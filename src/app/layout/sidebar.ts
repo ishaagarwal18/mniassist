@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { NAV } from './nav.model';
+import { PermissionService } from '@abp/ng.core';
+import { NAV, NavGroup } from './nav.model';
 import { ArAvatar, ArIcon } from '../ui';
 import { OpsService } from '../core/services/ops.service';
 import { InboxService } from '../core/services/inbox.service';
+import { grantedPolicy } from '../core/auth/permission';
 
 @Component({
   selector: 'ar-sidebar',
@@ -109,9 +111,17 @@ import { InboxService } from '../core/services/inbox.service';
   `,
 })
 export class ArSidebar {
-  protected readonly nav = NAV;
   private readonly inbox = inject(InboxService);
   private readonly ops = inject(OpsService);
+  private readonly permissions = inject(PermissionService);
+
+  /** NAV with items the current user cannot see filtered out (all visible on seed data). */
+  protected readonly nav: readonly NavGroup[] = NAV
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => grantedPolicy(item.permission, this.permissions)),
+    }))
+    .filter((group) => group.items.length > 0);
 
   protected badgeFor(kind: 'inbox' | 'enquiries' | 'alerts' | undefined): number | null {
     if (kind === 'inbox') return this.inbox.unassignedCount();
