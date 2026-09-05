@@ -57,7 +57,28 @@
     <ol class="thread__messages">
       @for (m of thread.messages; track m.id) {
         <li class="bubble" [class.bubble--out]="m.direction === 'out'">
-          <p class="bubble__body">{{ m.body }}</p>
+          @if (m.media; as media) {
+            @switch (media.kind) {
+              @case ('image') {
+                <a class="bubble__media" [href]="media.url" target="_blank" rel="noopener">
+                  <img [src]="media.url" alt="Attached image" loading="lazy" />
+                </a>
+              }
+              @case ('video') {
+                <video class="bubble__media" [src]="media.url" controls preload="metadata"></video>
+              }
+              @case ('audio') {
+                <audio class="bubble__media" [src]="media.url" controls preload="none"></audio>
+              }
+              @default {
+                <a class="bubble__file" [href]="media.url" target="_blank" rel="noopener">
+                  <ar-icon name="document" [size]="16" />
+                  <span>Attachment</span>
+                </a>
+              }
+            }
+          }
+          @if (m.body) { <p class="bubble__body">{{ m.body }}</p> }
           <span class="bubble__meta ar-mono">
             {{ m.at }}@if (m.status) { · {{ m.status }} }
           </span>

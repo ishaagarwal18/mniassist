@@ -160,9 +160,11 @@ export class InboxService {
       return environment.useMockData || !id ? undefined : id;
     },
     stream: ({ params: conversationId }) =>
-      this.api.getMessages(conversationId, { skipCount: 0, maxResultCount: 100 }).pipe(
+      this.api.getMessages(conversationId as string, { skipCount: 0, maxResultCount: 100 }).pipe(
         // The API returns newest first for paging; the thread reads oldest first.
-        map((page) => (page.items ?? []).map(toMessage).reverse()),
+        map((page) => (page.items ?? [])
+          .map((m) => toMessage(m, conversationId as string))
+          .reverse()),
       ),
     defaultValue: [] as ReturnType<typeof toMessage>[],
   });

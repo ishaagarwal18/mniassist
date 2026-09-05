@@ -13,9 +13,10 @@ import {
   SegmentDto,
 } from '../../proxy/contacts';
 import { ConversationDto, MessageDto, MessageDirection, MessageStatus } from '../../proxy/messaging';
+import { environment } from '../../../environments/environment';
 import { Channel, MessagingTier, QualityRating } from '../models/channel.model';
 import { Contact, ConsentSource, Segment } from '../models/contact.model';
-import { Conversation, Message } from '../models/conversation.model';
+import { Conversation, Message, MessageMedia } from '../models/conversation.model';
 
 /**
  * Server DTOs to view models.
@@ -142,13 +143,35 @@ export function toConversation(dto: ConversationDto, messages: readonly Message[
   };
 }
 
-export function toMessage(dto: MessageDto): Message {
+export function toMessage(dto: MessageDto, conversationId?: string): Message {
   return {
     id: dto.id!,
     direction: dto.direction === MessageDirection.Inbound ? 'in' : 'out',
     body: dto.body ?? '',
     at: formatClock(dto.sentAtUtc ?? dto.creationTime),
     status: toMessageStatus(dto.status),
+    media: toMessageMedia(dto, conversationId),
+  };
+}
+
+function toMessageMedia(dto: MessageDto, conversationId?: string): MessageMedia | undefined {
+  if (!dto.mediaBlobRef || !conversationId || !dto.id) {
+    return undefined;
+  }
+
+  const base = environment.apis['AutoReach']?.url ?? environment.apis.default.url;
+  const mime = dto.mediaMimeType ?? 'application/octet-stream';
+
+  return {
+    url: `${base}/api/auto-reach/inbox/${conversationId}/messages/${dto.id}/media`,
+    mimeType: mime,
+    kind: mime.startsWith('image/')
+      ? 'image'
+      : mime.startsWith('video/')
+        ? 'video'
+        : mime.startsWith('audio/')
+          ? 'audio'
+          : 'document',
   };
 }
 

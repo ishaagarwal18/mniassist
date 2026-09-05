@@ -3,12 +3,21 @@ export interface ServiceWindow {
   readonly expiresAt: Date | null;
 }
 
+export interface MessageMedia {
+  /** Absolute URL to stream the file from the API. */
+  readonly url: string;
+  readonly mimeType: string;
+  /** 'image' | 'video' | 'audio' | 'document' — drives which element renders it. */
+  readonly kind: 'image' | 'video' | 'audio' | 'document';
+}
+
 export interface Message {
   readonly id: string;
   readonly direction: 'in' | 'out';
   readonly body: string;
   readonly at: string;
   readonly status?: 'sent' | 'delivered' | 'read';
+  readonly media?: MessageMedia;
 }
 
 export interface Conversation {
