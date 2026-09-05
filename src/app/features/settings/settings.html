@@ -1,0 +1,115 @@
+<ar-topbar title="Settings" subtitle="Workspace" />
+
+<div class="page ar-scroll">
+  <div class="page__col">
+    <ar-card heading="Single sign-on">
+      <span card-actions>
+        @if (sso().isEnabled) {
+          <ar-chip tone="good">Enabled</ar-chip>
+        } @else if (sso().isConfigured) {
+          <ar-chip tone="amber">Configured, off</ar-chip>
+        } @else {
+          <ar-chip tone="neutral">Not set up</ar-chip>
+        }
+      </span>
+
+      <p class="page__muted">
+        Point your identity provider's issuer at AutoReach and map the email domains it
+        owns. People signing in from those domains are provisioned automatically with
+        the role below.
+      </p>
+
+      @if (error(); as msg) {
+        <ar-banner tone="bad">{{ msg }}</ar-banner>
+      }
+
+      @if (!editing()) {
+        @if (sso().isConfigured) {
+          <dl class="kv">
+            <dt>Provider</dt><dd>{{ sso().displayName }}</dd>
+            <dt>Issuer</dt><dd class="ar-mono">{{ sso().issuer }}</dd>
+            <dt>Email domains</dt><dd>{{ sso().allowedEmailDomains.join(', ') }}</dd>
+            <dt>New users get</dt><dd>{{ sso().defaultRoleName }}</dd>
+            <dt>Enforced</dt><dd>{{ sso().enforceSso ? 'Yes — password sign-in hidden for these domains' : 'No' }}</dd>
+          </dl>
+        }
+        <div class="row">
+          <button ar-button variant="primary" type="button" (click)="startEditing()">
+            {{ sso().isConfigured ? 'Edit' : 'Set up SSO' }}
+          </button>
+          @if (sso().isEnabled) {
+            <button ar-button variant="ghost" type="button" [disabled]="saving()" (click)="disable()">
+              Turn off
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="form">
+          <label class="field">
+            <span>Display name</span>
+            <input type="text" [ngModel]="displayName()" (ngModelChange)="displayName.set($event)"
+                   placeholder="Acme SSO" />
+          </label>
+          <label class="field">
+            <span>Issuer</span>
+            <input type="url" class="ar-mono" [ngModel]="issuer()" (ngModelChange)="issuer.set($event)"
+                   placeholder="https://login.acme.example" />
+          </label>
+          <label class="field">
+            <span>Authorization endpoint <em>(optional)</em></span>
+            <input type="url" class="ar-mono" [ngModel]="authorizationEndpoint()"
+                   (ngModelChange)="authorizationEndpoint.set($event)"
+                   placeholder="https://login.acme.example/authorize" />
+          </label>
+          <label class="field">
+            <span>Metadata URL <em>(optional)</em></span>
+            <input type="url" class="ar-mono" [ngModel]="metadataAddress()"
+                   (ngModelChange)="metadataAddress.set($event)"
+                   placeholder="https://login.acme.example/.well-known/openid-configuration" />
+          </label>
+          <label class="field">
+            <span>Email domains <em>(comma separated)</em></span>
+            <input type="text" [ngModel]="domains()" (ngModelChange)="domains.set($event)"
+                   placeholder="acme.com, acme.co.in" />
+          </label>
+          <label class="field">
+            <span>New users get the role</span>
+            <select [ngModel]="defaultRole()" (ngModelChange)="defaultRole.set($event)">
+              <option value="Agent">Agent</option>
+              <option value="Analyst">Analyst</option>
+              <option value="Manager">Manager</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </label>
+          <label class="check">
+            <input type="checkbox" [ngModel]="enforce()" (ngModelChange)="enforce.set($event)" />
+            <span>Hide password sign-in for these domains (advisory to the sign-in screen)</span>
+          </label>
+
+          <div class="row">
+            <button ar-button variant="primary" type="button"
+                    [disabled]="!canSave() || saving()" (click)="save(true)">
+              Save &amp; enable
+            </button>
+            <button ar-button variant="ghost" type="button"
+                    [disabled]="!canSave() || saving()" (click)="save(false)">
+              Save without enabling
+            </button>
+            <button ar-button variant="ghost" type="button" (click)="cancel()">Cancel</button>
+          </div>
+        </div>
+      }
+    </ar-card>
+
+    <ar-card heading="More settings">
+      <ul class="links">
+        <li><a routerLink="/settings/integrations">Integrations &amp; API keys</a></li>
+        <li><a routerLink="/settings/support-access">Support access</a></li>
+        <li><a routerLink="/channels">WhatsApp channels</a></li>
+        <li><a routerLink="/channels/numbers">Number management</a></li>
+        <li><a routerLink="/compliance">Compliance &amp; retention</a></li>
+        <li><a routerLink="/billing">Billing &amp; wallet</a></li>
+      </ul>
+    </ar-card>
+  </div>
+</div>
