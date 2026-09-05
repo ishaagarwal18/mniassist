@@ -1,0 +1,59 @@
+<ar-topbar title="Installed base" [subtitle]="dueSoon() + ' due within 30 days'">
+  <label class="toggle">
+    <input
+      type="checkbox"
+      [checked]="includeRetired()"
+      (change)="includeRetired.set($any($event.target).checked)"
+    />
+    Show retired
+  </label>
+  <button ar-button variant="primary" icon="plus">Register machine</button>
+</ar-topbar>
+
+<div class="ib ar-scroll">
+  @if (loading()) {
+    <p class="ib__empty">Loading…</p>
+  }
+
+  @for (a of assets(); track a.id) {
+    <article class="asset" [class.asset--retired]="a.retired">
+      <div class="asset__main">
+        <h2 class="asset__desc">{{ a.description }}</h2>
+        <p class="asset__meta">
+          @if (a.serial) {
+            <span class="ar-mono">{{ a.serial }}</span>
+          }
+          @if (a.make) {
+            <span> · {{ a.make }}</span>
+          }
+          @if (a.site) {
+            <span> · {{ a.site }}</span>
+          }
+        </p>
+      </div>
+      <div class="asset__due">
+        @if (a.nextDueKind) {
+          <span class="asset__kind">{{ a.nextDueKind }}</span>
+          <ar-chip [tone]="dueTone(a)">{{ dueLabel(a) }}</ar-chip>
+        } @else {
+          <span class="asset__kind muted">no upcoming reminder</span>
+        }
+      </div>
+      <div class="asset__actions">
+        @if (!a.retired) {
+          <button ar-button variant="ghost" [disabled]="!!busy()" (click)="recordService(a)">
+            Log service
+          </button>
+          <button ar-button variant="ghost" [disabled]="!!busy()" (click)="retire(a)">
+            Retire
+          </button>
+        } @else {
+          <ar-chip tone="neutral">Retired</ar-chip>
+        }
+      </div>
+    </article>
+  }
+  @if (assets().length === 0 && !loading()) {
+    <p class="ib__empty">No machines registered.</p>
+  }
+</div>

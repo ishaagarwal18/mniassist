@@ -1,0 +1,66 @@
+<ar-topbar title="Notifications" [subtitle]="subtitle()">
+  @if (unreadCount() > 0) {
+    <button ar-button variant="ghost" (click)="markAllRead()">Mark all read</button>
+  }
+</ar-topbar>
+
+<div class="notif">
+  <div class="notif__bar" role="tablist" aria-label="Filter notifications">
+    <button class="tab" type="button" role="tab" [attr.aria-selected]="filter() === 'all'"
+            [class.tab--on]="filter() === 'all'" (click)="setFilter('all')">
+      All
+    </button>
+    <button class="tab" type="button" role="tab" [attr.aria-selected]="filter() === 'unread'"
+            [class.tab--on]="filter() === 'unread'" (click)="setFilter('unread')">
+      Unread
+      @if (unreadCount() > 0) { <span class="tab__n ar-mono">{{ unreadCount() }}</span> }
+    </button>
+    <button class="tab" type="button" role="tab" [attr.aria-selected]="filter() === 'critical'"
+            [class.tab--on]="filter() === 'critical'" (click)="setFilter('critical')">
+      Critical
+      @if (criticalCount() > 0) { <span class="tab__n tab__n--bad ar-mono">{{ criticalCount() }}</span> }
+    </button>
+  </div>
+
+  <div class="notif__list ar-scroll">
+    @for (n of visible(); track n.id) {
+      <article class="row" [class.row--unread]="!n.read" [class.row--critical]="n.tone === 'critical'">
+        <div class="row__icon" [class]="'row__icon--' + n.tone" aria-hidden="true">
+          <ar-icon [name]="icon(n.tone)" [size]="15" />
+        </div>
+
+        <div class="row__body">
+          <div class="row__head">
+            <h2 class="row__title">{{ n.title }}</h2>
+            <span class="row__time ar-mono">{{ ago(n.occurredAt) }}</span>
+          </div>
+
+          <p class="row__text">{{ n.body }}</p>
+
+          <div class="row__meta">
+            <ar-chip [tone]="chipTone(n.tone)" [dot]="true">{{ kindLabel(n.kind) }}</ar-chip>
+
+            @if (n.emailState === 'failed') {
+              <!-- Worth showing: a critical alert nobody received by email is a
+                   critical alert nobody has seen. -->
+              <ar-chip tone="warn">Email failed</ar-chip>
+            }
+
+            @if (n.route) {
+              <a class="row__link" [routerLink]="n.route">Open</a>
+            }
+
+            @if (!n.read) {
+              <button class="row__mark" type="button" (click)="markRead(n.id)">Mark read</button>
+            }
+          </div>
+        </div>
+      </article>
+    } @empty {
+      <p class="empty">
+        @if (filter() === 'all') { No notifications yet. }
+        @else { Nothing here — try another filter. }
+      </p>
+    }
+  </div>
+</div>

@@ -1,0 +1,26 @@
+import { mapEnumToOptions } from '@abp/ng.core';
+
+export enum NotificationKind {
+  QualityDowngrade = 0,
+  QualityRecovered = 1,
+  TierChanged = 2,
+  TemplatePaused = 3,
+  TemplateRejected = 4,
+  AccountRestricted = 5,
+  CampaignSuspended = 6,
+  CampaignCompleted = 7,
+  LowWalletBalance = 8,
+  WalletExhausted = 9,
+  ComplianceSlaAtRisk = 10,
+  ReminderDispatchFailed = 11,
+  TemplateCategoryChanged = 12,
+  AccessTokenExpiring = 13,
+  ReconciliationVariance = 14,
+  WebhookEndpointDisabled = 15,
+  DataRequestReceived = 16,
+  SupportAccessStarted = 17,
+  InvoiceIssued = 18,
+  ConversationMention = 19,
+}
+
+export const notificationKindOptions = mapEnumToOptions(NotificationKind);

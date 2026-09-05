@@ -1,0 +1,64 @@
+<ar-topbar title="Automations" subtitle="Keyword bots, drip sequences and journeys">
+  <button ar-button variant="primary" icon="plus">New automation</button>
+</ar-topbar>
+
+<div class="au ar-scroll">
+  @if (loading()) {
+    <p class="au__empty">Loading…</p>
+  }
+
+  @for (a of automations(); track a.id) {
+    <article class="wf">
+      <div class="wf__head">
+        <div>
+          <h2 class="wf__name">{{ a.name }}</h2>
+          <p class="wf__meta">
+            <ar-chip tone="neutral">{{ a.trigger }}</ar-chip>
+            <span class="wf__steps">{{ a.steps }} steps</span>
+            <span class="wf__run">· last run {{ when(a.lastRunAt) }}</span>
+          </p>
+        </div>
+        <ar-chip [tone]="tone(a.state)" [dot]="true">{{ a.state }}</ar-chip>
+      </div>
+
+      <div class="wf__stats">
+        <span
+          ><strong>{{ a.enrolled }}</strong> enrolled</span
+        >
+        <span
+          ><strong>{{ a.completed }}</strong> completed</span
+        >
+        <span
+          ><strong>{{ pct(a.completionRate) }}</strong> completion</span
+        >
+      </div>
+
+      <div class="wf__actions">
+        <button ar-button variant="ghost" [disabled]="!!busy()" (click)="simulate(a)">
+          Dry-run
+        </button>
+        <button
+          ar-button
+          [variant]="a.state === 'active' ? 'ghost' : 'primary'"
+          [disabled]="!!busy()"
+          (click)="toggle(a)"
+        >
+          {{ a.state === 'active' ? 'Pause' : 'Activate' }}
+        </button>
+      </div>
+
+      @if (sim(); as s) {
+        @if (s.id === a.id) {
+          <ol class="sim">
+            @for (step of s.steps; track $index) {
+              <li>{{ step }}</li>
+            }
+          </ol>
+        }
+      }
+    </article>
+  }
+  @if (automations().length === 0 && !loading()) {
+    <p class="au__empty">No automations yet.</p>
+  }
+</div>

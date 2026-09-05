@@ -1,0 +1,49 @@
+<ar-topbar
+  title="Enquiries"
+  [subtitle]="openCount() + ' open · ' + value(pipelineValue()) + ' in play'"
+>
+  <button ar-button variant="primary" icon="plus">New enquiry</button>
+</ar-topbar>
+
+<div class="board ar-scroll">
+  @if (loading()) {
+    <p class="board__empty">Loading the pipeline…</p>
+  }
+  @for (col of board(); track col.stage) {
+    <section class="col">
+      <header class="col__head">
+        <h2 class="col__t">{{ col.label }}</h2>
+        <span class="col__meta">{{ col.count }} · {{ value(col.valueInPaise) }}</span>
+      </header>
+      <div class="col__cards">
+        @for (card of col.cards; track card.id) {
+          <article class="card">
+            <div class="card__ref ar-mono">{{ card.reference }}</div>
+            <h3 class="card__title">{{ card.title }}</h3>
+            <p class="card__contact">
+              {{ card.contact
+              }}<span class="card__co">{{ card.company ? ' · ' + card.company : '' }}</span>
+            </p>
+            <div class="card__foot">
+              <span class="card__val">{{ value(card.valueInPaise) }}</span>
+              <div class="card__meta">
+                @if (card.owner) {
+                  <ar-chip tone="neutral" [mono]="true">{{ card.owner }}</ar-chip>
+                }
+                <ar-chip [tone]="card.daysInStage > 10 ? 'amber' : 'neutral'"
+                  >{{ card.daysInStage }}d</ar-chip
+                >
+              </div>
+            </div>
+            @if (canAdvance(card.stage)) {
+              <button ar-button variant="ghost" (click)="advance(card)">Advance →</button>
+            }
+          </article>
+        }
+        @if (col.cards.length === 0) {
+          <p class="col__none">Nothing here.</p>
+        }
+      </div>
+    </section>
+  }
+</div>

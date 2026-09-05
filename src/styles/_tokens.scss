@@ -1,0 +1,64 @@
+/* AutoReach design tokens — Direction A "Instrument panel".
+   Values are lifted verbatim from the design-system artboard; nothing is
+   rounded to a 4/8px grid. Change a value here and it changes everywhere. */
+:root {
+  /* Surface and text */
+  --ar-ink-900: #14181D;
+  --ar-ink-700: #333B45;
+  --ar-ink-500: #5C6672;
+  --ar-ink-400: #7B8794;
+  --ar-line-300: #D7DCE2;
+  --ar-line-200: #E7EAEF;
+  --ar-bg-100: #F4F6F8;
+  --ar-bg-50: #FAFBFC;
+  --ar-white: #FFFFFF;
+
+  /* Accent — safety amber */
+  --ar-amber-600: #A85B12;
+  --ar-amber-500: #C4711E;
+  --ar-amber-200: #F2DFC4;
+  --ar-amber-100: #FBF1E3;
+
+  /* Free-window / utility teal */
+  --ar-teal-600: #0F7F86;
+  --ar-teal-100: #E4F2F3;
+
+  /* Status — reserved, never reused as a series colour */
+  --ar-green-600: #1F7A4D;
+  --ar-green-100: #E7F3EC;
+  --ar-warn-600: #8A5A00;
+  --ar-warn-100: #FCF3DF;
+  --ar-red-600: #B02A25;
+  --ar-red-100: #FBEAE9;
+
+  /* Sidebar */
+  --ar-nav: #1B2027;
+  --ar-nav-hi: #242B34;
+  --ar-nav-line: #2A323C;
+  --ar-nav-text: #A6B0BC;
+  --ar-nav-dim: #6E7A88;
+
+  /* Chart categorical — validated for CVD separation, chroma and contrast.
+     Do not substitute without re-running the palette validator. */
+  --ar-chart-marketing: #C4711E;
+  --ar-chart-utility: #0E8F84;
+  --ar-chart-service: #7A4FA8;
+
+  /* Type */
+  --ar-font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+  --ar-font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+
+  /* Radii — nothing is a pill except the mobile composer */
+  --ar-radius-chip: 4px;
+  --ar-radius-control: 6px;
+  --ar-radius-inset: 7px;
+  --ar-radius-card: 8px;
+
+  /* Density */
+  --ar-control-h: 32px;
+  --ar-control-h-touch: 44px;
+  --ar-gap-card: 14px;
+  --ar-pad-card: 18px;
+
+  --ar-shadow-pop: 0 4px 14px rgba(20, 24, 29, .12);
+}

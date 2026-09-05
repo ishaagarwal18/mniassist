@@ -1,0 +1,61 @@
+:host { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.notif { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+.notif__bar {
+  display: flex; align-items: center; gap: 4px; padding: 10px 22px;
+  background: var(--ar-white); border-bottom: 1px solid var(--ar-line-200);
+}
+.tab {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 12px; border: 0; border-radius: var(--ar-radius-control);
+  background: transparent; cursor: pointer;
+  font: 500 12.5px var(--ar-font-sans); color: var(--ar-ink-500);
+}
+.tab:hover { background: var(--ar-bg-100); }
+.tab--on { background: var(--ar-amber-100); color: var(--ar-ink-900); }
+.tab__n {
+  font-size: 11px; padding: 1px 6px; border-radius: 999px;
+  background: var(--ar-bg-200); color: var(--ar-ink-500);
+}
+.tab__n--bad { background: var(--ar-red-100); color: var(--ar-red-600); }
+
+.notif__list { flex: 1; min-height: 0; padding: 14px 22px 24px; }
+
+.row {
+  display: flex; gap: 13px; padding: 15px 17px;
+  background: var(--ar-white); border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-card); margin-bottom: 9px;
+}
+/* Unread is carried by a left rail rather than a background tint — a tinted row
+   fights the severity colour on the chip beside it. */
+.row--unread { border-left: 3px solid var(--ar-amber-500); }
+.row--critical.row--unread { border-left-color: var(--ar-red-500); }
+
+.row__icon {
+  width: 28px; height: 28px; flex: none; border-radius: 7px;
+  display: grid; place-items: center;
+}
+.row__icon--info { background: var(--ar-bg-100); color: var(--ar-ink-400); }
+.row__icon--warning { background: var(--ar-warn-100); color: var(--ar-warn-600); }
+.row__icon--critical { background: var(--ar-red-100); color: var(--ar-red-600); }
+
+.row__body { flex: 1; min-width: 0; }
+.row__head { display: flex; align-items: baseline; gap: 12px; }
+.row__title {
+  flex: 1; min-width: 0; margin: 0;
+  font: 500 13.5px/1.4 var(--ar-font-sans); color: var(--ar-ink-900);
+}
+.row__time { flex: none; font-size: 11px; color: var(--ar-ink-400); }
+.row__text {
+  margin: 5px 0 0; max-width: 74ch;
+  font: 400 12.5px/1.55 var(--ar-font-sans); color: var(--ar-ink-500);
+}
+.row__meta { display: flex; align-items: center; gap: 9px; margin-top: 11px; flex-wrap: wrap; }
+.row__link, .row__mark {
+  font: 500 12px var(--ar-font-sans); color: var(--ar-amber-600);
+  background: none; border: 0; padding: 0; cursor: pointer; text-decoration: none;
+}
+.row__link:hover, .row__mark:hover { text-decoration: underline; }
+.row__mark { color: var(--ar-ink-400); }
+
+.empty { text-align: center; color: var(--ar-ink-400); padding: 42px 12px; font: 400 13px var(--ar-font-sans); }

@@ -1,0 +1,217 @@
+import {
+  ChannelDto,
+  ChannelHealthDto,
+  ChannelState,
+  DisplayNameStatus,
+  MessagingTier as ApiMessagingTier,
+  QualityRating as ApiQualityRating,
+} from '../../proxy/channels';
+import {
+  ConsentSource as ApiConsentSource,
+  ContactDto,
+  DecisionRole,
+  SegmentDto,
+} from '../../proxy/contacts';
+import { ConversationDto, MessageDto, MessageDirection, MessageStatus } from '../../proxy/messaging';
+import { Channel, MessagingTier, QualityRating } from '../models/channel.model';
+import { Contact, ConsentSource, Segment } from '../models/contact.model';
+import { Conversation, Message } from '../models/conversation.model';
+
+/**
+ * Server DTOs to view models.
+ *
+ * `dto.id!` appears throughout: ABP's `EntityDto<TKey>` declares `id` optional
+ * because the same type is reused for create payloads, but every DTO the API
+ * returns has one. Threading `string | undefined` through the view models would
+ * make every template guard against a case the server cannot produce.
+ *
+ * These live in one place on purpose. The DTOs are generated and will be
+ * regenerated; the view models are hand-shaped for the screens. Keeping the
+ * translation here means a change on either side shows up as a type error in a
+ * single file rather than scattered through components.
+ */
+
+const QUALITY: Record<ApiQualityRating, QualityRating> = {
+  [ApiQualityRating.Unknown]: 'unknown',
+  [ApiQualityRating.Green]: 'green',
+  [ApiQualityRating.Yellow]: 'yellow',
+  [ApiQualityRating.Red]: 'red',
+};
+
+const TIER: Record<ApiMessagingTier, MessagingTier> = {
+  [ApiMessagingTier.Starting]: 'starting',
+  [ApiMessagingTier.Tier1]: 'tier1',
+  [ApiMessagingTier.Tier2]: 'tier2',
+  [ApiMessagingTier.Tier3]: 'tier3',
+  [ApiMessagingTier.Tier4]: 'tier4',
+};
+
+const NAME_STATUS: Record<DisplayNameStatus, Channel['nameStatus']> = {
+  [DisplayNameStatus.Pending]: 'pending',
+  [DisplayNameStatus.Approved]: 'approved',
+  [DisplayNameStatus.Rejected]: 'rejected',
+};
+
+const CONSENT_SOURCE: Record<ApiConsentSource, ConsentSource> = {
+  [ApiConsentSource.Website]: 'website',
+  [ApiConsentSource.WhatsAppOptIn]: 'whatsapp_optin',
+  [ApiConsentSource.Import]: 'import',
+  [ApiConsentSource.ClickToWhatsApp]: 'ctwa',
+  [ApiConsentSource.QrCode]: 'qr',
+  [ApiConsentSource.Manual]: 'manual',
+  [ApiConsentSource.Api]: 'api',
+};
+
+const DECISION_ROLE: Record<DecisionRole, NonNullable<Contact['attributes']['decisionRole']> | undefined> = {
+  [DecisionRole.Unknown]: undefined,
+  [DecisionRole.Maintenance]: 'Maintenance',
+  [DecisionRole.Purchase]: 'Purchase',
+  [DecisionRole.Engineering]: 'Engineering',
+  [DecisionRole.PlantHead]: 'Plant head',
+  [DecisionRole.Dealer]: 'Dealer',
+};
+
+export function toChannel(dto: ChannelDto, health?: ChannelHealthDto): Channel {
+  return {
+    id: dto.id!,
+    wabaId: dto.wabaId ?? '',
+    phoneNumberId: dto.phoneNumberId ?? '',
+    displayPhone: dto.displayPhoneNumber ?? '',
+    displayName: dto.verifiedName ?? '',
+    nameStatus: NAME_STATUS[dto.displayNameStatus] ?? 'pending',
+    quality: QUALITY[dto.quality] ?? 'unknown',
+    tier: TIER[dto.tier] ?? 'starting',
+    // Usage comes from the health endpoint because it is portfolio-scoped: the
+    // channel row alone cannot know what its sibling numbers have consumed.
+    used24h: health?.used24h ?? 0,
+    throughput: dto.throughputMps,
+    restricted: dto.state === ChannelState.Restricted || dto.state === ChannelState.Suspended,
+  };
+}
+
+export function toSegment(dto: SegmentDto): Segment {
+  return {
+    id: dto.id!,
+    name: dto.name ?? '',
+    count: dto.cachedMemberCount,
+  };
+}
+
+export function toContact(dto: ContactDto): Contact {
+  const attributes = dto.attributes ?? {};
+  const systems = attributes['systems']?.split(',').map(s => s.trim()).filter(Boolean);
+
+  return {
+    id: dto.id!,
+    name: dto.displayName ?? dto.waId ?? '',
+    phoneE164: formatWaId(dto.waId),
+    company: [dto.companyName, dto.city].filter(Boolean).join(' · '),
+    attributes: {
+      industry: attributes['industry'],
+      plantLocation: attributes['plant_location'] ?? dto.city,
+      systems: systems?.length ? systems : undefined,
+      decisionRole: DECISION_ROLE[dto.role],
+      capexBand: attributes['capex_band'],
+    },
+    consent: {
+      source: dto.consentSource !== undefined ? CONSENT_SOURCE[dto.consentSource] : 'manual',
+      evidence: attributes['consent_evidence'] ?? '—',
+      textVersion: attributes['consent_text_version'] ?? '—',
+      grantedAt: formatDate(dto.consentAtUtc),
+    },
+    amcExpiry: attributes['amc_expiry'],
+    lastActivity: formatRelative(dto.lastInboundAtUtc ?? dto.lastOutboundAtUtc),
+  };
+}
+
+export function toConversation(dto: ConversationDto, messages: readonly Message[] = []): Conversation {
+  return {
+    id: dto.id!,
+    contactName: dto.contactDisplayName ?? formatWaId(dto.contactWaId),
+    company: dto.contactCompanyName ?? '',
+    phoneE164: formatWaId(dto.contactWaId),
+    snippet: dto.lastMessagePreview ?? '',
+    at: formatClock(dto.lastInboundAtUtc ?? dto.lastOutboundAtUtc),
+    unread: dto.unreadCount,
+    // A closed window is null rather than a past date, because the composer
+    // branches on "is there a window" and a stale timestamp reads as an open one.
+    window: {
+      expiresAt: dto.isWindowOpen && dto.windowExpiresAtUtc ? new Date(dto.windowExpiresAtUtc) : null,
+    },
+    messages,
+  };
+}
+
+export function toMessage(dto: MessageDto): Message {
+  return {
+    id: dto.id!,
+    direction: dto.direction === MessageDirection.Inbound ? 'in' : 'out',
+    body: dto.body ?? '',
+    at: formatClock(dto.sentAtUtc ?? dto.creationTime),
+    status: toMessageStatus(dto.status),
+  };
+}
+
+function toMessageStatus(status: MessageStatus): Message['status'] {
+  switch (status) {
+    case MessageStatus.Sent:
+      return 'sent';
+    case MessageStatus.Delivered:
+      return 'delivered';
+    case MessageStatus.Read:
+      return 'read';
+    default:
+      // Queued, failed and withheld have no tick to show. Falling back to 'sent'
+      // would tell the agent a failed message went out.
+      return undefined;
+  }
+}
+
+/** wa_id has no plus and no spacing. Rendered as +91 XXXXX XXXXX for Indian numbers. */
+function formatWaId(waId: string | undefined): string {
+  if (!waId) return '';
+  const digits = waId.replace(/\D/g, '');
+
+  if (digits.length === 12 && digits.startsWith('91')) {
+    return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
+  }
+
+  return `+${digits}`;
+}
+
+function formatDate(iso: string | undefined): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatClock(iso: string | undefined): string {
+  if (!iso) return '';
+  const date = new Date(iso);
+  const today = new Date();
+
+  const sameDay =
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear();
+
+  return sameDay
+    ? date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })
+    : date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+}
+
+function formatRelative(iso: string | undefined): string {
+  if (!iso) return 'No activity';
+
+  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes} min ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Yesterday';
+  if (days < 30) return `${days} days ago`;
+
+  return formatDate(iso);
+}

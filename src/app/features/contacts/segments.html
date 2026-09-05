@@ -1,0 +1,283 @@
+<ar-topbar title="Audience builder" [subtitle]="subtitle()">
+  <button ar-button variant="ghost" icon="contacts">Import contacts</button>
+  <button ar-button variant="primary" icon="plus">Save segment</button>
+</ar-topbar>
+
+<div class="sg ar-scroll">
+  <div class="sg__cols">
+    <!-- ── Left: the rule ─────────────────────────────────────────────── -->
+    <section class="pane">
+      <header class="pane__head">
+        <div>
+          <h2 class="pane__title">Rule</h2>
+          <p class="pane__sub">
+            Conditions read top to bottom. A nested group has its own connective, so
+            “either of these, and all of those” is one segment rather than three.
+          </p>
+        </div>
+      </header>
+
+      @if (preview().matchesEveryone) {
+        <ar-banner tone="warn" [hazard]="true">
+          This rule places no constraint at all, so the segment is your entire contact
+          list. Add a condition before sending anything to it.
+        </ar-banner>
+      }
+
+      @for (problem of preview().problems; track problem) {
+        <ar-banner tone="bad">{{ problem }}</ar-banner>
+      }
+
+      <!-- Recursive group renderer. A group draws its own connective and each of
+           its children, which may itself be a group. -->
+      <ng-template #groupTpl let-group let-path="path" let-depth="depth">
+        <div class="grp" [class.grp--nested]="depth > 0" [attr.data-mode]="group.mode">
+          <div class="grp__bar">
+            <label class="grp__mode">
+              <!-- `[selected]` on each option rather than `[value]` on the select.
+                   Angular writes the select's value property before @for has rendered
+                   its options, so the assignment finds nothing to match and the
+                   control silently falls back to the first entry — every field would
+                   read "City" whatever the rule actually said. -->
+              <select class="sel sel--mode" (change)="setMode(path, $any($event.target).value)">
+                <option value="all" [selected]="group.mode === 'all'">Match all of</option>
+                <option value="any" [selected]="group.mode === 'any'">Match any of</option>
+                <option value="not" [selected]="group.mode === 'not'">Exclude anyone matching</option>
+              </select>
+            </label>
+
+            <div class="grp__actions">
+              <button type="button" class="link" (click)="addClause(path)">+ condition</button>
+              <button type="button" class="link" (click)="addGroup(path, 'any')">+ any-group</button>
+              @if (depth === 0) {
+                <button type="button" class="link" (click)="addGroup(path, 'not')">+ exclusion</button>
+              }
+            </div>
+          </div>
+
+          <ol class="rows">
+            @for (node of group.children; track $index) {
+              <li class="row">
+                <span class="row__joint" aria-hidden="true">
+                  {{ $index === 0 ? 'where' : connective(group.mode) }}
+                </span>
+
+                @if (isGroupNode(node)) {
+                  <div class="row__nest">
+                    <ng-container
+                      *ngTemplateOutlet="
+                        groupTpl;
+                        context: { $implicit: asGroup(node), path: childPath(path, $index), depth: depth + 1 }
+                      "
+                    />
+                  </div>
+                } @else {
+                  <div class="clause">
+                    <select
+                      class="sel sel--field"
+                      (change)="setField(path, $index, $any($event.target).value)"
+                    >
+                      @for (fg of fieldGroups(); track fg.heading) {
+                        <optgroup [label]="fg.heading">
+                          @for (f of fg.items; track f.value) {
+                            <option [value]="f.value" [selected]="f.value === asClause(node).field">
+                              {{ f.label }}
+                            </option>
+                          }
+                        </optgroup>
+                      }
+                    </select>
+
+                    <select
+                      class="sel sel--op"
+                      (change)="setOp(path, $index, $any($event.target).value)"
+                    >
+                      @for (op of operatorsFor(asClause(node).field); track op.value) {
+                        <option [value]="op.value" [selected]="op.value === asClause(node).op">
+                          {{ op.label }}
+                        </option>
+                      }
+                    </select>
+
+                    @switch (kindOf(asClause(node).field)) {
+                      @case ('enum') {
+                        <select
+                          class="sel sel--val"
+                          (change)="setValue(path, $index, $any($event.target).value)"
+                        >
+                          <option value="" [selected]="!asClause(node).value">Choose…</option>
+                          @for (o of optionsFor(asClause(node).field); track o.value) {
+                            <option [value]="o.value" [selected]="o.value === asClause(node).value">
+                              {{ o.label }}
+                            </option>
+                          }
+                        </select>
+                      }
+                      @case ('flag') {
+                        <span class="flagval">yes</span>
+                      }
+                      @default {
+                        <input
+                          class="sel sel--val"
+                          [class.sel--num]="kindOf(asClause(node).field) !== 'text'"
+                          [type]="kindOf(asClause(node).field) === 'text' ? 'text' : 'number'"
+                          [value]="asClause(node).value ?? ''"
+                          [placeholder]="kindOf(asClause(node).field) === 'days' ? 'days' : 'value'"
+                          (input)="setValue(path, $index, $any($event.target).value)"
+                        />
+                      }
+                    }
+
+                    <button
+                      type="button"
+                      class="row__del"
+                      title="Remove this condition"
+                      (click)="remove(path, $index)"
+                    >×</button>
+                  </div>
+
+                  @if (hintFor(asClause(node).field); as hint) {
+                    <p class="clause__hint">{{ hint }}</p>
+                  }
+                }
+              </li>
+            } @empty {
+              <li class="rows__empty">
+                No conditions yet. Every contact will match until you add one.
+              </li>
+            }
+          </ol>
+        </div>
+      </ng-template>
+
+      <ng-container
+        *ngTemplateOutlet="groupTpl; context: { $implicit: rule(), path: [], depth: 0 }"
+      />
+
+      <div class="saved">
+        <h3 class="saved__title">Saved segments</h3>
+        <ul class="saved__list">
+          @for (s of saved(); track s.id) {
+            <li>
+              <button
+                type="button"
+                class="saved__item"
+                [class.saved__item--on]="openSegmentId() === s.id"
+                (click)="loadSaved(s.id)"
+              >
+                <span class="saved__name">{{ s.name }}</span>
+                <span class="saved__meta">
+                  <span class="ar-mono">{{ count(s.cachedMemberCount) }}</span>
+                  @if (s.isCountStale) {
+                    <ar-chip tone="warn">{{ staleness(s.lastEvaluatedAt) }}</ar-chip>
+                  } @else {
+                    <ar-chip tone="neutral">{{ staleness(s.lastEvaluatedAt) }}</ar-chip>
+                  }
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+        <p class="saved__note">
+          A dynamic segment is re-resolved when a campaign starts, not when it is saved —
+          so an opt-out on Thursday is honoured by a campaign scheduled on Monday. The
+          count beside each name is the last one taken, which is why it says how old it is.
+        </p>
+      </div>
+    </section>
+
+    <!-- ── Right: what it costs ───────────────────────────────────────── -->
+    <aside class="pane pane--side">
+      <h2 class="pane__title">Preview</h2>
+
+      <div class="figs">
+        <div class="fig">
+          <span class="fig__n ar-mono">{{ count(preview().totalMatching) }}</span>
+          <span class="fig__l">match the rule</span>
+        </div>
+        <div class="fig fig--split">
+          <div>
+            <span class="fig__n fig__n--sm ar-mono">{{ count(preview().marketingEligible) }}</span>
+            <span class="fig__l">can receive marketing</span>
+          </div>
+          <div>
+            <span class="fig__n fig__n--sm ar-mono">{{ count(preview().utilityEligible) }}</span>
+            <span class="fig__l">can receive utility</span>
+          </div>
+        </div>
+      </div>
+
+      @if (consentGap() > 0) {
+        <p class="gap">
+          <strong>{{ count(consentGap()) }}</strong> of the people who match cannot be sent
+          marketing —
+          {{ count(preview().optedOut) }} opted out and
+          {{ count(preview().suppressed - preview().optedOut) }} are suppressed for other
+          reasons. Utility messages still reach them.
+        </p>
+      }
+
+      @if (preview().insideServiceWindow > 0) {
+        <p class="free">
+          <ar-chip tone="teal" [dot]="true">Free right now</ar-chip>
+          {{ count(preview().insideServiceWindow) }} are inside the 24-hour window, so a
+          reply costs nothing.
+        </p>
+      }
+
+      <h3 class="side__title">One send would cost</h3>
+      <table class="cost">
+        <thead>
+          <tr>
+            <th scope="col">Category</th>
+            <th scope="col" class="num">Recipients</th>
+            <th scope="col" class="num">Rate</th>
+            <th scope="col" class="num">Estimate</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (line of preview().cost; track line.category) {
+            <tr [class.cost--over]="line.exceedsWalletBalance">
+              <th scope="row">{{ line.category }}</th>
+              <td class="num ar-mono">{{ count(line.recipients) }}</td>
+              <td class="num ar-mono">{{ rupees(line.rateInPaise, true) }}</td>
+              <td class="num ar-mono">{{ rupees(line.estimatedTotalInPaise) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <p class="cost__note">
+        Marketing and utility are priced against different audiences on purpose: one
+        reaches the opted-in, the other reaches nearly everyone. Both are estimates —
+        billing follows Meta's delivery receipt, so an undelivered or withheld message
+        is never charged.
+      </p>
+
+      <p class="wallet">
+        Wallet balance <span class="ar-mono">{{ rupees(walletPaise()) }}</span>
+      </p>
+
+      <h3 class="side__title">Sample</h3>
+      <ul class="sample">
+        @for (c of preview().sample; track c.id) {
+          <li class="sample__row">
+            <div>
+              <span class="sample__name">{{ c.name }}</span>
+              @if (c.company) { <span class="sample__co">{{ c.company }}</span> }
+              @if (c.designation) { <span class="sample__desig">{{ c.designation }}</span> }
+            </div>
+            <div class="sample__chips">
+              <ar-chip [tone]="lifecycleTone(c.lifecycle)">{{ c.lifecycle }}</ar-chip>
+              @if (!c.canReceiveMarketing) {
+                <ar-chip tone="warn">{{ c.suppression === 'optedOut' ? 'Opted out' : 'Utility only' }}</ar-chip>
+              }
+            </div>
+          </li>
+        } @empty {
+          <li class="sample__none">Nobody matches this rule yet.</li>
+        }
+      </ul>
+    </aside>
+  </div>
+</div>

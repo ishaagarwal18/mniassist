@@ -1,0 +1,68 @@
+<ar-topbar
+  title="Channels"
+  [subtitle]="
+    channels().length +
+    ' connected' +
+    (restrictedCount() ? ' · ' + restrictedCount() + ' restricted' : '')
+  "
+>
+  <a ar-button variant="ghost" routerLink="/channels/numbers">Manage numbers</a>
+  <button ar-button variant="primary" icon="plus">Connect a number</button>
+</ar-topbar>
+
+<div class="ch ar-scroll">
+  @if (loading()) {
+    <p class="ch__empty">Loading…</p>
+  }
+
+  @for (c of channels(); track c.id) {
+    <article class="chan" [class.chan--restricted]="c.restricted">
+      <header class="chan__head">
+        <div>
+          <h2 class="chan__phone ar-mono">{{ c.displayPhone }}</h2>
+          <p class="chan__name">{{ c.displayName }}</p>
+        </div>
+        <div class="chan__chips">
+          <ar-chip [tone]="qualityTone(c.quality)" [dot]="true">
+            {{ c.quality === 'unknown' ? 'no rating' : c.quality + ' quality' }}
+          </ar-chip>
+          <ar-chip tone="neutral" [mono]="true">{{ tierLabel(c) }}</ar-chip>
+          @if (c.restricted) {
+            <ar-chip tone="bad">Restricted</ar-chip>
+          }
+        </div>
+      </header>
+
+      <div class="chan__body">
+        <div class="chan__meter">
+          <ar-meter
+            [value]="utilisation(c)"
+            [tone]="utilisation(c) > 80 ? 'bad' : utilisation(c) > 60 ? 'amber' : 'good'"
+            [label]="
+              limit(c) === null
+                ? 'unlimited tier'
+                : count(c.used24h) + ' of ' + count(limit(c)!) + ' recipients / 24h'
+            "
+          />
+        </div>
+        <dl class="chan__facts">
+          <div>
+            <dt>Throughput</dt>
+            <dd>{{ c.throughput }} msg/s</dd>
+          </div>
+          <div>
+            <dt>WABA</dt>
+            <dd class="ar-mono">{{ c.wabaId }}</dd>
+          </div>
+          <div>
+            <dt>Display name</dt>
+            <dd>{{ c.nameStatus }}</dd>
+          </div>
+        </dl>
+      </div>
+    </article>
+  }
+  @if (channels().length === 0 && !loading()) {
+    <p class="ch__empty">No numbers connected. Run Embedded Signup to add one.</p>
+  }
+</div>

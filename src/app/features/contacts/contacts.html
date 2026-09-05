@@ -1,0 +1,76 @@
+<ar-topbar title="Contacts"
+  [subtitle]="count(totalContacts()) + ' contacts · ' + count(consentedTotal()) + ' with marketing consent'">
+  <button ar-button variant="ghost" icon="download">Import</button>
+  <button ar-button variant="primary" icon="plus">New contact</button>
+</ar-topbar>
+
+<div class="contacts">
+  <nav class="segs" aria-label="Segments">
+    <p class="ar-label segs__head">Segments</p>
+    @for (s of segments(); track s.id) {
+      <button class="seg" type="button" [class.seg--on]="s.id === activeSegment()"
+              [attr.aria-pressed]="s.id === activeSegment()" (click)="activeSegment.set(s.id)">
+        <span class="seg__name">{{ s.name }}</span>
+        <span class="ar-mono seg__count">{{ count(s.count) }}</span>
+      </button>
+    }
+
+    <hr class="segs__rule" />
+    <p class="ar-label segs__head">Suppressed</p>
+    @for (s of suppression(); track s.id) {
+      <div class="seg seg--static">
+        <span class="seg__name">{{ s.name }}</span>
+        <span class="ar-mono seg__count">{{ count(s.count) }}</span>
+      </div>
+    }
+  </nav>
+
+  <section class="table-pane">
+    <div class="table-pane__bar">
+      <ar-search-box class="table-pane__search" [(query)]="query"
+                     placeholder="Search by name, company or phone" />
+      <button ar-button variant="ghost" icon="filter">Filter</button>
+    </div>
+
+    <div class="table-pane__body ar-scroll">
+      <table class="ar-table">
+        <caption class="sr-only">Contacts in the selected segment</caption>
+        <thead>
+          <tr>
+            <th scope="col">Contact</th>
+            <th scope="col">Company / plant</th>
+            <th scope="col">Role</th>
+            <th scope="col">Systems</th>
+            <th scope="col">AMC expiry</th>
+            <th scope="col">Consent</th>
+            <th scope="col">Last activity</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of visible(); track c.id) {
+            <tr>
+              <td>
+                <span class="who">
+                  <ar-avatar [name]="c.name" [size]="26" />
+                  <span class="who__name">{{ c.name }}</span>
+                </span>
+              </td>
+              <td>{{ c.company }}</td>
+              <td>{{ c.attributes.decisionRole ?? '—' }}</td>
+              <td>{{ systems(c) }}</td>
+              <td class="num">{{ c.amcExpiry ?? '—' }}</td>
+              <td><ar-chip [tone]="consentTone(c)">{{ consentLabel(c) }}</ar-chip></td>
+              <td>{{ c.lastActivity }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="7" class="empty">No contacts match “{{ query() }}”.</td></tr>
+          }
+        </tbody>
+      </table>
+
+      <p class="table-pane__foot">
+        Showing {{ count(visible().length) }} of {{ count(segmentCount()) }} in this segment
+      </p>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,143 @@
+<ar-topbar title="Campaigns" [subtitle]="campaigns().length + ' total'">
+  <button ar-button variant="primary" icon="plus">New campaign</button>
+</ar-topbar>
+
+<div class="cm ar-scroll">
+  @if (error(); as e) {
+    <p class="cm__err">{{ e }}</p>
+  }
+  @if (loading()) {
+    <p class="cm__empty">Loading…</p>
+  }
+
+  @for (c of campaigns(); track c.id) {
+    <article class="camp">
+      <button class="camp__row" (click)="toggle(c)">
+        <div class="camp__id">
+          <h2 class="camp__name">{{ c.name }}</h2>
+          <p class="camp__meta">
+            <span class="ar-mono">{{ c.templateName ?? '—' }}</span>
+            @if (c.segmentName) {
+              <span> · {{ c.segmentName }}</span>
+            }
+          </p>
+        </div>
+        <div class="camp__right">
+          <span class="camp__prog">
+            {{ count(c.dispatched) }} / {{ count(c.estimatedRecipients) }}
+          </span>
+          <ar-chip [tone]="tone(c.state)" [dot]="c.state === 'running'">{{ c.state }}</ar-chip>
+        </div>
+      </button>
+
+      @if (c.suspendReason && c.state === 'suspended') {
+        <p class="camp__suspend">Auto-suspended: {{ c.suspendReason }}</p>
+      }
+
+      @if (openId() === c.id) {
+        <div class="panel">
+          @if (busy() && !preflight() && !report()) {
+            <p class="panel__loading">Loading…</p>
+          }
+
+          @if (preflight(); as pf) {
+            <ul class="checks">
+              @for (o of pf.outcomes; track o.check) {
+                <li
+                  class="check"
+                  [class.check--fail]="!o.passed"
+                  [class.check--warn]="!o.passed && !o.blocking"
+                >
+                  <span class="check__mark">{{ o.passed ? '✓' : o.blocking ? '✕' : '!' }}</span>
+                  <span>
+                    <strong>{{ o.check }}</strong>
+                    <span class="check__detail">{{ o.detail }}</span>
+                  </span>
+                </li>
+              }
+            </ul>
+            <div class="panel__foot">
+              <span class="panel__cost">
+                {{ count(pf.recipients) }} recipients · est. {{ inr(pf.estimatedCostInPaise) }}
+                @if (pf.daysRequired > 1) {
+                  · spread over {{ pf.daysRequired }} days
+                }
+              </span>
+              <div class="panel__actions">
+                <button
+                  ar-button
+                  variant="primary"
+                  [disabled]="busy() || !pf.canSend"
+                  (click)="send(c)"
+                >
+                  {{ pf.canSendImmediately ? 'Send now' : 'Send (spread)' }}
+                </button>
+              </div>
+            </div>
+          }
+
+          @if (report(); as r) {
+            <div class="report">
+              <div class="report__grid">
+                <span
+                  ><b>{{ count(r.sent) }}</b> sent</span
+                >
+                <span
+                  ><b>{{ pct(r.deliveryRate) }}</b> delivered</span
+                >
+                <span
+                  ><b>{{ pct(r.readRate) }}</b> read</span
+                >
+                <span
+                  ><b>{{ pct(r.replyRate) }}</b> replied</span
+                >
+                <span
+                  ><b>{{ count(r.failed) }}</b> failed</span
+                >
+                <span
+                  ><b>{{ count(r.withheld) }}</b> withheld</span
+                >
+                <span
+                  ><b>{{ count(r.optedOut) }}</b> opted out</span
+                >
+                <span
+                  ><b>{{ inr(r.spendInPaise) }}</b> spend</span
+                >
+              </div>
+              @if (r.errors.length > 0) {
+                <ul class="errs">
+                  @for (e of r.errors; track e.code) {
+                    <li>
+                      <b>{{ e.count }}×</b> {{ e.title ?? 'error ' + e.code }} —
+                      <span class="muted">{{ e.guidance }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+              <div class="panel__actions">
+                @if (r.state === 'running') {
+                  <button ar-button variant="ghost" [disabled]="busy()" (click)="pause(c)">
+                    Pause
+                  </button>
+                }
+                @if (r.state === 'paused' || r.state === 'suspended') {
+                  <button ar-button variant="primary" [disabled]="busy()" (click)="resume(c)">
+                    Resume
+                  </button>
+                }
+                @if (r.state === 'running' || r.state === 'paused' || r.state === 'scheduled') {
+                  <button ar-button variant="ghost" [disabled]="busy()" (click)="cancel(c)">
+                    Cancel
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </article>
+  }
+  @if (campaigns().length === 0 && !loading()) {
+    <p class="cm__empty">No campaigns yet.</p>
+  }
+</div>

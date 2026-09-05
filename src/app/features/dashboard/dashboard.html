@@ -1,0 +1,119 @@
+<ar-topbar title="Home" subtitle="Tuesday, 26 August · Vertex Automation Systems">
+  @if (channel(); as ch) { <ar-channel-health-strip [channel]="ch" /> }
+  <button ar-button variant="ghost" icon="billing">₹18,420</button>
+  <button ar-button variant="primary" icon="plus">New campaign</button>
+</ar-topbar>
+
+<div class="page ar-scroll">
+  <ar-banner tone="warn" [hazard]="true" class="page__banner">
+    <strong>Template <span class="ar-mono">amc_renewal_v2</span> was paused by Meta for quality.</strong>
+    Two scheduled campaigns are blocked until it is replaced.
+    <button banner-actions ar-button variant="ghost">Review template</button>
+  </ar-banner>
+
+  <div class="page__stats">
+    <ar-stat-tile label="Open enquiries" value="18" note="4 new this week" tone="good" />
+    <ar-stat-tile label="Quotations awaiting reply" value="11" note="₹42.6L in play" />
+    <ar-stat-tile label="Messages this month" [value]="count(messagesThisMonth)"
+                  [note]="freeShareLabel() + ' delivered inside a free window'" tone="teal" />
+    <ar-stat-tile label="Opt-out rate" value="0.21%" note="Healthy — threshold 0.50%" tone="good" />
+  </div>
+
+  <div class="page__grid">
+    <div class="page__col">
+      <ar-card heading="Needs you today">
+        <span card-actions class="page__muted">6 items</span>
+        <ul class="todo">
+          @for (item of todo; track item.title) {
+            <li class="todo__row">
+              <span class="todo__icon" [class]="'todo__icon--' + item.tone">
+                <ar-icon [name]="item.icon" [size]="16" />
+              </span>
+              <span class="todo__text">
+                <span class="todo__title">{{ item.title }}</span>
+                <span class="todo__meta">{{ item.meta }}</span>
+              </span>
+              <button ar-button variant="ghost">{{ item.action }}</button>
+            </li>
+          }
+        </ul>
+      </ar-card>
+
+      <ar-card heading="Recent campaigns">
+        <a card-actions href="#" class="page__link">View all</a>
+        <table class="ar-table">
+          <thead>
+            <tr>
+              <th scope="col">Campaign</th><th scope="col">Category</th>
+              <th scope="col" class="num">Sent</th><th scope="col" class="num">Read</th>
+              <th scope="col" class="num">Replied</th><th scope="col" class="num">Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of recent; track c.name) {
+              <tr>
+                <td class="strong">{{ c.name }}</td>
+                <td><ar-chip [tone]="c.tone">{{ c.category }}</ar-chip></td>
+                <td class="num">{{ count(c.sent) }}</td>
+                <td class="num">{{ count(c.read) }}</td>
+                <td class="num">{{ count(c.replied) }}</td>
+                <td class="num" [class.free]="c.cost === '₹0'">{{ c.cost }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </ar-card>
+    </div>
+
+    <div class="page__col">
+      <ar-card heading="Channel health">
+        <ar-chip card-actions [mono]="true">{{ channel()?.displayPhone ?? "No channel" }}</ar-chip>
+        <div class="health">
+          <div class="health__quality">
+            <strong class="health__rating">Green</strong>
+            <span class="page__muted">30 days at high quality</span>
+          </div>
+          <hr class="rule" />
+          <div class="health__usage">
+            <div class="health__usage-head">
+              <span class="page__muted">Rolling 24-hour recipients</span>
+              <span class="ar-mono">{{ usageLabel() }}</span>
+            </div>
+            <ar-meter [value]="channel()?.used24h ?? 0" [max]="tierLimit()" tone="amber"
+                      label="Rolling 24-hour recipients used" />
+            <p class="health__foot">
+              Portfolio-scoped · 20% reserved for utility and service traffic
+            </p>
+          </div>
+        </div>
+      </ar-card>
+
+      <ar-card heading="Message mix — August">
+        <div class="mix__bar" role="img"
+             [attr.aria-label]="'Message mix: ' + freeShareLabel() + ' free of charge'">
+          @for (s of mix; track s.label) {
+            <span class="mix__seg" [style.width.%]="s.share" [style.background]="s.colour"></span>
+          }
+        </div>
+        <ul class="mix__legend">
+          @for (s of mix; track s.label) {
+            <li class="mix__item">
+              <span class="mix__swatch" [style.background]="s.colour"></span>
+              <span class="mix__label">{{ s.label }}</span>
+              <span class="ar-mono mix__share">{{ s.share }}%</span>
+            </li>
+          }
+        </ul>
+        <div class="saving">
+          <ar-icon name="clock" [size]="17" />
+          <div>
+            <strong class="saving__head">{{ freeMessagesLabel() }} messages cost nothing</strong>
+            <span class="saving__sub">
+              {{ freeShareLabel() }} landed inside an open window · {{ savedLabel() }} saved on utility charges
+            </span>
+          </div>
+        </div>
+      </ar-card>
+    </div>
+  </div>
+</div>

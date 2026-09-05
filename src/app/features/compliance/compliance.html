@@ -1,0 +1,161 @@
+<ar-topbar title="Compliance" subtitle="DPDP requests, retention and breach log">
+  <button ar-button variant="primary" icon="plus">Log a request</button>
+</ar-topbar>
+
+<div class="cx ar-scroll">
+  <div class="cx__stats">
+    <ar-stat-tile
+      label="Open requests"
+      [value]="overview().openRequests + ''"
+      [tone]="
+        overview().breachingSla > 0 ? 'bad' : overview().dueThisWeek > 0 ? 'amber' : 'neutral'
+      "
+      [note]="
+        overview().breachingSla > 0
+          ? overview().breachingSla + ' past SLA'
+          : overview().dueThisWeek + ' due this week'
+      "
+    />
+    <ar-stat-tile
+      label="Open breaches"
+      [value]="overview().openBreaches + ''"
+      [tone]="overview().openBreaches > 0 ? 'bad' : 'good'"
+    />
+    <ar-stat-tile
+      label="Consent records"
+      [value]="(overview().consentRecords | number: '1.0-0') ?? '0'"
+    />
+    <ar-stat-tile
+      label="Suppressed"
+      [value]="overview().suppressed + ''"
+      note="opt-out / invalid / blocked"
+    />
+  </div>
+
+  <section class="card">
+    <h2 class="card__h">Data-principal requests</h2>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Kind</th>
+          <th>Requester</th>
+          <th>Contact</th>
+          <th>Received</th>
+          <th>SLA</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of requests(); track r.id) {
+          <tr [class.tbl__row--busy]="busy() === r.id">
+            <td>{{ kindLabel(r.kind) }}</td>
+            <td class="ar-mono">{{ r.requester }}</td>
+            <td>{{ r.contact ?? '—' }}</td>
+            <td>{{ when(r.receivedAt) }}</td>
+            <td>
+              <ar-chip [tone]="slaTone(r)">{{ slaLabel(r) }}</ar-chip>
+            </td>
+            <td class="actions">
+              @if (r.state === 'received' || r.state === 'inProgress') {
+                <button ar-button variant="ghost" [disabled]="!!busy()" (click)="fulfil(r)">
+                  Fulfil
+                </button>
+                <button ar-button variant="ghost" [disabled]="!!busy()" (click)="reject(r)">
+                  Reject
+                </button>
+              }
+            </td>
+          </tr>
+        }
+        @if (requests().length === 0 && !loading()) {
+          <tr>
+            <td colspan="6" class="muted">No requests on the clock.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2 class="card__h">Retention policies</h2>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Data class</th>
+          <th>Keep for</th>
+          <th>Enforced</th>
+          <th>Last purge</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of policies(); track p.id) {
+          <tr>
+            <td>{{ p.dataClass }}</td>
+            <td>
+              <input
+                class="days"
+                type="number"
+                min="1"
+                max="3650"
+                [attr.aria-label]="'Retention days for ' + p.dataClass"
+                [value]="p.days"
+                [disabled]="isConsentClass(p.dataClass) || !!busy()"
+                (change)="onDaysChange(p.id, p.enabled, $event)"
+              />
+              days
+            </td>
+            <td>
+              @if (isConsentClass(p.dataClass)) {
+                <ar-chip tone="neutral">never — evidence</ar-chip>
+              } @else {
+                <label class="sw">
+                  <input
+                    type="checkbox"
+                    [checked]="p.enabled"
+                    [disabled]="!!busy()"
+                    (change)="togglePolicy(p.id, p.days, $any($event.target).checked)"
+                  />
+                  {{ p.enabled ? 'on' : 'off' }}
+                </label>
+              }
+            </td>
+            <td class="muted">
+              {{ when(p.lastRun) }}
+              @if (p.lastRows > 0) {
+                , {{ p.lastRows | number: '1.0-0' }} rows
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+
+  @if (breaches().length > 0) {
+    <section class="card">
+      <h2 class="card__h">Breach log</h2>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Incident</th>
+            <th>Severity</th>
+            <th>State</th>
+            <th>Detected</th>
+            <th class="num">Affected</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of breaches(); track b.id) {
+            <tr>
+              <td>{{ b.title }}</td>
+              <td class="cap">{{ b.severity }}</td>
+              <td class="cap">{{ b.state }}</td>
+              <td>{{ when(b.detectedAt) }}</td>
+              <td class="num">{{ b.affected | number: '1.0-0' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+</div>

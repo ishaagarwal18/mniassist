@@ -1,0 +1,213 @@
+<ar-topbar title="Templates" [subtitle]="subtitle()">
+  <button ar-button variant="ghost" icon="refresh" [disabled]="busy()" (click)="sync()">
+    Sync from Meta
+  </button>
+  <button ar-button variant="primary" icon="plus" (click)="openComposer()">New template</button>
+</ar-topbar>
+
+<div class="tpl ar-scroll">
+  <div class="tpl__stats">
+    <ar-stat-tile label="Templates" [value]="counts().total + ''" />
+    <ar-stat-tile
+      label="Awaiting review"
+      [value]="counts().pending + ''"
+      [tone]="counts().pending > 0 ? 'amber' : 'neutral'"
+    />
+    <ar-stat-tile
+      label="Rejected"
+      [value]="counts().rejected + ''"
+      [tone]="counts().rejected > 0 ? 'bad' : 'neutral'"
+      [note]="counts().rejected > 0 ? 'Fix the reason and resubmit' : null"
+    />
+    <ar-stat-tile
+      label="Re-categorised by Meta"
+      [value]="counts().recategorised + ''"
+      [tone]="counts().recategorised > 0 ? 'warn' : 'neutral'"
+      [note]="counts().recategorised > 0 ? 'Billed at Meta’s category' : null"
+    />
+  </div>
+
+  <div class="tpl__bar">
+    <ar-search-box placeholder="Search name or text" (queryChange)="search($event)" />
+  </div>
+
+  @if (loading()) {
+    <p class="tpl__empty">Loading templates…</p>
+  } @else if (templates().length === 0) {
+    <p class="tpl__empty">No templates yet. Create one and submit it to Meta for approval.</p>
+  }
+
+  @for (t of templates(); track t.id) {
+    <article class="tp" [class.tp--bad]="t.status === 'rejected'">
+      <header class="tp__head">
+        <div class="tp__id">
+          <h2 class="tp__name ar-mono">{{ t.name }}</h2>
+          <span class="tp__lang">{{ t.language }}</span>
+        </div>
+        <div class="tp__chips">
+          <ar-chip [tone]="statusTone(t.status)">{{ t.status }}</ar-chip>
+          @if (t.status === 'approved' || t.status === 'paused') {
+            <ar-chip [tone]="qualityTone(t.quality)" [dot]="true">
+              {{ t.quality === 'unknown' ? 'no rating' : t.quality + ' quality' }}
+            </ar-chip>
+          }
+          <ar-chip tone="neutral" [mono]="true">{{ categoryLabel(t.category) }}</ar-chip>
+          @if (t.metaAssignedCategory && t.metaAssignedCategory !== t.category) {
+            <ar-chip tone="warn">Meta bills as {{ categoryLabel(t.metaAssignedCategory) }}</ar-chip>
+          }
+          @if (t.variableCount > 0) {
+            <ar-chip tone="neutral"
+              >{{ t.variableCount }} variable{{ t.variableCount === 1 ? '' : 's' }}</ar-chip
+            >
+          }
+        </div>
+      </header>
+
+      @if (t.header) {
+        <p class="tp__part tp__part--h">{{ t.header }}</p>
+      }
+      <p class="tp__part tp__body">{{ t.body }}</p>
+      @if (t.footer) {
+        <p class="tp__part tp__part--f">{{ t.footer }}</p>
+      }
+
+      @if (t.status === 'rejected' && t.rejectionReason) {
+        <p class="tp__reject">Rejected by Meta: {{ t.rejectionReason }}</p>
+      }
+
+      <footer class="tp__foot">
+        <span class="tp__when">
+          @if (t.approvedAt) {
+            Approved {{ when(t.approvedAt) }}
+          } @else if (t.submittedAt) {
+            Submitted {{ when(t.submittedAt) }}
+          } @else {
+            Not submitted
+          }
+        </span>
+        @if (canSubmit(t)) {
+          <button ar-button variant="primary" [disabled]="busy()" (click)="submit(t)">
+            {{ t.status === 'rejected' ? 'Resubmit to Meta' : 'Submit to Meta' }}
+          </button>
+        }
+      </footer>
+    </article>
+  }
+</div>
+
+@if (composerOpen()) {
+  <div class="drawer-scrim" (click)="composerOpen.set(false)"></div>
+  <aside class="drawer" role="dialog" aria-label="New template">
+    <header class="drawer__head">
+      <h2 class="drawer__title">New template</h2>
+      <button ar-button variant="ghost" (click)="composerOpen.set(false)">Close</button>
+    </header>
+
+    <div class="drawer__body ar-scroll">
+      <label class="fld">
+        <span class="fld__l">Name</span>
+        <input
+          class="fld__in ar-mono"
+          [value]="draft().name"
+          maxlength="512"
+          placeholder="amc_renewal_30d"
+          (input)="patch('name', $any($event.target).value)"
+        />
+        <span class="fld__h">Lowercase letters, digits and underscores only.</span>
+      </label>
+
+      <div class="fld-row">
+        <label class="fld">
+          <span class="fld__l">Language</span>
+          <input
+            class="fld__in"
+            [value]="draft().language"
+            maxlength="16"
+            (input)="patch('language', $any($event.target).value)"
+          />
+        </label>
+        <label class="fld">
+          <span class="fld__l">Category</span>
+          <select
+            class="fld__in"
+            [value]="draft().category"
+            (change)="patch('category', $any($event.target).value)"
+          >
+            <option value="utility">Utility</option>
+            <option value="marketing">Marketing</option>
+            <option value="authentication">Authentication</option>
+          </select>
+          <span class="fld__h">
+            A promotion is marketing however it is phrased — filing it as utility is the fastest way
+            to a restriction.
+          </span>
+        </label>
+      </div>
+
+      <label class="fld">
+        <span class="fld__l">Header <span class="fld__opt">optional</span></span>
+        <input
+          class="fld__in"
+          [value]="draft().header"
+          maxlength="60"
+          (input)="patch('header', $any($event.target).value)"
+        />
+      </label>
+
+      <label class="fld">
+        <span class="fld__l">Body</span>
+        <textarea
+          class="fld__in fld__ta"
+          rows="6"
+          [value]="draft().body"
+          maxlength="1024"
+          placeholder="Hello {{ '{{' }}1{{ '}}' }}, …"
+          (input)="patch('body', $any($event.target).value)"
+        ></textarea>
+        <span class="fld__h">
+          {{ bodyVariableCount() }} variable{{ bodyVariableCount() === 1 ? '' : 's' }} — use
+          {{ '{{' }}1{{ '}}' }}, {{ '{{' }}2{{ '}}' }} in order.
+        </span>
+      </label>
+
+      <label class="fld">
+        <span class="fld__l">Footer <span class="fld__opt">optional</span></span>
+        <input
+          class="fld__in"
+          [value]="draft().footer"
+          maxlength="60"
+          (input)="patch('footer', $any($event.target).value)"
+        />
+      </label>
+
+      @if (lint(); as items) {
+        <div class="lint">
+          @if (items.length === 0) {
+            <p class="lint__ok">
+              Nothing flagged. Meta can still reject on review, but the common causes are clear.
+            </p>
+          }
+          @for (i of items; track i.code + i.message) {
+            <p class="lint__i lint__i--{{ i.severity }}">{{ i.message }}</p>
+          }
+        </div>
+      }
+
+      @if (error(); as e) {
+        <p class="drawer__err">{{ e }}</p>
+      }
+    </div>
+
+    <footer class="drawer__foot">
+      <button ar-button variant="ghost" [disabled]="busy()" (click)="runLint()">Check</button>
+      <button
+        ar-button
+        variant="primary"
+        [disabled]="busy() || !draft().name.trim() || !draft().body.trim() || lintHasErrors()"
+        (click)="createTemplate()"
+      >
+        Create draft
+      </button>
+    </footer>
+  </aside>
+}

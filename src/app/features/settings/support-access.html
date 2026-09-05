@@ -1,0 +1,120 @@
+<ar-topbar title="Support access" [subtitle]="subtitle()">
+  <button ar-button variant="primary" icon="plus">Grant access</button>
+</ar-topbar>
+
+<div class="sa ar-scroll">
+  @if (active().length === 0) {
+    <ar-banner tone="good">
+      Nobody at AutoReach can open your account. Support can only enter after you grant
+      access here, and every grant expires on its own.
+    </ar-banner>
+  }
+
+  @for (g of active(); track g.id) {
+    <article class="grant grant--live">
+      <header class="grant__head">
+        <div>
+          <div class="grant__badges">
+            <ar-chip tone="amber" [dot]="true">Active</ar-chip>
+            <ar-chip [tone]="g.allowsWrite ? 'warn' : 'neutral'">
+              {{ g.allowsWrite ? 'Read and write' : 'Read only' }}
+            </ar-chip>
+            @if (g.ticketRef) { <ar-chip tone="neutral" [mono]="true">{{ g.ticketRef }}</ar-chip> }
+          </div>
+          <h2 class="grant__reason">{{ g.reason }}</h2>
+          <p class="grant__who">
+            Granted by {{ g.grantedBy }}
+            @if (g.grantedTo) { to {{ g.grantedTo }} } @else { to any support engineer }
+            · {{ when(g.grantedAt) }}
+          </p>
+        </div>
+
+        <div class="grant__right">
+          <p class="grant__expiry ar-mono">{{ expiresIn(g.expiresAt) }}</p>
+          <button ar-button variant="ghost">Revoke now</button>
+        </div>
+      </header>
+
+      <p class="grant__note">
+        Revoking takes effect immediately and closes any session in progress. You do not
+        need to give a reason.
+      </p>
+    </article>
+  }
+
+  <section class="block">
+    <h3 class="block__title">Session history</h3>
+    <p class="block__sub">
+      Every visit, with how much was done. A read-only session cannot have changed anything —
+      the write count is there so you do not have to take that on trust.
+    </p>
+
+    <table class="ar-table">
+      <caption class="sr-only">Support sessions</caption>
+      <thead>
+        <tr>
+          <th scope="col">Engineer</th>
+          <th scope="col">Started</th>
+          <th scope="col">Duration</th>
+          <th scope="col">Access</th>
+          <th scope="col" class="num">Actions</th>
+          <th scope="col" class="num">Changes</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (s of sessions(); track s.id) {
+          <tr>
+            <td class="ar-mono">{{ s.engineer }}</td>
+            <td class="ar-mono">{{ when(s.startedAt) }}</td>
+            <td class="ar-mono">{{ duration(s) }}</td>
+            <td>
+              <ar-chip [tone]="s.writeEnabled ? 'warn' : 'neutral'">
+                {{ s.writeEnabled ? 'Read and write' : 'Read only' }}
+              </ar-chip>
+            </td>
+            <td class="num ar-mono">{{ s.actionCount }}</td>
+            <td class="num ar-mono" [class.sa__wrote]="s.writeCount > 0">{{ s.writeCount }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="empty">No support sessions on record.</td></tr>
+        }
+      </tbody>
+    </table>
+  </section>
+
+  @if (past().length) {
+    <section class="block">
+      <h3 class="block__title">Expired and revoked grants</h3>
+      <table class="ar-table">
+        <caption class="sr-only">Past grants</caption>
+        <thead>
+          <tr>
+            <th scope="col">Reason</th>
+            <th scope="col">Granted</th>
+            <th scope="col">Ended</th>
+            <th scope="col">Access</th>
+            <th scope="col" class="num">Sessions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (g of past(); track g.id) {
+            <tr>
+              <td>{{ g.reason }}</td>
+              <td class="ar-mono">{{ when(g.grantedAt) }}</td>
+              <td class="ar-mono">
+                @if (g.revokedAt) { Revoked {{ when(g.revokedAt) }} }
+                @else { Expired {{ when(g.expiresAt) }} }
+              </td>
+              <td>
+                <ar-chip [tone]="g.allowsWrite ? 'warn' : 'neutral'">
+                  {{ g.allowsWrite ? 'Read and write' : 'Read only' }}
+                </ar-chip>
+              </td>
+              <td class="num ar-mono">{{ g.sessionCount }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+</div>

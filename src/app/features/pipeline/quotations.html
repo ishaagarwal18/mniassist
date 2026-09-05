@@ -1,0 +1,58 @@
+<ar-topbar title="Quotations" [subtitle]="awaitingDecision() + ' awaiting a decision'">
+  <button ar-button variant="primary" icon="plus">New quotation</button>
+</ar-topbar>
+
+<div class="q ar-scroll">
+  @if (loading()) {
+    <p class="q__empty">Loading…</p>
+  }
+
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>Reference</th>
+        <th>State</th>
+        <th class="num">Total</th>
+        <th>Issued</th>
+        <th>Valid until</th>
+        <th>Follow-up</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (q of quotes(); track q.id) {
+        <tr [class.tbl__row--busy]="busy() === q.id">
+          <td>
+            <span class="ar-mono">{{ q.reference }}</span>
+            @if (q.revision > 0) {
+              <span class="rev">rev {{ q.revision }}</span>
+            }
+          </td>
+          <td>
+            <ar-chip [tone]="tone(q.state)">{{ q.state }}</ar-chip>
+          </td>
+          <td class="num">{{ money(q.totalInPaise) }}</td>
+          <td>{{ when(q.issuedAt) }}</td>
+          <td>{{ when(q.validUntil) }}</td>
+          <td [class.due]="followUp(q) === 'due now'">{{ followUp(q) }}</td>
+          <td class="actions">
+            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="download(q)">
+              PDF
+            </button>
+            @if (q.state === 'issued' || q.state === 'revised') {
+              <button ar-button variant="ghost" [disabled]="!!busy()" (click)="won(q)">Won</button>
+              <button ar-button variant="ghost" [disabled]="!!busy()" (click)="lost(q)">
+                Lost
+              </button>
+            }
+          </td>
+        </tr>
+      }
+      @if (quotes().length === 0 && !loading()) {
+        <tr>
+          <td colspan="7" class="muted">No quotations yet.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

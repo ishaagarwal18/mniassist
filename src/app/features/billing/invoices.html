@@ -1,0 +1,184 @@
+<ar-topbar title="Invoices" [subtitle]="subtitle()">
+  <button ar-button variant="ghost" icon="refresh">Reconcile</button>
+  <button ar-button variant="primary" icon="plus">Generate invoice</button>
+</ar-topbar>
+
+<div class="inv">
+  <aside class="inv__list ar-scroll" aria-label="Invoices">
+    @for (i of invoices(); track i.id) {
+      <button
+        class="li"
+        type="button"
+        [class.li--on]="i.id === selected()?.id"
+        [attr.aria-pressed]="i.id === selected()?.id"
+        (click)="select(i.id)"
+      >
+        <div class="li__top">
+          <span class="li__no ar-mono">{{ i.number }}</span>
+          <ar-chip [tone]="tone(i.state)">{{ i.state }}</ar-chip>
+        </div>
+        <p class="li__period">{{ period(i) }}</p>
+        <p class="li__total ar-mono">{{ inr(i.totalInPaise) }}</p>
+      </button>
+    }
+  </aside>
+
+  <section class="inv__detail ar-scroll">
+    @if (selected(); as v) {
+      <div class="doc">
+        <header class="doc__head">
+          <div>
+            <p class="ar-label">Tax invoice</p>
+            <h2 class="doc__no ar-mono">{{ v.number }}</h2>
+            <p class="doc__period">{{ period(v) }}</p>
+          </div>
+          <div class="doc__amount">
+            <p class="doc__amount-value ar-mono">{{ inr(v.totalInPaise) }}</p>
+            <p class="doc__amount-label">
+              @if (v.state === 'paid') {
+                Paid {{ day(v.issuedAt) }}
+              } @else if (v.state === 'draft') {
+                Not yet issued
+              } @else {
+                Due {{ day(v.dueAt) }}
+              }
+            </p>
+          </div>
+        </header>
+
+        <dl class="parties">
+          <div class="parties__cell">
+            <dt>Billed to</dt>
+            <dd>{{ v.customerName }}</dd>
+            @if (v.customerGstin) {
+              <dd class="ar-mono parties__gstin">GSTIN {{ v.customerGstin }}</dd>
+            }
+          </div>
+          <div class="parties__cell">
+            <dt>Place of supply</dt>
+            <dd class="ar-mono">{{ v.placeOfSupply }}</dd>
+            <dd class="parties__note">
+              @if (v.interState) {
+                Inter-state — IGST
+              } @else {
+                Intra-state — CGST + SGST
+              }
+            </dd>
+          </div>
+        </dl>
+
+        @if (v.lines.length) {
+          <table class="ar-table lines">
+            <caption class="sr-only">
+              Invoice lines
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Description</th>
+                <th scope="col">SAC</th>
+                <th scope="col" class="num">Qty</th>
+                <th scope="col" class="num">Rate</th>
+                <th scope="col" class="num">Taxable</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of v.lines; track l.description) {
+                <tr>
+                  <td>{{ l.description }}</td>
+                  <td class="ar-mono">{{ l.sac }}</td>
+                  <td class="num ar-mono">{{ count(l.quantity) }}</td>
+                  <td class="num ar-mono">{{ ratePercent(l.gstRateBasisPoints) }}</td>
+                  <td class="num ar-mono">{{ inr(l.taxableValueInPaise) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        <dl class="totals">
+          <div>
+            <dt>Taxable value</dt>
+            <dd class="ar-mono">{{ inr(v.taxableValueInPaise) }}</dd>
+          </div>
+          @if (v.interState) {
+            <div>
+              <dt>IGST</dt>
+              <dd class="ar-mono">{{ inr(v.igstInPaise) }}</dd>
+            </div>
+          } @else {
+            <div>
+              <dt>CGST</dt>
+              <dd class="ar-mono">{{ inr(v.cgstInPaise) }}</dd>
+            </div>
+            <div>
+              <dt>SGST</dt>
+              <dd class="ar-mono">{{ inr(v.sgstInPaise) }}</dd>
+            </div>
+          }
+          @if (v.roundOffInPaise !== 0) {
+            <div>
+              <dt>Round off</dt>
+              <dd class="ar-mono">{{ inr(v.roundOffInPaise) }}</dd>
+            </div>
+          }
+          <div class="totals__grand">
+            <dt>Total</dt>
+            <dd class="ar-mono">{{ inr(v.totalInPaise) }}</dd>
+          </div>
+        </dl>
+      </div>
+    } @else {
+      <p class="empty">No invoices yet.</p>
+    }
+
+    @for (r of runs(); track r.id) {
+      <section class="rec" [class.rec--alert]="!r.withinTolerance && !r.acknowledged">
+        <header class="rec__head">
+          <div>
+            <p class="ar-label">Meter vs Meta</p>
+            <h3 class="rec__title">{{ r.channelNumber }} · {{ r.periodLabel }}</h3>
+          </div>
+          <ar-chip [tone]="r.withinTolerance ? 'good' : 'warn'" [dot]="true">
+            {{ variancePercent(r.varianceBasisPoints) }}
+          </ar-chip>
+        </header>
+
+        <p class="rec__source">{{ r.source }}</p>
+
+        <table class="ar-table rec__table">
+          <caption class="sr-only">
+            Variance by pricing category
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Category</th>
+              <th scope="col" class="num">Ours</th>
+              <th scope="col" class="num">Meta</th>
+              <th scope="col" class="num">Difference</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (v of r.variances; track v.category) {
+              <tr>
+                <td>
+                  {{ v.category }}
+                  @if (v.likelyCause) {
+                    <p class="rec__cause">{{ v.likelyCause }}</p>
+                  }
+                </td>
+                <td class="num ar-mono">{{ inr(v.ourCostInPaise) }}</td>
+                <td class="num ar-mono">{{ inr(v.metaCostInPaise) }}</td>
+                <td
+                  class="num ar-mono"
+                  [class.rec__delta--over]="v.ourCostInPaise > v.metaCostInPaise"
+                >
+                  {{ inr(v.ourCostInPaise - v.metaCostInPaise) }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+  </section>
+</div>

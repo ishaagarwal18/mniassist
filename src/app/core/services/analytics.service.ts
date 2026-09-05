@@ -1,0 +1,209 @@
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { forkJoin, map } from 'rxjs';
+
+import { environment } from '../../../environments/environment';
+import { AnalyticsService as AnalyticsApi } from '../../proxy/analytics';
+import {
+  PricingCategory as ApiPricingCategory,
+  TemplateCategory as ApiTemplateCategory,
+  TemplateQuality as ApiTemplateQuality,
+} from '../../proxy/messaging';
+import {
+  AgentPerformance,
+  CategoryBreakdown,
+  PricingCategory,
+  TemplatePerformance,
+  TrendPoint,
+} from '../models/analytics.model';
+import { ChannelService } from './channel.service';
+
+const PRICING: Record<ApiPricingCategory, PricingCategory> = {
+  [ApiPricingCategory.Unknown]: 'unknown',
+  [ApiPricingCategory.Marketing]: 'marketing',
+  [ApiPricingCategory.Utility]: 'utility',
+  [ApiPricingCategory.Authentication]: 'authentication',
+  [ApiPricingCategory.Service]: 'service',
+};
+
+const TEMPLATE_CAT: Record<ApiTemplateCategory, TemplatePerformance['category']> = {
+  [ApiTemplateCategory.Marketing]: 'marketing',
+  [ApiTemplateCategory.Utility]: 'utility',
+  [ApiTemplateCategory.Authentication]: 'authentication',
+};
+
+const TEMPLATE_QUALITY: Record<ApiTemplateQuality, TemplatePerformance['quality']> = {
+  [ApiTemplateQuality.Unknown]: 'unknown',
+  [ApiTemplateQuality.High]: 'high',
+  [ApiTemplateQuality.Medium]: 'medium',
+  [ApiTemplateQuality.Low]: 'low',
+};
+
+/** Range presets, in days back from now. */
+export type AnalyticsRange = 7 | 30 | 90;
+
+interface Bundle {
+  trend: TrendPoint[];
+  categories: CategoryBreakdown[];
+  templates: TemplatePerformance[];
+  agents: AgentPerformance[];
+}
+
+const SEED: Bundle = {
+  trend: Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(Date.now() - (13 - i) * 86_400_000);
+    return {
+      date: d.toISOString().slice(0, 10),
+      marketing: 120 + Math.round(Math.sin(i / 2) * 60) + i * 4,
+      utility: 200 + Math.round(Math.cos(i / 3) * 40),
+      service: 90 + (i % 5) * 12,
+      spendInPaise: (140 + i * 6) * 8631,
+    };
+  }),
+  categories: [
+    { category: 'utility', count: 3_240, spendInPaise: 372_600, shareOfVolume: 0.52 },
+    { category: 'marketing', count: 2_180, spendInPaise: 1_881_558, shareOfVolume: 0.35 },
+    { category: 'service', count: 810, spendInPaise: 0, shareOfVolume: 0.13 },
+  ],
+  templates: [
+    {
+      templateId: 't-1',
+      name: 'amc_renewal_30d',
+      category: 'utility',
+      quality: 'high',
+      sent: 1_204,
+      deliveryRate: 0.982,
+      readRate: 0.741,
+      replyRate: 0.38,
+    },
+    {
+      templateId: 't-2',
+      name: 'quotation_followup_d5',
+      category: 'marketing',
+      quality: 'medium',
+      sent: 880,
+      deliveryRate: 0.955,
+      readRate: 0.62,
+      replyRate: 0.29,
+    },
+    {
+      templateId: 't-3',
+      name: 'vfd_retrofit_bulletin',
+      category: 'marketing',
+      quality: 'high',
+      sent: 2_000,
+      deliveryRate: 0.968,
+      readRate: 0.54,
+      replyRate: 0.11,
+    },
+  ],
+  agents: [
+    {
+      userId: 'u-1',
+      userName: 'ravi.k',
+      conversationsHandled: 148,
+      messagesSent: 612,
+      medianFirstResponseMinutes: 7,
+      enquiriesCreated: 22,
+    },
+    {
+      userId: 'u-2',
+      userName: 'sneha.p',
+      conversationsHandled: 121,
+      messagesSent: 503,
+      medianFirstResponseMinutes: 11,
+      enquiriesCreated: 14,
+    },
+    {
+      userId: 'u-3',
+      userName: 'imtiaz.a',
+      conversationsHandled: 96,
+      messagesSent: 388,
+      medianFirstResponseMinutes: 19,
+      enquiriesCreated: 9,
+    },
+  ],
+};
+
+@Injectable({ providedIn: 'root' })
+export class AnalyticsStore {
+  private readonly api = inject(AnalyticsApi);
+  private readonly channels = inject(ChannelService);
+
+  readonly range = signal<AnalyticsRange>(30);
+
+  private readonly resource = rxResource({
+    params: () =>
+      environment.useMockData
+        ? undefined
+        : {
+            fromUtc: new Date(Date.now() - this.range() * 86_400_000).toISOString(),
+            channelId: this.channels.active()?.id,
+          },
+    stream: ({ params }) =>
+      forkJoin({
+        trend: this.api.getVolumeTrend(params),
+        categories: this.api.getCategoryBreakdown(params),
+        templates: this.api.getTemplatePerformance(params),
+        agents: this.api.getAgentPerformance(params),
+      }).pipe(
+        map((r): Bundle => ({
+          trend: (r.trend.items ?? []).map((t) => ({
+            date: t.date ?? '',
+            marketing: t.marketing,
+            utility: t.utility,
+            service: t.service,
+            spendInPaise: t.spendInPaise,
+          })),
+          categories: (r.categories.items ?? []).map((c) => ({
+            category: PRICING[c.category],
+            count: c.count,
+            spendInPaise: c.spendInPaise,
+            shareOfVolume: c.shareOfVolume,
+          })),
+          templates: (r.templates.items ?? []).map((t) => ({
+            templateId: t.templateId ?? '',
+            name: t.name ?? '(unnamed)',
+            category: TEMPLATE_CAT[t.category],
+            quality: TEMPLATE_QUALITY[t.quality],
+            sent: t.sent,
+            deliveryRate: t.deliveryRate,
+            readRate: t.readRate,
+            replyRate: t.replyRate,
+          })),
+          agents: (r.agents.items ?? []).map((a) => ({
+            userId: a.userId ?? '',
+            userName: a.userName ?? '(removed)',
+            conversationsHandled: a.conversationsHandled,
+            messagesSent: a.messagesSent,
+            medianFirstResponseMinutes: a.medianFirstResponseMinutes,
+            enquiriesCreated: a.enquiriesCreated,
+          })),
+        })),
+      ),
+    defaultValue: SEED,
+  });
+
+  readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
+  private readonly data = computed<Bundle>(() =>
+    environment.useMockData ? SEED : this.resource.value(),
+  );
+
+  readonly trend = computed(() => this.data().trend);
+  readonly categories = computed(() => this.data().categories);
+  readonly templates = computed(() => this.data().templates);
+  readonly agents = computed(() => this.data().agents);
+
+  readonly totals = computed(() => {
+    const t = this.data().trend;
+    return {
+      messages: t.reduce((n, p) => n + p.marketing + p.utility + p.service, 0),
+      spendInPaise: t.reduce((n, p) => n + p.spendInPaise, 0),
+      free: this.data().categories.find((c) => c.category === 'service')?.count ?? 0,
+    };
+  });
+
+  setRange(days: AnalyticsRange): void {
+    this.range.set(days);
+  }
+}

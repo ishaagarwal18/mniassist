@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Format check
+        run: npx prettier --check "src/**/*.{ts,html,scss}"
+
+      - name: Build
+        run: npx ng build --configuration production
+
+      - name: Unit tests
+        run: npx ng test --watch=false --browsers=ChromeHeadless
+        continue-on-error: true # no specs yet; keep the job green until they exist

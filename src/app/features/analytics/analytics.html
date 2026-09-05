@@ -1,0 +1,138 @@
+<ar-topbar title="Analytics" subtitle="Volume, spend and per-actor performance">
+  <div class="rangepick">
+    @for (r of ranges; track r) {
+      <button ar-button [variant]="range() === r ? 'primary' : 'ghost'" (click)="setRange(r)">
+        {{ r }}d
+      </button>
+    }
+  </div>
+</ar-topbar>
+
+<div class="an ar-scroll">
+  <div class="an__stats">
+    <ar-stat-tile
+      label="Messages in range"
+      [value]="(totals().messages | number: '1.0-0') ?? '0'"
+    />
+    <ar-stat-tile label="Spend in range" [value]="inr(totals().spendInPaise)" />
+    <ar-stat-tile
+      label="Free (in-window)"
+      [value]="(totals().free | number: '1.0-0') ?? '0'"
+      tone="teal"
+      note="Not billed"
+    />
+  </div>
+
+  <section class="card">
+    <h2 class="card__h">Volume by day</h2>
+    @if (loading()) {
+      <p class="card__empty">Loading…</p>
+    } @else {
+      <div class="trend" role="img" aria-label="Daily message volume by category">
+        @for (b of bars(); track b.date) {
+          <div class="trend__col" [title]="b.label + ' · ' + b.total + ' messages'">
+            <div class="trend__stack">
+              <span class="trend__seg trend__seg--mkt" [style.height]="height(b.marketing)"></span>
+              <span class="trend__seg trend__seg--utl" [style.height]="height(b.utility)"></span>
+              <span class="trend__seg trend__seg--svc" [style.height]="height(b.service)"></span>
+            </div>
+          </div>
+        }
+      </div>
+      <div class="legend">
+        <span class="legend__i legend__i--mkt">Marketing</span>
+        <span class="legend__i legend__i--utl">Utility</span>
+        <span class="legend__i legend__i--svc">Service</span>
+      </div>
+    }
+  </section>
+
+  <section class="card">
+    <h2 class="card__h">Spend by category</h2>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th class="num">Messages</th>
+          <th class="num">Share</th>
+          <th class="num">Spend</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of categories(); track c.category) {
+          <tr>
+            <td class="cap">{{ c.category }}</td>
+            <td class="num">{{ c.count | number: '1.0-0' }}</td>
+            <td class="num">{{ pct(c.shareOfVolume) }}</td>
+            <td class="num">{{ c.spendInPaise === 0 ? 'Free' : inr(c.spendInPaise) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2 class="card__h">Template performance</h2>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Template</th>
+          <th class="num">Sent</th>
+          <th class="num">Delivered</th>
+          <th class="num">Read</th>
+          <th class="num">Reply</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (t of templates(); track t.templateId) {
+          <tr>
+            <td>
+              <span class="ar-mono">{{ t.name }}</span>
+              <span class="muted">· {{ t.category }}</span>
+            </td>
+            <td class="num">{{ t.sent | number: '1.0-0' }}</td>
+            <td class="num">{{ pct(t.deliveryRate) }}</td>
+            <td class="num">{{ pct(t.readRate) }}</td>
+            <td class="num">{{ pct(t.replyRate) }}</td>
+          </tr>
+        }
+        @if (templates().length === 0) {
+          <tr>
+            <td colspan="5" class="muted">No template sends in this range.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2 class="card__h">Agent performance</h2>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Agent</th>
+          <th class="num">Conversations</th>
+          <th class="num">Messages</th>
+          <th class="num">Median first reply</th>
+          <th class="num">Enquiries</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of agents(); track a.userId) {
+          <tr>
+            <td class="ar-mono">{{ a.userName }}</td>
+            <td class="num">{{ a.conversationsHandled | number: '1.0-0' }}</td>
+            <td class="num">{{ a.messagesSent | number: '1.0-0' }}</td>
+            <td class="num">{{ minutes(a.medianFirstResponseMinutes) }}</td>
+            <td class="num">{{ a.enquiriesCreated }}</td>
+          </tr>
+        }
+        @if (agents().length === 0) {
+          <tr>
+            <td colspan="5" class="muted">No agent activity in this range.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+</div>

@@ -1,0 +1,113 @@
+<ar-topbar title="Integrations" [subtitle]="subtitle()">
+  <button ar-button variant="primary" icon="plus">Add endpoint</button>
+</ar-topbar>
+
+<div class="intg">
+  <aside class="intg__list ar-scroll" aria-label="Webhook endpoints">
+    @for (w of webhooks(); track w.id) {
+      <button class="hook" type="button" [class.hook--on]="w.id === selected()?.id"
+              [attr.aria-pressed]="w.id === selected()?.id" (click)="select(w.id)">
+        <div class="hook__top">
+          <span class="hook__name">{{ w.description }}</span>
+          <ar-chip [tone]="w.enabled ? 'good' : 'bad'" [dot]="true">
+            {{ w.enabled ? 'Live' : 'Disabled' }}
+          </ar-chip>
+        </div>
+        <p class="hook__url ar-mono">{{ w.url }}</p>
+        <p class="hook__events">{{ w.events.length }} event{{ w.events.length === 1 ? '' : 's' }}</p>
+      </button>
+    }
+  </aside>
+
+  <section class="intg__detail ar-scroll">
+    @if (selected(); as w) {
+      @if (!w.enabled) {
+        <ar-banner tone="bad">
+          This endpoint switched itself off after {{ w.consecutiveFailures }} consecutive failures.
+          Events raised while it is off are not queued — fix the endpoint, then re-enable it.
+        </ar-banner>
+      }
+
+      <div class="panel">
+        <header class="panel__head">
+          <div>
+            <h2 class="panel__title">{{ w.description }}</h2>
+            <p class="panel__url ar-mono">{{ w.url }}</p>
+          </div>
+          <div class="panel__actions">
+            <button ar-button variant="ghost">Send test</button>
+            @if (!w.enabled) { <button ar-button variant="primary">Re-enable</button> }
+          </div>
+        </header>
+
+        <dl class="facts">
+          <div><dt>Last success</dt><dd class="ar-mono">{{ when(w.lastSuccessAt) }}</dd></div>
+          <div><dt>Last failure</dt><dd class="ar-mono">{{ when(w.lastFailureAt) }}</dd></div>
+          <div>
+            <dt>Consecutive failures</dt>
+            <dd class="ar-mono" [class.facts__bad]="w.consecutiveFailures > 0">
+              {{ w.consecutiveFailures }}
+            </dd>
+          </div>
+          <div><dt>Signing</dt><dd>HMAC-SHA256, secret set</dd></div>
+        </dl>
+
+        @if (w.lastError) {
+          <p class="panel__error ar-mono">{{ w.lastError }}</p>
+        }
+
+        <div class="events">
+          <p class="ar-label">Subscribed events</p>
+          <div class="events__row">
+            @for (e of w.events; track e) {
+              <ar-chip tone="neutral" [mono]="true">{{ eventLabel(e) }}</ar-chip>
+            }
+          </div>
+        </div>
+
+        <div class="signing">
+          <p class="ar-label">Verifying a payload</p>
+          <p class="signing__text">
+            Every request carries <code>X-AutoReach-Signature-256</code> and
+            <code>X-AutoReach-Timestamp</code>. The signature is an HMAC-SHA256 over
+            <code>{{ '{timestamp}.{body}' }}</code> using your signing secret — the same shape Meta
+            uses, so code that already verifies Meta's webhooks works here unchanged. The timestamp
+            is inside the signed material, which is what stops a captured payload being replayed.
+          </p>
+          <button ar-button variant="ghost">Rotate secret</button>
+        </div>
+      </div>
+
+      <section class="panel">
+        <h3 class="panel__title panel__title--sub">Recent deliveries</h3>
+        <table class="ar-table">
+          <caption class="sr-only">Recent webhook deliveries</caption>
+          <thead>
+            <tr>
+              <th scope="col">Event</th>
+              <th scope="col">State</th>
+              <th scope="col" class="num">Attempts</th>
+              <th scope="col" class="num">Status</th>
+              <th scope="col">When</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of relevantDeliveries(); track d.id) {
+              <tr>
+                <td class="ar-mono">{{ eventLabel(d.event) }}</td>
+                <td><ar-chip [tone]="deliveryTone(d.state)">{{ d.state }}</ar-chip></td>
+                <td class="num ar-mono">{{ d.attempts }}</td>
+                <td class="num ar-mono">{{ d.statusCode ?? '—' }}</td>
+                <td class="ar-mono">{{ when(d.createdAt) }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="empty">No deliveries yet.</td></tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    } @else {
+      <p class="empty">No endpoints configured.</p>
+    }
+  </section>
+</div>

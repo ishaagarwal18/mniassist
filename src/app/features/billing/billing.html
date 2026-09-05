@@ -1,0 +1,94 @@
+<ar-topbar title="Billing" [subtitle]="planName() + ' plan'">
+  <button ar-button variant="primary" icon="billing" [disabled]="busy()" (click)="topUp()">
+    Top up wallet
+  </button>
+</ar-topbar>
+
+<div class="bl ar-scroll">
+  <div class="bl__grid">
+    <section class="card">
+      <h2 class="card__h">Wallet</h2>
+      <p class="card__big">{{ money(d().balanceInPaise) }}</p>
+      @if (runway() !== null) {
+        <ar-meter
+          [value]="runway()! * 100"
+          [tone]="d().isLow ? 'bad' : 'good'"
+          [label]="d().daysRemaining + ' days at current spend'"
+        />
+      } @else {
+        <p class="card__sub">No recent spend to project a runway from.</p>
+      }
+      <p class="card__sub">
+        Auto top-up {{ d().autoTopUp ? 'on — ' + money(d().autoAmountInPaise) : 'off' }}
+      </p>
+    </section>
+
+    <section class="card">
+      <h2 class="card__h">This period</h2>
+      <div class="bl__stats">
+        <ar-stat-tile label="Billed" [value]="money(d().billed)" />
+        <ar-stat-tile label="GST" [value]="money(d().tax)" />
+        <ar-stat-tile
+          label="Free messages"
+          [value]="(d().free | number: '1.0-0') ?? '0'"
+          tone="teal"
+          [note]="'saved ' + money(d().avoided)"
+        />
+      </div>
+      <p class="card__sub">
+        Period ends {{ when(d().periodEnd) }} · subscription {{ money(d().feeInPaise) }}/mo
+      </p>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2 class="card__h">Plan</h2>
+    <div class="plans">
+      @for (p of planLadder; track p) {
+        <button
+          class="plan"
+          [class.plan--current]="p === d().plan"
+          [disabled]="busy()"
+          (click)="changePlan(p)"
+        >
+          <span class="plan__name">{{ planLabel(p) }}</span>
+          @if (p === d().plan) {
+            <ar-chip tone="good">current</ar-chip>
+          }
+        </button>
+      }
+    </div>
+    <p class="card__sub">{{ d().seats }} agent seats included on {{ planName() }}.</p>
+  </section>
+
+  <section class="card">
+    <h2 class="card__h">Ledger</h2>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Type</th>
+          <th>Detail</th>
+          <th class="num">Amount</th>
+          <th class="num">Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (t of d().transactions; track t.id) {
+          <tr>
+            <td>{{ when(t.at) }}</td>
+            <td>{{ t.kind }}</td>
+            <td class="muted">{{ t.description }}</td>
+            <td class="num" [class.neg]="t.amountInPaise < 0">{{ money(t.amountInPaise) }}</td>
+            <td class="num">{{ money(t.balanceAfterInPaise) }}</td>
+          </tr>
+        }
+        @if (d().transactions.length === 0 && !loading()) {
+          <tr>
+            <td colspan="5" class="muted">No wallet activity yet.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+</div>

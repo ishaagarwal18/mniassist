@@ -1,0 +1,43 @@
+<ar-topbar title="Documents" [subtitle]="documents().length + ' in the library'">
+  <button ar-button variant="primary" icon="plus">Upload document</button>
+</ar-topbar>
+
+<div class="dl ar-scroll">
+  <div class="dl__bar">
+    <ar-search-box placeholder="Search title or part number" [(query)]="query" />
+  </div>
+
+  @if (loading()) {
+    <p class="dl__empty">Loading…</p>
+  }
+
+  @for (d of documents(); track d.id) {
+    <article class="doc">
+      <div class="doc__main">
+        <h2 class="doc__title">{{ d.title }}</h2>
+        <p class="doc__meta">
+          @if (d.category) {
+            <ar-chip tone="neutral">{{ d.category }}</ar-chip>
+          }
+          <span>{{ d.sizeLabel }}</span>
+          <span>· {{ d.sendCount }} deliveries</span>
+          <span>· last sent {{ when(d.lastSentAt) }}</span>
+        </p>
+        @if (d.parts.length > 0) {
+          <p class="doc__parts">
+            @for (p of d.parts; track p) {
+              <span class="doc__part ar-mono">{{ p }}</span>
+            }
+          </p>
+        }
+      </div>
+      <div class="doc__actions">
+        <button ar-button variant="ghost">Edit</button>
+        <button ar-button variant="ghost">Download</button>
+      </div>
+    </article>
+  }
+  @if (documents().length === 0 && !loading()) {
+    <p class="dl__empty">Nothing in the library. Upload a datasheet and key it to a part number.</p>
+  }
+</div>

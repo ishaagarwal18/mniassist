@@ -1,0 +1,49 @@
+<ar-topbar title="Flows" subtitle="In-chat forms — RFQ intake, booking, tickets">
+  <button ar-button variant="primary" icon="plus">New flow</button>
+</ar-topbar>
+
+<div class="fl ar-scroll">
+  @if (error(); as e) {
+    <p class="fl__err">{{ e }}</p>
+  }
+  @if (loading()) {
+    <p class="fl__empty">Loading…</p>
+  }
+
+  @for (f of flows(); track f.id) {
+    <article class="flow">
+      <div class="flow__main">
+        <h2 class="flow__name">{{ f.name }}</h2>
+        <p class="flow__meta">
+          <ar-chip [tone]="tone(f.state)">{{ f.state }}</ar-chip>
+          <span>v{{ f.version }}</span>
+          <span>· {{ f.screens }} screen{{ f.screens === 1 ? '' : 's' }}</span>
+          @if (f.hasEndpoint) {
+            <span>· data endpoint set</span>
+          }
+          @if (f.publishedAt) {
+            <span>· published {{ when(f.publishedAt) }}</span>
+          }
+        </p>
+        @if (f.blockReason) {
+          <p class="flow__block">Blocked by Meta: {{ f.blockReason }}</p>
+        }
+      </div>
+      <div class="flow__actions">
+        @if (f.state === 'draft' || f.state === 'deprecated') {
+          <button ar-button variant="primary" [disabled]="!!busy()" (click)="publish(f)">
+            {{ f.state === 'deprecated' ? 'Re-publish' : 'Publish to Meta' }}
+          </button>
+        }
+        @if (f.state === 'published') {
+          <button ar-button variant="ghost" [disabled]="!!busy()" (click)="deprecate(f)">
+            Deprecate
+          </button>
+        }
+      </div>
+    </article>
+  }
+  @if (flows().length === 0 && !loading()) {
+    <p class="fl__empty">No flows yet.</p>
+  }
+</div>
