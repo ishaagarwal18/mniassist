@@ -146,6 +146,12 @@ export const routes: Routes = [
           import('./features/channels/chat-widgets').then((m) => m.ArChatWidgets),
       },
       {
+        path: 'channels/migrate',
+        title: 'Migrate a number · AutoReach',
+        loadComponent: () =>
+          import('./features/channels/migrate-number').then((m) => m.ArMigrateNumber),
+      },
+      {
         path: 'notifications',
         title: 'Notifications · AutoReach',
         loadComponent: () =>

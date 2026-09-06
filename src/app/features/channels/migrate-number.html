@@ -1,0 +1,143 @@
+<ar-topbar title="Migrate a number" subtitle="From the WhatsApp Business app to the Cloud API" />
+
+<div class="mn ar-scroll">
+  @if (error(); as e) {
+    <p class="mn__err">{{ e }}</p>
+  }
+
+  @if (active(); as m) {
+    <article class="step">
+      <div class="step__head">
+        <h2 class="step__h">{{ m.e164 }}</h2>
+        <ar-chip tone="amber">{{ statusLabel(m.status) }}</ar-chip>
+      </div>
+
+      @if (m.status === S.WarningAcknowledged) {
+        <p class="step__p">
+          Meta will send a verification code to this number. Choose how, then request it.
+        </p>
+        <label class="ar-field mn__narrow">
+          <span class="ar-field__label">Send code by</span>
+          <select
+            class="ar-field__input"
+            [value]="method()"
+            (change)="method.set(+$any($event.target).value)"
+          >
+            <option [value]="0">SMS</option>
+            <option [value]="1">Voice call</option>
+          </select>
+        </label>
+        <button ar-button variant="primary" [disabled]="busy() === 'code'" (click)="requestCode(m)">
+          {{ busy() === 'code' ? 'Requesting…' : 'Request code' }}
+        </button>
+      }
+
+      @if (m.status === S.CodeRequested) {
+        <p class="step__p">
+          Enter the code Meta sent, and set a 6-digit two-step verification PIN for the number.
+        </p>
+        <div class="ar-field-row">
+          <label class="ar-field">
+            <span class="ar-field__label">Verification code</span>
+            <input
+              class="ar-field__input ar-mono"
+              [value]="code()"
+              (input)="code.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Two-step PIN (6 digits)</span>
+            <input
+              class="ar-field__input ar-mono"
+              maxlength="6"
+              [value]="pin()"
+              (input)="pin.set($any($event.target).value)"
+            />
+          </label>
+        </div>
+        <button ar-button variant="primary" [disabled]="busy() === 'verify'" (click)="verify(m)">
+          {{ busy() === 'verify' ? 'Verifying…' : 'Verify & finish' }}
+        </button>
+      }
+
+      @if (m.failureReason) {
+        <p class="mn__err">{{ m.failureReason }}</p>
+      }
+    </article>
+  } @else {
+    <section class="warn">
+      <h2 class="warn__h">Before you start</h2>
+      <p class="warn__p">
+        Your <strong>chat history in the WhatsApp Business app will not come across</strong>. The
+        number arrives on the Cloud API with no past conversations, and the app can no longer be
+        used with this number afterwards. Broadcast lists and labels do not migrate either.
+      </p>
+      <label class="warn__ack">
+        <input
+          type="checkbox"
+          [checked]="acknowledged()"
+          (change)="acknowledged.set($any($event.target).checked)"
+        />
+        <span>I understand the WhatsApp Business app chat history will be lost.</span>
+      </label>
+    </section>
+
+    <section class="form">
+      <div class="ar-field-row">
+        <label class="ar-field mn__cc">
+          <span class="ar-field__label">Country code</span>
+          <input
+            class="ar-field__input"
+            [value]="cc()"
+            (input)="cc.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label"
+            >Number <span class="ar-field__opt">without country code</span></span
+          >
+          <input
+            class="ar-field__input"
+            [value]="phone()"
+            (input)="phone.set($any($event.target).value)"
+          />
+        </label>
+      </div>
+      <label class="ar-field">
+        <span class="ar-field__label"
+          >WABA ID
+          <span class="ar-field__opt">the number is added to this business account</span></span
+        >
+        <input
+          class="ar-field__input ar-mono"
+          [value]="waba()"
+          (input)="waba.set($any($event.target).value)"
+        />
+      </label>
+      <button
+        ar-button
+        variant="primary"
+        [disabled]="!acknowledged() || busy() === 'start'"
+        (click)="start()"
+      >
+        {{ busy() === 'start' ? 'Starting…' : 'Start migration' }}
+      </button>
+    </section>
+  }
+
+  @if (migrations().length > 0) {
+    <section class="hist">
+      <h2 class="hist__h">History</h2>
+      @for (m of migrations(); track m.id) {
+        <div class="hist__row">
+          <span class="ar-mono">{{ m.e164 }}</span>
+          <ar-chip
+            [tone]="m.status === S.Completed ? 'good' : m.status === S.Failed ? 'bad' : 'neutral'"
+          >
+            {{ statusLabel(m.status) }}
+          </ar-chip>
+        </div>
+      }
+    </section>
+  }
+</div>

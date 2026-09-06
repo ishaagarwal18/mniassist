@@ -144,6 +144,12 @@ export const NAV: readonly NavGroup[] = [
         route: '/channels/widget',
         permission: 'AutoReach.Channels',
       },
+      {
+        label: 'Migrate a number',
+        icon: 'refresh',
+        route: '/channels/migrate',
+        permission: 'AutoReach.Channels.Onboard',
+      },
       { label: 'Billing', icon: 'billing', route: '/billing', permission: 'AutoReach.Billing' },
       {
         label: 'Invoices',
