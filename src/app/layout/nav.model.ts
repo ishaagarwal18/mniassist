@@ -188,6 +188,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Members',
       },
       {
+        label: 'Agency mode',
+        icon: 'segment',
+        route: '/settings/agency',
+        permission: 'AutoReach.Agency',
+      },
+      {
         label: 'Compliance',
         icon: 'shield',
         route: '/compliance',

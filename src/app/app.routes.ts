@@ -202,6 +202,11 @@ export const routes: Routes = [
           import('./features/settings/support-access').then((m) => m.ArSupportAccess),
       },
       {
+        path: 'settings/agency',
+        title: 'Agency mode · AutoReach',
+        loadComponent: () => import('./features/settings/agency').then((m) => m.ArAgency),
+      },
+      {
         path: 'platform',
         title: 'Platform · AutoReach',
         loadComponent: () => import('./features/platform/console').then((m) => m.ArPlatformConsole),
