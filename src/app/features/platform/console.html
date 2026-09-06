@@ -42,10 +42,66 @@
   <section class="block">
     <header class="block__head">
       <div>
+        <h2 class="block__title">At-risk queue</h2>
+        <p class="block__sub">
+          Opened by the nightly sweep. The tenant owner is notified in-app and by email at the same
+          time; this is the internal ticket.
+        </p>
+      </div>
+      <label class="toggle">
+        <input
+          type="checkbox"
+          [checked]="showResolvedAlerts()"
+          (change)="showResolvedAlerts.set($any($event.target).checked)"
+        />
+        <span>Show resolved</span>
+      </label>
+    </header>
+
+    <ul class="alerts">
+      @for (a of alerts(); track a.id) {
+        <li class="alert" [class.alert--resolved]="a.status === 'resolved'">
+          <div class="alert__body">
+            <div class="alert__head">
+              <span class="alert__tenant">{{ a.tenantName }}</span>
+              <ar-chip [tone]="alertTone(a.status)">{{ a.reason }}</ar-chip>
+              @if (a.assignedTo) {
+                <span class="alert__owner">· {{ a.assignedTo }}</span>
+              }
+            </div>
+            <p class="alert__detail">{{ a.detail }}</p>
+            @if (a.notes) {
+              <p class="alert__notes">{{ a.notes }}</p>
+            }
+          </div>
+          <div class="alert__actions">
+            @if (a.status === 'open') {
+              <button ar-button type="button" variant="ghost" (click)="ackAlert(a.id)">
+                Take it
+              </button>
+            }
+            @if (a.status !== 'resolved') {
+              <button ar-button type="button" variant="ghost" (click)="resolveAlert(a.id)">
+                Resolve
+              </button>
+            } @else if (a.resolvedByRecovery) {
+              <ar-chip tone="good">Recovered</ar-chip>
+            }
+          </div>
+        </li>
+      } @empty {
+        <li class="alerts__none">Nothing at risk right now.</li>
+      }
+    </ul>
+  </section>
+
+  <section class="block">
+    <header class="block__head">
+      <div>
         <h2 class="block__title">Tenants</h2>
         <p class="block__sub">
-          Figures are from the nightly rollup, so they are as of the last run rather than
-          to the second. Anything needing attention sorts to the top.
+          Figures are from the nightly rollup, so they are as of the last run rather than to the
+          second. Anything needing attention sorts to the top.
         </p>
       </div>
       <label class="toggle">
@@ -102,7 +158,9 @@
             <td class="tseen">{{ lastSeen(t.lastActivityAt) }}</td>
           </tr>
         } @empty {
-          <tr><td colspan="8" class="tbl__empty">Nothing needs attention right now.</td></tr>
+          <tr>
+            <td colspan="8" class="tbl__empty">Nothing needs attention right now.</td>
+          </tr>
         }
       </tbody>
     </table>
@@ -111,10 +169,9 @@
   <section class="block">
     <h2 class="block__title">Rate history</h2>
     <p class="block__sub">
-      What tenants pay per message, and when it changed. Meta announces rate changes weeks
-      ahead, so a scheduled one appears here before it bills. Superseded rates are kept
-      rather than overwritten — a campaign report from December has to keep costing what
-      it cost.
+      What tenants pay per message, and when it changed. Meta announces rate changes weeks ahead, so
+      a scheduled one appears here before it bills. Superseded rates are kept rather than
+      overwritten — a campaign report from December has to keep costing what it cost.
     </p>
 
     <div class="rates">

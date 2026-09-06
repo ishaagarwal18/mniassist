@@ -37,3 +37,29 @@ export interface TenantOverviewDto extends EntityDto<string> {
   activeUsers?: number;
   lastActivityUtc?: string | null;
 }
+
+import type { AtRiskAlertStatus, AtRiskReason } from './at-risk-reason.enum';
+
+export interface GetAtRiskAlertsInput {
+  status?: AtRiskAlertStatus | null;
+  skipCount?: number;
+  maxResultCount?: number;
+}
+
+export interface AtRiskAlertDto {
+  id?: string;
+  tenantId?: string;
+  tenantName?: string;
+  reason?: AtRiskReason;
+  detail?: string;
+  status?: AtRiskAlertStatus;
+  detectedAtUtc?: string;
+  lastSeenAtUtc?: string;
+  acknowledgedAtUtc?: string | null;
+  resolvedAtUtc?: string | null;
+  resolvedByRecovery?: boolean;
+  assignedToUserId?: string | null;
+  assignedToUserName?: string | null;
+  notes?: string | null;
+  ticketRef?: string | null;
+}

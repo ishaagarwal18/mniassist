@@ -4,6 +4,7 @@ import { forkJoin, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { PlatformAdminService } from '../../proxy/administration';
+import { AtRiskStore } from '../../core/services/at-risk.store';
 import { RateCardDto } from '../../proxy/billing';
 import { SubscriptionPlan } from '../../proxy/billing/subscription-plan.enum';
 import { MessagingTier } from '../../proxy/channels/messaging-tier.enum';
@@ -266,8 +267,26 @@ function toRateHistory(cards: RateCardDto[]): RateHistory[] {
 })
 export class ArPlatformConsole {
   private readonly api = inject(PlatformAdminService);
+  private readonly atRisk = inject(AtRiskStore);
 
   protected readonly atRiskOnly = signal(false);
+
+  // ---- At-risk queue (M15-3) -----------------------------------------
+  protected readonly alerts = this.atRisk.alerts;
+  protected readonly showResolvedAlerts = this.atRisk.showResolved;
+
+  protected ackAlert(id: string): void {
+    void this.atRisk.acknowledge(id);
+  }
+
+  protected resolveAlert(id: string): void {
+    const note = window.prompt('Closing note (what did you do?):')?.trim();
+    void this.atRisk.resolve(id, note || undefined);
+  }
+
+  protected alertTone(status: string): 'bad' | 'amber' | 'good' {
+    return status === 'open' ? 'bad' : status === 'acknowledged' ? 'amber' : 'good';
+  }
 
   private readonly resource = rxResource({
     params: () => (environment.useMockData ? undefined : { atRisk: this.atRiskOnly() }),
