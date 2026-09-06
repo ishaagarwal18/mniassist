@@ -1,8 +1,10 @@
 import type {
+  CampaignAbTestReportDto,
   CampaignDto,
   CampaignPreflightDto,
   CampaignRecipientDto,
   CampaignReportDto,
+  ConfigureAbTestInput,
   CreateUpdateCampaignDto,
   GetCampaignListInput,
   GetCampaignRecipientsInput,
@@ -99,6 +101,27 @@ export class CampaignService {
         method: 'GET',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/campaign/${id}/report`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  configureAbTest = (id: string, input: ConfigureAbTestInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CampaignDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/campaign/${id}/configure-ab-test`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getAbTestReport = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CampaignAbTestReportDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/campaign/${id}/ab-test-report`,
       },
       { apiName: this.apiName, ...config },
     );

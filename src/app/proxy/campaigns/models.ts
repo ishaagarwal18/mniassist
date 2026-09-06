@@ -3,6 +3,7 @@ import type { CampaignState } from './campaign-state.enum';
 import type { MessageStatus } from '../messaging/message-status.enum';
 import type { RecurrenceKind } from './recurrence-kind.enum';
 import type { PreflightCheck } from './preflight-check.enum';
+import type { AbTestMetric } from './ab-test-metric.enum';
 
 export interface CampaignCostLineDto {
   category?: string;
@@ -34,6 +35,9 @@ export interface CampaignDto extends FullAuditedEntityDto<string> {
   suspendReason?: string | null;
   variableMappingJson?: string;
   matchRecipientLanguage?: boolean;
+  abMetric?: AbTestMetric;
+  abTestPercent?: number;
+  winnerVariantId?: string | null;
   schedule?: CampaignScheduleDto | null;
   costLines?: CampaignCostLineDto[];
 }
@@ -117,6 +121,40 @@ export interface CampaignScheduleInput {
   quietFrom?: string;
   quietUntil?: string;
   blackoutDays?: any[];
+}
+
+export interface AbTestVariantInput {
+  label: string;
+  templateId: string;
+  weight?: number;
+}
+
+export interface ConfigureAbTestInput {
+  metric?: AbTestMetric;
+  testPercent?: number;
+  variants: AbTestVariantInput[];
+}
+
+export interface CampaignAbVariantRowDto {
+  variantId?: string;
+  label?: string;
+  templateId?: string;
+  templateName?: string | null;
+  weight?: number;
+  sent?: number;
+  delivered?: number;
+  read?: number;
+  replied?: number;
+  rate?: number;
+  isWinner?: boolean;
+}
+
+export interface CampaignAbTestReportDto {
+  metric?: AbTestMetric;
+  testPercent?: number;
+  winnerVariantId?: string | null;
+  decidedAtUtc?: string | null;
+  variants?: CampaignAbVariantRowDto[];
 }
 
 export interface CreateUpdateCampaignDto {
