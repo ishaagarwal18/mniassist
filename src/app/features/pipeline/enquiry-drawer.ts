@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 
-import { EnquiryStage } from '../../proxy/pipeline';
+import { EnquiryStage, LostReasonCategory } from '../../proxy/pipeline';
 import { EnquiryDetail, PipelineStore, Stage } from '../../core/services/pipeline.service';
 import { inrCompact } from '../../core/util/format';
 import { ArButton, ArChip } from '../../ui';
@@ -93,11 +93,44 @@ const NEXT: Partial<Record<Stage, { stage: EnquiryStage; label: string }>> = {
                 type="button"
                 variant="ghost"
                 [disabled]="busy()"
-                (click)="markLost(d)"
+                (click)="losing.set(!losing())"
               >
                 Mark lost
               </button>
             </div>
+
+            @if (losing()) {
+              <div class="lostbox">
+                <label class="ar-field">
+                  <span class="ar-field__label">Reason category</span>
+                  <select
+                    class="ar-field__input"
+                    [value]="lostCat()"
+                    (change)="lostCat.set(+$any($event.target).value)"
+                  >
+                    @for (o of lostCategories; track o.value) {
+                      <option [value]="o.value">{{ o.label }}</option>
+                    }
+                  </select>
+                </label>
+                <textarea
+                  class="note"
+                  rows="2"
+                  placeholder="What happened? (recorded on the enquiry)"
+                  [value]="lostNote()"
+                  (input)="lostNote.set($any($event.target).value)"
+                ></textarea>
+                <button
+                  ar-button
+                  type="button"
+                  variant="primary"
+                  [disabled]="busy() || !lostNote().trim()"
+                  (click)="confirmLost(d)"
+                >
+                  Confirm lost
+                </button>
+              </div>
+            }
           }
 
           <section class="sec">
@@ -275,6 +308,16 @@ const NEXT: Partial<Record<Stage, { stage: EnquiryStage; label: string }>> = {
       display: flex;
       gap: 8px;
     }
+    .lostbox {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-bg-50);
+    }
     .quote {
       display: flex;
       align-items: center;
@@ -353,6 +396,20 @@ export class ArEnquiryDrawer {
   protected readonly busy = signal(false);
   protected readonly noteText = signal('');
 
+  protected readonly losing = signal(false);
+  protected readonly lostCat = signal<LostReasonCategory>(LostReasonCategory.LostToCompetitor);
+  protected readonly lostNote = signal('');
+  protected readonly lostCategories: { value: LostReasonCategory; label: string }[] = [
+    { value: LostReasonCategory.PriceTooHigh, label: 'Price too high' },
+    { value: LostReasonCategory.LostToCompetitor, label: 'Lost to competitor' },
+    { value: LostReasonCategory.ProjectCancelledOrDeferred, label: 'Project cancelled / deferred' },
+    { value: LostReasonCategory.NoBudget, label: 'No budget' },
+    { value: LostReasonCategory.TimelineTooLong, label: 'Timeline too long' },
+    { value: LostReasonCategory.TechnicalFit, label: 'Technical fit' },
+    { value: LostReasonCategory.NoResponse, label: 'No response' },
+    { value: LostReasonCategory.Other, label: 'Other' },
+  ];
+
   protected next(stage: Stage): { stage: EnquiryStage; label: string } | undefined {
     return NEXT[stage];
   }
@@ -390,16 +447,17 @@ export class ArEnquiryDrawer {
     }
   }
 
-  protected async markLost(d: EnquiryDetail): Promise<void> {
-    const reason = window.prompt('Why was this lost? (recorded on the enquiry)')?.trim();
+  protected async confirmLost(d: EnquiryDetail): Promise<void> {
+    const reason = this.lostNote().trim();
     if (!reason) return;
     this.busy.set(true);
     try {
-      await this.store.moveEnquiry(d.id, EnquiryStage.Lost, reason);
+      await this.store.moveEnquiry(d.id, EnquiryStage.Lost, reason, this.lostCat());
       this.changed.emit();
       this.close.emit();
     } finally {
       this.busy.set(false);
+      this.losing.set(false);
     }
   }
 

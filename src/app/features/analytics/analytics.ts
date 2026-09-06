@@ -37,6 +37,17 @@ export class ArAnalytics {
   protected readonly templates = this.store.templates;
   protected readonly agents = this.store.agents;
   protected readonly totals = this.store.totals;
+  protected readonly conversion = this.store.conversion;
+
+  protected readonly lostReasons = computed(() =>
+    Object.entries(this.conversion().lostReasonBreakdown ?? {})
+      .map(([reason, count]) => ({ reason, count }))
+      .sort((a, b) => b.count - a.count),
+  );
+
+  protected setConversionDimension(d: 'source' | 'owner'): void {
+    this.store.setConversionDimension(d);
+  }
 
   protected readonly ranges: readonly AnalyticsRange[] = [7, 30, 90];
 

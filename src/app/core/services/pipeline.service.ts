@@ -14,6 +14,7 @@ import {
   EnquiryStage,
   InstalledAssetDto,
   InstalledAssetService,
+  LostReasonCategory,
   QuotationDto,
   QuotationService,
   QuotationState,
@@ -403,8 +404,15 @@ export class PipelineStore {
     this.tick.update((n) => n + 1);
   }
 
-  async moveEnquiry(id: string, stage: EnquiryStage, note?: string): Promise<void> {
-    await firstValueFrom(this.enquiryApi.move(id, { stage, note: note?.trim() || undefined }));
+  async moveEnquiry(
+    id: string,
+    stage: EnquiryStage,
+    note?: string,
+    lostCategory?: LostReasonCategory,
+  ): Promise<void> {
+    await firstValueFrom(
+      this.enquiryApi.move(id, { stage, note: note?.trim() || undefined, lostCategory }),
+    );
     this.reload();
   }
 

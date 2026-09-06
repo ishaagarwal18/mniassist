@@ -3,6 +3,7 @@ export * from './enquiry-stage.enum';
 export * from './enquiry.service';
 export * from './installed-asset.service';
 export * from './lead-source.enum';
+export * from './lost-reason-category.enum';
 export * from './models';
 export * from './quotation-state.enum';
 export * from './quotation.service';

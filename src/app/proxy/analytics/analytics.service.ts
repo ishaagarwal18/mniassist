@@ -3,8 +3,10 @@ import type {
   AdAttributionDto,
   AgentPerformanceDto,
   CategoryBreakdownDto,
+  ConversionReportDto,
   DashboardDto,
   GetAnalyticsInput,
+  GetConversionReportInput,
   TemplatePerformanceDto,
   TrendPointDto,
 } from './models';
@@ -43,6 +45,22 @@ export class AnalyticsService {
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/analytics/ad-attribution',
         params: { fromUtc: input.fromUtc, toUtc: input.toUtc, channelId: input.channelId },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getConversionReport = (input: GetConversionReportInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ConversionReportDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/analytics/conversion-report',
+        params: {
+          dimension: input.dimension,
+          fromUtc: input.fromUtc,
+          toUtc: input.toUtc,
+          channelId: input.channelId,
+        },
       },
       { apiName: this.apiName, ...config },
     );

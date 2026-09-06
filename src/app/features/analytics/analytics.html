@@ -147,4 +147,64 @@
       </tbody>
     </table>
   </section>
+
+  <section class="card">
+    <div class="card__hrow">
+      <h2 class="card__h">Enquiry conversion</h2>
+      <div class="seg">
+        <button
+          type="button"
+          [class.seg--on]="conversion().dimension === 'source'"
+          (click)="setConversionDimension('source')"
+        >
+          By source
+        </button>
+        <button
+          type="button"
+          [class.seg--on]="conversion().dimension === 'owner'"
+          (click)="setConversionDimension('owner')"
+        >
+          By owner
+        </button>
+      </div>
+    </div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>{{ conversion().dimension === 'owner' ? 'Owner' : 'Source' }}</th>
+          <th class="num">Won</th>
+          <th class="num">Lost</th>
+          <th class="num">Open</th>
+          <th class="num">Win rate</th>
+          <th class="num">Won value</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of conversion().rows ?? []; track r.key) {
+          <tr>
+            <td>{{ r.label }}</td>
+            <td class="num">{{ r.won }}</td>
+            <td class="num">{{ r.lost }}</td>
+            <td class="num">{{ r.open }}</td>
+            <td class="num">{{ pct(r.winRate ?? 0) }}</td>
+            <td class="num ar-mono">{{ inr(r.wonValueInPaise ?? 0) }}</td>
+          </tr>
+        }
+        @if ((conversion().rows ?? []).length === 0) {
+          <tr>
+            <td colspan="6" class="muted">No closed enquiries in this range.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (lostReasons().length > 0) {
+      <p class="card__sub">Why deals were lost</p>
+      <div class="chips">
+        @for (l of lostReasons(); track l.reason) {
+          <span class="chip">{{ l.reason }} · {{ l.count }}</span>
+        }
+      </div>
+    }
+  </section>
 </div>

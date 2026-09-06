@@ -3,7 +3,11 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, forkJoin, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AnalyticsExportFormat, AnalyticsService as AnalyticsApi } from '../../proxy/analytics';
+import {
+  AnalyticsExportFormat,
+  AnalyticsService as AnalyticsApi,
+  ConversionReportDto,
+} from '../../proxy/analytics';
 import {
   PricingCategory as ApiPricingCategory,
   TemplateCategory as ApiTemplateCategory,
@@ -48,6 +52,54 @@ interface Bundle {
   templates: TemplatePerformance[];
   agents: AgentPerformance[];
 }
+
+const SEED_CONVERSION: ConversionReportDto = {
+  dimension: 'source',
+  rows: [
+    {
+      key: 'Exhibition',
+      label: 'Exhibition',
+      won: 9,
+      lost: 6,
+      open: 4,
+      wonValueInPaise: 182_00_000,
+      winRate: 0.6,
+    },
+    {
+      key: 'Website',
+      label: 'Website',
+      won: 5,
+      lost: 8,
+      open: 7,
+      wonValueInPaise: 71_00_000,
+      winRate: 0.385,
+    },
+    {
+      key: 'ClickToWhatsApp',
+      label: 'ClickToWhatsApp',
+      won: 4,
+      lost: 3,
+      open: 2,
+      wonValueInPaise: 54_00_000,
+      winRate: 0.571,
+    },
+    {
+      key: 'Referral',
+      label: 'Referral',
+      won: 6,
+      lost: 1,
+      open: 1,
+      wonValueInPaise: 120_00_000,
+      winRate: 0.857,
+    },
+  ],
+  lostReasonBreakdown: {
+    PriceTooHigh: 7,
+    LostToCompetitor: 5,
+    NoBudget: 4,
+    ProjectCancelledOrDeferred: 2,
+  },
+};
 
 const SEED: Bundle = {
   trend: Array.from({ length: 14 }, (_, i) => {
@@ -212,6 +264,30 @@ export class AnalyticsStore {
 
   setRange(days: AnalyticsRange): void {
     this.range.set(days);
+  }
+
+  // ── Conversion report (M10-8) ──────────────────────────────────────────
+  readonly conversionDimension = signal<'source' | 'owner'>('source');
+
+  private readonly conversionResource = rxResource({
+    params: () =>
+      environment.useMockData
+        ? undefined
+        : {
+            dimension: this.conversionDimension(),
+            fromUtc: new Date(Date.now() - this.range() * 86_400_000).toISOString(),
+            channelId: this.channels.active()?.id,
+          },
+    stream: ({ params }) => this.api.getConversionReport(params),
+    defaultValue: SEED_CONVERSION,
+  });
+
+  readonly conversion = computed(() =>
+    environment.useMockData ? SEED_CONVERSION : this.conversionResource.value(),
+  );
+
+  setConversionDimension(d: 'source' | 'owner'): void {
+    this.conversionDimension.set(d);
   }
 
   /** Downloads the category / template / agent tables in the chosen format. M12-6. */

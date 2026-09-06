@@ -5,6 +5,7 @@ import type { EnquiryEventKind } from './enquiry-event-kind.enum';
 import type { QuotationState } from './quotation-state.enum';
 import type { ReminderState } from './reminder-state.enum';
 import type { ReminderKind } from './reminder-kind.enum';
+import type { LostReasonCategory } from './lost-reason-category.enum';
 
 export interface CreateUpdateEnquiryDto {
   contactId?: string;
@@ -80,6 +81,8 @@ export interface EnquiryDto extends FullAuditedEntityDto<string> {
   stageChangedAtUtc?: string | null;
   daysInStage?: number;
   lostReason?: string | null;
+  lostCategory?: LostReasonCategory;
+  wonReason?: string | null;
   attributes?: Record<string, string>;
 }
 
@@ -153,6 +156,7 @@ export interface IssueQuotationInput {
 export interface MoveEnquiryInput {
   stage?: EnquiryStage;
   note?: string | null;
+  lostCategory?: LostReasonCategory | null;
 }
 
 export interface PlanRemindersInput {

@@ -48,6 +48,26 @@ export interface GetAnalyticsInput {
   channelId?: string | null;
 }
 
+export interface GetConversionReportInput extends GetAnalyticsInput {
+  dimension?: string | null;
+}
+
+export interface ConversionRowDto {
+  key?: string;
+  label?: string;
+  won?: number;
+  lost?: number;
+  open?: number;
+  wonValueInPaise?: number;
+  winRate?: number;
+}
+
+export interface ConversionReportDto {
+  dimension?: string;
+  rows?: ConversionRowDto[];
+  lostReasonBreakdown?: Record<string, number>;
+}
+
 export interface InboxSnapshotDto {
   openConversations?: number;
   unassigned?: number;
