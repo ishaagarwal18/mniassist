@@ -91,6 +91,12 @@ export const NAV: readonly NavGroup[] = [
         route: '/documents',
         permission: 'AutoReach.Library',
       },
+      {
+        label: 'Price lists',
+        icon: 'billing',
+        route: '/documents/price-lists',
+        permission: 'AutoReach.Library',
+      },
     ],
   },
   {

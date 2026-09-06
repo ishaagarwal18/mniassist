@@ -115,6 +115,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/documents/documents').then((m) => m.ArDocuments),
       },
       {
+        path: 'documents/price-lists',
+        title: 'Price lists · AutoReach',
+        loadComponent: () => import('./features/documents/price-lists').then((m) => m.ArPriceLists),
+      },
+      {
         path: 'billing',
         title: 'Billing · AutoReach',
         loadComponent: () => import('./features/billing/billing').then((m) => m.ArBilling),
