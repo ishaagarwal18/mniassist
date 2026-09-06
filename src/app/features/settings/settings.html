@@ -14,9 +14,8 @@
       </span>
 
       <p class="page__muted">
-        Point your identity provider's issuer at AutoReach and map the email domains it
-        owns. People signing in from those domains are provisioned automatically with
-        the role below.
+        Point your identity provider's issuer at AutoReach and map the email domains it owns. People
+        signing in from those domains are provisioned automatically with the role below.
       </p>
 
       @if (error(); as msg) {
@@ -26,11 +25,18 @@
       @if (!editing()) {
         @if (sso().isConfigured) {
           <dl class="kv">
-            <dt>Provider</dt><dd>{{ sso().displayName }}</dd>
-            <dt>Issuer</dt><dd class="ar-mono">{{ sso().issuer }}</dd>
-            <dt>Email domains</dt><dd>{{ sso().allowedEmailDomains.join(', ') }}</dd>
-            <dt>New users get</dt><dd>{{ sso().defaultRoleName }}</dd>
-            <dt>Enforced</dt><dd>{{ sso().enforceSso ? 'Yes — password sign-in hidden for these domains' : 'No' }}</dd>
+            <dt>Provider</dt>
+            <dd>{{ sso().displayName }}</dd>
+            <dt>Issuer</dt>
+            <dd class="ar-mono">{{ sso().issuer }}</dd>
+            <dt>Email domains</dt>
+            <dd>{{ sso().allowedEmailDomains.join(', ') }}</dd>
+            <dt>New users get</dt>
+            <dd>{{ sso().defaultRoleName }}</dd>
+            <dt>Enforced</dt>
+            <dd>
+              {{ sso().enforceSso ? 'Yes — password sign-in hidden for these domains' : 'No' }}
+            </dd>
           </dl>
         }
         <div class="row">
@@ -38,7 +44,13 @@
             {{ sso().isConfigured ? 'Edit' : 'Set up SSO' }}
           </button>
           @if (sso().isEnabled) {
-            <button ar-button variant="ghost" type="button" [disabled]="saving()" (click)="disable()">
+            <button
+              ar-button
+              variant="ghost"
+              type="button"
+              [disabled]="saving()"
+              (click)="disable()"
+            >
               Turn off
             </button>
           }
@@ -47,30 +59,51 @@
         <div class="form">
           <label class="field">
             <span>Display name</span>
-            <input type="text" [ngModel]="displayName()" (ngModelChange)="displayName.set($event)"
-                   placeholder="Acme SSO" />
+            <input
+              type="text"
+              [ngModel]="displayName()"
+              (ngModelChange)="displayName.set($event)"
+              placeholder="Acme SSO"
+            />
           </label>
           <label class="field">
             <span>Issuer</span>
-            <input type="url" class="ar-mono" [ngModel]="issuer()" (ngModelChange)="issuer.set($event)"
-                   placeholder="https://login.acme.example" />
+            <input
+              type="url"
+              class="ar-mono"
+              [ngModel]="issuer()"
+              (ngModelChange)="issuer.set($event)"
+              placeholder="https://login.acme.example"
+            />
           </label>
           <label class="field">
             <span>Authorization endpoint <em>(optional)</em></span>
-            <input type="url" class="ar-mono" [ngModel]="authorizationEndpoint()"
-                   (ngModelChange)="authorizationEndpoint.set($event)"
-                   placeholder="https://login.acme.example/authorize" />
+            <input
+              type="url"
+              class="ar-mono"
+              [ngModel]="authorizationEndpoint()"
+              (ngModelChange)="authorizationEndpoint.set($event)"
+              placeholder="https://login.acme.example/authorize"
+            />
           </label>
           <label class="field">
             <span>Metadata URL <em>(optional)</em></span>
-            <input type="url" class="ar-mono" [ngModel]="metadataAddress()"
-                   (ngModelChange)="metadataAddress.set($event)"
-                   placeholder="https://login.acme.example/.well-known/openid-configuration" />
+            <input
+              type="url"
+              class="ar-mono"
+              [ngModel]="metadataAddress()"
+              (ngModelChange)="metadataAddress.set($event)"
+              placeholder="https://login.acme.example/.well-known/openid-configuration"
+            />
           </label>
           <label class="field">
             <span>Email domains <em>(comma separated)</em></span>
-            <input type="text" [ngModel]="domains()" (ngModelChange)="domains.set($event)"
-                   placeholder="acme.com, acme.co.in" />
+            <input
+              type="text"
+              [ngModel]="domains()"
+              (ngModelChange)="domains.set($event)"
+              placeholder="acme.com, acme.co.in"
+            />
           </label>
           <label class="field">
             <span>New users get the role</span>
@@ -87,18 +120,65 @@
           </label>
 
           <div class="row">
-            <button ar-button variant="primary" type="button"
-                    [disabled]="!canSave() || saving()" (click)="save(true)">
+            <button
+              ar-button
+              variant="primary"
+              type="button"
+              [disabled]="!canSave() || saving()"
+              (click)="save(true)"
+            >
               Save &amp; enable
             </button>
-            <button ar-button variant="ghost" type="button"
-                    [disabled]="!canSave() || saving()" (click)="save(false)">
+            <button
+              ar-button
+              variant="ghost"
+              type="button"
+              [disabled]="!canSave() || saving()"
+              (click)="save(false)"
+            >
               Save without enabling
             </button>
             <button ar-button variant="ghost" type="button" (click)="cancel()">Cancel</button>
           </div>
         </div>
       }
+    </ar-card>
+
+    <ar-card heading="Signed-in devices">
+      <p class="page__muted">
+        Every device with an active session for your account. Ending one signs that device out — it
+        can sign back in.
+      </p>
+      @if (sessions().length > 1) {
+        <button ar-button variant="ghost" (click)="revokeOtherSessions()">
+          Sign out everywhere else
+        </button>
+      }
+      <ul class="sessions">
+        @for (s of sessions(); track s.sessionId) {
+          <li class="session">
+            <div class="session__id">
+              <span class="session__device">
+                {{ s.device }}
+                @if (s.isCurrent) {
+                  <ar-chip tone="good">This device</ar-chip>
+                }
+              </span>
+              <span class="session__meta">
+                {{ s.deviceInfo || s.ip || s.client || '—' }} · last active
+                {{ when(s.lastActiveAt) }}
+              </span>
+            </div>
+            @if (!s.isCurrent) {
+              <button type="button" class="link link--danger" (click)="revokeSession(s.sessionId)">
+                Sign out
+              </button>
+            }
+          </li>
+        } @empty {
+          <li class="session__none">No other active sessions.</li>
+        }
+      </ul>
     </ar-card>
 
     <ar-card heading="More settings">

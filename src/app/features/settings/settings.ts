@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { SettingsStore } from '../../core/services/settings.service';
+import { SessionStore } from '../../core/services/session.store';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArBanner, ArCard, ArChip } from '../../ui';
 
@@ -20,9 +21,34 @@ import { ArButton, ArBanner, ArCard, ArChip } from '../../ui';
 })
 export class ArSettings {
   private readonly store = inject(SettingsStore);
+  private readonly sessionStore = inject(SessionStore);
 
   protected readonly sso = this.store.sso;
   protected readonly loading = this.store.ssoLoading;
+
+  protected readonly sessions = this.sessionStore.sessions;
+
+  protected revokeSession(sessionId: string): void {
+    if (window.confirm('Sign this device out?')) {
+      void this.sessionStore.revoke(sessionId);
+    }
+  }
+
+  protected revokeOtherSessions(): void {
+    if (window.confirm('Sign out every other device?')) {
+      void this.sessionStore.revokeOthers();
+    }
+  }
+
+  protected when(iso?: string): string {
+    if (!iso) return 'unknown';
+    const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.round(hrs / 24)}d ago`;
+  }
 
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -38,12 +64,18 @@ export class ArSettings {
   protected readonly enforce = signal(false);
 
   protected readonly domainList = computed(() =>
-    this.domains().split(',').map((d) => d.trim()).filter(Boolean));
+    this.domains()
+      .split(',')
+      .map((d) => d.trim())
+      .filter(Boolean),
+  );
 
-  protected readonly canSave = computed(() =>
-    this.displayName().trim().length > 1 &&
-    this.issuer().trim().length > 6 &&
-    this.domainList().length > 0);
+  protected readonly canSave = computed(
+    () =>
+      this.displayName().trim().length > 1 &&
+      this.issuer().trim().length > 6 &&
+      this.domainList().length > 0,
+  );
 
   protected startEditing(): void {
     const c = this.sso();

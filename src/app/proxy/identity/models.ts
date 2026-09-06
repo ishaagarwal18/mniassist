@@ -186,3 +186,14 @@ export interface SsoDiscoveryDto {
   authorizationEndpoint?: string | null;
   issuer?: string | null;
 }
+
+export interface UserSessionDto {
+  sessionId: string;
+  device?: string | null;
+  deviceInfo?: string | null;
+  clientId?: string | null;
+  ipAddresses?: string | null;
+  signedInUtc?: string;
+  lastAccessedUtc?: string | null;
+  isCurrent?: boolean;
+}
