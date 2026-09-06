@@ -8,13 +8,14 @@ import {
   AgencyLinkStatus,
   AgencyService,
 } from '../../proxy/agencies';
+import { AgencyActingStore } from '../../core/services/agency-acting.store';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip } from '../../ui';
 
 /**
  * Agency mode (M01-8). A client issues an invite code and gives it to their agency;
- * the agency redeems it and gets a read-only consolidated view of that client.
- * Acting inside a client workspace is a separate, later capability.
+ * the agency redeems it, gets a read-only consolidated view of each client, and can
+ * open a read-only acting session to browse that client's own screens.
  */
 @Component({
   selector: 'ar-agency',
@@ -25,6 +26,7 @@ import { ArButton, ArChip } from '../../ui';
 })
 export class ArAgency {
   private readonly api = inject(AgencyService);
+  protected readonly acting = inject(AgencyActingStore);
 
   private readonly tick = signal(0);
   protected readonly S = AgencyLinkStatus;
@@ -109,5 +111,23 @@ export class ArAgency {
     } finally {
       this.busy.set(null);
     }
+  }
+
+  protected async enter(client: AgencyClientSnapshotDto): Promise<void> {
+    this.busy.set('enter-' + client.linkId);
+    this.error.set(null);
+    try {
+      await this.acting.enter(client.linkId);
+      window.location.assign('/home');
+    } catch (e: unknown) {
+      this.error.set(e instanceof Error ? e.message : 'Could not open a client session.');
+    } finally {
+      this.busy.set(null);
+    }
+  }
+
+  protected async exitActing(): Promise<void> {
+    await this.acting.leave();
+    this.tick.update((n) => n + 1);
   }
 }

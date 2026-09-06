@@ -61,6 +61,15 @@
 
   <section class="ag__block">
     <h2 class="ag__h">Client workspaces you manage</h2>
+
+    @if (acting.session(); as s) {
+      <p class="ag__acting">
+        You are in a read-only session in <strong>{{ s.clientDisplayName }}</strong
+        >.
+        <button type="button" (click)="exitActing()">End session</button>
+      </p>
+    }
+
     <div class="ag__redeem">
       <input
         class="ar-field__input ar-mono"
@@ -83,15 +92,26 @@
       <article class="ag__client">
         <div class="ag__client-head">
           <span class="ag__row-name">{{ c.clientDisplayName }}</span>
-          <button
-            ar-button
-            type="button"
-            variant="ghost"
-            [disabled]="busy() === c.linkId"
-            (click)="leave(c)"
-          >
-            Leave
-          </button>
+          <div class="ag__client-actions">
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              [disabled]="busy() === 'enter-' + c.linkId || acting.isActing()"
+              (click)="enter(c)"
+            >
+              {{ c.actingNow ? 'In session' : 'Enter workspace' }}
+            </button>
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="busy() === c.linkId"
+              (click)="leave(c)"
+            >
+              Leave
+            </button>
+          </div>
         </div>
         <p class="ag__client-stats">
           {{ c.openConversations }} open conversation(s) · {{ c.runningCampaigns }} running

@@ -34,6 +34,19 @@ export interface AgencyClientSnapshotDto {
   openConversations: number;
   runningCampaigns: number;
   spendThisMonthInPaise: number;
+  actingNow: boolean;
+}
+
+export interface AgencySessionDto {
+  id: string;
+  linkId: string;
+  clientTenantId: string;
+  clientDisplayName: string;
+  agencyDisplayName?: string | null;
+  agencyUserName: string;
+  startedAtUtc: string;
+  expiresAtUtc: string;
+  endedAtUtc?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -74,6 +87,30 @@ export class AgencyService {
   leaveClient = (linkId: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, void>(
       { method: 'POST', url: `/api/auto-reach/agency/leave-client/${linkId}` },
+      { apiName: this.apiName, ...config },
+    );
+
+  enterClient = (linkId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, AgencySessionDto>(
+      { method: 'POST', url: `/api/auto-reach/agency/enter-client/${linkId}` },
+      { apiName: this.apiName, ...config },
+    );
+
+  endActingSession = (sessionId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, void>(
+      { method: 'POST', url: `/api/auto-reach/agency/end-acting-session/${sessionId}` },
+      { apiName: this.apiName, ...config },
+    );
+
+  getMyActingSession = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, AgencySessionDto | null>(
+      { method: 'GET', url: '/api/auto-reach/agency/my-acting-session' },
+      { apiName: this.apiName, ...config },
+    );
+
+  getActingSessionsForClient = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ListResultDto<AgencySessionDto>>(
+      { method: 'GET', url: '/api/auto-reach/agency/acting-sessions-for-client' },
       { apiName: this.apiName, ...config },
     );
 }
