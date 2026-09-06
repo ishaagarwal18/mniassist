@@ -5,6 +5,9 @@ import { firstValueFrom, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   EnquiryBoardColumnDto,
+  EnquiryDetailDto,
+  EnquiryEventDto,
+  EnquiryEventKind,
   EnquiryService,
   EnquiryStage,
   InstalledAssetDto,
@@ -48,6 +51,29 @@ export interface Quotation {
   validUntil?: string;
   nextFollowUpAt?: string;
   daysSinceIssue: number;
+}
+export interface EnquiryEvent {
+  kind: string;
+  at?: string;
+  by?: string;
+  summary: string;
+}
+export interface EnquiryDetail {
+  id: string;
+  reference: string;
+  title: string;
+  stage: Stage;
+  contact: string;
+  company?: string;
+  owner?: string;
+  requirement?: string;
+  valueInPaise?: number;
+  expectedCloseDate?: string;
+  daysInStage: number;
+  lostReason?: string;
+  conversationId?: string;
+  quotations: Quotation[];
+  timeline: EnquiryEvent[];
 }
 export interface Asset {
   id: string;
@@ -137,6 +163,50 @@ function asset(a: InstalledAssetDto): Asset {
     nextDueKind: a.nextDueKind != null ? DUE_KIND[a.nextDueKind] : undefined,
     nextDueOn: a.nextDueOn ?? undefined,
     retired: a.isRetired ?? false,
+  };
+}
+
+const EVENT_KIND: Record<EnquiryEventKind, string> = {
+  [EnquiryEventKind.Created]: 'Created',
+  [EnquiryEventKind.StageChange]: 'Stage change',
+  [EnquiryEventKind.Note]: 'Note',
+  [EnquiryEventKind.MessageSent]: 'Message sent',
+  [EnquiryEventKind.MessageReceived]: 'Message received',
+  [EnquiryEventKind.QuotationIssued]: 'Quotation issued',
+  [EnquiryEventKind.DocumentShared]: 'Document shared',
+  [EnquiryEventKind.OwnerChanged]: 'Owner changed',
+  [EnquiryEventKind.FlowSubmitted]: 'Flow submitted',
+};
+
+function enquiryEvent(e: EnquiryEventDto): EnquiryEvent {
+  return {
+    kind: e.kind != null ? EVENT_KIND[e.kind] : 'Event',
+    at: e.occurredAtUtc ?? undefined,
+    by: e.byUserName ?? undefined,
+    summary: e.summary ?? '',
+  };
+}
+
+function enquiryDetail(d: EnquiryDetailDto & { id?: string }): EnquiryDetail {
+  const stage = d.stage != null ? STAGE[d.stage] : 'new';
+  return {
+    id: d.id!,
+    reference: d.reference ?? '',
+    title: d.title ?? '(untitled)',
+    stage,
+    contact: d.contactDisplayName ?? '—',
+    company: d.contactCompanyName ?? undefined,
+    owner: d.ownerUserName ?? undefined,
+    requirement: d.requirement ?? undefined,
+    valueInPaise: d.estimatedValueInPaise ?? undefined,
+    expectedCloseDate: d.expectedCloseDate ?? undefined,
+    daysInStage: d.daysInStage ?? 0,
+    lostReason: d.lostReason ?? undefined,
+    conversationId: d.conversationId ?? undefined,
+    quotations: (d.quotations ?? []).map(quotation),
+    timeline: (d.timeline ?? [])
+      .map(enquiryEvent)
+      .sort((a, b) => (b.at ?? '').localeCompare(a.at ?? '')),
   };
 }
 
@@ -323,9 +393,79 @@ export class PipelineStore {
     this.tick.update((n) => n + 1);
   }
 
-  async moveEnquiry(id: string, stage: EnquiryStage): Promise<void> {
-    await firstValueFrom(this.enquiryApi.move(id, { stage }));
+  async moveEnquiry(id: string, stage: EnquiryStage, note?: string): Promise<void> {
+    await firstValueFrom(this.enquiryApi.move(id, { stage, note: note?.trim() || undefined }));
     this.reload();
+  }
+
+  /** Full card for the detail drawer: the enquiry, its quotations and its timeline. */
+  async loadEnquiry(id: string): Promise<EnquiryDetail> {
+    if (environment.useMockData) {
+      return this.seedEnquiryDetail(id);
+    }
+    const dto = await firstValueFrom(this.enquiryApi.getDetail(id));
+    return enquiryDetail({ ...(dto as EnquiryDetailDto & { id?: string }), id });
+  }
+
+  async addEnquiryNote(id: string, note: string): Promise<void> {
+    if (!environment.useMockData) {
+      await firstValueFrom(this.enquiryApi.addNote(id, note.trim()));
+    }
+  }
+
+  async assignEnquiry(id: string, ownerUserId: string): Promise<void> {
+    if (!environment.useMockData) {
+      await firstValueFrom(this.enquiryApi.assign(id, ownerUserId));
+      this.reload();
+    }
+  }
+
+  private seedEnquiryDetail(id: string): EnquiryDetail {
+    const card = this.board()
+      .flatMap((c) => c.cards)
+      .find((c) => c.id === id);
+    return {
+      id,
+      reference: card?.reference ?? 'ENQ-2026-000',
+      title: card?.title ?? 'Enquiry',
+      stage: card?.stage ?? 'new',
+      contact: card?.contact ?? '—',
+      company: card?.company,
+      owner: card?.owner,
+      requirement:
+        'Existing DOL starters on the packing line trip on peak load. Wants a VFD retrofit ' +
+        'with soft-start on four 15 kW motors, plus a walkthrough of the payback before ' +
+        'committing.',
+      valueInPaise: card?.valueInPaise,
+      daysInStage: card?.daysInStage ?? 0,
+      quotations: SEED_QUOTES.slice(0, 1),
+      timeline: [
+        {
+          kind: 'Stage change',
+          at: new Date(Date.now() - 2 * 86_400_000).toISOString(),
+          by: 'sneha.p',
+          summary: `Moved to ${card?.stage ?? 'new'}`,
+        },
+        {
+          kind: 'Note',
+          at: new Date(Date.now() - 4 * 86_400_000).toISOString(),
+          by: 'ravi.k',
+          summary: 'Site visit booked for Thursday; needs single-line diagram beforehand.',
+        },
+        {
+          kind: 'Message received',
+          at: new Date(Date.now() - 6 * 86_400_000).toISOString(),
+          by: card?.contact,
+          summary: 'Shared the motor nameplate photos.',
+        },
+        {
+          kind: 'Created',
+          at: new Date(Date.now() - 9 * 86_400_000).toISOString(),
+          by: 'ravi.k',
+          summary: 'Enquiry created from an inbox conversation.',
+        },
+      ],
+    };
   }
 
   async markQuoteWon(id: string): Promise<void> {

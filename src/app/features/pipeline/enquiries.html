@@ -17,7 +17,13 @@
       </header>
       <div class="col__cards">
         @for (card of col.cards; track card.id) {
-          <article class="card">
+          <article
+            class="card"
+            tabindex="0"
+            role="button"
+            (click)="selectedId.set(card.id)"
+            (keydown.enter)="selectedId.set(card.id)"
+          >
             <div class="card__ref ar-mono">{{ card.reference }}</div>
             <h3 class="card__title">{{ card.title }}</h3>
             <p class="card__contact">
@@ -36,7 +42,9 @@
               </div>
             </div>
             @if (canAdvance(card.stage)) {
-              <button ar-button variant="ghost" (click)="advance(card)">Advance →</button>
+              <button ar-button type="button" variant="ghost" (click)="advance(card, $event)">
+                Advance →
+              </button>
             }
           </article>
         }
@@ -47,3 +55,11 @@
     </section>
   }
 </div>
+
+@if (selectedId(); as id) {
+  <ar-enquiry-drawer
+    [enquiryId]="id"
+    (close)="selectedId.set(null)"
+    (changed)="selectedId.set(null)"
+  />
+}
