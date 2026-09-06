@@ -96,7 +96,71 @@
       </section>
 
       <section class="grp">
-        <h2 class="grp__h">Body</h2>
+        <div class="grp__hrow">
+          <h2 class="grp__h">Body</h2>
+          <button type="button" class="tc__ai-toggle" (click)="aiOpen.set(!aiOpen())">
+            {{ aiOpen() ? 'Hide AI draft' : '✨ Draft with AI' }}
+          </button>
+        </div>
+
+        @if (aiOpen()) {
+          <div class="tc__ai">
+            <label class="ar-field">
+              <span class="ar-field__label">What should this message say?</span>
+              <textarea
+                class="ar-field__input"
+                rows="2"
+                placeholder="e.g. tell the customer their quotation is ready and invite them to view it"
+                [value]="aiGoal()"
+                (input)="aiGoal.set($any($event.target).value)"
+              ></textarea>
+            </label>
+            <div class="tc__ai-row">
+              <select
+                class="ar-field__input"
+                title="Tone"
+                aria-label="Tone"
+                [value]="aiTone()"
+                (change)="aiTone.set(+$any($event.target).value)"
+              >
+                @for (t of aiTones; track t.value) {
+                  <option [value]="t.value">{{ t.label }}</option>
+                }
+              </select>
+              <button
+                ar-button
+                type="button"
+                variant="primary"
+                [disabled]="aiBusy()"
+                (click)="runAiDraft()"
+              >
+                {{ aiBusy() ? 'Drafting…' : 'Draft' }}
+              </button>
+            </div>
+            @if (aiError(); as e) {
+              <p class="tc__ai-err">{{ e }}</p>
+            }
+            @if (aiResult(); as r) {
+              <p class="tc__ai-note">{{ r.providerName }} — pick one to fill the body:</p>
+              @for (v of r.bodyVariants; track $index) {
+                <button type="button" class="tc__ai-variant" (click)="useVariant(v)">
+                  {{ v }}
+                </button>
+              }
+              @if (r.suggestedButtonLabels.length > 0) {
+                <p class="tc__ai-note">Suggested buttons:</p>
+                <div class="tc__ai-btns">
+                  @for (b of r.suggestedButtonLabels; track b) {
+                    <button type="button" class="tc__ai-chip" (click)="addSuggestedButton(b)">
+                      + {{ b }}
+                    </button>
+                  }
+                </div>
+              }
+            }
+          </div>
+        }
+
         <label class="ar-field">
           <textarea
             class="ar-field__input tc__body"

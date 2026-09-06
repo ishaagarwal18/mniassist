@@ -11,9 +11,11 @@ import {
 } from '../../core/models/template.model';
 import {
   TemplateService,
+  TemplateDraftTone,
   draftFromTemplate,
   emptyDraft,
 } from '../../core/services/template.service';
+import { DraftedTemplateDto } from '../../proxy/messaging';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArIcon } from '../../ui';
 import { IconName } from '../../ui/icon';
@@ -83,6 +85,53 @@ export class ArTemplateComposer {
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly editing = signal(false);
+
+  // ── AI draft (M04-10) ────────────────────────────────────────────────────
+  protected readonly aiTones: { value: TemplateDraftTone; label: string }[] = [
+    { value: TemplateDraftTone.Friendly, label: 'Friendly' },
+    { value: TemplateDraftTone.Formal, label: 'Formal' },
+    { value: TemplateDraftTone.Concise, label: 'Concise' },
+    { value: TemplateDraftTone.Persuasive, label: 'Persuasive' },
+  ];
+  protected readonly aiOpen = signal(false);
+  protected readonly aiGoal = signal('');
+  protected readonly aiTone = signal<TemplateDraftTone>(TemplateDraftTone.Friendly);
+  protected readonly aiBusy = signal(false);
+  protected readonly aiResult = signal<DraftedTemplateDto | null>(null);
+  protected readonly aiError = signal<string | null>(null);
+
+  protected async runAiDraft(): Promise<void> {
+    if (this.aiGoal().trim().length < 3) {
+      this.aiError.set('Describe what the message should say first.');
+      return;
+    }
+    this.aiBusy.set(true);
+    this.aiError.set(null);
+    try {
+      const result = await this.store.draftWithAi(
+        this.aiGoal(),
+        this.draft().category,
+        this.aiTone(),
+      );
+      this.aiResult.set(result);
+    } catch (e: unknown) {
+      this.aiError.set(e instanceof Error ? e.message : 'The draft could not be generated.');
+    } finally {
+      this.aiBusy.set(false);
+    }
+  }
+
+  protected useVariant(body: string): void {
+    this.patch('body', body);
+  }
+
+  protected addSuggestedButton(label: string): void {
+    if (!this.canAdd('quick_reply')) return;
+    this.patch('buttons', [
+      ...this.draft().buttons,
+      { kind: 'quick_reply' as TemplateButtonKind, text: label, url: '', phone: '' },
+    ]);
+  }
 
   constructor() {
     const id = this.route.snapshot.paramMap.get('id');

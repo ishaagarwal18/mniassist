@@ -1,5 +1,7 @@
 import type {
   CreateUpdateTemplateDto,
+  DraftTemplateInput,
+  DraftedTemplateDto,
   GetTemplateListInput,
   RenderTemplateInput,
   RenderedTemplateDto,
@@ -34,6 +36,17 @@ export class TemplateService {
       {
         method: 'DELETE',
         url: `/api/auto-reach/template/${id}`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  draft = (input: DraftTemplateInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, DraftedTemplateDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/template/draft',
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );

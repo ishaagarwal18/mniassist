@@ -266,6 +266,29 @@ export interface RenderedTemplateDto {
   unresolvedVariables?: string[];
 }
 
+/** M04-10: AI-assisted template drafting. */
+export enum TemplateDraftTone {
+  Friendly = 0,
+  Formal = 1,
+  Concise = 2,
+  Persuasive = 3,
+}
+
+export interface DraftTemplateInput {
+  goal: string;
+  category?: TemplateCategory;
+  tone?: TemplateDraftTone;
+  languageCode?: string;
+  audience?: string | null;
+  brand?: string | null;
+}
+
+export interface DraftedTemplateDto {
+  providerName: string;
+  bodyVariants: string[];
+  suggestedButtonLabels: string[];
+}
+
 export interface SearchConversationsInput extends PagedResultRequestDto {
   term?: string | null;
   channelId?: string | null;
@@ -286,6 +309,7 @@ export interface SendMessageInput {
   variables?: Record<string, string>;
   libraryDocumentId?: string | null;
 }
+
 
 export interface SendLocationInput {
   latitude: number;

@@ -5,8 +5,10 @@ import { firstValueFrom, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   CreateUpdateTemplateDto,
+  DraftedTemplateDto,
   TemplateCategory as ApiCategory,
   TemplateComponentKind,
+  TemplateDraftTone,
   TemplateDto,
   TemplateHeaderFormat,
   TemplateLintSeverity,
@@ -314,6 +316,67 @@ function localLint(draft: DraftTemplate): LintItem[] {
   return items;
 }
 
+export { TemplateDraftTone };
+
+/** Mock-mode mirror of the server's heuristic draft (M04-10). */
+function localDraft(
+  goal: string,
+  category: TemplateCategory,
+  tone: TemplateDraftTone,
+): DraftedTemplateDto {
+  const g = goal.trim();
+  const sentence = g
+    ? g[0].toUpperCase() + g.slice(1) + (/[.!?]$/.test(g) ? '' : '.')
+    : 'We have an update for you.';
+
+  if (category === 'authentication') {
+    return {
+      providerName: 'AutoReach assistant (built-in)',
+      bodyVariants: [
+        '{{1}} is your verification code. For your security, do not share this code with anyone.',
+        'Your one-time code is {{1}}. It expires in 10 minutes. Do not share it.',
+      ],
+      suggestedButtonLabels: [],
+    };
+  }
+
+  const ctaByTone: Record<TemplateDraftTone, string> = {
+    [TemplateDraftTone.Friendly]: 'Let us know if you have any questions.',
+    [TemplateDraftTone.Formal]: 'Please reply to this message if you require any clarification.',
+    [TemplateDraftTone.Concise]: 'Reply to proceed.',
+    [TemplateDraftTone.Persuasive]: "Reply YES to confirm and we'll take it from here.",
+  };
+  const greetByTone: Record<TemplateDraftTone, string> = {
+    [TemplateDraftTone.Friendly]: 'Hi {{1}},\n\n',
+    [TemplateDraftTone.Formal]: 'Dear {{1}},\n\n',
+    [TemplateDraftTone.Concise]: '',
+    [TemplateDraftTone.Persuasive]: 'Hi {{1}},\n\n',
+  };
+  const order = [
+    tone,
+    ...[
+      TemplateDraftTone.Friendly,
+      TemplateDraftTone.Formal,
+      TemplateDraftTone.Concise,
+      TemplateDraftTone.Persuasive,
+    ].filter((t) => t !== tone),
+  ];
+  const optOut = category === 'marketing' ? '\n\nReply STOP to opt out.' : '';
+  const bodyVariants = order
+    .slice(0, 3)
+    .map((t) => `${greetByTone[t]}${sentence}\n\n${ctaByTone[t]}${optOut}`.trim());
+
+  const lg = g.toLowerCase();
+  let suggestedButtonLabels = ['Yes, tell me more', 'Not now'];
+  if (/quot|price|order/.test(lg)) suggestedButtonLabels = ['View quotation', 'Talk to sales'];
+  else if (/appointment|visit|demo|book/.test(lg))
+    suggestedButtonLabels = ['Confirm', 'Reschedule'];
+  else if (/service|amc|maintenance|warranty/.test(lg))
+    suggestedButtonLabels = ['Book service', 'Call me back'];
+
+  return { providerName: 'AutoReach assistant (built-in)', bodyVariants, suggestedButtonLabels };
+}
+
 /**
  * Template studio store. Mirrors the pattern used by the contacts and channel
  * stores: a seeded list runs the screen standalone, the same signals are fed by
@@ -541,6 +604,25 @@ export class TemplateService {
     }
     await firstValueFrom(this.api.submit(id));
     this.reload();
+  }
+
+  /** AI-assisted body drafting for the composer (M04-10). */
+  async draftWithAi(
+    goal: string,
+    category: TemplateCategory,
+    tone: TemplateDraftTone,
+  ): Promise<DraftedTemplateDto> {
+    if (environment.useMockData) {
+      return localDraft(goal, category, tone);
+    }
+    return firstValueFrom(
+      this.api.draft({
+        goal: goal.trim(),
+        category: CATEGORY_TO_API[category],
+        tone,
+        languageCode: 'en',
+      }),
+    );
   }
 
   async syncFromMeta(): Promise<number> {
