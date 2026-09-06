@@ -47,8 +47,7 @@ export class CrmSyncService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/auto-reach/crm-sync/resync',
-        params: { connectionId },
+        url: `/api/auto-reach/crm-sync/resync/${connectionId}`,
       },
       { apiName: this.apiName, ...config },
     );
