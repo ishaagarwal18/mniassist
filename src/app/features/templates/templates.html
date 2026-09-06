@@ -60,6 +60,9 @@
               >{{ t.variableCount }} variable{{ t.variableCount === 1 ? '' : 's' }}</ar-chip
             >
           }
+          @if (languagesFor(t).length > 1) {
+            <ar-chip tone="teal">{{ languagesFor(t).join(' · ') }}</ar-chip>
+          }
         </div>
       </header>
 

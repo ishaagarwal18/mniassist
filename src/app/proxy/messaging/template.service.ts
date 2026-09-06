@@ -4,10 +4,11 @@ import type {
   RenderTemplateInput,
   RenderedTemplateDto,
   TemplateDto,
+  TemplateLanguageGroupDto,
   TemplateLintResultDto,
 } from './models';
 import { RestService, Rest } from '@abp/ng.core';
-import type { PagedResultDto } from '@abp/ng.core';
+import type { ListResultDto, PagedResultDto } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
 
 @Injectable({
@@ -62,6 +63,33 @@ export class TemplateService {
           skipCount: input.skipCount,
           maxResultCount: input.maxResultCount,
         },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getLanguageGroups = (channelId: string | undefined, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ListResultDto<TemplateLanguageGroupDto>>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/template/language-groups',
+        params: { channelId },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  resolveForLocale = (
+    channelId: string,
+    name: string,
+    languageCode: string,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, TemplateDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/template/resolve-for-locale',
+        params: { channelId, name, languageCode },
       },
       { apiName: this.apiName, ...config },
     );

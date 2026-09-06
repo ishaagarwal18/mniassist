@@ -53,6 +53,11 @@ export class ArTemplates {
   protected readonly counts = this.store.counts;
   protected readonly loading = this.store.loading;
 
+  /** The languages a template name exists in — a group of more than one is M04-9. */
+  protected languagesFor(t: Template): string[] {
+    return (this.store.languageGroups().get(t.name) ?? [t.language]).slice().sort();
+  }
+
   protected readonly busy = signal(false);
 
   protected readonly subtitle = computed(() => {

@@ -318,6 +318,20 @@ export interface SnoozeConversationInput {
   untilUtc?: string;
 }
 
+export interface TemplateLanguageVariantDto {
+  templateId?: string;
+  languageCode?: string;
+  status?: TemplateStatus;
+  quality?: TemplateQuality;
+}
+
+export interface TemplateLanguageGroupDto {
+  name?: string;
+  channelId?: string;
+  category?: TemplateCategory;
+  languages?: TemplateLanguageVariantDto[];
+}
+
 export interface TemplateComponentDto extends EntityDto<string> {
   kind?: TemplateComponentKind;
   headerFormat?: TemplateHeaderFormat;

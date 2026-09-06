@@ -418,6 +418,17 @@ export class TemplateService {
     return q ? list.filter((t) => t.name.includes(q) || t.body.toLowerCase().includes(q)) : list;
   });
 
+  /** Template name → the language codes it exists in (M04-9). */
+  readonly languageGroups = computed<Map<string, string[]>>(() => {
+    const map = new Map<string, string[]>();
+    for (const t of this.all()) {
+      const langs = map.get(t.name) ?? [];
+      if (!langs.includes(t.language)) langs.push(t.language);
+      map.set(t.name, langs);
+    }
+    return map;
+  });
+
   readonly counts = computed(() => {
     const list = this.all();
     return {

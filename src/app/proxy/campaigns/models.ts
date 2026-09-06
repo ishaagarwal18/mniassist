@@ -33,6 +33,7 @@ export interface CampaignDto extends FullAuditedEntityDto<string> {
   optOutRate?: number;
   suspendReason?: string | null;
   variableMappingJson?: string;
+  matchRecipientLanguage?: boolean;
   schedule?: CampaignScheduleDto | null;
   costLines?: CampaignCostLineDto[];
 }
@@ -125,6 +126,7 @@ export interface CreateUpdateCampaignDto {
   segmentId?: string | null;
   throttlePerSecond?: number;
   variableMappingJson?: string;
+  matchRecipientLanguage?: boolean;
 }
 
 export interface GetCampaignListInput extends PagedAndSortedResultRequestDto {
