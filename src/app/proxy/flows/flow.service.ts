@@ -1,4 +1,10 @@
-import type { CreateUpdateFlowDto, FlowDto, FlowResponseDto, GetFlowListInput } from './models';
+import type {
+  CreateUpdateFlowDto,
+  FlowDto,
+  FlowFunnelDto,
+  FlowResponseDto,
+  GetFlowListInput,
+} from './models';
 import { RestService, Rest } from '@abp/ng.core';
 import type { PagedResultDto, PagedResultRequestDto } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
@@ -74,6 +80,16 @@ export class FlowService {
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/flow/${id}/responses`,
         params: { skipCount: input.skipCount, maxResultCount: input.maxResultCount },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getFunnel = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, FlowFunnelDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/flow/${id}/funnel`,
       },
       { apiName: this.apiName, ...config },
     );

@@ -1,10 +1,46 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 
 import { FState, Flow, WorkflowStore } from '../../core/services/workflow.service';
 import { ChannelService } from '../../core/services/channel.service';
+import { FlowFunnelDto, FlowService } from '../../proxy/flows';
+import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
+
+const SEED_FUNNEL: FlowFunnelDto = {
+  flowName: 'RFQ intake',
+  started: 214,
+  completed: 138,
+  completionRate: 0.645,
+  screens: [
+    {
+      screenId: 'APPLICATION',
+      title: 'Application',
+      order: 0,
+      enteredCount: 214,
+      completedCount: 190,
+      dropOffRate: 0.112,
+    },
+    {
+      screenId: 'COMMERCIAL',
+      title: 'Commercial',
+      order: 1,
+      enteredCount: 190,
+      completedCount: 150,
+      dropOffRate: 0.211,
+    },
+    {
+      screenId: 'SUMMARY',
+      title: 'Summary',
+      order: 2,
+      enteredCount: 150,
+      completedCount: 138,
+      dropOffRate: 0.08,
+    },
+  ],
+};
 
 const STATE_TONE: Record<FState, ChipTone> = {
   draft: 'neutral',
@@ -27,7 +63,31 @@ const STATE_TONE: Record<FState, ChipTone> = {
 })
 export class ArFlows {
   private readonly store = inject(WorkflowStore);
+  private readonly flowApi = inject(FlowService);
   protected readonly channels = inject(ChannelService).channels;
+
+  // ---- Funnel (M08-5) -----------------------------------------------
+  protected readonly funnelOpen = signal(false);
+  protected readonly funnel = signal<FlowFunnelDto | null>(null);
+  protected readonly funnelName = signal('');
+
+  protected async openFunnel(f: Flow): Promise<void> {
+    this.funnelName.set(f.name);
+    this.funnel.set(null);
+    this.funnelOpen.set(true);
+    this.funnel.set(
+      environment.useMockData ? SEED_FUNNEL : await firstValueFrom(this.flowApi.getFunnel(f.id)),
+    );
+  }
+
+  protected pct(fraction?: number): string {
+    return `${Math.round((fraction ?? 0) * 100)}%`;
+  }
+
+  protected barWidth(entered?: number, started?: number): string {
+    if (!started) return '0%';
+    return `${Math.max(4, Math.round(((entered ?? 0) / started) * 100))}%`;
+  }
 
   protected readonly flows = this.store.flows;
   protected readonly loading = this.store.loadingFlows;

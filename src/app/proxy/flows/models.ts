@@ -13,6 +13,7 @@ export interface CreateUpdateFlowScreenDto {
   screenId: string;
   title: string;
   order?: number;
+  webhookUrl?: string | null;
 }
 
 export interface FlowDto extends FullAuditedEntityDto<string> {
@@ -61,7 +62,17 @@ export interface FlowScreenDto extends EntityDto<string> {
   order?: number;
   enteredCount?: number;
   completedCount?: number;
+  webhookUrl?: string | null;
   dropOffRate?: number;
+}
+
+export interface FlowFunnelDto {
+  flowId?: string;
+  flowName?: string;
+  started?: number;
+  completed?: number;
+  completionRate?: number;
+  screens?: FlowScreenDto[];
 }
 
 export interface FlowSummaryDto extends EntityDto<string> {

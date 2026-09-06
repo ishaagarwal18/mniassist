@@ -72,6 +72,7 @@
         }
       </div>
       <div class="flow__actions">
+        <button ar-button variant="ghost" (click)="openFunnel(f)">Funnel</button>
         @if (f.state === 'draft' || f.state === 'deprecated') {
           <button ar-button variant="primary" [disabled]="!!busy()" (click)="publish(f)">
             {{ f.state === 'deprecated' ? 'Re-publish' : 'Publish to Meta' }}
@@ -89,3 +90,30 @@
     <p class="fl__empty">No flows yet.</p>
   }
 </div>
+
+@if (funnelOpen()) {
+  <ar-dialog [title]="funnelName() + ' — funnel'" (dismiss)="funnelOpen.set(false)">
+    @if (funnel(); as fn) {
+      <p class="funnel__top">
+        {{ fn.started }} started · {{ fn.completed }} completed · {{ pct(fn.completionRate) }}
+      </p>
+      @for (s of fn.screens ?? []; track s.screenId) {
+        <div class="funnel__row">
+          <div class="funnel__label">
+            <span>{{ s.title }}</span>
+            <span class="funnel__drop">{{ pct(s.dropOffRate) }} drop-off</span>
+          </div>
+          <div class="funnel__track">
+            <span class="funnel__bar" [style.width]="barWidth(s.enteredCount, fn.started)"></span>
+          </div>
+          <span class="funnel__nums">{{ s.enteredCount }} in · {{ s.completedCount }} out</span>
+        </div>
+      }
+    } @else {
+      <p class="fl__empty">Loading…</p>
+    }
+    <div dialogActions>
+      <button ar-button variant="primary" (click)="funnelOpen.set(false)">Done</button>
+    </div>
+  </ar-dialog>
+}
