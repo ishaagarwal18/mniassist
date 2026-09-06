@@ -36,6 +36,7 @@ export interface CampaignDto extends FullAuditedEntityDto<string> {
   variableMappingJson?: string;
   matchRecipientLanguage?: boolean;
   sendViaMarketingLite?: boolean;
+  optimiseSendTime?: boolean;
   abMetric?: AbTestMetric;
   abTestPercent?: number;
   winnerVariantId?: string | null;
@@ -167,6 +168,7 @@ export interface CreateUpdateCampaignDto {
   variableMappingJson?: string;
   matchRecipientLanguage?: boolean;
   sendViaMarketingLite?: boolean;
+  optimiseSendTime?: boolean;
 }
 
 export interface GetCampaignListInput extends PagedAndSortedResultRequestDto {
