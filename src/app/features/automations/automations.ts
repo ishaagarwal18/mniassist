@@ -42,6 +42,7 @@ export class ArAutomations {
     { value: AutomationTriggerKind.ScheduledDate, label: 'Scheduled date' },
     { value: AutomationTriggerKind.FlowCompleted, label: 'Flow completed' },
     { value: AutomationTriggerKind.CampaignReply, label: 'Campaign reply' },
+    { value: AutomationTriggerKind.SegmentEntered, label: 'Contact enters a segment (drip)' },
   ];
   protected readonly dialogOpen = signal(false);
   protected readonly saving = signal(false);

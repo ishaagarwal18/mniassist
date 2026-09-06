@@ -9,6 +9,7 @@ export enum AutomationTriggerKind {
   ScheduledDate = 5,
   FlowCompleted = 6,
   CampaignReply = 7,
+  SegmentEntered = 8,
 }
 
 export const automationTriggerKindOptions = mapEnumToOptions(AutomationTriggerKind);

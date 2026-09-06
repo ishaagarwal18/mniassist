@@ -12,6 +12,7 @@ export enum AutomationNodeKind {
   Webhook = 8,
   End = 9,
   StartFlow = 10,
+  WaitForReply = 11,
 }
 
 export const automationNodeKindOptions = mapEnumToOptions(AutomationNodeKind);

@@ -117,6 +117,21 @@
                 />
               </label>
             }
+            @case (NK.WaitForReply) {
+              <label class="ar-field ab__narrow">
+                <span class="ar-field__label">Wait for a reply (hours)</span>
+                <input
+                  class="ar-field__input"
+                  type="number"
+                  min="1"
+                  [value]="cfg(step, 'hours')"
+                  (input)="setCfg(i, 'hours', $any($event.target).value)"
+                />
+              </label>
+              <p class="node__blurb">
+                If the contact replies, the journey continues. If not, it ends here.
+              </p>
+            }
             @case (NK.Condition) {
               <div class="ar-field-row">
                 <label class="ar-field">

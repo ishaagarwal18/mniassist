@@ -81,6 +81,12 @@ const KIND_META: Record<
     blurb: 'Run an in-chat form',
     addable: true,
   },
+  [AutomationNodeKind.WaitForReply]: {
+    label: 'Wait for a reply',
+    icon: 'clock',
+    blurb: 'Branch on whether they respond',
+    addable: true,
+  },
   [AutomationNodeKind.End]: {
     label: 'End',
     icon: 'check',
@@ -182,7 +188,7 @@ export class ArAutomationBuilder {
         exited: node.exitedCount,
       });
       cursor =
-        node.kind === AutomationNodeKind.Condition
+        node.kind === AutomationNodeKind.Condition || node.kind === AutomationNodeKind.WaitForReply
           ? (node.trueNodeId ?? null)
           : (node.nextNodeId ?? null);
     }
@@ -227,6 +233,8 @@ export class ArAutomationBuilder {
         return { minutes: 30 };
       case AutomationNodeKind.Condition:
         return { field: 'lastInboundDays', op: 'lte', value: '1' };
+      case AutomationNodeKind.WaitForReply:
+        return { hours: 48 };
       case AutomationNodeKind.AssignAgent:
         return { strategy: 'roundRobin' };
       case AutomationNodeKind.Webhook:
@@ -314,7 +322,10 @@ export class ArAutomationBuilder {
         positionX: 0,
         positionY: (i + 1) * 120,
       };
-      if (step.kind === AutomationNodeKind.Condition) {
+      if (
+        step.kind === AutomationNodeKind.Condition ||
+        step.kind === AutomationNodeKind.WaitForReply
+      ) {
         base.trueNodeId = next;
         base.falseNodeId = endId;
       } else {

@@ -66,6 +66,7 @@ const TRIGGER: Record<AutomationTriggerKind, string> = {
   [AutomationTriggerKind.ScheduledDate]: 'Scheduled date',
   [AutomationTriggerKind.FlowCompleted]: 'Flow completed',
   [AutomationTriggerKind.CampaignReply]: 'Campaign reply',
+  [AutomationTriggerKind.SegmentEntered]: 'Segment entered',
 };
 const WSTATE: Record<AutomationState, WState> = {
   [AutomationState.Draft]: 'draft',
