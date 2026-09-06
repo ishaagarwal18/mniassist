@@ -1,5 +1,5 @@
 <ar-topbar title="Numbers" [subtitle]="subtitle()">
-  <button ar-button variant="ghost" icon="refresh">Refresh from Meta</button>
+  <button ar-button variant="ghost" icon="refresh" (click)="refresh()">Refresh from Meta</button>
   <button ar-button variant="primary" icon="plus">Connect a number</button>
 </ar-topbar>
 
@@ -114,6 +114,8 @@
                   maxlength="6"
                   placeholder="Current PIN"
                   autocomplete="off"
+                  [value]="draftCurrentPin()"
+                  (input)="draftCurrentPin.set($any($event.target).value)"
                 />
               }
               <input
@@ -123,6 +125,8 @@
                 maxlength="6"
                 placeholder="New six-digit PIN"
                 autocomplete="new-password"
+                [value]="draftPin()"
+                (input)="draftPin.set($any($event.target).value)"
               />
               <div class="edit__row">
                 <button ar-button variant="primary" (click)="setPin(n.channelId)">

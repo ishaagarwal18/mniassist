@@ -1,9 +1,251 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { forkJoin, map } from 'rxjs';
 
-import { GrowthService } from '../../core/services/growth.service';
-import { TenantOverview } from '../../core/models/growth.model';
+import { environment } from '../../../environments/environment';
+import { PlatformAdminService } from '../../proxy/administration';
+import { RateCardDto } from '../../proxy/billing';
+import { SubscriptionPlan } from '../../proxy/billing/subscription-plan.enum';
+import { MessagingTier } from '../../proxy/channels/messaging-tier.enum';
+import { QualityRating } from '../../proxy/channels/quality-rating.enum';
+import { PricingCategory } from '../../proxy/messaging/pricing-category.enum';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArStatTile } from '../../ui';
+
+type Quality = 'green' | 'yellow' | 'red' | 'unknown';
+
+interface PlatformMetrics {
+  totalTenants: number;
+  activeTenants: number;
+  trialTenants: number;
+  tenantsAtRisk: number;
+  mrrInPaise: number;
+  messageMarginMonthInPaise: number;
+  messagesMonth: number;
+  averageDeliveryRate: number;
+  openComplianceRequests: number;
+  tenantsToBreakEven: number;
+}
+
+interface TenantOverview {
+  id: string;
+  name: string;
+  plan: string;
+  isTrial: boolean;
+  channelCount: number;
+  worstQuality: Quality;
+  tier: string;
+  messages30d: number;
+  spend30dInPaise: number;
+  walletBalanceInPaise: number;
+  activeUsers: number;
+  lastActivityAt?: string;
+}
+
+interface RateHistoryPoint {
+  effectiveFrom: string;
+  rateInPaise: number;
+  changeInPaise: number;
+  changePercent: number;
+  isCurrent: boolean;
+}
+
+interface RateHistory {
+  category: string;
+  currentRateInPaise: number;
+  nextChangeFrom?: string;
+  nextRateInPaise?: number;
+  points: RateHistoryPoint[];
+}
+
+const QUALITY: Record<QualityRating, Quality> = {
+  [QualityRating.Unknown]: 'unknown',
+  [QualityRating.Green]: 'green',
+  [QualityRating.Yellow]: 'yellow',
+  [QualityRating.Red]: 'red',
+};
+
+const TIER: Record<MessagingTier, string> = {
+  [MessagingTier.Starting]: '250 / 24h',
+  [MessagingTier.Tier1]: '1K / 24h',
+  [MessagingTier.Tier2]: '10K / 24h',
+  [MessagingTier.Tier3]: '100K / 24h',
+  [MessagingTier.Tier4]: 'Unlimited',
+};
+
+const PLAN: Record<SubscriptionPlan, string> = {
+  [SubscriptionPlan.Starter]: 'Starter',
+  [SubscriptionPlan.Growth]: 'Growth',
+  [SubscriptionPlan.Pro]: 'Pro',
+  [SubscriptionPlan.Enterprise]: 'Enterprise',
+};
+
+const CATEGORY: Record<PricingCategory, string> = {
+  [PricingCategory.Unknown]: 'Unknown',
+  [PricingCategory.Marketing]: 'Marketing',
+  [PricingCategory.Utility]: 'Utility',
+  [PricingCategory.Authentication]: 'Authentication',
+  [PricingCategory.Service]: 'Service',
+};
+
+const SEED_METRICS: PlatformMetrics = {
+  totalTenants: 34,
+  activeTenants: 27,
+  trialTenants: 9,
+  tenantsAtRisk: 4,
+  mrrInPaise: 4_86_000_00,
+  messageMarginMonthInPaise: 1_92_450_00,
+  messagesMonth: 486_210,
+  averageDeliveryRate: 0.9642,
+  openComplianceRequests: 3,
+  tenantsToBreakEven: 6,
+};
+
+const SEED_TENANTS: TenantOverview[] = [
+  {
+    id: 't1',
+    name: 'Meridian Automation',
+    plan: 'Growth',
+    isTrial: false,
+    channelCount: 3,
+    worstQuality: 'yellow',
+    tier: '10K / 24h',
+    messages30d: 84_120,
+    spend30dInPaise: 72_18_400,
+    walletBalanceInPaise: 3_41_000,
+    activeUsers: 11,
+    lastActivityAt: new Date().toISOString(),
+  },
+  {
+    id: 't2',
+    name: 'Sanghvi Controls',
+    plan: 'Starter',
+    isTrial: false,
+    channelCount: 1,
+    worstQuality: 'green',
+    tier: '1K / 24h',
+    messages30d: 12_480,
+    spend30dInPaise: 10_92_300,
+    walletBalanceInPaise: 84_000,
+    activeUsers: 4,
+    lastActivityAt: new Date().toISOString(),
+  },
+  {
+    id: 't4',
+    name: 'Kohinoor Instruments',
+    plan: 'Starter',
+    isTrial: true,
+    channelCount: 1,
+    worstQuality: 'unknown',
+    tier: '250 / 24h',
+    messages30d: 0,
+    spend30dInPaise: 0,
+    walletBalanceInPaise: 0,
+    activeUsers: 2,
+    lastActivityAt: new Date(Date.now() - 9 * 86_400_000).toISOString(),
+  },
+  {
+    id: 't5',
+    name: 'Deccan Valves',
+    plan: 'Growth',
+    isTrial: false,
+    channelCount: 2,
+    worstQuality: 'red',
+    tier: '10K / 24h',
+    messages30d: 41_200,
+    spend30dInPaise: 34_86_000,
+    walletBalanceInPaise: 12_400,
+    activeUsers: 7,
+    lastActivityAt: new Date(Date.now() - 86_400_000).toISOString(),
+  },
+];
+
+const SEED_RATES: RateHistory[] = [
+  {
+    category: 'Marketing',
+    currentRateInPaise: 86.31,
+    points: [
+      {
+        effectiveFrom: '2024-06-01T00:00:00Z',
+        rateInPaise: 78.46,
+        changeInPaise: 0,
+        changePercent: 0,
+        isCurrent: false,
+      },
+      {
+        effectiveFrom: '2026-01-01T00:00:00Z',
+        rateInPaise: 86.31,
+        changeInPaise: 7.85,
+        changePercent: 10.01,
+        isCurrent: true,
+      },
+    ],
+  },
+  {
+    category: 'Utility',
+    currentRateInPaise: 11.5,
+    nextChangeFrom: new Date(Date.now() + 43 * 86_400_000).toISOString(),
+    nextRateInPaise: 12.2,
+    points: [
+      {
+        effectiveFrom: '2024-06-01T00:00:00Z',
+        rateInPaise: 11.0,
+        changeInPaise: 0,
+        changePercent: 0,
+        isCurrent: false,
+      },
+      {
+        effectiveFrom: '2026-01-01T00:00:00Z',
+        rateInPaise: 11.5,
+        changeInPaise: 0.5,
+        changePercent: 4.55,
+        isCurrent: true,
+      },
+    ],
+  },
+];
+
+function toRateHistory(cards: RateCardDto[]): RateHistory[] {
+  const now = Date.now();
+  const byCategory = new Map<string, RateCardDto[]>();
+  for (const card of cards) {
+    const key = card.category != null ? CATEGORY[card.category] : 'Unknown';
+    const bucket = byCategory.get(key) ?? [];
+    bucket.push(card);
+    byCategory.set(key, bucket);
+  }
+
+  return [...byCategory.entries()].map(([category, list]) => {
+    const sorted = [...list].sort(
+      (a, b) =>
+        new Date(a.effectiveFromUtc ?? 0).getTime() - new Date(b.effectiveFromUtc ?? 0).getTime(),
+    );
+    const past = sorted.filter((c) => new Date(c.effectiveFromUtc ?? 0).getTime() <= now);
+    const scheduled = sorted.find((c) => new Date(c.effectiveFromUtc ?? 0).getTime() > now);
+    const currentRate = past.at(-1)?.sellRateInPaise ?? 0;
+
+    const points: RateHistoryPoint[] = past.map((c, i) => {
+      const rate = c.sellRateInPaise ?? 0;
+      const prev = i > 0 ? (past[i - 1].sellRateInPaise ?? rate) : rate;
+      const delta = rate - prev;
+      return {
+        effectiveFrom: c.effectiveFromUtc ?? '',
+        rateInPaise: rate,
+        changeInPaise: delta,
+        changePercent: prev ? Math.round((delta / prev) * 10_000) / 100 : 0,
+        isCurrent: c.effectiveToUtc == null,
+      };
+    });
+
+    return {
+      category,
+      currentRateInPaise: currentRate,
+      nextChangeFrom: scheduled?.effectiveFromUtc ?? undefined,
+      nextRateInPaise: scheduled?.sellRateInPaise ?? undefined,
+      points,
+    };
+  });
+}
 
 /**
  * Our own back office: how the platform is doing, and which tenants need a human.
@@ -14,9 +256,6 @@ import { ArButton, ArChip, ArStatTile } from '../../ui';
  * has been visible in this table for a month.
  *
  * Every figure here comes from a nightly rollup, not a live scan across tenants.
- * That is why the delivery rate and the message count are as of the last run rather
- * than to the second, and the header says so instead of implying a freshness the
- * numbers do not have.
  */
 @Component({
   selector: 'ar-platform-console',
@@ -26,19 +265,66 @@ import { ArButton, ArChip, ArStatTile } from '../../ui';
   styleUrl: './console.scss',
 })
 export class ArPlatformConsole {
-  private readonly growth = inject(GrowthService);
-
-  protected readonly metrics = this.growth.platformMetrics;
-  protected readonly rates = this.growth.rateHistory;
+  private readonly api = inject(PlatformAdminService);
 
   protected readonly atRiskOnly = signal(false);
 
-  protected readonly tenants = computed(() => {
-    const all = this.growth.tenants();
-    const rows = this.atRiskOnly() ? all.filter(t => this.isAtRisk(t)) : [...all];
+  private readonly resource = rxResource({
+    params: () => (environment.useMockData ? undefined : { atRisk: this.atRiskOnly() }),
+    stream: ({ params }) =>
+      forkJoin({
+        metrics: this.api.getMetrics(),
+        tenants: this.api.getTenants({
+          skipCount: 0,
+          maxResultCount: 100,
+          atRiskOnly: params.atRisk || undefined,
+        }),
+        rates: this.api.getRateCards(true),
+      }).pipe(
+        map((r) => ({
+          metrics: {
+            totalTenants: r.metrics.totalTenants ?? 0,
+            activeTenants: r.metrics.activeTenants ?? 0,
+            trialTenants: r.metrics.trialTenants ?? 0,
+            tenantsAtRisk: r.metrics.tenantsAtRisk ?? 0,
+            mrrInPaise: r.metrics.monthlyRecurringRevenueInPaise ?? 0,
+            messageMarginMonthInPaise: r.metrics.messageMarginMonthInPaise ?? 0,
+            messagesMonth: r.metrics.messagesMonth ?? 0,
+            averageDeliveryRate: r.metrics.averageDeliveryRate ?? 0,
+            openComplianceRequests: r.metrics.openComplianceRequests ?? 0,
+            tenantsToBreakEven: r.metrics.tenantsToBreakEven ?? 0,
+          } as PlatformMetrics,
+          tenants: (r.tenants.items ?? []).map((t): TenantOverview => ({
+            id: t.id!,
+            name: t.name ?? '(unnamed tenant)',
+            plan: t.plan != null ? PLAN[t.plan] : '—',
+            isTrial: t.isTrial ?? false,
+            channelCount: t.channelCount ?? 0,
+            worstQuality: t.worstQuality != null ? QUALITY[t.worstQuality] : 'unknown',
+            tier: t.bestTier != null ? TIER[t.bestTier] : '—',
+            messages30d: t.messages30d ?? 0,
+            spend30dInPaise: t.spend30dInPaise ?? 0,
+            walletBalanceInPaise: t.walletBalanceInPaise ?? 0,
+            activeUsers: t.activeUsers ?? 0,
+            lastActivityAt: t.lastActivityUtc ?? undefined,
+          })),
+          rates: toRateHistory(r.rates.items ?? []),
+        })),
+      ),
+    defaultValue: { metrics: SEED_METRICS, tenants: SEED_TENANTS, rates: SEED_RATES },
+  });
 
-    // At-risk first, then by spend. The console is a work queue before it is a
-    // report, so what needs attention sorts above what is merely large.
+  protected readonly metrics = computed(() =>
+    environment.useMockData ? SEED_METRICS : this.resource.value().metrics,
+  );
+  protected readonly rates = computed(() =>
+    environment.useMockData ? SEED_RATES : this.resource.value().rates,
+  );
+
+  protected readonly tenants = computed(() => {
+    const all = environment.useMockData ? SEED_TENANTS : this.resource.value().tenants;
+    const rows = this.atRiskOnly() ? all.filter((t) => this.isAtRisk(t)) : [...all];
+
     return rows.sort((a, b) => {
       const risk = Number(this.isAtRisk(b)) - Number(this.isAtRisk(a));
       return risk !== 0 ? risk : b.spend30dInPaise - a.spend30dInPaise;
@@ -52,8 +338,11 @@ export class ArPlatformConsole {
 
   /** A degraded number, or a connected tenant that has stopped sending entirely. */
   protected isAtRisk(t: TenantOverview): boolean {
-    return t.worstQuality === 'yellow' || t.worstQuality === 'red' ||
-      (t.channelCount > 0 && t.messages30d === 0);
+    return (
+      t.worstQuality === 'yellow' ||
+      t.worstQuality === 'red' ||
+      (t.channelCount > 0 && t.messages30d === 0)
+    );
   }
 
   protected riskReason(t: TenantOverview): string | null {
@@ -61,22 +350,20 @@ export class ArPlatformConsole {
     if (t.worstQuality === 'yellow') return 'Number quality is Yellow';
 
     if (t.channelCount > 0 && t.messages30d === 0) {
-      // A trial that connected a number and never sent is a stalled onboarding, not a
-      // lapsing customer — and saying "nothing in 30 days" about an account nine days
-      // old is simply false. Same signal, different problem, different sentence.
-      return t.isTrial ? 'Trial connected a number but never sent' : 'Connected but sent nothing in 30 days';
+      return t.isTrial
+        ? 'Trial connected a number but never sent'
+        : 'Connected but sent nothing in 30 days';
     }
 
     return null;
   }
 
-  protected qualityTone(q: TenantOverview['worstQuality']): 'good' | 'warn' | 'bad' | 'neutral' {
+  protected qualityTone(q: Quality): 'good' | 'warn' | 'bad' | 'neutral' {
     return q === 'green' ? 'good' : q === 'yellow' ? 'warn' : q === 'red' ? 'bad' : 'neutral';
   }
 
-  // ---- Formatting ----------------------------------------------------------
+  // ---- Formatting --------------------------------------------------------
 
-  /** Lakh-scale money reads better abbreviated; a bill does not. This is a dashboard. */
   protected lakhs(paise: number): string {
     const rupees = paise / 100;
     if (rupees >= 1_00_000) return `₹${(rupees / 1_00_000).toFixed(2)} L`;

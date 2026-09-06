@@ -1,13 +1,13 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
-import { GrowthService } from '../../core/services/growth.service';
+import { SegmentStore } from '../../core/services/segment.store';
 import {
   SegmentClause,
   SegmentField,
   SegmentGroup,
   isGroup,
-} from '../../core/models/growth.model';
+} from '../../core/models/segment.model';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip } from '../../ui';
 
@@ -33,13 +33,13 @@ import { ArBanner, ArButton, ArChip } from '../../ui';
   styleUrl: './segments.scss',
 })
 export class ArSegments {
-  private readonly growth = inject(GrowthService);
+  private readonly store = inject(SegmentStore);
 
-  protected readonly rule = this.growth.rule;
-  protected readonly preview = this.growth.preview;
-  protected readonly saved = this.growth.savedSegments;
-  protected readonly fields = this.growth.fields;
-  protected readonly walletPaise = this.growth.walletBalanceInPaise;
+  protected readonly rule = this.store.rule;
+  protected readonly preview = this.store.preview;
+  protected readonly saved = this.store.savedSegments;
+  protected readonly fields = this.store.fields;
+  protected readonly walletPaise = this.store.walletBalanceInPaise;
 
   protected readonly openSegmentId = signal<string | null>('s1');
 
@@ -94,47 +94,63 @@ export class ArSegments {
   }
 
   protected addClause(path: readonly number[]): void {
-    this.growth.addClause(path);
+    this.store.addClause(path);
   }
 
   protected addGroup(path: readonly number[], mode: 'all' | 'any' | 'not'): void {
-    this.growth.addGroup(path, mode);
+    this.store.addGroup(path, mode);
   }
 
   protected remove(path: readonly number[], index: number): void {
-    this.growth.removeAt(path, index);
+    this.store.removeAt(path, index);
   }
 
   protected setMode(path: readonly number[], value: string): void {
-    this.growth.setGroupMode(path, value as 'all' | 'any' | 'not');
+    this.store.setGroupMode(path, value as 'all' | 'any' | 'not');
   }
 
   protected setField(path: readonly number[], index: number, value: string): void {
     // Changing the field clears the value: an enum value left over from the previous
     // field is a condition that silently matches nobody.
-    this.growth.updateClause(path, index, { field: value, value: '' });
+    this.store.updateClause(path, index, { field: value, value: '' });
   }
 
   protected setOp(path: readonly number[], index: number, value: string): void {
-    this.growth.updateClause(path, index, { op: value as SegmentClause['op'] });
+    this.store.updateClause(path, index, { op: value as SegmentClause['op'] });
   }
 
   protected setValue(path: readonly number[], index: number, value: string): void {
-    this.growth.updateClause(path, index, { value });
+    this.store.updateClause(path, index, { value });
   }
 
   protected loadSaved(id: string): void {
-    const segment = this.saved().find(s => s.id === id);
+    const segment = this.saved().find((s) => s.id === id);
     if (segment) {
-      this.growth.setRule(segment.rule);
+      this.store.setRule(segment.rule);
       this.openSegmentId.set(id);
+    }
+  }
+
+  protected async saveSegment(): Promise<void> {
+    const name = window.prompt('Name this segment:')?.trim();
+    if (!name) return;
+    const description = window.prompt('Description (optional):')?.trim() || undefined;
+    await this.store.save(name, description);
+  }
+
+  protected async deleteSaved(id: string, event: Event): Promise<void> {
+    event.stopPropagation();
+    const segment = this.saved().find((s) => s.id === id);
+    if (segment && window.confirm(`Delete “${segment.name}”?`)) {
+      await this.store.remove(id);
+      if (this.openSegmentId() === id) this.openSegmentId.set(null);
     }
   }
 
   // ---- Field metadata ------------------------------------------------------
 
   protected fieldFor(name: string): SegmentField | undefined {
-    return this.fields.find(f => f.value === name);
+    return this.fields.find((f) => f.value === name);
   }
 
   protected optionsFor(name: string) {
