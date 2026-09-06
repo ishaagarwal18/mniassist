@@ -231,6 +231,12 @@ export interface MessageDto extends EntityDto<string> {
   body?: string | null;
   mediaBlobRef?: string | null;
   mediaMimeType?: string | null;
+  mediaFileName?: string | null;
+  locationLatitude?: number | null;
+  locationLongitude?: number | null;
+  locationName?: string | null;
+  locationAddress?: string | null;
+  interactiveJson?: string | null;
   status?: MessageStatus;
   pricingCategory?: PricingCategory;
   priceInPaise?: number;
@@ -279,6 +285,24 @@ export interface SendMessageInput {
   templateId?: string | null;
   variables?: Record<string, string>;
   libraryDocumentId?: string | null;
+}
+
+export interface SendLocationInput {
+  latitude: number;
+  longitude: number;
+  name?: string | null;
+  address?: string | null;
+}
+
+export interface ReplyButtonInput {
+  id?: string | null;
+  title: string;
+}
+
+export interface SendInteractiveInput {
+  bodyText: string;
+  footerText?: string | null;
+  buttons: ReplyButtonInput[];
 }
 
 export interface SetConversationLabelsDto {

@@ -12,7 +12,12 @@ import {
   DecisionRole,
   SegmentDto,
 } from '../../proxy/contacts';
-import { ConversationDto, MessageDto, MessageDirection, MessageStatus } from '../../proxy/messaging';
+import {
+  ConversationDto,
+  MessageDto,
+  MessageDirection,
+  MessageStatus,
+} from '../../proxy/messaging';
 import { environment } from '../../../environments/environment';
 import { Channel, MessagingTier, QualityRating } from '../models/channel.model';
 import { Contact, ConsentSource, Segment } from '../models/contact.model';
@@ -63,7 +68,10 @@ const CONSENT_SOURCE: Record<ApiConsentSource, ConsentSource> = {
   [ApiConsentSource.Api]: 'api',
 };
 
-const DECISION_ROLE: Record<DecisionRole, NonNullable<Contact['attributes']['decisionRole']> | undefined> = {
+const DECISION_ROLE: Record<
+  DecisionRole,
+  NonNullable<Contact['attributes']['decisionRole']> | undefined
+> = {
   [DecisionRole.Unknown]: undefined,
   [DecisionRole.Maintenance]: 'Maintenance',
   [DecisionRole.Purchase]: 'Purchase',
@@ -100,7 +108,10 @@ export function toSegment(dto: SegmentDto): Segment {
 
 export function toContact(dto: ContactDto): Contact {
   const attributes = dto.attributes ?? {};
-  const systems = attributes['systems']?.split(',').map(s => s.trim()).filter(Boolean);
+  const systems = attributes['systems']
+    ?.split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   return {
     id: dto.id!,
@@ -125,7 +136,10 @@ export function toContact(dto: ContactDto): Contact {
   };
 }
 
-export function toConversation(dto: ConversationDto, messages: readonly Message[] = []): Conversation {
+export function toConversation(
+  dto: ConversationDto,
+  messages: readonly Message[] = [],
+): Conversation {
   return {
     id: dto.id!,
     contactName: dto.contactDisplayName ?? formatWaId(dto.contactWaId),
@@ -137,7 +151,8 @@ export function toConversation(dto: ConversationDto, messages: readonly Message[
     // A closed window is null rather than a past date, because the composer
     // branches on "is there a window" and a stale timestamp reads as an open one.
     window: {
-      expiresAt: dto.isWindowOpen && dto.windowExpiresAtUtc ? new Date(dto.windowExpiresAtUtc) : null,
+      expiresAt:
+        dto.isWindowOpen && dto.windowExpiresAtUtc ? new Date(dto.windowExpiresAtUtc) : null,
     },
     messages,
   };
@@ -151,7 +166,28 @@ export function toMessage(dto: MessageDto, conversationId?: string): Message {
     at: formatClock(dto.sentAtUtc ?? dto.creationTime),
     status: dto.status != null ? toMessageStatus(dto.status) : undefined,
     media: toMessageMedia(dto, conversationId),
+    location:
+      dto.locationLatitude != null && dto.locationLongitude != null
+        ? {
+            latitude: dto.locationLatitude,
+            longitude: dto.locationLongitude,
+            name: dto.locationName ?? undefined,
+            address: dto.locationAddress ?? undefined,
+          }
+        : undefined,
+    buttons: toMessageButtons(dto.interactiveJson),
   };
+}
+
+function toMessageButtons(json: string | null | undefined) {
+  if (!json) return undefined;
+  try {
+    const parsed = JSON.parse(json) as { buttons?: { id?: string; title?: string }[] };
+    const buttons = (parsed.buttons ?? []).map((b) => ({ id: b.id ?? '', title: b.title ?? '' }));
+    return buttons.length ? buttons : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function toMessageMedia(dto: MessageDto, conversationId?: string): MessageMedia | undefined {
@@ -165,6 +201,7 @@ function toMessageMedia(dto: MessageDto, conversationId?: string): MessageMedia 
   return {
     url: `${base}/api/auto-reach/inbox/${conversationId}/messages/${dto.id}/media`,
     mimeType: mime,
+    fileName: dto.mediaFileName ?? undefined,
     kind: mime.startsWith('image/')
       ? 'image'
       : mime.startsWith('video/')
@@ -204,7 +241,11 @@ function formatWaId(waId: string | null | undefined): string {
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 function formatClock(iso: string | null | undefined): string {

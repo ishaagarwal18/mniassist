@@ -221,6 +221,55 @@ export class InboxService {
     });
   }
 
+  /** Send an ad-hoc file the agent picked (not from the library). M06-6. */
+  async sendMedia(file: File, caption?: string): Promise<void> {
+    const id = this.selectedId();
+    if (!id || environment.useMockData) return;
+    const body = new FormData();
+    body.append('file', file, file.name);
+    if (caption?.trim()) body.append('caption', caption.trim());
+    await firstValueFrom(this.api.sendMedia(id, body));
+    this.afterSend();
+  }
+
+  /** Send a location pin. M06-6. */
+  async sendLocation(
+    latitude: number,
+    longitude: number,
+    name?: string,
+    address?: string,
+  ): Promise<void> {
+    const id = this.selectedId();
+    if (!id || environment.useMockData) return;
+    await firstValueFrom(
+      this.api.sendLocation(id, {
+        latitude,
+        longitude,
+        name: name?.trim() || undefined,
+        address: address?.trim() || undefined,
+      }),
+    );
+    this.afterSend();
+  }
+
+  /** Send a message with up to three reply buttons. M06-6. */
+  async sendButtons(
+    bodyText: string,
+    footerText: string | undefined,
+    buttons: { title: string }[],
+  ): Promise<void> {
+    const id = this.selectedId();
+    if (!id || environment.useMockData) return;
+    await firstValueFrom(
+      this.api.sendInteractive(id, {
+        bodyText: bodyText.trim(),
+        footerText: footerText?.trim() || undefined,
+        buttons: buttons.filter((b) => b.title.trim()).map((b) => ({ title: b.title.trim() })),
+      }),
+    );
+    this.afterSend();
+  }
+
   private async dispatch(
     conversationId: string,
     input: { text?: string; libraryDocumentId?: string },
@@ -229,6 +278,10 @@ export class InboxService {
       return;
     }
     await firstValueFrom(this.api.send(conversationId, input));
+    this.afterSend();
+  }
+
+  private afterSend(): void {
     this.messagesResource.reload();
     this.listResource.reload();
   }

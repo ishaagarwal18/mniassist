@@ -86,13 +86,36 @@
                 @default {
                   <a class="bubble__file" [href]="media.url" target="_blank" rel="noopener">
                     <ar-icon name="document" [size]="16" />
-                    <span>Attachment</span>
+                    <span>{{ media.fileName || 'Attachment' }}</span>
                   </a>
                 }
               }
             }
+            @if (m.location; as loc) {
+              <a
+                class="bubble__file"
+                [href]="
+                  'https://www.google.com/maps/search/?api=1&query=' +
+                  loc.latitude +
+                  ',' +
+                  loc.longitude
+                "
+                target="_blank"
+                rel="noopener"
+              >
+                <ar-icon name="globe" [size]="16" />
+                <span>{{ loc.name || loc.address || 'Location' }}</span>
+              </a>
+            }
             @if (m.body) {
               <p class="bubble__body">{{ m.body }}</p>
+            }
+            @if (m.buttons; as buttons) {
+              <div class="bubble__buttons">
+                @for (b of buttons; track b.id || b.title) {
+                  <span class="bubble__btn">{{ b.title }}</span>
+                }
+              </div>
             }
             <span class="bubble__meta ar-mono">
               {{ m.at }}
@@ -134,13 +157,43 @@
               <button
                 type="button"
                 class="composer__tool"
+                title="Attach a file"
+                (click)="fileInput.click()"
+              >
+                <ar-icon name="attach" [size]="17" />
+              </button>
+              <input
+                #fileInput
+                type="file"
+                hidden
+                accept="image/*,video/*,audio/*,application/pdf"
+                (change)="onFile($event)"
+              />
+              <button
+                type="button"
+                class="composer__tool"
                 title="Attach a document from the library"
                 (click)="pickerOpen.set(true)"
               >
                 <ar-icon name="document" [size]="17" />
               </button>
-              <ar-icon name="template" [size]="17" />
-              <ar-icon name="flow" [size]="17" />
+              <button
+                type="button"
+                class="composer__tool"
+                title="Share a location"
+                [disabled]="sending()"
+                (click)="shareLocation()"
+              >
+                <ar-icon name="globe" [size]="17" />
+              </button>
+              <button
+                type="button"
+                class="composer__tool"
+                title="Add reply buttons"
+                (click)="openButtons()"
+              >
+                <ar-icon name="flow" [size]="17" />
+              </button>
               <span class="composer__spacer"></span>
               <span class="composer__free">Free inside the open window</span>
               <button
@@ -169,6 +222,61 @@
 
       @if (pickerOpen()) {
         <ar-document-picker (pick)="onPick($event)" (close)="pickerOpen.set(false)" />
+      }
+
+      @if (buttonsOpen()) {
+        <ar-dialog title="Reply buttons" (dismiss)="buttonsOpen.set(false)">
+          <label class="ar-field">
+            <span class="ar-field__label">Message</span>
+            <textarea
+              class="ar-field__input"
+              rows="2"
+              aria-label="Button message body"
+              [value]="btnBody()"
+              (input)="btnBody.set($any($event.target).value)"
+            ></textarea>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label"
+              >Footer <span class="ar-field__opt">(optional)</span></span
+            >
+            <input
+              class="ar-field__input"
+              maxlength="60"
+              aria-label="Button message footer"
+              [value]="btnFooter()"
+              (input)="btnFooter.set($any($event.target).value)"
+            />
+          </label>
+          <div class="ar-field">
+            <span class="ar-field__label"
+              >Buttons <span class="ar-field__opt">(up to 3, max 20 chars)</span></span
+            >
+            @for (t of btnTitles(); track $index) {
+              <input
+                class="ar-field__input"
+                maxlength="20"
+                [placeholder]="'Button ' + ($index + 1)"
+                [value]="t"
+                (input)="setBtnTitle($index, $any($event.target).value)"
+              />
+            }
+          </div>
+          <div dialogActions>
+            <button ar-button type="button" variant="ghost" (click)="buttonsOpen.set(false)">
+              Cancel
+            </button>
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              [disabled]="sending()"
+              (click)="sendButtons()"
+            >
+              Send
+            </button>
+          </div>
+        </ar-dialog>
       }
     } @else {
       <div class="thread__none">

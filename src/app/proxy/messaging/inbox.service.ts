@@ -8,6 +8,8 @@ import type {
   InboxPollInput,
   MessageDto,
   SearchConversationsInput,
+  SendInteractiveInput,
+  SendLocationInput,
   SendMessageInput,
   SnoozeConversationInput,
 } from './models';
@@ -170,6 +172,47 @@ export class InboxService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/inbox/send/${conversationId}`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  sendMedia = (conversationId: string, formData: FormData, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, MessageDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/send-media/${conversationId}`,
+        body: formData,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  sendLocation = (
+    conversationId: string,
+    input: SendLocationInput,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, MessageDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/send-location/${conversationId}`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  sendInteractive = (
+    conversationId: string,
+    input: SendInteractiveInput,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, MessageDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/send-interactive/${conversationId}`,
         body: input,
       },
       { apiName: this.apiName, ...config },

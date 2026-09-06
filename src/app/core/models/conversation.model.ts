@@ -9,6 +9,19 @@ export interface MessageMedia {
   readonly mimeType: string;
   /** 'image' | 'video' | 'audio' | 'document' — drives which element renders it. */
   readonly kind: 'image' | 'video' | 'audio' | 'document';
+  readonly fileName?: string;
+}
+
+export interface MessageLocation {
+  readonly latitude: number;
+  readonly longitude: number;
+  readonly name?: string;
+  readonly address?: string;
+}
+
+export interface MessageButton {
+  readonly id: string;
+  readonly title: string;
 }
 
 export interface Message {
@@ -18,6 +31,9 @@ export interface Message {
   readonly at: string;
   readonly status?: 'sent' | 'delivered' | 'read';
   readonly media?: MessageMedia;
+  readonly location?: MessageLocation;
+  /** Present on a reply-button message. */
+  readonly buttons?: readonly MessageButton[];
 }
 
 export interface Conversation {
