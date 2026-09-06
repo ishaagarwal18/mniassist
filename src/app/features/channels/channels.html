@@ -7,8 +7,14 @@
   "
 >
   <a ar-button variant="ghost" routerLink="/channels/numbers">Manage numbers</a>
-  <button ar-button variant="primary" icon="plus">Connect a number</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="connectOpen.set(true)">
+    Connect a number
+  </button>
 </ar-topbar>
+
+@if (connectOpen()) {
+  <ar-connect-number-dialog (close)="connectOpen.set(false)" />
+}
 
 <div class="ch ar-scroll">
   @if (loading()) {

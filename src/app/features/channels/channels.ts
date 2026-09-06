@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ChannelService } from '../../core/services/channel.service';
@@ -7,6 +7,7 @@ import { count } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArMeter } from '../../ui';
 import { ChipTone } from '../../ui/chip';
+import { ArConnectNumberDialog } from './connect-number-dialog';
 
 /**
  * Channels overview (M02). One card per connected number with its quality, tier and
@@ -15,7 +16,7 @@ import { ChipTone } from '../../ui/chip';
  */
 @Component({
   selector: 'ar-channels',
-  imports: [ArTopbar, ArButton, ArChip, ArMeter, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, ArMeter, RouterLink, ArConnectNumberDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './channels.html',
   styleUrl: './channels.scss',
@@ -25,6 +26,7 @@ export class ArChannels {
 
   protected readonly channels = this.store.channels;
   protected readonly loading = this.store.loading;
+  protected readonly connectOpen = signal(false);
 
   protected readonly restrictedCount = computed(
     () => this.channels().filter((c) => c.restricted).length,

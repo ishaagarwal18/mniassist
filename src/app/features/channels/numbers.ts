@@ -9,6 +9,7 @@ import { MessagingTier } from '../../proxy/channels/messaging-tier.enum';
 import { QualityRating } from '../../proxy/channels/quality-rating.enum';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip } from '../../ui';
+import { ArConnectNumberDialog } from './connect-number-dialog';
 
 type Quality = 'green' | 'yellow' | 'red' | 'unknown';
 type NameReviewState = 'pending' | 'approved' | 'rejected';
@@ -99,13 +100,15 @@ const SEED: readonly ManagedNumber[] = [
  */
 @Component({
   selector: 'ar-numbers',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip],
+  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArConnectNumberDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './numbers.html',
   styleUrl: './numbers.scss',
 })
 export class ArNumbers {
   private readonly api = inject(ChannelApi);
+
+  protected readonly connectOpen = signal(false);
 
   private readonly reloadTick = signal(0);
 

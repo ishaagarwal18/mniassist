@@ -1,7 +1,15 @@
 <ar-topbar title="Numbers" [subtitle]="subtitle()">
-  <button ar-button variant="ghost" icon="refresh" (click)="refresh()">Refresh from Meta</button>
-  <button ar-button variant="primary" icon="plus">Connect a number</button>
+  <button ar-button type="button" variant="ghost" icon="refresh" (click)="refresh()">
+    Refresh from Meta
+  </button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="connectOpen.set(true)">
+    Connect a number
+  </button>
 </ar-topbar>
+
+@if (connectOpen()) {
+  <ar-connect-number-dialog (close)="connectOpen.set(false)" />
+}
 
 <div class="nm ar-scroll">
   <ar-banner tone="teal">
