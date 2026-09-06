@@ -207,4 +207,34 @@
       </div>
     }
   </section>
+
+  @if (mmLiteRows().length > 0) {
+    <section class="card">
+      <h2 class="card__h">MM Lite vs standard</h2>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Path</th>
+            <th class="num">Sent</th>
+            <th class="num">Delivered</th>
+            <th class="num">Read</th>
+            <th class="num">Replied</th>
+            <th class="num">Spend</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of mmLiteRows(); track r.path) {
+            <tr>
+              <td>{{ r.path }}</td>
+              <td class="num">{{ r.sent | number: '1.0-0' }}</td>
+              <td class="num">{{ pct(r.deliveryRate ?? 0) }}</td>
+              <td class="num">{{ pct(r.readRate ?? 0) }}</td>
+              <td class="num">{{ pct(r.replyRate ?? 0) }}</td>
+              <td class="num ar-mono">{{ inr(r.spendInPaise ?? 0) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
 </div>

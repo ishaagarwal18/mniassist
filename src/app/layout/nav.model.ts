@@ -102,6 +102,12 @@ export const NAV: readonly NavGroup[] = [
         route: '/platform',
         permission: 'AutoReach.Administration.ViewPlatformMetrics',
       },
+      {
+        label: 'Feature flags',
+        icon: 'settings',
+        route: '/platform/feature-flags',
+        permission: 'AutoReach.Administration.ManageTenants',
+      },
     ],
   },
   {

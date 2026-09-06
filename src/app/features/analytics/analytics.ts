@@ -38,6 +38,14 @@ export class ArAnalytics {
   protected readonly agents = this.store.agents;
   protected readonly totals = this.store.totals;
   protected readonly conversion = this.store.conversion;
+  protected readonly mmLite = this.store.mmLite;
+
+  protected readonly mmLiteRows = computed(() => {
+    const c = this.mmLite();
+    return [c.viaMarketingLite, c.standard].filter(
+      (r): r is NonNullable<typeof r> => !!r && !!r.sent,
+    );
+  });
 
   protected readonly lostReasons = computed(() =>
     Object.entries(this.conversion().lostReasonBreakdown ?? {})

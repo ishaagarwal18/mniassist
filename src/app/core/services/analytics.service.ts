@@ -7,6 +7,7 @@ import {
   AnalyticsExportFormat,
   AnalyticsService as AnalyticsApi,
   ConversionReportDto,
+  MarketingLiteComparisonDto,
 } from '../../proxy/analytics';
 import {
   PricingCategory as ApiPricingCategory,
@@ -98,6 +99,31 @@ const SEED_CONVERSION: ConversionReportDto = {
     LostToCompetitor: 5,
     NoBudget: 4,
     ProjectCancelledOrDeferred: 2,
+  },
+};
+
+const SEED_MM_LITE: MarketingLiteComparisonDto = {
+  viaMarketingLite: {
+    path: 'MM Lite',
+    sent: 4200,
+    delivered: 4100,
+    read: 2700,
+    replied: 540,
+    spendInPaise: 273_00_000,
+    deliveryRate: 0.976,
+    readRate: 0.643,
+    replyRate: 0.129,
+  },
+  standard: {
+    path: 'Standard',
+    sent: 3800,
+    delivered: 3660,
+    read: 2200,
+    replied: 410,
+    spendInPaise: 361_00_000,
+    deliveryRate: 0.963,
+    readRate: 0.579,
+    replyRate: 0.108,
   },
 };
 
@@ -289,6 +315,23 @@ export class AnalyticsStore {
   setConversionDimension(d: 'source' | 'owner'): void {
     this.conversionDimension.set(d);
   }
+
+  // ── MM Lite comparison (M05-11) ────────────────────────────────────────
+  private readonly mmLiteResource = rxResource({
+    params: () =>
+      environment.useMockData
+        ? undefined
+        : {
+            fromUtc: new Date(Date.now() - this.range() * 86_400_000).toISOString(),
+            channelId: this.channels.active()?.id,
+          },
+    stream: ({ params }) => this.api.getMarketingLiteComparison(params),
+    defaultValue: SEED_MM_LITE,
+  });
+
+  readonly mmLite = computed(() =>
+    environment.useMockData ? SEED_MM_LITE : this.mmLiteResource.value(),
+  );
 
   /** Downloads the category / template / agent tables in the chosen format. M12-6. */
   async export(format: AnalyticsExportFormat): Promise<void> {

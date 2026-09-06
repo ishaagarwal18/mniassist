@@ -7,6 +7,7 @@ import type {
   DashboardDto,
   GetAnalyticsInput,
   GetConversionReportInput,
+  MarketingLiteComparisonDto,
   TemplatePerformanceDto,
   TrendPointDto,
 } from './models';
@@ -44,6 +45,17 @@ export class AnalyticsService {
         method: 'GET',
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/analytics/ad-attribution',
+        params: { fromUtc: input.fromUtc, toUtc: input.toUtc, channelId: input.channelId },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getMarketingLiteComparison = (input: GetAnalyticsInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, MarketingLiteComparisonDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/analytics/marketing-lite-comparison',
         params: { fromUtc: input.fromUtc, toUtc: input.toUtc, channelId: input.channelId },
       },
       { apiName: this.apiName, ...config },

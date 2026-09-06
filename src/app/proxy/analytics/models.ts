@@ -68,6 +68,23 @@ export interface ConversionReportDto {
   lostReasonBreakdown?: Record<string, number>;
 }
 
+export interface MarketingLiteRowDto {
+  path?: string;
+  sent?: number;
+  delivered?: number;
+  read?: number;
+  replied?: number;
+  spendInPaise?: number;
+  deliveryRate?: number;
+  readRate?: number;
+  replyRate?: number;
+}
+
+export interface MarketingLiteComparisonDto {
+  viaMarketingLite?: MarketingLiteRowDto;
+  standard?: MarketingLiteRowDto;
+}
+
 export interface InboxSnapshotDto {
   openConversations?: number;
   unassigned?: number;

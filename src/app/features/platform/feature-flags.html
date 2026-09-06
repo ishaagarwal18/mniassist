@@ -1,0 +1,104 @@
+<ar-topbar title="Feature flags" subtitle="Staged rollout per tenant">
+  <button ar-button variant="primary" icon="plus" (click)="openNew()">New rule</button>
+</ar-topbar>
+
+<div class="ff ar-scroll">
+  <p class="ff__intro">
+    A key can be on for everyone, on for a percentage of tenants (a stable hash decides which), or
+    overridden on/off for one tenant. A tenant override always wins.
+  </p>
+
+  @if (loading()) {
+    <p class="ff__empty">Loading…</p>
+  } @else if (flags().length === 0) {
+    <p class="ff__empty">No rules yet. Add one to control who sees a feature.</p>
+  }
+
+  @for (f of flags(); track f.id) {
+    <article class="fr">
+      <div class="fr__main">
+        <h2 class="fr__key">{{ keyLabel(f.key) }}</h2>
+        <p class="fr__scope">
+          {{ f.tenantId ? 'Tenant: ' + (f.tenantName || f.tenantId) : 'Global default' }}
+          @if (f.note) {
+            · {{ f.note }}
+          }
+        </p>
+      </div>
+      <ar-chip [tone]="f.enabled ? 'good' : (f.rolloutPercent ?? 0) > 0 ? 'amber' : 'neutral'">
+        {{ state(f) }}
+      </ar-chip>
+      <div class="fr__act">
+        <button ar-button variant="ghost" (click)="openEdit(f)">Edit</button>
+        <button ar-button variant="ghost" (click)="remove(f)">Delete</button>
+      </div>
+    </article>
+  }
+</div>
+
+@if (editorOpen()) {
+  <ar-dialog title="Feature flag rule" (dismiss)="editorOpen.set(false)">
+    <label class="ar-field">
+      <span class="ar-field__label">Feature</span>
+      <select
+        class="ar-field__input"
+        [value]="form().key"
+        (change)="patch('key', $any($event.target).value)"
+      >
+        @for (k of keys; track k.value) {
+          <option [value]="k.value">{{ k.label }}</option>
+        }
+      </select>
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label"
+        >Tenant ID <span class="ar-field__opt">blank = global default</span></span
+      >
+      <input
+        class="ar-field__input ar-mono"
+        [value]="form().tenantId"
+        (input)="patch('tenantId', $any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field__opt-row">
+      <input
+        type="checkbox"
+        [checked]="form().enabled"
+        (change)="patch('enabled', $any($event.target).checked)"
+      />
+      <span>On for everyone this rule covers</span>
+    </label>
+    @if (!form().enabled && !form().tenantId) {
+      <label class="ar-field ff__narrow">
+        <span class="ar-field__label">Rollout %</span>
+        <input
+          class="ar-field__input"
+          type="number"
+          min="0"
+          max="100"
+          [value]="form().rolloutPercent"
+          (input)="patch('rolloutPercent', +$any($event.target).value)"
+        />
+      </label>
+    }
+    <label class="ar-field">
+      <span class="ar-field__label">Note <span class="ar-field__opt">optional</span></span>
+      <input
+        class="ar-field__input"
+        [value]="form().note"
+        (input)="patch('note', $any($event.target).value)"
+      />
+    </label>
+
+    @if (error(); as msg) {
+      <p class="ff__err">{{ msg }}</p>
+    }
+
+    <div dialogActions>
+      <button ar-button variant="ghost" (click)="editorOpen.set(false)">Cancel</button>
+      <button ar-button variant="primary" [disabled]="busy()" (click)="save()">
+        {{ busy() ? 'Saving…' : 'Save' }}
+      </button>
+    </div>
+  </ar-dialog>
+}

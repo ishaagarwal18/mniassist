@@ -173,6 +173,12 @@ export const routes: Routes = [
         title: 'Platform · AutoReach',
         loadComponent: () => import('./features/platform/console').then((m) => m.ArPlatformConsole),
       },
+      {
+        path: 'platform/feature-flags',
+        title: 'Feature flags · AutoReach',
+        loadComponent: () =>
+          import('./features/platform/feature-flags').then((m) => m.ArFeatureFlags),
+      },
       { path: '**', redirectTo: 'home' },
     ],
   },
