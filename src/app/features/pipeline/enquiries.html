@@ -2,8 +2,73 @@
   title="Enquiries"
   [subtitle]="openCount() + ' open · ' + value(pipelineValue()) + ' in play'"
 >
-  <button ar-button variant="primary" icon="plus">New enquiry</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+    New enquiry
+  </button>
 </ar-topbar>
+
+@if (dialogOpen()) {
+  <ar-dialog title="New enquiry" (dismiss)="dialogOpen.set(false)">
+    <div class="ar-field">
+      <span class="ar-field__label">Contact</span>
+      <ar-contact-picker (picked)="contact.set($event)" />
+    </div>
+    <label class="ar-field">
+      <span class="ar-field__label">Title</span>
+      <input
+        class="ar-field__input"
+        placeholder="e.g. VFD retrofit — packing line"
+        [value]="title()"
+        (input)="title.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Requirement <span class="ar-field__opt">(optional)</span></span>
+      <textarea
+        class="ar-field__input"
+        rows="3"
+        [value]="requirement()"
+        (input)="requirement.set($any($event.target).value)"
+      ></textarea>
+    </label>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Est. value (₹)</span>
+        <input
+          class="ar-field__input"
+          inputmode="numeric"
+          [value]="valueRupees()"
+          (input)="valueRupees.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Source</span>
+        <select class="ar-field__input" (change)="source.set(+$any($event.target).value)">
+          @for (s of sources; track s.value) {
+            <option [value]="s.value" [selected]="s.value === source()">{{ s.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    @if (error(); as e) {
+      <p class="board__dialog-err">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="saving()"
+        (click)="createEnquiry()"
+      >
+        {{ saving() ? 'Creating…' : 'Create enquiry' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 <div class="board ar-scroll">
   @if (loading()) {

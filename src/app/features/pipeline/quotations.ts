@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { PipelineStore, QState, Quotation } from '../../core/services/pipeline.service';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip } from '../../ui';
+import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 
 const STATE_TONE: Record<QState, ChipTone> = {
@@ -22,7 +22,7 @@ const STATE_TONE: Record<QState, ChipTone> = {
  */
 @Component({
   selector: 'ar-quotations',
-  imports: [ArTopbar, ArButton, ArChip],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quotations.html',
   styleUrl: './quotations.scss',
@@ -33,6 +33,38 @@ export class ArQuotations {
   protected readonly quotes = this.store.quotes;
   protected readonly loading = this.store.loading;
   protected readonly busy = signal<string | null>(null);
+
+  // ---- New quotation dialog -----------------------------------------
+  protected readonly dialogOpen = signal(false);
+  protected readonly saving = signal(false);
+  protected readonly error = signal<string | null>(null);
+  protected readonly enquiryOptions = signal<{ id: string; label: string }[]>([]);
+  protected readonly enquiryId = signal('');
+
+  protected openDialog(): void {
+    const opts = this.store.openEnquiryOptions();
+    this.enquiryOptions.set(opts);
+    this.enquiryId.set(opts[0]?.id ?? '');
+    this.error.set(null);
+    this.dialogOpen.set(true);
+  }
+
+  protected async createQuotation(): Promise<void> {
+    if (!this.enquiryId()) {
+      window.alert('Pick the enquiry this quotation is for.');
+      return;
+    }
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      await this.store.createQuotation(this.enquiryId());
+      this.dialogOpen.set(false);
+    } catch (e: unknown) {
+      this.error.set(e instanceof Error ? e.message : 'The quotation could not be created.');
+    } finally {
+      this.saving.set(false);
+    }
+  }
 
   protected readonly awaitingDecision = computed(
     () => this.quotes().filter((q) => q.state === 'issued' || q.state === 'revised').length,

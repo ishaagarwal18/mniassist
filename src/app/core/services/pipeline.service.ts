@@ -4,6 +4,8 @@ import { firstValueFrom, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
+  CreateUpdateEnquiryDto,
+  CreateUpdateInstalledAssetDto,
   EnquiryBoardColumnDto,
   EnquiryDetailDto,
   EnquiryEventDto,
@@ -17,6 +19,13 @@ import {
   QuotationState,
   ReminderKind,
 } from '../../proxy/pipeline';
+import { ContactService as ContactApi } from '../../proxy/contacts';
+
+/** id + a human label, for the contact / enquiry pickers in the create dialogs. */
+export interface PickerOption {
+  id: string;
+  label: string;
+}
 
 // ---- View models --------------------------------------------------------------
 
@@ -336,6 +345,7 @@ export class PipelineStore {
   private readonly enquiryApi = inject(EnquiryService);
   private readonly quotationApi = inject(QuotationService);
   private readonly assetApi = inject(InstalledAssetService);
+  private readonly contactApi = inject(ContactApi);
 
   private readonly tick = signal(0);
   readonly includeRetired = signal(false);
@@ -489,6 +499,64 @@ export class PipelineStore {
 
   async retireAsset(id: string): Promise<void> {
     await firstValueFrom(this.assetApi.retire(id));
+    this.assetsResource.reload();
+  }
+
+  // ---- Create-dialog support -------------------------------------------
+
+  private static readonly MOCK_CONTACTS: PickerOption[] = [
+    { id: 'p1', label: 'Sandeep Rao — Meridian Foods' },
+    { id: 'p2', label: 'Priya Nambiar — Kanpur Polymers' },
+    { id: 'p3', label: 'Devendra Joshi — Sanand Press Works' },
+    { id: 'p4', label: 'Anitha Menon — Hosur Machine Tools' },
+  ];
+
+  /** Contact typeahead for the enquiry and installed-asset dialogs. */
+  async searchContacts(term: string): Promise<PickerOption[]> {
+    const q = term.trim().toLowerCase();
+    if (environment.useMockData) {
+      return PipelineStore.MOCK_CONTACTS.filter((c) => c.label.toLowerCase().includes(q));
+    }
+    const page = await firstValueFrom(
+      this.contactApi.getList({
+        filter: term.trim() || undefined,
+        skipCount: 0,
+        maxResultCount: 10,
+      }),
+    );
+    return (page.items ?? []).map((c) => ({
+      id: c.id!,
+      label: [c.displayName ?? c.waId, c.companyName].filter(Boolean).join(' — '),
+    }));
+  }
+
+  /** Open enquiries, for the quotation dialog's picker. */
+  openEnquiryOptions(): PickerOption[] {
+    return this.board()
+      .flatMap((col) => col.cards)
+      .map((card) => ({
+        id: card.id,
+        label: `${card.reference} · ${card.title}${card.company ? ' — ' + card.company : ''}`,
+      }));
+  }
+
+  async createEnquiry(input: CreateUpdateEnquiryDto): Promise<void> {
+    if (environment.useMockData) return;
+    await firstValueFrom(this.enquiryApi.create(input));
+    this.reload();
+  }
+
+  async createQuotation(enquiryId: string): Promise<void> {
+    if (environment.useMockData) return;
+    await firstValueFrom(
+      this.quotationApi.create({ enquiryId, lines: [], taxRateBasisPoints: 1800 }),
+    );
+    this.quotesResource.reload();
+  }
+
+  async createAsset(input: CreateUpdateInstalledAssetDto): Promise<void> {
+    if (environment.useMockData) return;
+    await firstValueFrom(this.assetApi.create(input));
     this.assetsResource.reload();
   }
 }

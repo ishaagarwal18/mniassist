@@ -7,8 +7,102 @@
     />
     Show retired
   </label>
-  <button ar-button variant="primary" icon="plus">Register machine</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+    Register machine
+  </button>
 </ar-topbar>
+
+@if (dialogOpen()) {
+  <ar-dialog title="Register a machine" (dismiss)="dialogOpen.set(false)">
+    <div class="ar-field">
+      <span class="ar-field__label"
+        >Owner contact <span class="ar-field__opt">(optional)</span></span
+      >
+      <ar-contact-picker (picked)="contact.set($event)" />
+    </div>
+    <label class="ar-field">
+      <span class="ar-field__label">Description</span>
+      <input
+        class="ar-field__input"
+        placeholder="e.g. Line 3 VFD panel"
+        [value]="f().description"
+        (input)="patchAsset('description', $any($event.target).value)"
+      />
+    </label>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Serial no.</span>
+        <input
+          class="ar-field__input"
+          [value]="f().serialNumber"
+          (input)="patchAsset('serialNumber', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">AMC ends</span>
+        <input
+          class="ar-field__input"
+          type="date"
+          [value]="f().amcEndsOn"
+          (input)="patchAsset('amcEndsOn', $any($event.target).value)"
+        />
+      </label>
+    </div>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Make</span>
+        <input
+          class="ar-field__input"
+          [value]="f().make"
+          (input)="patchAsset('make', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Model</span>
+        <input
+          class="ar-field__input"
+          [value]="f().model"
+          (input)="patchAsset('model', $any($event.target).value)"
+        />
+      </label>
+    </div>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Site name</span>
+        <input
+          class="ar-field__input"
+          [value]="f().siteName"
+          (input)="patchAsset('siteName', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Site city</span>
+        <input
+          class="ar-field__input"
+          [value]="f().siteCity"
+          (input)="patchAsset('siteCity', $any($event.target).value)"
+        />
+      </label>
+    </div>
+    @if (error(); as e) {
+      <p class="ib__dialog-err">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="saving()"
+        (click)="registerMachine()"
+      >
+        {{ saving() ? 'Saving…' : 'Register' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 <div class="ib ar-scroll">
   @if (loading()) {

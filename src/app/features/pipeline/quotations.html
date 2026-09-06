@@ -1,6 +1,45 @@
 <ar-topbar title="Quotations" [subtitle]="awaitingDecision() + ' awaiting a decision'">
-  <button ar-button variant="primary" icon="plus">New quotation</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+    New quotation
+  </button>
 </ar-topbar>
+
+@if (dialogOpen()) {
+  <ar-dialog title="New quotation" (dismiss)="dialogOpen.set(false)">
+    <p class="q__dialog-note">
+      Creates a draft against an open enquiry at 18% GST. Add the line items, then issue it.
+    </p>
+    <label class="ar-field">
+      <span class="ar-field__label">Enquiry</span>
+      @if (enquiryOptions().length) {
+        <select class="ar-field__input" (change)="enquiryId.set($any($event.target).value)">
+          @for (o of enquiryOptions(); track o.id) {
+            <option [value]="o.id" [selected]="o.id === enquiryId()">{{ o.label }}</option>
+          }
+        </select>
+      } @else {
+        <p class="q__dialog-note">No open enquiries. Create one on the pipeline board first.</p>
+      }
+    </label>
+    @if (error(); as e) {
+      <p class="q__dialog-err">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="saving() || !enquiryOptions().length"
+        (click)="createQuotation()"
+      >
+        {{ saving() ? 'Creating…' : 'Create draft' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 <div class="q ar-scroll">
   @if (loading()) {

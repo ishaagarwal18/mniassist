@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
-import { Asset, PipelineStore } from '../../core/services/pipeline.service';
+import { Asset, PickerOption, PipelineStore } from '../../core/services/pipeline.service';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip } from '../../ui';
+import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
+import { ArContactPicker } from './contact-picker';
 
 /**
  * Installed base (M10). Every machine with its AMC / calibration / warranty dates —
@@ -12,7 +13,7 @@ import { ChipTone } from '../../ui/chip';
  */
 @Component({
   selector: 'ar-installed-base',
-  imports: [ArTopbar, ArButton, ArChip],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArContactPicker],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './installed-base.html',
   styleUrl: './installed-base.scss',
@@ -24,6 +25,67 @@ export class ArInstalledBase {
   protected readonly loading = this.store.loading;
   protected readonly includeRetired = this.store.includeRetired;
   protected readonly busy = signal<string | null>(null);
+
+  // ---- Register machine dialog ------------------------------------
+  protected readonly dialogOpen = signal(false);
+  protected readonly saving = signal(false);
+  protected readonly error = signal<string | null>(null);
+  protected readonly contact = signal<PickerOption | null>(null);
+  protected readonly f = signal({
+    description: '',
+    serialNumber: '',
+    make: '',
+    model: '',
+    siteName: '',
+    siteCity: '',
+    amcEndsOn: '',
+  });
+
+  protected patchAsset(key: keyof ReturnType<ArInstalledBase['f']>, value: string): void {
+    this.f.update((s) => ({ ...s, [key]: value }));
+  }
+
+  protected openDialog(): void {
+    this.contact.set(null);
+    this.f.set({
+      description: '',
+      serialNumber: '',
+      make: '',
+      model: '',
+      siteName: '',
+      siteCity: '',
+      amcEndsOn: '',
+    });
+    this.error.set(null);
+    this.dialogOpen.set(true);
+  }
+
+  protected async registerMachine(): Promise<void> {
+    const v = this.f();
+    if (!v.description.trim()) {
+      window.alert('Describe the machine — e.g. “Line 3 VFD panel”.');
+      return;
+    }
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      await this.store.createAsset({
+        contactId: this.contact()?.id,
+        description: v.description.trim(),
+        serialNumber: v.serialNumber.trim() || undefined,
+        make: v.make.trim() || undefined,
+        model: v.model.trim() || undefined,
+        siteName: v.siteName.trim() || undefined,
+        siteCity: v.siteCity.trim() || undefined,
+        amcEndsOn: v.amcEndsOn || undefined,
+      });
+      this.dialogOpen.set(false);
+    } catch (e: unknown) {
+      this.error.set(e instanceof Error ? e.message : 'The machine could not be registered.');
+    } finally {
+      this.saving.set(false);
+    }
+  }
 
   protected readonly dueSoon = computed(
     () =>
