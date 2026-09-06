@@ -1,7 +1,85 @@
 <ar-topbar title="Invoices" [subtitle]="subtitle()">
-  <button ar-button variant="ghost" icon="refresh">Reconcile</button>
-  <button ar-button variant="primary" icon="plus">Generate invoice</button>
+  <button ar-button type="button" variant="ghost" icon="refresh">Reconcile</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+    Generate invoice
+  </button>
 </ar-topbar>
+
+@if (dialogOpen()) {
+  <ar-dialog title="Generate a GST invoice" (dismiss)="dialogOpen.set(false)">
+    <p class="inv__dialog-note">
+      Bills wallet usage for the period. Issued separately once you have checked it.
+    </p>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Period start</span>
+        <input
+          class="ar-field__input"
+          type="date"
+          [value]="g().periodStart"
+          (input)="patchInvoice('periodStart', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Period end</span>
+        <input
+          class="ar-field__input"
+          type="date"
+          [value]="g().periodEnd"
+          (input)="patchInvoice('periodEnd', $any($event.target).value)"
+        />
+      </label>
+    </div>
+    <label class="ar-field">
+      <span class="ar-field__label">Customer legal name</span>
+      <input
+        class="ar-field__input"
+        [value]="g().legalName"
+        (input)="patchInvoice('legalName', $any($event.target).value)"
+      />
+    </label>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">GSTIN <span class="ar-field__opt">(optional)</span></span>
+        <input
+          class="ar-field__input"
+          [value]="g().gstin"
+          (input)="patchInvoice('gstin', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Place of supply (state code)</span>
+        <input
+          class="ar-field__input"
+          inputmode="numeric"
+          maxlength="2"
+          placeholder="e.g. 27"
+          [value]="g().stateCode"
+          (input)="patchInvoice('stateCode', $any($event.target).value)"
+        />
+      </label>
+    </div>
+    <label class="ar-field">
+      <span class="ar-field__label">Address <span class="ar-field__opt">(optional)</span></span>
+      <input
+        class="ar-field__input"
+        [value]="g().address"
+        (input)="patchInvoice('address', $any($event.target).value)"
+      />
+    </label>
+    @if (error(); as e) {
+      <p class="inv__dialog-err">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button ar-button type="button" variant="primary" [disabled]="saving()" (click)="generate()">
+        {{ saving() ? 'Generating…' : 'Generate' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 <div class="inv">
   <aside class="inv__list ar-scroll" aria-label="Invoices">

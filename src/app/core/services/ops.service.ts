@@ -1,11 +1,16 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { firstValueFrom, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { NotificationService as NotificationApi } from '../../proxy/notifications';
-import { InvoiceService as InvoiceApi, ReconciliationService as ReconciliationApi } from '../../proxy/billing';
+import {
+  GenerateInvoiceDto,
+  InvoiceService as InvoiceApi,
+  ReconciliationService as ReconciliationApi,
+} from '../../proxy/billing';
 import { WebhookSubscriptionService as WebhookApi } from '../../proxy/integrations';
+import { WebhookEvent } from '../../proxy/integrations/webhook-event.enum';
 import { SupportAccessService as SupportApi } from '../../proxy/platform';
 import {
   Invoice,
@@ -72,8 +77,9 @@ export class OpsService {
       kind: 'QualityDowngrade',
       tone: 'critical',
       title: 'Quality on +91 90210 44xxx is Red — 2 campaigns suspended',
-      body: 'Meta has rated this number’s quality as Red. Marketing campaigns have been stopped '
-        + 'automatically to protect the number from being restricted. Reminders and replies are unaffected.',
+      body:
+        'Meta has rated this number’s quality as Red. Marketing campaigns have been stopped ' +
+        'automatically to protect the number from being restricted. Reminders and replies are unaffected.',
       occurredAt: OpsService.hoursAgo(3),
       read: false,
       route: '/campaigns',
@@ -84,8 +90,9 @@ export class OpsService {
       kind: 'TemplateCategoryChanged',
       tone: 'warning',
       title: 'Template ‘amc_renewal_30d’ re-categorised to Marketing',
-      body: 'Meta changed this template’s category. It will now be billed at the marketing rate, '
-        + 'and may only be sent to contacts with marketing consent.',
+      body:
+        'Meta changed this template’s category. It will now be billed at the marketing rate, ' +
+        'and may only be sent to contacts with marketing consent.',
       occurredAt: OpsService.hoursAgo(5),
       read: false,
       route: '/templates',
@@ -96,8 +103,9 @@ export class OpsService {
       kind: 'ReconciliationVariance',
       tone: 'warning',
       title: 'Billing variance of 1.84% on +91 90210 44xxx',
-      body: 'Our meter recorded ₹1,204.60 more than Meta billed for 01 Jul – 31 Jul 2026. '
-        + 'Marketing is the category that is out.',
+      body:
+        'Our meter recorded ₹1,204.60 more than Meta billed for 01 Jul – 31 Jul 2026. ' +
+        'Marketing is the category that is out.',
       occurredAt: OpsService.hoursAgo(16),
       read: false,
       route: '/billing/reconciliation',
@@ -108,8 +116,9 @@ export class OpsService {
       kind: 'AccessTokenExpiring',
       tone: 'critical',
       title: 'Your WhatsApp connection expires in 6 days',
-      body: 'Reconnect the channel in Settings → Channels. Once it expires, nothing can be sent '
-        + 'or received on that number until it is reconnected.',
+      body:
+        'Reconnect the channel in Settings → Channels. Once it expires, nothing can be sent ' +
+        'or received on that number until it is reconnected.',
       occurredAt: OpsService.daysAgo(1),
       read: true,
       route: '/channels',
@@ -131,8 +140,9 @@ export class OpsService {
       kind: 'SupportAccessStarted',
       tone: 'info',
       title: 'AutoReach support has entered your account',
-      body: 'p.deshmukh started a read-only support session under the access you granted: '
-        + '“Investigating stuck campaign #4180”.',
+      body:
+        'p.deshmukh started a read-only support session under the access you granted: ' +
+        '“Investigating stuck campaign #4180”.',
       occurredAt: OpsService.daysAgo(3),
       read: true,
       route: '/settings/support-access',
@@ -143,8 +153,9 @@ export class OpsService {
       kind: 'WebhookEndpointDisabled',
       tone: 'warning',
       title: 'A webhook endpoint was disabled',
-      body: 'https://crm.vertexautomation.in/hooks/autoreach failed 20 times in a row and has been '
-        + 'switched off. Fix the endpoint and re-enable it in Integrations.',
+      body:
+        'https://crm.vertexautomation.in/hooks/autoreach failed 20 times in a row and has been ' +
+        'switched off. Fix the endpoint and re-enable it in Integrations.',
       occurredAt: OpsService.daysAgo(4),
       read: true,
       route: '/settings/integrations',
@@ -257,8 +268,8 @@ export class OpsService {
           ourCostInPaise: 2_45_240_00,
           metaCostInPaise: 2_39_480_00,
           likelyCause:
-            'We counted more than Meta billed. Most often a withheld message (131049) metered as '
-            + 'billable, or a conversation we opened twice inside one 24-hour window.',
+            'We counted more than Meta billed. Most often a withheld message (131049) metered as ' +
+            'billable, or a conversation we opened twice inside one 24-hour window.',
         },
         {
           category: 'Utility',
@@ -267,8 +278,8 @@ export class OpsService {
           ourCostInPaise: 41_000_00,
           metaCostInPaise: 41_592_00,
           likelyCause:
-            'Meta billed more than we counted. Most often a template Meta re-categorised after we '
-            + 'priced it.',
+            'Meta billed more than we counted. Most often a template Meta re-categorised after we ' +
+            'priced it.',
         },
       ],
     },
@@ -298,10 +309,40 @@ export class OpsService {
   ];
 
   private readonly deliverySeed: readonly WebhookDelivery[] = [
-    { id: 'd-1', event: 'InboundMessage', state: 'abandoned', attempts: 6, createdAt: OpsService.daysAgo(4), statusCode: 502, error: 'Endpoint returned 502' },
-    { id: 'd-2', event: 'EnquiryCreated', state: 'abandoned', attempts: 6, createdAt: OpsService.daysAgo(4), statusCode: 502, error: 'Endpoint returned 502' },
-    { id: 'd-3', event: 'QuotationStatusChanged', state: 'delivered', attempts: 1, createdAt: OpsService.hoursAgo(2), statusCode: 200 },
-    { id: 'd-4', event: 'QuotationStatusChanged', state: 'delivered', attempts: 2, createdAt: OpsService.hoursAgo(18), statusCode: 200 },
+    {
+      id: 'd-1',
+      event: 'InboundMessage',
+      state: 'abandoned',
+      attempts: 6,
+      createdAt: OpsService.daysAgo(4),
+      statusCode: 502,
+      error: 'Endpoint returned 502',
+    },
+    {
+      id: 'd-2',
+      event: 'EnquiryCreated',
+      state: 'abandoned',
+      attempts: 6,
+      createdAt: OpsService.daysAgo(4),
+      statusCode: 502,
+      error: 'Endpoint returned 502',
+    },
+    {
+      id: 'd-3',
+      event: 'QuotationStatusChanged',
+      state: 'delivered',
+      attempts: 1,
+      createdAt: OpsService.hoursAgo(2),
+      statusCode: 200,
+    },
+    {
+      id: 'd-4',
+      event: 'QuotationStatusChanged',
+      state: 'delivered',
+      attempts: 2,
+      createdAt: OpsService.hoursAgo(18),
+      statusCode: 200,
+    },
   ];
 
   private readonly grantSeed: readonly SupportGrant[] = [
@@ -332,9 +373,33 @@ export class OpsService {
   ];
 
   private readonly sessionSeed: readonly SupportSession[] = [
-    { id: 's-1', engineer: 'p.deshmukh', startedAt: OpsService.daysAgo(3), endedAt: OpsService.hoursAgo(71.4), writeEnabled: false, actionCount: 41, writeCount: 0 },
-    { id: 's-2', engineer: 'p.deshmukh', startedAt: OpsService.daysAgo(2), endedAt: OpsService.hoursAgo(47.8), writeEnabled: false, actionCount: 12, writeCount: 0 },
-    { id: 's-3', engineer: 'a.menon', startedAt: OpsService.daysAgo(49), endedAt: OpsService.hoursAgo(1174.5), writeEnabled: true, actionCount: 88, writeCount: 6 },
+    {
+      id: 's-1',
+      engineer: 'p.deshmukh',
+      startedAt: OpsService.daysAgo(3),
+      endedAt: OpsService.hoursAgo(71.4),
+      writeEnabled: false,
+      actionCount: 41,
+      writeCount: 0,
+    },
+    {
+      id: 's-2',
+      engineer: 'p.deshmukh',
+      startedAt: OpsService.daysAgo(2),
+      endedAt: OpsService.hoursAgo(47.8),
+      writeEnabled: false,
+      actionCount: 12,
+      writeCount: 0,
+    },
+    {
+      id: 's-3',
+      engineer: 'a.menon',
+      startedAt: OpsService.daysAgo(49),
+      endedAt: OpsService.hoursAgo(1174.5),
+      writeEnabled: true,
+      actionCount: 88,
+      writeCount: 6,
+    },
   ];
 
   // ---- resources -----------------------------------------------------------
@@ -344,7 +409,7 @@ export class OpsService {
     stream: ({ params }) =>
       this.notificationApi
         .getList({ unreadOnly: params.unreadOnly, skipCount: 0, maxResultCount: 100 })
-        .pipe(map(r => (r.items ?? []).map(toNotification))),
+        .pipe(map((r) => (r.items ?? []).map(toNotification))),
     defaultValue: [] as OpsNotification[],
   });
 
@@ -353,7 +418,7 @@ export class OpsService {
     stream: () =>
       this.invoiceApi
         .getList({ skipCount: 0, maxResultCount: 50 })
-        .pipe(map(r => (r.items ?? []).map(toInvoice))),
+        .pipe(map((r) => (r.items ?? []).map(toInvoice))),
     defaultValue: [] as Invoice[],
   });
 
@@ -362,19 +427,23 @@ export class OpsService {
     stream: () =>
       this.reconciliationApi
         .getList({ skipCount: 0, maxResultCount: 25 })
-        .pipe(map(r => (r.items ?? []).map(toReconciliationRun))),
+        .pipe(map((r) => (r.items ?? []).map(toReconciliationRun))),
     defaultValue: [] as ReconciliationRun[],
   });
 
   private readonly webhooksResource = rxResource({
     params: () => (environment.useMockData ? undefined : {}),
-    stream: () => this.webhookApi.getList({ skipCount: 0, maxResultCount: 100 }).pipe(map(r => (r.items ?? []).map(toWebhookSubscription))),
+    stream: () =>
+      this.webhookApi
+        .getList({ skipCount: 0, maxResultCount: 100 })
+        .pipe(map((r) => (r.items ?? []).map(toWebhookSubscription))),
     defaultValue: [] as WebhookSubscription[],
   });
 
   private readonly grantsResource = rxResource({
     params: () => (environment.useMockData ? undefined : {}),
-    stream: () => this.supportApi.getMyGrants(false).pipe(map(r => (r.items ?? []).map(toSupportGrant))),
+    stream: () =>
+      this.supportApi.getMyGrants(false).pipe(map((r) => (r.items ?? []).map(toSupportGrant))),
     defaultValue: [] as SupportGrant[],
   });
 
@@ -383,7 +452,7 @@ export class OpsService {
     stream: () =>
       this.supportApi
         .getSessionHistory({ skipCount: 0, maxResultCount: 50 })
-        .pipe(map(r => (r.items ?? []).map(toSupportSession))),
+        .pipe(map((r) => (r.items ?? []).map(toSupportSession))),
     defaultValue: [] as SupportSession[],
   });
 
@@ -393,15 +462,17 @@ export class OpsService {
   // ---- public views --------------------------------------------------------
 
   readonly notifications = computed<readonly OpsNotification[]>(() => {
-    const base = environment.useMockData ? this.notificationSeed : this.notificationsResource.value();
+    const base = environment.useMockData
+      ? this.notificationSeed
+      : this.notificationsResource.value();
     const read = this.readLocally();
-    return base.map(n => (read.has(n.id) ? { ...n, read: true } : n));
+    return base.map((n) => (read.has(n.id) ? { ...n, read: true } : n));
   });
 
-  readonly unreadCount = computed(() => this.notifications().filter(n => !n.read).length);
+  readonly unreadCount = computed(() => this.notifications().filter((n) => !n.read).length);
 
   readonly unreadCriticalCount = computed(
-    () => this.notifications().filter(n => !n.read && n.tone === 'critical').length,
+    () => this.notifications().filter((n) => !n.read && n.tone === 'critical').length,
   );
 
   readonly invoices = computed<readonly Invoice[]>(() =>
@@ -429,7 +500,7 @@ export class OpsService {
   // ---- actions -------------------------------------------------------------
 
   markRead(id: string): void {
-    this.readLocally.update(set => new Set(set).add(id));
+    this.readLocally.update((set) => new Set(set).add(id));
 
     if (!environment.useMockData) {
       this.notificationApi.markRead(id).subscribe();
@@ -437,10 +508,31 @@ export class OpsService {
   }
 
   markAllRead(): void {
-    this.readLocally.set(new Set(this.notifications().map(n => n.id)));
+    this.readLocally.set(new Set(this.notifications().map((n) => n.id)));
 
     if (!environment.useMockData) {
       this.notificationApi.markAllRead().subscribe();
     }
+  }
+
+  // ---- create-dialog actions ---------------------------------------------
+
+  async generateInvoice(input: GenerateInvoiceDto): Promise<void> {
+    if (environment.useMockData) return;
+    await firstValueFrom(this.invoiceApi.generate(input));
+    this.invoicesResource.reload();
+  }
+
+  async createWebhook(url: string, description: string, events: WebhookEvent[]): Promise<void> {
+    if (environment.useMockData) return;
+    await firstValueFrom(
+      this.webhookApi.create({
+        url: url.trim(),
+        description: description.trim() || undefined,
+        events,
+        isEnabled: true,
+      }),
+    );
+    this.webhooksResource.reload();
   }
 }

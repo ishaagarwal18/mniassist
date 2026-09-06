@@ -1,6 +1,57 @@
 <ar-topbar title="Documents" [subtitle]="documents().length + ' in the library'">
-  <button ar-button variant="primary" icon="plus">Upload document</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+    Upload document
+  </button>
 </ar-topbar>
+
+@if (dialogOpen()) {
+  <ar-dialog title="Upload a document" (dismiss)="dialogOpen.set(false)">
+    <label class="ar-field">
+      <span class="ar-field__label">File</span>
+      <input class="ar-field__input" type="file" (change)="onFile($event)" />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Title</span>
+      <input
+        class="ar-field__input"
+        [value]="title()"
+        (input)="title.set($any($event.target).value)"
+      />
+    </label>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Category <span class="ar-field__opt">(optional)</span></span>
+        <input
+          class="ar-field__input"
+          placeholder="datasheet / drawing / contract"
+          [value]="category()"
+          (input)="category.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label"
+          >Part numbers <span class="ar-field__opt">(comma-separated)</span></span
+        >
+        <input
+          class="ar-field__input"
+          [value]="parts()"
+          (input)="parts.set($any($event.target).value)"
+        />
+      </label>
+    </div>
+    @if (error(); as e) {
+      <p class="dl__dialog-err">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button ar-button type="button" variant="primary" [disabled]="uploading()" (click)="upload()">
+        {{ uploading() ? 'Uploading…' : 'Upload' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 <div class="dl ar-scroll">
   <div class="dl__bar">

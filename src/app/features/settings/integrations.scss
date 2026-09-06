@@ -67,3 +67,7 @@
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
+
+.intg__events { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+.intg__event { display: flex; align-items: center; gap: 7px; font: 400 12px var(--ar-font-sans); color: var(--ar-ink-700); }
+.intg__dialog-err { margin: 0; font: 400 12px var(--ar-font-sans); color: var(--ar-warn-600); }

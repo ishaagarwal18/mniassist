@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { firstValueFrom, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { LibraryDocumentDto, LibraryService } from '../../proxy/library';
+import { CreateLibraryDocumentDto, LibraryDocumentDto, LibraryService } from '../../proxy/library';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip, ArSearchBox } from '../../ui';
+import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 
 interface Doc {
   id: string;
@@ -76,7 +76,7 @@ function toDoc(d: LibraryDocumentDto): Doc {
  */
 @Component({
   selector: 'ar-documents',
-  imports: [ArTopbar, ArButton, ArChip, ArSearchBox],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './documents.html',
   styleUrl: './documents.scss',
@@ -85,6 +85,69 @@ export class ArDocuments {
   private readonly api = inject(LibraryService);
 
   protected readonly query = signal('');
+
+  // ---- Upload dialog ---------------------------------------------
+  protected readonly dialogOpen = signal(false);
+  protected readonly uploading = signal(false);
+  protected readonly error = signal<string | null>(null);
+  protected readonly file = signal<File | null>(null);
+  protected readonly title = signal('');
+  protected readonly category = signal('');
+  protected readonly parts = signal('');
+
+  protected openDialog(): void {
+    this.file.set(null);
+    this.title.set('');
+    this.category.set('');
+    this.parts.set('');
+    this.error.set(null);
+    this.dialogOpen.set(true);
+  }
+
+  protected onFile(event: Event): void {
+    const picked = (event.target as HTMLInputElement).files?.[0] ?? null;
+    this.file.set(picked);
+    if (picked && !this.title().trim()) {
+      this.title.set(picked.name.replace(/\.[^.]+$/, ''));
+    }
+  }
+
+  protected async upload(): Promise<void> {
+    const f = this.file();
+    if (!f) {
+      window.alert('Choose a file to upload.');
+      return;
+    }
+    if (!this.title().trim()) {
+      window.alert('Give the document a title.');
+      return;
+    }
+    this.uploading.set(true);
+    this.error.set(null);
+    try {
+      if (!environment.useMockData) {
+        const body = new FormData();
+        body.append('title', this.title().trim());
+        if (this.category().trim()) body.append('category', this.category().trim());
+        for (const p of this.parts()
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)) {
+          body.append('partNumbers', p);
+        }
+        body.append('file', f, f.name);
+        // The generated proxy types `create` as the DTO; Angular's HttpClient sends
+        // a FormData body as multipart, which is what the [FromForm] endpoint wants.
+        await firstValueFrom(this.api.create(body as unknown as CreateLibraryDocumentDto));
+      }
+      this.resource.reload();
+      this.dialogOpen.set(false);
+    } catch (e: unknown) {
+      this.error.set(e instanceof Error ? e.message : 'The upload failed.');
+    } finally {
+      this.uploading.set(false);
+    }
+  }
 
   private readonly resource = rxResource({
     params: () => (environment.useMockData ? undefined : { q: this.query() }),

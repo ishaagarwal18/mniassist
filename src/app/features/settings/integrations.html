@@ -1,12 +1,74 @@
 <ar-topbar title="Integrations" [subtitle]="subtitle()">
-  <button ar-button variant="primary" icon="plus">Add endpoint</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+    Add endpoint
+  </button>
 </ar-topbar>
+
+@if (dialogOpen()) {
+  <ar-dialog title="Add a webhook endpoint" (dismiss)="dialogOpen.set(false)">
+    <label class="ar-field">
+      <span class="ar-field__label">Endpoint URL</span>
+      <input
+        class="ar-field__input"
+        type="url"
+        placeholder="https://…"
+        [value]="url()"
+        (input)="url.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Description <span class="ar-field__opt">(optional)</span></span>
+      <input
+        class="ar-field__input"
+        [value]="description()"
+        (input)="description.set($any($event.target).value)"
+      />
+    </label>
+    <div class="ar-field">
+      <span class="ar-field__label">Events</span>
+      <div class="intg__events">
+        @for (e of allEvents; track e.value) {
+          <label class="intg__event">
+            <input
+              type="checkbox"
+              [checked]="events().has(e.value)"
+              (change)="toggleEvent(e.value, $any($event.target).checked)"
+            />
+            {{ e.label }}
+          </label>
+        }
+      </div>
+    </div>
+    @if (error(); as err) {
+      <p class="intg__dialog-err">{{ err }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="saving()"
+        (click)="createEndpoint()"
+      >
+        {{ saving() ? 'Adding…' : 'Add endpoint' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 <div class="intg">
   <aside class="intg__list ar-scroll" aria-label="Webhook endpoints">
     @for (w of webhooks(); track w.id) {
-      <button class="hook" type="button" [class.hook--on]="w.id === selected()?.id"
-              [attr.aria-pressed]="w.id === selected()?.id" (click)="select(w.id)">
+      <button
+        class="hook"
+        type="button"
+        [class.hook--on]="w.id === selected()?.id"
+        [attr.aria-pressed]="w.id === selected()?.id"
+        (click)="select(w.id)"
+      >
         <div class="hook__top">
           <span class="hook__name">{{ w.description }}</span>
           <ar-chip [tone]="w.enabled ? 'good' : 'bad'" [dot]="true">
@@ -14,7 +76,9 @@
           </ar-chip>
         </div>
         <p class="hook__url ar-mono">{{ w.url }}</p>
-        <p class="hook__events">{{ w.events.length }} event{{ w.events.length === 1 ? '' : 's' }}</p>
+        <p class="hook__events">
+          {{ w.events.length }} event{{ w.events.length === 1 ? '' : 's' }}
+        </p>
       </button>
     }
   </aside>
@@ -36,20 +100,31 @@
           </div>
           <div class="panel__actions">
             <button ar-button variant="ghost">Send test</button>
-            @if (!w.enabled) { <button ar-button variant="primary">Re-enable</button> }
+            @if (!w.enabled) {
+              <button ar-button variant="primary">Re-enable</button>
+            }
           </div>
         </header>
 
         <dl class="facts">
-          <div><dt>Last success</dt><dd class="ar-mono">{{ when(w.lastSuccessAt) }}</dd></div>
-          <div><dt>Last failure</dt><dd class="ar-mono">{{ when(w.lastFailureAt) }}</dd></div>
+          <div>
+            <dt>Last success</dt>
+            <dd class="ar-mono">{{ when(w.lastSuccessAt) }}</dd>
+          </div>
+          <div>
+            <dt>Last failure</dt>
+            <dd class="ar-mono">{{ when(w.lastFailureAt) }}</dd>
+          </div>
           <div>
             <dt>Consecutive failures</dt>
             <dd class="ar-mono" [class.facts__bad]="w.consecutiveFailures > 0">
               {{ w.consecutiveFailures }}
             </dd>
           </div>
-          <div><dt>Signing</dt><dd>HMAC-SHA256, secret set</dd></div>
+          <div>
+            <dt>Signing</dt>
+            <dd>HMAC-SHA256, secret set</dd>
+          </div>
         </dl>
 
         @if (w.lastError) {
@@ -81,7 +156,9 @@
       <section class="panel">
         <h3 class="panel__title panel__title--sub">Recent deliveries</h3>
         <table class="ar-table">
-          <caption class="sr-only">Recent webhook deliveries</caption>
+          <caption class="sr-only">
+            Recent webhook deliveries
+          </caption>
           <thead>
             <tr>
               <th scope="col">Event</th>
@@ -95,13 +172,17 @@
             @for (d of relevantDeliveries(); track d.id) {
               <tr>
                 <td class="ar-mono">{{ eventLabel(d.event) }}</td>
-                <td><ar-chip [tone]="deliveryTone(d.state)">{{ d.state }}</ar-chip></td>
+                <td>
+                  <ar-chip [tone]="deliveryTone(d.state)">{{ d.state }}</ar-chip>
+                </td>
                 <td class="num ar-mono">{{ d.attempts }}</td>
                 <td class="num ar-mono">{{ d.statusCode ?? '—' }}</td>
                 <td class="ar-mono">{{ when(d.createdAt) }}</td>
               </tr>
             } @empty {
-              <tr><td colspan="5" class="empty">No deliveries yet.</td></tr>
+              <tr>
+                <td colspan="5" class="empty">No deliveries yet.</td>
+              </tr>
             }
           </tbody>
         </table>
