@@ -95,6 +95,8 @@ export interface ContactDto extends FullAuditedEntityDto<string> {
   lastCampaignResponse?: CampaignResponse;
   lastCampaignAtUtc?: string | null;
   campaignsReceived?: number;
+  engagementScore?: number;
+  scoreUpdatedAtUtc?: string | null;
   canReceiveMarketing?: boolean;
 }
 
@@ -218,6 +220,7 @@ export interface GetContactListInput extends PagedAndSortedResultRequestDto {
   tag?: string | null;
   consentScope?: ConsentScope | null;
   suppression?: SuppressionReason | null;
+  minScore?: number | null;
 }
 
 export interface GrantConsentInput {

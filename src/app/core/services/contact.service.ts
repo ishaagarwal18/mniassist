@@ -64,6 +64,7 @@ export class ContactService {
       },
       amcExpiry: '30 Sep 2026',
       lastActivity: '2 hours ago',
+      score: 84,
     },
     {
       id: 'p2',
@@ -84,6 +85,7 @@ export class ContactService {
       },
       amcExpiry: '11 Oct 2026',
       lastActivity: 'Today 10:37',
+      score: 71,
     },
     {
       id: 'p3',
@@ -104,6 +106,7 @@ export class ContactService {
       },
       amcExpiry: '04 Oct 2026',
       lastActivity: 'Yesterday',
+      score: 63,
     },
     {
       id: 'p4',
@@ -124,6 +127,7 @@ export class ContactService {
       },
       amcExpiry: '22 Sep 2026',
       lastActivity: 'Yesterday',
+      score: 58,
     },
     {
       id: 'p5',
@@ -143,6 +147,7 @@ export class ContactService {
         grantedAt: '08 Jan 2026',
       },
       lastActivity: '24 Aug',
+      score: 44,
     },
     {
       id: 'p6',
@@ -163,6 +168,7 @@ export class ContactService {
       },
       amcExpiry: '18 Oct 2026',
       lastActivity: '22 Aug',
+      score: 32,
     },
     {
       id: 'p7',
@@ -183,6 +189,7 @@ export class ContactService {
       },
       amcExpiry: '07 Oct 2026',
       lastActivity: '19 Aug',
+      score: 21,
     },
   ];
 

@@ -195,6 +195,13 @@ export const SEGMENT_FIELDS: readonly SegmentField[] = [
     hint: 'Use with “exclude” to cap fatigue.',
   },
   {
+    value: 'score',
+    label: 'Engagement score',
+    group: 'How they react',
+    kind: 'number',
+    hint: '0–100, from recency, campaign response and flow completion.',
+  },
+  {
     value: 'lastInboundDays',
     label: 'Days since they last wrote',
     group: 'How they react',

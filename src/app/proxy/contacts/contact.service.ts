@@ -67,6 +67,7 @@ export class ContactService {
           tag: input.tag,
           consentScope: input.consentScope,
           suppression: input.suppression,
+          minScore: input.minScore,
           sorting: input.sorting,
           skipCount: input.skipCount,
           maxResultCount: input.maxResultCount,
@@ -93,6 +94,16 @@ export class ContactService {
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/contact/${id}`,
         body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  recomputeScore = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ContactDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/contact/${id}/recompute-score`,
       },
       { apiName: this.apiName, ...config },
     );

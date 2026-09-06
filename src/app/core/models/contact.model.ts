@@ -1,5 +1,5 @@
 export type ConsentSource =
-  | 'website' | 'whatsapp_optin' | 'import' | 'ctwa' | 'qr' | 'manual' | 'api';
+  'website' | 'whatsapp_optin' | 'import' | 'ctwa' | 'qr' | 'manual' | 'api';
 
 export interface ConsentRecord {
   readonly source: ConsentSource;
@@ -27,6 +27,8 @@ export interface Contact {
   readonly consent: ConsentRecord;
   readonly amcExpiry?: string;
   readonly lastActivity: string;
+  /** 0–100 engagement score (M03-10). */
+  readonly score?: number;
 }
 
 export interface Segment {

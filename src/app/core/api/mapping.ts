@@ -133,6 +133,7 @@ export function toContact(dto: ContactDto): Contact {
     },
     amcExpiry: attributes['amc_expiry'],
     lastActivity: formatRelative(dto.lastInboundAtUtc ?? dto.lastOutboundAtUtc),
+    score: dto.engagementScore ?? 0,
   };
 }
 
