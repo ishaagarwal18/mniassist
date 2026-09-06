@@ -1,0 +1,154 @@
+<ar-topbar title="Scheduled reports" subtitle="Emailed / sent to the owner on a cadence">
+  <button ar-button variant="primary" icon="plus" (click)="openNew()">New report</button>
+</ar-topbar>
+
+<div class="rep ar-scroll">
+  @if (loading()) {
+    <p class="rep__empty">Loading…</p>
+  } @else if (reports().length === 0) {
+    <p class="rep__empty">No scheduled reports. Add one to have a summary sent to you.</p>
+  }
+
+  @for (r of reports(); track r.id) {
+    <article class="rr" [class.rr--off]="!r.isActive">
+      <div class="rr__main">
+        <h2 class="rr__name">{{ r.name }}</h2>
+        <p class="rr__meta">
+          {{ kindLabel(r.kind) }} · {{ cadenceLabel(r.cadence) }} at {{ r.sendHourLocal }}:00 ·
+          {{ channelSummary(r.channels) }}
+        </p>
+        <p class="rr__runs">
+          Last sent {{ when(r.lastRunAtUtc) }} · next {{ when(r.nextRunAtUtc) }}
+        </p>
+      </div>
+      @if (!r.isActive) {
+        <ar-chip tone="warn">Paused</ar-chip>
+      }
+      <div class="rr__act">
+        <button ar-button variant="primary" (click)="runNow(r)">Send now</button>
+        <button ar-button variant="ghost" (click)="openEdit(r)">Edit</button>
+        <button ar-button variant="ghost" (click)="remove(r)">Delete</button>
+      </div>
+    </article>
+  }
+</div>
+
+@if (editorOpen()) {
+  <ar-dialog [title]="editingId() ? 'Edit report' : 'New report'" (dismiss)="editorOpen.set(false)">
+    <label class="ar-field">
+      <span class="ar-field__label">Name</span>
+      <input
+        class="ar-field__input"
+        [value]="draft().name"
+        (input)="patch('name', $any($event.target).value)"
+      />
+    </label>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Report</span>
+        <select
+          class="ar-field__input"
+          [value]="draft().kind"
+          (change)="patch('kind', +$any($event.target).value)"
+        >
+          @for (k of kinds; track k.value) {
+            <option [value]="k.value">{{ k.label }}</option>
+          }
+        </select>
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Cadence</span>
+        <select
+          class="ar-field__input"
+          [value]="draft().cadence"
+          (change)="patch('cadence', +$any($event.target).value)"
+        >
+          @for (c of cadences; track c.value) {
+            <option [value]="c.value">{{ c.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <label class="ar-field rep__narrow">
+      <span class="ar-field__label">Send at (hour, IST)</span>
+      <input
+        class="ar-field__input"
+        type="number"
+        min="0"
+        max="23"
+        [value]="draft().sendHourLocal"
+        (input)="patch('sendHourLocal', +$any($event.target).value)"
+      />
+    </label>
+
+    <p class="ar-field__label">Deliver by</p>
+    <label class="ar-field__opt-row">
+      <input
+        type="checkbox"
+        [checked]="draft().email"
+        (change)="patch('email', $any($event.target).checked)"
+      />
+      <span>Email</span>
+    </label>
+    <label class="ar-field__opt-row">
+      <input
+        type="checkbox"
+        [checked]="draft().inApp"
+        (change)="patch('inApp', $any($event.target).checked)"
+      />
+      <span>In-app notification</span>
+    </label>
+    <label class="ar-field__opt-row">
+      <input
+        type="checkbox"
+        [checked]="draft().whatsapp"
+        (change)="patch('whatsapp', $any($event.target).checked)"
+      />
+      <span>WhatsApp digest</span>
+    </label>
+
+    @if (draft().email) {
+      <label class="ar-field">
+        <span class="ar-field__label"
+          >Extra email recipients <span class="ar-field__opt">comma-separated</span></span
+        >
+        <input
+          class="ar-field__input"
+          [value]="draft().emailRecipients"
+          (input)="patch('emailRecipients', $any($event.target).value)"
+        />
+      </label>
+    }
+    @if (draft().whatsapp) {
+      <label class="ar-field">
+        <span class="ar-field__label"
+          >WhatsApp number <span class="ar-field__opt">E.164, no +</span></span
+        >
+        <input
+          class="ar-field__input ar-mono"
+          [value]="draft().whatsAppNumber"
+          (input)="patch('whatsAppNumber', $any($event.target).value)"
+        />
+      </label>
+    }
+    <label class="ar-field__opt-row">
+      <input
+        type="checkbox"
+        [checked]="draft().isActive"
+        (change)="patch('isActive', $any($event.target).checked)"
+      />
+      <span>Active</span>
+    </label>
+
+    @if (error(); as msg) {
+      <p class="rep__err">{{ msg }}</p>
+    }
+
+    <div dialogActions>
+      <button ar-button variant="ghost" (click)="editorOpen.set(false)">Cancel</button>
+      <button ar-button variant="primary" [disabled]="busy()" (click)="save()">
+        {{ busy() ? 'Saving…' : 'Save' }}
+      </button>
+    </div>
+  </ar-dialog>
+}

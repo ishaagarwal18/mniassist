@@ -119,6 +119,12 @@ export const NAV: readonly NavGroup[] = [
         route: '/analytics',
         permission: 'AutoReach.Analytics',
       },
+      {
+        label: 'Scheduled reports',
+        icon: 'clock',
+        route: '/settings/reports',
+        permission: 'AutoReach.Analytics',
+      },
       { label: 'Channels', icon: 'channel', route: '/channels', permission: 'AutoReach.Channels' },
       {
         label: 'Numbers',
