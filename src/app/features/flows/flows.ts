@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { FState, Flow, WorkflowStore } from '../../core/services/workflow.service';
@@ -64,6 +65,7 @@ const STATE_TONE: Record<FState, ChipTone> = {
 export class ArFlows {
   private readonly store = inject(WorkflowStore);
   private readonly flowApi = inject(FlowService);
+  private readonly router = inject(Router);
   protected readonly channels = inject(ChannelService).channels;
 
   // ---- Funnel (M08-5) -----------------------------------------------
@@ -121,6 +123,10 @@ export class ArFlows {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  protected design(f: Flow): void {
+    void this.router.navigate(['/flows', f.id]);
   }
 
   protected tone(s: FState): ChipTone {

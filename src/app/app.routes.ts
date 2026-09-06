@@ -110,6 +110,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/flows/flows').then((m) => m.ArFlows),
       },
       {
+        path: 'flows/:id',
+        title: 'Flow designer · AutoReach',
+        loadComponent: () => import('./features/flows/flow-designer').then((m) => m.ArFlowDesigner),
+      },
+      {
         path: 'documents',
         title: 'Documents · AutoReach',
         loadComponent: () => import('./features/documents/documents').then((m) => m.ArDocuments),

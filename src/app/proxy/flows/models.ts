@@ -1,5 +1,6 @@
 import type { EntityDto, FullAuditedEntityDto, PagedAndSortedResultRequestDto } from '@abp/ng.core';
 import type { FlowState } from '../messaging/flow-state.enum';
+import type { FlowFieldType } from './flow-field-type.enum';
 
 export interface CreateUpdateFlowDto {
   name: string;
@@ -9,11 +10,30 @@ export interface CreateUpdateFlowDto {
   screens?: CreateUpdateFlowScreenDto[];
 }
 
+export interface CreateUpdateFlowScreenFieldDto {
+  name: string;
+  label: string;
+  fieldType?: FlowFieldType;
+  required?: boolean;
+  order?: number;
+  optionsText?: string | null;
+}
+
+export interface FlowScreenFieldDto extends EntityDto<string> {
+  name?: string;
+  label?: string;
+  fieldType?: FlowFieldType;
+  required?: boolean;
+  order?: number;
+  optionsText?: string | null;
+}
+
 export interface CreateUpdateFlowScreenDto {
   screenId: string;
   title: string;
   order?: number;
   webhookUrl?: string | null;
+  fields?: CreateUpdateFlowScreenFieldDto[];
 }
 
 export interface FlowDto extends FullAuditedEntityDto<string> {
@@ -63,6 +83,7 @@ export interface FlowScreenDto extends EntityDto<string> {
   enteredCount?: number;
   completedCount?: number;
   webhookUrl?: string | null;
+  fields?: FlowScreenFieldDto[];
   dropOffRate?: number;
 }
 

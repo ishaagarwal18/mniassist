@@ -72,6 +72,7 @@
         }
       </div>
       <div class="flow__actions">
+        <button ar-button variant="ghost" (click)="design(f)">Design</button>
         <button ar-button variant="ghost" (click)="openFunnel(f)">Funnel</button>
         @if (f.state === 'draft' || f.state === 'deprecated') {
           <button ar-button variant="primary" [disabled]="!!busy()" (click)="publish(f)">

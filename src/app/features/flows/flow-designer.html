@@ -1,0 +1,116 @@
+<ar-topbar [title]="name() || 'Flow'" subtitle="Screen & field designer">
+  <a class="fd__back" routerLink="/flows">← All flows</a>
+  <button ar-button variant="primary" [disabled]="saving() || loading()" (click)="save()">
+    {{ saving() ? 'Saving…' : 'Save' }}
+  </button>
+</ar-topbar>
+
+@if (loading()) {
+  <p class="fd__empty">Loading…</p>
+} @else {
+  <div class="fd">
+    <div class="fd__col fd__col--edit ar-scroll">
+      @if (error(); as e) {
+        <p class="fd__err">{{ e }}</p>
+      }
+
+      <label class="ar-field">
+        <span class="ar-field__label">Flow name</span>
+        <input
+          class="ar-field__input"
+          [value]="name()"
+          (input)="name.set($any($event.target).value)"
+        />
+      </label>
+
+      @for (s of screens(); track si; let si = $index) {
+        <section class="scr">
+          <div class="scr__head">
+            <input
+              class="ar-field__input ar-mono scr__id"
+              [value]="s.screenId"
+              (input)="setScreen(si, 'screenId', $any($event.target).value)"
+            />
+            <button type="button" class="scr__x" (click)="removeScreen(si)">×</button>
+          </div>
+          <label class="ar-field">
+            <span class="ar-field__label">Screen title</span>
+            <input
+              class="ar-field__input"
+              [value]="s.title"
+              (input)="setScreen(si, 'title', $any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label"
+              >Screen webhook <span class="ar-field__opt">optional (M07-7)</span></span
+            >
+            <input
+              class="ar-field__input ar-mono"
+              [value]="s.webhookUrl"
+              placeholder="https://…"
+              (input)="setScreen(si, 'webhookUrl', $any($event.target).value)"
+            />
+          </label>
+
+          <p class="scr__fh">Fields</p>
+          @for (f of s.fields; track fi; let fi = $index) {
+            <div class="fld">
+              <div class="fld__row">
+                <input
+                  class="ar-field__input ar-mono"
+                  placeholder="name"
+                  [value]="f.name"
+                  (input)="setField(si, fi, 'name', $any($event.target).value)"
+                />
+                <input
+                  class="ar-field__input"
+                  placeholder="Label shown to the customer"
+                  [value]="f.label"
+                  (input)="setField(si, fi, 'label', $any($event.target).value)"
+                />
+              </div>
+              <div class="fld__row">
+                <select
+                  class="ar-field__input"
+                  [value]="f.fieldType"
+                  (change)="setField(si, fi, 'fieldType', +$any($event.target).value)"
+                >
+                  @for (t of fieldTypes; track t.value) {
+                    <option [value]="t.value">{{ t.label }}</option>
+                  }
+                </select>
+                <label class="fld__req">
+                  <input
+                    type="checkbox"
+                    [checked]="f.required"
+                    (change)="setField(si, fi, 'required', $any($event.target).checked)"
+                  />
+                  Required
+                </label>
+                <button type="button" class="scr__x" (click)="removeField(si, fi)">×</button>
+              </div>
+              @if (needsOptions(f.fieldType)) {
+                <textarea
+                  class="ar-field__input"
+                  rows="3"
+                  placeholder="One option per line"
+                  [value]="f.options"
+                  (input)="setField(si, fi, 'options', $any($event.target).value)"
+                ></textarea>
+              }
+            </div>
+          }
+          <button type="button" class="fd__add" (click)="addField(si)">+ Add field</button>
+        </section>
+      }
+
+      <button type="button" class="fd__add" (click)="addScreen()">+ Add screen</button>
+    </div>
+
+    <div class="fd__col fd__col--json">
+      <p class="fd__jh">Generated Flow JSON</p>
+      <pre class="fd__json ar-scroll">{{ prettyJson() }}</pre>
+    </div>
+  </div>
+}
