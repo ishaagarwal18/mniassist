@@ -311,6 +311,13 @@ export interface SendMessageInput {
 }
 
 
+/** M06-12: AI-drafted reply options for the composer. */
+export interface SuggestedRepliesDto {
+  providerName: string;
+  suggestions: string[];
+  basedOn?: string | null;
+}
+
 export interface SendLocationInput {
   latitude: number;
   longitude: number;

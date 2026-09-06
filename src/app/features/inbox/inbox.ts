@@ -68,6 +68,24 @@ export class ArInbox {
   protected readonly pickerOpen = signal(false);
   protected readonly sending = signal(false);
 
+  // ---- AI reply suggestions (M06-12) ------------------------------------
+  protected readonly suggestions = signal<string[]>([]);
+  protected readonly suggestBusy = signal(false);
+
+  protected async suggestReplies(): Promise<void> {
+    this.suggestBusy.set(true);
+    try {
+      this.suggestions.set(await this.inbox.suggestReplies());
+    } finally {
+      this.suggestBusy.set(false);
+    }
+  }
+
+  protected useSuggestion(text: string): void {
+    this.draft.set(text);
+    this.suggestions.set([]);
+  }
+
   protected async send(): Promise<void> {
     const doc = this.attached();
     const text = this.draft().trim();

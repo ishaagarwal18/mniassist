@@ -12,6 +12,7 @@ import type {
   SendLocationInput,
   SendMessageInput,
   SnoozeConversationInput,
+  SuggestedRepliesDto,
 } from './models';
 import { RestService, Rest } from '@abp/ng.core';
 import type { PagedResultDto, PagedResultRequestDto } from '@abp/ng.core';
@@ -162,6 +163,16 @@ export class InboxService {
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/inbox/search',
         body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  suggestReplies = (conversationId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, SuggestedRepliesDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/suggest-replies/${conversationId}`,
       },
       { apiName: this.apiName, ...config },
     );

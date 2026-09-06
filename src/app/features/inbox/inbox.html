@@ -143,6 +143,16 @@
               (keydown.enter.control)="send()"
             ></textarea>
 
+            @if (suggestions().length > 0) {
+              <div class="composer__suggest">
+                @for (s of suggestions(); track $index) {
+                  <button type="button" class="composer__suggest-chip" (click)="useSuggestion(s)">
+                    {{ s }}
+                  </button>
+                }
+              </div>
+            }
+
             @if (attached(); as doc) {
               <div class="composer__attach">
                 <ar-icon name="document" [size]="15" />
@@ -161,6 +171,15 @@
                 (click)="fileInput.click()"
               >
                 <ar-icon name="attach" [size]="17" />
+              </button>
+              <button
+                type="button"
+                class="composer__tool"
+                title="Suggest replies"
+                [disabled]="suggestBusy()"
+                (click)="suggestReplies()"
+              >
+                <ar-icon name="bolt" [size]="17" />
               </button>
               <input
                 #fileInput

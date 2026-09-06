@@ -208,6 +208,34 @@ export class InboxService {
     await this.dispatch(id, { text: body });
   }
 
+  /** AI-drafted reply options for the composer (M06-12). */
+  async suggestReplies(): Promise<string[]> {
+    const id = this.selectedId();
+    if (!id) return [];
+    if (environment.useMockData) {
+      const last = (this.selected()?.snippet ?? '').toLowerCase();
+      const hi = 'Hi,';
+      const picks: string[] = [];
+      if (/price|quote|cost|rate/.test(last))
+        picks.push(
+          `${hi} thanks for your interest. I'll prepare a quotation and send it across shortly — could you confirm the quantity and the delivery location?`,
+        );
+      if (/delivery|lead time|when|how long/.test(last))
+        picks.push(
+          `${hi} current lead time is about 2–3 weeks from order confirmation. I'll confirm the exact date once the order is placed.`,
+        );
+      if (picks.length === 0)
+        picks.push(
+          `${hi} thanks for your message — noted. Let me check the details and get back to you today.`,
+          `${hi} could you share a little more detail so I can point you to the right person?`,
+        );
+      picks.push(`${hi} happy to jump on a quick call if that's easier — what time works for you?`);
+      return picks;
+    }
+    const result = await firstValueFrom(this.api.suggestReplies(id));
+    return result.suggestions ?? [];
+  }
+
   /**
    * Send a document from the library, with an optional caption. The API resolves
    * the stored file and its media handle — this only carries the id and the text.
