@@ -54,6 +54,7 @@ export const NAV: readonly NavGroup[] = [
       { label: 'Billing', icon: 'billing', route: '/billing', permission: 'AutoReach.Billing' },
       { label: 'Invoices', icon: 'document', route: '/billing/invoices', permission: 'AutoReach.Billing' },
       { label: 'Integrations', icon: 'link', route: '/settings/integrations', permission: 'AutoReach.Integrations' },
+      { label: 'Users & roles', icon: 'user', route: '/settings/members', permission: 'AutoReach.Members' },
       { label: 'Support access', icon: 'user', route: '/settings/support-access', permission: 'AutoReach.Members' },
       { label: 'Compliance', icon: 'shield', route: '/compliance', permission: 'AutoReach.Compliance' },
       { label: 'Settings', icon: 'settings', route: '/settings' },
