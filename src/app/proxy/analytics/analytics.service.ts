@@ -1,3 +1,4 @@
+import { AnalyticsExportFormat } from './analytics-export-format.enum';
 import type {
   AdAttributionDto,
   AgentPerformanceDto,
@@ -18,12 +19,18 @@ export class AnalyticsService {
   private restService = inject(RestService);
   apiName = 'AutoReach';
 
-  export = (input: GetAnalyticsInput, config?: Partial<Rest.Config>) =>
-    this.restService.request<any, string>(
+  export = (
+    input: GetAnalyticsInput,
+    format: AnalyticsExportFormat = AnalyticsExportFormat.Csv,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, Blob>(
       {
         method: 'POST',
-        headers: { Accept: 'application/json' },
+        responseType: 'blob',
+        headers: { Accept: 'application/octet-stream' },
         url: '/api/auto-reach/analytics/export',
+        params: { format },
         body: input,
       },
       { apiName: this.apiName, ...config },

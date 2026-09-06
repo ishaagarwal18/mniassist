@@ -1,8 +1,20 @@
 <ar-topbar title="Analytics" subtitle="Volume, spend and per-actor performance">
   <div class="rangepick">
     @for (r of ranges; track r) {
-      <button ar-button [variant]="range() === r ? 'primary' : 'ghost'" (click)="setRange(r)">
+      <button
+        ar-button
+        type="button"
+        [variant]="range() === r ? 'primary' : 'ghost'"
+        (click)="setRange(r)"
+      >
         {{ r }}d
+      </button>
+    }
+  </div>
+  <div class="rangepick">
+    @for (f of exportFormats; track f.value) {
+      <button ar-button type="button" variant="ghost" icon="download" (click)="export(f.value)">
+        {{ f.label }}
       </button>
     }
   </div>

@@ -1,9 +1,9 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { forkJoin, map } from 'rxjs';
+import { firstValueFrom, forkJoin, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AnalyticsService as AnalyticsApi } from '../../proxy/analytics';
+import { AnalyticsExportFormat, AnalyticsService as AnalyticsApi } from '../../proxy/analytics';
 import {
   PricingCategory as ApiPricingCategory,
   TemplateCategory as ApiTemplateCategory,
@@ -156,7 +156,8 @@ export class AnalyticsStore {
             spendInPaise: t.spendInPaise ?? 0,
           })),
           categories: (r.categories.items ?? []).map((c) => ({
-            category: c.category != null ? PRICING[c.category] : PRICING[ApiPricingCategory.Unknown],
+            category:
+              c.category != null ? PRICING[c.category] : PRICING[ApiPricingCategory.Unknown],
             count: c.count ?? 0,
             spendInPaise: c.spendInPaise ?? 0,
             shareOfVolume: c.shareOfVolume ?? 0,
@@ -164,8 +165,14 @@ export class AnalyticsStore {
           templates: (r.templates.items ?? []).map((t) => ({
             templateId: t.templateId ?? '',
             name: t.name ?? '(unnamed)',
-            category: t.category != null ? TEMPLATE_CAT[t.category] : TEMPLATE_CAT[ApiTemplateCategory.Utility],
-            quality: t.quality != null ? TEMPLATE_QUALITY[t.quality] : TEMPLATE_QUALITY[ApiTemplateQuality.Unknown],
+            category:
+              t.category != null
+                ? TEMPLATE_CAT[t.category]
+                : TEMPLATE_CAT[ApiTemplateCategory.Utility],
+            quality:
+              t.quality != null
+                ? TEMPLATE_QUALITY[t.quality]
+                : TEMPLATE_QUALITY[ApiTemplateQuality.Unknown],
             sent: t.sent ?? 0,
             deliveryRate: t.deliveryRate ?? 0,
             readRate: t.readRate ?? 0,
@@ -205,5 +212,34 @@ export class AnalyticsStore {
 
   setRange(days: AnalyticsRange): void {
     this.range.set(days);
+  }
+
+  /** Downloads the category / template / agent tables in the chosen format. M12-6. */
+  async export(format: AnalyticsExportFormat): Promise<void> {
+    if (environment.useMockData) {
+      window.alert('Export needs the API — it is disabled in the standalone build.');
+      return;
+    }
+    const blob = await firstValueFrom(
+      this.api.export(
+        {
+          fromUtc: new Date(Date.now() - this.range() * 86_400_000).toISOString(),
+          channelId: this.channels.active()?.id,
+        },
+        format,
+      ),
+    );
+    const ext =
+      format === AnalyticsExportFormat.Excel
+        ? 'xls'
+        : format === AnalyticsExportFormat.Pdf
+          ? 'pdf'
+          : 'csv';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analytics-${this.range()}d.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }

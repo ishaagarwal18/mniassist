@@ -2,6 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { AnalyticsRange, AnalyticsStore } from '../../core/services/analytics.service';
+import { AnalyticsExportFormat } from '../../proxy/analytics';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArStatTile } from '../../ui';
@@ -54,6 +55,16 @@ export class ArAnalytics {
 
   protected setRange(days: AnalyticsRange): void {
     this.store.setRange(days);
+  }
+
+  protected readonly exportFormats = [
+    { value: AnalyticsExportFormat.Csv, label: 'CSV' },
+    { value: AnalyticsExportFormat.Excel, label: 'Excel' },
+    { value: AnalyticsExportFormat.Pdf, label: 'PDF' },
+  ];
+
+  protected export(format: AnalyticsExportFormat): void {
+    void this.store.export(format);
   }
 
   protected inr(paise: number): string {
