@@ -1,4 +1,5 @@
-import { Injectable, computed, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService, ConfigStateService } from '@abp/ng.core';
 import { firstValueFrom, of } from 'rxjs';
@@ -8,6 +9,7 @@ import { ProfileDto, ProfileService, UpdateProfileDto } from '../../proxy/accoun
 import { initials } from '../util/format';
 
 const MOCK = environment.useMockData;
+const MOCK_SIGNED_OUT_KEY = 'ar.mock.signedOut';
 
 /** The shape the whole app reads for "who is signed in". */
 export interface CurrentUser {
@@ -41,6 +43,18 @@ export class CurrentUserService {
   private readonly auth = inject(AuthService);
   private readonly config = inject(ConfigStateService);
   private readonly api = inject(ProfileService);
+  private readonly router = inject(Router);
+
+  /** Mock-mode only: a local "signed out" flag the login screen flips. */
+  private readonly mockSignedOut = signal(this.readMockSignedOut());
+
+  private readMockSignedOut(): boolean {
+    try {
+      return localStorage.getItem(MOCK_SIGNED_OUT_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
 
   private readonly configUser = toSignal(
     MOCK ? of(undefined) : this.config.getOne$('currentUser'),
@@ -61,7 +75,9 @@ export class CurrentUserService {
     };
   });
 
-  readonly isAuthenticated = computed(() => (MOCK ? true : this.user().isAuthenticated));
+  readonly isAuthenticated = computed(() =>
+    MOCK ? !this.mockSignedOut() : this.user().isAuthenticated,
+  );
 
   readonly fullName = computed(() => {
     const u = this.user();
@@ -76,17 +92,29 @@ export class CurrentUserService {
   });
 
   login(): void {
-    if (!MOCK) this.auth.navigateToLogin();
+    if (MOCK) {
+      try {
+        localStorage.removeItem(MOCK_SIGNED_OUT_KEY);
+      } catch {
+        /* ignore */
+      }
+      this.mockSignedOut.set(false);
+      void this.router.navigateByUrl('/home');
+      return;
+    }
+    this.auth.navigateToLogin();
   }
 
   logout(): void {
     if (MOCK) {
       try {
-        localStorage.clear();
+        localStorage.setItem(MOCK_SIGNED_OUT_KEY, '1');
+        localStorage.removeItem('ar.agency.acting');
       } catch {
         /* ignore */
       }
-      window.location.assign('/');
+      this.mockSignedOut.set(true);
+      void this.router.navigateByUrl('/login');
       return;
     }
     void this.auth.logout();

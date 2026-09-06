@@ -1,19 +1,24 @@
-import { CanActivateFn } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
 import { authGuard as abpAuthGuard } from '@abp/ng.core';
 
 import { environment } from '../../../environments/environment';
+import { CurrentUserService } from '../services/current-user.service';
 
 /**
  * Route guard for the whole shell.
  *
- * In mock mode there is no auth server to talk to, so every route is open — the
- * design is meant to be reviewable without a backend. Once the API is wired
- * (`useMockData: false`) this delegates to ABP's own `authGuard`, which redirects
- * an unauthenticated visitor to the login flow the OAuth provider set up.
+ * In mock mode there is no auth server, so "signed in" is a local flag the login
+ * screen flips — an unauthenticated visitor is sent to `/login` rather than shown
+ * the app chrome. Once the API is wired (`useMockData: false`) this delegates to
+ * ABP's own `authGuard`, which redirects to the OAuth provider's login.
  */
 export const appAuthGuard: CanActivateFn = (route, state) => {
   if ((environment as unknown as { useMockData?: boolean }).useMockData) {
-    return true;
+    if (inject(CurrentUserService).isAuthenticated()) {
+      return true;
+    }
+    return inject(Router).createUrlTree(['/login']);
   }
   return abpAuthGuard(route, state);
 };

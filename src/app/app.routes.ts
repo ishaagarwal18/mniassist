@@ -6,6 +6,11 @@ import { appAuthGuard } from './core/auth/auth.guard';
  *  only things in the initial bundle. */
 export const routes: Routes = [
   {
+    path: 'login',
+    title: 'Sign in · AutoReach',
+    loadComponent: () => import('./features/account/login').then((m) => m.ArLogin),
+  },
+  {
     path: '',
     component: ArAppShell,
     canActivate: [appAuthGuard],
