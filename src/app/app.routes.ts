@@ -17,6 +17,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/dashboard/dashboard').then(m => m.ArDashboard),
       },
       {
+        path: 'getting-started', title: 'Get started · AutoReach',
+        loadComponent: () => import('./features/onboarding/wizard').then(m => m.ArOnboardingWizard),
+      },
+      {
         path: 'inbox', title: 'Inbox · AutoReach',
         loadComponent: () => import('./features/inbox/inbox').then(m => m.ArInbox),
       },

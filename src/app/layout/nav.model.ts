@@ -20,6 +20,7 @@ export const NAV: readonly NavGroup[] = [
     heading: null,
     items: [
       { label: 'Home', icon: 'home', route: '/home' },
+      { label: 'Get started', icon: 'check', route: '/getting-started' },
       { label: 'Notifications', icon: 'alert', route: '/notifications', badge: 'alerts' },
       { label: 'Inbox', icon: 'inbox', route: '/inbox', badge: 'inbox', permission: 'AutoReach.Inbox' },
       { label: 'Contacts', icon: 'contacts', route: '/contacts', permission: 'AutoReach.Contacts' },
