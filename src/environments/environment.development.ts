@@ -3,15 +3,16 @@ import { Environment } from '@abp/ng.core';
 /**
  * Development environment.
  * <p>
- * `useMockData` starts true so the UI runs standalone against the seeded signal
- * stores — the design work does not need a database to be reviewable. Flip it to
- * false once `dotnet run` is up on 44320 and the same screens bind to real data.
+ * `useMockData` is false: the screens bind to the real API on 44320, which also
+ * issues its own tokens (OpenIddict password grant) — sign-in on `/login` goes
+ * through that. Set it back to true to review the UI against the seeded signal
+ * stores without a database.
  * </p>
  */
 export const environment = {
   production: false,
 
-  useMockData: true,
+  useMockData: false,
 
   application: {
     baseUrl: 'http://localhost:4200',
@@ -19,7 +20,7 @@ export const environment = {
   },
 
   oAuthConfig: {
-    issuer: 'https://localhost:44321/',
+    issuer: 'https://localhost:44320/',
     redirectUri: 'http://localhost:4200',
     clientId: 'AutoReach_App',
     responseType: 'code',

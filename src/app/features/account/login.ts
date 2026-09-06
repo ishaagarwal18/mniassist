@@ -27,6 +27,21 @@ import { ArButton, ArIcon } from '../../ui';
           <p class="lg__error">{{ e }}</p>
         }
 
+        @if (!mock) {
+          <label class="lg__field">
+            <span>Workspace <em class="lg__opt">— leave blank for the host</em></span>
+            <input
+              class="ar-field__input"
+              name="tenant"
+              autocapitalize="none"
+              autocomplete="organization"
+              placeholder="e.g. vertex-automation"
+              [value]="tenant()"
+              (input)="tenant.set($any($event.target).value)"
+            />
+          </label>
+        }
+
         <label class="lg__field">
           <span>Username or email</span>
           <input
@@ -144,6 +159,11 @@ import { ArButton, ArIcon } from '../../ui';
       font: 500 12px var(--ar-font-sans);
       color: var(--ar-ink-700);
     }
+    .lg__opt {
+      font-style: normal;
+      font-weight: 400;
+      color: var(--ar-ink-400);
+    }
     .lg__remember {
       display: flex;
       align-items: center;
@@ -180,6 +200,7 @@ export class ArLogin {
   private readonly router = inject(Router);
 
   protected readonly mock = environment.useMockData;
+  protected readonly tenant = signal('');
   protected readonly username = signal('');
   protected readonly password = signal('');
   protected readonly rememberMe = signal(true);
@@ -202,7 +223,12 @@ export class ArLogin {
     this.busy.set(true);
     this.error.set(null);
     try {
-      await this.account.signIn(this.username().trim(), this.password(), this.rememberMe());
+      await this.account.signIn(
+        this.username().trim(),
+        this.password(),
+        this.rememberMe(),
+        this.tenant().trim(),
+      );
     } catch (e: unknown) {
       this.error.set(this.readError(e));
       this.busy.set(false);

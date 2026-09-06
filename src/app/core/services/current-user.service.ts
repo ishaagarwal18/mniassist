@@ -1,7 +1,12 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { AuthService, ConfigStateService } from '@abp/ng.core';
+import {
+  AbpTenantService,
+  AuthService,
+  ConfigStateService,
+  SessionStateService,
+} from '@abp/ng.core';
 import { firstValueFrom, of } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -61,6 +66,14 @@ export class CurrentUserService {
   private readonly config = inject(ConfigStateService);
   private readonly api = inject(ProfileService);
   private readonly router = inject(Router);
+  private readonly tenants = inject(AbpTenantService);
+  private readonly session = inject(SessionStateService);
+
+  /** Multi-tenancy is on outside mock mode — the login form offers a workspace field. */
+  readonly tenancyEnabled = !MOCK;
+
+  /** The workspace the sign-in form last resolved (for the shell to show). */
+  readonly currentTenantName = signal<string>(this.session.getTenant()?.name ?? '');
 
   /** Mock-mode only: whether the local sign-in flag is set, and who as. */
   private readonly mockSignedIn = signal(this.readMockState() !== null);
@@ -112,11 +125,42 @@ export class CurrentUserService {
   });
 
   /**
-   * Signs in with a username and password. In mock mode there is no auth server, so
-   * any non-empty credentials are accepted and the local session flag is flipped.
-   * In real mode this is ABP's password grant against the OpenIddict token endpoint.
+   * Resolves a workspace (tenant) name to an id and pins it on the session, so the
+   * token request and every later API call carry the `__tenant` header. A blank
+   * name clears it (host login). Throws if the name does not match a live tenant.
+   * No-ops in mock mode.
    */
-  async signIn(username: string, password: string, rememberMe: boolean): Promise<void> {
+  async selectTenant(name: string): Promise<void> {
+    if (MOCK) return;
+    const wanted = name.trim();
+    if (!wanted) {
+      this.session.setTenant(null);
+      this.currentTenantName.set('');
+      return;
+    }
+    const result = await firstValueFrom(this.tenants.findTenantByName(wanted));
+    if (!result?.success || !result.tenantId) {
+      throw new Error(`Workspace "${wanted}" was not found.`);
+    }
+    if (!result.isActive) {
+      throw new Error(`Workspace "${wanted}" is not active.`);
+    }
+    this.session.setTenant({ id: result.tenantId, name: result.name ?? wanted, isAvailable: true });
+    this.currentTenantName.set(result.name ?? wanted);
+  }
+
+  /**
+   * Signs in with a username and password, optionally scoped to a workspace. In
+   * mock mode there is no auth server, so any non-empty credentials are accepted
+   * and the local session flag is flipped. In real mode this resolves the tenant
+   * then runs ABP's password grant against the OpenIddict token endpoint.
+   */
+  async signIn(
+    username: string,
+    password: string,
+    rememberMe: boolean,
+    tenant = '',
+  ): Promise<void> {
     if (MOCK) {
       this.mockUser.set(mockIdentityFrom(username));
       try {
@@ -128,6 +172,7 @@ export class CurrentUserService {
       await this.router.navigateByUrl('/home');
       return;
     }
+    await this.selectTenant(tenant);
     await firstValueFrom(this.auth.login({ username, password, rememberMe, redirectUrl: '/home' }));
   }
 
@@ -149,7 +194,17 @@ export class CurrentUserService {
       void this.router.navigateByUrl('/login');
       return;
     }
-    void this.auth.logout();
+    this.auth.logout().subscribe({
+      complete: () => {
+        this.session.setTenant(null);
+        this.currentTenantName.set('');
+        try {
+          localStorage.removeItem('ar.agency.acting');
+        } catch {
+          /* ignore */
+        }
+      },
+    });
   }
 
   // ---- profile ------------------------------------------------------
