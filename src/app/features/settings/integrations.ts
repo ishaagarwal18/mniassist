@@ -1,11 +1,29 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 
 import { OpsService } from '../../core/services/ops.service';
 import { WebhookSubscription } from '../../core/models/ops.model';
 import { WebhookEvent } from '../../proxy/integrations/webhook-event.enum';
+import { CrmSyncConnectionStatusDto, CrmSyncService } from '../../proxy/integrations';
+import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
+
+const SEED_CRM: CrmSyncConnectionStatusDto[] = [
+  {
+    connectionId: 'crm-zoho',
+    kind: 2,
+    name: 'Zoho CRM — Sales',
+    state: 1,
+    supportsDealSync: true,
+    linkedEnquiries: 34,
+    linkedQuotations: 12,
+    lastOutboundAtUtc: new Date(Date.now() - 26 * 60_000).toISOString(),
+    lastInboundAtUtc: new Date(Date.now() - 3 * 3_600_000).toISOString(),
+    inboundWebhookPath: '/api/webhooks/crm/crm-zoho?secret=••••••',
+  },
+];
 
 const DELIVERY_TONE: Record<string, ChipTone> = {
   delivered: 'good',
@@ -31,10 +49,50 @@ const DELIVERY_TONE: Record<string, ChipTone> = {
 })
 export class ArIntegrations {
   private readonly ops = inject(OpsService);
+  private readonly crmSync = inject(CrmSyncService);
 
   protected readonly webhooks = this.ops.webhooks;
   protected readonly deliveries = this.ops.deliveries;
   protected readonly selectedId = signal<string | null>('wh-1');
+
+  // ---- CRM two-way sync (M10-9) -----------------------------------
+  protected readonly crm = signal<CrmSyncConnectionStatusDto[]>([]);
+  protected readonly crmError = signal<string | null>(null);
+  protected readonly resyncing = signal<string | null>(null);
+
+  constructor() {
+    void this.loadCrm();
+  }
+
+  private async loadCrm(): Promise<void> {
+    if (environment.useMockData) {
+      this.crm.set(SEED_CRM);
+      return;
+    }
+    try {
+      const status = await firstValueFrom(this.crmSync.getStatus());
+      this.crm.set(status.connections ?? []);
+    } catch {
+      this.crmError.set('Could not load CRM sync status.');
+    }
+  }
+
+  protected async resync(connectionId: string): Promise<void> {
+    this.resyncing.set(connectionId);
+    this.crmError.set(null);
+    try {
+      await firstValueFrom(this.crmSync.resync(connectionId));
+      await this.loadCrm();
+    } catch (e: unknown) {
+      this.crmError.set(e instanceof Error ? e.message : 'The resync could not be started.');
+    } finally {
+      this.resyncing.set(null);
+    }
+  }
+
+  protected crmKindLabel(kind: number): string {
+    return { 2: 'Zoho CRM', 6: 'HubSpot' }[kind] ?? `Kind ${kind}`;
+  }
 
   // ---- Add endpoint dialog -----------------------------------------
   protected readonly allEvents: { value: WebhookEvent; label: string }[] = [

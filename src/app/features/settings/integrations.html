@@ -192,3 +192,49 @@
     }
   </section>
 </div>
+
+<section class="crm" aria-label="CRM two-way sync">
+  <h2 class="crm__title">CRM two-way sync</h2>
+  <p class="crm__lead">
+    Enquiries and quotations are pushed to a connected Zoho CRM or HubSpot as deals when they are
+    created or move stage. A change made back in the CRM — the deal stage or its value — flows into
+    the pipeline when the CRM posts to the inbound webhook below.
+  </p>
+
+  @if (crmError(); as e) {
+    <p class="intg__dialog-err">{{ e }}</p>
+  }
+
+  @for (c of crm(); track c.connectionId) {
+    <article class="crm__row">
+      <div class="crm__head">
+        <span class="crm__name">{{ c.name }}</span>
+        <ar-chip [tone]="c.state === 1 ? 'good' : 'warn'" [dot]="true">
+          {{ crmKindLabel(c.kind) }}
+        </ar-chip>
+      </div>
+      <p class="crm__counts">
+        {{ c.linkedEnquiries }} enquir{{ c.linkedEnquiries === 1 ? 'y' : 'ies' }} ·
+        {{ c.linkedQuotations }} quotation{{ c.linkedQuotations === 1 ? '' : 's' }} linked · pushed
+        {{ when(c.lastOutboundAtUtc ?? undefined) }} · received
+        {{ when(c.lastInboundAtUtc ?? undefined) }}
+      </p>
+      <p class="crm__hook">
+        Inbound webhook: <code>{{ c.inboundWebhookPath }}</code>
+      </p>
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        [disabled]="resyncing() === c.connectionId"
+        (click)="resync(c.connectionId)"
+      >
+        {{ resyncing() === c.connectionId ? 'Resyncing…' : 'Resync open enquiries' }}
+      </button>
+    </article>
+  } @empty {
+    <p class="empty">
+      No CRM with two-way sync is connected. Add a Zoho CRM or HubSpot connection to start.
+    </p>
+  }
+</section>
