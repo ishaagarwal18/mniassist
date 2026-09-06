@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { TemplateService } from '../../core/services/template.service';
 import {
-  DraftTemplate,
-  LintItem,
   Template,
   TemplateCategory,
   TemplateQuality,
@@ -29,19 +28,10 @@ const QUALITY_TONE: Record<TemplateQuality, ChipTone> = {
   low: 'bad',
 };
 
-const emptyDraft = (): DraftTemplate => ({
-  name: '',
-  language: 'en',
-  category: 'utility',
-  header: '',
-  body: '',
-  footer: '',
-});
-
 /**
- * Template studio (M04). Authoring, the pre-submission lint, and submission to
- * Meta — the three things that were missing from the client even though the API
- * supported them.
+ * Template studio (M04). The list, the pre-submission lint summary, and
+ * submission to Meta. Authoring itself is the visual composer at
+ * `/templates/new` (M04-1) — a form beside a live WhatsApp preview.
  *
  * The screen leads with the two states that cost a tenant money: a template Meta
  * re-categorised (billing follows Meta's category, not the filed one) and a
@@ -57,25 +47,13 @@ const emptyDraft = (): DraftTemplate => ({
 })
 export class ArTemplates {
   private readonly store = inject(TemplateService);
+  private readonly router = inject(Router);
 
   protected readonly templates = this.store.templates;
   protected readonly counts = this.store.counts;
   protected readonly loading = this.store.loading;
 
-  protected readonly composerOpen = signal(false);
-  protected readonly draft = signal<DraftTemplate>(emptyDraft());
-  protected readonly lint = signal<LintItem[] | null>(null);
   protected readonly busy = signal(false);
-  protected readonly error = signal<string | null>(null);
-
-  protected readonly bodyVariableCount = computed(() => {
-    const matches = this.draft().body.match(/\{\{\s*\d+\s*\}\}/g) ?? [];
-    return new Set(matches.map((m) => m.replace(/\D/g, ''))).size;
-  });
-
-  protected readonly lintHasErrors = computed(() =>
-    (this.lint() ?? []).some((i) => i.severity === 'error'),
-  );
 
   protected readonly subtitle = computed(() => {
     const c = this.counts();
@@ -88,41 +66,12 @@ export class ArTemplates {
     this.store.filter.set(term);
   }
 
-  protected openComposer(): void {
-    this.draft.set(emptyDraft());
-    this.lint.set(null);
-    this.error.set(null);
-    this.composerOpen.set(true);
+  protected newTemplate(): void {
+    void this.router.navigate(['/templates/new']);
   }
 
-  protected patch<K extends keyof DraftTemplate>(key: K, value: DraftTemplate[K]): void {
-    this.draft.update((d) => ({ ...d, [key]: value }));
-    this.lint.set(null);
-  }
-
-  protected async runLint(): Promise<void> {
-    this.busy.set(true);
-    this.error.set(null);
-    try {
-      this.lint.set(await this.store.lint(this.draft()));
-    } catch {
-      this.error.set('Could not reach the linter.');
-    } finally {
-      this.busy.set(false);
-    }
-  }
-
-  protected async createTemplate(): Promise<void> {
-    this.busy.set(true);
-    this.error.set(null);
-    try {
-      await this.store.create(this.draft());
-      this.composerOpen.set(false);
-    } catch (e: unknown) {
-      this.error.set(e instanceof Error ? e.message : 'Could not create the template.');
-    } finally {
-      this.busy.set(false);
-    }
+  protected edit(t: Template): void {
+    void this.router.navigate(['/templates', t.id, 'edit']);
   }
 
   protected async submit(t: Template): Promise<void> {
@@ -153,6 +102,10 @@ export class ArTemplates {
 
   protected categoryLabel(c: TemplateCategory): string {
     return c[0].toUpperCase() + c.slice(1);
+  }
+
+  protected canEdit(t: Template): boolean {
+    return t.status === 'draft' || t.status === 'rejected';
   }
 
   protected canSubmit(t: Template): boolean {

@@ -15,11 +15,15 @@ import {
   TemplateStatus as ApiStatus,
 } from '../../proxy/messaging';
 import {
+  DraftButton,
   DraftTemplate,
   LintItem,
   LintSeverity,
   Template,
+  TemplateButtonKind,
+  TemplateButtonView,
   TemplateCategory,
+  TemplateHeaderKind,
   TemplateQuality,
   TemplateStatus,
 } from '../models/template.model';
@@ -59,15 +63,75 @@ const SEVERITY: Record<TemplateLintSeverity, LintSeverity> = {
   [TemplateLintSeverity.Error]: 'error',
 };
 
+const HEADER_KIND: Record<TemplateHeaderFormat, TemplateHeaderKind> = {
+  [TemplateHeaderFormat.None]: 'none',
+  [TemplateHeaderFormat.Text]: 'text',
+  [TemplateHeaderFormat.Image]: 'image',
+  [TemplateHeaderFormat.Video]: 'video',
+  [TemplateHeaderFormat.Document]: 'document',
+  [TemplateHeaderFormat.Location]: 'none',
+};
+
+const HEADER_KIND_TO_API: Record<TemplateHeaderKind, TemplateHeaderFormat> = {
+  none: TemplateHeaderFormat.None,
+  text: TemplateHeaderFormat.Text,
+  image: TemplateHeaderFormat.Image,
+  video: TemplateHeaderFormat.Video,
+  document: TemplateHeaderFormat.Document,
+};
+
+/** Meta's on-the-wire button `type` ↔ our string kind. */
+const BUTTON_KIND: Record<string, TemplateButtonKind> = {
+  QUICK_REPLY: 'quick_reply',
+  URL: 'url',
+  PHONE_NUMBER: 'phone',
+};
+
+function parseButtons(json: string | null | undefined): TemplateButtonView[] {
+  if (!json) return [];
+  try {
+    const raw = JSON.parse(json) as Array<Record<string, string>>;
+    if (!Array.isArray(raw)) return [];
+    return raw.map((b) => ({
+      kind: BUTTON_KIND[b['type']] ?? 'quick_reply',
+      text: b['text'] ?? '',
+      url: b['url'] ?? undefined,
+      phone: b['phone_number'] ?? undefined,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function buildButtonsJson(buttons: readonly DraftButton[]): string {
+  return JSON.stringify(
+    buttons
+      .filter((b) => b.text.trim())
+      .map((b) => {
+        if (b.kind === 'url') {
+          return { type: 'URL', text: b.text.trim(), url: b.url.trim() || 'https://example.com' };
+        }
+        if (b.kind === 'phone') {
+          return { type: 'PHONE_NUMBER', text: b.text.trim(), phone_number: b.phone.trim() };
+        }
+        return { type: 'QUICK_REPLY', text: b.text.trim() };
+      }),
+  );
+}
+
 function toTemplate(dto: TemplateDto): Template {
-  const part = (k: TemplateComponentKind) =>
-    dto.components?.find((c) => c.kind === k)?.text ?? undefined;
+  const component = (k: TemplateComponentKind) => dto.components?.find((c) => c.kind === k);
+  const part = (k: TemplateComponentKind) => component(k)?.text ?? undefined;
+  const headerComponent = component(TemplateComponentKind.Header);
   return {
     id: dto.id!,
     name: dto.name ?? '',
     language: dto.languageCode ?? 'en',
     category: dto.category != null ? CATEGORY[dto.category] : CATEGORY[ApiCategory.Utility],
-    effectiveCategory: dto.effectiveCategory != null ? CATEGORY[dto.effectiveCategory] : CATEGORY[ApiCategory.Utility],
+    effectiveCategory:
+      dto.effectiveCategory != null
+        ? CATEGORY[dto.effectiveCategory]
+        : CATEGORY[ApiCategory.Utility],
     metaAssignedCategory:
       dto.metaAssignedCategory != null ? CATEGORY[dto.metaAssignedCategory] : undefined,
     status: dto.status != null ? STATUS[dto.status] : STATUS[ApiStatus.Draft],
@@ -76,20 +140,66 @@ function toTemplate(dto: TemplateDto): Template {
     submittedAt: dto.submittedAtUtc ?? undefined,
     approvedAt: dto.approvedAtUtc ?? undefined,
     variableCount: dto.variableCount ?? 0,
+    headerKind:
+      headerComponent?.headerFormat != null ? HEADER_KIND[headerComponent.headerFormat] : 'none',
     header: part(TemplateComponentKind.Header),
     body: part(TemplateComponentKind.Body) ?? '',
     footer: part(TemplateComponentKind.Footer),
+    buttons: parseButtons(component(TemplateComponentKind.Buttons)?.buttonsJson),
+  };
+}
+
+/** A blank draft the composer opens on. */
+export function emptyDraft(): DraftTemplate {
+  return {
+    name: '',
+    language: 'en',
+    category: 'utility',
+    headerKind: 'none',
+    header: '',
+    body: '',
+    footer: '',
+    buttons: [],
+    samples: {},
+  };
+}
+
+/** Loads an existing template back into an editable draft. */
+export function draftFromTemplate(t: Template): DraftTemplate {
+  return {
+    id: t.id,
+    name: t.name,
+    language: t.language,
+    category: t.category,
+    headerKind: t.headerKind,
+    header: t.header ?? '',
+    body: t.body,
+    footer: t.footer ?? '',
+    buttons: t.buttons.map((b) => ({
+      kind: b.kind,
+      text: b.text,
+      url: b.url ?? '',
+      phone: b.phone ?? '',
+    })),
+    samples: {},
   };
 }
 
 function toCreateDto(channelId: string, draft: DraftTemplate): CreateUpdateTemplateDto {
   const components: CreateUpdateTemplateDto['components'] = [];
   let order = 0;
-  if (draft.header.trim()) {
+  if (draft.headerKind === 'text' && draft.header.trim()) {
     components.push({
       kind: TemplateComponentKind.Header,
       headerFormat: TemplateHeaderFormat.Text,
       text: draft.header.trim(),
+      order: order++,
+    });
+  } else if (draft.headerKind !== 'none' && draft.headerKind !== 'text') {
+    components.push({
+      kind: TemplateComponentKind.Header,
+      headerFormat: HEADER_KIND_TO_API[draft.headerKind],
+      text: null,
       order: order++,
     });
   }
@@ -107,6 +217,16 @@ function toCreateDto(channelId: string, draft: DraftTemplate): CreateUpdateTempl
       order: order++,
     });
   }
+  const withText = draft.buttons.filter((b) => b.text.trim());
+  if (withText.length > 0) {
+    components.push({
+      kind: TemplateComponentKind.Buttons,
+      headerFormat: TemplateHeaderFormat.None,
+      text: null,
+      buttonsJson: buildButtonsJson(withText),
+      order: order++,
+    });
+  }
   return {
     channelId,
     name: draft.name.trim(),
@@ -114,6 +234,84 @@ function toCreateDto(channelId: string, draft: DraftTemplate): CreateUpdateTempl
     category: CATEGORY_TO_API[draft.category],
     components,
   };
+}
+
+/** A small subset of the server lint, run in the browser for the mock-data build so
+ *  the composer's "Check" button does something useful offline. */
+function localLint(draft: DraftTemplate): LintItem[] {
+  const items: LintItem[] = [];
+  const push = (severity: LintSeverity, code: string, message: string) =>
+    items.push({ severity, code, message });
+
+  if (!/^[a-z0-9_]+$/.test(draft.name.trim())) {
+    push('error', 'name', 'The name may only contain lowercase letters, digits and underscores.');
+  }
+  if (!draft.body.trim()) {
+    push('error', 'body', 'The body cannot be empty.');
+  }
+  if (draft.body.length > 1024) {
+    push(
+      'error',
+      'body-length',
+      `The body is ${draft.body.length} characters; Meta's limit is 1024.`,
+    );
+  }
+
+  const nums = (draft.body.match(/\{\{\s*(\d+)\s*\}\}/g) ?? []).map((m) => +m.replace(/\D/g, ''));
+  const distinct = [...new Set(nums)].sort((a, b) => a - b);
+  distinct.forEach((n, i) => {
+    if (n !== i + 1) {
+      push(
+        'error',
+        'vars',
+        `Variables must be numbered {{1}}, {{2}}, … in order — found {{${n}}}.`,
+      );
+    }
+  });
+  if (/\{\{\s*\d+\s*\}\}[.,!?]?\s*$/.test(draft.body.trim())) {
+    push(
+      'warning',
+      'var-trailing',
+      'A message that ends on a variable is a common rejection reason.',
+    );
+  }
+
+  if (
+    draft.category === 'utility' &&
+    /\b(off|discount|sale|free|offer|% off)\b/i.test(draft.body)
+  ) {
+    push(
+      'warning',
+      'promo',
+      'This reads as promotional — Meta will likely re-categorise it as marketing (billed higher).',
+    );
+  }
+
+  const quick = draft.buttons.filter((b) => b.kind === 'quick_reply' && b.text.trim()).length;
+  if (quick > 3) {
+    push('error', 'buttons-quick', `At most 3 quick-reply buttons are allowed; this has ${quick}.`);
+  }
+  draft.buttons.forEach((b) => {
+    if (b.text.trim().length > 25) {
+      push('error', 'button-label', `Button label "${b.text}" is over Meta's 25-character limit.`);
+    }
+    if (b.kind === 'url' && !/^https?:\/\//.test(b.url.trim())) {
+      push(
+        'error',
+        'button-url',
+        `The URL button "${b.text || '(unnamed)'}" needs a full http(s) URL.`,
+      );
+    }
+    if (b.kind === 'phone' && !/^\+\d{6,}$/.test(b.phone.trim())) {
+      push(
+        'error',
+        'button-phone',
+        `The call button "${b.text || '(unnamed)'}" needs a phone number in +country format.`,
+      );
+    }
+  });
+
+  return items;
 }
 
 /**
@@ -128,8 +326,9 @@ export class TemplateService {
 
   readonly filter = signal('');
   private readonly reloadTick = signal(0);
+  private readonly seedTick = signal(0);
 
-  private readonly seed: readonly Template[] = [
+  private seedList: Template[] = [
     {
       id: 't-1',
       name: 'amc_renewal_30d',
@@ -139,9 +338,14 @@ export class TemplateService {
       status: 'approved',
       quality: 'high',
       variableCount: 4,
+      headerKind: 'text',
       header: 'AMC renewal due',
       body: 'Hello {{1}}, the annual maintenance contract on your {{2}} at {{3}} expires on {{4}}. Reply here and we will send the renewal quotation.',
       footer: 'You are receiving this because you hold an AMC with us.',
+      buttons: [
+        { kind: 'quick_reply', text: 'Send AMC options' },
+        { kind: 'phone', text: 'Call service desk', phone: '+912040001234' },
+      ],
       approvedAt: '2026-07-14T00:00:00Z',
     },
     {
@@ -154,7 +358,9 @@ export class TemplateService {
       status: 'approved',
       quality: 'medium',
       variableCount: 3,
+      headerKind: 'none',
       body: 'Hi {{1}}, following up on quotation {{2}} for {{3}}. Happy to revise it or walk you through the sizing — just reply here.',
+      buttons: [],
       approvedAt: '2026-08-02T00:00:00Z',
     },
     {
@@ -166,7 +372,9 @@ export class TemplateService {
       status: 'pending',
       quality: 'unknown',
       variableCount: 1,
-      body: 'Hello {{1}}, our August technical bulletin covers VFD retrofits on ageing DOL starters — typical payback under 14 months. Reply BULLETIN for the PDF.',
+      headerKind: 'document',
+      body: 'Hello {{1}}, our August technical bulletin covers VFD retrofits on ageing DOL starters — typical payback under 14 months.',
+      buttons: [{ kind: 'url', text: 'Read the bulletin', url: 'https://example.com/bulletin' }],
       submittedAt: '2026-08-24T00:00:00Z',
     },
     {
@@ -178,7 +386,9 @@ export class TemplateService {
       status: 'rejected',
       quality: 'unknown',
       variableCount: 2,
+      headerKind: 'none',
       body: 'Hi {{1}}, calibration on {{2}} is due. Book now for 10% off!',
+      buttons: [],
       rejectionReason: 'Promotional content ("10% off") is not permitted in a utility template.',
     },
   ];
@@ -194,9 +404,13 @@ export class TemplateService {
 
   readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
 
-  readonly all = computed<readonly Template[]>(() =>
-    environment.useMockData ? this.seed : this.resource.value(),
-  );
+  readonly all = computed<readonly Template[]>(() => {
+    if (environment.useMockData) {
+      this.seedTick();
+      return this.seedList;
+    }
+    return this.resource.value();
+  });
 
   readonly templates = computed<readonly Template[]>(() => {
     const q = this.filter().trim().toLowerCase();
@@ -219,6 +433,9 @@ export class TemplateService {
   }
 
   async lint(draft: DraftTemplate): Promise<LintItem[]> {
+    if (environment.useMockData) {
+      return localLint(draft);
+    }
     const channelId = this.channels.active()?.id ?? '';
     const result = await firstValueFrom(this.api.lint(toCreateDto(channelId, draft)));
     return (result.items ?? []).map((i) => ({
@@ -228,7 +445,55 @@ export class TemplateService {
     }));
   }
 
+  /** Loads one template for the composer's edit route. */
+  async load(id: string): Promise<Template> {
+    if (environment.useMockData) {
+      this.seedTick();
+      const found = this.seedList.find((t) => t.id === id);
+      if (!found) throw new Error('Template not found.');
+      return found;
+    }
+    return toTemplate(await firstValueFrom(this.api.get(id)));
+  }
+
+  private mockDraftToTemplate(draft: DraftTemplate, id: string): Template {
+    const vars = new Set(
+      [draft.header, draft.body, draft.footer]
+        .join(' ')
+        .match(/\{\{\s*(\d+)\s*\}\}/g)
+        ?.map((m) => m.replace(/\D/g, '')) ?? [],
+    );
+    return {
+      id,
+      name: draft.name.trim(),
+      language: draft.language.trim() || 'en',
+      category: draft.category,
+      effectiveCategory: draft.category,
+      status: 'draft',
+      quality: 'unknown',
+      variableCount: vars.size,
+      headerKind: draft.headerKind,
+      header: draft.headerKind === 'text' ? draft.header.trim() || undefined : undefined,
+      body: draft.body,
+      footer: draft.footer.trim() || undefined,
+      buttons: draft.buttons
+        .filter((b) => b.text.trim())
+        .map((b) => ({
+          kind: b.kind,
+          text: b.text.trim(),
+          url: b.kind === 'url' ? b.url.trim() : undefined,
+          phone: b.kind === 'phone' ? b.phone.trim() : undefined,
+        })),
+    };
+  }
+
   async create(draft: DraftTemplate): Promise<Template> {
+    if (environment.useMockData) {
+      const t = this.mockDraftToTemplate(draft, `t-${crypto.randomUUID().slice(0, 8)}`);
+      this.seedList = [t, ...this.seedList];
+      this.seedTick.update((n) => n + 1);
+      return t;
+    }
     const channelId = this.channels.active()?.id;
     if (!channelId) {
       throw new Error('Connect a channel before creating a template.');
@@ -238,7 +503,31 @@ export class TemplateService {
     return toTemplate(dto);
   }
 
+  async update(draft: DraftTemplate): Promise<Template> {
+    if (!draft.id) throw new Error('This template has no id — create it first.');
+    if (environment.useMockData) {
+      const t = this.mockDraftToTemplate(draft, draft.id);
+      this.seedList = this.seedList.map((x) => (x.id === draft.id ? t : x));
+      this.seedTick.update((n) => n + 1);
+      return t;
+    }
+    const channelId = this.channels.active()?.id;
+    if (!channelId) {
+      throw new Error('Connect a channel before saving a template.');
+    }
+    const dto = await firstValueFrom(this.api.update(draft.id, toCreateDto(channelId, draft)));
+    this.reload();
+    return toTemplate(dto);
+  }
+
   async submit(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.seedList = this.seedList.map((t) =>
+        t.id === id ? { ...t, status: 'pending', submittedAt: new Date().toISOString() } : t,
+      );
+      this.seedTick.update((n) => n + 1);
+      return;
+    }
     await firstValueFrom(this.api.submit(id));
     this.reload();
   }

@@ -1,0 +1,274 @@
+<ar-topbar
+  [title]="editing() ? 'Edit template' : 'New template'"
+  [subtitle]="draft().name || 'Draft'"
+>
+  <a class="tc__back" routerLink="/templates">← All templates</a>
+  <button ar-button variant="ghost" [disabled]="busy()" (click)="runLint()">Check</button>
+  <button ar-button variant="ghost" [disabled]="!canSave()" (click)="save(false)">
+    Save draft
+  </button>
+  <button ar-button variant="primary" [disabled]="!canSave()" (click)="save(true)">
+    Save &amp; submit
+  </button>
+</ar-topbar>
+
+@if (loading()) {
+  <p class="tc__loading">Loading…</p>
+} @else {
+  <div class="tc">
+    <!-- ── Editor ──────────────────────────────────────────────────────── -->
+    <div class="tc__form ar-scroll">
+      @if (error(); as e) {
+        <p class="tc__err">{{ e }}</p>
+      }
+
+      <section class="grp">
+        <h2 class="grp__h">Basics</h2>
+        <label class="ar-field">
+          <span class="ar-field__label">Name</span>
+          <input
+            class="ar-field__input ar-mono"
+            [value]="draft().name"
+            maxlength="512"
+            placeholder="amc_renewal_30d"
+            (input)="patch('name', $any($event.target).value)"
+          />
+          <span class="grp__hint">Lowercase letters, digits and underscores only.</span>
+        </label>
+        <div class="ar-field-row">
+          <label class="ar-field">
+            <span class="ar-field__label">Language</span>
+            <input
+              class="ar-field__input"
+              [value]="draft().language"
+              maxlength="16"
+              (input)="patch('language', $any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Category</span>
+            <select
+              class="ar-field__input"
+              [value]="draft().category"
+              (change)="patch('category', $any($event.target).value)"
+            >
+              @for (c of categories; track c.value) {
+                <option [value]="c.value">{{ c.label }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        <p class="grp__hint">
+          A promotion is marketing however it is phrased — filing it as utility is the fastest way
+          to a restriction.
+        </p>
+      </section>
+
+      <section class="grp">
+        <h2 class="grp__h">Header <span class="grp__opt">optional</span></h2>
+        <label class="ar-field">
+          <span class="ar-field__label">Type</span>
+          <select
+            class="ar-field__input"
+            [value]="draft().headerKind"
+            (change)="patch('headerKind', $any($event.target).value)"
+          >
+            @for (h of headerKinds; track h.value) {
+              <option [value]="h.value">{{ h.label }}</option>
+            }
+          </select>
+        </label>
+        @if (draft().headerKind === 'text') {
+          <label class="ar-field">
+            <span class="ar-field__label">Header text</span>
+            <input
+              class="ar-field__input"
+              [value]="draft().header"
+              maxlength="60"
+              (input)="patch('header', $any($event.target).value)"
+            />
+          </label>
+        } @else if (draft().headerKind !== 'none') {
+          <p class="grp__hint">
+            The {{ draft().headerKind }} is chosen per send — the preview shows a placeholder.
+          </p>
+        }
+      </section>
+
+      <section class="grp">
+        <h2 class="grp__h">Body</h2>
+        <label class="ar-field">
+          <textarea
+            class="ar-field__input tc__body"
+            rows="7"
+            [value]="draft().body"
+            maxlength="1024"
+            placeholder="Hello, thanks for reaching out…"
+            (input)="patch('body', $any($event.target).value)"
+          ></textarea>
+        </label>
+        <div class="tc__bodybar">
+          <button type="button" class="tc__addvar" (click)="appendVariable()">
+            + Add variable
+          </button>
+          <span class="grp__hint">{{ draft().body.length }} / 1024</span>
+        </div>
+
+        @if (variables().length > 0) {
+          <div class="samples">
+            <p class="samples__h">Sample values <span class="grp__opt">preview only</span></p>
+            @for (n of variables(); track n) {
+              <label class="samples__row">
+                <span class="samples__tok ar-mono">{{ '{{' + n + '}}' }}</span>
+                <input
+                  class="ar-field__input"
+                  [value]="draft().samples[n] || ''"
+                  placeholder="e.g. Rajesh Kumar"
+                  (input)="setSample(n + '', $any($event.target).value)"
+                />
+              </label>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="grp">
+        <h2 class="grp__h">Footer <span class="grp__opt">optional</span></h2>
+        <label class="ar-field">
+          <input
+            class="ar-field__input"
+            [value]="draft().footer"
+            maxlength="60"
+            placeholder="Reply STOP to opt out"
+            (input)="patch('footer', $any($event.target).value)"
+          />
+        </label>
+      </section>
+
+      <section class="grp">
+        <h2 class="grp__h">Buttons <span class="grp__opt">optional</span></h2>
+        @for (b of draft().buttons; track $index) {
+          <div class="btn-edit">
+            <div class="btn-edit__head">
+              <ar-icon [name]="buttonIcon[b.kind]" [size]="13" />
+              <span class="btn-edit__kind">{{ buttonLabel(b.kind) }}</span>
+              <span class="btn-edit__sp"></span>
+              <button type="button" class="btn-edit__x" (click)="removeButton($index)">×</button>
+            </div>
+            <input
+              class="ar-field__input"
+              [value]="b.text"
+              maxlength="25"
+              placeholder="Button label"
+              (input)="patchButton($index, 'text', $any($event.target).value)"
+            />
+            @if (b.kind === 'url') {
+              <input
+                class="ar-field__input"
+                [value]="b.url"
+                placeholder="https://example.com/{{ '{{' }}1{{ '}}' }}"
+                (input)="patchButton($index, 'url', $any($event.target).value)"
+              />
+            }
+            @if (b.kind === 'phone') {
+              <input
+                class="ar-field__input"
+                [value]="b.phone"
+                placeholder="+912040001234"
+                (input)="patchButton($index, 'phone', $any($event.target).value)"
+              />
+            }
+          </div>
+        }
+        <div class="btn-add">
+          <button
+            type="button"
+            [disabled]="!canAdd('quick_reply')"
+            (click)="addButton('quick_reply')"
+          >
+            + Quick reply
+          </button>
+          <button type="button" [disabled]="!canAdd('url')" (click)="addButton('url')">
+            + Visit website
+          </button>
+          <button type="button" [disabled]="!canAdd('phone')" (click)="addButton('phone')">
+            + Call phone number
+          </button>
+        </div>
+        <p class="grp__hint">Up to 3 quick replies, one website and one call button.</p>
+      </section>
+
+      @if (lint(); as items) {
+        <section class="grp lint">
+          @if (items.length === 0) {
+            <p class="lint__ok">Nothing flagged. Meta can still reject on review.</p>
+          }
+          @for (i of items; track i.code + i.message) {
+            <p class="lint__i lint__i--{{ i.severity }}">{{ i.message }}</p>
+          }
+        </section>
+      }
+    </div>
+
+    <!-- ── Live preview ────────────────────────────────────────────────── -->
+    <div class="tc__preview">
+      <div class="phone">
+        <div class="phone__bar">
+          <span class="phone__back">‹</span>
+          <span class="phone__avatar"></span>
+          <span class="phone__name">Your business</span>
+        </div>
+        <div class="phone__wall">
+          <div class="wa">
+            @if (draft().headerKind === 'text' && previewHeaderText()) {
+              <p class="wa__header">{{ previewHeaderText() }}</p>
+            } @else if (draft().headerKind !== 'none' && draft().headerKind !== 'text') {
+              <div class="wa__media">
+                <ar-icon [name]="headerMediaIcon()" [size]="24" />
+                <span>{{ draft().headerKind }}</span>
+              </div>
+            }
+
+            <p class="wa__body">
+              @for (seg of previewBody(); track $index) {
+                @if (seg.variable) {
+                  <span class="wa__var">{{ seg.text }}</span>
+                } @else {
+                  <span>{{ seg.text }}</span>
+                }
+              }
+            </p>
+
+            @if (previewFooter()) {
+              <p class="wa__footer">{{ previewFooter() }}</p>
+            }
+            <span class="wa__time">11:20 am</span>
+          </div>
+
+          @if (draft().buttons.length > 0) {
+            <div class="wa__buttons">
+              @for (b of draft().buttons; track $index) {
+                <div class="wa__btn">
+                  <ar-icon [name]="buttonIcon[b.kind]" [size]="14" />
+                  <span>{{ b.text || 'Button' }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="tc__meta">
+        <ar-chip tone="neutral" [mono]="true">{{ draft().category }}</ar-chip>
+        <ar-chip tone="neutral"
+          >{{ variables().length }} variable{{ variables().length === 1 ? '' : 's' }}</ar-chip
+        >
+        @if (lint()) {
+          <ar-chip [tone]="lintErrors() > 0 ? 'bad' : 'good'">
+            {{ lintErrors() > 0 ? lintErrors() + ' to fix' : 'Lint clean' }}
+          </ar-chip>
+        }
+      </div>
+    </div>
+  </div>
+}
