@@ -1,11 +1,14 @@
 import type { IRemoteStreamContent } from '../volo/abp/content/models';
 import type { FullAuditedEntityDto, PagedAndSortedResultRequestDto } from '@abp/ng.core';
+import type { DocumentVisibility } from './document-visibility.enum';
 
 export interface CreateLibraryDocumentDto {
   title: string;
   description?: string | null;
   category?: string | null;
   partNumbers?: string[];
+  visibility?: DocumentVisibility;
+  allowedAccountIds?: string[];
   file: IRemoteStreamContent;
 }
 
@@ -22,6 +25,8 @@ export interface LibraryDocumentDto extends FullAuditedEntityDto<string> {
   category?: string | null;
   sendCount?: number;
   lastSentAtUtc?: string | null;
+  visibility?: DocumentVisibility;
+  allowedAccountIds?: string[];
   partNumbers?: string[];
 }
 
@@ -30,4 +35,6 @@ export interface UpdateLibraryDocumentDto {
   description?: string | null;
   category?: string | null;
   partNumbers?: string[];
+  visibility?: DocumentVisibility;
+  allowedAccountIds?: string[];
 }

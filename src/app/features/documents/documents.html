@@ -39,6 +39,30 @@
         />
       </label>
     </div>
+    <label class="ar-field">
+      <span class="ar-field__label">Access</span>
+      <select
+        class="ar-field__input"
+        [value]="visibility()"
+        (change)="visibility.set(+$any($event.target).value)"
+      >
+        @for (o of visibilityOptions; track o.value) {
+          <option [value]="o.value">{{ o.label }}</option>
+        }
+      </select>
+    </label>
+    @if (visibility() === DV.NamedAccounts) {
+      <label class="ar-field">
+        <span class="ar-field__label"
+          >Allowed account IDs <span class="ar-field__opt">(comma-separated)</span></span
+        >
+        <input
+          class="ar-field__input ar-mono"
+          [value]="allowedAccounts()"
+          (input)="allowedAccounts.set($any($event.target).value)"
+        />
+      </label>
+    }
     @if (error(); as e) {
       <p class="dl__dialog-err">{{ e }}</p>
     }

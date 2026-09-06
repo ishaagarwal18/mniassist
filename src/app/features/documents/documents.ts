@@ -3,7 +3,12 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { CreateLibraryDocumentDto, LibraryDocumentDto, LibraryService } from '../../proxy/library';
+import {
+  CreateLibraryDocumentDto,
+  DocumentVisibility,
+  LibraryDocumentDto,
+  LibraryService,
+} from '../../proxy/library';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 
@@ -94,12 +99,22 @@ export class ArDocuments {
   protected readonly title = signal('');
   protected readonly category = signal('');
   protected readonly parts = signal('');
+  protected readonly visibility = signal(DocumentVisibility.Public);
+  protected readonly allowedAccounts = signal('');
+  protected readonly visibilityOptions = [
+    { value: DocumentVisibility.Public, label: 'Public — anyone you message' },
+    { value: DocumentVisibility.VerifiedDealers, label: 'Verified dealers only' },
+    { value: DocumentVisibility.NamedAccounts, label: 'Named accounts only' },
+  ];
+  protected readonly DV = DocumentVisibility;
 
   protected openDialog(): void {
     this.file.set(null);
     this.title.set('');
     this.category.set('');
     this.parts.set('');
+    this.visibility.set(DocumentVisibility.Public);
+    this.allowedAccounts.set('');
     this.error.set(null);
     this.dialogOpen.set(true);
   }
@@ -129,6 +144,15 @@ export class ArDocuments {
         const body = new FormData();
         body.append('title', this.title().trim());
         if (this.category().trim()) body.append('category', this.category().trim());
+        body.append('visibility', String(this.visibility()));
+        if (this.visibility() === DocumentVisibility.NamedAccounts) {
+          for (const a of this.allowedAccounts()
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)) {
+            body.append('allowedAccountIds', a);
+          }
+        }
         for (const p of this.parts()
           .split(',')
           .map((s) => s.trim())
