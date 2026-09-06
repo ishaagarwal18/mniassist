@@ -6,7 +6,6 @@ export enum MessageStatus {
   Delivered = 2,
   Read = 3,
   Failed = 4,
-  /** Meta's per-user marketing cap (131049). Not a failure, not billed. */
   Withheld = 5,
 }
 

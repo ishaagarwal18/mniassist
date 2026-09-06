@@ -8,18 +8,20 @@ import type {
 } from './models';
 import { RestService, Rest } from '@abp/ng.core';
 import type { PagedResultDto } from '@abp/ng.core';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 @Injectable({
   providedIn: 'root',
 })
 export class TemplateService {
+  private restService = inject(RestService);
   apiName = 'AutoReach';
 
   create = (input: CreateUpdateTemplateDto, config?: Partial<Rest.Config>) =>
     this.restService.request<any, TemplateDto>(
       {
         method: 'POST',
+        headers: { Accept: 'application/json' },
         url: '/api/auto-reach/template',
         body: input,
       },
@@ -39,6 +41,7 @@ export class TemplateService {
     this.restService.request<any, TemplateDto>(
       {
         method: 'GET',
+        headers: { Accept: 'application/json' },
         url: `/api/auto-reach/template/${id}`,
       },
       { apiName: this.apiName, ...config },
@@ -48,6 +51,7 @@ export class TemplateService {
     this.restService.request<any, PagedResultDto<TemplateDto>>(
       {
         method: 'GET',
+        headers: { Accept: 'application/json' },
         url: '/api/auto-reach/template',
         params: {
           channelId: input.channelId,
@@ -66,6 +70,7 @@ export class TemplateService {
     this.restService.request<any, TemplateLintResultDto>(
       {
         method: 'POST',
+        headers: { Accept: 'application/json' },
         url: '/api/auto-reach/template/lint',
         body: input,
       },
@@ -76,6 +81,7 @@ export class TemplateService {
     this.restService.request<any, RenderedTemplateDto>(
       {
         method: 'POST',
+        headers: { Accept: 'application/json' },
         url: `/api/auto-reach/template/${id}/render`,
         body: input,
       },
@@ -86,6 +92,7 @@ export class TemplateService {
     this.restService.request<any, TemplateDto>(
       {
         method: 'POST',
+        headers: { Accept: 'application/json' },
         url: `/api/auto-reach/template/${id}/submit`,
       },
       { apiName: this.apiName, ...config },
@@ -95,8 +102,8 @@ export class TemplateService {
     this.restService.request<any, number>(
       {
         method: 'POST',
-        url: '/api/auto-reach/template/sync-from-meta',
-        params: { channelId },
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/template/sync-from-meta/${channelId}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -105,11 +112,10 @@ export class TemplateService {
     this.restService.request<any, TemplateDto>(
       {
         method: 'PUT',
+        headers: { Accept: 'application/json' },
         url: `/api/auto-reach/template/${id}`,
         body: input,
       },
       { apiName: this.apiName, ...config },
     );
-
-  constructor(private restService: RestService) {}
 }

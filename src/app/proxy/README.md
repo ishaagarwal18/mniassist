@@ -1,25 +1,18 @@
-# Generated service proxies
+# Proxy Generation Output
 
-The files under this folder mirror what `abp generate-proxy -t ng` emits for the
-AutoReach API. They were hand-authored to the generator's own conventions so that
-regenerating overwrites them cleanly rather than colliding with a different style.
+This directory includes the output of the latest proxy generation.
+The files and folders in it will be overwritten when proxy generation is run again.
+Therefore, please do not place your own content in this folder.
 
-To regenerate once the API is running:
+In addition, `generate-proxy.json` works like a lock file.
+It includes information used by the proxy generator, so please do not delete or modify it.
 
-```bash
-# from the API solution
-dotnet run --project src/AutoReach.HttpApi.Host
+Finally, the name of the files and folders should not be changed for two reasons:
 
-# from this Angular app, in another terminal
-abp generate-proxy -t ng --url https://localhost:44320
-```
+- Proxy generator will keep creating them at those paths and you will have multiple copies of the same content.
+- ABP Suite generates files which include imports from this folder.
 
-The generator needs `rootNamespace` in `src/environments/environment.ts` (it is
-`Mni.AutoReach`, matching `Directory.Build.props`) and it needs the API started with
-`dotnet run` — IIS Express does not expose the API definition endpoint the generator
-reads.
-
-Only the modules the UI currently binds to are covered here: channels, contacts,
-messaging, campaigns, analytics and billing. The generator will add the remaining
-ones — automation, flows, library, pipeline, compliance, integrations and platform
-administration — on the first real run.
+> **Important Notice:** If you are building a module and are planning to publish to npm,
+> some of the generated proxies are likely to be exported from public-api.ts file. In such a case,
+> please make sure you export files directly and not from barrel exports. In other words,
+> do not include index.ts exports in your public-api.ts exports.

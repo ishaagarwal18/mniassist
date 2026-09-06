@@ -7,7 +7,6 @@ export enum CampaignState {
   Paused = 3,
   Completed = 4,
   Cancelled = 5,
-  /** Halted automatically on a quality downgrade or an opt-out breach. */
   Suspended = 6,
 }
 

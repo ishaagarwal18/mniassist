@@ -25,6 +25,7 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
+    "@abp/ng.schematics": "^10.6.0",
     "@angular/build": "^21.2.22",
     "@angular/cli": "^21.2.22",
     "@angular/compiler-cli": "^21.2.0",

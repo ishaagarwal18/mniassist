@@ -2,26 +2,52 @@ import type {
   ChannelDto,
   ChannelHealthDto,
   ChannelQualitySnapshotDto,
+  CompleteEmbeddedSignupInput,
   CompleteOnboardingStepInput,
   GetChannelListInput,
+  NumberManagementDto,
   OnboardingSessionDto,
+  RequestDisplayNameChangeInput,
+  SetTwoStepPinInput,
+  UpdateBusinessProfileInput,
   UpdateChannelInput,
 } from './models';
 import { RestService, Rest } from '@abp/ng.core';
 import type { ListResultDto, PagedResultDto } from '@abp/ng.core';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ChannelService {
+  private restService = inject(RestService);
   apiName = 'AutoReach';
 
-  completeOnboardingStep = (sessionId: string, input: CompleteOnboardingStepInput, config?: Partial<Rest.Config>) =>
+  completeEmbeddedSignup = (
+    sessionId: string,
+    input: CompleteEmbeddedSignupInput,
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<any, OnboardingSessionDto>(
       {
         method: 'POST',
-        url: `/api/auto-reach/channel/onboarding/${sessionId}/steps`,
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/channel/complete-embedded-signup/${sessionId}`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  completeOnboardingStep = (
+    sessionId: string,
+    input: CompleteOnboardingStepInput,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, OnboardingSessionDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/channel/complete-onboarding-step/${sessionId}`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -31,6 +57,7 @@ export class ChannelService {
     this.restService.request<any, ChannelDto>(
       {
         method: 'GET',
+        headers: { Accept: 'application/json' },
         url: `/api/auto-reach/channel/${id}`,
       },
       { apiName: this.apiName, ...config },
@@ -40,7 +67,8 @@ export class ChannelService {
     this.restService.request<any, ListResultDto<ChannelHealthDto>>(
       {
         method: 'GET',
-        url: '/api/auto-reach/channel/all-health',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/channel/health',
       },
       { apiName: this.apiName, ...config },
     );
@@ -49,6 +77,7 @@ export class ChannelService {
     this.restService.request<any, ChannelHealthDto>(
       {
         method: 'GET',
+        headers: { Accept: 'application/json' },
         url: `/api/auto-reach/channel/${id}/health`,
       },
       { apiName: this.apiName, ...config },
@@ -58,6 +87,7 @@ export class ChannelService {
     this.restService.request<any, PagedResultDto<ChannelDto>>(
       {
         method: 'GET',
+        headers: { Accept: 'application/json' },
         url: '/api/auto-reach/channel',
         params: {
           state: input.state,
@@ -70,21 +100,59 @@ export class ChannelService {
       { apiName: this.apiName, ...config },
     );
 
-  getOrStartOnboarding = (config?: Partial<Rest.Config>) =>
-    this.restService.request<any, OnboardingSessionDto>(
+  getNumberManagement = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, NumberManagementDto>(
       {
-        method: 'POST',
-        url: '/api/auto-reach/channel/onboarding',
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/channel/${id}/number-management`,
       },
       { apiName: this.apiName, ...config },
     );
 
-  getQualityHistory = (id: string, days = 30, config?: Partial<Rest.Config>) =>
+  getOrStartOnboarding = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, OnboardingSessionDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/channel/or-start-onboarding',
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getQualityHistory = (id: string, days: number = 30, config?: Partial<Rest.Config>) =>
     this.restService.request<any, ListResultDto<ChannelQualitySnapshotDto>>(
       {
         method: 'GET',
+        headers: { Accept: 'application/json' },
         url: `/api/auto-reach/channel/${id}/quality-history`,
         params: { days },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  requestDisplayName = (
+    id: string,
+    input: RequestDisplayNameChangeInput,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, NumberManagementDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/channel/${id}/request-display-name`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  setTwoStepPin = (id: string, input: SetTwoStepPinInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, NumberManagementDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/channel/${id}/set-two-step-pin`,
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );
@@ -93,11 +161,25 @@ export class ChannelService {
     this.restService.request<any, ChannelDto>(
       {
         method: 'PUT',
+        headers: { Accept: 'application/json' },
         url: `/api/auto-reach/channel/${id}`,
         body: input,
       },
       { apiName: this.apiName, ...config },
     );
 
-  constructor(private restService: RestService) {}
+  updateBusinessProfile = (
+    id: string,
+    input: UpdateBusinessProfileInput,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, NumberManagementDto>(
+      {
+        method: 'PUT',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/channel/${id}/business-profile`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
 }

@@ -7,18 +7,20 @@ import type {
 } from './models';
 import { RestService, Rest } from '@abp/ng.core';
 import type { ListResultDto, PagedResultDto } from '@abp/ng.core';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ContactService {
+  private restService = inject(RestService);
   apiName = 'AutoReach';
 
   create = (input: CreateUpdateContactDto, config?: Partial<Rest.Config>) =>
     this.restService.request<any, ContactDto>(
       {
         method: 'POST',
+        headers: { Accept: 'application/json' },
         url: '/api/auto-reach/contact',
         body: input,
       },
@@ -38,6 +40,7 @@ export class ContactService {
     this.restService.request<any, ContactDto>(
       {
         method: 'GET',
+        headers: { Accept: 'application/json' },
         url: `/api/auto-reach/contact/${id}`,
       },
       { apiName: this.apiName, ...config },
@@ -47,6 +50,7 @@ export class ContactService {
     this.restService.request<any, ListResultDto<ConsentRecordDto>>(
       {
         method: 'GET',
+        headers: { Accept: 'application/json' },
         url: `/api/auto-reach/contact/${id}/consent-history`,
       },
       { apiName: this.apiName, ...config },
@@ -56,6 +60,7 @@ export class ContactService {
     this.restService.request<any, PagedResultDto<ContactDto>>(
       {
         method: 'GET',
+        headers: { Accept: 'application/json' },
         url: '/api/auto-reach/contact',
         params: {
           filter: input.filter,
@@ -74,6 +79,7 @@ export class ContactService {
     this.restService.request<any, ContactDto>(
       {
         method: 'POST',
+        headers: { Accept: 'application/json' },
         url: `/api/auto-reach/contact/${id}/grant-consent`,
         body: input,
       },
@@ -84,6 +90,7 @@ export class ContactService {
     this.restService.request<any, ContactDto>(
       {
         method: 'PUT',
+        headers: { Accept: 'application/json' },
         url: `/api/auto-reach/contact/${id}`,
         body: input,
       },
@@ -94,10 +101,9 @@ export class ContactService {
     this.restService.request<any, ContactDto>(
       {
         method: 'POST',
+        headers: { Accept: 'application/json' },
         url: `/api/auto-reach/contact/${id}/withdraw-marketing-consent`,
       },
       { apiName: this.apiName, ...config },
     );
-
-  constructor(private restService: RestService) {}
 }

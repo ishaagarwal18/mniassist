@@ -1,28 +1,48 @@
 import type {
   AssignConversationInput,
+  ConversationContextDto,
   ConversationDto,
   GetInboxInput,
   InboxCountsDto,
+  InboxPollDto,
+  InboxPollInput,
   MessageDto,
+  SearchConversationsInput,
   SendMessageInput,
   SnoozeConversationInput,
 } from './models';
 import { RestService, Rest } from '@abp/ng.core';
 import type { PagedResultDto, PagedResultRequestDto } from '@abp/ng.core';
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 @Injectable({
   providedIn: 'root',
 })
 export class InboxService {
+  private restService = inject(RestService);
   apiName = 'AutoReach';
 
-  assign = (conversationId: string, input: AssignConversationInput, config?: Partial<Rest.Config>) =>
+  assign = (
+    conversationId: string,
+    input: AssignConversationInput,
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<any, ConversationDto>(
       {
         method: 'POST',
-        url: `/api/auto-reach/inbox/${conversationId}/assign`,
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/assign/${conversationId}`,
         body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  autoAssign = (conversationId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ConversationDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/auto-assign/${conversationId}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -31,7 +51,18 @@ export class InboxService {
     this.restService.request<any, ConversationDto>(
       {
         method: 'POST',
-        url: `/api/auto-reach/inbox/${conversationId}/close`,
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/close/${conversationId}`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getContext = (conversationId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ConversationContextDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/context/${conversationId}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -40,7 +71,8 @@ export class InboxService {
     this.restService.request<any, ConversationDto>(
       {
         method: 'GET',
-        url: `/api/auto-reach/inbox/${id}`,
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/${id}/conversation`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -49,7 +81,8 @@ export class InboxService {
     this.restService.request<any, PagedResultDto<ConversationDto>>(
       {
         method: 'GET',
-        url: '/api/auto-reach/inbox',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/inbox/conversations',
         params: {
           state: input.state,
           assignedUserId: input.assignedUserId,
@@ -68,16 +101,22 @@ export class InboxService {
     this.restService.request<any, InboxCountsDto>(
       {
         method: 'GET',
+        headers: { Accept: 'application/json' },
         url: '/api/auto-reach/inbox/counts',
       },
       { apiName: this.apiName, ...config },
     );
 
-  getMessages = (conversationId: string, input: PagedResultRequestDto, config?: Partial<Rest.Config>) =>
+  getMessages = (
+    conversationId: string,
+    input: PagedResultRequestDto,
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<any, PagedResultDto<MessageDto>>(
       {
         method: 'GET',
-        url: `/api/auto-reach/inbox/${conversationId}/messages`,
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/messages/${conversationId}`,
         params: { skipCount: input.skipCount, maxResultCount: input.maxResultCount },
       },
       { apiName: this.apiName, ...config },
@@ -87,7 +126,19 @@ export class InboxService {
     this.restService.request<any, ConversationDto>(
       {
         method: 'POST',
-        url: `/api/auto-reach/inbox/${conversationId}/mark-read`,
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/mark-read/${conversationId}`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  poll = (input: InboxPollInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, InboxPollDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/inbox/poll',
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );
@@ -96,7 +147,19 @@ export class InboxService {
     this.restService.request<any, ConversationDto>(
       {
         method: 'POST',
-        url: `/api/auto-reach/inbox/${conversationId}/reopen`,
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/reopen/${conversationId}`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  search = (input: SearchConversationsInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, PagedResultDto<ConversationDto>>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/inbox/search',
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );
@@ -105,21 +168,25 @@ export class InboxService {
     this.restService.request<any, MessageDto>(
       {
         method: 'POST',
-        url: `/api/auto-reach/inbox/${conversationId}/send`,
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/send/${conversationId}`,
         body: input,
       },
       { apiName: this.apiName, ...config },
     );
 
-  snooze = (conversationId: string, input: SnoozeConversationInput, config?: Partial<Rest.Config>) =>
+  snooze = (
+    conversationId: string,
+    input: SnoozeConversationInput,
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<any, ConversationDto>(
       {
         method: 'POST',
-        url: `/api/auto-reach/inbox/${conversationId}/snooze`,
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/snooze/${conversationId}`,
         body: input,
       },
       { apiName: this.apiName, ...config },
     );
-
-  constructor(private restService: RestService) {}
 }

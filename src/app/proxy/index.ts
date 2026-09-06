@@ -1,10 +1,42 @@
-export * from './analytics';
-export * from './billing';
-export * from './campaigns';
-export * from './channels';
-export * from './contacts';
-export * from './messaging';
-export * from './compliance';
-export * from './integrations';
-export * from './notifications';
-export * from './platform';
+import * as Administration from './administration';
+import * as Analytics from './analytics';
+import * as Automation from './automation';
+import * as Billing from './billing';
+import * as Campaigns from './campaigns';
+import * as Channels from './channels';
+import * as Compliance from './compliance';
+import * as Contacts from './contacts';
+import * as Controllers from './controllers';
+import * as Flows from './flows';
+import * as Identity from './identity';
+import * as Integrations from './integrations';
+import * as Library from './library';
+import * as Messaging from './messaging';
+import * as Microsoft from './microsoft';
+import * as Notifications from './notifications';
+import * as Pipeline from './pipeline';
+import * as Platform from './platform';
+import * as Volo from './volo';
+import * as Webhooks from './webhooks';
+export {
+  Administration,
+  Analytics,
+  Automation,
+  Billing,
+  Campaigns,
+  Channels,
+  Compliance,
+  Contacts,
+  Controllers,
+  Flows,
+  Identity,
+  Integrations,
+  Library,
+  Messaging,
+  Microsoft,
+  Notifications,
+  Pipeline,
+  Platform,
+  Volo,
+  Webhooks,
+};
