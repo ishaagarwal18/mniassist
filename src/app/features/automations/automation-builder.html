@@ -1,0 +1,272 @@
+<ar-topbar [title]="name() || 'Automation'" subtitle="Step builder">
+  <a class="ab__back" routerLink="/automations">← All automations</a>
+  <button
+    ar-button
+    type="button"
+    variant="primary"
+    [disabled]="saving() || loading()"
+    (click)="save()"
+  >
+    {{ saving() ? 'Saving…' : 'Save' }}
+  </button>
+</ar-topbar>
+
+<div class="ab ar-scroll">
+  @if (loading()) {
+    <p class="ab__empty">Loading…</p>
+  } @else {
+    @if (error(); as e) {
+      <p class="ab__err">{{ e }}</p>
+    }
+
+    <!-- ── Trigger ─────────────────────────────────────────────────── -->
+    <section class="node node--trigger">
+      <div class="node__mark"><ar-icon name="automation" [size]="15" /></div>
+      <div class="node__body">
+        <h2 class="node__title">When this happens</h2>
+        <label class="ar-field">
+          <span class="ar-field__label">Automation name</span>
+          <input
+            class="ar-field__input"
+            [value]="name()"
+            (input)="name.set($any($event.target).value)"
+          />
+        </label>
+        @if (trigger() === TK.InboundKeyword) {
+          <label class="ar-field">
+            <span class="ar-field__label"
+              >Keywords <span class="ar-field__opt">(comma-separated)</span></span
+            >
+            <input
+              class="ar-field__input"
+              placeholder="PRICE, RATE, QUOTE"
+              [value]="keywords()"
+              (input)="keywords.set($any($event.target).value)"
+            />
+          </label>
+        } @else {
+          <p class="node__blurb">Trigger: {{ trigger() }} — configured on the automation list.</p>
+        }
+      </div>
+    </section>
+
+    <!-- ── Steps ───────────────────────────────────────────────────── -->
+    @for (step of steps(); track step.localId; let i = $index) {
+      <div class="rail"><span class="rail__line"></span></div>
+
+      <section class="node" [class.node--cond]="step.kind === NK.Condition">
+        <div class="node__mark"><ar-icon [name]="kindMeta[step.kind].icon" [size]="15" /></div>
+        <div class="node__body">
+          <div class="node__head">
+            <h3 class="node__title">{{ kindMeta[step.kind].label }}</h3>
+            @if (step.entered != null) {
+              <ar-chip tone="neutral">{{ step.entered }} in · {{ step.exited ?? 0 }} out</ar-chip>
+            }
+            <span class="node__spacer"></span>
+            <button type="button" class="node__btn" title="Move up" (click)="move(i, -1)">↑</button>
+            <button type="button" class="node__btn" title="Move down" (click)="move(i, 1)">
+              ↓
+            </button>
+            <button
+              type="button"
+              class="node__btn node__btn--del"
+              title="Delete"
+              (click)="remove(i)"
+            >
+              ×
+            </button>
+          </div>
+
+          @switch (step.kind) {
+            @case (NK.SendSessionMessage) {
+              <label class="ar-field">
+                <span class="ar-field__label">Message</span>
+                <textarea
+                  class="ar-field__input"
+                  rows="2"
+                  [value]="cfg(step, 'text')"
+                  (input)="setCfg(i, 'text', $any($event.target).value)"
+                ></textarea>
+              </label>
+            }
+            @case (NK.SendTemplate) {
+              <label class="ar-field">
+                <span class="ar-field__label">Template</span>
+                <select
+                  class="ar-field__input"
+                  (change)="setCfg(i, 'templateId', $any($event.target).value)"
+                >
+                  <option value="">Choose a template…</option>
+                  @for (t of templateOptions(); track t.id) {
+                    <option [value]="t.id" [selected]="t.id === cfg(step, 'templateId')">
+                      {{ t.name }}
+                    </option>
+                  }
+                </select>
+              </label>
+            }
+            @case (NK.Wait) {
+              <label class="ar-field ab__narrow">
+                <span class="ar-field__label">Wait for (minutes)</span>
+                <input
+                  class="ar-field__input"
+                  type="number"
+                  min="1"
+                  [value]="cfg(step, 'minutes')"
+                  (input)="setCfg(i, 'minutes', $any($event.target).value)"
+                />
+              </label>
+            }
+            @case (NK.Condition) {
+              <div class="ar-field-row">
+                <label class="ar-field">
+                  <span class="ar-field__label">Field</span>
+                  <input
+                    class="ar-field__input"
+                    [value]="cfg(step, 'field')"
+                    (input)="setCfg(i, 'field', $any($event.target).value)"
+                  />
+                </label>
+                <label class="ar-field ab__narrow">
+                  <span class="ar-field__label">Is</span>
+                  <select
+                    class="ar-field__input"
+                    (change)="setCfg(i, 'op', $any($event.target).value)"
+                  >
+                    @for (op of ['eq', 'ne', 'gte', 'lte', 'contains']; track op) {
+                      <option [value]="op" [selected]="op === cfg(step, 'op')">{{ op }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="ar-field">
+                  <span class="ar-field__label">Value</span>
+                  <input
+                    class="ar-field__input"
+                    [value]="cfg(step, 'value')"
+                    (input)="setCfg(i, 'value', $any($event.target).value)"
+                  />
+                </label>
+              </div>
+              <p class="node__blurb">If the contact does not match, the journey ends here.</p>
+            }
+            @case (NK.AssignAgent) {
+              <label class="ar-field">
+                <span class="ar-field__label">Strategy</span>
+                <select
+                  class="ar-field__input"
+                  (change)="setCfg(i, 'strategy', $any($event.target).value)"
+                >
+                  @for (s of ['roundRobin', 'leastBusy', 'firstAvailable']; track s) {
+                    <option [value]="s" [selected]="s === cfg(step, 'strategy')">{{ s }}</option>
+                  }
+                </select>
+              </label>
+            }
+            @case (NK.UpdateAttribute) {
+              <div class="ar-field-row">
+                <label class="ar-field">
+                  <span class="ar-field__label">Attribute key</span>
+                  <input
+                    class="ar-field__input"
+                    [value]="cfg(step, 'key')"
+                    (input)="setCfg(i, 'key', $any($event.target).value)"
+                  />
+                </label>
+                <label class="ar-field">
+                  <span class="ar-field__label">Value</span>
+                  <input
+                    class="ar-field__input"
+                    [value]="cfg(step, 'value')"
+                    (input)="setCfg(i, 'value', $any($event.target).value)"
+                  />
+                </label>
+              </div>
+            }
+            @case (NK.CreateEnquiry) {
+              <div class="ar-field-row">
+                <label class="ar-field">
+                  <span class="ar-field__label">Title</span>
+                  <input
+                    class="ar-field__input"
+                    [value]="cfg(step, 'title')"
+                    (input)="setCfg(i, 'title', $any($event.target).value)"
+                  />
+                </label>
+                <label class="ar-field">
+                  <span class="ar-field__label">Source</span>
+                  <input
+                    class="ar-field__input"
+                    [value]="cfg(step, 'source')"
+                    (input)="setCfg(i, 'source', $any($event.target).value)"
+                  />
+                </label>
+              </div>
+            }
+            @case (NK.Webhook) {
+              <div class="ar-field-row">
+                <label class="ar-field">
+                  <span class="ar-field__label">URL</span>
+                  <input
+                    class="ar-field__input"
+                    type="url"
+                    [value]="cfg(step, 'url')"
+                    (input)="setCfg(i, 'url', $any($event.target).value)"
+                  />
+                </label>
+                <label class="ar-field ab__narrow">
+                  <span class="ar-field__label">Method</span>
+                  <select
+                    class="ar-field__input"
+                    (change)="setCfg(i, 'method', $any($event.target).value)"
+                  >
+                    @for (m of ['POST', 'PUT', 'GET']; track m) {
+                      <option [value]="m" [selected]="m === cfg(step, 'method')">{{ m }}</option>
+                    }
+                  </select>
+                </label>
+              </div>
+            }
+            @case (NK.StartFlow) {
+              <label class="ar-field">
+                <span class="ar-field__label">Flow</span>
+                <select
+                  class="ar-field__input"
+                  (change)="setCfg(i, 'flowId', $any($event.target).value)"
+                >
+                  <option value="">Choose a flow…</option>
+                  @for (f of flowOptions(); track f.id) {
+                    <option [value]="f.id" [selected]="f.id === cfg(step, 'flowId')">
+                      {{ f.name }}
+                    </option>
+                  }
+                </select>
+              </label>
+            }
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ── Add ─────────────────────────────────────────────────────── -->
+    <div class="rail"><span class="rail__line"></span></div>
+    <div class="add">
+      @for (k of addableKinds; track k.kind) {
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          icon="plus"
+          (click)="addingAfter.set(null); addStep(k.kind)"
+        >
+          {{ k.label }}
+        </button>
+      }
+    </div>
+
+    <div class="rail"><span class="rail__line rail__line--end"></span></div>
+    <section class="node node--end">
+      <div class="node__mark"><ar-icon name="check" [size]="15" /></div>
+      <div class="node__body"><h3 class="node__title">End</h3></div>
+    </section>
+  }
+</div>

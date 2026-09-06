@@ -3,8 +3,18 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AutomationDto, AutomationService } from '../../proxy/automation';
-import { AutomationState, AutomationTriggerKind, FlowState } from '../../proxy/messaging';
+import {
+  AutomationDto,
+  AutomationNodeDto,
+  AutomationService,
+  CreateUpdateAutomationNodeDto,
+} from '../../proxy/automation';
+import {
+  AutomationNodeKind,
+  AutomationState,
+  AutomationTriggerKind,
+  FlowState,
+} from '../../proxy/messaging';
 import { FlowDto, FlowService } from '../../proxy/flows';
 
 /** A one-screen placeholder so a freshly created flow is valid JSON; the screen
@@ -255,4 +265,99 @@ export class WorkflowStore {
     );
     this.reload();
   }
+
+  // ---- Automation builder (M07-2) -------------------------------------
+
+  /** The automation with its full node graph, for the step builder. */
+  async loadAutomation(id: string): Promise<AutomationDto> {
+    if (environment.useMockData) {
+      return {
+        id,
+        name: 'Keyword bot — PRICE',
+        channelId: 'ch-1',
+        trigger: AutomationTriggerKind.InboundKeyword,
+        triggerConfigJson: JSON.stringify({ keywords: ['PRICE', 'RATE'] }),
+        state: AutomationState.Draft,
+        nodes: SEED_NODES,
+      } as AutomationDto;
+    }
+    return firstValueFrom(this.automationApi.get(id));
+  }
+
+  /** Persists the trigger config and the node graph the builder produced. */
+  async saveAutomation(
+    id: string,
+    input: {
+      name: string;
+      channelId: string;
+      trigger: AutomationTriggerKind;
+      triggerConfigJson: string;
+      nodes: CreateUpdateAutomationNodeDto[];
+    },
+  ): Promise<void> {
+    if (environment.useMockData) return;
+    await firstValueFrom(this.automationApi.update(id, input));
+    this.reload();
+  }
 }
+
+const SEED_NODES: AutomationNodeDto[] = [
+  {
+    id: 'n-trigger',
+    kind: AutomationNodeKind.Trigger,
+    configJson: '{}',
+    nextNodeId: 'n-msg',
+    enteredCount: 120,
+    exitedCount: 120,
+  },
+  {
+    id: 'n-msg',
+    kind: AutomationNodeKind.SendSessionMessage,
+    configJson: JSON.stringify({
+      text: 'Thanks for your interest! Which product line — VFDs, PLCs or servos?',
+    }),
+    nextNodeId: 'n-wait',
+    enteredCount: 120,
+    exitedCount: 118,
+  },
+  {
+    id: 'n-wait',
+    kind: AutomationNodeKind.Wait,
+    configJson: JSON.stringify({ minutes: 30 }),
+    nextNodeId: 'n-cond',
+    enteredCount: 118,
+    exitedCount: 118,
+  },
+  {
+    id: 'n-cond',
+    kind: AutomationNodeKind.Condition,
+    configJson: JSON.stringify({ field: 'lastInboundDays', op: 'lte', value: '1' }),
+    trueNodeId: 'n-enq',
+    falseNodeId: 'n-end',
+    enteredCount: 118,
+    exitedCount: 96,
+  },
+  {
+    id: 'n-enq',
+    kind: AutomationNodeKind.CreateEnquiry,
+    configJson: JSON.stringify({ source: 'ClickToWhatsApp', title: 'Inbound price enquiry' }),
+    nextNodeId: 'n-assign',
+    enteredCount: 96,
+    exitedCount: 96,
+  },
+  {
+    id: 'n-assign',
+    kind: AutomationNodeKind.AssignAgent,
+    configJson: JSON.stringify({ strategy: 'roundRobin' }),
+    nextNodeId: 'n-end',
+    enteredCount: 96,
+    exitedCount: 96,
+  },
+  {
+    id: 'n-end',
+    kind: AutomationNodeKind.End,
+    configJson: '{}',
+    enteredCount: 118,
+    exitedCount: 0,
+  },
+];

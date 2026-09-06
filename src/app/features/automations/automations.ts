@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { Automation, WState, WorkflowStore } from '../../core/services/workflow.service';
 import { ChannelService } from '../../core/services/channel.service';
@@ -16,7 +17,7 @@ const STATE_TONE: Record<WState, ChipTone> = { draft: 'neutral', active: 'good',
  */
 @Component({
   selector: 'ar-automations',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [RouterLink, ArTopbar, ArButton, ArChip, ArDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './automations.html',
   styleUrl: './automations.scss',

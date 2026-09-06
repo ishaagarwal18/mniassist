@@ -65,6 +65,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/automations/automations').then(m => m.ArAutomations),
       },
       {
+        path: 'automations/:id', title: 'Automation builder · AutoReach',
+        loadComponent: () => import('./features/automations/automation-builder').then(m => m.ArAutomationBuilder),
+      },
+      {
         path: 'flows', title: 'Flows · AutoReach',
         loadComponent: () => import('./features/flows/flows').then(m => m.ArFlows),
       },

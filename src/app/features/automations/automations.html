@@ -98,7 +98,8 @@
       </div>
 
       <div class="wf__actions">
-        <button ar-button variant="ghost" [disabled]="!!busy()" (click)="simulate(a)">
+        <a class="wf__editlink" [routerLink]="['/automations', a.id]">Edit steps</a>
+        <button ar-button type="button" variant="ghost" [disabled]="!!busy()" (click)="simulate(a)">
           Dry-run
         </button>
         <button
