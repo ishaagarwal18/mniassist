@@ -79,10 +79,6 @@ import { ArButton, ArIcon } from '../../ui';
 
         @if (mock) {
           <p class="lg__hint">Demo build — any username and password will sign you in.</p>
-        } @else {
-          <button type="button" class="lg__link" (click)="useProvider()">
-            Sign in with your organisation instead
-          </button>
         }
       </form>
       <p class="lg__foot">AutoReach — WhatsApp marketing for industrial automation</p>
@@ -233,10 +229,6 @@ export class ArLogin {
       this.error.set(this.readError(e));
       this.busy.set(false);
     }
-  }
-
-  protected useProvider(): void {
-    this.account.redirectToProvider();
   }
 
   private readError(e: unknown): string {

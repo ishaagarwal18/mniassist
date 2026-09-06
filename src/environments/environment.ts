@@ -20,8 +20,10 @@ export const environment = {
     issuer: 'https://auth.autoreach.example/',
     redirectUri: 'https://app.autoreach.example',
     clientId: 'AutoReach_App',
-    responseType: 'code',
-    scope: 'offline_access AutoReach',
+    // Resource-owner password grant — the in-app /login form posts straight to
+    // /connect/token. See environment.development.ts.
+    responseType: 'password',
+    scope: 'openid profile offline_access AutoReach',
     requireHttps: true,
   },
 

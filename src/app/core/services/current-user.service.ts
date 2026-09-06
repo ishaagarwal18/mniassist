@@ -176,11 +176,6 @@ export class CurrentUserService {
     await firstValueFrom(this.auth.login({ username, password, rememberMe, redirectUrl: '/home' }));
   }
 
-  /** Fallback for identity providers that only support the redirect (code) flow. */
-  redirectToProvider(): void {
-    if (!MOCK) this.auth.navigateToLogin();
-  }
-
   logout(): void {
     if (MOCK) {
       try {

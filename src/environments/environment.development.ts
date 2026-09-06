@@ -23,8 +23,11 @@ export const environment = {
     issuer: 'https://localhost:44320/',
     redirectUri: 'http://localhost:4200',
     clientId: 'AutoReach_App',
-    responseType: 'code',
-    scope: 'offline_access AutoReach',
+    // Resource-owner password grant: the /login form posts credentials straight
+    // to /connect/token. "code" would make @abp/ng.oauth redirect to the host's
+    // /connect/authorize, which has no login page to render.
+    responseType: 'password',
+    scope: 'openid profile offline_access AutoReach',
     requireHttps: false,
   },
 
