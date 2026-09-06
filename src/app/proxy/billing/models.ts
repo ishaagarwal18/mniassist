@@ -27,6 +27,16 @@ export interface ChangePlanInput {
   plan?: SubscriptionPlan;
 }
 
+export interface PlanUsageDto {
+  channelLimit?: number;
+  channelsUsed?: number;
+  seatLimit?: number;
+  seatsUsed?: number;
+  contactLimit?: number;
+  contactsUsed?: number;
+  features?: string[];
+}
+
 export interface ConfigureAutoTopUpInput {
   enabled?: boolean;
   amountInPaise?: number;

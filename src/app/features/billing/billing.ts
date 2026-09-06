@@ -6,6 +6,7 @@ import { firstValueFrom, forkJoin, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   BillingService,
+  PlanUsageDto,
   SubscriptionPlan,
   WalletService,
   WalletTransactionType,
@@ -50,6 +51,21 @@ const SEED = {
   tax: 1_555_00,
   free: 3_240,
   avoided: 372_600,
+  usage: {
+    channelLimit: 2,
+    channelsUsed: 1,
+    seatLimit: 10,
+    seatsUsed: 6,
+    contactLimit: 25_000,
+    contactsUsed: 12_486,
+    features: [
+      'AutomationBuilder',
+      'Flows',
+      'DocumentLibrary',
+      'FullAnalytics',
+      'ClickToWhatsAppAttribution',
+    ],
+  } as PlanUsageDto,
   transactions: [
     {
       id: 't-1',
@@ -106,8 +122,10 @@ export class ArBilling {
         txns: this.walletApi.getTransactions({ skipCount: 0, maxResultCount: 20 }),
         summary: this.billingApi.getSummary(),
         sub: this.billingApi.getSubscription(),
+        usage: this.billingApi.getPlanUsage(),
       }).pipe(
         map((r) => ({
+          usage: r.usage,
           balanceInPaise: r.wallet.balanceInPaise,
           isLow: r.wallet.isLow,
           daysRemaining: r.wallet.estimatedDaysRemaining ?? null,
@@ -147,6 +165,24 @@ export class ArBilling {
   );
 
   protected readonly planName = computed(() => this.d().plan != null ? PLAN_NAME[this.d().plan!] : PLAN_NAME[0]);
+
+  protected readonly usage = computed(() => this.d().usage);
+  protected readonly usageRows = computed(() => {
+    const u = this.usage();
+    const row = (label: string, used = 0, limit = 0) => ({
+      label,
+      used,
+      limit,
+      unlimited: limit >= 2_000_000_000,
+      fraction: limit > 0 ? Math.min(1, used / limit) : 0,
+      over: limit > 0 && used > limit,
+    });
+    return [
+      row('Members', u.seatsUsed, u.seatLimit),
+      row('Connected numbers', u.channelsUsed, u.channelLimit),
+      row('Contacts', u.contactsUsed, u.contactLimit),
+    ];
+  });
   protected readonly runway = computed(() => {
     const days = this.d().daysRemaining;
     return days == null ? null : Math.min(1, days / 30);

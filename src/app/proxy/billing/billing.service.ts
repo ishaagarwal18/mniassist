@@ -1,6 +1,7 @@
 import type {
   BillingSummaryDto,
   ChangePlanInput,
+  PlanUsageDto,
   RateCardDto,
   RateHistoryDto,
   SubscriptionDto,
@@ -44,6 +45,16 @@ export class BillingService {
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/billing/rate-history',
         params: { countryCode },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getPlanUsage = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, PlanUsageDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/billing/plan-usage',
       },
       { apiName: this.apiName, ...config },
     );
