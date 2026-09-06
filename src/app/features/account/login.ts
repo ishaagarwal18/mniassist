@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { environment } from '../../../environments/environment';
@@ -6,10 +6,9 @@ import { CurrentUserService } from '../../core/services/current-user.service';
 import { ArButton, ArIcon } from '../../ui';
 
 /**
- * The signed-out landing. In mock mode "Sign in" flips the local session flag and
- * drops you into the app; with a real API it hands off to the OAuth provider's
- * login. Rendered outside the app shell, so a signed-out visitor never sees the
- * navigation.
+ * The sign-in screen. Username + password (ABP's password grant in real mode; any
+ * non-empty credentials in the demo build). Rendered outside the app shell, so a
+ * signed-out visitor never sees the navigation.
  */
 @Component({
   selector: 'ar-login',
@@ -17,23 +16,60 @@ import { ArButton, ArIcon } from '../../ui';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="lg">
-      <div class="lg__card">
+      <form class="lg__card" (submit)="submit($event)">
         <div class="lg__brand">
           <span class="lg__mark"><ar-icon name="bolt" [size]="16" [strokeWidth]="0" /></span>
           <span class="lg__name">AutoReach</span>
         </div>
         <h1 class="lg__title">Sign in to your workspace</h1>
-        <p class="lg__sub">
-          {{
-            mock
-              ? 'Demo build — no password needed.'
-              : 'You will be taken to your organisation’s sign-in page.'
-          }}
-        </p>
-        <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="signIn()">
+
+        @if (error(); as e) {
+          <p class="lg__error">{{ e }}</p>
+        }
+
+        <label class="lg__field">
+          <span>Username or email</span>
+          <input
+            class="ar-field__input"
+            name="username"
+            autocomplete="username"
+            autocapitalize="none"
+            [value]="username()"
+            (input)="username.set($any($event.target).value)"
+          />
+        </label>
+        <label class="lg__field">
+          <span>Password</span>
+          <input
+            class="ar-field__input"
+            type="password"
+            name="password"
+            autocomplete="current-password"
+            [value]="password()"
+            (input)="password.set($any($event.target).value)"
+          />
+        </label>
+        <label class="lg__remember">
+          <input
+            type="checkbox"
+            [checked]="rememberMe()"
+            (change)="rememberMe.set($any($event.target).checked)"
+          />
+          Keep me signed in
+        </label>
+
+        <button ar-button type="submit" variant="primary" [disabled]="busy() || !canSubmit()">
           {{ busy() ? 'Signing in…' : 'Sign in' }}
         </button>
-      </div>
+
+        @if (mock) {
+          <p class="lg__hint">Demo build — any username and password will sign you in.</p>
+        } @else {
+          <button type="button" class="lg__link" (click)="useProvider()">
+            Sign in with your organisation instead
+          </button>
+        }
+      </form>
       <p class="lg__foot">AutoReach — WhatsApp marketing for industrial automation</p>
     </div>
   `,
@@ -55,7 +91,7 @@ import { ArButton, ArIcon } from '../../ui';
     .lg__card {
       width: 340px;
       max-width: 100%;
-      padding: 28px 26px 26px;
+      padding: 28px 26px 24px;
       background: var(--ar-white);
       border: 1px solid var(--ar-line-200);
       border-radius: var(--ar-radius-card);
@@ -67,7 +103,7 @@ import { ArButton, ArIcon } from '../../ui';
       align-items: center;
       justify-content: center;
       gap: 9px;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
     }
     .lg__mark {
       width: 26px;
@@ -85,17 +121,52 @@ import { ArButton, ArIcon } from '../../ui';
       letter-spacing: -0.015em;
     }
     .lg__title {
-      margin: 0 0 6px;
+      margin: 0 0 16px;
       font: 600 16px var(--ar-font-sans);
       color: var(--ar-ink-900);
     }
-    .lg__sub {
-      margin: 0 0 20px;
-      font: 400 12.5px/1.5 var(--ar-font-sans);
+    .lg__error {
+      margin: 0 0 12px;
+      padding: 8px 10px;
+      border-radius: var(--ar-radius-inset);
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
+      font: 400 12px var(--ar-font-sans);
+    }
+    .lg__field {
+      display: block;
+      text-align: left;
+      margin-bottom: 12px;
+    }
+    .lg__field > span {
+      display: block;
+      margin-bottom: 4px;
+      font: 500 12px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .lg__remember {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 16px;
+      font: 400 12px var(--ar-font-sans);
       color: var(--ar-ink-500);
     }
-    .lg__card button {
+    .lg__card button[ar-button] {
       width: 100%;
+    }
+    .lg__hint {
+      margin: 14px 0 0;
+      font: 400 11.5px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
+    .lg__link {
+      margin-top: 12px;
+      border: 0;
+      background: transparent;
+      color: var(--ar-teal-600);
+      font: 500 12px var(--ar-font-sans);
+      cursor: pointer;
     }
     .lg__foot {
       margin: 0;
@@ -109,17 +180,46 @@ export class ArLogin {
   private readonly router = inject(Router);
 
   protected readonly mock = environment.useMockData;
+  protected readonly username = signal('');
+  protected readonly password = signal('');
+  protected readonly rememberMe = signal(true);
   protected readonly busy = signal(false);
+  protected readonly error = signal<string | null>(null);
+
+  protected readonly canSubmit = computed(
+    () => this.username().trim().length > 0 && this.password().length > 0,
+  );
 
   constructor() {
-    // Already signed in (e.g. hit /login directly) — go home.
     if (this.account.isAuthenticated()) {
       void this.router.navigateByUrl('/home');
     }
   }
 
-  protected signIn(): void {
+  protected async submit(event: Event): Promise<void> {
+    event.preventDefault();
+    if (!this.canSubmit() || this.busy()) return;
     this.busy.set(true);
-    this.account.login();
+    this.error.set(null);
+    try {
+      await this.account.signIn(this.username().trim(), this.password(), this.rememberMe());
+    } catch (e: unknown) {
+      this.error.set(this.readError(e));
+      this.busy.set(false);
+    }
+  }
+
+  protected useProvider(): void {
+    this.account.redirectToProvider();
+  }
+
+  private readError(e: unknown): string {
+    const err = e as { error?: { error_description?: string; error?: string }; message?: string };
+    return (
+      err?.error?.error_description ||
+      err?.error?.error ||
+      err?.message ||
+      'Wrong username or password.'
+    );
   }
 }

@@ -9,7 +9,8 @@ import { ProfileDto, ProfileService, UpdateProfileDto } from '../../proxy/accoun
 import { initials } from '../util/format';
 
 const MOCK = environment.useMockData;
-const MOCK_SIGNED_OUT_KEY = 'ar.mock.signedOut';
+/** Mock mode has no auth server, so "signed in" is this local flag. Absent = signed out. */
+const MOCK_SIGNED_IN_KEY = 'ar.mock.signedIn';
 
 /** The shape the whole app reads for "who is signed in". */
 export interface CurrentUser {
@@ -32,6 +33,22 @@ const SEED_USER: CurrentUser = {
   roles: ['admin'],
 };
 
+/** A mock user derived from what was typed into the login form. */
+function mockIdentityFrom(login: string): CurrentUser {
+  const raw = login.trim();
+  if (!raw) return { ...SEED_USER };
+  const local = raw.includes('@') ? raw.slice(0, raw.indexOf('@')) : raw;
+  const parts = local.split(/[._-]+/).filter(Boolean);
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  return {
+    ...SEED_USER,
+    userName: raw.includes('@') ? local : raw,
+    name: parts[0] ? cap(parts[0]) : local,
+    surname: parts[1] ? cap(parts[1]) : '',
+    email: raw.includes('@') ? raw : SEED_USER.email,
+  };
+}
+
 /**
  * The signed-in user: identity for the shell (name, role, avatar), sign-out, and
  * profile read/update against ABP's Account module. In mock mode a seeded user
@@ -45,14 +62,17 @@ export class CurrentUserService {
   private readonly api = inject(ProfileService);
   private readonly router = inject(Router);
 
-  /** Mock-mode only: a local "signed out" flag the login screen flips. */
-  private readonly mockSignedOut = signal(this.readMockSignedOut());
+  /** Mock-mode only: whether the local sign-in flag is set, and who as. */
+  private readonly mockSignedIn = signal(this.readMockState() !== null);
+  private readonly mockUser = signal<CurrentUser>(
+    this.readMockState() ? mockIdentityFrom(this.readMockState()!) : { ...SEED_USER },
+  );
 
-  private readMockSignedOut(): boolean {
+  private readMockState(): string | null {
     try {
-      return localStorage.getItem(MOCK_SIGNED_OUT_KEY) === '1';
+      return localStorage.getItem(MOCK_SIGNED_IN_KEY);
     } catch {
-      return false;
+      return null;
     }
   }
 
@@ -62,7 +82,7 @@ export class CurrentUserService {
   );
 
   readonly user = computed<CurrentUser>(() => {
-    if (MOCK) return SEED_USER;
+    if (MOCK) return this.mockUser();
     const u = (this.configUser() ?? {}) as Record<string, unknown>;
     return {
       isAuthenticated: Boolean(u['isAuthenticated']),
@@ -76,7 +96,7 @@ export class CurrentUserService {
   });
 
   readonly isAuthenticated = computed(() =>
-    MOCK ? !this.mockSignedOut() : this.user().isAuthenticated,
+    MOCK ? this.mockSignedIn() : this.user().isAuthenticated,
   );
 
   readonly fullName = computed(() => {
@@ -91,29 +111,41 @@ export class CurrentUserService {
     return role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Member';
   });
 
-  login(): void {
+  /**
+   * Signs in with a username and password. In mock mode there is no auth server, so
+   * any non-empty credentials are accepted and the local session flag is flipped.
+   * In real mode this is ABP's password grant against the OpenIddict token endpoint.
+   */
+  async signIn(username: string, password: string, rememberMe: boolean): Promise<void> {
     if (MOCK) {
+      this.mockUser.set(mockIdentityFrom(username));
       try {
-        localStorage.removeItem(MOCK_SIGNED_OUT_KEY);
+        localStorage.setItem(MOCK_SIGNED_IN_KEY, username.trim() || 'demo');
       } catch {
         /* ignore */
       }
-      this.mockSignedOut.set(false);
-      void this.router.navigateByUrl('/home');
+      this.mockSignedIn.set(true);
+      await this.router.navigateByUrl('/home');
       return;
     }
-    this.auth.navigateToLogin();
+    await firstValueFrom(this.auth.login({ username, password, rememberMe, redirectUrl: '/home' }));
+  }
+
+  /** Fallback for identity providers that only support the redirect (code) flow. */
+  redirectToProvider(): void {
+    if (!MOCK) this.auth.navigateToLogin();
   }
 
   logout(): void {
     if (MOCK) {
       try {
-        localStorage.setItem(MOCK_SIGNED_OUT_KEY, '1');
+        localStorage.removeItem(MOCK_SIGNED_IN_KEY);
         localStorage.removeItem('ar.agency.acting');
       } catch {
         /* ignore */
       }
-      this.mockSignedOut.set(true);
+      this.mockSignedIn.set(false);
+      this.mockUser.set({ ...SEED_USER });
       void this.router.navigateByUrl('/login');
       return;
     }
@@ -140,13 +172,14 @@ export class CurrentUserService {
 
   async saveProfile(input: UpdateProfileDto): Promise<void> {
     if (MOCK) {
-      Object.assign(SEED_USER, {
+      this.mockUser.update((u) => ({
+        ...u,
         userName: input.userName,
         email: input.email,
         name: input.name ?? '',
         surname: input.surname ?? '',
         phoneNumber: input.phoneNumber ?? '',
-      });
+      }));
       return;
     }
     await firstValueFrom(this.api.update(input));
