@@ -1,0 +1,135 @@
+<ar-topbar title="Your profile" subtitle="Your name, contact details and password" />
+
+<div class="pf ar-scroll">
+  @if (loading()) {
+    <p class="pf__empty">Loading…</p>
+  } @else {
+    <div class="pf__col">
+      <ar-card heading="Your details">
+        @if (detailsError(); as e) {
+          <ar-banner tone="bad">{{ e }}</ar-banner>
+        }
+        @if (detailsSaved()) {
+          <ar-banner tone="good">Saved.</ar-banner>
+        }
+
+        <label class="pf__field">
+          <span>Username</span>
+          <input class="ar-field__input" [value]="userName()" disabled />
+        </label>
+        <div class="pf__row">
+          <label class="pf__field">
+            <span>First name</span>
+            <input
+              class="ar-field__input"
+              [value]="name()"
+              (input)="name.set($any($event.target).value)"
+            />
+          </label>
+          <label class="pf__field">
+            <span>Last name</span>
+            <input
+              class="ar-field__input"
+              [value]="surname()"
+              (input)="surname.set($any($event.target).value)"
+            />
+          </label>
+        </div>
+        <label class="pf__field">
+          <span>Email</span>
+          <input
+            class="ar-field__input"
+            type="email"
+            [value]="email()"
+            [disabled]="isExternal()"
+            (input)="email.set($any($event.target).value)"
+          />
+        </label>
+        <label class="pf__field">
+          <span>Phone <span class="pf__opt">optional</span></span>
+          <input
+            class="ar-field__input ar-mono"
+            [value]="phoneNumber()"
+            (input)="phoneNumber.set($any($event.target).value)"
+          />
+        </label>
+
+        @if (isExternal()) {
+          <p class="pf__note">
+            Your account is managed by your organisation's identity provider — some fields are
+            read-only here.
+          </p>
+        }
+
+        <div class="pf__actions">
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="!canSaveDetails() || savingDetails()"
+            (click)="saveDetails()"
+          >
+            {{ savingDetails() ? 'Saving…' : 'Save details' }}
+          </button>
+        </div>
+      </ar-card>
+
+      @if (hasPassword() && !isExternal()) {
+        <ar-card heading="Password">
+          @if (passwordError(); as e) {
+            <ar-banner tone="bad">{{ e }}</ar-banner>
+          }
+          @if (passwordSaved()) {
+            <ar-banner tone="good">Password changed.</ar-banner>
+          }
+
+          <label class="pf__field">
+            <span>Current password</span>
+            <input
+              class="ar-field__input"
+              type="password"
+              autocomplete="current-password"
+              [value]="currentPassword()"
+              (input)="currentPassword.set($any($event.target).value)"
+            />
+          </label>
+          <label class="pf__field">
+            <span>New password</span>
+            <input
+              class="ar-field__input"
+              type="password"
+              autocomplete="new-password"
+              [value]="newPassword()"
+              (input)="newPassword.set($any($event.target).value)"
+            />
+          </label>
+          <label class="pf__field">
+            <span>Confirm new password</span>
+            <input
+              class="ar-field__input"
+              type="password"
+              autocomplete="new-password"
+              [value]="confirmPassword()"
+              (input)="confirmPassword.set($any($event.target).value)"
+            />
+          </label>
+          @if (newPassword() && confirmPassword() && newPassword() !== confirmPassword()) {
+            <p class="pf__mismatch">The new passwords do not match.</p>
+          }
+
+          <div class="pf__actions">
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              [disabled]="!canSavePassword() || savingPassword()"
+              (click)="savePassword()"
+            >
+              {{ savingPassword() ? 'Changing…' : 'Change password' }}
+            </button>
+          </div>
+        </ar-card>
+      }
+    </div>
+  }
+</div>

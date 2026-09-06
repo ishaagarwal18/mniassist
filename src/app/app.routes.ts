@@ -179,6 +179,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/settings/settings').then((m) => m.ArSettings),
       },
       {
+        path: 'settings/profile',
+        title: 'Your profile · AutoReach',
+        loadComponent: () => import('./features/account/profile').then((m) => m.ArProfile),
+      },
+      {
         path: 'settings/members',
         title: 'Users & roles · AutoReach',
         loadComponent: () => import('./features/settings/members').then((m) => m.ArMembers),

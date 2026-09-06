@@ -1,0 +1,67 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.pf {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 22px 24px 32px;
+}
+
+.pf__col {
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.pf__empty {
+  padding: 40px 12px;
+  color: var(--ar-ink-400);
+  font: 400 13px var(--ar-font-sans);
+}
+
+.pf__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 12px;
+}
+.pf__field:first-of-type {
+  margin-top: 4px;
+}
+.pf__field > span {
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}
+.pf__opt {
+  color: var(--ar-ink-400);
+  font-weight: 400;
+}
+
+.pf__row {
+  display: flex;
+  gap: 12px;
+}
+.pf__row .pf__field {
+  flex: 1;
+}
+
+.pf__note {
+  margin: 12px 0 0;
+  font: 400 12px/1.5 var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+.pf__mismatch {
+  margin: 8px 0 0;
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-warn-600);
+}
+
+.pf__actions {
+  margin-top: 16px;
+}
