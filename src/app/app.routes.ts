@@ -72,6 +72,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/analytics/analytics').then((m) => m.ArAnalytics),
       },
       {
+        path: 'analytics/dashboards',
+        title: 'Custom dashboards · AutoReach',
+        loadComponent: () =>
+          import('./features/analytics/dashboards').then((m) => m.ArCustomDashboards),
+      },
+      {
         path: 'enquiries',
         title: 'Enquiries · AutoReach',
         loadComponent: () => import('./features/pipeline/enquiries').then((m) => m.ArEnquiries),

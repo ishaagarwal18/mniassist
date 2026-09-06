@@ -1,0 +1,127 @@
+<ar-topbar title="Custom dashboards" subtitle="Your own view of the numbers that matter">
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openNew()">
+    New dashboard
+  </button>
+</ar-topbar>
+
+<div class="cd">
+  <aside class="cd__list ar-scroll" aria-label="Dashboards">
+    @for (d of dashboards(); track d.id) {
+      <button
+        class="cd__item"
+        type="button"
+        [class.cd__item--on]="d.id === current()?.id"
+        (click)="select(d.id)"
+      >
+        <span class="cd__item-name">{{ d.name }}</span>
+        @if (d.isShared) {
+          <ar-chip tone="neutral">Shared</ar-chip>
+        }
+        <span class="cd__item-meta">{{ d.widgets.length }} widget(s)</span>
+      </button>
+    } @empty {
+      <p class="cd__empty">No dashboards yet.</p>
+    }
+  </aside>
+
+  <section class="cd__view ar-scroll">
+    @if (current(); as d) {
+      <header class="cd__head">
+        <h2 class="cd__title">{{ d.name }}</h2>
+        <div class="cd__head-actions">
+          <button ar-button type="button" variant="ghost" (click)="openEdit()">Edit</button>
+          <button ar-button type="button" variant="ghost" (click)="removeDashboard()">
+            Delete
+          </button>
+        </div>
+      </header>
+
+      @if (rendering()) {
+        <p class="cd__empty">Loading…</p>
+      } @else if (rendered(); as r) {
+        @if (r.widgets.length === 0) {
+          <p class="cd__empty">This dashboard has no widgets. Edit it to add some.</p>
+        } @else {
+          <div class="cd__grid">
+            @for (w of r.widgets; track w.id) {
+              <article class="tile" [class.tile--bar]="w.kind === K.RateBar">
+                <span class="tile__label">{{ w.title }}</span>
+                <span class="tile__value">{{ format(w.value, w.unit) }}</span>
+                @if (w.kind === K.RateBar) {
+                  <span class="tile__track">
+                    <span class="tile__fill" [style.width.%]="w.value * 100"></span>
+                  </span>
+                }
+              </article>
+            }
+          </div>
+        }
+      }
+    } @else {
+      <p class="cd__empty">Create a dashboard to get started.</p>
+    }
+  </section>
+</div>
+
+@if (dialogOpen()) {
+  <ar-dialog
+    [title]="editingId() ? 'Edit dashboard' : 'New dashboard'"
+    (dismiss)="dialogOpen.set(false)"
+  >
+    <label class="ar-field">
+      <span class="ar-field__label">Name</span>
+      <input
+        class="ar-field__input"
+        [value]="name()"
+        (input)="name.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field__opt-row">
+      <input
+        type="checkbox"
+        [checked]="shared()"
+        (change)="shared.set($any($event.target).checked)"
+      />
+      Share with everyone in the workspace
+    </label>
+
+    <p class="cd__wh">Widgets</p>
+    @for (row of rows(); track $index) {
+      <div class="cd__row">
+        <select
+          class="ar-field__input"
+          title="Metric"
+          [value]="row.metricKey"
+          (change)="setRow($index, 'metricKey', $any($event.target).value)"
+        >
+          @for (m of metrics(); track m.key) {
+            <option [value]="m.key">{{ m.category }} · {{ m.label }}</option>
+          }
+        </select>
+        <select
+          class="ar-field__input cd__row-kind"
+          title="Style"
+          [value]="row.kind"
+          (change)="setRow($index, 'kind', +$any($event.target).value)"
+        >
+          <option [value]="K.StatTile">Number</option>
+          <option [value]="K.RateBar">Bar</option>
+        </select>
+        <button type="button" class="cd__row-x" (click)="removeRow($index)">×</button>
+      </div>
+    }
+    <button type="button" class="cd__add" (click)="addRow()">+ Add widget</button>
+
+    @if (error(); as e) {
+      <p class="cd__err">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button ar-button type="button" variant="primary" [disabled]="saving()" (click)="save()">
+        {{ saving() ? 'Saving…' : 'Save' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
