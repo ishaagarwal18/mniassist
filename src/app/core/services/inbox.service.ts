@@ -1,6 +1,6 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { firstValueFrom, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { InboxService as InboxApi } from '../../proxy/messaging';
@@ -162,9 +162,9 @@ export class InboxService {
     stream: ({ params: conversationId }) =>
       this.api.getMessages(conversationId as string, { skipCount: 0, maxResultCount: 100 }).pipe(
         // The API returns newest first for paging; the thread reads oldest first.
-        map((page) => (page.items ?? [])
-          .map((m) => toMessage(m, conversationId as string))
-          .reverse()),
+        map((page) =>
+          (page.items ?? []).map((m) => toMessage(m, conversationId as string)).reverse(),
+        ),
       ),
     defaultValue: [] as ReturnType<typeof toMessage>[],
   });
@@ -198,6 +198,39 @@ export class InboxService {
 
   select(id: string): void {
     this._selectedId.set(id);
+  }
+
+  /** Send a free-form reply. Only valid while the 24-hour window is open. */
+  async sendText(text: string): Promise<void> {
+    const id = this.selectedId();
+    const body = text.trim();
+    if (!id || !body) return;
+    await this.dispatch(id, { text: body });
+  }
+
+  /**
+   * Send a document from the library, with an optional caption. The API resolves
+   * the stored file and its media handle — this only carries the id and the text.
+   */
+  async sendDocument(libraryDocumentId: string, caption?: string): Promise<void> {
+    const id = this.selectedId();
+    if (!id) return;
+    await this.dispatch(id, {
+      libraryDocumentId,
+      text: caption?.trim() || undefined,
+    });
+  }
+
+  private async dispatch(
+    conversationId: string,
+    input: { text?: string; libraryDocumentId?: string },
+  ): Promise<void> {
+    if (environment.useMockData) {
+      return;
+    }
+    await firstValueFrom(this.api.send(conversationId, input));
+    this.messagesResource.reload();
+    this.listResource.reload();
   }
 
   reload(): void {

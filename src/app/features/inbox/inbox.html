@@ -1,6 +1,8 @@
 <ar-topbar title="Inbox">
   <ar-chip tone="warn">{{ unassigned() }} unassigned</ar-chip>
-  @if (channel(); as ch) { <ar-channel-health-strip [channel]="ch" /> }
+  @if (channel(); as ch) {
+    <ar-channel-health-strip [channel]="ch" />
+  }
   <button ar-button variant="ghost" icon="filter">Filters</button>
 </ar-topbar>
 
@@ -10,9 +12,13 @@
     <ul class="list__items">
       @for (c of conversations(); track c.id) {
         <li>
-          <button class="conv" type="button" [class.conv--on]="c.id === selectedId()"
-                  [attr.aria-current]="c.id === selectedId() ? 'true' : null"
-                  (click)="select(c.id)">
+          <button
+            class="conv"
+            type="button"
+            [class.conv--on]="c.id === selectedId()"
+            [attr.aria-current]="c.id === selectedId() ? 'true' : null"
+            (click)="select(c.id)"
+          >
             <ar-avatar [name]="c.contactName" [size]="32" />
             <span class="conv__body">
               <span class="conv__head">
@@ -33,86 +39,137 @@
 
   <section class="thread" aria-label="Conversation">
     @if (selected(); as thread) {
-    <header class="thread__head">
-      <div class="thread__who">
-        <strong class="thread__name">{{ thread.contactName }}</strong>
-        <span class="thread__meta">{{ thread.company }} · <span class="ar-mono">{{ thread.phoneE164 }}</span></span>
-      </div>
-      @if (windowLeft(); as left) {
-        <div class="window window--open">
-          <ar-icon name="clock" [size]="15" />
-          <span>Service window closes in</span>
-          <strong class="ar-mono">{{ left }}</strong>
+      <header class="thread__head">
+        <div class="thread__who">
+          <strong class="thread__name">{{ thread.contactName }}</strong>
+          <span class="thread__meta"
+            >{{ thread.company }} · <span class="ar-mono">{{ thread.phoneE164 }}</span></span
+          >
         </div>
-      } @else {
-        <div class="window window--shut">
-          <ar-icon name="clock" [size]="15" />
-          <span>Service window closed</span>
-        </div>
-      }
-      <button ar-button variant="ghost" icon="user">Assign</button>
-      <button ar-button variant="ghost" icon="check">Resolve</button>
-    </header>
+        @if (windowLeft(); as left) {
+          <div class="window window--open">
+            <ar-icon name="clock" [size]="15" />
+            <span>Service window closes in</span>
+            <strong class="ar-mono">{{ left }}</strong>
+          </div>
+        } @else {
+          <div class="window window--shut">
+            <ar-icon name="clock" [size]="15" />
+            <span>Service window closed</span>
+          </div>
+        }
+        <button ar-button variant="ghost" icon="user">Assign</button>
+        <button ar-button variant="ghost" icon="check">Resolve</button>
+      </header>
 
-    <ol class="thread__messages">
-      @for (m of thread.messages; track m.id) {
-        <li class="bubble" [class.bubble--out]="m.direction === 'out'">
-          @if (m.media; as media) {
-            @switch (media.kind) {
-              @case ('image') {
-                <a class="bubble__media" [href]="media.url" target="_blank" rel="noopener">
-                  <img [src]="media.url" alt="Attached image" loading="lazy" />
-                </a>
-              }
-              @case ('video') {
-                <video class="bubble__media" [src]="media.url" controls preload="metadata"></video>
-              }
-              @case ('audio') {
-                <audio class="bubble__media" [src]="media.url" controls preload="none"></audio>
-              }
-              @default {
-                <a class="bubble__file" [href]="media.url" target="_blank" rel="noopener">
-                  <ar-icon name="document" [size]="16" />
-                  <span>Attachment</span>
-                </a>
+      <ol class="thread__messages">
+        @for (m of thread.messages; track m.id) {
+          <li class="bubble" [class.bubble--out]="m.direction === 'out'">
+            @if (m.media; as media) {
+              @switch (media.kind) {
+                @case ('image') {
+                  <a class="bubble__media" [href]="media.url" target="_blank" rel="noopener">
+                    <img [src]="media.url" alt="Attached image" loading="lazy" />
+                  </a>
+                }
+                @case ('video') {
+                  <video
+                    class="bubble__media"
+                    [src]="media.url"
+                    controls
+                    preload="metadata"
+                  ></video>
+                }
+                @case ('audio') {
+                  <audio class="bubble__media" [src]="media.url" controls preload="none"></audio>
+                }
+                @default {
+                  <a class="bubble__file" [href]="media.url" target="_blank" rel="noopener">
+                    <ar-icon name="document" [size]="16" />
+                    <span>Attachment</span>
+                  </a>
+                }
               }
             }
-          }
-          @if (m.body) { <p class="bubble__body">{{ m.body }}</p> }
-          <span class="bubble__meta ar-mono">
-            {{ m.at }}@if (m.status) { · {{ m.status }} }
-          </span>
-        </li>
-      } @empty {
-        <li class="thread__empty">No messages in this conversation yet.</li>
-      }
-    </ol>
+            @if (m.body) {
+              <p class="bubble__body">{{ m.body }}</p>
+            }
+            <span class="bubble__meta ar-mono">
+              {{ m.at }}
+              @if (m.status) {
+                · {{ m.status }}
+              }
+            </span>
+          </li>
+        } @empty {
+          <li class="thread__empty">No messages in this conversation yet.</li>
+        }
+      </ol>
 
-    <footer class="composer">
-      @if (windowOpen()) {
-        <div class="composer__box">
-          <span class="composer__placeholder">Reply to {{ thread.contactName }}…</span>
-          <div class="composer__tools">
-            <ar-icon name="attach" [size]="17" />
-            <ar-icon name="document" [size]="17" />
-            <ar-icon name="template" [size]="17" />
-            <ar-icon name="flow" [size]="17" />
-            <span class="composer__spacer"></span>
-            <span class="composer__free">Free inside the open window</span>
-            <button ar-button variant="primary" icon="send">Send</button>
+      <footer class="composer">
+        @if (windowOpen()) {
+          <div class="composer__box">
+            <textarea
+              class="composer__input"
+              rows="2"
+              aria-label="Reply message"
+              [placeholder]="'Reply to ' + thread.contactName + '…'"
+              [value]="draft()"
+              (input)="draft.set($any($event.target).value)"
+              (keydown.enter.meta)="send()"
+              (keydown.enter.control)="send()"
+            ></textarea>
+
+            @if (attached(); as doc) {
+              <div class="composer__attach">
+                <ar-icon name="document" [size]="15" />
+                <span class="composer__attach-name">{{ doc.title }}</span>
+                <button type="button" class="composer__attach-x" (click)="attached.set(null)">
+                  ×
+                </button>
+              </div>
+            }
+
+            <div class="composer__tools">
+              <button
+                type="button"
+                class="composer__tool"
+                title="Attach a document from the library"
+                (click)="pickerOpen.set(true)"
+              >
+                <ar-icon name="document" [size]="17" />
+              </button>
+              <ar-icon name="template" [size]="17" />
+              <ar-icon name="flow" [size]="17" />
+              <span class="composer__spacer"></span>
+              <span class="composer__free">Free inside the open window</span>
+              <button
+                ar-button
+                type="button"
+                variant="primary"
+                icon="send"
+                [disabled]="sending() || (!draft().trim() && !attached())"
+                (click)="send()"
+              >
+                Send
+              </button>
+            </div>
           </div>
-        </div>
-      } @else {
-        <div class="composer__locked">
-          <ar-icon name="alert" [size]="17" />
-          <p class="composer__locked-text">
-            The 24-hour service window has closed. Start with an approved template
-            to reopen the conversation — free-form replies are not delivered.
-          </p>
-          <button ar-button variant="primary" icon="template">Choose a template</button>
-        </div>
+        } @else {
+          <div class="composer__locked">
+            <ar-icon name="alert" [size]="17" />
+            <p class="composer__locked-text">
+              The 24-hour service window has closed. Start with an approved template to reopen the
+              conversation — free-form replies are not delivered.
+            </p>
+            <button ar-button variant="primary" icon="template">Choose a template</button>
+          </div>
+        }
+      </footer>
+
+      @if (pickerOpen()) {
+        <ar-document-picker (pick)="onPick($event)" (close)="pickerOpen.set(false)" />
       }
-    </footer>
     } @else {
       <div class="thread__none">
         <p>No conversation selected.</p>

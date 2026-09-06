@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { InboxService } from '../../core/services/inbox.service';
 import { Conversation } from '../../core/models/conversation.model';
 import { untilLabel } from '../../core/util/format';
@@ -7,10 +7,20 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArAvatar, ArButton, ArChip, ArIcon, ArSearchBox } from '../../ui';
 import { ChannelService } from '../../core/services/channel.service';
 import { ArChannelHealthStrip } from '../../ui/channel-health-strip';
+import { ArDocumentPicker, PickedDocument } from './document-picker';
 
 @Component({
   selector: 'ar-inbox',
-  imports: [ArTopbar, ArAvatar, ArChip, ArIcon, ArButton, ArSearchBox, ArChannelHealthStrip],
+  imports: [
+    ArTopbar,
+    ArAvatar,
+    ArChip,
+    ArIcon,
+    ArButton,
+    ArSearchBox,
+    ArChannelHealthStrip,
+    ArDocumentPicker,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './inbox.html',
   styleUrl: './inbox.scss',
@@ -41,8 +51,43 @@ export class ArInbox {
 
   protected windowChipFor(c: Conversation): { label: string; tone: 'teal' | 'bad' } | null {
     const left = untilLabel(c.window.expiresAt, this.now());
-    return left ? { label: `Window open · ${left}`, tone: 'teal' } : { label: 'Window closed', tone: 'bad' };
+    return left
+      ? { label: `Window open · ${left}`, tone: 'teal' }
+      : { label: 'Window closed', tone: 'bad' };
   }
 
-  protected select(id: string): void { this.inbox.select(id); }
+  protected select(id: string): void {
+    this.inbox.select(id);
+  }
+
+  // ---- Composer -----------------------------------------------------------
+
+  protected readonly draft = signal('');
+  protected readonly attached = signal<PickedDocument | null>(null);
+  protected readonly pickerOpen = signal(false);
+  protected readonly sending = signal(false);
+
+  protected async send(): Promise<void> {
+    const doc = this.attached();
+    const text = this.draft().trim();
+    if (!doc && !text) return;
+
+    this.sending.set(true);
+    try {
+      if (doc) {
+        await this.inbox.sendDocument(doc.id, text || undefined);
+      } else {
+        await this.inbox.sendText(text);
+      }
+      this.draft.set('');
+      this.attached.set(null);
+    } finally {
+      this.sending.set(false);
+    }
+  }
+
+  protected onPick(doc: PickedDocument): void {
+    this.attached.set(doc);
+    this.pickerOpen.set(false);
+  }
 }
