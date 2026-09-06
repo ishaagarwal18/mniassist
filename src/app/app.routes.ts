@@ -152,6 +152,11 @@ export const routes: Routes = [
           import('./features/channels/migrate-number').then((m) => m.ArMigrateNumber),
       },
       {
+        path: 'channels/catalogue',
+        title: 'Catalogue · AutoReach',
+        loadComponent: () => import('./features/channels/catalogue').then((m) => m.ArCatalogue),
+      },
+      {
         path: 'notifications',
         title: 'Notifications · AutoReach',
         loadComponent: () =>

@@ -1,0 +1,137 @@
+<ar-topbar
+  title="Catalogue"
+  [subtitle]="
+    pendingCount() ? pendingCount() + ' change(s) not yet synced' : 'In sync with WhatsApp'
+  "
+>
+  <button ar-button type="button" variant="ghost" (click)="openAdd()">Add product</button>
+  <button
+    ar-button
+    type="button"
+    variant="primary"
+    [disabled]="syncing() || !channelId()"
+    (click)="sync()"
+  >
+    {{ syncing() ? 'Syncing…' : 'Sync to WhatsApp' }}
+  </button>
+</ar-topbar>
+
+<div class="cat ar-scroll">
+  @if (!channelId()) {
+    <p class="cat__empty">Connect a channel to build its catalogue.</p>
+  } @else if (error(); as e) {
+    <p class="cat__err">{{ e }}</p>
+  }
+  @if (note(); as n) {
+    <p class="cat__note">{{ n }}</p>
+  }
+
+  @if (loading()) {
+    <p class="cat__empty">Loading…</p>
+  }
+
+  @for (p of products(); track p.id) {
+    <article class="prod">
+      @if (p.imageUrl) {
+        <img class="prod__img" [src]="p.imageUrl" alt="" />
+      } @else {
+        <div class="prod__img prod__img--none">{{ p.name.charAt(0) }}</div>
+      }
+      <div class="prod__main">
+        <div class="prod__head">
+          <span class="prod__name">{{ p.name }}</span>
+          <ar-chip [tone]="tone(p.syncState)" [dot]="true">{{ stateLabel(p.syncState) }}</ar-chip>
+        </div>
+        <p class="prod__meta">
+          <span class="ar-mono">{{ p.retailerId }}</span>
+          · {{ rupees(p.priceInPaise) }} · {{ p.availability === 1 ? 'Out of stock' : 'In stock' }}
+        </p>
+        @if (p.syncError) {
+          <p class="prod__err">{{ p.syncError }}</p>
+        }
+      </div>
+      <div class="prod__actions">
+        <button ar-button type="button" variant="ghost" (click)="openEdit(p)">Edit</button>
+        <button ar-button type="button" variant="ghost" (click)="remove(p)">Remove</button>
+      </div>
+    </article>
+  } @empty {
+    @if (channelId() && !loading()) {
+      <p class="cat__empty">No products yet. Add one, then sync it to WhatsApp.</p>
+    }
+  }
+</div>
+
+@if (dialogOpen()) {
+  <ar-dialog
+    [title]="editingId() ? 'Edit product' : 'Add product'"
+    (dismiss)="dialogOpen.set(false)"
+  >
+    <label class="ar-field">
+      <span class="ar-field__label">SKU <span class="ar-field__opt">retailer id</span></span>
+      <input
+        class="ar-field__input ar-mono"
+        [value]="form().retailerId"
+        [disabled]="!!editingId()"
+        (input)="patch('retailerId', $any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Name</span>
+      <input
+        class="ar-field__input"
+        [value]="form().name"
+        (input)="patch('name', $any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Description <span class="ar-field__opt">optional</span></span>
+      <textarea
+        class="ar-field__input"
+        rows="2"
+        [value]="form().description"
+        (input)="patch('description', $any($event.target).value)"
+      ></textarea>
+    </label>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Price (₹)</span>
+        <input
+          class="ar-field__input"
+          type="number"
+          min="0"
+          [value]="form().priceRupees"
+          (input)="patch('priceRupees', +$any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field__opt-row">
+        <input
+          type="checkbox"
+          [checked]="form().inStock"
+          (change)="patch('inStock', $any($event.target).checked)"
+        />
+        In stock
+      </label>
+    </div>
+    <label class="ar-field">
+      <span class="ar-field__label">Image URL <span class="ar-field__opt">optional</span></span>
+      <input
+        class="ar-field__input ar-mono"
+        placeholder="https://…"
+        [value]="form().imageUrl"
+        (input)="patch('imageUrl', $any($event.target).value)"
+      />
+    </label>
+    @if (error(); as e) {
+      <p class="cat__err">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button ar-button type="button" variant="primary" [disabled]="saving()" (click)="save()">
+        {{ saving() ? 'Saving…' : 'Save' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
