@@ -189,8 +189,8 @@ export class ComplianceStore {
             (d) =>
               ({
                 id: d.id!,
-                kind: KIND[d.kind],
-                state: STATE[d.state],
+                kind: d.kind != null ? KIND[d.kind] : KIND[0],
+                state: d.state != null ? STATE[d.state] : STATE[0],
                 requester: d.requesterIdentifier,
                 contact: d.contactDisplayName,
                 receivedAt: d.receivedAtUtc,
@@ -202,7 +202,7 @@ export class ComplianceStore {
             (p) =>
               ({
                 id: p.id!,
-                dataClass: CLASS[p.dataClass],
+                dataClass: p.dataClass != null ? CLASS[p.dataClass] : CLASS[0],
                 days: p.retentionDays,
                 enabled: p.isEnabled,
                 lastRun: p.lastPurgeAtUtc,
@@ -214,8 +214,8 @@ export class ComplianceStore {
               ({
                 id: b.id!,
                 title: b.title,
-                severity: SEV[b.severity],
-                state: BSTATE[b.state],
+                severity: b.severity != null ? SEV[b.severity] : SEV[0],
+                state: b.state != null ? BSTATE[b.state] : BSTATE[0],
                 detectedAt: b.detectedAtUtc,
                 affected: b.affectedPrincipalCount,
               }) as Breach,

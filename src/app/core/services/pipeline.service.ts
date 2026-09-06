@@ -95,21 +95,21 @@ const DUE_KIND: Record<ReminderKind, string> = {
 };
 
 function boardColumn(c: EnquiryBoardColumnDto): BoardColumn {
-  const stage = STAGE[c.stage];
+  const stage = c.stage != null ? STAGE[c.stage] : 'new';
   return {
     stage,
     label: STAGE_LABEL[stage],
-    count: c.count,
-    valueInPaise: c.totalValueInPaise,
+    count: c.count ?? 0,
+    valueInPaise: c.totalValueInPaise ?? 0,
     cards: (c.cards ?? []).map((e) => ({
       id: e.id!,
-      reference: e.reference,
+      reference: e.reference ?? '',
       title: e.title ?? '(untitled)',
       contact: e.contactDisplayName ?? '—',
-      company: e.contactCompanyName,
-      owner: e.ownerUserName,
-      valueInPaise: e.estimatedValueInPaise,
-      daysInStage: e.daysInStage,
+      company: e.contactCompanyName ?? undefined,
+      owner: e.ownerUserName ?? undefined,
+      valueInPaise: e.estimatedValueInPaise ?? 0,
+      daysInStage: e.daysInStage ?? 0,
       stage,
     })),
   };
@@ -117,26 +117,26 @@ function boardColumn(c: EnquiryBoardColumnDto): BoardColumn {
 function quotation(q: QuotationDto): Quotation {
   return {
     id: q.id!,
-    reference: q.reference,
-    revision: q.revisionNumber,
-    state: QSTATE[q.state],
-    totalInPaise: q.totalInPaise,
-    issuedAt: q.issuedAtUtc,
-    validUntil: q.validUntilUtc,
-    nextFollowUpAt: q.nextFollowUpAtUtc,
-    daysSinceIssue: q.daysSinceIssue,
+    reference: q.reference ?? '',
+    revision: q.revisionNumber ?? 0,
+    state: q.state != null ? QSTATE[q.state] : 'draft',
+    totalInPaise: q.totalInPaise ?? 0,
+    issuedAt: q.issuedAtUtc ?? undefined,
+    validUntil: q.validUntilUtc ?? undefined,
+    nextFollowUpAt: q.nextFollowUpAtUtc ?? undefined,
+    daysSinceIssue: q.daysSinceIssue ?? 0,
   };
 }
 function asset(a: InstalledAssetDto): Asset {
   return {
     id: a.id!,
-    description: a.description,
-    serial: a.serialNumber,
+    description: a.description ?? '',
+    serial: a.serialNumber ?? undefined,
     make: [a.make, a.model].filter(Boolean).join(' ') || undefined,
     site: [a.siteName, a.siteCity].filter(Boolean).join(', ') || undefined,
     nextDueKind: a.nextDueKind != null ? DUE_KIND[a.nextDueKind] : undefined,
-    nextDueOn: a.nextDueOn,
-    retired: a.isRetired,
+    nextDueOn: a.nextDueOn ?? undefined,
+    retired: a.isRetired ?? false,
   };
 }
 

@@ -368,7 +368,7 @@ export class OpsService {
 
   private readonly webhooksResource = rxResource({
     params: () => (environment.useMockData ? undefined : {}),
-    stream: () => this.webhookApi.getList().pipe(map(r => (r.items ?? []).map(toWebhookSubscription))),
+    stream: () => this.webhookApi.getList({ skipCount: 0, maxResultCount: 100 }).pipe(map(r => (r.items ?? []).map(toWebhookSubscription))),
     defaultValue: [] as WebhookSubscription[],
   });
 

@@ -3,11 +3,8 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import {
-  SaveSsoConfigurationInput,
-  SsoService,
-  TenantSsoConfigurationDto,
-} from '../../proxy/identity';
+import { SaveSsoConfigurationInput, TenantSsoConfigurationDto } from '../../proxy/identity';
+import { SsoService } from '../../proxy/controllers';
 
 const SSO_SEED: TenantSsoConfigurationDto = {
   isConfigured: false,

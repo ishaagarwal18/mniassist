@@ -3,7 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 
 import { environment } from '../../../environments/environment';
 import { AnalyticsService as AnalyticsApi, DashboardDto } from '../../proxy/analytics';
-import { QualityRating } from '../../proxy/channels';
+import { ChannelHealthDto, QualityRating } from '../../proxy/channels';
 
 /** A client-side "needs you today" item derived from the dashboard snapshot. */
 export interface ActionItem {
@@ -14,13 +14,26 @@ export interface ActionItem {
   readonly route: string;
 }
 
-const SEED: DashboardDto = {
-  generatedAtUtc: new Date().toISOString(),
+/** The DTO with every field filled — the templates read this, not the raw proxy shape. */
+interface Dashboard {
+  channels: ChannelHealthDto[];
+  volume: { sent24h: number; received24h: number; delivered24h: number; failed24h: number; deliveryRate: number };
+  inbox: { openConversations: number; unassigned: number; windowClosingWithinHour: number };
+  pipeline: {
+    openEnquiries: number; newThisWeek: number; openValueInPaise: number;
+    quotationsAwaitingDecision: number; winRate: number;
+  };
+  spend: {
+    spend24hInPaise: number; spendMonthInPaise: number; freeMessages24h: number;
+    avoidedCharge24hInPaise: number; walletBalanceInPaise: number;
+  };
+  trend: { marketing: number; utility: number; service: number }[];
+}
+
+const SEED: Dashboard = {
   channels: [],
-  volume: {
-    sent24h: 1_240, received24h: 318, delivered24h: 1_206, failed24h: 12, withheld24h: 4, deliveryRate: 0.972,
-  },
-  inbox: { openConversations: 23, unassigned: 5, windowClosingWithinHour: 3, medianFirstResponseMinutes: 8 },
+  volume: { sent24h: 1_240, received24h: 318, delivered24h: 1_206, failed24h: 12, deliveryRate: 0.972 },
+  inbox: { openConversations: 23, unassigned: 5, windowClosingWithinHour: 3 },
   pipeline: {
     openEnquiries: 18, newThisWeek: 4, openValueInPaise: 42_60_00_000,
     quotationsAwaitingDecision: 11, winRate: 0.34,
@@ -32,6 +45,38 @@ const SEED: DashboardDto = {
   trend: [],
 };
 
+function normalise(dto: DashboardDto | undefined): Dashboard {
+  const v = dto?.volume ?? {};
+  const i = dto?.inbox ?? {};
+  const p = dto?.pipeline ?? {};
+  const s = dto?.spend ?? {};
+
+  return {
+    channels: dto?.channels ?? [],
+    volume: {
+      sent24h: v.sent24h ?? 0, received24h: v.received24h ?? 0, delivered24h: v.delivered24h ?? 0,
+      failed24h: v.failed24h ?? 0, deliveryRate: v.deliveryRate ?? 0,
+    },
+    inbox: {
+      openConversations: i.openConversations ?? 0, unassigned: i.unassigned ?? 0,
+      windowClosingWithinHour: i.windowClosingWithinHour ?? 0,
+    },
+    pipeline: {
+      openEnquiries: p.openEnquiries ?? 0, newThisWeek: p.newThisWeek ?? 0,
+      openValueInPaise: p.openValueInPaise ?? 0, quotationsAwaitingDecision: p.quotationsAwaitingDecision ?? 0,
+      winRate: p.winRate ?? 0,
+    },
+    spend: {
+      spend24hInPaise: s.spend24hInPaise ?? 0, spendMonthInPaise: s.spendMonthInPaise ?? 0,
+      freeMessages24h: s.freeMessages24h ?? 0, avoidedCharge24hInPaise: s.avoidedCharge24hInPaise ?? 0,
+      walletBalanceInPaise: s.walletBalanceInPaise ?? 0,
+    },
+    trend: (dto?.trend ?? []).map(t => ({
+      marketing: t.marketing ?? 0, utility: t.utility ?? 0, service: t.service ?? 0,
+    })),
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class DashboardStore {
   private readonly api = inject(AnalyticsApi);
@@ -39,22 +84,21 @@ export class DashboardStore {
   private readonly resource = rxResource({
     params: () => (environment.useMockData ? undefined : {}),
     stream: () => this.api.getDashboard(),
-    defaultValue: SEED,
+    defaultValue: undefined as DashboardDto | undefined,
   });
 
   readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
-  readonly data = computed<DashboardDto>(() => (environment.useMockData ? SEED : this.resource.value() ?? SEED));
+
+  readonly data = computed<Dashboard>(() =>
+    environment.useMockData ? SEED : normalise(this.resource.value()));
 
   readonly volume = computed(() => this.data().volume);
   readonly inbox = computed(() => this.data().inbox);
   readonly pipeline = computed(() => this.data().pipeline);
   readonly spend = computed(() => this.data().spend);
-  readonly trend = computed(() => this.data().trend ?? []);
 
-  /** Message mix for the current window, from the trend series (falls back to a sensible split). */
   readonly mix = computed(() => {
-    const t = this.trend();
-    const totals = t.reduce(
+    const totals = this.data().trend.reduce(
       (acc, p) => ({
         marketing: acc.marketing + p.marketing,
         utility: acc.utility + p.utility,
@@ -73,7 +117,6 @@ export class DashboardStore {
     ];
   });
 
-  /** "Needs you today", derived from the snapshot — there is no server list for this. */
   readonly actionItems = computed<ActionItem[]>(() => {
     const d = this.data();
     const items: ActionItem[] = [];
@@ -82,7 +125,7 @@ export class DashboardStore {
       items.push({
         icon: 'quotation', tone: 'amber',
         title: `${d.pipeline.quotationsAwaitingDecision} quotation(s) awaiting a decision`,
-        meta: `${this.inr(d.pipeline.openValueInPaise)} in play across the pipeline`,
+        meta: `${inr(d.pipeline.openValueInPaise)} in play across the pipeline`,
         route: '/quotations',
       });
     }
@@ -114,8 +157,7 @@ export class DashboardStore {
       });
     }
 
-    const atRisk = (d.channels ?? []).filter((c) => c.quality === QualityRating.Red || !c.canSend);
-    for (const c of atRisk) {
+    for (const c of d.channels.filter(x => x.quality === QualityRating.Red || x.canSend === false)) {
       items.push({
         icon: 'alert', tone: 'bad',
         title: `${c.displayPhoneNumber ?? 'A channel'} needs attention`,
@@ -128,17 +170,17 @@ export class DashboardStore {
       items.push({
         icon: 'billing', tone: 'amber',
         title: 'Wallet balance is running low',
-        meta: `${this.inr(d.spend.walletBalanceInPaise)} left`,
+        meta: `${inr(d.spend.walletBalanceInPaise)} left`,
         route: '/billing',
       });
     }
 
     return items;
   });
+}
 
-  private inr(paise: number): string {
-    return (paise / 100).toLocaleString('en-IN', {
-      style: 'currency', currency: 'INR', maximumFractionDigits: 0,
-    });
-  }
+function inr(paise: number): string {
+  return (paise / 100).toLocaleString('en-IN', {
+    style: 'currency', currency: 'INR', maximumFractionDigits: 0,
+  });
 }

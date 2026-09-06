@@ -3,13 +3,9 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import {
-  AutomationDto,
-  AutomationService,
-  AutomationState,
-  AutomationTriggerKind,
-} from '../../proxy/automation';
-import { FlowDto, FlowService, FlowState } from '../../proxy/flows';
+import { AutomationDto, AutomationService } from '../../proxy/automation';
+import { AutomationState, AutomationTriggerKind, FlowState } from '../../proxy/messaging';
+import { FlowDto, FlowService } from '../../proxy/flows';
 
 export type WState = 'draft' | 'active' | 'paused';
 export type FState = 'draft' | 'published' | 'deprecated' | 'blocked';
@@ -44,7 +40,8 @@ const TRIGGER: Record<AutomationTriggerKind, string> = {
   [AutomationTriggerKind.AttributeChanged]: 'Attribute changed',
   [AutomationTriggerKind.EnquiryStageChanged]: 'Enquiry stage',
   [AutomationTriggerKind.ScheduledDate]: 'Scheduled date',
-  [AutomationTriggerKind.FlowSubmitted]: 'Flow submitted',
+  [AutomationTriggerKind.FlowCompleted]: 'Flow completed',
+  [AutomationTriggerKind.CampaignReply]: 'Campaign reply',
 };
 const WSTATE: Record<AutomationState, WState> = {
   [AutomationState.Draft]: 'draft',
@@ -61,26 +58,26 @@ const FSTATE: Record<FlowState, FState> = {
 function automation(a: AutomationDto): Automation {
   return {
     id: a.id!,
-    name: a.name,
-    description: a.description,
-    trigger: TRIGGER[a.trigger],
-    state: WSTATE[a.state],
-    enrolled: a.enrolledCount,
-    completed: a.completedCount,
-    completionRate: a.completionRate,
+    name: a.name ?? '(untitled)',
+    description: a.description ?? undefined,
+    trigger: a.trigger != null ? (TRIGGER[a.trigger] ?? '—') : '—',
+    state: a.state != null ? (WSTATE[a.state] ?? 'draft') : 'draft',
+    enrolled: a.enrolledCount ?? 0,
+    completed: a.completedCount ?? 0,
+    completionRate: a.completionRate ?? 0,
     steps: (a.nodes ?? []).length,
-    lastRunAt: a.lastRunAtUtc,
+    lastRunAt: a.lastRunAtUtc ?? undefined,
   };
 }
 function flow(f: FlowDto): Flow {
   return {
     id: f.id!,
-    name: f.name,
-    state: FSTATE[f.state],
-    version: f.version,
+    name: f.name ?? '(untitled)',
+    state: f.state != null ? (FSTATE[f.state] ?? 'draft') : 'draft',
+    version: f.version ?? 1,
     screens: (f.screens ?? []).length,
-    publishedAt: f.publishedAtUtc,
-    blockReason: f.blockReason,
+    publishedAt: f.publishedAtUtc ?? undefined,
+    blockReason: f.blockReason ?? undefined,
     hasEndpoint: !!f.dataEndpointUrl,
   };
 }

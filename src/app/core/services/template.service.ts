@@ -66,15 +66,15 @@ function toTemplate(dto: TemplateDto): Template {
     id: dto.id!,
     name: dto.name ?? '',
     language: dto.languageCode ?? 'en',
-    category: CATEGORY[dto.category],
-    effectiveCategory: CATEGORY[dto.effectiveCategory],
+    category: dto.category != null ? CATEGORY[dto.category] : CATEGORY[ApiCategory.Utility],
+    effectiveCategory: dto.effectiveCategory != null ? CATEGORY[dto.effectiveCategory] : CATEGORY[ApiCategory.Utility],
     metaAssignedCategory:
       dto.metaAssignedCategory != null ? CATEGORY[dto.metaAssignedCategory] : undefined,
-    status: STATUS[dto.status],
-    quality: QUALITY[dto.quality],
-    rejectionReason: dto.rejectionReason,
-    submittedAt: dto.submittedAtUtc,
-    approvedAt: dto.approvedAtUtc,
+    status: dto.status != null ? STATUS[dto.status] : STATUS[ApiStatus.Draft],
+    quality: dto.quality != null ? QUALITY[dto.quality] : QUALITY[ApiQuality.Unknown],
+    rejectionReason: dto.rejectionReason ?? undefined,
+    submittedAt: dto.submittedAtUtc ?? undefined,
+    approvedAt: dto.approvedAtUtc ?? undefined,
     variableCount: dto.variableCount ?? 0,
     header: part(TemplateComponentKind.Header),
     body: part(TemplateComponentKind.Body) ?? '',
@@ -222,7 +222,7 @@ export class TemplateService {
     const channelId = this.channels.active()?.id ?? '';
     const result = await firstValueFrom(this.api.lint(toCreateDto(channelId, draft)));
     return (result.items ?? []).map((i) => ({
-      severity: SEVERITY[i.severity],
+      severity: i.severity != null ? SEVERITY[i.severity] : SEVERITY[TemplateLintSeverity.Info],
       code: i.code ?? '',
       message: i.message ?? '',
     }));

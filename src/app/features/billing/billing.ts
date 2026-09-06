@@ -125,7 +125,7 @@ export class ArBilling {
             (t) =>
               ({
                 id: t.id!,
-                kind: TXN[t.type],
+                kind: t.type != null ? TXN[t.type] : TXN[0],
                 amountInPaise: t.amountInPaise,
                 balanceAfterInPaise: t.balanceAfterInPaise,
                 description: t.description ?? t.reference,
@@ -146,7 +146,7 @@ export class ArBilling {
       : this.resource.value(),
   );
 
-  protected readonly planName = computed(() => PLAN_NAME[this.d().plan]);
+  protected readonly planName = computed(() => this.d().plan != null ? PLAN_NAME[this.d().plan!] : PLAN_NAME[0]);
   protected readonly runway = computed(() => {
     const days = this.d().daysRemaining;
     return days == null ? null : Math.min(1, days / 30);
@@ -159,8 +159,8 @@ export class ArBilling {
     SubscriptionPlan.Enterprise,
   ];
 
-  protected money(paise: number): string {
-    return inr(paise);
+  protected money(paise: number | null | undefined): string {
+    return inr(paise ?? 0);
   }
   protected planLabel(p: SubscriptionPlan): string {
     return PLAN_NAME[p];

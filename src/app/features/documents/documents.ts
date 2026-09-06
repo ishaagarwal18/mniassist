@@ -56,15 +56,15 @@ const SEED: Doc[] = [
 ];
 
 function toDoc(d: LibraryDocumentDto): Doc {
-  const kb = d.sizeBytes / 1024;
+  const kb = (d.sizeBytes ?? 0) / 1024;
   return {
     id: d.id!,
-    title: d.title,
-    category: d.category,
+    title: d.title ?? '(untitled)',
+    category: d.category ?? undefined,
     sizeLabel: kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`,
     parts: d.partNumbers ?? [],
-    sendCount: d.sendCount,
-    lastSentAt: d.lastSentAtUtc,
+    sendCount: d.sendCount ?? 0,
+    lastSentAt: d.lastSentAtUtc ?? undefined,
   };
 }
 

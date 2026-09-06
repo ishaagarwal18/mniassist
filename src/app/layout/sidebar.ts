@@ -124,7 +124,7 @@ export class ArSidebar {
     .filter((group) => group.items.length > 0);
 
   protected badgeFor(kind: 'inbox' | 'enquiries' | 'alerts' | undefined): number | null {
-    if (kind === 'inbox') return this.inbox.unassignedCount();
+    if (kind === 'inbox') return this.inbox.unassignedCount() ?? null;
     if (kind === 'enquiries') return 4;
 
     // Unread notifications, not unread criticals. A badge that only counts the worst

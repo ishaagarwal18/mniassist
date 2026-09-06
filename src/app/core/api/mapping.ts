@@ -79,13 +79,13 @@ export function toChannel(dto: ChannelDto, health?: ChannelHealthDto): Channel {
     phoneNumberId: dto.phoneNumberId ?? '',
     displayPhone: dto.displayPhoneNumber ?? '',
     displayName: dto.verifiedName ?? '',
-    nameStatus: NAME_STATUS[dto.displayNameStatus] ?? 'pending',
-    quality: QUALITY[dto.quality] ?? 'unknown',
-    tier: TIER[dto.tier] ?? 'starting',
+    nameStatus: dto.displayNameStatus != null ? NAME_STATUS[dto.displayNameStatus] : 'pending',
+    quality: dto.quality != null ? QUALITY[dto.quality] : 'unknown',
+    tier: dto.tier != null ? TIER[dto.tier] : 'starting',
     // Usage comes from the health endpoint because it is portfolio-scoped: the
     // channel row alone cannot know what its sibling numbers have consumed.
     used24h: health?.used24h ?? 0,
-    throughput: dto.throughputMps,
+    throughput: dto.throughputMps ?? 0,
     restricted: dto.state === ChannelState.Restricted || dto.state === ChannelState.Suspended,
   };
 }
@@ -94,7 +94,7 @@ export function toSegment(dto: SegmentDto): Segment {
   return {
     id: dto.id!,
     name: dto.name ?? '',
-    count: dto.cachedMemberCount,
+    count: dto.cachedMemberCount ?? 0,
   };
 }
 
@@ -111,11 +111,11 @@ export function toContact(dto: ContactDto): Contact {
       industry: attributes['industry'],
       plantLocation: attributes['plant_location'] ?? dto.city,
       systems: systems?.length ? systems : undefined,
-      decisionRole: DECISION_ROLE[dto.role],
+      decisionRole: dto.role != null ? DECISION_ROLE[dto.role] : undefined,
       capexBand: attributes['capex_band'],
     },
     consent: {
-      source: dto.consentSource !== undefined ? CONSENT_SOURCE[dto.consentSource] : 'manual',
+      source: dto.consentSource != null ? CONSENT_SOURCE[dto.consentSource] : 'manual',
       evidence: attributes['consent_evidence'] ?? '—',
       textVersion: attributes['consent_text_version'] ?? '—',
       grantedAt: formatDate(dto.consentAtUtc),
@@ -133,7 +133,7 @@ export function toConversation(dto: ConversationDto, messages: readonly Message[
     phoneE164: formatWaId(dto.contactWaId),
     snippet: dto.lastMessagePreview ?? '',
     at: formatClock(dto.lastInboundAtUtc ?? dto.lastOutboundAtUtc),
-    unread: dto.unreadCount,
+    unread: dto.unreadCount ?? 0,
     // A closed window is null rather than a past date, because the composer
     // branches on "is there a window" and a stale timestamp reads as an open one.
     window: {
@@ -149,7 +149,7 @@ export function toMessage(dto: MessageDto, conversationId?: string): Message {
     direction: dto.direction === MessageDirection.Inbound ? 'in' : 'out',
     body: dto.body ?? '',
     at: formatClock(dto.sentAtUtc ?? dto.creationTime),
-    status: toMessageStatus(dto.status),
+    status: dto.status != null ? toMessageStatus(dto.status) : undefined,
     media: toMessageMedia(dto, conversationId),
   };
 }
@@ -191,7 +191,7 @@ function toMessageStatus(status: MessageStatus): Message['status'] {
 }
 
 /** wa_id has no plus and no spacing. Rendered as +91 XXXXX XXXXX for Indian numbers. */
-function formatWaId(waId: string | undefined): string {
+function formatWaId(waId: string | null | undefined): string {
   if (!waId) return '';
   const digits = waId.replace(/\D/g, '');
 
@@ -202,12 +202,12 @@ function formatWaId(waId: string | undefined): string {
   return `+${digits}`;
 }
 
-function formatDate(iso: string | undefined): string {
+function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function formatClock(iso: string | undefined): string {
+function formatClock(iso: string | null | undefined): string {
   if (!iso) return '';
   const date = new Date(iso);
   const today = new Date();
@@ -222,7 +222,7 @@ function formatClock(iso: string | undefined): string {
     : date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
 }
 
-function formatRelative(iso: string | undefined): string {
+function formatRelative(iso: string | null | undefined): string {
   if (!iso) return 'No activity';
 
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);

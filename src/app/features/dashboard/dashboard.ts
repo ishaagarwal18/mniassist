@@ -8,13 +8,13 @@ import { count, inr, inrCompact, pct } from '../../core/util/format';
 import { TIER_LIMIT } from '../../core/models/channel.model';
 import { ArTopbar } from '../../layout/topbar';
 import {
-  ArBanner, ArButton, ArCard, ArChannelHealthStrip, ArChip, ArIcon, ArMeter, ArStatTile,
+  ArButton, ArCard, ArChannelHealthStrip, ArChip, ArIcon, ArMeter, ArStatTile,
 } from '../../ui';
 
 @Component({
   selector: 'ar-dashboard',
   imports: [
-    RouterLink, ArTopbar, ArCard, ArStatTile, ArChip, ArIcon, ArButton, ArBanner, ArMeter, ArChannelHealthStrip,
+    RouterLink, ArTopbar, ArCard, ArStatTile, ArChip, ArIcon, ArButton, ArMeter, ArChannelHealthStrip,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.html',

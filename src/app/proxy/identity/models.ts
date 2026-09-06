@@ -152,3 +152,37 @@ export interface WorkspaceMemberDto {
   openConversationCount?: number;
   lastSessionRevokedAtUtc?: string | null;
 }
+
+// --- SSO (SsoController; the schematics did not emit these because the
+//     controller sits in the 'app' module, not 'auto-reach'). ---
+
+export interface TenantSsoConfigurationDto {
+  isConfigured: boolean;
+  isEnabled: boolean;
+  displayName?: string | null;
+  issuer?: string | null;
+  metadataAddress?: string | null;
+  authorizationEndpoint?: string | null;
+  allowedEmailDomains: string[];
+  defaultRoleName: string;
+  enforceSso: boolean;
+}
+
+export interface SaveSsoConfigurationInput {
+  displayName: string;
+  issuer: string;
+  metadataAddress?: string | null;
+  authorizationEndpoint?: string | null;
+  allowedEmailDomains: string[];
+  defaultRoleName: string;
+  enforceSso: boolean;
+  enable: boolean;
+}
+
+export interface SsoDiscoveryDto {
+  ssoAvailable: boolean;
+  ssoEnforced: boolean;
+  displayName?: string | null;
+  authorizationEndpoint?: string | null;
+  issuer?: string | null;
+}
