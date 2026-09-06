@@ -11,6 +11,7 @@ export * from './contact.service';
 export * from './custom-field-entity.enum';
 export * from './custom-field-type.enum';
 export * from './custom-field.service';
+export * from './customer-account.service';
 export * from './decision-role.enum';
 export * from './models';
 export * from './segment.service';

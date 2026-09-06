@@ -37,6 +37,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Segments',
       },
       {
+        label: 'Accounts',
+        icon: 'contacts',
+        route: '/contacts/accounts',
+        permission: 'AutoReach.Contacts',
+      },
+      {
         label: 'Campaigns',
         icon: 'campaign',
         route: '/campaigns',

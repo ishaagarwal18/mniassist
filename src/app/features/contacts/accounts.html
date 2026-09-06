@@ -1,0 +1,172 @@
+<ar-topbar title="Accounts" subtitle="Companies & plants your contacts roll up to">
+  <button ar-button variant="primary" icon="plus" (click)="openNew()">New account</button>
+</ar-topbar>
+
+<div class="acc ar-scroll">
+  <div class="acc__bar">
+    <ar-search-box placeholder="Search accounts" (queryChange)="search($event)" />
+  </div>
+
+  @if (loading()) {
+    <p class="acc__empty">Loading…</p>
+  } @else if (accounts().length === 0) {
+    <p class="acc__empty">No accounts yet. Group a few contacts under a plant or company.</p>
+  }
+
+  @for (a of accounts(); track a.id) {
+    <article class="ac">
+      <div class="ac__main">
+        <h2 class="ac__name">{{ a.name }}</h2>
+        <p class="ac__meta">
+          @if (a.industry) {
+            {{ a.industry }} ·
+          }
+          @if (a.city) {
+            {{ a.city }}
+            @if (a.state) {
+              , {{ a.state }}
+            }
+          }
+        </p>
+      </div>
+      <ar-chip tone="neutral"
+        >{{ a.contactCount }} contact{{ a.contactCount === 1 ? '' : 's' }}</ar-chip
+      >
+      <div class="ac__actions">
+        <button ar-button variant="primary" (click)="openRollup(a)">Rollup</button>
+        <button ar-button variant="ghost" (click)="openEdit(a)">Edit</button>
+        <button ar-button variant="ghost" (click)="remove(a)">Delete</button>
+      </div>
+    </article>
+  }
+</div>
+
+@if (editorOpen()) {
+  <ar-dialog
+    [title]="editingId() ? 'Edit account' : 'New account'"
+    (dismiss)="editorOpen.set(false)"
+  >
+    <label class="ar-field">
+      <span class="ar-field__label">Name</span>
+      <input
+        class="ar-field__input"
+        [value]="draft().name"
+        (input)="patch('name', $any($event.target).value)"
+      />
+    </label>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Industry</span>
+        <input
+          class="ar-field__input"
+          [value]="draft().industry"
+          (input)="patch('industry', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Website</span>
+        <input
+          class="ar-field__input"
+          [value]="draft().website"
+          (input)="patch('website', $any($event.target).value)"
+        />
+      </label>
+    </div>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">City</span>
+        <input
+          class="ar-field__input"
+          [value]="draft().city"
+          (input)="patch('city', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">State</span>
+        <input
+          class="ar-field__input"
+          [value]="draft().state"
+          (input)="patch('state', $any($event.target).value)"
+        />
+      </label>
+    </div>
+    <label class="ar-field">
+      <span class="ar-field__label">Notes <span class="ar-field__opt">optional</span></span>
+      <textarea
+        class="ar-field__input"
+        rows="3"
+        [value]="draft().notes"
+        (input)="patch('notes', $any($event.target).value)"
+      ></textarea>
+    </label>
+
+    @if (error(); as msg) {
+      <p class="acc__err">{{ msg }}</p>
+    }
+
+    <div dialogActions>
+      <button ar-button variant="ghost" (click)="editorOpen.set(false)">Cancel</button>
+      <button ar-button variant="primary" [disabled]="busy()" (click)="save()">
+        {{ busy() ? 'Saving…' : editingId() ? 'Save' : 'Create' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
+
+@if (rollupOpen()) {
+  <ar-dialog
+    [title]="(rollupFor()?.name || 'Account') + ' — rollup'"
+    (dismiss)="rollupOpen.set(false)"
+  >
+    @if (rollup(); as r) {
+      <div class="roll">
+        <div class="roll__grid">
+          <div class="roll__stat">
+            <b>{{ r.contactCount }}</b
+            ><span>Contacts</span>
+          </div>
+          <div class="roll__stat">
+            <b>{{ r.openEnquiryCount }}</b
+            ><span>Open enquiries</span>
+          </div>
+          <div class="roll__stat">
+            <b>{{ r.wonEnquiryCount }}</b
+            ><span>Won</span>
+          </div>
+          <div class="roll__stat">
+            <b>{{ inr(r.pipelineValueInPaise) }}</b
+            ><span>Pipeline value</span>
+          </div>
+        </div>
+        <p class="roll__act">Last activity: {{ when(r.lastActivityUtc) }}</p>
+
+        @if (breakdownRows(r).length > 0) {
+          <div class="roll__bd">
+            @for (row of breakdownRows(r); track row.stage) {
+              <span class="roll__chip">{{ row.stage }} · {{ row.count }}</span>
+            }
+          </div>
+        }
+
+        @if (r.contacts && r.contacts.length > 0) {
+          <ul class="roll__contacts">
+            @for (c of r.contacts; track c.id) {
+              <li>
+                <span class="roll__cn">{{ c.displayName || c.waId }}</span>
+                @if (c.designation) {
+                  <span class="roll__cd">{{ c.designation }}</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    } @else {
+      <p class="acc__empty">Loading…</p>
+    }
+
+    <div dialogActions>
+      <button ar-button variant="primary" (click)="rollupOpen.set(false)">Done</button>
+    </div>
+  </ar-dialog>
+}

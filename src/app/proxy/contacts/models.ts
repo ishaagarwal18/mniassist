@@ -13,6 +13,53 @@ import type { MessageStatus } from '../messaging/message-status.enum';
 import type { CustomFieldEntity } from './custom-field-entity.enum';
 import type { CustomFieldType } from './custom-field-type.enum';
 
+export interface CustomerAccountDto extends FullAuditedEntityDto<string> {
+  name?: string;
+  industry?: string | null;
+  city?: string | null;
+  state?: string | null;
+  website?: string | null;
+  ownerUserId?: string | null;
+  notes?: string | null;
+  contactCount?: number;
+}
+
+export interface CreateUpdateCustomerAccountDto {
+  name: string;
+  industry?: string | null;
+  city?: string | null;
+  state?: string | null;
+  website?: string | null;
+  ownerUserId?: string | null;
+  notes?: string | null;
+}
+
+export interface GetCustomerAccountListInput extends PagedAndSortedResultRequestDto {
+  filter?: string | null;
+  ownerUserId?: string | null;
+}
+
+export interface AccountContactDto {
+  id?: string;
+  displayName?: string | null;
+  waId?: string;
+  designation?: string | null;
+  lifecycle?: ContactLifecycle;
+  lastInboundAtUtc?: string | null;
+}
+
+export interface CustomerAccountRollupDto {
+  accountId?: string;
+  contactCount?: number;
+  openEnquiryCount?: number;
+  wonEnquiryCount?: number;
+  lostEnquiryCount?: number;
+  pipelineValueInPaise?: number;
+  lastActivityUtc?: string | null;
+  lifecycleBreakdown?: Record<string, number>;
+  contacts?: AccountContactDto[];
+}
+
 export interface ConsentRecordDto extends EntityDto<string> {
   scope?: ConsentScope;
   source?: ConsentSource;
@@ -26,6 +73,7 @@ export interface ContactDto extends FullAuditedEntityDto<string> {
   waId?: string;
   displayName?: string | null;
   companyName?: string | null;
+  accountId?: string | null;
   role?: DecisionRole;
   languageCode?: string;
   consentScope?: ConsentScope;
@@ -112,6 +160,7 @@ export interface CreateUpdateContactDto {
   waId: string;
   displayName?: string | null;
   companyName?: string | null;
+  accountId?: string | null;
   role?: DecisionRole;
   languageCode?: string;
   city?: string | null;

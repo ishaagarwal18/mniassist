@@ -39,6 +39,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/contacts/segments').then((m) => m.ArSegments),
       },
       {
+        path: 'contacts/accounts',
+        title: 'Accounts · AutoReach',
+        loadComponent: () => import('./features/contacts/accounts').then((m) => m.ArAccounts),
+      },
+      {
         path: 'campaigns',
         title: 'Campaigns · AutoReach',
         loadComponent: () =>
