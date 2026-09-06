@@ -7,9 +7,10 @@ import {
   Preflight,
   Report,
 } from '../../core/services/campaign.service';
+import { ChannelService } from '../../core/services/channel.service';
 import { count, inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip } from '../../ui';
+import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 
 const STATE_TONE: Record<CState, ChipTone> = {
@@ -29,16 +30,45 @@ const STATE_TONE: Record<CState, ChipTone> = {
  */
 @Component({
   selector: 'ar-campaign-builder',
-  imports: [ArTopbar, ArButton, ArChip],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './campaign-builder.html',
   styleUrl: './campaign-builder.scss',
 })
 export class ArCampaignBuilder {
   private readonly store = inject(CampaignStore);
+  protected readonly channels = inject(ChannelService).channels;
 
   protected readonly campaigns = this.store.campaigns;
   protected readonly loading = this.store.loading;
+
+  // ---- New campaign dialog ---------------------------------------------
+  protected readonly dialogOpen = signal(false);
+  protected readonly saving = signal(false);
+  protected readonly newName = signal('');
+  protected readonly newChannel = signal('');
+
+  protected openDialog(): void {
+    this.newName.set('');
+    this.newChannel.set(this.channels()[0]?.id ?? '');
+    this.dialogOpen.set(true);
+  }
+
+  protected async createCampaign(): Promise<void> {
+    if (!this.newName().trim() || !this.newChannel()) {
+      window.alert('Give the campaign a name and pick a channel.');
+      return;
+    }
+    this.saving.set(true);
+    try {
+      await this.store.create(this.newName(), this.newChannel());
+      this.dialogOpen.set(false);
+    } catch (e: unknown) {
+      this.error.set(e instanceof Error ? e.message : 'The campaign could not be created.');
+    } finally {
+      this.saving.set(false);
+    }
+  }
 
   protected readonly openId = signal<string | null>(null);
   protected readonly preflight = signal<Preflight | null>(null);

@@ -1,6 +1,49 @@
 <ar-topbar title="Campaigns" [subtitle]="campaigns().length + ' total'">
-  <button ar-button variant="primary" icon="plus">New campaign</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+    New campaign
+  </button>
 </ar-topbar>
+
+@if (dialogOpen()) {
+  <ar-dialog title="New campaign" (dismiss)="dialogOpen.set(false)">
+    <p class="cm__dialog-note">
+      Creates a draft. Template, audience and schedule are set on the campaign before it can pass
+      pre-flight.
+    </p>
+    <label class="ar-field">
+      <span class="ar-field__label">Name</span>
+      <input
+        class="ar-field__input"
+        [value]="newName()"
+        (input)="newName.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Channel</span>
+      <select class="ar-field__input" (change)="newChannel.set($any($event.target).value)">
+        @for (ch of channels(); track ch.id) {
+          <option [value]="ch.id" [selected]="ch.id === newChannel()">
+            {{ ch.displayName }} · {{ ch.displayPhone }}
+          </option>
+        }
+      </select>
+    </label>
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="saving()"
+        (click)="createCampaign()"
+      >
+        {{ saving() ? 'Creating…' : 'Create draft' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 <div class="cm ar-scroll">
   @if (error(); as e) {

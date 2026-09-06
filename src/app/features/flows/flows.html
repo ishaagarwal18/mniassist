@@ -1,6 +1,48 @@
 <ar-topbar title="Flows" subtitle="In-chat forms — RFQ intake, booking, tickets">
-  <button ar-button variant="primary" icon="plus">New flow</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+    New flow
+  </button>
 </ar-topbar>
+
+@if (dialogOpen()) {
+  <ar-dialog title="New flow" (dismiss)="dialogOpen.set(false)">
+    <p class="fl__dialog-note">
+      Creates a draft with one empty screen. Build the screens, then publish to Meta.
+    </p>
+    <label class="ar-field">
+      <span class="ar-field__label">Name</span>
+      <input
+        class="ar-field__input"
+        [value]="newName()"
+        (input)="newName.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Channel</span>
+      <select class="ar-field__input" (change)="newChannel.set($any($event.target).value)">
+        @for (ch of channels(); track ch.id) {
+          <option [value]="ch.id" [selected]="ch.id === newChannel()">
+            {{ ch.displayName }} · {{ ch.displayPhone }}
+          </option>
+        }
+      </select>
+    </label>
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="saving()"
+        (click)="createFlow()"
+      >
+        {{ saving() ? 'Creating…' : 'Create draft' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 <div class="fl ar-scroll">
   @if (error(); as e) {

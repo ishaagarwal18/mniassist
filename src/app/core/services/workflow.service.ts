@@ -7,6 +7,20 @@ import { AutomationDto, AutomationService } from '../../proxy/automation';
 import { AutomationState, AutomationTriggerKind, FlowState } from '../../proxy/messaging';
 import { FlowDto, FlowService } from '../../proxy/flows';
 
+/** A one-screen placeholder so a freshly created flow is valid JSON; the screen
+ *  designer fills in the rest. */
+const STARTER_FLOW_JSON = JSON.stringify({
+  version: '7.0',
+  screens: [
+    {
+      id: 'WELCOME',
+      title: 'Untitled screen',
+      terminal: true,
+      layout: { type: 'SingleColumnLayout', children: [] },
+    },
+  ],
+});
+
 export type WState = 'draft' | 'active' | 'paused';
 export type FState = 'draft' | 'published' | 'deprecated' | 'blocked';
 
@@ -212,6 +226,33 @@ export class WorkflowStore {
   }
   async deprecateFlow(id: string): Promise<void> {
     await firstValueFrom(this.flowApi.deprecate(id));
+    this.reload();
+  }
+
+  /** Creates a draft automation. The trigger config and nodes are set in the editor. */
+  async createAutomation(
+    name: string,
+    channelId: string,
+    trigger: AutomationTriggerKind,
+    keyword?: string,
+  ): Promise<void> {
+    if (environment.useMockData) return;
+    const triggerConfigJson =
+      trigger === AutomationTriggerKind.InboundKeyword && keyword
+        ? JSON.stringify({ keywords: [keyword.trim()] })
+        : '{}';
+    await firstValueFrom(
+      this.automationApi.create({ name: name.trim(), channelId, trigger, triggerConfigJson }),
+    );
+    this.reload();
+  }
+
+  /** Creates a draft flow with a single empty screen. */
+  async createFlow(name: string, channelId: string): Promise<void> {
+    if (environment.useMockData) return;
+    await firstValueFrom(
+      this.flowApi.create({ name: name.trim(), channelId, definitionJson: STARTER_FLOW_JSON }),
+    );
     this.reload();
   }
 }

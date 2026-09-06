@@ -1,6 +1,70 @@
 <ar-topbar title="Automations" subtitle="Keyword bots, drip sequences and journeys">
-  <button ar-button variant="primary" icon="plus">New automation</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+    New automation
+  </button>
 </ar-topbar>
+
+@if (dialogOpen()) {
+  <ar-dialog title="New automation" (dismiss)="dialogOpen.set(false)">
+    <p class="au__dialog-note">
+      Creates a draft, paused. Add the steps in the editor, then activate.
+    </p>
+    <label class="ar-field">
+      <span class="ar-field__label">Name</span>
+      <input
+        class="ar-field__input"
+        [value]="newName()"
+        (input)="newName.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Channel</span>
+      <select class="ar-field__input" (change)="newChannel.set($any($event.target).value)">
+        @for (ch of channels(); track ch.id) {
+          <option [value]="ch.id" [selected]="ch.id === newChannel()">
+            {{ ch.displayName }} · {{ ch.displayPhone }}
+          </option>
+        }
+      </select>
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Trigger</span>
+      <select class="ar-field__input" (change)="newTrigger.set(+$any($event.target).value)">
+        @for (t of triggers; track t.value) {
+          <option [value]="t.value" [selected]="t.value === newTrigger()">{{ t.label }}</option>
+        }
+      </select>
+    </label>
+    @if (newTrigger() === TK.InboundKeyword) {
+      <label class="ar-field">
+        <span class="ar-field__label">Keyword</span>
+        <input
+          class="ar-field__input"
+          placeholder="e.g. PRICE"
+          [value]="newKeyword()"
+          (input)="newKeyword.set($any($event.target).value)"
+        />
+      </label>
+    }
+    @if (error(); as e) {
+      <p class="au__dialog-err">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="saving()"
+        (click)="createAutomation()"
+      >
+        {{ saving() ? 'Creating…' : 'Create draft' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 <div class="au ar-scroll">
   @if (loading()) {
