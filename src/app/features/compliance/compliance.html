@@ -1,6 +1,48 @@
 <ar-topbar title="Compliance" subtitle="DPDP requests, retention and breach log">
-  <button ar-button variant="primary" icon="plus">Log a request</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+    Log a request
+  </button>
 </ar-topbar>
+
+@if (dialogOpen()) {
+  <ar-dialog title="Log a DPDP request" (dismiss)="dialogOpen.set(false)">
+    <p class="cx__dialog-note">
+      For a request received by email, phone or post. A request that comes through the opt-out
+      keyword is logged automatically.
+    </p>
+    <label class="ar-field">
+      <span class="ar-field__label">Request type</span>
+      <select class="ar-field__input" (change)="newKind.set(+$any($event.target).value)">
+        @for (k of requestKinds; track k.value) {
+          <option [value]="k.value" [selected]="k.value === newKind()">{{ k.label }}</option>
+        }
+      </select>
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Requester identifier</span>
+      <input
+        class="ar-field__input"
+        placeholder="Phone or email they gave"
+        [value]="requester()"
+        (input)="requester.set($any($event.target).value)"
+      />
+    </label>
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="saving()"
+        (click)="saveRequest()"
+      >
+        {{ saving() ? 'Logging…' : 'Log request' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 <div class="cx ar-scroll">
   <div class="cx__stats">

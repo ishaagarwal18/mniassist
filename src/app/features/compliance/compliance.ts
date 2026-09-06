@@ -2,8 +2,9 @@ import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 
 import { ComplianceStore, DpdpRequest, ReqKind } from '../../core/services/compliance.service';
+import { DataRequestKind } from '../../proxy/compliance';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip, ArStatTile } from '../../ui';
+import { ArButton, ArChip, ArDialog, ArStatTile } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 
 const KIND_LABEL: Record<ReqKind, string> = {
@@ -21,7 +22,7 @@ const KIND_LABEL: Record<ReqKind, string> = {
  */
 @Component({
   selector: 'ar-compliance',
-  imports: [ArTopbar, ArButton, ArChip, ArStatTile, DecimalPipe],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArStatTile, DecimalPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './compliance.html',
   styleUrl: './compliance.scss',
@@ -38,6 +39,40 @@ export class ArCompliance {
 
   protected kindLabel(k: ReqKind): string {
     return KIND_LABEL[k];
+  }
+
+  // ---- Log a request dialog --------------------------------------------
+
+  protected readonly requestKinds = [
+    { value: DataRequestKind.Access, label: 'Access' },
+    { value: DataRequestKind.Correction, label: 'Correction' },
+    { value: DataRequestKind.Erasure, label: 'Erasure' },
+    { value: DataRequestKind.ConsentWithdrawal, label: 'Consent withdrawal' },
+  ];
+  protected readonly dialogOpen = signal(false);
+  protected readonly saving = signal(false);
+  protected readonly newKind = signal<DataRequestKind>(DataRequestKind.Access);
+  protected readonly requester = signal('');
+
+  protected openDialog(): void {
+    this.newKind.set(DataRequestKind.Access);
+    this.requester.set('');
+    this.dialogOpen.set(true);
+  }
+
+  protected async saveRequest(): Promise<void> {
+    const who = this.requester().trim();
+    if (!who) {
+      window.alert('Enter how the data principal identified themselves — a phone number or email.');
+      return;
+    }
+    this.saving.set(true);
+    try {
+      await this.store.logRequest(this.newKind(), who);
+      this.dialogOpen.set(false);
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   protected slaTone(r: DpdpRequest): ChipTone {

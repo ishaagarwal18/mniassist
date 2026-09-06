@@ -10,3 +10,4 @@ export * from './tabs';
 export * from './meter';
 export * from './avatar';
 export * from './channel-health-strip';
+export * from './dialog';

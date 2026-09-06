@@ -265,4 +265,13 @@ export class ComplianceStore {
     );
     this.reload();
   }
+
+  async logRequest(kind: DataRequestKind, requesterIdentifier: string): Promise<void> {
+    if (!environment.useMockData) {
+      await firstValueFrom(
+        this.api.createRequest({ kind, requesterIdentifier: requesterIdentifier.trim() }),
+      );
+      this.reload();
+    }
+  }
 }

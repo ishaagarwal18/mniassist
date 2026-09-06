@@ -1,10 +1,11 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { forkJoin, map } from 'rxjs';
+import { firstValueFrom, forkJoin, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
   ContactService as ContactApi,
+  CreateUpdateContactDto,
   SegmentService as SegmentApi,
   SuppressionReason,
 } from '../../proxy/contacts';
@@ -43,34 +44,146 @@ export class ContactService {
   ];
 
   private readonly seedContacts: readonly Contact[] = [
-    { id: 'p1', name: 'Sandeep Rao', phoneE164: '+91 98220 11xxx', company: 'Meridian Foods · Pune',
-      attributes: { industry: 'Food & beverage', plantLocation: 'Chakan, Pune', systems: ['PLC + HMI', 'VFD'], decisionRole: 'Maintenance', capexBand: '₹10–50L' },
-      consent: { source: 'website', evidence: 'IP 49.36.x.x', textVersion: 'v2', grantedAt: '14 Mar 2026' },
-      amcExpiry: '30 Sep 2026', lastActivity: '2 hours ago' },
-    { id: 'p2', name: 'Priya Nambiar', phoneE164: '+91 99360 22xxx', company: 'Kanpur Polymers · Kanpur',
-      attributes: { industry: 'Polymers', plantLocation: 'Kanpur', systems: ['SCADA', 'VFD'], decisionRole: 'Purchase' },
-      consent: { source: 'website', evidence: 'IP 103.21.x.x', textVersion: 'v2', grantedAt: '02 Apr 2026' },
-      amcExpiry: '11 Oct 2026', lastActivity: 'Today 10:37' },
-    { id: 'p3', name: 'Devendra Joshi', phoneE164: '+91 90990 33xxx', company: 'Sanand Press Works · Sanand',
-      attributes: { industry: 'Metal forming', plantLocation: 'Sanand', systems: ['Servo', 'Vision'], decisionRole: 'Maintenance' },
-      consent: { source: 'qr', evidence: 'wamid.HBg…9A2', textVersion: 'v2', grantedAt: '11 Feb 2026' },
-      amcExpiry: '04 Oct 2026', lastActivity: 'Yesterday' },
-    { id: 'p4', name: 'Anitha Menon', phoneE164: '+91 94440 55xxx', company: 'Hosur Machine Tools · Hosur',
-      attributes: { industry: 'Machine tools', plantLocation: 'Hosur', systems: ['Servo', 'PLC + HMI'], decisionRole: 'Engineering' },
-      consent: { source: 'website', evidence: 'IP 45.118.x.x', textVersion: 'v2', grantedAt: '19 May 2026' },
-      amcExpiry: '22 Sep 2026', lastActivity: 'Yesterday' },
-    { id: 'p5', name: 'Farhan Qureshi', phoneE164: '+91 98190 77xxx', company: 'Vasai Panel Systems · Vasai',
-      attributes: { industry: 'Panel building', plantLocation: 'Vasai', systems: ['Panels', 'VFD'], decisionRole: 'Dealer' },
-      consent: { source: 'manual', evidence: 'Dealer agreement DA-114', textVersion: 'v2', grantedAt: '08 Jan 2026' },
-      lastActivity: '24 Aug' },
-    { id: 'p6', name: 'Lalitha Iyer', phoneE164: '+91 93440 88xxx', company: 'Coimbatore Textiles · Coimbatore',
-      attributes: { industry: 'Textiles', plantLocation: 'Coimbatore', systems: ['SCADA', 'Drives'], decisionRole: 'Plant head' },
-      consent: { source: 'ctwa', evidence: 'Ad 238114 · referral', textVersion: 'v2', grantedAt: '22 Aug 2026' },
-      amcExpiry: '18 Oct 2026', lastActivity: '22 Aug' },
-    { id: 'p7', name: 'Imran Shaikh', phoneE164: '+91 91750 66xxx', company: 'Aurangabad Auto Parts · Waluj',
-      attributes: { industry: 'Automotive', plantLocation: 'Waluj', systems: ['Robotics', 'PLC'], decisionRole: 'Purchase' },
-      consent: { source: 'import', evidence: 'Batch IMP-0271 · signed form', textVersion: 'v1', grantedAt: '19 Jan 2026' },
-      amcExpiry: '07 Oct 2026', lastActivity: '19 Aug' },
+    {
+      id: 'p1',
+      name: 'Sandeep Rao',
+      phoneE164: '+91 98220 11xxx',
+      company: 'Meridian Foods · Pune',
+      attributes: {
+        industry: 'Food & beverage',
+        plantLocation: 'Chakan, Pune',
+        systems: ['PLC + HMI', 'VFD'],
+        decisionRole: 'Maintenance',
+        capexBand: '₹10–50L',
+      },
+      consent: {
+        source: 'website',
+        evidence: 'IP 49.36.x.x',
+        textVersion: 'v2',
+        grantedAt: '14 Mar 2026',
+      },
+      amcExpiry: '30 Sep 2026',
+      lastActivity: '2 hours ago',
+    },
+    {
+      id: 'p2',
+      name: 'Priya Nambiar',
+      phoneE164: '+91 99360 22xxx',
+      company: 'Kanpur Polymers · Kanpur',
+      attributes: {
+        industry: 'Polymers',
+        plantLocation: 'Kanpur',
+        systems: ['SCADA', 'VFD'],
+        decisionRole: 'Purchase',
+      },
+      consent: {
+        source: 'website',
+        evidence: 'IP 103.21.x.x',
+        textVersion: 'v2',
+        grantedAt: '02 Apr 2026',
+      },
+      amcExpiry: '11 Oct 2026',
+      lastActivity: 'Today 10:37',
+    },
+    {
+      id: 'p3',
+      name: 'Devendra Joshi',
+      phoneE164: '+91 90990 33xxx',
+      company: 'Sanand Press Works · Sanand',
+      attributes: {
+        industry: 'Metal forming',
+        plantLocation: 'Sanand',
+        systems: ['Servo', 'Vision'],
+        decisionRole: 'Maintenance',
+      },
+      consent: {
+        source: 'qr',
+        evidence: 'wamid.HBg…9A2',
+        textVersion: 'v2',
+        grantedAt: '11 Feb 2026',
+      },
+      amcExpiry: '04 Oct 2026',
+      lastActivity: 'Yesterday',
+    },
+    {
+      id: 'p4',
+      name: 'Anitha Menon',
+      phoneE164: '+91 94440 55xxx',
+      company: 'Hosur Machine Tools · Hosur',
+      attributes: {
+        industry: 'Machine tools',
+        plantLocation: 'Hosur',
+        systems: ['Servo', 'PLC + HMI'],
+        decisionRole: 'Engineering',
+      },
+      consent: {
+        source: 'website',
+        evidence: 'IP 45.118.x.x',
+        textVersion: 'v2',
+        grantedAt: '19 May 2026',
+      },
+      amcExpiry: '22 Sep 2026',
+      lastActivity: 'Yesterday',
+    },
+    {
+      id: 'p5',
+      name: 'Farhan Qureshi',
+      phoneE164: '+91 98190 77xxx',
+      company: 'Vasai Panel Systems · Vasai',
+      attributes: {
+        industry: 'Panel building',
+        plantLocation: 'Vasai',
+        systems: ['Panels', 'VFD'],
+        decisionRole: 'Dealer',
+      },
+      consent: {
+        source: 'manual',
+        evidence: 'Dealer agreement DA-114',
+        textVersion: 'v2',
+        grantedAt: '08 Jan 2026',
+      },
+      lastActivity: '24 Aug',
+    },
+    {
+      id: 'p6',
+      name: 'Lalitha Iyer',
+      phoneE164: '+91 93440 88xxx',
+      company: 'Coimbatore Textiles · Coimbatore',
+      attributes: {
+        industry: 'Textiles',
+        plantLocation: 'Coimbatore',
+        systems: ['SCADA', 'Drives'],
+        decisionRole: 'Plant head',
+      },
+      consent: {
+        source: 'ctwa',
+        evidence: 'Ad 238114 · referral',
+        textVersion: 'v2',
+        grantedAt: '22 Aug 2026',
+      },
+      amcExpiry: '18 Oct 2026',
+      lastActivity: '22 Aug',
+    },
+    {
+      id: 'p7',
+      name: 'Imran Shaikh',
+      phoneE164: '+91 91750 66xxx',
+      company: 'Aurangabad Auto Parts · Waluj',
+      attributes: {
+        industry: 'Automotive',
+        plantLocation: 'Waluj',
+        systems: ['Robotics', 'PLC'],
+        decisionRole: 'Purchase',
+      },
+      consent: {
+        source: 'import',
+        evidence: 'Batch IMP-0271 · signed form',
+        textVersion: 'v1',
+        grantedAt: '19 Jan 2026',
+      },
+      amcExpiry: '07 Oct 2026',
+      lastActivity: '19 Aug',
+    },
   ];
 
   private readonly contactsResource = rxResource({
@@ -84,7 +197,7 @@ export class ContactService {
           },
     stream: ({ params }) =>
       this.api.getList(params).pipe(
-        map(page => ({
+        map((page) => ({
           items: (page.items ?? []).map(toContact),
           totalCount: page.totalCount ?? 0,
         })),
@@ -97,7 +210,7 @@ export class ContactService {
     stream: () =>
       this.segmentApi
         .getList({ skipCount: 0, maxResultCount: 100 })
-        .pipe(map(page => (page.items ?? []).map(toSegment))),
+        .pipe(map((page) => (page.items ?? []).map(toSegment))),
     defaultValue: [] as Segment[],
   });
 
@@ -109,7 +222,7 @@ export class ContactService {
         invalid: this.countBy(SuppressionReason.InvalidNumber),
         blocked: this.countBy(SuppressionReason.BlockedByUser),
       }).pipe(
-        map(counts => [
+        map((counts) => [
           { id: 'optout', name: 'Opted out', count: counts.optout },
           { id: 'invalid', name: 'Invalid number', count: counts.invalid },
           { id: 'blocked', name: 'Blocked by user', count: counts.blocked },
@@ -147,10 +260,17 @@ export class ContactService {
     this.suppressionResource.reload();
   }
 
+  async create(input: CreateUpdateContactDto): Promise<void> {
+    if (!environment.useMockData) {
+      await firstValueFrom(this.api.create(input));
+      this.contactsResource.reload();
+    }
+  }
+
   /** One count per bucket. maxResultCount 0 asks the server for the total only. */
   private countBy(suppression: SuppressionReason) {
     return this.api
       .getList({ suppression, skipCount: 0, maxResultCount: 1 })
-      .pipe(map(page => page.totalCount ?? 0));
+      .pipe(map((page) => page.totalCount ?? 0));
   }
 }

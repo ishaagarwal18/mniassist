@@ -1,15 +1,90 @@
-<ar-topbar title="Contacts"
-  [subtitle]="count(totalContacts()) + ' contacts · ' + count(consentedTotal()) + ' with marketing consent'">
-  <button ar-button variant="ghost" icon="download">Import</button>
-  <button ar-button variant="primary" icon="plus">New contact</button>
+<ar-topbar
+  title="Contacts"
+  [subtitle]="
+    count(totalContacts()) + ' contacts · ' + count(consentedTotal()) + ' with marketing consent'
+  "
+>
+  <button ar-button type="button" variant="ghost" icon="download">Import</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+    New contact
+  </button>
 </ar-topbar>
+
+@if (dialogOpen()) {
+  <ar-dialog title="New contact" (dismiss)="dialogOpen.set(false)">
+    <label class="ar-field">
+      <span class="ar-field__label">WhatsApp number</span>
+      <input
+        class="ar-field__input"
+        type="tel"
+        placeholder="919821012345"
+        [value]="form().waId"
+        (input)="patchText('waId', $any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Name</span>
+      <input
+        class="ar-field__input"
+        [value]="form().displayName"
+        (input)="patchText('displayName', $any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Company</span>
+      <input
+        class="ar-field__input"
+        [value]="form().companyName"
+        (input)="patchText('companyName', $any($event.target).value)"
+      />
+    </label>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">City</span>
+        <input
+          class="ar-field__input"
+          [value]="form().city"
+          (input)="patchText('city', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Decision role</span>
+        <select class="ar-field__input" (change)="patchRole($any($event.target).value)">
+          @for (r of roles; track r.value) {
+            <option [value]="r.value" [selected]="r.value === form().role">{{ r.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="saving()"
+        (click)="saveContact()"
+      >
+        {{ saving() ? 'Saving…' : 'Add contact' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 <div class="contacts">
   <nav class="segs" aria-label="Segments">
     <p class="ar-label segs__head">Segments</p>
     @for (s of segments(); track s.id) {
-      <button class="seg" type="button" [class.seg--on]="s.id === activeSegment()"
-              [attr.aria-pressed]="s.id === activeSegment()" (click)="activeSegment.set(s.id)">
+      <button
+        class="seg"
+        type="button"
+        [class.seg--on]="s.id === activeSegment()"
+        [attr.aria-pressed]="s.id === activeSegment()"
+        (click)="activeSegment.set(s.id)"
+      >
         <span class="seg__name">{{ s.name }}</span>
         <span class="ar-mono seg__count">{{ count(s.count) }}</span>
       </button>
@@ -27,14 +102,19 @@
 
   <section class="table-pane">
     <div class="table-pane__bar">
-      <ar-search-box class="table-pane__search" [(query)]="query"
-                     placeholder="Search by name, company or phone" />
+      <ar-search-box
+        class="table-pane__search"
+        [(query)]="query"
+        placeholder="Search by name, company or phone"
+      />
       <button ar-button variant="ghost" icon="filter">Filter</button>
     </div>
 
     <div class="table-pane__body ar-scroll">
       <table class="ar-table">
-        <caption class="sr-only">Contacts in the selected segment</caption>
+        <caption class="sr-only">
+          Contacts in the selected segment
+        </caption>
         <thead>
           <tr>
             <th scope="col">Contact</th>
@@ -59,11 +139,15 @@
               <td>{{ c.attributes.decisionRole ?? '—' }}</td>
               <td>{{ systems(c) }}</td>
               <td class="num">{{ c.amcExpiry ?? '—' }}</td>
-              <td><ar-chip [tone]="consentTone(c)">{{ consentLabel(c) }}</ar-chip></td>
+              <td>
+                <ar-chip [tone]="consentTone(c)">{{ consentLabel(c) }}</ar-chip>
+              </td>
               <td>{{ c.lastActivity }}</td>
             </tr>
           } @empty {
-            <tr><td colspan="7" class="empty">No contacts match “{{ query() }}”.</td></tr>
+            <tr>
+              <td colspan="7" class="empty">No contacts match “{{ query() }}”.</td>
+            </tr>
           }
         </tbody>
       </table>
