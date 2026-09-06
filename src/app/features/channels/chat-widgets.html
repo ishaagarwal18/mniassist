@@ -1,0 +1,184 @@
+<ar-topbar title="Chat links & QR codes" subtitle="Tracked ways into a WhatsApp chat">
+  <button ar-button variant="primary" icon="plus" (click)="openNew()">New link</button>
+</ar-topbar>
+
+<div class="cw ar-scroll">
+  <p class="cw__intro">
+    Each link carries a short code in its pre-filled message. When the customer sends that first
+    message the code comes back to us, so a website button, an email link and a stall QR code can be
+    told apart — and counted.
+  </p>
+
+  @if (entryPoints().length > 0) {
+    <p class="cw__total">
+      {{ totalClicks() }} clicks tracked across {{ entryPoints().length }} links
+    </p>
+  }
+
+  @if (loading()) {
+    <p class="cw__empty">Loading…</p>
+  } @else if (entryPoints().length === 0) {
+    <p class="cw__empty">
+      No chat links yet. Create one to get a wa.me link, a widget snippet and a QR code.
+    </p>
+  }
+
+  @for (e of entryPoints(); track e.id) {
+    <article class="ep" [class.ep--off]="!e.isActive">
+      <div class="ep__main">
+        <div class="ep__head">
+          <h2 class="ep__name">{{ e.name }}</h2>
+          <ar-chip tone="neutral">{{ sourceLabel[e.source] }}</ar-chip>
+          @if (!e.isActive) {
+            <ar-chip tone="warn">Paused</ar-chip>
+          }
+        </div>
+        <p class="ep__msg">{{ e.prefilledMessage || 'No pre-filled message' }}</p>
+        <p class="ep__meta">
+          <span class="ep__slug ar-mono">[{{ e.slug }}]</span>
+          · {{ e.clickCount }} click{{ e.clickCount === 1 ? '' : 's' }} · last
+          {{ when(e.lastClickAt) }}
+        </p>
+      </div>
+      <div class="ep__actions">
+        <button ar-button variant="primary" (click)="openAssets(e)">Get link &amp; QR</button>
+        <button ar-button variant="ghost" (click)="openEdit(e)">Edit</button>
+        <button ar-button variant="ghost" (click)="remove(e)">Delete</button>
+      </div>
+    </article>
+  }
+</div>
+
+@if (editorOpen()) {
+  <ar-dialog
+    [title]="editingId() ? 'Edit chat link' : 'New chat link'"
+    (dismiss)="editorOpen.set(false)"
+  >
+    @if (channels.channels().length > 1 && !editingId()) {
+      <label class="ar-field">
+        <span class="ar-field__label">Channel</span>
+        <select
+          class="ar-field__input"
+          [value]="draft().channelId"
+          (change)="patch('channelId', $any($event.target).value)"
+        >
+          @for (c of channels.channels(); track c.id) {
+            <option [value]="c.id">{{ c.displayName }} · {{ c.displayPhone }}</option>
+          }
+        </select>
+      </label>
+    }
+
+    <label class="ar-field">
+      <span class="ar-field__label">Name</span>
+      <input
+        class="ar-field__input"
+        [value]="draft().name"
+        placeholder="Website — contact page"
+        (input)="patch('name', $any($event.target).value)"
+      />
+    </label>
+
+    <label class="ar-field">
+      <span class="ar-field__label">Source</span>
+      <select
+        class="ar-field__input"
+        [value]="draft().source"
+        (change)="patch('source', +$any($event.target).value)"
+      >
+        @for (s of sources; track s.value) {
+          <option [value]="s.value">{{ s.label }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="ar-field">
+      <span class="ar-field__label"
+        >Pre-filled message <span class="ar-field__opt">optional</span></span
+      >
+      <textarea
+        class="ar-field__input"
+        rows="3"
+        maxlength="512"
+        [value]="draft().prefilledMessage"
+        placeholder="Hi, I'd like a quote for a VFD."
+        (input)="patch('prefilledMessage', $any($event.target).value)"
+      ></textarea>
+      <span class="cw__hint">The tracking code is appended automatically on its own line.</span>
+    </label>
+
+    <label class="ar-field__opt-row">
+      <input
+        type="checkbox"
+        [checked]="draft().isActive"
+        (change)="patch('isActive', $any($event.target).checked)"
+      />
+      <span>Active — a paused link still works but new clicks are not counted</span>
+    </label>
+
+    @if (error(); as msg) {
+      <p class="cw__err">{{ msg }}</p>
+    }
+
+    <div dialogActions>
+      <button ar-button variant="ghost" (click)="editorOpen.set(false)">Cancel</button>
+      <button ar-button variant="primary" [disabled]="busy()" (click)="save()">
+        {{ busy() ? 'Saving…' : editingId() ? 'Save' : 'Create' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
+
+@if (assetsOpen()) {
+  <ar-dialog [title]="assetsFor()?.name || 'Chat link'" (dismiss)="assetsOpen.set(false)">
+    @if (assetsLoading()) {
+      <p class="cw__empty">Building…</p>
+    } @else if (assets(); as a) {
+      <div class="asset">
+        <span class="asset__label">wa.me link</span>
+        <div class="asset__row">
+          <code class="asset__code">{{ a.waLink }}</code>
+          <button ar-button variant="ghost" (click)="copy('link', a.waLink)">
+            {{ copied() === 'link' ? 'Copied' : 'Copy' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="asset">
+        <span class="asset__label">QR code</span>
+        @if (a.qrPngDataUri) {
+          <img class="asset__qr" [src]="a.qrPngDataUri" alt="QR code for this chat link" />
+          <a
+            class="asset__dl"
+            [href]="a.qrPngDataUri"
+            [download]="(assetsFor()?.slug || 'chat') + '-qr.png'"
+          >
+            Download PNG
+          </a>
+        } @else {
+          <p class="asset__hint">The QR image is generated once a live channel is connected.</p>
+        }
+      </div>
+
+      <div class="asset">
+        <span class="asset__label">Website widget snippet</span>
+        <textarea class="asset__snippet ar-mono" rows="4" readonly>{{ a.widgetSnippet }}</textarea>
+        <button ar-button variant="ghost" (click)="copy('snippet', a.widgetSnippet)">
+          {{ copied() === 'snippet' ? 'Copied' : 'Copy snippet' }}
+        </button>
+        <p class="asset__hint">
+          Paste once before &lt;/body&gt; — it needs no framework or extra script.
+        </p>
+      </div>
+
+      <div class="asset">
+        <span class="asset__label">Pre-filled message</span>
+        <pre class="asset__pre">{{ a.prefilledText }}</pre>
+      </div>
+    }
+
+    <div dialogActions>
+      <button ar-button variant="primary" (click)="assetsOpen.set(false)">Done</button>
+    </div>
+  </ar-dialog>
+}

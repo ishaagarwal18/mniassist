@@ -125,6 +125,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/channels/numbers').then((m) => m.ArNumbers),
       },
       {
+        path: 'channels/widget',
+        title: 'Chat links & QR · AutoReach',
+        loadComponent: () =>
+          import('./features/channels/chat-widgets').then((m) => m.ArChatWidgets),
+      },
+      {
         path: 'notifications',
         title: 'Notifications · AutoReach',
         loadComponent: () =>
