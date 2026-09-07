@@ -100,6 +100,35 @@ export const NAV: readonly NavGroup[] = [
     ],
   },
   {
+    heading: 'Administration',
+    items: [
+      {
+        label: 'Users',
+        icon: 'user',
+        route: '/admin/users',
+        permission: 'AbpIdentity.Users',
+      },
+      {
+        label: 'Roles & permissions',
+        icon: 'shield',
+        route: '/admin/roles',
+        permission: 'AbpIdentity.Roles',
+      },
+      {
+        label: 'Members & invites',
+        icon: 'user',
+        route: '/settings/members',
+        permission: 'AutoReach.Members',
+      },
+      {
+        label: 'Workspaces',
+        icon: 'globe',
+        route: '/admin/tenants',
+        permission: 'AbpTenantManagement.Tenants',
+      },
+    ],
+  },
+  {
     heading: 'Platform',
     items: [
       {
@@ -174,12 +203,6 @@ export const NAV: readonly NavGroup[] = [
         icon: 'link',
         route: '/settings/integrations',
         permission: 'AutoReach.Integrations',
-      },
-      {
-        label: 'Users & roles',
-        icon: 'user',
-        route: '/settings/members',
-        permission: 'AutoReach.Members',
       },
       {
         label: 'Support access',

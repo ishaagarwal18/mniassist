@@ -11,6 +11,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/account/login').then((m) => m.ArLogin),
   },
   {
+    path: 'signup',
+    title: 'Create a workspace · AutoReach',
+    loadComponent: () => import('./features/account/signup').then((m) => m.ArSignup),
+  },
+  {
     path: '',
     component: ArAppShell,
     canActivate: [appAuthGuard],
@@ -190,8 +195,23 @@ export const routes: Routes = [
       },
       {
         path: 'settings/members',
-        title: 'Users & roles · AutoReach',
+        title: 'Members & invites · AutoReach',
         loadComponent: () => import('./features/settings/members').then((m) => m.ArMembers),
+      },
+      {
+        path: 'admin/tenants',
+        title: 'Workspaces · AutoReach',
+        loadComponent: () => import('./features/admin/tenants').then((m) => m.ArAdminTenants),
+      },
+      {
+        path: 'admin/users',
+        title: 'Users · AutoReach',
+        loadComponent: () => import('./features/admin/users').then((m) => m.ArAdminUsers),
+      },
+      {
+        path: 'admin/roles',
+        title: 'Roles & permissions · AutoReach',
+        loadComponent: () => import('./features/admin/roles').then((m) => m.ArAdminRoles),
       },
       {
         path: 'settings/reports',

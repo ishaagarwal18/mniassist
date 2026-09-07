@@ -1,3 +1,5 @@
+export * from './identity-role.service';
+export * from './identity-user.service';
 export * from './invitation-state.enum';
 export * from './models';
 export * from './onboarding-checklist-step.enum';

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { environment } from '../../../environments/environment';
 import { CurrentUserService } from '../../core/services/current-user.service';
@@ -12,7 +12,7 @@ import { ArButton, ArIcon } from '../../ui';
  */
 @Component({
   selector: 'ar-login',
-  imports: [ArButton, ArIcon],
+  imports: [ArButton, ArIcon, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="lg">
@@ -79,6 +79,8 @@ import { ArButton, ArIcon } from '../../ui';
 
         @if (mock) {
           <p class="lg__hint">Demo build — any username and password will sign you in.</p>
+        } @else {
+          <a class="lg__link" routerLink="/signup">Create a workspace</a>
         }
       </form>
       <p class="lg__foot">AutoReach — WhatsApp marketing for industrial automation</p>
