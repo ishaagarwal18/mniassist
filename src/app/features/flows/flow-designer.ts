@@ -168,6 +168,9 @@ export class ArFlowDesigner {
           channelId: this.channelId(),
           definitionJson: this.definitionJson(),
           dataEndpointUrl: this.dataEndpointUrl().trim() || null,
+          // Once there are screens the designer owns the JSON and rebuilds it from
+          // them; an empty designer leaves whatever JSON the flow already had.
+          generateDefinitionFromScreens: this.screens().length > 0,
           screens: this.screens().map((s, i) => ({
             screenId: s.screenId.trim(),
             title: s.title.trim(),

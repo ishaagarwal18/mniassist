@@ -140,7 +140,7 @@ export class ArMembers {
   // ---- Formatting -----------------------------------------------------
 
   protected roleTone(role: string): 'amber' | 'teal' | 'neutral' {
-    if (role === 'Owner' || role === 'Admin') return 'amber';
+    if (role === 'Owner' || role === 'Administrator' || role === 'admin') return 'amber';
     if (role === 'Manager') return 'teal';
     return 'neutral';
   }

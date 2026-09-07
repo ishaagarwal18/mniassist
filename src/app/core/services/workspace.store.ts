@@ -33,7 +33,7 @@ export interface Invitation {
 /** The roles AutoReach seeds. Invitations and role changes pick from this list. */
 export const WORKSPACE_ROLES = [
   'Owner',
-  'Admin',
+  'Administrator',
   'Manager',
   'Agent',
   'Analyst',

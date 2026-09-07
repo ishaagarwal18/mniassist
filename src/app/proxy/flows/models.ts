@@ -8,6 +8,8 @@ export interface CreateUpdateFlowDto {
   definitionJson: string;
   dataEndpointUrl?: string | null;
   screens?: CreateUpdateFlowScreenDto[];
+  /** The designer sets this so its screens/fields regenerate the Flow JSON. */
+  generateDefinitionFromScreens?: boolean;
 }
 
 export interface CreateUpdateFlowScreenFieldDto {
