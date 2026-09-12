@@ -73,6 +73,22 @@ references and figures are illustrative. Replace the `signal([...])` seeds with
 unchanged — that is why the derived values live in `computed()` rather than in
 the templates.
 
+## Accessibility
+
+A real WCAG 2.1 AA pass has been run against the actual rendered app (not a
+static lint) — `a11y-audit/` launches real Chromium via Playwright and runs
+`axe-core` against sign-up/login, the onboarding checklist, the inbox and the
+campaign builder. First run found 6 real violations, nearly all traced to
+three design tokens in `_tokens.scss` being a shade too light for AA's 4.5:1
+text-contrast minimum; fixing the tokens fixed the violations across every
+page in one pass, plus two `<ar-meter>` call sites with no accessible name
+and an onboarding form input with only a `placeholder`. Second run: zero
+violations. **This is one honest layer, not full conformance** — automated
+tools catch roughly a third to half of WCAG success criteria; keyboard-only
+navigation, a real screen-reader pass, and 400% zoom/reflow were not
+attempted. See `a11y-audit/RESULTS.md` for the full account, exact before/
+after contrast ratios, and what a manual pass would still need to cover.
+
 ## Not yet built
 
 The mockups cover 26 screens. This project implements four. The remaining
@@ -130,3 +146,18 @@ Initial bundle went from 73 kB to 354 kB raw (95 kB transferred) as a result.
 That is the cost of the idiomatic ABP client; a hand-rolled `HttpClient` wrapper
 would be smaller but would not give you the config state, permission directives,
 or proxy regeneration.
+
+---
+
+## Legal pages
+
+`/privacy` (`src/app/features/legal/privacy-policy.ts`) is a public,
+unauthenticated route — required as the privacy policy URL for WhatsApp
+Business Platform App Review (autoreach-api's go-live tracker item a2) and
+for DPDP Act §5. Content is grounded in the actual backend data model
+(retention days, sub-processors, consent sources) rather than generic
+boilerplate, but ships with three placeholders — the Grievance Officer's
+contact, the registered business address, and a general contact email —
+that must be filled in, and is worth a legal read-through regardless, before
+relying on it for real. See `autoreach-api/docs/meta-app-review-prep.md` for
+the rest of the App Review checklist this page is one piece of.

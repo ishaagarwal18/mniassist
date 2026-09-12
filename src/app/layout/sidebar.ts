@@ -210,7 +210,10 @@ import { grantedPolicy } from '../core/auth/permission';
     }
     .sb__item--on .sb__badge {
       background: var(--ar-amber-500);
-      color: var(--ar-nav);
+      /* var(--ar-nav) on amber-500 was 4.46:1 — just under WCAG AA's 4.5:1.
+         ar-ink-900 (darker) clears it at 4.86:1. amber-500 itself is left
+         untouched — it doubles as --ar-chart-marketing, validated separately. */
+      color: var(--ar-ink-900);
     }
 
     .sb__foot {

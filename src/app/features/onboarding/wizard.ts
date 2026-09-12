@@ -39,7 +39,7 @@ import { ArButton, ArChip, ArMeter } from '../../ui';
         </section>
       } @else {
         <div class="prog">
-          <ar-meter [value]="progress()" tone="teal" />
+          <ar-meter [value]="progress()" tone="teal" label="Onboarding checklist progress" />
           <span class="prog__n ar-mono">{{ progress() }}%</span>
         </div>
       }
@@ -71,6 +71,7 @@ import { ArButton, ArChip, ArMeter } from '../../ui';
                         inputmode="numeric"
                         maxlength="6"
                         placeholder="6-digit code"
+                        aria-label="6-digit verification code"
                         [value]="otpCode()"
                         (input)="otpCode.set($any($event.target).value)"
                       />
@@ -88,6 +89,7 @@ import { ArButton, ArChip, ArMeter } from '../../ui';
                         class="otp__in"
                         type="tel"
                         placeholder="+91 …"
+                        aria-label="Mobile number"
                         [value]="mobile()"
                         (input)="mobile.set($any($event.target).value)"
                       />
@@ -181,9 +183,10 @@ import { ArButton, ArChip, ArMeter } from '../../ui';
       border-color: var(--ar-amber-500);
       box-shadow: 0 0 0 1px var(--ar-amber-500) inset;
     }
-    .step--done {
-      opacity: 0.7;
-    }
+    /* No opacity dimming here: composited over --ar-ink-500's already-modest
+       5.84:1 headroom, 0.7 opacity dropped .step__d's text to ~3.0:1 — below
+       WCAG AA. The teal-tinted mark and the "Done" chip already signal
+       completion; opacity added no information, only a contrast failure. */
     .step__mark {
       width: 26px;
       height: 26px;

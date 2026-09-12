@@ -77,7 +77,11 @@
             </span>
           </div>
           @if (!r.unlimited) {
-            <ar-meter [value]="r.fraction * 100" [tone]="r.over ? 'bad' : r.fraction > 0.85 ? 'amber' : 'good'" />
+            <ar-meter
+              [value]="r.fraction * 100"
+              [tone]="r.over ? 'bad' : r.fraction > 0.85 ? 'amber' : 'good'"
+              [label]="r.label + ' usage'"
+            />
           } @else {
             <p class="usage__note">Unlimited on this plan.</p>
           }

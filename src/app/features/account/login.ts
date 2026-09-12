@@ -83,7 +83,10 @@ import { ArButton, ArIcon } from '../../ui';
           <a class="lg__link" routerLink="/signup">Create a workspace</a>
         }
       </form>
-      <p class="lg__foot">AutoReach — WhatsApp marketing for industrial automation</p>
+      <p class="lg__foot">
+        AutoReach — WhatsApp marketing for industrial automation ·
+        <a routerLink="/privacy" class="lg__foot-link">Privacy policy</a>
+      </p>
     </div>
   `,
   styles: `
@@ -190,6 +193,10 @@ import { ArButton, ArIcon } from '../../ui';
       margin: 0;
       font: 400 11.5px var(--ar-font-sans);
       color: var(--ar-ink-400);
+    }
+    .lg__foot-link {
+      color: inherit;
+      text-decoration: underline;
     }
   `,
 })

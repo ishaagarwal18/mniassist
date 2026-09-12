@@ -1,0 +1,47 @@
+[
+  {
+    "name": "signup",
+    "path": "/signup",
+    "url": "http://localhost:4200/signup",
+    "violations": [],
+    "passes": 15,
+    "incomplete": []
+  },
+  {
+    "name": "login",
+    "path": "/login",
+    "url": "http://localhost:4200/login",
+    "violations": [],
+    "passes": 13,
+    "incomplete": []
+  },
+  {
+    "name": "onboarding (getting-started)",
+    "path": "/getting-started",
+    "url": "http://localhost:4200/getting-started",
+    "violations": [],
+    "passes": 24,
+    "incomplete": [
+      {
+        "id": "color-contrast",
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds"
+      }
+    ]
+  },
+  {
+    "name": "inbox",
+    "path": "/inbox",
+    "url": "http://localhost:4200/inbox",
+    "violations": [],
+    "passes": 26,
+    "incomplete": []
+  },
+  {
+    "name": "campaign-builder",
+    "path": "/campaigns",
+    "url": "http://localhost:4200/campaigns",
+    "violations": [],
+    "passes": 18,
+    "incomplete": []
+  }
+]

@@ -16,6 +16,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/account/signup').then((m) => m.ArSignup),
   },
   {
+    path: 'privacy',
+    title: 'Privacy Policy · AutoReach',
+    loadComponent: () =>
+      import('./features/legal/privacy-policy').then((m) => m.ArPrivacyPolicy),
+  },
+  {
     path: '',
     component: ArAppShell,
     canActivate: [appAuthGuard],

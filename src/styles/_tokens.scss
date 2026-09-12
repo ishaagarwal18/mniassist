@@ -6,7 +6,13 @@
   --ar-ink-900: #14181D;
   --ar-ink-700: #333B45;
   --ar-ink-500: #5C6672;
-  --ar-ink-400: #7B8794;
+  /* Darkened from the original #7B8794 — that value was 3.66:1 on white,
+     below WCAG 2.1 AA's 4.5:1 minimum for normal text, and this token is the
+     app's workhorse "muted" text colour (58 files). Verified at >=4.5:1
+     against every light background it's actually used on: white, --ar-bg-50,
+     --ar-bg-100, --ar-amber-100 and --ar-teal-100 (see a11y-audit/RESULTS.md
+     in autoreach-web for the numbers and the tool that found this). */
+  --ar-ink-400: #616D75;
   --ar-line-300: #D7DCE2;
   --ar-line-200: #E7EAEF;
   --ar-bg-100: #F4F6F8;
@@ -20,7 +26,10 @@
   --ar-amber-100: #FBF1E3;
 
   /* Free-window / utility teal */
-  --ar-teal-600: #0F7F86;
+  /* Darkened from #0F7F86 (4.15:1 on --ar-teal-100 — below AA's 4.5:1) to
+     #0C6169 (6.24:1). White-on-this-background (the teal avatar) only
+     improves, since darkening a background raises contrast for light text. */
+  --ar-teal-600: #0C6169;
   --ar-teal-100: #E4F2F3;
 
   /* Status — reserved, never reused as a series colour */
@@ -36,7 +45,9 @@
   --ar-nav-hi: #242B34;
   --ar-nav-line: #2A323C;
   --ar-nav-text: #A6B0BC;
-  --ar-nav-dim: #6E7A88;
+  /* Lightened from #6E7A88 (3.74:1 on --ar-nav) to #8994A1 (5.31:1) — used
+     only against the dark sidebar background (sidebar.ts), never elsewhere. */
+  --ar-nav-dim: #8994A1;
 
   /* Chart categorical — validated for CVD separation, chroma and contrast.
      Do not substitute without re-running the palette validator. */
