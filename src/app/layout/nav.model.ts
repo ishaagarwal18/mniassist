@@ -191,6 +191,12 @@ export const NAV: readonly NavGroup[] = [
         route: '/channels/catalogue',
         permission: 'AutoReach.Channels',
       },
+      {
+        label: 'Voice / IVR',
+        icon: 'phone',
+        route: '/channels/voice-ivr',
+        permission: 'AutoReach.Channels',
+      },
       { label: 'Billing', icon: 'billing', route: '/billing', permission: 'AutoReach.Billing' },
       {
         label: 'Invoices',

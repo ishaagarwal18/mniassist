@@ -1,0 +1,254 @@
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+
+import { VoiceService } from '../../core/services/voice.service';
+import { ChannelState } from '../../proxy/channels/channel-state.enum';
+import { IvrBranchAction, IvrPromptDto } from '../../proxy/voice';
+import { ArTopbar } from '../../layout/topbar';
+import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ChipTone } from '../../ui/chip';
+
+interface PromptDraft {
+  name: string;
+  sayText: string;
+  maxDigits: number;
+  inputTimeoutSeconds: number;
+  isEntryPoint: boolean;
+}
+
+interface BranchDraft {
+  digit: string;
+  action: IvrBranchAction;
+  nextPromptId: string;
+  transferToNumber: string;
+}
+
+const EMPTY_DRAFT: PromptDraft = {
+  name: '',
+  sayText: '',
+  maxDigits: 1,
+  inputTimeoutSeconds: 5,
+  isEntryPoint: false,
+};
+
+const EMPTY_BRANCH: BranchDraft = {
+  digit: '',
+  action: IvrBranchAction.GoToPrompt,
+  nextPromptId: '',
+  transferToNumber: '',
+};
+
+const STATE_TONE: Record<ChannelState, ChipTone> = {
+  [ChannelState.Onboarding]: 'neutral',
+  [ChannelState.Active]: 'good',
+  [ChannelState.Suspended]: 'warn',
+  [ChannelState.Restricted]: 'bad',
+};
+
+/**
+ * The IVR prompt-management screen the go-live tracker flagged as still missing:
+ * `VoiceChannelAppService` already exposed create/update/delete/branch endpoints,
+ * nothing beyond Swagger could call them. One prompt is the channel's entry point
+ * (where a fresh call starts); every other prompt is reached by a branch on some
+ * digit. Exotel's own dashboard still owns the actual call-flow topology — this
+ * screen edits AutoReach's own record of the menu a tenant wants, which a Passthru
+ * applet built once on that dashboard then reads back through this platform's
+ * webhook. See `IvrPrompt`'s remarks on the API side for why that split exists.
+ */
+@Component({
+  selector: 'ar-voice-ivr',
+  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './voice-ivr.html',
+  styleUrl: './voice-ivr.scss',
+})
+export class ArVoiceIvr {
+  private readonly store = inject(VoiceService);
+
+  protected readonly channel = this.store.channel;
+  protected readonly prompts = this.store.prompts;
+  protected readonly loading = this.store.loading;
+  protected readonly error = this.store.error;
+  protected readonly entryPoint = this.store.entryPoint;
+
+  protected readonly busy = signal(false);
+
+  protected readonly editingId = signal<string | null>(null);
+  protected readonly createOpen = signal(false);
+  protected readonly draft = signal<PromptDraft>({ ...EMPTY_DRAFT });
+
+  protected readonly branchPromptId = signal<string | null>(null);
+  protected readonly branchDraft = signal<BranchDraft>({ ...EMPTY_BRANCH });
+
+  protected readonly BranchAction = IvrBranchAction;
+  protected readonly ChannelState = ChannelState;
+
+  protected readonly canSaveDraft = computed(
+    () => this.draft().name.trim().length > 0 && this.draft().sayText.trim().length > 0,
+  );
+
+  protected readonly canSaveBranch = computed(() => {
+    const d = this.branchDraft();
+    if (!d.digit.trim()) return false;
+    if (d.action === IvrBranchAction.GoToPrompt) return !!d.nextPromptId;
+    if (d.action === IvrBranchAction.TransferToAgent) return d.transferToNumber.trim().length > 0;
+    return true;
+  });
+
+  protected stateTone(s?: ChannelState): ChipTone {
+    return s != null ? STATE_TONE[s] : 'neutral';
+  }
+
+  protected actionLabel(a?: IvrBranchAction): string {
+    switch (a) {
+      case IvrBranchAction.GoToPrompt:
+        return 'Go to prompt';
+      case IvrBranchAction.TransferToAgent:
+        return 'Transfer to agent';
+      case IvrBranchAction.Hangup:
+      default:
+        return 'Hang up';
+    }
+  }
+
+  protected branchTarget(b: { action?: IvrBranchAction; nextPromptId?: string | null; transferToNumber?: string | null }): string {
+    if (b.action === IvrBranchAction.GoToPrompt) return this.promptName(b.nextPromptId);
+    if (b.action === IvrBranchAction.TransferToAgent) return b.transferToNumber ?? '—';
+    return '—';
+  }
+
+  protected promptName(id?: string | null): string {
+    return this.prompts().find((p) => p.id === id)?.name ?? '(deleted prompt)';
+  }
+
+  protected otherPrompts(currentId: string): readonly IvrPromptDto[] {
+    return this.prompts().filter((p) => p.id !== currentId);
+  }
+
+  protected openCreate(): void {
+    this.draft.set({ ...EMPTY_DRAFT, isEntryPoint: this.prompts().length === 0 });
+    this.editingId.set(null);
+    this.createOpen.set(true);
+  }
+
+  protected openEdit(p: IvrPromptDto): void {
+    this.draft.set({
+      name: p.name,
+      sayText: p.sayText,
+      maxDigits: p.maxDigits ?? 1,
+      inputTimeoutSeconds: p.inputTimeoutSeconds ?? 5,
+      isEntryPoint: !!p.isEntryPoint,
+    });
+    this.editingId.set(p.id!);
+    this.createOpen.set(true);
+  }
+
+  protected closeDialog(): void {
+    this.createOpen.set(false);
+    this.editingId.set(null);
+  }
+
+  protected patchDraft<K extends keyof PromptDraft>(key: K, value: PromptDraft[K]): void {
+    this.draft.update((d) => ({ ...d, [key]: value }));
+  }
+
+  protected async savePrompt(): Promise<void> {
+    if (!this.canSaveDraft() || this.busy()) return;
+    const d = this.draft();
+    const id = this.editingId();
+
+    this.busy.set(true);
+    try {
+      const ok = id
+        ? await this.store.updatePrompt(id, {
+            name: d.name.trim(),
+            sayText: d.sayText.trim(),
+            maxDigits: d.maxDigits,
+            inputTimeoutSeconds: d.inputTimeoutSeconds,
+          })
+        : await this.store.createPrompt({
+            name: d.name.trim(),
+            sayText: d.sayText.trim(),
+            maxDigits: d.maxDigits,
+            inputTimeoutSeconds: d.inputTimeoutSeconds,
+            isEntryPoint: d.isEntryPoint,
+          });
+
+      if (ok) {
+        this.closeDialog();
+        // A brand-new entry point was set inline by CreatePromptAsync; an edit
+        // never touches IsEntryPoint (see savePrompt/UpdatePromptAsync's split).
+        if (id && d.isEntryPoint && this.entryPoint()?.id !== id) {
+          await this.store.setEntryPoint(id);
+        }
+      }
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async makeEntryPoint(p: IvrPromptDto): Promise<void> {
+    if (this.busy() || p.isEntryPoint) return;
+    this.busy.set(true);
+    try {
+      await this.store.setEntryPoint(p.id!);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async removePrompt(p: IvrPromptDto): Promise<void> {
+    if (this.busy()) return;
+    if (!window.confirm(`Delete "${p.name}"? This can't be undone.`)) return;
+
+    this.busy.set(true);
+    try {
+      await this.store.deletePrompt(p.id!);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected openBranchForm(promptId: string): void {
+    this.branchDraft.set({ ...EMPTY_BRANCH });
+    this.branchPromptId.set(promptId);
+  }
+
+  protected closeBranchForm(): void {
+    this.branchPromptId.set(null);
+  }
+
+  protected patchBranch<K extends keyof BranchDraft>(key: K, value: BranchDraft[K]): void {
+    this.branchDraft.update((d) => ({ ...d, [key]: value }));
+  }
+
+  protected async saveBranch(): Promise<void> {
+    const promptId = this.branchPromptId();
+    if (!promptId || !this.canSaveBranch() || this.busy()) return;
+
+    const d = this.branchDraft();
+    this.busy.set(true);
+    try {
+      const ok = await this.store.setBranch(promptId, {
+        digit: d.digit.trim(),
+        action: d.action,
+        nextPromptId: d.action === IvrBranchAction.GoToPrompt ? d.nextPromptId : null,
+        transferToNumber: d.action === IvrBranchAction.TransferToAgent ? d.transferToNumber.trim() : null,
+      });
+      if (ok) this.closeBranchForm();
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async removeBranch(promptId: string, digit: string): Promise<void> {
+    if (this.busy()) return;
+    if (!window.confirm(`Remove the branch for "${digit}"?`)) return;
+
+    this.busy.set(true);
+    try {
+      await this.store.removeBranch(promptId, digit);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+}

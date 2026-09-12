@@ -1,0 +1,259 @@
+<ar-topbar
+  title="Voice / IVR"
+  [subtitle]="entryPoint() ? 'Entry point: ' + entryPoint()!.name : 'No entry point set yet'"
+>
+  <button ar-button variant="primary" icon="plus" [disabled]="busy()" (click)="openCreate()">
+    New prompt
+  </button>
+</ar-topbar>
+
+@if (loading()) {
+  <p class="vi__loading">Loading…</p>
+} @else {
+  <div class="vi ar-scroll">
+    @if (error(); as e) {
+      <p class="vi__err">{{ e }}</p>
+    }
+
+    @if (channel(); as ch) {
+      <section class="vi__channel">
+        <div class="vi__channel-row">
+          <span class="vi__channel-label">Exotel number</span>
+          <span class="ar-mono">{{ ch.exoPhone }}</span>
+          <ar-chip [tone]="stateTone(ch.state)">{{ ChannelState[ch.state!] }}</ar-chip>
+        </div>
+        @if (ch.passthruWebhookUrl) {
+          <p class="vi__hint">
+            Paste this into the Passthru applet on your Exotel dashboard flow:
+            <code class="ar-mono">{{ ch.passthruWebhookUrl }}</code>
+          </p>
+        } @else {
+          <p class="vi__hint">
+            Configure <span class="ar-mono">Voice:StatusCallbackBaseUrl</span> and
+            <span class="ar-mono">Voice:Exotel:WebhookSharedSecret</span> to get the Passthru URL a
+            tenant must paste into their own Exotel dashboard.
+          </p>
+        }
+      </section>
+    }
+
+    <section class="vi__prompts">
+      @if (prompts().length === 0) {
+        <p class="vi__empty">
+          No prompts yet. A fresh call has nowhere to start until one is created and marked as the
+          entry point.
+        </p>
+      }
+
+      @for (p of prompts(); track p.id) {
+        <article class="vi__card">
+          <header class="vi__card-head">
+            <div class="vi__card-title">
+              <h3>{{ p.name }}</h3>
+              @if (p.isEntryPoint) {
+                <ar-chip tone="teal" [dot]="true">Entry point</ar-chip>
+              }
+            </div>
+            <div class="vi__card-actions">
+              @if (!p.isEntryPoint) {
+                <button ar-button variant="quiet" [disabled]="busy()" (click)="makeEntryPoint(p)">
+                  Set as entry point
+                </button>
+              }
+              <button ar-button variant="ghost" [disabled]="busy()" (click)="openEdit(p)">
+                Edit
+              </button>
+              <button ar-button variant="danger" [disabled]="busy()" (click)="removePrompt(p)">
+                Delete
+              </button>
+            </div>
+          </header>
+
+          <p class="vi__say">"{{ p.sayText }}"</p>
+          <p class="vi__meta">
+            Collects up to {{ p.maxDigits }} digit{{ p.maxDigits === 1 ? '' : 's' }}, waits
+            {{ p.inputTimeoutSeconds }}s for input.
+          </p>
+
+          <table class="ar-table vi__branches">
+            <thead>
+              <tr>
+                <th>Digit</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of p.branches; track b.digit) {
+                <tr>
+                  <td class="ar-mono">{{ b.digit === '*' ? '(no match)' : b.digit }}</td>
+                  <td>{{ actionLabel(b.action) }}</td>
+                  <td>{{ branchTarget(b) }}</td>
+                  <td>
+                    <button
+                      ar-button
+                      variant="quiet"
+                      [disabled]="busy()"
+                      (click)="removeBranch(p.id!, b.digit)"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="vi__no-branches">No branches configured.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <button ar-button variant="ghost" icon="plus" [disabled]="busy()" (click)="openBranchForm(p.id!)">
+            Add branch
+          </button>
+        </article>
+      }
+    </section>
+  </div>
+}
+
+@if (createOpen()) {
+  <ar-dialog [title]="editingId() ? 'Edit prompt' : 'New prompt'" (dismiss)="closeDialog()">
+    <label class="ar-field">
+      <span class="ar-field__label">Internal name</span>
+      <input
+        class="ar-field__input"
+        [value]="draft().name"
+        maxlength="128"
+        placeholder="Main menu"
+        (input)="patchDraft('name', $any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Spoken text</span>
+      <textarea
+        class="ar-field__input"
+        rows="3"
+        maxlength="1024"
+        placeholder="Thanks for calling. Press 1 for sales, 2 for support."
+        [value]="draft().sayText"
+        (input)="patchDraft('sayText', $any($event.target).value)"
+      ></textarea>
+      <span class="vi__field-hint">
+        What Exotel's Say applet speaks — copy this into the matching step of the dashboard flow.
+      </span>
+    </label>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Max digits to collect</span>
+        <input
+          class="ar-field__input"
+          type="number"
+          min="1"
+          max="10"
+          [value]="draft().maxDigits"
+          (input)="patchDraft('maxDigits', +$any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Input timeout (seconds)</span>
+        <input
+          class="ar-field__input"
+          type="number"
+          min="1"
+          max="60"
+          [value]="draft().inputTimeoutSeconds"
+          (input)="patchDraft('inputTimeoutSeconds', +$any($event.target).value)"
+        />
+      </label>
+    </div>
+    <label class="vi__checkbox">
+      <input
+        type="checkbox"
+        [checked]="draft().isEntryPoint"
+        (change)="patchDraft('isEntryPoint', $any($event.target).checked)"
+      />
+      Make this the channel's entry point
+    </label>
+
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="closeDialog()">Cancel</button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="!canSaveDraft() || busy()"
+        (click)="savePrompt()"
+      >
+        {{ busy() ? 'Saving…' : 'Save' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
+
+@if (branchPromptId(); as promptId) {
+  <ar-dialog title="Add branch" (dismiss)="closeBranchForm()">
+    <label class="ar-field">
+      <span class="ar-field__label">Digit</span>
+      <input
+        class="ar-field__input ar-mono"
+        maxlength="1"
+        placeholder="1, 2… or * for no match"
+        [value]="branchDraft().digit"
+        (input)="patchBranch('digit', $any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Action</span>
+      <select
+        class="ar-field__input"
+        [value]="branchDraft().action"
+        (change)="patchBranch('action', +$any($event.target).value)"
+      >
+        <option [value]="BranchAction.GoToPrompt">Go to another prompt</option>
+        <option [value]="BranchAction.TransferToAgent">Transfer to an agent</option>
+        <option [value]="BranchAction.Hangup">Hang up</option>
+      </select>
+    </label>
+
+    @if (branchDraft().action === BranchAction.GoToPrompt) {
+      <label class="ar-field">
+        <span class="ar-field__label">Target prompt</span>
+        <select
+          class="ar-field__input"
+          [value]="branchDraft().nextPromptId"
+          (change)="patchBranch('nextPromptId', $any($event.target).value)"
+        >
+          <option value="" disabled>Select a prompt…</option>
+          @for (p of otherPrompts(promptId); track p.id) {
+            <option [value]="p.id">{{ p.name }}</option>
+          }
+        </select>
+      </label>
+    } @else if (branchDraft().action === BranchAction.TransferToAgent) {
+      <label class="ar-field">
+        <span class="ar-field__label">Transfer to (E.164)</span>
+        <input
+          class="ar-field__input ar-mono"
+          placeholder="919000000000"
+          [value]="branchDraft().transferToNumber"
+          (input)="patchBranch('transferToNumber', $any($event.target).value)"
+        />
+      </label>
+    }
+
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="closeBranchForm()">Cancel</button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="!canSaveBranch() || busy()"
+        (click)="saveBranch()"
+      >
+        {{ busy() ? 'Saving…' : 'Save' }}
+      </button>
+    </div>
+  </ar-dialog>
+}

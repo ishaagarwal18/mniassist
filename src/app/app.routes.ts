@@ -173,6 +173,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/channels/catalogue').then((m) => m.ArCatalogue),
       },
       {
+        path: 'channels/voice-ivr',
+        title: 'Voice / IVR · AutoReach',
+        loadComponent: () => import('./features/channels/voice-ivr').then((m) => m.ArVoiceIvr),
+      },
+      {
         path: 'notifications',
         title: 'Notifications · AutoReach',
         loadComponent: () =>
