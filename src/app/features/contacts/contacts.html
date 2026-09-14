@@ -3,6 +3,7 @@
   [subtitle]="
     count(totalContacts()) + ' contacts · ' + count(consentedTotal()) + ' with marketing consent'
   "
+  help="Your full customer list. Consent is shown with both a label and a colour — an imported list is flagged as the weakest evidence you have that someone agreed to be messaged."
 >
   <button ar-button type="button" variant="ghost" icon="download">Import</button>
   <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">

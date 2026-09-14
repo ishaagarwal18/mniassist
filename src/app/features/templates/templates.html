@@ -1,4 +1,8 @@
-<ar-topbar title="Templates" [subtitle]="subtitle()">
+<ar-topbar
+  title="Templates"
+  [subtitle]="subtitle()"
+  help="Every WhatsApp message sent outside the 24-hour reply window must be an approved template. Meta reviews and approves each one — not AutoReach — so check back here for its status before building a campaign around it."
+>
   <button ar-button variant="ghost" icon="refresh" [disabled]="busy()" (click)="sync()">
     Sync from Meta
   </button>

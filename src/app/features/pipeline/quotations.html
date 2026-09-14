@@ -1,4 +1,8 @@
-<ar-topbar title="Quotations" [subtitle]="awaitingDecision() + ' awaiting a decision'">
+<ar-topbar
+  title="Quotations"
+  [subtitle]="awaitingDecision() + ' awaiting a decision'"
+  help="Every quotation raised against an enquiry, with whose follow-up is due front and centre. Marking one Lost requires a reason — that feeds the loss-reason breakdown in Analytics."
+>
   <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
     New quotation
   </button>

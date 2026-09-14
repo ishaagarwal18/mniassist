@@ -1,4 +1,8 @@
-<ar-topbar title="Billing" [subtitle]="planName() + ' plan'">
+<ar-topbar
+  title="Billing"
+  [subtitle]="planName() + ' plan'"
+  help="Your prepaid wallet, current plan and usage against its limits. Limits are enforced the moment you try to exceed them, not as a surprise on the invoice."
+>
   <button ar-button variant="primary" icon="billing" [disabled]="busy()" (click)="topUp()">
     Top up wallet
   </button>

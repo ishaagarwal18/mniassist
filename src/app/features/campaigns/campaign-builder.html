@@ -1,4 +1,8 @@
-<ar-topbar title="Campaigns" [subtitle]="campaigns().length + ' total'">
+<ar-topbar
+  title="Campaigns"
+  [subtitle]="campaigns().length + ' total'"
+  help="A campaign ties one channel, one approved template, one audience and a schedule together. Every send runs through pre-flight checks before anything actually goes out."
+>
   <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
     New campaign
   </button>

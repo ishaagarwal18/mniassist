@@ -1,4 +1,8 @@
-<ar-topbar title="Invoices" [subtitle]="subtitle()">
+<ar-topbar
+  title="Invoices"
+  [subtitle]="subtitle()"
+  help="GST invoices and reconciliation in one place. An unresolved variance — a mismatch nobody's confirmed yet — is called out separately from what's simply outstanding."
+>
   <button ar-button type="button" variant="ghost" icon="refresh">Reconcile</button>
   <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
     Generate invoice

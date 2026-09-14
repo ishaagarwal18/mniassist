@@ -1,4 +1,8 @@
-<ar-topbar title="Integrations" [subtitle]="subtitle()">
+<ar-topbar
+  title="Integrations"
+  [subtitle]="subtitle()"
+  help="Outbound webhooks and CRM sync. An endpoint that fails 20 times in a row is disabled automatically — check the delivery log here if a connected system has gone quiet."
+>
   <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
     Add endpoint
   </button>

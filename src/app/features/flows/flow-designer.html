@@ -1,4 +1,8 @@
-<ar-topbar [title]="name() || 'Flow'" subtitle="Screen & field designer">
+<ar-topbar
+  [title]="name() || 'Flow'"
+  subtitle="Screen & field designer"
+  help="Build an in-chat form screen by screen — add fields, mark which are required, and the WhatsApp Flow JSON is generated for you. No hand-written JSON needed."
+>
   <a class="fd__back" routerLink="/flows">← All flows</a>
   <button ar-button variant="primary" [disabled]="saving() || loading()" (click)="save()">
     {{ saving() ? 'Saving…' : 'Save' }}

@@ -23,6 +23,7 @@ import { ArButton, ArChip, ArMeter } from '../../ui';
     <ar-topbar
       title="Get started"
       [subtitle]="checklist().completedCount + ' of ' + checklist().totalCount + ' done'"
+      help="A running checklist, not a gate — steps you've already finished show as done automatically. Dismissing it just hides the checklist; nothing here is lost."
     >
       @if (!checklist().isComplete) {
         <button ar-button type="button" variant="ghost" (click)="store.dismiss()">Dismiss</button>

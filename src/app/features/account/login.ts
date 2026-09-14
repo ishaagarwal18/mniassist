@@ -1,8 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { AbpTenantService } from '@abp/ng.core';
+import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { CurrentUserService } from '../../core/services/current-user.service';
+import { BrandingService } from '../../proxy/branding';
 import { ArButton, ArIcon } from '../../ui';
 
 /**
@@ -18,7 +21,13 @@ import { ArButton, ArIcon } from '../../ui';
     <div class="lg">
       <form class="lg__card" (submit)="submit($event)">
         <div class="lg__brand">
-          <span class="lg__mark"><ar-icon name="bolt" [size]="16" [strokeWidth]="0" /></span>
+          @if (workspaceLogo(); as logo) {
+            <span class="lg__mark lg__mark--logo"><img [src]="logo" alt="" /></span>
+          } @else {
+            <span class="lg__mark" [style.background]="workspacePrimaryColor() || null">
+              <ar-icon name="bolt" [size]="16" [strokeWidth]="0" />
+            </span>
+          }
           <span class="lg__name">AutoReach</span>
         </div>
         <h1 class="lg__title">Sign in to your workspace</h1>
@@ -38,6 +47,7 @@ import { ArButton, ArIcon } from '../../ui';
               placeholder="e.g. vertex-automation"
               [value]="tenant()"
               (input)="tenant.set($any($event.target).value)"
+              (blur)="previewWorkspaceBranding()"
             />
           </label>
         }
@@ -130,6 +140,15 @@ import { ArButton, ArIcon } from '../../ui';
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
+    }
+    .lg__mark--logo {
+      background: var(--ar-white, #fff);
+    }
+    .lg__mark--logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
     .lg__name {
       font: 600 17px var(--ar-font-sans);
@@ -203,6 +222,8 @@ import { ArButton, ArIcon } from '../../ui';
 export class ArLogin {
   private readonly account = inject(CurrentUserService);
   private readonly router = inject(Router);
+  private readonly tenants = inject(AbpTenantService);
+  private readonly branding = inject(BrandingService);
 
   protected readonly mock = environment.useMockData;
   protected readonly tenant = signal('');
@@ -212,6 +233,15 @@ export class ArLogin {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  // Pre-auth branding preview — a signed-out visitor typing their workspace name
+  // sees that workspace's own logo/colour appear, the same identity BrandingStore
+  // applies once they're actually signed in. Best-effort only: a lookup failure
+  // (unknown workspace, network hiccup) just leaves AutoReach's own defaults in
+  // place rather than surfacing an error on a field that isn't required yet.
+  protected readonly workspaceLogo = signal<string | null>(null);
+  protected readonly workspacePrimaryColor = signal<string | null>(null);
+  private lastPreviewedWorkspace = '';
+
   protected readonly canSubmit = computed(
     () => this.username().trim().length > 0 && this.password().length > 0,
   );
@@ -219,6 +249,35 @@ export class ArLogin {
   constructor() {
     if (this.account.isAuthenticated()) {
       void this.router.navigateByUrl('/home');
+    }
+  }
+
+  protected async previewWorkspaceBranding(): Promise<void> {
+    if (this.mock) return;
+    const name = this.tenant().trim();
+    if (!name || name === this.lastPreviewedWorkspace) return;
+    this.lastPreviewedWorkspace = name;
+
+    if (!name) {
+      this.workspaceLogo.set(null);
+      this.workspacePrimaryColor.set(null);
+      return;
+    }
+
+    try {
+      const found = await firstValueFrom(this.tenants.findTenantByName(name));
+      if (!found?.success || !found.tenantId || name !== this.tenant().trim()) return;
+
+      const branding = await firstValueFrom(this.branding.publicByTenantId(found.tenantId));
+      if (name !== this.tenant().trim()) return; // stale by the time this resolved
+      this.workspaceLogo.set(branding.logoDataUrl ?? null);
+      this.workspacePrimaryColor.set(branding.primaryColor ?? null);
+    } catch {
+      // Unknown workspace or a network hiccup — leave AutoReach's own identity
+      // showing. The real validation (does this workspace exist) happens at
+      // actual sign-in, not here.
+      this.workspaceLogo.set(null);
+      this.workspacePrimaryColor.set(null);
     }
   }
 

@@ -1,4 +1,8 @@
-<ar-topbar title="Numbers" [subtitle]="subtitle()">
+<ar-topbar
+  title="Numbers"
+  [subtitle]="subtitle()"
+  help="Your number's display name and two-step verification PIN — both live with Meta, not AutoReach. The PIN is shown once, at the moment you set it, and never again."
+>
   <button ar-button type="button" variant="ghost" icon="refresh" (click)="refresh()">
     Refresh from Meta
   </button>

@@ -25,7 +25,11 @@ const SEED: IdentityRoleDto[] = [
   imports: [ArTopbar, ArCard, ArButton, ArChip, ArBanner, ArDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Roles &amp; permissions" [subtitle]="subtitle()">
+    <ar-topbar
+      title="Roles &amp; permissions"
+      [subtitle]="subtitle()"
+      help="Define what each role can see and do across the workspace. Changing a role's permissions applies immediately to everyone holding it."
+    >
       <button ar-button type="button" variant="primary" icon="plus" (click)="openCreate()">
         New role
       </button>

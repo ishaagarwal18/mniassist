@@ -1,0 +1,107 @@
+<ar-topbar
+  title="Branding"
+  subtitle="Make AutoReach feel like your own product"
+  help="Upload a logo and pick two accent colours. They show up in the sidebar for everyone on your team — a tenant's own visual identity, not a per-person preference."
+/>
+
+<div class="br ar-scroll">
+  @if (error()) {
+    <ar-banner tone="bad">{{ error() }}</ar-banner>
+  }
+  @if (saved() && !error()) {
+    <ar-banner tone="good">Saved.</ar-banner>
+  }
+
+  <section class="block">
+    <h2 class="block__t">Logo</h2>
+    <div class="logo-row">
+      <div class="logo-preview">
+        @if (logoPreview(); as logo) {
+          <img [src]="logo" alt="Current logo" />
+        } @else {
+          <span class="logo-preview__empty">No logo</span>
+        }
+      </div>
+      <div class="logo-actions">
+        <input
+          #fileInput
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          (change)="onLogoFile($event)"
+          hidden
+        />
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="saving()"
+          (click)="fileInput.click()"
+        >
+          Upload logo
+        </button>
+        @if (hasLogo()) {
+          <button
+            ar-button
+            type="button"
+            variant="danger"
+            [disabled]="saving()"
+            (click)="removeLogo()"
+          >
+            Remove logo
+          </button>
+        }
+      </div>
+    </div>
+    <p class="block__empty">PNG, JPEG, WebP or SVG — 512 KB or smaller.</p>
+  </section>
+
+  <section class="block">
+    <h2 class="block__t">Colours</h2>
+    <div class="color-grid">
+      <label class="fld">
+        <span class="fld__k">Primary colour</span>
+        <div class="color-row">
+          <input
+            type="color"
+            class="swatch"
+            [value]="primaryDraft()"
+            (input)="primaryDraft.set($any($event.target).value)"
+          />
+          <input
+            class="fld__in ar-mono"
+            type="text"
+            [value]="primaryDraft()"
+            (input)="primaryDraft.set($any($event.target).value)"
+          />
+        </div>
+        <span class="fld__hint">The sidebar's brand mark, when no logo is set.</span>
+      </label>
+      <label class="fld">
+        <span class="fld__k">Accent colour</span>
+        <div class="color-row">
+          <input
+            type="color"
+            class="swatch"
+            [value]="accentDraft()"
+            (input)="accentDraft.set($any($event.target).value)"
+          />
+          <input
+            class="fld__in ar-mono"
+            type="text"
+            [value]="accentDraft()"
+            (input)="accentDraft.set($any($event.target).value)"
+          />
+        </div>
+        <span class="fld__hint">The active-item indicator in the sidebar.</span>
+      </label>
+    </div>
+    <div class="block__actions">
+      <button ar-button type="button" variant="ghost" [disabled]="saving()" (click)="resetColors()">
+        Reset to default
+      </button>
+      <button ar-button type="button" variant="primary" [disabled]="saving()" (click)="saveColors()">
+        {{ saving() ? 'Saving…' : 'Save colours' }}
+      </button>
+    </div>
+  </section>
+</div>

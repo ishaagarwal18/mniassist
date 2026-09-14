@@ -24,7 +24,11 @@ const SEED: TenantDto[] = [
   imports: [ArTopbar, ArCard, ArButton, ArBanner, ArDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Workspaces" [subtitle]="subtitle()">
+    <ar-topbar
+      title="Workspaces"
+      [subtitle]="subtitle()"
+      help="Every tenant workspace on this platform instance. Creating one here is a host-admin action — most customers should sign up for their own instead."
+    >
       <button ar-button type="button" variant="primary" icon="plus" (click)="openCreate()">
         New workspace
       </button>

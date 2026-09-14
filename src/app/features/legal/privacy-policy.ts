@@ -13,12 +13,14 @@ import { ArIcon } from '../../ui';
  * rights and their 30-day SLA) is taken from the actual domain model —
  * `RetentionPolicy.DefaultDaysFor`, `DataRequestKind`, `ConsentSource` — not
  * invented, so this page does not silently drift from what the product
- * actually does. What it cannot supply on its own: the registered business
- * address, the Grievance Officer's name and direct contact, and a legal
+ * actually does. Contact emails point at getautoreach.com (chosen and
+ * confirmed available via registry RDAP — see the go-live tracker's a1/a2
+ * notes). What this page still cannot supply on its own: the registered
+ * business address and the Grievance Officer's actual name, plus a legal
  * read-through — those are marked `[...]` below and are not optional before
  * this goes live for real; a privacy notice that promises a grievance
- * process with no way to reach the grievance officer fails DPDP §5 on its
- * own terms.
+ * process with no named officer still fails DPDP §5 on its own terms even
+ * with a working email address.
  */
 @Component({
   selector: 'ar-privacy-policy',
@@ -166,7 +168,7 @@ import { ArIcon } from '../../ui';
         </p>
         <p class="pp__callout">
           <strong>[Grievance Officer name]</strong><br />
-          Email: <strong>[grievance@yourdomain.example]</strong><br />
+          Email: <strong>grievance&#64;getautoreach.com</strong><br />
           Address: <strong>[Registered business address]</strong>
         </p>
         <p>
@@ -189,7 +191,7 @@ import { ArIcon } from '../../ui';
 
         <h2>11. Contact us</h2>
         <p>
-          Email: <strong>[privacy@yourdomain.example]</strong><br />
+          Email: <strong>privacy&#64;getautoreach.com</strong><br />
           Post: <strong>[Registered business address]</strong>
         </p>
       </main>

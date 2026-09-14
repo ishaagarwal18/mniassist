@@ -1,4 +1,8 @@
-<ar-topbar [title]="name() || 'Automation'" subtitle="Step builder">
+<ar-topbar
+  [title]="name() || 'Automation'"
+  subtitle="Step builder"
+  help="A straight chain of steps triggered by one event. 'Only continue if…' is the one branching step — everyone who doesn't match quietly reaches the end."
+>
   <a class="ab__back" routerLink="/automations">← All automations</a>
   <button
     ar-button

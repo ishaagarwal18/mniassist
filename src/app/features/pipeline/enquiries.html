@@ -1,6 +1,7 @@
 <ar-topbar
   title="Enquiries"
   [subtitle]="openCount() + ' open · ' + value(pipelineValue()) + ' in play'"
+  help="A board over your real sales pipeline — moving a card's stage here updates the actual record, it isn't a separate local view."
 >
   <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
     New enquiry

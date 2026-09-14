@@ -1,4 +1,8 @@
-<ar-topbar title="Notifications" [subtitle]="subtitle()">
+<ar-topbar
+  title="Notifications"
+  [subtitle]="subtitle()"
+  help="Everything that's paged you — a stalled campaign, a rejected template, an SLA about to slip."
+>
   @if (unreadCount() > 0) {
     <button ar-button variant="ghost" (click)="markAllRead()">Mark all read</button>
   }

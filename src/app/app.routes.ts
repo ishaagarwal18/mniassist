@@ -210,6 +210,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/settings/members').then((m) => m.ArMembers),
       },
       {
+        path: 'settings/branding',
+        title: 'Branding · AutoReach',
+        loadComponent: () => import('./features/settings/branding').then((m) => m.ArBranding),
+      },
+      {
         path: 'admin/tenants',
         title: 'Workspaces · AutoReach',
         loadComponent: () => import('./features/admin/tenants').then((m) => m.ArAdminTenants),

@@ -1,6 +1,7 @@
 <ar-topbar
   title="Voice / IVR"
   [subtitle]="entryPoint() ? 'Entry point: ' + entryPoint()!.name : 'No entry point set yet'"
+  help="AutoReach's own record of your phone menu, built on top of Exotel. The real call-flow topology still lives in Exotel's dashboard — keep the two in sync when you change one."
 >
   <button ar-button variant="primary" icon="plus" [disabled]="busy()" (click)="openCreate()">
     New prompt

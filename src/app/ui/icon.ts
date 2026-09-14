@@ -52,6 +52,10 @@ const ICONS = {
   globe: [c(10, 10, 7), p('M3 10h14M10 3c1.9 2 2.9 4.4 2.9 7s-1 5-2.9 7c-1.9-2-2.9-4.4-2.9-7s1-5 2.9-7')],
   tower: [p('M10 9.5v8'), c(10, 7, 1.6), p('M6.6 3.6a5.5 5.5 0 0 0 0 6.8M13.4 3.6a5.5 5.5 0 0 1 0 6.8M4.3 1.6a8.5 8.5 0 0 0 0 10.8M15.7 1.6a8.5 8.5 0 0 1 0 10.8'), p('M7 17.5h6')],
   phone: [p('M5.3 3.2h2.6l1 3.4-1.7 1.4a9.5 9.5 0 0 0 4.8 4.8l1.4-1.7 3.4 1v2.6c0 1-0.9 1.8-1.9 1.6A13.5 13.5 0 0 1 3.7 5.1c-.2-1 .6-1.9 1.6-1.9z')],
+
+  // The one glyph that's a badge rather than a pictogram — a circle housing a
+  // question mark reads as "help" faster than any pictogram would.
+  help: [c(10, 10, 7.2), p('M7.7 7.9c.15-1.6 1.7-2.4 3.1-2.1 1.2.2 2 1.2 1.8 2.3-.2 1-1.1 1.5-1.9 2-.6.4-1 .8-1 1.6'), c(9.7, 14.3, .15)],
 } as const satisfies Record<string, readonly Shape[]>;
 
 export type IconName = keyof typeof ICONS;

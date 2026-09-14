@@ -6,6 +6,7 @@ import { ArAvatar, ArIcon } from '../ui';
 import { OpsService } from '../core/services/ops.service';
 import { InboxService } from '../core/services/inbox.service';
 import { CurrentUserService } from '../core/services/current-user.service';
+import { BrandingStore } from '../core/services/branding.store';
 import { grantedPolicy } from '../core/auth/permission';
 
 @Component({
@@ -15,13 +16,19 @@ import { grantedPolicy } from '../core/auth/permission';
   template: `
     <div class="sb__top">
       <div class="sb__brand">
-        <span class="sb__mark" aria-hidden="true"
-          ><ar-icon name="bolt" [size]="13" [strokeWidth]="0"
-        /></span>
+        @if (branding.logoDataUrl(); as logo) {
+          <span class="sb__mark sb__mark--logo" aria-hidden="true"
+            ><img [src]="logo" alt=""
+          /></span>
+        } @else {
+          <span class="sb__mark" aria-hidden="true"
+            ><ar-icon name="bolt" [size]="13" [strokeWidth]="0"
+          /></span>
+        }
         <span class="sb__name">AutoReach</span>
       </div>
       <button class="sb__tenant" type="button">
-        <span class="sb__tenant-name">Vertex Automation</span>
+        <span class="sb__tenant-name">{{ account.currentTenantName() || 'AutoReach' }}</span>
         <ar-icon name="chevdown" [size]="14" />
       </button>
     </div>
@@ -105,11 +112,22 @@ import { grantedPolicy } from '../core/auth/permission';
       height: 22px;
       border-radius: 5px;
       flex: none;
-      background: var(--ar-amber-500);
+      /* A tenant's own primary colour, once set — see BrandingStore. Falls back to
+         AutoReach's own accent so an unbranded workspace looks exactly as before. */
+      background: var(--ar-tenant-primary, var(--ar-amber-500));
       color: var(--ar-nav);
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
+    }
+    .sb__mark--logo {
+      background: var(--ar-white, #fff);
+    }
+    .sb__mark--logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
     .sb__name {
       font: 600 15px var(--ar-font-sans);
@@ -129,6 +147,14 @@ import { grantedPolicy } from '../core/auth/permission';
       border: 1px solid #303945;
       border-radius: var(--ar-radius-control);
       color: var(--ar-nav-dim);
+      transition: border-color .12s ease;
+    }
+    /* No existing brand colour has a claim on this border (unlike --ar-teal-600,
+       which already means "link/tip" everywhere), so it's a genuinely new, safe
+       place for a tenant's own accent to show up, rather than repainting a colour
+       that already carries meaning somewhere else in the app. */
+    .sb__tenant:hover, .sb__tenant:focus-visible {
+      border-color: var(--ar-tenant-accent, #303945);
     }
     .sb__tenant-name {
       font: 500 12px var(--ar-font-sans);
@@ -185,7 +211,11 @@ import { grantedPolicy } from '../core/auth/permission';
       color: #fff;
     }
     .sb__item--on .sb__bar {
-      background: var(--ar-amber-500);
+      /* Deliberately not --ar-tenant-primary here: the active-item icon colour below
+         is verified against amber-500 specifically for contrast (see .sb__item--on
+         ar-icon and .sb__badge below) — swapping only the thin indicator bar keeps
+         that pairing untouched while still giving a branded workspace its own accent. */
+      background: var(--ar-tenant-accent, var(--ar-amber-500));
     }
     .sb__item--on .sb__label {
       font-weight: 500;
@@ -297,6 +327,7 @@ export class ArSidebar {
   private readonly ops = inject(OpsService);
   private readonly permissions = inject(PermissionService);
   protected readonly account = inject(CurrentUserService);
+  protected readonly branding = inject(BrandingStore);
 
   protected readonly menuOpen = signal(false);
 

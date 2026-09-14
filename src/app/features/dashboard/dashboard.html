@@ -1,4 +1,8 @@
-<ar-topbar title="Home" subtitle="Vertex Automation Systems">
+<ar-topbar
+  title="Home"
+  subtitle="Vertex Automation Systems"
+  help="Your workspace at a glance — channel health, wallet balance and a shortcut into your next campaign."
+>
   @if (channel(); as ch) { <ar-channel-health-strip [channel]="ch" /> }
   <button ar-button variant="ghost" icon="billing" routerLink="/billing">{{ walletLabel() }}</button>
   <button ar-button variant="primary" icon="plus" routerLink="/campaigns">New campaign</button>

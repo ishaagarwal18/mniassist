@@ -161,3 +161,35 @@ contact, the registered business address, and a general contact email —
 that must be filled in, and is worth a legal read-through regardless, before
 relying on it for real. See `autoreach-api/docs/meta-app-review-prep.md` for
 the rest of the App Review checklist this page is one piece of.
+
+## Tenant branding
+
+`/settings/branding` (`src/app/features/settings/branding.ts`) lets a tenant
+upload a logo and pick two accent colours, backed by autoreach-api's new
+`BrandingAppService` — see that repo's README for the full backend account.
+`BrandingStore` (`src/app/core/services/branding.store.ts`) loads it once and
+applies the colours as CSS custom properties (`--ar-tenant-primary`,
+`--ar-tenant-accent`) on the document root; the sidebar's brand mark and
+active-nav indicator read them with AutoReach's own defaults as a fallback, so
+an unbranded tenant looks exactly as before. Fixed a real, pre-existing bug
+along the way: the sidebar's tenant name (`.sb__tenant-name`) was a hardcoded
+literal ("Vertex Automation") rather than reading `CurrentUserService`'s own
+`currentTenantName` signal, which already existed and was already correct —
+it just wasn't wired to the one place that needed it.
+
+**Pre-authentication preview.** `login.ts`'s "Workspace" field — already there to
+resolve a tenant before signing in — now also fetches that tenant's public
+branding on blur (`BrandingService.publicByTenantId`, via ABP's own
+`findTenantByName` lookup, the same one `signIn()` itself uses) and shows the
+resolved logo/colour on the login card's own brand mark, best-effort: an unknown
+workspace or a network hiccup just leaves AutoReach's own identity showing rather
+than surfacing an error on a field nothing has been submitted for yet.
+`signup.ts` deliberately does not get this — it creates a *new* workspace, so by
+definition there is nothing yet to look up.
+
+**A second decorative element now reads a tenant's accent**, chosen carefully: the
+sidebar's workspace-switcher button gets a hover/focus border in
+`--ar-tenant-accent`. Not extended to elements that already carry a colour meaning
+elsewhere in the app (e.g. `--ar-teal-600`, used consistently for links/tips across
+dozens of components) — repainting one of those with a tenant colour would read as
+inconsistent, not branded.

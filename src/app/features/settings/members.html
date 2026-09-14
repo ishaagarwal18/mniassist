@@ -1,4 +1,8 @@
-<ar-topbar title="Users & roles" [subtitle]="subtitle()">
+<ar-topbar
+  title="Users & roles"
+  [subtitle]="subtitle()"
+  help="Invite teammates and manage who's active. Deactivating someone with open conversations will ask who should inherit them first."
+>
   <button ar-button type="button" variant="primary" icon="plus" (click)="openInvite()">
     Invite someone
   </button>

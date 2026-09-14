@@ -1,4 +1,8 @@
-<ar-topbar title="Audience builder" [subtitle]="subtitle()">
+<ar-topbar
+  title="Audience builder"
+  [subtitle]="subtitle()"
+  help="Audiences are saved rules, not frozen lists — membership is re-checked the moment a campaign actually sends, so a same-day opt-out is always honoured."
+>
   <button ar-button variant="ghost" icon="contacts">Import contacts</button>
   <button ar-button variant="primary" icon="plus" (click)="saveSegment()">Save segment</button>
 </ar-topbar>

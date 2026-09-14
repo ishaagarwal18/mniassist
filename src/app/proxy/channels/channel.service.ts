@@ -7,8 +7,10 @@ import type {
   GetChannelListInput,
   NumberManagementDto,
   OnboardingSessionDto,
+  RegenerateEmbedLinkInput,
   RequestDisplayNameChangeInput,
   SetTwoStepPinInput,
+  SolutionPartnerOnboardingSessionDto,
   UpdateBusinessProfileInput,
   UpdateChannelInput,
 } from './models';
@@ -49,6 +51,16 @@ export class ChannelService {
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/channel/complete-onboarding-step/${sessionId}`,
         body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  completeSolutionPartnerOnboarding = (sessionId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, SolutionPartnerOnboardingSessionDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/channel/complete-solution-partner-onboarding/${sessionId}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -120,6 +132,16 @@ export class ChannelService {
       { apiName: this.apiName, ...config },
     );
 
+  getOrStartSolutionPartnerOnboarding = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, SolutionPartnerOnboardingSessionDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/channel/or-start-solution-partner-onboarding',
+      },
+      { apiName: this.apiName, ...config },
+    );
+
   getQualityHistory = (id: string, days: number = 30, config?: Partial<Rest.Config>) =>
     this.restService.request<any, ListResultDto<ChannelQualitySnapshotDto>>(
       {
@@ -127,6 +149,31 @@ export class ChannelService {
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/channel/${id}/quality-history`,
         params: { days },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getSolutionPartnerOnboardingStatus = (sessionId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, SolutionPartnerOnboardingSessionDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/channel/solution-partner-onboarding-status/${sessionId}`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  regenerateSolutionPartnerEmbedLink = (
+    sessionId: string,
+    input: RegenerateEmbedLinkInput,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, SolutionPartnerOnboardingSessionDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/channel/regenerate-solution-partner-embed-link/${sessionId}`,
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );

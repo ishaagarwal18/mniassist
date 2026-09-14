@@ -34,7 +34,11 @@ interface Row extends IdentityUserDto {
   imports: [ArTopbar, ArCard, ArButton, ArChip, ArBanner, ArDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Users" [subtitle]="subtitle()">
+    <ar-topbar
+      title="Users"
+      [subtitle]="subtitle()"
+      help="Every identity that can sign in to this platform instance, across every workspace. To invite a teammate into one workspace, use Members & invites instead."
+    >
       <button ar-button type="button" variant="primary" icon="plus" (click)="openCreate()">
         New user
       </button>

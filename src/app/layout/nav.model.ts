@@ -228,6 +228,12 @@ export const NAV: readonly NavGroup[] = [
         route: '/compliance',
         permission: 'AutoReach.Compliance',
       },
+      {
+        label: 'Branding',
+        icon: 'settings',
+        route: '/settings/branding',
+        permission: 'AutoReach.Branding',
+      },
       { label: 'Settings', icon: 'settings', route: '/settings' },
     ],
   },

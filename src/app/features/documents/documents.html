@@ -1,4 +1,8 @@
-<ar-topbar title="Documents" [subtitle]="documents().length + ' in the library'">
+<ar-topbar
+  title="Documents"
+  [subtitle]="documents().length + ' in the library'"
+  help="Your datasheet and drawing library, indexed by part number. Set Access to control who can receive a document — public, verified dealers only, or named accounts only."
+>
   <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
     Upload document
   </button>
