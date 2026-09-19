@@ -59,7 +59,7 @@
               "scripts": true,
               "styles": true,
               "fonts": {
-                "inline": false
+                "inline": true
               }
             }
           },
@@ -82,7 +82,7 @@
                 "scripts": true,
                 "styles": true,
                 "fonts": {
-                  "inline": false
+                  "inline": true
                 }
               }
             },

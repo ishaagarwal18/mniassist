@@ -9,8 +9,10 @@ export interface CrmSyncConnectionStatusDto {
   name: string;
   state: IntegrationState;
   supportsDealSync: boolean;
+  supportsContactSync: boolean;
   linkedEnquiries: number;
   linkedQuotations: number;
+  linkedContacts: number;
   lastOutboundAtUtc?: string | null;
   lastInboundAtUtc?: string | null;
   inboundWebhookPath: string;

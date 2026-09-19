@@ -201,8 +201,9 @@
   <h2 class="crm__title">CRM two-way sync</h2>
   <p class="crm__lead">
     Enquiries and quotations are pushed to a connected Zoho CRM or HubSpot as deals when they are
-    created or move stage. A change made back in the CRM — the deal stage or its value — flows into
-    the pipeline when the CRM posts to the inbound webhook below.
+    created or move stage, and the contact behind each one is pushed as its own contact/lead record
+    first. A change made back in the CRM — the deal stage or its value — flows into the pipeline when
+    the CRM posts to the inbound webhook below.
   </p>
 
   @if (crmError(); as e) {
@@ -218,6 +219,7 @@
         </ar-chip>
       </div>
       <p class="crm__counts">
+        {{ c.linkedContacts }} contact{{ c.linkedContacts === 1 ? '' : 's' }} ·
         {{ c.linkedEnquiries }} enquir{{ c.linkedEnquiries === 1 ? 'y' : 'ies' }} ·
         {{ c.linkedQuotations }} quotation{{ c.linkedQuotations === 1 ? '' : 's' }} linked · pushed
         {{ when(c.lastOutboundAtUtc ?? undefined) }} · received
