@@ -257,3 +257,21 @@
   padding: 1px 5px;
   color: var(--ar-ink-700);
 }
+.crm__actions {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.crm__mapping-lead {
+  margin: 0 0 14px;
+  font: 400 12px/1.6 var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+.crm__mapping-heading {
+  margin: 16px 0 8px;
+}
+.crm__mapping-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+}

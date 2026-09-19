@@ -228,15 +228,20 @@
       <p class="crm__hook">
         Inbound webhook: <code>{{ c.inboundWebhookPath }}</code>
       </p>
-      <button
-        ar-button
-        type="button"
-        variant="ghost"
-        [disabled]="resyncing() === c.connectionId"
-        (click)="resync(c.connectionId)"
-      >
-        {{ resyncing() === c.connectionId ? 'Resyncing…' : 'Resync open enquiries' }}
-      </button>
+      <div class="crm__actions">
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="resyncing() === c.connectionId"
+          (click)="resync(c.connectionId)"
+        >
+          {{ resyncing() === c.connectionId ? 'Resyncing…' : 'Resync open enquiries' }}
+        </button>
+        <button ar-button type="button" variant="ghost" (click)="openMapping(c)">
+          Field mapping & currency
+        </button>
+      </div>
     </article>
   } @empty {
     <p class="empty">
@@ -244,3 +249,74 @@
     </p>
   }
 </section>
+
+@if (mappingConnection(); as mc) {
+  <ar-dialog title="{{ mc.name }} — field mapping" (dismiss)="closeMapping()">
+    @if (mappingLoading()) {
+      <p class="empty">Loading current configuration…</p>
+    } @else {
+      <p class="crm__mapping-lead">
+        Leave a field blank to keep {{ crmKindLabel(mc.kind) }}'s own default (shown as the
+        placeholder). Only fields you set here are sent as overrides.
+      </p>
+
+      <label class="ar-field">
+        <span class="ar-field__label">
+          Currency code <span class="ar-field__opt">(optional — labels the amount, does not convert it)</span>
+        </span>
+        <input
+          class="ar-field__input"
+          placeholder="e.g. INR, USD"
+          [value]="mappingCurrency()"
+          (input)="mappingCurrency.set($any($event.target).value)"
+        />
+      </label>
+
+      <p class="ar-label crm__mapping-heading">Deal fields</p>
+      <div class="crm__mapping-grid">
+        @for (f of dealFields(); track f.key) {
+          <label class="ar-field">
+            <span class="ar-field__label">{{ f.label }}</span>
+            <input
+              class="ar-field__input"
+              [placeholder]="defaultFor(f, mc.kind)"
+              [value]="dealValue(f.key)"
+              (input)="setDealField(f.key, $any($event.target).value)"
+            />
+          </label>
+        }
+      </div>
+
+      <p class="ar-label crm__mapping-heading">Contact fields</p>
+      <div class="crm__mapping-grid">
+        @for (f of contactFields(); track f.key) {
+          <label class="ar-field">
+            <span class="ar-field__label">{{ f.label }}</span>
+            <input
+              class="ar-field__input"
+              [placeholder]="defaultFor(f, mc.kind)"
+              [value]="contactValue(f.key)"
+              (input)="setContactField(f.key, $any($event.target).value)"
+            />
+          </label>
+        }
+      </div>
+
+      @if (mappingError(); as err) {
+        <p class="intg__dialog-err">{{ err }}</p>
+      }
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="closeMapping()">Cancel</button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="mappingSaving() || mappingLoading()"
+        (click)="saveMapping()"
+      >
+        {{ mappingSaving() ? 'Saving…' : 'Save mapping' }}
+      </button>
+    </div>
+  </ar-dialog>
+}

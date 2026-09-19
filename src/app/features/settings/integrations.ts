@@ -4,11 +4,44 @@ import { firstValueFrom } from 'rxjs';
 import { OpsService } from '../../core/services/ops.service';
 import { WebhookSubscription } from '../../core/models/ops.model';
 import { WebhookEvent } from '../../proxy/integrations/webhook-event.enum';
-import { CrmSyncConnectionStatusDto, CrmSyncService } from '../../proxy/integrations';
+import {
+  CrmSyncConnectionStatusDto,
+  CrmSyncService,
+  IntegrationService,
+} from '../../proxy/integrations';
 import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
+
+/** A canonical deal/contact field CrmFieldMapping (API) knows how to remap. */
+interface MappableField {
+  key: string;
+  label: string;
+  /** Undefined when the kind's connector never reads this canonical key. */
+  defaultByKind: Partial<Record<2 | 6, string>>;
+}
+
+const DEAL_FIELDS: MappableField[] = [
+  { key: 'name', label: 'Deal name', defaultByKind: { 2: 'Deal_Name', 6: 'dealname' } },
+  { key: 'stage', label: 'Stage', defaultByKind: { 2: 'Stage', 6: 'dealstage' } },
+  { key: 'amount', label: 'Amount', defaultByKind: { 2: 'Amount', 6: 'amount' } },
+  { key: 'closingDate', label: 'Closing date', defaultByKind: { 2: 'Closing_Date', 6: 'closedate' } },
+  { key: 'description', label: 'Description', defaultByKind: { 2: 'Description', 6: 'description' } },
+  { key: 'contactLookup', label: 'Contact link', defaultByKind: { 2: 'Contact_Name' } },
+  { key: 'currency', label: 'Currency field', defaultByKind: { 2: 'Currency', 6: 'deal_currency_code' } },
+];
+
+const CONTACT_FIELDS: MappableField[] = [
+  { key: 'firstName', label: 'First name', defaultByKind: { 2: 'First_Name', 6: 'firstname' } },
+  { key: 'lastName', label: 'Last name', defaultByKind: { 2: 'Last_Name', 6: 'lastname' } },
+  { key: 'phone', label: 'Phone', defaultByKind: { 2: 'Phone', 6: 'phone' } },
+  { key: 'email', label: 'Email', defaultByKind: { 2: 'Email', 6: 'email' } },
+  { key: 'company', label: 'Company', defaultByKind: { 2: 'Account_Name', 6: 'company' } },
+  { key: 'city', label: 'City', defaultByKind: { 2: 'Mailing_City', 6: 'city' } },
+  { key: 'state', label: 'State', defaultByKind: { 2: 'Mailing_State', 6: 'state' } },
+  { key: 'description', label: 'Description', defaultByKind: { 2: 'Description' } },
+];
 
 const SEED_CRM: CrmSyncConnectionStatusDto[] = [
   {
@@ -52,6 +85,7 @@ const DELIVERY_TONE: Record<string, ChipTone> = {
 export class ArIntegrations {
   private readonly ops = inject(OpsService);
   private readonly crmSync = inject(CrmSyncService);
+  private readonly integrations = inject(IntegrationService);
 
   protected readonly webhooks = this.ops.webhooks;
   protected readonly deliveries = this.ops.deliveries;
@@ -61,6 +95,40 @@ export class ArIntegrations {
   protected readonly crm = signal<CrmSyncConnectionStatusDto[]>([]);
   protected readonly crmError = signal<string | null>(null);
   protected readonly resyncing = signal<string | null>(null);
+
+  // ---- Field mapping / currency dialog ------------------------------
+  // configJson already carries "fieldMapping"/"currency" on the real API (see
+  // CrmFieldMapping.cs) — this just gives a tenant a form instead of hand-editing
+  // JSON. Mock mode has no backing connection row, so edits there live only in
+  // this in-memory map for the length of the session.
+  private readonly mockConfig = new Map<string, Record<string, unknown>>();
+  protected readonly mappingConnection = signal<CrmSyncConnectionStatusDto | null>(null);
+  protected readonly mappingLoading = signal(false);
+  protected readonly mappingSaving = signal(false);
+  protected readonly mappingError = signal<string | null>(null);
+  protected readonly mappingCurrency = signal('');
+  protected readonly mappingDeal = signal<Record<string, string>>({});
+  protected readonly mappingContact = signal<Record<string, string>>({});
+
+  protected readonly dealFields = computed(() => this.fieldsFor(DEAL_FIELDS));
+  protected readonly contactFields = computed(() => this.fieldsFor(CONTACT_FIELDS));
+
+  private fieldsFor(fields: MappableField[]): MappableField[] {
+    const kind = this.mappingConnection()?.kind as 2 | 6 | undefined;
+    return kind === undefined ? [] : fields.filter((f) => f.defaultByKind[kind] !== undefined);
+  }
+
+  protected defaultFor(field: MappableField, kind: number): string | undefined {
+    return field.defaultByKind[kind as 2 | 6];
+  }
+
+  protected dealValue(key: string): string {
+    return this.mappingDeal()[key] ?? '';
+  }
+
+  protected contactValue(key: string): string {
+    return this.mappingContact()[key] ?? '';
+  }
 
   constructor() {
     void this.loadCrm();
@@ -94,6 +162,113 @@ export class ArIntegrations {
 
   protected crmKindLabel(kind: number): string {
     return { 2: 'Zoho CRM', 6: 'HubSpot' }[kind] ?? `Kind ${kind}`;
+  }
+
+  protected async openMapping(connection: CrmSyncConnectionStatusDto): Promise<void> {
+    this.mappingConnection.set(connection);
+    this.mappingError.set(null);
+    this.mappingCurrency.set('');
+    this.mappingDeal.set({});
+    this.mappingContact.set({});
+    this.mappingLoading.set(true);
+
+    try {
+      const config = environment.useMockData
+        ? (this.mockConfig.get(connection.connectionId) ?? {})
+        : this.parseConfig((await firstValueFrom(this.integrations.get(connection.connectionId))).configJson);
+
+      this.mappingCurrency.set(typeof config['currency'] === 'string' ? (config['currency'] as string) : '');
+      const mapping = (config['fieldMapping'] as Record<string, Record<string, string>> | undefined) ?? {};
+      this.mappingDeal.set({ ...(mapping['deal'] ?? {}) });
+      this.mappingContact.set({ ...(mapping['contact'] ?? {}) });
+    } catch (e: unknown) {
+      this.mappingError.set(e instanceof Error ? e.message : 'Could not load the current configuration.');
+    } finally {
+      this.mappingLoading.set(false);
+    }
+  }
+
+  protected closeMapping(): void {
+    this.mappingConnection.set(null);
+  }
+
+  protected setDealField(key: string, value: string): void {
+    this.mappingDeal.update((m) => ({ ...m, [key]: value }));
+  }
+
+  protected setContactField(key: string, value: string): void {
+    this.mappingContact.update((m) => ({ ...m, [key]: value }));
+  }
+
+  protected async saveMapping(): Promise<void> {
+    const connection = this.mappingConnection();
+    if (!connection) return;
+
+    this.mappingSaving.set(true);
+    this.mappingError.set(null);
+
+    try {
+      const config = environment.useMockData
+        ? { ...(this.mockConfig.get(connection.connectionId) ?? {}) }
+        : this.parseConfig((await firstValueFrom(this.integrations.get(connection.connectionId))).configJson);
+
+      const currency = this.mappingCurrency().trim();
+      if (currency) {
+        config['currency'] = currency;
+      } else {
+        delete config['currency'];
+      }
+
+      const deal = this.trimmed(this.mappingDeal());
+      const contact = this.trimmed(this.mappingContact());
+      if (Object.keys(deal).length || Object.keys(contact).length) {
+        config['fieldMapping'] = {
+          ...(Object.keys(deal).length ? { deal } : {}),
+          ...(Object.keys(contact).length ? { contact } : {}),
+        };
+      } else {
+        delete config['fieldMapping'];
+      }
+
+      if (environment.useMockData) {
+        this.mockConfig.set(connection.connectionId, config);
+      } else {
+        const current = await firstValueFrom(this.integrations.get(connection.connectionId));
+        await firstValueFrom(
+          this.integrations.update(connection.connectionId, {
+            kind: current.kind,
+            name: current.name ?? connection.name,
+            configJson: JSON.stringify(config),
+            // A blank credential tells the API "leave the stored one alone" — see
+            // IntegrationAppService.UpdateAsync.
+            credential: null,
+          }),
+        );
+      }
+
+      this.closeMapping();
+    } catch (e: unknown) {
+      this.mappingError.set(e instanceof Error ? e.message : 'The configuration could not be saved.');
+    } finally {
+      this.mappingSaving.set(false);
+    }
+  }
+
+  private parseConfig(configJson?: string | null): Record<string, unknown> {
+    try {
+      const parsed = JSON.parse(configJson ?? '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private trimmed(fields: Record<string, string>): Record<string, string> {
+    const result: Record<string, string> = {};
+    for (const [key, value] of Object.entries(fields)) {
+      if (value.trim()) result[key] = value.trim();
+    }
+    return result;
   }
 
   // ---- Add endpoint dialog -----------------------------------------
