@@ -262,6 +262,14 @@
   gap: 9px;
   flex-wrap: wrap;
 }
+.crm__connect {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ar-line-200);
+}
 .crm__mapping-lead {
   margin: 0 0 14px;
   font: 400 12px/1.6 var(--ar-font-sans);

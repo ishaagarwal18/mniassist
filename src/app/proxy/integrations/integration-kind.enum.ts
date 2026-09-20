@@ -10,6 +10,7 @@ export enum IntegrationKind {
   HubSpot = 6,
   ZohoBooks = 7,
   Zapier = 8,
+  SalesforceCrm = 9,
 }
 
 export const integrationKindOptions = mapEnumToOptions(IntegrationKind);

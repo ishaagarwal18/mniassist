@@ -5,6 +5,7 @@ import { OpsService } from '../../core/services/ops.service';
 import { WebhookSubscription } from '../../core/models/ops.model';
 import { WebhookEvent } from '../../proxy/integrations/webhook-event.enum';
 import {
+  CrmOAuthService,
   CrmSyncConnectionStatusDto,
   CrmSyncService,
   IntegrationService,
@@ -14,33 +15,61 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 
+/** The CRM kinds with real deal/contact sync — matches ICrmDealSync/ICrmContactSync's
+ * actual registered implementations, not every IntegrationKind. */
+type SyncableKind = 2 | 6 | 9;
+
+/** The OAuth connect flow only exists for these three — see CrmOAuthController. */
+const OAUTH_KINDS: { kind: SyncableKind; label: string }[] = [
+  { kind: 2, label: 'Zoho CRM' },
+  { kind: 6, label: 'HubSpot' },
+  { kind: 9, label: 'Salesforce' },
+];
+
 /** A canonical deal/contact field CrmFieldMapping (API) knows how to remap. */
 interface MappableField {
   key: string;
   label: string;
   /** Undefined when the kind's connector never reads this canonical key. */
-  defaultByKind: Partial<Record<2 | 6, string>>;
+  defaultByKind: Partial<Record<SyncableKind, string>>;
 }
 
 const DEAL_FIELDS: MappableField[] = [
-  { key: 'name', label: 'Deal name', defaultByKind: { 2: 'Deal_Name', 6: 'dealname' } },
-  { key: 'stage', label: 'Stage', defaultByKind: { 2: 'Stage', 6: 'dealstage' } },
-  { key: 'amount', label: 'Amount', defaultByKind: { 2: 'Amount', 6: 'amount' } },
-  { key: 'closingDate', label: 'Closing date', defaultByKind: { 2: 'Closing_Date', 6: 'closedate' } },
-  { key: 'description', label: 'Description', defaultByKind: { 2: 'Description', 6: 'description' } },
-  { key: 'contactLookup', label: 'Contact link', defaultByKind: { 2: 'Contact_Name' } },
-  { key: 'currency', label: 'Currency field', defaultByKind: { 2: 'Currency', 6: 'deal_currency_code' } },
+  { key: 'name', label: 'Deal name', defaultByKind: { 2: 'Deal_Name', 6: 'dealname', 9: 'Name' } },
+  { key: 'stage', label: 'Stage', defaultByKind: { 2: 'Stage', 6: 'dealstage', 9: 'StageName' } },
+  { key: 'amount', label: 'Amount', defaultByKind: { 2: 'Amount', 6: 'amount', 9: 'Amount' } },
+  {
+    key: 'closingDate',
+    label: 'Closing date',
+    defaultByKind: { 2: 'Closing_Date', 6: 'closedate', 9: 'CloseDate' },
+  },
+  {
+    key: 'description',
+    label: 'Description',
+    defaultByKind: { 2: 'Description', 6: 'description', 9: 'Description' },
+  },
+  // Salesforce's ContactId is a plain lookup field, same canonical slot as Zoho's
+  // Contact_Name lookup — HubSpot links a contact through its associations API
+  // instead, so it never reads this key.
+  { key: 'contactLookup', label: 'Contact link', defaultByKind: { 2: 'Contact_Name', 9: 'ContactId' } },
+  {
+    key: 'currency',
+    label: 'Currency field',
+    defaultByKind: { 2: 'Currency', 6: 'deal_currency_code', 9: 'CurrencyIsoCode' },
+  },
 ];
 
 const CONTACT_FIELDS: MappableField[] = [
-  { key: 'firstName', label: 'First name', defaultByKind: { 2: 'First_Name', 6: 'firstname' } },
-  { key: 'lastName', label: 'Last name', defaultByKind: { 2: 'Last_Name', 6: 'lastname' } },
-  { key: 'phone', label: 'Phone', defaultByKind: { 2: 'Phone', 6: 'phone' } },
-  { key: 'email', label: 'Email', defaultByKind: { 2: 'Email', 6: 'email' } },
+  { key: 'firstName', label: 'First name', defaultByKind: { 2: 'First_Name', 6: 'firstname', 9: 'FirstName' } },
+  { key: 'lastName', label: 'Last name', defaultByKind: { 2: 'Last_Name', 6: 'lastname', 9: 'LastName' } },
+  { key: 'phone', label: 'Phone', defaultByKind: { 2: 'Phone', 6: 'phone', 9: 'Phone' } },
+  { key: 'email', label: 'Email', defaultByKind: { 2: 'Email', 6: 'email', 9: 'Email' } },
+  // No Salesforce entry: a Contact's employer there is the Account it links to, not a
+  // free-text field — see SalesforceContactSync's doc comment on the API side.
   { key: 'company', label: 'Company', defaultByKind: { 2: 'Account_Name', 6: 'company' } },
-  { key: 'city', label: 'City', defaultByKind: { 2: 'Mailing_City', 6: 'city' } },
-  { key: 'state', label: 'State', defaultByKind: { 2: 'Mailing_State', 6: 'state' } },
-  { key: 'description', label: 'Description', defaultByKind: { 2: 'Description' } },
+  { key: 'city', label: 'City', defaultByKind: { 2: 'Mailing_City', 6: 'city', 9: 'MailingCity' } },
+  { key: 'state', label: 'State', defaultByKind: { 2: 'Mailing_State', 6: 'state', 9: 'MailingState' } },
+  { key: 'description', label: 'Description', defaultByKind: { 2: 'Description', 9: 'Description' } },
 ];
 
 const SEED_CRM: CrmSyncConnectionStatusDto[] = [
@@ -86,6 +115,7 @@ export class ArIntegrations {
   private readonly ops = inject(OpsService);
   private readonly crmSync = inject(CrmSyncService);
   private readonly integrations = inject(IntegrationService);
+  private readonly crmOAuth = inject(CrmOAuthService);
 
   protected readonly webhooks = this.ops.webhooks;
   protected readonly deliveries = this.ops.deliveries;
@@ -114,12 +144,12 @@ export class ArIntegrations {
   protected readonly contactFields = computed(() => this.fieldsFor(CONTACT_FIELDS));
 
   private fieldsFor(fields: MappableField[]): MappableField[] {
-    const kind = this.mappingConnection()?.kind as 2 | 6 | undefined;
+    const kind = this.mappingConnection()?.kind as SyncableKind | undefined;
     return kind === undefined ? [] : fields.filter((f) => f.defaultByKind[kind] !== undefined);
   }
 
   protected defaultFor(field: MappableField, kind: number): string | undefined {
-    return field.defaultByKind[kind as 2 | 6];
+    return field.defaultByKind[kind as SyncableKind];
   }
 
   protected dealValue(key: string): string {
@@ -130,8 +160,66 @@ export class ArIntegrations {
     return this.mappingContact()[key] ?? '';
   }
 
+  // ---- OAuth connect flow (M10-9) ------------------------------------
+  protected readonly oAuthKinds = OAUTH_KINDS;
+  protected readonly oAuthStarting = signal<SyncableKind | null>(null);
+  protected readonly oAuthBanner = signal<{ tone: 'good' | 'bad'; message: string } | null>(null);
+
   constructor() {
+    this.consumeOAuthRedirectParams();
     void this.loadCrm();
+  }
+
+  /**
+   * CrmOAuthController's callback redirects the browser back here with
+   * ?crmOAuthConnected=<kind> or ?crmOAuthError=<reason> — read it once, show a
+   * banner, then strip it from the URL so a page refresh doesn't re-show it.
+   */
+  private consumeOAuthRedirectParams(): void {
+    const params = new URLSearchParams(window.location.search);
+    const connectedKind = params.get('crmOAuthConnected');
+    const error = params.get('crmOAuthError');
+
+    if (connectedKind !== null) {
+      this.oAuthBanner.set({ tone: 'good', message: 'CRM connected — token refresh is now automatic.' });
+    } else if (error !== null) {
+      this.oAuthBanner.set({ tone: 'bad', message: `The CRM connect flow did not finish (${error}).` });
+    } else {
+      return;
+    }
+
+    params.delete('crmOAuthConnected');
+    params.delete('crmOAuthError');
+    const query = params.toString();
+    history.replaceState(null, '', window.location.pathname + (query ? `?${query}` : ''));
+  }
+
+  /**
+   * Starts the interactive connect flow and leaves the SPA — the CRM's own consent
+   * screen isn't an Angular route. `connectionId` reconnects an existing connection
+   * whose refresh token has died; omitted, this creates a new one.
+   */
+  protected async startOAuth(kind: SyncableKind, connectionId?: string): Promise<void> {
+    if (environment.useMockData) {
+      this.oAuthBanner.set({
+        tone: 'bad',
+        message: 'The OAuth connect flow needs the real API — not available against mock data.',
+      });
+      return;
+    }
+
+    this.oAuthStarting.set(kind);
+    this.crmError.set(null);
+    try {
+      const label = this.oAuthKinds.find((k) => k.kind === kind)?.label ?? `Kind ${kind}`;
+      const result = await firstValueFrom(
+        this.crmOAuth.start(kind, connectionId ? { connectionId } : { name: label }),
+      );
+      window.location.href = result.authorizeUrl;
+    } catch (e: unknown) {
+      this.crmError.set(e instanceof Error ? e.message : 'The connect flow could not be started.');
+      this.oAuthStarting.set(null);
+    }
   }
 
   private async loadCrm(): Promise<void> {
@@ -161,7 +249,11 @@ export class ArIntegrations {
   }
 
   protected crmKindLabel(kind: number): string {
-    return { 2: 'Zoho CRM', 6: 'HubSpot' }[kind] ?? `Kind ${kind}`;
+    return { 2: 'Zoho CRM', 6: 'HubSpot', 9: 'Salesforce' }[kind] ?? `Kind ${kind}`;
+  }
+
+  protected isOAuthKind(kind: number): boolean {
+    return OAUTH_KINDS.some((k) => k.kind === kind);
   }
 
   protected async openMapping(connection: CrmSyncConnectionStatusDto): Promise<void> {

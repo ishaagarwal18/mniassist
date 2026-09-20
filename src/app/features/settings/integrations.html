@@ -200,15 +200,34 @@
 <section class="crm" aria-label="CRM two-way sync">
   <h2 class="crm__title">CRM two-way sync</h2>
   <p class="crm__lead">
-    Enquiries and quotations are pushed to a connected Zoho CRM or HubSpot as deals when they are
-    created or move stage, and the contact behind each one is pushed as its own contact/lead record
-    first. A change made back in the CRM — the deal stage or its value — flows into the pipeline when
-    the CRM posts to the inbound webhook below.
+    Enquiries and quotations are pushed to a connected Zoho CRM, HubSpot or Salesforce as deals when
+    they are created or move stage, and the contact behind each one is pushed as its own contact/lead
+    record first. A change made back in the CRM — the deal stage or its value — flows into the
+    pipeline when the CRM posts to the inbound webhook below. A connection made through Connect below
+    refreshes its own access token automatically; one pasted in by hand does not.
   </p>
+
+  @if (oAuthBanner(); as banner) {
+    <ar-banner [tone]="banner.tone">{{ banner.message }}</ar-banner>
+  }
 
   @if (crmError(); as e) {
     <p class="intg__dialog-err">{{ e }}</p>
   }
+
+  <div class="crm__connect">
+    @for (k of oAuthKinds; track k.kind) {
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        [disabled]="oAuthStarting() === k.kind"
+        (click)="startOAuth(k.kind)"
+      >
+        {{ oAuthStarting() === k.kind ? 'Redirecting…' : 'Connect ' + k.label }}
+      </button>
+    }
+  </div>
 
   @for (c of crm(); track c.connectionId) {
     <article class="crm__row">
@@ -241,11 +260,22 @@
         <button ar-button type="button" variant="ghost" (click)="openMapping(c)">
           Field mapping & currency
         </button>
+        @if (isOAuthKind(c.kind)) {
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="oAuthStarting() === c.kind"
+            (click)="startOAuth($any(c.kind), c.connectionId)"
+          >
+            {{ oAuthStarting() === c.kind ? 'Redirecting…' : 'Reconnect' }}
+          </button>
+        }
       </div>
     </article>
   } @empty {
     <p class="empty">
-      No CRM with two-way sync is connected. Add a Zoho CRM or HubSpot connection to start.
+      No CRM with two-way sync is connected. Use Connect above for Zoho CRM, HubSpot or Salesforce.
     </p>
   }
 </section>
