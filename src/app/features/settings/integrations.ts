@@ -83,6 +83,9 @@ const SEED_CRM: CrmSyncConnectionStatusDto[] = [
     linkedEnquiries: 34,
     linkedQuotations: 12,
     linkedContacts: 29,
+    supportsTimelineSync: true,
+    timelineEnabled: true,
+    loggedMessages: 212,
     lastOutboundAtUtc: new Date(Date.now() - 26 * 60_000).toISOString(),
     lastInboundAtUtc: new Date(Date.now() - 3 * 3_600_000).toISOString(),
     inboundWebhookPath: '/api/webhooks/crm/crm-zoho?secret=••••••',
@@ -137,6 +140,8 @@ export class ArIntegrations {
   protected readonly mappingSaving = signal(false);
   protected readonly mappingError = signal<string | null>(null);
   protected readonly mappingCurrency = signal('');
+  protected readonly timelineEnabled = signal(false);
+  protected readonly timelineCampaigns = signal(true);
   protected readonly mappingDeal = signal<Record<string, string>>({});
   protected readonly mappingContact = signal<Record<string, string>>({});
 
@@ -260,6 +265,8 @@ export class ArIntegrations {
     this.mappingConnection.set(connection);
     this.mappingError.set(null);
     this.mappingCurrency.set('');
+    this.timelineEnabled.set(false);
+    this.timelineCampaigns.set(true);
     this.mappingDeal.set({});
     this.mappingContact.set({});
     this.mappingLoading.set(true);
@@ -270,6 +277,9 @@ export class ArIntegrations {
         : this.parseConfig((await firstValueFrom(this.integrations.get(connection.connectionId))).configJson);
 
       this.mappingCurrency.set(typeof config['currency'] === 'string' ? (config['currency'] as string) : '');
+      const timeline = config['timeline'] as { enabled?: boolean; campaigns?: boolean } | undefined;
+      this.timelineEnabled.set(timeline?.enabled === true);
+      this.timelineCampaigns.set(timeline?.campaigns ?? true);
       const mapping = (config['fieldMapping'] as Record<string, Record<string, string>> | undefined) ?? {};
       this.mappingDeal.set({ ...(mapping['deal'] ?? {}) });
       this.mappingContact.set({ ...(mapping['contact'] ?? {}) });
@@ -309,6 +319,12 @@ export class ArIntegrations {
         config['currency'] = currency;
       } else {
         delete config['currency'];
+      }
+
+      if (this.timelineEnabled()) {
+        config['timeline'] = { enabled: true, campaigns: this.timelineCampaigns() };
+      } else {
+        delete config['timeline'];
       }
 
       const deal = this.trimmed(this.mappingDeal());

@@ -13,6 +13,9 @@ export interface CrmSyncConnectionStatusDto {
   linkedEnquiries: number;
   linkedQuotations: number;
   linkedContacts: number;
+  supportsTimelineSync: boolean;
+  timelineEnabled: boolean;
+  loggedMessages: number;
   lastOutboundAtUtc?: string | null;
   lastInboundAtUtc?: string | null;
   inboundWebhookPath: string;

@@ -202,7 +202,9 @@
   <p class="crm__lead">
     Enquiries and quotations are pushed to a connected Zoho CRM, HubSpot or Salesforce as deals when
     they are created or move stage, and the contact behind each one is pushed as its own contact/lead
-    record first. A change made back in the CRM — the deal stage or its value — flows into the
+    record first. With timeline logging on, WhatsApp replies and messages sent to that contact —
+    campaign sends included, if you choose — are also logged as notes or activities on their record.
+    A change made back in the CRM — the deal stage or its value — flows into the
     pipeline when the CRM posts to the inbound webhook below. A connection made through Connect below
     refreshes its own access token automatically; one pasted in by hand does not.
   </p>
@@ -240,7 +242,12 @@
       <p class="crm__counts">
         {{ c.linkedContacts }} contact{{ c.linkedContacts === 1 ? '' : 's' }} ·
         {{ c.linkedEnquiries }} enquir{{ c.linkedEnquiries === 1 ? 'y' : 'ies' }} ·
-        {{ c.linkedQuotations }} quotation{{ c.linkedQuotations === 1 ? '' : 's' }} linked · pushed
+        {{ c.linkedQuotations }} quotation{{ c.linkedQuotations === 1 ? '' : 's' }} linked ·
+        @if (c.supportsTimelineSync) {
+          {{ c.timelineEnabled ? c.loggedMessages + ' message' + (c.loggedMessages === 1 ? '' : 's') + ' on timelines' : 'timeline off' }}
+          ·
+        }
+        pushed
         {{ when(c.lastOutboundAtUtc ?? undefined) }} · received
         {{ when(c.lastInboundAtUtc ?? undefined) }}
       </p>
@@ -301,6 +308,27 @@
           (input)="mappingCurrency.set($any($event.target).value)"
         />
       </label>
+
+      @if (mc.supportsTimelineSync) {
+        <p class="ar-label crm__mapping-heading">Conversation timeline</p>
+        <label class="intg__event">
+          <input
+            type="checkbox"
+            [checked]="timelineEnabled()"
+            (change)="timelineEnabled.set($any($event.target).checked)"
+          />
+          Log WhatsApp messages on the contact's {{ crmKindLabel(mc.kind) }} timeline
+        </label>
+        <label class="intg__event">
+          <input
+            type="checkbox"
+            [checked]="timelineCampaigns()"
+            [disabled]="!timelineEnabled()"
+            (change)="timelineCampaigns.set($any($event.target).checked)"
+          />
+          Include campaign sends (one CRM entry per recipient — counts against its API limits)
+        </label>
+      }
 
       <p class="ar-label crm__mapping-heading">Deal fields</p>
       <div class="crm__mapping-grid">
