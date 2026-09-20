@@ -10,6 +10,7 @@ import type { LostReasonCategory } from './lost-reason-category.enum';
 
 export interface CreateUpdateEnquiryDto {
   contactId?: string;
+  pipelineId?: string | null;
   source?: LeadSource;
   sourceRef?: string | null;
   title?: string | null;
@@ -54,6 +55,8 @@ export interface CreateUpdateQuotationLineDto {
 
 export interface EnquiryBoardColumnDto {
   stage?: EnquiryStage;
+  stageId?: string;
+  stageName?: string;
   count?: number;
   totalValueInPaise?: number;
   cards?: EnquiryDto[];
@@ -79,6 +82,10 @@ export interface EnquiryDto extends FullAuditedEntityDto<string> {
   contactCompanyName?: string | null;
   conversationId?: string | null;
   stage?: EnquiryStage;
+  pipelineId?: string | null;
+  pipelineName?: string | null;
+  stageId?: string | null;
+  stageName?: string | null;
   source?: LeadSource;
   sourceRef?: string | null;
   title?: string | null;
@@ -107,6 +114,7 @@ export interface EnquiryEventDto extends EntityDto<string> {
 }
 
 export interface GetEnquiryBoardInput {
+  pipelineId?: string | null;
   ownerUserId?: string | null;
   source?: LeadSource | null;
   openOnly?: boolean;
@@ -114,6 +122,7 @@ export interface GetEnquiryBoardInput {
 
 export interface GetEnquiryListInput extends PagedAndSortedResultRequestDto {
   stage?: EnquiryStage | null;
+  pipelineId?: string | null;
   ownerUserId?: string | null;
   filter?: string | null;
 }
@@ -165,6 +174,7 @@ export interface IssueQuotationInput {
 }
 
 export interface MoveEnquiryInput {
+  stageId?: string | null;
   stage?: EnquiryStage;
   note?: string | null;
   lostCategory?: LostReasonCategory | null;
@@ -219,4 +229,53 @@ export interface ReminderDto extends EntityDto<string> {
   state?: ReminderState;
   sentAtUtc?: string | null;
   haltReason?: string | null;
+}
+
+export interface PipelineStageDto {
+  id?: string;
+  name?: string;
+  order?: number;
+  bucket?: EnquiryStage;
+  isFixed?: boolean;
+  enquiryCount?: number;
+}
+
+export interface SalesPipelineDto {
+  id?: string;
+  name?: string;
+  isDefault?: boolean;
+  enquiryCount?: number;
+  stages?: PipelineStageDto[];
+}
+
+export interface CreateSalesPipelineInput {
+  name: string;
+  copyStagesFromPipelineId?: string | null;
+}
+
+export interface UpdateSalesPipelineInput {
+  name: string;
+}
+
+export interface DeleteSalesPipelineInput {
+  moveEnquiriesToPipelineId?: string | null;
+}
+
+export interface SavePipelineStageInput {
+  name: string;
+  bucket?: EnquiryStage;
+  position?: number | null;
+}
+
+export interface ReorderPipelineStagesInput {
+  stageIds: string[];
+}
+
+export interface DeletePipelineStageInput {
+  moveEnquiriesToStageId?: string | null;
+}
+
+export interface MoveEnquiryToPipelineInput {
+  pipelineId: string;
+  stageId?: string | null;
 }

@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 
 import { Automation, WState, WorkflowStore } from '../../core/services/workflow.service';
 import { ChannelService } from '../../core/services/channel.service';
+import { PipelineStore } from '../../core/services/pipeline.service';
 import { AutomationTriggerKind } from '../../proxy/messaging';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
@@ -25,6 +26,7 @@ const STATE_TONE: Record<WState, ChipTone> = { draft: 'neutral', active: 'good',
 export class ArAutomations {
   private readonly store = inject(WorkflowStore);
   protected readonly channels = inject(ChannelService).channels;
+  protected readonly pipelines = inject(PipelineStore).pipelines;
 
   protected readonly automations = this.store.automations;
   protected readonly loading = this.store.loadingAutomations;
@@ -53,12 +55,22 @@ export class ArAutomations {
     AutomationTriggerKind.InboundKeyword,
   );
   protected readonly newKeyword = signal('');
+  /** For "enquiry stage changed": the pipeline and stage to wait for. Blank means any. */
+  protected readonly newPipelineId = signal('');
+  protected readonly newStageId = signal('');
+
+  protected stagesOfNewPipeline() {
+    const p = this.pipelines().find((x) => x.id === this.newPipelineId());
+    return p?.stages ?? [];
+  }
 
   protected openDialog(): void {
     this.newName.set('');
     this.newChannel.set(this.channels()[0]?.id ?? '');
     this.newTrigger.set(AutomationTriggerKind.InboundKeyword);
     this.newKeyword.set('');
+    this.newPipelineId.set('');
+    this.newStageId.set('');
     this.error.set(null);
     this.dialogOpen.set(true);
   }
@@ -80,6 +92,12 @@ export class ArAutomations {
         this.newChannel(),
         this.newTrigger(),
         this.newKeyword(),
+        this.newTrigger() === AutomationTriggerKind.EnquiryStageChanged
+          ? {
+              pipelineId: this.newPipelineId() || undefined,
+              stageId: this.newStageId() || undefined,
+            }
+          : undefined,
       );
       this.dialogOpen.set(false);
     } catch (e: unknown) {

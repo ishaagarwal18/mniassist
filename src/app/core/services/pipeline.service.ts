@@ -16,10 +16,13 @@ import {
   InstalledAssetDto,
   InstalledAssetService,
   LostReasonCategory,
+  PipelineStageDto,
   QuotationDto,
   QuotationService,
   QuotationState,
   ReminderKind,
+  SalesPipelineDto,
+  SalesPipelineService,
 } from '../../proxy/pipeline';
 import { ContactService as ContactApi } from '../../proxy/contacts';
 
@@ -43,6 +46,8 @@ export interface EnquiryCard {
   owner?: string;
   valueInPaise?: number;
   daysInStage: number;
+  /** The specific stage (column) the enquiry is in. */
+  stageId?: string;
   /** Deal score 0-100 for an open enquiry; undefined once won or lost. */
   score?: number;
   band?: ScoreBand;
@@ -63,7 +68,9 @@ function bandFrom(b: DealScoreBand | null | undefined, score: number | null | un
   return b === DealScoreBand.Hot ? 'hot' : b === DealScoreBand.Warm ? 'warm' : b === DealScoreBand.Cold ? 'cold' : bandOf(score);
 }
 export interface BoardColumn {
+  /** What the column counts as: one of the built-in seven. */
   stage: Stage;
+  stageId?: string;
   label: string;
   count: number;
   valueInPaise: number;
@@ -91,6 +98,10 @@ export interface EnquiryDetail {
   reference: string;
   title: string;
   stage: Stage;
+  stageId?: string;
+  stageName?: string;
+  pipelineId?: string;
+  pipelineName?: string;
   contact: string;
   company?: string;
   owner?: string;
@@ -155,7 +166,8 @@ function boardColumn(c: EnquiryBoardColumnDto): BoardColumn {
   const stage = c.stage != null ? STAGE[c.stage] : 'new';
   return {
     stage,
-    label: STAGE_LABEL[stage],
+    stageId: c.stageId,
+    label: c.stageName ?? STAGE_LABEL[stage],
     count: c.count ?? 0,
     valueInPaise: c.totalValueInPaise ?? 0,
     cards: (c.cards ?? []).map((e) => ({
@@ -167,6 +179,7 @@ function boardColumn(c: EnquiryBoardColumnDto): BoardColumn {
       owner: e.ownerUserName ?? undefined,
       valueInPaise: e.estimatedValueInPaise ?? 0,
       daysInStage: e.daysInStage ?? 0,
+      stageId: e.stageId ?? c.stageId,
       score: e.score ?? undefined,
       band: bandFrom(e.scoreBand, e.score),
       stage,
@@ -247,6 +260,10 @@ function enquiryDetail(d: EnquiryDetailDto & { id?: string }): EnquiryDetail {
     valueInPaise: d.estimatedValueInPaise ?? undefined,
     expectedCloseDate: d.expectedCloseDate ?? undefined,
     daysInStage: d.daysInStage ?? 0,
+    stageId: d.stageId ?? undefined,
+    stageName: d.stageName ?? undefined,
+    pipelineId: d.pipelineId ?? undefined,
+    pipelineName: d.pipelineName ?? undefined,
     score: d.score ?? undefined,
     band: bandFrom(d.scoreBand, d.score),
     scoreFactors: (d.scoreFactors ?? []).map((f) => ({
@@ -264,10 +281,29 @@ function enquiryDetail(d: EnquiryDetailDto & { id?: string }): EnquiryDetail {
   };
 }
 
+const MOCK_PIPELINES: SalesPipelineDto[] = [
+  {
+    id: 'p-default',
+    name: 'Sales',
+    isDefault: true,
+    enquiryCount: 16,
+    stages: [
+      { id: 's-new', name: 'New', order: 0, bucket: EnquiryStage.New, enquiryCount: 5 },
+      { id: 's-qualified', name: 'Qualified', order: 1, bucket: EnquiryStage.Qualified, enquiryCount: 4 },
+      { id: 's-siteVisit', name: 'Site visit', order: 2, bucket: EnquiryStage.SiteVisit, enquiryCount: 2 },
+      { id: 's-quoted', name: 'Quoted', order: 3, bucket: EnquiryStage.Quoted, enquiryCount: 3 },
+      { id: 's-negotiation', name: 'Negotiation', order: 4, bucket: EnquiryStage.Negotiation, enquiryCount: 2 },
+      { id: 's-won', name: 'Won', order: 5, bucket: EnquiryStage.Won, isFixed: true, enquiryCount: 0 },
+      { id: 's-lost', name: 'Lost', order: 6, bucket: EnquiryStage.Lost, isFixed: true, enquiryCount: 0 },
+    ],
+  },
+];
+
 const OPEN_STAGES: Stage[] = ['new', 'qualified', 'siteVisit', 'quoted', 'negotiation'];
 
 const SEED_BOARD: BoardColumn[] = OPEN_STAGES.map((stage, i) => ({
   stage,
+  stageId: `s-${stage}`,
   label: STAGE_LABEL[stage],
   count: [5, 4, 2, 3, 2][i],
   valueInPaise: [3_20_00000, 5_80_00000, 2_10_00000, 8_40_00000, 3_60_00000][i],
@@ -295,6 +331,7 @@ const SEED_BOARD: BoardColumn[] = OPEN_STAGES.map((stage, i) => ({
     valueInPaise: (18 + j * 6 + i * 4) * 100000 * 100,
     daysInStage: 2 + ((i * 3 + j) % 14),
     ...mockScore(i, j),
+    stageId: `s-${stage}`,
     stage,
   })),
 }));
@@ -392,15 +429,37 @@ export class PipelineStore {
   private readonly quotationApi = inject(QuotationService);
   private readonly assetApi = inject(InstalledAssetService);
   private readonly contactApi = inject(ContactApi);
+  private readonly pipelineApi = inject(SalesPipelineService);
 
   private readonly tick = signal(0);
   readonly includeRetired = signal(false);
 
+  /** The pipeline the board shows. Null means the workspace's default. */
+  readonly pipelineId = signal<string | null>(null);
+  private readonly pipelineTick = signal(0);
+
+  private readonly pipelinesResource = rxResource({
+    params: () => (environment.useMockData ? undefined : { tick: this.pipelineTick() }),
+    stream: () => this.pipelineApi.getList().pipe(map((r) => r.items ?? [])),
+    defaultValue: MOCK_PIPELINES,
+  });
+
+  /** Every pipeline with its stages, default first. */
+  readonly pipelines = computed<SalesPipelineDto[]>(() =>
+    environment.useMockData ? MOCK_PIPELINES : this.pipelinesResource.value(),
+  );
+
+  /** The pipeline on screen: the chosen one, else the default. */
+  readonly currentPipeline = computed(() => {
+    const all = this.pipelines();
+    return all.find((p) => p.id === this.pipelineId()) ?? all.find((p) => p.isDefault) ?? all[0];
+  });
+
   private readonly boardResource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.tick() }),
-    stream: () =>
+    params: () => (environment.useMockData ? undefined : { tick: this.tick(), pipeline: this.pipelineId() }),
+    stream: ({ params }) =>
       this.enquiryApi
-        .getBoard({ openOnly: true })
+        .getBoard({ openOnly: true, pipelineId: params.pipeline })
         .pipe(map((r) => (r.items ?? []).map(boardColumn))),
     defaultValue: SEED_BOARD,
   });
@@ -447,6 +506,82 @@ export class PipelineStore {
 
   private reload(): void {
     this.tick.update((n) => n + 1);
+  }
+
+  /** Where a card or drawer goes when advanced: the next stage of its pipeline, up to and including Won. */
+  nextStageOf(pipelineId: string | undefined, stageId: string | undefined, bucket: Stage): { stageId: string; label: string } | undefined {
+    if (environment.useMockData) {
+      const order: Stage[] = ['new', 'qualified', 'siteVisit', 'quoted', 'negotiation', 'won'];
+      const next = order[order.indexOf(bucket) + 1];
+      return next ? { stageId: `s-${next}`, label: STAGE_LABEL[next] } : undefined;
+    }
+    const pipeline = this.pipelines().find((p) => p.id === pipelineId) ?? this.currentPipeline();
+    const stages = pipeline?.stages ?? [];
+    const at = stages.findIndex((s) => s.id === stageId);
+    const next: PipelineStageDto | undefined = at >= 0 ? stages[at + 1] : undefined;
+    return next && next.bucket !== EnquiryStage.Lost && at >= 0 && stages[at].bucket !== EnquiryStage.Won
+      ? { stageId: next.id!, label: next.name ?? '' }
+      : undefined;
+  }
+
+  async moveEnquiryToStage(id: string, stageId: string, note?: string): Promise<void> {
+    if (environment.useMockData) return;
+    await firstValueFrom(this.enquiryApi.move(id, { stageId, note: note?.trim() || undefined }));
+    this.reload();
+    this.reloadPipelines();
+  }
+
+  reloadPipelines(): void {
+    this.pipelineTick.update((n) => n + 1);
+  }
+
+  // ---- Pipeline and stage administration (settings screen) ---------------------
+
+  async createPipeline(name: string, copyFrom?: string): Promise<void> {
+    await firstValueFrom(this.pipelineApi.create({ name, copyStagesFromPipelineId: copyFrom ?? null }));
+    this.reloadPipelines();
+  }
+
+  async renamePipeline(id: string, name: string): Promise<void> {
+    await firstValueFrom(this.pipelineApi.update(id, { name }));
+    this.reloadPipelines();
+  }
+
+  async makeDefaultPipeline(id: string): Promise<void> {
+    await firstValueFrom(this.pipelineApi.setDefault(id));
+    this.reloadPipelines();
+    this.reload();
+  }
+
+  async deletePipeline(id: string, moveTo?: string): Promise<void> {
+    await firstValueFrom(this.pipelineApi.delete(id, { moveEnquiriesToPipelineId: moveTo ?? null }));
+    if (this.pipelineId() === id) this.pipelineId.set(null);
+    this.reloadPipelines();
+    this.reload();
+  }
+
+  async addStage(pipelineId: string, name: string, bucket: EnquiryStage, position?: number): Promise<void> {
+    await firstValueFrom(this.pipelineApi.addStage(pipelineId, { name, bucket, position: position ?? null }));
+    this.reloadPipelines();
+    this.reload();
+  }
+
+  async saveStage(stageId: string, name: string, bucket: EnquiryStage): Promise<void> {
+    await firstValueFrom(this.pipelineApi.updateStage(stageId, { name, bucket }));
+    this.reloadPipelines();
+    this.reload();
+  }
+
+  async reorderStages(pipelineId: string, stageIds: string[]): Promise<void> {
+    await firstValueFrom(this.pipelineApi.reorderStages(pipelineId, { stageIds }));
+    this.reloadPipelines();
+    this.reload();
+  }
+
+  async deleteStage(stageId: string, moveTo?: string): Promise<void> {
+    await firstValueFrom(this.pipelineApi.deleteStage(stageId, { moveEnquiriesToStageId: moveTo ?? null }));
+    this.reloadPipelines();
+    this.reload();
   }
 
   async moveEnquiry(
@@ -501,6 +636,7 @@ export class PipelineStore {
         'committing.',
       valueInPaise: card?.valueInPaise,
       daysInStage: card?.daysInStage ?? 0,
+      stageId: card?.stageId,
       score: card?.score,
       band: card?.band,
       scoreFactors: card?.score == null ? [] : MOCK_FACTORS,

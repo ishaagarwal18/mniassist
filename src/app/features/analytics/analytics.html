@@ -170,12 +170,38 @@
         >
           By owner
         </button>
+        <button
+          type="button"
+          [class.seg--on]="conversion().dimension === 'stage'"
+          (click)="setConversionDimension('stage')"
+        >
+          By stage
+        </button>
+        <button
+          type="button"
+          [class.seg--on]="conversion().dimension === 'pipeline'"
+          (click)="setConversionDimension('pipeline')"
+        >
+          By pipeline
+        </button>
       </div>
+      @if (pipelines().length > 1) {
+        <select
+          class="ar-field__input"
+          aria-label="Pipeline"
+          (change)="setConversionPipeline($any($event.target).value)"
+        >
+          <option value="" [selected]="!conversionPipelineId()">All pipelines</option>
+          @for (p of pipelines(); track p.id) {
+            <option [value]="p.id" [selected]="p.id === conversionPipelineId()">{{ p.name }}</option>
+          }
+        </select>
+      }
     </div>
     <table class="tbl">
       <thead>
         <tr>
-          <th>{{ conversion().dimension === 'owner' ? 'Owner' : 'Source' }}</th>
+          <th>{{ dimensionLabel(conversion().dimension) }}</th>
           <th class="num">Won</th>
           <th class="num">Lost</th>
           <th class="num">Open</th>

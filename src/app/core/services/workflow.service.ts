@@ -246,12 +246,16 @@ export class WorkflowStore {
     channelId: string,
     trigger: AutomationTriggerKind,
     keyword?: string,
+    /** Trigger config for triggers that need one, such as the stage an enquiry must reach. */
+    triggerConfig?: object,
   ): Promise<void> {
     if (environment.useMockData) return;
     const triggerConfigJson =
       trigger === AutomationTriggerKind.InboundKeyword && keyword
         ? JSON.stringify({ keywords: [keyword.trim()] })
-        : '{}';
+        : triggerConfig
+          ? JSON.stringify(triggerConfig)
+          : '{}';
     await firstValueFrom(
       this.automationApi.create({ name: name.trim(), channelId, trigger, triggerConfigJson }),
     );

@@ -1,7 +1,8 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
-import { AnalyticsRange, AnalyticsStore } from '../../core/services/analytics.service';
+import { AnalyticsRange, AnalyticsStore, ConversionDimension } from '../../core/services/analytics.service';
+import { PipelineStore } from '../../core/services/pipeline.service';
 import { AnalyticsExportFormat } from '../../proxy/analytics';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
@@ -53,8 +54,19 @@ export class ArAnalytics {
       .sort((a, b) => b.count - a.count),
   );
 
-  protected setConversionDimension(d: 'source' | 'owner'): void {
+  protected readonly pipelines = inject(PipelineStore).pipelines;
+  protected readonly conversionPipelineId = this.store.conversionPipelineId;
+
+  protected setConversionDimension(d: ConversionDimension): void {
     this.store.setConversionDimension(d);
+  }
+
+  protected setConversionPipeline(id: string): void {
+    this.store.setConversionPipeline(id || null);
+  }
+
+  protected dimensionLabel(d: string | null | undefined): string {
+    return d === 'owner' ? 'Owner' : d === 'stage' ? 'Stage' : d === 'pipeline' ? 'Pipeline' : 'Source';
   }
 
   protected readonly ranges: readonly AnalyticsRange[] = [7, 30, 90];

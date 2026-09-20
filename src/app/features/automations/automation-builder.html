@@ -322,6 +322,30 @@
               (input)="keywords.set($any($event.target).value)"
             />
           </label>
+        } @else if (trigger() === TK.EnquiryStageChanged) {
+          <label class="ar-field">
+            <span class="ar-field__label">Pipeline <span class="ar-field__opt">optional</span></span>
+            <select
+              class="ar-field__input"
+              (change)="stagePipelineId.set($any($event.target).value); stageId.set('')"
+            >
+              <option value="" [selected]="!stagePipelineId()">Any pipeline</option>
+              @for (p of pipelines(); track p.id) {
+                <option [value]="p.id" [selected]="p.id === stagePipelineId()">{{ p.name }}</option>
+              }
+            </select>
+          </label>
+          @if (stagePipelineId()) {
+            <label class="ar-field">
+              <span class="ar-field__label">When a deal reaches</span>
+              <select class="ar-field__input" (change)="stageId.set($any($event.target).value)">
+                <option value="" [selected]="!stageId()">Any stage</option>
+                @for (s of stagesOfPipeline(); track s.id) {
+                  <option [value]="s.id" [selected]="s.id === stageId()">{{ s.name }}</option>
+                }
+              </select>
+            </label>
+          }
         } @else {
           <p class="node__blurb">Trigger: {{ trigger() }} — configured on the automation list.</p>
         }

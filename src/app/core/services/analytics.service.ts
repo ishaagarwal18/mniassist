@@ -54,6 +54,8 @@ interface Bundle {
   agents: AgentPerformance[];
 }
 
+export type ConversionDimension = 'source' | 'owner' | 'stage' | 'pipeline';
+
 const SEED_CONVERSION: ConversionReportDto = {
   dimension: 'source',
   rows: [
@@ -293,7 +295,9 @@ export class AnalyticsStore {
   }
 
   // ── Conversion report (M10-8) ──────────────────────────────────────────
-  readonly conversionDimension = signal<'source' | 'owner'>('source');
+  readonly conversionDimension = signal<ConversionDimension>('source');
+  /** Limits the report to one pipeline; null covers all of them. */
+  readonly conversionPipelineId = signal<string | null>(null);
 
   private readonly conversionResource = rxResource({
     params: () =>
@@ -301,6 +305,7 @@ export class AnalyticsStore {
         ? undefined
         : {
             dimension: this.conversionDimension(),
+            pipelineId: this.conversionPipelineId(),
             fromUtc: new Date(Date.now() - this.range() * 86_400_000).toISOString(),
             channelId: this.channels.active()?.id,
           },
@@ -312,8 +317,12 @@ export class AnalyticsStore {
     environment.useMockData ? SEED_CONVERSION : this.conversionResource.value(),
   );
 
-  setConversionDimension(d: 'source' | 'owner'): void {
+  setConversionDimension(d: ConversionDimension): void {
     this.conversionDimension.set(d);
+  }
+
+  setConversionPipeline(id: string | null): void {
+    this.conversionPipelineId.set(id);
   }
 
   // ── MM Lite comparison (M05-11) ────────────────────────────────────────

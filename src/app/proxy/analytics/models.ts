@@ -50,6 +50,7 @@ export interface GetAnalyticsInput {
 
 export interface GetConversionReportInput extends GetAnalyticsInput {
   dimension?: string | null;
+  pipelineId?: string | null;
 }
 
 export interface ConversionRowDto {

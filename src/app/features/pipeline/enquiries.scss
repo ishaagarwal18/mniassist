@@ -28,3 +28,5 @@
 .card__foot { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
 .card__val { font: 600 12px var(--ar-font-sans); color: var(--ar-ink-800); }
 .card__meta { display: flex; gap: 4px; }
+
+.board__pipe { width: auto; min-width: 160px; margin-right: 8px; }

@@ -7,6 +7,7 @@ export * from './lead-source.enum';
 export * from './lost-reason-category.enum';
 export * from './models';
 export * from './quotation-state.enum';
+export * from './sales-pipeline.service';
 export * from './quotation.service';
 export * from './reminder-kind.enum';
 export * from './reminder-state.enum';

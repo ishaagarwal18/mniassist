@@ -69,6 +69,7 @@ export class AnalyticsService {
         url: '/api/auto-reach/analytics/conversion-report',
         params: {
           dimension: input.dimension,
+          pipelineId: input.pipelineId,
           fromUtc: input.fromUtc,
           toUtc: input.toUtc,
           channelId: input.channelId,

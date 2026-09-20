@@ -1,25 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 
-import {
-  EnquiryCard,
-  PickerOption,
-  PipelineStore,
-  Stage,
-} from '../../core/services/pipeline.service';
-import { EnquiryStage, LeadSource } from '../../proxy/pipeline';
+import { Router } from '@angular/router';
+
+import { EnquiryCard, PickerOption, PipelineStore } from '../../core/services/pipeline.service';
+import { LeadSource } from '../../proxy/pipeline';
 import { inrCompact } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArEnquiryDrawer } from './enquiry-drawer';
 import { ArContactPicker } from './contact-picker';
-
-const NEXT: Partial<Record<Stage, EnquiryStage>> = {
-  new: EnquiryStage.Qualified,
-  qualified: EnquiryStage.SiteVisit,
-  siteVisit: EnquiryStage.Quoted,
-  quoted: EnquiryStage.Negotiation,
-  negotiation: EnquiryStage.Won,
-};
 
 /**
  * Enquiry pipeline (M10). A column per stage; each card advances one stage at a
@@ -36,6 +25,10 @@ const NEXT: Partial<Record<Stage, EnquiryStage>> = {
 })
 export class ArEnquiries {
   private readonly store = inject(PipelineStore);
+  private readonly router = inject(Router);
+
+  protected readonly pipelines = this.store.pipelines;
+  protected readonly currentPipeline = this.store.currentPipeline;
 
   protected readonly board = this.store.board;
   protected readonly loading = this.store.loading;
@@ -88,6 +81,7 @@ export class ArEnquiries {
     try {
       await this.store.createEnquiry({
         contactId: c.id,
+        pipelineId: this.store.pipelineId() ?? undefined,
         source: this.source(),
         title: this.title().trim(),
         requirement: this.requirement().trim() || undefined,
@@ -105,15 +99,23 @@ export class ArEnquiries {
     return paise == null ? '—' : inrCompact(paise / 100);
   }
 
-  protected canAdvance(stage: Stage): boolean {
-    return NEXT[stage] != null;
+  protected next(card: EnquiryCard): { stageId: string; label: string } | undefined {
+    return this.store.nextStageOf(this.currentPipeline()?.id, card.stageId, card.stage);
   }
 
   protected async advance(card: EnquiryCard, event: Event): Promise<void> {
     event.stopPropagation();
-    const target = NEXT[card.stage];
-    if (target != null) {
-      await this.store.moveEnquiry(card.id, target);
+    const target = this.next(card);
+    if (target) {
+      await this.store.moveEnquiryToStage(card.id, target.stageId);
     }
+  }
+
+  protected choosePipeline(id: string): void {
+    this.store.pipelineId.set(id);
+  }
+
+  protected managePipelines(): void {
+    void this.router.navigate(['/enquiries/pipelines']);
   }
 }

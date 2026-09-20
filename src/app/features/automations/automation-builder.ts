@@ -16,6 +16,7 @@ import {
 } from '../../core/models/automation-graph';
 import { layoutFlowMap } from '../../core/models/automation-flow-map';
 import { OpsService } from '../../core/services/ops.service';
+import { PipelineStore } from '../../core/services/pipeline.service';
 import { TemplateService } from '../../core/services/template.service';
 import { WorkflowStore } from '../../core/services/workflow.service';
 import { WorkspaceStore } from '../../core/services/workspace.store';
@@ -91,6 +92,7 @@ export class ArAutomationBuilder {
   private readonly members = inject(WorkspaceStore).members;
   private readonly webhooks = inject(OpsService).webhooks;
   private readonly route = inject(ActivatedRoute);
+  protected readonly pipelines = inject(PipelineStore).pipelines;
 
   protected readonly TK = AutomationTriggerKind;
   protected readonly NK = AutomationNodeKind;
@@ -121,6 +123,14 @@ export class ArAutomationBuilder {
   protected readonly channelId = signal('');
   protected readonly trigger = signal<AutomationTriggerKind>(AutomationTriggerKind.InboundKeyword);
   protected readonly keywords = signal('');
+  /** The trigger config as loaded, kept so a trigger this screen cannot edit is saved back as it was. */
+  private rawTriggerConfig = '{}';
+  protected readonly stagePipelineId = signal('');
+  protected readonly stageId = signal('');
+
+  protected stagesOfPipeline() {
+    return this.pipelines().find((p) => p.id === this.stagePipelineId())?.stages ?? [];
+  }
   protected readonly steps = signal<BuilderStep[]>([]);
 
   /** Set when the stored graph has a shape the list cannot show — saving is then blocked. */
@@ -151,8 +161,15 @@ export class ArAutomationBuilder {
       this.channelId.set(dto.channelId ?? '');
       this.trigger.set(dto.trigger ?? AutomationTriggerKind.InboundKeyword);
       try {
-        const tc = JSON.parse(dto.triggerConfigJson || '{}') as { keywords?: string[] };
+        this.rawTriggerConfig = dto.triggerConfigJson || '{}';
+        const tc = JSON.parse(this.rawTriggerConfig) as {
+          keywords?: string[];
+          pipelineId?: string;
+          stageId?: string;
+        };
         this.keywords.set((tc.keywords ?? []).join(', '));
+        this.stagePipelineId.set(tc.pipelineId ?? '');
+        this.stageId.set(tc.stageId ?? '');
       } catch {
         this.keywords.set('');
       }
@@ -422,6 +439,13 @@ export class ArAutomationBuilder {
         .filter(Boolean);
       return JSON.stringify({ keywords: kw });
     }
-    return '{}';
+    if (this.trigger() === AutomationTriggerKind.EnquiryStageChanged) {
+      return JSON.stringify({
+        pipelineId: this.stagePipelineId() || undefined,
+        stageId: this.stageId() || undefined,
+      });
+    }
+    // Every other trigger (a segment drip's segment, for one) is configured elsewhere: save it back untouched.
+    return this.rawTriggerConfig;
   }
 }

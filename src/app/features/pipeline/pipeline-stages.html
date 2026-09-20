@@ -1,0 +1,171 @@
+<ar-topbar
+  title="Pipelines"
+  subtitle="Your sales processes and their stages"
+  help="Run more than one sales process, each with its own stages. Every stage counts as one of the built-in seven, which is what scoring, reports, CRM sync and automations look at. Won and Lost are always last."
+>
+  <button ar-button variant="primary" icon="plus" (click)="open({ kind: 'pipeline' })">New pipeline</button>
+</ar-topbar>
+
+<div class="pl ar-scroll">
+  @if (error() && !dialog()) {
+    <p class="pl__err">{{ error() }}</p>
+  }
+
+  <nav class="pl__tabs" aria-label="Pipelines">
+    @for (p of pipelines(); track p.id) {
+      <button
+        type="button"
+        class="pl__tab"
+        [class.pl__tab--on]="p.id === selected()?.id"
+        (click)="select(p.id)"
+      >
+        {{ p.name }}
+        @if (p.isDefault) {
+          <ar-chip tone="teal">Default</ar-chip>
+        }
+      </button>
+    }
+  </nav>
+
+  @if (selected(); as p) {
+    <section class="pl__head">
+      <div>
+        <h2 class="pl__name">{{ p.name }}</h2>
+        <p class="pl__meta">{{ p.enquiryCount }} enquir{{ p.enquiryCount === 1 ? 'y' : 'ies' }} · {{ p.stages?.length }} stages</p>
+      </div>
+      <div class="pl__actions">
+        <button ar-button variant="ghost" (click)="open({ kind: 'rename-pipeline', pipeline: p })">Rename</button>
+        @if (!p.isDefault) {
+          <button ar-button variant="ghost" [disabled]="busy()" (click)="makeDefault(p)">Make default</button>
+          <button ar-button variant="ghost" (click)="open({ kind: 'delete-pipeline', pipeline: p })">Delete</button>
+        }
+      </div>
+    </section>
+
+    <ol class="st">
+      @for (s of p.stages; track s.id) {
+        <li class="st__row" [class.st__row--fixed]="s.isFixed">
+          <div class="st__main">
+            <span class="st__name">{{ s.name }}</span>
+            <span class="st__counts">counts as {{ bucketLabel(s.bucket) }}</span>
+          </div>
+          @if (!s.isFixed) {
+            <ar-chip tone="neutral">{{ s.enquiryCount }} open</ar-chip>
+          } @else {
+            <ar-chip tone="neutral">Built in</ar-chip>
+          }
+          <div class="st__actions">
+            @if (!s.isFixed) {
+              <button ar-button variant="ghost" aria-label="Move earlier" [disabled]="busy() || !canMove(s, -1)" (click)="move(s, -1)">↑</button>
+              <button ar-button variant="ghost" aria-label="Move later" [disabled]="busy() || !canMove(s, 1)" (click)="move(s, 1)">↓</button>
+            }
+            <button ar-button variant="ghost" (click)="open({ kind: 'stage', stage: s })">{{ s.isFixed ? 'Rename' : 'Edit' }}</button>
+            @if (!s.isFixed && openStages().length > 1) {
+              <button ar-button variant="ghost" (click)="open({ kind: 'delete-stage', stage: s })">Delete</button>
+            }
+          </div>
+        </li>
+      }
+    </ol>
+
+    <div class="pl__add">
+      <button ar-button variant="primary" icon="plus" (click)="open({ kind: 'stage', stage: null })">Add stage</button>
+      <p class="pl__note">New stages go after the last open stage; reorder with the arrows. Won and Lost always stay last.</p>
+    </div>
+  }
+</div>
+
+@if (dialog(); as d) {
+  <ar-dialog
+    [title]="d.kind === 'pipeline' ? 'New pipeline' : d.kind === 'rename-pipeline' ? 'Rename pipeline' : d.kind === 'stage' ? (d.stage ? 'Edit stage' : 'Add stage') : d.kind === 'delete-pipeline' ? 'Delete pipeline' : 'Delete stage'"
+    (dismiss)="close()"
+  >
+    @switch (d.kind) {
+      @case ('delete-pipeline') {
+        <p class="dlg__text">
+          Delete <b>{{ d.pipeline.name }}</b
+          >?
+          @if ((d.pipeline.enquiryCount ?? 0) > 0) {
+            It still has {{ d.pipeline.enquiryCount }} enquir{{ d.pipeline.enquiryCount === 1 ? 'y' : 'ies' }}: choose where they go. Each lands in the matching stage.
+          }
+        </p>
+        @if ((d.pipeline.enquiryCount ?? 0) > 0) {
+          <label class="ar-field">
+            <span class="ar-field__label">Move enquiries to</span>
+            <select class="ar-field__input" (change)="moveTo.set($any($event.target).value)">
+              <option value="">Choose a pipeline…</option>
+              @for (o of others(d.pipeline); track o.id) {
+                <option [value]="o.id">{{ o.name }}</option>
+              }
+            </select>
+          </label>
+        }
+      }
+      @case ('delete-stage') {
+        <p class="dlg__text">
+          Delete the <b>{{ d.stage.name }}</b> stage?
+          @if ((d.stage.enquiryCount ?? 0) > 0) {
+            {{ d.stage.enquiryCount }} open enquir{{ d.stage.enquiryCount === 1 ? 'y is' : 'ies are' }} in it: choose where they go.
+          }
+        </p>
+        @if ((d.stage.enquiryCount ?? 0) > 0) {
+          <label class="ar-field">
+            <span class="ar-field__label">Move enquiries to</span>
+            <select class="ar-field__input" (change)="moveTo.set($any($event.target).value)">
+              <option value="">Choose a stage…</option>
+              @for (o of otherOpenStages(d.stage); track o.id) {
+                <option [value]="o.id">{{ o.name }}</option>
+              }
+            </select>
+          </label>
+        }
+      }
+      @default {
+        <label class="ar-field">
+          <span class="ar-field__label">Name</span>
+          <input
+            class="ar-field__input"
+            maxlength="64"
+            [value]="name()"
+            (input)="name.set($any($event.target).value)"
+          />
+        </label>
+        @if (d.kind === 'pipeline') {
+          <label class="ar-field">
+            <span class="ar-field__label">Start from <span class="ar-field__opt">optional</span></span>
+            <select class="ar-field__input" (change)="copyFrom.set($any($event.target).value)">
+              <option value="">The standard seven stages</option>
+              @for (o of pipelines(); track o.id) {
+                <option [value]="o.id">Copy of {{ o.name }}</option>
+              }
+            </select>
+          </label>
+        }
+        @if (d.kind === 'stage' && !d.stage?.isFixed) {
+          <label class="ar-field">
+            <span class="ar-field__label">Counts as</span>
+            <select class="ar-field__input" (change)="bucket.set(+$any($event.target).value)">
+              @for (b of buckets; track b.value) {
+                <option [value]="b.value" [selected]="b.value === bucket()">{{ b.label }} — {{ b.hint }}</option>
+              }
+            </select>
+          </label>
+          <p class="dlg__text dlg__text--quiet">
+            Scoring, reports, CRM sync and automations treat this stage as the one you pick.
+          </p>
+        }
+      }
+    }
+
+    @if (error()) {
+      <p class="pl__err">{{ error() }}</p>
+    }
+
+    <div dialogActions>
+      <button ar-button variant="ghost" (click)="close()">Cancel</button>
+      <button ar-button variant="primary" [disabled]="busy()" (click)="saveDialog()">
+        {{ busy() ? 'Saving…' : d.kind === 'delete-pipeline' || d.kind === 'delete-stage' ? 'Delete' : 'Save' }}
+      </button>
+    </div>
+  </ar-dialog>
+}

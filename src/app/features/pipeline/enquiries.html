@@ -3,6 +3,16 @@
   [subtitle]="openCount() + ' open · ' + value(pipelineValue()) + ' in play'"
   help="A board over your real sales pipeline — moving a card's stage here updates the actual record, it isn't a separate local view."
 >
+  <select
+    class="ar-field__input board__pipe"
+    aria-label="Pipeline"
+    (change)="choosePipeline($any($event.target).value)"
+  >
+    @for (p of pipelines(); track p.id) {
+      <option [value]="p.id" [selected]="p.id === currentPipeline()?.id">{{ p.name }}</option>
+    }
+  </select>
+  <button ar-button type="button" variant="ghost" (click)="managePipelines()">Pipelines</button>
   <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
     New enquiry
   </button>
@@ -75,7 +85,7 @@
   @if (loading()) {
     <p class="board__empty">Loading the pipeline…</p>
   }
-  @for (col of board(); track col.stage) {
+  @for (col of board(); track col.stageId ?? col.stage) {
     <section class="col">
       <header class="col__head">
         <h2 class="col__t">{{ col.label }}</h2>
@@ -112,9 +122,9 @@
                 >
               </div>
             </div>
-            @if (canAdvance(card.stage)) {
+            @if (next(card); as n) {
               <button ar-button type="button" variant="ghost" (click)="advance(card, $event)">
-                Advance →
+                Advance → {{ n.label }}
               </button>
             }
           </article>

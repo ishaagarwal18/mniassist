@@ -6,6 +6,7 @@ import type {
   GetEnquiryBoardInput,
   GetEnquiryListInput,
   MoveEnquiryInput,
+  MoveEnquiryToPipelineInput,
 } from './models';
 import { RestService, Rest } from '@abp/ng.core';
 import type { ListResultDto, PagedResultDto } from '@abp/ng.core';
@@ -75,7 +76,12 @@ export class EnquiryService {
         method: 'GET',
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/enquiry/board',
-        params: { ownerUserId: input.ownerUserId, source: input.source, openOnly: input.openOnly },
+        params: {
+          pipelineId: input.pipelineId,
+          ownerUserId: input.ownerUserId,
+          source: input.source,
+          openOnly: input.openOnly,
+        },
       },
       { apiName: this.apiName, ...config },
     );
@@ -98,6 +104,7 @@ export class EnquiryService {
         url: '/api/auto-reach/enquiry',
         params: {
           stage: input.stage,
+          pipelineId: input.pipelineId,
           ownerUserId: input.ownerUserId,
           filter: input.filter,
           sorting: input.sorting,
@@ -114,6 +121,17 @@ export class EnquiryService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/enquiry/${id}/move`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  moveToPipeline = (id: string, input: MoveEnquiryToPipelineInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, EnquiryDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/enquiry/${id}/move-to-pipeline`,
         body: input,
       },
       { apiName: this.apiName, ...config },

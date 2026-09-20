@@ -9,17 +9,9 @@ import {
 } from '@angular/core';
 
 import { EnquiryStage, LostReasonCategory } from '../../proxy/pipeline';
-import { EnquiryDetail, PipelineStore, Stage } from '../../core/services/pipeline.service';
+import { EnquiryDetail, PipelineStore } from '../../core/services/pipeline.service';
 import { inrCompact } from '../../core/util/format';
 import { ArButton, ArChip } from '../../ui';
-
-const NEXT: Partial<Record<Stage, { stage: EnquiryStage; label: string }>> = {
-  new: { stage: EnquiryStage.Qualified, label: 'Qualified' },
-  qualified: { stage: EnquiryStage.SiteVisit, label: 'Site visit' },
-  siteVisit: { stage: EnquiryStage.Quoted, label: 'Quoted' },
-  quoted: { stage: EnquiryStage.Negotiation, label: 'Negotiation' },
-  negotiation: { stage: EnquiryStage.Won, label: 'Won' },
-};
 
 /**
  * The enquiry card, opened. A slide-over rather than a route because the board is
@@ -54,7 +46,7 @@ const NEXT: Partial<Record<Stage, { stage: EnquiryStage; label: string }>> = {
           <div class="facts">
             <div>
               <span class="facts__k">Stage</span
-              ><ar-chip tone="neutral">{{ label(d.stage) }}</ar-chip>
+              ><ar-chip tone="neutral">{{ d.stageName ?? label(d.stage) }}</ar-chip>
             </div>
             <div>
               <span class="facts__k">Value</span
@@ -97,14 +89,14 @@ const NEXT: Partial<Record<Stage, { stage: EnquiryStage; label: string }>> = {
             <p class="req">{{ d.requirement ?? 'Nothing recorded yet.' }}</p>
           </section>
 
-          @if (next(d.stage); as n) {
+          @if (next(d); as n) {
             <div class="advance">
               <button
                 ar-button
                 type="button"
                 variant="primary"
                 [disabled]="busy()"
-                (click)="advance(d, n.stage)"
+                (click)="advance(d, n.stageId)"
               >
                 Advance to {{ n.label }}
               </button>
@@ -472,8 +464,8 @@ export class ArEnquiryDrawer {
     { value: LostReasonCategory.Other, label: 'Other' },
   ];
 
-  protected next(stage: Stage): { stage: EnquiryStage; label: string } | undefined {
-    return NEXT[stage];
+  protected next(d: EnquiryDetail): { stageId: string; label: string } | undefined {
+    return this.store.nextStageOf(d.pipelineId, d.stageId, d.stage);
   }
 
   constructor() {
@@ -485,7 +477,7 @@ export class ArEnquiryDrawer {
     });
   }
 
-  protected label(stage: Stage): string {
+  protected label(stage: string): string {
     return stage.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
   }
 
@@ -498,10 +490,10 @@ export class ArEnquiryDrawer {
     return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
   }
 
-  protected async advance(d: EnquiryDetail, stage: EnquiryStage): Promise<void> {
+  protected async advance(d: EnquiryDetail, stageId: string): Promise<void> {
     this.busy.set(true);
     try {
-      await this.store.moveEnquiry(d.id, stage);
+      await this.store.moveEnquiryToStage(d.id, stageId);
       this.changed.emit();
       this.detail.set(await this.store.loadEnquiry(d.id));
     } finally {
