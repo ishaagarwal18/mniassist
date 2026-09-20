@@ -5,6 +5,7 @@ import type {
   CampaignRecipientDto,
   CampaignReportDto,
   ConfigureAbTestInput,
+  ConfigureSendTimeInput,
   CreateUpdateCampaignDto,
   GetCampaignListInput,
   GetCampaignRecipientsInput,
@@ -111,6 +112,17 @@ export class CampaignService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/campaign/${id}/configure-ab-test`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  configureSendTime = (id: string, input: ConfigureSendTimeInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CampaignDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/campaign/${id}/configure-send-time`,
         body: input,
       },
       { apiName: this.apiName, ...config },

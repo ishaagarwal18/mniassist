@@ -131,6 +131,10 @@ export interface AbTestVariantInput {
   weight?: number;
 }
 
+export interface ConfigureSendTimeInput {
+  optimise: boolean;
+}
+
 export interface ConfigureAbTestInput {
   metric?: AbTestMetric;
   testPercent?: number;

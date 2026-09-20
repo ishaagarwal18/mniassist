@@ -27,6 +27,8 @@ export interface Campaign {
   estimatedCostInPaise: number;
   optOutRate: number;
   suspendReason?: string;
+  /** Hold each recipient until the hour they usually message us (M05-12). */
+  optimiseSendTime: boolean;
 }
 
 export interface PreflightOutcome {
@@ -91,6 +93,7 @@ function toCampaign(c: CampaignDto): Campaign {
     estimatedCostInPaise: c.estimatedCostInPaise ?? 0,
     optOutRate: c.optOutRate ?? 0,
     suspendReason: c.suspendReason ?? undefined,
+    optimiseSendTime: c.optimiseSendTime ?? false,
   };
 }
 function toPreflight(p: CampaignPreflightDto): Preflight {
@@ -144,6 +147,7 @@ const SEED: Campaign[] = [
     estimatedRecipients: 1_347,
     estimatedCostInPaise: 3_780_00,
     optOutRate: 0.002,
+    optimiseSendTime: false,
   },
   {
     id: 'c-2',
@@ -155,6 +159,7 @@ const SEED: Campaign[] = [
     estimatedRecipients: 612,
     estimatedCostInPaise: 5_282_00,
     optOutRate: 0.004,
+    optimiseSendTime: false,
   },
   {
     id: 'c-3',
@@ -167,6 +172,7 @@ const SEED: Campaign[] = [
     estimatedRecipients: 196,
     estimatedCostInPaise: 1_690_00,
     optOutRate: 0,
+    optimiseSendTime: false,
   },
   {
     id: 'c-4',
@@ -178,6 +184,7 @@ const SEED: Campaign[] = [
     estimatedRecipients: 284,
     estimatedCostInPaise: 0,
     optOutRate: 0,
+    optimiseSendTime: false,
   },
 ];
 
@@ -196,7 +203,14 @@ export class CampaignStore {
   });
 
   readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
-  readonly campaigns = computed(() => (environment.useMockData ? SEED : this.resource.value()));
+  // Mock mode has no server to hold the toggle, so it lives here for the session.
+  private readonly mockOptimise = signal<Record<string, boolean>>({});
+
+  readonly campaigns = computed(() =>
+    environment.useMockData
+      ? SEED.map((c) => ({ ...c, optimiseSendTime: this.mockOptimise()[c.id] ?? c.optimiseSendTime }))
+      : this.resource.value(),
+  );
 
   private reload(): void {
     this.tick.update((n) => n + 1);
@@ -222,6 +236,20 @@ export class CampaignStore {
   }
   async cancel(id: string): Promise<void> {
     await firstValueFrom(this.api.cancel(id));
+    this.reload();
+  }
+
+  /**
+   * Send-time optimisation (M05-12). A dedicated call rather than a campaign update: the
+   * update replaces the audience, throttle and content, and a toggle must not be able to.
+   * Only draft and scheduled campaigns accept it.
+   */
+  async setOptimiseSendTime(id: string, optimise: boolean): Promise<void> {
+    if (environment.useMockData) {
+      this.mockOptimise.update((m) => ({ ...m, [id]: optimise }));
+      return;
+    }
+    await firstValueFrom(this.api.configureSendTime(id, { optimise }));
     this.reload();
   }
 

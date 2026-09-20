@@ -123,6 +123,29 @@ export class ArCampaignBuilder {
 
   protected canSend = computed(() => this.preflight()?.canSend ?? false);
 
+  protected readonly savingTiming = signal(false);
+
+  /**
+   * Send-time optimisation (M05-12). Saved the moment it is toggled, on its own call, so
+   * it cannot disturb the rest of the campaign. If the save fails the checkbox is put back
+   * — Angular will not re-apply an unchanged binding, so without this the box would show
+   * a setting the server never accepted.
+   */
+  protected async setOptimise(c: Campaign, event: Event): Promise<void> {
+    const box = event.target as HTMLInputElement;
+    const wanted = box.checked;
+    this.savingTiming.set(true);
+    this.error.set(null);
+    try {
+      await this.store.setOptimiseSendTime(c.id, wanted);
+    } catch (e: unknown) {
+      box.checked = c.optimiseSendTime;
+      this.error.set(e instanceof Error ? e.message : 'The send-time setting could not be saved.');
+    } finally {
+      this.savingTiming.set(false);
+    }
+  }
+
   private async act(fn: () => Promise<void>): Promise<void> {
     this.busy.set(true);
     this.error.set(null);

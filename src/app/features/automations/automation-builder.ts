@@ -1,113 +1,84 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
-import { WorkflowStore } from '../../core/services/workflow.service';
+import {
+  BuilderStep,
+  appendStep,
+  graphToSteps,
+  isBranching,
+  moveStep,
+  nextLocalId,
+  removeStep,
+  stepsToGraph,
+  updateStep,
+} from '../../core/models/automation-graph';
+import { OpsService } from '../../core/services/ops.service';
 import { TemplateService } from '../../core/services/template.service';
-import { AutomationNodeDto, CreateUpdateAutomationNodeDto } from '../../proxy/automation';
+import { WorkflowStore } from '../../core/services/workflow.service';
+import { WorkspaceStore } from '../../core/services/workspace.store';
 import { AutomationNodeKind, AutomationTriggerKind } from '../../proxy/messaging';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArIcon } from '../../ui';
 import { IconName } from '../../ui/icon';
 
-interface BuilderStep {
-  localId: string;
-  kind: AutomationNodeKind;
-  config: Record<string, unknown>;
-  entered?: number;
-  exited?: number;
-}
-
 const KIND_META: Record<
   AutomationNodeKind,
   { label: string; icon: IconName; blurb: string; addable: boolean }
 > = {
-  [AutomationNodeKind.Trigger]: {
-    label: 'Trigger',
-    icon: 'automation',
-    blurb: 'Starts the automation',
-    addable: false,
-  },
-  [AutomationNodeKind.SendSessionMessage]: {
-    label: 'Send a message',
-    icon: 'send',
-    blurb: 'Free-form, inside the window',
-    addable: true,
-  },
-  [AutomationNodeKind.SendTemplate]: {
-    label: 'Send a template',
-    icon: 'template',
-    blurb: 'An approved template',
-    addable: true,
-  },
-  [AutomationNodeKind.Wait]: {
-    label: 'Wait',
-    icon: 'clock',
-    blurb: 'Pause before the next step',
-    addable: true,
-  },
-  [AutomationNodeKind.Condition]: {
-    label: 'Only continue if…',
-    icon: 'filter',
-    blurb: 'Stop unless the contact matches',
-    addable: true,
-  },
-  [AutomationNodeKind.AssignAgent]: {
-    label: 'Assign to an agent',
-    icon: 'user',
-    blurb: 'Hand the conversation over',
-    addable: true,
-  },
-  [AutomationNodeKind.UpdateAttribute]: {
-    label: 'Set an attribute',
-    icon: 'contacts',
-    blurb: 'Tag or update the contact',
-    addable: true,
-  },
-  [AutomationNodeKind.CreateEnquiry]: {
-    label: 'Create an enquiry',
-    icon: 'enquiry',
-    blurb: 'Open a pipeline card',
-    addable: true,
-  },
-  [AutomationNodeKind.Webhook]: {
-    label: 'Call a webhook',
-    icon: 'link',
-    blurb: 'POST to your own system',
-    addable: true,
-  },
-  [AutomationNodeKind.StartFlow]: {
-    label: 'Start a flow',
-    icon: 'flow',
-    blurb: 'Run an in-chat form',
-    addable: true,
-  },
-  [AutomationNodeKind.WaitForReply]: {
-    label: 'Wait for a reply',
-    icon: 'clock',
-    blurb: 'Branch on whether they respond',
-    addable: true,
-  },
-  [AutomationNodeKind.End]: {
-    label: 'End',
-    icon: 'check',
-    blurb: 'The journey stops',
-    addable: false,
-  },
+  [AutomationNodeKind.Trigger]: { label: 'Trigger', icon: 'automation', blurb: 'Starts the automation', addable: false },
+  [AutomationNodeKind.SendSessionMessage]: { label: 'Send a message', icon: 'send', blurb: 'Free-form, inside the window', addable: true },
+  [AutomationNodeKind.SendTemplate]: { label: 'Send a template', icon: 'template', blurb: 'An approved template', addable: true },
+  [AutomationNodeKind.Wait]: { label: 'Wait', icon: 'clock', blurb: 'Pause before the next step', addable: true },
+  [AutomationNodeKind.Condition]: { label: 'If…', icon: 'filter', blurb: 'Branch on the contact', addable: true },
+  [AutomationNodeKind.AssignAgent]: { label: 'Assign to an agent', icon: 'user', blurb: 'Hand the conversation over', addable: true },
+  [AutomationNodeKind.UpdateAttribute]: { label: 'Set an attribute', icon: 'contacts', blurb: 'Tag or update the contact', addable: true },
+  [AutomationNodeKind.CreateEnquiry]: { label: 'Create an enquiry', icon: 'enquiry', blurb: 'Open a pipeline card', addable: true },
+  [AutomationNodeKind.Webhook]: { label: 'Call a webhook', icon: 'link', blurb: 'Notify one of your endpoints', addable: true },
+  // The engine has no handler for this kind yet — it just moves on — so it is not offered.
+  // An existing one is still shown, with a warning, so it is not silently dropped.
+  [AutomationNodeKind.StartFlow]: { label: 'Start a flow', icon: 'flow', blurb: 'Run an in-chat form', addable: false },
+  [AutomationNodeKind.WaitForReply]: { label: 'Wait for a reply', icon: 'clock', blurb: 'Branch on whether they respond', addable: true },
+  [AutomationNodeKind.End]: { label: 'End', icon: 'check', blurb: 'The journey stops', addable: false },
 };
 
-let counter = 0;
-const nextLocalId = () => `s${++counter}`;
+/** The fields AutomationEngine.ResolveField can read — anything else evaluates to nothing. */
+const CONDITION_FIELDS: { value: string; label: string }[] = [
+  { value: 'contact.name', label: 'Name' },
+  { value: 'contact.company', label: 'Company' },
+  { value: 'contact.city', label: 'City' },
+  { value: 'contact.state', label: 'State' },
+  { value: 'contact.role', label: 'Role' },
+  { value: 'contact.language', label: 'Language' },
+  { value: 'contact.consentScope', label: 'Consent' },
+  { value: 'contact.suppression', label: 'Suppression' },
+];
+const CUSTOM_ATTRIBUTE = 'attr.';
+
+/** The operators AutomationEngine.Compare evaluates. */
+const OPERATORS: { value: string; label: string; needsValue: boolean }[] = [
+  { value: 'equals', label: 'is', needsValue: true },
+  { value: 'notEquals', label: 'is not', needsValue: true },
+  { value: 'contains', label: 'contains', needsValue: true },
+  { value: 'isNotEmpty', label: 'is filled in', needsValue: false },
+  { value: 'isEmpty', label: 'is empty', needsValue: false },
+  { value: 'greaterThan', label: 'is greater than', needsValue: true },
+  { value: 'lessThan', label: 'is less than', needsValue: true },
+];
+
+type WaitUnit = 'minutes' | 'hours' | 'days';
+const UNIT_MINUTES: Record<WaitUnit, number> = { minutes: 1, hours: 60, days: 1440 };
 
 /**
- * The automation step builder (M07-2). The graph is drawn as a vertical chain
- * rather than a free canvas: the domain never gives a node more than two outputs, and
- * for a keyword bot or a drip sequence a list reads more clearly than boxes and
- * arrows. A "Only continue if…" step is the one branch — it carries on when the
- * contact matches and ends the journey when they do not.
+ * The automation step builder (M07-2): a step list, not a canvas. Two steps branch — an
+ * "If…" and a "Wait for a reply" — and each carries an "Otherwise" list of its own that
+ * runs when the condition fails or no reply arrives. The steps after a branching step are
+ * its "true" path. See <c>automation-graph.ts</c> for exactly what shape that allows and
+ * why a stored graph outside it is left untouched instead of being flattened.
  */
 @Component({
   selector: 'ar-automation-builder',
-  imports: [RouterLink, ArTopbar, ArButton, ArChip, ArIcon],
+  imports: [RouterLink, NgTemplateOutlet, ArTopbar, ArButton, ArChip, ArIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './automation-builder.html',
   styleUrl: './automation-builder.scss',
@@ -115,11 +86,16 @@ const nextLocalId = () => `s${++counter}`;
 export class ArAutomationBuilder {
   private readonly store = inject(WorkflowStore);
   private readonly templates = inject(TemplateService);
+  private readonly members = inject(WorkspaceStore).members;
+  private readonly webhooks = inject(OpsService).webhooks;
   private readonly route = inject(ActivatedRoute);
 
   protected readonly TK = AutomationTriggerKind;
   protected readonly NK = AutomationNodeKind;
   protected readonly kindMeta = KIND_META;
+  protected readonly conditionFields = CONDITION_FIELDS;
+  protected readonly operators = OPERATORS;
+  protected readonly units: WaitUnit[] = ['minutes', 'hours', 'days'];
   protected readonly addableKinds = Object.entries(KIND_META)
     .filter(([, m]) => m.addable)
     .map(([k, m]) => ({ kind: Number(k) as AutomationNodeKind, ...m }));
@@ -127,8 +103,15 @@ export class ArAutomationBuilder {
   protected readonly templateOptions = computed(() =>
     this.templates.all().map((t) => ({ id: t.id, name: t.name })),
   );
-  protected readonly flowOptions = computed(() =>
-    this.store.flows().map((f) => ({ id: f.id, name: f.name })),
+  protected readonly agentOptions = computed(() =>
+    this.members()
+      .filter((m) => m.isActive)
+      .map((m) => ({ id: m.userId, name: m.name || m.userName })),
+  );
+  protected readonly webhookOptions = computed(() =>
+    this.webhooks()
+      .filter((w) => w.enabled)
+      .map((w) => ({ id: w.id, name: w.description || w.url })),
   );
 
   protected readonly automationId = signal('');
@@ -138,10 +121,19 @@ export class ArAutomationBuilder {
   protected readonly keywords = signal('');
   protected readonly steps = signal<BuilderStep[]>([]);
 
+  /** Set when the stored graph has a shape the list cannot show — saving is then blocked. */
+  protected readonly notRepresentable = signal<string | null>(null);
+
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
+  protected readonly saved = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly addingAfter = signal<number | null>(null);
+
+  /** Which list's "add a step" menu is open: 'root', or the id of the step that owns the branch. */
+  protected readonly addMenu = signal<string | null>(null);
+
+  /** Everything that would make the saved automation do nothing, in reading order. */
+  protected readonly issues = computed(() => this.collectIssues(this.steps(), ''));
 
   constructor() {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
@@ -162,118 +154,206 @@ export class ArAutomationBuilder {
       } catch {
         this.keywords.set('');
       }
-      this.steps.set(this.chainToSteps(dto.nodes ?? []));
+
+      const parsed = graphToSteps(dto.nodes ?? []);
+      this.steps.set(parsed.steps);
+      this.notRepresentable.set(parsed.representable ? null : (parsed.reason ?? 'an unsupported shape'));
     } finally {
       this.loading.set(false);
     }
   }
 
-  /** Follows nextNodeId / trueNodeId from the trigger into a flat list. */
-  private chainToSteps(nodes: AutomationNodeDto[]): BuilderStep[] {
-    const byId = new Map(nodes.map((n) => [n.id!, n]));
-    const trigger = nodes.find((n) => n.kind === AutomationNodeKind.Trigger);
-    const out: BuilderStep[] = [];
-    const seen = new Set<string>();
-    let cursor = trigger?.nextNodeId ?? null;
-
-    while (cursor && byId.has(cursor) && !seen.has(cursor)) {
-      seen.add(cursor);
-      const node = byId.get(cursor)!;
-      if (node.kind === AutomationNodeKind.End) break;
-      out.push({
-        localId: nextLocalId(),
-        kind: node.kind ?? AutomationNodeKind.SendSessionMessage,
-        config: this.parse(node.configJson),
-        entered: node.enteredCount,
-        exited: node.exitedCount,
-      });
-      cursor =
-        node.kind === AutomationNodeKind.Condition || node.kind === AutomationNodeKind.WaitForReply
-          ? (node.trueNodeId ?? null)
-          : (node.nextNodeId ?? null);
-    }
-    return out;
-  }
-
-  private parse(json: string | null | undefined): Record<string, unknown> {
-    try {
-      return json ? (JSON.parse(json) as Record<string, unknown>) : {};
-    } catch {
-      return {};
-    }
-  }
-
-  // ---- Step editing ---------------------------------------------------
+  // ---- Reading a step's config ---------------------------------------------
 
   protected cfg(step: BuilderStep, key: string): string {
     const v = step.config[key];
     return v == null ? '' : String(v);
   }
 
-  protected setCfg(index: number, key: string, value: string): void {
-    this.steps.update((list) =>
-      list.map((s, i) => (i === index ? { ...s, config: { ...s.config, [key]: value } } : s)),
-    );
+  private num(step: BuilderStep, key: string): number | undefined {
+    const v = Number(step.config[key]);
+    return Number.isFinite(v) && v > 0 ? v : undefined;
   }
 
-  protected addStep(kind: AutomationNodeKind): void {
-    const at = this.addingAfter();
-    const step: BuilderStep = { localId: nextLocalId(), kind, config: this.defaultConfig(kind) };
-    this.steps.update((list) => {
-      const copy = [...list];
-      copy.splice(at == null ? copy.length : at + 1, 0, step);
-      return copy;
-    });
-    this.addingAfter.set(null);
+  protected isBranching = isBranching;
+
+  protected meta(kind: AutomationNodeKind) {
+    return KIND_META[kind];
+  }
+
+  protected label(kind: AutomationNodeKind): string {
+    return KIND_META[kind]?.label ?? 'Step';
+  }
+
+  protected runsNothing(kind: AutomationNodeKind): boolean {
+    return kind === AutomationNodeKind.StartFlow;
+  }
+
+  // ---- Editing --------------------------------------------------------------
+
+  protected setCfg(id: string, key: string, value: string): void {
+    this.patch(id, (s) => ({ ...s, config: { ...s.config, [key]: value } }));
+  }
+
+  /** Numbers are stored as numbers — the engine reads them with GetValue<int>, which throws on a string. */
+  protected setNum(id: string, key: string, value: string): void {
+    const n = Math.max(1, Math.floor(Number(value)) || 1);
+    this.patch(id, (s) => ({ ...s, config: { ...s.config, [key]: n } }));
+  }
+
+  private patch(id: string, fn: (s: BuilderStep) => BuilderStep): void {
+    this.saved.set(false);
+    this.steps.update((list) => updateStep(list, id, fn));
+  }
+
+  protected waitUnit(step: BuilderStep): WaitUnit {
+    const m = this.num(step, 'minutes') ?? 30;
+    return m % 1440 === 0 ? 'days' : m % 60 === 0 ? 'hours' : 'minutes';
+  }
+
+  protected waitAmount(step: BuilderStep): number {
+    return (this.num(step, 'minutes') ?? 30) / UNIT_MINUTES[this.waitUnit(step)];
+  }
+
+  protected setWait(step: BuilderStep, amount: number, unit: WaitUnit): void {
+    const minutes = Math.max(1, Math.floor(amount) || 1) * UNIT_MINUTES[unit];
+    this.patch(step.localId, (s) => ({ ...s, config: { ...s.config, minutes } }));
+  }
+
+  // Condition fields are either one of the contact fields or "attr.<key>" for a custom attribute.
+  protected fieldChoice(step: BuilderStep): string {
+    const f = this.cfg(step, 'field');
+    return f.toLowerCase().startsWith(CUSTOM_ATTRIBUTE) ? CUSTOM_ATTRIBUTE : f;
+  }
+
+  protected attributeKey(step: BuilderStep): string {
+    const f = this.cfg(step, 'field');
+    return f.toLowerCase().startsWith(CUSTOM_ATTRIBUTE) ? f.slice(CUSTOM_ATTRIBUTE.length) : '';
+  }
+
+  protected setFieldChoice(id: string, choice: string): void {
+    this.setCfg(id, 'field', choice);
+  }
+
+  protected setAttributeKey(id: string, key: string): void {
+    this.setCfg(id, 'field', CUSTOM_ATTRIBUTE + key.trim());
+  }
+
+  protected needsValue(step: BuilderStep): boolean {
+    return OPERATORS.find((o) => o.value === this.cfg(step, 'operator'))?.needsValue ?? true;
+  }
+
+  protected addStep(owner: string | null, kind: AutomationNodeKind): void {
+    this.saved.set(false);
+    const step: BuilderStep = {
+      localId: nextLocalId(),
+      kind,
+      config: this.defaultConfig(kind),
+      otherwise: isBranching(kind) ? [] : undefined,
+    };
+    this.steps.update((list) => appendStep(list, owner, step));
+    this.addMenu.set(null);
   }
 
   private defaultConfig(kind: AutomationNodeKind): Record<string, unknown> {
     switch (kind) {
       case AutomationNodeKind.Wait:
         return { minutes: 30 };
-      case AutomationNodeKind.Condition:
-        return { field: 'lastInboundDays', op: 'lte', value: '1' };
       case AutomationNodeKind.WaitForReply:
         return { hours: 48 };
-      case AutomationNodeKind.AssignAgent:
-        return { strategy: 'roundRobin' };
-      case AutomationNodeKind.Webhook:
-        return { url: '', method: 'POST' };
+      case AutomationNodeKind.Condition:
+        return { field: 'contact.city', operator: 'equals', value: '' };
+      case AutomationNodeKind.UpdateAttribute:
+        return { key: '', value: '' };
       case AutomationNodeKind.CreateEnquiry:
-        return { source: 'ClickToWhatsApp', title: '' };
+        return { subject: '' };
       default:
         return {};
     }
   }
 
-  protected remove(index: number): void {
-    this.steps.update((list) => list.filter((_, i) => i !== index));
+  protected remove(id: string): void {
+    this.saved.set(false);
+    this.steps.update((list) => removeStep(list, id));
   }
 
-  protected move(index: number, delta: number): void {
-    this.steps.update((list) => {
-      const to = index + delta;
-      if (to < 0 || to >= list.length) return list;
-      const copy = [...list];
-      [copy[index], copy[to]] = [copy[to], copy[index]];
-      return copy;
+  protected move(id: string, delta: -1 | 1): void {
+    this.saved.set(false);
+    this.steps.update((list) => moveStep(list, id, delta));
+  }
+
+  protected toggleAddMenu(owner: string): void {
+    this.addMenu.update((open) => (open === owner ? null : owner));
+  }
+
+  /** What the "otherwise" branch of this step is called. */
+  protected otherwiseLabel(step: BuilderStep): string {
+    return step.kind === AutomationNodeKind.WaitForReply
+      ? `If they don't reply within ${this.num(step, 'hours') ?? 48} hours`
+      : "Otherwise — when it doesn't match";
+  }
+
+  // ---- Validation -----------------------------------------------------------
+
+  private collectIssues(list: BuilderStep[], where: string): string[] {
+    const out: string[] = [];
+    list.forEach((s, i) => {
+      const at = `${where}Step ${i + 1} (${this.label(s.kind)})`;
+      switch (s.kind) {
+        case AutomationNodeKind.SendSessionMessage:
+          if (!this.cfg(s, 'text').trim()) out.push(`${at}: write the message.`);
+          break;
+        case AutomationNodeKind.SendTemplate:
+          if (!this.cfg(s, 'templateId')) out.push(`${at}: choose a template.`);
+          break;
+        case AutomationNodeKind.AssignAgent:
+          if (!this.cfg(s, 'userId')) out.push(`${at}: choose who to assign to — without one it clears the owner.`);
+          break;
+        case AutomationNodeKind.UpdateAttribute:
+          if (!this.cfg(s, 'key').trim()) out.push(`${at}: give the attribute a name.`);
+          break;
+        case AutomationNodeKind.Webhook:
+          if (!this.cfg(s, 'subscriptionId')) out.push(`${at}: choose one of your webhook endpoints.`);
+          break;
+        case AutomationNodeKind.Condition: {
+          const field = this.cfg(s, 'field');
+          const known = CONDITION_FIELDS.some((f) => f.value === field);
+          const attribute = field.toLowerCase().startsWith(CUSTOM_ATTRIBUTE) && field.length > CUSTOM_ATTRIBUTE.length;
+          if (!known && !attribute) out.push(`${at}: pick what to check — this field isn't one the engine can read.`);
+          if (!OPERATORS.some((o) => o.value === this.cfg(s, 'operator'))) out.push(`${at}: pick how to compare it.`);
+          else if (this.needsValue(s) && !this.cfg(s, 'value').trim()) out.push(`${at}: give the value to compare against.`);
+          break;
+        }
+      }
+      if (s.otherwise?.length) out.push(...this.collectIssues(s.otherwise, `${at} › otherwise › `));
     });
+    return out;
   }
 
-  // ---- Save ---------------------------------------------------------
+  // ---- Save -----------------------------------------------------------------
+
+  protected readonly canSave = computed(
+    () => !this.saving() && !this.loading() && this.notRepresentable() === null,
+  );
 
   protected async save(): Promise<void> {
+    const problems = this.issues();
+    if (problems.length > 0) {
+      this.error.set(`Fix ${problems.length} thing${problems.length === 1 ? '' : 's'} first — see the list above.`);
+      return;
+    }
+
     this.saving.set(true);
     this.error.set(null);
     try {
-      const nodes = this.buildNodes();
       await this.store.saveAutomation(this.automationId(), {
         name: this.name().trim(),
         channelId: this.channelId(),
         trigger: this.trigger(),
         triggerConfigJson: this.triggerConfigJson(),
-        nodes,
+        nodes: stepsToGraph(this.steps()),
       });
+      this.saved.set(true);
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'The automation could not be saved.');
     } finally {
@@ -290,61 +370,5 @@ export class ArAutomationBuilder {
       return JSON.stringify({ keywords: kw });
     }
     return '{}';
-  }
-
-  private uuid(): string {
-    return crypto.randomUUID();
-  }
-
-  /** Flattens the step list back into Trigger → … → End with real ids and links. */
-  private buildNodes(): CreateUpdateAutomationNodeDto[] {
-    const triggerId = this.uuid();
-    const endId = this.uuid();
-    const ids = this.steps().map(() => this.uuid());
-
-    const nodes: CreateUpdateAutomationNodeDto[] = [
-      {
-        id: triggerId,
-        kind: AutomationNodeKind.Trigger,
-        configJson: '{}',
-        nextNodeId: ids[0] ?? endId,
-        positionX: 0,
-        positionY: 0,
-      },
-    ];
-
-    this.steps().forEach((step, i) => {
-      const next = ids[i + 1] ?? endId;
-      const base: CreateUpdateAutomationNodeDto = {
-        id: ids[i],
-        kind: step.kind,
-        configJson: JSON.stringify(step.config),
-        positionX: 0,
-        positionY: (i + 1) * 120,
-      };
-      if (
-        step.kind === AutomationNodeKind.Condition ||
-        step.kind === AutomationNodeKind.WaitForReply
-      ) {
-        base.trueNodeId = next;
-        base.falseNodeId = endId;
-      } else {
-        base.nextNodeId = next;
-      }
-      nodes.push(base);
-    });
-
-    nodes.push({
-      id: endId,
-      kind: AutomationNodeKind.End,
-      configJson: '{}',
-      positionX: 0,
-      positionY: (this.steps().length + 1) * 120,
-    });
-    return nodes;
-  }
-
-  protected label(kind: AutomationNodeKind): string {
-    return KIND_META[kind].label;
   }
 }

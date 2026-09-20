@@ -67,6 +67,9 @@
             @if (c.segmentName) {
               <span> · {{ c.segmentName }}</span>
             }
+            @if (c.optimiseSendTime) {
+              <span> · best-time send</span>
+            }
           </p>
         </div>
         <div class="camp__right">
@@ -85,6 +88,26 @@
         <div class="panel">
           @if (busy() && !preflight() && !report()) {
             <p class="panel__loading">Loading…</p>
+          }
+
+          @if (c.state === 'draft' || c.state === 'scheduled') {
+            <label class="timing">
+              <input
+                type="checkbox"
+                [checked]="c.optimiseSendTime"
+                [disabled]="savingTiming()"
+                (change)="setOptimise(c, $event)"
+              />
+              <span>
+                <strong>Send at each recipient's best time</strong>
+                <span class="timing__hint">
+                  Holds each message until the hour that person usually writes to you — learned
+                  weekly from their last 90 days of replies, and only once they have at least five.
+                  Anyone without enough history goes out at the normal time, and no one is held more
+                  than a day. Takes effect when the campaign is sent.
+                </span>
+              </span>
+            </label>
           }
 
           @if (preflight(); as pf) {
