@@ -1,0 +1,352 @@
+<ar-topbar
+  title="AI assistant"
+  [subtitle]="subtitle()"
+  help="Answers inbound WhatsApp messages from your knowledge base, inside the 24-hour service window, and hands the conversation to a person whenever it isn't sure. Test it in 'Try a question' before switching it on."
+>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openArticle()">
+    Add article
+  </button>
+</ar-topbar>
+
+@if (editing(); as target) {
+  <ar-dialog
+    [title]="target.id ? 'Edit article' : 'Add a knowledge article'"
+    (dismiss)="editing.set(null)"
+  >
+    <label class="ar-field">
+      <span class="ar-field__label">Title</span>
+      <input
+        class="ar-field__input"
+        placeholder="e.g. Warranty and returns"
+        [value]="draftTitle()"
+        (input)="draftTitle.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Text</span>
+      <textarea
+        class="ar-field__input ai__textarea"
+        rows="9"
+        placeholder="Write it the way you'd want a customer to hear it. One topic per article retrieves best."
+        [value]="draftBody()"
+        (input)="draftBody.set($any($event.target).value)"
+      ></textarea>
+    </label>
+    <label class="ai__check">
+      <input
+        type="checkbox"
+        [checked]="draftEnabled()"
+        (change)="draftEnabled.set($any($event.target).checked)"
+      />
+      The assistant may answer from this article
+    </label>
+    @if (articleError(); as err) {
+      <p class="ai__err">{{ err }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="editing.set(null)">Cancel</button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="savingArticle()"
+        (click)="saveArticle()"
+      >
+        {{ savingArticle() ? 'Saving…' : 'Save article' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
+
+<div class="ai ar-scroll">
+  @if (status(); as s) {
+    @if (!s.modelConfigured) {
+      <ar-banner tone="warn">
+        No chat model is configured on this deployment (<code>Ai:Anthropic:ApiKey</code>), so the
+        assistant cannot be switched on. You can still build the knowledge base and test retrieval
+        below.
+      </ar-banner>
+    }
+    @if (!s.embeddingIsSemantic) {
+      <ar-banner tone="teal">
+        Search is using offline keyword matching, which finds shared words — part numbers and product
+        names work well — but not paraphrases. Set <code>Ai:Embeddings:VoyageApiKey</code> for
+        semantic search; every article is then re-indexed automatically.
+      </ar-banner>
+    }
+    @if (s.staleArticleCount > 0) {
+      <ar-banner tone="warn">
+        {{ s.staleArticleCount }} article{{ s.staleArticleCount === 1 ? ' is' : 's are' }} not
+        searchable yet (never indexed, or indexed by a different search model). Use Re-index below.
+      </ar-banner>
+    }
+  }
+
+  @if (error(); as e) {
+    <p class="ai__err">{{ e }}</p>
+  }
+  @if (notice(); as n) {
+    <p class="ai__notice">{{ n }}</p>
+  }
+
+  <section class="panel">
+    <h2 class="panel__title">Assistant</h2>
+
+    <label class="ai__check ai__check--lead">
+      <input
+        type="checkbox"
+        [checked]="enabled()"
+        (change)="enabled.set($any($event.target).checked)"
+      />
+      Reply to inbound WhatsApp messages automatically
+    </label>
+
+    <div class="ai__grid">
+      <label class="ar-field">
+        <span class="ar-field__label">
+          Confidence threshold — {{ score(minSimilarity()) }}
+          @if (status(); as s) {
+            <span class="ar-field__opt">(recommended {{ score(s.recommendedMinSimilarity) }} for this search model)</span>
+          }
+        </span>
+        <input
+          type="range"
+          min="0.05"
+          max="0.95"
+          step="0.01"
+          [value]="minSimilarity()"
+          (input)="minSimilarity.set(+$any($event.target).value)"
+        />
+        <span class="ai__hint">
+          The best-matching passage must score at least this or the assistant hands off instead of
+          answering. Higher is safer; lower answers more and is more often wrong.
+        </span>
+      </label>
+
+      <label class="ar-field">
+        <span class="ar-field__label">Replies per conversation before handing off</span>
+        <input
+          class="ar-field__input"
+          type="number"
+          min="1"
+          max="20"
+          [value]="maxReplies()"
+          (input)="maxReplies.set(+$any($event.target).value)"
+        />
+      </label>
+    </div>
+
+    <label class="ar-field">
+      <span class="ar-field__label">Tone and style <span class="ar-field__opt">(optional)</span></span>
+      <textarea
+        class="ar-field__input ai__textarea"
+        rows="3"
+        placeholder="e.g. Polite and concise. We are Meridian Automation, an ABB partner. Never quote prices."
+        [value]="persona()"
+        (input)="persona.set($any($event.target).value)"
+      ></textarea>
+      <span class="ai__hint">
+        Shapes tone only. It cannot make the assistant answer from outside your knowledge base.
+      </span>
+    </label>
+
+    <label class="ar-field">
+      <span class="ar-field__label">Message sent when it hands off</span>
+      <textarea
+        class="ar-field__input ai__textarea"
+        rows="2"
+        [value]="handoffMessage()"
+        (input)="handoffMessage.set($any($event.target).value)"
+      ></textarea>
+    </label>
+
+    <p class="ai__hint">
+      It also hands off — without calling the model — when a customer asks for a person, raises a
+      complaint, sends a photo or location, or when a colleague has already picked up the
+      conversation.
+    </p>
+
+    <div class="panel__actions">
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="savingSettings()"
+        (click)="saveSettings()"
+      >
+        {{ savingSettings() ? 'Saving…' : 'Save settings' }}
+      </button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="panel__title">Try a question</h2>
+    <p class="ai__hint">
+      Runs the same retrieval and the same model the assistant would use, and sends nothing.
+    </p>
+    <div class="ai__ask">
+      <input
+        class="ar-field__input"
+        placeholder="e.g. What is the warranty on the ACS580 drive?"
+        [value]="question()"
+        (input)="question.set($any($event.target).value)"
+        (keydown.enter)="ask()"
+      />
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        [disabled]="asking() || !question().trim()"
+        (click)="ask()"
+      >
+        {{ asking() ? 'Asking…' : 'Ask' }}
+      </button>
+    </div>
+
+    @if (askResult(); as r) {
+      <div class="ai__result">
+        <div class="ai__result-head">
+          <ar-chip [tone]="r.wouldAnswer ? 'good' : 'warn'" [dot]="true">
+            {{ r.wouldAnswer ? 'Would answer' : 'Would hand off' }}
+          </ar-chip>
+          <span class="ar-mono">best {{ score(r.topScore) }} · threshold {{ score(r.threshold) }}</span>
+        </div>
+        @if (r.answer) {
+          <p class="ai__answer">{{ r.answer }}</p>
+        }
+        @if (r.handoffReason) {
+          <p class="ai__hint">{{ r.handoffReason }}</p>
+        }
+        @for (p of r.passages; track $index) {
+          <div class="ai__passage">
+            <div class="ai__passage-head">
+              <span>{{ p.articleTitle }}</span>
+              <span class="ar-mono">{{ score(p.score) }}</span>
+            </div>
+            <p>{{ p.text }}</p>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="panel">
+    <header class="panel__head">
+      <h2 class="panel__title">Knowledge base</h2>
+      <div class="panel__actions">
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="busy() !== null"
+          (click)="syncLibrary()"
+        >
+          {{ busy() === 'sync' ? 'Syncing…' : 'Sync from Library' }}
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="busy() !== null"
+          (click)="reindex()"
+        >
+          {{ busy() === 'reindex' ? 'Re-indexing…' : 'Re-index' }}
+        </button>
+      </div>
+    </header>
+    <p class="ai__hint">
+      Library sync reads text from <strong>Public</strong> documents only. A document restricted to
+      verified dealers or named accounts is never put in here — the assistant would hand its
+      contents to anyone who asked.
+    </p>
+
+    <table class="ar-table">
+      <caption class="sr-only">
+        Knowledge articles
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Article</th>
+          <th scope="col">Source</th>
+          <th scope="col" class="num">Passages</th>
+          <th scope="col">Indexed</th>
+          <th scope="col">In use</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of articles(); track a.id) {
+          <tr>
+            <td>
+              {{ a.title }}
+              @if (a.lastIndexError) {
+                <div class="ai__err">{{ a.lastIndexError }}</div>
+              }
+            </td>
+            <td>
+              <ar-chip tone="neutral">{{ a.source === Source.Manual ? 'Written here' : 'Library' }}</ar-chip>
+            </td>
+            <td class="num ar-mono">{{ a.chunkCount }}</td>
+            <td class="ar-mono">{{ when(a.indexedAtUtc) }}</td>
+            <td>
+              <input
+                type="checkbox"
+                [checked]="a.isEnabled"
+                [attr.aria-label]="'Use ' + a.title"
+                (change)="toggleArticle(a)"
+              />
+            </td>
+            <td class="ai__row-actions">
+              @if (a.source === Source.Manual) {
+                <button ar-button type="button" variant="ghost" (click)="openArticle(a)">Edit</button>
+              }
+              <button ar-button type="button" variant="ghost" (click)="removeArticle(a)">Delete</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="empty">
+              Nothing here yet. Add an article, or sync your Library, so the assistant has something
+              to answer from.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2 class="panel__title">Recent decisions</h2>
+    <table class="ar-table">
+      <caption class="sr-only">
+        What the assistant did with recent messages
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Outcome</th>
+          <th scope="col">Customer asked</th>
+          <th scope="col">Assistant said / why not</th>
+          <th scope="col" class="num">Score</th>
+          <th scope="col">When</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of recent(); track r.id) {
+          <tr>
+            <td>
+              <ar-chip [tone]="outcomeTone(r.outcome)">{{ outcomeLabel(r.outcome) }}</ar-chip>
+            </td>
+            <td>{{ r.question ?? '—' }}</td>
+            <td>{{ r.answer ?? r.reason ?? '—' }}</td>
+            <td class="num ar-mono">{{ score(r.topScore) }}</td>
+            <td class="ar-mono">{{ when(r.createdAtUtc) }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="empty">No decisions yet.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+</div>

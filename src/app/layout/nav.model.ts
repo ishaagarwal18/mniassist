@@ -211,6 +211,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Integrations',
       },
       {
+        label: 'AI assistant',
+        icon: 'automation',
+        route: '/settings/ai-assistant',
+        permission: 'AutoReach.Integrations',
+      },
+      {
         label: 'Support access',
         icon: 'user',
         route: '/settings/support-access',
