@@ -137,3 +137,15 @@
 .score--cold {
   color: var(--ar-ink-400);
 }
+
+.table-pane__account {
+  max-width: 220px;
+}
+.table-pane__subs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+  white-space: nowrap;
+}

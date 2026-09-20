@@ -43,6 +43,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Contacts',
       },
       {
+        label: 'Duplicates',
+        icon: 'contacts',
+        route: '/contacts/duplicates',
+        permission: 'AutoReach.Contacts.Merge',
+      },
+      {
         label: 'Campaigns',
         icon: 'campaign',
         route: '/campaigns',

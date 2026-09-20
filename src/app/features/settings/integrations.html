@@ -247,6 +247,10 @@
           {{ c.timelineEnabled ? c.loggedMessages + ' message' + (c.loggedMessages === 1 ? '' : 's') + ' on timelines' : 'timeline off' }}
           ·
         }
+        @if (c.supportsAccountSync) {
+          {{ c.accountsEnabled ? c.linkedAccounts + ' compan' + (c.linkedAccounts === 1 ? 'y' : 'ies') + ' linked' : 'companies off' }}
+          ·
+        }
         pushed
         {{ when(c.lastOutboundAtUtc ?? undefined) }} · received
         {{ when(c.lastInboundAtUtc ?? undefined) }}
@@ -328,6 +332,22 @@
           />
           Include campaign sends (one CRM entry per recipient — counts against its API limits)
         </label>
+      }
+
+      @if (mc.supportsAccountSync) {
+        <p class="ar-label crm__mapping-heading">Company accounts</p>
+        <label class="intg__event">
+          <input
+            type="checkbox"
+            [checked]="accountsEnabled()"
+            (change)="accountsEnabled.set($any($event.target).checked)"
+          />
+          Sync company accounts to {{ crmKindLabel(mc.kind) }}, keeping the parent-child hierarchy, and link each contact to its account
+        </label>
+        <p class="crm__mapping-lead">
+          Creates a company record for each account (parents first). Nothing is deleted in {{ crmKindLabel(mc.kind) }} when an
+          account is deleted here. {{ crmKindLabel(mc.kind) }} needs to be reconnected once so it grants access to company records.
+        </p>
       }
 
       <p class="ar-label crm__mapping-heading">Deal fields</p>

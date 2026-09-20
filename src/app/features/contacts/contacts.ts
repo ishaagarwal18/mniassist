@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { AccountStore } from '../../core/services/account.store';
 import { ContactService } from '../../core/services/contact.service';
 import { ConsentSource, Contact } from '../../core/models/contact.model';
 import { DecisionRole } from '../../proxy/contacts';
@@ -38,11 +39,24 @@ const CONSENT_TONE: Record<ConsentSource, ChipTone> = {
 })
 export class ArContacts {
   private readonly store = inject(ContactService);
+  private readonly accountStore = inject(AccountStore);
 
   protected readonly segments = this.store.segments;
   protected readonly suppression = this.store.suppression;
   protected readonly activeSegment = signal('amc60');
   protected readonly query = signal('');
+
+  /** Accounts to filter by, in tree order, so a plant reads as belonging to its company. */
+  protected readonly accountRows = this.accountStore.rows;
+  protected readonly accountId = this.store.accountId;
+  protected readonly includeSubsidiaries = this.store.includeSubsidiaries;
+  protected readonly chosenAccountHasChildren = computed(
+    () => (this.accountStore.all().find((a) => a.id === this.accountId())?.childCount ?? 0) > 0,
+  );
+
+  protected chooseAccount(id: string): void {
+    this.store.filterByAccount(id);
+  }
 
   protected readonly totalContacts = computed(
     () => this.segments().find((s) => s.id === 'all')?.count ?? 0,

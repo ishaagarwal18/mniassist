@@ -26,6 +26,12 @@ export class ContactService {
   private readonly segmentApi = inject(SegmentApi);
 
   readonly filter = signal('');
+
+  /** Show only contacts on this company account (empty = all). */
+  readonly accountId = signal('');
+
+  /** With an account chosen: also the contacts of every account beneath it. */
+  readonly includeSubsidiaries = signal(true);
   readonly skipCount = signal(0);
   readonly maxResultCount = signal(50);
 
@@ -199,6 +205,8 @@ export class ContactService {
         ? undefined
         : {
             filter: this.filter(),
+            accountId: this.accountId() || undefined,
+            includeSubsidiaries: this.accountId() ? this.includeSubsidiaries() : undefined,
             skipCount: this.skipCount(),
             maxResultCount: this.maxResultCount(),
           },
@@ -258,6 +266,12 @@ export class ContactService {
 
   search(term: string): void {
     this.filter.set(term);
+    this.skipCount.set(0);
+  }
+
+  /** Restricts the list to one account (or clears the restriction with an empty id) and returns to the first page. */
+  filterByAccount(accountId: string): void {
+    this.accountId.set(accountId);
     this.skipCount.set(0);
   }
 

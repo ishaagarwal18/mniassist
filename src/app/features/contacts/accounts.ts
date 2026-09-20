@@ -1,6 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
-import { AccountStore, CustomerAccount } from '../../core/services/account.store';
+import {
+  AccountRow,
+  AccountStore,
+  CustomerAccount,
+  MAX_ACCOUNT_DEPTH,
+  moveProblem,
+} from '../../core/services/account.store';
 import { CustomerAccountRollupDto } from '../../proxy/contacts';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
@@ -12,14 +18,16 @@ interface Draft {
   state: string;
   website: string;
   notes: string;
+  /** The account this one sits under; blank for a top-level account. */
+  parentId: string;
 }
 
-const BLANK: Draft = { name: '', industry: '', city: '', state: '', website: '', notes: '' };
+const BLANK: Draft = { name: '', industry: '', city: '', state: '', website: '', notes: '', parentId: '' };
 
 /**
- * Company / plant grouping (M03-11). Several contacts on one deal roll up here, and
- * the rollup answers "how is this account doing" without adding the three
- * half-pictures by hand.
+ * Company / plant grouping (M03-11), as a tree: a group owns companies, a company owns plants, up to five
+ * levels. Several contacts on one deal roll up to their account, and a parent's rollup can include every
+ * subsidiary beneath it — "how is the whole group doing" without adding the plants up by hand.
  */
 @Component({
   selector: 'ar-accounts',
@@ -31,7 +39,9 @@ const BLANK: Draft = { name: '', industry: '', city: '', state: '', website: '',
 export class ArAccounts {
   private readonly store = inject(AccountStore);
 
-  protected readonly accounts = this.store.accounts;
+  protected readonly rows = this.store.rows;
+  protected readonly searching = computed(() => this.store.filter().trim().length > 0);
+  protected readonly maxDepth = MAX_ACCOUNT_DEPTH;
   protected readonly loading = this.store.loading;
 
   protected readonly editorOpen = signal(false);
@@ -43,6 +53,16 @@ export class ArAccounts {
   protected readonly rollupOpen = signal(false);
   protected readonly rollupFor = signal<CustomerAccount | null>(null);
   protected readonly rollup = signal<CustomerAccountRollupDto | null>(null);
+  protected readonly includeSubsidiaries = signal(false);
+
+  /**
+   * Accounts the one being edited may sit under: anything that would not create a loop or push the tree past
+   * its depth limit. The server checks again — this only keeps the picker from offering a refusal.
+   */
+  protected readonly parentOptions = computed(() => {
+    const id = this.editingId();
+    return this.store.all().filter((a) => a.id !== id && moveProblem(id, a.id, this.store.all()) === null);
+  });
 
   protected search(term: string): void {
     this.store.filter.set(term);
@@ -52,9 +72,9 @@ export class ArAccounts {
     this.draft.update((d) => ({ ...d, [key]: value }));
   }
 
-  protected openNew(): void {
+  protected openNew(parentId = ''): void {
     this.editingId.set(null);
-    this.draft.set({ ...BLANK });
+    this.draft.set({ ...BLANK, parentId });
     this.error.set(null);
     this.editorOpen.set(true);
   }
@@ -68,6 +88,7 @@ export class ArAccounts {
       state: a.state ?? '',
       website: a.website ?? '',
       notes: a.notes ?? '',
+      parentId: a.parentId ?? '',
     });
     this.error.set(null);
     this.editorOpen.set(true);
@@ -89,6 +110,7 @@ export class ArAccounts {
         state: d.state.trim() || null,
         website: d.website.trim() || null,
         notes: d.notes.trim() || null,
+        parentAccountId: d.parentId || null,
       });
       this.editorOpen.set(false);
     } catch (e: unknown) {
@@ -99,15 +121,32 @@ export class ArAccounts {
   }
 
   protected async remove(a: CustomerAccount): Promise<void> {
-    if (!confirm(`Delete "${a.name}"? Its ${a.contactCount} contact(s) will be ungrouped.`)) return;
+    const subs = a.childCount > 0 ? ` Its ${a.childCount} subsidiar${a.childCount === 1 ? 'y moves' : 'ies move'} up a level.` : '';
+    if (!confirm(`Delete "${a.name}"? Its ${a.contactCount} contact(s) will be ungrouped.${subs}`)) return;
     await this.store.remove(a.id);
+  }
+
+  protected isTopLevel(row: AccountRow): boolean {
+    return row.depth === 1;
   }
 
   protected async openRollup(a: CustomerAccount): Promise<void> {
     this.rollupFor.set(a);
-    this.rollup.set(null);
+    this.includeSubsidiaries.set(false);
     this.rollupOpen.set(true);
-    this.rollup.set(await this.store.rollup(a.id));
+    await this.loadRollup();
+  }
+
+  protected async toggleSubsidiaries(on: boolean): Promise<void> {
+    this.includeSubsidiaries.set(on);
+    await this.loadRollup();
+  }
+
+  private async loadRollup(): Promise<void> {
+    const a = this.rollupFor();
+    if (!a) return;
+    this.rollup.set(null);
+    this.rollup.set(await this.store.rollup(a.id, this.includeSubsidiaries()));
   }
 
   protected inr(paise?: number): string {

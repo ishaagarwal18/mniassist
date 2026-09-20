@@ -85,6 +85,9 @@ const SEED_CRM: CrmSyncConnectionStatusDto[] = [
     linkedContacts: 29,
     supportsTimelineSync: true,
     timelineEnabled: true,
+    supportsAccountSync: true,
+    accountsEnabled: true,
+    linkedAccounts: 8,
     loggedMessages: 212,
     lastOutboundAtUtc: new Date(Date.now() - 26 * 60_000).toISOString(),
     lastInboundAtUtc: new Date(Date.now() - 3 * 3_600_000).toISOString(),
@@ -142,6 +145,7 @@ export class ArIntegrations {
   protected readonly mappingCurrency = signal('');
   protected readonly timelineEnabled = signal(false);
   protected readonly timelineCampaigns = signal(true);
+  protected readonly accountsEnabled = signal(false);
   protected readonly mappingDeal = signal<Record<string, string>>({});
   protected readonly mappingContact = signal<Record<string, string>>({});
 
@@ -267,6 +271,7 @@ export class ArIntegrations {
     this.mappingCurrency.set('');
     this.timelineEnabled.set(false);
     this.timelineCampaigns.set(true);
+    this.accountsEnabled.set(false);
     this.mappingDeal.set({});
     this.mappingContact.set({});
     this.mappingLoading.set(true);
@@ -280,6 +285,7 @@ export class ArIntegrations {
       const timeline = config['timeline'] as { enabled?: boolean; campaigns?: boolean } | undefined;
       this.timelineEnabled.set(timeline?.enabled === true);
       this.timelineCampaigns.set(timeline?.campaigns ?? true);
+      this.accountsEnabled.set((config['accounts'] as { enabled?: boolean } | undefined)?.enabled === true);
       const mapping = (config['fieldMapping'] as Record<string, Record<string, string>> | undefined) ?? {};
       this.mappingDeal.set({ ...(mapping['deal'] ?? {}) });
       this.mappingContact.set({ ...(mapping['contact'] ?? {}) });
@@ -325,6 +331,12 @@ export class ArIntegrations {
         config['timeline'] = { enabled: true, campaigns: this.timelineCampaigns() };
       } else {
         delete config['timeline'];
+      }
+
+      if (this.accountsEnabled()) {
+        config['accounts'] = { enabled: true };
+      } else {
+        delete config['accounts'];
       }
 
       const deal = this.trimmed(this.mappingDeal());

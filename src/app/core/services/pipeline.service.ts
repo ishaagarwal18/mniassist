@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environment';
 import {
   CreateUpdateEnquiryDto,
   CreateUpdateInstalledAssetDto,
+  DealScoreBand,
   EnquiryBoardColumnDto,
   EnquiryDetailDto,
   EnquiryEventDto,
@@ -42,7 +43,24 @@ export interface EnquiryCard {
   owner?: string;
   valueInPaise?: number;
   daysInStage: number;
+  /** Deal score 0-100 for an open enquiry; undefined once won or lost. */
+  score?: number;
+  band?: ScoreBand;
   stage: Stage;
+}
+export type ScoreBand = 'hot' | 'warm' | 'cold';
+export interface ScoreFactor {
+  key: string;
+  points: number;
+  max: number;
+  note: string;
+}
+export function bandOf(score: number): ScoreBand {
+  return score >= 70 ? 'hot' : score >= 40 ? 'warm' : 'cold';
+}
+function bandFrom(b: DealScoreBand | null | undefined, score: number | null | undefined): ScoreBand | undefined {
+  if (score == null) return undefined;
+  return b === DealScoreBand.Hot ? 'hot' : b === DealScoreBand.Warm ? 'warm' : b === DealScoreBand.Cold ? 'cold' : bandOf(score);
 }
 export interface BoardColumn {
   stage: Stage;
@@ -80,6 +98,9 @@ export interface EnquiryDetail {
   valueInPaise?: number;
   expectedCloseDate?: string;
   daysInStage: number;
+  score?: number;
+  band?: ScoreBand;
+  scoreFactors: ScoreFactor[];
   lostReason?: string;
   conversationId?: string;
   quotations: Quotation[];
@@ -146,6 +167,8 @@ function boardColumn(c: EnquiryBoardColumnDto): BoardColumn {
       owner: e.ownerUserName ?? undefined,
       valueInPaise: e.estimatedValueInPaise ?? 0,
       daysInStage: e.daysInStage ?? 0,
+      score: e.score ?? undefined,
+      band: bandFrom(e.scoreBand, e.score),
       stage,
     })),
   };
@@ -197,6 +220,19 @@ function enquiryEvent(e: EnquiryEventDto): EnquiryEvent {
   };
 }
 
+const MOCK_FACTORS: ScoreFactor[] = [
+  { key: 'Stage', points: 28, max: 35, note: 'In Quoted' },
+  { key: 'Engagement', points: 14, max: 20, note: 'Contact engagement 70/100' },
+  { key: 'Momentum', points: 14, max: 20, note: '9 days in this stage' },
+  { key: 'Completeness', points: 10, max: 15, note: 'Missing close date' },
+  { key: 'Source', points: 7, max: 10, note: 'From Exhibition' },
+];
+
+function mockScore(i: number, j: number): { score: number; band: ScoreBand } {
+  const score = Math.min(96, 22 + i * 14 + ((j * 17) % 30));
+  return { score, band: bandOf(score) };
+}
+
 function enquiryDetail(d: EnquiryDetailDto & { id?: string }): EnquiryDetail {
   const stage = d.stage != null ? STAGE[d.stage] : 'new';
   return {
@@ -211,6 +247,14 @@ function enquiryDetail(d: EnquiryDetailDto & { id?: string }): EnquiryDetail {
     valueInPaise: d.estimatedValueInPaise ?? undefined,
     expectedCloseDate: d.expectedCloseDate ?? undefined,
     daysInStage: d.daysInStage ?? 0,
+    score: d.score ?? undefined,
+    band: bandFrom(d.scoreBand, d.score),
+    scoreFactors: (d.scoreFactors ?? []).map((f) => ({
+      key: f.key ?? '',
+      points: f.points ?? 0,
+      max: f.max ?? 0,
+      note: f.note ?? '',
+    })),
     lostReason: d.lostReason ?? undefined,
     conversationId: d.conversationId ?? undefined,
     quotations: (d.quotations ?? []).map(quotation),
@@ -250,6 +294,7 @@ const SEED_BOARD: BoardColumn[] = OPEN_STAGES.map((stage, i) => ({
     owner: ['ravi.k', 'sneha.p'][(i + j) % 2],
     valueInPaise: (18 + j * 6 + i * 4) * 100000 * 100,
     daysInStage: 2 + ((i * 3 + j) % 14),
+    ...mockScore(i, j),
     stage,
   })),
 }));
@@ -456,6 +501,9 @@ export class PipelineStore {
         'committing.',
       valueInPaise: card?.valueInPaise,
       daysInStage: card?.daysInStage ?? 0,
+      score: card?.score,
+      band: card?.band,
+      scoreFactors: card?.score == null ? [] : MOCK_FACTORS,
       quotations: SEED_QUOTES.slice(0, 1),
       timeline: [
         {

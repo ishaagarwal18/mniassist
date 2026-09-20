@@ -108,6 +108,28 @@
         [(query)]="query"
         placeholder="Search by name, company or phone"
       />
+      <select
+        class="ar-field__input table-pane__account"
+        aria-label="Filter by company account"
+        (change)="chooseAccount($any($event.target).value)"
+      >
+        <option value="" [selected]="!accountId()">All accounts</option>
+        @for (row of accountRows(); track row.account.id) {
+          <option [value]="row.account.id" [selected]="row.account.id === accountId()">
+            {{ '\u2003'.repeat(row.depth - 1) }}{{ row.account.name }}
+          </option>
+        }
+      </select>
+      @if (accountId() && chosenAccountHasChildren()) {
+        <label class="table-pane__subs">
+          <input
+            type="checkbox"
+            [checked]="includeSubsidiaries()"
+            (change)="includeSubsidiaries.set($any($event.target).checked)"
+          />
+          Include subsidiaries
+        </label>
+      }
       <button ar-button variant="ghost" icon="filter">Filter</button>
     </div>
 

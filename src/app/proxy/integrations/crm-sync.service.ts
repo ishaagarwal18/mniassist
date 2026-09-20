@@ -15,6 +15,11 @@ export interface CrmSyncConnectionStatusDto {
   linkedContacts: number;
   supportsTimelineSync: boolean;
   timelineEnabled: boolean;
+  /** Whether this CRM can hold company records (Zoho Account, HubSpot Company, Salesforce Account). */
+  supportsAccountSync: boolean;
+  /** The connection has opted in to company sync. */
+  accountsEnabled: boolean;
+  linkedAccounts: number;
   loggedMessages: number;
   lastOutboundAtUtc?: string | null;
   lastInboundAtUtc?: string | null;

@@ -1,11 +1,14 @@
 import type {
+  ContactDuplicatePairDto,
   ContactMergeDto,
   ContactMergePreviewDto,
   ContactTimelineEntryDto,
   ContactTimelineRequestDto,
+  DismissDuplicateInput,
+  GetContactDuplicatesInput,
 } from './models';
 import { RestService, Rest } from '@abp/ng.core';
-import type { ListResultDto } from '@abp/ng.core';
+import type { ListResultDto, PagedResultDto } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
 
 @Injectable({
@@ -52,6 +55,31 @@ export class ContactMergeService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/contact-merge/preview-merge',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getDuplicates = (input: GetContactDuplicatesInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, PagedResultDto<ContactDuplicatePairDto>>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/contact-merge/duplicates',
+        params: {
+          highConfidenceOnly: input.highConfidenceOnly,
+          skipCount: input.skipCount,
+          maxResultCount: input.maxResultCount,
+        },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  dismissDuplicate = (input: DismissDuplicateInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, void>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/contact-merge/dismiss-duplicate',
         body: input,
       },
       { apiName: this.apiName, ...config },

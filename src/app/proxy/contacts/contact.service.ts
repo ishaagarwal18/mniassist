@@ -68,6 +68,8 @@ export class ContactService {
           consentScope: input.consentScope,
           suppression: input.suppression,
           minScore: input.minScore,
+          accountId: input.accountId,
+          includeSubsidiaries: input.includeSubsidiaries,
           sorting: input.sorting,
           skipCount: input.skipCount,
           maxResultCount: input.maxResultCount,

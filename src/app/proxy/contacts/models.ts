@@ -8,6 +8,10 @@ import type { QuotationState } from '../pipeline/quotation-state.enum';
 import type { CampaignResponse } from './campaign-response.enum';
 import type { ContactExportStatus } from './contact-export-status.enum';
 import type { ContactTimelineKind } from './contact-timeline-kind.enum';
+import type { ChannelKind } from '../channels/channel-kind.enum';
+import type { ChannelMergeMode } from './channel-merge-mode.enum';
+import type { DuplicateConfidence } from './duplicate-confidence.enum';
+import type { DuplicateReason } from './duplicate-reason.enum';
 import type { MessageDirection } from '../messaging/message-direction.enum';
 import type { MessageStatus } from '../messaging/message-status.enum';
 import type { CustomFieldEntity } from './custom-field-entity.enum';
@@ -21,11 +25,17 @@ export interface CustomerAccountDto extends FullAuditedEntityDto<string> {
   website?: string | null;
   ownerUserId?: string | null;
   notes?: string | null;
+  /** The account this one sits under; null/absent for a top-level account. */
+  parentAccountId?: string | null;
+  /** Accounts directly under this one. */
+  childCount?: number;
   contactCount?: number;
 }
 
 export interface CreateUpdateCustomerAccountDto {
   name: string;
+  /** Refused by the server if it would create a loop or nest deeper than five levels. */
+  parentAccountId?: string | null;
   industry?: string | null;
   city?: string | null;
   state?: string | null;
@@ -37,6 +47,8 @@ export interface CreateUpdateCustomerAccountDto {
 export interface GetCustomerAccountListInput extends PagedAndSortedResultRequestDto {
   filter?: string | null;
   ownerUserId?: string | null;
+  parentAccountId?: string | null;
+  rootsOnly?: boolean;
 }
 
 export interface AccountContactDto {
@@ -46,10 +58,31 @@ export interface AccountContactDto {
   designation?: string | null;
   lifecycle?: ContactLifecycle;
   lastInboundAtUtc?: string | null;
+  accountId?: string | null;
+  accountName?: string | null;
+}
+
+/** One account in the tree, in reading order (a parent, then its subtree). */
+export interface AccountTreeNodeDto {
+  id: string;
+  parentAccountId?: string | null;
+  name: string;
+  city?: string | null;
+  industry?: string | null;
+  ownerUserId?: string | null;
+  /** 1 for a top-level account, 2 for its child, and so on. */
+  depth: number;
+  childCount: number;
+  contactCount: number;
+  /** Contacts on this account and everything below it. */
+  subtreeContactCount: number;
 }
 
 export interface CustomerAccountRollupDto {
   accountId?: string;
+  /** True when the figures include every account under this one. */
+  includesSubsidiaries?: boolean;
+  subsidiaryCount?: number;
   contactCount?: number;
   openEnquiryCount?: number;
   wonEnquiryCount?: number;
@@ -134,6 +167,11 @@ export interface ContactMergePreviewDto {
   resultingTags?: string[];
   consentNarrowed?: boolean;
   suppressionAdded?: boolean;
+  channels?: ChannelConsentOutcomeDto[];
+  addressesGained?: string[];
+  crmRecordsHandedOver?: number;
+  crmDuplicatesLeft?: number;
+  conversationsToMove?: number;
   messagesToMove?: number;
   enquiriesToMove?: number;
   quotationsToMove?: number;
@@ -221,6 +259,10 @@ export interface GetContactListInput extends PagedAndSortedResultRequestDto {
   consentScope?: ConsentScope | null;
   suppression?: SuppressionReason | null;
   minScore?: number | null;
+  /** Only contacts on this company account. */
+  accountId?: string | null;
+  /** With accountId: also contacts on every account beneath it, at any depth. */
+  includeSubsidiaries?: boolean;
 }
 
 export interface GrantConsentInput {
@@ -314,4 +356,44 @@ export interface SegmentPreviewDto {
   problems?: string[];
   matchesEveryone?: boolean;
   cost?: SegmentCostLineDto[];
+}
+
+export interface ChannelConsentOutcomeDto {
+  channel?: ChannelKind;
+  mode?: ChannelMergeMode;
+  resultingScope?: ConsentScope;
+  resultingSuppression?: SuppressionReason;
+  narrowed?: boolean;
+  suppressionAdded?: boolean;
+}
+
+export interface GetContactDuplicatesInput {
+  highConfidenceOnly?: boolean;
+  skipCount?: number;
+  maxResultCount?: number;
+}
+
+export interface DuplicateContactDto {
+  id?: string;
+  displayName?: string | null;
+  companyName?: string | null;
+  waId?: string | null;
+  emailAddress?: string | null;
+  hasInstagram?: boolean;
+  hasMessenger?: boolean;
+  creationTime?: string;
+  lastActivityUtc?: string | null;
+}
+
+export interface ContactDuplicatePairDto {
+  confidence?: DuplicateConfidence;
+  reasons?: DuplicateReason[];
+  first?: DuplicateContactDto;
+  second?: DuplicateContactDto;
+  suggestedSurvivorId?: string;
+}
+
+export interface DismissDuplicateInput {
+  contactAId?: string;
+  contactBId?: string;
 }

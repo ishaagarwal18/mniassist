@@ -1,4 +1,5 @@
 import type {
+  AccountTreeNodeDto,
   CreateUpdateCustomerAccountDto,
   CustomerAccountDto,
   CustomerAccountRollupDto,
@@ -24,6 +25,8 @@ export class CustomerAccountService {
         params: {
           filter: input.filter,
           ownerUserId: input.ownerUserId,
+          parentAccountId: input.parentAccountId,
+          rootsOnly: input.rootsOnly,
           sorting: input.sorting,
           skipCount: input.skipCount,
           maxResultCount: input.maxResultCount,
@@ -73,12 +76,13 @@ export class CustomerAccountService {
       { apiName: this.apiName, ...config },
     );
 
-  getRollup = (id: string, config?: Partial<Rest.Config>) =>
+  getRollup = (id: string, includeSubsidiaries = false, config?: Partial<Rest.Config>) =>
     this.restService.request<any, CustomerAccountRollupDto>(
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/customer-account/${id}/rollup`,
+        params: { includeSubsidiaries },
       },
       { apiName: this.apiName, ...config },
     );
@@ -90,6 +94,27 @@ export class CustomerAccountService {
         url: '/api/auto-reach/customer-account/set-contact-account',
         params: { accountId },
         body: contactIds,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getTree = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, AccountTreeNodeDto[]>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/customer-account/tree',
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  setParent = (id: string, parentAccountId?: string | null, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CustomerAccountDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/customer-account/${id}/set-parent`,
+        body: { parentAccountId: parentAccountId ?? null },
       },
       { apiName: this.apiName, ...config },
     );

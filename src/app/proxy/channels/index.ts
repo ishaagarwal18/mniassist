@@ -7,3 +7,4 @@ export * from './models';
 export * from './number-migration.service';
 export * from './onboarding-step.enum';
 export * from './quality-rating.enum';
+export * from './channel-kind.enum';

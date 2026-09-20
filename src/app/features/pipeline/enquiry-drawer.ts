@@ -68,6 +68,26 @@ const NEXT: Partial<Record<Stage, { stage: EnquiryStage; label: string }>> = {
             </div>
           </div>
 
+          @if (d.score != null) {
+            <section class="score">
+              <h3 class="score__h">
+                Deal score
+                <ar-chip [tone]="d.band === 'hot' ? 'good' : d.band === 'warm' ? 'amber' : 'neutral'"
+                  >{{ d.band === 'hot' ? 'Hot' : d.band === 'warm' ? 'Warm' : 'Cold' }} · {{ d.score }}/100</ar-chip
+                >
+              </h3>
+              <ul class="score__list">
+                @for (f of d.scoreFactors; track f.key) {
+                  <li>
+                    <span class="score__k">{{ f.key }}</span>
+                    <span class="score__note">{{ f.note }}</span>
+                    <span class="score__pts ar-mono">{{ f.points > 0 ? '+' : '' }}{{ f.points }}{{ f.max ? ' / ' + f.max : '' }}</span>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+
           @if (d.lostReason) {
             <p class="lost">Lost — {{ d.lostReason }}</p>
           }
@@ -257,6 +277,48 @@ const NEXT: Partial<Record<Stage, { stage: EnquiryStage; label: string }>> = {
       gap: 18px;
     }
 
+    .score {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .score__h {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      font: 600 12px var(--ar-font-sans);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ar-ink-500);
+    }
+    .score__list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+    }
+    .score__list li {
+      display: grid;
+      grid-template-columns: 96px 1fr auto;
+      gap: 8px;
+      padding: 5px 0;
+      border-top: 1px solid var(--ar-line-200);
+      font: 400 12px var(--ar-font-sans);
+    }
+    .score__k {
+      font-weight: 500;
+      color: var(--ar-ink-700);
+    }
+    .score__note {
+      color: var(--ar-ink-400);
+    }
+    .score__pts {
+      color: var(--ar-ink-900);
+      font-variant-numeric: tabular-nums;
+    }
     .facts {
       display: grid;
       grid-template-columns: 1fr 1fr;

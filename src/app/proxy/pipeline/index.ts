@@ -1,3 +1,4 @@
+export * from './deal-score-band.enum';
 export * from './enquiry-event-kind.enum';
 export * from './enquiry-stage.enum';
 export * from './enquiry.service';

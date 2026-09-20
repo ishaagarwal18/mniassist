@@ -1,3 +1,4 @@
+import type { DealScoreBand } from './deal-score-band.enum';
 import type { LeadSource } from './lead-source.enum';
 import type { EnquiryStage } from './enquiry-stage.enum';
 import type { EntityDto, FullAuditedEntityDto, PagedAndSortedResultRequestDto } from '@abp/ng.core';
@@ -61,6 +62,14 @@ export interface EnquiryBoardColumnDto {
 export interface EnquiryDetailDto extends EnquiryDto {
   timeline?: EnquiryEventDto[];
   quotations?: QuotationDto[];
+  scoreFactors?: EnquiryScoreFactorDto[];
+}
+
+export interface EnquiryScoreFactorDto {
+  key?: string;
+  points?: number;
+  max?: number;
+  note?: string;
 }
 
 export interface EnquiryDto extends FullAuditedEntityDto<string> {
@@ -80,6 +89,8 @@ export interface EnquiryDto extends FullAuditedEntityDto<string> {
   expectedCloseDate?: string | null;
   stageChangedAtUtc?: string | null;
   daysInStage?: number;
+  score?: number | null;
+  scoreBand?: DealScoreBand | null;
   lostReason?: string | null;
   lostCategory?: LostReasonCategory;
   wonReason?: string | null;

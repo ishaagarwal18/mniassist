@@ -1,4 +1,5 @@
 export * from './campaign-response.enum';
+export * from './channel-merge-mode.enum';
 export * from './consent-scope.enum';
 export * from './consent-source.enum';
 export * from './contact-export-status.enum';
@@ -13,6 +14,8 @@ export * from './custom-field-type.enum';
 export * from './custom-field.service';
 export * from './customer-account.service';
 export * from './decision-role.enum';
+export * from './duplicate-confidence.enum';
+export * from './duplicate-reason.enum';
 export * from './models';
 export * from './segment.service';
 export * from './suppression-reason.enum';

@@ -70,6 +70,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/contacts/accounts').then((m) => m.ArAccounts),
       },
       {
+        path: 'contacts/duplicates',
+        title: 'Duplicates · AutoReach',
+        loadComponent: () => import('./features/contacts/duplicates').then((m) => m.ArDuplicates),
+      },
+      {
         path: 'campaigns',
         title: 'Campaigns · AutoReach',
         loadComponent: () =>

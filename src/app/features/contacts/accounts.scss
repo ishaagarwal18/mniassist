@@ -126,3 +126,17 @@
 .roll__cd {
   color: var(--ar-ink-400);
 }
+
+/* Subsidiaries sit indented under their parent, marked by a rule on the left so the tree reads at a glance. */
+.ac--child {
+  border-left: 2px solid var(--ar-line-300);
+}
+.roll__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font: 500 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+  cursor: pointer;
+}
