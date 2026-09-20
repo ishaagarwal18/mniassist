@@ -72,6 +72,8 @@
       <button ar-button variant="primary" icon="plus" (click)="open({ kind: 'stage', stage: null })">Add stage</button>
       <p class="pl__note">New stages go after the last open stage; reorder with the arrows. Won and Lost always stay last.</p>
     </div>
+
+    <ar-lead-rotation-panel [pipelineId]="p.id!" />
   }
 </div>
 

@@ -4,6 +4,7 @@ import { PipelineStore } from '../../core/services/pipeline.service';
 import { EnquiryStage, PipelineStageDto, SalesPipelineDto } from '../../proxy/pipeline';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArLeadRotationPanel } from './lead-rotation-panel';
 
 /** What an open stage can count as. Won and Lost are built in and fixed. */
 const BUCKETS: { value: EnquiryStage; label: string; hint: string }[] = [
@@ -28,7 +29,7 @@ type Dialog =
  */
 @Component({
   selector: 'ar-pipeline-stages',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArLeadRotationPanel],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pipeline-stages.html',
   styleUrl: './pipeline-stages.scss',

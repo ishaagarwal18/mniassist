@@ -1,3 +1,4 @@
+import type { LeadRotationMode } from './lead-rotation-mode.enum';
 import type { DealScoreBand } from './deal-score-band.enum';
 import type { LeadSource } from './lead-source.enum';
 import type { EnquiryStage } from './enquiry-stage.enum';
@@ -278,4 +279,43 @@ export interface DeletePipelineStageInput {
 export interface MoveEnquiryToPipelineInput {
   pipelineId: string;
   stageId?: string | null;
+}
+
+export interface LeadRotationMemberDto {
+  userId?: string;
+  userName?: string;
+  name?: string | null;
+  isActive?: boolean;
+  isPaused?: boolean;
+  weight?: number;
+  maxOpenDeals?: number | null;
+  openDeals?: number;
+  atCap?: boolean;
+}
+
+export interface LeadRotationDto {
+  pipelineId?: string;
+  isEnabled?: boolean;
+  mode?: LeadRotationMode;
+  sources?: LeadSource[];
+  assignContact?: boolean;
+  emailAssignee?: boolean;
+  members?: LeadRotationMemberDto[];
+  nextUserId?: string | null;
+}
+
+export interface LeadRotationMemberInput {
+  userId: string;
+  isPaused: boolean;
+  weight: number;
+  maxOpenDeals?: number | null;
+}
+
+export interface SaveLeadRotationInput {
+  isEnabled: boolean;
+  mode: LeadRotationMode;
+  sources: LeadSource[];
+  assignContact: boolean;
+  emailAssignee: boolean;
+  members: LeadRotationMemberInput[];
 }
