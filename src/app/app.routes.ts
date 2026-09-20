@@ -119,6 +119,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/pipeline/pipeline-stages').then((m) => m.ArPipelineStages),
       },
       {
+        path: 'forecast',
+        title: 'Forecast · AutoReach',
+        loadComponent: () => import('./features/pipeline/forecast').then((m) => m.ArForecast),
+      },
+      {
         path: 'quotations',
         title: 'Quotations · AutoReach',
         loadComponent: () => import('./features/pipeline/quotations').then((m) => m.ArQuotations),

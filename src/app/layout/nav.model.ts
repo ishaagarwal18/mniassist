@@ -80,6 +80,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Pipeline',
       },
       {
+        label: 'Forecast',
+        icon: 'analytics',
+        route: '/forecast',
+        permission: 'AutoReach.Pipeline',
+      },
+      {
         label: 'Quotations',
         icon: 'quotation',
         route: '/quotations',

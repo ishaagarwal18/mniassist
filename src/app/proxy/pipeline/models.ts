@@ -1,3 +1,6 @@
+import type { SalesPeriodKind } from './sales-period-kind.enum';
+import type { ForecastChanceBasis } from './forecast-chance-basis.enum';
+import type { ForecastValueSource } from './forecast-value-source.enum';
 import type { LeadRotationMode } from './lead-rotation-mode.enum';
 import type { DealScoreBand } from './deal-score-band.enum';
 import type { LeadSource } from './lead-source.enum';
@@ -318,4 +321,146 @@ export interface SaveLeadRotationInput {
   assignContact: boolean;
   emailAssignee: boolean;
   members: LeadRotationMemberInput[];
+}
+
+export interface GetSalesForecastInput {
+  kind?: SalesPeriodKind;
+  periodStart?: string | null;
+  pipelineId?: string | null;
+  ownerUserId?: string | null;
+}
+
+export interface ForecastOwnerDto {
+  ownerUserId?: string | null;
+  ownerName?: string;
+  targetInPaise?: number;
+  closedInPaise?: number;
+  commitInPaise?: number;
+  expectedInPaise?: number;
+  bestCaseInPaise?: number;
+  openDeals?: number;
+  attainment?: number | null;
+  projectedAttainment?: number | null;
+  gapInPaise?: number;
+}
+
+export interface ForecastDealDto {
+  enquiryId?: string;
+  reference?: string;
+  title?: string | null;
+  contactName?: string | null;
+  ownerName?: string;
+  stage?: EnquiryStage;
+  valueInPaise?: number;
+  weightedInPaise?: number;
+  expectedClose?: string;
+  valueSource?: ForecastValueSource;
+  quotationReference?: string | null;
+  chancePercent?: number;
+  chanceBasis?: ForecastChanceBasis;
+}
+
+export interface StageChanceDto {
+  stage?: EnquiryStage;
+  configuredPercent?: number;
+  effectivePercent?: number;
+  sample?: number;
+  basis?: ForecastChanceBasis;
+}
+
+export interface StageWeightsDto {
+  new: number;
+  qualified: number;
+  siteVisit: number;
+  quoted: number;
+  negotiation: number;
+}
+
+export interface SalesForecastDto {
+  kind?: SalesPeriodKind;
+  periodStart?: string;
+  periodEnd?: string;
+  label?: string;
+  previousPeriodStart?: string;
+  nextPeriodStart?: string;
+  team?: ForecastOwnerDto;
+  owners?: ForecastOwnerDto[];
+  deals?: ForecastDealDto[];
+  unscheduledDeals?: number;
+  unscheduledValueInPaise?: number;
+  overdueDeals?: number;
+  overdueValueInPaise?: number;
+  unvaluedDeals?: number;
+  fiscalYearStartMonth?: number;
+  weights?: StageWeightsDto;
+  learnFromHistory?: boolean;
+  chances?: StageChanceDto[];
+}
+
+export interface GetSalesQuotasInput {
+  kind?: SalesPeriodKind;
+  periodStart?: string | null;
+}
+
+export interface SalesQuotaDto {
+  id?: string;
+  userId?: string | null;
+  ownerName?: string;
+  kind?: SalesPeriodKind;
+  periodStart?: string;
+  targetInPaise?: number;
+}
+
+export interface SetSalesQuotaInput {
+  userId?: string | null;
+  kind: SalesPeriodKind;
+  periodStart: string;
+  targetInPaise: number;
+}
+
+export interface PipelineWeightsDto {
+  pipelineId: string;
+  weights: StageWeightsDto;
+}
+
+export interface SalesForecastSettingsDto {
+  fiscalYearStartMonth: number;
+  weights: StageWeightsDto;
+  learnFromHistory: boolean;
+  pipelineWeights: PipelineWeightsDto[];
+}
+
+export interface GetForecastHistoryInput {
+  kind?: SalesPeriodKind;
+  periodStart?: string | null;
+  ownerUserId?: string | null;
+}
+
+export interface ForecastPointDto {
+  date?: string;
+  targetInPaise?: number;
+  closedInPaise?: number;
+  commitInPaise?: number;
+  expectedInPaise?: number;
+  bestCaseInPaise?: number;
+  openDeals?: number;
+}
+
+export interface ForecastAccuracyDto {
+  label?: string;
+  periodStart?: string;
+  targetInPaise?: number;
+  expectedAtStartInPaise?: number | null;
+  expectedAtMidpointInPaise?: number | null;
+  actualInPaise?: number;
+  midpointError?: number | null;
+}
+
+export interface ForecastHistoryDto {
+  label?: string;
+  points?: ForecastPointDto[];
+  changeOverDays?: number | null;
+  expectedChangeInPaise?: number | null;
+  closedChangeInPaise?: number | null;
+  accuracy?: ForecastAccuracyDto[];
 }

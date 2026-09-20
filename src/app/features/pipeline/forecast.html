@@ -1,0 +1,372 @@
+<ar-topbar
+  title="Forecast"
+  [subtitle]="forecast().label ?? ''"
+  help="What you are on course to sell in a month or quarter. Expected weights each open deal due in the period by how likely its stage is to win. Commit is what is won plus deals in Negotiation. Best case is everything scheduled landing. Deals with no close date, or a date that has passed, are listed but not counted."
+>
+  <select class="ar-field__input fc__pipe" aria-label="Pipeline" (change)="choosePipeline($any($event.target).value)">
+    <option value="" [selected]="!pipelineId()">All pipelines</option>
+    @for (p of pipelines(); track p.id) {
+      <option [value]="p.id" [selected]="p.id === pipelineId()">{{ p.name }}</option>
+    }
+  </select>
+  <button ar-button variant="ghost" (click)="openAssumptions()">Assumptions</button>
+  <button ar-button variant="primary" (click)="openQuotas()">Set quotas</button>
+</ar-topbar>
+
+<div class="fc ar-scroll">
+  <div class="fc__bar">
+    <div class="seg" role="group" aria-label="Period">
+      <button type="button" [class.seg--on]="kind() === Kind.Month" (click)="setKind(Kind.Month)">Month</button>
+      <button type="button" [class.seg--on]="kind() === Kind.Quarter" (click)="setKind(Kind.Quarter)">Quarter</button>
+    </div>
+    <div class="fc__nav">
+      <button ar-button variant="ghost" aria-label="Previous period" (click)="previous()">←</button>
+      <b class="fc__label">{{ forecast().label }}</b>
+      <button ar-button variant="ghost" aria-label="Next period" (click)="next()">→</button>
+      <button ar-button variant="ghost" (click)="today()">Today</button>
+    </div>
+  </div>
+
+  @if (failed()) {
+    <p class="fc__err">Could not load the forecast. Check your connection and reload.</p>
+  }
+
+  @if (team(); as t) {
+    <section class="fc__cards" [class.fc__cards--loading]="loading()">
+      <article class="stat">
+        <span class="stat__k">Target</span>
+        <b class="stat__v">{{ t.targetInPaise ? money(t.targetInPaise) : '—' }}</b>
+        <span class="stat__s">{{ t.targetInPaise ? 'set for the period' : 'no quota set' }}</span>
+      </article>
+      <article class="stat">
+        <span class="stat__k">Closed</span>
+        <b class="stat__v">{{ money(t.closedInPaise) }}</b>
+        <span class="stat__s">{{ pct(t.attainment) }} of target</span>
+      </article>
+      <article class="stat stat--main">
+        <span class="stat__k">Expected</span>
+        <b class="stat__v">{{ money(t.expectedInPaise) }}</b>
+        <span class="stat__s">{{ pct(t.projectedAttainment) }} of target</span>
+      </article>
+      <article class="stat">
+        <span class="stat__k">Commit</span>
+        <b class="stat__v">{{ money(t.commitInPaise) }}</b>
+        <span class="stat__s">won + Negotiation</span>
+      </article>
+      <article class="stat">
+        <span class="stat__k">Best case</span>
+        <b class="stat__v">{{ money(t.bestCaseInPaise) }}</b>
+        <span class="stat__s">if everything lands</span>
+      </article>
+      <article class="stat">
+        <span class="stat__k">Still to find</span>
+        <b class="stat__v">{{ t.targetInPaise ? money(t.gapInPaise) : '—' }}</b>
+        <span class="stat__s">on the expected figure</span>
+      </article>
+    </section>
+
+    @if (t.targetInPaise) {
+      <div class="fc__meter" role="img" [attr.aria-label]="'Closed ' + pct(t.attainment) + ', expected ' + pct(t.projectedAttainment) + ' of target'">
+        <span class="fc__meter-exp" [style.width.%]="expectedShare()"></span>
+        <span class="fc__meter-won" [style.width.%]="closedShare()"></span>
+      </div>
+    }
+  }
+
+  @if ((forecast().unscheduledDeals ?? 0) > 0 || (forecast().overdueDeals ?? 0) > 0 || (forecast().unvaluedDeals ?? 0) > 0) {
+    <section class="fc__notes">
+      @if ((forecast().overdueDeals ?? 0) > 0) {
+        <p class="note note--warn">
+          <b>{{ forecast().overdueDeals }} deal{{ forecast().overdueDeals === 1 ? '' : 's' }} slipped</b>
+          ({{ money(forecast().overdueValueInPaise) }}): the expected close date has passed and they are still open. They are not counted in any period until the date is updated.
+        </p>
+      }
+      @if ((forecast().unvaluedDeals ?? 0) > 0) {
+        <p class="note note--warn">
+          <b>{{ forecast().unvaluedDeals }} open deal{{ forecast().unvaluedDeals === 1 ? '' : 's' }} with no value</b>: no sent quotation and no estimate, so they add nothing to the forecast. Send a quotation or add an estimate.
+        </p>
+      }
+      @if ((forecast().unscheduledDeals ?? 0) > 0) {
+        <p class="note">
+          <b>{{ forecast().unscheduledDeals }} open deal{{ forecast().unscheduledDeals === 1 ? '' : 's' }} with no close date</b>
+          ({{ money(forecast().unscheduledValueInPaise) }}) cannot be placed in a period. Add an expected close date to include them.
+        </p>
+      }
+    </section>
+  }
+
+  <section class="fc__block">
+    <h2 class="fc__h">By person</h2>
+    @if (owners().length === 0) {
+      <p class="fc__empty">Nothing due, won or targeted in this period.</p>
+    } @else {
+      <div class="fc__table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Owner</th>
+              <th class="num">Target</th>
+              <th class="num">Closed</th>
+              <th class="num">Expected</th>
+              <th class="num">Commit</th>
+              <th class="num">Best case</th>
+              <th class="num">Projected</th>
+              <th class="num">Deals</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (o of owners(); track o.ownerUserId ?? 'none') {
+              <tr>
+                <td>{{ o.ownerName }}</td>
+                <td class="num">{{ o.targetInPaise ? money(o.targetInPaise) : '—' }}</td>
+                <td class="num">{{ money(o.closedInPaise) }}</td>
+                <td class="num">{{ money(o.expectedInPaise) }}</td>
+                <td class="num">{{ money(o.commitInPaise) }}</td>
+                <td class="num">{{ money(o.bestCaseInPaise) }}</td>
+                <td class="num">
+                  @if (o.projectedAttainment != null) {
+                    <ar-chip [tone]="tone(o)">{{ pct(o.projectedAttainment) }}</ar-chip>
+                  } @else {
+                    <span class="fc__muted">no quota</span>
+                  }
+                </td>
+                <td class="num">{{ o.openDeals }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <section class="fc__block">
+    <h2 class="fc__h">Deals due this period</h2>
+    @if (deals().length === 0) {
+      <p class="fc__empty">No open deals are due to close in this period.</p>
+    } @else {
+      <div class="fc__table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Deal</th>
+              <th>Owner</th>
+              <th>Stage</th>
+              <th>Due</th>
+              <th class="num">Value</th>
+              <th class="num">Chance</th>
+              <th class="num">Weighted</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of deals(); track d.enquiryId) {
+              <tr>
+                <td>
+                  <span class="fc__ref">{{ d.reference }}</span>
+                  {{ d.title || 'Untitled' }}
+                  @if (d.contactName) {
+                    <span class="fc__muted"> · {{ d.contactName }}</span>
+                  }
+                </td>
+                <td>{{ d.ownerName }}</td>
+                <td>{{ stage(d.stage) }}</td>
+                <td>{{ day(d.expectedClose) }}</td>
+                <td class="num">
+                  {{ money(d.valueInPaise) }}
+                  <span class="fc__src" [class.fc__src--none]="d.valueSource === Source.None">{{ sourceText(d) }}</span>
+                </td>
+                <td class="num">{{ d.chancePercent }}%</td>
+                <td class="num">{{ money(d.weightedInPaise) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <section class="fc__block">
+    <h2 class="fc__h">How likely each stage is to win</h2>
+    <p class="fc__sub">
+      @if (forecast().learnFromHistory) {
+        Starts from your settings and is moved by what happened to deals you have closed in the last 12 months. With few closed deals it stays close to your setting.
+      } @else {
+        Using your settings only. Turn on learning under Assumptions to let closed deals adjust them.
+      }
+    </p>
+    <div class="fc__table-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Stage</th>
+            <th class="num">Your setting</th>
+            <th class="num">Used</th>
+            <th>Based on</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of forecast().chances ?? []; track c.stage) {
+            <tr>
+              <td>{{ stage(c.stage) }}</td>
+              <td class="num">{{ c.configuredPercent }}%</td>
+              <td class="num"><b>{{ c.effectivePercent }}%</b></td>
+              <td class="fc__muted">{{ basisText(c.basis, c.sample) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="fc__block">
+    <div class="fc__hrow">
+      <h2 class="fc__h">How this forecast has moved</h2>
+      <button ar-button variant="ghost" [disabled]="busy()" (click)="saveSnapshot()">Save today's forecast</button>
+    </div>
+    @if (changeText(); as c) {
+      <p class="fc__sub"><ar-chip [tone]="(history().expectedChangeInPaise ?? 0) >= 0 ? 'good' : 'amber'">{{ c }}</ar-chip></p>
+    }
+    @if (chart(); as ch) {
+      <svg class="fc__chart" [attr.viewBox]="'0 0 ' + ch.w + ' ' + ch.h" role="img" aria-label="Expected and closed over the period">
+        @if (ch.targetY != null) {
+          <line class="fc__c-target" x1="8" [attr.y1]="ch.targetY" [attr.x2]="ch.w - 8" [attr.y2]="ch.targetY" />
+        }
+        <polyline class="fc__c-exp" [attr.points]="ch.expected" fill="none" />
+        <polyline class="fc__c-won" [attr.points]="ch.closed" fill="none" />
+        @for (d of ch.dots; track d.label) {
+          <circle class="fc__c-dot" [attr.cx]="d.x" [attr.cy]="d.y" r="3" />
+        }
+        <text class="fc__c-tx" x="8" [attr.y]="ch.h - 4">{{ ch.first }}</text>
+        <text class="fc__c-tx" [attr.x]="ch.w - 8" [attr.y]="ch.h - 4" text-anchor="end">{{ ch.last }}</text>
+      </svg>
+      <p class="fc__legend">
+        <span class="fc__k fc__k--exp"></span> Expected
+        <span class="fc__k fc__k--won"></span> Closed
+        @if (ch.targetY != null) {
+          <span class="fc__k fc__k--tgt"></span> Target
+        }
+      </p>
+    } @else {
+      <p class="fc__empty">No history for this period yet. A snapshot is saved each day, or use the button to save one now.</p>
+    }
+
+    @if ((history().accuracy ?? []).length > 0) {
+      <h3 class="fc__h2">How earlier forecasts turned out</h3>
+      <div class="fc__table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th class="num">Target</th>
+              <th class="num">Forecast at start</th>
+              <th class="num">Forecast mid-period</th>
+              <th class="num">Actually won</th>
+              <th>Mid-period forecast was</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of history().accuracy; track a.periodStart) {
+              <tr>
+                <td>{{ a.label }}</td>
+                <td class="num">{{ a.targetInPaise ? money(a.targetInPaise) : '—' }}</td>
+                <td class="num">{{ a.expectedAtStartInPaise == null ? '—' : money(a.expectedAtStartInPaise) }}</td>
+                <td class="num">{{ a.expectedAtMidpointInPaise == null ? '—' : money(a.expectedAtMidpointInPaise) }}</td>
+                <td class="num">{{ money(a.actualInPaise) }}</td>
+                <td class="fc__muted">{{ errorText(a.midpointError) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+@if (quotaOpen()) {
+  <ar-dialog [title]="'Quotas · ' + forecast().label" (dismiss)="quotaOpen.set(false)">
+    <p class="dlg__text">
+      Targets in rupees for this {{ kind() === Kind.Month ? 'month' : 'quarter' }}. Leave blank for none. A quarter with no quota of its own uses the sum of its months.
+    </p>
+    <div class="qt">
+      @for (r of quotaRows(); track r.userId ?? 'team'; let i = $index) {
+        <label class="qt__row">
+          <span class="qt__name">{{ r.name }}</span>
+          <span class="qt__rs">₹</span>
+          <input
+            class="ar-field__input qt__in"
+            inputmode="numeric"
+            placeholder="none"
+            [value]="r.rupees"
+            (input)="setRupees(i, $any($event.target).value)"
+            [attr.aria-label]="'Target for ' + r.name"
+          />
+        </label>
+      }
+    </div>
+    @if (error()) {
+      <p class="fc__err">{{ error() }}</p>
+    }
+    <div dialogActions>
+      <button ar-button variant="ghost" (click)="quotaOpen.set(false)">Cancel</button>
+      <button ar-button variant="primary" [disabled]="busy()" (click)="saveQuotas()">{{ busy() ? 'Saving…' : 'Save quotas' }}</button>
+    </div>
+  </ar-dialog>
+}
+
+@if (assumptionsOpen()) {
+  <ar-dialog title="Forecast assumptions" (dismiss)="assumptionsOpen.set(false)">
+    <label class="ar-field">
+      <span class="ar-field__label">Financial year starts in</span>
+      <select class="ar-field__input" (change)="fiscalStart.set(+$any($event.target).value)">
+        @for (m of months; track m; let i = $index) {
+          <option [value]="i + 1" [selected]="i + 1 === fiscalStart()">{{ m }}</option>
+        }
+      </select>
+    </label>
+    <label class="fc__check">
+      <input type="checkbox" [checked]="learn()" (change)="learn.set($any($event.target).checked)" />
+      Learn the chances from closed deals (your figures below are the starting point)
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Chances for</span>
+      <select class="ar-field__input" (change)="setScope($any($event.target).value)">
+        <option value="" [selected]="!scope()">Every pipeline (the default)</option>
+        @for (p of pipelines(); track p.id) {
+          <option [value]="p.id" [selected]="p.id === scope()">{{ p.name }}{{ overrides()[p.id!] ? ' · own chances' : '' }}</option>
+        }
+      </select>
+    </label>
+    <p class="dlg__text">
+      Chance of winning a deal in each stage, as a percentage. Expected weights each open deal by its stage. A later stage cannot be lower than an earlier one.
+      @if (scope() && !scopeHasOverride()) {
+        This pipeline currently uses the default chances; changing a figure gives it its own.
+      }
+    </p>
+    @if (scopeHasOverride()) {
+      <p class="dlg__text"><button ar-button variant="ghost" (click)="useWorkspaceChances()">Use the default chances for this pipeline</button></p>
+    }
+    <div class="qt">
+      @for (w of weightRows; track w.key) {
+        <label class="qt__row">
+          <span class="qt__name">{{ w.label }}</span>
+          <input
+            class="ar-field__input qt__in"
+            type="number"
+            min="0"
+            max="100"
+            [value]="shownWeights()[w.key]"
+            (change)="setWeight(w.key, $any($event.target).value)"
+            [attr.aria-label]="'Chance of winning at ' + w.label"
+          />
+          <span class="qt__rs">%</span>
+        </label>
+      }
+    </div>
+    @if (error()) {
+      <p class="fc__err">{{ error() }}</p>
+    }
+    <div dialogActions>
+      <button ar-button variant="ghost" (click)="assumptionsOpen.set(false)">Cancel</button>
+      <button ar-button variant="primary" [disabled]="busy()" (click)="saveAssumptions()">{{ busy() ? 'Saving…' : 'Save' }}</button>
+    </div>
+  </ar-dialog>
+}
