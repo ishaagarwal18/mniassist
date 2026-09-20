@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 
 import { VoiceService } from '../../core/services/voice.service';
 import { ChannelState } from '../../proxy/channels/channel-state.enum';
-import { IvrBranchAction, IvrPromptDto } from '../../proxy/voice';
+import { IvrBranchAction, IvrIssueDto, IvrPromptDto, IvrSimulationStepDto } from '../../proxy/voice';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
@@ -45,14 +45,12 @@ const STATE_TONE: Record<ChannelState, ChipTone> = {
 };
 
 /**
- * The IVR prompt-management screen the go-live tracker flagged as still missing:
- * `VoiceChannelAppService` already exposed create/update/delete/branch endpoints,
- * nothing beyond Swagger could call them. One prompt is the channel's entry point
- * (where a fresh call starts); every other prompt is reached by a branch on some
- * digit. Exotel's own dashboard still owns the actual call-flow topology — this
- * screen edits AutoReach's own record of the menu a tenant wants, which a Passthru
- * applet built once on that dashboard then reads back through this platform's
- * webhook. See `IvrPrompt`'s remarks on the API side for why that split exists.
+ * The phone menu, edited here and served to Exotel live. Exotel lets an application URL control what
+ * each applet says and who Connect dials, but never which applet runs next — so its dashboard holds one
+ * fixed, menu-agnostic skeleton (Gather → Passthru, three times, then Connect) built once from the URLs
+ * shown in "Connect to Exotel". Everything that varies — the words, the keys, where each leads —
+ * lives in the prompts below and takes effect on the very next call. "Try the menu" runs the same
+ * rules a live call does.
  */
 @Component({
   selector: 'ar-voice-ivr',
@@ -78,6 +76,20 @@ export class ArVoiceIvr {
 
   protected readonly branchPromptId = signal<string | null>(null);
   protected readonly branchDraft = signal<BranchDraft>({ ...EMPTY_BRANCH });
+
+  protected readonly issues = this.store.issues;
+
+  // --- Connect to Exotel
+  protected readonly flowUrlDraft = signal('');
+  protected readonly copied = signal<string | null>(null);
+
+  // --- Try the menu
+  protected readonly keys = signal<string[]>(['', '', '']);
+  protected readonly steps = signal<IvrSimulationStepDto[] | null>(null);
+  protected readonly simulating = signal(false);
+
+  protected readonly errors = computed(() => this.issues().filter((i) => i.severity === 2));
+  protected readonly notes = computed(() => this.issues().filter((i) => i.severity < 2));
 
   protected readonly BranchAction = IvrBranchAction;
   protected readonly ChannelState = ChannelState;
@@ -250,5 +262,60 @@ export class ArVoiceIvr {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  // ---- Connect to Exotel ----------------------------------------------------
+
+  protected startFlowUrlEdit(): void {
+    this.flowUrlDraft.set(this.channel()?.flowUrl ?? '');
+  }
+
+  protected async saveFlowUrl(): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    try {
+      await this.store.setFlowUrl(this.flowUrlDraft());
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async copy(text: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+      this.copied.set(text);
+      setTimeout(() => this.copied.update((c) => (c === text ? null : c)), 1500);
+    } catch {
+      // Clipboard access can be blocked; the URL is still on screen to select by hand.
+    }
+  }
+
+  // ---- Try the menu --------------------------------------------------------
+
+  protected setKey(level: number, value: string): void {
+    this.keys.update((k) => k.map((v, i) => (i === level ? value.slice(0, 1) : v)));
+    this.steps.set(null);
+  }
+
+  protected async runSimulation(): Promise<void> {
+    if (this.simulating()) return;
+    this.simulating.set(true);
+    try {
+      this.steps.set(await this.store.simulate({ keyPresses: this.keys().map((k) => (k.trim() ? k.trim() : null)) }));
+    } finally {
+      this.simulating.set(false);
+    }
+  }
+
+  protected outcomeTone(outcome: number): ChipTone {
+    return outcome === 3 ? 'good' : outcome === 2 ? 'warn' : outcome === 1 ? 'teal' : 'neutral';
+  }
+
+  protected outcomeLabel(outcome: number): string {
+    return ['Plays again', 'Next menu', 'Call ends', 'Transfer'][outcome] ?? '';
+  }
+
+  protected issueTone(issue: IvrIssueDto): ChipTone {
+    return issue.severity === 2 ? 'bad' : issue.severity === 1 ? 'warn' : 'neutral';
   }
 }

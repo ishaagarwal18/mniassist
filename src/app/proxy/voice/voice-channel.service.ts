@@ -1,9 +1,13 @@
 import type {
   CreateIvrPromptInput,
+  IvrIssueDto,
   IvrPromptDto,
+  IvrSimulationStepDto,
   PlaceVoiceCallInput,
   SetIvrBranchInput,
   SetVoiceAccountInput,
+  SetVoiceFlowUrlInput,
+  SimulateIvrInput,
   UpdateIvrPromptInput,
   VoiceCallDto,
   VoiceChannelDto,
@@ -118,6 +122,35 @@ export class VoiceChannelService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/voice-channel/place-call',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  setFlowUrl = (input: SetVoiceFlowUrlInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<SetVoiceFlowUrlInput, VoiceChannelDto>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/voice-channel/set-flow-url',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getIvrIssues = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, IvrIssueDto[]>(
+      {
+        method: 'GET',
+        url: '/api/auto-reach/voice-channel/ivr-issues',
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  simulateIvr = (input: SimulateIvrInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<SimulateIvrInput, IvrSimulationStepDto[]>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/voice-channel/simulate-ivr',
         body: input,
       },
       { apiName: this.apiName, ...config },

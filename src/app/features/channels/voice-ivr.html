@@ -1,7 +1,7 @@
 <ar-topbar
   title="Voice / IVR"
   [subtitle]="entryPoint() ? 'Entry point: ' + entryPoint()!.name : 'No entry point set yet'"
-  help="AutoReach's own record of your phone menu, built on top of Exotel. The real call-flow topology still lives in Exotel's dashboard — keep the two in sync when you change one."
+  help="Your phone menu is edited here and served to Exotel live, so a change takes effect on the next call. Exotel's dashboard holds only one fixed, menu-independent flow — set it up once under Connect to Exotel."
 >
   <button ar-button variant="primary" icon="plus" [disabled]="busy()" (click)="openCreate()">
     New prompt
@@ -23,20 +23,150 @@
           <span class="ar-mono">{{ ch.exoPhone }}</span>
           <ar-chip [tone]="stateTone(ch.state)">{{ ChannelState[ch.state!] }}</ar-chip>
         </div>
-        @if (ch.passthruWebhookUrl) {
-          <p class="vi__hint">
-            Paste this into the Passthru applet on your Exotel dashboard flow:
-            <code class="ar-mono">{{ ch.passthruWebhookUrl }}</code>
+            </section>
+    }
+
+    @if (channel(); as ch) {
+      <section class="vi__panel">
+        <h2 class="vi__panel-title">Connect to Exotel <span class="vi__once">(once)</span></h2>
+
+        @if (!ch.ivrSetup?.ready) {
+          <p class="vi__hint vi__hint--warn">
+            {{ ch.ivrSetup?.problem ?? 'The Exotel URLs cannot be issued yet.' }} Ask your AutoReach
+            administrator to fix this.
           </p>
         } @else {
           <p class="vi__hint">
-            Configure <span class="ar-mono">Voice:StatusCallbackBaseUrl</span> and
-            <span class="ar-mono">Voice:Exotel:WebhookSharedSecret</span> to get the Passthru URL a
-            tenant must paste into their own Exotel dashboard.
+            On your Exotel dashboard, build this flow <strong>once</strong>. It does not contain your
+            menu — only the plumbing. After that, everything you edit below is live.
+          </p>
+          <ol class="vi__steps">
+            <li>
+              Add three <strong>Gather</strong> applets. Turn on “application URL” for each and paste:
+              <ul class="vi__urls">
+                @for (u of ch.ivrSetup!.gatherUrls; track u; let n = $index) {
+                  <li>
+                    <span class="vi__url-label">Gather {{ n + 1 }}</span>
+                    <code class="ar-mono">{{ u }}</code>
+                    <button ar-button variant="quiet" (click)="copy(u)">{{ copied() === u ? 'Copied' : 'Copy' }}</button>
+                  </li>
+                }
+              </ul>
+            </li>
+            <li>
+              After Gather 1 and Gather 2, add a <strong>Passthru</strong> applet (not async) with:
+              <ul class="vi__urls">
+                @for (u of ch.ivrSetup!.routeUrls; track u; let n = $index) {
+                  <li>
+                    <span class="vi__url-label">Passthru {{ n + 1 }}</span>
+                    <code class="ar-mono">{{ u }}</code>
+                    <button ar-button variant="quiet" (click)="copy(u)">{{ copied() === u ? 'Copied' : 'Copy' }}</button>
+                  </li>
+                }
+              </ul>
+              A <em>200</em> result continues to the next Gather; a <em>302</em> result goes to Connect.
+              Gather 3 goes straight to Connect.
+            </li>
+            <li>
+              Add one <strong>Connect</strong> applet with “application URL”:
+              <ul class="vi__urls">
+                <li>
+                  <span class="vi__url-label">Connect</span>
+                  <code class="ar-mono">{{ ch.ivrSetup!.connectUrl }}</code>
+                  <button ar-button variant="quiet" (click)="copy(ch.ivrSetup!.connectUrl!)">{{ copied() === ch.ivrSetup!.connectUrl ? 'Copied' : 'Copy' }}</button>
+                </li>
+              </ul>
+              Send its failure path to a <strong>Hangup</strong> applet — that is how a menu ends a call.
+            </li>
+            <li>
+              Set the flow's call-status callback to:
+              <ul class="vi__urls">
+                <li>
+                  <span class="vi__url-label">Status</span>
+                  <code class="ar-mono">{{ ch.ivrSetup!.statusCallbackUrl }}</code>
+                  <button ar-button variant="quiet" (click)="copy(ch.ivrSetup!.statusCallbackUrl!)">{{ copied() === ch.ivrSetup!.statusCallbackUrl ? 'Copied' : 'Copy' }}</button>
+                </li>
+              </ul>
+            </li>
+            <li>
+              Point your Exotel number at this flow for <strong>incoming</strong> calls, then paste the
+              flow's URL here so <strong>outgoing</strong> calls use it too:
+              <div class="vi__flow">
+                <input
+                  class="ar-field__input"
+                  placeholder="http://my.exotel.in/exoml/start/12345"
+                  autocapitalize="none"
+                  [value]="flowUrlDraft() || ch.flowUrl || ''"
+                  (focus)="startFlowUrlEdit()"
+                  (input)="flowUrlDraft.set($any($event.target).value)"
+                />
+                <button ar-button variant="primary" [disabled]="busy()" (click)="saveFlowUrl()">Save</button>
+              </div>
+            </li>
+          </ol>
+          <p class="vi__hint">
+            Keep the menu to three levels — that is what the flow above can serve, and the depth
+            Exotel itself recommends. The third menu can only transfer or end the call.
           </p>
         }
       </section>
     }
+
+    @if (issues().length > 0) {
+      <section class="vi__panel">
+        <h2 class="vi__panel-title">Check your menu</h2>
+        <ul class="vi__issues">
+          @for (i of issues(); track $index) {
+            <li>
+              <ar-chip [tone]="issueTone(i)">{{ i.severity === 2 ? 'Fix' : i.severity === 1 ? 'Check' : 'Note' }}</ar-chip>
+              <span>{{ i.message }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    <section class="vi__panel">
+      <h2 class="vi__panel-title">Try the menu</h2>
+      <p class="vi__hint">
+        Press keys as a caller would. This runs the same rules a live call does — leave a key blank
+        to simulate silence.
+      </p>
+      <div class="vi__keys">
+        @for (n of [0, 1, 2]; track n) {
+          <label class="ar-field">
+            <span class="ar-field__label">Menu {{ n + 1 }} key</span>
+            <input
+              class="ar-field__input vi__key"
+              maxlength="1"
+              inputmode="numeric"
+              [value]="keys()[n]"
+              (input)="setKey(n, $any($event.target).value)"
+            />
+          </label>
+        }
+        <button ar-button variant="primary" [disabled]="simulating() || !entryPoint()" (click)="runSimulation()">
+          {{ simulating() ? 'Running…' : 'Run' }}
+        </button>
+      </div>
+      @if (steps(); as list) {
+        <ol class="vi__sim">
+          @for (st of list; track $index) {
+            <li>
+              <div class="vi__sim-head">
+                <strong>{{ st.promptName }}</strong>
+                <ar-chip [tone]="outcomeTone(st.outcome)">{{ outcomeLabel(st.outcome) }}</ar-chip>
+              </div>
+              <p class="vi__say">“{{ st.sayText }}”</p>
+              <p class="vi__meta">
+                @if (st.keyPressed) { Caller presses <span class="ar-mono">{{ st.keyPressed }}</span>. }
+                {{ st.detail }}
+              </p>
+            </li>
+          }
+        </ol>
+      }
+    </section>
 
     <section class="vi__prompts">
       @if (prompts().length === 0) {

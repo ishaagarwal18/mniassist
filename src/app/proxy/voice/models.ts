@@ -13,6 +13,50 @@ export interface VoiceChannelDto extends AuditedEntityDto<string> {
   state?: ChannelState;
   restrictionReason?: string | null;
   passthruWebhookUrl?: string | null;
+  /** The Exotel call-flow URL of the one-time skeleton flow; null until pasted in. */
+  flowUrl?: string | null;
+  ivrSetup?: VoiceIvrSetupDto;
+}
+
+/** What to type into Exotel's dashboard, once. The menu itself is edited in AutoReach. */
+export interface VoiceIvrSetupDto {
+  ready: boolean;
+  problem?: string | null;
+  /** Application URL for Gather applet 1, 2 and 3, in that order. */
+  gatherUrls: string[];
+  /** The Passthru URL after Gather 1 and Gather 2. */
+  routeUrls: string[];
+  connectUrl?: string | null;
+  statusCallbackUrl?: string | null;
+}
+
+export interface SetVoiceFlowUrlInput {
+  flowUrl?: string | null;
+}
+
+/** 0 info, 1 warning, 2 error. */
+export type IvrIssueSeverity = 0 | 1 | 2;
+
+export interface IvrIssueDto {
+  severity: IvrIssueSeverity;
+  promptId?: string | null;
+  message: string;
+}
+
+export interface SimulateIvrInput {
+  keyPresses: (string | null)[];
+}
+
+/** 0 stay, 1 next, 2 hangup, 3 transfer. */
+export type IvrDecisionKind = 0 | 1 | 2 | 3;
+
+export interface IvrSimulationStepDto {
+  promptId: string;
+  promptName: string;
+  sayText: string;
+  keyPressed?: string | null;
+  outcome: IvrDecisionKind;
+  detail?: string | null;
 }
 
 export interface SetVoiceAccountInput {

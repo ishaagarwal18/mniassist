@@ -7,8 +7,11 @@ import { ChannelState } from '../../proxy/channels/channel-state.enum';
 import {
   CreateIvrPromptInput,
   IvrBranchAction,
+  IvrIssueDto,
   IvrPromptDto,
+  IvrSimulationStepDto,
   SetIvrBranchInput,
+  SimulateIvrInput,
   UpdateIvrPromptInput,
   VoiceChannelDto,
   VoiceChannelService as VoiceApi,
@@ -27,7 +30,7 @@ import { readApiError } from '../util/api-error';
 export class VoiceService {
   private readonly api = inject(VoiceApi);
 
-  private readonly mockChannel: VoiceChannelDto = {
+  private readonly mockChannel = signal<VoiceChannelDto>({
     id: 'voice-mock-1',
     exoPhone: '07966000000',
     accountSid: 'exotel-mock-sid',
@@ -36,7 +39,15 @@ export class VoiceService {
     state: ChannelState.Active,
     restrictionReason: null,
     passthruWebhookUrl: 'https://api.autoreach.example/api/voice/webhook/****/passthru',
-  };
+    flowUrl: null,
+    ivrSetup: {
+      ready: true,
+      gatherUrls: [1, 2, 3].map((l) => `https://api.autoreach.example/api/voice/ivr/****/gather/${l}`),
+      routeUrls: [1, 2].map((l) => `https://api.autoreach.example/api/voice/ivr/****/route/${l}`),
+      connectUrl: 'https://api.autoreach.example/api/voice/ivr/****/connect',
+      statusCallbackUrl: 'https://api.autoreach.example/api/voice/webhook/****/status',
+    },
+  });
 
   private readonly mockSales = 'prompt-sales';
   private readonly mockSupport = 'prompt-support';
@@ -91,8 +102,19 @@ export class VoiceService {
     defaultValue: [] as IvrPromptDto[],
   });
 
+  private readonly issuesResource = rxResource({
+    params: () => (environment.useMockData ? undefined : {}),
+    stream: () => this.api.getIvrIssues(),
+    defaultValue: [] as IvrIssueDto[],
+  });
+
+  /** What would go wrong for a caller in the current menu — from the same rules a live call runs. */
+  readonly issues = computed<readonly IvrIssueDto[]>(() =>
+    environment.useMockData ? [] : this.issuesResource.value(),
+  );
+
   readonly channel = computed<VoiceChannelDto | undefined>(() =>
-    environment.useMockData ? this.mockChannel : this.channelResource.value(),
+    environment.useMockData ? this.mockChannel() : this.channelResource.value(),
   );
 
   readonly prompts = computed<readonly IvrPromptDto[]>(() =>
@@ -112,6 +134,40 @@ export class VoiceService {
 
   reload(): void {
     this.promptsResource.reload();
+    this.issuesResource.reload();
+  }
+
+  /** Records the Exotel call-flow URL of the one-time skeleton flow. Blank clears it. */
+  async setFlowUrl(flowUrl: string): Promise<boolean> {
+    this._error.set(null);
+    if (environment.useMockData) {
+      this.mockChannel.update((c) => ({ ...c, flowUrl: flowUrl.trim() || null }));
+      return true;
+    }
+
+    try {
+      await firstValueFrom(this.api.setFlowUrl({ flowUrl: flowUrl.trim() || null }));
+      this.channelResource.reload();
+      return true;
+    } catch (e) {
+      this._error.set(readApiError(e, 'Could not save the flow URL.'));
+      return false;
+    }
+  }
+
+  /** Walks the saved menu with these key presses exactly as a live call would — the server runs the real rules. */
+  async simulate(input: SimulateIvrInput): Promise<IvrSimulationStepDto[] | null> {
+    this._error.set(null);
+    if (environment.useMockData) {
+      return simulateLocally(this.prompts(), input.keyPresses);
+    }
+
+    try {
+      return await firstValueFrom(this.api.simulateIvr(input));
+    } catch (e) {
+      this._error.set(readApiError(e, 'Could not run the simulation.'));
+      return null;
+    }
   }
 
   async createPrompt(input: CreateIvrPromptInput): Promise<boolean> {
@@ -242,4 +298,40 @@ export class VoiceService {
       return false;
     }
   }
+}
+
+/** Demo-build stand-in for the server's simulator: same three-level rules, no network. */
+function simulateLocally(prompts: readonly IvrPromptDto[], keys: (string | null)[]): IvrSimulationStepDto[] {
+  const steps: IvrSimulationStepDto[] = [];
+  let current = prompts.find((p) => p.isEntryPoint);
+  for (let level = 1; level <= 3 && current; level++) {
+    const key = keys[level - 1] ?? null;
+    const branch = key
+      ? (current.branches.find((b) => b.digit === key) ?? current.branches.find((b) => b.digit === '*'))
+      : undefined;
+    const last = level === 3;
+    let outcome: 0 | 1 | 2 | 3;
+    let detail: string;
+    let next: IvrPromptDto | undefined;
+
+    if (!key) {
+      outcome = last ? 2 : 0;
+      detail = last ? 'No key pressed on the last level — the call ends.' : 'No key pressed — the prompt plays again.';
+    } else if (branch?.action === IvrBranchAction.GoToPrompt && !last) {
+      next = prompts.find((p) => p.id === branch.nextPromptId);
+      outcome = 1;
+      detail = `Goes to “${next?.name ?? '(missing prompt)'}”.`;
+    } else if (branch?.action === IvrBranchAction.TransferToAgent) {
+      outcome = 3;
+      detail = `Transfers the caller to ${branch.transferToNumber}.`;
+    } else {
+      outcome = 2;
+      detail = branch ? 'A call cannot go deeper than three levels — the call ends.' : `Key ${key} ends the call.`;
+    }
+
+    steps.push({ promptId: current.id!, promptName: current.name, sayText: current.sayText, keyPressed: key, outcome, detail });
+    if (outcome === 2 || outcome === 3) break;
+    current = outcome === 1 ? next : current;
+  }
+  return steps;
 }
