@@ -16,6 +16,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/account/signup').then((m) => m.ArSignup),
   },
   {
+    path: 'forgot-password',
+    title: 'Reset your password · AutoReach',
+    loadComponent: () => import('./features/account/forgot-password').then((m) => m.ArForgotPassword),
+  },
+  {
+    path: 'reset-password',
+    title: 'Choose a new password · AutoReach',
+    loadComponent: () => import('./features/account/reset-password').then((m) => m.ArResetPassword),
+  },
+  {
     path: 'privacy',
     title: 'Privacy Policy · AutoReach',
     loadComponent: () =>

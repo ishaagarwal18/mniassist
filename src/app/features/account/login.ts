@@ -91,6 +91,7 @@ import { ArButton, ArIcon } from '../../ui';
           <p class="lg__hint">Demo build — any username and password will sign you in.</p>
         } @else {
           <a class="lg__link" routerLink="/signup">Create a workspace</a>
+          <a class="lg__link lg__link--forgot" routerLink="/forgot-password">Forgot password?</a>
         }
       </form>
       <p class="lg__foot">
@@ -207,6 +208,9 @@ import { ArButton, ArIcon } from '../../ui';
       color: var(--ar-teal-600);
       font: 500 12px var(--ar-font-sans);
       cursor: pointer;
+    }
+    .lg__link--forgot {
+      display: block;
     }
     .lg__foot {
       margin: 0;

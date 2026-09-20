@@ -10,8 +10,11 @@ import { AutomationNodeKind } from '../../proxy/messaging';
  * true, deadline passes → false). So the list reads top to bottom, and those two steps
  * carry one extra list — {@link BuilderStep.otherwise} — that runs when the step does not
  * go the "true" way. The steps after such a step in its own list are the "true" path.
- * Nothing rejoins: an otherwise path runs to its end and the journey stops there, exactly
- * as an empty one always did.
+ * By default nothing rejoins: an otherwise path runs to its end and the journey stops
+ * there, exactly as an empty one always did. A branching step can instead be set to
+ * <b>rejoin</b>: its "true" path then lives in {@link BuilderStep.then}, and when both
+ * that and the otherwise list run out they continue together with the steps that follow
+ * the branching step.
  *
  * That is deliberately less than a general graph. The point of doing it as a list is that
  * it stays readable, and it can be shown honestly only if a saved graph that does NOT fit
@@ -24,6 +27,10 @@ export interface BuilderStep {
   config: Record<string, unknown>;
   /** Only on a branching step: what runs when it does not go the "true" way. */
   otherwise?: BuilderStep[];
+  /** Only on a branching step with {@link rejoin}: the steps that run when it goes the "true" way. */
+  then?: BuilderStep[];
+  /** Both paths continue with the steps after this one, rather than the true path being that list. */
+  rejoin?: boolean;
   entered?: number;
   exited?: number;
 }
@@ -61,16 +68,42 @@ export function graphToSteps(nodes: readonly AutomationNodeDto[]): ParsedGraph {
   const visited = new Set<string>();
   let reason: string | undefined;
 
-  const walk = (startId: string | null | undefined): BuilderStep[] => {
+  const links = (n: AutomationNodeDto): string[] =>
+    [n.nextNodeId, n.trueNodeId, n.falseNodeId].filter((x): x is string => !!x && byId.has(x));
+
+  /** Every node reachable from `start`, End excluded, in breadth-first order. */
+  const reachable = (start: string | null | undefined): string[] => {
+    const order: string[] = [];
+    const seen = new Set<string>();
+    const queue = start && byId.has(start) ? [start] : [];
+    while (queue.length) {
+      const id = queue.shift()!;
+      if (seen.has(id) || byId.get(id)!.kind === AutomationNodeKind.End) continue;
+      seen.add(id);
+      order.push(id);
+      queue.push(...links(byId.get(id)!));
+    }
+    return order;
+  };
+
+  /** The first node both paths of a branch arrive at — where they rejoin — if any. */
+  const mergePoint = (node: AutomationNodeDto): string | undefined => {
+    const onTrue = new Set(reachable(node.trueNodeId));
+    return reachable(node.falseNodeId).find((id) => onTrue.has(id));
+  };
+
+  // `stop` is the node an enclosing rejoin continues at: a walk ends when it gets there
+  // and the enclosing step picks it up from there.
+  const walk = (startId: string | null | undefined, stop?: string): BuilderStep[] => {
     const out: BuilderStep[] = [];
     let cursor = startId ?? null;
 
-    while (cursor && byId.has(cursor)) {
+    while (cursor && byId.has(cursor) && cursor !== stop) {
       const node = byId.get(cursor)!;
       if (node.kind === AutomationNodeKind.End) break;
 
       if (visited.has(cursor)) {
-        reason ??= 'two paths lead to the same step (steps rejoin, or the journey loops)';
+        reason ??= 'two paths lead to the same step in a way the list cannot show (a loop, or paths that cross)';
         break;
       }
       visited.add(cursor);
@@ -88,9 +121,20 @@ export function graphToSteps(nodes: readonly AutomationNodeDto[]): ParsedGraph {
         if (node.nextNodeId) {
           reason ??= 'a branching step also has a plain "next" link';
         }
-        step.otherwise = walk(node.falseNodeId);
-        out.push(step);
-        cursor = node.trueNodeId ?? null;
+        const merge = mergePoint(node);
+        if (merge) {
+          step.rejoin = true;
+          step.then = walk(node.trueNodeId, merge);
+          step.otherwise = walk(node.falseNodeId, merge);
+          out.push(step);
+          cursor = merge;
+        } else {
+          // Without a rejoin the otherwise path ends the journey. If it reaches the enclosing
+          // rejoin point it is not doing that, so it is walked unbounded and flagged below.
+          step.otherwise = walk(node.falseNodeId);
+          out.push(step);
+          cursor = node.trueNodeId ?? null;
+        }
       } else {
         if (node.trueNodeId || node.falseNodeId) {
           reason ??= 'a non-branching step has true/false links';
@@ -129,12 +173,13 @@ export function stepsToGraph(
   const nodes: CreateUpdateAutomationNodeDto[] = [];
   let row = 1;
 
-  // Emits one list and returns the id of its first node (or End when it is empty).
-  const emit = (list: readonly BuilderStep[]): string => {
+  // Emits one list and returns the id of its first node. `after` is where the list's last
+  // step goes: End for a path that simply stops, or the point a rejoin continues at.
+  const emit = (list: readonly BuilderStep[], after: string): string => {
     const ids = list.map(() => newId());
 
     list.forEach((step, i) => {
-      const next = ids[i + 1] ?? endId;
+      const next = ids[i + 1] ?? after;
       const node: CreateUpdateAutomationNodeDto = {
         id: ids[i],
         kind: step.kind,
@@ -144,8 +189,13 @@ export function stepsToGraph(
       };
 
       if (isBranching(step.kind)) {
-        node.trueNodeId = next;
-        node.falseNodeId = step.otherwise?.length ? emit(step.otherwise) : endId;
+        if (step.rejoin) {
+          node.trueNodeId = step.then?.length ? emit(step.then, next) : next;
+          node.falseNodeId = step.otherwise?.length ? emit(step.otherwise, next) : next;
+        } else {
+          node.trueNodeId = next;
+          node.falseNodeId = step.otherwise?.length ? emit(step.otherwise, endId) : endId;
+        }
       } else {
         node.nextNodeId = next;
       }
@@ -153,10 +203,10 @@ export function stepsToGraph(
       nodes.push(node);
     });
 
-    return ids[0] ?? endId;
+    return ids[0] ?? after;
   };
 
-  const first = emit(steps);
+  const first = emit(steps, endId);
 
   return [
     { id: triggerId, kind: AutomationNodeKind.Trigger, configJson: '{}', nextNodeId: first, positionX: 0, positionY: 0 },
@@ -175,7 +225,14 @@ function transform(
 ): BuilderStep[] {
   const index = list.findIndex((s) => s.localId === id);
   if (index >= 0) return fn(list, index);
-  return list.map((s) => (s.otherwise ? { ...s, otherwise: transform(s.otherwise, id, fn) } : s));
+  return list.map((s) => {
+    if (!s.otherwise && !s.then) return s;
+    return {
+      ...s,
+      ...(s.otherwise ? { otherwise: transform(s.otherwise, id, fn) } : {}),
+      ...(s.then ? { then: transform(s.then, id, fn) } : {}),
+    };
+  });
 }
 
 export const updateStep = (
@@ -196,8 +253,36 @@ export const moveStep = (list: BuilderStep[], id: string, delta: -1 | 1): Builde
     return copy;
   });
 
-/** Appends to the top-level list, or to the otherwise list of the step `owner`. */
-export function appendStep(list: BuilderStep[], owner: string | null, step: BuilderStep): BuilderStep[] {
+export type BranchName = 'then' | 'otherwise';
+
+/** Appends to the top-level list (owner null), or to a branch list of the step `owner`. */
+export function appendStep(
+  list: BuilderStep[],
+  owner: string | null,
+  step: BuilderStep,
+  branch: BranchName = 'otherwise',
+): BuilderStep[] {
   if (owner === null) return [...list, step];
-  return updateStep(list, owner, (s) => ({ ...s, otherwise: [...(s.otherwise ?? []), step] }));
+  return updateStep(list, owner, (s) => ({ ...s, [branch]: [...(s[branch] ?? []), step] }));
+}
+
+/**
+ * Turns rejoining on or off for a branching step. Turning it on moves nothing on the
+ * screen's meaning of "after": the true path starts empty and the steps below the step
+ * now run after both paths. Turning it off folds the true path back in front of them.
+ * It is refused (list returned unchanged) while the otherwise path still has steps,
+ * because without a rejoin that path would have to end the journey where it ends.
+ */
+export function setRejoin(list: BuilderStep[], id: string, on: boolean): BuilderStep[] {
+  return transform(list, id, (siblings, i) => {
+    const step = siblings[i];
+    if (!!step.rejoin === on) return siblings;
+    if (!on && step.otherwise?.length) return siblings;
+    if (on) {
+      return siblings.map((s, j) => (j === i ? { ...s, rejoin: true, then: s.then ?? [] } : s));
+    }
+    const copy = [...siblings];
+    copy.splice(i, 1, { ...step, rejoin: false, then: undefined }, ...(step.then ?? []));
+    return copy;
+  });
 }

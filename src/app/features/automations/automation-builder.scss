@@ -191,3 +191,72 @@
   font: 500 12px var(--ar-font-sans);
   color: var(--ar-teal-600);
 }
+
+/* Rejoin: the "if true" list is a solid rule (the main line of the branch); the join note
+   sits under both. */
+.branch--then {
+  border-left-style: solid;
+  border-left-color: var(--ar-teal-600);
+}
+.branch__join {
+  margin: 8px 0 0;
+  color: var(--ar-teal-600);
+}
+.node__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 2px;
+  font: 500 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+  cursor: pointer;
+}
+
+/* Flow map: read-only picture of the graph the engine runs. Uses currentColor so it
+   follows the theme. */
+.map {
+  margin-top: 26px;
+  color: var(--ar-ink-700);
+}
+.map__title {
+  margin: 0 0 8px;
+  font: 600 11px var(--ar-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ar-teal-600);
+}
+.map__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.map__edge {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  opacity: 0.7;
+}
+.map__edge--else {
+  stroke-dasharray: 4 3;
+}
+.map__edgelabel {
+  font: 500 10px var(--ar-font-sans);
+  fill: currentColor;
+  opacity: 0.75;
+}
+.map__node {
+  fill: var(--ar-bg-100);
+  stroke: var(--ar-line-300);
+}
+.map__node--branch {
+  stroke: var(--ar-teal-600);
+}
+.map__node--end {
+  stroke-dasharray: 3 3;
+}
+.map__nodetext {
+  font: 500 11.5px var(--ar-font-sans);
+  fill: currentColor;
+  text-anchor: middle;
+}

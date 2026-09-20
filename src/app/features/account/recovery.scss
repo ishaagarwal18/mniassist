@@ -1,0 +1,89 @@
+/* Shared by the forgot-password and reset-password screens; mirrors the sign-in card. */
+:host {
+  display: flex;
+  min-height: 100vh;
+  background: var(--ar-bg-100);
+}
+.rc {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 24px;
+}
+.rc__card {
+  width: 360px;
+  max-width: 100%;
+  padding: 28px 26px 24px;
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-card);
+  box-shadow: 0 10px 40px rgba(15, 23, 32, 0.08);
+  text-align: center;
+}
+.rc__title {
+  margin: 0 0 6px;
+  font: 600 16px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+}
+.rc__lead {
+  margin: 0 0 16px;
+  font: 400 12.5px/1.5 var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+.rc__error {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: var(--ar-radius-inset);
+  background: var(--ar-red-100);
+  color: var(--ar-red-600);
+  font: 400 12px var(--ar-font-sans);
+  text-align: left;
+}
+.rc__ok {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: var(--ar-radius-inset);
+  background: var(--ar-bg-100);
+  color: var(--ar-ink-700);
+  font: 400 12.5px/1.5 var(--ar-font-sans);
+  text-align: left;
+}
+.rc__field {
+  display: block;
+  text-align: left;
+  margin-bottom: 12px;
+}
+.rc__field > span {
+  display: block;
+  margin-bottom: 4px;
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}
+.rc__opt {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--ar-ink-400);
+}
+.rc__card button[ar-button] {
+  width: 100%;
+}
+.rc__links {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  font: 500 12px var(--ar-font-sans);
+}
+.rc__links a,
+.rc__linkbtn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--ar-teal-600);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}

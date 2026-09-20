@@ -10,9 +10,11 @@ import {
   moveStep,
   nextLocalId,
   removeStep,
+  setRejoin as setRejoinIn,
   stepsToGraph,
   updateStep,
 } from '../../core/models/automation-graph';
+import { layoutFlowMap } from '../../core/models/automation-flow-map';
 import { OpsService } from '../../core/services/ops.service';
 import { TemplateService } from '../../core/services/template.service';
 import { WorkflowStore } from '../../core/services/workflow.service';
@@ -243,7 +245,11 @@ export class ArAutomationBuilder {
     return OPERATORS.find((o) => o.value === this.cfg(step, 'operator'))?.needsValue ?? true;
   }
 
-  protected addStep(owner: string | null, kind: AutomationNodeKind): void {
+  /**
+   * `owner` names the list being added to: 'root', a step's id (its otherwise list), or
+   * `<id>#then` (the true list of a step whose paths rejoin).
+   */
+  protected addStep(owner: string, kind: AutomationNodeKind): void {
     this.saved.set(false);
     const step: BuilderStep = {
       localId: nextLocalId(),
@@ -251,9 +257,55 @@ export class ArAutomationBuilder {
       config: this.defaultConfig(kind),
       otherwise: isBranching(kind) ? [] : undefined,
     };
-    this.steps.update((list) => appendStep(list, owner, step));
+    if (owner === 'root') {
+      this.steps.update((list) => appendStep(list, null, step));
+    } else if (owner.endsWith('#then')) {
+      this.steps.update((list) => appendStep(list, owner.slice(0, -'#then'.length), step, 'then'));
+    } else {
+      this.steps.update((list) => appendStep(list, owner, step, 'otherwise'));
+    }
     this.addMenu.set(null);
   }
+
+  protected setRejoin(id: string, on: boolean): void {
+    this.saved.set(false);
+    this.steps.update((list) => setRejoinIn(list, id, on));
+  }
+
+  /** Whether the list named by `owner` belongs to a step whose paths rejoin. */
+  protected rejoins(owner: string): boolean {
+    const id = owner.endsWith('#then') ? owner.slice(0, -'#then'.length) : owner;
+    const find = (list: BuilderStep[]): BuilderStep | undefined => {
+      for (const s of list) {
+        if (s.localId === id) return s;
+        const hit = find(s.otherwise ?? []) ?? find(s.then ?? []);
+        if (hit) return hit;
+      }
+      return undefined;
+    };
+    return !!find(this.steps())?.rejoin;
+  }
+
+  /** What the "true" branch of a rejoining step is called. */
+  protected thenLabel(step: BuilderStep): string {
+    return step.kind === AutomationNodeKind.WaitForReply
+      ? 'If they reply'
+      : 'If it matches';
+  }
+
+  /** The automation drawn as the graph the engine will run. */
+  protected readonly flowMap = computed(() => {
+    let n = 0;
+    const nodes = stepsToGraph(this.steps(), () => `n${++n}`);
+    if (nodes.length <= 2) return null; // just Trigger → End: nothing worth drawing yet
+    const label = (node: { kind?: AutomationNodeKind }): string => {
+      if (node.kind === AutomationNodeKind.Trigger) return 'Trigger';
+      if (node.kind === AutomationNodeKind.End) return 'End';
+      const text = KIND_META[node.kind ?? AutomationNodeKind.SendSessionMessage]?.label ?? 'Step';
+      return text.length > 20 ? text.slice(0, 19) + '…' : text;
+    };
+    return layoutFlowMap(nodes, label);
+  });
 
   private defaultConfig(kind: AutomationNodeKind): Record<string, unknown> {
     switch (kind) {
@@ -325,6 +377,7 @@ export class ArAutomationBuilder {
           break;
         }
       }
+      if (s.then?.length) out.push(...this.collectIssues(s.then, `${at} › if true › `));
       if (s.otherwise?.length) out.push(...this.collectIssues(s.otherwise, `${at} › otherwise › `));
     });
     return out;

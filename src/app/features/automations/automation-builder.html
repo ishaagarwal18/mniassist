@@ -216,12 +216,36 @@
         }
 
         @if (isBranching(step.kind)) {
+          <label class="node__check">
+            <input
+              type="checkbox"
+              [checked]="!!step.rejoin"
+              [disabled]="!!step.rejoin && (step.otherwise?.length ?? 0) > 0"
+              (change)="setRejoin(step.localId, $any($event.target).checked)"
+            />
+            <span>Both paths carry on with the steps below</span>
+          </label>
+          @if (step.rejoin && (step.otherwise?.length ?? 0) > 0) {
+            <p class="node__blurb">Empty the “otherwise” path to turn this off.</p>
+          }
+
+          @if (step.rejoin) {
+            <div class="branch branch--then">
+              <div class="branch__label">{{ thenLabel(step) }}</div>
+              <ng-container
+                *ngTemplateOutlet="stepList; context: { $implicit: step.then ?? [], owner: step.localId + '#then' }"
+              />
+            </div>
+          }
           <div class="branch">
             <div class="branch__label">{{ otherwiseLabel(step) }}</div>
             <ng-container
               *ngTemplateOutlet="stepList; context: { $implicit: step.otherwise ?? [], owner: step.localId }"
             />
           </div>
+          @if (step.rejoin) {
+            <p class="node__blurb branch__join">↓ Both paths meet here and continue with the steps below.</p>
+          }
         }
       </div>
     </section>
@@ -245,7 +269,7 @@
             ar-button
             type="button"
             variant="ghost"
-            (click)="addStep(owner === 'root' ? null : owner, k.kind)"
+            (click)="addStep(owner, k.kind)"
           >
             {{ k.label }}
           </button>
@@ -253,7 +277,7 @@
       </div>
     }
   </div>
-  @if (owner !== 'root') {
+  @if (owner !== 'root' && !rejoins(owner)) {
     <p class="node__blurb branch__end">The journey ends when this path runs out of steps.</p>
   }
 </ng-template>
@@ -305,6 +329,50 @@
     </section>
 
     <ng-container *ngTemplateOutlet="stepList; context: { $implicit: steps(), owner: 'root' }" />
+
+    <!-- ── Flow map: the same automation drawn as the graph the engine runs ─────────── -->
+    <section class="map">
+      <h3 class="map__title">Flow map</h3>
+      @if (flowMap(); as m) {
+        <svg
+          class="map__svg"
+          role="img"
+          aria-label="The automation drawn as a flow: solid arrows are the main path, dashed arrows are the otherwise path"
+          [attr.viewBox]="'0 0 ' + m.width + ' ' + m.height"
+          [style.max-width.px]="m.width"
+        >
+          <defs>
+            <marker id="ab-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0 0L8 4L0 8z" fill="currentColor" />
+            </marker>
+          </defs>
+          @for (e of m.edges; track $index) {
+            <path
+              [attr.d]="e.d"
+              class="map__edge"
+              [class.map__edge--else]="e.otherwise"
+              marker-end="url(#ab-arrow)"
+            />
+            @if (e.label) {
+              <text class="map__edgelabel" [attr.x]="e.lx" [attr.y]="e.ly">{{ e.label }}</text>
+            }
+          }
+          @for (n of m.nodes; track n.id) {
+            <g [attr.transform]="'translate(' + n.x + ',' + n.y + ')'">
+              <rect
+                class="map__node"
+                [class.map__node--branch]="n.branching"
+                [class.map__node--end]="n.terminal"
+                [attr.width]="m.nodeW"
+                [attr.height]="m.nodeH"
+                rx="8"
+              />
+              <text class="map__nodetext" [attr.x]="m.nodeW / 2" [attr.y]="m.nodeH / 2 + 4">{{ n.label }}</text>
+            </g>
+          }
+        </svg>
+      }
+    </section>
 
     <div class="rail"><span class="rail__line rail__line--end"></span></div>
     <section class="node node--end">

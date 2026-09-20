@@ -6,6 +6,7 @@ import {
   graphToSteps,
   moveStep,
   removeStep,
+  setRejoin,
   stepsToGraph,
   updateStep,
 } from './automation-graph';
@@ -76,7 +77,7 @@ describe('automation step tree ↔ node graph', () => {
     expect(condition.trueNodeId).toBe(end.id);
   });
 
-  it('refuses to represent a graph whose paths rejoin, rather than flattening it', () => {
+  it('reads paths that meet again as a rejoining branch', () => {
     const nodes: AutomationNodeDto[] = [
       { id: 't', kind: K.Trigger, nextNodeId: 'c' },
       { id: 'c', kind: K.Condition, trueNodeId: 'a', falseNodeId: 'b', configJson: '{}' },
@@ -88,8 +89,79 @@ describe('automation step tree ↔ node graph', () => {
 
     const parsed = graphToSteps(nodes);
 
-    expect(parsed.representable).toBe(false);
-    expect(parsed.reason).toContain('same step');
+    expect(parsed.representable).toBe(true);
+    expect(parsed.steps.map((s) => s.kind)).toEqual([K.Condition, K.AssignAgent]);
+    expect(parsed.steps[0].rejoin).toBe(true);
+    expect(parsed.steps[0].then!.length).toBe(1);
+    expect(parsed.steps[0].otherwise!.length).toBe(1);
+  });
+
+  it('round-trips a rejoining branch, an empty side, and one nested inside another', () => {
+    const inner = step(K.Condition, { field: 'contact.role' }, [step(K.Wait, { minutes: 5 })]);
+    inner.rejoin = true;
+    inner.then = [];
+    const outer = step(K.WaitForReply, { hours: 24 }, [step(K.SendSessionMessage, { text: 'nudge' })]);
+    outer.rejoin = true;
+    outer.then = [step(K.SendSessionMessage, { text: 'thanks' }), inner];
+    const tree = [outer, step(K.CreateEnquiry, { subject: 'either way' })];
+
+    const nodes = stepsToGraph(tree, sequentialIds) as AutomationNodeDto[];
+    const parsed = graphToSteps(nodes);
+
+    expect(parsed.representable).toBe(true);
+    const full = (steps: BuilderStep[]): unknown =>
+      steps.map((s) => ({
+        kind: s.kind,
+        config: s.config,
+        rejoin: !!s.rejoin,
+        then: s.then ? full(s.then) : undefined,
+        otherwise: s.otherwise ? full(s.otherwise) : undefined,
+      }));
+    expect(full(parsed.steps)).toEqual(full(tree));
+
+    // Both sides of the outer branch reach the enquiry; nothing else does.
+    const enquiry = nodes.find((x) => x.kind === K.CreateEnquiry)!;
+    const into = nodes.filter((x) => [x.nextNodeId, x.trueNodeId, x.falseNodeId].includes(enquiry.id));
+    expect(into.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('a rejoin with both sides empty points straight at the next step', () => {
+    const c = step(K.Condition, {});
+    c.rejoin = true;
+    c.then = [];
+    const nodes = stepsToGraph([c, step(K.Wait, { minutes: 1 })], sequentialIds);
+    const cond = nodes.find((x) => x.kind === K.Condition)!;
+    const wait = nodes.find((x) => x.kind === K.Wait)!;
+
+    expect(cond.trueNodeId).toBe(wait.id);
+    expect(cond.falseNodeId).toBe(wait.id);
+  });
+
+  it('refuses a graph whose paths cross without a clean rejoin, rather than flattening it', () => {
+    // b's true side jumps back into a's branch — a loop of sorts the list cannot show.
+    const nodes: AutomationNodeDto[] = [
+      { id: 't', kind: K.Trigger, nextNodeId: 'c' },
+      { id: 'c', kind: K.Condition, trueNodeId: 'a', falseNodeId: 'b', configJson: '{}' },
+      { id: 'a', kind: K.SendSessionMessage, nextNodeId: 'b', configJson: '{}' },
+      { id: 'b', kind: K.Condition, trueNodeId: 'a', falseNodeId: 'e', configJson: '{}' },
+      { id: 'e', kind: K.End },
+    ] as AutomationNodeDto[];
+
+    expect(graphToSteps(nodes).representable).toBe(false);
+  });
+
+  it('turns rejoining on and off without losing the true path', () => {
+    const c = step(K.Condition, {}, []);
+    const list = [c, step(K.Wait, { minutes: 1 })];
+
+    const on = setRejoin(list, c.localId, true);
+    expect(on[0].rejoin).toBe(true);
+    expect(on[0].then).toEqual([]);
+
+    const withThen = updateStep(on, c.localId, (s) => ({ ...s, then: [step(K.AssignAgent, {})] }));
+    const off = setRejoin(withThen, c.localId, false);
+    expect(off.map((s) => s.kind)).toEqual([K.Condition, K.AssignAgent, K.Wait]);
+    expect(off[0].rejoin).toBe(false);
   });
 
   it('refuses a graph with steps the trigger cannot reach — they would vanish on save', () => {
