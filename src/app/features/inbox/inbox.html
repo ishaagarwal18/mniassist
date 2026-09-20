@@ -28,7 +28,12 @@
                 <span class="conv__name">{{ c.contactName }}</span>
                 <span class="conv__time ar-mono">{{ c.at }}</span>
               </span>
-              <span class="conv__org">{{ c.company }}</span>
+              <span class="conv__org">
+                @if (c.channel) {
+                  {{ c.channel }}{{ c.company ? ' · ' : '' }}
+                }
+                {{ c.company }}
+              </span>
               <span class="conv__snippet">{{ c.snippet }}</span>
               @if (windowChipFor(c); as w) {
                 <ar-chip class="conv__chip" [tone]="w.tone" [dot]="true">{{ w.label }}</ar-chip>
@@ -46,7 +51,12 @@
         <div class="thread__who">
           <strong class="thread__name">{{ thread.contactName }}</strong>
           <span class="thread__meta"
-            >{{ thread.company }} · <span class="ar-mono">{{ thread.phoneE164 }}</span></span
+            >{{ thread.company }} ·
+            @if (thread.channel) {
+              <ar-chip tone="neutral">{{ thread.channel }}</ar-chip>
+            } @else {
+              <span class="ar-mono">{{ thread.phoneE164 }}</span>
+            }</span
           >
         </div>
         @if (windowLeft(); as left) {
@@ -167,14 +177,16 @@
             }
 
             <div class="composer__tools">
-              <button
-                type="button"
-                class="composer__tool"
-                title="Attach a file"
-                (click)="fileInput.click()"
-              >
-                <ar-icon name="attach" [size]="17" />
-              </button>
+              @if (!thread.channel) {
+                <button
+                  type="button"
+                  class="composer__tool"
+                  title="Attach a file"
+                  (click)="fileInput.click()"
+                >
+                  <ar-icon name="attach" [size]="17" />
+                </button>
+              }
               <button
                 type="button"
                 class="composer__tool"
@@ -191,33 +203,37 @@
                 accept="image/*,video/*,audio/*,application/pdf"
                 (change)="onFile($event)"
               />
-              <button
-                type="button"
-                class="composer__tool"
-                title="Attach a document from the library"
-                (click)="pickerOpen.set(true)"
-              >
-                <ar-icon name="document" [size]="17" />
-              </button>
-              <button
-                type="button"
-                class="composer__tool"
-                title="Share a location"
-                [disabled]="sending()"
-                (click)="shareLocation()"
-              >
-                <ar-icon name="globe" [size]="17" />
-              </button>
-              <button
-                type="button"
-                class="composer__tool"
-                title="Add reply buttons"
-                (click)="openButtons()"
-              >
-                <ar-icon name="flow" [size]="17" />
-              </button>
+              @if (!thread.channel) {
+                <button
+                  type="button"
+                  class="composer__tool"
+                  title="Attach a document from the library"
+                  (click)="pickerOpen.set(true)"
+                >
+                  <ar-icon name="document" [size]="17" />
+                </button>
+                <button
+                  type="button"
+                  class="composer__tool"
+                  title="Share a location"
+                  [disabled]="sending()"
+                  (click)="shareLocation()"
+                >
+                  <ar-icon name="globe" [size]="17" />
+                </button>
+                <button
+                  type="button"
+                  class="composer__tool"
+                  title="Add reply buttons"
+                  (click)="openButtons()"
+                >
+                  <ar-icon name="flow" [size]="17" />
+                </button>
+              }
               <span class="composer__spacer"></span>
-              <span class="composer__free">Free inside the open window</span>
+              <span class="composer__free">
+                {{ thread.channel ? 'Text only on ' + thread.channel : 'Free inside the open window' }}
+              </span>
               <button
                 ar-button
                 type="button"

@@ -1,0 +1,196 @@
+<ar-topbar
+  title="Email sending"
+  subtitle="Sender identity and delivery route"
+  help="Marketing email goes out from the sender you set here, either through AutoReach's shared relay or through your own SMTP server. Every marketing email carries a one-click unsubscribe link automatically."
+/>
+
+<div class="es ar-scroll">
+  @if (loading()) {
+    <p class="es__muted">Loading…</p>
+  } @else if (channel(); as c) {
+    @if (!c.isSenderConfigured) {
+      <ar-banner tone="warn">
+        No sender address is set up yet, so email campaigns cannot send. Enter the address your
+        emails should come from below.
+      </ar-banner>
+    }
+    @if (c.unsubscribeProblem; as problem) {
+      <ar-banner tone="warn">
+        Marketing email is paused platform-wide: unsubscribe links cannot be built ({{ problem }}).
+        Ask your AutoReach administrator to fix this — sending without an unsubscribe link is not
+        allowed.
+      </ar-banner>
+    }
+
+    @if (error(); as e) {
+      <p class="es__err">{{ e }}</p>
+    }
+    @if (notice(); as n) {
+      <p class="es__notice">{{ n }}</p>
+    }
+
+    <section class="panel">
+      <h2 class="panel__title">Sender</h2>
+      <div class="es__grid">
+        <label class="ar-field">
+          <span class="ar-field__label">From name</span>
+          <input
+            class="ar-field__input"
+            [value]="fromName()"
+            (input)="fromName.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">From address</span>
+          <input
+            class="ar-field__input"
+            type="email"
+            placeholder="sales@yourcompany.com"
+            [value]="fromAddress()"
+            (input)="fromAddress.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Reply-to <span class="ar-field__opt">(optional)</span></span>
+          <input
+            class="ar-field__input"
+            type="email"
+            [value]="replyTo()"
+            (input)="replyTo.set($any($event.target).value)"
+          />
+        </label>
+      </div>
+      <div class="panel__actions">
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="!canSaveSender() || savingSender()"
+          (click)="saveSender()"
+        >
+          {{ savingSender() ? 'Saving…' : 'Save sender' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel__title">Delivery</h2>
+
+      <label class="es__radio">
+        <input
+          type="radio"
+          name="route"
+          [checked]="route() === 'shared'"
+          (change)="route.set('shared')"
+        />
+        <span>
+          <strong>AutoReach shared relay</strong>
+          <span class="es__hint"
+            >Nothing to set up. Mail shares a sending reputation with other workspaces, and replies
+            come to your reply-to address.</span
+          >
+        </span>
+      </label>
+      <label class="es__radio">
+        <input
+          type="radio"
+          name="route"
+          [checked]="route() === 'own'"
+          (change)="route.set('own')"
+        />
+        <span>
+          <strong>My own SMTP server</strong>
+          <span class="es__hint"
+            >Mail leaves under your own domain and your own SPF/DKIM signature, so deliverability and
+            bounces are yours to manage. Use the server your email provider gives you (Google
+            Workspace, Microsoft 365, Zoho, SendGrid, Amazon SES…).</span
+          >
+        </span>
+      </label>
+
+      @if (route() === 'own') {
+        <div class="es__grid es__grid--smtp">
+          <label class="ar-field">
+            <span class="ar-field__label">SMTP host</span>
+            <input
+              class="ar-field__input"
+              placeholder="smtp.yourprovider.com"
+              autocapitalize="none"
+              [value]="host()"
+              (input)="host.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Port</span>
+            <select class="ar-field__input" (change)="setPort(+$any($event.target).value)">
+              @for (p of [587, 465, 25, 2525]; track p) {
+                <option [value]="p" [selected]="p === port()">{{ p }}</option>
+              }
+            </select>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Username <span class="ar-field__opt">(if it needs a login)</span></span>
+            <input
+              class="ar-field__input"
+              autocomplete="off"
+              autocapitalize="none"
+              [value]="username()"
+              (input)="username.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">
+              Password
+              @if (c.smtpHasPassword) {
+                <span class="ar-field__opt">(saved — leave blank to keep it)</span>
+              }
+            </span>
+            <input
+              class="ar-field__input"
+              type="password"
+              autocomplete="new-password"
+              [value]="password()"
+              (input)="password.set($any($event.target).value)"
+            />
+          </label>
+        </div>
+        <p class="es__hint">
+          The connection is always encrypted{{ implicitTls() ? ' (TLS on connect)' : ' (STARTTLS)' }}. Only the standard mail
+          ports are allowed, and the server must be on the public internet.
+        </p>
+      }
+
+      <div class="panel__actions">
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="!canSaveDelivery() || savingDelivery()"
+          (click)="saveDelivery()"
+        >
+          {{ savingDelivery() ? 'Saving…' : 'Save delivery settings' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel__title">Send a test email</h2>
+      <div class="es__test">
+        <input
+          class="ar-field__input"
+          type="email"
+          aria-label="Send the test email to"
+          placeholder="you@yourcompany.com"
+          [value]="testTo()"
+          (input)="testTo.set($any($event.target).value)"
+        />
+        <button ar-button type="button" [disabled]="!canTest() || testing()" (click)="sendTest()">
+          {{ testing() ? 'Sending…' : 'Send test' }}
+        </button>
+      </div>
+      @if (!c.isSenderConfigured) {
+        <p class="es__hint">Save a sender address first.</p>
+      }
+    </section>
+  }
+</div>

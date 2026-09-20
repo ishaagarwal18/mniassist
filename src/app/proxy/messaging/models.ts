@@ -118,7 +118,9 @@ export interface ConversationContextDto {
 export interface ConversationDto extends EntityDto<string> {
   channelId?: string;
   contactId?: string;
-  contactWaId?: string;
+  contactWaId?: string | null;
+  /** 0 WhatsApp, 1 Instagram, 2 Messenger, 3 SMS, 4 Email, 5 Voice. */
+  channelKind?: number;
   contactDisplayName?: string | null;
   contactCompanyName?: string | null;
   state?: ConversationState;

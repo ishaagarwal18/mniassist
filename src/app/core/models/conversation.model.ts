@@ -41,6 +41,8 @@ export interface Conversation {
   readonly contactName: string;
   readonly company: string;
   readonly phoneE164: string;
+  /** Set only for a channel that is not WhatsApp (Messenger, Instagram) — those contacts have no phone. */
+  readonly channel?: string;
   readonly snippet: string;
   readonly at: string;
   readonly unread: number;

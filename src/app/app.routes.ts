@@ -258,6 +258,12 @@ export const routes: Routes = [
           import('./features/settings/ai-assistant').then((m) => m.ArAiAssistant),
       },
       {
+        path: 'settings/email-sending',
+        title: 'Email sending · AutoReach',
+        loadComponent: () =>
+          import('./features/settings/email-sending').then((m) => m.ArEmailSending),
+      },
+      {
         path: 'settings/support-access',
         title: 'Support access · AutoReach',
         loadComponent: () =>

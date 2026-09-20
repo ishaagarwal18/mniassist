@@ -137,6 +137,9 @@ export function toContact(dto: ContactDto): Contact {
   };
 }
 
+/** Channels whose contacts have no phone number, keyed by the API's ChannelKind. WhatsApp (0) is absent on purpose. */
+const PHONELESS_CHANNEL: Record<number, string | undefined> = { 1: 'Instagram', 2: 'Messenger' };
+
 export function toConversation(
   dto: ConversationDto,
   messages: readonly Message[] = [],
@@ -146,6 +149,7 @@ export function toConversation(
     contactName: dto.contactDisplayName ?? formatWaId(dto.contactWaId),
     company: dto.contactCompanyName ?? '',
     phoneE164: formatWaId(dto.contactWaId),
+    channel: PHONELESS_CHANNEL[dto.channelKind ?? 0],
     snippet: dto.lastMessagePreview ?? '',
     at: formatClock(dto.lastInboundAtUtc ?? dto.lastOutboundAtUtc),
     unread: dto.unreadCount ?? 0,

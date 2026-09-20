@@ -217,6 +217,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Integrations',
       },
       {
+        label: 'Email sending',
+        icon: 'send',
+        route: '/settings/email-sending',
+        permission: 'AutoReach.Channels',
+      },
+      {
         label: 'Support access',
         icon: 'user',
         route: '/settings/support-access',
