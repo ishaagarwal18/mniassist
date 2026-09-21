@@ -45,6 +45,10 @@
   </ar-dialog>
 }
 
+@if (editingId(); as id) {
+  <ar-quote-editor [quotationId]="id" (closed)="editorClosed($event)" />
+}
+
 <div class="q ar-scroll">
   @if (loading()) {
     <p class="q__empty">Loading…</p>
@@ -55,6 +59,7 @@
       <tr>
         <th>Reference</th>
         <th>State</th>
+        <th class="num">GST</th>
         <th class="num">Total</th>
         <th>Issued</th>
         <th>Valid until</th>
@@ -74,11 +79,24 @@
           <td>
             <ar-chip [tone]="tone(q.state)">{{ q.state }}</ar-chip>
           </td>
+          <td class="num muted" [attr.title]="gstTitle(q) || null">
+            @if (q.taxInPaise !== undefined) {
+              {{ money(q.taxInPaise) }}
+              @if ((q.taxBreakdown?.length ?? 0) > 1) {
+                <span class="mix">{{ q.taxBreakdown?.length }} rates</span>
+              }
+            } @else {
+              —
+            }
+          </td>
           <td class="num">{{ money(q.totalInPaise) }}</td>
           <td>{{ when(q.issuedAt) }}</td>
           <td>{{ when(q.validUntil) }}</td>
           <td [class.due]="followUp(q) === 'due now'">{{ followUp(q) }}</td>
           <td class="actions">
+            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="editingId.set(q.id)">
+              {{ q.state === 'won' || q.state === 'lost' || q.state === 'expired' ? 'View' : 'Lines' }}
+            </button>
             <button ar-button variant="ghost" [disabled]="!!busy()" (click)="download(q)">
               PDF
             </button>
@@ -93,7 +111,7 @@
       }
       @if (quotes().length === 0 && !loading()) {
         <tr>
-          <td colspan="7" class="muted">No quotations yet.</td>
+          <td colspan="8" class="muted">No quotations yet.</td>
         </tr>
       }
     </tbody>

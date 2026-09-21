@@ -29,6 +29,8 @@ export interface CatalogueProductDto {
   syncState: CatalogueSyncState;
   lastSyncedAtUtc?: string | null;
   syncError?: string | null;
+  /** The product in the product catalogue this listing comes from. While set, name, description and price are the product's. */
+  productId?: string | null;
 }
 
 export interface CreateUpdateCatalogueProductDto {
@@ -40,6 +42,15 @@ export interface CreateUpdateCatalogueProductDto {
   currency: string;
   imageUrl?: string | null;
   availability: CatalogueProductAvailability;
+}
+
+export interface AddCatalogueFromProductsResultDto {
+  added: number;
+  skipped: string[];
+}
+
+export interface LinkExistingResultDto {
+  linked: number;
 }
 
 export interface CatalogueSyncResultDto {
@@ -79,6 +90,18 @@ export class CatalogueService {
   delete = (id: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, void>(
       { method: 'DELETE', url: `/api/auto-reach/catalogue/${id}` },
+      { apiName: this.apiName, ...config },
+    );
+
+  addFromProducts = (channelId: string, productIds: string[], config?: Partial<Rest.Config>) =>
+    this.restService.request<any, AddCatalogueFromProductsResultDto>(
+      { method: 'POST', url: '/api/auto-reach/catalogue/from-products', body: { channelId, productIds } },
+      { apiName: this.apiName, ...config },
+    );
+
+  linkExisting = (channelId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, LinkExistingResultDto>(
+      { method: 'POST', url: `/api/auto-reach/catalogue/link-existing/${channelId}` },
       { apiName: this.apiName, ...config },
     );
 

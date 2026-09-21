@@ -100,3 +100,11 @@
   display: flex;
   gap: 4px;
 }
+.cat__choices { display: flex; flex-direction: column; max-height: 260px; overflow-y: auto; margin-bottom: 10px; border: 1px solid var(--ar-line-200); border-radius: var(--ar-radius-control); }
+.cat__choice {
+  display: grid; grid-template-columns: auto auto 1fr auto; gap: 10px; align-items: baseline;
+  padding: 7px 10px; border-bottom: 1px solid var(--ar-line-200); font: 400 12.5px var(--ar-font-sans); color: var(--ar-ink-800);
+}
+.cat__choice:last-child { border-bottom: 0; }
+.cat__choice-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat__choice-price { font-variant-numeric: tabular-nums; color: var(--ar-ink-600); }

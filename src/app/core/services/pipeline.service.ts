@@ -82,6 +82,10 @@ export interface Quotation {
   revision: number;
   state: QState;
   totalInPaise: number;
+  /** GST across the quotation, each line at its own rate. */
+  taxInPaise?: number;
+  /** GST by rate, for the tooltip on the list. */
+  taxBreakdown?: { ratePercent: number; taxInPaise: number }[];
   issuedAt?: string;
   validUntil?: string;
   nextFollowUpAt?: string;
@@ -193,6 +197,11 @@ function quotation(q: QuotationDto): Quotation {
     revision: q.revisionNumber ?? 0,
     state: q.state != null ? QSTATE[q.state] : 'draft',
     totalInPaise: q.totalInPaise ?? 0,
+    taxInPaise: q.taxInPaise ?? 0,
+    taxBreakdown: (q.taxBreakdown ?? []).map((t) => ({
+      ratePercent: (t.rateBasisPoints ?? 0) / 100,
+      taxInPaise: t.taxInPaise ?? 0,
+    })),
     issuedAt: q.issuedAtUtc ?? undefined,
     validUntil: q.validUntilUtc ?? undefined,
     nextFollowUpAt: q.nextFollowUpAtUtc ?? undefined,
@@ -506,6 +515,11 @@ export class PipelineStore {
 
   private reload(): void {
     this.tick.update((n) => n + 1);
+  }
+
+  /** Re-reads the quotation list, after lines were edited elsewhere. */
+  reloadQuotes(): void {
+    this.quotesResource.reload();
   }
 
   /** Where a card or drawer goes when advanced: the next stage of its pipeline, up to and including Won. */

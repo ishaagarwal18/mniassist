@@ -9,6 +9,8 @@ export interface PriceListItemDto {
   unitPriceInPaise?: number;
   uom?: string;
   minimumOrderQuantity?: number;
+  /** The catalogue product this SKU names; null when it is not in the catalogue. */
+  productId?: string | null;
 }
 
 export interface PriceListDto {

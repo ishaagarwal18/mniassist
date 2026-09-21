@@ -4,6 +4,14 @@ import type {
   IssueQuotationInput,
   QuotationDto,
 } from './models';
+import type {
+  CatalogueMatchDto,
+  RepriceQuotationInput,
+  RepriceResultDto,
+  ResolvedPriceDto,
+  ResolveQuotePriceInput,
+  SearchQuoteCatalogueInput,
+} from './quote-pricing.models';
 import { RestService, Rest } from '@abp/ng.core';
 import type { PagedResultDto } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
@@ -111,6 +119,39 @@ export class QuotationService {
         method: 'PUT',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/quotation/${id}`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  resolvePrice = (input: ResolveQuotePriceInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ResolvedPriceDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/quotation/resolve-price',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  searchCatalogue = (input: SearchQuoteCatalogueInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CatalogueMatchDto[]>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/quotation/search-catalogue',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  reprice = (id: string, input: RepriceQuotationInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, RepriceResultDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/quotation/${id}/reprice`,
         body: input,
       },
       { apiName: this.apiName, ...config },

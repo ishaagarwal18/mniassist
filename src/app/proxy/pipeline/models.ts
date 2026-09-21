@@ -8,6 +8,7 @@ import type { EnquiryStage } from './enquiry-stage.enum';
 import type { EntityDto, FullAuditedEntityDto, PagedAndSortedResultRequestDto } from '@abp/ng.core';
 import type { EnquiryEventKind } from './enquiry-event-kind.enum';
 import type { QuotationState } from './quotation-state.enum';
+import type { QuotePriceSource } from './quote-price-source.enum';
 import type { ReminderState } from './reminder-state.enum';
 import type { ReminderKind } from './reminder-kind.enum';
 import type { LostReasonCategory } from './lost-reason-category.enum';
@@ -43,6 +44,7 @@ export interface CreateUpdateInstalledAssetDto {
 
 export interface CreateUpdateQuotationDto {
   enquiryId?: string;
+  priceListId?: string | null;
   lines?: CreateUpdateQuotationLineDto[];
   taxRateBasisPoints?: number;
 }
@@ -55,6 +57,12 @@ export interface CreateUpdateQuotationLineDto {
   unit?: string;
   unitPriceInPaise?: number;
   discountBasisPoints?: number;
+  useCataloguePrice?: boolean;
+  taxRateBasisPoints?: number | null;
+  keepPricing?: boolean;
+  priceSource?: QuotePriceSource;
+  priceListId?: string | null;
+  listPriceInPaise?: number | null;
 }
 
 export interface EnquiryBoardColumnDto {
@@ -197,8 +205,10 @@ export interface QuotationDto extends FullAuditedEntityDto<string> {
   state?: QuotationState;
   revisionNumber?: number;
   subtotalInPaise?: number;
+  taxRateBasisPoints?: number;
   taxInPaise?: number;
   totalInPaise?: number;
+  taxBreakdown?: QuotationTaxLineDto[];
   issuedAtUtc?: string | null;
   validUntilUtc?: string | null;
   decidedAtUtc?: string | null;
@@ -207,6 +217,7 @@ export interface QuotationDto extends FullAuditedEntityDto<string> {
   nextFollowUpAtUtc?: string | null;
   daysSinceIssue?: number;
   lostReason?: string | null;
+  priceListId?: string | null;
   lines?: QuotationLineDto[];
 }
 
@@ -219,6 +230,17 @@ export interface QuotationLineDto extends EntityDto<string> {
   unitPriceInPaise?: number;
   discountBasisPoints?: number;
   lineTotalInPaise?: number;
+  productId?: string | null;
+  priceSource?: QuotePriceSource;
+  priceListId?: string | null;
+  listPriceInPaise?: number | null;
+  taxRateBasisPoints?: number | null;
+}
+
+export interface QuotationTaxLineDto {
+  rateBasisPoints?: number;
+  netInPaise?: number;
+  taxInPaise?: number;
 }
 
 export interface ReminderDto extends EntityDto<string> {

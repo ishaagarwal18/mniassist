@@ -12,6 +12,8 @@ interface ItemRow {
   price: string;
   uom: string;
   moq: string;
+  /** The SKU names a product in the catalogue. */
+  linked?: boolean;
 }
 
 /**
@@ -128,6 +130,9 @@ interface ItemRow {
               (input)="setRow($index, 'price', $any($event.target).value)"
             />
             <button type="button" class="pl__x" (click)="removeRow($index)">×</button>
+            @if (row.linked) {
+              <span class="pl__link" title="This SKU is a product in your catalogue. Renaming the product renames it here.">in catalogue</span>
+            }
           </div>
         }
         <button type="button" class="pl__addrow" (click)="addRow()">+ Add item</button>
@@ -192,6 +197,12 @@ interface ItemRow {
       grid-template-columns: 1fr 1.4fr 0.8fr 24px;
       gap: 6px;
       margin-bottom: 6px;
+    }
+    .pl__link {
+      grid-column: 1 / -1;
+      margin-top: -2px;
+      font: 400 11px var(--ar-font-sans);
+      color: var(--ar-teal-600);
     }
     .pl__x {
       background: none;
@@ -302,6 +313,7 @@ export class ArPriceLists {
         price: String((i.unitPriceInPaise ?? 0) / 100),
         uom: i.uom ?? 'each',
         moq: String(i.minimumOrderQuantity ?? 1),
+        linked: !!i.productId,
       })),
     );
     this.error.set(null);

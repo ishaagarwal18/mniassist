@@ -5,6 +5,15 @@
   "
   help="Your WhatsApp commerce catalogue for the selected channel. Click Sync to push local changes to Meta — editing an existing product updates it in place rather than duplicating it."
 >
+  <button
+    ar-button
+    type="button"
+    variant="ghost"
+    [disabled]="!channelId()"
+    (click)="openFromProducts()"
+  >
+    Add from products
+  </button>
   <button ar-button type="button" variant="ghost" (click)="openAdd()">Add product</button>
   <button
     ar-button
@@ -42,6 +51,9 @@
         <div class="prod__head">
           <span class="prod__name">{{ p.name }}</span>
           <ar-chip [tone]="tone(p.syncState)" [dot]="true">{{ stateLabel(p.syncState) }}</ar-chip>
+          @if (p.productId) {
+            <ar-chip tone="neutral">From product catalogue</ar-chip>
+          }
         </div>
         <p class="prod__meta">
           <span class="ar-mono">{{ p.retailerId }}</span>
@@ -58,7 +70,10 @@
     </article>
   } @empty {
     @if (channelId() && !loading()) {
-      <p class="cat__empty">No products yet. Add one, then sync it to WhatsApp.</p>
+      <p class="cat__empty">
+        Nothing listed yet. Add products from your product catalogue, or type one in, then sync it
+        to WhatsApp.
+      </p>
     }
   }
 </div>
@@ -77,10 +92,17 @@
         (input)="patch('retailerId', $any($event.target).value)"
       />
     </label>
+    @if (linked()) {
+      <p class="cat__note">
+        This listing comes from your product catalogue. Its name, description and price follow the
+        product: change them on the Products page.
+      </p>
+    }
     <label class="ar-field">
       <span class="ar-field__label">Name</span>
       <input
         class="ar-field__input"
+        [disabled]="linked()"
         [value]="form().name"
         (input)="patch('name', $any($event.target).value)"
       />
@@ -90,6 +112,7 @@
       <textarea
         class="ar-field__input"
         rows="2"
+        [disabled]="linked()"
         [value]="form().description"
         (input)="patch('description', $any($event.target).value)"
       ></textarea>
@@ -101,6 +124,7 @@
           class="ar-field__input"
           type="number"
           min="0"
+          [disabled]="linked()"
           [value]="form().priceRupees"
           (input)="patch('priceRupees', +$any($event.target).value)"
         />
@@ -132,6 +156,64 @@
       </button>
       <button ar-button type="button" variant="primary" [disabled]="saving()" (click)="save()">
         {{ saving() ? 'Saving…' : 'Save' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
+
+@if (fromProductsOpen()) {
+  <ar-dialog title="Add from products" (dismiss)="fromProductsOpen.set(false)">
+    <p class="cat__note">
+      Pick products to list on this channel. A listing takes its name, description and price from
+      the product and follows it when it changes; it goes out of stock if the product is taken off
+      sale.
+    </p>
+    <label class="ar-field">
+      <span class="ar-field__label">Search</span>
+      <input
+        id="catalogue-product-search"
+        class="ar-field__input"
+        placeholder="Part number or name"
+        [value]="productFilter()"
+        (input)="onProductFilter($any($event.target).value)"
+      />
+    </label>
+    <div class="cat__choices">
+      @for (p of available(); track p.id) {
+        <label class="cat__choice">
+          <input
+            type="checkbox"
+            [checked]="picked().has(p.id!)"
+            (change)="toggle(p.id!, $any($event.target).checked)"
+          />
+          <span class="ar-mono">{{ p.partNumber }}</span>
+          <span class="cat__choice-name">{{ p.name }}</span>
+          <span class="cat__choice-price">{{ rupees(p.listPriceInPaise ?? 0) }}</span>
+        </label>
+      } @empty {
+        <p class="cat__note">
+          No products to add. Products already on this channel are not shown.
+        </p>
+      }
+    </div>
+    @if (addNote(); as n) {
+      <p class="cat__note">{{ n }}</p>
+    }
+    @if (error(); as e) {
+      <p class="cat__err">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="fromProductsOpen.set(false)">
+        Close
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="adding() || picked().size === 0"
+        (click)="addPicked()"
+      >
+        {{ adding() ? 'Adding…' : 'Add ' + picked().size + ' to catalogue' }}
       </button>
     </div>
   </ar-dialog>

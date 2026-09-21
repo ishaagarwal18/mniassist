@@ -4,6 +4,7 @@ import { PipelineStore, QState, Quotation } from '../../core/services/pipeline.s
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArQuoteEditor } from './quote-editor';
 import { ChipTone } from '../../ui/chip';
 
 const STATE_TONE: Record<QState, ChipTone> = {
@@ -22,7 +23,7 @@ const STATE_TONE: Record<QState, ChipTone> = {
  */
 @Component({
   selector: 'ar-quotations',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArQuoteEditor],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quotations.html',
   styleUrl: './quotations.scss',
@@ -33,6 +34,14 @@ export class ArQuotations {
   protected readonly quotes = this.store.quotes;
   protected readonly loading = this.store.loading;
   protected readonly busy = signal<string | null>(null);
+
+  // ---- Line editor -----------------------------------------------------
+  protected readonly editingId = signal<string | null>(null);
+
+  protected editorClosed(saved: boolean): void {
+    this.editingId.set(null);
+    if (saved) this.store.reloadQuotes();
+  }
 
   // ---- New quotation dialog -----------------------------------------
   protected readonly dialogOpen = signal(false);
@@ -72,6 +81,14 @@ export class ArQuotations {
 
   protected tone(s: QState): ChipTone {
     return STATE_TONE[s];
+  }
+
+  /** The GST by rate, for the hover text: "GST 12% ₹120 · 18% ₹360". Nothing when there is one rate or none. */
+  protected gstTitle(q: Quotation): string {
+    const parts = q.taxBreakdown ?? [];
+    return parts.length > 1
+      ? 'GST ' + parts.map((t) => `${t.ratePercent}% ${inr(t.taxInPaise)}`).join(' · ')
+      : '';
   }
 
   protected money(paise: number): string {

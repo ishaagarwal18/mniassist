@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, of } from 'rxjs';
 
@@ -9,6 +9,7 @@ import {
   CatalogueSyncState,
 } from '../../proxy/commerce';
 import { ChannelService } from '../../core/services/channel.service';
+import { ProductDto, ProductService } from '../../proxy/library';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
@@ -51,6 +52,7 @@ const STATE_LABEL: Record<CatalogueSyncState, string> = {
 export class ArCatalogue {
   private readonly api = inject(CatalogueService);
   private readonly channels = inject(ChannelService);
+  private readonly productApi = inject(ProductService);
 
   protected readonly channelId = computed(() => this.channels.active()?.id);
   private readonly tick = signal(0);
@@ -70,6 +72,33 @@ export class ArCatalogue {
     () => this.products().filter((p) => p.syncState !== CatalogueSyncState.Synced).length,
   );
 
+  /** Channels already checked this visit for listings that predate the product catalogue. */
+  private readonly linkChecked = new Set<string>();
+
+  constructor() {
+    effect(() => {
+      const id = this.channelId();
+      if (!id || this.linkChecked.has(id)) return;
+      this.linkChecked.add(id);
+      untracked(() => void this.linkExisting(id));
+    });
+  }
+
+  /** Listings typed in before the product catalogue existed are linked to the products whose SKUs they carry. */
+  private async linkExisting(channelId: string): Promise<void> {
+    try {
+      const r = await firstValueFrom(this.api.linkExisting(channelId));
+      if (r.linked > 0) {
+        this.note.set(
+          `${r.linked} listing${r.linked === 1 ? '' : 's'} matched a product by SKU and now follow${r.linked === 1 ? 's' : ''} it: name, description and price come from the product.`,
+        );
+        this.tick.update((n) => n + 1);
+      }
+    } catch {
+      // Not being able to check is not worth an error on the page; the listings just stay as they are.
+    }
+  }
+
   protected readonly syncing = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly note = signal<string | null>(null);
@@ -79,6 +108,25 @@ export class ArCatalogue {
   protected readonly editingId = signal<string | null>(null);
   protected readonly saving = signal(false);
   protected readonly form = signal<ProductForm>(this.blank());
+  /** The listing being edited comes from a product, so its name, description and price are the product's. */
+  protected readonly linked = signal(false);
+
+  // ---- add from the product catalogue ----------------------------------
+  protected readonly fromProductsOpen = signal(false);
+  protected readonly productFilter = signal('');
+  protected readonly productChoices = signal<ProductDto[]>([]);
+  protected readonly picked = signal<ReadonlySet<string>>(new Set());
+  protected readonly adding = signal(false);
+  protected readonly addNote = signal<string | null>(null);
+  private searchTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /** Products already on this channel, so they are not offered again. */
+  private readonly listedProductIds = computed(
+    () => new Set(this.products().map((p) => p.productId).filter((id): id is string => !!id)),
+  );
+  protected readonly available = computed(() =>
+    this.productChoices().filter((p) => !!p.id && !this.listedProductIds().has(p.id)),
+  );
 
   private blank(): ProductForm {
     return {
@@ -101,7 +149,67 @@ export class ArCatalogue {
     return `₹${(paise / 100).toLocaleString('en-IN')}`;
   }
 
+  protected async openFromProducts(): Promise<void> {
+    this.picked.set(new Set());
+    this.productFilter.set('');
+    this.addNote.set(null);
+    this.error.set(null);
+    this.fromProductsOpen.set(true);
+    await this.searchProducts();
+  }
+
+  protected onProductFilter(value: string): void {
+    this.productFilter.set(value);
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => void this.searchProducts(), 250);
+  }
+
+  private async searchProducts(): Promise<void> {
+    try {
+      const page = await firstValueFrom(
+        this.productApi.getList({
+          filter: this.productFilter().trim() || null,
+          activeOnly: true,
+          skipCount: 0,
+          maxResultCount: 50,
+        }),
+      );
+      this.productChoices.set(page.items ?? []);
+    } catch {
+      this.productChoices.set([]);
+    }
+  }
+
+  protected toggle(id: string, on: boolean): void {
+    this.picked.update((s) => {
+      const next = new Set(s);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  protected async addPicked(): Promise<void> {
+    const channelId = this.channelId();
+    if (!channelId || this.picked().size === 0) return;
+    this.adding.set(true);
+    this.error.set(null);
+    try {
+      const r = await firstValueFrom(this.api.addFromProducts(channelId, [...this.picked()]));
+      this.addNote.set(
+        `Added ${r.added}.${r.skipped.length ? ' Not added: ' + r.skipped.join(' ') : ''}`,
+      );
+      this.picked.set(new Set());
+      this.tick.update((n) => n + 1);
+    } catch (e: unknown) {
+      this.error.set(e instanceof Error ? e.message : 'The products could not be added.');
+    } finally {
+      this.adding.set(false);
+    }
+  }
+
   protected openAdd(): void {
+    this.linked.set(false);
     this.editingId.set(null);
     this.form.set(this.blank());
     this.error.set(null);
@@ -109,6 +217,7 @@ export class ArCatalogue {
   }
 
   protected openEdit(p: CatalogueProductDto): void {
+    this.linked.set(!!p.productId);
     this.editingId.set(p.id);
     this.form.set({
       retailerId: p.retailerId,

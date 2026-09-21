@@ -18,3 +18,5 @@ export * from './quotation.service';
 export * from './reminder-kind.enum';
 export * from './reminder-state.enum';
 export * from './reminder.service';
+export * from './quote-price-source.enum';
+export * from './quote-pricing.models';

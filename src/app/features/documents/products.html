@@ -1,0 +1,243 @@
+<ar-topbar
+  title="Products"
+  [subtitle]="total() + ' part' + (total() === 1 ? '' : 's')"
+  help="The parts you quote. Each has a part number, a unit and a list price. On a quotation, a price list can set a different price for a customer; the list price here is the fallback, and what discounts are measured against."
+>
+  <button ar-button type="button" variant="ghost" (click)="openImport()">Import</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openNew()">
+    New product
+  </button>
+</ar-topbar>
+
+<div class="pd__bar">
+  <ar-search-box placeholder="Part number or name" [(query)]="filter" />
+  <select
+    id="product-category-filter"
+    class="ar-field__input pd__cat"
+    aria-label="Category"
+    (change)="category.set($any($event.target).value)"
+  >
+    <option value="">All categories</option>
+    @for (c of categories(); track c) {
+      <option [value]="c" [selected]="c === category()">{{ c }}</option>
+    }
+  </select>
+  <label class="pd__chk">
+    <input
+      id="product-active-only"
+      type="checkbox"
+      [checked]="activeOnly()"
+      (change)="activeOnly.set($any($event.target).checked)"
+    />
+    <span>Active only</span>
+  </label>
+</div>
+
+<div class="pd ar-scroll">
+  @if (loading()) {
+    <p class="pd__empty">Loading…</p>
+  } @else if (products().length === 0) {
+    <p class="pd__empty">
+      @if (filter() || category() || activeOnly()) {
+        No products match.
+      } @else {
+        No products yet. Add one, or paste a spreadsheet with Import.
+      }
+    </p>
+  } @else {
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Part number</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Unit</th>
+          <th class="num">List price</th>
+          <th class="num">GST</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (p of products(); track p.id) {
+          <tr [class.off]="!p.isActive">
+            <td class="ar-mono">{{ p.partNumber }}</td>
+            <td>
+              {{ p.name }}
+              @if (!p.isActive) {
+                <ar-chip tone="warn">Inactive</ar-chip>
+              }
+            </td>
+            <td class="muted">{{ p.category || '—' }}</td>
+            <td class="muted">{{ p.unit }}</td>
+            <td class="num">{{ money(p.listPriceInPaise ?? 0) }}</td>
+            <td class="num muted">{{ gstLabel(p) }}</td>
+            <td class="actions">
+              <button ar-button type="button" variant="ghost" (click)="openEdit(p)">Edit</button>
+              <button ar-button type="button" variant="ghost" (click)="remove(p)">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (total() > products().length) {
+      <p class="pd__empty">
+        Showing the first {{ products().length }} of {{ total() }}. Narrow the search to find the
+        rest.
+      </p>
+    }
+  }
+</div>
+
+@if (editorOpen()) {
+  <ar-dialog [title]="editingId() ? 'Edit product' : 'New product'" (dismiss)="editorOpen.set(false)">
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Part number</span>
+        <input
+          id="product-part"
+          class="ar-field__input"
+          [value]="partNumber()"
+          (input)="partNumber.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Unit</span>
+        <input
+          id="product-unit"
+          class="ar-field__input"
+          [value]="unit()"
+          (input)="unit.set($any($event.target).value)"
+        />
+      </label>
+    </div>
+    <label class="ar-field">
+      <span class="ar-field__label">Name</span>
+      <input
+        id="product-name"
+        class="ar-field__input"
+        [value]="name()"
+        (input)="name.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Description <span class="ar-field__opt">optional</span></span>
+      <input
+        id="product-desc"
+        class="ar-field__input"
+        [value]="description()"
+        (input)="description.set($any($event.target).value)"
+      />
+    </label>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">List price ₹</span>
+        <input
+          id="product-price"
+          class="ar-field__input"
+          inputmode="decimal"
+          [value]="price()"
+          (input)="price.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Category <span class="ar-field__opt">optional</span></span>
+        <input
+          id="product-cat"
+          class="ar-field__input"
+          [value]="categoryText()"
+          (input)="categoryText.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">GST % <span class="ar-field__opt">blank = quote's</span></span>
+        <input
+          id="product-gst"
+          class="ar-field__input"
+          inputmode="decimal"
+          [value]="gst()"
+          (input)="gst.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">HSN <span class="ar-field__opt">optional</span></span>
+        <input
+          id="product-hsn"
+          class="ar-field__input"
+          [value]="hsn()"
+          (input)="hsn.set($any($event.target).value)"
+        />
+      </label>
+    </div>
+    <label class="ar-field__opt-row">
+      <input
+        id="product-active"
+        type="checkbox"
+        [checked]="active()"
+        (change)="active.set($any($event.target).checked)"
+      />
+      <span>Active — can be added to quotations</span>
+    </label>
+    @if (error(); as msg) {
+      <p class="pd__err">{{ msg }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="editorOpen.set(false)">
+        Cancel
+      </button>
+      <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
+        {{ busy() ? 'Saving…' : 'Save' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
+
+@if (importOpen()) {
+  <ar-dialog title="Import products" (dismiss)="importOpen.set(false)">
+    <p class="pd__note">
+      Paste rows from a spreadsheet. Columns in order: part number, name, price ₹, unit, category,
+      HSN, GST %. A part number that already exists is updated; the rest are added.
+    </p>
+    <label class="ar-field">
+      <span class="ar-field__label">Rows</span>
+      <textarea
+        id="product-import"
+        class="ar-field__input pd__paste"
+        rows="8"
+        placeholder="VFD-15KW, 15 kW drive, 45000, no, Drives, 85044090, 18"
+        [value]="pasted()"
+        (input)="pasted.set($any($event.target).value)"
+      ></textarea>
+    </label>
+    @if (importResult(); as r) {
+      <p class="pd__note">
+        <strong>{{ r.created }}</strong> added, <strong>{{ r.updated }}</strong> updated{{
+          r.skipped?.length ? ', ' + r.skipped?.length + ' skipped:' : '.'
+        }}
+      </p>
+      @if (r.skipped?.length) {
+        <ul class="pd__skipped">
+          @for (s of r.skipped; track $index) {
+            <li>{{ s }}</li>
+          }
+        </ul>
+      }
+    }
+    @if (error(); as msg) {
+      <p class="pd__err">{{ msg }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="importOpen.set(false)">
+        Close
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="busy() || !pasted().trim()"
+        (click)="runImport()"
+      >
+        {{ busy() ? 'Importing…' : 'Import' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
