@@ -2,6 +2,7 @@ import { RestService, Rest } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
 
 import type {
+  SigningCodeSentDto,
   SigningResultDto,
   SigningViewDto,
   SubmitSignatureInput,
@@ -21,6 +22,13 @@ export class QuoteSigningService {
   get = (token: string) =>
     this.restService.request<any, SigningViewDto>(
       { method: 'GET', url: `/api/quote-signing/${token}` },
+      { apiName: this.apiName, ...this.own },
+    );
+
+  /** Emails the signer a one-time code, when the request asks for one. */
+  sendCode = (token: string) =>
+    this.restService.request<any, SigningCodeSentDto>(
+      { method: 'POST', url: `/api/quote-signing/${token}/code` },
       { apiName: this.apiName, ...this.own },
     );
 

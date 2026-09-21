@@ -168,6 +168,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/flows/flow-designer').then((m) => m.ArFlowDesigner),
       },
       {
+        path: 'tasks',
+        title: 'Tasks · AutoReach',
+        loadComponent: () => import('./features/activities/tasks').then((m) => m.ArTasks),
+      },
+      {
+        path: 'meetings',
+        title: 'Meetings · AutoReach',
+        loadComponent: () => import('./features/activities/meetings').then((m) => m.ArMeetings),
+      },
+      {
         path: 'documents',
         title: 'Documents · AutoReach',
         loadComponent: () => import('./features/documents/documents').then((m) => m.ArDocuments),

@@ -12,6 +12,7 @@ import { EnquiryStage, LostReasonCategory } from '../../proxy/pipeline';
 import { EnquiryDetail, PipelineStore } from '../../core/services/pipeline.service';
 import { inrCompact } from '../../core/util/format';
 import { ArButton, ArChip } from '../../ui';
+import { ArEnquiryActivities } from '../activities/enquiry-activities';
 
 /**
  * The enquiry card, opened. A slide-over rather than a route because the board is
@@ -22,7 +23,7 @@ import { ArButton, ArChip } from '../../ui';
  */
 @Component({
   selector: 'ar-enquiry-drawer',
-  imports: [ArButton, ArChip],
+  imports: [ArButton, ArChip, ArEnquiryActivities],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="scrim" (click)="close.emit()"></div>
@@ -156,6 +157,10 @@ import { ArButton, ArChip } from '../../ui';
             } @empty {
               <p class="sec__empty">No quotation raised yet.</p>
             }
+          </section>
+
+          <section class="sec">
+            <ar-enquiry-activities [enquiryId]="d.id" />
           </section>
 
           <section class="sec">

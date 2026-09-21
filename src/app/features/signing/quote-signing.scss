@@ -76,3 +76,7 @@
   .sg__head { flex-direction: column; align-items: flex-start; }
   .sg__actions .sg__btn { flex: 1 1 100%; text-align: center; }
 }
+
+.sg__code { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sg__code .sg__input { flex: 1 1 140px; letter-spacing: 0.2em; font-variant-numeric: tabular-nums; }
+.sg__hint { display: block; margin-top: 4px; font-size: 12px; opacity: 0.75; }

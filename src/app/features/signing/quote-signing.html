@@ -129,6 +129,31 @@
             <ar-signature-pad (drawn)="drawn.set($event)" />
           </div>
 
+          @if (v.requiresCode) {
+            <div class="sg__field">
+              <span>One-time code</span>
+              <div class="sg__code">
+                <input
+                  id="sg-code"
+                  class="sg__input"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  maxlength="7"
+                  placeholder="6-digit code"
+                  aria-label="One-time code"
+                  [value]="code()"
+                  (input)="code.set($any($event.target).value)"
+                />
+                <button type="button" class="sg__btn sg__btn--ghost" [disabled]="busy()" (click)="sendCode()">
+                  {{ codeNote() || v.codeSentTo ? 'Send a new code' : 'Send me a code' }}
+                </button>
+              </div>
+              <small class="sg__hint">
+                {{ codeNote() ?? (v.codeSentTo ? 'A code was sent to ' + v.codeSentTo + '.' : 'We email a code to confirm it is you.') }}
+              </small>
+            </div>
+          }
+
           <label class="sg__consent" for="sg-consent">
             <input
               id="sg-consent"

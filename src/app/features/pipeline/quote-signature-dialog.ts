@@ -1,10 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { TemplateService } from '../../core/services/template.service';
+
 import {
   QuotationSignatureService,
   SignatureRequestDto,
   SignatureRequestStatus,
+  SigningDeliveryDto,
 } from '../../proxy/pipeline';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
@@ -84,6 +87,50 @@ const TONE: Record<SignatureRequestStatus, ChipTone> = {
             (input)="days.set(+$any($event.target).value)"
           />
         </label>
+
+        <fieldset class="qs__send">
+          <legend class="ar-field__label">Send it for me</legend>
+          <label class="qs__chk" for="sig-send-mail">
+            <input id="sig-send-mail" type="checkbox" [checked]="sendMail()" (change)="sendMail.set($any($event.target).checked)" />
+            <span>Email the link to the address above</span>
+          </label>
+          <label class="qs__chk" for="sig-send-wa">
+            <input id="sig-send-wa" type="checkbox" [checked]="sendWa()" (change)="sendWa.set($any($event.target).checked)" />
+            <span>Send on WhatsApp to the customer's number on file</span>
+          </label>
+          @if (sendWa()) {
+            <label class="ar-field">
+              <span class="ar-field__label">Approved template <span class="ar-field__opt">3 variables: name, quote reference, link</span></span>
+              <select id="sig-template" class="ar-field__input" [value]="templateId()" (change)="templateId.set($any($event.target).value)">
+                <option value="">Send as a plain message (only inside the 24-hour window)</option>
+                @for (t of templateChoices(); track t.id) {
+                  <option [value]="t.id" [selected]="t.id === templateId()">{{ t.name }} · {{ t.language }}</option>
+                }
+              </select>
+            </label>
+          }
+          <label class="qs__chk" for="sig-code">
+            <input id="sig-code" type="checkbox" [checked]="needCode()" (change)="needCode.set($any($event.target).checked)" />
+            <span>Ask the signer for a one-time code we email them (needs an email address)</span>
+          </label>
+          <p class="qs__note">
+            WhatsApp goes only to a customer who has agreed to be messaged, and outside the 24-hour window it needs an approved
+            template. If something cannot be sent, you are told why and can still copy the link.
+          </p>
+        </fieldset>
+
+        @if (delivery(); as d) {
+          @if (sendMail()) {
+            <p class="qs__res" [class.qs__res--bad]="!d.emailSent">
+              {{ d.emailSent ? 'Emailed to ' + email() + '.' : 'Email not sent: ' + (d.emailNote || 'unknown reason') }}
+            </p>
+          }
+          @if (sendWa()) {
+            <p class="qs__res" [class.qs__res--bad]="!d.whatsAppSent">
+              {{ d.whatsAppSent ? 'Sent on WhatsApp.' : 'WhatsApp not sent: ' + (d.whatsAppNote || 'unknown reason') }}
+            </p>
+          }
+        }
 
         @if (link(); as url) {
           <div class="qs__link">
@@ -172,6 +219,10 @@ const TONE: Record<SignatureRequestStatus, ChipTone> = {
   styles: `
     .qs__note { margin: 0 0 10px; font: 400 12.5px var(--ar-font-sans); color: var(--ar-ink-600); }
     .qs__narrow { max-width: 180px; }
+    .qs__send { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(--ar-line-200); border-radius: var(--ar-radius-control); display: flex; flex-direction: column; gap: 8px; }
+    .qs__chk { display: flex; align-items: center; gap: 8px; font: 400 12.5px var(--ar-font-sans); color: var(--ar-ink-700); }
+    .qs__res { margin: 8px 0 0; font: 500 12.5px var(--ar-font-sans); color: var(--ar-teal-600); }
+    .qs__res--bad { color: var(--ar-red-600); }
     .qs__err {
       margin: 8px 0; padding: 8px 10px; border-radius: var(--ar-radius-control);
       background: var(--ar-red-100); color: var(--ar-red-600); font: 500 12px var(--ar-font-sans);
@@ -189,6 +240,7 @@ const TONE: Record<SignatureRequestStatus, ChipTone> = {
 })
 export class ArQuoteSignatureDialog implements OnInit {
   private readonly api = inject(QuotationSignatureService);
+  private readonly templates = inject(TemplateService);
 
   readonly quotationId = input.required<string>();
   readonly reference = input.required<string>();
@@ -209,6 +261,15 @@ export class ArQuoteSignatureDialog implements OnInit {
   protected readonly history = signal<SignatureRequestDto[]>([]);
   protected readonly link = signal<string | null>(null);
   protected readonly copied = signal(false);
+  protected readonly sendMail = signal(false);
+  protected readonly sendWa = signal(false);
+  protected readonly needCode = signal(false);
+  protected readonly templateId = signal('');
+  protected readonly delivery = signal<SigningDeliveryDto | null>(null);
+  /** Only approved templates with the three variables the message fills in. */
+  protected readonly templateChoices = computed(() =>
+    this.templates.all().filter((t) => t.status === 'approved' && t.variableCount === 3),
+  );
 
   protected readonly canRequest = computed(() => this.open());
   protected readonly cannotRequestReason = computed(() =>
@@ -255,6 +316,7 @@ export class ArQuoteSignatureDialog implements OnInit {
     this.busy.set(true);
     this.error.set(null);
     this.copied.set(false);
+    this.delivery.set(null);
     try {
       const made = await firstValueFrom(
         this.api.request(this.quotationId(), {
@@ -262,8 +324,13 @@ export class ArQuoteSignatureDialog implements OnInit {
           signerPhone: this.phone().trim() || null,
           signerEmail: this.email().trim() || null,
           validForDays: Math.min(90, Math.max(1, Math.round(this.days()) || 14)),
+          sendByEmail: this.sendMail(),
+          sendByWhatsApp: this.sendWa(),
+          whatsAppTemplateId: this.sendWa() && this.templateId() ? this.templateId() : null,
+          requireVerificationCode: this.needCode(),
         }),
       );
+      this.delivery.set(made.delivery ?? null);
       this.link.set(made.signingPath ? signingUrl(window.location.origin, made.signingPath) : null);
       await this.loadHistory();
     } catch (e: unknown) {

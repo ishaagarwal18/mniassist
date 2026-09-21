@@ -44,13 +44,21 @@ export class ArQuoteSigning {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  /** The one-time code, when the request asks for one. */
+  protected readonly code = signal('');
+  protected readonly codeNote = signal<string | null>(null);
+
   /** Set once the customer has acted on this visit. */
   protected readonly outcome = signal<SigningResultDto | null>(null);
 
   protected readonly accent = computed(() => safeColor(this.view()?.accentColor, '#0b6b63'));
   protected readonly primary = computed(() => safeColor(this.view()?.primaryColor, '#16202e'));
   protected readonly canSubmit = computed(
-    () => this.typedName().trim().length >= 2 && this.consent() && !this.busy(),
+    () =>
+      this.typedName().trim().length >= 2 &&
+      this.consent() &&
+      !this.busy() &&
+      (!this.view()?.requiresCode || this.code().replace(/\D/g, '').length === 6),
   );
 
   constructor() {
@@ -109,12 +117,26 @@ export class ArQuoteSigning {
           typedName: this.typedName().trim(),
           drawnSignature: this.drawn(),
           consent: this.consent(),
+          code: this.view()?.requiresCode ? this.code() : null,
         }),
       );
       this.outcome.set(result);
       await this.load();
     } catch (e: unknown) {
       this.error.set(apiMessage(e, 'Your signature could not be saved. Please try again.'));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async sendCode(): Promise<void> {
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      const sent = await firstValueFrom(this.api.sendCode(this.token()));
+      this.codeNote.set(`We sent a 6-digit code to ${sent.sentTo}. It works for ${sent.validForMinutes} minutes.`);
+    } catch (e: unknown) {
+      this.error.set(apiMessage(e, 'The code could not be sent. Please try again in a few minutes.'));
     } finally {
       this.busy.set(false);
     }

@@ -6,6 +6,17 @@ export interface RequestSignatureInput {
   signerEmail?: string | null;
   signerPhone?: string | null;
   validForDays?: number;
+  sendByEmail?: boolean;
+  sendByWhatsApp?: boolean;
+  whatsAppTemplateId?: string | null;
+  requireVerificationCode?: boolean;
+}
+
+export interface SigningDeliveryDto {
+  emailSent?: boolean;
+  emailNote?: string | null;
+  whatsAppSent?: boolean;
+  whatsAppNote?: string | null;
 }
 
 export interface SignatureRequestDto {
@@ -24,6 +35,12 @@ export interface SignatureRequestDto {
   hasDrawnSignature?: boolean;
   declinedAtUtc?: string | null;
   declineReason?: string | null;
+  requiresCode?: boolean;
+  codeVerifiedAtUtc?: string | null;
+  emailSentAtUtc?: string | null;
+  whatsAppSentAtUtc?: string | null;
+  /** How sending went. Only in the reply to the request that made the link. */
+  delivery?: SigningDeliveryDto | null;
   /** Only in the reply to the request that made the link: the secret is not kept. */
   signingPath?: string | null;
 }
@@ -71,12 +88,20 @@ export interface SigningViewDto {
   taxBreakdown?: QuotationTaxLineDto[];
   signedAtUtc?: string | null;
   signedName?: string | null;
+  requiresCode?: boolean;
+  codeSentTo?: string | null;
 }
 
 export interface SubmitSignatureInput {
   typedName: string;
   drawnSignature?: string | null;
   consent: boolean;
+  code?: string | null;
+}
+
+export interface SigningCodeSentDto {
+  sentTo?: string;
+  validForMinutes?: number;
 }
 
 export interface SigningResultDto {

@@ -10,6 +10,8 @@ export enum EnquiryEventKind {
   DocumentShared = 6,
   OwnerChanged = 7,
   FlowSubmitted = 8,
+  TaskCompleted = 9,
+  MeetingScheduled = 10,
 }
 
 export const enquiryEventKindOptions = mapEnumToOptions(EnquiryEventKind);

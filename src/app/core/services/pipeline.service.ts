@@ -231,6 +231,8 @@ const EVENT_KIND: Record<EnquiryEventKind, string> = {
   [EnquiryEventKind.DocumentShared]: 'Document shared',
   [EnquiryEventKind.OwnerChanged]: 'Owner changed',
   [EnquiryEventKind.FlowSubmitted]: 'Flow submitted',
+  [EnquiryEventKind.TaskCompleted]: 'Task completed',
+  [EnquiryEventKind.MeetingScheduled]: 'Meeting scheduled',
 };
 
 function enquiryEvent(e: EnquiryEventDto): EnquiryEvent {

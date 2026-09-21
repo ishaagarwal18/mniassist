@@ -1,0 +1,124 @@
+<ar-topbar
+  title="Tasks"
+  [subtitle]="summary() ? summary()!.open + ' open' + (summary()!.overdue ? ' · ' + summary()!.overdue + ' overdue' : '') : ''"
+  help="What has to be done, and by when. Tick a task to finish it. A task about a deal shows on that deal's timeline once done, and you are reminded before it is due."
+>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">New task</button>
+</ar-topbar>
+
+@if (creating() || editing()) {
+  <ar-task-dialog
+    [task]="editing()"
+    (saved)="closeDialog(true)"
+    (deleted)="closeDialog(true)"
+    (closed)="closeDialog(false)"
+  />
+}
+
+<div class="tk ar-scroll">
+  @if (summary(); as s) {
+    <div class="tk__sum" role="group" aria-label="Your tasks at a glance">
+      <span class="tk__pill" [class.tk__pill--bad]="s.overdue"><strong>{{ s.overdue }}</strong> overdue</span>
+      <span class="tk__pill" [class.tk__pill--amber]="s.dueToday"><strong>{{ s.dueToday }}</strong> due today</span>
+      <span class="tk__pill"><strong>{{ s.dueThisWeek }}</strong> this week</span>
+      <span class="tk__pill"><strong>{{ s.noDate }}</strong> no date</span>
+      <span class="tk__pill tk__pill--soft"><strong>{{ s.doneLast7Days }}</strong> done in the last 7 days</span>
+    </div>
+  }
+
+  <form class="tk__quick" (submit)="$event.preventDefault(); quickAdd()">
+    <input
+      id="task-quick"
+      class="ar-field__input"
+      placeholder="Add a task for yourself and press Enter"
+      aria-label="Add a task"
+      [value]="quickTitle()"
+      (input)="quickTitle.set($any($event.target).value)"
+    />
+  </form>
+
+  <div class="tk__bar">
+    @if (directory.canSeeAll) {
+      <div class="tk__seg" role="group" aria-label="Whose tasks">
+        <button type="button" [class.on]="scope() === 'mine'" (click)="scope.set('mine')">Mine</button>
+        <button type="button" [class.on]="scope() === 'everyone'" (click)="scope.set('everyone')">Everyone</button>
+      </div>
+    }
+    <ar-search-box placeholder="Search tasks" [(query)]="filter" />
+    <label class="tk__chk">
+      <input
+        id="task-show-done"
+        type="checkbox"
+        [checked]="showDone()"
+        (change)="showDone.set($any($event.target).checked)"
+      />
+      <span>Show finished</span>
+    </label>
+  </div>
+
+  @if (error(); as msg) {
+    <p class="tk__err" role="alert">{{ msg }}</p>
+  }
+
+  @if (loading() && !tasks().length) {
+    <p class="tk__empty">Loading…</p>
+  } @else if (!total()) {
+    <p class="tk__empty">
+      @if (filter()) {
+        No tasks match.
+      } @else {
+        Nothing to do. Add a task above.
+      }
+    </p>
+  }
+
+  @for (g of groups(); track g.bucket) {
+    <section class="tk__group" [attr.aria-label]="g.label">
+      <h2 class="tk__h">
+        <ar-chip [tone]="bucketTone(g.bucket)">{{ g.label }}</ar-chip>
+        <span class="tk__count">{{ g.tasks.length }}</span>
+      </h2>
+
+      <ul class="tk__list">
+        @for (t of g.tasks; track t.id) {
+          <li class="tk__row" [class.tk__row--done]="t.status !== Status.Open" [class.tk__row--busy]="busy() === t.id">
+            <input
+              class="tk__tick"
+              type="checkbox"
+              [attr.aria-label]="(t.status === Status.Open ? 'Finish ' : 'Reopen ') + t.title"
+              [checked]="t.status === Status.Done"
+              [disabled]="t.status === Status.Cancelled || busy() === t.id"
+              (change)="toggle(t)"
+            />
+            <button type="button" class="tk__main" (click)="editing.set(t)">
+              <span class="tk__title">
+                {{ t.title }}
+                @if (t.priority === High && t.status === Status.Open) {
+                  <ar-chip tone="bad">High</ar-chip>
+                }
+              </span>
+              <span class="tk__meta">
+                <span [class.tk__late]="isOverdue(t)">{{ dueText(t) }}</span>
+                @if (!isMine(t)) {
+                  <span>· {{ t.assigneeName || 'Someone' }}</span>
+                }
+                @if (t.contactName) {
+                  <span>· {{ t.contactName }}</span>
+                }
+                @if (t.enquiryReference) {
+                  <span class="ar-mono">· {{ t.enquiryReference }}</span>
+                }
+                @if (t.recurrence) {
+                  <span>· ↻ {{ repeatText(t) }}</span>
+                }
+              </span>
+              @if (t.notes) {
+                <span class="tk__notes">{{ t.notes }}</span>
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</div>
