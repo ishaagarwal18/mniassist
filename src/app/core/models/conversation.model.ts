@@ -30,6 +30,10 @@ export interface Message {
   readonly body: string;
   readonly at: string;
   readonly status?: 'sent' | 'delivered' | 'read';
+  /** Email only: how many times the message's tracking pixel loaded. */
+  readonly opens?: number;
+  /** Email only: when it last loaded, as a clock time. */
+  readonly lastOpenedAt?: string;
   readonly media?: MessageMedia;
   readonly location?: MessageLocation;
   /** Present on a reply-button message. */
@@ -43,6 +47,8 @@ export interface Conversation {
   readonly phoneE164: string;
   /** Set only for a channel that is not WhatsApp (Messenger, Instagram) — those contacts have no phone. */
   readonly channel?: string;
+  /** True for a channel with no service window to reopen (email): the composer is never locked. */
+  readonly windowless?: boolean;
   readonly snippet: string;
   readonly at: string;
   readonly unread: number;

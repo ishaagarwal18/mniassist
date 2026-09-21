@@ -6,6 +6,7 @@ import { ArTopbar } from '../../layout/topbar';
 import {
   EmailChannelDto,
   EmailChannelService,
+  EmailSyncResultDto,
 } from '../../proxy/email/email-channel.service';
 import { ArBanner, ArButton } from '../../ui';
 
@@ -22,6 +23,18 @@ const SEED: EmailChannelDto = {
   smtpUsername: null,
   smtpHasPassword: false,
   unsubscribeProblem: null,
+  trackOpens: true,
+  trackingProblem: null,
+  hasImap: false,
+  imapHost: null,
+  imapPort: null,
+  imapImplicitTls: true,
+  imapUsername: null,
+  imapHasPassword: false,
+  imapFolder: null,
+  syncEnabled: false,
+  lastSyncedAtUtc: null,
+  lastSyncError: null,
 };
 
 type Route = 'shared' | 'own';
@@ -62,6 +75,20 @@ export class ArEmailSending {
   protected readonly password = signal('');
   protected readonly savingDelivery = signal(false);
 
+  // Open tracking
+  protected readonly savingTracking = signal(false);
+
+  // Reply sync (the mailbox replies arrive in)
+  protected readonly imapHost = signal('');
+  protected readonly imapPort = signal(993);
+  protected readonly imapTls = signal(true);
+  protected readonly imapUser = signal('');
+  protected readonly imapPassword = signal('');
+  protected readonly imapFolder = signal('');
+  protected readonly savingImap = signal(false);
+  protected readonly syncing = signal(false);
+  protected readonly syncResult = signal<EmailSyncResultDto | null>(null);
+
   // Test send
   protected readonly testTo = signal('');
   protected readonly testing = signal(false);
@@ -72,6 +99,13 @@ export class ArEmailSending {
   );
   protected readonly canSaveDelivery = computed(
     () => this.route() === 'shared' || (this.host().trim().length > 0 && this.port() > 0),
+  );
+  protected readonly canSaveImap = computed(
+    () =>
+      this.imapHost().trim().length > 0 &&
+      this.imapUser().trim().length > 0 &&
+      // A first connection needs the password; later saves may leave it blank to keep the stored one.
+      (this.imapPassword().length > 0 || !!this.channel()?.imapHasPassword),
   );
   protected readonly canTest = computed(
     () => this.senderReady() && /^\S+@\S+\.\S+$/.test(this.testTo().trim()),
@@ -104,6 +138,115 @@ export class ArEmailSending {
     this.implicitTls.set(c.smtpImplicitTls);
     this.username.set(c.smtpUsername ?? '');
     this.password.set('');
+    this.imapHost.set(c.imapHost ?? '');
+    this.imapPort.set(c.imapPort ?? 993);
+    this.imapTls.set(c.hasImap ? c.imapImplicitTls : true);
+    this.imapUser.set(c.imapUsername ?? '');
+    this.imapFolder.set(c.hasImap && c.imapFolder !== 'INBOX' ? (c.imapFolder ?? '') : '');
+    this.imapPassword.set('');
+  }
+
+  protected setImapPort(value: number): void {
+    this.imapPort.set(value);
+    // 993 is TLS on connect; 143 starts plain and upgrades with STARTTLS.
+    this.imapTls.set(value === 993);
+  }
+
+  protected async setTracking(on: boolean): Promise<void> {
+    if (this.savingTracking()) return;
+    this.begin(this.savingTracking);
+    try {
+      this.apply(
+        this.mock ? { ...(this.channel() ?? SEED), trackOpens: on } : await firstValueFrom(this.api.setOpenTracking(on)),
+      );
+      this.notice.set(on ? 'Open tracking is on for new emails.' : 'Open tracking is off. New emails carry no tracking pixel.');
+    } catch (e) {
+      this.error.set(this.message(e, 'Open tracking could not be changed.'));
+    } finally {
+      this.savingTracking.set(false);
+    }
+  }
+
+  protected async connectMailbox(): Promise<void> {
+    if (!this.canSaveImap() || this.savingImap()) return;
+    this.begin(this.savingImap);
+    this.syncResult.set(null);
+    try {
+      const input = {
+        host: this.imapHost().trim(),
+        port: this.imapPort(),
+        implicitTls: this.imapTls(),
+        username: this.imapUser().trim(),
+        password: this.imapPassword() || null,
+        folder: this.imapFolder().trim() || null,
+      };
+      this.apply(
+        this.mock
+          ? {
+              ...(this.channel() ?? SEED),
+              hasImap: true,
+              syncEnabled: true,
+              imapHost: input.host,
+              imapPort: input.port,
+              imapImplicitTls: input.implicitTls,
+              imapUsername: input.username,
+              imapHasPassword: true,
+              imapFolder: input.folder ?? 'INBOX',
+            }
+          : await firstValueFrom(this.api.useImapSync(input)),
+      );
+      this.notice.set('Connected. Replies that arrive from now on are added to your inbox.');
+    } catch (e) {
+      this.error.set(this.message(e, 'The mailbox could not be connected.'));
+    } finally {
+      this.savingImap.set(false);
+    }
+  }
+
+  protected async changeSync(action: 'pause' | 'resume' | 'remove'): Promise<void> {
+    if (this.savingImap()) return;
+    if (action === 'remove' && !window.confirm('Disconnect this mailbox? Its saved password is deleted.')) return;
+    this.begin(this.savingImap);
+    try {
+      const base = this.channel() ?? SEED;
+      const next =
+        action === 'pause'
+          ? this.mock ? { ...base, syncEnabled: false } : await firstValueFrom(this.api.pauseSync())
+          : action === 'resume'
+            ? this.mock ? { ...base, syncEnabled: true, lastSyncError: null } : await firstValueFrom(this.api.resumeSync())
+            : this.mock ? { ...base, hasImap: false, syncEnabled: false, imapHost: null, imapHasPassword: false } : await firstValueFrom(this.api.removeImap());
+      this.apply(next);
+      this.notice.set(
+        action === 'pause' ? 'Reading the mailbox is paused.' : action === 'resume' ? 'Reading the mailbox has resumed.' : 'The mailbox is disconnected.',
+      );
+    } catch (e) {
+      this.error.set(this.message(e, 'That could not be done.'));
+    } finally {
+      this.savingImap.set(false);
+    }
+  }
+
+  protected async syncNow(): Promise<void> {
+    if (this.syncing()) return;
+    this.begin(this.syncing);
+    this.syncResult.set(null);
+    try {
+      const result = this.mock
+        ? { succeeded: true, imported: 0, skipped: 0, bounces: 0, moreWaiting: false }
+        : await firstValueFrom(this.api.syncNow());
+      this.syncResult.set(result);
+      if (!this.mock) this.apply(await firstValueFrom(this.api.getOrCreate()));
+    } catch (e) {
+      this.error.set(this.message(e, 'The mailbox could not be read.'));
+    } finally {
+      this.syncing.set(false);
+    }
+  }
+
+  protected when(iso: string | null | undefined): string {
+    return iso
+      ? new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+      : 'never';
   }
 
   protected setPort(value: number): void {

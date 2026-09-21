@@ -59,7 +59,12 @@
             }</span
           >
         </div>
-        @if (windowLeft(); as left) {
+        @if (thread.windowless) {
+          <div class="window window--open">
+            <ar-icon name="clock" [size]="15" />
+            <span>Email: no reply window</span>
+          </div>
+        } @else if (windowLeft(); as left) {
           <div class="window window--open">
             <ar-icon name="clock" [size]="15" />
             <span>Service window closes in</span>
@@ -132,7 +137,9 @@
             }
             <span class="bubble__meta ar-mono">
               {{ m.at }}
-              @if (m.status) {
+              @if (m.opens) {
+                · opened {{ m.opens }}×{{ m.opens > 1 && m.lastOpenedAt ? ', last ' + m.lastOpenedAt : '' }}
+              } @else if (m.status) {
                 · {{ m.status }}
               }
             </span>

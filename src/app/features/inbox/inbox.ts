@@ -48,9 +48,10 @@ export class ArInbox {
     return thread ? untilLabel(thread.window.expiresAt, this.now()) : null;
   });
 
-  protected readonly windowOpen = computed(() => this.windowLeft() !== null);
+  protected readonly windowOpen = computed(() => !!this.selected()?.windowless || this.windowLeft() !== null);
 
   protected windowChipFor(c: Conversation): { label: string; tone: 'teal' | 'bad' } | null {
+    if (c.windowless) return null;
     const left = untilLabel(c.window.expiresAt, this.now());
     return left
       ? { label: `Window open · ${left}`, tone: 'teal' }

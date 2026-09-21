@@ -246,6 +246,9 @@ export interface MessageDto extends EntityDto<string> {
   sentAtUtc?: string | null;
   deliveredAtUtc?: string | null;
   readAtUtc?: string | null;
+  /** For an email: how many times its tracking pixel was loaded. Zero is not proof it was unread: many clients block images. */
+  openCount?: number;
+  lastOpenedAtUtc?: string | null;
   errorCode?: number | null;
   errorTitle?: string | null;
 }

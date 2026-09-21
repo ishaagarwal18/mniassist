@@ -93,3 +93,12 @@
   color: var(--ar-ink-700);
   font: 400 12.5px var(--ar-font-sans);
 }
+
+.es__status {
+  margin: 10px 0 0;
+  font: 400 13px/1.5 var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}
+.es__status--bad {
+  color: var(--ar-red-600);
+}

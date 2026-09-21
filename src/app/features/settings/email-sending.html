@@ -174,6 +174,146 @@
     </section>
 
     <section class="panel">
+      <h2 class="panel__title">Open tracking</h2>
+      <label class="es__radio">
+        <input
+          id="es-track"
+          type="checkbox"
+          [checked]="c.trackOpens"
+          [disabled]="savingTracking()"
+          (change)="setTracking($any($event.target).checked)"
+        />
+        <span>
+          <strong>Show when an email is opened</strong>
+          <span class="es__hint"
+            >Adds a tiny invisible image to each email you send. When the reader's mail program loads it, the message shows "opened" in
+            the inbox and counts toward the campaign's read rate. It is a hint, not proof: some programs block images (so a read
+            email shows nothing), and some load them in advance (so an unread one shows as opened).</span
+          >
+        </span>
+      </label>
+      @if (c.trackOpens && c.trackingProblem; as problem) {
+        <ar-banner tone="warn">
+          Tracking is on but cannot work yet ({{ problem }}). Ask your AutoReach administrator to fix this.
+        </ar-banner>
+      }
+    </section>
+
+    <section class="panel">
+      <h2 class="panel__title">Replies</h2>
+      <p class="es__hint">
+        Connect the mailbox your customers' replies arrive in, and their replies are added to the conversation in your inbox. Only mail
+        from your contacts is added, and only mail that arrives after you connect. A failed-delivery notice for an address that does
+        not exist also stops further email to that contact. Nothing in the mailbox is changed, moved or deleted.
+      </p>
+
+      @if (c.hasImap) {
+        <p class="es__status" [class.es__status--bad]="!!c.lastSyncError">
+          @if (c.syncEnabled) {
+            Reading <strong>{{ c.imapUsername }}</strong> on {{ c.imapHost }}. Last checked {{ when(c.lastSyncedAtUtc) }}.
+          } @else {
+            Paused. {{ c.imapUsername }} on {{ c.imapHost }}.
+          }
+          @if (c.lastSyncError; as why) {
+            <br />
+            {{ why }}
+            @if (!c.syncEnabled) {
+              Reading stopped after repeated failures. Fix the cause, then resume.
+            }
+          }
+        </p>
+        <div class="panel__actions">
+          <button ar-button type="button" [disabled]="syncing() || savingImap()" (click)="syncNow()">
+            {{ syncing() ? 'Checking…' : 'Check now' }}
+          </button>
+          @if (c.syncEnabled) {
+            <button ar-button type="button" variant="ghost" [disabled]="savingImap()" (click)="changeSync('pause')">Pause</button>
+          } @else {
+            <button ar-button type="button" variant="ghost" [disabled]="savingImap()" (click)="changeSync('resume')">Resume</button>
+          }
+          <button ar-button type="button" variant="ghost" [disabled]="savingImap()" (click)="changeSync('remove')">Disconnect</button>
+        </div>
+        @if (syncResult(); as r) {
+          <p class="es__hint">
+            @if (r.succeeded) {
+              {{ r.imported }} {{ r.imported === 1 ? 'reply' : 'replies' }} added, {{ r.skipped }} skipped, {{ r.bounces }}
+              {{ r.bounces === 1 ? 'address' : 'addresses' }} stopped after a failed-delivery notice.
+              @if (r.moreWaiting) {
+                More is waiting; check again.
+              }
+            } @else {
+              {{ r.error }}
+            }
+          </p>
+        }
+      }
+
+      <div class="es__grid es__grid--smtp">
+        <label class="ar-field">
+          <span class="ar-field__label">IMAP host</span>
+          <input
+            class="ar-field__input"
+            placeholder="imap.yourprovider.com"
+            autocapitalize="none"
+            [value]="imapHost()"
+            (input)="imapHost.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Port</span>
+          <select class="ar-field__input" (change)="setImapPort(+$any($event.target).value)">
+            @for (p of [993, 143]; track p) {
+              <option [value]="p" [selected]="p === imapPort()">{{ p }}</option>
+            }
+          </select>
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Username</span>
+          <input
+            class="ar-field__input"
+            autocomplete="off"
+            autocapitalize="none"
+            [value]="imapUser()"
+            (input)="imapUser.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">
+            Password
+            @if (c.imapHasPassword) {
+              <span class="ar-field__opt">(saved — leave blank to keep it)</span>
+            }
+          </span>
+          <input
+            class="ar-field__input"
+            type="password"
+            autocomplete="new-password"
+            [value]="imapPassword()"
+            (input)="imapPassword.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Folder <span class="ar-field__opt">(blank for INBOX)</span></span>
+          <input
+            class="ar-field__input"
+            autocapitalize="none"
+            [value]="imapFolder()"
+            (input)="imapFolder.set($any($event.target).value)"
+          />
+        </label>
+      </div>
+      <p class="es__hint">
+        The connection is always encrypted{{ imapTls() ? ' (TLS on connect)' : ' (STARTTLS)' }}, and it is tried before anything is saved.
+        Gmail and Microsoft 365 usually need an app password for this; sign-in with your normal password may be refused.
+      </p>
+      <div class="panel__actions">
+        <button ar-button type="button" variant="primary" [disabled]="!canSaveImap() || savingImap()" (click)="connectMailbox()">
+          {{ savingImap() ? 'Connecting…' : c.hasImap ? 'Save mailbox' : 'Connect mailbox' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="panel">
       <h2 class="panel__title">Send a test email</h2>
       <div class="es__test">
         <input

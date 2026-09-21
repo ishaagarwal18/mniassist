@@ -17,6 +17,43 @@ export interface EmailChannelDto {
   smtpHasPassword: boolean;
   /** Set when the platform cannot build unsubscribe links, so marketing email is refused. */
   unsubscribeProblem?: string | null;
+  /** Whether email carries a tracking pixel, so opens show on messages. */
+  trackOpens: boolean;
+  /** Set when tracking is on but the platform cannot build tracking links, so no pixel is added. */
+  trackingProblem?: string | null;
+  hasImap: boolean;
+  imapHost?: string | null;
+  imapPort?: number | null;
+  imapImplicitTls: boolean;
+  imapUsername?: string | null;
+  imapHasPassword: boolean;
+  imapFolder?: string | null;
+  /** Whether replies are being read from the mailbox. */
+  syncEnabled: boolean;
+  lastSyncedAtUtc?: string | null;
+  /** Why the last attempt failed, when it did. Sync stops by itself after a run of failures. */
+  lastSyncError?: string | null;
+}
+
+export interface UpdateEmailImapInput {
+  host: string;
+  port: number;
+  implicitTls: boolean;
+  username: string;
+  /** Send only to set or change it; null keeps the stored password. */
+  password?: string | null;
+  /** Blank means INBOX. */
+  folder?: string | null;
+}
+
+/** What one pass of reading the mailbox did. */
+export interface EmailSyncResultDto {
+  succeeded: boolean;
+  error?: string | null;
+  imported: number;
+  skipped: number;
+  bounces: number;
+  moreWaiting: boolean;
 }
 
 export interface UpdateEmailSenderProfileInput {
@@ -61,6 +98,42 @@ export class EmailChannelService {
   useSharedRelay = (config?: Partial<Rest.Config>) =>
     this.restService.request<any, EmailChannelDto>(
       { method: 'POST', url: '/api/auto-reach/email-channel/use-shared-relay' },
+      { apiName: this.apiName, ...config },
+    );
+
+  setOpenTracking = (enabled: boolean, config?: Partial<Rest.Config>) =>
+    this.restService.request<{ enabled: boolean }, EmailChannelDto>(
+      { method: 'POST', url: '/api/auto-reach/email-channel/set-open-tracking', body: { enabled } },
+      { apiName: this.apiName, ...config },
+    );
+
+  useImapSync = (input: UpdateEmailImapInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<UpdateEmailImapInput, EmailChannelDto>(
+      { method: 'POST', url: '/api/auto-reach/email-channel/use-imap-sync', body: input },
+      { apiName: this.apiName, ...config },
+    );
+
+  pauseSync = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, EmailChannelDto>(
+      { method: 'POST', url: '/api/auto-reach/email-channel/pause-sync' },
+      { apiName: this.apiName, ...config },
+    );
+
+  resumeSync = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, EmailChannelDto>(
+      { method: 'POST', url: '/api/auto-reach/email-channel/resume-sync' },
+      { apiName: this.apiName, ...config },
+    );
+
+  removeImap = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, EmailChannelDto>(
+      { method: 'DELETE', url: '/api/auto-reach/email-channel/imap' },
+      { apiName: this.apiName, ...config },
+    );
+
+  syncNow = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, EmailSyncResultDto>(
+      { method: 'POST', url: '/api/auto-reach/email-channel/sync-now' },
       { apiName: this.apiName, ...config },
     );
 

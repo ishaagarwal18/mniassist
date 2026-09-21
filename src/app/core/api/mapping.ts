@@ -138,7 +138,10 @@ export function toContact(dto: ContactDto): Contact {
 }
 
 /** Channels whose contacts have no phone number, keyed by the API's ChannelKind. WhatsApp (0) is absent on purpose. */
-const PHONELESS_CHANNEL: Record<number, string | undefined> = { 1: 'Instagram', 2: 'Messenger' };
+const PHONELESS_CHANNEL: Record<number, string | undefined> = { 1: 'Instagram', 2: 'Messenger', 4: 'Email' };
+
+/** Email has no service window: a reply is never blocked waiting for one. */
+const EMAIL_CHANNEL = 4;
 
 export function toConversation(
   dto: ConversationDto,
@@ -150,6 +153,7 @@ export function toConversation(
     company: dto.contactCompanyName ?? '',
     phoneE164: formatWaId(dto.contactWaId),
     channel: PHONELESS_CHANNEL[dto.channelKind ?? 0],
+    windowless: dto.channelKind === EMAIL_CHANNEL ? true : undefined,
     snippet: dto.lastMessagePreview ?? '',
     at: formatClock(dto.lastInboundAtUtc ?? dto.lastOutboundAtUtc),
     unread: dto.unreadCount ?? 0,
@@ -170,6 +174,8 @@ export function toMessage(dto: MessageDto, conversationId?: string): Message {
     body: dto.body ?? '',
     at: formatClock(dto.sentAtUtc ?? dto.creationTime),
     status: dto.status != null ? toMessageStatus(dto.status) : undefined,
+    opens: dto.openCount ? dto.openCount : undefined,
+    lastOpenedAt: dto.lastOpenedAtUtc ? formatClock(dto.lastOpenedAtUtc) : undefined,
     media: toMessageMedia(dto, conversationId),
     location:
       dto.locationLatitude != null && dto.locationLongitude != null
