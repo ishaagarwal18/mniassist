@@ -32,6 +32,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/signing/quote-signing').then((m) => m.ArQuoteSigning),
   },
   {
+    // A lead-capture form's public page: no login, no app shell. The address is all a visitor holds.
+    path: 'f/:code',
+    title: 'Enquiry form',
+    loadComponent: () => import('./features/forms/public-form').then((m) => m.ArPublicForm),
+  },
+  {
     path: 'privacy',
     title: 'Privacy Policy · AutoReach',
     loadComponent: () =>
@@ -171,6 +177,11 @@ export const routes: Routes = [
         path: 'tasks',
         title: 'Tasks · AutoReach',
         loadComponent: () => import('./features/activities/tasks').then((m) => m.ArTasks),
+      },
+      {
+        path: 'forms',
+        title: 'Web forms · AutoReach',
+        loadComponent: () => import('./features/forms/forms').then((m) => m.ArWebForms),
       },
       {
         path: 'calls',

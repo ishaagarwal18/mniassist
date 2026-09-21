@@ -1,0 +1,52 @@
+:host { display: block; min-height: 100vh; background: #f3f5f8; }
+:host-context(.pf--embedded) { background: transparent; }
+
+.pf {
+  --pf-line: #c9d1dc;
+  --pf-ink: #16202e;
+  --pf-soft: #5b6676;
+  --pf-accent: #0b6b63;
+  --pf-bad: #b42318;
+  padding: 24px 16px 48px;
+  font: 400 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--pf-ink);
+}
+.pf--embedded { padding: 0; }
+
+.pf__card {
+  max-width: 560px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px;
+  background: #fff; border: 1px solid var(--pf-line); border-radius: 10px;
+}
+.pf--embedded .pf__card { border: 0; border-radius: 0; box-shadow: none; }
+.pf__card--done { background: #eaf6ee; border-color: #9ccfae; }
+.pf__title { margin: 0; font-size: 22px; line-height: 1.25; text-wrap: balance; }
+.pf__intro { margin: -6px 0 0; color: var(--pf-soft); }
+.pf__note { max-width: 560px; margin: 48px auto; text-align: center; color: var(--pf-soft); }
+
+.pf__field { display: flex; flex-direction: column; gap: 6px; }
+.pf__label { font-weight: 600; font-size: 14px; }
+.pf__req { font-style: normal; color: var(--pf-bad); margin-left: 2px; }
+.pf__input {
+  width: 100%; box-sizing: border-box; padding: 10px 12px; font: inherit; color: inherit; background: #fff;
+  border: 1px solid var(--pf-line); border-radius: 8px;
+}
+.pf__input:focus-visible, .pf__btn:focus-visible, .pf__chk input:focus-visible { outline: 2px solid var(--pf-accent); outline-offset: 2px; }
+.pf__input[aria-invalid='true'], .pf__chk input[aria-invalid='true'] { border-color: var(--pf-bad); outline-color: var(--pf-bad); }
+textarea.pf__input { resize: vertical; min-height: 96px; }
+.pf__help { margin: 0; font-size: 13px; color: var(--pf-soft); }
+.pf__err { margin: 0; font-size: 13px; color: var(--pf-bad); }
+.pf__fail { margin: 0; padding: 10px 12px; border-radius: 8px; background: #fdeceb; color: var(--pf-bad); font-weight: 500; }
+
+.pf__chk { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; cursor: pointer; }
+.pf__chk input { margin-top: 3px; width: 18px; height: 18px; flex: none; }
+
+.pf__btn {
+  align-self: flex-start; padding: 11px 22px; font: 600 15px inherit; color: #fff; background: var(--pf-accent);
+  border: 0; border-radius: 8px; cursor: pointer;
+}
+.pf__btn[disabled] { opacity: 0.6; cursor: progress; }
+
+/* Off-screen, not display:none: a bot that skips hidden fields would then skip the trap too. */
+.pf__trap { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+
+@media (max-width: 480px) { .pf__card { padding: 18px; } .pf__btn { width: 100%; } }

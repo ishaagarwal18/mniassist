@@ -210,6 +210,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Channels',
       },
       {
+        label: 'Web forms',
+        icon: 'template',
+        route: '/forms',
+        permission: 'AutoReach.Channels',
+      },
+      {
         label: 'Chat links & QR',
         icon: 'link',
         route: '/channels/widget',
