@@ -149,6 +149,7 @@ export function toConversation(
 ): Conversation {
   return {
     id: dto.id!,
+    contactId: dto.contactId ?? undefined,
     contactName: dto.contactDisplayName ?? formatWaId(dto.contactWaId),
     company: dto.contactCompanyName ?? '',
     phoneE164: formatWaId(dto.contactWaId),

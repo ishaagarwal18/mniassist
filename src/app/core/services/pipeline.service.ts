@@ -107,6 +107,8 @@ export interface EnquiryDetail {
   pipelineId?: string;
   pipelineName?: string;
   contact: string;
+  /** The contact's id, so a call or a task can be started for them from the deal. */
+  contactId?: string;
   company?: string;
   owner?: string;
   requirement?: string;
@@ -233,6 +235,7 @@ const EVENT_KIND: Record<EnquiryEventKind, string> = {
   [EnquiryEventKind.FlowSubmitted]: 'Flow submitted',
   [EnquiryEventKind.TaskCompleted]: 'Task completed',
   [EnquiryEventKind.MeetingScheduled]: 'Meeting scheduled',
+  [EnquiryEventKind.CallLogged]: 'Call',
 };
 
 function enquiryEvent(e: EnquiryEventDto): EnquiryEvent {
@@ -265,6 +268,7 @@ function enquiryDetail(d: EnquiryDetailDto & { id?: string }): EnquiryDetail {
     title: d.title ?? '(untitled)',
     stage,
     contact: d.contactDisplayName ?? '—',
+    contactId: d.contactId ?? undefined,
     company: d.contactCompanyName ?? undefined,
     owner: d.ownerUserName ?? undefined,
     requirement: d.requirement ?? undefined,
@@ -644,6 +648,7 @@ export class PipelineStore {
       title: card?.title ?? 'Enquiry',
       stage: card?.stage ?? 'new',
       contact: card?.contact ?? '—',
+      contactId: 'mock-contact',
       company: card?.company,
       owner: card?.owner,
       requirement:

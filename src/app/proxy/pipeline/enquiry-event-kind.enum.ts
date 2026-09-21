@@ -12,6 +12,7 @@ export enum EnquiryEventKind {
   FlowSubmitted = 8,
   TaskCompleted = 9,
   MeetingScheduled = 10,
+  CallLogged = 11,
 }
 
 export const enquiryEventKindOptions = mapEnumToOptions(EnquiryEventKind);

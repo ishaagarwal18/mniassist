@@ -76,6 +76,9 @@
             <span>Service window closed</span>
           </div>
         }
+        @if (thread.contactId && (!thread.channel || thread.channel === 'Email')) {
+          <button ar-button variant="ghost" icon="phone" (click)="calling.set(true)">Call</button>
+        }
         <button ar-button variant="ghost" icon="user">Assign</button>
         <button ar-button variant="ghost" icon="check">Resolve</button>
       </header>
@@ -264,6 +267,10 @@
           </div>
         }
       </footer>
+
+      @if (calling() && thread.contactId) {
+        <ar-call-dialog [contactId]="thread.contactId" [contactName]="thread.contactName" (closed)="calling.set(false)" />
+      }
 
       @if (pickerOpen()) {
         <ar-document-picker (pick)="onPick($event)" (close)="pickerOpen.set(false)" />

@@ -42,6 +42,8 @@ export interface Message {
 
 export interface Conversation {
   readonly id: string;
+  /** The contact, so a call can be started for them from the thread. */
+  readonly contactId?: string;
   readonly contactName: string;
   readonly company: string;
   readonly phoneE164: string;

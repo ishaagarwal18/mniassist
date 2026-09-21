@@ -8,6 +8,7 @@ import { ArAvatar, ArButton, ArChip, ArDialog, ArIcon, ArSearchBox } from '../..
 import { ChannelService } from '../../core/services/channel.service';
 import { ArChannelHealthStrip } from '../../ui/channel-health-strip';
 import { ArDocumentPicker, PickedDocument } from './document-picker';
+import { ArCallDialog } from '../calls/call-dialog';
 
 @Component({
   selector: 'ar-inbox',
@@ -21,6 +22,7 @@ import { ArDocumentPicker, PickedDocument } from './document-picker';
     ArSearchBox,
     ArChannelHealthStrip,
     ArDocumentPicker,
+    ArCallDialog,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './inbox.html',
@@ -47,6 +49,9 @@ export class ArInbox {
     const thread = this.selected();
     return thread ? untilLabel(thread.window.expiresAt, this.now()) : null;
   });
+
+  /** The call dialog, open for the selected conversation's contact. */
+  protected readonly calling = signal(false);
 
   protected readonly windowOpen = computed(() => !!this.selected()?.windowless || this.windowLeft() !== null);
 

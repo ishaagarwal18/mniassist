@@ -92,6 +92,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Activities',
       },
       {
+        label: 'Calls',
+        icon: 'phone',
+        route: '/calls',
+        permission: 'AutoReach.Inbox',
+      },
+      {
         label: 'Forecast',
         icon: 'analytics',
         route: '/forecast',

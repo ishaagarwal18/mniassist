@@ -173,6 +173,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/activities/tasks').then((m) => m.ArTasks),
       },
       {
+        path: 'calls',
+        title: 'Calls · AutoReach',
+        loadComponent: () => import('./features/calls/calls').then((m) => m.ArCalls),
+      },
+      {
         path: 'meetings',
         title: 'Meetings · AutoReach',
         loadComponent: () => import('./features/activities/meetings').then((m) => m.ArMeetings),

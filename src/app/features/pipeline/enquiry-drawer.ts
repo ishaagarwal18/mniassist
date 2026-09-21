@@ -13,6 +13,7 @@ import { EnquiryDetail, PipelineStore } from '../../core/services/pipeline.servi
 import { inrCompact } from '../../core/util/format';
 import { ArButton, ArChip } from '../../ui';
 import { ArEnquiryActivities } from '../activities/enquiry-activities';
+import { ArEnquiryCalls } from '../calls/enquiry-calls';
 
 /**
  * The enquiry card, opened. A slide-over rather than a route because the board is
@@ -23,7 +24,7 @@ import { ArEnquiryActivities } from '../activities/enquiry-activities';
  */
 @Component({
   selector: 'ar-enquiry-drawer',
-  imports: [ArButton, ArChip, ArEnquiryActivities],
+  imports: [ArButton, ArChip, ArEnquiryActivities, ArEnquiryCalls],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="scrim" (click)="close.emit()"></div>
@@ -161,6 +162,10 @@ import { ArEnquiryActivities } from '../activities/enquiry-activities';
 
           <section class="sec">
             <ar-enquiry-activities [enquiryId]="d.id" />
+          </section>
+
+          <section class="sec">
+            <ar-enquiry-calls [enquiryId]="d.id" [contactId]="d.contactId" [contactName]="d.contact" />
           </section>
 
           <section class="sec">
