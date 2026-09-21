@@ -26,6 +26,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/account/reset-password').then((m) => m.ArResetPassword),
   },
   {
+    // The customer's signing page: no login, no app shell. The link is the credential.
+    path: 'sign/:token',
+    title: 'Review and sign · AutoReach',
+    loadComponent: () => import('./features/signing/quote-signing').then((m) => m.ArQuoteSigning),
+  },
+  {
     path: 'privacy',
     title: 'Privacy Policy · AutoReach',
     loadComponent: () =>

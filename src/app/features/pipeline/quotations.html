@@ -45,6 +45,15 @@
   </ar-dialog>
 }
 
+@if (signingFor(); as q) {
+  <ar-quote-signature-dialog
+    [quotationId]="q.id"
+    [reference]="q.reference"
+    [open]="canSign(q)"
+    (closed)="signingClosed()"
+  />
+}
+
 @if (editingId(); as id) {
   <ar-quote-editor [quotationId]="id" (closed)="editorClosed($event)" />
 }
@@ -78,6 +87,9 @@
           </td>
           <td>
             <ar-chip [tone]="tone(q.state)">{{ q.state }}</ar-chip>
+            @if (sigChip(q); as sc) {
+              <ar-chip [tone]="sc.tone">{{ sc.label }}</ar-chip>
+            }
           </td>
           <td class="num muted" [attr.title]="gstTitle(q) || null">
             @if (q.taxInPaise !== undefined) {
@@ -97,6 +109,11 @@
             <button ar-button variant="ghost" [disabled]="!!busy()" (click)="editingId.set(q.id)">
               {{ q.state === 'won' || q.state === 'lost' || q.state === 'expired' ? 'View' : 'Lines' }}
             </button>
+            @if (signingAvailable && (canSign(q) || sigChip(q))) {
+              <button ar-button variant="ghost" [disabled]="!!busy()" (click)="signingFor.set(q)">
+                Signature
+              </button>
+            }
             <button ar-button variant="ghost" [disabled]="!!busy()" (click)="download(q)">
               PDF
             </button>

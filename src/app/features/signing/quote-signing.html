@@ -1,0 +1,176 @@
+<div class="sg" [style.--sg-accent]="accent()" [style.--sg-primary]="primary()">
+  <main class="sg__doc">
+    @if (loading()) {
+      <p class="sg__note">Opening your quotation…</p>
+    } @else if (loadError(); as msg) {
+      <section class="sg__card sg__card--stop">
+        <h1 class="sg__title">This link cannot be used</h1>
+        <p>{{ msg }}</p>
+      </section>
+    } @else if (view(); as v) {
+      <header class="sg__head">
+        @if (v.logoDataUrl) {
+          <img class="sg__logo" [src]="v.logoDataUrl" alt="" />
+        }
+        <div>
+          <p class="sg__from">{{ v.companyName || 'Quotation' }}</p>
+          <h1 class="sg__title">Quotation {{ v.reference }}</h1>
+          <p class="sg__meta">
+            @if (v.revision) {
+              Revision {{ v.revision }} ·
+            }
+            @if (v.recipientName) {
+              For {{ v.recipientName }} ·
+            }
+            Issued {{ date(v.issuedAtUtc) }} · Valid until {{ date(v.validUntilUtc) }}
+          </p>
+        </div>
+      </header>
+
+      @if (v.status === Status.Signed) {
+        <section class="sg__card sg__card--done" role="status">
+          <h2>Signed and accepted</h2>
+          <p>
+            Signed by <strong>{{ v.signedName }}</strong> on {{ dateTime(v.signedAtUtc) }}. The
+            sender has been told. Keep a copy for your records.
+          </p>
+          <a class="sg__btn sg__btn--ghost" [href]="documentUrl()" target="_blank" rel="noopener">
+            Download the signed quotation
+          </a>
+        </section>
+      } @else if (!v.canSign) {
+        <section class="sg__card sg__card--stop" role="status">
+          <h2>
+            @switch (v.status) {
+              @case (Status.Declined) { Declined }
+              @case (Status.Expired) { This link has expired }
+              @default { This quotation can no longer be signed }
+            }
+          </h2>
+          <p>{{ v.reason }}</p>
+        </section>
+      }
+
+      @if (outcome(); as o) {
+        @if (o.status === Status.Declined) {
+          <p class="sg__note" role="status">Thank you. Your answer has been passed on.</p>
+        }
+      }
+
+      @if (v.lines?.length) {
+        <div class="sg__scroll">
+          <table class="sg__tbl">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Item</th>
+                <th class="num">Qty</th>
+                <th class="num">Unit price</th>
+                <th class="num">Disc.</th>
+                <th class="num">GST</th>
+                <th class="num">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of v.lines; track l.order) {
+                <tr>
+                  <td>{{ l.order }}</td>
+                  <td>
+                    {{ l.description }}
+                    @if (l.partNumber) {
+                      <span class="sg__part">{{ l.partNumber }}</span>
+                    }
+                  </td>
+                  <td class="num">{{ l.quantity }} {{ l.unit }}</td>
+                  <td class="num">{{ money(l.unitPriceInPaise) }}</td>
+                  <td class="num">{{ l.discountBasisPoints ? pct(l.discountBasisPoints) : '—' }}</td>
+                  <td class="num">{{ pct(l.taxRateBasisPoints) }}</td>
+                  <td class="num">{{ money(l.lineTotalInPaise) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <dl class="sg__sum">
+          <div><dt>Subtotal</dt><dd>{{ money(v.subtotalInPaise) }}</dd></div>
+          @for (t of v.taxBreakdown; track t.rateBasisPoints) {
+            <div><dt>GST {{ pct(t.rateBasisPoints) }}</dt><dd>{{ money(t.taxInPaise) }}</dd></div>
+          }
+          <div class="sg__sum-total"><dt>Total</dt><dd>{{ money(v.totalInPaise) }}</dd></div>
+        </dl>
+
+        @if (v.canSign) {
+          <p>
+            <a class="sg__link" [href]="documentUrl()" target="_blank" rel="noopener">
+              Open the quotation as a document
+            </a>
+          </p>
+        }
+      }
+
+      @if (v.canSign) {
+        <section class="sg__card sg__sign" aria-labelledby="sg-sign-h">
+          <h2 id="sg-sign-h">Sign to accept</h2>
+
+          <label class="sg__field" for="sg-name">
+            <span>Your full name</span>
+            <input
+              id="sg-name"
+              class="sg__input"
+              autocomplete="name"
+              [value]="typedName()"
+              (input)="typedName.set($any($event.target).value)"
+            />
+          </label>
+
+          <div class="sg__field">
+            <span>Signature <em>(optional)</em></span>
+            <ar-signature-pad (drawn)="drawn.set($event)" />
+          </div>
+
+          <label class="sg__consent" for="sg-consent">
+            <input
+              id="sg-consent"
+              type="checkbox"
+              [checked]="consent()"
+              (change)="consent.set($any($event.target).checked)"
+            />
+            <span>{{ v.consentText }}</span>
+          </label>
+
+          @if (error(); as msg) {
+            <p class="sg__err" role="alert">{{ msg }}</p>
+          }
+
+          <div class="sg__actions">
+            <button type="button" class="sg__btn" [disabled]="!canSubmit()" (click)="sign()">
+              {{ busy() ? 'Saving…' : 'Sign and accept' }}
+            </button>
+            <button type="button" class="sg__btn sg__btn--ghost" [disabled]="busy()" (click)="declining.set(!declining())">
+              Decline
+            </button>
+          </div>
+
+          @if (declining()) {
+            <div class="sg__decline">
+              <label class="sg__field" for="sg-reason">
+                <span>Reason <em>(optional)</em></span>
+                <textarea
+                  id="sg-reason"
+                  class="sg__input"
+                  rows="3"
+                  [value]="declineReason()"
+                  (input)="declineReason.set($any($event.target).value)"
+                ></textarea>
+              </label>
+              <button type="button" class="sg__btn sg__btn--danger" [disabled]="busy()" (click)="decline()">
+                Decline this quotation
+              </button>
+            </div>
+          }
+        </section>
+      }
+    }
+  </main>
+</div>
