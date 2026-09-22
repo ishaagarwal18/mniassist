@@ -14,6 +14,7 @@ import { inrCompact } from '../../core/util/format';
 import { ArButton, ArChip } from '../../ui';
 import { ArEnquiryActivities } from '../activities/enquiry-activities';
 import { ArEnquiryCalls } from '../calls/enquiry-calls';
+import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
 
 /**
  * The enquiry card, opened. A slide-over rather than a route because the board is
@@ -24,7 +25,7 @@ import { ArEnquiryCalls } from '../calls/enquiry-calls';
  */
 @Component({
   selector: 'ar-enquiry-drawer',
-  imports: [ArButton, ArChip, ArEnquiryActivities, ArEnquiryCalls],
+  imports: [ArButton, ArChip, ArEnquiryActivities, ArEnquiryCalls, ArEnquiryTickets],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="scrim" (click)="close.emit()"></div>
@@ -166,6 +167,10 @@ import { ArEnquiryCalls } from '../calls/enquiry-calls';
 
           <section class="sec">
             <ar-enquiry-calls [enquiryId]="d.id" [contactId]="d.contactId" [contactName]="d.contact" />
+          </section>
+
+          <section class="sec">
+            <ar-enquiry-tickets [enquiryId]="d.id" [contactId]="d.contactId" [contactName]="d.contact" />
           </section>
 
           <section class="sec">

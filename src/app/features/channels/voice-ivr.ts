@@ -83,6 +83,14 @@ export class ArVoiceIvr {
   protected readonly flowUrlDraft = signal('');
   protected readonly copied = signal<string | null>(null);
 
+  // --- In-browser phone (softphone)
+  protected readonly softphoneEnabledDraft = signal(false);
+  protected readonly sipDomainDraft = signal('');
+  protected readonly sipWsDraft = signal('');
+  protected readonly sipUsernameDraft = signal('');
+  protected readonly sipPasswordDraft = signal('');
+  protected readonly softphoneEditing = signal(false);
+
   // --- Try the menu
   protected readonly keys = signal<string[]>(['', '', '']);
   protected readonly steps = signal<IvrSimulationStepDto[] | null>(null);
@@ -275,6 +283,35 @@ export class ArVoiceIvr {
     this.busy.set(true);
     try {
       await this.store.setFlowUrl(this.flowUrlDraft());
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  // ---- In-browser phone (softphone) ------------------------------------------
+
+  protected startSoftphoneEdit(): void {
+    const ch = this.channel();
+    this.softphoneEnabledDraft.set(!!ch?.softphoneEnabled);
+    this.sipDomainDraft.set(ch?.sipDomain ?? '');
+    this.sipWsDraft.set(ch?.sipWebSocketUrl ?? '');
+    this.sipUsernameDraft.set(ch?.sipUsername ?? '');
+    this.sipPasswordDraft.set('');
+    this.softphoneEditing.set(true);
+  }
+
+  protected async saveSoftphone(): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    try {
+      const ok = await this.store.setSoftphone({
+        enabled: this.softphoneEnabledDraft(),
+        sipDomain: this.sipDomainDraft().trim() || null,
+        sipWebSocketUrl: this.sipWsDraft().trim() || null,
+        sipUsername: this.sipUsernameDraft().trim() || null,
+        sipPassword: this.sipPasswordDraft().trim() || null,
+      });
+      if (ok) this.softphoneEditing.set(false);
     } finally {
       this.busy.set(false);
     }

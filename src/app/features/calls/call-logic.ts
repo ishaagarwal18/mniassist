@@ -47,6 +47,13 @@ export function looksLikeNumber(text: string): boolean {
   return digits.length >= 10 && digits.length <= 15;
 }
 
+/** What a typed number becomes on the wire: a bare 10-digit Indian number gets the country code added; anything else is kept as
+ *  typed, digits only. Mirrors the server's own `PhoneNumberRules.Normalise` for the one case a client can resolve without it. */
+export function toE164Digits(typed: string): string {
+  const digits = typed.replace(/\D/g, '');
+  return digits.length === 10 ? `91${digits}` : digits;
+}
+
 /** Digits with the country code shown the way people read them: "+91 98123 45678". */
 export function displayNumber(digits: string | null | undefined): string {
   if (!digits) return '';

@@ -7,8 +7,12 @@ import type {
   CallSetupDto,
   GetCallsInput,
   LogManualCallInput,
+  ReportSoftphoneEventInput,
+  ReportSoftphoneInboundInput,
   SetCallOutcomeInput,
+  SoftphoneCredentialsDto,
   StartCallInput,
+  StartSoftphoneCallInput,
 } from './call.models';
 
 /** The rep's side of calling. Routes follow ABP's conventional-controller naming for CallAppService. */
@@ -32,6 +36,30 @@ export class CallService {
   start = (input: StartCallInput, config?: Partial<Rest.Config>) =>
     this.restService.request<StartCallInput, CallLogDto>(
       { method: 'POST', url: '/api/auto-reach/call/start', body: input },
+      { apiName: this.apiName, ...config },
+    );
+
+  getSoftphoneCredentials = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, SoftphoneCredentialsDto>(
+      { method: 'GET', url: '/api/auto-reach/call/softphone-credentials' },
+      { apiName: this.apiName, ...config },
+    );
+
+  startSoftphoneCall = (input: StartSoftphoneCallInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<StartSoftphoneCallInput, CallLogDto>(
+      { method: 'POST', url: '/api/auto-reach/call/start-softphone-call', body: input },
+      { apiName: this.apiName, ...config },
+    );
+
+  reportSoftphoneInbound = (input: ReportSoftphoneInboundInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<ReportSoftphoneInboundInput, CallLogDto>(
+      { method: 'POST', url: '/api/auto-reach/call/report-softphone-inbound', body: input },
+      { apiName: this.apiName, ...config },
+    );
+
+  reportSoftphoneEvent = (id: string, input: ReportSoftphoneEventInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<ReportSoftphoneEventInput, CallLogDto>(
+      { method: 'POST', url: `/api/auto-reach/call/${id}/report-softphone-event`, body: input },
       { apiName: this.apiName, ...config },
     );
 

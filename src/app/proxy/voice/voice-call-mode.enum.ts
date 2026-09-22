@@ -7,6 +7,8 @@ export enum VoiceCallMode {
   ClickToCall = 1,
   /** Made or taken outside the platform and written up afterwards. */
   Manual = 2,
+  /** Made or answered on the in-browser phone — no separate handset rings. */
+  Softphone = 3,
 }
 
 export const voiceCallModeOptions = mapEnumToOptions(VoiceCallMode);

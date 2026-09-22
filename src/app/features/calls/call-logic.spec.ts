@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { CallLogDto, CallOutcome, VoiceCallDirection, VoiceCallMode, VoiceCallStatus } from '../../proxy/voice';
-import { callHeadline, displayNumber, durationLabel, looksLikeNumber, needsOutcome, outcomeToOffer } from './call-logic';
+import { callHeadline, displayNumber, durationLabel, looksLikeNumber, needsOutcome, outcomeToOffer, toE164Digits } from './call-logic';
 
 const call = (over: Partial<CallLogDto> = {}): CallLogDto => ({
   id: 'c1',
@@ -38,6 +38,14 @@ describe('looksLikeNumber', () => {
     expect(looksLikeNumber('98123 4567x')).toBe(false);
     expect(looksLikeNumber('')).toBe(false);
     expect(looksLikeNumber('1234567890123456')).toBe(false);
+  });
+});
+
+describe('toE164Digits', () => {
+  it('adds the country code to a bare 10-digit number and leaves the rest as typed digits', () => {
+    expect(toE164Digits('98123 45678')).toBe('919812345678');
+    expect(toE164Digits('919812345678')).toBe('919812345678');
+    expect(toE164Digits('+44 20 7946 0958')).toBe('442079460958');
   });
 });
 

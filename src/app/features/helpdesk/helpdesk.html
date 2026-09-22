@@ -1,0 +1,73 @@
+<ar-topbar
+  title="Helpdesk"
+  [subtitle]="total() + ' tickets'"
+  help="Every service ticket raised for a customer, whatever raised it — a WhatsApp Flow submission, a call written up, or by hand from a deal or contact. Reply to the customer from here and it goes out through whichever channel the ticket started on."
+/>
+
+@if (opened(); as id) {
+  <ar-ticket-detail-dialog [ticketId]="id" (closed)="closeDetail($event)" />
+}
+
+<div class="hd ar-scroll">
+  <div class="hd__stats">
+    <ar-stat-tile label="Open" [value]="(summary()?.openCount ?? 0) + ''" />
+    <ar-stat-tile label="Pending on customer" [value]="(summary()?.pendingCount ?? 0) + ''" />
+    <ar-stat-tile label="Overdue" [value]="(summary()?.overdueCount ?? 0) + ''" [tone]="(summary()?.overdueCount ?? 0) > 0 ? 'bad' : 'neutral'" />
+    <ar-stat-tile label="Unassigned" [value]="(summary()?.unassignedCount ?? 0) + ''" [tone]="(summary()?.unassignedCount ?? 0) > 0 ? 'amber' : 'neutral'" />
+  </div>
+
+  <div class="hd__bar">
+    @if (canSeeAll) {
+      <div class="hd__seg" role="group" aria-label="Whose tickets">
+        <button type="button" [class.on]="scope() === 'mine'" (click)="scope.set('mine')">Mine</button>
+        <button type="button" [class.on]="scope() === 'everyone'" (click)="scope.set('everyone')">Everyone</button>
+      </div>
+    }
+    <select class="hd__status" aria-label="Status" (change)="status.set($any($event.target).value === '' ? null : +$any($event.target).value)">
+      <option value="">Any status</option>
+      @for (s of [Status.Open, Status.Pending, Status.Resolved, Status.Closed]; track s) {
+        <option [value]="s">{{ STATUS_LABEL[s] }}</option>
+      }
+    </select>
+    <label class="hd__chk" for="hd-overdue">
+      <input id="hd-overdue" type="checkbox" [checked]="overdueOnly()" (change)="overdueOnly.set($any($event.target).checked)" />
+      <span>Overdue only</span>
+    </label>
+    <ar-search-box placeholder="Search reference or subject" (queryChange)="filter.set($event)" />
+  </div>
+
+  @if (error(); as msg) {
+    <p class="hd__err" role="alert">{{ msg }}</p>
+  }
+
+  @if (loading()) {
+    <p class="hd__empty">Loading…</p>
+  } @else {
+    <ul class="hd__list">
+      @for (t of tickets(); track t.id) {
+        <li class="hd__row" (click)="opened.set(t.id)">
+          <div class="hd__main">
+            <div class="hd__head">
+              <strong class="hd__ref ar-mono">{{ t.reference }}</strong>
+              <ar-chip [tone]="STATUS_TONE[t.status]">{{ STATUS_LABEL[t.status] }}</ar-chip>
+              <ar-chip [tone]="PRIORITY_TONE[t.priority]">{{ PRIORITY_LABEL[t.priority] }}</ar-chip>
+              @if (due(t); as d) {
+                <span class="hd__due" [class.hd__due--bad]="t.isOverdue">{{ d }}</span>
+              }
+            </div>
+            <p class="hd__subject">{{ t.subject }}</p>
+            <p class="hd__line">
+              {{ t.contactName || t.contactNumber }}@if (t.enquiryReference) { · deal {{ t.enquiryReference }} }@if (t.assignedUserName) { · {{ t.assignedUserName }} }
+            </p>
+          </div>
+        </li>
+      } @empty {
+        <li class="hd__empty">No tickets match. Raise one from a deal or a contact.</li>
+      }
+    </ul>
+
+    @if (tickets().length < total()) {
+      <button type="button" class="hd__more" (click)="more()">Show more ({{ total() - tickets().length }} left)</button>
+    }
+  }
+</div>

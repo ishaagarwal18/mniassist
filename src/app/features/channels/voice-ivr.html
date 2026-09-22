@@ -112,6 +112,56 @@
       </section>
     }
 
+    @if (channel(); as ch) {
+      <section class="vi__panel">
+        <h2 class="vi__panel-title">In-browser phone</h2>
+        <p class="vi__hint">
+          Turn this on and reps get a phone bar docked in the app — they can call or answer without a separate handset. It
+          registers against a SIP/WebRTC line (your voice provider's SIP trunk); the settings below are what they give you for it.
+        </p>
+
+        @if (!softphoneEditing()) {
+          <div class="vi__channel-row">
+            <span class="vi__channel-label">Status</span>
+            <ar-chip [tone]="ch.softphoneEnabled ? 'good' : 'neutral'">{{ ch.softphoneEnabled ? 'On' : 'Off' }}</ar-chip>
+            @if (ch.softphoneEnabled) {
+              <code class="ar-mono">sip:{{ ch.sipUsername }}&#64;{{ ch.sipDomain }}</code>
+            }
+          </div>
+          <button ar-button variant="ghost" [disabled]="busy()" (click)="startSoftphoneEdit()">
+            {{ ch.softphoneEnabled ? 'Edit' : 'Turn on' }}
+          </button>
+        } @else {
+          <label class="vi__checkbox">
+            <input type="checkbox" [checked]="softphoneEnabledDraft()" (change)="softphoneEnabledDraft.set($any($event.target).checked)" />
+            Turn on the in-browser phone
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">SIP domain</span>
+            <input class="ar-field__input ar-mono" placeholder="voice.example.com" [value]="sipDomainDraft()" (input)="sipDomainDraft.set($any($event.target).value)" />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">SIP WebSocket server</span>
+            <input class="ar-field__input ar-mono" placeholder="wss://voice.example.com/ws" [value]="sipWsDraft()" (input)="sipWsDraft.set($any($event.target).value)" />
+          </label>
+          <div class="ar-field-row">
+            <label class="ar-field">
+              <span class="ar-field__label">SIP username</span>
+              <input class="ar-field__input ar-mono" placeholder="sales" [value]="sipUsernameDraft()" (input)="sipUsernameDraft.set($any($event.target).value)" />
+            </label>
+            <label class="ar-field">
+              <span class="ar-field__label">SIP password <span class="vi__once">(leave blank to keep it)</span></span>
+              <input class="ar-field__input" type="password" autocomplete="new-password" [value]="sipPasswordDraft()" (input)="sipPasswordDraft.set($any($event.target).value)" />
+            </label>
+          </div>
+          <div class="vi__flow">
+            <button ar-button variant="ghost" [disabled]="busy()" (click)="softphoneEditing.set(false)">Cancel</button>
+            <button ar-button variant="primary" [disabled]="busy()" (click)="saveSoftphone()">{{ busy() ? 'Saving…' : 'Save' }}</button>
+          </div>
+        }
+      </section>
+    }
+
     @if (issues().length > 0) {
       <section class="vi__panel">
         <h2 class="vi__panel-title">Check your menu</h2>

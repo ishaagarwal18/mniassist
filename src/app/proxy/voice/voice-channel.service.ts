@@ -5,6 +5,7 @@ import type {
   IvrSimulationStepDto,
   PlaceVoiceCallInput,
   SetIvrBranchInput,
+  SetSoftphoneInput,
   SetVoiceAccountInput,
   SetVoiceFlowUrlInput,
   SimulateIvrInput,
@@ -38,6 +39,17 @@ export class VoiceChannelService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/voice-channel/set-account',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  setSoftphone = (input: SetSoftphoneInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, VoiceChannelDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/voice-channel/set-softphone',
         body: input,
       },
       { apiName: this.apiName, ...config },

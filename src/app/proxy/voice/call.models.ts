@@ -50,6 +50,37 @@ export interface GetCallsInput {
   maxResultCount?: number;
 }
 
+/** What a browser needs to register the workspace's shared softphone line. */
+export interface SoftphoneCredentialsDto {
+  ready: boolean;
+  /** Why not, in a sentence, when ready is false. */
+  problem?: string | null;
+  /** The wss:// address the browser's SIP client connects to. */
+  wsServer?: string | null;
+  /** The SIP address of record, e.g. sip:sales@voice.example.com. */
+  sipUri?: string | null;
+  password?: string | null;
+  /** The signed-in rep's own name, for the softphone's own display. */
+  displayName?: string | null;
+}
+
+export interface StartSoftphoneCallInput {
+  /** Who to call. Either this or `number` is given — never neither. */
+  contactId?: string | null;
+  /** A number typed straight into the softphone's own dialler, with no contact picked. Ignored when contactId is given. */
+  number?: string | null;
+  enquiryId?: string | null;
+}
+
+export interface ReportSoftphoneInboundInput {
+  fromNumber: string;
+}
+
+export interface ReportSoftphoneEventInput {
+  status: VoiceCallStatus;
+  durationSeconds?: number | null;
+}
+
 export interface CallLogDto {
   id: string;
   contactId: string;

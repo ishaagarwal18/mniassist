@@ -11,6 +11,7 @@ import {
   IvrPromptDto,
   IvrSimulationStepDto,
   SetIvrBranchInput,
+  SetSoftphoneInput,
   SimulateIvrInput,
   UpdateIvrPromptInput,
   VoiceChannelDto,
@@ -47,6 +48,10 @@ export class VoiceService {
       connectUrl: 'https://api.autoreach.example/api/voice/ivr/****/connect',
       statusCallbackUrl: 'https://api.autoreach.example/api/voice/webhook/****/status',
     },
+    softphoneEnabled: true,
+    sipDomain: 'voice.mock.local',
+    sipWebSocketUrl: 'wss://voice.mock.local/ws',
+    sipUsername: 'sales',
   });
 
   private readonly mockSales = 'prompt-sales';
@@ -151,6 +156,27 @@ export class VoiceService {
       return true;
     } catch (e) {
       this._error.set(readApiError(e, 'Could not save the flow URL.'));
+      return false;
+    }
+  }
+
+  /** Turns the in-browser phone on or off and records the SIP identity reps' browsers register with. */
+  async setSoftphone(input: SetSoftphoneInput): Promise<boolean> {
+    this._error.set(null);
+    if (environment.useMockData) {
+      this.mockChannel.update((c) => ({
+        ...c, softphoneEnabled: input.enabled, sipDomain: input.sipDomain ?? null,
+        sipWebSocketUrl: input.sipWebSocketUrl ?? null, sipUsername: input.sipUsername ?? null,
+      }));
+      return true;
+    }
+
+    try {
+      await firstValueFrom(this.api.setSoftphone(input));
+      this.channelResource.reload();
+      return true;
+    } catch (e) {
+      this._error.set(readApiError(e, 'Could not save the in-browser phone settings.'));
       return false;
     }
   }

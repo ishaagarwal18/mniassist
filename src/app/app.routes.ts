@@ -189,6 +189,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/calls/calls').then((m) => m.ArCalls),
       },
       {
+        path: 'helpdesk',
+        title: 'Helpdesk · AutoReach',
+        loadComponent: () => import('./features/helpdesk/helpdesk').then((m) => m.ArHelpdesk),
+      },
+      {
         path: 'meetings',
         title: 'Meetings · AutoReach',
         loadComponent: () => import('./features/activities/meetings').then((m) => m.ArMeetings),

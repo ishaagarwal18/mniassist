@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ArSidebar } from './sidebar';
+import { ArSoftphoneBar } from './softphone-bar';
 import { AgencyActingStore } from '../core/services/agency-acting.store';
 
 @Component({
   selector: 'ar-app-shell',
-  imports: [RouterOutlet, ArSidebar],
+  imports: [RouterOutlet, ArSidebar, ArSoftphoneBar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-sidebar />
@@ -20,6 +21,7 @@ import { AgencyActingStore } from '../core/services/agency-acting.store';
       }
       <div class="shell__content"><router-outlet /></div>
     </main>
+    <ar-softphone-bar />
   `,
   styles: `
     :host {

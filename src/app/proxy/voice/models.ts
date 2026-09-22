@@ -16,6 +16,21 @@ export interface VoiceChannelDto extends AuditedEntityDto<string> {
   /** The Exotel call-flow URL of the one-time skeleton flow; null until pasted in. */
   flowUrl?: string | null;
   ivrSetup?: VoiceIvrSetupDto;
+
+  softphoneEnabled?: boolean;
+  sipDomain?: string | null;
+  sipWebSocketUrl?: string | null;
+  sipUsername?: string | null;
+}
+
+/** Turns the in-browser phone on or off and records the SIP identity reps' browsers register with. */
+export interface SetSoftphoneInput {
+  enabled: boolean;
+  sipDomain?: string | null;
+  sipWebSocketUrl?: string | null;
+  sipUsername?: string | null;
+  /** Only sent to rotate the password — omitted keeps whatever is already stored. */
+  sipPassword?: string | null;
 }
 
 /** What to type into Exotel's dashboard, once. The menu itself is edited in AutoReach. */

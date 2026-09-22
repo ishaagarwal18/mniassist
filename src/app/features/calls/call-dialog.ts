@@ -1,15 +1,17 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { SoftphoneService } from '../../core/services/softphone.service';
 import { CallLogDto, CallSetupDto } from '../../proxy/voice';
 import { ArButton, ArDialog } from '../../ui';
 import { errorMessage } from '../activities/activity-logic';
 import { CallGateway } from './call-mock';
-import { displayNumber, looksLikeNumber } from './call-logic';
+import { displayNumber, looksLikeNumber, toE164Digits } from './call-logic';
 
 /**
- * Calling a contact from the app. The rep's own phone rings first; when they answer, the customer is rung and the two are joined, with the
- * workspace's business number as the caller id. No headset or softphone: only a phone and a number to ring.
+ * Calling a contact from the app. Two ways to be on the line: the rep's own phone rings first and Exotel bridges the two once they
+ * pick up ("Ring my phone"), or the browser itself is the phone ("Call in browser") — the second only offered once the workspace
+ * has the in-browser phone turned on. Either way the customer sees the workspace's business number, not the rep's own.
  */
 @Component({
   selector: 'ar-call-dialog',
@@ -24,8 +26,22 @@ import { displayNumber, looksLikeNumber } from './call-logic';
           Ringing <strong>{{ ringing() }}</strong> now. Pick up, and we connect {{ contactName() }}. The call shows in the log when it ends,
           and you can say how it went then.
         </p>
+      } @else if (softphoneStarted()) {
+        <p class="cd__ok" role="status">Calling {{ contactName() }} from the in-browser phone. Watch the phone bar in the corner.</p>
       } @else if (setup(); as s) {
-        @if (!s.channelReady) {
+        @if (softphone.configured()) {
+          <div class="cd__seg" role="group" aria-label="How to call">
+            <button type="button" [class.on]="mode() === 'browser'" (click)="mode.set('browser')">Call in browser</button>
+            <button type="button" [class.on]="mode() === 'phone'" (click)="mode.set('phone')">Ring my phone</button>
+          </div>
+        }
+
+        @if (mode() === 'browser') {
+          <p class="cd__hint">
+            The call opens in the phone bar at the bottom of the screen. No separate phone needed — {{ contactName() }} sees the
+            workspace's business number.
+          </p>
+        } @else if (!s.channelReady) {
           <p class="cd__err" role="alert">
             Calling is not set up yet ({{ s.channelProblem }}). An administrator connects the Exotel account under Channels.
           </p>
@@ -72,8 +88,14 @@ import { displayNumber, looksLikeNumber } from './call-logic';
       }
 
       <div dialogActions>
-        <button ar-button type="button" variant="ghost" (click)="closed.emit(started())">{{ started() ? 'Done' : 'Cancel' }}</button>
-        @if (!started() && setup()?.channelReady) {
+        <button ar-button type="button" variant="ghost" (click)="closed.emit(started())">
+          {{ started() || softphoneStarted() ? 'Done' : 'Cancel' }}
+        </button>
+        @if (!started() && !softphoneStarted() && mode() === 'browser') {
+          <button ar-button type="button" variant="primary" icon="phone" [disabled]="busy()" (click)="startBrowserCall()">
+            {{ busy() ? 'Calling…' : 'Call now' }}
+          </button>
+        } @else if (!started() && !softphoneStarted() && setup()?.channelReady) {
           <button ar-button type="button" variant="primary" icon="phone" [disabled]="busy() || !canStart()" (click)="start()">
             {{ busy() ? 'Calling…' : 'Call now' }}
           </button>
@@ -86,10 +108,14 @@ import { displayNumber, looksLikeNumber } from './call-logic';
     .cd__ok { margin: 0; padding: 10px 12px; border-radius: var(--ar-radius-control); background: var(--ar-bg-100); font: 400 13px/1.5 var(--ar-font-sans); color: var(--ar-ink-800); }
     .cd__err { margin: 8px 0 0; padding: 8px 10px; border-radius: var(--ar-radius-control); background: var(--ar-red-100); color: var(--ar-red-600); font: 500 12px var(--ar-font-sans); }
     .cd__chk { display: flex; align-items: center; gap: 8px; margin: 6px 0; font: 400 12.5px var(--ar-font-sans); color: var(--ar-ink-700); }
+    .cd__seg { display: inline-flex; margin-bottom: 10px; border: 1px solid var(--ar-line-200); border-radius: var(--ar-radius-control); overflow: hidden; }
+    .cd__seg button { padding: 6px 12px; background: var(--ar-white); border: 0; cursor: pointer; font: 500 12.5px var(--ar-font-sans); color: var(--ar-ink-600); }
+    .cd__seg button.on { background: var(--ar-ink-900); color: var(--ar-white); }
   `,
 })
 export class ArCallDialog implements OnInit {
   private readonly api = inject(CallGateway).api;
+  protected readonly softphone = inject(SoftphoneService);
 
   readonly contactId = input.required<string>();
   readonly contactName = input('the customer');
@@ -106,6 +132,8 @@ export class ArCallDialog implements OnInit {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly started = signal<CallLogDto | null>(null);
+  protected readonly softphoneStarted = signal(false);
+  protected readonly mode = signal<'phone' | 'browser'>('phone');
 
   protected readonly numberOk = computed(() => looksLikeNumber(this.number()));
   protected readonly canStart = computed(() => this.numberOk());
@@ -117,6 +145,7 @@ export class ArCallDialog implements OnInit {
   protected readonly ringing = computed(() => displayNumber(this.setup()?.myNumber) || this.number().trim());
 
   async ngOnInit(): Promise<void> {
+    void this.softphone.ensureConnected();
     try {
       const s = await firstValueFrom(this.api.getSetup());
       this.setup.set(s);
@@ -143,10 +172,27 @@ export class ArCallDialog implements OnInit {
         }),
       );
       // What was rung is what the rep typed, as the server normalised it.
-      this.setup.update((s) => (s ? { ...s, myNumber: this.number().replace(/\D/g, '').length === 10 ? `91${this.number().replace(/\D/g, '')}` : this.number().replace(/\D/g, '') } : s));
+      this.setup.update((s) => (s ? { ...s, myNumber: toE164Digits(this.number()) } : s));
       this.started.set(call);
     } catch (e: unknown) {
       this.error.set(errorMessage(e, 'The call could not be placed.'));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async startBrowserCall(): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      await this.softphone.dial({ contactId: this.contactId(), contactName: this.contactName(), enquiryId: this.enquiryId() });
+      const failure = this.softphone.error();
+      if (failure) {
+        this.error.set(failure);
+      } else {
+        this.softphoneStarted.set(true);
+      }
     } finally {
       this.busy.set(false);
     }
