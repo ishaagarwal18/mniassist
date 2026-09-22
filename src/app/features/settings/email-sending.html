@@ -210,9 +210,20 @@
       @if (c.hasImap) {
         <p class="es__status" [class.es__status--bad]="!!c.lastSyncError">
           @if (c.syncEnabled) {
-            Reading <strong>{{ c.imapUsername }}</strong> on {{ c.imapHost }}. Last checked {{ when(c.lastSyncedAtUtc) }}.
+            Reading <strong>{{ c.imapUsername }}</strong>
+            @if (c.imapOAuthProvider === OAuth.None) {
+              on {{ c.imapHost }}.
+            } @else {
+              through {{ c.imapOAuthProvider === OAuth.Google ? 'Google' : 'Microsoft 365' }}.
+            }
+            Last checked {{ when(c.lastSyncedAtUtc) }}.
           } @else {
-            Paused. {{ c.imapUsername }} on {{ c.imapHost }}.
+            Paused. {{ c.imapUsername }}
+            @if (c.imapOAuthProvider === OAuth.None) {
+              on {{ c.imapHost }}.
+            } @else {
+              through {{ c.imapOAuthProvider === OAuth.Google ? 'Google' : 'Microsoft 365' }}.
+            }
           }
           @if (c.lastSyncError; as why) {
             <br />
@@ -248,69 +259,95 @@
         }
       }
 
-      <div class="es__grid es__grid--smtp">
-        <label class="ar-field">
-          <span class="ar-field__label">IMAP host</span>
-          <input
-            class="ar-field__input"
-            placeholder="imap.yourprovider.com"
-            autocapitalize="none"
-            [value]="imapHost()"
-            (input)="imapHost.set($any($event.target).value)"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Port</span>
-          <select class="ar-field__input" (change)="setImapPort(+$any($event.target).value)">
-            @for (p of [993, 143]; track p) {
-              <option [value]="p" [selected]="p === imapPort()">{{ p }}</option>
-            }
-          </select>
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Username</span>
-          <input
-            class="ar-field__input"
-            autocomplete="off"
-            autocapitalize="none"
-            [value]="imapUser()"
-            (input)="imapUser.set($any($event.target).value)"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">
-            Password
-            @if (c.imapHasPassword) {
-              <span class="ar-field__opt">(saved — leave blank to keep it)</span>
-            }
-          </span>
-          <input
-            class="ar-field__input"
-            type="password"
-            autocomplete="new-password"
-            [value]="imapPassword()"
-            (input)="imapPassword.set($any($event.target).value)"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Folder <span class="ar-field__opt">(blank for INBOX)</span></span>
-          <input
-            class="ar-field__input"
-            autocapitalize="none"
-            [value]="imapFolder()"
-            (input)="imapFolder.set($any($event.target).value)"
-          />
-        </label>
-      </div>
-      <p class="es__hint">
-        The connection is always encrypted{{ imapTls() ? ' (TLS on connect)' : ' (STARTTLS)' }}, and it is tried before anything is saved.
-        Gmail and Microsoft 365 usually need an app password for this; sign-in with your normal password may be refused.
-      </p>
-      <div class="panel__actions">
-        <button ar-button type="button" variant="primary" [disabled]="!canSaveImap() || savingImap()" (click)="connectMailbox()">
-          {{ savingImap() ? 'Connecting…' : c.hasImap ? 'Save mailbox' : 'Connect mailbox' }}
-        </button>
-      </div>
+      @if (!c.hasImap || c.imapOAuthProvider === OAuth.None) {
+        <p class="es__hint">Sign in with the mailbox's own account, or set it up manually below.</p>
+        <div class="es__oauth">
+          <button
+            ar-button
+            type="button"
+            [disabled]="!c.googleOAuthAvailable || connectingOAuth() !== null"
+            [title]="c.googleOAuthAvailable ? '' : 'Not set up on this deployment'"
+            (click)="connectOAuth(OAuth.Google)"
+          >
+            {{ connectingOAuth() === OAuth.Google ? 'Connecting…' : 'Connect Gmail' }}
+          </button>
+          <button
+            ar-button
+            type="button"
+            [disabled]="!c.microsoftOAuthAvailable || connectingOAuth() !== null"
+            [title]="c.microsoftOAuthAvailable ? '' : 'Not set up on this deployment'"
+            (click)="connectOAuth(OAuth.Microsoft)"
+          >
+            {{ connectingOAuth() === OAuth.Microsoft ? 'Connecting…' : 'Connect Microsoft 365' }}
+          </button>
+        </div>
+
+        <p class="es__hint es__hint--divider">Or set up an IMAP mailbox manually</p>
+        <div class="es__grid es__grid--smtp">
+          <label class="ar-field">
+            <span class="ar-field__label">IMAP host</span>
+            <input
+              class="ar-field__input"
+              placeholder="imap.yourprovider.com"
+              autocapitalize="none"
+              [value]="imapHost()"
+              (input)="imapHost.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Port</span>
+            <select class="ar-field__input" (change)="setImapPort(+$any($event.target).value)">
+              @for (p of [993, 143]; track p) {
+                <option [value]="p" [selected]="p === imapPort()">{{ p }}</option>
+              }
+            </select>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Username</span>
+            <input
+              class="ar-field__input"
+              autocomplete="off"
+              autocapitalize="none"
+              [value]="imapUser()"
+              (input)="imapUser.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">
+              Password
+              @if (c.imapHasPassword) {
+                <span class="ar-field__opt">(saved — leave blank to keep it)</span>
+              }
+            </span>
+            <input
+              class="ar-field__input"
+              type="password"
+              autocomplete="new-password"
+              [value]="imapPassword()"
+              (input)="imapPassword.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Folder <span class="ar-field__opt">(blank for INBOX)</span></span>
+            <input
+              class="ar-field__input"
+              autocapitalize="none"
+              [value]="imapFolder()"
+              (input)="imapFolder.set($any($event.target).value)"
+            />
+          </label>
+        </div>
+        <p class="es__hint">
+          The connection is always encrypted{{ imapTls() ? ' (TLS on connect)' : ' (STARTTLS)' }}, and it is tried before anything is saved.
+          Gmail and Microsoft 365 usually refuse this outright — use "Connect Gmail" / "Connect Microsoft 365" above for those, or an app
+          password if the account still allows one.
+        </p>
+        <div class="panel__actions">
+          <button ar-button type="button" variant="primary" [disabled]="!canSaveImap() || savingImap()" (click)="connectMailbox()">
+            {{ savingImap() ? 'Connecting…' : c.hasImap ? 'Save mailbox' : 'Connect mailbox' }}
+          </button>
+        </div>
+      }
     </section>
 
     <section class="panel">

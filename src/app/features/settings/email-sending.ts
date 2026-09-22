@@ -8,6 +8,7 @@ import {
   EmailChannelService,
   EmailSyncResultDto,
 } from '../../proxy/email/email-channel.service';
+import { EmailOAuthProvider, EmailOAuthService } from '../../proxy/email/email-oauth.service';
 import { ArBanner, ArButton } from '../../ui';
 
 const SEED: EmailChannelDto = {
@@ -32,6 +33,9 @@ const SEED: EmailChannelDto = {
   imapUsername: null,
   imapHasPassword: false,
   imapFolder: null,
+  imapOAuthProvider: EmailOAuthProvider.None,
+  googleOAuthAvailable: true,
+  microsoftOAuthAvailable: true,
   syncEnabled: false,
   lastSyncedAtUtc: null,
   lastSyncError: null,
@@ -53,7 +57,11 @@ type Route = 'shared' | 'own';
 })
 export class ArEmailSending {
   private readonly api = inject(EmailChannelService);
+  private readonly oauth = inject(EmailOAuthService);
   private readonly mock = environment.useMockData;
+
+  protected readonly OAuth = EmailOAuthProvider;
+  protected readonly connectingOAuth = signal<EmailOAuthProvider | null>(null);
 
   protected readonly channel = signal<EmailChannelDto | null>(null);
   protected readonly loading = signal(true);
@@ -112,7 +120,62 @@ export class ArEmailSending {
   );
 
   constructor() {
+    this.consumeOAuthRedirectParams();
     void this.load();
+  }
+
+  /**
+   * EmailOAuthController's callback redirects the browser back here with ?emailOAuthConnected=<provider> or ?emailOAuthError=<reason>
+   * — read it once, show a notice, then strip it from the URL so a page refresh doesn't re-show it. Mirrors the CRM integrations
+   * screen's own handling of the identical redirect shape.
+   */
+  private consumeOAuthRedirectParams(): void {
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get('emailOAuthConnected');
+    const error = params.get('emailOAuthError');
+
+    if (connected !== null) {
+      this.notice.set('Mailbox connected. Replies that arrive from now on are added to your inbox.');
+    } else if (error !== null) {
+      this.error.set(this.oAuthErrorMessage(error));
+    } else {
+      return;
+    }
+
+    params.delete('emailOAuthConnected');
+    params.delete('emailOAuthError');
+    const query = params.toString();
+    history.replaceState(null, '', window.location.pathname + (query ? `?${query}` : ''));
+  }
+
+  private oAuthErrorMessage(reason: string): string {
+    if (reason === 'access_denied') return 'The connect flow was cancelled.';
+    if (reason === 'no_refresh_token') return 'The connection could not be kept alive. Try connecting again.';
+    if (reason === 'no_mailbox_address') return 'The mailbox address could not be read from the sign-in. Try again.';
+    if (reason.startsWith('mailbox_test_failed')) {
+      const detail = reason.slice(reason.indexOf(':') + 1).trim();
+      return `Signed in, but the mailbox could not be read${detail ? ': ' + detail : '.'} An administrator on that account may have turned IMAP access off.`;
+    }
+    return 'The connect flow did not finish. Please try again.';
+  }
+
+  /** Starts the interactive connect flow and leaves the SPA — the consent screen isn't an Angular route. */
+  protected async connectOAuth(provider: EmailOAuthProvider): Promise<void> {
+    if (this.mock) {
+      this.error.set('The connect flow needs the real API — not available against sample data.');
+      return;
+    }
+
+    this.connectingOAuth.set(provider);
+    this.error.set(null);
+    this.notice.set(null);
+    try {
+      const result = await firstValueFrom(this.oauth.start(provider));
+      window.location.href = result.authorizeUrl;
+    } catch (e) {
+      this.error.set(this.message(e, 'The connect flow could not be started.'));
+      this.connectingOAuth.set(null);
+    }
   }
 
   private async load(): Promise<void> {
@@ -192,6 +255,7 @@ export class ArEmailSending {
               imapUsername: input.username,
               imapHasPassword: true,
               imapFolder: input.folder ?? 'INBOX',
+              imapOAuthProvider: EmailOAuthProvider.None,
             }
           : await firstValueFrom(this.api.useImapSync(input)),
       );
@@ -214,7 +278,9 @@ export class ArEmailSending {
           ? this.mock ? { ...base, syncEnabled: false } : await firstValueFrom(this.api.pauseSync())
           : action === 'resume'
             ? this.mock ? { ...base, syncEnabled: true, lastSyncError: null } : await firstValueFrom(this.api.resumeSync())
-            : this.mock ? { ...base, hasImap: false, syncEnabled: false, imapHost: null, imapHasPassword: false } : await firstValueFrom(this.api.removeImap());
+            : this.mock
+            ? { ...base, hasImap: false, syncEnabled: false, imapHost: null, imapHasPassword: false, imapOAuthProvider: EmailOAuthProvider.None }
+            : await firstValueFrom(this.api.removeImap());
       this.apply(next);
       this.notice.set(
         action === 'pause' ? 'Reading the mailbox is paused.' : action === 'resume' ? 'Reading the mailbox has resumed.' : 'The mailbox is disconnected.',

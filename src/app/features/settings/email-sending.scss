@@ -102,3 +102,15 @@
 .es__status--bad {
   color: var(--ar-red-600);
 }
+
+.es__oauth {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 2px;
+}
+.es__hint--divider {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ar-line-200);
+}

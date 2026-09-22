@@ -1,6 +1,8 @@
 import { RestService, Rest } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
 
+import type { EmailOAuthProvider } from './email-oauth.service';
+
 export interface EmailChannelDto {
   id: string;
   fromName: string;
@@ -28,6 +30,11 @@ export interface EmailChannelDto {
   imapUsername?: string | null;
   imapHasPassword: boolean;
   imapFolder?: string | null;
+  /** Which provider the mailbox was signed into through, or None for a plain IMAP password (or no mailbox at all). */
+  imapOAuthProvider: EmailOAuthProvider;
+  /** Whether this deployment can offer "Connect Gmail" / "Connect Microsoft 365" — false hides the button rather than let it fail after it's clicked. */
+  googleOAuthAvailable: boolean;
+  microsoftOAuthAvailable: boolean;
   /** Whether replies are being read from the mailbox. */
   syncEnabled: boolean;
   lastSyncedAtUtc?: string | null;
