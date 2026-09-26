@@ -52,9 +52,9 @@ export class ArNotifications {
 
     switch (this.filter()) {
       case 'unread':
-        return all.filter(n => !n.read);
+        return all.filter((n) => !n.read);
       case 'critical':
-        return all.filter(n => n.tone === 'critical');
+        return all.filter((n) => n.tone === 'critical');
       default:
         return all;
     }

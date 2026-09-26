@@ -27,7 +27,11 @@ export class QuotationSignatureService {
 
   lookupStatuses = (quotationIds: string[], config?: Partial<Rest.Config>) =>
     this.restService.request<any, QuotationSignatureSummaryDto[]>(
-      { method: 'POST', url: '/api/auto-reach/quotation-signature/lookup-statuses', body: { quotationIds } },
+      {
+        method: 'POST',
+        url: '/api/auto-reach/quotation-signature/lookup-statuses',
+        body: { quotationIds },
+      },
       { apiName: this.apiName, ...config },
     );
 

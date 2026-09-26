@@ -1,4 +1,13 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, inject, signal } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -51,7 +60,11 @@ export class ArPublicForm implements AfterViewInit {
   ngAfterViewInit(): void {
     // Inside a frame, tell the page around us how tall the form is, so it can size the frame to fit.
     if (!this.isEmbedded || window.parent === window) return;
-    const tell = () => window.parent.postMessage({ autoreachFormHeight: Math.ceil(this.host.nativeElement.scrollHeight) + 8 }, '*');
+    const tell = () =>
+      window.parent.postMessage(
+        { autoreachFormHeight: Math.ceil(this.host.nativeElement.scrollHeight) + 8 },
+        '*',
+      );
     const observer = new ResizeObserver(tell);
     observer.observe(this.host.nativeElement);
     inject(DestroyRef).onDestroy(() => observer.disconnect());
@@ -84,11 +97,19 @@ export class ArPublicForm implements AfterViewInit {
   }
 
   protected inputType(f: PublicWebFormFieldDto): string {
-    return f.kind === WebFormFieldKind.Email ? 'email' : f.kind === WebFormFieldKind.Phone ? 'tel' : 'text';
+    return f.kind === WebFormFieldKind.Email
+      ? 'email'
+      : f.kind === WebFormFieldKind.Phone
+        ? 'tel'
+        : 'text';
   }
 
   protected autocomplete(f: PublicWebFormFieldDto): string {
-    return f.kind === WebFormFieldKind.Email ? 'email' : f.kind === WebFormFieldKind.Phone ? 'tel' : 'off';
+    return f.kind === WebFormFieldKind.Email
+      ? 'email'
+      : f.kind === WebFormFieldKind.Phone
+        ? 'tel'
+        : 'off';
   }
 
   protected setConsent(ticked: boolean): void {
@@ -101,11 +122,14 @@ export class ArPublicForm implements AfterViewInit {
     if (!form || this.busy()) return;
 
     const found = checkAnswers(form.fields, this.answers());
-    if (!this.consent()) found['consent'] = 'Please tick the box to agree, so we can get back to you.';
+    if (!this.consent())
+      found['consent'] = 'Please tick the box to agree, so we can get back to you.';
     this.errors.set(found);
     this.failure.set(null);
     if (Object.keys(found).length > 0) {
-      queueMicrotask(() => this.host.nativeElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+      queueMicrotask(() =>
+        this.host.nativeElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
+      );
       return;
     }
 
@@ -117,7 +141,8 @@ export class ArPublicForm implements AfterViewInit {
           consent: this.consent(),
           marketingOptIn: this.marketing(),
           website: this.honeypot() || null,
-          sourceUrl: (this.isEmbedded ? document.referrer : window.location.href.split('?')[0]) || null,
+          sourceUrl:
+            (this.isEmbedded ? document.referrer : window.location.href.split('?')[0]) || null,
           ...campaignTags(window.location.search),
         }),
       );
@@ -132,7 +157,9 @@ export class ArPublicForm implements AfterViewInit {
         this.errors.set(fromServer);
         this.failure.set('Please check the highlighted answers and try again.');
       } else if ((e as { status?: number })?.status === 429) {
-        this.failure.set(apiMessage(e, 'Too many attempts. Please wait a few minutes and try again.'));
+        this.failure.set(
+          apiMessage(e, 'Too many attempts. Please wait a few minutes and try again.'),
+        );
       } else if ((e as { status?: number })?.status === 404) {
         this.unavailable.set('This form is not available.');
       } else {

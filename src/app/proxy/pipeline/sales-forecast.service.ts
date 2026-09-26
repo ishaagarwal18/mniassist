@@ -72,7 +72,11 @@ export class SalesForecastService {
         method: 'GET',
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/sales-forecast/history',
-        params: { kind: input.kind, periodStart: input.periodStart, ownerUserId: input.ownerUserId },
+        params: {
+          kind: input.kind,
+          periodStart: input.periodStart,
+          ownerUserId: input.ownerUserId,
+        },
       },
       { apiName: this.apiName, ...config },
     );

@@ -15,7 +15,11 @@ describe('automation flow map', () => {
     let n = 0;
     const graph = stepsToGraph(
       [
-        s(K.Condition, { rejoin: true, then: [s(K.SendSessionMessage)], otherwise: [s(K.SendSessionMessage)] }),
+        s(K.Condition, {
+          rejoin: true,
+          then: [s(K.SendSessionMessage)],
+          otherwise: [s(K.SendSessionMessage)],
+        }),
         s(K.AssignAgent),
       ],
       () => `n${++n}`,
@@ -23,7 +27,9 @@ describe('automation flow map', () => {
     const map = layoutFlowMap(graph, (x) => String(x.kind));
 
     const assign = graph.find((x) => x.kind === K.AssignAgent)!;
-    const arrivals = graph.filter((x) => [x.nextNodeId, x.trueNodeId, x.falseNodeId].includes(assign.id));
+    const arrivals = graph.filter((x) =>
+      [x.nextNodeId, x.trueNodeId, x.falseNodeId].includes(assign.id),
+    );
     expect(arrivals.length).toBe(2);
 
     const y = (id: string) => map.nodes.find((m) => m.id === id)!.y;

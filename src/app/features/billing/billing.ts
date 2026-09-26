@@ -164,7 +164,9 @@ export class ArBilling {
       : this.resource.value(),
   );
 
-  protected readonly planName = computed(() => this.d().plan != null ? PLAN_NAME[this.d().plan!] : PLAN_NAME[0]);
+  protected readonly planName = computed(() =>
+    this.d().plan != null ? PLAN_NAME[this.d().plan!] : PLAN_NAME[0],
+  );
 
   protected readonly usage = computed(() => this.d().usage);
   protected readonly usageRows = computed(() => {

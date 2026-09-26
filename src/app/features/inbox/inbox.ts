@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -62,7 +70,9 @@ export class ArInbox {
   /** The call dialog, open for the selected conversation's contact. */
   protected readonly calling = signal(false);
 
-  protected readonly windowOpen = computed(() => !!this.selected()?.windowless || this.windowLeft() !== null);
+  protected readonly windowOpen = computed(
+    () => !!this.selected()?.windowless || this.windowLeft() !== null,
+  );
 
   protected windowChipFor(c: Conversation): { label: string; tone: 'teal' | 'bad' } | null {
     if (c.windowless) return null;
@@ -147,7 +157,7 @@ export class ArInbox {
       untracked(() => {
         firstValueFrom(this.sms.getTemplates())
           .then((all) => this.smsTemplates.set(sendableSmsTemplates(all)))
-          .catch(() => this.smsTemplatesLoaded = false);
+          .catch(() => (this.smsTemplatesLoaded = false));
       });
     });
   }
@@ -171,12 +181,17 @@ export class ArInbox {
     this.sending.set(true);
     this.smsError.set(null);
     try {
-      await firstValueFrom(this.sms.send({ contactId, templateId: t.id, variables: this.smsValues() }));
+      await firstValueFrom(
+        this.sms.send({ contactId, templateId: t.id, variables: this.smsValues() }),
+      );
       this.smsTemplate.set(null);
       this.smsValues.set({});
       this.inbox.reload();
     } catch (e: unknown) {
-      this.smsError.set((e as { error?: { error?: { message?: string } } })?.error?.error?.message ?? 'The SMS could not be sent.');
+      this.smsError.set(
+        (e as { error?: { error?: { message?: string } } })?.error?.error?.message ??
+          'The SMS could not be sent.',
+      );
     } finally {
       this.sending.set(false);
     }
@@ -185,7 +200,10 @@ export class ArInbox {
   // ---- Payment requests (BillDesk) -----------------------------------------------------------------------------------
 
   private readonly paymentsApi = inject(PaymentService);
-  protected readonly canRequestPayment = grantedPolicy('AutoReach.Payments.Request', inject(PermissionService));
+  protected readonly canRequestPayment = grantedPolicy(
+    'AutoReach.Payments.Request',
+    inject(PermissionService),
+  );
   protected readonly paymentOpen = signal(false);
   protected readonly payAmount = signal('');
   protected readonly payDescription = signal('');
@@ -212,15 +230,20 @@ export class ArInbox {
     this.sending.set(true);
     this.payError.set(null);
     try {
-      await firstValueFrom(this.paymentsApi.create({
-        conversationId,
-        amount: Number(this.payAmount().trim().replace(/,/g, '')),
-        description: this.payDescription().trim(),
-      }));
+      await firstValueFrom(
+        this.paymentsApi.create({
+          conversationId,
+          amount: Number(this.payAmount().trim().replace(/,/g, '')),
+          description: this.payDescription().trim(),
+        }),
+      );
       this.paymentOpen.set(false);
       this.inbox.reload();
     } catch (e: unknown) {
-      this.payError.set((e as { error?: { error?: { message?: string } } })?.error?.error?.message ?? 'The payment link could not be sent.');
+      this.payError.set(
+        (e as { error?: { error?: { message?: string } } })?.error?.error?.message ??
+          'The payment link could not be sent.',
+      );
     } finally {
       this.sending.set(false);
     }

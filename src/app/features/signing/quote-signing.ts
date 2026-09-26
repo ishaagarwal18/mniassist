@@ -87,7 +87,11 @@ export class ArQuoteSigning {
 
   protected date(iso: string | null | undefined): string {
     return iso
-      ? new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+      ? new Date(iso).toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })
       : '—';
   }
 
@@ -134,9 +138,13 @@ export class ArQuoteSigning {
     this.error.set(null);
     try {
       const sent = await firstValueFrom(this.api.sendCode(this.token()));
-      this.codeNote.set(`We sent a 6-digit code to ${sent.sentTo}. It works for ${sent.validForMinutes} minutes.`);
+      this.codeNote.set(
+        `We sent a 6-digit code to ${sent.sentTo}. It works for ${sent.validForMinutes} minutes.`,
+      );
     } catch (e: unknown) {
-      this.error.set(apiMessage(e, 'The code could not be sent. Please try again in a few minutes.'));
+      this.error.set(
+        apiMessage(e, 'The code could not be sent. Please try again in a few minutes.'),
+      );
     } finally {
       this.busy.set(false);
     }
@@ -146,7 +154,9 @@ export class ArQuoteSigning {
     this.busy.set(true);
     this.error.set(null);
     try {
-      const result = await firstValueFrom(this.api.decline(this.token(), this.declineReason().trim() || null));
+      const result = await firstValueFrom(
+        this.api.decline(this.token(), this.declineReason().trim() || null),
+      );
       this.outcome.set(result);
       await this.load();
     } catch (e: unknown) {

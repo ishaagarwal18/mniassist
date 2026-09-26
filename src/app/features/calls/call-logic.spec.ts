@@ -1,7 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
-import { CallLogDto, CallOutcome, VoiceCallDirection, VoiceCallMode, VoiceCallStatus } from '../../proxy/voice';
-import { callHeadline, displayNumber, durationLabel, looksLikeNumber, needsOutcome, outcomeToOffer, toE164Digits } from './call-logic';
+import {
+  CallLogDto,
+  CallOutcome,
+  VoiceCallDirection,
+  VoiceCallMode,
+  VoiceCallStatus,
+} from '../../proxy/voice';
+import {
+  callHeadline,
+  displayNumber,
+  durationLabel,
+  looksLikeNumber,
+  needsOutcome,
+  outcomeToOffer,
+  toE164Digits,
+} from './call-logic';
 
 const call = (over: Partial<CallLogDto> = {}): CallLogDto => ({
   id: 'c1',
@@ -60,10 +74,18 @@ describe('displayNumber', () => {
 describe('callHeadline', () => {
   it('names the direction, how it ended and how long', () => {
     expect(callHeadline(call())).toBe('Outbound call · answered · 2m 05s');
-    expect(callHeadline(call({ status: VoiceCallStatus.NoAnswer, durationSeconds: 0 }))).toBe('Outbound call · not answered');
-    expect(callHeadline(call({ mode: VoiceCallMode.Manual, direction: VoiceCallDirection.Inbound, durationSeconds: 60 }))).toBe(
-      'Inbound call · written up · 1m',
+    expect(callHeadline(call({ status: VoiceCallStatus.NoAnswer, durationSeconds: 0 }))).toBe(
+      'Outbound call · not answered',
     );
+    expect(
+      callHeadline(
+        call({
+          mode: VoiceCallMode.Manual,
+          direction: VoiceCallDirection.Inbound,
+          durationSeconds: 60,
+        }),
+      ),
+    ).toBe('Inbound call · written up · 1m');
   });
 });
 
@@ -78,8 +100,14 @@ describe('needsOutcome', () => {
 
 describe('outcomeToOffer', () => {
   it('prefers what the rep said, then the suggestion, then that they spoke', () => {
-    expect(outcomeToOffer({ outcome: CallOutcome.WrongNumber, suggestedOutcome: CallOutcome.NoAnswer })).toBe(CallOutcome.WrongNumber);
-    expect(outcomeToOffer({ outcome: CallOutcome.None, suggestedOutcome: CallOutcome.NoAnswer })).toBe(CallOutcome.NoAnswer);
-    expect(outcomeToOffer({ outcome: CallOutcome.None, suggestedOutcome: CallOutcome.None })).toBe(CallOutcome.Connected);
+    expect(
+      outcomeToOffer({ outcome: CallOutcome.WrongNumber, suggestedOutcome: CallOutcome.NoAnswer }),
+    ).toBe(CallOutcome.WrongNumber);
+    expect(
+      outcomeToOffer({ outcome: CallOutcome.None, suggestedOutcome: CallOutcome.NoAnswer }),
+    ).toBe(CallOutcome.NoAnswer);
+    expect(outcomeToOffer({ outcome: CallOutcome.None, suggestedOutcome: CallOutcome.None })).toBe(
+      CallOutcome.Connected,
+    );
   });
 });

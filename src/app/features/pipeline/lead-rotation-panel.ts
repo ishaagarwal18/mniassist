@@ -1,9 +1,22 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { WorkspaceStore } from '../../core/services/workspace.store';
-import { LeadRotationDto, LeadRotationMode, LeadRotationService, LeadSource } from '../../proxy/pipeline';
+import {
+  LeadRotationDto,
+  LeadRotationMode,
+  LeadRotationService,
+  LeadSource,
+} from '../../proxy/pipeline';
 import { ArButton, ArChip } from '../../ui';
 
 interface Row {
@@ -158,7 +171,9 @@ export class ArLeadRotationPanel {
       this.apply(dto);
     } catch (e: unknown) {
       const err = e as { error?: { error?: { message?: string } }; message?: string };
-      this.error.set(err?.error?.error?.message ?? err?.message ?? 'The rotation could not be saved.');
+      this.error.set(
+        err?.error?.error?.message ?? err?.message ?? 'The rotation could not be saved.',
+      );
     } finally {
       this.busy.set(false);
     }
@@ -192,7 +207,9 @@ export class ArLeadRotationPanel {
     );
     this.atCap.set(new Set((dto.members ?? []).filter((m) => m.atCap).map((m) => m.userId!)));
     this.nextUserId.set(dto.nextUserId ?? null);
-    this.load.set(Object.fromEntries((dto.members ?? []).map((m) => [m.userId!, m.openDeals ?? 0])));
+    this.load.set(
+      Object.fromEntries((dto.members ?? []).map((m) => [m.userId!, m.openDeals ?? 0])),
+    );
     this.dirty.set(false);
     this.loaded.set(true);
   }

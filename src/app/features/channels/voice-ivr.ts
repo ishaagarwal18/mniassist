@@ -2,7 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 
 import { VoiceService } from '../../core/services/voice.service';
 import { ChannelState } from '../../proxy/channels/channel-state.enum';
-import { IvrBranchAction, IvrIssueDto, IvrPromptDto, IvrSimulationStepDto } from '../../proxy/voice';
+import {
+  IvrBranchAction,
+  IvrIssueDto,
+  IvrPromptDto,
+  IvrSimulationStepDto,
+} from '../../proxy/voice';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
@@ -130,7 +135,11 @@ export class ArVoiceIvr {
     }
   }
 
-  protected branchTarget(b: { action?: IvrBranchAction; nextPromptId?: string | null; transferToNumber?: string | null }): string {
+  protected branchTarget(b: {
+    action?: IvrBranchAction;
+    nextPromptId?: string | null;
+    transferToNumber?: string | null;
+  }): string {
     if (b.action === IvrBranchAction.GoToPrompt) return this.promptName(b.nextPromptId);
     if (b.action === IvrBranchAction.TransferToAgent) return b.transferToNumber ?? '—';
     return '—';
@@ -252,7 +261,8 @@ export class ArVoiceIvr {
         digit: d.digit.trim(),
         action: d.action,
         nextPromptId: d.action === IvrBranchAction.GoToPrompt ? d.nextPromptId : null,
-        transferToNumber: d.action === IvrBranchAction.TransferToAgent ? d.transferToNumber.trim() : null,
+        transferToNumber:
+          d.action === IvrBranchAction.TransferToAgent ? d.transferToNumber.trim() : null,
       });
       if (ok) this.closeBranchForm();
     } finally {
@@ -338,7 +348,11 @@ export class ArVoiceIvr {
     if (this.simulating()) return;
     this.simulating.set(true);
     try {
-      this.steps.set(await this.store.simulate({ keyPresses: this.keys().map((k) => (k.trim() ? k.trim() : null)) }));
+      this.steps.set(
+        await this.store.simulate({
+          keyPresses: this.keys().map((k) => (k.trim() ? k.trim() : null)),
+        }),
+      );
     } finally {
       this.simulating.set(false);
     }

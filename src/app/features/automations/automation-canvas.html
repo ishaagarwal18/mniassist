@@ -19,14 +19,31 @@
     [style.transform]="'translate(' + pan().x + 'px,' + pan().y + 'px) scale(' + zoom() + ')'"
     [style.background-size.px]="GRID * 2"
   >
-    <svg class="cv__edges" [attr.width]="worldSize().w" [attr.height]="worldSize().h" aria-hidden="true">
+    <svg
+      class="cv__edges"
+      [attr.width]="worldSize().w"
+      [attr.height]="worldSize().h"
+      aria-hidden="true"
+    >
       <defs>
-        <marker id="cv-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto">
+        <marker
+          id="cv-arrow"
+          viewBox="0 0 8 8"
+          refX="7"
+          refY="4"
+          markerWidth="8"
+          markerHeight="8"
+          orient="auto"
+        >
           <path d="M0 0L8 4L0 8z" fill="currentColor" />
         </marker>
       </defs>
       @for (e of edges(); track e.key) {
-        <g class="cv__edge" [class.cv__edge--else]="e.otherwise" [class.cv__edge--on]="selectedEdge() === e.key">
+        <g
+          class="cv__edge"
+          [class.cv__edge--else]="e.otherwise"
+          [class.cv__edge--on]="selectedEdge() === e.key"
+        >
           <path class="cv__edge-hit" [attr.d]="e.d" (pointerdown)="selectEdge($event, e.key)" />
           <path class="cv__edge-line" [attr.d]="e.d" marker-end="url(#cv-arrow)" />
         </g>
@@ -83,7 +100,9 @@
           <span class="cn__mark"><ar-icon [name]="card.icon" [size]="14" /></span>
           <span class="cn__title">{{ card.title }}</span>
           @if (n.entered != null) {
-            <span class="cn__count" title="Contacts in · out">{{ n.entered }}·{{ n.exited ?? 0 }}</span>
+            <span class="cn__count" title="Contacts in · out"
+              >{{ n.entered }}·{{ n.exited ?? 0 }}</span
+            >
           }
           @if (flagged().has(n.id)) {
             <span class="cn__warn" title="Needs attention">!</span>
@@ -97,7 +116,10 @@
               [class.cn__port--else]="p === 'no'"
               [class.cn__port--open]="!linkOf(n, p)"
               [style.left.%]="p === 'yes' ? 27 : p === 'no' ? 73 : 50"
-              [title]="'Drag to the step that comes ' + (p === 'next' ? 'next' : 'on ' + portLabel(n.kind, p))"
+              [title]="
+                'Drag to the step that comes ' +
+                (p === 'next' ? 'next' : 'on ' + portLabel(n.kind, p))
+              "
               (pointerdown)="onPortDown($event, n, p)"
             >
               @if (p !== 'next') {
@@ -128,12 +150,37 @@
 </div>
 
 <div class="cv__tools">
-  <button type="button" class="cv__tool" title="Zoom out" aria-label="Zoom out" (click)="zoomBy(1 / 1.2)">−</button>
+  <button
+    type="button"
+    class="cv__tool"
+    title="Zoom out"
+    aria-label="Zoom out"
+    (click)="zoomBy(1 / 1.2)"
+  >
+    −
+  </button>
   <span class="cv__zoom">{{ (zoom() * 100).toFixed(0) }}%</span>
-  <button type="button" class="cv__tool" title="Zoom in" aria-label="Zoom in" (click)="zoomBy(1.2)">+</button>
+  <button type="button" class="cv__tool" title="Zoom in" aria-label="Zoom in" (click)="zoomBy(1.2)">
+    +
+  </button>
   <button type="button" class="cv__tool cv__tool--text" (click)="fit()">Fit</button>
-  <button type="button" class="cv__tool cv__tool--text" title="Lay every step out from the trigger down" (click)="tidy.emit()">Tidy up</button>
-  <button type="button" class="cv__tool cv__tool--text" [disabled]="!canUndo()" title="Undo (Ctrl+Z)" (click)="undo.emit()">Undo</button>
+  <button
+    type="button"
+    class="cv__tool cv__tool--text"
+    title="Lay every step out from the trigger down"
+    (click)="tidy.emit()"
+  >
+    Tidy up
+  </button>
+  <button
+    type="button"
+    class="cv__tool cv__tool--text"
+    [disabled]="!canUndo()"
+    title="Undo (Ctrl+Z)"
+    (click)="undo.emit()"
+  >
+    Undo
+  </button>
 </div>
 
 @if (ghost(); as g) {

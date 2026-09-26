@@ -27,7 +27,8 @@ export class SettingsStore {
 
   readonly ssoLoading = computed(() => !environment.useMockData && this.ssoResource.isLoading());
   readonly sso = computed<TenantSsoConfigurationDto>(() =>
-    environment.useMockData ? SSO_SEED : this.ssoResource.value() ?? SSO_SEED);
+    environment.useMockData ? SSO_SEED : (this.ssoResource.value() ?? SSO_SEED),
+  );
 
   async saveSso(input: SaveSsoConfigurationInput): Promise<void> {
     if (environment.useMockData) {

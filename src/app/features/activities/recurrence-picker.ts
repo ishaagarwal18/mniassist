@@ -15,9 +15,15 @@ import { DAY_NAMES, NO_REPEAT, RecurrenceDraft, WEEK_ORDER, recurrenceProblem } 
     <div class="rp">
       <label class="ar-field">
         <span class="ar-field__label">Repeats</span>
-        <select id="rp-frequency" class="ar-field__input" (change)="set({ frequency: +$any($event.target).value })">
+        <select
+          id="rp-frequency"
+          class="ar-field__input"
+          (change)="set({ frequency: +$any($event.target).value })"
+        >
           @for (f of frequencies; track f.value) {
-            <option [value]="f.value" [selected]="f.value === draft().frequency">{{ f.label }}</option>
+            <option [value]="f.value" [selected]="f.value === draft().frequency">
+              {{ f.label }}
+            </option>
           }
         </select>
       </label>
@@ -57,10 +63,23 @@ import { DAY_NAMES, NO_REPEAT, RecurrenceDraft, WEEK_ORDER, recurrenceProblem } 
 
         <div class="rp__ends" role="radiogroup" aria-label="Ends">
           @if (!needsEnd()) {
-            <label><input type="radio" name="rp-ends" [checked]="draft().ends === 'never'" (change)="set({ ends: 'never' })" /> Never</label>
+            <label
+              ><input
+                type="radio"
+                name="rp-ends"
+                [checked]="draft().ends === 'never'"
+                (change)="set({ ends: 'never' })"
+              />
+              Never</label
+            >
           }
           <label class="rp__row">
-            <input type="radio" name="rp-ends" [checked]="draft().ends === 'count'" (change)="set({ ends: 'count' })" />
+            <input
+              type="radio"
+              name="rp-ends"
+              [checked]="draft().ends === 'count'"
+              (change)="set({ ends: 'count' })"
+            />
             After
             <input
               id="rp-count"
@@ -76,7 +95,12 @@ import { DAY_NAMES, NO_REPEAT, RecurrenceDraft, WEEK_ORDER, recurrenceProblem } 
             times
           </label>
           <label class="rp__row">
-            <input type="radio" name="rp-ends" [checked]="draft().ends === 'until'" (change)="set({ ends: 'until' })" />
+            <input
+              type="radio"
+              name="rp-ends"
+              [checked]="draft().ends === 'until'"
+              (change)="set({ ends: 'until' })"
+            />
             On
             <input
               id="rp-until"
@@ -97,20 +121,69 @@ import { DAY_NAMES, NO_REPEAT, RecurrenceDraft, WEEK_ORDER, recurrenceProblem } 
     </div>
   `,
   styles: `
-    .rp { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-    .rp__every, .rp__row { display: flex; align-items: center; gap: 8px; font: 400 12.5px var(--ar-font-sans); color: var(--ar-ink-700); }
-    .rp__n { width: 72px; }
-    .rp__days { display: flex; flex-wrap: wrap; gap: 4px; }
-    .rp__day {
-      min-width: 40px; padding: 5px 8px; background: var(--ar-white); border: 1px solid var(--ar-line-200); border-radius: 999px; cursor: pointer;
-      font: 500 12px var(--ar-font-sans); color: var(--ar-ink-600);
+    .rp {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 10px;
     }
-    .rp__day.on { background: var(--ar-ink-900); color: var(--ar-white); border-color: var(--ar-ink-900); }
-    .rp__day:focus-visible { outline: 2px solid var(--ar-amber-500); outline-offset: 2px; }
-    .rp__hint { margin: 0; font: 400 11.5px var(--ar-font-sans); color: var(--ar-ink-400); }
-    .rp__ends { display: flex; flex-direction: column; gap: 6px; font: 400 12.5px var(--ar-font-sans); color: var(--ar-ink-700); }
-    .rp__ends > label { display: flex; align-items: center; gap: 8px; }
-    .rp__err { margin: 0; font: 500 12px var(--ar-font-sans); color: var(--ar-red-600); }
+    .rp__every,
+    .rp__row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .rp__n {
+      width: 72px;
+    }
+    .rp__days {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .rp__day {
+      min-width: 40px;
+      padding: 5px 8px;
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: 999px;
+      cursor: pointer;
+      font: 500 12px var(--ar-font-sans);
+      color: var(--ar-ink-600);
+    }
+    .rp__day.on {
+      background: var(--ar-ink-900);
+      color: var(--ar-white);
+      border-color: var(--ar-ink-900);
+    }
+    .rp__day:focus-visible {
+      outline: 2px solid var(--ar-amber-500);
+      outline-offset: 2px;
+    }
+    .rp__hint {
+      margin: 0;
+      font: 400 11.5px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
+    .rp__ends {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .rp__ends > label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .rp__err {
+      margin: 0;
+      font: 500 12px var(--ar-font-sans);
+      color: var(--ar-red-600);
+    }
   `,
 })
 export class ArRecurrencePicker {
@@ -133,7 +206,11 @@ export class ArRecurrencePicker {
   protected readonly problem = computed(() => recurrenceProblem(this.draft(), this.needsEnd()));
   protected readonly unit = computed(() => {
     const n = this.draft().interval;
-    const names: Record<number, string> = { [RecurrenceFrequency.Daily]: 'day', [RecurrenceFrequency.Weekly]: 'week', [RecurrenceFrequency.Monthly]: 'month' };
+    const names: Record<number, string> = {
+      [RecurrenceFrequency.Daily]: 'day',
+      [RecurrenceFrequency.Weekly]: 'week',
+      [RecurrenceFrequency.Monthly]: 'month',
+    };
     const base = names[this.draft().frequency] ?? '';
     return n === 1 ? base : `${base}s`;
   });
@@ -147,6 +224,8 @@ export class ArRecurrencePicker {
 
   protected toggleDay(d: Weekday): void {
     const has = this.draft().weekdays.includes(d);
-    this.set({ weekdays: has ? this.draft().weekdays.filter((x) => x !== d) : [...this.draft().weekdays, d] });
+    this.set({
+      weekdays: has ? this.draft().weekdays.filter((x) => x !== d) : [...this.draft().weekdays, d],
+    });
   }
 }

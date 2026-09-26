@@ -43,7 +43,9 @@ export class VoiceService {
     flowUrl: null,
     ivrSetup: {
       ready: true,
-      gatherUrls: [1, 2, 3].map((l) => `https://api.autoreach.example/api/voice/ivr/****/gather/${l}`),
+      gatherUrls: [1, 2, 3].map(
+        (l) => `https://api.autoreach.example/api/voice/ivr/****/gather/${l}`,
+      ),
       routeUrls: [1, 2].map((l) => `https://api.autoreach.example/api/voice/ivr/****/route/${l}`),
       connectUrl: 'https://api.autoreach.example/api/voice/ivr/****/connect',
       statusCallbackUrl: 'https://api.autoreach.example/api/voice/webhook/****/status',
@@ -165,8 +167,11 @@ export class VoiceService {
     this._error.set(null);
     if (environment.useMockData) {
       this.mockChannel.update((c) => ({
-        ...c, softphoneEnabled: input.enabled, sipDomain: input.sipDomain ?? null,
-        sipWebSocketUrl: input.sipWebSocketUrl ?? null, sipUsername: input.sipUsername ?? null,
+        ...c,
+        softphoneEnabled: input.enabled,
+        sipDomain: input.sipDomain ?? null,
+        sipWebSocketUrl: input.sipWebSocketUrl ?? null,
+        sipUsername: input.sipUsername ?? null,
       }));
       return true;
     }
@@ -327,13 +332,17 @@ export class VoiceService {
 }
 
 /** Demo-build stand-in for the server's simulator: same three-level rules, no network. */
-function simulateLocally(prompts: readonly IvrPromptDto[], keys: (string | null)[]): IvrSimulationStepDto[] {
+function simulateLocally(
+  prompts: readonly IvrPromptDto[],
+  keys: (string | null)[],
+): IvrSimulationStepDto[] {
   const steps: IvrSimulationStepDto[] = [];
   let current = prompts.find((p) => p.isEntryPoint);
   for (let level = 1; level <= 3 && current; level++) {
     const key = keys[level - 1] ?? null;
     const branch = key
-      ? (current.branches.find((b) => b.digit === key) ?? current.branches.find((b) => b.digit === '*'))
+      ? (current.branches.find((b) => b.digit === key) ??
+        current.branches.find((b) => b.digit === '*'))
       : undefined;
     const last = level === 3;
     let outcome: 0 | 1 | 2 | 3;
@@ -342,7 +351,9 @@ function simulateLocally(prompts: readonly IvrPromptDto[], keys: (string | null)
 
     if (!key) {
       outcome = last ? 2 : 0;
-      detail = last ? 'No key pressed on the last level — the call ends.' : 'No key pressed — the prompt plays again.';
+      detail = last
+        ? 'No key pressed on the last level — the call ends.'
+        : 'No key pressed — the prompt plays again.';
     } else if (branch?.action === IvrBranchAction.GoToPrompt && !last) {
       next = prompts.find((p) => p.id === branch.nextPromptId);
       outcome = 1;
@@ -352,10 +363,19 @@ function simulateLocally(prompts: readonly IvrPromptDto[], keys: (string | null)
       detail = `Transfers the caller to ${branch.transferToNumber}.`;
     } else {
       outcome = 2;
-      detail = branch ? 'A call cannot go deeper than three levels — the call ends.' : `Key ${key} ends the call.`;
+      detail = branch
+        ? 'A call cannot go deeper than three levels — the call ends.'
+        : `Key ${key} ends the call.`;
     }
 
-    steps.push({ promptId: current.id!, promptName: current.name, sayText: current.sayText, keyPressed: key, outcome, detail });
+    steps.push({
+      promptId: current.id!,
+      promptName: current.name,
+      sayText: current.sayText,
+      keyPressed: key,
+      outcome,
+      detail,
+    });
     if (outcome === 2 || outcome === 3) break;
     current = outcome === 1 ? next : current;
   }

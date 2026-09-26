@@ -22,7 +22,13 @@ describe('erp sync form', () => {
     const config = { url: 'http://tally:9000', salesLedger: 'Old' };
     const next = applyErpForm(
       config,
-      { ...readErpForm({}), customers: true, company: ' Sun Energy ', salesLedger: '', cardCodePrefix: 'AR' },
+      {
+        ...readErpForm({}),
+        customers: true,
+        company: ' Sun Energy ',
+        salesLedger: '',
+        cardCodePrefix: 'AR',
+      },
       IntegrationKind.Tally,
     );
     expect(next).toEqual({
@@ -34,7 +40,11 @@ describe('erp sync form', () => {
   });
 
   it('writes only the SAP prefix for SAP, and removes erp when everything is off', () => {
-    const next = applyErpForm({ erp: { invoices: true }, db: 'SBODEMO' }, { ...readErpForm({}), cardCodePrefix: 'C', company: 'X' }, IntegrationKind.SapB1);
+    const next = applyErpForm(
+      { erp: { invoices: true }, db: 'SBODEMO' },
+      { ...readErpForm({}), cardCodePrefix: 'C', company: 'X' },
+      IntegrationKind.SapB1,
+    );
     expect(next).toEqual({ db: 'SBODEMO', cardCodePrefix: 'C' });
   });
 
@@ -44,8 +54,18 @@ describe('erp sync form', () => {
   });
 
   it('describes a run', () => {
-    expect(describeRun({ retried: 0, recovered: 0, stillFailing: 0, invoices: 3 })).toBe('Nothing was waiting to retry; 3 invoices read.');
-    expect(describeRun({ retried: 2, recovered: 1, stillFailing: 1, invoices: 0, invoiceError: 'Tally is not running' })).toBe(
+    expect(describeRun({ retried: 0, recovered: 0, stillFailing: 0, invoices: 3 })).toBe(
+      'Nothing was waiting to retry; 3 invoices read.',
+    );
+    expect(
+      describeRun({
+        retried: 2,
+        recovered: 1,
+        stillFailing: 1,
+        invoices: 0,
+        invoiceError: 'Tally is not running',
+      }),
+    ).toBe(
       '1 of 2 retried records went through; invoices could not be read: Tally is not running.',
     );
   });

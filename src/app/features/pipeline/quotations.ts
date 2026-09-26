@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { PipelineStore, QState, Quotation } from '../../core/services/pipeline.service';
@@ -6,7 +14,11 @@ import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { environment } from '../../../environments/environment';
-import { QuotationSignatureService, QuotationSignatureSummaryDto, SignatureRequestStatus } from '../../proxy/pipeline';
+import {
+  QuotationSignatureService,
+  QuotationSignatureSummaryDto,
+  SignatureRequestStatus,
+} from '../../proxy/pipeline';
 import { SIGNATURE_STATUS_LABEL } from '../signing/signing-logic';
 import { ArQuoteEditor } from './quote-editor';
 import { ArQuoteSignatureDialog } from './quote-signature-dialog';
@@ -44,7 +56,9 @@ export class ArQuotations {
   // ---- Signatures ------------------------------------------------------
   /** Signing needs the live API: a link has to be something a customer can open. */
   protected readonly signingAvailable = !environment.useMockData;
-  protected readonly signatureStatus = signal<ReadonlyMap<string, QuotationSignatureSummaryDto>>(new Map());
+  protected readonly signatureStatus = signal<ReadonlyMap<string, QuotationSignatureSummaryDto>>(
+    new Map(),
+  );
   protected readonly signingFor = signal<Quotation | null>(null);
 
   constructor() {
@@ -59,7 +73,9 @@ export class ArQuotations {
   private async loadSignatureStatuses(ids: string[]): Promise<void> {
     try {
       const rows = await firstValueFrom(this.signatures.lookupStatuses(ids.slice(0, 200)));
-      this.signatureStatus.set(new Map(rows.filter((r) => r.quotationId).map((r) => [r.quotationId!, r])));
+      this.signatureStatus.set(
+        new Map(rows.filter((r) => r.quotationId).map((r) => [r.quotationId!, r])),
+      );
     } catch {
       // The list is still useful without the chips.
     }

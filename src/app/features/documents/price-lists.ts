@@ -131,7 +131,11 @@ interface ItemRow {
             />
             <button type="button" class="pl__x" (click)="removeRow($index)">×</button>
             @if (row.linked) {
-              <span class="pl__link" title="This SKU is a product in your catalogue. Renaming the product renames it here.">in catalogue</span>
+              <span
+                class="pl__link"
+                title="This SKU is a product in your catalogue. Renaming the product renames it here."
+                >in catalogue</span
+              >
             }
           </div>
         }

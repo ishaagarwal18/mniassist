@@ -4,7 +4,12 @@ import {
   ReconciliationRunDto,
 } from '../../proxy/billing';
 import { WebhookSubscriptionDto, WebhookEvent } from '../../proxy/integrations';
-import { NotificationDto, NotificationDeliveryState, NotificationKind, NotificationSeverity } from '../../proxy/notifications';
+import {
+  NotificationDto,
+  NotificationDeliveryState,
+  NotificationKind,
+  NotificationSeverity,
+} from '../../proxy/notifications';
 import { SupportImpersonationGrantDto, SupportSessionDto } from '../../proxy/platform';
 import {
   Invoice,
@@ -81,7 +86,7 @@ export function toInvoice(dto: InvoiceDto): Invoice {
     igstInPaise: dto.igstInPaise ?? 0,
     roundOffInPaise: dto.roundOffInPaise ?? 0,
     totalInPaise: dto.totalInPaise ?? 0,
-    lines: (dto.lines ?? []).map(l => ({
+    lines: (dto.lines ?? []).map((l) => ({
       description: l.description ?? '',
       sac: l.hsnOrSacCode ?? '',
       quantity: l.quantity ?? 0,
@@ -105,7 +110,7 @@ export function toReconciliationRun(dto: ReconciliationRunDto): ReconciliationRu
     varianceBasisPoints: dto.costVarianceBasisPoints ?? 0,
     withinTolerance: dto.withinTolerance ?? true,
     acknowledged: dto.acknowledgedAtUtc != null,
-    variances: (dto.variances ?? []).map(v => ({
+    variances: (dto.variances ?? []).map((v) => ({
       category: String(v.category),
       ourCount: v.ourCount ?? 0,
       metaCount: v.metaCount ?? 0,
@@ -122,7 +127,7 @@ export function toWebhookSubscription(dto: WebhookSubscriptionDto): WebhookSubsc
     url: dto.url ?? '',
     description: dto.description ?? dto.url ?? '',
     enabled: dto.isEnabled ?? false,
-    events: (dto.events ?? []).map(e => WebhookEvent[e] ?? String(e)),
+    events: (dto.events ?? []).map((e) => WebhookEvent[e] ?? String(e)),
     lastSuccessAt: dto.lastSuccessAtUtc ?? undefined,
     lastFailureAt: dto.lastFailureAtUtc ?? undefined,
     consecutiveFailures: dto.consecutiveFailureCount ?? 0,

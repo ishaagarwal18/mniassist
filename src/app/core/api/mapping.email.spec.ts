@@ -37,7 +37,12 @@ describe('email in the inbox', () => {
   });
 
   it('an email never opened shows no open count at all rather than a zero', () => {
-    const m = toMessage({ id: 'm2', direction: MessageDirection.Outbound, body: 'x', openCount: 0 } as MessageDto);
+    const m = toMessage({
+      id: 'm2',
+      direction: MessageDirection.Outbound,
+      body: 'x',
+      openCount: 0,
+    } as MessageDto);
 
     expect(m.opens).toBeUndefined();
     expect(m.lastOpenedAt).toBeUndefined();

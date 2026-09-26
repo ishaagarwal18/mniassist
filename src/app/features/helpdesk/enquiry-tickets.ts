@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
 
@@ -53,7 +61,16 @@ const STATUS_TONE: Record<TicketStatus, ChipTone> = {
 
     <div class="et__add">
       @if (canRaise) {
-        <button ar-button type="button" variant="ghost" icon="plus" [disabled]="!contactId()" (click)="raising.set(true)">Raise a ticket</button>
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          icon="plus"
+          [disabled]="!contactId()"
+          (click)="raising.set(true)"
+        >
+          Raise a ticket
+        </button>
       }
     </div>
 
@@ -71,18 +88,66 @@ const STATUS_TONE: Record<TicketStatus, ChipTone> = {
     }
   `,
   styles: `
-    :host { display: block; }
-    .et__t { margin: 0 0 8px; font: 600 12px var(--ar-font-sans); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ar-ink-500); }
-    .et__row { display: flex; flex-direction: column; gap: 2px; padding: 6px 0; cursor: pointer; }
-    .et__row:hover .et__subject { color: var(--ar-teal-600); }
-    .et__main { display: flex; align-items: center; gap: 8px; }
-    .et__ref { font-size: 11px; color: var(--ar-ink-400); }
-    .et__bad { font: 500 11px var(--ar-font-sans); color: var(--ar-red-600); }
-    .et__bad--ok { color: var(--ar-ink-400); }
-    .et__subject { font: 400 13px var(--ar-font-sans); color: var(--ar-ink-900); overflow-wrap: anywhere; }
-    .et__empty { margin: 0; font: 400 12px var(--ar-font-sans); color: var(--ar-ink-400); }
-    .et__add { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .et__err { margin: 0 0 8px; padding: 8px 10px; border-radius: var(--ar-radius-control); background: var(--ar-red-100); color: var(--ar-red-600); font: 500 12px var(--ar-font-sans); }
+    :host {
+      display: block;
+    }
+    .et__t {
+      margin: 0 0 8px;
+      font: 600 12px var(--ar-font-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ar-ink-500);
+    }
+    .et__row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 6px 0;
+      cursor: pointer;
+    }
+    .et__row:hover .et__subject {
+      color: var(--ar-teal-600);
+    }
+    .et__main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .et__ref {
+      font-size: 11px;
+      color: var(--ar-ink-400);
+    }
+    .et__bad {
+      font: 500 11px var(--ar-font-sans);
+      color: var(--ar-red-600);
+    }
+    .et__bad--ok {
+      color: var(--ar-ink-400);
+    }
+    .et__subject {
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+      overflow-wrap: anywhere;
+    }
+    .et__empty {
+      margin: 0;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
+    .et__add {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .et__err {
+      margin: 0 0 8px;
+      padding: 8px 10px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
+      font: 500 12px var(--ar-font-sans);
+    }
   `,
 })
 export class ArEnquiryTickets {

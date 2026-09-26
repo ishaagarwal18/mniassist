@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { CrmTaskDto, CrmTaskStatus, MeetingDto, MeetingStatus } from '../../proxy/activities';
@@ -50,29 +58,90 @@ import { ArTaskDialog } from './task-dialog';
 
     @if (directory.canCreate) {
       <div class="ea__add">
-        <button ar-button type="button" variant="ghost" (click)="addingTask.set(true)">Add a task</button>
-        <button ar-button type="button" variant="ghost" (click)="addingMeeting.set(true)">Schedule a meeting</button>
+        <button ar-button type="button" variant="ghost" (click)="addingTask.set(true)">
+          Add a task
+        </button>
+        <button ar-button type="button" variant="ghost" (click)="addingMeeting.set(true)">
+          Schedule a meeting
+        </button>
       </div>
     }
 
     @if (addingTask()) {
-      <ar-task-dialog [enquiryPreset]="enquiryId()" (saved)="done()" (deleted)="done()" (closed)="addingTask.set(false)" />
+      <ar-task-dialog
+        [enquiryPreset]="enquiryId()"
+        (saved)="done()"
+        (deleted)="done()"
+        (closed)="addingTask.set(false)"
+      />
     }
     @if (addingMeeting()) {
-      <ar-meeting-dialog [enquiryPreset]="enquiryId()" (saved)="done()" (closed)="addingMeeting.set(false)" />
+      <ar-meeting-dialog
+        [enquiryPreset]="enquiryId()"
+        (saved)="done()"
+        (closed)="addingMeeting.set(false)"
+      />
     }
   `,
   styles: `
-    :host { display: block; }
-    .ea__t { margin: 0 0 8px; font: 600 12px var(--ar-font-sans); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ar-ink-500); }
-    .ea__row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font: 400 13px var(--ar-font-sans); color: var(--ar-ink-900); }
-    .ea__what { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-    .ea__when { font: 400 12px var(--ar-font-sans); color: var(--ar-ink-400); white-space: nowrap; }
-    .ea__when--late { color: var(--ar-red-600); }
-    .ea__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ar-teal-600); margin: 0 4px; flex: none; }
-    .ea__empty { margin: 0; font: 400 12px var(--ar-font-sans); color: var(--ar-ink-400); }
-    .ea__add { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .ea__err { margin: 0 0 8px; padding: 8px 10px; border-radius: var(--ar-radius-control); background: var(--ar-red-100); color: var(--ar-red-600); font: 500 12px var(--ar-font-sans); }
+    :host {
+      display: block;
+    }
+    .ea__t {
+      margin: 0 0 8px;
+      font: 600 12px var(--ar-font-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ar-ink-500);
+    }
+    .ea__row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .ea__what {
+      flex: 1;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .ea__when {
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+      white-space: nowrap;
+    }
+    .ea__when--late {
+      color: var(--ar-red-600);
+    }
+    .ea__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ar-teal-600);
+      margin: 0 4px;
+      flex: none;
+    }
+    .ea__empty {
+      margin: 0;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
+    .ea__add {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .ea__err {
+      margin: 0 0 8px;
+      padding: 8px 10px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
+      font: 500 12px var(--ar-font-sans);
+    }
   `,
 })
 export class ArEnquiryActivities {
@@ -104,9 +173,20 @@ export class ArEnquiryActivities {
     try {
       const now = new Date();
       const [tasks, meetings] = await Promise.all([
-        firstValueFrom(this.gateway.tasks.getList({ enquiryId: id, status: CrmTaskStatus.Open, maxResultCount: 20 })),
         firstValueFrom(
-          this.gateway.meetings.getList({ enquiryId: id, everyone: true, fromUtc: now.toISOString(), toUtc: addDays(now, 90).toISOString() }),
+          this.gateway.tasks.getList({
+            enquiryId: id,
+            status: CrmTaskStatus.Open,
+            maxResultCount: 20,
+          }),
+        ),
+        firstValueFrom(
+          this.gateway.meetings.getList({
+            enquiryId: id,
+            everyone: true,
+            fromUtc: now.toISOString(),
+            toUtc: addDays(now, 90).toISOString(),
+          }),
         ),
       ]);
       // A stale answer for a deal the drawer has moved off is dropped.

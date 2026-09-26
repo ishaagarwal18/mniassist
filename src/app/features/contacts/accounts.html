@@ -15,12 +15,20 @@
     <p class="acc__empty">Loading…</p>
   } @else if (rows().length === 0) {
     <p class="acc__empty">
-      {{ searching() ? 'No account matches that search.' : 'No accounts yet. Group a few contacts under a plant or company.' }}
+      {{
+        searching()
+          ? 'No account matches that search.'
+          : 'No accounts yet. Group a few contacts under a plant or company.'
+      }}
     </p>
   }
 
   @for (row of rows(); track row.account.id) {
-    <article class="ac" [class.ac--child]="!searching() && row.depth > 1" [style.margin-left.px]="searching() ? 0 : (row.depth - 1) * 24">
+    <article
+      class="ac"
+      [class.ac--child]="!searching() && row.depth > 1"
+      [style.margin-left.px]="searching() ? 0 : (row.depth - 1) * 24"
+    >
       <div class="ac__main">
         <h2 class="ac__name">{{ row.account.name }}</h2>
         <p class="ac__meta">
@@ -37,7 +45,9 @@
       </div>
       @if (row.account.childCount > 0) {
         <ar-chip tone="teal"
-          >{{ row.account.childCount }} subsidiar{{ row.account.childCount === 1 ? 'y' : 'ies' }}</ar-chip
+          >{{ row.account.childCount }} subsidiar{{
+            row.account.childCount === 1 ? 'y' : 'ies'
+          }}</ar-chip
         >
       }
       <ar-chip tone="neutral"
@@ -49,7 +59,9 @@
       <div class="ac__actions">
         <button ar-button variant="primary" (click)="openRollup(row.account)">Rollup</button>
         @if (row.depth < maxDepth) {
-          <button ar-button variant="ghost" (click)="openNew(row.account.id)">Add subsidiary</button>
+          <button ar-button variant="ghost" (click)="openNew(row.account.id)">
+            Add subsidiary
+          </button>
         }
         <button ar-button variant="ghost" (click)="openEdit(row.account)">Edit</button>
         <button ar-button variant="ghost" (click)="remove(row.account)">Delete</button>
@@ -108,7 +120,9 @@
       </label>
     </div>
     <label class="ar-field">
-      <span class="ar-field__label">Parent account <span class="ar-field__opt">optional</span></span>
+      <span class="ar-field__label"
+        >Parent account <span class="ar-field__opt">optional</span></span
+      >
       <select class="ar-field__input" (change)="patch('parentId', $any($event.target).value)">
         <option value="" [selected]="!draft().parentId">None — top level</option>
         @for (o of parentOptions(); track o.id) {

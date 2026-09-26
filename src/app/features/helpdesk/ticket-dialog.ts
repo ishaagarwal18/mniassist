@@ -4,7 +4,12 @@ import { firstValueFrom } from 'rxjs';
 import { ServiceTicketDto, TicketPriority } from '../../proxy/support';
 import { ArButton, ArDialog } from '../../ui';
 import { errorMessage } from '../activities/activity-logic';
-import { PRIORITY_CHOICES, PRIORITY_LABEL, PRIORITY_SLA_HOURS, hoursByPriority } from './ticket-logic';
+import {
+  PRIORITY_CHOICES,
+  PRIORITY_LABEL,
+  PRIORITY_SLA_HOURS,
+  hoursByPriority,
+} from './ticket-logic';
 import { ServiceTicketGateway } from './ticket-mock';
 
 /** Raising a ticket for a customer's problem: what it is, how urgent, and — when raised from a deal or an installed machine —
@@ -30,13 +35,26 @@ import { ServiceTicketGateway } from './ticket-mock';
       <div class="ar-field-row">
         <label class="ar-field" for="tk-category">
           <span class="ar-field__label">Category <span class="ar-field__opt">optional</span></span>
-          <input id="tk-category" class="ar-field__input" maxlength="100" placeholder="Motor" [value]="category()" (input)="category.set($any($event.target).value)" />
+          <input
+            id="tk-category"
+            class="ar-field__input"
+            maxlength="100"
+            placeholder="Motor"
+            [value]="category()"
+            (input)="category.set($any($event.target).value)"
+          />
         </label>
         <label class="ar-field" for="tk-priority">
           <span class="ar-field__label">Priority</span>
-          <select id="tk-priority" class="ar-field__input" (change)="priority.set(+$any($event.target).value)">
+          <select
+            id="tk-priority"
+            class="ar-field__input"
+            (change)="priority.set(+$any($event.target).value)"
+          >
             @for (p of choices; track p) {
-              <option [value]="p" [selected]="p === priority()">{{ label[p] }} — {{ hours()[p] }}h SLA</option>
+              <option [value]="p" [selected]="p === priority()">
+                {{ label[p] }} — {{ hours()[p] }}h SLA
+              </option>
             }
           </select>
         </label>
@@ -61,14 +79,27 @@ import { ServiceTicketGateway } from './ticket-mock';
 
       <div dialogActions>
         <button ar-button type="button" variant="ghost" (click)="closed.emit(null)">Cancel</button>
-        <button ar-button type="button" variant="primary" [disabled]="busy() || !subject().trim()" (click)="save()">
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="busy() || !subject().trim()"
+          (click)="save()"
+        >
           {{ busy() ? 'Raising…' : 'Raise ticket' }}
         </button>
       </div>
     </ar-dialog>
   `,
   styles: `
-    .tk__err { margin: 8px 0 0; padding: 8px 10px; border-radius: var(--ar-radius-control); background: var(--ar-red-100); color: var(--ar-red-600); font: 500 12px var(--ar-font-sans); }
+    .tk__err {
+      margin: 8px 0 0;
+      padding: 8px 10px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
+      font: 500 12px var(--ar-font-sans);
+    }
   `,
 })
 export class ArTicketDialog {

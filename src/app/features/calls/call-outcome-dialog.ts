@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { CallLogDto, CallOutcome } from '../../proxy/voice';
@@ -20,14 +28,21 @@ import { OUTCOME_CHOICES, OUTCOME_LABEL, callHeadline, outcomeToOffer } from './
         <legend class="ar-field__label">Outcome</legend>
         @for (o of choices; track o) {
           <label class="co__choice" [class.co__choice--on]="o === outcome()">
-            <input type="radio" name="co-outcome" [checked]="o === outcome()" (change)="outcome.set(o)" />
+            <input
+              type="radio"
+              name="co-outcome"
+              [checked]="o === outcome()"
+              (change)="outcome.set(o)"
+            />
             <span>{{ label[o] }}</span>
           </label>
         }
       </fieldset>
 
       <label class="ar-field" for="co-notes">
-        <span class="ar-field__label">What was said <span class="ar-field__opt">optional</span></span>
+        <span class="ar-field__label"
+          >What was said <span class="ar-field__opt">optional</span></span
+        >
         <textarea
           id="co-notes"
           class="ar-field__input"
@@ -45,17 +60,54 @@ import { OUTCOME_CHOICES, OUTCOME_LABEL, callHeadline, outcomeToOffer } from './
 
       <div dialogActions>
         <button ar-button type="button" variant="ghost" (click)="closed.emit()">Not now</button>
-        <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">{{ busy() ? 'Saving…' : 'Save' }}</button>
+        <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
+          {{ busy() ? 'Saving…' : 'Save' }}
+        </button>
       </div>
     </ar-dialog>
   `,
   styles: `
-    .co__what { margin: 0 0 12px; font: 500 13px var(--ar-font-sans); color: var(--ar-ink-700); }
-    .co__choices { border: 0; margin: 0 0 12px; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .co__choices legend { grid-column: 1 / -1; padding: 0; margin-bottom: 2px; }
-    .co__choice { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--ar-line-200); border-radius: var(--ar-radius-control); font: 400 13px var(--ar-font-sans); color: var(--ar-ink-800); cursor: pointer; }
-    .co__choice--on { border-color: var(--ar-teal-600); background: var(--ar-bg-100); }
-    .co__err { margin: 8px 0 0; padding: 8px 10px; border-radius: var(--ar-radius-control); background: var(--ar-red-100); color: var(--ar-red-600); font: 500 12px var(--ar-font-sans); }
+    .co__what {
+      margin: 0 0 12px;
+      font: 500 13px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .co__choices {
+      border: 0;
+      margin: 0 0 12px;
+      padding: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .co__choices legend {
+      grid-column: 1 / -1;
+      padding: 0;
+      margin-bottom: 2px;
+    }
+    .co__choice {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-800);
+      cursor: pointer;
+    }
+    .co__choice--on {
+      border-color: var(--ar-teal-600);
+      background: var(--ar-bg-100);
+    }
+    .co__err {
+      margin: 8px 0 0;
+      padding: 8px 10px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
+      font: 500 12px var(--ar-font-sans);
+    }
   `,
 })
 export class ArCallOutcomeDialog implements OnInit {
@@ -87,7 +139,12 @@ export class ArCallOutcomeDialog implements OnInit {
     this.busy.set(true);
     this.error.set(null);
     try {
-      const updated = await firstValueFrom(this.api.setOutcome(this.call().id, { outcome: this.outcome(), notes: this.notes().trim() || null }));
+      const updated = await firstValueFrom(
+        this.api.setOutcome(this.call().id, {
+          outcome: this.outcome(),
+          notes: this.notes().trim() || null,
+        }),
+      );
       this.saved.emit(updated);
     } catch (e: unknown) {
       this.error.set(errorMessage(e, 'The outcome could not be saved.'));

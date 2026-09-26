@@ -36,9 +36,26 @@ export class CallMockStore {
   constructor() {
     const ago = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
     this.calls.push(
-      this.make({ contactName: 'Sandeep Rao', status: VoiceCallStatus.Completed, durationSeconds: 312, startedAtUtc: ago(3), outcome: CallOutcome.CallBackLater, notes: 'Wants the payback sheet before Friday.' }),
-      this.make({ contactName: 'Priya Nambiar', status: VoiceCallStatus.NoAnswer, durationSeconds: 0, startedAtUtc: ago(26) }),
-      this.make({ contactName: 'Devendra Joshi', status: VoiceCallStatus.Completed, durationSeconds: 95, startedAtUtc: ago(50) }),
+      this.make({
+        contactName: 'Sandeep Rao',
+        status: VoiceCallStatus.Completed,
+        durationSeconds: 312,
+        startedAtUtc: ago(3),
+        outcome: CallOutcome.CallBackLater,
+        notes: 'Wants the payback sheet before Friday.',
+      }),
+      this.make({
+        contactName: 'Priya Nambiar',
+        status: VoiceCallStatus.NoAnswer,
+        durationSeconds: 0,
+        startedAtUtc: ago(26),
+      }),
+      this.make({
+        contactName: 'Devendra Joshi',
+        status: VoiceCallStatus.Completed,
+        durationSeconds: 95,
+        startedAtUtc: ago(50),
+      }),
     );
   }
 
@@ -61,7 +78,9 @@ export class CallMockStore {
       repName: 'You',
       repUserId: 'mock-me',
       isOver: ended,
-      endedAtUtc: ended ? new Date(Date.parse(started) + (p.durationSeconds ?? 0) * 1000).toISOString() : null,
+      endedAtUtc: ended
+        ? new Date(Date.parse(started) + (p.durationSeconds ?? 0) * 1000).toISOString()
+        : null,
       ...p,
     } as CallLogDto;
   }
@@ -75,13 +94,18 @@ export class MockCallApi {
 
   setMyNumber = (phoneNumber: string): Observable<CallSetupDto> => {
     const digits = phoneNumber.replace(/\D/g, '');
-    if (digits.length < 10) return refuse('CallNumberInvalid', 'That does not look like a phone number.');
+    if (digits.length < 10)
+      return refuse('CallNumberInvalid', 'That does not look like a phone number.');
     this.s.myNumber = digits.length === 10 ? `91${digits}` : digits;
     return this.getSetup();
   };
 
   start = (input: StartCallInput): Observable<CallLogDto> => {
-    if (!input.repNumber && !this.s.myNumber) return refuse('CallNeedsRepNumber', 'Add the phone number we should ring you on, then try again.');
+    if (!input.repNumber && !this.s.myNumber)
+      return refuse(
+        'CallNeedsRepNumber',
+        'Add the phone number we should ring you on, then try again.',
+      );
     if (input.repNumber && input.saveNumber) this.setMyNumber(input.repNumber);
     const call = this.s.make({ contactId: input.contactId, enquiryId: input.enquiryId ?? null });
     this.s.calls.unshift(call);
@@ -99,7 +123,8 @@ export class MockCallApi {
   };
 
   logManual = (input: LogManualCallInput): Observable<CallLogDto> => {
-    if (Date.parse(input.startedAtUtc) > Date.now() + 5 * 60_000) return refuse('CallStartedInFuture', 'A call cannot have started in the future.');
+    if (Date.parse(input.startedAtUtc) > Date.now() + 5 * 60_000)
+      return refuse('CallStartedInFuture', 'A call cannot have started in the future.');
     const call = this.s.make({
       contactId: input.contactId,
       enquiryId: input.enquiryId ?? null,
@@ -134,9 +159,18 @@ export class MockCallApi {
       .filter((c) => !input.contactId || c.contactId === input.contactId)
       .filter((c) => !input.enquiryId || c.enquiryId === input.enquiryId)
       .filter((c) => input.status == null || c.status === input.status)
-      .filter((c) => !input.needsOutcome || (c.isOver && c.outcome === CallOutcome.None && c.mode !== VoiceCallMode.Ivr))
-      .sort((a, b) => (b.startedAtUtc ?? b.creationTime).localeCompare(a.startedAtUtc ?? a.creationTime));
-    const page = items.slice(input.skipCount ?? 0, (input.skipCount ?? 0) + (input.maxResultCount ?? 50));
+      .filter(
+        (c) =>
+          !input.needsOutcome ||
+          (c.isOver && c.outcome === CallOutcome.None && c.mode !== VoiceCallMode.Ivr),
+      )
+      .sort((a, b) =>
+        (b.startedAtUtc ?? b.creationTime).localeCompare(a.startedAtUtc ?? a.creationTime),
+      );
+    const page = items.slice(
+      input.skipCount ?? 0,
+      (input.skipCount ?? 0) + (input.maxResultCount ?? 50),
+    );
     return of({ items: page.map((c) => ({ ...c })), totalCount: items.length });
   };
 

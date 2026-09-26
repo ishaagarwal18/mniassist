@@ -42,20 +42,51 @@ const HEIGHT = 200;
     <button type="button" class="pad__clear" [disabled]="empty()" (click)="clear()">Clear</button>
   `,
   styles: `
-    :host { display: block; }
-    .pad {
-      position: relative; border: 1px dashed var(--sg-line, #b8c0cc); border-radius: 8px; background: #fff;
+    :host {
+      display: block;
     }
-    .pad__canvas { display: block; width: 100%; height: auto; aspect-ratio: 3 / 1; touch-action: none; cursor: crosshair; }
+    .pad {
+      position: relative;
+      border: 1px dashed var(--sg-line, #b8c0cc);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .pad__canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 3 / 1;
+      touch-action: none;
+      cursor: crosshair;
+    }
     .pad__hint {
-      position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
-      color: #8a94a3; font: 400 13px system-ui, sans-serif;
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      color: #8a94a3;
+      font:
+        400 13px system-ui,
+        sans-serif;
     }
     .pad__clear {
-      margin-top: 6px; padding: 0; background: none; border: 0; cursor: pointer;
-      font: 500 12px system-ui, sans-serif; color: var(--sg-accent, #0b6b63); text-decoration: underline;
+      margin-top: 6px;
+      padding: 0;
+      background: none;
+      border: 0;
+      cursor: pointer;
+      font:
+        500 12px system-ui,
+        sans-serif;
+      color: var(--sg-accent, #0b6b63);
+      text-decoration: underline;
     }
-    .pad__clear:disabled { color: #a0a8b4; text-decoration: none; cursor: default; }
+    .pad__clear:disabled {
+      color: #a0a8b4;
+      text-decoration: none;
+      cursor: default;
+    }
   `,
 })
 export class ArSignaturePad {

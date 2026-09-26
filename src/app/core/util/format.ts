@@ -2,10 +2,13 @@
 export function inr(paise: number, opts: { paise?: boolean } = {}): string {
   const rupees = opts.paise === false ? paise : paise / 100;
   const whole = Math.abs(rupees) >= 100 || Number.isInteger(rupees);
-  return '₹' + rupees.toLocaleString('en-IN', {
-    minimumFractionDigits: whole ? 0 : 2,
-    maximumFractionDigits: whole ? 0 : 2,
-  });
+  return (
+    '₹' +
+    rupees.toLocaleString('en-IN', {
+      minimumFractionDigits: whole ? 0 : 2,
+      maximumFractionDigits: whole ? 0 : 2,
+    })
+  );
 }
 
 /** ₹42.6L / ₹1.42 Cr — how Indian B2B actually writes deal values. */
@@ -34,5 +37,10 @@ export function untilLabel(expiresAt: Date | null, now = new Date()): string | n
 }
 
 export function initials(name: string): string {
-  return name.split(/\s+/).map(w => w[0] ?? '').join('').slice(0, 2).toUpperCase();
+  return name
+    .split(/\s+/)
+    .map((w) => w[0] ?? '')
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 }

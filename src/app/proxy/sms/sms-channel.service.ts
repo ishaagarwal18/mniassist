@@ -47,7 +47,10 @@ export class SmsChannelService {
   apiName = 'AutoReach';
 
   getOrCreate = (config?: Partial<Rest.Config>) =>
-    this.restService.request<any, SmsChannelDto>({ method: 'GET', url: '/api/auto-reach/sms-channel/or-create' }, { apiName: this.apiName, ...config });
+    this.restService.request<any, SmsChannelDto>(
+      { method: 'GET', url: '/api/auto-reach/sms-channel/or-create' },
+      { apiName: this.apiName, ...config },
+    );
 
   setInboundNumber = (input: SetSmsInboundNumberInput, config?: Partial<Rest.Config>) =>
     this.restService.request<SetSmsInboundNumberInput, SmsChannelDto>(
@@ -56,8 +59,14 @@ export class SmsChannelService {
     );
 
   getTemplates = (config?: Partial<Rest.Config>) =>
-    this.restService.request<any, SmsTemplateDto[]>({ method: 'GET', url: '/api/auto-reach/sms-channel/templates' }, { apiName: this.apiName, ...config });
+    this.restService.request<any, SmsTemplateDto[]>(
+      { method: 'GET', url: '/api/auto-reach/sms-channel/templates' },
+      { apiName: this.apiName, ...config },
+    );
 
   send = (input: SendSmsInput, config?: Partial<Rest.Config>) =>
-    this.restService.request<SendSmsInput, void>({ method: 'POST', url: '/api/auto-reach/sms-channel/send', body: input }, { apiName: this.apiName, ...config });
+    this.restService.request<SendSmsInput, void>(
+      { method: 'POST', url: '/api/auto-reach/sms-channel/send', body: input },
+      { apiName: this.apiName, ...config },
+    );
 }

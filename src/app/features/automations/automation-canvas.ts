@@ -49,7 +49,15 @@ export interface PaletteItem {
 
 type Drag =
   | { type: 'pan'; startX: number; startY: number; panX: number; panY: number }
-  | { type: 'node'; id: string; startX: number; startY: number; nodeX: number; nodeY: number; moved: boolean }
+  | {
+      type: 'node';
+      id: string;
+      startX: number;
+      startY: number;
+      nodeX: number;
+      nodeY: number;
+      moved: boolean;
+    }
   | { type: 'wire'; from: string; port: Port }
   | { type: 'palette'; kind: AutomationNodeKind; startX: number; startY: number; moved: boolean };
 
@@ -103,15 +111,26 @@ export class ArAutomationCanvas {
   /** Where a step being dragged is right now, before it is dropped. */
   private readonly dragging = signal<{ id: string; x: number; y: number } | null>(null);
   /** The loose end of a wire being drawn, in canvas coordinates, and the step under it. */
-  protected readonly wire = signal<{ from: string; port: Port; x: number; y: number; over: string | null; ok: boolean } | null>(null);
+  protected readonly wire = signal<{
+    from: string;
+    port: Port;
+    x: number;
+    y: number;
+    over: string | null;
+    ok: boolean;
+  } | null>(null);
   /** A palette item being dragged, in viewport coordinates. */
-  protected readonly ghost = signal<{ label: string; icon: IconName; x: number; y: number } | null>(null);
+  protected readonly ghost = signal<{ label: string; icon: IconName; x: number; y: number } | null>(
+    null,
+  );
   protected readonly selectedEdge = signal<string | null>(null);
 
   /** The nodes as drawn: the stored positions, except for a step being dragged. */
   protected readonly view = computed(() => {
     const d = this.dragging();
-    return d ? this.nodes().map((n) => (n.id === d.id ? { ...n, x: d.x, y: d.y } : n)) : this.nodes();
+    return d
+      ? this.nodes().map((n) => (n.id === d.id ? { ...n, x: d.x, y: d.y } : n))
+      : this.nodes();
   });
 
   protected readonly edges = computed(() => {
@@ -179,7 +198,11 @@ export class ArAutomationCanvas {
     const maxX = Math.max(...nodes.map((n) => n.x + NODE_W));
     const maxY = Math.max(...nodes.map((n) => n.y + NODE_H));
     const pad = 40;
-    const z = clamp(Math.min(el.clientWidth / (maxX - minX + pad * 2), el.clientHeight / (maxY - minY + pad * 2)), MIN_ZOOM, 1);
+    const z = clamp(
+      Math.min(el.clientWidth / (maxX - minX + pad * 2), el.clientHeight / (maxY - minY + pad * 2)),
+      MIN_ZOOM,
+      1,
+    );
     this.zoom.set(z);
     this.pan.set({
       x: (el.clientWidth - (maxX - minX) * z) / 2 - minX * z,
@@ -236,7 +259,15 @@ export class ArAutomationCanvas {
     e.stopPropagation();
     this.selectedEdge.set(null);
     this.select.emit(n.id);
-    this.drag = { type: 'node', id: n.id, startX: e.clientX, startY: e.clientY, nodeX: n.x, nodeY: n.y, moved: false };
+    this.drag = {
+      type: 'node',
+      id: n.id,
+      startX: e.clientX,
+      startY: e.clientY,
+      nodeX: n.x,
+      nodeY: n.y,
+      moved: false,
+    };
     this.capture(e);
   }
 
@@ -253,7 +284,13 @@ export class ArAutomationCanvas {
   protected onPaletteDown(e: PointerEvent, item: PaletteItem): void {
     if (e.button !== 0) return;
     e.stopPropagation();
-    this.drag = { type: 'palette', kind: item.kind, startX: e.clientX, startY: e.clientY, moved: false };
+    this.drag = {
+      type: 'palette',
+      kind: item.kind,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+    };
     this.capture(e);
   }
 
@@ -284,7 +321,12 @@ export class ArAutomationCanvas {
         d.moved = true;
         const item = this.palette().find((p) => p.kind === d.kind)!;
         const rect = this.host.nativeElement.getBoundingClientRect();
-        this.ghost.set({ label: item.label, icon: item.icon, x: e.clientX - rect.left, y: e.clientY - rect.top });
+        this.ghost.set({
+          label: item.label,
+          icon: item.icon,
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
         break;
       }
     }
@@ -321,9 +363,17 @@ export class ArAutomationCanvas {
         }
         const el = this.viewport().nativeElement;
         const rect = el.getBoundingClientRect();
-        const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+        const inside =
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom;
         // The pointer is captured, so the event's own target is always the viewport: ask what is under it instead.
-        if (!inside || document.elementFromPoint(e.clientX, e.clientY)?.closest('.cv__palette, .cv__tools')) break;
+        if (
+          !inside ||
+          document.elementFromPoint(e.clientX, e.clientY)?.closest('.cv__palette, .cv__tools')
+        )
+          break;
         const w = this.toWorld(e.clientX, e.clientY);
         this.add.emit({ kind: d.kind, x: snap(w.x - NODE_W / 2), y: snap(w.y - NODE_H / 2) });
         break;
@@ -350,7 +400,10 @@ export class ArAutomationCanvas {
     // The middle of the view is often an existing step; move down until the new one sits clear of everything.
     const x = snap(w.x - NODE_W / 2);
     let y = snap(w.y - NODE_H / 2);
-    const clash = (yy: number) => this.nodes().some((n) => Math.abs(n.x - x) < NODE_W + GRID && Math.abs(n.y - yy) < NODE_H + GRID);
+    const clash = (yy: number) =>
+      this.nodes().some(
+        (n) => Math.abs(n.x - x) < NODE_W + GRID && Math.abs(n.y - yy) < NODE_H + GRID,
+      );
     while (clash(y)) y += NODE_H + GRID * 2;
     this.add.emit({ kind, x, y });
   }
@@ -411,7 +464,9 @@ export class ArAutomationCanvas {
     }
 
     // Arrow keys nudge the selected step one grid square, so it can be placed without a mouse.
-    const step = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    const step = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[
+      e.key
+    ];
     const id = this.selected();
     if (step && id) {
       const n = this.nodes().find((x) => x.id === id);

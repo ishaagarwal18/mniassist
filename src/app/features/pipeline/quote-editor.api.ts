@@ -70,8 +70,25 @@ export class QuoteEditorApi {
       demoWrite(base, {
         taxRateBasisPoints: 1800,
         lines: [
-          { order: 1, partNumber: 'VFD-15KW', description: '15 kW variable frequency drive', quantity: 2, unit: 'no', unitPriceInPaise: 0, useCataloguePrice: true },
-          { order: 2, partNumber: null, description: 'Site survey and layout drawing', quantity: 1, unit: 'lot', unitPriceInPaise: 8_000_00, useCataloguePrice: false, taxRateBasisPoints: 1800 },
+          {
+            order: 1,
+            partNumber: 'VFD-15KW',
+            description: '15 kW variable frequency drive',
+            quantity: 2,
+            unit: 'no',
+            unitPriceInPaise: 0,
+            useCataloguePrice: true,
+          },
+          {
+            order: 2,
+            partNumber: null,
+            description: 'Site survey and layout drawing',
+            quantity: 1,
+            unit: 'lot',
+            unitPriceInPaise: 8_000_00,
+            useCataloguePrice: false,
+            taxRateBasisPoints: 1800,
+          },
         ],
       }),
     );
@@ -79,18 +96,33 @@ export class QuoteEditorApi {
 
   async priceLists(): Promise<PriceListDto[]> {
     if (this.mock) return demoPriceLists();
-    const page = await firstValueFrom(this.lists.getList({ activeOnly: true, skipCount: 0, maxResultCount: 100 }));
+    const page = await firstValueFrom(
+      this.lists.getList({ activeOnly: true, skipCount: 0, maxResultCount: 100 }),
+    );
     return page.items ?? [];
   }
 
-  async resolve(quotationId: string, priceListId: string | null, partNumber: string, quantity: number): Promise<ResolvedPriceDto> {
+  async resolve(
+    quotationId: string,
+    priceListId: string | null,
+    partNumber: string,
+    quantity: number,
+  ): Promise<ResolvedPriceDto> {
     if (this.mock) return demoResolve(partNumber, quantity, priceListId);
-    return firstValueFrom(this.quotes.resolvePrice({ quotationId, priceListId, partNumber, quantity }));
+    return firstValueFrom(
+      this.quotes.resolvePrice({ quotationId, priceListId, partNumber, quantity }),
+    );
   }
 
-  async search(quotationId: string, priceListId: string | null, query: string | null): Promise<CatalogueMatchDto[]> {
+  async search(
+    quotationId: string,
+    priceListId: string | null,
+    query: string | null,
+  ): Promise<CatalogueMatchDto[]> {
     if (this.mock) return demoSearch(query, priceListId, 15);
-    return firstValueFrom(this.quotes.searchCatalogue({ query, quotationId, priceListId, maxResultCount: 15 }));
+    return firstValueFrom(
+      this.quotes.searchCatalogue({ query, quotationId, priceListId, maxResultCount: 15 }),
+    );
   }
 
   async update(id: string, input: CreateUpdateQuotationDto): Promise<QuotationDto> {

@@ -63,9 +63,18 @@ export interface ScoreFactor {
 export function bandOf(score: number): ScoreBand {
   return score >= 70 ? 'hot' : score >= 40 ? 'warm' : 'cold';
 }
-function bandFrom(b: DealScoreBand | null | undefined, score: number | null | undefined): ScoreBand | undefined {
+function bandFrom(
+  b: DealScoreBand | null | undefined,
+  score: number | null | undefined,
+): ScoreBand | undefined {
   if (score == null) return undefined;
-  return b === DealScoreBand.Hot ? 'hot' : b === DealScoreBand.Warm ? 'warm' : b === DealScoreBand.Cold ? 'cold' : bandOf(score);
+  return b === DealScoreBand.Hot
+    ? 'hot'
+    : b === DealScoreBand.Warm
+      ? 'warm'
+      : b === DealScoreBand.Cold
+        ? 'cold'
+        : bandOf(score);
 }
 export interface BoardColumn {
   /** What the column counts as: one of the built-in seven. */
@@ -304,12 +313,44 @@ const MOCK_PIPELINES: SalesPipelineDto[] = [
     enquiryCount: 16,
     stages: [
       { id: 's-new', name: 'New', order: 0, bucket: EnquiryStage.New, enquiryCount: 5 },
-      { id: 's-qualified', name: 'Qualified', order: 1, bucket: EnquiryStage.Qualified, enquiryCount: 4 },
-      { id: 's-siteVisit', name: 'Site visit', order: 2, bucket: EnquiryStage.SiteVisit, enquiryCount: 2 },
+      {
+        id: 's-qualified',
+        name: 'Qualified',
+        order: 1,
+        bucket: EnquiryStage.Qualified,
+        enquiryCount: 4,
+      },
+      {
+        id: 's-siteVisit',
+        name: 'Site visit',
+        order: 2,
+        bucket: EnquiryStage.SiteVisit,
+        enquiryCount: 2,
+      },
       { id: 's-quoted', name: 'Quoted', order: 3, bucket: EnquiryStage.Quoted, enquiryCount: 3 },
-      { id: 's-negotiation', name: 'Negotiation', order: 4, bucket: EnquiryStage.Negotiation, enquiryCount: 2 },
-      { id: 's-won', name: 'Won', order: 5, bucket: EnquiryStage.Won, isFixed: true, enquiryCount: 0 },
-      { id: 's-lost', name: 'Lost', order: 6, bucket: EnquiryStage.Lost, isFixed: true, enquiryCount: 0 },
+      {
+        id: 's-negotiation',
+        name: 'Negotiation',
+        order: 4,
+        bucket: EnquiryStage.Negotiation,
+        enquiryCount: 2,
+      },
+      {
+        id: 's-won',
+        name: 'Won',
+        order: 5,
+        bucket: EnquiryStage.Won,
+        isFixed: true,
+        enquiryCount: 0,
+      },
+      {
+        id: 's-lost',
+        name: 'Lost',
+        order: 6,
+        bucket: EnquiryStage.Lost,
+        isFixed: true,
+        enquiryCount: 0,
+      },
     ],
   },
 ];
@@ -471,7 +512,8 @@ export class PipelineStore {
   });
 
   private readonly boardResource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.tick(), pipeline: this.pipelineId() }),
+    params: () =>
+      environment.useMockData ? undefined : { tick: this.tick(), pipeline: this.pipelineId() },
     stream: ({ params }) =>
       this.enquiryApi
         .getBoard({ openOnly: true, pipelineId: params.pipeline })
@@ -529,7 +571,11 @@ export class PipelineStore {
   }
 
   /** Where a card or drawer goes when advanced: the next stage of its pipeline, up to and including Won. */
-  nextStageOf(pipelineId: string | undefined, stageId: string | undefined, bucket: Stage): { stageId: string; label: string } | undefined {
+  nextStageOf(
+    pipelineId: string | undefined,
+    stageId: string | undefined,
+    bucket: Stage,
+  ): { stageId: string; label: string } | undefined {
     if (environment.useMockData) {
       const order: Stage[] = ['new', 'qualified', 'siteVisit', 'quoted', 'negotiation', 'won'];
       const next = order[order.indexOf(bucket) + 1];
@@ -539,7 +585,10 @@ export class PipelineStore {
     const stages = pipeline?.stages ?? [];
     const at = stages.findIndex((s) => s.id === stageId);
     const next: PipelineStageDto | undefined = at >= 0 ? stages[at + 1] : undefined;
-    return next && next.bucket !== EnquiryStage.Lost && at >= 0 && stages[at].bucket !== EnquiryStage.Won
+    return next &&
+      next.bucket !== EnquiryStage.Lost &&
+      at >= 0 &&
+      stages[at].bucket !== EnquiryStage.Won
       ? { stageId: next.id!, label: next.name ?? '' }
       : undefined;
   }
@@ -558,7 +607,9 @@ export class PipelineStore {
   // ---- Pipeline and stage administration (settings screen) ---------------------
 
   async createPipeline(name: string, copyFrom?: string): Promise<void> {
-    await firstValueFrom(this.pipelineApi.create({ name, copyStagesFromPipelineId: copyFrom ?? null }));
+    await firstValueFrom(
+      this.pipelineApi.create({ name, copyStagesFromPipelineId: copyFrom ?? null }),
+    );
     this.reloadPipelines();
   }
 
@@ -574,14 +625,23 @@ export class PipelineStore {
   }
 
   async deletePipeline(id: string, moveTo?: string): Promise<void> {
-    await firstValueFrom(this.pipelineApi.delete(id, { moveEnquiriesToPipelineId: moveTo ?? null }));
+    await firstValueFrom(
+      this.pipelineApi.delete(id, { moveEnquiriesToPipelineId: moveTo ?? null }),
+    );
     if (this.pipelineId() === id) this.pipelineId.set(null);
     this.reloadPipelines();
     this.reload();
   }
 
-  async addStage(pipelineId: string, name: string, bucket: EnquiryStage, position?: number): Promise<void> {
-    await firstValueFrom(this.pipelineApi.addStage(pipelineId, { name, bucket, position: position ?? null }));
+  async addStage(
+    pipelineId: string,
+    name: string,
+    bucket: EnquiryStage,
+    position?: number,
+  ): Promise<void> {
+    await firstValueFrom(
+      this.pipelineApi.addStage(pipelineId, { name, bucket, position: position ?? null }),
+    );
     this.reloadPipelines();
     this.reload();
   }
@@ -599,7 +659,9 @@ export class PipelineStore {
   }
 
   async deleteStage(stageId: string, moveTo?: string): Promise<void> {
-    await firstValueFrom(this.pipelineApi.deleteStage(stageId, { moveEnquiriesToStageId: moveTo ?? null }));
+    await firstValueFrom(
+      this.pipelineApi.deleteStage(stageId, { moveEnquiriesToStageId: moveTo ?? null }),
+    );
     this.reloadPipelines();
     this.reload();
   }

@@ -87,7 +87,10 @@ export class PaymentService {
   apiName = 'AutoReach';
 
   getGateway = (config?: Partial<Rest.Config>) =>
-    this.restService.request<any, PaymentGatewayDto>({ method: 'GET', url: '/api/auto-reach/payment/gateway' }, { apiName: this.apiName, ...config });
+    this.restService.request<any, PaymentGatewayDto>(
+      { method: 'GET', url: '/api/auto-reach/payment/gateway' },
+      { apiName: this.apiName, ...config },
+    );
 
   setGateway = (input: SetPaymentGatewayInput, config?: Partial<Rest.Config>) =>
     this.restService.request<SetPaymentGatewayInput, PaymentGatewayDto>(
@@ -106,13 +109,21 @@ export class PaymentService {
       {
         method: 'GET',
         url: '/api/auto-reach/payment',
-        params: { status: input.status, contactId: input.contactId, skipCount: input.skipCount, maxResultCount: input.maxResultCount },
+        params: {
+          status: input.status,
+          contactId: input.contactId,
+          skipCount: input.skipCount,
+          maxResultCount: input.maxResultCount,
+        },
       },
       { apiName: this.apiName, ...config },
     );
 
   cancel = (id: string, config?: Partial<Rest.Config>) =>
-    this.restService.request<any, PaymentRequestDto>({ method: 'POST', url: `/api/auto-reach/payment/${id}/cancel` }, { apiName: this.apiName, ...config });
+    this.restService.request<any, PaymentRequestDto>(
+      { method: 'POST', url: `/api/auto-reach/payment/${id}/cancel` },
+      { apiName: this.apiName, ...config },
+    );
 }
 
 /** What the customer's browser calls. Anonymous; errors are handled by the page itself. */
@@ -124,7 +135,10 @@ export class PaymentPublicService {
   private readonly own: Partial<Rest.Config> = { skipHandleError: true };
 
   get = (token: string) =>
-    this.restService.request<any, PublicPaymentDto>({ method: 'GET', url: `/api/payments/public/${token}` }, { apiName: this.apiName, ...this.own });
+    this.restService.request<any, PublicPaymentDto>(
+      { method: 'GET', url: `/api/payments/public/${token}` },
+      { apiName: this.apiName, ...this.own },
+    );
 
   checkout = (token: string) =>
     this.restService.request<any, PaymentCheckoutDto>(

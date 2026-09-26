@@ -21,8 +21,20 @@ import { graphToSteps } from './automation-graph';
 
 const K = AutomationNodeKind;
 
-const node = (id: string, kind: AutomationNodeKind, links: Partial<Pick<CanvasNode, 'next' | 'yes' | 'no' | 'x' | 'y'>> = {}): CanvasNode => ({
-  id, kind, config: {}, x: 0, y: 0, next: null, yes: null, no: null, ...links,
+const node = (
+  id: string,
+  kind: AutomationNodeKind,
+  links: Partial<Pick<CanvasNode, 'next' | 'yes' | 'no' | 'x' | 'y'>> = {},
+): CanvasNode => ({
+  id,
+  kind,
+  config: {},
+  x: 0,
+  y: 0,
+  next: null,
+  yes: null,
+  no: null,
+  ...links,
 });
 
 /** Trigger → a → b → End, with c on its own. */
@@ -73,12 +85,18 @@ describe('the automation canvas model', () => {
       node('b', K.SendSessionMessage),
       node('e', K.End),
     ];
-    const joined = ok(connect(ok(connect(ok(connect(nodes, 'c', 'no', 'b')), 'a', 'next', 'e')), 'b', 'next', 'e'));
+    const joined = ok(
+      connect(ok(connect(ok(connect(nodes, 'c', 'no', 'b')), 'a', 'next', 'e')), 'b', 'next', 'e'),
+    );
     expect(joined.filter((n) => n.next === 'e').length).toBe(2);
   });
 
   it('disconnects one way out and leaves the others', () => {
-    const nodes = [node('c', K.Condition, { yes: 'a', no: 'b' }), node('a', K.Wait), node('b', K.Wait)];
+    const nodes = [
+      node('c', K.Condition, { yes: 'a', no: 'b' }),
+      node('a', K.Wait),
+      node('b', K.Wait),
+    ];
     const cut = disconnect(nodes, 'c', 'yes');
     expect(cut[0].yes).toBeNull();
     expect(cut[0].no).toBe('b');
@@ -107,7 +125,10 @@ describe('the automation canvas model', () => {
 
   it('round-trips through what the API stores, dropping links to steps that are not there', () => {
     const dtos = toDtos(sample());
-    const back = fromDtos([...dtos, { id: 'x', kind: K.Wait, nextNodeId: 'gone', configJson: '{"minutes":5}' }]);
+    const back = fromDtos([
+      ...dtos,
+      { id: 'x', kind: K.Wait, nextNodeId: 'gone', configJson: '{"minutes":5}' },
+    ]);
     expect(back.find((n) => n.id === 'a')!.next).toBe('b');
     const x = back.find((n) => n.id === 'x')!;
     expect(x.next).toBeNull();
@@ -153,7 +174,9 @@ describe('the automation canvas model', () => {
 
   it('undo brings back the structure but keeps text typed since', () => {
     const before = sample();
-    const after = moveNode(before, 'a', 400, 400).map((n) => (n.id === 'a' ? { ...n, config: { text: 'typed later' } } : n));
+    const after = moveNode(before, 'a', 400, 400).map((n) =>
+      n.id === 'a' ? { ...n, config: { text: 'typed later' } } : n,
+    );
     const restored = restoreStructure(before, after);
     const a = restored.find((n) => n.id === 'a')!;
     expect(a.x).toBe(0);

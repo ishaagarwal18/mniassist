@@ -22,23 +22,57 @@ import { ServiceTicketGateway } from './ticket-mock';
       } @else {
         <section class="ts__section">
           <h2 class="ts__h">SLA — hours to respond, by priority</h2>
-          <p class="ts__hint">A ticket's due time is set from this the moment it is raised or its priority changes.</p>
+          <p class="ts__hint">
+            A ticket's due time is set from this the moment it is raised or its priority changes.
+          </p>
           <div class="ts__grid">
             <label class="ar-field" for="ts-urgent">
               <span class="ar-field__label">Urgent</span>
-              <input id="ts-urgent" class="ar-field__input" type="number" min="1" max="720" [value]="urgentHours()" (input)="urgentHours.set(+$any($event.target).value)" />
+              <input
+                id="ts-urgent"
+                class="ar-field__input"
+                type="number"
+                min="1"
+                max="720"
+                [value]="urgentHours()"
+                (input)="urgentHours.set(+$any($event.target).value)"
+              />
             </label>
             <label class="ar-field" for="ts-high">
               <span class="ar-field__label">High</span>
-              <input id="ts-high" class="ar-field__input" type="number" min="1" max="720" [value]="highHours()" (input)="highHours.set(+$any($event.target).value)" />
+              <input
+                id="ts-high"
+                class="ar-field__input"
+                type="number"
+                min="1"
+                max="720"
+                [value]="highHours()"
+                (input)="highHours.set(+$any($event.target).value)"
+              />
             </label>
             <label class="ar-field" for="ts-normal">
               <span class="ar-field__label">Normal</span>
-              <input id="ts-normal" class="ar-field__input" type="number" min="1" max="720" [value]="normalHours()" (input)="normalHours.set(+$any($event.target).value)" />
+              <input
+                id="ts-normal"
+                class="ar-field__input"
+                type="number"
+                min="1"
+                max="720"
+                [value]="normalHours()"
+                (input)="normalHours.set(+$any($event.target).value)"
+              />
             </label>
             <label class="ar-field" for="ts-low">
               <span class="ar-field__label">Low</span>
-              <input id="ts-low" class="ar-field__input" type="number" min="1" max="720" [value]="lowHours()" (input)="lowHours.set(+$any($event.target).value)" />
+              <input
+                id="ts-low"
+                class="ar-field__input"
+                type="number"
+                min="1"
+                max="720"
+                [value]="lowHours()"
+                (input)="lowHours.set(+$any($event.target).value)"
+              />
             </label>
           </div>
         </section>
@@ -46,17 +80,30 @@ import { ServiceTicketGateway } from './ticket-mock';
         <section class="ts__section">
           <h2 class="ts__h">Public ticket portal</h2>
           <label class="ts__toggle">
-            <input type="checkbox" [checked]="portalEnabled()" (change)="portalEnabled.set($any($event.target).checked)" />
+            <input
+              type="checkbox"
+              [checked]="portalEnabled()"
+              (change)="portalEnabled.set($any($event.target).checked)"
+            />
             <span>Let customers raise a ticket themselves, with no sign-in</span>
           </label>
           @if (portalEnabled()) {
             <p class="ts__hint">
-              Every ticket from this page is Normal priority and unassigned, the same as one written up by hand — nobody skips the queue by knowing the address.
+              Every ticket from this page is Normal priority and unassigned, the same as one written
+              up by hand — nobody skips the queue by knowing the address.
             </p>
             @if (portalUrl(); as url) {
               <div class="ts__url">
-                <input class="ar-field__input ar-mono" readonly aria-label="Portal address" [value]="url" (focus)="$any($event.target).select()" />
-                <button ar-button type="button" variant="ghost" (click)="copy(url)">Copy link</button>
+                <input
+                  class="ar-field__input ar-mono"
+                  readonly
+                  aria-label="Portal address"
+                  [value]="url"
+                  (focus)="$any($event.target).select()"
+                />
+                <button ar-button type="button" variant="ghost" (click)="copy(url)">
+                  Copy link
+                </button>
               </div>
             } @else {
               <p class="ts__hint">Its address is given once you save.</p>
@@ -73,26 +120,85 @@ import { ServiceTicketGateway } from './ticket-mock';
       }
 
       <div dialogActions>
-        <button ar-button type="button" variant="ghost" (click)="closed.emit(changed())">Close</button>
-        <button ar-button type="button" variant="primary" [disabled]="loading() || saving() || !hoursValid()" (click)="save()">
+        <button ar-button type="button" variant="ghost" (click)="closed.emit(changed())">
+          Close
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="loading() || saving() || !hoursValid()"
+          (click)="save()"
+        >
           {{ saving() ? 'Saving…' : 'Save' }}
         </button>
       </div>
     </ar-dialog>
   `,
   styles: `
-    .ts__hint { margin: 0; font: 400 12.5px var(--ar-font-sans); color: var(--ar-ink-400); }
-    .ts__section { display: flex; flex-direction: column; gap: 8px; }
-    .ts__h { margin: 0; font: 600 13px var(--ar-font-sans); color: var(--ar-ink-900); }
-    .ts__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-    .ts__toggle { display: flex; align-items: flex-start; gap: 10px; font: 500 13px var(--ar-font-sans); color: var(--ar-ink-800); cursor: pointer; }
-    .ts__toggle input { margin-top: 2px; width: 16px; height: 16px; flex: none; }
-    .ts__url { display: flex; gap: 8px; }
-    .ts__url .ar-field__input { flex: 1; }
-    .ts__ok { margin: 0; padding: 8px 10px; border-radius: var(--ar-radius-control); background: var(--ar-teal-100); color: var(--ar-teal-700); font: 500 12px var(--ar-font-sans); }
-    .ts__err { margin: 0; padding: 8px 10px; border-radius: var(--ar-radius-control); background: var(--ar-red-100); color: var(--ar-red-600); font: 500 12px var(--ar-font-sans); }
+    .ts__hint {
+      margin: 0;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
+    .ts__section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ts__h {
+      margin: 0;
+      font: 600 13px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .ts__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .ts__toggle {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font: 500 13px var(--ar-font-sans);
+      color: var(--ar-ink-800);
+      cursor: pointer;
+    }
+    .ts__toggle input {
+      margin-top: 2px;
+      width: 16px;
+      height: 16px;
+      flex: none;
+    }
+    .ts__url {
+      display: flex;
+      gap: 8px;
+    }
+    .ts__url .ar-field__input {
+      flex: 1;
+    }
+    .ts__ok {
+      margin: 0;
+      padding: 8px 10px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-teal-100);
+      color: var(--ar-teal-700);
+      font: 500 12px var(--ar-font-sans);
+    }
+    .ts__err {
+      margin: 0;
+      padding: 8px 10px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
+      font: 500 12px var(--ar-font-sans);
+    }
 
-    @media (max-width: 480px) { .ts__grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) {
+      .ts__grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
   `,
 })
 export class ArTicketSettingsDialog {
@@ -115,7 +221,9 @@ export class ArTicketSettingsDialog {
   protected readonly portalUrl = signal<string | null>(null);
 
   protected readonly hoursValid = () =>
-    [this.urgentHours(), this.highHours(), this.normalHours(), this.lowHours()].every((h) => Number.isInteger(h) && h >= 1 && h <= 720);
+    [this.urgentHours(), this.highHours(), this.normalHours(), this.lowHours()].every(
+      (h) => Number.isInteger(h) && h >= 1 && h <= 720,
+    );
 
   constructor() {
     void this.load();

@@ -23,7 +23,15 @@ interface Draft {
   parentId: string;
 }
 
-const BLANK: Draft = { name: '', industry: '', city: '', state: '', website: '', notes: '', parentId: '' };
+const BLANK: Draft = {
+  name: '',
+  industry: '',
+  city: '',
+  state: '',
+  website: '',
+  notes: '',
+  parentId: '',
+};
 
 /**
  * Company / plant grouping (M03-11), as a tree: a group owns companies, a company owns plants, up to five
@@ -62,7 +70,9 @@ export class ArAccounts {
    */
   protected readonly parentOptions = computed(() => {
     const id = this.editingId();
-    return this.store.all().filter((a) => a.id !== id && moveProblem(id, a.id, this.store.all()) === null);
+    return this.store
+      .all()
+      .filter((a) => a.id !== id && moveProblem(id, a.id, this.store.all()) === null);
   });
 
   protected search(term: string): void {
@@ -122,8 +132,12 @@ export class ArAccounts {
   }
 
   protected async remove(a: CustomerAccount): Promise<void> {
-    const subs = a.childCount > 0 ? ` Its ${a.childCount} subsidiar${a.childCount === 1 ? 'y moves' : 'ies move'} up a level.` : '';
-    if (!confirm(`Delete "${a.name}"? Its ${a.contactCount} contact(s) will be ungrouped.${subs}`)) return;
+    const subs =
+      a.childCount > 0
+        ? ` Its ${a.childCount} subsidiar${a.childCount === 1 ? 'y moves' : 'ies move'} up a level.`
+        : '';
+    if (!confirm(`Delete "${a.name}"? Its ${a.contactCount} contact(s) will be ungrouped.${subs}`))
+      return;
     await this.store.remove(a.id);
   }
 

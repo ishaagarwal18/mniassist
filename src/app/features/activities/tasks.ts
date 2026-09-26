@@ -1,18 +1,28 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { ArTopbar } from '../../layout/topbar';
-import {
-  CrmTaskDto,
-  CrmTaskStatus,
-  CrmTaskSummaryDto,
-  TaskPriority,
-} from '../../proxy/activities';
+import { CrmTaskDto, CrmTaskStatus, CrmTaskSummaryDto, TaskPriority } from '../../proxy/activities';
 import { ArButton, ArChip, ArSearchBox } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { ActivityDirectory } from './activity-directory';
 import { ActivityGateway } from './activity-mock';
-import { DueBucket, dueBucket, dueLabel, errorMessage, groupTasks, utcOffsetMinutes } from './activity-logic';
+import {
+  DueBucket,
+  dueBucket,
+  dueLabel,
+  errorMessage,
+  groupTasks,
+  utcOffsetMinutes,
+} from './activity-logic';
 import { ArTaskDialog } from './task-dialog';
 import { recurrenceLabel } from './recurrence';
 
@@ -122,7 +132,9 @@ export class ArTasks {
     this.busy.set(t.id!);
     this.error.set(null);
     try {
-      await firstValueFrom(t.status === CrmTaskStatus.Open ? this.api.complete(t.id!) : this.api.reopen(t.id!));
+      await firstValueFrom(
+        t.status === CrmTaskStatus.Open ? this.api.complete(t.id!) : this.api.reopen(t.id!),
+      );
       this.reload();
     } catch (e: unknown) {
       this.error.set(errorMessage(e, 'The task could not be changed.'));

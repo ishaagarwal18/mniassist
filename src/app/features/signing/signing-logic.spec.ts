@@ -23,7 +23,9 @@ describe('signature pad points', () => {
   });
 
   it('survives a pad with no size yet', () => {
-    expect(() => padPoint(10, 10, { left: 0, top: 0, width: 0, height: 0 }, 600, 200)).not.toThrow();
+    expect(() =>
+      padPoint(10, 10, { left: 0, top: 0, width: 0, height: 0 }, 600, 200),
+    ).not.toThrow();
   });
 });
 
@@ -44,19 +46,25 @@ describe('sharing the link', () => {
   });
 
   it('words the message with the reference and who it is from', () => {
-    expect(shareText('QTN-1', 'Asha', url, 'Sun Energy')).toContain('quotation QTN-1 from Sun Energy');
+    expect(shareText('QTN-1', 'Asha', url, 'Sun Energy')).toContain(
+      'quotation QTN-1 from Sun Energy',
+    );
     expect(shareText('QTN-1', 'Asha', url)).not.toContain(' from ');
   });
 
   it('makes a WhatsApp link from the digits of a phone number, or none', () => {
     const text = shareText('QTN-1', 'Asha', url);
-    expect(whatsappShareLink('+91 98000-00000', text)).toMatch(/^https:\/\/wa\.me\/919800000000\?text=/);
+    expect(whatsappShareLink('+91 98000-00000', text)).toMatch(
+      /^https:\/\/wa\.me\/919800000000\?text=/,
+    );
     expect(whatsappShareLink('12345', text)).toBeNull();
     expect(whatsappShareLink(null, text)).toBeNull();
   });
 
   it('makes a mail link only for something that looks like an address', () => {
-    expect(mailtoShareLink('asha@example.com', 'Sign', 'hi')).toMatch(/^mailto:asha@example.com\?subject=Sign&body=hi$/);
+    expect(mailtoShareLink('asha@example.com', 'Sign', 'hi')).toMatch(
+      /^mailto:asha@example.com\?subject=Sign&body=hi$/,
+    );
     expect(mailtoShareLink('nope', 'Sign', 'hi')).toBeNull();
   });
 });
@@ -68,7 +76,9 @@ describe('status wording and errors', () => {
   });
 
   it('shows the servers message, or the fallback when there is none', () => {
-    expect(apiMessage({ error: { error: { message: 'This link has expired.' } } }, 'x')).toBe('This link has expired.');
+    expect(apiMessage({ error: { error: { message: 'This link has expired.' } } }, 'x')).toBe(
+      'This link has expired.',
+    );
     expect(apiMessage({}, 'Something went wrong.')).toBe('Something went wrong.');
     expect(apiMessage({ error: { error: { message: 'y'.repeat(500) } } }, 'short')).toBe('short');
   });

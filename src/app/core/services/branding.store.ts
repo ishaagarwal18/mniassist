@@ -3,7 +3,11 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { BrandingService, TenantBrandingDto, UpdateTenantBrandingInput } from '../../proxy/branding';
+import {
+  BrandingService,
+  TenantBrandingDto,
+  UpdateTenantBrandingInput,
+} from '../../proxy/branding';
 
 /**
  * Tenant identity: a logo and two accent colours, applied to the app shell as CSS
@@ -43,8 +47,12 @@ export class BrandingStore {
       const root = document.documentElement.style;
       const primary = this.primaryColor();
       const accent = this.accentColor();
-      primary ? root.setProperty('--ar-tenant-primary', primary) : root.removeProperty('--ar-tenant-primary');
-      accent ? root.setProperty('--ar-tenant-accent', accent) : root.removeProperty('--ar-tenant-accent');
+      primary
+        ? root.setProperty('--ar-tenant-primary', primary)
+        : root.removeProperty('--ar-tenant-primary');
+      accent
+        ? root.setProperty('--ar-tenant-accent', accent)
+        : root.removeProperty('--ar-tenant-accent');
     });
   }
 

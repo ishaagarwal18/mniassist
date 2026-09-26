@@ -32,14 +32,20 @@ describe('the week', () => {
       expect(dayKey(s)).toBe('2026-09-21');
       expect(s.getHours()).toBe(0);
     }
-    expect(dayKey(startOfWeek(at(2026, 9, 27, 23, 59)))).toBe('2026-09-21');   // Sunday belongs to the week before it
+    expect(dayKey(startOfWeek(at(2026, 9, 27, 23, 59)))).toBe('2026-09-21'); // Sunday belongs to the week before it
     expect(dayKey(startOfWeek(at(2026, 9, 28)))).toBe('2026-09-28');
   });
 
   it('is seven days, Monday first, over a half-open range', () => {
     const w = weekOf(at(2026, 9, 24, 15, 0));
     expect(w.days.map(dayKey)).toEqual([
-      '2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24', '2026-09-25', '2026-09-26', '2026-09-27',
+      '2026-09-21',
+      '2026-09-22',
+      '2026-09-23',
+      '2026-09-24',
+      '2026-09-25',
+      '2026-09-26',
+      '2026-09-27',
     ]);
     expect(dayKey(w.to)).toBe('2026-09-28');
   });
@@ -86,9 +92,15 @@ describe('date inputs', () => {
 
   it('starts a new meeting on the next half hour, at least a quarter of an hour away', () => {
     expect(toLocalInput(iso(defaultMeetingStart(at(2026, 9, 21, 10, 0))))).toBe('2026-09-21T10:30');
-    expect(toLocalInput(iso(defaultMeetingStart(at(2026, 9, 21, 10, 14))))).toBe('2026-09-21T10:30');
-    expect(toLocalInput(iso(defaultMeetingStart(at(2026, 9, 21, 10, 16))))).toBe('2026-09-21T11:00');
-    expect(toLocalInput(iso(defaultMeetingStart(at(2026, 9, 21, 23, 50))))).toBe('2026-09-22T00:30');
+    expect(toLocalInput(iso(defaultMeetingStart(at(2026, 9, 21, 10, 14))))).toBe(
+      '2026-09-21T10:30',
+    );
+    expect(toLocalInput(iso(defaultMeetingStart(at(2026, 9, 21, 10, 16))))).toBe(
+      '2026-09-21T11:00',
+    );
+    expect(toLocalInput(iso(defaultMeetingStart(at(2026, 9, 21, 23, 50))))).toBe(
+      '2026-09-22T00:30',
+    );
   });
 });
 
@@ -106,7 +118,9 @@ describe('tasks by when they are due', () => {
   });
 
   it('files a finished or cancelled task under done, whatever its date', () => {
-    expect(dueBucket({ status: CrmTaskStatus.Done, dueAtUtc: iso(at(2026, 1, 1)) }, now)).toBe('done');
+    expect(dueBucket({ status: CrmTaskStatus.Done, dueAtUtc: iso(at(2026, 1, 1)) }, now)).toBe(
+      'done',
+    );
     expect(dueBucket({ status: CrmTaskStatus.Cancelled, dueAtUtc: null }, now)).toBe('done');
   });
 
@@ -160,7 +174,11 @@ describe('meeting wording', () => {
   });
 
   it('lists a booking once', () => {
-    const list = uniqueConflicts([conflict(), conflict(), conflict({ userId: 'u2', userName: 'Meera' })]);
+    const list = uniqueConflicts([
+      conflict(),
+      conflict(),
+      conflict({ userId: 'u2', userName: 'Meera' }),
+    ]);
     expect(list.map((c) => c.userName)).toEqual(['Ravi K', 'Meera']);
   });
 });
@@ -173,8 +191,12 @@ describe('errors from the server', () => {
   });
 
   it('shows the servers sentence when there is one', () => {
-    expect(errorMessage({ error: { error: { message: 'Ravi already has "Plant review" at that time.' } } }, 'x'))
-      .toBe('Ravi already has "Plant review" at that time.');
+    expect(
+      errorMessage(
+        { error: { error: { message: 'Ravi already has "Plant review" at that time.' } } },
+        'x',
+      ),
+    ).toBe('Ravi already has "Plant review" at that time.');
     expect(errorMessage({}, 'Something went wrong.')).toBe('Something went wrong.');
   });
 

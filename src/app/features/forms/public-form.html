@@ -26,11 +26,19 @@
                 [attr.aria-invalid]="errors()[q.key] ? 'true' : null"
                 (change)="set(q, $any($event.target).checked ? 'yes' : 'no')"
               />
-              <span>{{ q.label }}@if (q.required) { <em class="pf__req">*</em> }</span>
+              <span
+                >{{ q.label }}
+                @if (q.required) {
+                  <em class="pf__req">*</em>
+                }
+              </span>
             </label>
           } @else {
             <label class="pf__label" [for]="'pf-' + q.key">
-              {{ q.label }}@if (q.required) { <em class="pf__req" aria-label="required">*</em> }
+              {{ q.label }}
+              @if (q.required) {
+                <em class="pf__req" aria-label="required">*</em>
+              }
             </label>
             @switch (q.kind) {
               @case (Kind.LongText) {
@@ -87,7 +95,15 @@
       <!-- A field no person sees: a script that fills in every box fills in this one too. -->
       <div class="pf__trap" aria-hidden="true">
         <label for="pf-hp">Leave this field empty</label>
-        <input id="pf-hp" type="text" name="hp_extra" tabindex="-1" autocomplete="off" [value]="honeypot()" (input)="honeypot.set($any($event.target).value)" />
+        <input
+          id="pf-hp"
+          type="text"
+          name="hp_extra"
+          tabindex="-1"
+          autocomplete="off"
+          [value]="honeypot()"
+          (input)="honeypot.set($any($event.target).value)"
+        />
       </div>
 
       <div class="pf__field">
@@ -109,7 +125,12 @@
       @if (f.marketingOptInText) {
         <div class="pf__field">
           <label class="pf__chk" for="pf-marketing">
-            <input id="pf-marketing" type="checkbox" [checked]="marketing()" (change)="marketing.set($any($event.target).checked)" />
+            <input
+              id="pf-marketing"
+              type="checkbox"
+              [checked]="marketing()"
+              (change)="marketing.set($any($event.target).checked)"
+            />
             <span>{{ f.marketingOptInText }}</span>
           </label>
         </div>
@@ -119,7 +140,9 @@
         <p class="pf__fail" role="alert">{{ msg }}</p>
       }
 
-      <button type="submit" class="pf__btn" [disabled]="busy()">{{ busy() ? 'Sending…' : f.submitLabel }}</button>
+      <button type="submit" class="pf__btn" [disabled]="busy()">
+        {{ busy() ? 'Sending…' : f.submitLabel }}
+      </button>
     </form>
   }
 </main>

@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
 
@@ -32,7 +40,9 @@ import { ArLogCallDialog } from './log-call-dialog';
         <div class="ec__main">
           <span>{{ headline(c) }}</span>
           @if (c.outcome !== None) {
-            <span class="ec__out">{{ outcomeLabel[c.outcome] }}{{ c.notes ? ' — ' + c.notes : '' }}</span>
+            <span class="ec__out"
+              >{{ outcomeLabel[c.outcome] }}{{ c.notes ? ' — ' + c.notes : '' }}</span
+            >
           }
         </div>
         @if (needs(c)) {
@@ -49,32 +59,115 @@ import { ArLogCallDialog } from './log-call-dialog';
 
     <div class="ec__add">
       @if (canCall) {
-        <button ar-button type="button" variant="ghost" icon="phone" [disabled]="!contactId()" (click)="calling.set(true)">Call {{ contactName() }}</button>
-        <button ar-button type="button" variant="ghost" [disabled]="!contactId()" (click)="logging.set(true)">Log a call</button>
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          icon="phone"
+          [disabled]="!contactId()"
+          (click)="calling.set(true)"
+        >
+          Call {{ contactName() }}
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="!contactId()"
+          (click)="logging.set(true)"
+        >
+          Log a call
+        </button>
       }
     </div>
 
     @if (calling()) {
-      <ar-call-dialog [contactId]="contactId()!" [contactName]="contactName()" [enquiryId]="enquiryId()" (closed)="calling.set(false); refresh()" />
+      <ar-call-dialog
+        [contactId]="contactId()!"
+        [contactName]="contactName()"
+        [enquiryId]="enquiryId()"
+        (closed)="calling.set(false); refresh()"
+      />
     }
     @if (logging()) {
-      <ar-log-call-dialog [contactId]="contactId()!" [contactName]="contactName()" [enquiryId]="enquiryId()" (closed)="logging.set(false); refresh()" />
+      <ar-log-call-dialog
+        [contactId]="contactId()!"
+        [contactName]="contactName()"
+        [enquiryId]="enquiryId()"
+        (closed)="logging.set(false); refresh()"
+      />
     }
     @if (editing(); as c) {
-      <ar-call-outcome-dialog [call]="c" (saved)="editing.set(null); refresh()" (closed)="editing.set(null)" />
+      <ar-call-outcome-dialog
+        [call]="c"
+        (saved)="editing.set(null); refresh()"
+        (closed)="editing.set(null)"
+      />
     }
   `,
   styles: `
-    :host { display: block; }
-    .ec__t { margin: 0 0 8px; font: 600 12px var(--ar-font-sans); text-transform: uppercase; letter-spacing: 0.05em; color: var(--ar-ink-500); }
-    .ec__row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 5px 0; font: 400 13px var(--ar-font-sans); color: var(--ar-ink-900); }
-    .ec__main { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
-    .ec__out { font-size: 12px; color: var(--ar-ink-600); }
-    .ec__when { font: 400 12px var(--ar-font-sans); color: var(--ar-ink-400); white-space: nowrap; }
-    .ec__link { flex: none; background: none; border: 0; padding: 0; cursor: pointer; font: 500 12px var(--ar-font-sans); color: var(--ar-teal-600); }
-    .ec__empty { margin: 0; font: 400 12px var(--ar-font-sans); color: var(--ar-ink-400); }
-    .ec__add { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-    .ec__err { margin: 0 0 8px; padding: 8px 10px; border-radius: var(--ar-radius-control); background: var(--ar-red-100); color: var(--ar-red-600); font: 500 12px var(--ar-font-sans); }
+    :host {
+      display: block;
+    }
+    .ec__t {
+      margin: 0 0 8px;
+      font: 600 12px var(--ar-font-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ar-ink-500);
+    }
+    .ec__row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 5px 0;
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .ec__main {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .ec__out {
+      font-size: 12px;
+      color: var(--ar-ink-600);
+    }
+    .ec__when {
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+      white-space: nowrap;
+    }
+    .ec__link {
+      flex: none;
+      background: none;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      font: 500 12px var(--ar-font-sans);
+      color: var(--ar-teal-600);
+    }
+    .ec__empty {
+      margin: 0;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
+    .ec__add {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .ec__err {
+      margin: 0 0 8px;
+      padding: 8px 10px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
+      font: 500 12px var(--ar-font-sans);
+    }
   `,
 })
 export class ArEnquiryCalls {
@@ -134,6 +227,9 @@ export class ArEnquiryCalls {
   }
 
   protected when(c: CallLogDto): string {
-    return new Date(c.startedAtUtc ?? c.creationTime).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    return new Date(c.startedAtUtc ?? c.creationTime).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+    });
   }
 }

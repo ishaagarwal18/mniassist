@@ -315,7 +315,6 @@ export interface SendMessageInput {
   libraryDocumentId?: string | null;
 }
 
-
 /** M06-12: AI-drafted reply options for the composer. */
 export interface SuggestedRepliesDto {
   providerName: string;

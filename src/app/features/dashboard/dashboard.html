@@ -3,28 +3,48 @@
   subtitle="Vertex Automation Systems"
   help="Your workspace at a glance — channel health, wallet balance and a shortcut into your next campaign."
 >
-  @if (channel(); as ch) { <ar-channel-health-strip [channel]="ch" /> }
-  <button ar-button variant="ghost" icon="billing" routerLink="/billing">{{ walletLabel() }}</button>
+  @if (channel(); as ch) {
+    <ar-channel-health-strip [channel]="ch" />
+  }
+  <button ar-button variant="ghost" icon="billing" routerLink="/billing">
+    {{ walletLabel() }}
+  </button>
   <button ar-button variant="primary" icon="plus" routerLink="/campaigns">New campaign</button>
 </ar-topbar>
 
 <div class="page ar-scroll">
   <div class="page__stats">
-    <ar-stat-tile label="Open enquiries" [value]="count(pipeline().openEnquiries)"
-                  [note]="pipeline().newThisWeek + ' new this week'" tone="good" />
-    <ar-stat-tile label="Quotations awaiting reply" [value]="count(pipeline().quotationsAwaitingDecision)"
-                  [note]="pipelineValueLabel() + ' in play'" />
-    <ar-stat-tile label="Sent in the last 24h" [value]="count(volume().sent24h)"
-                  [note]="deliveryLabel()" tone="teal" />
-    <ar-stat-tile label="Open conversations" [value]="count(inbox().openConversations)"
-                  [note]="inbox().unassigned + ' unassigned'"
-                  [tone]="inbox().unassigned > 0 ? 'amber' : 'good'" />
+    <ar-stat-tile
+      label="Open enquiries"
+      [value]="count(pipeline().openEnquiries)"
+      [note]="pipeline().newThisWeek + ' new this week'"
+      tone="good"
+    />
+    <ar-stat-tile
+      label="Quotations awaiting reply"
+      [value]="count(pipeline().quotationsAwaitingDecision)"
+      [note]="pipelineValueLabel() + ' in play'"
+    />
+    <ar-stat-tile
+      label="Sent in the last 24h"
+      [value]="count(volume().sent24h)"
+      [note]="deliveryLabel()"
+      tone="teal"
+    />
+    <ar-stat-tile
+      label="Open conversations"
+      [value]="count(inbox().openConversations)"
+      [note]="inbox().unassigned + ' unassigned'"
+      [tone]="inbox().unassigned > 0 ? 'amber' : 'good'"
+    />
   </div>
 
   <div class="page__grid">
     <div class="page__col">
       <ar-card heading="Needs you today">
-        <span card-actions class="page__muted">{{ todo().length }} item{{ todo().length === 1 ? '' : 's' }}</span>
+        <span card-actions class="page__muted"
+          >{{ todo().length }} item{{ todo().length === 1 ? '' : 's' }}</span
+        >
         @if (todo().length === 0) {
           <p class="page__muted todo__empty">Nothing needs your attention right now.</p>
         } @else {
@@ -50,8 +70,10 @@
         <table class="ar-table">
           <thead>
             <tr>
-              <th scope="col">Campaign</th><th scope="col">State</th>
-              <th scope="col" class="num">Sent</th><th scope="col" class="num">Recipients</th>
+              <th scope="col">Campaign</th>
+              <th scope="col">State</th>
+              <th scope="col" class="num">Sent</th>
+              <th scope="col" class="num">Recipients</th>
               <th scope="col" class="num">Cost</th>
             </tr>
           </thead>
@@ -59,13 +81,17 @@
             @for (c of recent(); track c.name) {
               <tr>
                 <td class="strong">{{ c.name }}</td>
-                <td><ar-chip [tone]="chipToneFor(c.state)">{{ c.state }}</ar-chip></td>
+                <td>
+                  <ar-chip [tone]="chipToneFor(c.state)">{{ c.state }}</ar-chip>
+                </td>
                 <td class="num">{{ count(c.sent) }}</td>
                 <td class="num">{{ count(c.recipients) }}</td>
                 <td class="num" [class.free]="c.free">{{ c.cost }}</td>
               </tr>
             } @empty {
-              <tr><td colspan="5" class="page__muted">No campaigns yet.</td></tr>
+              <tr>
+                <td colspan="5" class="page__muted">No campaigns yet.</td>
+              </tr>
             }
           </tbody>
         </table>
@@ -74,10 +100,10 @@
 
     <div class="page__col">
       <ar-card heading="Channel health">
-        <ar-chip card-actions [mono]="true">{{ channel()?.displayPhone ?? "No channel" }}</ar-chip>
+        <ar-chip card-actions [mono]="true">{{ channel()?.displayPhone ?? 'No channel' }}</ar-chip>
         <div class="health">
           <div class="health__quality">
-            <strong class="health__rating">{{ channel()?.quality ?? "—" }}</strong>
+            <strong class="health__rating">{{ channel()?.quality ?? '—' }}</strong>
             <span class="page__muted">Rolling quality rating</span>
           </div>
           <hr class="rule" />
@@ -86,16 +112,25 @@
               <span class="page__muted">Rolling 24-hour recipients</span>
               <span class="ar-mono">{{ usageLabel() }}</span>
             </div>
-            <ar-meter [value]="channel()?.used24h ?? 0" [max]="tierLimit()" tone="amber"
-                      label="Rolling 24-hour recipients used" />
-            <p class="health__foot">Portfolio-scoped · a share is reserved for utility and service traffic</p>
+            <ar-meter
+              [value]="channel()?.used24h ?? 0"
+              [max]="tierLimit()"
+              tone="amber"
+              label="Rolling 24-hour recipients used"
+            />
+            <p class="health__foot">
+              Portfolio-scoped · a share is reserved for utility and service traffic
+            </p>
           </div>
         </div>
       </ar-card>
 
       <ar-card heading="Message mix">
-        <div class="mix__bar" role="img"
-             [attr.aria-label]="'Message mix: ' + freeShareLabel() + ' free of charge'">
+        <div
+          class="mix__bar"
+          role="img"
+          [attr.aria-label]="'Message mix: ' + freeShareLabel() + ' free of charge'"
+        >
           @for (s of mix(); track s.label) {
             <span class="mix__seg" [style.width.%]="s.share" [style.background]="s.colour"></span>
           }
@@ -112,7 +147,9 @@
         <div class="saving">
           <ar-icon name="clock" [size]="17" />
           <div>
-            <strong class="saving__head">{{ freeMessagesLabel() }} free messages in the last 24h</strong>
+            <strong class="saving__head"
+              >{{ freeMessagesLabel() }} free messages in the last 24h</strong
+            >
             <span class="saving__sub">{{ avoidedLabel() }}</span>
           </div>
         </div>

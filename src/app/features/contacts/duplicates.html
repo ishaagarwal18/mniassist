@@ -7,7 +7,11 @@
 <div class="dup ar-scroll">
   <div class="dup__bar">
     <label class="dup__toggle">
-      <input type="checkbox" [checked]="highOnly()" (change)="toggleHighOnly($any($event.target).checked)" />
+      <input
+        type="checkbox"
+        [checked]="highOnly()"
+        (change)="toggleHighOnly($any($event.target).checked)"
+      />
       Near-certain matches only
     </label>
     <span class="dup__count">{{ pairs().length }} pair{{ pairs().length === 1 ? '' : 's' }}</span>
@@ -23,14 +27,20 @@
     <p class="dup__err">Could not load duplicates. Check your connection and reload the page.</p>
   } @else if (pairs().length === 0) {
     <p class="dup__empty">
-      {{ highOnly() ? 'No near-certain duplicates.' : 'No likely duplicates found. Pairs you mark as not duplicates stay hidden.' }}
+      {{
+        highOnly()
+          ? 'No near-certain duplicates.'
+          : 'No likely duplicates found. Pairs you mark as not duplicates stay hidden.'
+      }}
     </p>
   }
 
   @for (p of pairs(); track p.first?.id + '|' + p.second?.id) {
     <article class="pr">
       <header class="pr__head">
-        <ar-chip [tone]="p.confidence === High ? 'bad' : 'amber'">{{ p.confidence === High ? 'Near certain' : 'Possible' }}</ar-chip>
+        <ar-chip [tone]="p.confidence === High ? 'bad' : 'amber'">{{
+          p.confidence === High ? 'Near certain' : 'Possible'
+        }}</ar-chip>
         <span class="pr__why">
           @for (r of p.reasons; track r; let last = $last) {
             {{ reasonText(r) }}{{ last ? '' : ' · ' }}
@@ -58,7 +68,9 @@
               @if (c?.hasMessenger) {
                 <span class="who__tag">Messenger</span>
               }
-              <span class="who__tag who__tag--quiet">Last active {{ when(c?.lastActivityUtc) }}</span>
+              <span class="who__tag who__tag--quiet"
+                >Last active {{ when(c?.lastActivityUtc) }}</span
+              >
             </p>
           </div>
         }
@@ -72,7 +84,10 @@
   }
 
   @if (moreThanShown() > 0) {
-    <p class="dup__empty">{{ moreThanShown() }} more pair{{ moreThanShown() === 1 ? '' : 's' }} not shown. Resolve these and reload to see them.</p>
+    <p class="dup__empty">
+      {{ moreThanShown() }} more pair{{ moreThanShown() === 1 ? '' : 's' }} not shown. Resolve these
+      and reload to see them.
+    </p>
   }
 </div>
 
@@ -84,16 +99,24 @@
         <div class="mg__keep">
           @for (c of [pair()?.first, pair()?.second]; track c?.id) {
             <label class="mg__opt" [class.mg__opt--on]="c?.id === survivorId()">
-              <input type="radio" name="survivor" [checked]="c?.id === survivorId()" (change)="keep(c?.id ?? '')" />
+              <input
+                type="radio"
+                name="survivor"
+                [checked]="c?.id === survivorId()"
+                (change)="keep(c?.id ?? '')"
+              />
               <span>
                 <b>{{ display(c) }}</b>
-                <small>{{ c?.waId ? '+' + c?.waId : c?.emailAddress || 'No phone or email' }}</small>
+                <small>{{
+                  c?.waId ? '+' + c?.waId : c?.emailAddress || 'No phone or email'
+                }}</small>
               </span>
             </label>
           }
         </div>
         <p class="mg__note">
-          The other record is removed from the contact list once merged. Its messages, conversations, campaigns, enquiries and quotations move to the one you keep.
+          The other record is removed from the contact list once merged. Its messages,
+          conversations, campaigns, enquiries and quotations move to the one you keep.
         </p>
       </section>
 
@@ -109,17 +132,28 @@
               <div class="fc">
                 <span class="fc__label">{{ fieldLabel(f.field) }}</span>
                 <label class="fc__opt" [class.fc__opt--on]="!takesLoser(f.field)">
-                  <input type="radio" [name]="'f-' + f.field" [checked]="!takesLoser(f.field)" (change)="choose(f.field, false)" />
+                  <input
+                    type="radio"
+                    [name]="'f-' + f.field"
+                    [checked]="!takesLoser(f.field)"
+                    (change)="choose(f.field, false)"
+                  />
                   {{ value(f.survivorValue) }}
                 </label>
                 <label class="fc__opt" [class.fc__opt--on]="takesLoser(f.field)">
-                  <input type="radio" [name]="'f-' + f.field" [checked]="takesLoser(f.field)" (change)="choose(f.field, true)" />
+                  <input
+                    type="radio"
+                    [name]="'f-' + f.field"
+                    [checked]="takesLoser(f.field)"
+                    (change)="choose(f.field, true)"
+                  />
                   {{ value(f.loserValue) }}
                 </label>
               </div>
             }
             <p class="mg__note">
-              The first value belongs to the record you keep. A phone number or address you do not choose is not carried over.
+              The first value belongs to the record you keep. A phone number or address you do not
+              choose is not carried over.
             </p>
           </section>
         }
@@ -129,7 +163,9 @@
             <h3 class="mg__h">What the merged contact gains</h3>
             <ul class="mg__list">
               @for (f of fills(); track f.field) {
-                <li>{{ fieldLabel(f.field) }}: <b>{{ f.loserValue }}</b></li>
+                <li>
+                  {{ fieldLabel(f.field) }}: <b>{{ f.loserValue }}</b>
+                </li>
               }
             </ul>
           </section>
@@ -152,12 +188,17 @@
             <ul class="mg__list">
               @if ((pv.crmRecordsHandedOver ?? 0) > 0) {
                 <li>
-                  In {{ pv.crmRecordsHandedOver }} connected CRM{{ pv.crmRecordsHandedOver === 1 ? '' : 's' }}, the record for the merged-away contact carries on as the merged contact.
+                  In {{ pv.crmRecordsHandedOver }} connected CRM{{
+                    pv.crmRecordsHandedOver === 1 ? '' : 's'
+                  }}, the record for the merged-away contact carries on as the merged contact.
                 </li>
               }
               @if ((pv.crmDuplicatesLeft ?? 0) > 0) {
                 <li class="mg__li--warn">
-                  In {{ pv.crmDuplicatesLeft }} connected CRM{{ pv.crmDuplicatesLeft === 1 ? '' : 's' }}, both contacts already have a record. The kept contact's record stays linked; the other is left in the CRM, so merge those two there.
+                  In {{ pv.crmDuplicatesLeft }} connected CRM{{
+                    pv.crmDuplicatesLeft === 1 ? '' : 's'
+                  }}, both contacts already have a record. The kept contact's record stays linked;
+                  the other is left in the CRM, so merge those two there.
                 </li>
               }
             </ul>
@@ -169,12 +210,15 @@
             <h3 class="mg__h">Consent after the merge</h3>
             @if (anyNarrowed()) {
               <p class="mg__warn">
-                One of these records had marketing switched off, so the merged contact keeps it off. A merge never turns marketing back on.
+                One of these records had marketing switched off, so the merged contact keeps it off.
+                A merge never turns marketing back on.
               </p>
             }
             <ul class="mg__list">
               @for (l of consentLines(); track l.channel) {
-                <li [class.mg__li--warn]="l.warn"><b>{{ l.channel }}</b> — {{ l.text }}</li>
+                <li [class.mg__li--warn]="l.warn">
+                  <b>{{ l.channel }}</b> — {{ l.text }}
+                </li>
               }
             </ul>
           </section>
@@ -188,7 +232,12 @@
 
     <div dialogActions>
       <button ar-button variant="ghost" (click)="close()">Cancel</button>
-      <button ar-button variant="primary" [disabled]="busy() || previewing() || !preview()" (click)="confirm()">
+      <button
+        ar-button
+        variant="primary"
+        [disabled]="busy() || previewing() || !preview()"
+        (click)="confirm()"
+      >
         {{ busy() ? 'Merging…' : 'Merge contacts' }}
       </button>
     </div>

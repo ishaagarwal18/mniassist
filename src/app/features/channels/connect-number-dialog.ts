@@ -66,8 +66,8 @@ const PROVIDER_LABELS: readonly string[] = ['Meta (direct)', 'Gupshup (Solution 
         <p class="cn__p">
           Gupshup is a WhatsApp Business Solution Partner — a route for a tenant who'd rather not
           hold its own Meta business verification. You'll be sent to a Gupshup-hosted page to
-          complete WhatsApp's signup on our partner account's behalf; the link stays valid for
-          five days.
+          complete WhatsApp's signup on our partner account's behalf; the link stays valid for five
+          days.
         </p>
 
         @if (gupshupSession(); as s) {

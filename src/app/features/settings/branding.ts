@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 
 import { BrandingStore } from '../../core/services/branding.store';
 import { ArTopbar } from '../../layout/topbar';

@@ -8,7 +8,10 @@ export const sendableSmsTemplates = (templates: readonly SmsTemplateDto[]): SmsT
  * The SMS as it will read: each {#var#} replaced, in registration order, by the value typed for that variable — or by its name
  * in braces while it is still empty, so an agent can see what is missing.
  */
-export function previewSms(template: Pick<SmsTemplateDto, 'content' | 'variableNames'>, values: Record<string, string>): string {
+export function previewSms(
+  template: Pick<SmsTemplateDto, 'content' | 'variableNames'>,
+  values: Record<string, string>,
+): string {
   let text = template.content;
   for (const name of template.variableNames) {
     const value = values[name]?.trim();
@@ -18,5 +21,7 @@ export function previewSms(template: Pick<SmsTemplateDto, 'content' | 'variableN
 }
 
 /** Every variable has a value. */
-export const smsVariablesComplete = (template: Pick<SmsTemplateDto, 'variableNames'>, values: Record<string, string>): boolean =>
-  template.variableNames.every((n) => !!values[n]?.trim());
+export const smsVariablesComplete = (
+  template: Pick<SmsTemplateDto, 'variableNames'>,
+  values: Record<string, string>,
+): boolean => template.variableNames.every((n) => !!values[n]?.trim());

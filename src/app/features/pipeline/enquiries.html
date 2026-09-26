@@ -113,8 +113,12 @@
                   <ar-chip tone="neutral" [mono]="true">{{ card.owner }}</ar-chip>
                 }
                 @if (card.score != null) {
-                  <ar-chip [tone]="card.band === 'hot' ? 'good' : card.band === 'warm' ? 'amber' : 'neutral'"
-                    >{{ card.band === 'hot' ? 'Hot' : card.band === 'warm' ? 'Warm' : 'Cold' }} {{ card.score }}</ar-chip
+                  <ar-chip
+                    [tone]="
+                      card.band === 'hot' ? 'good' : card.band === 'warm' ? 'amber' : 'neutral'
+                    "
+                    >{{ card.band === 'hot' ? 'Hot' : card.band === 'warm' ? 'Warm' : 'Cold' }}
+                    {{ card.score }}</ar-chip
                   >
                 }
                 <ar-chip [tone]="card.daysInStage > 10 ? 'amber' : 'neutral'"

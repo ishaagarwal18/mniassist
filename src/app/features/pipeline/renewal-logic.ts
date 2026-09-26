@@ -42,7 +42,9 @@ export function renewalTone(r: AmcRenewalDto, now: Date = new Date()): ChipTone 
 }
 
 /** Open renewals grouped into board columns, soonest ending first in each. */
-export function groupByStatus(rows: AmcRenewalDto[]): { status: RenewalStatus; rows: AmcRenewalDto[] }[] {
+export function groupByStatus(
+  rows: AmcRenewalDto[],
+): { status: RenewalStatus; rows: AmcRenewalDto[] }[] {
   return OPEN_STATUSES.map((status) => ({
     status,
     rows: rows
@@ -69,7 +71,8 @@ export function amcCommercials(
     valueInPaise = Math.round(Number(value) * 100);
   }
   if (term) {
-    if (!/^\d+$/.test(term) || Number(term) < 1 || Number(term) > 60) return 'The AMC term is a whole number of months, 1 to 60.';
+    if (!/^\d+$/.test(term) || Number(term) < 1 || Number(term) > 60)
+      return 'The AMC term is a whole number of months, 1 to 60.';
     termMonths = Number(term);
   }
   return { valueInPaise, termMonths };

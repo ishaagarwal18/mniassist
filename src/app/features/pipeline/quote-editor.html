@@ -63,9 +63,7 @@
                   </button>
                 } @empty {
                   @if (!searching()) {
-                    <p class="qe__note">
-                      No part matches. Add a blank line below to type it in.
-                    </p>
+                    <p class="qe__note">No part matches. Add a blank line below to type it in.</p>
                   }
                 }
               </div>
@@ -76,15 +74,15 @@
 
       @if (issued()) {
         <p class="qe__note">
-          This quotation has been issued. Changes here are not sent to the customer until you
-          issue it again, which starts a new revision.
+          This quotation has been issued. Changes here are not sent to the customer until you issue
+          it again, which starts a new revision.
         </p>
       }
 
       @if (locked()) {
         <p class="qe__note">
-          This quotation has been decided or has expired, so its lines are a record and cannot
-          be changed.
+          This quotation has been decided or has expired, so its lines are a record and cannot be
+          changed.
         </p>
       }
 
@@ -126,7 +124,10 @@
                   <span class="qe__src" [class.qe__src--list]="r.fromList">
                     {{ sourceLabel(r) }}
                     @if (!r.fromList && r.partNumber.trim() && !locked()) {
-                      · <button type="button" class="qe__link" (click)="useListPrice(r)">use list price</button>
+                      ·
+                      <button type="button" class="qe__link" (click)="useListPrice(r)">
+                        use list price
+                      </button>
                     }
                   </span>
                   @if (below(r)) {
@@ -136,7 +137,8 @@
                   }
                   @if (discountedBy(r) > 0) {
                     <span class="qe__hint">
-                      {{ money(discountedBy(r)) }} under the list price of {{ money(r.listPaise ?? 0) }}.
+                      {{ money(discountedBy(r)) }} under the list price of
+                      {{ money(r.listPaise ?? 0) }}.
                     </span>
                   }
                 </td>
@@ -230,16 +232,25 @@
       </label>
 
       <dl class="qe__sum">
-        <div><dt>Subtotal</dt><dd>{{ money(totals().subtotalPaise) }}</dd></div>
+        <div>
+          <dt>Subtotal</dt>
+          <dd>{{ money(totals().subtotalPaise) }}</dd>
+        </div>
         @for (t of totals().breakdown; track t.rateBasisPoints) {
           <div>
             <dt>GST {{ ratePct(t.rateBasisPoints) }}%</dt>
             <dd>{{ money(t.taxPaise) }}</dd>
           </div>
         } @empty {
-          <div><dt>GST</dt><dd>{{ money(0) }}</dd></div>
+          <div>
+            <dt>GST</dt>
+            <dd>{{ money(0) }}</dd>
+          </div>
         }
-        <div class="qe__sum-total"><dt>Total</dt><dd>{{ money(totals().totalPaise) }}</dd></div>
+        <div class="qe__sum-total">
+          <dt>Total</dt>
+          <dd>{{ money(totals().totalPaise) }}</dd>
+        </div>
       </dl>
 
       @if (!locked()) {
@@ -271,12 +282,18 @@
             } @else {
               <table class="qe__tbl qe__tbl--small">
                 <thead>
-                  <tr><th>Part</th><th class="num">Now</th><th class="num">Would be</th></tr>
+                  <tr>
+                    <th>Part</th>
+                    <th class="num">Now</th>
+                    <th class="num">Would be</th>
+                  </tr>
                 </thead>
                 <tbody>
                   @for (l of changedLines(); track l.lineId) {
                     <tr>
-                      <td><span class="ar-mono">{{ l.partNumber }}</span> {{ l.description }}</td>
+                      <td>
+                        <span class="ar-mono">{{ l.partNumber }}</span> {{ l.description }}
+                      </td>
                       <td class="num">{{ money(l.oldUnitPriceInPaise ?? 0) }}</td>
                       <td class="num">{{ money(l.newUnitPriceInPaise ?? 0) }}</td>
                     </tr>
@@ -309,7 +326,10 @@
 
   <footer class="qe__foot">
     @if (!locked()) {
-      <span class="qe__note">Saving keeps each price as it is. Use “Check prices” to bring list-priced lines up to date.</span>
+      <span class="qe__note"
+        >Saving keeps each price as it is. Use “Check prices” to bring list-priced lines up to
+        date.</span
+      >
     }
     <button ar-button type="button" variant="ghost" (click)="close()">
       {{ locked() ? 'Close' : 'Cancel' }}

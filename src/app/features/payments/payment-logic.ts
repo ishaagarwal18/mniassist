@@ -10,7 +10,10 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentRequestStatus, string> = {
 
 /** ₹1,23,450.00 — rupees, Indian grouping, always two decimals. */
 export function rupees(paise: number): string {
-  return '₹' + (paise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (
+    '₹' +
+    (paise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  );
 }
 
 /**
@@ -28,7 +31,11 @@ export function amountProblem(text: string): string | null {
 }
 
 /** The form that sends the customer's browser to BillDesk's checkout, built off-screen and submitted. */
-export function postToCheckout(doc: Document, actionUrl: string, fields: Record<string, string>): HTMLFormElement {
+export function postToCheckout(
+  doc: Document,
+  actionUrl: string,
+  fields: Record<string, string>,
+): HTMLFormElement {
   const form = doc.createElement('form');
   form.method = 'POST';
   form.action = actionUrl;

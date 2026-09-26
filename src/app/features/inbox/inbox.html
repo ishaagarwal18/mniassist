@@ -57,8 +57,8 @@
             }
             @if (!thread.channel || thread.sms) {
               <span class="ar-mono">{{ thread.phoneE164 }}</span>
-            }</span
-          >
+            }
+          </span>
         </div>
         @if (thread.windowless) {
           <div class="window window--open">
@@ -142,7 +142,9 @@
             <span class="bubble__meta ar-mono">
               {{ m.at }}
               @if (m.opens) {
-                · opened {{ m.opens }}×{{ m.opens > 1 && m.lastOpenedAt ? ', last ' + m.lastOpenedAt : '' }}
+                · opened {{ m.opens }}×{{
+                  m.opens > 1 && m.lastOpenedAt ? ', last ' + m.lastOpenedAt : ''
+                }}
               } @else if (m.status) {
                 · {{ m.status }}
               }
@@ -160,14 +162,22 @@
               An SMS reply has to be an approved DLT template. Pick one and fill in its values.
             </p>
             @if (smsTemplates().length === 0) {
-              <p class="composer__sms-note">No approved SMS templates yet — register them on your DLT portal and add them to the SMS channel.</p>
+              <p class="composer__sms-note">
+                No approved SMS templates yet — register them on your DLT portal and add them to the
+                SMS channel.
+              </p>
             } @else {
               <label class="ar-field">
                 <span class="ar-field__label">Template</span>
-                <select class="ar-field__input" (change)="pickSmsTemplate($any($event.target).value)">
+                <select
+                  class="ar-field__input"
+                  (change)="pickSmsTemplate($any($event.target).value)"
+                >
                   <option value="">Choose a template…</option>
                   @for (t of smsTemplates(); track t.id) {
-                    <option [value]="t.id" [selected]="t.id === smsTemplate()?.id">{{ t.name }}</option>
+                    <option [value]="t.id" [selected]="t.id === smsTemplate()?.id">
+                      {{ t.name }}
+                    </option>
                   }
                 </select>
               </label>
@@ -175,7 +185,11 @@
                 @for (v of t.variableNames; track v) {
                   <label class="ar-field">
                     <span class="ar-field__label">{{ v }}</span>
-                    <input class="ar-field__input" [value]="smsValue(v)" (input)="setSmsValue(v, $any($event.target).value)" />
+                    <input
+                      class="ar-field__input"
+                      [value]="smsValue(v)"
+                      (input)="setSmsValue(v, $any($event.target).value)"
+                    />
                   </label>
                 }
                 <p class="composer__sms-preview">{{ smsPreview() }}</p>
@@ -297,7 +311,9 @@
               }
               <span class="composer__spacer"></span>
               <span class="composer__free">
-                {{ thread.channel ? 'Text only on ' + thread.channel : 'Free inside the open window' }}
+                {{
+                  thread.channel ? 'Text only on ' + thread.channel : 'Free inside the open window'
+                }}
               </span>
               <button
                 ar-button
@@ -324,28 +340,55 @@
       </footer>
 
       @if (calling() && thread.contactId) {
-        <ar-call-dialog [contactId]="thread.contactId" [contactName]="thread.contactName" (closed)="calling.set(false)" />
+        <ar-call-dialog
+          [contactId]="thread.contactId"
+          [contactName]="thread.contactName"
+          (closed)="calling.set(false)"
+        />
       }
 
       @if (paymentOpen()) {
         <ar-dialog title="Request a payment" (dismiss)="paymentOpen.set(false)">
           <p class="composer__sms-note">
-            {{ thread.contactName }} gets a secure link in this conversation to pay by UPI, card or net banking.
+            {{ thread.contactName }} gets a secure link in this conversation to pay by UPI, card or
+            net banking.
           </p>
           <label class="ar-field" for="pay-amount">
             <span class="ar-field__label">Amount (₹)</span>
-            <input id="pay-amount" class="ar-field__input" inputmode="decimal" placeholder="15000" [value]="payAmount()" (input)="payAmount.set($any($event.target).value)" />
+            <input
+              id="pay-amount"
+              class="ar-field__input"
+              inputmode="decimal"
+              placeholder="15000"
+              [value]="payAmount()"
+              (input)="payAmount.set($any($event.target).value)"
+            />
           </label>
           <label class="ar-field" for="pay-desc">
             <span class="ar-field__label">What it's for</span>
-            <input id="pay-desc" class="ar-field__input" maxlength="200" placeholder="Advance against quotation Q-2026-0012" [value]="payDescription()" (input)="payDescription.set($any($event.target).value)" />
+            <input
+              id="pay-desc"
+              class="ar-field__input"
+              maxlength="200"
+              placeholder="Advance against quotation Q-2026-0012"
+              [value]="payDescription()"
+              (input)="payDescription.set($any($event.target).value)"
+            />
           </label>
           @if (payError(); as e) {
             <p class="composer__sms-error" role="alert">{{ e }}</p>
           }
           <div dialogActions>
-            <button ar-button type="button" variant="ghost" (click)="paymentOpen.set(false)">Cancel</button>
-            <button ar-button type="button" variant="primary" [disabled]="sending()" (click)="requestPayment(thread.id)">
+            <button ar-button type="button" variant="ghost" (click)="paymentOpen.set(false)">
+              Cancel
+            </button>
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              [disabled]="sending()"
+              (click)="requestPayment(thread.id)"
+            >
               {{ sending() ? 'Sending…' : 'Send payment link' }}
             </button>
           </div>

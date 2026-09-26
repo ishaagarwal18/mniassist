@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
 
@@ -15,10 +23,21 @@ import {
 } from '../../proxy/web-forms';
 import { ArButton, ArChip } from '../../ui';
 import { errorMessage } from '../activities/activity-logic';
-import { KIND_CHOICES, TARGET_LABEL, fieldsProblem, keyFromLabel, kindFor, targetsFor } from './form-logic';
+import {
+  KIND_CHOICES,
+  TARGET_LABEL,
+  fieldsProblem,
+  keyFromLabel,
+  kindFor,
+  targetsFor,
+} from './form-logic';
 import { WebFormGateway } from './form-mock';
 
-type View = { mode: 'list' } | { mode: 'edit'; id: string | null } | { mode: 'submissions'; form: WebFormDto } | { mode: 'embed'; form: WebFormDto };
+type View =
+  | { mode: 'list' }
+  | { mode: 'edit'; id: string | null }
+  | { mode: 'submissions'; form: WebFormDto }
+  | { mode: 'embed'; form: WebFormDto };
 
 function blank(): CreateUpdateWebFormDto {
   return {
@@ -34,10 +53,38 @@ function blank(): CreateUpdateWebFormDto {
     enquiryTitle: null,
     isActive: true,
     fields: [
-      { key: 'name', label: 'Your name', kind: WebFormFieldKind.Text, required: true, options: [], target: WebFormFieldTarget.Name },
-      { key: 'email', label: 'Email', kind: WebFormFieldKind.Email, required: true, options: [], target: WebFormFieldTarget.Email },
-      { key: 'phone', label: 'Phone', kind: WebFormFieldKind.Phone, required: false, options: [], target: WebFormFieldTarget.Phone },
-      { key: 'need', label: 'What do you need?', kind: WebFormFieldKind.LongText, required: true, options: [], target: WebFormFieldTarget.Requirement },
+      {
+        key: 'name',
+        label: 'Your name',
+        kind: WebFormFieldKind.Text,
+        required: true,
+        options: [],
+        target: WebFormFieldTarget.Name,
+      },
+      {
+        key: 'email',
+        label: 'Email',
+        kind: WebFormFieldKind.Email,
+        required: true,
+        options: [],
+        target: WebFormFieldTarget.Email,
+      },
+      {
+        key: 'phone',
+        label: 'Phone',
+        kind: WebFormFieldKind.Phone,
+        required: false,
+        options: [],
+        target: WebFormFieldTarget.Phone,
+      },
+      {
+        key: 'need',
+        label: 'What do you need?',
+        kind: WebFormFieldKind.LongText,
+        required: true,
+        options: [],
+        target: WebFormFieldTarget.Requirement,
+      },
     ],
   };
 }
@@ -72,7 +119,9 @@ export class ArWebForms {
 
   // editor
   protected readonly draft = signal<CreateUpdateWebFormDto>(blank());
-  protected readonly problem = computed(() => (this.draft().name.trim() ? fieldsProblem(this.draft().fields) : 'Give the form a name.'));
+  protected readonly problem = computed(() =>
+    this.draft().name.trim() ? fieldsProblem(this.draft().fields) : 'Give the form a name.',
+  );
 
   // embed and submissions
   protected readonly embed = signal<WebFormEmbedDto | null>(null);
@@ -109,7 +158,14 @@ export class ArWebForms {
   }
 
   protected when(iso: string | null | undefined): string {
-    return iso ? new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'never';
+    return iso
+      ? new Date(iso).toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : 'never';
   }
 
   // ---- editing ----
@@ -121,7 +177,16 @@ export class ArWebForms {
   }
 
   protected edit(f: WebFormDto): void {
-    const { id: _id, slug: _s, viewCount: _v, submissionCount: _c, lastSubmissionAtUtc: _l, creationTime: _t, publicUrl: _u, ...rest } = f;
+    const {
+      id: _id,
+      slug: _s,
+      viewCount: _v,
+      submissionCount: _c,
+      lastSubmissionAtUtc: _l,
+      creationTime: _t,
+      publicUrl: _u,
+      ...rest
+    } = f;
     this.draft.set({ ...rest, fields: f.fields.map((x) => ({ ...x, options: [...x.options] })) });
     this.notice.set(null);
     this.view.set({ mode: 'edit', id: f.id });
@@ -132,14 +197,21 @@ export class ArWebForms {
   }
 
   protected patchField(i: number, p: Partial<WebFormFieldDto>): void {
-    this.draft.update((d) => ({ ...d, fields: d.fields.map((f, n) => (n === i ? { ...f, ...p } : f)) }));
+    this.draft.update((d) => ({
+      ...d,
+      fields: d.fields.map((f, n) => (n === i ? { ...f, ...p } : f)),
+    }));
   }
 
   protected setKind(i: number, kind: WebFormFieldKind): void {
     const f = this.draft().fields[i];
     // A target the new kind cannot fill is dropped rather than left to fail on save.
     const target = targetsFor(kind).includes(f.target) ? f.target : WebFormFieldTarget.None;
-    this.patchField(i, { kind, target, options: kind === WebFormFieldKind.Select && f.options.length === 0 ? ['', ''] : f.options });
+    this.patchField(i, {
+      kind,
+      target,
+      options: kind === WebFormFieldKind.Select && f.options.length === 0 ? ['', ''] : f.options,
+    });
   }
 
   protected setTarget(i: number, target: WebFormFieldTarget): void {
@@ -166,7 +238,17 @@ export class ArWebForms {
     const label = 'New question';
     this.draft.update((d) => ({
       ...d,
-      fields: [...d.fields, { key: keyFromLabel(label, taken), label, kind: WebFormFieldKind.Text, required: false, options: [], target: WebFormFieldTarget.None }],
+      fields: [
+        ...d.fields,
+        {
+          key: keyFromLabel(label, taken),
+          label,
+          kind: WebFormFieldKind.Text,
+          required: false,
+          options: [],
+          target: WebFormFieldTarget.None,
+        },
+      ],
     }));
   }
 
@@ -193,7 +275,13 @@ export class ArWebForms {
       const body: CreateUpdateWebFormDto = {
         ...this.draft(),
         name: this.draft().name.trim(),
-        fields: this.draft().fields.map((f) => ({ ...f, options: f.kind === WebFormFieldKind.Select ? f.options.map((o) => o.trim()).filter(Boolean) : [] })),
+        fields: this.draft().fields.map((f) => ({
+          ...f,
+          options:
+            f.kind === WebFormFieldKind.Select
+              ? f.options.map((o) => o.trim()).filter(Boolean)
+              : [],
+        })),
       };
       if (v.id) await firstValueFrom(this.api.update(v.id, body));
       else await firstValueFrom(this.api.create(body));
@@ -209,12 +297,22 @@ export class ArWebForms {
   // ---- list actions ----
 
   protected async toggle(f: WebFormDto): Promise<void> {
-    await this.run(() => firstValueFrom(this.api.setActive(f.id, !f.isActive)), 'That could not be changed.');
-    this.notice.set(f.isActive ? 'The form is off. Its page now says it is not available.' : 'The form is live.');
+    await this.run(
+      () => firstValueFrom(this.api.setActive(f.id, !f.isActive)),
+      'That could not be changed.',
+    );
+    this.notice.set(
+      f.isActive ? 'The form is off. Its page now says it is not available.' : 'The form is live.',
+    );
   }
 
   protected async remove(f: WebFormDto): Promise<void> {
-    if (!window.confirm(`Delete "${f.name}"? Its address stops working. The contacts and enquiries it made stay.`)) return;
+    if (
+      !window.confirm(
+        `Delete "${f.name}"? Its address stops working. The contacts and enquiries it made stay.`,
+      )
+    )
+      return;
     await this.run(() => firstValueFrom(this.api.delete(f.id)), 'The form could not be deleted.');
     this.notice.set('Form deleted.');
   }

@@ -19,10 +19,16 @@ export class WebFormService {
   apiName = 'AutoReach';
 
   getList = (config?: Partial<Rest.Config>) =>
-    this.restService.request<any, WebFormDto[]>({ method: 'GET', url: '/api/auto-reach/web-form' }, { apiName: this.apiName, ...config });
+    this.restService.request<any, WebFormDto[]>(
+      { method: 'GET', url: '/api/auto-reach/web-form' },
+      { apiName: this.apiName, ...config },
+    );
 
   get = (id: string, config?: Partial<Rest.Config>) =>
-    this.restService.request<any, WebFormDto>({ method: 'GET', url: `/api/auto-reach/web-form/${id}` }, { apiName: this.apiName, ...config });
+    this.restService.request<any, WebFormDto>(
+      { method: 'GET', url: `/api/auto-reach/web-form/${id}` },
+      { apiName: this.apiName, ...config },
+    );
 
   create = (input: CreateUpdateWebFormDto, config?: Partial<Rest.Config>) =>
     this.restService.request<CreateUpdateWebFormDto, WebFormDto>(
@@ -37,7 +43,10 @@ export class WebFormService {
     );
 
   delete = (id: string, config?: Partial<Rest.Config>) =>
-    this.restService.request<any, void>({ method: 'DELETE', url: `/api/auto-reach/web-form/${id}` }, { apiName: this.apiName, ...config });
+    this.restService.request<any, void>(
+      { method: 'DELETE', url: `/api/auto-reach/web-form/${id}` },
+      { apiName: this.apiName, ...config },
+    );
 
   setActive = (id: string, active: boolean, config?: Partial<Rest.Config>) =>
     this.restService.request<any, WebFormDto>(
@@ -51,9 +60,18 @@ export class WebFormService {
       { apiName: this.apiName, ...config },
     );
 
-  getSubmissions = (id: string, skipCount = 0, maxResultCount = 50, config?: Partial<Rest.Config>) =>
+  getSubmissions = (
+    id: string,
+    skipCount = 0,
+    maxResultCount = 50,
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<any, PagedResultDto<WebFormSubmissionDto>>(
-      { method: 'GET', url: `/api/auto-reach/web-form/${id}/submissions`, params: { skipCount, maxResultCount } },
+      {
+        method: 'GET',
+        url: `/api/auto-reach/web-form/${id}/submissions`,
+        params: { skipCount, maxResultCount },
+      },
       { apiName: this.apiName, ...config },
     );
 }

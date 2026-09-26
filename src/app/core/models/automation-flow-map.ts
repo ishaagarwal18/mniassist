@@ -51,11 +51,16 @@ export function layoutFlowMap(
 ): FlowMap {
   const { nodeW: NODE_W, nodeH: NODE_H, gapX: GAP_X, gapY: GAP_Y, pad: PAD } = sizes;
   const byId = new Map(nodes.map((n) => [n.id!, n]));
-  const out = (n: CreateUpdateAutomationNodeDto): { to: string; otherwise: boolean; kind: 'next' | 'true' | 'false' }[] => {
+  const out = (
+    n: CreateUpdateAutomationNodeDto,
+  ): { to: string; otherwise: boolean; kind: 'next' | 'true' | 'false' }[] => {
     const links: { to: string; otherwise: boolean; kind: 'next' | 'true' | 'false' }[] = [];
-    if (n.nextNodeId && byId.has(n.nextNodeId)) links.push({ to: n.nextNodeId, otherwise: false, kind: 'next' });
-    if (n.trueNodeId && byId.has(n.trueNodeId)) links.push({ to: n.trueNodeId, otherwise: false, kind: 'true' });
-    if (n.falseNodeId && byId.has(n.falseNodeId)) links.push({ to: n.falseNodeId, otherwise: true, kind: 'false' });
+    if (n.nextNodeId && byId.has(n.nextNodeId))
+      links.push({ to: n.nextNodeId, otherwise: false, kind: 'next' });
+    if (n.trueNodeId && byId.has(n.trueNodeId))
+      links.push({ to: n.trueNodeId, otherwise: false, kind: 'true' });
+    if (n.falseNodeId && byId.has(n.falseNodeId))
+      links.push({ to: n.falseNodeId, otherwise: true, kind: 'false' });
     return links;
   };
 
@@ -65,7 +70,9 @@ export function layoutFlowMap(
   // Longest-path depth. The graph is acyclic by construction; the guard keeps a bad one from hanging.
   const depth = new Map<string, number>();
   const order: string[] = [];
-  const queue: { id: string; d: number; trail: Set<string> }[] = [{ id: start.id!, d: 0, trail: new Set() }];
+  const queue: { id: string; d: number; trail: Set<string> }[] = [
+    { id: start.id!, d: 0, trail: new Set() },
+  ];
   while (queue.length) {
     const { id, d, trail } = queue.shift()!;
     if (trail.has(id)) continue;
@@ -90,7 +97,9 @@ export function layoutFlowMap(
   for (const [d, ids] of layers) {
     const rowW = ids.length * NODE_W + (ids.length - 1) * GAP_X;
     const x0 = (width - rowW) / 2;
-    ids.forEach((id, i) => pos.set(id, { x: x0 + i * (NODE_W + GAP_X), y: PAD + d * (NODE_H + GAP_Y) }));
+    ids.forEach((id, i) =>
+      pos.set(id, { x: x0 + i * (NODE_W + GAP_X), y: PAD + d * (NODE_H + GAP_Y) }),
+    );
   }
 
   const flowNodes: FlowMapNode[] = order.map((id) => {
@@ -101,7 +110,8 @@ export function layoutFlowMap(
       label: labelOf(n),
       x: p.x,
       y: p.y,
-      branching: n.kind === AutomationNodeKind.Condition || n.kind === AutomationNodeKind.WaitForReply,
+      branching:
+        n.kind === AutomationNodeKind.Condition || n.kind === AutomationNodeKind.WaitForReply,
       terminal: n.kind === AutomationNodeKind.End,
     };
   });
@@ -120,7 +130,15 @@ export function layoutFlowMap(
       const mid = (y1 + y2) / 2;
       const reply = n.kind === AutomationNodeKind.WaitForReply;
       const label =
-        l.kind === 'true' ? (reply ? 'replied' : 'yes') : l.kind === 'false' ? (reply ? 'no reply' : 'no') : undefined;
+        l.kind === 'true'
+          ? reply
+            ? 'replied'
+            : 'yes'
+          : l.kind === 'false'
+            ? reply
+              ? 'no reply'
+              : 'no'
+            : undefined;
       edges.push({
         d: `M${x1} ${y1} C${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`,
         otherwise: l.otherwise,

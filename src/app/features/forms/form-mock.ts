@@ -34,10 +34,38 @@ export class WebFormMockStore {
         createEnquiry: true,
         isActive: true,
         fields: [
-          { key: 'name', label: 'Your name', kind: WebFormFieldKind.Text, required: true, options: [], target: WebFormFieldTarget.Name },
-          { key: 'email', label: 'Email', kind: WebFormFieldKind.Email, required: true, options: [], target: WebFormFieldTarget.Email },
-          { key: 'phone', label: 'Phone', kind: WebFormFieldKind.Phone, required: false, options: [], target: WebFormFieldTarget.Phone },
-          { key: 'need', label: 'What do you need?', kind: WebFormFieldKind.LongText, required: true, options: [], target: WebFormFieldTarget.Requirement },
+          {
+            key: 'name',
+            label: 'Your name',
+            kind: WebFormFieldKind.Text,
+            required: true,
+            options: [],
+            target: WebFormFieldTarget.Name,
+          },
+          {
+            key: 'email',
+            label: 'Email',
+            kind: WebFormFieldKind.Email,
+            required: true,
+            options: [],
+            target: WebFormFieldTarget.Email,
+          },
+          {
+            key: 'phone',
+            label: 'Phone',
+            kind: WebFormFieldKind.Phone,
+            required: false,
+            options: [],
+            target: WebFormFieldTarget.Phone,
+          },
+          {
+            key: 'need',
+            label: 'What do you need?',
+            kind: WebFormFieldKind.LongText,
+            required: true,
+            options: [],
+            target: WebFormFieldTarget.Requirement,
+          },
         ],
       }),
     );
@@ -56,7 +84,8 @@ export class WebFormMockStore {
       publicUrl: `https://app.autoreach.in/f/h.${slug}`,
       ...d,
       submitLabel: d.submitLabel || 'Send',
-      successMessage: d.successMessage || 'Thank you. We have your details and will be in touch shortly.',
+      successMessage:
+        d.successMessage || 'Thank you. We have your details and will be in touch shortly.',
     };
   }
 }
@@ -102,10 +131,14 @@ export class MockWebFormApi {
 
   getEmbed = (id: string): Observable<WebFormEmbedDto> => {
     const f = this.s.forms.find((x) => x.id === id)!;
-    return of({ publicUrl: f.publicUrl, iframeHtml: `<iframe src="${f.publicUrl}?embed=1" title="${f.title}" style="width:100%;min-height:640px;border:0"></iframe>` });
+    return of({
+      publicUrl: f.publicUrl,
+      iframeHtml: `<iframe src="${f.publicUrl}?embed=1" title="${f.title}" style="width:100%;min-height:640px;border:0"></iframe>`,
+    });
   };
 
-  getSubmissions = (): Observable<PagedResultDto<WebFormSubmissionDto>> => of({ items: [], totalCount: 0 });
+  getSubmissions = (): Observable<PagedResultDto<WebFormSubmissionDto>> =>
+    of({ items: [], totalCount: 0 });
 }
 
 export type WebFormApi = Pick<WebFormService, keyof MockWebFormApi & keyof WebFormService>;
@@ -113,5 +146,7 @@ export type WebFormApi = Pick<WebFormService, keyof MockWebFormApi & keyof WebFo
 /** Where forms come from: the server, or memory on sample data. */
 @Injectable({ providedIn: 'root' })
 export class WebFormGateway {
-  readonly api: WebFormApi = environment.useMockData ? (new MockWebFormApi(inject(WebFormMockStore)) as unknown as WebFormApi) : inject(WebFormService);
+  readonly api: WebFormApi = environment.useMockData
+    ? (new MockWebFormApi(inject(WebFormMockStore)) as unknown as WebFormApi)
+    : inject(WebFormService);
 }

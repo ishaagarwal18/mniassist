@@ -46,10 +46,10 @@ export class ChannelService {
         health: this.api.getAllHealth(),
       }).pipe(
         map(({ list, health }) => {
-          const byId = new Map(health.items?.map(h => [h.channelId!, h] as const) ?? []);
+          const byId = new Map(health.items?.map((h) => [h.channelId!, h] as const) ?? []);
 
           return {
-            channels: (list.items ?? []).map(dto => toChannel(dto, byId.get(dto.id!))),
+            channels: (list.items ?? []).map((dto) => toChannel(dto, byId.get(dto.id!))),
             health: byId,
           };
         }),
@@ -69,7 +69,7 @@ export class ChannelService {
   readonly active = computed<Channel | undefined>(() => {
     const all = this.channels();
     const id = this._activeId();
-    return all.find(c => c.id === id) ?? all[0];
+    return all.find((c) => c.id === id) ?? all[0];
   });
 
   /** Share of the tier limit held back for utility and service traffic. Server-owned

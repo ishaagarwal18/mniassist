@@ -66,7 +66,11 @@ export class ServiceTicketService {
       { apiName: this.apiName, ...config },
     );
 
-  updateDetails = (id: string, input: UpdateServiceTicketDetailsInput, config?: Partial<Rest.Config>) =>
+  updateDetails = (
+    id: string,
+    input: UpdateServiceTicketDetailsInput,
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<UpdateServiceTicketDetailsInput, ServiceTicketDto>(
       { method: 'PUT', url: `/api/auto-reach/service-ticket/${id}/details`, body: input },
       { apiName: this.apiName, ...config },
@@ -102,9 +106,17 @@ export class ServiceTicketService {
       { apiName: this.apiName, ...config },
     );
 
-  recordSatisfaction = (id: string, input: RecordTicketSatisfactionInput, config?: Partial<Rest.Config>) =>
+  recordSatisfaction = (
+    id: string,
+    input: RecordTicketSatisfactionInput,
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<RecordTicketSatisfactionInput, ServiceTicketDto>(
-      { method: 'POST', url: `/api/auto-reach/service-ticket/${id}/record-satisfaction`, body: input },
+      {
+        method: 'POST',
+        url: `/api/auto-reach/service-ticket/${id}/record-satisfaction`,
+        body: input,
+      },
       { apiName: this.apiName, ...config },
     );
 

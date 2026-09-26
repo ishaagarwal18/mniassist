@@ -3,7 +3,9 @@
   [subtitle]="heading()"
   help="Your week. Scheduling checks everyone's calendars and can suggest times when all are free. Open a meeting to answer it, finish it, cancel it, or add it to your calendar app."
 >
-  <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">Schedule</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">
+    Schedule
+  </button>
 </ar-topbar>
 
 @if (creating() || editing()) {
@@ -42,7 +44,10 @@
         <p class="dt__row"><span>Where</span> {{ m.location }}</p>
       }
       @if (m.meetingUrl) {
-        <p class="dt__row"><span>Link</span> <a [href]="m.meetingUrl" target="_blank" rel="noopener">{{ m.meetingUrl }}</a></p>
+        <p class="dt__row">
+          <span>Link</span>
+          <a [href]="m.meetingUrl" target="_blank" rel="noopener">{{ m.meetingUrl }}</a>
+        </p>
       }
       <p class="dt__row"><span>Organiser</span> {{ m.organizerName || 'Someone' }}</p>
       @if (m.contactName) {
@@ -62,7 +67,12 @@
       <ul class="dt__people">
         @for (a of m.attendees; track a.id) {
           <li>
-            <span>{{ a.name }}@if (!a.userId) { <em> · guest</em> }</span>
+            <span
+              >{{ a.name }}
+              @if (!a.userId) {
+                <em> · guest</em>
+              }
+            </span>
             @if (a.userId) {
               <ar-chip [tone]="responseTone(a.response)">{{ responseLabel[a.response!] }}</ar-chip>
             }
@@ -73,25 +83,66 @@
       @if (needsMyAnswer(m)) {
         <div class="dt__ask" role="group" aria-label="Your answer">
           <span>Will you be there?</span>
-          <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="respond(m, Response.Accepted)">Accept</button>
-          <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="respond(m, Response.Declined)">Decline</button>
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="busy()"
+            (click)="respond(m, Response.Accepted)"
+          >
+            Accept
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="busy()"
+            (click)="respond(m, Response.Declined)"
+          >
+            Decline
+          </button>
         </div>
       }
 
       @if (outcomeOpen()) {
         <label class="ar-field">
-          <span class="ar-field__label">What came of it <span class="ar-field__opt">optional</span></span>
-          <textarea id="dt-outcome" class="ar-field__input" rows="3" [value]="note()" (input)="note.set($any($event.target).value)"></textarea>
+          <span class="ar-field__label"
+            >What came of it <span class="ar-field__opt">optional</span></span
+          >
+          <textarea
+            id="dt-outcome"
+            class="ar-field__input"
+            rows="3"
+            [value]="note()"
+            (input)="note.set($any($event.target).value)"
+          ></textarea>
         </label>
         <div class="dt__row-actions">
-          <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="complete(m)">Mark done</button>
-          <button ar-button type="button" variant="ghost" (click)="outcomeOpen.set(false)">Back</button>
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="busy()"
+            (click)="complete(m)"
+          >
+            Mark done
+          </button>
+          <button ar-button type="button" variant="ghost" (click)="outcomeOpen.set(false)">
+            Back
+          </button>
         </div>
       }
       @if (cancelOpen()) {
         <label class="ar-field">
-          <span class="ar-field__label">Why <span class="ar-field__opt">optional; everyone is told</span></span>
-          <input id="dt-why" class="ar-field__input" [value]="note()" (input)="note.set($any($event.target).value)" />
+          <span class="ar-field__label"
+            >Why <span class="ar-field__opt">optional; everyone is told</span></span
+          >
+          <input
+            id="dt-why"
+            class="ar-field__input"
+            [value]="note()"
+            (input)="note.set($any($event.target).value)"
+          />
         </label>
         @if (m.seriesId && (m.seriesIndex ?? 0) < (m.seriesTotal ?? 0)) {
           <label class="dt__chk">
@@ -101,12 +152,19 @@
               [checked]="cancelFollowing()"
               (change)="cancelFollowing.set($any($event.target).checked)"
             />
-            <span>Also cancel the {{ (m.seriesTotal ?? 0) - (m.seriesIndex ?? 0) }} later ones in the series</span>
+            <span
+              >Also cancel the {{ (m.seriesTotal ?? 0) - (m.seriesIndex ?? 0) }} later ones in the
+              series</span
+            >
           </label>
         }
         <div class="dt__row-actions">
-          <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="cancel(m)">Cancel the meeting</button>
-          <button ar-button type="button" variant="ghost" (click)="cancelOpen.set(false)">Back</button>
+          <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="cancel(m)">
+            Cancel the meeting
+          </button>
+          <button ar-button type="button" variant="ghost" (click)="cancelOpen.set(false)">
+            Back
+          </button>
         </div>
       }
 
@@ -116,12 +174,30 @@
     </div>
 
     <footer class="dt__foot">
-      <button ar-button type="button" variant="ghost" (click)="addToCalendar(m)">Add to calendar</button>
+      <button ar-button type="button" variant="ghost" (click)="addToCalendar(m)">
+        Add to calendar
+      </button>
       @if (m.status === Status.Scheduled && canChange(m) && !outcomeOpen() && !cancelOpen()) {
         <button ar-button type="button" variant="ghost" (click)="edit(m)">Edit</button>
-        <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="noShow(m)">No-show</button>
-        <button ar-button type="button" variant="ghost" (click)="note.set(''); cancelOpen.set(true)">Cancel</button>
-        <button ar-button type="button" variant="primary" (click)="note.set(''); outcomeOpen.set(true)">Done</button>
+        <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="noShow(m)">
+          No-show
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          (click)="note.set(''); cancelOpen.set(true)"
+        >
+          Cancel
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          (click)="note.set(''); outcomeOpen.set(true)"
+        >
+          Done
+        </button>
       }
     </footer>
   </div>
@@ -130,19 +206,38 @@
 <div class="wk ar-scroll">
   <div class="wk__bar">
     <div class="wk__nav" role="group" aria-label="Week">
-      <button ar-button type="button" variant="ghost" (click)="shift(-1)" aria-label="Previous week">‹</button>
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        (click)="shift(-1)"
+        aria-label="Previous week"
+      >
+        ‹
+      </button>
       <button ar-button type="button" variant="ghost" (click)="today()">Today</button>
-      <button ar-button type="button" variant="ghost" (click)="shift(1)" aria-label="Next week">›</button>
+      <button ar-button type="button" variant="ghost" (click)="shift(1)" aria-label="Next week">
+        ›
+      </button>
     </div>
     <span class="wk__range">{{ heading() }}</span>
     @if (directory.canSeeAll) {
       <div class="wk__seg" role="group" aria-label="Whose meetings">
-        <button type="button" [class.on]="scope() === 'mine'" (click)="scope.set('mine')">Mine</button>
-        <button type="button" [class.on]="scope() === 'everyone'" (click)="scope.set('everyone')">Everyone</button>
+        <button type="button" [class.on]="scope() === 'mine'" (click)="scope.set('mine')">
+          Mine
+        </button>
+        <button type="button" [class.on]="scope() === 'everyone'" (click)="scope.set('everyone')">
+          Everyone
+        </button>
       </div>
     }
     <label class="wk__chk">
-      <input id="mt-show-cancelled" type="checkbox" [checked]="showCancelled()" (change)="showCancelled.set($any($event.target).checked)" />
+      <input
+        id="mt-show-cancelled"
+        type="checkbox"
+        [checked]="showCancelled()"
+        (change)="showCancelled.set($any($event.target).checked)"
+      />
       <span>Show cancelled</span>
     </label>
   </div>
@@ -153,11 +248,22 @@
 
   <div class="wk__grid" [class.wk__grid--loading]="loading()">
     @for (d of days(); track d.day.getTime()) {
-      <section class="wk__day" [class.wk__day--today]="isToday(d.day)" [attr.aria-label]="dayName(d.day) + ' ' + dayNumber(d.day)">
+      <section
+        class="wk__day"
+        [class.wk__day--today]="isToday(d.day)"
+        [attr.aria-label]="dayName(d.day) + ' ' + dayNumber(d.day)"
+      >
         <header class="wk__dh">
           <span class="wk__dn">{{ dayName(d.day) }}</span>
           <span class="wk__dd">{{ dayNumber(d.day) }}</span>
-          <button type="button" class="wk__add" [attr.aria-label]="'Schedule on ' + dayName(d.day) + ' ' + dayNumber(d.day)" (click)="addOn(d.day)">+</button>
+          <button
+            type="button"
+            class="wk__add"
+            [attr.aria-label]="'Schedule on ' + dayName(d.day) + ' ' + dayNumber(d.day)"
+            (click)="addOn(d.day)"
+          >
+            +
+          </button>
         </header>
 
         @for (m of d.items; track m.id) {

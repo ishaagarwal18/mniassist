@@ -32,7 +32,16 @@ describe('renewal logic', () => {
 
   it('colours by urgency and by what the customer did', () => {
     expect(renewalTone(row({ currentEndsOn: '2026-10-10T00:00:00Z' }), NOW)).toBe('bad');
-    expect(renewalTone(row({ currentEndsOn: '2026-10-10T00:00:00Z', quotationId: 'q', status: RenewalStatus.Quoted }), NOW)).toBe('amber');
+    expect(
+      renewalTone(
+        row({
+          currentEndsOn: '2026-10-10T00:00:00Z',
+          quotationId: 'q',
+          status: RenewalStatus.Quoted,
+        }),
+        NOW,
+      ),
+    ).toBe('amber');
     expect(renewalTone(row({ currentEndsOn: '2026-10-25T00:00:00Z' }), NOW)).toBe('amber');
     expect(renewalTone(row({ status: RenewalStatus.Interested }), NOW)).toBe('teal');
     expect(renewalTone(row({ status: RenewalStatus.Won }), NOW)).toBe('good');

@@ -72,14 +72,40 @@ export class ActivityMockStore {
       return d.toISOString();
     };
     this.tasks.push(
-      this.task({ title: 'Send the revised quotation', dueAtUtc: at(0, 17), priority: TaskPriority.High }),
+      this.task({
+        title: 'Send the revised quotation',
+        dueAtUtc: at(0, 17),
+        priority: TaskPriority.High,
+      }),
       this.task({ title: 'Call about the drive commissioning', dueAtUtc: at(1, 11) }),
-      this.task({ title: 'Collect site photos', dueAtUtc: at(-1, 10), assigneeUserId: 'mock-asha' }),
-      this.task({ title: 'Review the pipeline', dueAtUtc: at(2, 9), recurrence: { frequency: RecurrenceFrequency.Weekly } }),
+      this.task({
+        title: 'Collect site photos',
+        dueAtUtc: at(-1, 10),
+        assigneeUserId: 'mock-asha',
+      }),
+      this.task({
+        title: 'Review the pipeline',
+        dueAtUtc: at(2, 9),
+        recurrence: { frequency: RecurrenceFrequency.Weekly },
+      }),
     );
     this.meetings.push(
-      this.meeting({ title: 'Site visit', startUtc: at(1, 14), endUtc: at(1, 15), kind: MeetingKind.SiteVisit, location: 'Plant 2', attendeeUserIds: ['mock-asha'] }),
-      this.meeting({ title: 'Quotation walkthrough', startUtc: at(3, 11), endUtc: at(3, 12), kind: MeetingKind.Video, meetingUrl: 'https://meet.example.in/walkthrough', attendeeUserIds: ['mock-ravi'] }),
+      this.meeting({
+        title: 'Site visit',
+        startUtc: at(1, 14),
+        endUtc: at(1, 15),
+        kind: MeetingKind.SiteVisit,
+        location: 'Plant 2',
+        attendeeUserIds: ['mock-asha'],
+      }),
+      this.meeting({
+        title: 'Quotation walkthrough',
+        startUtc: at(3, 11),
+        endUtc: at(3, 12),
+        kind: MeetingKind.Video,
+        meetingUrl: 'https://meet.example.in/walkthrough',
+        attendeeUserIds: ['mock-ravi'],
+      }),
     );
   }
 
@@ -89,9 +115,18 @@ export class ActivityMockStore {
     return label ? label.split(' · ')[0] : null;
   }
 
-  task(input: Partial<CreateUpdateCrmTaskDto> & { title: string; assigneeUserId?: string | null; seriesId?: string }): CrmTaskDto {
+  task(
+    input: Partial<CreateUpdateCrmTaskDto> & {
+      title: string;
+      assigneeUserId?: string | null;
+      seriesId?: string;
+    },
+  ): CrmTaskDto {
     const id = newId('task');
-    const rule = input.recurrence && input.recurrence.frequency !== RecurrenceFrequency.None ? input.recurrence : null;
+    const rule =
+      input.recurrence && input.recurrence.frequency !== RecurrenceFrequency.None
+        ? input.recurrence
+        : null;
     if (rule?.count) this.remaining.set(id, rule.count - 1);
     return {
       id,
@@ -116,7 +151,10 @@ export class ActivityMockStore {
     };
   }
 
-  meeting(input: Partial<CreateUpdateMeetingDto> & { title: string; startUtc: string; endUtc: string }, series?: { id: string; index: number; total: number }): MeetingDto {
+  meeting(
+    input: Partial<CreateUpdateMeetingDto> & { title: string; startUtc: string; endUtc: string },
+    series?: { id: string; index: number; total: number },
+  ): MeetingDto {
     const attendees = [MOCK_ME, ...(input.attendeeUserIds ?? [])]
       .filter((id, i, all) => all.indexOf(id) === i)
       .map((userId) => ({
@@ -127,7 +165,13 @@ export class ActivityMockStore {
         response: userId === MOCK_ME ? AttendeeResponse.Accepted : AttendeeResponse.Pending,
       }));
     for (const g of input.guests ?? []) {
-      attendees.push({ id: newId('att'), userId: null as unknown as string, name: g.name, email: g.email ?? null, response: AttendeeResponse.Pending });
+      attendees.push({
+        id: newId('att'),
+        userId: null as unknown as string,
+        name: g.name,
+        email: g.email ?? null,
+        response: AttendeeResponse.Pending,
+      });
     }
     return {
       id: newId('mtg'),
@@ -156,22 +200,47 @@ export class ActivityMockStore {
   }
 
   /** Bookings that would clash for any of these people. */
-  conflictsFor(userIds: readonly string[], span: { startUtc: string; endUtc: string }, buffer: number, excluding: ReadonlySet<string>): MeetingConflictDto[] {
+  conflictsFor(
+    userIds: readonly string[],
+    span: { startUtc: string; endUtc: string },
+    buffer: number,
+    excluding: ReadonlySet<string>,
+  ): MeetingConflictDto[] {
     const out: MeetingConflictDto[] = [];
     for (const m of this.meetings) {
-      if (m.status !== MeetingStatus.Scheduled || excluding.has(m.id!) || !clashes(span, m as { startUtc: string; endUtc: string }, buffer)) continue;
+      if (
+        m.status !== MeetingStatus.Scheduled ||
+        excluding.has(m.id!) ||
+        !clashes(span, m as { startUtc: string; endUtc: string }, buffer)
+      )
+        continue;
       for (const a of m.attendees ?? []) {
         if (a.userId && userIds.includes(a.userId)) {
-          out.push({ userId: a.userId, userName: a.name, meetingId: m.id, title: m.title, startUtc: m.startUtc, endUtc: m.endUtc });
+          out.push({
+            userId: a.userId,
+            userName: a.name,
+            meetingId: m.id,
+            title: m.title,
+            startUtc: m.startUtc,
+            endUtc: m.endUtc,
+          });
         }
       }
     }
     return out;
   }
 
-  busyFor(userIds: readonly string[], excludeId?: string | null): { startUtc: string; endUtc: string }[] {
+  busyFor(
+    userIds: readonly string[],
+    excludeId?: string | null,
+  ): { startUtc: string; endUtc: string }[] {
     return this.meetings
-      .filter((m) => m.status === MeetingStatus.Scheduled && m.id !== excludeId && (m.attendees ?? []).some((a) => a.userId && userIds.includes(a.userId)))
+      .filter(
+        (m) =>
+          m.status === MeetingStatus.Scheduled &&
+          m.id !== excludeId &&
+          (m.attendees ?? []).some((a) => a.userId && userIds.includes(a.userId)),
+      )
       .map((m) => ({ startUtc: m.startUtc!, endUtc: m.endUtc! }));
   }
 }
@@ -192,20 +261,35 @@ export class MockCrmTaskApi {
       if (input.enquiryId && t.enquiryId !== input.enquiryId) return false;
       if (input.contactId && t.contactId !== input.contactId) return false;
       if (input.quotationId && t.quotationId !== input.quotationId) return false;
-      if (input.overdueOnly && !(t.status === CrmTaskStatus.Open && t.dueAtUtc && Date.parse(t.dueAtUtc) < now)) return false;
-      if (input.dueBeforeUtc && !(t.dueAtUtc && Date.parse(t.dueAtUtc) < Date.parse(input.dueBeforeUtc))) return false;
+      if (
+        input.overdueOnly &&
+        !(t.status === CrmTaskStatus.Open && t.dueAtUtc && Date.parse(t.dueAtUtc) < now)
+      )
+        return false;
+      if (
+        input.dueBeforeUtc &&
+        !(t.dueAtUtc && Date.parse(t.dueAtUtc) < Date.parse(input.dueBeforeUtc))
+      )
+        return false;
       return !term || (t.title ?? '').toLowerCase().includes(term);
     });
     items = items.sort((a, b) => (a.dueAtUtc ?? '9').localeCompare(b.dueAtUtc ?? '9'));
     const total = items.length;
-    const page = items.slice(input.skipCount ?? 0, (input.skipCount ?? 0) + (input.maxResultCount ?? 50));
+    const page = items.slice(
+      input.skipCount ?? 0,
+      (input.skipCount ?? 0) + (input.maxResultCount ?? 50),
+    );
     return of({ items: page.map((t) => ({ ...t })), totalCount: total });
   };
 
   get = (id: string) => this.find(id);
 
   create = (input: CreateUpdateCrmTaskDto): Observable<CrmTaskDto> => {
-    if (input.recurrence && input.recurrence.frequency !== RecurrenceFrequency.None && !input.dueAtUtc) {
+    if (
+      input.recurrence &&
+      input.recurrence.frequency !== RecurrenceFrequency.None &&
+      !input.dueAtUtc
+    ) {
       return refuse('TaskRecurrenceNeedsDate', 'A task that repeats needs a due date.');
     }
     const t = this.s.task(input);
@@ -216,8 +300,12 @@ export class MockCrmTaskApi {
   update = (id: string, input: CreateUpdateCrmTaskDto): Observable<CrmTaskDto> => {
     const t = this.s.tasks.find((x) => x.id === id);
     if (!t) return refuse('NotFound', 'That task no longer exists.');
-    const rule = input.recurrence && input.recurrence.frequency !== RecurrenceFrequency.None ? input.recurrence : null;
-    if (rule && !input.dueAtUtc) return refuse('TaskRecurrenceNeedsDate', 'A task that repeats needs a due date.');
+    const rule =
+      input.recurrence && input.recurrence.frequency !== RecurrenceFrequency.None
+        ? input.recurrence
+        : null;
+    if (rule && !input.dueAtUtc)
+      return refuse('TaskRecurrenceNeedsDate', 'A task that repeats needs a due date.');
     Object.assign(t, {
       title: input.title,
       notes: input.notes ?? null,
@@ -249,7 +337,13 @@ export class MockCrmTaskApi {
     if (t.recurrence && t.dueAtUtc && !t.nextTaskId && (left === undefined || left > 0)) {
       const due = nextDue(t.dueAtUtc, t.recurrence, -new Date().getTimezoneOffset(), new Date());
       if (due) {
-        const next = this.s.task({ ...t, title: t.title!, dueAtUtc: due, recurrence: t.recurrence, seriesId: t.seriesId ?? undefined });
+        const next = this.s.task({
+          ...t,
+          title: t.title!,
+          dueAtUtc: due,
+          recurrence: t.recurrence,
+          seriesId: t.seriesId ?? undefined,
+        });
         this.s.remaining.delete(next.id!);
         if (left !== undefined) this.s.remaining.set(next.id!, left - 1);
         this.s.tasks.push(next);
@@ -290,9 +384,17 @@ export class MockCrmTaskApi {
       open: open.length,
       overdue: dated.filter((t) => Date.parse(t.dueAtUtc!) < now).length,
       dueToday: dated.filter((t) => Math.floor(local(t.dueAtUtc!) / DAY) === today).length,
-      dueThisWeek: dated.filter((t) => { const d = Math.floor(local(t.dueAtUtc!) / DAY) - today; return d >= 0 && d < 7; }).length,
+      dueThisWeek: dated.filter((t) => {
+        const d = Math.floor(local(t.dueAtUtc!) / DAY) - today;
+        return d >= 0 && d < 7;
+      }).length,
       noDate: open.length - dated.length,
-      doneLast7Days: mine.filter((t) => t.status === CrmTaskStatus.Done && t.completedAtUtc && now - Date.parse(t.completedAtUtc) < 7 * DAY).length,
+      doneLast7Days: mine.filter(
+        (t) =>
+          t.status === CrmTaskStatus.Done &&
+          t.completedAtUtc &&
+          now - Date.parse(t.completedAtUtc) < 7 * DAY,
+      ).length,
     });
   };
 
@@ -328,21 +430,35 @@ export class MockMeetingApi {
   };
 
   create = (input: CreateUpdateMeetingDto): Observable<MeetingDto> => {
-    if (Date.parse(input.endUtc) <= Date.parse(input.startUtc)) return refuse('MeetingEndBeforeStart', 'A meeting must end after it starts.');
+    if (Date.parse(input.endUtc) <= Date.parse(input.startUtc))
+      return refuse('MeetingEndBeforeStart', 'A meeting must end after it starts.');
     const repeats = input.recurrence && input.recurrence.frequency !== RecurrenceFrequency.None;
     if (repeats && !input.recurrence!.count && !input.recurrence!.untilUtc) {
-      return refuse('MeetingRecurrenceNeedsEnd', 'A series of meetings needs an end: a number of times, or a last date.');
+      return refuse(
+        'MeetingRecurrenceNeedsEnd',
+        'A series of meetings needs an end: a number of times, or a last date.',
+      );
     }
     const length = Date.parse(input.endUtc) - Date.parse(input.startUtc);
-    const starts = repeats ? seriesStarts(input.startUtc, input.recurrence!, input.utcOffsetMinutes ?? 0) : [input.startUtc];
+    const starts = repeats
+      ? seriesStarts(input.startUtc, input.recurrence!, input.utcOffsetMinutes ?? 0)
+      : [input.startUtc];
     const people = [MOCK_ME, ...(input.attendeeUserIds ?? [])];
 
     if (!input.allowConflicts) {
       for (const start of starts) {
-        const clash = this.s.conflictsFor(people, { startUtc: start, endUtc: new Date(Date.parse(start) + length).toISOString() }, 0, new Set());
+        const clash = this.s.conflictsFor(
+          people,
+          { startUtc: start, endUtc: new Date(Date.parse(start) + length).toISOString() },
+          0,
+          new Set(),
+        );
         if (clash.length) {
           const c = clash[0];
-          return refuse('MeetingConflict', `${c.userName} already has "${c.title}" at ${new Date(c.startUtc!).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.`);
+          return refuse(
+            'MeetingConflict',
+            `${c.userName} already has "${c.title}" at ${new Date(c.startUtc!).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.`,
+          );
         }
       }
     }
@@ -366,16 +482,33 @@ export class MockMeetingApi {
       const clash = this.s.conflictsFor(people, input, 0, new Set([id]));
       if (clash.length) {
         const c = clash[0];
-        return refuse('MeetingConflict', `${c.userName} already has "${c.title}" at ${new Date(c.startUtc!).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.`);
+        return refuse(
+          'MeetingConflict',
+          `${c.userName} already has "${c.title}" at ${new Date(c.startUtc!).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.`,
+        );
       }
     }
     const rebuilt = this.s.meeting(input);
-    Object.assign(m, { ...rebuilt, id: m.id, seriesId: m.seriesId, seriesIndex: m.seriesIndex, seriesTotal: m.seriesTotal, status: m.status });
+    Object.assign(m, {
+      ...rebuilt,
+      id: m.id,
+      seriesId: m.seriesId,
+      seriesIndex: m.seriesIndex,
+      seriesTotal: m.seriesTotal,
+      status: m.status,
+    });
     return of({ ...m });
   };
 
   checkConflicts = (input: CheckConflictsInput): Observable<MeetingConflictDto[]> =>
-    of(this.s.conflictsFor(input.userIds, input, input.bufferMinutes ?? 0, new Set(input.excludeMeetingId ? [input.excludeMeetingId] : [])));
+    of(
+      this.s.conflictsFor(
+        input.userIds,
+        input,
+        input.bufferMinutes ?? 0,
+        new Set(input.excludeMeetingId ? [input.excludeMeetingId] : []),
+      ),
+    );
 
   suggestSlots = (input: SuggestSlotsInput): Observable<SlotDto[]> =>
     of(
@@ -392,16 +525,31 @@ export class MockMeetingApi {
       }),
     );
 
-  complete = (id: string, outcome: string | null) => this.set(id, (m) => { m.status = MeetingStatus.Completed; m.outcome = outcome; });
-  markNoShow = (id: string) => this.set(id, (m) => { m.status = MeetingStatus.NoShow; });
+  complete = (id: string, outcome: string | null) =>
+    this.set(id, (m) => {
+      m.status = MeetingStatus.Completed;
+      m.outcome = outcome;
+    });
+  markNoShow = (id: string) =>
+    this.set(id, (m) => {
+      m.status = MeetingStatus.NoShow;
+    });
   respond = (id: string, response: AttendeeResponse) =>
-    this.set(id, (m) => { const a = m.attendees?.find((x) => x.userId === MOCK_ME); if (a) a.response = response; });
+    this.set(id, (m) => {
+      const a = m.attendees?.find((x) => x.userId === MOCK_ME);
+      if (a) a.response = response;
+    });
 
-  cancel = (id: string, reason: string | null, thisAndFollowing = false): Observable<MeetingDto> => {
+  cancel = (
+    id: string,
+    reason: string | null,
+    thisAndFollowing = false,
+  ): Observable<MeetingDto> => {
     const m = this.s.meetings.find((x) => x.id === id);
     if (!m) return refuse('NotFound', 'That meeting no longer exists.');
     for (const x of this.s.meetings) {
-      const inSeries = m.seriesId && x.seriesId === m.seriesId && (x.seriesIndex ?? 0) >= (m.seriesIndex ?? 0);
+      const inSeries =
+        m.seriesId && x.seriesId === m.seriesId && (x.seriesIndex ?? 0) >= (m.seriesIndex ?? 0);
       if ((x.id === id || (thisAndFollowing && inSeries)) && x.status === MeetingStatus.Scheduled) {
         x.status = MeetingStatus.Cancelled;
         x.cancelReason = reason;

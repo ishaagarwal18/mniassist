@@ -66,7 +66,9 @@ export const nextLocalId = (): string => `s${++counter}`;
 function parseConfig(json: string | null | undefined): Record<string, unknown> {
   try {
     const value = json ? JSON.parse(json) : {};
-    return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+    return value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
   } catch {
     return {};
   }
@@ -114,7 +116,8 @@ export function graphToSteps(nodes: readonly AutomationNodeDto[]): ParsedGraph {
       if (node.kind === AutomationNodeKind.End) break;
 
       if (visited.has(cursor)) {
-        reason ??= 'two paths lead to the same step in a way the list cannot show (a loop, or paths that cross)';
+        reason ??=
+          'two paths lead to the same step in a way the list cannot show (a loop, or paths that cross)';
         break;
       }
       visited.add(cursor);
@@ -226,16 +229,33 @@ export function stepsToGraph(
 
   return [
     {
-      id: triggerId, kind: AutomationNodeKind.Trigger, configJson: '{}', nextNodeId: first,
-      positionX: anchors.trigger?.x ?? 0, positionY: anchors.trigger?.y ?? 0,
+      id: triggerId,
+      kind: AutomationNodeKind.Trigger,
+      configJson: '{}',
+      nextNodeId: first,
+      positionX: anchors.trigger?.x ?? 0,
+      positionY: anchors.trigger?.y ?? 0,
     },
     ...nodes,
-    { id: endId, kind: AutomationNodeKind.End, configJson: '{}', positionX: anchors.end?.x ?? 0, positionY: anchors.end?.y ?? row * 120 },
+    {
+      id: endId,
+      kind: AutomationNodeKind.End,
+      configJson: '{}',
+      positionX: anchors.end?.x ?? 0,
+      positionY: anchors.end?.y ?? row * 120,
+    },
   ];
 }
 
 /** The trigger and End of a stored graph, so a save from the step list keeps them. */
-export function anchorsOf(nodes: readonly { id?: string; kind?: AutomationNodeKind; positionX?: number; positionY?: number }[]): GraphAnchors {
+export function anchorsOf(
+  nodes: readonly {
+    id?: string;
+    kind?: AutomationNodeKind;
+    positionX?: number;
+    positionY?: number;
+  }[],
+): GraphAnchors {
   const pick = (kind: AutomationNodeKind) => {
     const n = nodes.find((x) => x.kind === kind && x.id);
     return n ? { id: n.id!, x: n.positionX ?? 0, y: n.positionY ?? 0 } : undefined;

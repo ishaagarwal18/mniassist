@@ -17,7 +17,15 @@ import { ArSmsInboundCard } from './sms-inbound-card';
  */
 @Component({
   selector: 'ar-channels',
-  imports: [ArTopbar, ArButton, ArChip, ArMeter, RouterLink, ArConnectNumberDialog, ArSmsInboundCard],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArMeter,
+    RouterLink,
+    ArConnectNumberDialog,
+    ArSmsInboundCard,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './channels.html',
   styleUrl: './channels.scss',

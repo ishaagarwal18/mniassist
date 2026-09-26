@@ -32,11 +32,17 @@ export function startOfWeek(d: Date): Date {
 /** The seven local days of the week containing the date, Monday first, and the half-open range they cover. */
 export function weekOf(anchor: Date): { from: Date; to: Date; days: Date[] } {
   const from = startOfWeek(anchor);
-  return { from, to: addDays(from, 7), days: Array.from({ length: 7 }, (_, i) => addDays(from, i)) };
+  return {
+    from,
+    to: addDays(from, 7),
+    days: Array.from({ length: 7 }, (_, i) => addDays(from, i)),
+  };
 }
 
 export const sameDay = (a: Date, b: Date): boolean =>
-  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth() &&
+  a.getDate() === b.getDate();
 
 /** "2026-09-21" in local time, to group by. */
 export function dayKey(d: Date): string {
@@ -81,16 +87,37 @@ export function fromLocalInput(value: string | null | undefined): string | null 
 
 /** The next half hour, at least a quarter of an hour away: where a new meeting starts unless told otherwise. */
 export function defaultMeetingStart(now: Date): Date {
-  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 15);
+  const d = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    now.getHours(),
+    now.getMinutes() + 15,
+  );
   const rem = d.getMinutes() % 30;
-  return rem === 0 && d.getSeconds() === 0 ? d : new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes() + (30 - rem));
+  return rem === 0 && d.getSeconds() === 0
+    ? d
+    : new Date(
+        d.getFullYear(),
+        d.getMonth(),
+        d.getDate(),
+        d.getHours(),
+        d.getMinutes() + (30 - rem),
+      );
 }
 
 // ---- tasks ----------------------------------------------------------------------------
 
 export type DueBucket = 'overdue' | 'today' | 'week' | 'later' | 'nodate' | 'done';
 
-export const BUCKET_ORDER: readonly DueBucket[] = ['overdue', 'today', 'week', 'later', 'nodate', 'done'];
+export const BUCKET_ORDER: readonly DueBucket[] = [
+  'overdue',
+  'today',
+  'week',
+  'later',
+  'nodate',
+  'done',
+];
 
 export const BUCKET_LABEL: Record<DueBucket, string> = {
   overdue: 'Overdue',
@@ -102,7 +129,10 @@ export const BUCKET_LABEL: Record<DueBucket, string> = {
 };
 
 /** Where an open task stands against today, the same way the server counts it. */
-export function dueBucket(task: { status?: CrmTaskStatus; dueAtUtc?: string | null }, now: Date): DueBucket {
+export function dueBucket(
+  task: { status?: CrmTaskStatus; dueAtUtc?: string | null },
+  now: Date,
+): DueBucket {
   if (task.status !== undefined && task.status !== CrmTaskStatus.Open) return 'done';
   if (!task.dueAtUtc) return 'nodate';
   const due = new Date(task.dueAtUtc);
@@ -128,14 +158,20 @@ const timeOf = (d: Date): string =>
   d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
 
 /** "Today 4:30 pm", "Tomorrow 9:00 am", "Fri 25 Sep", "2 days overdue". */
-export function dueLabel(iso: string | null | undefined, now: Date, status?: CrmTaskStatus): string {
+export function dueLabel(
+  iso: string | null | undefined,
+  now: Date,
+  status?: CrmTaskStatus,
+): string {
   if (!iso) return 'No due date';
   const due = new Date(iso);
   const bucket = dueBucket({ status: status ?? CrmTaskStatus.Open, dueAtUtc: iso }, now);
 
   if (bucket === 'overdue') {
     const days = Math.floor((startOfDay(now).getTime() - startOfDay(due).getTime()) / 86_400_000);
-    return days <= 0 ? `Overdue since ${timeOf(due)}` : `${days} day${days === 1 ? '' : 's'} overdue`;
+    return days <= 0
+      ? `Overdue since ${timeOf(due)}`
+      : `${days} day${days === 1 ? '' : 's'} overdue`;
   }
   if (bucket === 'today') return `Today ${timeOf(due)}`;
   if (sameDay(startOfDay(due), addDays(startOfDay(now), 1))) return `Tomorrow ${timeOf(due)}`;
@@ -188,7 +224,11 @@ export function timeRange(startIso: string, endIso: string): string {
 
 /** "Mon 22 Sep, 10:00 am – 11:00 am": a suggested time as a button label. */
 export function slotLabel(startIso: string, endIso: string): string {
-  const day = new Date(startIso).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+  const day = new Date(startIso).toLocaleDateString('en-IN', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
   return `${day}, ${timeRange(startIso, endIso)}`;
 }
 
@@ -211,7 +251,10 @@ export function uniqueConflicts(conflicts: readonly MeetingConflictDto[]): Meeti
 
 /** True when the server refused because someone is already booked, which the person can override. */
 export function isConflictError(e: unknown): boolean {
-  return (e as { error?: { error?: { code?: string } } })?.error?.error?.code === 'AutoReach:MeetingConflict';
+  return (
+    (e as { error?: { error?: { code?: string } } })?.error?.error?.code ===
+    'AutoReach:MeetingConflict'
+  );
 }
 
 /** The words the server put on an error, or the fallback. */
@@ -221,7 +264,11 @@ export function errorMessage(e: unknown, fallback: string): string {
 }
 
 /** Hands a text file to the browser to save. */
-export function downloadTextFile(fileName: string, content: string, mime = 'text/calendar;charset=utf-8'): void {
+export function downloadTextFile(
+  fileName: string,
+  content: string,
+  mime = 'text/calendar;charset=utf-8',
+): void {
   const url = URL.createObjectURL(new Blob([content], { type: mime }));
   const a = document.createElement('a');
   a.href = url;

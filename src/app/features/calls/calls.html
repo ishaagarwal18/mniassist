@@ -12,12 +12,21 @@
   <div class="cl__bar">
     @if (canSeeAll) {
       <div class="cl__seg" role="group" aria-label="Whose calls">
-        <button type="button" [class.on]="scope() === 'mine'" (click)="scope.set('mine')">Mine</button>
-        <button type="button" [class.on]="scope() === 'everyone'" (click)="scope.set('everyone')">Everyone</button>
+        <button type="button" [class.on]="scope() === 'mine'" (click)="scope.set('mine')">
+          Mine
+        </button>
+        <button type="button" [class.on]="scope() === 'everyone'" (click)="scope.set('everyone')">
+          Everyone
+        </button>
       </div>
     }
     <label class="cl__chk" for="cl-waiting">
-      <input id="cl-waiting" type="checkbox" [checked]="waiting()" (change)="waiting.set($any($event.target).checked)" />
+      <input
+        id="cl-waiting"
+        type="checkbox"
+        [checked]="waiting()"
+        (change)="waiting.set($any($event.target).checked)"
+      />
       <span>Only calls waiting for an outcome</span>
     </label>
   </div>
@@ -45,20 +54,32 @@
               }
             </div>
             <p class="cl__line">
-              {{ headline(c) }} · {{ when(c) }}@if (c.repName) { · {{ c.repName }} }
+              {{ headline(c) }} · {{ when(c) }}
+              @if (c.repName) {
+                · {{ c.repName }}
+              }
             </p>
             @if (hasOutcome(c)) {
-              <p class="cl__outcome"><strong>{{ outcomeLabel[c.outcome] }}</strong>@if (c.notes) { — {{ c.notes }} }</p>
+              <p class="cl__outcome">
+                <strong>{{ outcomeLabel[c.outcome] }}</strong>
+                @if (c.notes) {
+                  — {{ c.notes }}
+                }
+              </p>
             } @else if (c.errorMessage) {
               <p class="cl__bad">{{ c.errorMessage }}</p>
             }
             @if (c.recordingUrl) {
-              <a class="cl__rec" [href]="c.recordingUrl" target="_blank" rel="noopener noreferrer">Listen to the recording</a>
+              <a class="cl__rec" [href]="c.recordingUrl" target="_blank" rel="noopener noreferrer"
+                >Listen to the recording</a
+              >
             }
           </div>
           <div class="cl__act">
             @if (needs(c)) {
-              <button type="button" class="cl__btn cl__btn--go" (click)="editing.set(c)">Say how it went</button>
+              <button type="button" class="cl__btn cl__btn--go" (click)="editing.set(c)">
+                Say how it went
+              </button>
             } @else if (c.isOver && c.mode !== Mode.Ivr) {
               <button type="button" class="cl__btn" (click)="editing.set(c)">Edit</button>
             } @else if (!c.isOver) {
@@ -68,13 +89,19 @@
         </li>
       } @empty {
         <li class="cl__empty">
-          {{ waiting() ? 'Nothing is waiting for an outcome.' : 'No calls yet. Start one from a contact or a deal.' }}
+          {{
+            waiting()
+              ? 'Nothing is waiting for an outcome.'
+              : 'No calls yet. Start one from a contact or a deal.'
+          }}
         </li>
       }
     </ul>
 
     @if (calls().length < total()) {
-      <button type="button" class="cl__more" (click)="more()">Show more ({{ total() - calls().length }} left)</button>
+      <button type="button" class="cl__more" (click)="more()">
+        Show more ({{ total() - calls().length }} left)
+      </button>
     }
   }
 </div>

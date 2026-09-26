@@ -15,16 +15,16 @@
         <div>
           <h2 class="pane__title">Rule</h2>
           <p class="pane__sub">
-            Conditions read top to bottom. A nested group has its own connective, so
-            “either of these, and all of those” is one segment rather than three.
+            Conditions read top to bottom. A nested group has its own connective, so “either of
+            these, and all of those” is one segment rather than three.
           </p>
         </div>
       </header>
 
       @if (preview().matchesEveryone) {
         <ar-banner tone="warn" [hazard]="true">
-          This rule places no constraint at all, so the segment is your entire contact
-          list. Add a condition before sending anything to it.
+          This rule places no constraint at all, so the segment is your entire contact list. Add a
+          condition before sending anything to it.
         </ar-banner>
       }
 
@@ -46,15 +46,21 @@
               <select class="sel sel--mode" (change)="setMode(path, $any($event.target).value)">
                 <option value="all" [selected]="group.mode === 'all'">Match all of</option>
                 <option value="any" [selected]="group.mode === 'any'">Match any of</option>
-                <option value="not" [selected]="group.mode === 'not'">Exclude anyone matching</option>
+                <option value="not" [selected]="group.mode === 'not'">
+                  Exclude anyone matching
+                </option>
               </select>
             </label>
 
             <div class="grp__actions">
               <button type="button" class="link" (click)="addClause(path)">+ condition</button>
-              <button type="button" class="link" (click)="addGroup(path, 'any')">+ any-group</button>
+              <button type="button" class="link" (click)="addGroup(path, 'any')">
+                + any-group
+              </button>
               @if (depth === 0) {
-                <button type="button" class="link" (click)="addGroup(path, 'not')">+ exclusion</button>
+                <button type="button" class="link" (click)="addGroup(path, 'not')">
+                  + exclusion
+                </button>
               }
             </div>
           </div>
@@ -71,7 +77,11 @@
                     <ng-container
                       *ngTemplateOutlet="
                         groupTpl;
-                        context: { $implicit: asGroup(node), path: childPath(path, $index), depth: depth + 1 }
+                        context: {
+                          $implicit: asGroup(node),
+                          path: childPath(path, $index),
+                          depth: depth + 1,
+                        }
                       "
                     />
                   </div>
@@ -137,7 +147,9 @@
                       class="row__del"
                       title="Remove this condition"
                       (click)="remove(path, $index)"
-                    >×</button>
+                    >
+                      ×
+                    </button>
                   </div>
 
                   @if (hintFor(asClause(node).field); as hint) {
@@ -183,9 +195,9 @@
           }
         </ul>
         <p class="saved__note">
-          A dynamic segment is re-resolved when a campaign starts, not when it is saved —
-          so an opt-out on Thursday is honoured by a campaign scheduled on Monday. The
-          count beside each name is the last one taken, which is why it says how old it is.
+          A dynamic segment is re-resolved when a campaign starts, not when it is saved — so an
+          opt-out on Thursday is honoured by a campaign scheduled on Monday. The count beside each
+          name is the last one taken, which is why it says how old it is.
         </p>
       </div>
     </section>
@@ -214,18 +226,17 @@
       @if (consentGap() > 0) {
         <p class="gap">
           <strong>{{ count(consentGap()) }}</strong> of the people who match cannot be sent
-          marketing —
-          {{ count(preview().optedOut) }} opted out and
-          {{ count(preview().suppressed - preview().optedOut) }} are suppressed for other
-          reasons. Utility messages still reach them.
+          marketing — {{ count(preview().optedOut) }} opted out and
+          {{ count(preview().suppressed - preview().optedOut) }} are suppressed for other reasons.
+          Utility messages still reach them.
         </p>
       }
 
       @if (preview().insideServiceWindow > 0) {
         <p class="free">
           <ar-chip tone="teal" [dot]="true">Free right now</ar-chip>
-          {{ count(preview().insideServiceWindow) }} are inside the 24-hour window, so a
-          reply costs nothing.
+          {{ count(preview().insideServiceWindow) }} are inside the 24-hour window, so a reply costs
+          nothing.
         </p>
       }
 
@@ -252,10 +263,9 @@
       </table>
 
       <p class="cost__note">
-        Marketing and utility are priced against different audiences on purpose: one
-        reaches the opted-in, the other reaches nearly everyone. Both are estimates —
-        billing follows Meta's delivery receipt, so an undelivered or withheld message
-        is never charged.
+        Marketing and utility are priced against different audiences on purpose: one reaches the
+        opted-in, the other reaches nearly everyone. Both are estimates — billing follows Meta's
+        delivery receipt, so an undelivered or withheld message is never charged.
       </p>
 
       <p class="wallet">
@@ -268,13 +278,19 @@
           <li class="sample__row">
             <div>
               <span class="sample__name">{{ c.name }}</span>
-              @if (c.company) { <span class="sample__co">{{ c.company }}</span> }
-              @if (c.designation) { <span class="sample__desig">{{ c.designation }}</span> }
+              @if (c.company) {
+                <span class="sample__co">{{ c.company }}</span>
+              }
+              @if (c.designation) {
+                <span class="sample__desig">{{ c.designation }}</span>
+              }
             </div>
             <div class="sample__chips">
               <ar-chip [tone]="lifecycleTone(c.lifecycle)">{{ c.lifecycle }}</ar-chip>
               @if (!c.canReceiveMarketing) {
-                <ar-chip tone="warn">{{ c.suppression === 'optedOut' ? 'Opted out' : 'Utility only' }}</ar-chip>
+                <ar-chip tone="warn">{{
+                  c.suppression === 'optedOut' ? 'Opted out' : 'Utility only'
+                }}</ar-chip>
               }
             </div>
           </li>

@@ -67,8 +67,10 @@ import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
             <section class="score">
               <h3 class="score__h">
                 Deal score
-                <ar-chip [tone]="d.band === 'hot' ? 'good' : d.band === 'warm' ? 'amber' : 'neutral'"
-                  >{{ d.band === 'hot' ? 'Hot' : d.band === 'warm' ? 'Warm' : 'Cold' }} · {{ d.score }}/100</ar-chip
+                <ar-chip
+                  [tone]="d.band === 'hot' ? 'good' : d.band === 'warm' ? 'amber' : 'neutral'"
+                  >{{ d.band === 'hot' ? 'Hot' : d.band === 'warm' ? 'Warm' : 'Cold' }} ·
+                  {{ d.score }}/100</ar-chip
                 >
               </h3>
               <ul class="score__list">
@@ -76,7 +78,10 @@ import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
                   <li>
                     <span class="score__k">{{ f.key }}</span>
                     <span class="score__note">{{ f.note }}</span>
-                    <span class="score__pts ar-mono">{{ f.points > 0 ? '+' : '' }}{{ f.points }}{{ f.max ? ' / ' + f.max : '' }}</span>
+                    <span class="score__pts ar-mono"
+                      >{{ f.points > 0 ? '+' : '' }}{{ f.points
+                      }}{{ f.max ? ' / ' + f.max : '' }}</span
+                    >
                   </li>
                 }
               </ul>
@@ -166,11 +171,19 @@ import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
           </section>
 
           <section class="sec">
-            <ar-enquiry-calls [enquiryId]="d.id" [contactId]="d.contactId" [contactName]="d.contact" />
+            <ar-enquiry-calls
+              [enquiryId]="d.id"
+              [contactId]="d.contactId"
+              [contactName]="d.contact"
+            />
           </section>
 
           <section class="sec">
-            <ar-enquiry-tickets [enquiryId]="d.id" [contactId]="d.contactId" [contactName]="d.contact" />
+            <ar-enquiry-tickets
+              [enquiryId]="d.id"
+              [contactId]="d.contactId"
+              [contactName]="d.contact"
+            />
           </section>
 
           <section class="sec">

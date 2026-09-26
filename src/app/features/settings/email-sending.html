@@ -51,7 +51,9 @@
           />
         </label>
         <label class="ar-field">
-          <span class="ar-field__label">Reply-to <span class="ar-field__opt">(optional)</span></span>
+          <span class="ar-field__label"
+            >Reply-to <span class="ar-field__opt">(optional)</span></span
+          >
           <input
             class="ar-field__input"
             type="email"
@@ -101,8 +103,8 @@
         <span>
           <strong>My own SMTP server</strong>
           <span class="es__hint"
-            >Mail leaves under your own domain and your own SPF/DKIM signature, so deliverability and
-            bounces are yours to manage. Use the server your email provider gives you (Google
+            >Mail leaves under your own domain and your own SPF/DKIM signature, so deliverability
+            and bounces are yours to manage. Use the server your email provider gives you (Google
             Workspace, Microsoft 365, Zoho, SendGrid, Amazon SES…).</span
           >
         </span>
@@ -129,7 +131,9 @@
             </select>
           </label>
           <label class="ar-field">
-            <span class="ar-field__label">Username <span class="ar-field__opt">(if it needs a login)</span></span>
+            <span class="ar-field__label"
+              >Username <span class="ar-field__opt">(if it needs a login)</span></span
+            >
             <input
               class="ar-field__input"
               autocomplete="off"
@@ -155,8 +159,10 @@
           </label>
         </div>
         <p class="es__hint">
-          The connection is always encrypted{{ implicitTls() ? ' (TLS on connect)' : ' (STARTTLS)' }}. Only the standard mail
-          ports are allowed, and the server must be on the public internet.
+          The connection is always encrypted{{
+            implicitTls() ? ' (TLS on connect)' : ' (STARTTLS)'
+          }}. Only the standard mail ports are allowed, and the server must be on the public
+          internet.
         </p>
       }
 
@@ -186,15 +192,17 @@
         <span>
           <strong>Show when an email is opened</strong>
           <span class="es__hint"
-            >Adds a tiny invisible image to each email you send. When the reader's mail program loads it, the message shows "opened" in
-            the inbox and counts toward the campaign's read rate. It is a hint, not proof: some programs block images (so a read
-            email shows nothing), and some load them in advance (so an unread one shows as opened).</span
+            >Adds a tiny invisible image to each email you send. When the reader's mail program
+            loads it, the message shows "opened" in the inbox and counts toward the campaign's read
+            rate. It is a hint, not proof: some programs block images (so a read email shows
+            nothing), and some load them in advance (so an unread one shows as opened).</span
           >
         </span>
       </label>
       @if (c.trackOpens && c.trackingProblem; as problem) {
         <ar-banner tone="warn">
-          Tracking is on but cannot work yet ({{ problem }}). Ask your AutoReach administrator to fix this.
+          Tracking is on but cannot work yet ({{ problem }}). Ask your AutoReach administrator to
+          fix this.
         </ar-banner>
       }
     </section>
@@ -202,9 +210,10 @@
     <section class="panel">
       <h2 class="panel__title">Replies</h2>
       <p class="es__hint">
-        Connect the mailbox your customers' replies arrive in, and their replies are added to the conversation in your inbox. Only mail
-        from your contacts is added, and only mail that arrives after you connect. A failed-delivery notice for an address that does
-        not exist also stops further email to that contact. Nothing in the mailbox is changed, moved or deleted.
+        Connect the mailbox your customers' replies arrive in, and their replies are added to the
+        conversation in your inbox. Only mail from your contacts is added, and only mail that
+        arrives after you connect. A failed-delivery notice for an address that does not exist also
+        stops further email to that contact. Nothing in the mailbox is changed, moved or deleted.
       </p>
 
       @if (c.hasImap) {
@@ -234,21 +243,53 @@
           }
         </p>
         <div class="panel__actions">
-          <button ar-button type="button" [disabled]="syncing() || savingImap()" (click)="syncNow()">
+          <button
+            ar-button
+            type="button"
+            [disabled]="syncing() || savingImap()"
+            (click)="syncNow()"
+          >
             {{ syncing() ? 'Checking…' : 'Check now' }}
           </button>
           @if (c.syncEnabled) {
-            <button ar-button type="button" variant="ghost" [disabled]="savingImap()" (click)="changeSync('pause')">Pause</button>
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="savingImap()"
+              (click)="changeSync('pause')"
+            >
+              Pause
+            </button>
           } @else {
-            <button ar-button type="button" variant="ghost" [disabled]="savingImap()" (click)="changeSync('resume')">Resume</button>
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="savingImap()"
+              (click)="changeSync('resume')"
+            >
+              Resume
+            </button>
           }
-          <button ar-button type="button" variant="ghost" [disabled]="savingImap()" (click)="changeSync('remove')">Disconnect</button>
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="savingImap()"
+            (click)="changeSync('remove')"
+          >
+            Disconnect
+          </button>
         </div>
         @if (syncResult(); as r) {
           <p class="es__hint">
             @if (r.succeeded) {
-              {{ r.imported }} {{ r.imported === 1 ? 'reply' : 'replies' }} added, {{ r.skipped }} skipped, {{ r.bounces }}
-              {{ r.bounces === 1 ? 'address' : 'addresses' }} stopped after failed deliveries{{ r.complaints ? ',' : '.' }}
+              {{ r.imported }} {{ r.imported === 1 ? 'reply' : 'replies' }} added,
+              {{ r.skipped }} skipped, {{ r.bounces }}
+              {{ r.bounces === 1 ? 'address' : 'addresses' }} stopped after failed deliveries{{
+                r.complaints ? ',' : '.'
+              }}
               @if (r.complaints) {
                 {{ r.complaints }} after a spam complaint.
               }
@@ -331,7 +372,9 @@
             />
           </label>
           <label class="ar-field">
-            <span class="ar-field__label">Folder <span class="ar-field__opt">(blank for INBOX)</span></span>
+            <span class="ar-field__label"
+              >Folder <span class="ar-field__opt">(blank for INBOX)</span></span
+            >
             <input
               class="ar-field__input"
               autocapitalize="none"
@@ -341,12 +384,19 @@
           </label>
         </div>
         <p class="es__hint">
-          The connection is always encrypted{{ imapTls() ? ' (TLS on connect)' : ' (STARTTLS)' }}, and it is tried before anything is saved.
-          Gmail and Microsoft 365 usually refuse this outright — use "Connect Gmail" / "Connect Microsoft 365" above for those, or an app
+          The connection is always encrypted{{ imapTls() ? ' (TLS on connect)' : ' (STARTTLS)' }},
+          and it is tried before anything is saved. Gmail and Microsoft 365 usually refuse this
+          outright — use "Connect Gmail" / "Connect Microsoft 365" above for those, or an app
           password if the account still allows one.
         </p>
         <div class="panel__actions">
-          <button ar-button type="button" variant="primary" [disabled]="!canSaveImap() || savingImap()" (click)="connectMailbox()">
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="!canSaveImap() || savingImap()"
+            (click)="connectMailbox()"
+          >
             {{ savingImap() ? 'Connecting…' : c.hasImap ? 'Save mailbox' : 'Connect mailbox' }}
           </button>
         </div>

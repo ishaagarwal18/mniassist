@@ -26,8 +26,8 @@ export class ArSupportAccess {
   protected readonly grants = this.ops.grants;
   protected readonly sessions = this.ops.sessions;
 
-  protected readonly active = computed(() => this.grants().filter(g => g.active));
-  protected readonly past = computed(() => this.grants().filter(g => !g.active));
+  protected readonly active = computed(() => this.grants().filter((g) => g.active));
+  protected readonly past = computed(() => this.grants().filter((g) => !g.active));
 
   protected readonly subtitle = computed(() => {
     const n = this.active().length;
@@ -62,7 +62,9 @@ export class ArSupportAccess {
 
     const minutes = Math.max(
       1,
-      Math.round((new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime()) / 60_000),
+      Math.round(
+        (new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime()) / 60_000,
+      ),
     );
 
     return minutes < 60 ? `${minutes} min` : `${Math.round(minutes / 60)}h ${minutes % 60}m`;

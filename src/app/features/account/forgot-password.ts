@@ -24,12 +24,16 @@ type Mode = 'password' | 'workspace';
   template: `
     <div class="rc">
       <form class="rc__card" (submit)="submit($event)">
-        <h1 class="rc__title">{{ mode() === 'password' ? 'Reset your password' : 'Find your workspace' }}</h1>
+        <h1 class="rc__title">
+          {{ mode() === 'password' ? 'Reset your password' : 'Find your workspace' }}
+        </h1>
         <p class="rc__lead">
           @if (mode() === 'password') {
-            Enter the email address on your account and we'll send you a link to choose a new password.
+            Enter the email address on your account and we'll send you a link to choose a new
+            password.
           } @else {
-            Enter the email address on your account and we'll email you the workspace name to sign in with.
+            Enter the email address on your account and we'll email you the workspace name to sign
+            in with.
           }
         </p>
 
@@ -39,8 +43,8 @@ type Mode = 'password' | 'workspace';
 
         @if (sent()) {
           <p class="rc__ok">
-            If there is an account for <strong>{{ email() }}</strong>, an email is on its way. It can take
-            a minute — check your spam folder too.
+            If there is an account for <strong>{{ email() }}</strong
+            >, an email is on its way. It can take a minute — check your spam folder too.
           </p>
         } @else {
           @if (mode() === 'password' && !mock) {
@@ -69,7 +73,13 @@ type Mode = 'password' | 'workspace';
             />
           </label>
           <button ar-button type="submit" variant="primary" [disabled]="busy() || !canSubmit()">
-            {{ busy() ? 'Sending…' : mode() === 'password' ? 'Send reset link' : 'Email me my workspace' }}
+            {{
+              busy()
+                ? 'Sending…'
+                : mode() === 'password'
+                  ? 'Send reset link'
+                  : 'Email me my workspace'
+            }}
           </button>
         }
 

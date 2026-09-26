@@ -33,12 +33,48 @@ interface DemoList {
 }
 
 export const DEMO_PRODUCTS: DemoProduct[] = [
-  { partNumber: 'VFD-15KW', name: '15 kW variable frequency drive', unit: 'no', paise: 45_000_00, taxBasisPoints: 1800 },
-  { partNumber: 'VFD-22KW', name: '22 kW variable frequency drive', unit: 'no', paise: 61_500_00, taxBasisPoints: 1800 },
-  { partNumber: 'PLC-S7-1214', name: 'S7-1200 CPU 1214C', unit: 'no', paise: 42_000_00, taxBasisPoints: 1800 },
-  { partNumber: 'CBL-3C-2.5', name: '3-core screened cable, 2.5 mm²', unit: 'm', paise: 210_00, taxBasisPoints: 1200 },
-  { partNumber: 'SVC-COMM', name: 'Commissioning and start-up', unit: 'lot', paise: 15_000_00, taxBasisPoints: 1800 },
-  { partNumber: 'SPR-FUSE-10A', name: 'Spare fuse, 10 A', unit: 'no', paise: 45_00, taxBasisPoints: 500 },
+  {
+    partNumber: 'VFD-15KW',
+    name: '15 kW variable frequency drive',
+    unit: 'no',
+    paise: 45_000_00,
+    taxBasisPoints: 1800,
+  },
+  {
+    partNumber: 'VFD-22KW',
+    name: '22 kW variable frequency drive',
+    unit: 'no',
+    paise: 61_500_00,
+    taxBasisPoints: 1800,
+  },
+  {
+    partNumber: 'PLC-S7-1214',
+    name: 'S7-1200 CPU 1214C',
+    unit: 'no',
+    paise: 42_000_00,
+    taxBasisPoints: 1800,
+  },
+  {
+    partNumber: 'CBL-3C-2.5',
+    name: '3-core screened cable, 2.5 mm²',
+    unit: 'm',
+    paise: 210_00,
+    taxBasisPoints: 1200,
+  },
+  {
+    partNumber: 'SVC-COMM',
+    name: 'Commissioning and start-up',
+    unit: 'lot',
+    paise: 15_000_00,
+    taxBasisPoints: 1800,
+  },
+  {
+    partNumber: 'SPR-FUSE-10A',
+    name: 'Spare fuse, 10 A',
+    unit: 'no',
+    paise: 45_00,
+    taxBasisPoints: 500,
+  },
 ];
 
 export const DEMO_LISTS: DemoList[] = [
@@ -55,7 +91,10 @@ export const DEMO_LISTS: DemoList[] = [
     id: 'demo-general',
     name: 'General',
     region: null,
-    prices: { 'VFD-15KW': { paise: 44_000_00, moq: 0 }, 'PLC-S7-1214': { paise: 40_500_00, moq: 0 } },
+    prices: {
+      'VFD-15KW': { paise: 44_000_00, moq: 0 },
+      'PLC-S7-1214': { paise: 40_500_00, moq: 0 },
+    },
   },
 ];
 
@@ -115,12 +154,24 @@ export function demoResolve(
       taxRateBasisPoints: product.taxBasisPoints,
     };
   }
-  return { found: false, partNumber, unit: 'no', unitPriceInPaise: 0, source: QuotePriceSource.Manual };
+  return {
+    found: false,
+    partNumber,
+    unit: 'no',
+    unitPriceInPaise: 0,
+    source: QuotePriceSource.Manual,
+  };
 }
 
-export function demoSearch(query: string | null | undefined, requestedListId: string | null, max: number): CatalogueMatchDto[] {
+export function demoSearch(
+  query: string | null | undefined,
+  requestedListId: string | null,
+  max: number,
+): CatalogueMatchDto[] {
   const q = key(query);
-  return DEMO_PRODUCTS.filter((p) => !q || key(p.partNumber).includes(q) || p.name.toUpperCase().includes(q))
+  return DEMO_PRODUCTS.filter(
+    (p) => !q || key(p.partNumber).includes(q) || p.name.toUpperCase().includes(q),
+  )
     .slice(0, max)
     .map((p) => {
       const r = demoResolve(p.partNumber, 1, requestedListId);
@@ -174,10 +225,14 @@ export function demoWrite(base: QuotationDto, input: CreateUpdateQuotationDto): 
   const lines: QuotationLineDto[] = [...(input.lines ?? [])]
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     .map((l, i) => {
-      const resolved = l.partNumber?.trim() ? demoResolve(l.partNumber, l.quantity ?? 1, listId) : null;
+      const resolved = l.partNumber?.trim()
+        ? demoResolve(l.partNumber, l.quantity ?? 1, listId)
+        : null;
       const fromList = !!l.useCataloguePrice && !!resolved?.found;
       const keep =
-        !l.useCataloguePrice && !!l.keepPricing && (l.priceSource ?? QuotePriceSource.Manual) !== QuotePriceSource.Manual;
+        !l.useCataloguePrice &&
+        !!l.keepPricing &&
+        (l.priceSource ?? QuotePriceSource.Manual) !== QuotePriceSource.Manual;
       const line: QuotationLineDto = {
         id: `demo-line-${Date.now()}-${i}`,
         order: i + 1,
@@ -189,17 +244,31 @@ export function demoWrite(base: QuotationDto, input: CreateUpdateQuotationDto): 
         discountBasisPoints: l.discountBasisPoints ?? 0,
         priceSource: fromList ? resolved!.source : keep ? l.priceSource : QuotePriceSource.Manual,
         priceListId: fromList ? resolved!.priceListId : keep ? (l.priceListId ?? null) : null,
-        listPriceInPaise: keep && l.listPriceInPaise != null ? l.listPriceInPaise : resolved?.found ? resolved.unitPriceInPaise : null,
+        listPriceInPaise:
+          keep && l.listPriceInPaise != null
+            ? l.listPriceInPaise
+            : resolved?.found
+              ? resolved.unitPriceInPaise
+              : null,
         taxRateBasisPoints: l.taxRateBasisPoints ?? resolved?.taxRateBasisPoints ?? null,
       };
       line.lineTotalInPaise = lineTotal(line);
       return line;
     });
 
-  return { ...base, priceListId: listId, taxRateBasisPoints: rate, lines, ...demoTotals(lines, rate) };
+  return {
+    ...base,
+    priceListId: listId,
+    taxRateBasisPoints: rate,
+    lines,
+    ...demoTotals(lines, rate),
+  };
 }
 
-export function demoReprice(base: QuotationDto, input: RepriceQuotationInput): { result: RepriceResultDto; quote: QuotationDto } {
+export function demoReprice(
+  base: QuotationDto,
+  input: RepriceQuotationInput,
+): { result: RepriceResultDto; quote: QuotationDto } {
   const listId = input.priceListId ?? base.priceListId ?? null;
   const rate = base.taxRateBasisPoints ?? 1800;
   const rows: NonNullable<RepriceResultDto['lines']> = [];
@@ -228,7 +297,13 @@ export function demoReprice(base: QuotationDto, input: RepriceQuotationInput): {
         row.newSource = r.source;
         row.priceListName = r.priceListName ?? null;
         row.changed = r.unitPriceInPaise !== l.unitPriceInPaise;
-        next = { ...l, unitPriceInPaise: r.unitPriceInPaise, priceSource: r.source, priceListId: r.priceListId ?? null, listPriceInPaise: r.unitPriceInPaise };
+        next = {
+          ...l,
+          unitPriceInPaise: r.unitPriceInPaise,
+          priceSource: r.source,
+          priceListId: r.priceListId ?? null,
+          listPriceInPaise: r.unitPriceInPaise,
+        };
         next.lineTotalInPaise = lineTotal(next);
       }
     }

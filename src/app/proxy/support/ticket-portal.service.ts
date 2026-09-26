@@ -1,7 +1,11 @@
 import { RestService, Rest } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
 
-import type { PublicTicketPortalDto, SubmitPublicTicketInput, SubmitPublicTicketResultDto } from './ticket-portal.models';
+import type {
+  PublicTicketPortalDto,
+  SubmitPublicTicketInput,
+  SubmitPublicTicketResultDto,
+} from './ticket-portal.models';
 
 /**
  * What a visitor's browser calls to raise a ticket of their own. Anonymous: the portal's address is the only thing they hold. Errors

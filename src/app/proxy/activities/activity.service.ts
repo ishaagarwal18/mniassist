@@ -101,9 +101,17 @@ export class CrmTaskService {
       { apiName: this.apiName, ...config },
     );
 
-  getSummary = (utcOffsetMinutes: number, assigneeUserId?: string | null, config?: Partial<Rest.Config>) =>
+  getSummary = (
+    utcOffsetMinutes: number,
+    assigneeUserId?: string | null,
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<any, CrmTaskSummaryDto>(
-      { method: 'GET', url: '/api/auto-reach/crm-task/summary', params: { utcOffsetMinutes, assigneeUserId } },
+      {
+        method: 'GET',
+        url: '/api/auto-reach/crm-task/summary',
+        params: { utcOffsetMinutes, assigneeUserId },
+      },
       { apiName: this.apiName, ...config },
     );
 }
@@ -167,9 +175,18 @@ export class MeetingService {
       { apiName: this.apiName, ...config },
     );
 
-  cancel = (id: string, reason: string | null, thisAndFollowing = false, config?: Partial<Rest.Config>) =>
+  cancel = (
+    id: string,
+    reason: string | null,
+    thisAndFollowing = false,
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<any, MeetingDto>(
-      { method: 'POST', url: `/api/auto-reach/meeting/${id}/cancel`, body: { reason, thisAndFollowing } },
+      {
+        method: 'POST',
+        url: `/api/auto-reach/meeting/${id}/cancel`,
+        body: { reason, thisAndFollowing },
+      },
       { apiName: this.apiName, ...config },
     );
 

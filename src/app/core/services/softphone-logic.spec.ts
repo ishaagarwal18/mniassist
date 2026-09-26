@@ -17,7 +17,9 @@ describe('formatDuration', () => {
 
 describe('sipTarget', () => {
   it('dials the destination number on the same domain as the workspace line', () => {
-    expect(sipTarget('sip:sales@voice.example.com', '919900112233')).toBe('sip:919900112233@voice.example.com');
+    expect(sipTarget('sip:sales@voice.example.com', '919900112233')).toBe(
+      'sip:919900112233@voice.example.com',
+    );
   });
 
   it('is null when there is no address of record to read a domain from', () => {

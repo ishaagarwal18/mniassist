@@ -14,18 +14,24 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   `,
   styles: `
     :host {
-      display: block; background: var(--ar-white);
+      display: block;
+      background: var(--ar-white);
       border: 1px solid var(--ar-line-200);
       border-radius: var(--ar-radius-card);
       padding: var(--ar-pad-card);
     }
     .ar-card__head {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
     }
     .ar-card__title {
-      margin: 0; font: 600 15px var(--ar-font-sans);
-      letter-spacing: -.01em; color: var(--ar-ink-900);
+      margin: 0;
+      font: 600 15px var(--ar-font-sans);
+      letter-spacing: -0.01em;
+      color: var(--ar-ink-900);
     }
   `,
 })

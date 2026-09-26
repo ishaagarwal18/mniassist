@@ -24,7 +24,20 @@ const STAGE_LABEL: Record<number, string> = {
   [EnquiryStage.Negotiation]: 'Negotiation',
 };
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
 
 /** One quota being edited: who, and the target in rupees as typed. */
 interface QuotaRow {
@@ -66,8 +79,12 @@ export class ArForecast {
   protected readonly deals = computed(() => this.forecast().deals ?? []);
 
   /** Share of the team target that is won and that is expected, capped at 100% for the bar. */
-  protected readonly closedShare = computed(() => this.share(this.team()?.closedInPaise, this.team()?.targetInPaise));
-  protected readonly expectedShare = computed(() => this.share(this.team()?.expectedInPaise, this.team()?.targetInPaise));
+  protected readonly closedShare = computed(() =>
+    this.share(this.team()?.closedInPaise, this.team()?.targetInPaise),
+  );
+  protected readonly expectedShare = computed(() =>
+    this.share(this.team()?.expectedInPaise, this.team()?.targetInPaise),
+  );
 
   // ---- the trend chart -----------------------------------------------------
 
@@ -80,8 +97,16 @@ export class ArForecast {
       return null;
     }
 
-    const top = Math.max(1, ...points.flatMap((p) => [p.targetInPaise ?? 0, p.expectedInPaise ?? 0, p.closedInPaise ?? 0]));
-    const x = (i: number) => (points.length === 1 ? w / 2 : pad.l + (i * (w - pad.l - pad.r)) / (points.length - 1));
+    const top = Math.max(
+      1,
+      ...points.flatMap((p) => [
+        p.targetInPaise ?? 0,
+        p.expectedInPaise ?? 0,
+        p.closedInPaise ?? 0,
+      ]),
+    );
+    const x = (i: number) =>
+      points.length === 1 ? w / 2 : pad.l + (i * (w - pad.l - pad.r)) / (points.length - 1);
     const y = (v: number) => h - pad.b - (v / top) * (h - pad.t - pad.b);
     const line = (pick: (p: (typeof points)[number]) => number) =>
       points.map((p, i) => `${x(i).toFixed(1)},${y(pick(p)).toFixed(1)}`).join(' ');
@@ -93,7 +118,11 @@ export class ArForecast {
       expected: line((p) => p.expectedInPaise ?? 0),
       closed: line((p) => p.closedInPaise ?? 0),
       targetY: target > 0 ? y(target) : null,
-      dots: points.map((p, i) => ({ x: x(i), y: y(p.expectedInPaise ?? 0), label: this.day(p.date) })),
+      dots: points.map((p, i) => ({
+        x: x(i),
+        y: y(p.expectedInPaise ?? 0),
+        label: this.day(p.date),
+      })),
       first: this.day(points[0].date),
       last: this.day(points[points.length - 1].date),
     };
@@ -115,7 +144,13 @@ export class ArForecast {
   /** Which set of chances the dialog is editing: '' is the workspace's, otherwise a pipeline's own. */
   protected readonly scope = signal('');
   protected readonly overrides = signal<Record<string, StageWeightsDto>>({});
-  protected readonly weights = signal<StageWeightsDto>({ new: 10, qualified: 25, siteVisit: 40, quoted: 55, negotiation: 75 });
+  protected readonly weights = signal<StageWeightsDto>({
+    new: 10,
+    qualified: 25,
+    siteVisit: 40,
+    quoted: 55,
+    negotiation: 75,
+  });
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -184,10 +219,20 @@ export class ArForecast {
     };
 
     const rows: QuotaRow[] = [
-      { userId: null, name: 'Whole team (replaces the sum of individual targets)', rupees: rupeesOf(null), original: rupeesOf(null) },
+      {
+        userId: null,
+        name: 'Whole team (replaces the sum of individual targets)',
+        rupees: rupeesOf(null),
+        original: rupeesOf(null),
+      },
       ...this.members()
         .filter((m) => m.isActive)
-        .map((m) => ({ userId: m.userId, name: m.name || m.userName, rupees: rupeesOf(m.userId), original: rupeesOf(m.userId) })),
+        .map((m) => ({
+          userId: m.userId,
+          name: m.name || m.userName,
+          rupees: rupeesOf(m.userId),
+          original: rupeesOf(m.userId),
+        })),
     ];
     this.quotaRows.set(rows);
     this.quotaOpen.set(true);
@@ -221,7 +266,9 @@ export class ArForecast {
     this.fiscalStart.set(s.fiscalYearStartMonth);
     this.learn.set(s.learnFromHistory);
     this.weights.set({ ...s.weights });
-    this.overrides.set(Object.fromEntries(s.pipelineWeights.map((p) => [p.pipelineId, { ...p.weights }])));
+    this.overrides.set(
+      Object.fromEntries(s.pipelineWeights.map((p) => [p.pipelineId, { ...p.weights }])),
+    );
     this.scope.set('');
     this.assumptionsOpen.set(true);
   }
@@ -232,7 +279,9 @@ export class ArForecast {
     return s ? (this.overrides()[s] ?? this.weights()) : this.weights();
   });
 
-  protected readonly scopeHasOverride = computed(() => !!this.scope() && !!this.overrides()[this.scope()]);
+  protected readonly scopeHasOverride = computed(
+    () => !!this.scope() && !!this.overrides()[this.scope()],
+  );
 
   protected setScope(id: string): void {
     this.scope.set(id);
@@ -262,7 +311,9 @@ export class ArForecast {
     this.busy.set(true);
     this.error.set(null);
     try {
-      const pipelineWeights: PipelineWeightsDto[] = Object.entries(this.overrides()).map(([pipelineId, weights]) => ({ pipelineId, weights }));
+      const pipelineWeights: PipelineWeightsDto[] = Object.entries(this.overrides()).map(
+        ([pipelineId, weights]) => ({ pipelineId, weights }),
+      );
       await this.store.saveSettings({
         fiscalYearStartMonth: this.fiscalStart(),
         weights: this.weights(),
@@ -280,10 +331,17 @@ export class ArForecast {
   protected basisText(basis: ForecastChanceBasis | undefined, sample: number | undefined): string {
     if (!sample) return 'your setting';
     const n = `${sample} closed deal${sample === 1 ? '' : 's'}`;
-    return basis === ForecastChanceBasis.Person ? `${n}, this person's` : basis === ForecastChanceBasis.Pipeline ? `${n} in this pipeline` : n;
+    return basis === ForecastChanceBasis.Person
+      ? `${n}, this person's`
+      : basis === ForecastChanceBasis.Pipeline
+        ? `${n} in this pipeline`
+        : n;
   }
 
-  protected sourceText(d: { valueSource?: ForecastValueSource; quotationReference?: string | null }): string {
+  protected sourceText(d: {
+    valueSource?: ForecastValueSource;
+    quotationReference?: string | null;
+  }): string {
     return d.valueSource === ForecastValueSource.Quotation
       ? (d.quotationReference ?? 'Quotation')
       : d.valueSource === ForecastValueSource.Estimate

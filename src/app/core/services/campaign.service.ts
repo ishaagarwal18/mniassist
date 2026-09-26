@@ -55,7 +55,8 @@ export interface Preflight {
  */
 export function sendTimeCoverage(learned: number, recipients: number): string {
   if (recipients <= 0) return 'No recipients yet, so no one to time.';
-  if (learned <= 0) return `None of the ${recipients.toLocaleString('en-IN')} recipients has enough reply history yet — all go out at the scheduled time.`;
+  if (learned <= 0)
+    return `None of the ${recipients.toLocaleString('en-IN')} recipients has enough reply history yet — all go out at the scheduled time.`;
   const pct = Math.round((learned / recipients) * 100);
   const rest = recipients - learned;
   return rest === 0
@@ -225,7 +226,10 @@ export class CampaignStore {
 
   readonly campaigns = computed(() =>
     environment.useMockData
-      ? SEED.map((c) => ({ ...c, optimiseSendTime: this.mockOptimise()[c.id] ?? c.optimiseSendTime }))
+      ? SEED.map((c) => ({
+          ...c,
+          optimiseSendTime: this.mockOptimise()[c.id] ?? c.optimiseSendTime,
+        }))
       : this.resource.value(),
   );
 

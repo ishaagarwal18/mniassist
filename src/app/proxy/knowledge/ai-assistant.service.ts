@@ -117,7 +117,8 @@ export class AiAssistantService {
     this.req<KnowledgeArticleDto>('POST', '/api/auto-reach/knowledge/articles', input);
   updateArticle = (id: string, input: SaveKnowledgeArticleDto) =>
     this.req<KnowledgeArticleDto>('PUT', `/api/auto-reach/knowledge/articles/${id}`, input);
-  deleteArticle = (id: string) => this.req<void>('DELETE', `/api/auto-reach/knowledge/articles/${id}`);
+  deleteArticle = (id: string) =>
+    this.req<void>('DELETE', `/api/auto-reach/knowledge/articles/${id}`);
   syncLibrary = () =>
     this.req<KnowledgeLibrarySyncResultDto>('POST', '/api/auto-reach/knowledge/sync-library');
   reindex = () => this.req<{ reindexed: number }>('POST', '/api/auto-reach/knowledge/reindex');

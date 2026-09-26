@@ -2,10 +2,17 @@
   <header class="lr__head">
     <div>
       <h3 class="lr__title">Lead rotation</h3>
-      <p class="lr__sub">Share new enquiries in this pipeline out to a team. An owner chosen by hand is never overridden.</p>
+      <p class="lr__sub">
+        Share new enquiries in this pipeline out to a team. An owner chosen by hand is never
+        overridden.
+      </p>
     </div>
     <label class="lr__switch">
-      <input type="checkbox" [checked]="enabled()" (change)="enabled.set($any($event.target).checked); touch()" />
+      <input
+        type="checkbox"
+        [checked]="enabled()"
+        (change)="enabled.set($any($event.target).checked); touch()"
+      />
       {{ enabled() ? 'On' : 'Off' }}
     </label>
   </header>
@@ -19,27 +26,45 @@
       <label class="ar-field">
         <span class="ar-field__label">How to choose</span>
         <select class="ar-field__input" (change)="mode.set(+$any($event.target).value); touch()">
-          <option [value]="Mode.RoundRobin" [selected]="mode() === Mode.RoundRobin">In turn, one after another</option>
-          <option [value]="Mode.LeastOpenDeals" [selected]="mode() === Mode.LeastOpenDeals">Whoever has the fewest open deals</option>
+          <option [value]="Mode.RoundRobin" [selected]="mode() === Mode.RoundRobin">
+            In turn, one after another
+          </option>
+          <option [value]="Mode.LeastOpenDeals" [selected]="mode() === Mode.LeastOpenDeals">
+            Whoever has the fewest open deals
+          </option>
         </select>
       </label>
       <div class="lr__checks">
         <label class="lr__check">
-          <input type="checkbox" [checked]="assignContact()" (change)="assignContact.set($any($event.target).checked); touch()" />
+          <input
+            type="checkbox"
+            [checked]="assignContact()"
+            (change)="assignContact.set($any($event.target).checked); touch()"
+          />
           Also make them the contact's owner when it has none
         </label>
         <label class="lr__check">
-          <input type="checkbox" [checked]="emailAssignee()" (change)="emailAssignee.set($any($event.target).checked); touch()" />
+          <input
+            type="checkbox"
+            [checked]="emailAssignee()"
+            (change)="emailAssignee.set($any($event.target).checked); touch()"
+          />
           Email them when a lead is assigned (they always get a notification in the app)
         </label>
       </div>
     </div>
 
     <fieldset class="lr__sources">
-      <legend class="ar-field__label">Sources <span class="ar-field__opt">none ticked covers all</span></legend>
+      <legend class="ar-field__label">
+        Sources <span class="ar-field__opt">none ticked covers all</span>
+      </legend>
       @for (s of sources; track s.value) {
         <label class="lr__check">
-          <input type="checkbox" [checked]="chosenSources().has(s.value)" (change)="setSource(s.value, $any($event.target).checked)" />
+          <input
+            type="checkbox"
+            [checked]="chosenSources().has(s.value)"
+            (change)="setSource(s.value, $any($event.target).checked)"
+          />
           {{ s.label }}
         </label>
       }
@@ -47,7 +72,10 @@
 
     <h4 class="lr__h">Team, in turn order</h4>
     <p class="lr__hint">
-      Share: someone with 2 gets twice as many leads as someone with 1. Limit: they stop getting leads at that many open enquiries, until they close some. If everyone is at their limit, the lead is left unassigned.</p>
+      Share: someone with 2 gets twice as many leads as someone with 1. Limit: they stop getting
+      leads at that many open enquiries, until they close some. If everyone is at their limit, the
+      lead is left unassigned.
+    </p>
     @if (rows().length === 0) {
       <p class="lr__empty">Nobody yet. Add the people who should receive leads.</p>
     }
@@ -88,9 +116,27 @@
           </label>
           <span class="lr__load">{{ load()[r.userId] ?? 0 }} open</span>
           <span class="lr__actions">
-            <button ar-button variant="ghost" aria-label="Move earlier" [disabled]="i === 0" (click)="move(i, -1)">↑</button>
-            <button ar-button variant="ghost" aria-label="Move later" [disabled]="i === rows().length - 1" (click)="move(i, 1)">↓</button>
-            <button ar-button variant="ghost" (click)="togglePause(i)">{{ r.paused ? 'Resume' : 'Pause' }}</button>
+            <button
+              ar-button
+              variant="ghost"
+              aria-label="Move earlier"
+              [disabled]="i === 0"
+              (click)="move(i, -1)"
+            >
+              ↑
+            </button>
+            <button
+              ar-button
+              variant="ghost"
+              aria-label="Move later"
+              [disabled]="i === rows().length - 1"
+              (click)="move(i, 1)"
+            >
+              ↓
+            </button>
+            <button ar-button variant="ghost" (click)="togglePause(i)">
+              {{ r.paused ? 'Resume' : 'Pause' }}
+            </button>
             <button ar-button variant="ghost" (click)="remove(i)">Remove</button>
           </span>
         </li>
@@ -100,7 +146,10 @@
     @if (addable().length > 0) {
       <label class="ar-field lr__add">
         <span class="ar-field__label">Add a person</span>
-        <select class="ar-field__input" (change)="add($any($event.target).value); $any($event.target).value = ''">
+        <select
+          class="ar-field__input"
+          (change)="add($any($event.target).value); $any($event.target).value = ''"
+        >
           <option value="">Choose…</option>
           @for (m of addable(); track m.userId) {
             <option [value]="m.userId">{{ m.name || m.userName }}</option>

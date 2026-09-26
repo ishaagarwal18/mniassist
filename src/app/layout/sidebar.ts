@@ -147,13 +147,14 @@ import { grantedPolicy } from '../core/auth/permission';
       border: 1px solid #303945;
       border-radius: var(--ar-radius-control);
       color: var(--ar-nav-dim);
-      transition: border-color .12s ease;
+      transition: border-color 0.12s ease;
     }
     /* No existing brand colour has a claim on this border (unlike --ar-teal-600,
        which already means "link/tip" everywhere), so it's a genuinely new, safe
        place for a tenant's own accent to show up, rather than repainting a colour
        that already carries meaning somewhere else in the app. */
-    .sb__tenant:hover, .sb__tenant:focus-visible {
+    .sb__tenant:hover,
+    .sb__tenant:focus-visible {
       border-color: var(--ar-tenant-accent, #303945);
     }
     .sb__tenant-name {

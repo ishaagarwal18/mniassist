@@ -52,7 +52,11 @@ const DEAL_FIELDS: MappableField[] = [
   // Salesforce's ContactId is a plain lookup field, same canonical slot as Zoho's
   // Contact_Name lookup — HubSpot links a contact through its associations API
   // instead, so it never reads this key.
-  { key: 'contactLookup', label: 'Contact link', defaultByKind: { 2: 'Contact_Name', 9: 'ContactId' } },
+  {
+    key: 'contactLookup',
+    label: 'Contact link',
+    defaultByKind: { 2: 'Contact_Name', 9: 'ContactId' },
+  },
   {
     key: 'currency',
     label: 'Currency field',
@@ -61,16 +65,32 @@ const DEAL_FIELDS: MappableField[] = [
 ];
 
 const CONTACT_FIELDS: MappableField[] = [
-  { key: 'firstName', label: 'First name', defaultByKind: { 2: 'First_Name', 6: 'firstname', 9: 'FirstName' } },
-  { key: 'lastName', label: 'Last name', defaultByKind: { 2: 'Last_Name', 6: 'lastname', 9: 'LastName' } },
+  {
+    key: 'firstName',
+    label: 'First name',
+    defaultByKind: { 2: 'First_Name', 6: 'firstname', 9: 'FirstName' },
+  },
+  {
+    key: 'lastName',
+    label: 'Last name',
+    defaultByKind: { 2: 'Last_Name', 6: 'lastname', 9: 'LastName' },
+  },
   { key: 'phone', label: 'Phone', defaultByKind: { 2: 'Phone', 6: 'phone', 9: 'Phone' } },
   { key: 'email', label: 'Email', defaultByKind: { 2: 'Email', 6: 'email', 9: 'Email' } },
   // No Salesforce entry: a Contact's employer there is the Account it links to, not a
   // free-text field — see SalesforceContactSync's doc comment on the API side.
   { key: 'company', label: 'Company', defaultByKind: { 2: 'Account_Name', 6: 'company' } },
   { key: 'city', label: 'City', defaultByKind: { 2: 'Mailing_City', 6: 'city', 9: 'MailingCity' } },
-  { key: 'state', label: 'State', defaultByKind: { 2: 'Mailing_State', 6: 'state', 9: 'MailingState' } },
-  { key: 'description', label: 'Description', defaultByKind: { 2: 'Description', 9: 'Description' } },
+  {
+    key: 'state',
+    label: 'State',
+    defaultByKind: { 2: 'Mailing_State', 6: 'state', 9: 'MailingState' },
+  },
+  {
+    key: 'description',
+    label: 'Description',
+    defaultByKind: { 2: 'Description', 9: 'Description' },
+  },
 ];
 
 const SEED_CRM: CrmSyncConnectionStatusDto[] = [
@@ -191,9 +211,15 @@ export class ArIntegrations {
     const error = params.get('crmOAuthError');
 
     if (connectedKind !== null) {
-      this.oAuthBanner.set({ tone: 'good', message: 'CRM connected — token refresh is now automatic.' });
+      this.oAuthBanner.set({
+        tone: 'good',
+        message: 'CRM connected — token refresh is now automatic.',
+      });
     } else if (error !== null) {
-      this.oAuthBanner.set({ tone: 'bad', message: `The CRM connect flow did not finish (${error}).` });
+      this.oAuthBanner.set({
+        tone: 'bad',
+        message: `The CRM connect flow did not finish (${error}).`,
+      });
     } else {
       return;
     }
@@ -280,18 +306,27 @@ export class ArIntegrations {
     try {
       const config = environment.useMockData
         ? (this.mockConfig.get(connection.connectionId) ?? {})
-        : this.parseConfig((await firstValueFrom(this.integrations.get(connection.connectionId))).configJson);
+        : this.parseConfig(
+            (await firstValueFrom(this.integrations.get(connection.connectionId))).configJson,
+          );
 
-      this.mappingCurrency.set(typeof config['currency'] === 'string' ? (config['currency'] as string) : '');
+      this.mappingCurrency.set(
+        typeof config['currency'] === 'string' ? (config['currency'] as string) : '',
+      );
       const timeline = config['timeline'] as { enabled?: boolean; campaigns?: boolean } | undefined;
       this.timelineEnabled.set(timeline?.enabled === true);
       this.timelineCampaigns.set(timeline?.campaigns ?? true);
-      this.accountsEnabled.set((config['accounts'] as { enabled?: boolean } | undefined)?.enabled === true);
-      const mapping = (config['fieldMapping'] as Record<string, Record<string, string>> | undefined) ?? {};
+      this.accountsEnabled.set(
+        (config['accounts'] as { enabled?: boolean } | undefined)?.enabled === true,
+      );
+      const mapping =
+        (config['fieldMapping'] as Record<string, Record<string, string>> | undefined) ?? {};
       this.mappingDeal.set({ ...(mapping['deal'] ?? {}) });
       this.mappingContact.set({ ...(mapping['contact'] ?? {}) });
     } catch (e: unknown) {
-      this.mappingError.set(e instanceof Error ? e.message : 'Could not load the current configuration.');
+      this.mappingError.set(
+        e instanceof Error ? e.message : 'Could not load the current configuration.',
+      );
     } finally {
       this.mappingLoading.set(false);
     }
@@ -319,7 +354,9 @@ export class ArIntegrations {
     try {
       const config = environment.useMockData
         ? { ...(this.mockConfig.get(connection.connectionId) ?? {}) }
-        : this.parseConfig((await firstValueFrom(this.integrations.get(connection.connectionId))).configJson);
+        : this.parseConfig(
+            (await firstValueFrom(this.integrations.get(connection.connectionId))).configJson,
+          );
 
       const currency = this.mappingCurrency().trim();
       if (currency) {
@@ -369,7 +406,9 @@ export class ArIntegrations {
 
       this.closeMapping();
     } catch (e: unknown) {
-      this.mappingError.set(e instanceof Error ? e.message : 'The configuration could not be saved.');
+      this.mappingError.set(
+        e instanceof Error ? e.message : 'The configuration could not be saved.',
+      );
     } finally {
       this.mappingSaving.set(false);
     }

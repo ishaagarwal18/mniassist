@@ -93,7 +93,10 @@ export class ArQuoteEditor implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      const [quote, lists] = await Promise.all([this.api.get(this.quotationId()), this.api.priceLists()]);
+      const [quote, lists] = await Promise.all([
+        this.api.get(this.quotationId()),
+        this.api.priceLists(),
+      ]);
       this.lists.set(lists);
       this.load(quote);
     } catch (e: unknown) {
@@ -202,7 +205,9 @@ export class ArQuoteEditor implements OnInit {
         Number(r.quantity) || 1,
       );
       if (!priced.found) {
-        this.error.set(`${r.partNumber} is not in a price list or the catalogue: price it by hand.`);
+        this.error.set(
+          `${r.partNumber} is not in a price list or the catalogue: price it by hand.`,
+        );
         return;
       }
       this.error.set(null);
@@ -219,7 +224,10 @@ export class ArQuoteEditor implements OnInit {
                 source: priced.source ?? QuotePriceSource.Catalogue,
                 priceListId: priced.priceListId ?? null,
                 listName: priced.priceListName ?? null,
-                tax: x.tax === '' && priced.taxRateBasisPoints != null ? String(priced.taxRateBasisPoints / 100) : x.tax,
+                tax:
+                  x.tax === '' && priced.taxRateBasisPoints != null
+                    ? String(priced.taxRateBasisPoints / 100)
+                    : x.tax,
                 listPaise: priced.unitPriceInPaise ?? null,
                 moq: priced.minimumOrderQuantity ?? 0,
               },
@@ -249,7 +257,11 @@ export class ArQuoteEditor implements OnInit {
     const seq = ++this.searchSeq;
     this.searching.set(true);
     try {
-      const found = await this.api.search(this.quotationId(), this.listId() || null, this.term().trim() || null);
+      const found = await this.api.search(
+        this.quotationId(),
+        this.listId() || null,
+        this.term().trim() || null,
+      );
       if (seq === this.searchSeq) this.matches.set(found);
     } catch {
       if (seq === this.searchSeq) this.matches.set([]);
@@ -316,7 +328,9 @@ export class ArQuoteEditor implements OnInit {
     this.repricing.set(true);
     this.error.set(null);
     try {
-      this.reprice.set(await this.api.reprice(this.quotationId(), { keepManualPrices: true, apply: false }));
+      this.reprice.set(
+        await this.api.reprice(this.quotationId(), { keepManualPrices: true, apply: false }),
+      );
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'The prices could not be checked.');
     } finally {

@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import { ServiceTicketDto, TicketPriority, TicketStatus } from '../../proxy/support';
-import { dueLabel, hoursByPriority, isFinished, isOverdue, PRIORITY_SLA_HOURS } from './ticket-logic';
+import {
+  dueLabel,
+  hoursByPriority,
+  isFinished,
+  isOverdue,
+  PRIORITY_SLA_HOURS,
+} from './ticket-logic';
 
-const ticket = (over: Partial<ServiceTicketDto> = {}): Pick<ServiceTicketDto, 'status' | 'dueAtUtc' | 'isOverdue'> => ({
+const ticket = (
+  over: Partial<ServiceTicketDto> = {},
+): Pick<ServiceTicketDto, 'status' | 'dueAtUtc' | 'isOverdue'> => ({
   status: TicketStatus.Open,
   dueAtUtc: '2026-09-22T12:00:00.000Z',
   isOverdue: false,
@@ -46,8 +54,12 @@ describe('dueLabel', () => {
     expect(dueLabel(ticket({ dueAtUtc: '2026-09-22T11:50:00.000Z' }), now)).toBe('20m left');
     expect(dueLabel(ticket({ dueAtUtc: '2026-09-22T15:30:00.000Z' }), now)).toBe('4h left');
     expect(dueLabel(ticket({ dueAtUtc: '2026-09-24T11:30:00.000Z' }), now)).toBe('2d left');
-    expect(dueLabel(ticket({ dueAtUtc: '2026-09-22T11:00:00.000Z', isOverdue: true }), now)).toBe('30m overdue');
-    expect(dueLabel(ticket({ dueAtUtc: '2026-09-21T11:30:00.000Z', isOverdue: true }), now)).toBe('1d overdue');
+    expect(dueLabel(ticket({ dueAtUtc: '2026-09-22T11:00:00.000Z', isOverdue: true }), now)).toBe(
+      '30m overdue',
+    );
+    expect(dueLabel(ticket({ dueAtUtc: '2026-09-21T11:30:00.000Z', isOverdue: true }), now)).toBe(
+      '1d overdue',
+    );
     expect(dueLabel(ticket({ dueAtUtc: null }), now)).toBeNull();
   });
 });

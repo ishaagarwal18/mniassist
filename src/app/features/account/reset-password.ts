@@ -22,10 +22,15 @@ import { ArButton } from '../../ui';
         <h1 class="rc__title">Choose a new password</h1>
 
         @if (!linkComplete) {
-          <p class="rc__error">This link is incomplete. Open the link from your email again, or request a new one.</p>
+          <p class="rc__error">
+            This link is incomplete. Open the link from your email again, or request a new one.
+          </p>
           <div class="rc__links"><a routerLink="/forgot-password">Request a new link</a></div>
         } @else if (done()) {
-          <p class="rc__ok">Your password has been changed and every device was signed out. Sign in with the new one.</p>
+          <p class="rc__ok">
+            Your password has been changed and every device was signed out. Sign in with the new
+            one.
+          </p>
           <a ar-button variant="primary" routerLink="/login">Go to sign in</a>
         } @else {
           <p class="rc__lead">Pick something you don't use anywhere else.</p>

@@ -18,7 +18,8 @@ export const routes: Routes = [
   {
     path: 'forgot-password',
     title: 'Reset your password · AutoReach',
-    loadComponent: () => import('./features/account/forgot-password').then((m) => m.ArForgotPassword),
+    loadComponent: () =>
+      import('./features/account/forgot-password').then((m) => m.ArForgotPassword),
   },
   {
     path: 'reset-password',
@@ -52,8 +53,7 @@ export const routes: Routes = [
   {
     path: 'privacy',
     title: 'Privacy Policy · AutoReach',
-    loadComponent: () =>
-      import('./features/legal/privacy-policy').then((m) => m.ArPrivacyPolicy),
+    loadComponent: () => import('./features/legal/privacy-policy').then((m) => m.ArPrivacyPolicy),
   },
   {
     path: '',
@@ -140,7 +140,8 @@ export const routes: Routes = [
       {
         path: 'enquiries/pipelines',
         title: 'Pipelines · AutoReach',
-        loadComponent: () => import('./features/pipeline/pipeline-stages').then((m) => m.ArPipelineStages),
+        loadComponent: () =>
+          import('./features/pipeline/pipeline-stages').then((m) => m.ArPipelineStages),
       },
       {
         path: 'forecast',
@@ -334,7 +335,8 @@ export const routes: Routes = [
       {
         path: 'settings/payments',
         title: 'Payments · AutoReach',
-        loadComponent: () => import('./features/payments/payments-settings').then((m) => m.ArPaymentsSettings),
+        loadComponent: () =>
+          import('./features/payments/payments-settings').then((m) => m.ArPaymentsSettings),
       },
       {
         path: 'settings/email-sending',

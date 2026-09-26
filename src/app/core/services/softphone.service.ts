@@ -3,7 +3,12 @@ import { firstValueFrom } from 'rxjs';
 import type { SimpleUser as SimpleUserType, SimpleUserDelegate } from 'sip.js/lib/platform/web';
 
 import { environment } from '../../../environments/environment';
-import { CallLogDto, CallService, SoftphoneCredentialsDto, VoiceCallStatus } from '../../proxy/voice';
+import {
+  CallLogDto,
+  CallService,
+  SoftphoneCredentialsDto,
+  VoiceCallStatus,
+} from '../../proxy/voice';
 import { readApiError } from '../util/api-error';
 import { sipTarget } from './softphone-logic';
 
@@ -78,8 +83,11 @@ export class SoftphoneService {
 
     if (environment.useMockData) {
       this.credentials = {
-        ready: true, wsServer: `wss://${MOCK_DOMAIN}/ws`, sipUri: `sip:you@${MOCK_DOMAIN}`,
-        password: 'mock', displayName: 'You',
+        ready: true,
+        wsServer: `wss://${MOCK_DOMAIN}/ws`,
+        sipUri: `sip:you@${MOCK_DOMAIN}`,
+        password: 'mock',
+        displayName: 'You',
       };
       this.configured.set(true);
       this.connection.set('registered');
@@ -118,7 +126,9 @@ export class SoftphoneService {
       await user.register();
       return true;
     } catch {
-      this.error.set('Could not connect the in-browser phone. Check the SIP settings under Channels.');
+      this.error.set(
+        'Could not connect the in-browser phone. Check the SIP settings under Channels.',
+      );
       this.connection.set('failed');
       this.simpleUser = null;
       return false;
@@ -137,7 +147,14 @@ export class SoftphoneService {
       onCallReceived: () => {
         this.wasAnswered = false;
         const remoteNumber = this.readRemoteNumber() ?? 'Unknown number';
-        this.call.set({ callLogId: null, direction: 'inbound', remoteNumber, contactId: null, contactName: null, enquiryId: null });
+        this.call.set({
+          callLogId: null,
+          direction: 'inbound',
+          remoteNumber,
+          contactId: null,
+          contactName: null,
+          enquiryId: null,
+        });
         this.callState.set('ringing-in');
         this.pendingInboundLog = this.logInbound(remoteNumber);
       },
@@ -165,7 +182,9 @@ export class SoftphoneService {
    *  the call. */
   private readRemoteNumber(): string | null {
     try {
-      const held = (this.simpleUser as unknown as { session?: { remoteIdentity?: { uri?: { user?: string } } } })?.session;
+      const held = (
+        this.simpleUser as unknown as { session?: { remoteIdentity?: { uri?: { user?: string } } } }
+      )?.session;
       return held?.remoteIdentity?.uri?.user ?? null;
     } catch {
       return null;
@@ -174,8 +193,19 @@ export class SoftphoneService {
 
   private async logInbound(remoteNumber: string): Promise<CallLogDto | null> {
     try {
-      const logged = await firstValueFrom(this.api.reportSoftphoneInbound({ fromNumber: remoteNumber }));
-      this.call.update((c) => (c && c.direction === 'inbound' ? { ...c, callLogId: logged.id, contactId: logged.contactId, contactName: logged.contactName ?? null } : c));
+      const logged = await firstValueFrom(
+        this.api.reportSoftphoneInbound({ fromNumber: remoteNumber }),
+      );
+      this.call.update((c) =>
+        c && c.direction === 'inbound'
+          ? {
+              ...c,
+              callLogId: logged.id,
+              contactId: logged.contactId,
+              contactName: logged.contactName ?? null,
+            }
+          : c,
+      );
       return logged;
     } catch (e) {
       this.error.set(readApiError(e, 'This call could not be logged.'));
@@ -194,7 +224,9 @@ export class SoftphoneService {
     if (environment.useMockData) return;
 
     try {
-      await firstValueFrom(this.api.reportSoftphoneEvent(id, { status, durationSeconds: this.durationSeconds() }));
+      await firstValueFrom(
+        this.api.reportSoftphoneEvent(id, { status, durationSeconds: this.durationSeconds() }),
+      );
     } catch {
       // Best effort — the call itself has already happened; a failed report does not undo it.
     }
@@ -217,35 +249,59 @@ export class SoftphoneService {
   /** Calls a known contact (the number is resolved from their record) or, from the bar's own dialler, a raw number with no
    *  contact picked yet — matched or created by number the same way an inbound call is. Either `contactId` or `number` must be
    *  given. `number` is digits with the country code, as every contact number is stored. */
-  async dial(target: { contactId?: string; number?: string; contactName?: string | null; enquiryId?: string | null }): Promise<void> {
-    if (this.callState() !== 'idle' || !(await this.ensureConnected()) || (!target.contactId && !target.number)) return;
+  async dial(target: {
+    contactId?: string;
+    number?: string;
+    contactName?: string | null;
+    enquiryId?: string | null;
+  }): Promise<void> {
+    if (
+      this.callState() !== 'idle' ||
+      !(await this.ensureConnected()) ||
+      (!target.contactId && !target.number)
+    )
+      return;
 
     this.error.set(null);
     this.wasAnswered = false;
     this.callState.set('calling');
     this.call.set({
-      callLogId: null, direction: 'outbound', remoteNumber: target.number ?? '',
-      contactId: target.contactId ?? null, contactName: target.contactName ?? null, enquiryId: target.enquiryId ?? null,
+      callLogId: null,
+      direction: 'outbound',
+      remoteNumber: target.number ?? '',
+      contactId: target.contactId ?? null,
+      contactName: target.contactName ?? null,
+      enquiryId: target.enquiryId ?? null,
     });
 
     if (environment.useMockData) {
-      this.call.update((c) => (c ? { ...c, callLogId: `mock-softphone-${Date.now().toString(36)}` } : c));
+      this.call.update((c) =>
+        c ? { ...c, callLogId: `mock-softphone-${Date.now().toString(36)}` } : c,
+      );
       this.mockTimer = setTimeout(() => this.delegate().onCallAnswered?.(), 2500);
       return;
     }
 
     try {
-      const logged = await firstValueFrom(this.api.startSoftphoneCall({
-        contactId: target.contactId ?? null,
-        number: target.contactId ? null : target.number,
-        enquiryId: target.enquiryId ?? null,
-      }));
+      const logged = await firstValueFrom(
+        this.api.startSoftphoneCall({
+          contactId: target.contactId ?? null,
+          number: target.contactId ? null : target.number,
+          enquiryId: target.enquiryId ?? null,
+        }),
+      );
       const dialNumber = logged.contactNumber ?? target.number;
-      this.call.update((c) => (c ? {
-        ...c, callLogId: logged.id, contactId: logged.contactId,
-        contactName: c.contactName ?? logged.contactName ?? null,
-        remoteNumber: dialNumber ?? c.remoteNumber,
-      } : c));
+      this.call.update((c) =>
+        c
+          ? {
+              ...c,
+              callLogId: logged.id,
+              contactId: logged.contactId,
+              contactName: c.contactName ?? logged.contactName ?? null,
+              remoteNumber: dialNumber ?? c.remoteNumber,
+            }
+          : c,
+      );
 
       if (!dialNumber) {
         throw new Error('This contact has no phone number to call.');

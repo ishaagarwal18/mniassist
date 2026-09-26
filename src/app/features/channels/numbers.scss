@@ -1,57 +1,171 @@
-:host { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.nm { flex: 1; min-height: 0; padding: 18px 24px 28px; display: flex; flex-direction: column; gap: 14px; }
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.nm {
+  flex: 1;
+  min-height: 0;
+  padding: 18px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
 .num {
-  background: var(--ar-white); border: 1px solid var(--ar-line-200);
-  border-radius: var(--ar-radius-card); padding: 18px 20px 20px;
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-card);
+  padding: 18px 20px 20px;
 }
 /* An unregistered number cannot send or receive anything, so it gets the same
    left-edge treatment the inbox uses for a thread that needs action. */
-.num--unreg { border-left: 3px solid var(--ar-red-600); }
+.num--unreg {
+  border-left: 3px solid var(--ar-red-600);
+}
 
 .num__head {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  gap: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--ar-line-200);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ar-line-200);
 }
-.num__phone { margin: 0; font: 600 16px var(--ar-font-mono); color: var(--ar-ink-900); letter-spacing: -.01em; }
-.num__name { margin: 3px 0 0; font: 400 12px var(--ar-font-sans); color: var(--ar-ink-500); }
-.num__state { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; flex: none; }
+.num__phone {
+  margin: 0;
+  font: 600 16px var(--ar-font-mono);
+  color: var(--ar-ink-900);
+  letter-spacing: -0.01em;
+}
+.num__name {
+  margin: 3px 0 0;
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+.num__state {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  flex: none;
+}
 
-.num__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; padding-top: 15px; }
-@media (max-width: 900px) { .num__grid { grid-template-columns: minmax(0, 1fr); } }
+.num__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  padding-top: 15px;
+}
+@media (max-width: 900px) {
+  .num__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 
-.blk { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.blk {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
 .blk__t {
-  margin: 0; font: 600 11px var(--ar-font-sans); color: var(--ar-ink-400);
-  letter-spacing: .04em; text-transform: uppercase;
+  margin: 0;
+  font: 600 11px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
-.blk__val { margin: 0; font: 500 14px var(--ar-font-sans); color: var(--ar-ink-900); }
-.blk__val--none { color: var(--ar-red-600); }
-.blk__note { margin: 0; max-width: 54ch; font: 400 11px/1.6 var(--ar-font-sans); color: var(--ar-ink-400); }
+.blk__val {
+  margin: 0;
+  font: 500 14px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+}
+.blk__val--none {
+  color: var(--ar-red-600);
+}
+.blk__note {
+  margin: 0;
+  max-width: 54ch;
+  font: 400 11px/1.6 var(--ar-font-sans);
+  color: var(--ar-ink-400);
+}
 
-.review { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.review {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .review__row {
-  display: flex; align-items: baseline; gap: 10px;
-  padding: 7px 10px; border-radius: var(--ar-radius-inset); background: var(--ar-bg-100);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: var(--ar-radius-inset);
+  background: var(--ar-bg-100);
 }
-.review__row--pending { background: var(--ar-amber-100); }
-.review__k { flex: none; width: 96px; font: 500 11px var(--ar-font-sans); color: var(--ar-ink-400); }
-.review__v { font: 500 13px var(--ar-font-sans); color: var(--ar-ink-900); }
-.review--bad { gap: 8px; align-items: flex-start; }
+.review__row--pending {
+  background: var(--ar-amber-100);
+}
+.review__k {
+  flex: none;
+  width: 96px;
+  font: 500 11px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+}
+.review__v {
+  font: 500 13px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+}
+.review--bad {
+  gap: 8px;
+  align-items: flex-start;
+}
 .review__reason {
-  margin: 0; padding: 8px 10px; border-radius: var(--ar-radius-inset);
-  background: var(--ar-red-100); color: var(--ar-red-600);
-  font: 400 12px/1.55 var(--ar-font-sans); max-width: 58ch;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--ar-radius-inset);
+  background: var(--ar-red-100);
+  color: var(--ar-red-600);
+  font: 400 12px/1.55 var(--ar-font-sans);
+  max-width: 58ch;
 }
 
-.edit { width: 100%; display: flex; flex-direction: column; gap: 8px; }
-.edit__in {
-  width: 100%; max-width: 340px; height: var(--ar-control-h);
-  padding: 0 10px; border: 1px solid var(--ar-line-300);
-  border-radius: var(--ar-radius-control); background: var(--ar-white);
-  font: 400 13px var(--ar-font-sans); color: var(--ar-ink-900);
+.edit {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.edit__in--pin { max-width: 180px; letter-spacing: .3em; }
-.edit__in:focus-visible { outline: 2px solid var(--ar-amber-500); outline-offset: -1px; border-color: var(--ar-amber-500); }
-.edit__row { display: flex; gap: 8px; }
-.edit__hint { margin: 0; max-width: 58ch; font: 400 11px/1.6 var(--ar-font-sans); color: var(--ar-ink-400); }
+.edit__in {
+  width: 100%;
+  max-width: 340px;
+  height: var(--ar-control-h);
+  padding: 0 10px;
+  border: 1px solid var(--ar-line-300);
+  border-radius: var(--ar-radius-control);
+  background: var(--ar-white);
+  font: 400 13px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+}
+.edit__in--pin {
+  max-width: 180px;
+  letter-spacing: 0.3em;
+}
+.edit__in:focus-visible {
+  outline: 2px solid var(--ar-amber-500);
+  outline-offset: -1px;
+  border-color: var(--ar-amber-500);
+}
+.edit__row {
+  display: flex;
+  gap: 8px;
+}
+.edit__hint {
+  margin: 0;
+  max-width: 58ch;
+  font: 400 11px/1.6 var(--ar-font-sans);
+  color: var(--ar-ink-400);
+}

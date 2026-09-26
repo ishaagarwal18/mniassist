@@ -37,15 +37,26 @@ export function readErpForm(config: Record<string, unknown>): ErpForm {
  * Writes the form back into a copy of the connection's config, leaving everything else (the gateway URL, the SAP database)
  * untouched. Blank names are removed so the connector falls back to its defaults; only the names the kind reads are written.
  */
-export function applyErpForm(config: Record<string, unknown>, form: ErpForm, kind: IntegrationKind): Record<string, unknown> {
+export function applyErpForm(
+  config: Record<string, unknown>,
+  form: ErpForm,
+  kind: IntegrationKind,
+): Record<string, unknown> {
   const next: Record<string, unknown> = { ...config };
   if (form.customers || form.salesOrders || form.invoices) {
-    next['erp'] = { customers: form.customers, salesOrders: form.salesOrders, invoices: form.invoices };
+    next['erp'] = {
+      customers: form.customers,
+      salesOrders: form.salesOrders,
+      invoices: form.invoices,
+    };
   } else {
     delete next['erp'];
   }
 
-  const used: readonly string[] = kind === IntegrationKind.Tally ? ['company', 'salesLedger', 'debtorsGroup'] : ['cardCodePrefix'];
+  const used: readonly string[] =
+    kind === IntegrationKind.Tally
+      ? ['company', 'salesLedger', 'debtorsGroup']
+      : ['cardCodePrefix'];
   for (const key of TEXT_KEYS) {
     const value = form[key].trim();
     if (used.includes(key) && value) next[key] = value;
@@ -65,7 +76,10 @@ export function erpFormProblem(form: ErpForm): string | null {
 export function describeRun(r: ErpSyncRunResultDto): string {
   const parts: string[] = [];
   if (r.retried === 0) parts.push('Nothing was waiting to retry');
-  else parts.push(`${r.recovered} of ${r.retried} retried record${r.retried === 1 ? '' : 's'} went through`);
+  else
+    parts.push(
+      `${r.recovered} of ${r.retried} retried record${r.retried === 1 ? '' : 's'} went through`,
+    );
   if (r.invoiceError) parts.push(`invoices could not be read: ${r.invoiceError}`);
   else parts.push(`${r.invoices} invoice${r.invoices === 1 ? '' : 's'} read`);
   return parts.join('; ') + '.';

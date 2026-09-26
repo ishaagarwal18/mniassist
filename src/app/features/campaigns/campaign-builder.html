@@ -107,7 +107,9 @@
                   than a day. Takes effect when the campaign is sent.
                 </span>
                 @if (preflight(); as pf) {
-                  <span class="timing__coverage">{{ coverage(pf.learnedSendHourRecipients, pf.recipients) }}</span>
+                  <span class="timing__coverage">{{
+                    coverage(pf.learnedSendHourRecipients, pf.recipients)
+                  }}</span>
                 }
               </span>
             </label>

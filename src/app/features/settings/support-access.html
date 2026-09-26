@@ -9,8 +9,8 @@
 <div class="sa ar-scroll">
   @if (active().length === 0) {
     <ar-banner tone="good">
-      Nobody at AutoReach can open your account. Support can only enter after you grant
-      access here, and every grant expires on its own.
+      Nobody at AutoReach can open your account. Support can only enter after you grant access here,
+      and every grant expires on its own.
     </ar-banner>
   }
 
@@ -23,12 +23,18 @@
             <ar-chip [tone]="g.allowsWrite ? 'warn' : 'neutral'">
               {{ g.allowsWrite ? 'Read and write' : 'Read only' }}
             </ar-chip>
-            @if (g.ticketRef) { <ar-chip tone="neutral" [mono]="true">{{ g.ticketRef }}</ar-chip> }
+            @if (g.ticketRef) {
+              <ar-chip tone="neutral" [mono]="true">{{ g.ticketRef }}</ar-chip>
+            }
           </div>
           <h2 class="grant__reason">{{ g.reason }}</h2>
           <p class="grant__who">
             Granted by {{ g.grantedBy }}
-            @if (g.grantedTo) { to {{ g.grantedTo }} } @else { to any support engineer }
+            @if (g.grantedTo) {
+              to {{ g.grantedTo }}
+            } @else {
+              to any support engineer
+            }
             · {{ when(g.grantedAt) }}
           </p>
         </div>
@@ -40,8 +46,8 @@
       </header>
 
       <p class="grant__note">
-        Revoking takes effect immediately and closes any session in progress. You do not
-        need to give a reason.
+        Revoking takes effect immediately and closes any session in progress. You do not need to
+        give a reason.
       </p>
     </article>
   }
@@ -49,12 +55,14 @@
   <section class="block">
     <h3 class="block__title">Session history</h3>
     <p class="block__sub">
-      Every visit, with how much was done. A read-only session cannot have changed anything —
-      the write count is there so you do not have to take that on trust.
+      Every visit, with how much was done. A read-only session cannot have changed anything — the
+      write count is there so you do not have to take that on trust.
     </p>
 
     <table class="ar-table">
-      <caption class="sr-only">Support sessions</caption>
+      <caption class="sr-only">
+        Support sessions
+      </caption>
       <thead>
         <tr>
           <th scope="col">Engineer</th>
@@ -80,7 +88,9 @@
             <td class="num ar-mono" [class.sa__wrote]="s.writeCount > 0">{{ s.writeCount }}</td>
           </tr>
         } @empty {
-          <tr><td colspan="6" class="empty">No support sessions on record.</td></tr>
+          <tr>
+            <td colspan="6" class="empty">No support sessions on record.</td>
+          </tr>
         }
       </tbody>
     </table>
@@ -90,7 +100,9 @@
     <section class="block">
       <h3 class="block__title">Expired and revoked grants</h3>
       <table class="ar-table">
-        <caption class="sr-only">Past grants</caption>
+        <caption class="sr-only">
+          Past grants
+        </caption>
         <thead>
           <tr>
             <th scope="col">Reason</th>
@@ -106,8 +118,11 @@
               <td>{{ g.reason }}</td>
               <td class="ar-mono">{{ when(g.grantedAt) }}</td>
               <td class="ar-mono">
-                @if (g.revokedAt) { Revoked {{ when(g.revokedAt) }} }
-                @else { Expired {{ when(g.expiresAt) }} }
+                @if (g.revokedAt) {
+                  Revoked {{ when(g.revokedAt) }}
+                } @else {
+                  Expired {{ when(g.expiresAt) }}
+                }
               </td>
               <td>
                 <ar-chip [tone]="g.allowsWrite ? 'warn' : 'neutral'">

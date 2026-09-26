@@ -45,11 +45,21 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
           <div class="pm__grid">
             <label class="ar-field" for="pm-merchant">
               <span class="ar-field__label">Merchant ID</span>
-              <input id="pm-merchant" class="ar-field__input ar-mono" [value]="merchantId()" (input)="merchantId.set($any($event.target).value)" />
+              <input
+                id="pm-merchant"
+                class="ar-field__input ar-mono"
+                [value]="merchantId()"
+                (input)="merchantId.set($any($event.target).value)"
+              />
             </label>
             <label class="ar-field" for="pm-client">
               <span class="ar-field__label">Client ID</span>
-              <input id="pm-client" class="ar-field__input ar-mono" [value]="clientId()" (input)="clientId.set($any($event.target).value)" />
+              <input
+                id="pm-client"
+                class="ar-field__input ar-mono"
+                [value]="clientId()"
+                (input)="clientId.set($any($event.target).value)"
+              />
             </label>
             <label class="ar-field" for="pm-secret">
               <span class="ar-field__label">
@@ -58,25 +68,55 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
                   <span class="ar-field__opt">(stored — leave empty to keep it)</span>
                 }
               </span>
-              <input id="pm-secret" type="password" autocomplete="off" class="ar-field__input" [value]="secret()" (input)="secret.set($any($event.target).value)" />
+              <input
+                id="pm-secret"
+                type="password"
+                autocomplete="off"
+                class="ar-field__input"
+                [value]="secret()"
+                (input)="secret.set($any($event.target).value)"
+              />
             </label>
             <label class="ar-field" for="pm-env">
               <span class="ar-field__label">System</span>
-              <select id="pm-env" class="ar-field__input" (change)="environment.set(+$any($event.target).value)">
-                <option [value]="Env.Uat" [selected]="environment() === Env.Uat">Test (UAT) — no real money</option>
-                <option [value]="Env.Production" [selected]="environment() === Env.Production">Live</option>
+              <select
+                id="pm-env"
+                class="ar-field__input"
+                (change)="environment.set(+$any($event.target).value)"
+              >
+                <option [value]="Env.Uat" [selected]="environment() === Env.Uat">
+                  Test (UAT) — no real money
+                </option>
+                <option [value]="Env.Production" [selected]="environment() === Env.Production">
+                  Live
+                </option>
               </select>
             </label>
           </div>
           <label class="pm__check">
-            <input type="checkbox" [checked]="enabled()" (change)="enabled.set($any($event.target).checked)" />
+            <input
+              type="checkbox"
+              [checked]="enabled()"
+              (change)="enabled.set($any($event.target).checked)"
+            />
             <span>Let the team send payment requests</span>
           </label>
           @if (webhookUrl(); as url) {
-            <p class="pm__hint">Give BillDesk this webhook address for your account: <span class="ar-mono">{{ url }}</span></p>
+            <p class="pm__hint">
+              Give BillDesk this webhook address for your account:
+              <span class="ar-mono">{{ url }}</span>
+            </p>
           }
           <div class="pm__actions">
-            <button ar-button type="button" variant="primary" [disabled]="saving()" (click)="save()">{{ saving() ? 'Saving…' : 'Save' }}</button>
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              [disabled]="saving()"
+              (click)="save()"
+            >
+              {{ saving() ? 'Saving…' : 'Save' }}
+            </button>
           </div>
         </section>
       }
@@ -91,12 +131,21 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
       <section class="pm__card">
         <h2 class="pm__h">Requests</h2>
         @if (requests().length === 0) {
-          <p class="pm__hint">No payment requests yet. Send one from a conversation in the inbox.</p>
+          <p class="pm__hint">
+            No payment requests yet. Send one from a conversation in the inbox.
+          </p>
         } @else {
           <div class="pm__table-wrap">
             <table class="pm__table">
               <thead>
-                <tr><th>Reference</th><th>Customer</th><th>For</th><th class="pm__num">Amount</th><th>Status</th><th></th></tr>
+                <tr>
+                  <th>Reference</th>
+                  <th>Customer</th>
+                  <th>For</th>
+                  <th class="pm__num">Amount</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
               </thead>
               <tbody>
                 @for (r of requests(); track r.id) {
@@ -113,9 +162,13 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
                     </td>
                     <td class="pm__row-actions">
                       @if (r.status === Status.Pending || r.status === Status.Failed) {
-                        <button type="button" class="pm__link" (click)="copy(r.payUrl)">Copy link</button>
+                        <button type="button" class="pm__link" (click)="copy(r.payUrl)">
+                          Copy link
+                        </button>
                         @if (canCancel) {
-                          <button type="button" class="pm__link pm__link--bad" (click)="cancel(r)">Cancel</button>
+                          <button type="button" class="pm__link pm__link--bad" (click)="cancel(r)">
+                            Cancel
+                          </button>
                         }
                       }
                     </td>
@@ -129,25 +182,109 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
     </div>
   `,
   styles: `
-    .pm { padding: 20px 24px 40px; display: flex; flex-direction: column; gap: 16px; max-width: 980px; }
-    .pm__card { padding: 16px 18px; background: var(--ar-white); border: 1px solid var(--ar-line-200); border-radius: var(--ar-radius-card); display: flex; flex-direction: column; gap: 12px; }
-    .pm__h { margin: 0; font: 600 14px var(--ar-font-sans); color: var(--ar-ink-900); }
-    .pm__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
-    .pm__check { display: flex; gap: 8px; align-items: center; font: 500 13px var(--ar-font-sans); color: var(--ar-ink-800); }
-    .pm__hint { margin: 0; font: 400 12.5px/1.5 var(--ar-font-sans); color: var(--ar-ink-500); overflow-wrap: anywhere; }
-    .pm__actions { display: flex; justify-content: flex-end; }
-    .pm__ok { margin: 0; font: 500 12.5px var(--ar-font-sans); color: var(--ar-teal-600); }
-    .pm__err { margin: 0; font: 500 12.5px var(--ar-font-sans); color: var(--ar-warn-600); }
-    .pm__table-wrap { overflow-x: auto; }
-    .pm__table { width: 100%; border-collapse: collapse; font: 400 12.5px var(--ar-font-sans); color: var(--ar-ink-800); }
-    .pm__table th { text-align: left; padding: 6px 8px; font-weight: 600; color: var(--ar-ink-500); border-bottom: 1px solid var(--ar-line-200); white-space: nowrap; }
-    .pm__table td { padding: 8px; border-bottom: 1px solid var(--ar-line-200); vertical-align: top; }
-    .pm__num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .pm__desc { max-width: 260px; }
-    .pm__why { display: block; margin-top: 3px; font-size: 11.5px; color: var(--ar-warn-600); }
-    .pm__row-actions { white-space: nowrap; }
-    .pm__link { background: none; border: 0; padding: 0 6px; font: 500 12px var(--ar-font-sans); color: var(--ar-teal-600); cursor: pointer; }
-    .pm__link--bad { color: var(--ar-warn-600); }
+    .pm {
+      padding: 20px 24px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 980px;
+    }
+    .pm__card {
+      padding: 16px 18px;
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .pm__h {
+      margin: 0;
+      font: 600 14px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .pm__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+    }
+    .pm__check {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font: 500 13px var(--ar-font-sans);
+      color: var(--ar-ink-800);
+    }
+    .pm__hint {
+      margin: 0;
+      font: 400 12.5px/1.5 var(--ar-font-sans);
+      color: var(--ar-ink-500);
+      overflow-wrap: anywhere;
+    }
+    .pm__actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .pm__ok {
+      margin: 0;
+      font: 500 12.5px var(--ar-font-sans);
+      color: var(--ar-teal-600);
+    }
+    .pm__err {
+      margin: 0;
+      font: 500 12.5px var(--ar-font-sans);
+      color: var(--ar-warn-600);
+    }
+    .pm__table-wrap {
+      overflow-x: auto;
+    }
+    .pm__table {
+      width: 100%;
+      border-collapse: collapse;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-800);
+    }
+    .pm__table th {
+      text-align: left;
+      padding: 6px 8px;
+      font-weight: 600;
+      color: var(--ar-ink-500);
+      border-bottom: 1px solid var(--ar-line-200);
+      white-space: nowrap;
+    }
+    .pm__table td {
+      padding: 8px;
+      border-bottom: 1px solid var(--ar-line-200);
+      vertical-align: top;
+    }
+    .pm__num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .pm__desc {
+      max-width: 260px;
+    }
+    .pm__why {
+      display: block;
+      margin-top: 3px;
+      font-size: 11.5px;
+      color: var(--ar-warn-600);
+    }
+    .pm__row-actions {
+      white-space: nowrap;
+    }
+    .pm__link {
+      background: none;
+      border: 0;
+      padding: 0 6px;
+      font: 500 12px var(--ar-font-sans);
+      color: var(--ar-teal-600);
+      cursor: pointer;
+    }
+    .pm__link--bad {
+      color: var(--ar-warn-600);
+    }
   `,
 })
 export class ArPaymentsSettings {
@@ -159,7 +296,10 @@ export class ArPaymentsSettings {
   protected readonly tone = STATUS_TONE;
   protected readonly label = PAYMENT_STATUS_LABEL;
   protected readonly money = rupees;
-  protected readonly canManage = grantedPolicy('AutoReach.Payments.ManageGateway', this.permissions);
+  protected readonly canManage = grantedPolicy(
+    'AutoReach.Payments.ManageGateway',
+    this.permissions,
+  );
   protected readonly canCancel = grantedPolicy('AutoReach.Payments.Cancel', this.permissions);
 
   protected readonly merchantId = signal('');
@@ -201,13 +341,15 @@ export class ArPaymentsSettings {
     this.notice.set(null);
     this.error.set(null);
     try {
-      const g = await firstValueFrom(this.api.setGateway({
-        merchantId: this.merchantId().trim() || null,
-        clientId: this.clientId().trim() || null,
-        secret: this.secret().trim() || null,
-        environment: this.environment(),
-        enabled: this.enabled(),
-      }));
+      const g = await firstValueFrom(
+        this.api.setGateway({
+          merchantId: this.merchantId().trim() || null,
+          clientId: this.clientId().trim() || null,
+          secret: this.secret().trim() || null,
+          environment: this.environment(),
+          enabled: this.enabled(),
+        }),
+      );
       this.secret.set('');
       this.hasSecret.set(g.hasSecret);
       this.enabled.set(g.enabled);

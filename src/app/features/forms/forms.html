@@ -4,7 +4,9 @@
   help="Build a form, put it on your website as a link or an embedded frame, and every submission makes or finds the contact, records what they agreed to, and opens an enquiry in your pipeline. It works alongside WhatsApp Flows and the chat widget."
 >
   @if (view().mode === 'list' && canManage) {
-    <button ar-button type="button" variant="primary" icon="plus" (click)="startNew()">New form</button>
+    <button ar-button type="button" variant="primary" icon="plus" (click)="startNew()">
+      New form
+    </button>
   } @else if (view().mode !== 'list') {
     <button ar-button type="button" variant="ghost" (click)="back()">Back to forms</button>
   }
@@ -28,25 +30,48 @@
             <li class="wf__card">
               <div class="wf__head">
                 <strong class="wf__name">{{ f.name }}</strong>
-                <ar-chip [tone]="f.isActive ? 'good' : 'neutral'">{{ f.isActive ? 'Live' : 'Off' }}</ar-chip>
-                <span class="wf__stats">{{ f.viewCount }} views · {{ f.submissionCount }} submitted · {{ rate(f) }} · last {{ when(f.lastSubmissionAtUtc) }}</span>
+                <ar-chip [tone]="f.isActive ? 'good' : 'neutral'">{{
+                  f.isActive ? 'Live' : 'Off'
+                }}</ar-chip>
+                <span class="wf__stats"
+                  >{{ f.viewCount }} views · {{ f.submissionCount }} submitted · {{ rate(f) }} ·
+                  last {{ when(f.lastSubmissionAtUtc) }}</span
+                >
               </div>
               <div class="wf__url">
-                <input class="ar-field__input ar-mono" readonly [attr.aria-label]="'Address of ' + f.name" [value]="f.publicUrl" (focus)="$any($event.target).select()" />
-                <button ar-button type="button" variant="ghost" (click)="copy(f.publicUrl, 'Link')">Copy link</button>
+                <input
+                  class="ar-field__input ar-mono"
+                  readonly
+                  [attr.aria-label]="'Address of ' + f.name"
+                  [value]="f.publicUrl"
+                  (focus)="$any($event.target).select()"
+                />
+                <button ar-button type="button" variant="ghost" (click)="copy(f.publicUrl, 'Link')">
+                  Copy link
+                </button>
               </div>
               <div class="wf__actions">
-                <button ar-button type="button" variant="ghost" (click)="openEmbed(f)">Embed on a website</button>
-                <button ar-button type="button" variant="ghost" (click)="openSubmissions(f)">Submissions</button>
+                <button ar-button type="button" variant="ghost" (click)="openEmbed(f)">
+                  Embed on a website
+                </button>
+                <button ar-button type="button" variant="ghost" (click)="openSubmissions(f)">
+                  Submissions
+                </button>
                 @if (canManage) {
                   <button ar-button type="button" variant="ghost" (click)="edit(f)">Edit</button>
-                  <button ar-button type="button" variant="ghost" (click)="toggle(f)">{{ f.isActive ? 'Turn off' : 'Turn on' }}</button>
-                  <button ar-button type="button" variant="ghost" (click)="remove(f)">Delete</button>
+                  <button ar-button type="button" variant="ghost" (click)="toggle(f)">
+                    {{ f.isActive ? 'Turn off' : 'Turn on' }}
+                  </button>
+                  <button ar-button type="button" variant="ghost" (click)="remove(f)">
+                    Delete
+                  </button>
                 }
               </div>
             </li>
           } @empty {
-            <li class="wf__muted">No forms yet. Make one, then put its link or embed code on your website.</li>
+            <li class="wf__muted">
+              No forms yet. Make one, then put its link or embed code on your website.
+            </li>
           }
         </ul>
       }
@@ -56,17 +81,37 @@
       <section class="wf__panel" aria-label="Form editor">
         <div class="wf__grid">
           <label class="ar-field" for="wf-name">
-            <span class="ar-field__label">Name <span class="ar-field__opt">only you see this</span></span>
-            <input id="wf-name" class="ar-field__input" [value]="draft().name" (input)="patch({ name: $any($event.target).value })" />
+            <span class="ar-field__label"
+              >Name <span class="ar-field__opt">only you see this</span></span
+            >
+            <input
+              id="wf-name"
+              class="ar-field__input"
+              [value]="draft().name"
+              (input)="patch({ name: $any($event.target).value })"
+            />
           </label>
           <label class="ar-field" for="wf-title">
             <span class="ar-field__label">Heading</span>
-            <input id="wf-title" class="ar-field__input" [value]="draft().title" (input)="patch({ title: $any($event.target).value })" />
+            <input
+              id="wf-title"
+              class="ar-field__input"
+              [value]="draft().title"
+              (input)="patch({ title: $any($event.target).value })"
+            />
           </label>
         </div>
         <label class="ar-field" for="wf-intro">
-          <span class="ar-field__label">Introduction <span class="ar-field__opt">optional</span></span>
-          <textarea id="wf-intro" class="ar-field__input" rows="2" [value]="draft().intro ?? ''" (input)="patch({ intro: $any($event.target).value })"></textarea>
+          <span class="ar-field__label"
+            >Introduction <span class="ar-field__opt">optional</span></span
+          >
+          <textarea
+            id="wf-intro"
+            class="ar-field__input"
+            rows="2"
+            [value]="draft().intro ?? ''"
+            (input)="patch({ intro: $any($event.target).value })"
+          ></textarea>
         </label>
 
         <h2 class="wf__h">Questions</h2>
@@ -76,11 +121,20 @@
               <div class="wf__qrow">
                 <label class="ar-field wf__grow" [attr.for]="'wf-l' + $index">
                   <span class="ar-field__label">Question</span>
-                  <input [id]="'wf-l' + $index" class="ar-field__input" [value]="q.label" (input)="setLabel($index, $any($event.target).value)" />
+                  <input
+                    [id]="'wf-l' + $index"
+                    class="ar-field__input"
+                    [value]="q.label"
+                    (input)="setLabel($index, $any($event.target).value)"
+                  />
                 </label>
                 <label class="ar-field" [attr.for]="'wf-k' + $index">
                   <span class="ar-field__label">Answer is</span>
-                  <select [id]="'wf-k' + $index" class="ar-field__input" (change)="setKind($index, +$any($event.target).value)">
+                  <select
+                    [id]="'wf-k' + $index"
+                    class="ar-field__input"
+                    (change)="setKind($index, +$any($event.target).value)"
+                  >
                     @for (k of kinds; track k.kind) {
                       <option [value]="k.kind" [selected]="k.kind === q.kind">{{ k.label }}</option>
                     }
@@ -88,7 +142,11 @@
                 </label>
                 <label class="ar-field" [attr.for]="'wf-t' + $index">
                   <span class="ar-field__label">Goes to</span>
-                  <select [id]="'wf-t' + $index" class="ar-field__input" (change)="setTarget($index, +$any($event.target).value)">
+                  <select
+                    [id]="'wf-t' + $index"
+                    class="ar-field__input"
+                    (change)="setTarget($index, +$any($event.target).value)"
+                  >
                     @for (t of targetsFor(q.kind); track t) {
                       <option [value]="t" [selected]="t === q.target">{{ targetLabel[t] }}</option>
                     }
@@ -97,68 +155,159 @@
               </div>
               @if (q.kind === Kind.Select) {
                 <label class="ar-field" [attr.for]="'wf-o' + $index">
-                  <span class="ar-field__label">Options <span class="ar-field__opt">one per line</span></span>
-                  <textarea [id]="'wf-o' + $index" class="ar-field__input" rows="3" [value]="q.options.join('\n')" (input)="setOptions($index, $any($event.target).value)"></textarea>
+                  <span class="ar-field__label"
+                    >Options <span class="ar-field__opt">one per line</span></span
+                  >
+                  <textarea
+                    [id]="'wf-o' + $index"
+                    class="ar-field__input"
+                    rows="3"
+                    [value]="q.options.join('\n')"
+                    (input)="setOptions($index, $any($event.target).value)"
+                  ></textarea>
                 </label>
               }
               <div class="wf__qfoot">
                 <label class="wf__chk" [attr.for]="'wf-r' + $index">
-                  <input [id]="'wf-r' + $index" type="checkbox" [checked]="q.required" (change)="patchField($index, { required: $any($event.target).checked })" />
+                  <input
+                    [id]="'wf-r' + $index"
+                    type="checkbox"
+                    [checked]="q.required"
+                    (change)="patchField($index, { required: $any($event.target).checked })"
+                  />
                   <span>Required</span>
                 </label>
                 <span class="wf__key ar-mono">{{ q.key }}</span>
                 <span class="wf__grow"></span>
-                <button type="button" class="wf__mini" aria-label="Move up" [disabled]="$index === 0" (click)="move($index, -1)">↑</button>
-                <button type="button" class="wf__mini" aria-label="Move down" [disabled]="$index === draft().fields.length - 1" (click)="move($index, 1)">↓</button>
-                <button type="button" class="wf__mini" aria-label="Remove question" (click)="removeQuestion($index)">Remove</button>
+                <button
+                  type="button"
+                  class="wf__mini"
+                  aria-label="Move up"
+                  [disabled]="$index === 0"
+                  (click)="move($index, -1)"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  class="wf__mini"
+                  aria-label="Move down"
+                  [disabled]="$index === draft().fields.length - 1"
+                  (click)="move($index, 1)"
+                >
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  class="wf__mini"
+                  aria-label="Remove question"
+                  (click)="removeQuestion($index)"
+                >
+                  Remove
+                </button>
               </div>
             </li>
           }
         </ol>
-        <button ar-button type="button" variant="ghost" icon="plus" (click)="addQuestion()">Add a question</button>
+        <button ar-button type="button" variant="ghost" icon="plus" (click)="addQuestion()">
+          Add a question
+        </button>
 
         <h2 class="wf__h">Agreement</h2>
         <label class="ar-field" for="wf-consent">
           <span class="ar-field__label">The box they must tick</span>
-          <input id="wf-consent" class="ar-field__input" [value]="draft().consentText" (input)="patch({ consentText: $any($event.target).value })" />
+          <input
+            id="wf-consent"
+            class="ar-field__input"
+            [value]="draft().consentText"
+            (input)="patch({ consentText: $any($event.target).value })"
+          />
         </label>
         <label class="ar-field" for="wf-mkt">
-          <span class="ar-field__label">A second, optional box for news and offers <span class="ar-field__opt">leave blank to not show it</span></span>
-          <input id="wf-mkt" class="ar-field__input" [value]="draft().marketingOptInText ?? ''" (input)="patch({ marketingOptInText: $any($event.target).value })" />
+          <span class="ar-field__label"
+            >A second, optional box for news and offers
+            <span class="ar-field__opt">leave blank to not show it</span></span
+          >
+          <input
+            id="wf-mkt"
+            class="ar-field__input"
+            [value]="draft().marketingOptInText ?? ''"
+            (input)="patch({ marketingOptInText: $any($event.target).value })"
+          />
         </label>
         <p class="wf__hint">
-          Ticking a box records the visitor's word, not proof that the number or address is theirs. Marketing messages to a number nobody has confirmed carry a risk.
+          Ticking a box records the visitor's word, not proof that the number or address is theirs.
+          Marketing messages to a number nobody has confirmed carry a risk.
         </p>
 
         <h2 class="wf__h">After they submit</h2>
         <label class="wf__chk" for="wf-enq">
-          <input id="wf-enq" type="checkbox" [checked]="draft().createEnquiry" (change)="patch({ createEnquiry: $any($event.target).checked })" />
+          <input
+            id="wf-enq"
+            type="checkbox"
+            [checked]="draft().createEnquiry"
+            (change)="patch({ createEnquiry: $any($event.target).checked })"
+          />
           <span>Open an enquiry in the pipeline for each submission</span>
         </label>
         <div class="wf__grid">
           <label class="ar-field" for="wf-etitle">
-            <span class="ar-field__label">Enquiry title <span class="ar-field__opt">blank uses the heading</span></span>
-            <input id="wf-etitle" class="ar-field__input" [value]="draft().enquiryTitle ?? ''" (input)="patch({ enquiryTitle: $any($event.target).value })" />
+            <span class="ar-field__label"
+              >Enquiry title <span class="ar-field__opt">blank uses the heading</span></span
+            >
+            <input
+              id="wf-etitle"
+              class="ar-field__input"
+              [value]="draft().enquiryTitle ?? ''"
+              (input)="patch({ enquiryTitle: $any($event.target).value })"
+            />
           </label>
           <label class="ar-field" for="wf-btn">
             <span class="ar-field__label">Button text</span>
-            <input id="wf-btn" class="ar-field__input" [value]="draft().submitLabel ?? ''" (input)="patch({ submitLabel: $any($event.target).value })" />
+            <input
+              id="wf-btn"
+              class="ar-field__input"
+              [value]="draft().submitLabel ?? ''"
+              (input)="patch({ submitLabel: $any($event.target).value })"
+            />
           </label>
         </div>
         <label class="ar-field" for="wf-ok">
           <span class="ar-field__label">Thank-you message</span>
-          <input id="wf-ok" class="ar-field__input" [value]="draft().successMessage ?? ''" (input)="patch({ successMessage: $any($event.target).value })" />
+          <input
+            id="wf-ok"
+            class="ar-field__input"
+            [value]="draft().successMessage ?? ''"
+            (input)="patch({ successMessage: $any($event.target).value })"
+          />
         </label>
         <label class="ar-field" for="wf-redir">
-          <span class="ar-field__label">Or send them to your own thank-you page <span class="ar-field__opt">https address, optional</span></span>
-          <input id="wf-redir" class="ar-field__input" placeholder="https://example.com/thanks" [value]="draft().redirectUrl ?? ''" (input)="patch({ redirectUrl: $any($event.target).value })" />
+          <span class="ar-field__label"
+            >Or send them to your own thank-you page
+            <span class="ar-field__opt">https address, optional</span></span
+          >
+          <input
+            id="wf-redir"
+            class="ar-field__input"
+            placeholder="https://example.com/thanks"
+            [value]="draft().redirectUrl ?? ''"
+            (input)="patch({ redirectUrl: $any($event.target).value })"
+          />
         </label>
 
         @if (problem(); as p) {
           <p class="wf__err" role="alert">{{ p }}</p>
         }
         <div class="wf__save">
-          <button ar-button type="button" variant="primary" [disabled]="!!problem() || busy()" (click)="save()">{{ busy() ? 'Saving…' : 'Save form' }}</button>
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="!!problem() || busy()"
+            (click)="save()"
+          >
+            {{ busy() ? 'Saving…' : 'Save form' }}
+          </button>
           <button ar-button type="button" variant="ghost" (click)="back()">Cancel</button>
         </div>
       </section>
@@ -170,20 +319,47 @@
           <h2 class="wf__h">Link</h2>
           <p class="wf__hint">Share this anywhere: an email, a QR code, a button on your site.</p>
           <div class="wf__url">
-            <input class="ar-field__input ar-mono" readonly aria-label="Form link" [value]="e.publicUrl" (focus)="$any($event.target).select()" />
-            <button ar-button type="button" variant="ghost" (click)="copy(e.publicUrl, 'Link')">Copy</button>
+            <input
+              class="ar-field__input ar-mono"
+              readonly
+              aria-label="Form link"
+              [value]="e.publicUrl"
+              (focus)="$any($event.target).select()"
+            />
+            <button ar-button type="button" variant="ghost" (click)="copy(e.publicUrl, 'Link')">
+              Copy
+            </button>
           </div>
           <h2 class="wf__h">Embed on a page</h2>
-          <p class="wf__hint">Paste this where the form should appear. The frame grows to fit the form.</p>
-          <textarea class="ar-field__input ar-mono wf__code" readonly rows="6" aria-label="Embed code" (focus)="$any($event.target).select()">{{ e.iframeHtml }}</textarea>
-          <div class="wf__save"><button ar-button type="button" variant="primary" (click)="copy(e.iframeHtml, 'Embed code')">Copy embed code</button></div>
+          <p class="wf__hint">
+            Paste this where the form should appear. The frame grows to fit the form.
+          </p>
+          <textarea
+            class="ar-field__input ar-mono wf__code"
+            readonly
+            rows="6"
+            aria-label="Embed code"
+            (focus)="$any($event.target).select()"
+            >{{ e.iframeHtml }}</textarea>
+          <div class="wf__save">
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              (click)="copy(e.iframeHtml, 'Embed code')"
+            >
+              Copy embed code
+            </button>
+          </div>
         </section>
       }
     }
 
     @case ('submissions') {
       <section class="wf__panel">
-        <h2 class="wf__h">Submissions <span class="wf__count">{{ submissionTotal() }}</span></h2>
+        <h2 class="wf__h">
+          Submissions <span class="wf__count">{{ submissionTotal() }}</span>
+        </h2>
         <ul class="wf__subs">
           @for (s of submissions(); track s.id) {
             <li class="wf__sub">
@@ -191,10 +367,15 @@
                 <strong>{{ s.contactName || 'Unknown' }}</strong>
                 <span class="wf__muted">{{ when(s.submittedAtUtc) }}</span>
                 @if (s.enquiryReference) {
-                  <a class="wf__ref ar-mono" [href]="'/enquiries/' + s.enquiryId">{{ s.enquiryReference }}</a>
+                  <a class="wf__ref ar-mono" [href]="'/enquiries/' + s.enquiryId">{{
+                    s.enquiryReference
+                  }}</a>
                 }
                 @if (s.utmSource || s.utmCampaign) {
-                  <span class="wf__muted">{{ s.utmSource }}{{ s.utmMedium ? ' / ' + s.utmMedium : '' }}{{ s.utmCampaign ? ' / ' + s.utmCampaign : '' }}</span>
+                  <span class="wf__muted"
+                    >{{ s.utmSource }}{{ s.utmMedium ? ' / ' + s.utmMedium : ''
+                    }}{{ s.utmCampaign ? ' / ' + s.utmCampaign : '' }}</span
+                  >
                 }
               </div>
               <dl class="wf__ans">

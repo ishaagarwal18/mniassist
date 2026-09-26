@@ -10,7 +10,9 @@ describe('sample-data calling', () => {
   it('starting a call rings, is on the log at once, and is waiting for an outcome only once it ends', async () => {
     const a = api();
 
-    const started = await firstValueFrom(a.start({ contactId: 'k1', enquiryId: 'e1', repNumber: '98123 45678' }));
+    const started = await firstValueFrom(
+      a.start({ contactId: 'k1', enquiryId: 'e1', repNumber: '98123 45678' }),
+    );
 
     expect(started.isOver).toBe(false);
     expect(started.mode).toBe(VoiceCallMode.ClickToCall);
@@ -25,7 +27,9 @@ describe('sample-data calling', () => {
     store.myNumber = null;
     const a = new MockCallApi(store);
 
-    await expect(firstValueFrom(a.start({ contactId: 'k1' }))).rejects.toMatchObject({ error: { error: { code: 'AutoReach:CallNeedsRepNumber' } } });
+    await expect(firstValueFrom(a.start({ contactId: 'k1' }))).rejects.toMatchObject({
+      error: { error: { code: 'AutoReach:CallNeedsRepNumber' } },
+    });
 
     await firstValueFrom(a.start({ contactId: 'k1', repNumber: '9811122233', saveNumber: true }));
     expect(store.myNumber).toBe('919811122233');
@@ -37,7 +41,9 @@ describe('sample-data calling', () => {
     const target = before.items![0];
     expect(target).toBeTruthy();
 
-    const updated = await firstValueFrom(a.setOutcome(target.id, { outcome: CallOutcome.NotInterested, notes: '  no budget  ' }));
+    const updated = await firstValueFrom(
+      a.setOutcome(target.id, { outcome: CallOutcome.NotInterested, notes: '  no budget  ' }),
+    );
 
     expect(updated.outcome).toBe(CallOutcome.NotInterested);
     expect(updated.notes).toBe('no budget');
@@ -50,14 +56,29 @@ describe('sample-data calling', () => {
     const when = new Date(Date.now() - 3_600_000).toISOString();
 
     const logged = await firstValueFrom(
-      a.logManual({ contactId: 'k1', direction: VoiceCallDirection.Inbound, startedAtUtc: when, durationSeconds: 240, outcome: CallOutcome.Connected, notes: 'Asked about lead time.' }),
+      a.logManual({
+        contactId: 'k1',
+        direction: VoiceCallDirection.Inbound,
+        startedAtUtc: when,
+        durationSeconds: 240,
+        outcome: CallOutcome.Connected,
+        notes: 'Asked about lead time.',
+      }),
     );
 
     expect(logged.isOver).toBe(true);
     expect(logged.mode).toBe(VoiceCallMode.Manual);
     expect(logged.outcome).toBe(CallOutcome.Connected);
     await expect(
-      firstValueFrom(a.logManual({ contactId: 'k1', direction: VoiceCallDirection.Outbound, startedAtUtc: new Date(Date.now() + 3 * 3_600_000).toISOString(), durationSeconds: 5, outcome: CallOutcome.Connected })),
+      firstValueFrom(
+        a.logManual({
+          contactId: 'k1',
+          direction: VoiceCallDirection.Outbound,
+          startedAtUtc: new Date(Date.now() + 3 * 3_600_000).toISOString(),
+          durationSeconds: 5,
+          outcome: CallOutcome.Connected,
+        }),
+      ),
     ).rejects.toMatchObject({ error: { error: { code: 'AutoReach:CallStartedInFuture' } } });
   });
 

@@ -95,7 +95,11 @@ export class CatalogueService {
 
   addFromProducts = (channelId: string, productIds: string[], config?: Partial<Rest.Config>) =>
     this.restService.request<any, AddCatalogueFromProductsResultDto>(
-      { method: 'POST', url: '/api/auto-reach/catalogue/from-products', body: { channelId, productIds } },
+      {
+        method: 'POST',
+        url: '/api/auto-reach/catalogue/from-products',
+        body: { channelId, productIds },
+      },
       { apiName: this.apiName, ...config },
     );
 

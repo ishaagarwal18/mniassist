@@ -1,5 +1,12 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import {
@@ -51,20 +58,80 @@ const KIND_META: Record<
   AutomationNodeKind,
   { label: string; icon: IconName; blurb: string; addable: boolean }
 > = {
-  [AutomationNodeKind.Trigger]: { label: 'Trigger', icon: 'automation', blurb: 'Starts the automation', addable: false },
-  [AutomationNodeKind.SendSessionMessage]: { label: 'Send a message', icon: 'send', blurb: 'Free-form, inside the window', addable: true },
-  [AutomationNodeKind.SendTemplate]: { label: 'Send a template', icon: 'template', blurb: 'An approved template', addable: true },
-  [AutomationNodeKind.Wait]: { label: 'Wait', icon: 'clock', blurb: 'Pause before the next step', addable: true },
-  [AutomationNodeKind.Condition]: { label: 'If…', icon: 'filter', blurb: 'Branch on the contact', addable: true },
-  [AutomationNodeKind.AssignAgent]: { label: 'Assign to an agent', icon: 'user', blurb: 'Hand the conversation over', addable: true },
-  [AutomationNodeKind.UpdateAttribute]: { label: 'Set an attribute', icon: 'contacts', blurb: 'Tag or update the contact', addable: true },
-  [AutomationNodeKind.CreateEnquiry]: { label: 'Create an enquiry', icon: 'enquiry', blurb: 'Open a pipeline card', addable: true },
-  [AutomationNodeKind.Webhook]: { label: 'Call a webhook', icon: 'link', blurb: 'Notify one of your endpoints', addable: true },
+  [AutomationNodeKind.Trigger]: {
+    label: 'Trigger',
+    icon: 'automation',
+    blurb: 'Starts the automation',
+    addable: false,
+  },
+  [AutomationNodeKind.SendSessionMessage]: {
+    label: 'Send a message',
+    icon: 'send',
+    blurb: 'Free-form, inside the window',
+    addable: true,
+  },
+  [AutomationNodeKind.SendTemplate]: {
+    label: 'Send a template',
+    icon: 'template',
+    blurb: 'An approved template',
+    addable: true,
+  },
+  [AutomationNodeKind.Wait]: {
+    label: 'Wait',
+    icon: 'clock',
+    blurb: 'Pause before the next step',
+    addable: true,
+  },
+  [AutomationNodeKind.Condition]: {
+    label: 'If…',
+    icon: 'filter',
+    blurb: 'Branch on the contact',
+    addable: true,
+  },
+  [AutomationNodeKind.AssignAgent]: {
+    label: 'Assign to an agent',
+    icon: 'user',
+    blurb: 'Hand the conversation over',
+    addable: true,
+  },
+  [AutomationNodeKind.UpdateAttribute]: {
+    label: 'Set an attribute',
+    icon: 'contacts',
+    blurb: 'Tag or update the contact',
+    addable: true,
+  },
+  [AutomationNodeKind.CreateEnquiry]: {
+    label: 'Create an enquiry',
+    icon: 'enquiry',
+    blurb: 'Open a pipeline card',
+    addable: true,
+  },
+  [AutomationNodeKind.Webhook]: {
+    label: 'Call a webhook',
+    icon: 'link',
+    blurb: 'Notify one of your endpoints',
+    addable: true,
+  },
   // The engine has no handler for this kind yet — it just moves on — so it is not offered.
   // An existing one is still shown, with a warning, so it is not silently dropped.
-  [AutomationNodeKind.StartFlow]: { label: 'Start a flow', icon: 'flow', blurb: 'Run an in-chat form', addable: false },
-  [AutomationNodeKind.WaitForReply]: { label: 'Wait for a reply', icon: 'clock', blurb: 'Branch on whether they respond', addable: true },
-  [AutomationNodeKind.End]: { label: 'End', icon: 'check', blurb: 'The journey stops', addable: false },
+  [AutomationNodeKind.StartFlow]: {
+    label: 'Start a flow',
+    icon: 'flow',
+    blurb: 'Run an in-chat form',
+    addable: false,
+  },
+  [AutomationNodeKind.WaitForReply]: {
+    label: 'Wait for a reply',
+    icon: 'clock',
+    blurb: 'Branch on whether they respond',
+    addable: true,
+  },
+  [AutomationNodeKind.End]: {
+    label: 'End',
+    icon: 'check',
+    blurb: 'The journey stops',
+    addable: false,
+  },
 };
 
 /** The fields AutomationEngine.ResolveField can read — anything else evaluates to nothing. */
@@ -180,7 +247,9 @@ export class ArAutomationBuilder {
     .filter(([, m]) => m.addable)
     .map(([k, m]) => ({ kind: Number(k) as AutomationNodeKind, label: m.label, icon: m.icon }));
 
-  protected readonly selectedNode = computed(() => this.nodes().find((n) => n.id === this.selectedId()) ?? null);
+  protected readonly selectedNode = computed(
+    () => this.nodes().find((n) => n.id === this.selectedId()) ?? null,
+  );
 
   /** The selected canvas node as the step shape the config forms read, so one set of forms serves both views. */
   protected readonly selectedStep = computed<BuilderStep | null>(() => {
@@ -229,7 +298,9 @@ export class ArAutomationBuilder {
       const stored = dto.nodes ?? [];
       const parsed = graphToSteps(stored);
       this.steps.set(parsed.steps);
-      this.notRepresentable.set(parsed.representable ? null : (parsed.reason ?? 'an unsupported shape'));
+      this.notRepresentable.set(
+        parsed.representable ? null : (parsed.reason ?? 'an unsupported shape'),
+      );
       this.anchors = anchorsOf(stored);
 
       // A graph the list cannot show opens on the canvas, where it can be edited; otherwise the last view used.
@@ -284,7 +355,11 @@ export class ArAutomationBuilder {
     this.saved.set(false);
     if (this.mode() === 'canvas') {
       this.nodes.update((ns) =>
-        ns.map((n) => (n.id === id ? { ...n, config: fn({ localId: n.id, kind: n.kind, config: n.config }).config } : n)),
+        ns.map((n) =>
+          n.id === id
+            ? { ...n, config: fn({ localId: n.id, kind: n.kind, config: n.config }).config }
+            : n,
+        ),
       );
       return;
     }
@@ -371,9 +446,7 @@ export class ArAutomationBuilder {
 
   /** What the "true" branch of a rejoining step is called. */
   protected thenLabel(step: BuilderStep): string {
-    return step.kind === AutomationNodeKind.WaitForReply
-      ? 'If they reply'
-      : 'If it matches';
+    return step.kind === AutomationNodeKind.WaitForReply ? 'If they reply' : 'If it matches';
   }
 
   /** The automation drawn as the graph the engine will run. */
@@ -486,7 +559,9 @@ export class ArAutomationBuilder {
 
     const parsed = graphToSteps(toNodeDtos(this.nodes()));
     if (!parsed.representable) {
-      this.notice.set(`This automation can't be shown as a list: ${parsed.reason}. Keep editing it on the canvas.`);
+      this.notice.set(
+        `This automation can't be shown as a list: ${parsed.reason}. Keep editing it on the canvas.`,
+      );
       return;
     }
     this.steps.set(parsed.steps);
@@ -513,7 +588,8 @@ export class ArAutomationBuilder {
     if (!h.length) return;
     this.nodes.set(restoreStructure(h[h.length - 1], this.nodes()));
     this.history.set(h.slice(0, -1));
-    if (this.selectedId() && !this.nodes().some((n) => n.id === this.selectedId())) this.selectedId.set(null);
+    if (this.selectedId() && !this.nodes().some((n) => n.id === this.selectedId()))
+      this.selectedId.set(null);
     this.saved.set(false);
   }
 
@@ -564,7 +640,9 @@ export class ArAutomationBuilder {
   protected targetsFor(from: CanvasNode, port: Port): { id: string; label: string }[] {
     const nodes = this.nodes();
     return nodes
-      .filter((n) => n.id === linkOf(from, port) || connectProblem(nodes, from.id, port, n.id) === null)
+      .filter(
+        (n) => n.id === linkOf(from, port) || connectProblem(nodes, from.id, port, n.id) === null,
+      )
       .map((n) => ({ id: n.id, label: this.nodeLabel(n) }));
   }
 
@@ -593,14 +671,18 @@ export class ArAutomationBuilder {
   /** What a canvas card says about a step, in a few words. */
   protected readonly describeNode = (n: CanvasNode): CanvasCard => {
     const meta = KIND_META[n.kind];
-    const title = n.kind === AutomationNodeKind.Trigger ? 'When this happens' : (meta?.label ?? 'Step');
+    const title =
+      n.kind === AutomationNodeKind.Trigger ? 'When this happens' : (meta?.label ?? 'Step');
     const icon = meta?.icon ?? 'automation';
     const s = { localId: n.id, kind: n.kind, config: n.config } as BuilderStep;
     const clip = (t: string) => (t.length > 34 ? t.slice(0, 33) + '…' : t);
     let detail = '';
     switch (n.kind) {
       case AutomationNodeKind.Trigger:
-        detail = this.trigger() === AutomationTriggerKind.InboundKeyword ? `Keywords: ${this.keywords() || '—'}` : 'Set above';
+        detail =
+          this.trigger() === AutomationTriggerKind.InboundKeyword
+            ? `Keywords: ${this.keywords() || '—'}`
+            : 'Set above';
         break;
       case AutomationNodeKind.End:
         detail = 'The journey stops';
@@ -609,7 +691,9 @@ export class ArAutomationBuilder {
         detail = this.cfg(s, 'text').trim() ? `“${this.cfg(s, 'text').trim()}”` : 'No message yet';
         break;
       case AutomationNodeKind.SendTemplate:
-        detail = this.templateOptions().find((t) => t.id === this.cfg(s, 'templateId'))?.name ?? 'No template chosen';
+        detail =
+          this.templateOptions().find((t) => t.id === this.cfg(s, 'templateId'))?.name ??
+          'No template chosen';
         break;
       case AutomationNodeKind.Wait:
         detail = `${this.waitAmount(s)} ${this.waitUnit(s)}`;
@@ -618,24 +702,30 @@ export class ArAutomationBuilder {
         detail = `Up to ${this.num(s, 'hours') ?? 48} hours`;
         break;
       case AutomationNodeKind.Condition: {
-        const field = this.fieldChoice(s) === CUSTOM_ATTRIBUTE
-          ? this.attributeKey(s) || 'attribute'
-          : (CONDITION_FIELDS.find((f) => f.value === this.cfg(s, 'field'))?.label ?? 'field');
+        const field =
+          this.fieldChoice(s) === CUSTOM_ATTRIBUTE
+            ? this.attributeKey(s) || 'attribute'
+            : (CONDITION_FIELDS.find((f) => f.value === this.cfg(s, 'field'))?.label ?? 'field');
         const op = OPERATORS.find((o) => o.value === this.cfg(s, 'operator'));
         detail = `${field} ${op?.label ?? '?'}${op?.needsValue ? ' ' + (this.cfg(s, 'value') || '…') : ''}`;
         break;
       }
       case AutomationNodeKind.AssignAgent:
-        detail = this.agentOptions().find((a) => a.id === this.cfg(s, 'userId'))?.name ?? 'Nobody chosen';
+        detail =
+          this.agentOptions().find((a) => a.id === this.cfg(s, 'userId'))?.name ?? 'Nobody chosen';
         break;
       case AutomationNodeKind.UpdateAttribute:
-        detail = this.cfg(s, 'key') ? `${this.cfg(s, 'key')} = ${this.cfg(s, 'value')}` : 'No attribute yet';
+        detail = this.cfg(s, 'key')
+          ? `${this.cfg(s, 'key')} = ${this.cfg(s, 'value')}`
+          : 'No attribute yet';
         break;
       case AutomationNodeKind.CreateEnquiry:
         detail = this.cfg(s, 'subject') || 'From automation';
         break;
       case AutomationNodeKind.Webhook:
-        detail = this.webhookOptions().find((w) => w.id === this.cfg(s, 'subscriptionId'))?.name ?? 'No endpoint chosen';
+        detail =
+          this.webhookOptions().find((w) => w.id === this.cfg(s, 'subscriptionId'))?.name ??
+          'No endpoint chosen';
         break;
       case AutomationNodeKind.StartFlow:
         detail = "Doesn't run yet";
@@ -658,7 +748,8 @@ export class ArAutomationBuilder {
         if (!this.cfg(step, 'templateId')) out.push('choose a template.');
         break;
       case AutomationNodeKind.AssignAgent:
-        if (!this.cfg(step, 'userId')) out.push('choose who to assign to — without one it clears the owner.');
+        if (!this.cfg(step, 'userId'))
+          out.push('choose who to assign to — without one it clears the owner.');
         break;
       case AutomationNodeKind.UpdateAttribute:
         if (!this.cfg(step, 'key').trim()) out.push('give the attribute a name.');
@@ -669,10 +760,15 @@ export class ArAutomationBuilder {
       case AutomationNodeKind.Condition: {
         const field = this.cfg(step, 'field');
         const known = CONDITION_FIELDS.some((f) => f.value === field);
-        const attribute = field.toLowerCase().startsWith(CUSTOM_ATTRIBUTE) && field.length > CUSTOM_ATTRIBUTE.length;
-        if (!known && !attribute) out.push("pick what to check — this field isn't one the engine can read.");
-        if (!OPERATORS.some((o) => o.value === this.cfg(step, 'operator'))) out.push('pick how to compare it.');
-        else if (this.needsValue(step) && !this.cfg(step, 'value').trim()) out.push('give the value to compare against.');
+        const attribute =
+          field.toLowerCase().startsWith(CUSTOM_ATTRIBUTE) &&
+          field.length > CUSTOM_ATTRIBUTE.length;
+        if (!known && !attribute)
+          out.push("pick what to check — this field isn't one the engine can read.");
+        if (!OPERATORS.some((o) => o.value === this.cfg(step, 'operator')))
+          out.push('pick how to compare it.');
+        else if (this.needsValue(step) && !this.cfg(step, 'value').trim())
+          out.push('give the value to compare against.');
         break;
       }
     }
@@ -711,12 +807,17 @@ export class ArAutomationBuilder {
   );
 
   /** Saved, but no contact will ever get to them — worth saying, not worth refusing a save over. */
-  protected readonly stranded = computed(() => (this.mode() === 'canvas' ? unreachable(this.nodes()) : []));
+  protected readonly stranded = computed(() =>
+    this.mode() === 'canvas' ? unreachable(this.nodes()) : [],
+  );
 
   // ---- Save -----------------------------------------------------------------
 
   protected readonly canSave = computed(
-    () => !this.saving() && !this.loading() && (this.mode() === 'canvas' || this.notRepresentable() === null),
+    () =>
+      !this.saving() &&
+      !this.loading() &&
+      (this.mode() === 'canvas' || this.notRepresentable() === null),
   );
 
   protected async save(): Promise<void> {

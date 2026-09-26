@@ -11,8 +11,10 @@ export interface TicketPortalAnswers {
 export function checkTicketAnswers(a: TicketPortalAnswers): Record<string, string> {
   const errors: Record<string, string> = {};
   if (!a.name.trim()) errors['name'] = 'Enter your name.';
-  if (!a.phone.trim()) errors['phone'] = 'Enter a valid phone number, with the country code if it is not an Indian number.';
-  if (!a.subject.trim()) errors['subject'] = "Tell us what this is about.";
+  if (!a.phone.trim())
+    errors['phone'] =
+      'Enter a valid phone number, with the country code if it is not an Indian number.';
+  if (!a.subject.trim()) errors['subject'] = 'Tell us what this is about.';
   if (!a.consent) errors['consent'] = 'Please tick the box to agree, so we can get back to you.';
   return errors;
 }

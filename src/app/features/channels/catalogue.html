@@ -191,9 +191,7 @@
           <span class="cat__choice-price">{{ rupees(p.listPriceInPaise ?? 0) }}</span>
         </label>
       } @empty {
-        <p class="cat__note">
-          No products to add. Products already on this channel are not shown.
-        </p>
+        <p class="cat__note">No products to add. Products already on this channel are not shown.</p>
       }
     </div>
     @if (addNote(); as n) {

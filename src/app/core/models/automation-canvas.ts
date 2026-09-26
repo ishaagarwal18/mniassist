@@ -52,7 +52,10 @@ export function portPoint(n: Pick<CanvasNode, 'x' | 'y'>, port: Port): { x: numb
   return { x: n.x + NODE_W * fraction, y: n.y + NODE_H };
 }
 
-export const inputPoint = (n: Pick<CanvasNode, 'x' | 'y'>): { x: number; y: number } => ({ x: n.x + NODE_W / 2, y: n.y });
+export const inputPoint = (n: Pick<CanvasNode, 'x' | 'y'>): { x: number; y: number } => ({
+  x: n.x + NODE_W / 2,
+  y: n.y,
+});
 
 /** A smooth link from one point to another, bending round when it has to go back up the page. */
 export function wirePath(from: { x: number; y: number }, to: { x: number; y: number }): string {
@@ -63,7 +66,9 @@ export function wirePath(from: { x: number; y: number }, to: { x: number; y: num
 function parseConfig(json: string | null | undefined): Record<string, unknown> {
   try {
     const value = json ? JSON.parse(json) : {};
-    return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+    return value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
   } catch {
     return {};
   }
@@ -90,10 +95,28 @@ export function fromDtos(
   }));
 
   if (!nodes.some((n) => n.kind === AutomationNodeKind.Trigger)) {
-    nodes.unshift({ id: newId(), kind: AutomationNodeKind.Trigger, config: {}, x: 0, y: 0, next: null, yes: null, no: null });
+    nodes.unshift({
+      id: newId(),
+      kind: AutomationNodeKind.Trigger,
+      config: {},
+      x: 0,
+      y: 0,
+      next: null,
+      yes: null,
+      no: null,
+    });
   }
   if (!nodes.some((n) => n.kind === AutomationNodeKind.End)) {
-    nodes.push({ id: newId(), kind: AutomationNodeKind.End, config: {}, x: 0, y: 0, next: null, yes: null, no: null });
+    nodes.push({
+      id: newId(),
+      kind: AutomationNodeKind.End,
+      config: {},
+      x: 0,
+      y: 0,
+      next: null,
+      yes: null,
+      no: null,
+    });
   }
   return nodes;
 }
@@ -114,7 +137,12 @@ export function toDtos(nodes: readonly CanvasNode[]): CreateUpdateAutomationNode
 
 /** The same, with each node's entered/exited counts, for reading back into the step list. */
 export const toNodeDtos = (nodes: readonly CanvasNode[]): AutomationNodeDto[] =>
-  toDtos(nodes).map((d, i) => ({ ...d, id: d.id!, enteredCount: nodes[i].entered, exitedCount: nodes[i].exited }));
+  toDtos(nodes).map((d, i) => ({
+    ...d,
+    id: d.id!,
+    enteredCount: nodes[i].entered,
+    exitedCount: nodes[i].exited,
+  }));
 
 export function linkOf(n: CanvasNode, port: Port): string | null {
   return port === 'next' ? n.next : port === 'yes' ? n.yes : n.no;
@@ -139,19 +167,30 @@ export function reaches(nodes: readonly CanvasNode[], from: string, to: string):
 }
 
 /** Why `from`'s `port` cannot be joined to `to`, or null when it can. */
-export function connectProblem(nodes: readonly CanvasNode[], from: string, port: Port, to: string): string | null {
+export function connectProblem(
+  nodes: readonly CanvasNode[],
+  from: string,
+  port: Port,
+  to: string,
+): string | null {
   const source = nodes.find((n) => n.id === from);
   const target = nodes.find((n) => n.id === to);
   if (!source || !target) return 'That step is no longer there.';
   if (!portsOf(source.kind).includes(port)) return 'That step has no such way out.';
   if (!hasInput(target.kind)) return 'Nothing can lead back into the trigger.';
-  if (from === to || reaches(nodes, to, from)) return 'That would make a loop — a contact would go round it forever.';
+  if (from === to || reaches(nodes, to, from))
+    return 'That would make a loop — a contact would go round it forever.';
   return null;
 }
 
 export type Edited = { nodes: CanvasNode[] } | { error: string };
 
-export function connect(nodes: readonly CanvasNode[], from: string, port: Port, to: string): Edited {
+export function connect(
+  nodes: readonly CanvasNode[],
+  from: string,
+  port: Port,
+  to: string,
+): Edited {
   const problem = connectProblem(nodes, from, port, to);
   if (problem) return { error: problem };
   return { nodes: nodes.map((n) => (n.id === from ? { ...n, [port]: to } : n)) };
@@ -163,22 +202,34 @@ export const disconnect = (nodes: readonly CanvasNode[], from: string, port: Por
 export function removeNode(nodes: readonly CanvasNode[], id: string): Edited {
   const node = nodes.find((n) => n.id === id);
   if (!node) return { nodes: [...nodes] };
-  if (isFixed(node.kind)) return { error: 'The trigger and End belong to the automation and cannot be deleted.' };
+  if (isFixed(node.kind))
+    return { error: 'The trigger and End belong to the automation and cannot be deleted.' };
   const drop = (to: string | null) => (to === id ? null : to);
   return {
-    nodes: nodes.filter((n) => n.id !== id).map((n) => ({ ...n, next: drop(n.next), yes: drop(n.yes), no: drop(n.no) })),
+    nodes: nodes
+      .filter((n) => n.id !== id)
+      .map((n) => ({ ...n, next: drop(n.next), yes: drop(n.yes), no: drop(n.no) })),
   };
 }
 
-export const moveNode = (nodes: readonly CanvasNode[], id: string, x: number, y: number): CanvasNode[] =>
-  nodes.map((n) => (n.id === id ? { ...n, x: snap(x), y: snap(y) } : n));
+export const moveNode = (
+  nodes: readonly CanvasNode[],
+  id: string,
+  x: number,
+  y: number,
+): CanvasNode[] => nodes.map((n) => (n.id === id ? { ...n, x: snap(x), y: snap(y) } : n));
 
 /** Steps the trigger never reaches: they are saved, but no contact will ever get to them. */
 export function unreachable(nodes: readonly CanvasNode[]): string[] {
   const trigger = nodes.find((n) => n.kind === AutomationNodeKind.Trigger);
   if (!trigger) return [];
   return nodes
-    .filter((n) => n.kind !== AutomationNodeKind.Trigger && n.kind !== AutomationNodeKind.End && !reaches(nodes, trigger.id, n.id))
+    .filter(
+      (n) =>
+        n.kind !== AutomationNodeKind.Trigger &&
+        n.kind !== AutomationNodeKind.End &&
+        !reaches(nodes, trigger.id, n.id),
+    )
     .map((n) => n.id);
 }
 
@@ -187,7 +238,13 @@ export const needsLayout = (nodes: readonly CanvasNode[]): boolean => nodes.ever
 
 /** Lays the whole graph out top to bottom from the trigger; anything the trigger does not reach goes in a row below. */
 export function tidy(nodes: readonly CanvasNode[]): CanvasNode[] {
-  const map = layoutFlowMap(toDtos(nodes), () => '', { nodeW: NODE_W, nodeH: NODE_H, gapX: GAP_X, gapY: GAP_Y, pad: 32 });
+  const map = layoutFlowMap(toDtos(nodes), () => '', {
+    nodeW: NODE_W,
+    nodeH: NODE_H,
+    gapX: GAP_X,
+    gapY: GAP_Y,
+    pad: 32,
+  });
   const placed = new Map(map.nodes.map((m) => [m.id, m]));
   let spareX = 32;
   const spareY = map.height + GAP_Y / 2;
@@ -209,7 +266,9 @@ export function placeNew(nodes: readonly CanvasNode[], fresh: ReadonlySet<string
   const out = new Map(nodes.map((n) => [n.id, { ...n }]));
   const done = new Set(nodes.filter((n) => !fresh.has(n.id)).map((n) => n.id));
   const occupied = (x: number, y: number) =>
-    [...out.values()].some((o) => done.has(o.id) && Math.abs(o.x - x) < NODE_W && Math.abs(o.y - y) < NODE_H);
+    [...out.values()].some(
+      (o) => done.has(o.id) && Math.abs(o.x - x) < NODE_W && Math.abs(o.y - y) < NODE_H,
+    );
 
   const trigger = nodes.find((n) => n.kind === AutomationNodeKind.Trigger);
   const order: string[] = [];
@@ -224,7 +283,11 @@ export function placeNew(nodes: readonly CanvasNode[], fresh: ReadonlySet<string
   }
   for (const n of nodes) if (!seen.has(n.id)) order.push(n.id);
 
-  const bottom = () => Math.max(0, ...[...out.values()].filter((o) => done.has(o.id)).map((o) => o.y + NODE_H + GAP_Y));
+  const bottom = () =>
+    Math.max(
+      0,
+      ...[...out.values()].filter((o) => done.has(o.id)).map((o) => o.y + NODE_H + GAP_Y),
+    );
 
   for (const id of order) {
     if (!fresh.has(id)) continue;
@@ -234,7 +297,8 @@ export function placeNew(nodes: readonly CanvasNode[], fresh: ReadonlySet<string
     const parent = [...out.values()].find((p) => done.has(p.id) && outLinks(p).includes(id));
     if (parent) {
       const port: Port = parent.yes === id ? 'yes' : parent.no === id ? 'no' : 'next';
-      const shift = port === 'yes' ? -(NODE_W + GAP_X) / 2 : port === 'no' ? (NODE_W + GAP_X) / 2 : 0;
+      const shift =
+        port === 'yes' ? -(NODE_W + GAP_X) / 2 : port === 'no' ? (NODE_W + GAP_X) / 2 : 0;
       x = Math.max(0, parent.x + shift);
       y = parent.y + NODE_H + GAP_Y;
     }
@@ -250,7 +314,10 @@ export function placeNew(nodes: readonly CanvasNode[], fresh: ReadonlySet<string
  * Undo brings back the structure that was there — which steps, how they are joined, where they sit — but keeps whatever
  * was typed into a step since, so undoing a move does not also undo a message written after it.
  */
-export function restoreStructure(snapshot: readonly CanvasNode[], current: readonly CanvasNode[]): CanvasNode[] {
+export function restoreStructure(
+  snapshot: readonly CanvasNode[],
+  current: readonly CanvasNode[],
+): CanvasNode[] {
   const now = new Map(current.map((n) => [n.id, n]));
   return snapshot.map((n) => {
     const later = now.get(n.id);

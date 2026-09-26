@@ -71,7 +71,11 @@ export class SalesPipelineService {
       { apiName: this.apiName, ...config },
     );
 
-  reorderStages = (pipelineId: string, input: ReorderPipelineStagesInput, config?: Partial<Rest.Config>) =>
+  reorderStages = (
+    pipelineId: string,
+    input: ReorderPipelineStagesInput,
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<any, SalesPipelineDto>(
       {
         method: 'POST',

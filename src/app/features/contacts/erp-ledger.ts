@@ -30,7 +30,13 @@ import { rupees } from '../payments/payment-logic';
             <div class="led__scroll">
               <table class="led__table">
                 <thead>
-                  <tr><th>Invoice</th><th>Date</th><th>Due</th><th class="num">Total</th><th class="num">Unpaid</th></tr>
+                  <tr>
+                    <th>Invoice</th>
+                    <th>Date</th>
+                    <th>Due</th>
+                    <th class="num">Total</th>
+                    <th class="num">Unpaid</th>
+                  </tr>
                 </thead>
                 <tbody>
                   @for (i of l.invoices; track i.number) {
@@ -39,7 +45,9 @@ import { rupees } from '../payments/payment-logic';
                       <td>{{ day(i.invoiceDateUtc) }}</td>
                       <td>{{ i.dueDateUtc ? day(i.dueDateUtc) : '—' }}</td>
                       <td class="num">{{ money(i.totalInPaise) }}</td>
-                      <td class="num">{{ i.outstandingInPaise != null ? money(i.outstandingInPaise) : '—' }}</td>
+                      <td class="num">
+                        {{ i.outstandingInPaise != null ? money(i.outstandingInPaise) : '—' }}
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -51,17 +59,62 @@ import { rupees } from '../payments/payment-logic';
     }
   `,
   styles: `
-    .led { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--ar-line-200); }
-    .led__sum { display: flex; gap: 24px; flex-wrap: wrap; }
-    .led__sum div { display: flex; flex-direction: column; gap: 2px; }
-    .led__sum b { font: 600 15px var(--ar-font-sans); color: var(--ar-ink-900); font-variant-numeric: tabular-nums; }
-    .led__sum span { font: 400 11.5px var(--ar-font-sans); color: var(--ar-ink-500); }
-    .led__scroll { overflow-x: auto; }
-    .led__table { width: 100%; border-collapse: collapse; font: 400 12px var(--ar-font-sans); color: var(--ar-ink-900); }
-    .led__table th { text-align: left; font-weight: 500; color: var(--ar-ink-500); padding: 4px 8px 4px 0; border-bottom: 1px solid var(--ar-line-200); }
-    .led__table td { padding: 5px 8px 5px 0; border-bottom: 1px solid var(--ar-line-100, var(--ar-line-200)); white-space: nowrap; }
-    .num { text-align: right; font-variant-numeric: tabular-nums; }
-    .led__bad, .led__bad b { color: var(--ar-bad-600, #b42318); }
+    .led {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--ar-line-200);
+    }
+    .led__sum {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .led__sum div {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .led__sum b {
+      font: 600 15px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+      font-variant-numeric: tabular-nums;
+    }
+    .led__sum span {
+      font: 400 11.5px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .led__scroll {
+      overflow-x: auto;
+    }
+    .led__table {
+      width: 100%;
+      border-collapse: collapse;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .led__table th {
+      text-align: left;
+      font-weight: 500;
+      color: var(--ar-ink-500);
+      padding: 4px 8px 4px 0;
+      border-bottom: 1px solid var(--ar-line-200);
+    }
+    .led__table td {
+      padding: 5px 8px 5px 0;
+      border-bottom: 1px solid var(--ar-line-100, var(--ar-line-200));
+      white-space: nowrap;
+    }
+    .num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .led__bad,
+    .led__bad b {
+      color: var(--ar-bad-600, #b42318);
+    }
   `,
 })
 export class ArErpLedger {
@@ -90,6 +143,10 @@ export class ArErpLedger {
   }
 
   protected day(iso: string): string {
-    return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    return new Date(iso).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 }

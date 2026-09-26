@@ -27,7 +27,12 @@ export function signingUrl(origin: string, signingPath: string): string {
 }
 
 /** The text sent with the link when it is shared. */
-export function shareText(reference: string, signerName: string, url: string, company?: string | null): string {
+export function shareText(
+  reference: string,
+  signerName: string,
+  url: string,
+  company?: string | null,
+): string {
   const from = company ? ` from ${company}` : '';
   return `Hello ${signerName}, please review and sign quotation ${reference}${from}: ${url}`;
 }
@@ -38,8 +43,14 @@ export function whatsappShareLink(phone: string | null | undefined, text: string
   return digits.length >= 10 ? `https://wa.me/${digits}?text=${encodeURIComponent(text)}` : null;
 }
 
-export function mailtoShareLink(email: string | null | undefined, subject: string, text: string): string | null {
-  return email?.includes('@') ? `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}` : null;
+export function mailtoShareLink(
+  email: string | null | undefined,
+  subject: string,
+  text: string,
+): string | null {
+  return email?.includes('@')
+    ? `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`
+    : null;
 }
 
 export const SIGNATURE_STATUS_LABEL: Record<SignatureRequestStatus, string> = {

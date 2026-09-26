@@ -58,20 +58,38 @@ const REMINDERS: { label: string; minutes: number }[] = [
   imports: [ArDialog, ArButton, ArRecurrencePicker],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-dialog [title]="meeting() ? 'Edit meeting' : 'Schedule a meeting'" (dismiss)="closed.emit()">
+    <ar-dialog
+      [title]="meeting() ? 'Edit meeting' : 'Schedule a meeting'"
+      (dismiss)="closed.emit()"
+    >
       <label class="ar-field">
         <span class="ar-field__label">Title</span>
-        <input id="mt-title" class="ar-field__input" [value]="title()" (input)="title.set($any($event.target).value)" />
+        <input
+          id="mt-title"
+          class="ar-field__input"
+          [value]="title()"
+          (input)="title.set($any($event.target).value)"
+        />
       </label>
 
       <div class="ar-field-row">
         <label class="ar-field">
           <span class="ar-field__label">Starts</span>
-          <input id="mt-start" class="ar-field__input" type="datetime-local" [value]="start()" (input)="start.set($any($event.target).value)" />
+          <input
+            id="mt-start"
+            class="ar-field__input"
+            type="datetime-local"
+            [value]="start()"
+            (input)="start.set($any($event.target).value)"
+          />
         </label>
         <label class="ar-field">
           <span class="ar-field__label">Length</span>
-          <select id="mt-duration" class="ar-field__input" (change)="duration.set(+$any($event.target).value)">
+          <select
+            id="mt-duration"
+            class="ar-field__input"
+            (change)="duration.set(+$any($event.target).value)"
+          >
             @for (d of durations(); track d) {
               <option [value]="d" [selected]="d === duration()">{{ label(d) }}</option>
             }
@@ -82,7 +100,11 @@ const REMINDERS: { label: string; minutes: number }[] = [
       <div class="ar-field-row">
         <label class="ar-field">
           <span class="ar-field__label">Kind</span>
-          <select id="mt-kind" class="ar-field__input" (change)="kind.set(+$any($event.target).value)">
+          <select
+            id="mt-kind"
+            class="ar-field__input"
+            (change)="kind.set(+$any($event.target).value)"
+          >
             @for (k of kinds; track k) {
               <option [value]="k" [selected]="k === kind()">{{ kindLabel[k] }}</option>
             }
@@ -90,16 +112,24 @@ const REMINDERS: { label: string; minutes: number }[] = [
         </label>
         <label class="ar-field">
           <span class="ar-field__label">Remind</span>
-          <select id="mt-reminder" class="ar-field__input" (change)="reminder.set(+$any($event.target).value)">
+          <select
+            id="mt-reminder"
+            class="ar-field__input"
+            (change)="reminder.set(+$any($event.target).value)"
+          >
             @for (r of reminders; track r.minutes) {
-              <option [value]="r.minutes" [selected]="r.minutes === reminder()">{{ r.label }}</option>
+              <option [value]="r.minutes" [selected]="r.minutes === reminder()">
+                {{ r.label }}
+              </option>
             }
           </select>
         </label>
       </div>
 
       <label class="ar-field">
-        <span class="ar-field__label">Where <span class="ar-field__opt">a place, or a link for an online meeting</span></span>
+        <span class="ar-field__label"
+          >Where <span class="ar-field__opt">a place, or a link for an online meeting</span></span
+        >
         <input
           id="mt-where"
           class="ar-field__input"
@@ -111,11 +141,16 @@ const REMINDERS: { label: string; minutes: number }[] = [
       @if (!meeting()) {
         <ar-recurrence-picker [(draft)]="repeat" [needsEnd]="true" />
       } @else if (meeting()!.seriesId) {
-        <p class="mt__note">This is meeting {{ meeting()!.seriesIndex }} of {{ meeting()!.seriesTotal }} in a series. Changes here are to this one only.</p>
+        <p class="mt__note">
+          This is meeting {{ meeting()!.seriesIndex }} of {{ meeting()!.seriesTotal }} in a series.
+          Changes here are to this one only.
+        </p>
       }
 
       <fieldset class="mt__people">
-        <legend class="ar-field__label">Who is in it <span class="ar-field__opt">you are always in</span></legend>
+        <legend class="ar-field__label">
+          Who is in it <span class="ar-field__opt">you are always in</span>
+        </legend>
         <input
           class="ar-field__input mt__filter"
           placeholder="Find a colleague"
@@ -139,7 +174,9 @@ const REMINDERS: { label: string; minutes: number }[] = [
           }
         </div>
 
-        <p class="ar-field__label mt__sub">Guests <span class="ar-field__opt">from outside the workspace</span></p>
+        <p class="ar-field__label mt__sub">
+          Guests <span class="ar-field__opt">from outside the workspace</span>
+        </p>
         @for (g of guests(); track $index) {
           <div class="mt__guest">
             <input
@@ -157,7 +194,14 @@ const REMINDERS: { label: string; minutes: number }[] = [
               [value]="g.email"
               (input)="setGuest($index, 'email', $any($event.target).value)"
             />
-            <button type="button" class="mt__x" aria-label="Remove guest" (click)="removeGuest($index)">×</button>
+            <button
+              type="button"
+              class="mt__x"
+              aria-label="Remove guest"
+              (click)="removeGuest($index)"
+            >
+              ×
+            </button>
           </div>
         }
         <button type="button" class="mt__link" (click)="addGuest()">+ Add a guest</button>
@@ -175,7 +219,13 @@ const REMINDERS: { label: string; minutes: number }[] = [
       }
 
       <div class="mt__find">
-        <button ar-button type="button" variant="ghost" [disabled]="suggesting()" (click)="findTimes()">
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="suggesting()"
+          (click)="findTimes()"
+        >
           {{ suggesting() ? 'Looking…' : 'Find a time when everyone is free' }}
         </button>
         @if (slots() !== null) {
@@ -186,14 +236,22 @@ const REMINDERS: { label: string; minutes: number }[] = [
               }
             </div>
           } @else {
-            <p class="mt__note">No time in the next 7 days suits everyone, inside 9 am to 6 pm on weekdays.</p>
+            <p class="mt__note">
+              No time in the next 7 days suits everyone, inside 9 am to 6 pm on weekdays.
+            </p>
           }
         }
       </div>
 
       <label class="ar-field">
-        <span class="ar-field__label">About a deal <span class="ar-field__opt">optional</span></span>
-        <select id="mt-enquiry" class="ar-field__input" (change)="enquiryId.set($any($event.target).value)">
+        <span class="ar-field__label"
+          >About a deal <span class="ar-field__opt">optional</span></span
+        >
+        <select
+          id="mt-enquiry"
+          class="ar-field__input"
+          (change)="enquiryId.set($any($event.target).value)"
+        >
           <option value="" [selected]="!enquiryId()">Not about a deal</option>
           @for (o of directory.enquiryOptions(); track o.id) {
             <option [value]="o.id" [selected]="o.id === enquiryId()">{{ o.label }}</option>
@@ -231,35 +289,104 @@ const REMINDERS: { label: string; minutes: number }[] = [
     </ar-dialog>
   `,
   styles: `
-    .mt__people { margin: 0 0 10px; padding: 0; border: 0; min-width: 0; }
-    .mt__filter { width: 100%; margin-bottom: 6px; }
+    .mt__people {
+      margin: 0 0 10px;
+      padding: 0;
+      border: 0;
+      min-width: 0;
+    }
+    .mt__filter {
+      width: 100%;
+      margin-bottom: 6px;
+    }
     .mt__users {
-      max-height: 132px; overflow-y: auto; border: 1px solid var(--ar-line-200); border-radius: var(--ar-radius-control);
+      max-height: 132px;
+      overflow-y: auto;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
     }
-    .mt__user { display: flex; align-items: center; gap: 8px; padding: 6px 10px; font: 400 12.5px var(--ar-font-sans); color: var(--ar-ink-800); }
-    .mt__user + .mt__user { border-top: 1px solid var(--ar-line-200); }
-    .mt__sub { margin: 10px 0 4px; }
-    .mt__guest { display: grid; grid-template-columns: 1fr 1.3fr auto; gap: 6px; margin-bottom: 6px; }
-    .mt__x { background: none; border: 0; cursor: pointer; color: var(--ar-ink-400); font-size: 16px; }
+    .mt__user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-800);
+    }
+    .mt__user + .mt__user {
+      border-top: 1px solid var(--ar-line-200);
+    }
+    .mt__sub {
+      margin: 10px 0 4px;
+    }
+    .mt__guest {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr auto;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .mt__x {
+      background: none;
+      border: 0;
+      cursor: pointer;
+      color: var(--ar-ink-400);
+      font-size: 16px;
+    }
     .mt__link {
-      padding: 0; background: none; border: 0; cursor: pointer; font: 500 12px var(--ar-font-sans); color: var(--ar-teal-600);
+      padding: 0;
+      background: none;
+      border: 0;
+      cursor: pointer;
+      font: 500 12px var(--ar-font-sans);
+      color: var(--ar-teal-600);
     }
-    .mt__note { margin: 6px 0; font: 400 12px var(--ar-font-sans); color: var(--ar-ink-400); }
+    .mt__note {
+      margin: 6px 0;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
     .mt__warn {
-      margin: 0 0 10px; padding: 9px 12px; border-radius: var(--ar-radius-control);
-      background: var(--ar-amber-100, #fdf3e7); color: var(--ar-ink-800); font: 400 12.5px var(--ar-font-sans);
+      margin: 0 0 10px;
+      padding: 9px 12px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-amber-100, #fdf3e7);
+      color: var(--ar-ink-800);
+      font: 400 12.5px var(--ar-font-sans);
     }
-    .mt__warn ul { margin: 4px 0 0; padding-left: 18px; }
-    .mt__find { margin: 0 0 10px; }
-    .mt__slots { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .mt__warn ul {
+      margin: 4px 0 0;
+      padding-left: 18px;
+    }
+    .mt__find {
+      margin: 0 0 10px;
+    }
+    .mt__slots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
     .mt__slot {
-      padding: 5px 10px; background: var(--ar-white); border: 1px solid var(--ar-line-200); border-radius: 999px; cursor: pointer;
-      font: 500 12px var(--ar-font-sans); color: var(--ar-ink-800);
+      padding: 5px 10px;
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: 999px;
+      cursor: pointer;
+      font: 500 12px var(--ar-font-sans);
+      color: var(--ar-ink-800);
     }
-    .mt__slot:hover, .mt__slot:focus-visible { border-color: var(--ar-teal-600); outline: none; }
+    .mt__slot:hover,
+    .mt__slot:focus-visible {
+      border-color: var(--ar-teal-600);
+      outline: none;
+    }
     .mt__err {
-      margin: 8px 0 0; padding: 8px 10px; border-radius: var(--ar-radius-control);
-      background: var(--ar-red-100); color: var(--ar-red-600); font: 500 12px var(--ar-font-sans);
+      margin: 8px 0 0;
+      padding: 8px 10px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
+      font: 500 12px var(--ar-font-sans);
     }
   `,
 })
@@ -275,7 +402,12 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
   readonly saved = output<MeetingDto>();
   readonly closed = output<void>();
 
-  protected readonly kinds = [MeetingKind.InPerson, MeetingKind.Call, MeetingKind.Video, MeetingKind.SiteVisit];
+  protected readonly kinds = [
+    MeetingKind.InPerson,
+    MeetingKind.Call,
+    MeetingKind.Video,
+    MeetingKind.SiteVisit,
+  ];
   protected readonly kindLabel = KIND_LABEL;
   protected readonly reminders = REMINDERS;
 
@@ -291,7 +423,9 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
   protected readonly guests = signal<{ name: string; email: string }[]>([]);
   protected readonly userFilter = signal('');
   protected readonly repeat = signal<RecurrenceDraft>({ ...NO_REPEAT });
-  protected readonly repeatProblem = computed(() => (this.meeting() ? null : recurrenceProblem(this.repeat(), true)));
+  protected readonly repeatProblem = computed(() =>
+    this.meeting() ? null : recurrenceProblem(this.repeat(), true),
+  );
 
   protected readonly conflicts = signal<MeetingConflictDto[]>([]);
   protected readonly slots = signal<SlotDto[] | null>(null);
@@ -304,8 +438,14 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
   private checkTimer: ReturnType<typeof setTimeout> | undefined;
   private checkSeq = 0;
 
-  protected readonly durations = computed(() => (DURATIONS.includes(this.duration()) ? DURATIONS : [...DURATIONS, this.duration()].sort((a, b) => a - b)));
-  protected readonly conflictLines = computed(() => uniqueConflicts(this.conflicts()).map(conflictLine));
+  protected readonly durations = computed(() =>
+    DURATIONS.includes(this.duration())
+      ? DURATIONS
+      : [...DURATIONS, this.duration()].sort((a, b) => a - b),
+  );
+  protected readonly conflictLines = computed(() =>
+    uniqueConflicts(this.conflicts()).map(conflictLine),
+  );
   protected readonly visibleUsers = computed(() => {
     const f = this.userFilter().trim().toLowerCase();
     return this.directory.users().filter((u) => !f || (u.name ?? '').toLowerCase().includes(f));
@@ -333,10 +473,18 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
       this.where.set(m.location ?? m.meetingUrl ?? '');
       this.reminder.set(m.reminderLeadMinutes ?? 15);
       this.enquiryId.set(m.enquiryId ?? '');
-      this.attendees.set(new Set((m.attendees ?? []).filter((a) => a.userId).map((a) => a.userId!)));
-      this.guests.set((m.attendees ?? []).filter((a) => !a.userId).map((a) => ({ name: a.name ?? '', email: a.email ?? '' })));
+      this.attendees.set(
+        new Set((m.attendees ?? []).filter((a) => a.userId).map((a) => a.userId!)),
+      );
+      this.guests.set(
+        (m.attendees ?? [])
+          .filter((a) => !a.userId)
+          .map((a) => ({ name: a.name ?? '', email: a.email ?? '' })),
+      );
     } else {
-      this.start.set(toLocalInput((this.startPreset() ?? defaultMeetingStart(new Date())).toISOString()));
+      this.start.set(
+        toLocalInput((this.startPreset() ?? defaultMeetingStart(new Date())).toISOString()),
+      );
       this.enquiryId.set(this.enquiryPreset() ?? '');
     }
 
@@ -349,7 +497,13 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
   }
 
   protected label(minutes: number): string {
-    return minutes < 60 ? `${minutes} minutes` : minutes === 60 ? '1 hour' : minutes % 60 === 0 ? `${minutes / 60} hours` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
+    return minutes < 60
+      ? `${minutes} minutes`
+      : minutes === 60
+        ? '1 hour'
+        : minutes % 60 === 0
+          ? `${minutes / 60} hours`
+          : `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
   }
 
   protected slot(s: SlotDto): string {
@@ -382,7 +536,10 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
   private window(): { startUtc: string; endUtc: string } | null {
     const startUtc = fromLocalInput(this.start());
     if (!startUtc) return null;
-    return { startUtc, endUtc: new Date(new Date(startUtc).getTime() + this.duration() * 60_000).toISOString() };
+    return {
+      startUtc,
+      endUtc: new Date(new Date(startUtc).getTime() + this.duration() * 60_000).toISOString(),
+    };
   }
 
   private scheduleCheck(): void {
@@ -400,7 +557,11 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
     const seq = ++this.checkSeq;
     try {
       const found = await firstValueFrom(
-        this.api.checkConflicts({ ...w, userIds: [...this.attendees()], excludeMeetingId: this.meeting()?.id ?? null }),
+        this.api.checkConflicts({
+          ...w,
+          userIds: [...this.attendees()],
+          excludeMeetingId: this.meeting()?.id ?? null,
+        }),
       );
       if (seq === this.checkSeq) this.conflicts.set(found);
     } catch {
@@ -477,7 +638,9 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
     this.error.set(null);
     try {
       const m = this.meeting();
-      this.saved.emit(await firstValueFrom(m?.id ? this.api.update(m.id, body) : this.api.create(body)));
+      this.saved.emit(
+        await firstValueFrom(m?.id ? this.api.update(m.id, body) : this.api.create(body)),
+      );
     } catch (e: unknown) {
       if (isConflictError(e)) {
         // Someone booked them since the check: shown now, and the button becomes "anyway".

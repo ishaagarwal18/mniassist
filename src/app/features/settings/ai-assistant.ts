@@ -20,7 +20,8 @@ const SEED_SETTINGS: ChatbotSettingsDto = {
   enabled: false,
   minSimilarity: 0.45,
   persona: 'Polite and concise. We are Meridian Automation, an ABB and Siemens channel partner.',
-  handoffMessage: "Thanks for your message — I'm passing this to our team, who will reply here shortly.",
+  handoffMessage:
+    "Thanks for your message — I'm passing this to our team, who will reply here shortly.",
   maxRepliesPerConversation: 6,
   answerWhatsApp: true,
   answerInstagram: false,
@@ -118,7 +119,10 @@ export class ArAiAssistant {
   protected readonly maxReplies = signal(6);
   protected readonly channels = ASSISTANT_CHANNELS;
   protected readonly answerOn = signal<Record<AssistantChannelKey, boolean>>({
-    answerWhatsApp: true, answerInstagram: false, answerMessenger: false, answerEmail: false,
+    answerWhatsApp: true,
+    answerInstagram: false,
+    answerMessenger: false,
+    answerEmail: false,
   });
   protected readonly savingSettings = signal(false);
 
@@ -341,7 +345,8 @@ export class ArAiAssistant {
   }
 
   protected async removeArticle(article: KnowledgeArticleDto): Promise<void> {
-    if (!window.confirm(`Delete "${article.title}"? The assistant will stop answering from it.`)) return;
+    if (!window.confirm(`Delete "${article.title}"? The assistant will stop answering from it.`))
+      return;
     try {
       if (!environment.useMockData) {
         await firstValueFrom(this.api.deleteArticle(article.id));

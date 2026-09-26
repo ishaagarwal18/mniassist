@@ -107,7 +107,9 @@
           <td [class.due]="followUp(q) === 'due now'">{{ followUp(q) }}</td>
           <td class="actions">
             <button ar-button variant="ghost" [disabled]="!!busy()" (click)="editingId.set(q.id)">
-              {{ q.state === 'won' || q.state === 'lost' || q.state === 'expired' ? 'View' : 'Lines' }}
+              {{
+                q.state === 'won' || q.state === 'lost' || q.state === 'expired' ? 'View' : 'Lines'
+              }}
             </button>
             @if (signingAvailable && (canSign(q) || sigChip(q))) {
               <button ar-button variant="ghost" [disabled]="!!busy()" (click)="signingFor.set(q)">

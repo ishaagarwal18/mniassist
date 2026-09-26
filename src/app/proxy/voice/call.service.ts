@@ -57,7 +57,11 @@ export class CallService {
       { apiName: this.apiName, ...config },
     );
 
-  reportSoftphoneEvent = (id: string, input: ReportSoftphoneEventInput, config?: Partial<Rest.Config>) =>
+  reportSoftphoneEvent = (
+    id: string,
+    input: ReportSoftphoneEventInput,
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<ReportSoftphoneEventInput, CallLogDto>(
       { method: 'POST', url: `/api/auto-reach/call/${id}/report-softphone-event`, body: input },
       { apiName: this.apiName, ...config },

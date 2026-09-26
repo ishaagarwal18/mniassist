@@ -135,7 +135,9 @@ export class ArEmailSending {
     const error = params.get('emailOAuthError');
 
     if (connected !== null) {
-      this.notice.set('Mailbox connected. Replies that arrive from now on are added to your inbox.');
+      this.notice.set(
+        'Mailbox connected. Replies that arrive from now on are added to your inbox.',
+      );
     } else if (error !== null) {
       this.error.set(this.oAuthErrorMessage(error));
     } else {
@@ -150,8 +152,10 @@ export class ArEmailSending {
 
   private oAuthErrorMessage(reason: string): string {
     if (reason === 'access_denied') return 'The connect flow was cancelled.';
-    if (reason === 'no_refresh_token') return 'The connection could not be kept alive. Try connecting again.';
-    if (reason === 'no_mailbox_address') return 'The mailbox address could not be read from the sign-in. Try again.';
+    if (reason === 'no_refresh_token')
+      return 'The connection could not be kept alive. Try connecting again.';
+    if (reason === 'no_mailbox_address')
+      return 'The mailbox address could not be read from the sign-in. Try again.';
     if (reason.startsWith('mailbox_test_failed')) {
       const detail = reason.slice(reason.indexOf(':') + 1).trim();
       return `Signed in, but the mailbox could not be read${detail ? ': ' + detail : '.'} An administrator on that account may have turned IMAP access off.`;
@@ -220,9 +224,15 @@ export class ArEmailSending {
     this.begin(this.savingTracking);
     try {
       this.apply(
-        this.mock ? { ...(this.channel() ?? SEED), trackOpens: on } : await firstValueFrom(this.api.setOpenTracking(on)),
+        this.mock
+          ? { ...(this.channel() ?? SEED), trackOpens: on }
+          : await firstValueFrom(this.api.setOpenTracking(on)),
       );
-      this.notice.set(on ? 'Open tracking is on for new emails.' : 'Open tracking is off. New emails carry no tracking pixel.');
+      this.notice.set(
+        on
+          ? 'Open tracking is on for new emails.'
+          : 'Open tracking is off. New emails carry no tracking pixel.',
+      );
     } catch (e) {
       this.error.set(this.message(e, 'Open tracking could not be changed.'));
     } finally {
@@ -269,21 +279,40 @@ export class ArEmailSending {
 
   protected async changeSync(action: 'pause' | 'resume' | 'remove'): Promise<void> {
     if (this.savingImap()) return;
-    if (action === 'remove' && !window.confirm('Disconnect this mailbox? Its saved password is deleted.')) return;
+    if (
+      action === 'remove' &&
+      !window.confirm('Disconnect this mailbox? Its saved password is deleted.')
+    )
+      return;
     this.begin(this.savingImap);
     try {
       const base = this.channel() ?? SEED;
       const next =
         action === 'pause'
-          ? this.mock ? { ...base, syncEnabled: false } : await firstValueFrom(this.api.pauseSync())
+          ? this.mock
+            ? { ...base, syncEnabled: false }
+            : await firstValueFrom(this.api.pauseSync())
           : action === 'resume'
-            ? this.mock ? { ...base, syncEnabled: true, lastSyncError: null } : await firstValueFrom(this.api.resumeSync())
+            ? this.mock
+              ? { ...base, syncEnabled: true, lastSyncError: null }
+              : await firstValueFrom(this.api.resumeSync())
             : this.mock
-            ? { ...base, hasImap: false, syncEnabled: false, imapHost: null, imapHasPassword: false, imapOAuthProvider: EmailOAuthProvider.None }
-            : await firstValueFrom(this.api.removeImap());
+              ? {
+                  ...base,
+                  hasImap: false,
+                  syncEnabled: false,
+                  imapHost: null,
+                  imapHasPassword: false,
+                  imapOAuthProvider: EmailOAuthProvider.None,
+                }
+              : await firstValueFrom(this.api.removeImap());
       this.apply(next);
       this.notice.set(
-        action === 'pause' ? 'Reading the mailbox is paused.' : action === 'resume' ? 'Reading the mailbox has resumed.' : 'The mailbox is disconnected.',
+        action === 'pause'
+          ? 'Reading the mailbox is paused.'
+          : action === 'resume'
+            ? 'Reading the mailbox has resumed.'
+            : 'The mailbox is disconnected.',
       );
     } catch (e) {
       this.error.set(this.message(e, 'That could not be done.'));
@@ -298,7 +327,14 @@ export class ArEmailSending {
     this.syncResult.set(null);
     try {
       const result = this.mock
-        ? { succeeded: true, imported: 0, skipped: 0, bounces: 0, complaints: 0, moreWaiting: false }
+        ? {
+            succeeded: true,
+            imported: 0,
+            skipped: 0,
+            bounces: 0,
+            complaints: 0,
+            moreWaiting: false,
+          }
         : await firstValueFrom(this.api.syncNow());
       this.syncResult.set(result);
       if (!this.mock) this.apply(await firstValueFrom(this.api.getOrCreate()));
@@ -311,7 +347,12 @@ export class ArEmailSending {
 
   protected when(iso: string | null | undefined): string {
     return iso
-      ? new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+      ? new Date(iso).toLocaleString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
       : 'never';
   }
 
@@ -351,7 +392,12 @@ export class ArEmailSending {
       let next: EmailChannelDto;
       if (this.route() === 'shared') {
         next = this.mock
-          ? { ...(this.channel() ?? SEED), usesCustomSmtp: false, smtpHost: null, smtpHasPassword: false }
+          ? {
+              ...(this.channel() ?? SEED),
+              usesCustomSmtp: false,
+              smtpHost: null,
+              smtpHasPassword: false,
+            }
           : await firstValueFrom(this.api.useSharedRelay());
       } else {
         const input = {
@@ -362,7 +408,13 @@ export class ArEmailSending {
           password: this.password() || null,
         };
         next = this.mock
-          ? { ...(this.channel() ?? SEED), usesCustomSmtp: true, smtpHost: input.host, smtpPort: input.port, smtpHasPassword: !!input.password }
+          ? {
+              ...(this.channel() ?? SEED),
+              usesCustomSmtp: true,
+              smtpHost: input.host,
+              smtpPort: input.port,
+              smtpHasPassword: !!input.password,
+            }
           : await firstValueFrom(this.api.useCustomSmtp(input));
       }
       this.apply(next);

@@ -89,7 +89,10 @@
 </div>
 
 @if (editorOpen()) {
-  <ar-dialog [title]="editingId() ? 'Edit product' : 'New product'" (dismiss)="editorOpen.set(false)">
+  <ar-dialog
+    [title]="editingId() ? 'Edit product' : 'New product'"
+    (dismiss)="editorOpen.set(false)"
+  >
     <div class="ar-field-row">
       <label class="ar-field">
         <span class="ar-field__label">Part number</span>
@@ -149,7 +152,9 @@
         />
       </label>
       <label class="ar-field">
-        <span class="ar-field__label">GST % <span class="ar-field__opt">blank = quote's</span></span>
+        <span class="ar-field__label"
+          >GST % <span class="ar-field__opt">blank = quote's</span></span
+        >
         <input
           id="product-gst"
           class="ar-field__input"
@@ -226,9 +231,7 @@
       <p class="pd__err">{{ msg }}</p>
     }
     <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="importOpen.set(false)">
-        Close
-      </button>
+      <button ar-button type="button" variant="ghost" (click)="importOpen.set(false)">Close</button>
       <button
         ar-button
         type="button"

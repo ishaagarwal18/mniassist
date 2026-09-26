@@ -69,9 +69,10 @@
     }
     @if (!s.embeddingIsSemantic) {
       <ar-banner tone="teal">
-        Search is using offline keyword matching, which finds shared words — part numbers and product
-        names work well — but not paraphrases. Set <code>Ai:Embeddings:VoyageApiKey</code> for
-        semantic search; every article is then re-indexed automatically.
+        Search is using offline keyword matching, which finds shared words — part numbers and
+        product names work well — but not paraphrases. Set
+        <code>Ai:Embeddings:VoyageApiKey</code> for semantic search; every article is then
+        re-indexed automatically.
       </ar-banner>
     }
     @if (s.staleArticleCount > 0) {
@@ -105,13 +106,17 @@
       <legend class="ar-field__label">Answer on</legend>
       @for (c of channels; track c.key) {
         <label class="ai__check">
-          <input type="checkbox" [checked]="answerOn()[c.key]" (change)="setChannel(c.key, $any($event.target).checked)" />
+          <input
+            type="checkbox"
+            [checked]="answerOn()[c.key]"
+            (change)="setChannel(c.key, $any($event.target).checked)"
+          />
           {{ c.label }}
         </label>
       }
       <p class="ai__hint">
-        Not SMS: an SMS reply has to match a DLT-registered template, so the assistant cannot write one. SMS replies land in
-        the inbox for your team.
+        Not SMS: an SMS reply has to match a DLT-registered template, so the assistant cannot write
+        one. SMS replies land in the inbox for your team.
       </p>
     </fieldset>
 
@@ -120,7 +125,9 @@
         <span class="ar-field__label">
           Confidence threshold — {{ score(minSimilarity()) }}
           @if (status(); as s) {
-            <span class="ar-field__opt">(recommended {{ score(s.recommendedMinSimilarity) }} for this search model)</span>
+            <span class="ar-field__opt"
+              >(recommended {{ score(s.recommendedMinSimilarity) }} for this search model)</span
+            >
           }
         </span>
         <input
@@ -151,7 +158,9 @@
     </div>
 
     <label class="ar-field">
-      <span class="ar-field__label">Tone and style <span class="ar-field__opt">(optional)</span></span>
+      <span class="ar-field__label"
+        >Tone and style <span class="ar-field__opt">(optional)</span></span
+      >
       <textarea
         class="ar-field__input ai__textarea"
         rows="3"
@@ -223,7 +232,9 @@
           <ar-chip [tone]="r.wouldAnswer ? 'good' : 'warn'" [dot]="true">
             {{ r.wouldAnswer ? 'Would answer' : 'Would hand off' }}
           </ar-chip>
-          <span class="ar-mono">best {{ score(r.topScore) }} · threshold {{ score(r.threshold) }}</span>
+          <span class="ar-mono"
+            >best {{ score(r.topScore) }} · threshold {{ score(r.threshold) }}</span
+          >
         </div>
         @if (r.answer) {
           <p class="ai__answer">{{ r.answer }}</p>
@@ -298,7 +309,9 @@
               }
             </td>
             <td>
-              <ar-chip tone="neutral">{{ a.source === Source.Manual ? 'Written here' : 'Library' }}</ar-chip>
+              <ar-chip tone="neutral">{{
+                a.source === Source.Manual ? 'Written here' : 'Library'
+              }}</ar-chip>
             </td>
             <td class="num ar-mono">{{ a.chunkCount }}</td>
             <td class="ar-mono">{{ when(a.indexedAtUtc) }}</td>
@@ -312,9 +325,13 @@
             </td>
             <td class="ai__row-actions">
               @if (a.source === Source.Manual) {
-                <button ar-button type="button" variant="ghost" (click)="openArticle(a)">Edit</button>
+                <button ar-button type="button" variant="ghost" (click)="openArticle(a)">
+                  Edit
+                </button>
               }
-              <button ar-button type="button" variant="ghost" (click)="removeArticle(a)">Delete</button>
+              <button ar-button type="button" variant="ghost" (click)="removeArticle(a)">
+                Delete
+              </button>
             </td>
           </tr>
         } @empty {

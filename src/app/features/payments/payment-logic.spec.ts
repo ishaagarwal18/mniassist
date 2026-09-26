@@ -16,10 +16,18 @@ describe('payment helpers', () => {
   });
 
   it('builds a hidden form posting each field to the checkout', () => {
-    const form = postToCheckout(document, 'https://pay.example/checkout', { mercid: 'M1', bdorderid: 'BD1', rdata: 'x' });
+    const form = postToCheckout(document, 'https://pay.example/checkout', {
+      mercid: 'M1',
+      bdorderid: 'BD1',
+      rdata: 'x',
+    });
     expect(form.method.toLowerCase()).toBe('post');
     expect(form.action).toBe('https://pay.example/checkout');
-    expect(Array.from(form.querySelectorAll('input')).map((i) => `${i.name}=${i.value}`)).toEqual(['mercid=M1', 'bdorderid=BD1', 'rdata=x']);
+    expect(Array.from(form.querySelectorAll('input')).map((i) => `${i.name}=${i.value}`)).toEqual([
+      'mercid=M1',
+      'bdorderid=BD1',
+      'rdata=x',
+    ]);
     form.remove();
   });
 });

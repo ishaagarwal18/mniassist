@@ -126,7 +126,8 @@ export class ArProducts {
       listPriceInPaise: Math.round((Number(this.price().replace(/,/g, '')) || 0) * 100),
       hsnCode: this.hsn().trim() || null,
       category: this.categoryText().trim() || null,
-      taxRateBasisPoints: this.gst().trim() === '' ? null : Math.round((Number(this.gst()) || 0) * 100),
+      taxRateBasisPoints:
+        this.gst().trim() === '' ? null : Math.round((Number(this.gst()) || 0) * 100),
       isActive: this.active(),
     };
   }
@@ -137,7 +138,10 @@ export class ArProducts {
       this.error.set('A part number and a name are both needed.');
       return;
     }
-    if (dto.taxRateBasisPoints != null && (dto.taxRateBasisPoints < 0 || dto.taxRateBasisPoints > 3000)) {
+    if (
+      dto.taxRateBasisPoints != null &&
+      (dto.taxRateBasisPoints < 0 || dto.taxRateBasisPoints > 3000)
+    ) {
       this.error.set('GST must be between 0% and 30%.');
       return;
     }

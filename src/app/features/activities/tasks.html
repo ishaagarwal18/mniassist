@@ -1,9 +1,17 @@
 <ar-topbar
   title="Tasks"
-  [subtitle]="summary() ? summary()!.open + ' open' + (summary()!.overdue ? ' · ' + summary()!.overdue + ' overdue' : '') : ''"
+  [subtitle]="
+    summary()
+      ? summary()!.open +
+        ' open' +
+        (summary()!.overdue ? ' · ' + summary()!.overdue + ' overdue' : '')
+      : ''
+  "
   help="What has to be done, and by when. Tick a task to finish it. A task about a deal shows on that deal's timeline once done, and you are reminded before it is due."
 >
-  <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">New task</button>
+  <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">
+    New task
+  </button>
 </ar-topbar>
 
 @if (creating() || editing()) {
@@ -18,11 +26,21 @@
 <div class="tk ar-scroll">
   @if (summary(); as s) {
     <div class="tk__sum" role="group" aria-label="Your tasks at a glance">
-      <span class="tk__pill" [class.tk__pill--bad]="s.overdue"><strong>{{ s.overdue }}</strong> overdue</span>
-      <span class="tk__pill" [class.tk__pill--amber]="s.dueToday"><strong>{{ s.dueToday }}</strong> due today</span>
-      <span class="tk__pill"><strong>{{ s.dueThisWeek }}</strong> this week</span>
-      <span class="tk__pill"><strong>{{ s.noDate }}</strong> no date</span>
-      <span class="tk__pill tk__pill--soft"><strong>{{ s.doneLast7Days }}</strong> done in the last 7 days</span>
+      <span class="tk__pill" [class.tk__pill--bad]="s.overdue"
+        ><strong>{{ s.overdue }}</strong> overdue</span
+      >
+      <span class="tk__pill" [class.tk__pill--amber]="s.dueToday"
+        ><strong>{{ s.dueToday }}</strong> due today</span
+      >
+      <span class="tk__pill"
+        ><strong>{{ s.dueThisWeek }}</strong> this week</span
+      >
+      <span class="tk__pill"
+        ><strong>{{ s.noDate }}</strong> no date</span
+      >
+      <span class="tk__pill tk__pill--soft"
+        ><strong>{{ s.doneLast7Days }}</strong> done in the last 7 days</span
+      >
     </div>
   }
 
@@ -40,8 +58,12 @@
   <div class="tk__bar">
     @if (directory.canSeeAll) {
       <div class="tk__seg" role="group" aria-label="Whose tasks">
-        <button type="button" [class.on]="scope() === 'mine'" (click)="scope.set('mine')">Mine</button>
-        <button type="button" [class.on]="scope() === 'everyone'" (click)="scope.set('everyone')">Everyone</button>
+        <button type="button" [class.on]="scope() === 'mine'" (click)="scope.set('mine')">
+          Mine
+        </button>
+        <button type="button" [class.on]="scope() === 'everyone'" (click)="scope.set('everyone')">
+          Everyone
+        </button>
       </div>
     }
     <ar-search-box placeholder="Search tasks" [(query)]="filter" />
@@ -81,7 +103,11 @@
 
       <ul class="tk__list">
         @for (t of g.tasks; track t.id) {
-          <li class="tk__row" [class.tk__row--done]="t.status !== Status.Open" [class.tk__row--busy]="busy() === t.id">
+          <li
+            class="tk__row"
+            [class.tk__row--done]="t.status !== Status.Open"
+            [class.tk__row--busy]="busy() === t.id"
+          >
             <input
               class="tk__tick"
               type="checkbox"

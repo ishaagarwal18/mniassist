@@ -19,7 +19,8 @@ const REASONS: Record<DuplicateReason, string> = {
   [DuplicateReason.SameEmail]: 'Same email address',
   [DuplicateReason.SameNameAndCompany]: 'Same name and company',
   [DuplicateReason.SameNameOnDifferentChannels]: 'Same name, reached on different channels',
-  [DuplicateReason.SameEmailDifferentPhones]: 'Same email, different phone numbers (may be a shared mailbox)',
+  [DuplicateReason.SameEmailDifferentPhones]:
+    'Same email, different phone numbers (may be a shared mailbox)',
 };
 
 const FIELDS: Record<string, string> = {
@@ -87,10 +88,14 @@ export class ArDuplicates {
   });
 
   /** Fields the two records disagree on and both filled in — the ones that need a decision. */
-  protected readonly choices = computed(() => (this.preview()?.conflicts ?? []).filter((c) => c.needsChoice));
+  protected readonly choices = computed(() =>
+    (this.preview()?.conflicts ?? []).filter((c) => c.needsChoice),
+  );
 
   /** Fields only one side has: nothing to decide, shown so the operator sees what the merged contact gains. */
-  protected readonly fills = computed(() => (this.preview()?.conflicts ?? []).filter((c) => !c.needsChoice && c.loserValue));
+  protected readonly fills = computed(() =>
+    (this.preview()?.conflicts ?? []).filter((c) => !c.needsChoice && c.loserValue),
+  );
 
   protected readonly consentLines = computed(() =>
     (this.preview()?.channels ?? [])
@@ -107,7 +112,9 @@ export class ArDuplicates {
       })),
   );
 
-  protected readonly anyNarrowed = computed(() => !!this.preview()?.consentNarrowed || !!this.preview()?.suppressionAdded);
+  protected readonly anyNarrowed = computed(
+    () => !!this.preview()?.consentNarrowed || !!this.preview()?.suppressionAdded,
+  );
 
   protected reasonText(r: DuplicateReason): string {
     return REASONS[r] ?? 'Possible match';
@@ -127,7 +134,13 @@ export class ArDuplicates {
   }
 
   protected when(iso: string | null | undefined): string {
-    return iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'never';
+    return iso
+      ? new Date(iso).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        })
+      : 'never';
   }
 
   protected toggleHighOnly(on: boolean): void {
@@ -197,7 +210,9 @@ export class ArDuplicates {
   private input() {
     const survivor = this.survivorId();
     const loser = this.loser()?.id;
-    return survivor && loser ? { survivorId: survivor, loserId: loser, takeFromLoser: [...this.takeFromLoser()] } : null;
+    return survivor && loser
+      ? { survivorId: survivor, loserId: loser, takeFromLoser: [...this.takeFromLoser()] }
+      : null;
   }
 
   private async refreshPreview(): Promise<void> {

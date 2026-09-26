@@ -22,7 +22,10 @@ import { environment } from '../../../environments/environment';
  * The name may be an OR list — `"AutoReach.Billing || AutoReach.Analytics"` — which
  * matches ABP's own `getGrantedPolicy` behaviour.
  */
-export function grantedPolicy(name: string | undefined | null, permissions: PermissionService): boolean {
+export function grantedPolicy(
+  name: string | undefined | null,
+  permissions: PermissionService,
+): boolean {
   if (!name || environment.useMockData) {
     return true;
   }

@@ -3,7 +3,9 @@
   subtitle="Your sales processes and their stages"
   help="Run more than one sales process, each with its own stages. Every stage counts as one of the built-in seven, which is what scoring, reports, CRM sync and automations look at. Won and Lost are always last."
 >
-  <button ar-button variant="primary" icon="plus" (click)="open({ kind: 'pipeline' })">New pipeline</button>
+  <button ar-button variant="primary" icon="plus" (click)="open({ kind: 'pipeline' })">
+    New pipeline
+  </button>
 </ar-topbar>
 
 <div class="pl ar-scroll">
@@ -31,13 +33,26 @@
     <section class="pl__head">
       <div>
         <h2 class="pl__name">{{ p.name }}</h2>
-        <p class="pl__meta">{{ p.enquiryCount }} enquir{{ p.enquiryCount === 1 ? 'y' : 'ies' }} · {{ p.stages?.length }} stages</p>
+        <p class="pl__meta">
+          {{ p.enquiryCount }} enquir{{ p.enquiryCount === 1 ? 'y' : 'ies' }} ·
+          {{ p.stages?.length }} stages
+        </p>
       </div>
       <div class="pl__actions">
-        <button ar-button variant="ghost" (click)="open({ kind: 'rename-pipeline', pipeline: p })">Rename</button>
+        <button ar-button variant="ghost" (click)="open({ kind: 'rename-pipeline', pipeline: p })">
+          Rename
+        </button>
         @if (!p.isDefault) {
-          <button ar-button variant="ghost" [disabled]="busy()" (click)="makeDefault(p)">Make default</button>
-          <button ar-button variant="ghost" (click)="open({ kind: 'delete-pipeline', pipeline: p })">Delete</button>
+          <button ar-button variant="ghost" [disabled]="busy()" (click)="makeDefault(p)">
+            Make default
+          </button>
+          <button
+            ar-button
+            variant="ghost"
+            (click)="open({ kind: 'delete-pipeline', pipeline: p })"
+          >
+            Delete
+          </button>
         }
       </div>
     </section>
@@ -56,12 +71,32 @@
           }
           <div class="st__actions">
             @if (!s.isFixed) {
-              <button ar-button variant="ghost" aria-label="Move earlier" [disabled]="busy() || !canMove(s, -1)" (click)="move(s, -1)">↑</button>
-              <button ar-button variant="ghost" aria-label="Move later" [disabled]="busy() || !canMove(s, 1)" (click)="move(s, 1)">↓</button>
+              <button
+                ar-button
+                variant="ghost"
+                aria-label="Move earlier"
+                [disabled]="busy() || !canMove(s, -1)"
+                (click)="move(s, -1)"
+              >
+                ↑
+              </button>
+              <button
+                ar-button
+                variant="ghost"
+                aria-label="Move later"
+                [disabled]="busy() || !canMove(s, 1)"
+                (click)="move(s, 1)"
+              >
+                ↓
+              </button>
             }
-            <button ar-button variant="ghost" (click)="open({ kind: 'stage', stage: s })">{{ s.isFixed ? 'Rename' : 'Edit' }}</button>
+            <button ar-button variant="ghost" (click)="open({ kind: 'stage', stage: s })">
+              {{ s.isFixed ? 'Rename' : 'Edit' }}
+            </button>
             @if (!s.isFixed && openStages().length > 1) {
-              <button ar-button variant="ghost" (click)="open({ kind: 'delete-stage', stage: s })">Delete</button>
+              <button ar-button variant="ghost" (click)="open({ kind: 'delete-stage', stage: s })">
+                Delete
+              </button>
             }
           </div>
         </li>
@@ -69,8 +104,18 @@
     </ol>
 
     <div class="pl__add">
-      <button ar-button variant="primary" icon="plus" (click)="open({ kind: 'stage', stage: null })">Add stage</button>
-      <p class="pl__note">New stages go after the last open stage; reorder with the arrows. Won and Lost always stay last.</p>
+      <button
+        ar-button
+        variant="primary"
+        icon="plus"
+        (click)="open({ kind: 'stage', stage: null })"
+      >
+        Add stage
+      </button>
+      <p class="pl__note">
+        New stages go after the last open stage; reorder with the arrows. Won and Lost always stay
+        last.
+      </p>
     </div>
 
     <ar-lead-rotation-panel [pipelineId]="p.id!" />
@@ -79,7 +124,19 @@
 
 @if (dialog(); as d) {
   <ar-dialog
-    [title]="d.kind === 'pipeline' ? 'New pipeline' : d.kind === 'rename-pipeline' ? 'Rename pipeline' : d.kind === 'stage' ? (d.stage ? 'Edit stage' : 'Add stage') : d.kind === 'delete-pipeline' ? 'Delete pipeline' : 'Delete stage'"
+    [title]="
+      d.kind === 'pipeline'
+        ? 'New pipeline'
+        : d.kind === 'rename-pipeline'
+          ? 'Rename pipeline'
+          : d.kind === 'stage'
+            ? d.stage
+              ? 'Edit stage'
+              : 'Add stage'
+            : d.kind === 'delete-pipeline'
+              ? 'Delete pipeline'
+              : 'Delete stage'
+    "
     (dismiss)="close()"
   >
     @switch (d.kind) {
@@ -88,7 +145,9 @@
           Delete <b>{{ d.pipeline.name }}</b
           >?
           @if ((d.pipeline.enquiryCount ?? 0) > 0) {
-            It still has {{ d.pipeline.enquiryCount }} enquir{{ d.pipeline.enquiryCount === 1 ? 'y' : 'ies' }}: choose where they go. Each lands in the matching stage.
+            It still has {{ d.pipeline.enquiryCount }} enquir{{
+              d.pipeline.enquiryCount === 1 ? 'y' : 'ies'
+            }}: choose where they go. Each lands in the matching stage.
           }
         </p>
         @if ((d.pipeline.enquiryCount ?? 0) > 0) {
@@ -107,7 +166,10 @@
         <p class="dlg__text">
           Delete the <b>{{ d.stage.name }}</b> stage?
           @if ((d.stage.enquiryCount ?? 0) > 0) {
-            {{ d.stage.enquiryCount }} open enquir{{ d.stage.enquiryCount === 1 ? 'y is' : 'ies are' }} in it: choose where they go.
+            {{ d.stage.enquiryCount }} open enquir{{
+              d.stage.enquiryCount === 1 ? 'y is' : 'ies are'
+            }}
+            in it: choose where they go.
           }
         </p>
         @if ((d.stage.enquiryCount ?? 0) > 0) {
@@ -134,7 +196,9 @@
         </label>
         @if (d.kind === 'pipeline') {
           <label class="ar-field">
-            <span class="ar-field__label">Start from <span class="ar-field__opt">optional</span></span>
+            <span class="ar-field__label"
+              >Start from <span class="ar-field__opt">optional</span></span
+            >
             <select class="ar-field__input" (change)="copyFrom.set($any($event.target).value)">
               <option value="">The standard seven stages</option>
               @for (o of pipelines(); track o.id) {
@@ -148,7 +212,9 @@
             <span class="ar-field__label">Counts as</span>
             <select class="ar-field__input" (change)="bucket.set(+$any($event.target).value)">
               @for (b of buckets; track b.value) {
-                <option [value]="b.value" [selected]="b.value === bucket()">{{ b.label }} — {{ b.hint }}</option>
+                <option [value]="b.value" [selected]="b.value === bucket()">
+                  {{ b.label }} — {{ b.hint }}
+                </option>
               }
             </select>
           </label>
@@ -166,7 +232,13 @@
     <div dialogActions>
       <button ar-button variant="ghost" (click)="close()">Cancel</button>
       <button ar-button variant="primary" [disabled]="busy()" (click)="saveDialog()">
-        {{ busy() ? 'Saving…' : d.kind === 'delete-pipeline' || d.kind === 'delete-stage' ? 'Delete' : 'Save' }}
+        {{
+          busy()
+            ? 'Saving…'
+            : d.kind === 'delete-pipeline' || d.kind === 'delete-stage'
+              ? 'Delete'
+              : 'Save'
+        }}
       </button>
     </div>
   </ar-dialog>

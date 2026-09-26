@@ -1,16 +1,38 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
 
 import { grantedPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
-import { CallLogDto, CallOutcome, VoiceCallDirection, VoiceCallMode, VoiceCallStatus } from '../../proxy/voice';
+import {
+  CallLogDto,
+  CallOutcome,
+  VoiceCallDirection,
+  VoiceCallMode,
+  VoiceCallStatus,
+} from '../../proxy/voice';
 import { ArChip } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { errorMessage } from '../activities/activity-logic';
 import { ArCallOutcomeDialog } from './call-outcome-dialog';
 import { CallGateway } from './call-mock';
-import { OUTCOME_LABEL, STATUS_LABEL, callHeadline, displayNumber, isLive, needsOutcome } from './call-logic';
+import {
+  OUTCOME_LABEL,
+  STATUS_LABEL,
+  callHeadline,
+  displayNumber,
+  isLive,
+  needsOutcome,
+} from './call-logic';
 
 const STATUS_TONE: Record<VoiceCallStatus, ChipTone> = {
   [VoiceCallStatus.Queued]: 'amber',
@@ -72,7 +94,11 @@ export class ArCalls {
   private async load(): Promise<void> {
     try {
       const page = await firstValueFrom(
-        this.api.getList({ mine: this.scope() === 'mine', needsOutcome: this.waiting(), maxResultCount: this.limit() }),
+        this.api.getList({
+          mine: this.scope() === 'mine',
+          needsOutcome: this.waiting(),
+          maxResultCount: this.limit(),
+        }),
       );
       this.calls.set(page.items ?? []);
       this.total.set(page.totalCount ?? 0);
@@ -114,7 +140,12 @@ export class ArCalls {
 
   protected when(c: CallLogDto): string {
     const at = c.startedAtUtc ?? c.creationTime;
-    return new Date(at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return new Date(at).toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 
   protected outcomeSaved(): void {

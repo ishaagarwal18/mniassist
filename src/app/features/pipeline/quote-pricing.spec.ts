@@ -91,19 +91,34 @@ describe('quote rows', () => {
       },
       7,
     );
-    expect(r).toMatchObject({ fromList: true, price: '41000', listName: 'West', moq: 2, key: 7, tax: '' });
+    expect(r).toMatchObject({
+      fromList: true,
+      price: '41000',
+      listName: 'West',
+      moq: 2,
+      key: 7,
+      tax: '',
+    });
   });
 
   it('a match brings the products GST rate with it', () => {
-    expect(rowFromMatch({ partNumber: 'X', name: 'X', taxRateBasisPoints: 1200 }, 1).tax).toBe('12');
+    expect(rowFromMatch({ partNumber: 'X', name: 'X', taxRateBasisPoints: 1200 }, 1).tax).toBe(
+      '12',
+    );
   });
 
   it('a saved manual line stays manual; a saved list line stays list-priced', () => {
-    const manual = rowFromLine({ id: 'a', unitPriceInPaise: 500, priceSource: QuotePriceSource.Manual }, 1);
-    const listed = rowFromLine({ id: 'b', unitPriceInPaise: 500, priceSource: QuotePriceSource.PriceList }, 2);
+    const manual = rowFromLine(
+      { id: 'a', unitPriceInPaise: 500, priceSource: QuotePriceSource.Manual },
+      1,
+    );
+    const listed = rowFromLine(
+      { id: 'b', unitPriceInPaise: 500, priceSource: QuotePriceSource.PriceList },
+      2,
+    );
     expect(manual.fromList).toBe(false);
     expect(listed.fromList).toBe(true);
-    expect(listed.keep).toBe(true);   // saving must not quietly reprice it
+    expect(listed.keep).toBe(true); // saving must not quietly reprice it
     expect(manual.keep).toBe(false);
   });
 });

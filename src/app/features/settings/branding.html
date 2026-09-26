@@ -99,7 +99,13 @@
       <button ar-button type="button" variant="ghost" [disabled]="saving()" (click)="resetColors()">
         Reset to default
       </button>
-      <button ar-button type="button" variant="primary" [disabled]="saving()" (click)="saveColors()">
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="saving()"
+        (click)="saveColors()"
+      >
         {{ saving() ? 'Saving…' : 'Save colours' }}
       </button>
     </div>

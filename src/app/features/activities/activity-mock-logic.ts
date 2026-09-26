@@ -17,7 +17,10 @@ export interface Span {
 /** Two bookings clash when they overlap, or come closer than the buffer. Touching end-to-start is not a clash without a buffer. */
 export function clashes(a: Span, b: Span, bufferMinutes = 0): boolean {
   const gap = bufferMinutes * MINUTE;
-  return Date.parse(a.startUtc) < Date.parse(b.endUtc) + gap && Date.parse(b.startUtc) < Date.parse(a.endUtc) + gap;
+  return (
+    Date.parse(a.startUtc) < Date.parse(b.endUtc) + gap &&
+    Date.parse(b.startUtc) < Date.parse(a.endUtc) + gap
+  );
 }
 
 export interface SlotQuery {
@@ -50,7 +53,10 @@ export function freeSlots(busy: readonly Span[], q: SlotQuery): SlotDto[] {
     const close = day + q.workEndMinute * MINUTE;
     for (let s = open; s + length <= close && out.length < q.max; s += step) {
       if (s < from || s + length > to) continue;
-      const span = { startUtc: new Date(s).toISOString(), endUtc: new Date(s + length).toISOString() };
+      const span = {
+        startUtc: new Date(s).toISOString(),
+        endUtc: new Date(s + length).toISOString(),
+      };
       if (busy.some((b) => clashes(span, b, q.bufferMinutes))) continue;
       out.push({ startUtc: span.startUtc, endUtc: span.endUtc });
     }
@@ -62,7 +68,11 @@ export function freeSlots(busy: readonly Span[], q: SlotQuery): SlotDto[] {
  * The dates a rule produces from a first one, in order, computed in local time so a 10:00 meeting stays at 10:00. Monthly repeats
  * count from the first date, so the 31st clamps to a short month and comes back afterwards. Ends at `untilUtc` or when the caller stops.
  */
-export function* occurrencesOf(startUtc: string, rule: RecurrenceDto, utcOffsetMinutes: number): Generator<string> {
+export function* occurrencesOf(
+  startUtc: string,
+  rule: RecurrenceDto,
+  utcOffsetMinutes: number,
+): Generator<string> {
   const offset = utcOffsetMinutes * MINUTE;
   const first = Date.parse(startUtc) + offset; // "local" wall-clock, read through UTC fields
   const until = rule.untilUtc ? Date.parse(rule.untilUtc) : Infinity;
@@ -110,7 +120,12 @@ export function* occurrencesOf(startUtc: string, rule: RecurrenceDto, utcOffsetM
 }
 
 /** A series' dates, at most `max` and at most the rule's own count. */
-export function seriesStarts(startUtc: string, rule: RecurrenceDto, utcOffsetMinutes: number, max = 52): string[] {
+export function seriesStarts(
+  startUtc: string,
+  rule: RecurrenceDto,
+  utcOffsetMinutes: number,
+  max = 52,
+): string[] {
   const limit = Math.min(max, rule.count ?? max);
   const out: string[] = [];
   for (const d of occurrencesOf(startUtc, rule, utcOffsetMinutes)) {
@@ -121,7 +136,12 @@ export function seriesStarts(startUtc: string, rule: RecurrenceDto, utcOffsetMin
 }
 
 /** The next date of a repeating task: the first one after both the date it was due and now, so a late tick never brings back an overdue copy. */
-export function nextDue(dueUtc: string, rule: RecurrenceDto, utcOffsetMinutes: number, nowUtc: Date): string | null {
+export function nextDue(
+  dueUtc: string,
+  rule: RecurrenceDto,
+  utcOffsetMinutes: number,
+  nowUtc: Date,
+): string | null {
   const floor = Math.max(Date.parse(dueUtc), nowUtc.getTime());
   for (const d of occurrencesOf(dueUtc, rule, utcOffsetMinutes)) {
     if (Date.parse(d) > floor) return d;
@@ -142,7 +162,11 @@ export interface IcsMeeting {
 }
 
 const stamp = (iso: string) => iso.replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-const escapeText = (t: string) => t.replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/[,;]/g, (c) => `\\${c}`);
+const escapeText = (t: string) =>
+  t
+    .replace(/\\/g, '\\\\')
+    .replace(/\r?\n/g, '\\n')
+    .replace(/[,;]/g, (c) => `\\${c}`);
 
 /** Long lines are folded at 75 characters with a leading space, as calendars expect. */
 export function foldLine(line: string): string {

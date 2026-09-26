@@ -1,10 +1,22 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
 
 import { grantedPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
-import { ServiceTicketDto, ServiceTicketSummaryDto, TicketPriority, TicketStatus } from '../../proxy/support';
+import {
+  ServiceTicketDto,
+  ServiceTicketSummaryDto,
+  TicketPriority,
+  TicketStatus,
+} from '../../proxy/support';
 import { ArButton, ArChip, ArSearchBox, ArStatTile } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { errorMessage } from '../activities/activity-logic';
@@ -31,7 +43,15 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
  *  contact it is about — this page works the queue, it does not start one from nothing. */
 @Component({
   selector: 'ar-helpdesk',
-  imports: [ArTopbar, ArButton, ArChip, ArSearchBox, ArStatTile, ArTicketDetailDialog, ArTicketSettingsDialog],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArSearchBox,
+    ArStatTile,
+    ArTicketDetailDialog,
+    ArTicketSettingsDialog,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './helpdesk.html',
   styleUrl: './helpdesk.scss',
@@ -48,7 +68,10 @@ export class ArHelpdesk {
   protected readonly Priority = TicketPriority;
 
   protected readonly canSeeAll = grantedPolicy('AutoReach.Helpdesk.ViewAll', this.permissions);
-  protected readonly canManageSettings = grantedPolicy('AutoReach.Helpdesk.ManageSettings', this.permissions);
+  protected readonly canManageSettings = grantedPolicy(
+    'AutoReach.Helpdesk.ManageSettings',
+    this.permissions,
+  );
 
   protected readonly scope = signal<'mine' | 'everyone'>('mine');
   protected readonly status = signal<TicketStatus | null>(null);

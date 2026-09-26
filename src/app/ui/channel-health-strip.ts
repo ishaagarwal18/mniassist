@@ -21,9 +21,14 @@ import { ArMeter } from './meter';
     <span class="chs__group">
       <span class="chs__tier">{{ tierLabel() }}</span>
       @if (limit(); as l) {
-        <ar-meter class="chs__meter" [value]="channel().used24h" [max]="l"
-                  [thickness]="5" [tone]="usageTone()"
-                  [label]="'Rolling 24-hour recipients used: ' + usageText()" />
+        <ar-meter
+          class="chs__meter"
+          [value]="channel().used24h"
+          [max]="l"
+          [thickness]="5"
+          [tone]="usageTone()"
+          [label]="'Rolling 24-hour recipients used: ' + usageText()"
+        />
         <span class="chs__usage">{{ usageText() }}</span>
       } @else {
         <span class="chs__usage">Unlimited</span>
@@ -32,22 +37,63 @@ import { ArMeter } from './meter';
   `,
   styles: `
     :host {
-      display: inline-flex; align-items: center; gap: 14px;
-      height: var(--ar-control-h); padding: 0 12px;
-      background: var(--ar-bg-100); border: 1px solid var(--ar-line-200);
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      height: var(--ar-control-h);
+      padding: 0 12px;
+      background: var(--ar-bg-100);
+      border: 1px solid var(--ar-line-200);
       border-radius: var(--ar-radius-control);
     }
-    .chs__group { display: inline-flex; align-items: center; gap: 7px; }
-    .chs__rule { width: 1px; height: 16px; background: var(--ar-line-300); }
-    .chs__dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
-    .chs__dot--unknown { background: var(--ar-ink-400); box-shadow: 0 0 0 3px var(--ar-line-200); }
-    .chs__dot--green  { background: var(--ar-green-600); box-shadow: 0 0 0 3px var(--ar-green-100); }
-    .chs__dot--yellow { background: var(--ar-warn-600); box-shadow: 0 0 0 3px var(--ar-warn-100); }
-    .chs__dot--red    { background: var(--ar-red-600); box-shadow: 0 0 0 3px var(--ar-red-100); }
-    .chs__quality { font: 500 12px var(--ar-font-sans); color: var(--ar-ink-700); }
-    .chs__tier { font: 500 12px var(--ar-font-sans); color: var(--ar-ink-500); }
-    .chs__meter { width: 64px; }
-    .chs__usage { font: 500 11px var(--ar-font-mono); color: var(--ar-ink-500); white-space: nowrap; }
+    .chs__group {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .chs__rule {
+      width: 1px;
+      height: 16px;
+      background: var(--ar-line-300);
+    }
+    .chs__dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex: none;
+    }
+    .chs__dot--unknown {
+      background: var(--ar-ink-400);
+      box-shadow: 0 0 0 3px var(--ar-line-200);
+    }
+    .chs__dot--green {
+      background: var(--ar-green-600);
+      box-shadow: 0 0 0 3px var(--ar-green-100);
+    }
+    .chs__dot--yellow {
+      background: var(--ar-warn-600);
+      box-shadow: 0 0 0 3px var(--ar-warn-100);
+    }
+    .chs__dot--red {
+      background: var(--ar-red-600);
+      box-shadow: 0 0 0 3px var(--ar-red-100);
+    }
+    .chs__quality {
+      font: 500 12px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .chs__tier {
+      font: 500 12px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .chs__meter {
+      width: 64px;
+    }
+    .chs__usage {
+      font: 500 11px var(--ar-font-mono);
+      color: var(--ar-ink-500);
+      white-space: nowrap;
+    }
   `,
 })
 export class ArChannelHealthStrip {
@@ -55,8 +101,12 @@ export class ArChannelHealthStrip {
 
   protected readonly limit = computed(() => TIER_LIMIT[this.channel().tier]);
   protected readonly tierLabel = computed(() => TIER_LABEL[this.channel().tier]);
-  protected readonly qualityLabel = computed(() =>
-    ({ unknown: 'Not rated yet', green: 'Green', yellow: 'Yellow', red: 'Red' })[this.channel().quality]);
+  protected readonly qualityLabel = computed(
+    () =>
+      ({ unknown: 'Not rated yet', green: 'Green', yellow: 'Yellow', red: 'Red' })[
+        this.channel().quality
+      ],
+  );
 
   protected readonly usageText = computed(() => {
     const l = this.limit();

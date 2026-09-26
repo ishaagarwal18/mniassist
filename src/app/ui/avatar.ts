@@ -14,12 +14,23 @@ import { initials } from '../core/util/format';
   template: `{{ text() }}`,
   styles: `
     :host {
-      display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 50%; flex: none; font-weight: 600;
-      font-family: var(--ar-font-sans); line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      flex: none;
+      font-weight: 600;
+      font-family: var(--ar-font-sans);
+      line-height: 1;
     }
-    :host(.ar-avatar--neutral) { background: var(--ar-bg-100); color: var(--ar-ink-500); }
-    :host(.ar-avatar--teal) { background: var(--ar-teal-600); color: #fff; }
+    :host(.ar-avatar--neutral) {
+      background: var(--ar-bg-100);
+      color: var(--ar-ink-500);
+    }
+    :host(.ar-avatar--teal) {
+      background: var(--ar-teal-600);
+      color: #fff;
+    }
   `,
 })
 export class ArAvatar {

@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -11,7 +20,13 @@ import {
 import { ArButton, ArDialog } from '../../ui';
 import { ActivityDirectory } from './activity-directory';
 import { ActivityGateway } from './activity-mock';
-import { PRIORITY_LABEL, errorMessage, fromLocalInput, toLocalInput, utcOffsetMinutes } from './activity-logic';
+import {
+  PRIORITY_LABEL,
+  errorMessage,
+  fromLocalInput,
+  toLocalInput,
+  utcOffsetMinutes,
+} from './activity-logic';
 import { ArRecurrencePicker } from './recurrence-picker';
 import { NO_REPEAT, RecurrenceDraft, recurrenceProblem, toDraft, toRecurrence } from './recurrence';
 
@@ -54,7 +69,11 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
         </label>
         <label class="ar-field">
           <span class="ar-field__label">Priority</span>
-          <select id="task-priority" class="ar-field__input" (change)="priority.set(+$any($event.target).value)">
+          <select
+            id="task-priority"
+            class="ar-field__input"
+            (change)="priority.set(+$any($event.target).value)"
+          >
             @for (p of priorities; track p) {
               <option [value]="p" [selected]="p === priority()">{{ priorityLabel[p] }}</option>
             }
@@ -65,7 +84,11 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
       <div class="ar-field-row">
         <label class="ar-field">
           <span class="ar-field__label">Who does it</span>
-          <select id="task-assignee" class="ar-field__input" (change)="assignee.set($any($event.target).value)">
+          <select
+            id="task-assignee"
+            class="ar-field__input"
+            (change)="assignee.set($any($event.target).value)"
+          >
             @for (u of directory.users(); track u.userId) {
               <option [value]="u.userId" [selected]="u.userId === assignee()">
                 {{ u.name }}{{ u.userId === directory.meId ? ' (me)' : '' }}
@@ -79,10 +102,14 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
             id="task-reminder"
             class="ar-field__input"
             [disabled]="!due()"
-            (change)="reminder.set($any($event.target).value === '' ? null : +$any($event.target).value)"
+            (change)="
+              reminder.set($any($event.target).value === '' ? null : +$any($event.target).value)
+            "
           >
             @for (r of reminders; track r.label) {
-              <option [value]="r.minutes ?? ''" [selected]="r.minutes === reminder()">{{ r.label }}</option>
+              <option [value]="r.minutes ?? ''" [selected]="r.minutes === reminder()">
+                {{ r.label }}
+              </option>
             }
           </select>
         </label>
@@ -91,12 +118,21 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
       @if (due()) {
         <ar-recurrence-picker [(draft)]="repeat" />
       } @else {
-        <p class="td__hint">Give it a due date to make it repeat. When a repeating task is finished, the next one is made.</p>
+        <p class="td__hint">
+          Give it a due date to make it repeat. When a repeating task is finished, the next one is
+          made.
+        </p>
       }
 
       <label class="ar-field">
-        <span class="ar-field__label">About a deal <span class="ar-field__opt">optional</span></span>
-        <select id="task-enquiry" class="ar-field__input" (change)="enquiryId.set($any($event.target).value)">
+        <span class="ar-field__label"
+          >About a deal <span class="ar-field__opt">optional</span></span
+        >
+        <select
+          id="task-enquiry"
+          class="ar-field__input"
+          (change)="enquiryId.set($any($event.target).value)"
+        >
           <option value="" [selected]="!enquiryId()">Not about a deal</option>
           @for (o of directory.enquiryOptions(); track o.id) {
             <option [value]="o.id" [selected]="o.id === enquiryId()">{{ o.label }}</option>
@@ -122,12 +158,20 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
       <div dialogActions>
         @if (task(); as t) {
           @if (t.status === Status.Open) {
-            <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="cancelTask(t)">
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="busy()"
+              (click)="cancelTask(t)"
+            >
               Cancel task
             </button>
           }
           @if (directory.canDelete) {
-            <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="remove(t)">Delete</button>
+            <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="remove(t)">
+              Delete
+            </button>
           }
         }
         <button ar-button type="button" variant="ghost" (click)="closed.emit()">Close</button>
@@ -144,10 +188,18 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
     </ar-dialog>
   `,
   styles: `
-    .td__hint { margin: 0 0 10px; font: 400 12px var(--ar-font-sans); color: var(--ar-ink-400); }
+    .td__hint {
+      margin: 0 0 10px;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
     .td__err {
-      margin: 8px 0 0; padding: 8px 10px; border-radius: var(--ar-radius-control);
-      background: var(--ar-red-100); color: var(--ar-red-600); font: 500 12px var(--ar-font-sans);
+      margin: 8px 0 0;
+      padding: 8px 10px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
+      font: 500 12px var(--ar-font-sans);
     }
   `,
 })
@@ -176,7 +228,9 @@ export class ArTaskDialog implements OnInit {
   protected readonly reminder = signal<number | null>(15);
   protected readonly enquiryId = signal('');
   protected readonly repeat = signal<RecurrenceDraft>({ ...NO_REPEAT });
-  protected readonly repeatProblem = computed(() => (this.due() ? recurrenceProblem(this.repeat(), false) : null));
+  protected readonly repeatProblem = computed(() =>
+    this.due() ? recurrenceProblem(this.repeat(), false) : null,
+  );
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -196,7 +250,8 @@ export class ArTaskDialog implements OnInit {
       this.enquiryId.set(this.enquiryPreset() ?? '');
     }
     await this.directory.load();
-    if (!this.assignee()) this.assignee.set(this.directory.meId ?? this.directory.users()[0]?.userId ?? '');
+    if (!this.assignee())
+      this.assignee.set(this.directory.meId ?? this.directory.users()[0]?.userId ?? '');
   }
 
   private body(): CreateUpdateCrmTaskDto {
@@ -210,7 +265,9 @@ export class ArTaskDialog implements OnInit {
       enquiryId: this.enquiryId() || null,
       reminderLeadMinutes: due ? this.reminder() : null,
       // Sent as none rather than left out when it does not repeat, so turning repeating off is an instruction and not a silence.
-      recurrence: due ? (toRecurrence(this.repeat()) ?? { frequency: RecurrenceFrequency.None }) : null,
+      recurrence: due
+        ? (toRecurrence(this.repeat()) ?? { frequency: RecurrenceFrequency.None })
+        : null,
       utcOffsetMinutes: utcOffsetMinutes(),
     };
   }
@@ -218,13 +275,18 @@ export class ArTaskDialog implements OnInit {
   protected async save(): Promise<void> {
     await this.run(async () => {
       const t = this.task();
-      const result = await firstValueFrom(t?.id ? this.api.update(t.id, this.body()) : this.api.create(this.body()));
+      const result = await firstValueFrom(
+        t?.id ? this.api.update(t.id, this.body()) : this.api.create(this.body()),
+      );
       this.saved.emit(result);
     }, 'The task could not be saved.');
   }
 
   protected async cancelTask(t: CrmTaskDto): Promise<void> {
-    await this.run(async () => this.saved.emit(await firstValueFrom(this.api.cancel(t.id!))), 'The task could not be cancelled.');
+    await this.run(
+      async () => this.saved.emit(await firstValueFrom(this.api.cancel(t.id!))),
+      'The task could not be cancelled.',
+    );
   }
 
   protected async remove(t: CrmTaskDto): Promise<void> {

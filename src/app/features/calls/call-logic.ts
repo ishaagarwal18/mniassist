@@ -1,4 +1,10 @@
-import { CallLogDto, CallOutcome, VoiceCallDirection, VoiceCallMode, VoiceCallStatus } from '../../proxy/voice';
+import {
+  CallLogDto,
+  CallOutcome,
+  VoiceCallDirection,
+  VoiceCallMode,
+  VoiceCallStatus,
+} from '../../proxy/voice';
 
 /** What a rep can say came of a call, in the order the form offers them. */
 export const OUTCOME_CHOICES: readonly CallOutcome[] = [
@@ -36,7 +42,9 @@ export function durationLabel(seconds: number | null | undefined): string {
   const s = Math.max(0, Math.round(seconds ?? 0));
   if (s < 60) return `${s}s`;
   const rest = s % 60;
-  return rest === 0 ? `${Math.floor(s / 60)}m` : `${Math.floor(s / 60)}m ${String(rest).padStart(2, '0')}s`;
+  return rest === 0
+    ? `${Math.floor(s / 60)}m`
+    : `${Math.floor(s / 60)}m ${String(rest).padStart(2, '0')}s`;
 }
 
 /** Whether what was typed could be a phone number: 10 to 15 digits, with the usual punctuation and nothing else. */

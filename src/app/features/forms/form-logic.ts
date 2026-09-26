@@ -1,4 +1,9 @@
-import { PublicWebFormFieldDto, WebFormFieldDto, WebFormFieldKind, WebFormFieldTarget } from '../../proxy/web-forms';
+import {
+  PublicWebFormFieldDto,
+  WebFormFieldDto,
+  WebFormFieldKind,
+  WebFormFieldTarget,
+} from '../../proxy/web-forms';
 
 /** Names for the kinds of question, in the order the builder offers them. */
 export const KIND_CHOICES: readonly { kind: WebFormFieldKind; label: string }[] = [
@@ -29,13 +34,19 @@ const TARGET_KINDS: Partial<Record<WebFormFieldTarget, readonly WebFormFieldKind
   [WebFormFieldTarget.Phone]: [WebFormFieldKind.Phone],
   [WebFormFieldTarget.Company]: [WebFormFieldKind.Text],
   [WebFormFieldTarget.City]: [WebFormFieldKind.Text],
-  [WebFormFieldTarget.Requirement]: [WebFormFieldKind.Text, WebFormFieldKind.LongText, WebFormFieldKind.Select],
+  [WebFormFieldTarget.Requirement]: [
+    WebFormFieldKind.Text,
+    WebFormFieldKind.LongText,
+    WebFormFieldKind.Select,
+  ],
   [WebFormFieldTarget.EstimatedValue]: [WebFormFieldKind.Number],
 };
 
 /** The targets a question of this kind can fill in. */
 export function targetsFor(kind: WebFormFieldKind): WebFormFieldTarget[] {
-  const fits = (Object.keys(TARGET_KINDS) as unknown as WebFormFieldTarget[]).filter((t) => TARGET_KINDS[t]!.includes(kind));
+  const fits = (Object.keys(TARGET_KINDS) as unknown as WebFormFieldTarget[]).filter((t) =>
+    TARGET_KINDS[t]!.includes(kind),
+  );
   return [WebFormFieldTarget.None, ...fits.map(Number)];
 }
 
@@ -75,20 +86,24 @@ export function fieldsProblem(fields: readonly WebFormFieldDto[]): string | null
   for (const f of fields) {
     const label = f.label.trim();
     if (!label) return 'Every question needs a label.';
-    if (!/^[a-z][a-z0-9_]{0,39}$/.test(f.key) || RESERVED.has(f.key)) return `The name of "${label}" is not allowed. Use lower-case letters, digits and underscores.`;
+    if (!/^[a-z][a-z0-9_]{0,39}$/.test(f.key) || RESERVED.has(f.key))
+      return `The name of "${label}" is not allowed. Use lower-case letters, digits and underscores.`;
     if (keys.has(f.key)) return `Two questions are named "${f.key}".`;
     keys.add(f.key);
 
     if (f.target !== WebFormFieldTarget.None) {
-      if (targets.has(f.target)) return `More than one question fills in the ${TARGET_LABEL[f.target].toLowerCase()}. Only one can.`;
+      if (targets.has(f.target))
+        return `More than one question fills in the ${TARGET_LABEL[f.target].toLowerCase()}. Only one can.`;
       targets.add(f.target);
-      if (!TARGET_KINDS[f.target]!.includes(f.kind)) return `"${label}" is set to fill in the ${TARGET_LABEL[f.target].toLowerCase()}, which needs a different kind of question.`;
+      if (!TARGET_KINDS[f.target]!.includes(f.kind))
+        return `"${label}" is set to fill in the ${TARGET_LABEL[f.target].toLowerCase()}, which needs a different kind of question.`;
     }
 
     if (f.kind === WebFormFieldKind.Select) {
       const options = f.options.map((o) => o.trim()).filter(Boolean);
       if (options.length < 2) return `"${label}" is a choice, so it needs at least two options.`;
-      if (new Set(options.map((o) => o.toLowerCase())).size !== options.length) return `The options of "${label}" must be different from each other.`;
+      if (new Set(options.map((o) => o.toLowerCase())).size !== options.length)
+        return `The options of "${label}" must be different from each other.`;
     }
   }
 
@@ -99,7 +114,10 @@ export function fieldsProblem(fields: readonly WebFormFieldDto[]): string | null
 }
 
 /** What the visitor typed, checked the way the server will, so a mistake is caught before they press send. */
-export function checkAnswers(fields: readonly PublicWebFormFieldDto[], answers: Readonly<Record<string, string>>): Record<string, string> {
+export function checkAnswers(
+  fields: readonly PublicWebFormFieldDto[],
+  answers: Readonly<Record<string, string>>,
+): Record<string, string> {
   const errors: Record<string, string> = {};
   for (const f of fields) {
     const v = (answers[f.key] ?? '').trim();
@@ -113,18 +131,21 @@ export function checkAnswers(fields: readonly PublicWebFormFieldDto[], answers: 
     }
     switch (f.kind) {
       case WebFormFieldKind.Email:
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) errors[f.key] = 'Enter a valid email address.';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v))
+          errors[f.key] = 'Enter a valid email address.';
         break;
       case WebFormFieldKind.Phone: {
         const digits = v.replace(/\D/g, '');
-        if (/[^0-9+\s\-().]/.test(v) || digits.length < 10 || digits.length > 15) errors[f.key] = 'Enter a valid phone number.';
+        if (/[^0-9+\s\-().]/.test(v) || digits.length < 10 || digits.length > 15)
+          errors[f.key] = 'Enter a valid phone number.';
         break;
       }
       case WebFormFieldKind.Number:
         if (!/^\d[\d,]*(\.\d+)?$/.test(v)) errors[f.key] = 'Enter a number.';
         break;
       case WebFormFieldKind.Select:
-        if (!f.options.some((o) => o.toLowerCase() === v.toLowerCase())) errors[f.key] = 'Choose one of the options.';
+        if (!f.options.some((o) => o.toLowerCase() === v.toLowerCase()))
+          errors[f.key] = 'Choose one of the options.';
         break;
       case WebFormFieldKind.LongText:
         if (v.length > 4000) errors[f.key] = `${f.label} is too long.`;
@@ -137,18 +158,31 @@ export function checkAnswers(fields: readonly PublicWebFormFieldDto[], answers: 
 }
 
 /** The campaign tags on the page's address: only these five, trimmed and short. Nothing else from the address is sent. */
-export function campaignTags(search: string): { utmSource?: string; utmMedium?: string; utmCampaign?: string } {
+export function campaignTags(search: string): {
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+} {
   const p = new URLSearchParams(search);
   const tag = (k: string, max: number) => {
-    const v = (p.get(k) ?? '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, max);
+    const v = (p.get(k) ?? '')
+      .replace(/[\u0000-\u001f]/g, '')
+      .trim()
+      .slice(0, max);
     return v || undefined;
   };
-  return { utmSource: tag('utm_source', 100), utmMedium: tag('utm_medium', 100), utmCampaign: tag('utm_campaign', 150) };
+  return {
+    utmSource: tag('utm_source', 100),
+    utmMedium: tag('utm_medium', 100),
+    utmCampaign: tag('utm_campaign', 150),
+  };
 }
 
 /** The per-question messages the server sent with a refused submission, by question key (and "consent"). */
 export function serverFieldErrors(e: unknown): Record<string, string> {
-  const list = (e as { error?: { error?: { validationErrors?: { message?: string; members?: string[] }[] } } })?.error?.error?.validationErrors;
+  const list = (
+    e as { error?: { error?: { validationErrors?: { message?: string; members?: string[] }[] } } }
+  )?.error?.error?.validationErrors;
   const out: Record<string, string> = {};
   for (const item of list ?? []) {
     for (const m of item.members ?? []) {

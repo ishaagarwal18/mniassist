@@ -22,14 +22,32 @@ const MOCK_PAIRS: ContactDuplicatePairDto[] = [
     confidence: DuplicateConfidence.High,
     reasons: [DuplicateReason.SameEmail],
     suggestedSurvivorId: 'm-1',
-    first: { id: 'm-1', displayName: 'Rahul Sharma', companyName: 'Meridian Pumps', waId: '919811100001', emailAddress: 'rahul@meridian.in' },
-    second: { id: 'm-2', displayName: 'R. Sharma', companyName: 'Meridian Pumps Pvt Ltd', waId: null, emailAddress: 'rahul@meridian.in', hasInstagram: true },
+    first: {
+      id: 'm-1',
+      displayName: 'Rahul Sharma',
+      companyName: 'Meridian Pumps',
+      waId: '919811100001',
+      emailAddress: 'rahul@meridian.in',
+    },
+    second: {
+      id: 'm-2',
+      displayName: 'R. Sharma',
+      companyName: 'Meridian Pumps Pvt Ltd',
+      waId: null,
+      emailAddress: 'rahul@meridian.in',
+      hasInstagram: true,
+    },
   },
   {
     confidence: DuplicateConfidence.Medium,
     reasons: [DuplicateReason.SameNameOnDifferentChannels],
     suggestedSurvivorId: 'm-3',
-    first: { id: 'm-3', displayName: 'Priya Nair', companyName: 'Sanand Press Works', waId: '919822200003' },
+    first: {
+      id: 'm-3',
+      displayName: 'Priya Nair',
+      companyName: 'Sanand Press Works',
+      waId: '919822200003',
+    },
     second: { id: 'm-4', displayName: 'Priya Nair', hasMessenger: true },
   },
 ];
@@ -48,7 +66,8 @@ export class DuplicateStore {
   private readonly dismissedMock = signal<ReadonlySet<string>>(new Set());
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.reloadTick(), high: this.highOnly() }),
+    params: () =>
+      environment.useMockData ? undefined : { tick: this.reloadTick(), high: this.highOnly() },
     stream: ({ params }) =>
       this.api
         .getDuplicates({ highConfidenceOnly: params.high, maxResultCount: 100 })
@@ -62,13 +81,19 @@ export class DuplicateStore {
   readonly pairs = computed<readonly ContactDuplicatePairDto[]>(() => {
     if (environment.useMockData) {
       const gone = this.dismissedMock();
-      return MOCK_PAIRS.filter((p) => !gone.has(p.first!.id!) && (!this.highOnly() || p.confidence === DuplicateConfidence.High));
+      return MOCK_PAIRS.filter(
+        (p) =>
+          !gone.has(p.first!.id!) &&
+          (!this.highOnly() || p.confidence === DuplicateConfidence.High),
+      );
     }
     return this.resource.value().items;
   });
 
   /** Pairs beyond the ones listed — the server pages at 100. */
-  readonly moreThanShown = computed(() => (environment.useMockData ? 0 : Math.max(0, this.resource.value().total - this.pairs().length)));
+  readonly moreThanShown = computed(() =>
+    environment.useMockData ? 0 : Math.max(0, this.resource.value().total - this.pairs().length),
+  );
 
   reload(): void {
     this.reloadTick.update((n) => n + 1);
@@ -104,8 +129,18 @@ export class DuplicateStore {
       survivorId: input.survivorId,
       loserId: input.loserId,
       conflicts: [
-        { field: 'DisplayName', survivorValue: 'Rahul Sharma', loserValue: 'R. Sharma', needsChoice: true },
-        { field: 'InstagramIgsid', survivorValue: null, loserValue: '17841400000000001', needsChoice: false },
+        {
+          field: 'DisplayName',
+          survivorValue: 'Rahul Sharma',
+          loserValue: 'R. Sharma',
+          needsChoice: true,
+        },
+        {
+          field: 'InstagramIgsid',
+          survivorValue: null,
+          loserValue: '17841400000000001',
+          needsChoice: false,
+        },
       ],
       resultingScope: ConsentScope.UtilityOnly,
       resultingSuppression: SuppressionReason.None,

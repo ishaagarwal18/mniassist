@@ -45,7 +45,9 @@ export class ArPipelineStages {
     const all = this.pipelines();
     return all.find((p) => p.id === this.selectedId()) ?? all.find((p) => p.isDefault) ?? all[0];
   });
-  protected readonly openStages = computed(() => (this.selected()?.stages ?? []).filter((s) => !s.isFixed));
+  protected readonly openStages = computed(() =>
+    (this.selected()?.stages ?? []).filter((s) => !s.isFixed),
+  );
 
   protected readonly dialog = signal<Dialog | null>(null);
   protected readonly busy = signal(false);
@@ -126,7 +128,11 @@ export class ArPipelineStages {
         const pipeline = this.selected();
         return this.run(() =>
           d.stage
-            ? this.store.saveStage(d.stage.id!, name, d.stage.isFixed ? d.stage.bucket! : this.bucket())
+            ? this.store.saveStage(
+                d.stage.id!,
+                name,
+                d.stage.isFixed ? d.stage.bucket! : this.bucket(),
+              )
             : this.store.addStage(pipeline!.id!, name, this.bucket()),
         );
       }

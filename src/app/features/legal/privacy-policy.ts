@@ -44,8 +44,8 @@ import { ArIcon } from '../../ui';
         </p>
 
         <p>
-          AutoReach is a WhatsApp, SMS, Email, Instagram and Messenger marketing platform built
-          for industrial automation businesses in India to reach their own customers. This policy
+          AutoReach is a WhatsApp, SMS, Email, Instagram and Messenger marketing platform built for
+          industrial automation businesses in India to reach their own customers. This policy
           explains what personal data we process when a business (a "tenant") uses AutoReach to
           message <em>its</em> customers ("contacts"), and what data we collect about the tenant's
           own team members who use the product.
@@ -54,32 +54,54 @@ import { ArIcon } from '../../ui';
         <h2>1. What we collect</h2>
         <table class="pp__table">
           <thead>
-            <tr><th>Category</th><th>What</th><th>Source</th></tr>
+            <tr>
+              <th>Category</th>
+              <th>What</th>
+              <th>Source</th>
+            </tr>
           </thead>
           <tbody>
             <tr>
               <td>Contact identity</td>
-              <td>Phone number (WhatsApp/SMS/Voice), email address, Instagram/Messenger identifier, display name</td>
-              <td>Entered by the tenant, imported by the tenant, or supplied by the contact when they message the tenant first</td>
+              <td>
+                Phone number (WhatsApp/SMS/Voice), email address, Instagram/Messenger identifier,
+                display name
+              </td>
+              <td>
+                Entered by the tenant, imported by the tenant, or supplied by the contact when they
+                message the tenant first
+              </td>
             </tr>
             <tr>
               <td>Message content</td>
-              <td>The text, media and template content of messages sent and received through the platform</td>
+              <td>
+                The text, media and template content of messages sent and received through the
+                platform
+              </td>
               <td>The tenant and its contacts, in the course of using the product</td>
             </tr>
             <tr>
               <td>Consent records</td>
               <td>When and how a contact consented to be messaged, and any withdrawal</td>
-              <td>The tenant's own capture flow (a form, a WhatsApp opt-in, an import, a QR code) or an inbound message</td>
+              <td>
+                The tenant's own capture flow (a form, a WhatsApp opt-in, an import, a QR code) or
+                an inbound message
+              </td>
             </tr>
             <tr>
               <td>Account &amp; billing</td>
-              <td>Team member names, emails, roles; wallet balance and invoices; GST details where applicable</td>
+              <td>
+                Team member names, emails, roles; wallet balance and invoices; GST details where
+                applicable
+              </td>
               <td>The tenant, at signup and during use</td>
             </tr>
             <tr>
               <td>Technical &amp; usage data</td>
-              <td>IP address at the point of a consent event; delivery/read status of messages; login activity</td>
+              <td>
+                IP address at the point of a consent event; delivery/read status of messages; login
+                activity
+              </td>
               <td>Automatically, as part of operating the service</td>
             </tr>
           </tbody>
@@ -87,10 +109,21 @@ import { ArIcon } from '../../ui';
 
         <h2>2. Why we process it</h2>
         <ul>
-          <li>To deliver the messages a tenant sends through the platform, and to receive replies on the tenant's behalf.</li>
-          <li>To maintain the consent and opt-out record every messaging channel we support legally requires (WhatsApp, TRAI's DLT regime for SMS, CAN-SPAM-equivalent practice for email).</li>
-          <li>To operate billing, support and fraud/abuse prevention for the tenant's own account.</li>
-          <li>To meet our own legal obligations — tax records, and responding to a lawful request from a regulator or court.</li>
+          <li>
+            To deliver the messages a tenant sends through the platform, and to receive replies on
+            the tenant's behalf.
+          </li>
+          <li>
+            To maintain the consent and opt-out record every messaging channel we support legally
+            requires (WhatsApp, TRAI's DLT regime for SMS, CAN-SPAM-equivalent practice for email).
+          </li>
+          <li>
+            To operate billing, support and fraud/abuse prevention for the tenant's own account.
+          </li>
+          <li>
+            To meet our own legal obligations — tax records, and responding to a lawful request from
+            a regulator or court.
+          </li>
         </ul>
         <p>
           We do not sell contact data, and we do not use one tenant's contacts or message content to
@@ -100,16 +133,28 @@ import { ArIcon } from '../../ui';
         <h2>3. Who we share it with</h2>
         <p>
           Delivering a message means the channel it travels over necessarily sees it. The
-          sub-processors below are the platforms and vendors a tenant's data passes through,
-          each acting under its own terms with us:
+          sub-processors below are the platforms and vendors a tenant's data passes through, each
+          acting under its own terms with us:
         </p>
         <ul>
-          <li><strong>Meta Platforms, Inc.</strong> — WhatsApp Cloud API, Instagram and Messenger sends and receives.</li>
-          <li><strong>Gupshup</strong> — an alternative WhatsApp Business Solution Provider route, where a tenant is routed through one instead of connecting directly to Meta.</li>
+          <li>
+            <strong>Meta Platforms, Inc.</strong> — WhatsApp Cloud API, Instagram and Messenger
+            sends and receives.
+          </li>
+          <li>
+            <strong>Gupshup</strong> — an alternative WhatsApp Business Solution Provider route,
+            where a tenant is routed through one instead of connecting directly to Meta.
+          </li>
           <li><strong>MSG91</strong> — SMS delivery.</li>
           <li><strong>Exotel</strong> — voice calling and IVR.</li>
-          <li><strong>Razorpay / PayU</strong> — payment processing for wallet top-ups and subscription billing.</li>
-          <li><strong>Microsoft Azure</strong> — cloud hosting (database, cache, message queue, secret storage, file storage) in an Indian Azure region where available.</li>
+          <li>
+            <strong>Razorpay / PayU</strong> — payment processing for wallet top-ups and
+            subscription billing.
+          </li>
+          <li>
+            <strong>Microsoft Azure</strong> — cloud hosting (database, cache, message queue, secret
+            storage, file storage) in an Indian Azure region where available.
+          </li>
         </ul>
         <p>
           Some of these are based outside India (Meta Platforms, Inc.). Where personal data
@@ -118,13 +163,23 @@ import { ArIcon } from '../../ui';
         </p>
 
         <h2>4. How long we keep it</h2>
-        <p>These are the platform's own configured defaults; a tenant's administrator can shorten most of them:</p>
+        <p>
+          These are the platform's own configured defaults; a tenant's administrator can shorten
+          most of them:
+        </p>
         <ul>
           <li>Conversation history (messages): <strong>2 years</strong></li>
           <li>Media attachments: <strong>1 year</strong></li>
-          <li>Raw inbound webhook payloads (a short-lived diagnostic copy): <strong>30 days</strong></li>
-          <li>Data exports generated on request: <strong>30 days</strong>, then automatically deleted</li>
-          <li>Consent records and audit logs: <strong>7 years</strong> — kept longer deliberately, since this is the evidence a consent was ever given or withdrawn</li>
+          <li>
+            Raw inbound webhook payloads (a short-lived diagnostic copy): <strong>30 days</strong>
+          </li>
+          <li>
+            Data exports generated on request: <strong>30 days</strong>, then automatically deleted
+          </li>
+          <li>
+            Consent records and audit logs: <strong>7 years</strong> — kept longer deliberately,
+            since this is the evidence a consent was ever given or withdrawn
+          </li>
         </ul>
 
         <h2>5. Your rights</h2>
@@ -135,8 +190,14 @@ import { ArIcon } from '../../ui';
         <ul>
           <li><strong>Access</strong> a copy of the personal data held about you.</li>
           <li><strong>Correct</strong> inaccurate personal data.</li>
-          <li><strong>Erase</strong> your personal data, subject to what we must keep for legal/tax reasons.</li>
-          <li><strong>Withdraw consent</strong> to marketing messages at any time — every marketing message includes a way to opt out.</li>
+          <li>
+            <strong>Erase</strong> your personal data, subject to what we must keep for legal/tax
+            reasons.
+          </li>
+          <li>
+            <strong>Withdraw consent</strong> to marketing messages at any time — every marketing
+            message includes a way to opt out.
+          </li>
         </ul>
         <p>
           Every request like this is logged and answered within <strong>30 days</strong>. To ask a
@@ -154,11 +215,11 @@ import { ArIcon } from '../../ui';
 
         <h2>7. Who is responsible for your data</h2>
         <p>
-          If you received a message through AutoReach, the business that messaged you (the
-          "tenant") is who asked for your consent and is responsible for deciding what to send
-          you — they are the data fiduciary under India's Digital Personal Data Protection Act,
-          2023. AutoReach (Sun Energy &amp; Automation) processes that data on the tenant's
-          instructions, as its data processor / significant processing platform.
+          If you received a message through AutoReach, the business that messaged you (the "tenant")
+          is who asked for your consent and is responsible for deciding what to send you — they are
+          the data fiduciary under India's Digital Personal Data Protection Act, 2023. AutoReach
+          (Sun Energy &amp; Automation) processes that data on the tenant's instructions, as its
+          data processor / significant processing platform.
         </p>
 
         <h2>8. Grievance officer &amp; complaints</h2>
@@ -178,9 +239,9 @@ import { ArIcon } from '../../ui';
 
         <h2>9. Children</h2>
         <p>
-          AutoReach is a business-to-business messaging tool. It is not directed at children, and
-          we do not knowingly process the personal data of anyone under 18 as a contact in their
-          own right.
+          AutoReach is a business-to-business messaging tool. It is not directed at children, and we
+          do not knowingly process the personal data of anyone under 18 as a contact in their own
+          right.
         </p>
 
         <h2>10. Changes to this policy</h2>

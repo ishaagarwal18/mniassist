@@ -1,4 +1,9 @@
-import { ServiceTicketDto, ServiceTicketSettingsDto, TicketPriority, TicketStatus } from '../../proxy/support';
+import {
+  ServiceTicketDto,
+  ServiceTicketSettingsDto,
+  TicketPriority,
+  TicketStatus,
+} from '../../proxy/support';
 
 export const STATUS_LABEL: Record<TicketStatus, string> = {
   [TicketStatus.Open]: 'Open',
@@ -24,7 +29,9 @@ export const PRIORITY_SLA_HOURS: Record<TicketPriority, number> = {
 };
 
 /** The workspace's own SLA policy, keyed by priority the way {@link PRIORITY_SLA_HOURS} is — so a dialog can show whichever it has. */
-export function hoursByPriority(s: Pick<ServiceTicketSettingsDto, 'urgentHours' | 'highHours' | 'normalHours' | 'lowHours'>): Record<TicketPriority, number> {
+export function hoursByPriority(
+  s: Pick<ServiceTicketSettingsDto, 'urgentHours' | 'highHours' | 'normalHours' | 'lowHours'>,
+): Record<TicketPriority, number> {
   return {
     [TicketPriority.Urgent]: s.urgentHours,
     [TicketPriority.High]: s.highHours,
@@ -56,7 +63,10 @@ export function isOverdue(t: Pick<ServiceTicketDto, 'status' | 'dueAtUtc'>, now:
 }
 
 /** "3h left", "Due in 20m", "2 days overdue". */
-export function dueLabel(t: Pick<ServiceTicketDto, 'dueAtUtc' | 'isOverdue'>, now: Date): string | null {
+export function dueLabel(
+  t: Pick<ServiceTicketDto, 'dueAtUtc' | 'isOverdue'>,
+  now: Date,
+): string | null {
   if (!t.dueAtUtc) return null;
   const due = new Date(t.dueAtUtc);
   const ms = due.getTime() - now.getTime();

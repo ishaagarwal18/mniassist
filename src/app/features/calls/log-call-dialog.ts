@@ -17,25 +17,48 @@ import { OUTCOME_CHOICES, OUTCOME_LABEL } from './call-logic';
       <div class="ar-field-row">
         <label class="ar-field" for="lc-dir">
           <span class="ar-field__label">Direction</span>
-          <select id="lc-dir" class="ar-field__input" (change)="direction.set(+$any($event.target).value)">
+          <select
+            id="lc-dir"
+            class="ar-field__input"
+            (change)="direction.set(+$any($event.target).value)"
+          >
             <option [value]="Out" [selected]="direction() === Out">I called them</option>
             <option [value]="In" [selected]="direction() === In">They called me</option>
           </select>
         </label>
         <label class="ar-field" for="lc-when">
           <span class="ar-field__label">Started</span>
-          <input id="lc-when" class="ar-field__input" type="datetime-local" [max]="now" [value]="when()" (input)="when.set($any($event.target).value)" />
+          <input
+            id="lc-when"
+            class="ar-field__input"
+            type="datetime-local"
+            [max]="now"
+            [value]="when()"
+            (input)="when.set($any($event.target).value)"
+          />
         </label>
       </div>
 
       <div class="ar-field-row">
         <label class="ar-field" for="lc-min">
           <span class="ar-field__label">Minutes on the call</span>
-          <input id="lc-min" class="ar-field__input" type="number" min="0" max="360" [value]="minutes()" (input)="minutes.set(+$any($event.target).value)" />
+          <input
+            id="lc-min"
+            class="ar-field__input"
+            type="number"
+            min="0"
+            max="360"
+            [value]="minutes()"
+            (input)="minutes.set(+$any($event.target).value)"
+          />
         </label>
         <label class="ar-field" for="lc-outcome">
           <span class="ar-field__label">How it went</span>
-          <select id="lc-outcome" class="ar-field__input" (change)="outcome.set(+$any($event.target).value)">
+          <select
+            id="lc-outcome"
+            class="ar-field__input"
+            (change)="outcome.set(+$any($event.target).value)"
+          >
             @for (o of choices; track o) {
               <option [value]="o" [selected]="o === outcome()">{{ label[o] }}</option>
             }
@@ -44,8 +67,17 @@ import { OUTCOME_CHOICES, OUTCOME_LABEL } from './call-logic';
       </div>
 
       <label class="ar-field" for="lc-notes">
-        <span class="ar-field__label">What was said <span class="ar-field__opt">optional</span></span>
-        <textarea id="lc-notes" class="ar-field__input" rows="4" maxlength="2000" [value]="notes()" (input)="notes.set($any($event.target).value)"></textarea>
+        <span class="ar-field__label"
+          >What was said <span class="ar-field__opt">optional</span></span
+        >
+        <textarea
+          id="lc-notes"
+          class="ar-field__input"
+          rows="4"
+          maxlength="2000"
+          [value]="notes()"
+          (input)="notes.set($any($event.target).value)"
+        ></textarea>
       </label>
 
       <p class="lc__hint">This records a call that already happened. Nothing is dialled.</p>
@@ -56,13 +88,32 @@ import { OUTCOME_CHOICES, OUTCOME_LABEL } from './call-logic';
 
       <div dialogActions>
         <button ar-button type="button" variant="ghost" (click)="closed.emit(null)">Cancel</button>
-        <button ar-button type="button" variant="primary" [disabled]="busy() || !when()" (click)="save()">{{ busy() ? 'Saving…' : 'Log call' }}</button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="busy() || !when()"
+          (click)="save()"
+        >
+          {{ busy() ? 'Saving…' : 'Log call' }}
+        </button>
       </div>
     </ar-dialog>
   `,
   styles: `
-    .lc__hint { margin: 0; font: 400 12px var(--ar-font-sans); color: var(--ar-ink-400); }
-    .lc__err { margin: 8px 0 0; padding: 8px 10px; border-radius: var(--ar-radius-control); background: var(--ar-red-100); color: var(--ar-red-600); font: 500 12px var(--ar-font-sans); }
+    .lc__hint {
+      margin: 0;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
+    .lc__err {
+      margin: 8px 0 0;
+      padding: 8px 10px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
+      font: 500 12px var(--ar-font-sans);
+    }
   `,
 })
 export class ArLogCallDialog {

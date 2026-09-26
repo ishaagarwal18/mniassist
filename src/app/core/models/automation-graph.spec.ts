@@ -17,7 +17,11 @@ const K = AutomationNodeKind;
 let n = 0;
 const sequentialIds = () => `id-${++n}`;
 
-const step = (kind: AutomationNodeKind, config: Record<string, unknown> = {}, otherwise?: BuilderStep[]): BuilderStep => ({
+const step = (
+  kind: AutomationNodeKind,
+  config: Record<string, unknown> = {},
+  otherwise?: BuilderStep[],
+): BuilderStep => ({
   localId: `t${++n}`,
   kind,
   config,
@@ -26,13 +30,21 @@ const step = (kind: AutomationNodeKind, config: Record<string, unknown> = {}, ot
 
 /** Strips volatile fields so a tree can be compared with one read back from a graph. */
 const shape = (steps: BuilderStep[]): unknown =>
-  steps.map((s) => ({ kind: s.kind, config: s.config, otherwise: s.otherwise ? shape(s.otherwise) : undefined }));
+  steps.map((s) => ({
+    kind: s.kind,
+    config: s.config,
+    otherwise: s.otherwise ? shape(s.otherwise) : undefined,
+  }));
 
 describe('automation step tree ↔ node graph', () => {
   beforeEach(() => (n = 0));
 
   it('round-trips a straight chain', () => {
-    const tree = [step(K.SendSessionMessage, { text: 'hi' }), step(K.Wait, { minutes: 30 }), step(K.AssignAgent, { userId: 'u1' })];
+    const tree = [
+      step(K.SendSessionMessage, { text: 'hi' }),
+      step(K.Wait, { minutes: 30 }),
+      step(K.AssignAgent, { userId: 'u1' }),
+    ];
 
     const parsed = graphToSteps(stepsToGraph(tree, sequentialIds) as AutomationNodeDto[]);
 
@@ -70,7 +82,10 @@ describe('automation step tree ↔ node graph', () => {
   });
 
   it('points an empty otherwise at End, which is what a bare condition has always meant', () => {
-    const nodes = stepsToGraph([step(K.Condition, { field: 'contact.city', operator: 'isNotEmpty' })], sequentialIds);
+    const nodes = stepsToGraph(
+      [step(K.Condition, { field: 'contact.city', operator: 'isNotEmpty' })],
+      sequentialIds,
+    );
     const condition = nodes.find((x) => x.kind === K.Condition)!;
     const end = nodes.find((x) => x.kind === K.End)!;
 
@@ -101,7 +116,9 @@ describe('automation step tree ↔ node graph', () => {
     const inner = step(K.Condition, { field: 'contact.role' }, [step(K.Wait, { minutes: 5 })]);
     inner.rejoin = true;
     inner.then = [];
-    const outer = step(K.WaitForReply, { hours: 24 }, [step(K.SendSessionMessage, { text: 'nudge' })]);
+    const outer = step(K.WaitForReply, { hours: 24 }, [
+      step(K.SendSessionMessage, { text: 'nudge' }),
+    ]);
     outer.rejoin = true;
     outer.then = [step(K.SendSessionMessage, { text: 'thanks' }), inner];
     const tree = [outer, step(K.CreateEnquiry, { subject: 'either way' })];
@@ -122,7 +139,9 @@ describe('automation step tree ↔ node graph', () => {
 
     // Both sides of the outer branch reach the enquiry; nothing else does.
     const enquiry = nodes.find((x) => x.kind === K.CreateEnquiry)!;
-    const into = nodes.filter((x) => [x.nextNodeId, x.trueNodeId, x.falseNodeId].includes(enquiry.id));
+    const into = nodes.filter((x) =>
+      [x.nextNodeId, x.trueNodeId, x.falseNodeId].includes(enquiry.id),
+    );
     expect(into.length).toBeGreaterThanOrEqual(2);
   });
 
@@ -179,7 +198,14 @@ describe('automation step tree ↔ node graph', () => {
   it('keeps stored node ids, places and the trigger/End, so a save updates the graph rather than replacing it', () => {
     const stored = [
       { id: 't', kind: K.Trigger, nextNodeId: 'a', positionX: 16, positionY: 0 },
-      { id: 'a', kind: K.SendSessionMessage, nextNodeId: 'e', configJson: '{"text":"hi"}', positionX: 64, positionY: 160 },
+      {
+        id: 'a',
+        kind: K.SendSessionMessage,
+        nextNodeId: 'e',
+        configJson: '{"text":"hi"}',
+        positionX: 64,
+        positionY: 160,
+      },
       { id: 'e', kind: K.End, positionX: 16, positionY: 320 },
     ] as AutomationNodeDto[];
 
@@ -187,7 +213,11 @@ describe('automation step tree ↔ node graph', () => {
     const saved = stepsToGraph(parsed.steps, sequentialIds, anchorsOf(stored));
 
     expect(saved.map((x) => x.id)).toEqual(['t', 'a', 'e']);
-    expect(saved.find((x) => x.id === 'a')).toMatchObject({ positionX: 64, positionY: 160, nextNodeId: 'e' });
+    expect(saved.find((x) => x.id === 'a')).toMatchObject({
+      positionX: 64,
+      positionY: 160,
+      nextNodeId: 'e',
+    });
     expect(saved.find((x) => x.id === 'e')).toMatchObject({ positionX: 16, positionY: 320 });
   });
 
@@ -199,7 +229,11 @@ describe('automation step tree ↔ node graph', () => {
     ] as AutomationNodeDto[];
     const parsed = graphToSteps(stored);
 
-    const saved = stepsToGraph([...parsed.steps, step(K.AssignAgent)], sequentialIds, anchorsOf(stored));
+    const saved = stepsToGraph(
+      [...parsed.steps, step(K.AssignAgent)],
+      sequentialIds,
+      anchorsOf(stored),
+    );
 
     const assign = saved.find((x) => x.kind === K.AssignAgent)!;
     expect(assign.id).toMatch(/^id-/);
@@ -227,7 +261,10 @@ describe('editing the step tree', () => {
 
   it('updates a step nested in an otherwise branch', () => {
     const t = tree();
-    const next = updateStep(t, t[0].otherwise![0].localId, (s) => ({ ...s, config: { text: 'changed' } }));
+    const next = updateStep(t, t[0].otherwise![0].localId, (s) => ({
+      ...s,
+      config: { text: 'changed' },
+    }));
 
     expect(next[0].otherwise![0].config).toEqual({ text: 'changed' });
     expect(t[0].otherwise![0].config).toEqual({ text: 'inner' }); // the original is untouched

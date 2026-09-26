@@ -23,7 +23,7 @@
           <span class="ar-mono">{{ ch.exoPhone }}</span>
           <ar-chip [tone]="stateTone(ch.state)">{{ ChannelState[ch.state!] }}</ar-chip>
         </div>
-            </section>
+      </section>
     }
 
     @if (channel(); as ch) {
@@ -37,18 +37,21 @@
           </p>
         } @else {
           <p class="vi__hint">
-            On your Exotel dashboard, build this flow <strong>once</strong>. It does not contain your
-            menu — only the plumbing. After that, everything you edit below is live.
+            On your Exotel dashboard, build this flow <strong>once</strong>. It does not contain
+            your menu — only the plumbing. After that, everything you edit below is live.
           </p>
           <ol class="vi__steps">
             <li>
-              Add three <strong>Gather</strong> applets. Turn on “application URL” for each and paste:
+              Add three <strong>Gather</strong> applets. Turn on “application URL” for each and
+              paste:
               <ul class="vi__urls">
                 @for (u of ch.ivrSetup!.gatherUrls; track u; let n = $index) {
                   <li>
                     <span class="vi__url-label">Gather {{ n + 1 }}</span>
                     <code class="ar-mono">{{ u }}</code>
-                    <button ar-button variant="quiet" (click)="copy(u)">{{ copied() === u ? 'Copied' : 'Copy' }}</button>
+                    <button ar-button variant="quiet" (click)="copy(u)">
+                      {{ copied() === u ? 'Copied' : 'Copy' }}
+                    </button>
                   </li>
                 }
               </ul>
@@ -60,12 +63,14 @@
                   <li>
                     <span class="vi__url-label">Passthru {{ n + 1 }}</span>
                     <code class="ar-mono">{{ u }}</code>
-                    <button ar-button variant="quiet" (click)="copy(u)">{{ copied() === u ? 'Copied' : 'Copy' }}</button>
+                    <button ar-button variant="quiet" (click)="copy(u)">
+                      {{ copied() === u ? 'Copied' : 'Copy' }}
+                    </button>
                   </li>
                 }
               </ul>
-              A <em>200</em> result continues to the next Gather; a <em>302</em> result goes to Connect.
-              Gather 3 goes straight to Connect.
+              A <em>200</em> result continues to the next Gather; a <em>302</em> result goes to
+              Connect. Gather 3 goes straight to Connect.
             </li>
             <li>
               Add one <strong>Connect</strong> applet with “application URL”:
@@ -73,10 +78,13 @@
                 <li>
                   <span class="vi__url-label">Connect</span>
                   <code class="ar-mono">{{ ch.ivrSetup!.connectUrl }}</code>
-                  <button ar-button variant="quiet" (click)="copy(ch.ivrSetup!.connectUrl!)">{{ copied() === ch.ivrSetup!.connectUrl ? 'Copied' : 'Copy' }}</button>
+                  <button ar-button variant="quiet" (click)="copy(ch.ivrSetup!.connectUrl!)">
+                    {{ copied() === ch.ivrSetup!.connectUrl ? 'Copied' : 'Copy' }}
+                  </button>
                 </li>
               </ul>
-              Send its failure path to a <strong>Hangup</strong> applet — that is how a menu ends a call.
+              Send its failure path to a <strong>Hangup</strong> applet — that is how a menu ends a
+              call.
             </li>
             <li>
               Set the flow's call-status callback to:
@@ -84,13 +92,15 @@
                 <li>
                   <span class="vi__url-label">Status</span>
                   <code class="ar-mono">{{ ch.ivrSetup!.statusCallbackUrl }}</code>
-                  <button ar-button variant="quiet" (click)="copy(ch.ivrSetup!.statusCallbackUrl!)">{{ copied() === ch.ivrSetup!.statusCallbackUrl ? 'Copied' : 'Copy' }}</button>
+                  <button ar-button variant="quiet" (click)="copy(ch.ivrSetup!.statusCallbackUrl!)">
+                    {{ copied() === ch.ivrSetup!.statusCallbackUrl ? 'Copied' : 'Copy' }}
+                  </button>
                 </li>
               </ul>
             </li>
             <li>
-              Point your Exotel number at this flow for <strong>incoming</strong> calls, then paste the
-              flow's URL here so <strong>outgoing</strong> calls use it too:
+              Point your Exotel number at this flow for <strong>incoming</strong> calls, then paste
+              the flow's URL here so <strong>outgoing</strong> calls use it too:
               <div class="vi__flow">
                 <input
                   class="ar-field__input"
@@ -100,7 +110,9 @@
                   (focus)="startFlowUrlEdit()"
                   (input)="flowUrlDraft.set($any($event.target).value)"
                 />
-                <button ar-button variant="primary" [disabled]="busy()" (click)="saveFlowUrl()">Save</button>
+                <button ar-button variant="primary" [disabled]="busy()" (click)="saveFlowUrl()">
+                  Save
+                </button>
               </div>
             </li>
           </ol>
@@ -116,14 +128,17 @@
       <section class="vi__panel">
         <h2 class="vi__panel-title">In-browser phone</h2>
         <p class="vi__hint">
-          Turn this on and reps get a phone bar docked in the app — they can call or answer without a separate handset. It
-          registers against a SIP/WebRTC line (your voice provider's SIP trunk); the settings below are what they give you for it.
+          Turn this on and reps get a phone bar docked in the app — they can call or answer without
+          a separate handset. It registers against a SIP/WebRTC line (your voice provider's SIP
+          trunk); the settings below are what they give you for it.
         </p>
 
         @if (!softphoneEditing()) {
           <div class="vi__channel-row">
             <span class="vi__channel-label">Status</span>
-            <ar-chip [tone]="ch.softphoneEnabled ? 'good' : 'neutral'">{{ ch.softphoneEnabled ? 'On' : 'Off' }}</ar-chip>
+            <ar-chip [tone]="ch.softphoneEnabled ? 'good' : 'neutral'">{{
+              ch.softphoneEnabled ? 'On' : 'Off'
+            }}</ar-chip>
             @if (ch.softphoneEnabled) {
               <code class="ar-mono">sip:{{ ch.sipUsername }}&#64;{{ ch.sipDomain }}</code>
             }
@@ -133,30 +148,66 @@
           </button>
         } @else {
           <label class="vi__checkbox">
-            <input type="checkbox" [checked]="softphoneEnabledDraft()" (change)="softphoneEnabledDraft.set($any($event.target).checked)" />
+            <input
+              type="checkbox"
+              [checked]="softphoneEnabledDraft()"
+              (change)="softphoneEnabledDraft.set($any($event.target).checked)"
+            />
             Turn on the in-browser phone
           </label>
           <label class="ar-field">
             <span class="ar-field__label">SIP domain</span>
-            <input class="ar-field__input ar-mono" placeholder="voice.example.com" [value]="sipDomainDraft()" (input)="sipDomainDraft.set($any($event.target).value)" />
+            <input
+              class="ar-field__input ar-mono"
+              placeholder="voice.example.com"
+              [value]="sipDomainDraft()"
+              (input)="sipDomainDraft.set($any($event.target).value)"
+            />
           </label>
           <label class="ar-field">
             <span class="ar-field__label">SIP WebSocket server</span>
-            <input class="ar-field__input ar-mono" placeholder="wss://voice.example.com/ws" [value]="sipWsDraft()" (input)="sipWsDraft.set($any($event.target).value)" />
+            <input
+              class="ar-field__input ar-mono"
+              placeholder="wss://voice.example.com/ws"
+              [value]="sipWsDraft()"
+              (input)="sipWsDraft.set($any($event.target).value)"
+            />
           </label>
           <div class="ar-field-row">
             <label class="ar-field">
               <span class="ar-field__label">SIP username</span>
-              <input class="ar-field__input ar-mono" placeholder="sales" [value]="sipUsernameDraft()" (input)="sipUsernameDraft.set($any($event.target).value)" />
+              <input
+                class="ar-field__input ar-mono"
+                placeholder="sales"
+                [value]="sipUsernameDraft()"
+                (input)="sipUsernameDraft.set($any($event.target).value)"
+              />
             </label>
             <label class="ar-field">
-              <span class="ar-field__label">SIP password <span class="vi__once">(leave blank to keep it)</span></span>
-              <input class="ar-field__input" type="password" autocomplete="new-password" [value]="sipPasswordDraft()" (input)="sipPasswordDraft.set($any($event.target).value)" />
+              <span class="ar-field__label"
+                >SIP password <span class="vi__once">(leave blank to keep it)</span></span
+              >
+              <input
+                class="ar-field__input"
+                type="password"
+                autocomplete="new-password"
+                [value]="sipPasswordDraft()"
+                (input)="sipPasswordDraft.set($any($event.target).value)"
+              />
             </label>
           </div>
           <div class="vi__flow">
-            <button ar-button variant="ghost" [disabled]="busy()" (click)="softphoneEditing.set(false)">Cancel</button>
-            <button ar-button variant="primary" [disabled]="busy()" (click)="saveSoftphone()">{{ busy() ? 'Saving…' : 'Save' }}</button>
+            <button
+              ar-button
+              variant="ghost"
+              [disabled]="busy()"
+              (click)="softphoneEditing.set(false)"
+            >
+              Cancel
+            </button>
+            <button ar-button variant="primary" [disabled]="busy()" (click)="saveSoftphone()">
+              {{ busy() ? 'Saving…' : 'Save' }}
+            </button>
           </div>
         }
       </section>
@@ -168,7 +219,9 @@
         <ul class="vi__issues">
           @for (i of issues(); track $index) {
             <li>
-              <ar-chip [tone]="issueTone(i)">{{ i.severity === 2 ? 'Fix' : i.severity === 1 ? 'Check' : 'Note' }}</ar-chip>
+              <ar-chip [tone]="issueTone(i)">{{
+                i.severity === 2 ? 'Fix' : i.severity === 1 ? 'Check' : 'Note'
+              }}</ar-chip>
               <span>{{ i.message }}</span>
             </li>
           }
@@ -195,7 +248,12 @@
             />
           </label>
         }
-        <button ar-button variant="primary" [disabled]="simulating() || !entryPoint()" (click)="runSimulation()">
+        <button
+          ar-button
+          variant="primary"
+          [disabled]="simulating() || !entryPoint()"
+          (click)="runSimulation()"
+        >
           {{ simulating() ? 'Running…' : 'Run' }}
         </button>
       </div>
@@ -209,7 +267,10 @@
               </div>
               <p class="vi__say">“{{ st.sayText }}”</p>
               <p class="vi__meta">
-                @if (st.keyPressed) { Caller presses <span class="ar-mono">{{ st.keyPressed }}</span>. }
+                @if (st.keyPressed) {
+                  Caller presses <span class="ar-mono">{{ st.keyPressed }}</span
+                  >.
+                }
                 {{ st.detail }}
               </p>
             </li>
@@ -290,7 +351,13 @@
             </tbody>
           </table>
 
-          <button ar-button variant="ghost" icon="plus" [disabled]="busy()" (click)="openBranchForm(p.id!)">
+          <button
+            ar-button
+            variant="ghost"
+            icon="plus"
+            [disabled]="busy()"
+            (click)="openBranchForm(p.id!)"
+          >
             Add branch
           </button>
         </article>

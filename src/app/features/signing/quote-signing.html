@@ -42,9 +42,15 @@
         <section class="sg__card sg__card--stop" role="status">
           <h2>
             @switch (v.status) {
-              @case (Status.Declined) { Declined }
-              @case (Status.Expired) { This link has expired }
-              @default { This quotation can no longer be signed }
+              @case (Status.Declined) {
+                Declined
+              }
+              @case (Status.Expired) {
+                This link has expired
+              }
+              @default {
+                This quotation can no longer be signed
+              }
             }
           </h2>
           <p>{{ v.reason }}</p>
@@ -83,7 +89,9 @@
                   </td>
                   <td class="num">{{ l.quantity }} {{ l.unit }}</td>
                   <td class="num">{{ money(l.unitPriceInPaise) }}</td>
-                  <td class="num">{{ l.discountBasisPoints ? pct(l.discountBasisPoints) : '—' }}</td>
+                  <td class="num">
+                    {{ l.discountBasisPoints ? pct(l.discountBasisPoints) : '—' }}
+                  </td>
                   <td class="num">{{ pct(l.taxRateBasisPoints) }}</td>
                   <td class="num">{{ money(l.lineTotalInPaise) }}</td>
                 </tr>
@@ -93,11 +101,20 @@
         </div>
 
         <dl class="sg__sum">
-          <div><dt>Subtotal</dt><dd>{{ money(v.subtotalInPaise) }}</dd></div>
+          <div>
+            <dt>Subtotal</dt>
+            <dd>{{ money(v.subtotalInPaise) }}</dd>
+          </div>
           @for (t of v.taxBreakdown; track t.rateBasisPoints) {
-            <div><dt>GST {{ pct(t.rateBasisPoints) }}</dt><dd>{{ money(t.taxInPaise) }}</dd></div>
+            <div>
+              <dt>GST {{ pct(t.rateBasisPoints) }}</dt>
+              <dd>{{ money(t.taxInPaise) }}</dd>
+            </div>
           }
-          <div class="sg__sum-total"><dt>Total</dt><dd>{{ money(v.totalInPaise) }}</dd></div>
+          <div class="sg__sum-total">
+            <dt>Total</dt>
+            <dd>{{ money(v.totalInPaise) }}</dd>
+          </div>
         </dl>
 
         @if (v.canSign) {
@@ -144,12 +161,22 @@
                   [value]="code()"
                   (input)="code.set($any($event.target).value)"
                 />
-                <button type="button" class="sg__btn sg__btn--ghost" [disabled]="busy()" (click)="sendCode()">
+                <button
+                  type="button"
+                  class="sg__btn sg__btn--ghost"
+                  [disabled]="busy()"
+                  (click)="sendCode()"
+                >
                   {{ codeNote() || v.codeSentTo ? 'Send a new code' : 'Send me a code' }}
                 </button>
               </div>
               <small class="sg__hint">
-                {{ codeNote() ?? (v.codeSentTo ? 'A code was sent to ' + v.codeSentTo + '.' : 'We email a code to confirm it is you.') }}
+                {{
+                  codeNote() ??
+                    (v.codeSentTo
+                      ? 'A code was sent to ' + v.codeSentTo + '.'
+                      : 'We email a code to confirm it is you.')
+                }}
               </small>
             </div>
           }
@@ -172,7 +199,12 @@
             <button type="button" class="sg__btn" [disabled]="!canSubmit()" (click)="sign()">
               {{ busy() ? 'Saving…' : 'Sign and accept' }}
             </button>
-            <button type="button" class="sg__btn sg__btn--ghost" [disabled]="busy()" (click)="declining.set(!declining())">
+            <button
+              type="button"
+              class="sg__btn sg__btn--ghost"
+              [disabled]="busy()"
+              (click)="declining.set(!declining())"
+            >
               Decline
             </button>
           </div>
@@ -189,7 +221,12 @@
                   (input)="declineReason.set($any($event.target).value)"
                 ></textarea>
               </label>
-              <button type="button" class="sg__btn sg__btn--danger" [disabled]="busy()" (click)="decline()">
+              <button
+                type="button"
+                class="sg__btn sg__btn--danger"
+                [disabled]="busy()"
+                (click)="decline()"
+              >
                 Decline this quotation
               </button>
             </div>

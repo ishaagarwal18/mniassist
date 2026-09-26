@@ -69,7 +69,11 @@ export class ErpSyncService {
 
   getStatus = (config?: Partial<Rest.Config>) =>
     this.restService.request<any, ErpSyncStatusDto>(
-      { method: 'GET', headers: { Accept: 'application/json' }, url: '/api/auto-reach/erp-sync/status' },
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/erp-sync/status',
+      },
       { apiName: this.apiName, ...config },
     );
 

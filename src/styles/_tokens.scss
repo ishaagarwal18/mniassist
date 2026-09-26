@@ -3,57 +3,57 @@
    rounded to a 4/8px grid. Change a value here and it changes everywhere. */
 :root {
   /* Surface and text */
-  --ar-ink-900: #14181D;
-  --ar-ink-700: #333B45;
-  --ar-ink-500: #5C6672;
+  --ar-ink-900: #14181d;
+  --ar-ink-700: #333b45;
+  --ar-ink-500: #5c6672;
   /* Darkened from the original #7B8794 — that value was 3.66:1 on white,
      below WCAG 2.1 AA's 4.5:1 minimum for normal text, and this token is the
      app's workhorse "muted" text colour (58 files). Verified at >=4.5:1
      against every light background it's actually used on: white, --ar-bg-50,
      --ar-bg-100, --ar-amber-100 and --ar-teal-100 (see a11y-audit/RESULTS.md
      in autoreach-web for the numbers and the tool that found this). */
-  --ar-ink-400: #616D75;
-  --ar-line-300: #D7DCE2;
-  --ar-line-200: #E7EAEF;
-  --ar-bg-100: #F4F6F8;
-  --ar-bg-50: #FAFBFC;
-  --ar-white: #FFFFFF;
+  --ar-ink-400: #616d75;
+  --ar-line-300: #d7dce2;
+  --ar-line-200: #e7eaef;
+  --ar-bg-100: #f4f6f8;
+  --ar-bg-50: #fafbfc;
+  --ar-white: #ffffff;
 
   /* Accent — safety amber */
-  --ar-amber-600: #A85B12;
-  --ar-amber-500: #C4711E;
-  --ar-amber-200: #F2DFC4;
-  --ar-amber-100: #FBF1E3;
+  --ar-amber-600: #a85b12;
+  --ar-amber-500: #c4711e;
+  --ar-amber-200: #f2dfc4;
+  --ar-amber-100: #fbf1e3;
 
   /* Free-window / utility teal */
   /* Darkened from #0F7F86 (4.15:1 on --ar-teal-100 — below AA's 4.5:1) to
      #0C6169 (6.24:1). White-on-this-background (the teal avatar) only
      improves, since darkening a background raises contrast for light text. */
-  --ar-teal-600: #0C6169;
-  --ar-teal-100: #E4F2F3;
+  --ar-teal-600: #0c6169;
+  --ar-teal-100: #e4f2f3;
 
   /* Status — reserved, never reused as a series colour */
-  --ar-green-600: #1F7A4D;
-  --ar-green-100: #E7F3EC;
-  --ar-warn-600: #8A5A00;
-  --ar-warn-100: #FCF3DF;
-  --ar-red-600: #B02A25;
-  --ar-red-100: #FBEAE9;
+  --ar-green-600: #1f7a4d;
+  --ar-green-100: #e7f3ec;
+  --ar-warn-600: #8a5a00;
+  --ar-warn-100: #fcf3df;
+  --ar-red-600: #b02a25;
+  --ar-red-100: #fbeae9;
 
   /* Sidebar */
-  --ar-nav: #1B2027;
-  --ar-nav-hi: #242B34;
-  --ar-nav-line: #2A323C;
-  --ar-nav-text: #A6B0BC;
+  --ar-nav: #1b2027;
+  --ar-nav-hi: #242b34;
+  --ar-nav-line: #2a323c;
+  --ar-nav-text: #a6b0bc;
   /* Lightened from #6E7A88 (3.74:1 on --ar-nav) to #8994A1 (5.31:1) — used
      only against the dark sidebar background (sidebar.ts), never elsewhere. */
-  --ar-nav-dim: #8994A1;
+  --ar-nav-dim: #8994a1;
 
   /* Chart categorical — validated for CVD separation, chroma and contrast.
      Do not substitute without re-running the palette validator. */
-  --ar-chart-marketing: #C4711E;
-  --ar-chart-utility: #0E8F84;
-  --ar-chart-service: #7A4FA8;
+  --ar-chart-marketing: #c4711e;
+  --ar-chart-utility: #0e8f84;
+  --ar-chart-service: #7a4fa8;
 
   /* Type */
   --ar-font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
@@ -71,5 +71,5 @@
   --ar-gap-card: 14px;
   --ar-pad-card: 18px;
 
-  --ar-shadow-pop: 0 4px 14px rgba(20, 24, 29, .12);
+  --ar-shadow-pop: 0 4px 14px rgba(20, 24, 29, 0.12);
 }

@@ -88,13 +88,21 @@ export class AmcRenewalService {
 
   getSummary = (config?: Partial<Rest.Config>) =>
     this.restService.request<any, RenewalSummaryDto>(
-      { method: 'GET', headers: { Accept: 'application/json' }, url: '/api/auto-reach/amc-renewal/summary' },
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/amc-renewal/summary',
+      },
       { apiName: this.apiName, ...config },
     );
 
   draftQuote = (id: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, AmcRenewalDto>(
-      { method: 'POST', headers: { Accept: 'application/json' }, url: `/api/auto-reach/amc-renewal/${id}/draft-quote` },
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/amc-renewal/${id}/draft-quote`,
+      },
       { apiName: this.apiName, ...config },
     );
 
@@ -111,19 +119,32 @@ export class AmcRenewalService {
 
   refresh = (config?: Partial<Rest.Config>) =>
     this.restService.request<any, { added: number }>(
-      { method: 'POST', headers: { Accept: 'application/json' }, url: '/api/auto-reach/amc-renewal/refresh' },
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/amc-renewal/refresh',
+      },
       { apiName: this.apiName, ...config },
     );
 
   getSettings = (config?: Partial<Rest.Config>) =>
     this.restService.request<any, RenewalSettingsDto>(
-      { method: 'GET', headers: { Accept: 'application/json' }, url: '/api/auto-reach/amc-renewal/settings' },
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/amc-renewal/settings',
+      },
       { apiName: this.apiName, ...config },
     );
 
   updateSettings = (input: RenewalSettingsDto, config?: Partial<Rest.Config>) =>
     this.restService.request<any, RenewalSettingsDto>(
-      { method: 'PUT', headers: { Accept: 'application/json' }, url: '/api/auto-reach/amc-renewal/settings', body: input },
+      {
+        method: 'PUT',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/amc-renewal/settings',
+        body: input,
+      },
       { apiName: this.apiName, ...config },
     );
 }

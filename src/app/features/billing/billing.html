@@ -68,8 +68,8 @@
   <section class="card">
     <h2 class="card__h">Plan usage</h2>
     <p class="card__sub">
-      The limits the API enforces. Crossing one is blocked at the point of the action, not
-      the invoice — upgrade the plan first.
+      The limits the API enforces. Crossing one is blocked at the point of the action, not the
+      invoice — upgrade the plan first.
     </p>
     <ul class="usage">
       @for (r of usageRows(); track r.label) {
@@ -77,7 +77,10 @@
           <div class="usage__head">
             <span class="usage__label">{{ r.label }}</span>
             <span class="usage__count ar-mono">
-              {{ (r.used | number: '1.0-0') ?? '0' }}@if (!r.unlimited) { / {{ (r.limit | number: '1.0-0') ?? '0' }} }
+              {{ (r.used | number: '1.0-0') ?? '0' }}
+              @if (!r.unlimited) {
+                / {{ (r.limit | number: '1.0-0') ?? '0' }}
+              }
             </span>
           </div>
           @if (!r.unlimited) {
@@ -93,7 +96,8 @@
       }
     </ul>
     <p class="card__sub usage__features">
-      Unlocked: {{ usage().features?.length ? usage().features!.join(' · ') : 'core features only' }}
+      Unlocked:
+      {{ usage().features?.length ? usage().features!.join(' · ') : 'core features only' }}
     </p>
   </section>
 

@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [master, main, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [master, main, develop]
 
 jobs:
   build:
@@ -29,5 +29,4 @@ jobs:
         run: npx ng build --configuration production
 
       - name: Unit tests
-        run: npx ng test --watch=false --browsers=ChromeHeadless
-        continue-on-error: true # no specs yet; keep the job green until they exist
+        run: npx ng test --watch=false

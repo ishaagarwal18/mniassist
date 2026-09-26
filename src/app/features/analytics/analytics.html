@@ -193,7 +193,9 @@
         >
           <option value="" [selected]="!conversionPipelineId()">All pipelines</option>
           @for (p of pipelines(); track p.id) {
-            <option [value]="p.id" [selected]="p.id === conversionPipelineId()">{{ p.name }}</option>
+            <option [value]="p.id" [selected]="p.id === conversionPipelineId()">
+              {{ p.name }}
+            </option>
           }
         </select>
       }

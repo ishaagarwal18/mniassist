@@ -5,8 +5,7 @@ export type PricingCategory = 'marketing' | 'utility' | 'authentication' | 'serv
 /** Outcomes that campaign reporting must keep distinct.
  *  `withheld` is Meta's per-user frequency cap (error 131049): not a failure,
  *  not billed, and excluded from the delivery rate. */
-export type MessageStatus =
-  | 'queued' | 'sent' | 'delivered' | 'read' | 'failed' | 'withheld';
+export type MessageStatus = 'queued' | 'sent' | 'delivered' | 'read' | 'failed' | 'withheld';
 
 export interface CampaignCounters {
   readonly queued: number;

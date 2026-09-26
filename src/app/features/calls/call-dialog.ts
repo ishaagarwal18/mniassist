@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { SoftphoneService } from '../../core/services/softphone.service';
@@ -23,32 +32,39 @@ import { displayNumber, looksLikeNumber, toE164Digits } from './call-logic';
         <p class="cd__hint">Checking that calling is set up…</p>
       } @else if (started(); as call) {
         <p class="cd__ok" role="status">
-          Ringing <strong>{{ ringing() }}</strong> now. Pick up, and we connect {{ contactName() }}. The call shows in the log when it ends,
-          and you can say how it went then.
+          Ringing <strong>{{ ringing() }}</strong> now. Pick up, and we connect {{ contactName() }}.
+          The call shows in the log when it ends, and you can say how it went then.
         </p>
       } @else if (softphoneStarted()) {
-        <p class="cd__ok" role="status">Calling {{ contactName() }} from the in-browser phone. Watch the phone bar in the corner.</p>
+        <p class="cd__ok" role="status">
+          Calling {{ contactName() }} from the in-browser phone. Watch the phone bar in the corner.
+        </p>
       } @else if (setup(); as s) {
         @if (softphone.configured()) {
           <div class="cd__seg" role="group" aria-label="How to call">
-            <button type="button" [class.on]="mode() === 'browser'" (click)="mode.set('browser')">Call in browser</button>
-            <button type="button" [class.on]="mode() === 'phone'" (click)="mode.set('phone')">Ring my phone</button>
+            <button type="button" [class.on]="mode() === 'browser'" (click)="mode.set('browser')">
+              Call in browser
+            </button>
+            <button type="button" [class.on]="mode() === 'phone'" (click)="mode.set('phone')">
+              Ring my phone
+            </button>
           </div>
         }
 
         @if (mode() === 'browser') {
           <p class="cd__hint">
-            The call opens in the phone bar at the bottom of the screen. No separate phone needed — {{ contactName() }} sees the
-            workspace's business number.
+            The call opens in the phone bar at the bottom of the screen. No separate phone needed —
+            {{ contactName() }} sees the workspace's business number.
           </p>
         } @else if (!s.channelReady) {
           <p class="cd__err" role="alert">
-            Calling is not set up yet ({{ s.channelProblem }}). An administrator connects the Exotel account under Channels.
+            Calling is not set up yet ({{ s.channelProblem }}). An administrator connects the Exotel
+            account under Channels.
           </p>
         } @else {
           <p class="cd__hint">
-            Your phone rings first. When you answer, {{ contactName() }} is rung and connected to you. They see the business number, not
-            yours.
+            Your phone rings first. When you answer, {{ contactName() }} is rung and connected to
+            you. They see the business number, not yours.
           </p>
 
           <label class="ar-field" for="cd-number">
@@ -68,17 +84,30 @@ import { displayNumber, looksLikeNumber, toE164Digits } from './call-logic';
           }
           @if (changed()) {
             <label class="cd__chk" for="cd-save">
-              <input id="cd-save" type="checkbox" [checked]="save()" (change)="save.set($any($event.target).checked)" />
+              <input
+                id="cd-save"
+                type="checkbox"
+                [checked]="save()"
+                (change)="save.set($any($event.target).checked)"
+              />
               <span>Use this number from now on</span>
             </label>
           }
 
           <label class="cd__chk" for="cd-record">
-            <input id="cd-record" type="checkbox" [checked]="record()" (change)="record.set($any($event.target).checked)" />
+            <input
+              id="cd-record"
+              type="checkbox"
+              [checked]="record()"
+              (change)="record.set($any($event.target).checked)"
+            />
             <span>Record the call</span>
           </label>
           @if (record()) {
-            <p class="cd__hint">Tell the customer the call is being recorded. Recording without their agreement is not allowed.</p>
+            <p class="cd__hint">
+              Tell the customer the call is being recorded. Recording without their agreement is not
+              allowed.
+            </p>
           }
         }
       }
@@ -92,11 +121,25 @@ import { displayNumber, looksLikeNumber, toE164Digits } from './call-logic';
           {{ started() || softphoneStarted() ? 'Done' : 'Cancel' }}
         </button>
         @if (!started() && !softphoneStarted() && mode() === 'browser') {
-          <button ar-button type="button" variant="primary" icon="phone" [disabled]="busy()" (click)="startBrowserCall()">
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            icon="phone"
+            [disabled]="busy()"
+            (click)="startBrowserCall()"
+          >
             {{ busy() ? 'Calling…' : 'Call now' }}
           </button>
         } @else if (!started() && !softphoneStarted() && setup()?.channelReady) {
-          <button ar-button type="button" variant="primary" icon="phone" [disabled]="busy() || !canStart()" (click)="start()">
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            icon="phone"
+            [disabled]="busy() || !canStart()"
+            (click)="start()"
+          >
             {{ busy() ? 'Calling…' : 'Call now' }}
           </button>
         }
@@ -104,13 +147,54 @@ import { displayNumber, looksLikeNumber, toE164Digits } from './call-logic';
     </ar-dialog>
   `,
   styles: `
-    .cd__hint { margin: 0 0 10px; font: 400 12.5px/1.5 var(--ar-font-sans); color: var(--ar-ink-600); }
-    .cd__ok { margin: 0; padding: 10px 12px; border-radius: var(--ar-radius-control); background: var(--ar-bg-100); font: 400 13px/1.5 var(--ar-font-sans); color: var(--ar-ink-800); }
-    .cd__err { margin: 8px 0 0; padding: 8px 10px; border-radius: var(--ar-radius-control); background: var(--ar-red-100); color: var(--ar-red-600); font: 500 12px var(--ar-font-sans); }
-    .cd__chk { display: flex; align-items: center; gap: 8px; margin: 6px 0; font: 400 12.5px var(--ar-font-sans); color: var(--ar-ink-700); }
-    .cd__seg { display: inline-flex; margin-bottom: 10px; border: 1px solid var(--ar-line-200); border-radius: var(--ar-radius-control); overflow: hidden; }
-    .cd__seg button { padding: 6px 12px; background: var(--ar-white); border: 0; cursor: pointer; font: 500 12.5px var(--ar-font-sans); color: var(--ar-ink-600); }
-    .cd__seg button.on { background: var(--ar-ink-900); color: var(--ar-white); }
+    .cd__hint {
+      margin: 0 0 10px;
+      font: 400 12.5px/1.5 var(--ar-font-sans);
+      color: var(--ar-ink-600);
+    }
+    .cd__ok {
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-bg-100);
+      font: 400 13px/1.5 var(--ar-font-sans);
+      color: var(--ar-ink-800);
+    }
+    .cd__err {
+      margin: 8px 0 0;
+      padding: 8px 10px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
+      font: 500 12px var(--ar-font-sans);
+    }
+    .cd__chk {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .cd__seg {
+      display: inline-flex;
+      margin-bottom: 10px;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
+      overflow: hidden;
+    }
+    .cd__seg button {
+      padding: 6px 12px;
+      background: var(--ar-white);
+      border: 0;
+      cursor: pointer;
+      font: 500 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-600);
+    }
+    .cd__seg button.on {
+      background: var(--ar-ink-900);
+      color: var(--ar-white);
+    }
   `,
 })
 export class ArCallDialog implements OnInit {
@@ -142,7 +226,9 @@ export class ArCallDialog implements OnInit {
     const on = (this.setup()?.myNumber ?? '').replace(/\D/g, '');
     return this.numberOk() && this.number().replace(/\D/g, '').slice(-10) !== on.slice(-10);
   });
-  protected readonly ringing = computed(() => displayNumber(this.setup()?.myNumber) || this.number().trim());
+  protected readonly ringing = computed(
+    () => displayNumber(this.setup()?.myNumber) || this.number().trim(),
+  );
 
   async ngOnInit(): Promise<void> {
     void this.softphone.ensureConnected();
@@ -186,7 +272,11 @@ export class ArCallDialog implements OnInit {
     this.busy.set(true);
     this.error.set(null);
     try {
-      await this.softphone.dial({ contactId: this.contactId(), contactName: this.contactName(), enquiryId: this.enquiryId() });
+      await this.softphone.dial({
+        contactId: this.contactId(),
+        contactName: this.contactName(),
+        enquiryId: this.enquiryId(),
+      });
       const failure = this.softphone.error();
       if (failure) {
         this.error.set(failure);

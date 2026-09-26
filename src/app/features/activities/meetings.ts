@@ -1,12 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { ArTopbar } from '../../layout/topbar';
-import {
-  AttendeeResponse,
-  MeetingDto,
-  MeetingStatus,
-} from '../../proxy/activities';
+import { AttendeeResponse, MeetingDto, MeetingStatus } from '../../proxy/activities';
 import { ArButton, ArChip } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { ActivityDirectory } from './activity-directory';
@@ -58,12 +62,18 @@ export class ArMeetings {
   protected readonly busy = signal(false);
 
   protected readonly week = computed(() => weekOf(this.anchor()));
-  protected readonly days = computed(() => groupByDay(this.meetings(), (m) => m.startUtc, this.week().days));
+  protected readonly days = computed(() =>
+    groupByDay(this.meetings(), (m) => m.startUtc, this.week().days),
+  );
   protected readonly heading = computed(() => {
     const { from, to } = this.week();
     const last = addDays(to, -1);
     const f = (d: Date, year = false) =>
-      d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', ...(year ? { year: 'numeric' } : {}) });
+      d.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        ...(year ? { year: 'numeric' } : {}),
+      });
     return `${f(from)} – ${f(last, true)}`;
   });
 
@@ -142,7 +152,11 @@ export class ArMeetings {
     return durationLabel(minutesBetween(m.startUtc!, m.endUtc!));
   }
   protected whenLong(m: MeetingDto): string {
-    return new Date(m.startUtc!).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+    return new Date(m.startUtc!).toLocaleDateString('en-IN', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
   }
 
   protected addOn(day: Date): void {
@@ -155,11 +169,21 @@ export class ArMeetings {
   // ---- what a meeting is to me ---------------------------------------------------------
 
   protected statusTone(s: MeetingStatus | undefined): ChipTone {
-    return s === MeetingStatus.Completed ? 'good' : s === MeetingStatus.Cancelled ? 'neutral' : s === MeetingStatus.NoShow ? 'bad' : 'amber';
+    return s === MeetingStatus.Completed
+      ? 'good'
+      : s === MeetingStatus.Cancelled
+        ? 'neutral'
+        : s === MeetingStatus.NoShow
+          ? 'bad'
+          : 'amber';
   }
 
   protected responseTone(r: AttendeeResponse | undefined): ChipTone {
-    return r === AttendeeResponse.Accepted ? 'good' : r === AttendeeResponse.Declined ? 'bad' : 'neutral';
+    return r === AttendeeResponse.Accepted
+      ? 'good'
+      : r === AttendeeResponse.Declined
+        ? 'bad'
+        : 'neutral';
   }
 
   protected myResponse(m: MeetingDto): AttendeeResponse | undefined {
@@ -168,11 +192,18 @@ export class ArMeetings {
 
   /** In the meeting, not the organiser, and yet to answer. */
   protected needsMyAnswer(m: MeetingDto): boolean {
-    return m.status === MeetingStatus.Scheduled && m.organizerUserId !== this.directory.meId && this.myResponse(m) === AttendeeResponse.Pending;
+    return (
+      m.status === MeetingStatus.Scheduled &&
+      m.organizerUserId !== this.directory.meId &&
+      this.myResponse(m) === AttendeeResponse.Pending
+    );
   }
 
   protected canChange(m: MeetingDto): boolean {
-    return this.directory.canUpdate && (m.organizerUserId === this.directory.meId || this.directory.canSeeAll);
+    return (
+      this.directory.canUpdate &&
+      (m.organizerUserId === this.directory.meId || this.directory.canSeeAll)
+    );
   }
 
   protected isLink(m: MeetingDto): boolean {
@@ -226,19 +257,32 @@ export class ArMeetings {
   }
 
   protected respond(m: MeetingDto, response: AttendeeResponse): Promise<void> {
-    return this.act(() => firstValueFrom(this.api.respond(m.id!, response)), 'Your answer could not be saved.');
+    return this.act(
+      () => firstValueFrom(this.api.respond(m.id!, response)),
+      'Your answer could not be saved.',
+    );
   }
 
   protected complete(m: MeetingDto): Promise<void> {
-    return this.act(() => firstValueFrom(this.api.complete(m.id!, this.note().trim() || null)), 'The meeting could not be marked done.');
+    return this.act(
+      () => firstValueFrom(this.api.complete(m.id!, this.note().trim() || null)),
+      'The meeting could not be marked done.',
+    );
   }
 
   protected noShow(m: MeetingDto): Promise<void> {
-    return this.act(() => firstValueFrom(this.api.markNoShow(m.id!)), 'The meeting could not be marked.');
+    return this.act(
+      () => firstValueFrom(this.api.markNoShow(m.id!)),
+      'The meeting could not be marked.',
+    );
   }
 
   protected cancel(m: MeetingDto): Promise<void> {
-    return this.act(() => firstValueFrom(this.api.cancel(m.id!, this.note().trim() || null, this.cancelFollowing())), 'The meeting could not be cancelled.');
+    return this.act(
+      () =>
+        firstValueFrom(this.api.cancel(m.id!, this.note().trim() || null, this.cancelFollowing())),
+      'The meeting could not be cancelled.',
+    );
   }
 
   protected async addToCalendar(m: MeetingDto): Promise<void> {

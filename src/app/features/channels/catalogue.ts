@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, of } from 'rxjs';
 
@@ -122,7 +130,12 @@ export class ArCatalogue {
 
   /** Products already on this channel, so they are not offered again. */
   private readonly listedProductIds = computed(
-    () => new Set(this.products().map((p) => p.productId).filter((id): id is string => !!id)),
+    () =>
+      new Set(
+        this.products()
+          .map((p) => p.productId)
+          .filter((id): id is string => !!id),
+      ),
   );
   protected readonly available = computed(() =>
     this.productChoices().filter((p) => !!p.id && !this.listedProductIds().has(p.id)),

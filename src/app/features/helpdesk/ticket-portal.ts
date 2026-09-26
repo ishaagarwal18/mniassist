@@ -49,7 +49,9 @@ export class ArTicketPortal {
     } catch (e: unknown) {
       const status = (e as { status?: number })?.status;
       this.unavailable.set(
-        status === 429 ? apiMessage(e, 'Too many requests. Please wait a few minutes and try again.') : 'This page is not available.',
+        status === 429
+          ? apiMessage(e, 'Too many requests. Please wait a few minutes and try again.')
+          : 'This page is not available.',
       );
     } finally {
       this.loading.set(false);
@@ -63,7 +65,12 @@ export class ArTicketPortal {
   protected async submit(): Promise<void> {
     if (!this.portal() || this.busy()) return;
 
-    const found = checkTicketAnswers({ name: this.name(), phone: this.phone(), subject: this.subject(), consent: this.consent() });
+    const found = checkTicketAnswers({
+      name: this.name(),
+      phone: this.phone(),
+      subject: this.subject(),
+      consent: this.consent(),
+    });
     this.errors.set(found);
     this.failure.set(null);
     if (Object.keys(found).length > 0) return;
@@ -88,7 +95,9 @@ export class ArTicketPortal {
         this.errors.set(fromServer);
         this.failure.set('Please check the highlighted answers and try again.');
       } else if ((e as { status?: number })?.status === 429) {
-        this.failure.set(apiMessage(e, 'Too many attempts. Please wait a few minutes and try again.'));
+        this.failure.set(
+          apiMessage(e, 'Too many attempts. Please wait a few minutes and try again.'),
+        );
       } else if ((e as { status?: number })?.status === 404) {
         this.unavailable.set('This page is not available.');
       } else {

@@ -77,7 +77,9 @@ function height(id: string, accounts: readonly CustomerAccount[]): number {
   let level = [id];
   const seen = new Set<string>([id]);
   for (;;) {
-    const next = accounts.filter((a) => a.parentId && level.includes(a.parentId) && !seen.has(a.id));
+    const next = accounts.filter(
+      (a) => a.parentId && level.includes(a.parentId) && !seen.has(a.id),
+    );
     if (!next.length) return h;
     next.forEach((a) => seen.add(a.id));
     h++;
@@ -209,7 +211,9 @@ export class AccountStore {
     const q = this.filter().trim().toLowerCase();
     const list = this.all();
     return q
-      ? list.filter((a) => a.name.toLowerCase().includes(q) || (a.city ?? '').toLowerCase().includes(q))
+      ? list.filter(
+          (a) => a.name.toLowerCase().includes(q) || (a.city ?? '').toLowerCase().includes(q),
+        )
       : list;
   });
 
@@ -220,7 +224,11 @@ export class AccountStore {
   readonly rows = computed<readonly AccountRow[]>(() => {
     const all = this.all();
     if (this.filter().trim()) {
-      return this.accounts().map((account) => ({ account, depth: 1, subtreeContacts: account.contactCount }));
+      return this.accounts().map((account) => ({
+        account,
+        depth: 1,
+        subtreeContacts: account.contactCount,
+      }));
     }
 
     const byId = new Map(all.map((a) => [a.id, a]));
@@ -232,7 +240,11 @@ export class AccountStore {
     return this.treeResource
       .value()
       .filter((n) => byId.has(n.id))
-      .map((n) => ({ account: byId.get(n.id)!, depth: n.depth, subtreeContacts: n.subtreeContactCount }));
+      .map((n) => ({
+        account: byId.get(n.id)!,
+        depth: n.depth,
+        subtreeContacts: n.subtreeContactCount,
+      }));
   });
 
   reload(): void {
@@ -278,7 +290,9 @@ export class AccountStore {
     if (environment.useMockData) {
       const gone = this.seed.find((a) => a.id === id);
       // Subsidiaries move up to the deleted account's own parent, as on the server.
-      this.seed = this.seed.filter((a) => a.id !== id).map((a) => (a.parentId === id ? { ...a, parentId: gone?.parentId } : a));
+      this.seed = this.seed
+        .filter((a) => a.id !== id)
+        .map((a) => (a.parentId === id ? { ...a, parentId: gone?.parentId } : a));
       this.reloadTick.update((n) => n + 1);
       return;
     }
@@ -322,7 +336,11 @@ export class AccountStore {
     const ids = new Set(all.map((a) => a.id));
 
     const subtree = (a: CustomerAccount) =>
-      a.contactCount + descendantIds(a.id, all).reduce((n, d) => n + (all.find((x) => x.id === d)?.contactCount ?? 0), 0);
+      a.contactCount +
+      descendantIds(a.id, all).reduce(
+        (n, d) => n + (all.find((x) => x.id === d)?.contactCount ?? 0),
+        0,
+      );
 
     const walk = (a: CustomerAccount, depth: number): void => {
       if (seen.has(a.id)) return;

@@ -41,12 +41,19 @@ const DEFAULT_SLA_HOURS: Record<TicketPriority, number> = {
   [TicketPriority.Low]: 72,
 };
 
-function dueAt(priority: TicketPriority, fromIso: string, hours: Record<TicketPriority, number>): string {
+function dueAt(
+  priority: TicketPriority,
+  fromIso: string,
+  hours: Record<TicketPriority, number>,
+): string {
   return new Date(Date.parse(fromIso) + hours[priority] * 3_600_000).toISOString();
 }
 
 function recomputeOverdue(t: ServiceTicketDto): void {
-  t.isOverdue = !!t.dueAtUtc && Date.parse(t.dueAtUtc) < Date.now() && (t.status === TicketStatus.Open || t.status === TicketStatus.Pending);
+  t.isOverdue =
+    !!t.dueAtUtc &&
+    Date.parse(t.dueAtUtc) < Date.now() &&
+    (t.status === TicketStatus.Open || t.status === TicketStatus.Pending);
 }
 
 /** Tickets for sample-data mode, kept in memory for the life of the page. */
@@ -76,20 +83,40 @@ export class TicketMockStore {
   constructor() {
     const ago = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
     const t1 = this.make({
-      contactName: 'Sandeep Rao', subject: 'Motor overheating on line 2', category: 'Motor',
-      priority: TicketPriority.Urgent, status: TicketStatus.Open, creationTime: ago(2),
+      contactName: 'Sandeep Rao',
+      subject: 'Motor overheating on line 2',
+      category: 'Motor',
+      priority: TicketPriority.Urgent,
+      status: TicketStatus.Open,
+      creationTime: ago(2),
     });
     const t2 = this.make({
-      contactName: 'Priya Nambiar', subject: 'PLC not responding to remote commands', category: 'PLC',
-      priority: TicketPriority.High, status: TicketStatus.Pending, creationTime: ago(20), assignedUserId: 'mock-me', assignedUserName: 'You',
+      contactName: 'Priya Nambiar',
+      subject: 'PLC not responding to remote commands',
+      category: 'PLC',
+      priority: TicketPriority.High,
+      status: TicketStatus.Pending,
+      creationTime: ago(20),
+      assignedUserId: 'mock-me',
+      assignedUserName: 'You',
     });
     const t3 = this.make({
-      contactName: 'Devendra Joshi', subject: 'Annual calibration due', category: 'Calibration',
-      priority: TicketPriority.Low, status: TicketStatus.Resolved, creationTime: ago(96), resolvedAtUtc: ago(48), dueAtUtc: null,
+      contactName: 'Devendra Joshi',
+      subject: 'Annual calibration due',
+      category: 'Calibration',
+      priority: TicketPriority.Low,
+      status: TicketStatus.Resolved,
+      creationTime: ago(96),
+      resolvedAtUtc: ago(48),
+      dueAtUtc: null,
     });
     this.tickets.push(t1, t2, t3);
     this.comments.push(
-      this.makeComment(t2.id, { body: 'Checked the spares — a replacement module is in stock.', isInternal: true, authorName: 'You' }),
+      this.makeComment(t2.id, {
+        body: 'Checked the spares — a replacement module is in stock.',
+        isInternal: true,
+        authorName: 'You',
+      }),
     );
   }
 
@@ -115,7 +142,10 @@ export class TicketMockStore {
       conversationId: null,
       assignedUserId: null,
       assignedUserName: null,
-      dueAtUtc: status === TicketStatus.Open || status === TicketStatus.Pending ? dueAt(priority, created, this.hoursMap()) : null,
+      dueAtUtc:
+        status === TicketStatus.Open || status === TicketStatus.Pending
+          ? dueAt(priority, created, this.hoursMap())
+          : null,
       isOverdue: false,
       firstRespondedAtUtc: null,
       resolvedAtUtc: null,
@@ -168,7 +198,9 @@ export class MockServiceTicketApi {
     const t = this.s.tickets.find((x) => x.id === id);
     if (!t) return refuse('NotFound', 'That ticket no longer exists.');
     recomputeOverdue(t);
-    const comments = this.s.comments.filter((c) => c.ticketId === id).sort((a, b) => a.creationTime.localeCompare(b.creationTime));
+    const comments = this.s.comments
+      .filter((c) => c.ticketId === id)
+      .sort((a, b) => a.creationTime.localeCompare(b.creationTime));
     return of({ ...t, comments: comments.map((c) => ({ ...c })) });
   };
 
@@ -182,9 +214,16 @@ export class MockServiceTicketApi {
       .filter((t) => !input.unassigned || !t.assignedUserId)
       .filter((t) => !input.mine || t.assignedUserId === 'mock-me')
       .filter((t) => !input.overdue || t.isOverdue)
-      .filter((t) => !input.filter || `${t.reference} ${t.subject}`.toLowerCase().includes(input.filter.toLowerCase()))
+      .filter(
+        (t) =>
+          !input.filter ||
+          `${t.reference} ${t.subject}`.toLowerCase().includes(input.filter.toLowerCase()),
+      )
       .sort((a, b) => b.creationTime.localeCompare(a.creationTime));
-    const page = items.slice(input.skipCount ?? 0, (input.skipCount ?? 0) + (input.maxResultCount ?? 50));
+    const page = items.slice(
+      input.skipCount ?? 0,
+      (input.skipCount ?? 0) + (input.maxResultCount ?? 50),
+    );
     return of({ items: page.map((t) => ({ ...t })), totalCount: items.length });
   };
 
@@ -198,10 +237,17 @@ export class MockServiceTicketApi {
     });
   };
 
-  updateDetails = (id: string, input: UpdateServiceTicketDetailsInput): Observable<ServiceTicketDto> => {
+  updateDetails = (
+    id: string,
+    input: UpdateServiceTicketDetailsInput,
+  ): Observable<ServiceTicketDto> => {
     const t = this.s.tickets.find((x) => x.id === id);
     if (!t) return refuse('NotFound', 'That ticket no longer exists.');
-    Object.assign(t, { subject: input.subject, description: input.description ?? null, category: input.category ?? null });
+    Object.assign(t, {
+      subject: input.subject,
+      description: input.description ?? null,
+      category: input.category ?? null,
+    });
     return of({ ...t });
   };
 
@@ -221,7 +267,8 @@ export class MockServiceTicketApi {
     if (!t) return refuse('NotFound', 'That ticket no longer exists.');
     const now = new Date().toISOString();
     const wasFinished = t.status === TicketStatus.Resolved || t.status === TicketStatus.Closed;
-    const nowOpenAgain = input.status === TicketStatus.Open || input.status === TicketStatus.Pending;
+    const nowOpenAgain =
+      input.status === TicketStatus.Open || input.status === TicketStatus.Pending;
 
     if (wasFinished && nowOpenAgain) {
       t.reopenCount += 1;
@@ -257,26 +304,41 @@ export class MockServiceTicketApi {
     return of({ ...t });
   };
 
-  addComment = (id: string, input: AddServiceTicketCommentInput): Observable<ServiceTicketCommentDto> => {
+  addComment = (
+    id: string,
+    input: AddServiceTicketCommentInput,
+  ): Observable<ServiceTicketCommentDto> => {
     const t = this.s.tickets.find((x) => x.id === id);
     if (!t) return refuse('NotFound', 'That ticket no longer exists.');
     if (!input.isInternal) {
-      if (!t.conversationId) return refuse('TicketHasNoConversation', 'This ticket has no conversation to reply through yet.');
+      if (!t.conversationId)
+        return refuse(
+          'TicketHasNoConversation',
+          'This ticket has no conversation to reply through yet.',
+        );
       t.firstRespondedAtUtc = t.firstRespondedAtUtc ?? new Date().toISOString();
       if (t.status === TicketStatus.Open) {
         t.status = TicketStatus.Pending;
         recomputeOverdue(t);
       }
     }
-    const c = this.s.makeComment(id, { body: input.body, isInternal: input.isInternal, authorName: 'You' });
+    const c = this.s.makeComment(id, {
+      body: input.body,
+      isInternal: input.isInternal,
+      authorName: 'You',
+    });
     this.s.comments.push(c);
     return of({ ...c });
   };
 
-  recordSatisfaction = (id: string, input: RecordTicketSatisfactionInput): Observable<ServiceTicketDto> => {
+  recordSatisfaction = (
+    id: string,
+    input: RecordTicketSatisfactionInput,
+  ): Observable<ServiceTicketDto> => {
     const t = this.s.tickets.find((x) => x.id === id);
     if (!t) return refuse('NotFound', 'That ticket no longer exists.');
-    if (input.rating < 1 || input.rating > 5) return refuse('TicketRatingInvalid', 'Satisfaction rating must be between 1 and 5.');
+    if (input.rating < 1 || input.rating > 5)
+      return refuse('TicketRatingInvalid', 'Satisfaction rating must be between 1 and 5.');
     t.satisfactionRating = input.rating;
     return of({ ...t });
   };
@@ -285,16 +347,25 @@ export class MockServiceTicketApi {
 
   setSettings = (input: SetServiceTicketSettingsInput): Observable<ServiceTicketSettingsDto> => {
     for (const [field, hours] of Object.entries({
-      urgentHours: input.urgentHours, highHours: input.highHours, normalHours: input.normalHours, lowHours: input.lowHours,
+      urgentHours: input.urgentHours,
+      highHours: input.highHours,
+      normalHours: input.normalHours,
+      lowHours: input.lowHours,
     })) {
-      if (hours < 1 || hours > 720) return refuse('TicketSlaHoursInvalid', `${field} must be between 1 and 720 hours.`);
+      if (hours < 1 || hours > 720)
+        return refuse('TicketSlaHoursInvalid', `${field} must be between 1 and 720 hours.`);
     }
 
     // The portal's address, once given, stays put even while the portal is switched off — the same as the server's own behaviour.
-    const portalUrl = input.portalEnabled ? (this.s.settings.portalUrl ?? 'https://app.autoreach.in/t/h.mocktkt01') : this.s.settings.portalUrl;
+    const portalUrl = input.portalEnabled
+      ? (this.s.settings.portalUrl ?? 'https://app.autoreach.in/t/h.mocktkt01')
+      : this.s.settings.portalUrl;
 
     this.s.settings = {
-      urgentHours: input.urgentHours, highHours: input.highHours, normalHours: input.normalHours, lowHours: input.lowHours,
+      urgentHours: input.urgentHours,
+      highHours: input.highHours,
+      normalHours: input.normalHours,
+      lowHours: input.lowHours,
       portalEnabled: input.portalEnabled,
       portalUrl,
     };
@@ -302,7 +373,10 @@ export class MockServiceTicketApi {
   };
 }
 
-export type ServiceTicketApi = Pick<ServiceTicketService, keyof MockServiceTicketApi & keyof ServiceTicketService>;
+export type ServiceTicketApi = Pick<
+  ServiceTicketService,
+  keyof MockServiceTicketApi & keyof ServiceTicketService
+>;
 
 /** Where tickets come from: the server, or memory on sample data. */
 @Injectable({ providedIn: 'root' })
