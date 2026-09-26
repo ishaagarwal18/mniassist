@@ -4,8 +4,8 @@ import { AutomationNodeKind } from '../../proxy/messaging';
 /**
  * A read-only picture of an automation as the graph the engine actually runs: layered
  * top to bottom by the longest path from the trigger, so a rejoin shows as two arrows
- * arriving at one box. It is a view of the step list, not a second editor — editing stays
- * in the list, where a path cannot be left dangling or crossed by accident.
+ * arriving at one box. It is the step list's picture; the canvas reuses its layering to
+ * tidy a graph up.
  */
 export interface FlowMapNode {
   id: string;
@@ -34,16 +34,22 @@ export interface FlowMap {
   nodeH: number;
 }
 
-const NODE_W = 150;
-const NODE_H = 34;
-const GAP_X = 26;
-const GAP_Y = 44;
-const PAD = 12;
+export interface FlowMapSizes {
+  nodeW: number;
+  nodeH: number;
+  gapX: number;
+  gapY: number;
+  pad: number;
+}
+
+const MAP_SIZES: FlowMapSizes = { nodeW: 150, nodeH: 34, gapX: 26, gapY: 44, pad: 12 };
 
 export function layoutFlowMap(
   nodes: readonly CreateUpdateAutomationNodeDto[],
   labelOf: (node: CreateUpdateAutomationNodeDto) => string,
+  sizes: FlowMapSizes = MAP_SIZES,
 ): FlowMap {
+  const { nodeW: NODE_W, nodeH: NODE_H, gapX: GAP_X, gapY: GAP_Y, pad: PAD } = sizes;
   const byId = new Map(nodes.map((n) => [n.id!, n]));
   const out = (n: CreateUpdateAutomationNodeDto): { to: string; otherwise: boolean; kind: 'next' | 'true' | 'false' }[] => {
     const links: { to: string; otherwise: boolean; kind: 'next' | 'true' | 'false' }[] = [];

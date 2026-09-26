@@ -143,6 +143,9 @@ const PHONELESS_CHANNEL: Record<number, string | undefined> = { 1: 'Instagram', 
 /** Email has no service window: a reply is never blocked waiting for one. */
 const EMAIL_CHANNEL = 4;
 
+/** SMS has no service window either, but every reply must be an approved DLT template. */
+const SMS_CHANNEL = 3;
+
 export function toConversation(
   dto: ConversationDto,
   messages: readonly Message[] = [],
@@ -153,8 +156,9 @@ export function toConversation(
     contactName: dto.contactDisplayName ?? formatWaId(dto.contactWaId),
     company: dto.contactCompanyName ?? '',
     phoneE164: formatWaId(dto.contactWaId),
-    channel: PHONELESS_CHANNEL[dto.channelKind ?? 0],
-    windowless: dto.channelKind === EMAIL_CHANNEL ? true : undefined,
+    channel: dto.channelKind === SMS_CHANNEL ? 'SMS' : PHONELESS_CHANNEL[dto.channelKind ?? 0],
+    windowless: dto.channelKind === EMAIL_CHANNEL || dto.channelKind === SMS_CHANNEL ? true : undefined,
+    sms: dto.channelKind === SMS_CHANNEL ? true : undefined,
     snippet: dto.lastMessagePreview ?? '',
     at: formatClock(dto.lastInboundAtUtc ?? dto.lastOutboundAtUtc),
     unread: dto.unreadCount ?? 0,

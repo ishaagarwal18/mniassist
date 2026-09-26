@@ -45,6 +45,22 @@ export interface Preflight {
   canSend: boolean;
   canSendImmediately: boolean;
   daysRequired: number;
+  /** Of `recipients`, how many have a learned send hour. */
+  learnedSendHourRecipients: number;
+}
+
+/**
+ * "12 of 40 (30%) have a learned hour; the other 28 go out at the scheduled time." — what best-time sending would
+ * actually change for this audience.
+ */
+export function sendTimeCoverage(learned: number, recipients: number): string {
+  if (recipients <= 0) return 'No recipients yet, so no one to time.';
+  if (learned <= 0) return `None of the ${recipients.toLocaleString('en-IN')} recipients has enough reply history yet — all go out at the scheduled time.`;
+  const pct = Math.round((learned / recipients) * 100);
+  const rest = recipients - learned;
+  return rest === 0
+    ? `All ${recipients.toLocaleString('en-IN')} recipients have a learned hour.`
+    : `${learned.toLocaleString('en-IN')} of ${recipients.toLocaleString('en-IN')} recipients (${pct}%) have a learned hour; the other ${rest.toLocaleString('en-IN')} go out at the scheduled time.`;
 }
 export interface Report {
   state: CState;
@@ -110,6 +126,7 @@ function toPreflight(p: CampaignPreflightDto): Preflight {
     canSend: p.canSend ?? false,
     canSendImmediately: p.canSendImmediately ?? false,
     daysRequired: p.daysRequired ?? 0,
+    learnedSendHourRecipients: p.learnedSendHourRecipients ?? 0,
   };
 }
 function toReport(r: CampaignReportDto): Report {

@@ -2,10 +2,18 @@
   title="Helpdesk"
   [subtitle]="total() + ' tickets'"
   help="Every service ticket raised for a customer, whatever raised it — a WhatsApp Flow submission, a call written up, or by hand from a deal or contact. Reply to the customer from here and it goes out through whichever channel the ticket started on."
-/>
+>
+  @if (canManageSettings) {
+    <button ar-button type="button" variant="ghost" (click)="settingsOpen.set(true)">Settings</button>
+  }
+</ar-topbar>
 
 @if (opened(); as id) {
   <ar-ticket-detail-dialog [ticketId]="id" (closed)="closeDetail($event)" />
+}
+
+@if (settingsOpen()) {
+  <ar-ticket-settings-dialog (closed)="closeSettings($event)" />
 }
 
 <div class="hd ar-scroll">

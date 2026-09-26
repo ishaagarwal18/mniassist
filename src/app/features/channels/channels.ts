@@ -8,6 +8,7 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArMeter } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { ArConnectNumberDialog } from './connect-number-dialog';
+import { ArSmsInboundCard } from './sms-inbound-card';
 
 /**
  * Channels overview (M02). One card per connected number with its quality, tier and
@@ -16,7 +17,7 @@ import { ArConnectNumberDialog } from './connect-number-dialog';
  */
 @Component({
   selector: 'ar-channels',
-  imports: [ArTopbar, ArButton, ArChip, ArMeter, RouterLink, ArConnectNumberDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArMeter, RouterLink, ArConnectNumberDialog, ArSmsInboundCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './channels.html',
   styleUrl: './channels.scss',

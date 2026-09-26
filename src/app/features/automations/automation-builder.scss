@@ -13,6 +13,123 @@
   align-items: stretch;
   max-width: 780px;
 }
+.ab--wide {
+  max-width: none;
+  padding-bottom: 20px;
+}
+.ab--wide .ab__trigger-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+.ab__trigger-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ab__seg {
+  display: inline-flex;
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-control);
+  overflow: hidden;
+}
+.ab__seg button {
+  padding: 5px 12px;
+  background: var(--ar-white);
+  border: 0;
+  cursor: pointer;
+  font: 500 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-600);
+}
+.ab__seg button.on {
+  background: var(--ar-ink-900);
+  color: var(--ar-white);
+}
+
+/* The canvas takes the rest of the screen; the panel for the selected step sits beside it, or below on a narrow one. */
+.ab__canvas {
+  flex: 1;
+  min-height: 520px;
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 14px;
+}
+.ab__board {
+  min-height: 520px;
+}
+.ab__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-card);
+  overflow-y: auto;
+  max-height: calc(100vh - 220px);
+}
+.ab__panel-h {
+  margin: 4px 0 0;
+  font: 600 11px var(--ar-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ar-warn-600);
+}
+.ab__panel-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: 400 12px/1.5 var(--ar-font-sans);
+}
+.ab__panel-list .ab__link {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border-left: 2px solid var(--ar-warn-600);
+  background: var(--ar-bg-50);
+  text-decoration: none;
+}
+.ab__panel-list .ab__link:hover,
+.ab__panel-list .ab__link:focus-visible {
+  background: var(--ar-bg-100);
+}
+.ab__panel-issue {
+  margin: 0;
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-warn-600);
+}
+.ab__panel-note {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--ar-radius-control);
+  background: var(--ar-amber-100);
+  font: 400 12px/1.5 var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}
+.ab__link {
+  padding: 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  color: var(--ar-ink-700);
+  cursor: pointer;
+  text-decoration: underline;
+}
+@media (max-width: 900px) {
+  .ab__canvas {
+    grid-template-columns: 1fr;
+  }
+  .ab__panel {
+    max-height: none;
+  }
+}
+
 .ab__empty {
   color: var(--ar-ink-400);
   font: 400 13px var(--ar-font-sans);

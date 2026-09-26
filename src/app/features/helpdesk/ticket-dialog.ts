@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { ServiceTicketDto, TicketPriority } from '../../proxy/support';
 import { ArButton, ArDialog } from '../../ui';
 import { errorMessage } from '../activities/activity-logic';
-import { PRIORITY_CHOICES, PRIORITY_LABEL, PRIORITY_SLA_HOURS } from './ticket-logic';
+import { PRIORITY_CHOICES, PRIORITY_LABEL, PRIORITY_SLA_HOURS, hoursByPriority } from './ticket-logic';
 import { ServiceTicketGateway } from './ticket-mock';
 
 /** Raising a ticket for a customer's problem: what it is, how urgent, and — when raised from a deal or an installed machine —
@@ -36,7 +36,7 @@ import { ServiceTicketGateway } from './ticket-mock';
           <span class="ar-field__label">Priority</span>
           <select id="tk-priority" class="ar-field__input" (change)="priority.set(+$any($event.target).value)">
             @for (p of choices; track p) {
-              <option [value]="p" [selected]="p === priority()">{{ label[p] }} — {{ hours[p] }}h SLA</option>
+              <option [value]="p" [selected]="p === priority()">{{ label[p] }} — {{ hours()[p] }}h SLA</option>
             }
           </select>
         </label>
@@ -85,7 +85,7 @@ export class ArTicketDialog {
 
   protected readonly choices = PRIORITY_CHOICES;
   protected readonly label = PRIORITY_LABEL;
-  protected readonly hours = PRIORITY_SLA_HOURS;
+  protected readonly hours = signal(PRIORITY_SLA_HOURS);
 
   protected readonly subject = signal('');
   protected readonly category = signal('');
@@ -93,6 +93,13 @@ export class ArTicketDialog {
   protected readonly description = signal('');
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
+
+  constructor() {
+    // The workspace's own SLA policy, when it has one — shown instead of the fixed default so this promise is never stale.
+    void firstValueFrom(this.api.getSettings())
+      .then((s) => this.hours.set(hoursByPriority(s)))
+      .catch(() => undefined);
+  }
 
   protected async save(): Promise<void> {
     if (!this.subject().trim() || this.busy()) return;

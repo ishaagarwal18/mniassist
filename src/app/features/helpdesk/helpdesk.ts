@@ -5,11 +5,12 @@ import { firstValueFrom } from 'rxjs';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
 import { ServiceTicketDto, ServiceTicketSummaryDto, TicketPriority, TicketStatus } from '../../proxy/support';
-import { ArChip, ArSearchBox, ArStatTile } from '../../ui';
+import { ArButton, ArChip, ArSearchBox, ArStatTile } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { errorMessage } from '../activities/activity-logic';
 import { ArTicketDetailDialog } from './ticket-detail-dialog';
 import { PRIORITY_LABEL, STATUS_LABEL, dueLabel } from './ticket-logic';
+import { ArTicketSettingsDialog } from './ticket-settings-dialog';
 import { ServiceTicketGateway } from './ticket-mock';
 
 const STATUS_TONE: Record<TicketStatus, ChipTone> = {
@@ -30,7 +31,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
  *  contact it is about — this page works the queue, it does not start one from nothing. */
 @Component({
   selector: 'ar-helpdesk',
-  imports: [ArTopbar, ArChip, ArSearchBox, ArStatTile, ArTicketDetailDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArSearchBox, ArStatTile, ArTicketDetailDialog, ArTicketSettingsDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './helpdesk.html',
   styleUrl: './helpdesk.scss',
@@ -47,6 +48,7 @@ export class ArHelpdesk {
   protected readonly Priority = TicketPriority;
 
   protected readonly canSeeAll = grantedPolicy('AutoReach.Helpdesk.ViewAll', this.permissions);
+  protected readonly canManageSettings = grantedPolicy('AutoReach.Helpdesk.ManageSettings', this.permissions);
 
   protected readonly scope = signal<'mine' | 'everyone'>('mine');
   protected readonly status = signal<TicketStatus | null>(null);
@@ -60,6 +62,7 @@ export class ArHelpdesk {
   protected readonly error = signal<string | null>(null);
   protected readonly limit = signal(50);
   protected readonly opened = signal<string | null>(null);
+  protected readonly settingsOpen = signal(false);
 
   private readonly tick = signal(0);
 
@@ -112,6 +115,11 @@ export class ArHelpdesk {
 
   protected closeDetail(changed: boolean): void {
     this.opened.set(null);
+    if (changed) this.reload();
+  }
+
+  protected closeSettings(changed: boolean): void {
+    this.settingsOpen.set(false);
     if (changed) this.reload();
   }
 }

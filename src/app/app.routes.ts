@@ -38,6 +38,18 @@ export const routes: Routes = [
     loadComponent: () => import('./features/forms/public-form').then((m) => m.ArPublicForm),
   },
   {
+    // A customer's pay page, from the link sent in their conversation: no login, no app shell.
+    path: 'pay/:token',
+    title: 'Pay securely',
+    loadComponent: () => import('./features/payments/pay-page').then((m) => m.ArPayPage),
+  },
+  {
+    // The public "raise a ticket" page: no login, no app shell, the same way a lead-capture form's page works.
+    path: 't/:code',
+    title: 'Raise a ticket',
+    loadComponent: () => import('./features/helpdesk/ticket-portal').then((m) => m.ArTicketPortal),
+  },
+  {
     path: 'privacy',
     title: 'Privacy Policy · AutoReach',
     loadComponent: () =>
@@ -313,6 +325,11 @@ export const routes: Routes = [
         title: 'AI assistant · AutoReach',
         loadComponent: () =>
           import('./features/settings/ai-assistant').then((m) => m.ArAiAssistant),
+      },
+      {
+        path: 'settings/payments',
+        title: 'Payments · AutoReach',
+        loadComponent: () => import('./features/payments/payments-settings').then((m) => m.ArPaymentsSettings),
       },
       {
         path: 'settings/email-sending',

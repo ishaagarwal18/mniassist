@@ -109,3 +109,21 @@ export interface ServiceTicketSummaryDto {
   overdueCount: number;
   unassignedCount: number;
 }
+
+export interface ServiceTicketSettingsDto {
+  urgentHours: number;
+  highHours: number;
+  normalHours: number;
+  lowHours: number;
+  portalEnabled: boolean;
+  /** Set only once the portal has been turned on at least once; the slug it was given stays put after that. */
+  portalUrl?: string | null;
+}
+
+export interface SetServiceTicketSettingsInput {
+  urgentHours: number;
+  highHours: number;
+  normalHours: number;
+  lowHours: number;
+  portalEnabled: boolean;
+}

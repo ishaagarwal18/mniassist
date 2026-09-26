@@ -199,6 +199,10 @@
             }
           </ul>
         }
+
+        @if (rollupFor(); as acc) {
+          <ar-erp-ledger [customerId]="acc.id" />
+        }
       </div>
     } @else {
       <p class="acc__empty">Loading…</p>

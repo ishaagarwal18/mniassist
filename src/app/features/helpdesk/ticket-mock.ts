@@ -14,7 +14,9 @@ import {
   ServiceTicketDetailDto,
   ServiceTicketDto,
   ServiceTicketService,
+  ServiceTicketSettingsDto,
   ServiceTicketSummaryDto,
+  SetServiceTicketSettingsInput,
   SetTicketPriorityInput,
   SetTicketStatusInput,
   TicketPriority,
@@ -32,15 +34,15 @@ function refuse(code: string, message: string): Observable<never> {
   return throwError(() => ({ error: { error: { code: `AutoReach:${code}`, message } } }));
 }
 
-const SLA_HOURS: Record<TicketPriority, number> = {
+const DEFAULT_SLA_HOURS: Record<TicketPriority, number> = {
   [TicketPriority.Urgent]: 4,
   [TicketPriority.High]: 8,
   [TicketPriority.Normal]: 24,
   [TicketPriority.Low]: 72,
 };
 
-function dueAt(priority: TicketPriority, fromIso: string): string {
-  return new Date(Date.parse(fromIso) + SLA_HOURS[priority] * 3_600_000).toISOString();
+function dueAt(priority: TicketPriority, fromIso: string, hours: Record<TicketPriority, number>): string {
+  return new Date(Date.parse(fromIso) + hours[priority] * 3_600_000).toISOString();
 }
 
 function recomputeOverdue(t: ServiceTicketDto): void {
@@ -52,7 +54,24 @@ function recomputeOverdue(t: ServiceTicketDto): void {
 export class TicketMockStore {
   readonly tickets: ServiceTicketDto[] = [];
   readonly comments: ServiceTicketCommentDto[] = [];
+  settings: ServiceTicketSettingsDto = {
+    urgentHours: DEFAULT_SLA_HOURS[TicketPriority.Urgent],
+    highHours: DEFAULT_SLA_HOURS[TicketPriority.High],
+    normalHours: DEFAULT_SLA_HOURS[TicketPriority.Normal],
+    lowHours: DEFAULT_SLA_HOURS[TicketPriority.Low],
+    portalEnabled: false,
+    portalUrl: null,
+  };
   private reference = 1;
+
+  hoursMap(): Record<TicketPriority, number> {
+    return {
+      [TicketPriority.Urgent]: this.settings.urgentHours,
+      [TicketPriority.High]: this.settings.highHours,
+      [TicketPriority.Normal]: this.settings.normalHours,
+      [TicketPriority.Low]: this.settings.lowHours,
+    };
+  }
 
   constructor() {
     const ago = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
@@ -96,7 +115,7 @@ export class TicketMockStore {
       conversationId: null,
       assignedUserId: null,
       assignedUserName: null,
-      dueAtUtc: status === TicketStatus.Open || status === TicketStatus.Pending ? dueAt(priority, created) : null,
+      dueAtUtc: status === TicketStatus.Open || status === TicketStatus.Pending ? dueAt(priority, created, this.hoursMap()) : null,
       isOverdue: false,
       firstRespondedAtUtc: null,
       resolvedAtUtc: null,
@@ -191,7 +210,7 @@ export class MockServiceTicketApi {
     if (!t) return refuse('NotFound', 'That ticket no longer exists.');
     t.priority = input.priority;
     if (t.status === TicketStatus.Open || t.status === TicketStatus.Pending) {
-      t.dueAtUtc = dueAt(input.priority, new Date().toISOString());
+      t.dueAtUtc = dueAt(input.priority, new Date().toISOString(), this.s.hoursMap());
     }
     recomputeOverdue(t);
     return of({ ...t });
@@ -208,7 +227,7 @@ export class MockServiceTicketApi {
       t.reopenCount += 1;
       t.resolvedAtUtc = null;
       t.closedAtUtc = null;
-      t.dueAtUtc = dueAt(t.priority, now);
+      t.dueAtUtc = dueAt(t.priority, now, this.s.hoursMap());
     } else if (input.status === TicketStatus.Resolved) {
       t.resolvedAtUtc = now;
       t.dueAtUtc = null;
@@ -260,6 +279,26 @@ export class MockServiceTicketApi {
     if (input.rating < 1 || input.rating > 5) return refuse('TicketRatingInvalid', 'Satisfaction rating must be between 1 and 5.');
     t.satisfactionRating = input.rating;
     return of({ ...t });
+  };
+
+  getSettings = (): Observable<ServiceTicketSettingsDto> => of({ ...this.s.settings });
+
+  setSettings = (input: SetServiceTicketSettingsInput): Observable<ServiceTicketSettingsDto> => {
+    for (const [field, hours] of Object.entries({
+      urgentHours: input.urgentHours, highHours: input.highHours, normalHours: input.normalHours, lowHours: input.lowHours,
+    })) {
+      if (hours < 1 || hours > 720) return refuse('TicketSlaHoursInvalid', `${field} must be between 1 and 720 hours.`);
+    }
+
+    // The portal's address, once given, stays put even while the portal is switched off — the same as the server's own behaviour.
+    const portalUrl = input.portalEnabled ? (this.s.settings.portalUrl ?? 'https://app.autoreach.in/t/h.mocktkt01') : this.s.settings.portalUrl;
+
+    this.s.settings = {
+      urgentHours: input.urgentHours, highHours: input.highHours, normalHours: input.normalHours, lowHours: input.lowHours,
+      portalEnabled: input.portalEnabled,
+      portalUrl,
+    };
+    return of({ ...this.s.settings });
   };
 }
 

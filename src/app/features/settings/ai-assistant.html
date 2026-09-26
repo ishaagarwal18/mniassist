@@ -98,8 +98,22 @@
         [checked]="enabled()"
         (change)="enabled.set($any($event.target).checked)"
       />
-      Reply to inbound WhatsApp messages automatically
+      Reply to customers' messages automatically
     </label>
+
+    <fieldset class="ai__channels" [disabled]="!enabled()">
+      <legend class="ar-field__label">Answer on</legend>
+      @for (c of channels; track c.key) {
+        <label class="ai__check">
+          <input type="checkbox" [checked]="answerOn()[c.key]" (change)="setChannel(c.key, $any($event.target).checked)" />
+          {{ c.label }}
+        </label>
+      }
+      <p class="ai__hint">
+        Not SMS: an SMS reply has to match a DLT-registered template, so the assistant cannot write one. SMS replies land in
+        the inbox for your team.
+      </p>
+    </fieldset>
 
     <div class="ai__grid">
       <label class="ar-field">

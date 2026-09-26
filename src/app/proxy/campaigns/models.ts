@@ -60,6 +60,7 @@ export interface CampaignPreflightDto {
   canSend?: boolean;
   canSendImmediately?: boolean;
   daysRequired?: number;
+  learnedSendHourRecipients?: number;
   costLines?: CampaignCostLineDto[];
 }
 

@@ -291,6 +291,8 @@
   }
 </section>
 
+<ar-erp-sync-section />
+
 @if (mappingConnection(); as mc) {
   <ar-dialog title="{{ mc.name }} — field mapping" (dismiss)="closeMapping()">
     @if (mappingLoading()) {

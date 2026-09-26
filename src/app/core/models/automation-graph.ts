@@ -33,6 +33,17 @@ export interface BuilderStep {
   rejoin?: boolean;
   entered?: number;
   exited?: number;
+  /** The stored node this step was read from, kept so a save updates it rather than replacing it. */
+  nodeId?: string;
+  /** Where the step sits on the canvas, when it has been placed there. */
+  x?: number;
+  y?: number;
+}
+
+/** The trigger and End nodes, which the step list does not show but a save must keep. */
+export interface GraphAnchors {
+  trigger?: { id: string; x: number; y: number };
+  end?: { id: string; x: number; y: number };
 }
 
 export const isBranching = (kind: AutomationNodeKind): boolean =>
@@ -115,6 +126,9 @@ export function graphToSteps(nodes: readonly AutomationNodeDto[]): ParsedGraph {
         config: parseConfig(node.configJson),
         entered: node.enteredCount,
         exited: node.exitedCount,
+        nodeId: node.id,
+        x: node.positionX,
+        y: node.positionY,
       };
 
       if (isBranching(kind)) {
@@ -167,25 +181,27 @@ export function graphToSteps(nodes: readonly AutomationNodeDto[]): ParsedGraph {
 export function stepsToGraph(
   steps: readonly BuilderStep[],
   newId: () => string = () => crypto.randomUUID(),
+  anchors: GraphAnchors = {},
 ): CreateUpdateAutomationNodeDto[] {
-  const triggerId = newId();
-  const endId = newId();
+  const triggerId = anchors.trigger?.id ?? newId();
+  const endId = anchors.end?.id ?? newId();
   const nodes: CreateUpdateAutomationNodeDto[] = [];
   let row = 1;
 
   // Emits one list and returns the id of its first node. `after` is where the list's last
   // step goes: End for a path that simply stops, or the point a rejoin continues at.
   const emit = (list: readonly BuilderStep[], after: string): string => {
-    const ids = list.map(() => newId());
+    const ids = list.map((s) => s.nodeId ?? newId());
 
     list.forEach((step, i) => {
       const next = ids[i + 1] ?? after;
+      const placeholderY = row++ * 120;
       const node: CreateUpdateAutomationNodeDto = {
         id: ids[i],
         kind: step.kind,
         configJson: JSON.stringify(step.config),
-        positionX: 0,
-        positionY: row++ * 120,
+        positionX: step.x ?? 0,
+        positionY: step.y ?? placeholderY,
       };
 
       if (isBranching(step.kind)) {
@@ -209,10 +225,22 @@ export function stepsToGraph(
   const first = emit(steps, endId);
 
   return [
-    { id: triggerId, kind: AutomationNodeKind.Trigger, configJson: '{}', nextNodeId: first, positionX: 0, positionY: 0 },
+    {
+      id: triggerId, kind: AutomationNodeKind.Trigger, configJson: '{}', nextNodeId: first,
+      positionX: anchors.trigger?.x ?? 0, positionY: anchors.trigger?.y ?? 0,
+    },
     ...nodes,
-    { id: endId, kind: AutomationNodeKind.End, configJson: '{}', positionX: 0, positionY: row * 120 },
+    { id: endId, kind: AutomationNodeKind.End, configJson: '{}', positionX: anchors.end?.x ?? 0, positionY: anchors.end?.y ?? row * 120 },
   ];
+}
+
+/** The trigger and End of a stored graph, so a save from the step list keeps them. */
+export function anchorsOf(nodes: readonly { id?: string; kind?: AutomationNodeKind; positionX?: number; positionY?: number }[]): GraphAnchors {
+  const pick = (kind: AutomationNodeKind) => {
+    const n = nodes.find((x) => x.kind === kind && x.id);
+    return n ? { id: n.id!, x: n.positionX ?? 0, y: n.positionY ?? 0 } : undefined;
+  };
+  return { trigger: pick(AutomationNodeKind.Trigger), end: pick(AutomationNodeKind.End) };
 }
 
 // ---- Editing the tree -----------------------------------------------------

@@ -1,4 +1,4 @@
-import { ServiceTicketDto, TicketPriority, TicketStatus } from '../../proxy/support';
+import { ServiceTicketDto, ServiceTicketSettingsDto, TicketPriority, TicketStatus } from '../../proxy/support';
 
 export const STATUS_LABEL: Record<TicketStatus, string> = {
   [TicketStatus.Open]: 'Open',
@@ -22,6 +22,16 @@ export const PRIORITY_SLA_HOURS: Record<TicketPriority, number> = {
   [TicketPriority.Normal]: 24,
   [TicketPriority.Low]: 72,
 };
+
+/** The workspace's own SLA policy, keyed by priority the way {@link PRIORITY_SLA_HOURS} is — so a dialog can show whichever it has. */
+export function hoursByPriority(s: Pick<ServiceTicketSettingsDto, 'urgentHours' | 'highHours' | 'normalHours' | 'lowHours'>): Record<TicketPriority, number> {
+  return {
+    [TicketPriority.Urgent]: s.urgentHours,
+    [TicketPriority.High]: s.highHours,
+    [TicketPriority.Normal]: s.normalHours,
+    [TicketPriority.Low]: s.lowHours,
+  };
+}
 
 export const PRIORITY_CHOICES: readonly TicketPriority[] = [
   TicketPriority.Urgent,

@@ -1,9 +1,11 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import {
   BuilderStep,
+  GraphAnchors,
+  anchorsOf,
   appendStep,
   graphToSteps,
   isBranching,
@@ -14,7 +16,27 @@ import {
   stepsToGraph,
   updateStep,
 } from '../../core/models/automation-graph';
+import {
+  CanvasNode,
+  Port,
+  connect,
+  connectProblem,
+  disconnect,
+  fromDtos,
+  isFixed,
+  linkOf,
+  needsLayout,
+  placeNew,
+  portsOf,
+  removeNode,
+  restoreStructure,
+  tidy,
+  toDtos,
+  toNodeDtos,
+  unreachable,
+} from '../../core/models/automation-canvas';
 import { layoutFlowMap } from '../../core/models/automation-flow-map';
+import { ArAutomationCanvas, CanvasCard, PaletteItem } from './automation-canvas';
 import { OpsService } from '../../core/services/ops.service';
 import { PipelineStore } from '../../core/services/pipeline.service';
 import { TemplateService } from '../../core/services/template.service';
@@ -72,16 +94,20 @@ const OPERATORS: { value: string; label: string; needsValue: boolean }[] = [
 type WaitUnit = 'minutes' | 'hours' | 'days';
 const UNIT_MINUTES: Record<WaitUnit, number> = { minutes: 1, hours: 60, days: 1440 };
 
+type Mode = 'list' | 'canvas';
+const MODE_KEY = 'ar.automationBuilder.mode';
+const UNDO_DEPTH = 50;
+
 /**
- * The automation step builder (M07-2): a step list, not a canvas. Two steps branch — an
- * "If…" and a "Wait for a reply" — and each carries an "Otherwise" list of its own that
- * runs when the condition fails or no reply arrives. The steps after a branching step are
- * its "true" path. See <c>automation-graph.ts</c> for exactly what shape that allows and
- * why a stored graph outside it is left untouched instead of being flattened.
+ * The automation builder (M07-2), two ways round. The step list reads top to bottom: two steps branch — an "If…" and a
+ * "Wait for a reply" — and each carries an "Otherwise" list of its own; see <c>automation-graph.ts</c> for exactly what
+ * shape that allows. The canvas draws the same automation as boxes and arrows and edits any shape the engine can run,
+ * short of a loop; see <c>automation-canvas.ts</c>. Switching from the canvas to the list is only offered when the graph
+ * fits the list, so neither view ever rewrites the other's work into something different.
  */
 @Component({
   selector: 'ar-automation-builder',
-  imports: [RouterLink, NgTemplateOutlet, ArTopbar, ArButton, ArChip, ArIcon],
+  imports: [RouterLink, NgTemplateOutlet, ArTopbar, ArButton, ArChip, ArIcon, ArAutomationCanvas],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './automation-builder.html',
   styleUrl: './automation-builder.scss',
@@ -133,8 +159,34 @@ export class ArAutomationBuilder {
   }
   protected readonly steps = signal<BuilderStep[]>([]);
 
-  /** Set when the stored graph has a shape the list cannot show — saving is then blocked. */
+  /** Set when the stored graph has a shape the list cannot show — saving from the list is then blocked. */
   protected readonly notRepresentable = signal<string | null>(null);
+
+  // ---- The canvas ------------------------------------------------------------------------------------------
+
+  protected readonly mode = signal<Mode>('list');
+  /** The graph as the canvas edits it. Only current while {@link mode} is 'canvas'; the list is current otherwise. */
+  protected readonly nodes = signal<CanvasNode[]>([]);
+  protected readonly selectedId = signal<string | null>(null);
+  /** Why the view could not be switched, or something the canvas refused to do. */
+  protected readonly notice = signal<string | null>(null);
+  private readonly history = signal<CanvasNode[][]>([]);
+  protected readonly canUndo = computed(() => this.history().length > 0);
+  /** The trigger and End of the stored graph, kept so the list saves them back rather than inventing new ones. */
+  private anchors: GraphAnchors = {};
+  private readonly canvas = viewChild(ArAutomationCanvas);
+
+  protected readonly palette: PaletteItem[] = Object.entries(KIND_META)
+    .filter(([, m]) => m.addable)
+    .map(([k, m]) => ({ kind: Number(k) as AutomationNodeKind, label: m.label, icon: m.icon }));
+
+  protected readonly selectedNode = computed(() => this.nodes().find((n) => n.id === this.selectedId()) ?? null);
+
+  /** The selected canvas node as the step shape the config forms read, so one set of forms serves both views. */
+  protected readonly selectedStep = computed<BuilderStep | null>(() => {
+    const n = this.selectedNode();
+    return n && !isFixed(n.kind) ? { localId: n.id, kind: n.kind, config: n.config } : null;
+  });
 
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
@@ -174,9 +226,16 @@ export class ArAutomationBuilder {
         this.keywords.set('');
       }
 
-      const parsed = graphToSteps(dto.nodes ?? []);
+      const stored = dto.nodes ?? [];
+      const parsed = graphToSteps(stored);
       this.steps.set(parsed.steps);
       this.notRepresentable.set(parsed.representable ? null : (parsed.reason ?? 'an unsupported shape'));
+      this.anchors = anchorsOf(stored);
+
+      // A graph the list cannot show opens on the canvas, where it can be edited; otherwise the last view used.
+      if (!parsed.representable || this.preferredMode() === 'canvas') {
+        this.openCanvas(fromDtos(stored));
+      }
     } finally {
       this.loading.set(false);
     }
@@ -220,8 +279,15 @@ export class ArAutomationBuilder {
     this.patch(id, (s) => ({ ...s, config: { ...s.config, [key]: n } }));
   }
 
+  /** Changes one step's settings in whichever view is current. On the canvas this is not an undo point — see restoreStructure. */
   private patch(id: string, fn: (s: BuilderStep) => BuilderStep): void {
     this.saved.set(false);
+    if (this.mode() === 'canvas') {
+      this.nodes.update((ns) =>
+        ns.map((n) => (n.id === id ? { ...n, config: fn({ localId: n.id, kind: n.kind, config: n.config }).config } : n)),
+      );
+      return;
+    }
     this.steps.update((list) => updateStep(list, id, fn));
   }
 
@@ -362,66 +428,316 @@ export class ArAutomationBuilder {
       : "Otherwise — when it doesn't match";
   }
 
+  // ---- Switching views -------------------------------------------------------
+
+  private preferredMode(): Mode {
+    try {
+      return localStorage.getItem(MODE_KEY) === 'canvas' ? 'canvas' : 'list';
+    } catch {
+      return 'list';
+    }
+  }
+
+  private rememberMode(mode: Mode): void {
+    try {
+      localStorage.setItem(MODE_KEY, mode);
+    } catch {
+      // Private window or blocked storage: the view just isn't remembered.
+    }
+  }
+
+  private openCanvas(nodes: CanvasNode[]): void {
+    this.nodes.set(needsLayout(nodes) ? tidy(nodes) : nodes);
+    this.history.set([]);
+    this.selectedId.set(null);
+    this.mode.set('canvas');
+  }
+
+  /**
+   * The step list as a graph with every stored node's id and place kept. Steps added in the list since have no place yet:
+   * they are put beside whatever leads into them, or the whole thing is laid out if nothing has a place at all.
+   */
+  private graphFromSteps(): CanvasNode[] {
+    const placed = new Set<string>();
+    const walk = (list: BuilderStep[]) =>
+      list.forEach((s) => {
+        if (s.nodeId && s.x !== undefined) placed.add(s.nodeId);
+        walk(s.then ?? []);
+        walk(s.otherwise ?? []);
+      });
+    walk(this.steps());
+    if (this.anchors.trigger) placed.add(this.anchors.trigger.id);
+    if (this.anchors.end) placed.add(this.anchors.end.id);
+
+    const nodes = fromDtos(stepsToGraph(this.steps(), undefined, this.anchors));
+    if (needsLayout(nodes)) return tidy(nodes);
+    return placeNew(nodes, new Set(nodes.filter((n) => !placed.has(n.id)).map((n) => n.id)));
+  }
+
+  protected switchTo(mode: Mode): void {
+    if (mode === this.mode()) return;
+    this.notice.set(null);
+
+    if (mode === 'canvas') {
+      this.openCanvas(this.graphFromSteps());
+      this.rememberMode('canvas');
+      return;
+    }
+
+    const parsed = graphToSteps(toNodeDtos(this.nodes()));
+    if (!parsed.representable) {
+      this.notice.set(`This automation can't be shown as a list: ${parsed.reason}. Keep editing it on the canvas.`);
+      return;
+    }
+    this.steps.set(parsed.steps);
+    this.anchors = anchorsOf(toDtos(this.nodes()));
+    this.notRepresentable.set(null);
+    this.selectedId.set(null);
+    this.mode.set('list');
+    this.rememberMode('list');
+  }
+
+  // ---- Canvas edits --------------------------------------------------------------
+
+  /** Every structural change on the canvas comes through here, so it can be undone. */
+  protected commit(next: CanvasNode[]): void {
+    const current = this.nodes();
+    this.history.update((h) => [...h.slice(-(UNDO_DEPTH - 1)), current]);
+    this.nodes.set(next);
+    this.saved.set(false);
+    this.notice.set(null);
+  }
+
+  protected undoCanvas(): void {
+    const h = this.history();
+    if (!h.length) return;
+    this.nodes.set(restoreStructure(h[h.length - 1], this.nodes()));
+    this.history.set(h.slice(0, -1));
+    if (this.selectedId() && !this.nodes().some((n) => n.id === this.selectedId())) this.selectedId.set(null);
+    this.saved.set(false);
+  }
+
+  protected tidyCanvas(): void {
+    this.commit(tidy(this.nodes()));
+    queueMicrotask(() => this.canvas()?.fit());
+  }
+
+  protected addFromPalette(e: { kind: AutomationNodeKind; x: number; y: number }): void {
+    const node: CanvasNode = {
+      id: crypto.randomUUID(),
+      kind: e.kind,
+      config: this.defaultConfig(e.kind),
+      x: e.x,
+      y: e.y,
+      next: null,
+      yes: null,
+      no: null,
+    };
+    this.commit([...this.nodes(), node]);
+    this.selectedId.set(node.id);
+  }
+
+  protected deleteSelected(): void {
+    const id = this.selectedId();
+    if (!id) return;
+    const result = removeNode(this.nodes(), id);
+    if ('error' in result) {
+      this.notice.set(result.error);
+      return;
+    }
+    this.selectedId.set(null);
+    this.commit(result.nodes);
+  }
+
+  protected ports = portsOf;
+  protected linkOf = linkOf;
+  protected isFixed = isFixed;
+
+  protected portName(kind: AutomationNodeKind, port: Port): string {
+    if (port === 'next') return 'Then goes to';
+    const reply = kind === AutomationNodeKind.WaitForReply;
+    if (port === 'yes') return reply ? 'If they reply, goes to' : 'If it matches, goes to';
+    return reply ? "If they don't reply, goes to" : "If it doesn't match, goes to";
+  }
+
+  /** The steps this way out could lead to — every step but the trigger and anything that would make a loop. */
+  protected targetsFor(from: CanvasNode, port: Port): { id: string; label: string }[] {
+    const nodes = this.nodes();
+    return nodes
+      .filter((n) => n.id === linkOf(from, port) || connectProblem(nodes, from.id, port, n.id) === null)
+      .map((n) => ({ id: n.id, label: this.nodeLabel(n) }));
+  }
+
+  /** The same way-out wiring the canvas does by dragging, from a dropdown, for anyone not using a pointer. */
+  protected setLink(from: string, port: Port, to: string): void {
+    if (!to) {
+      this.commit(disconnect(this.nodes(), from, port));
+      return;
+    }
+    const result = connect(this.nodes(), from, port, to);
+    if ('error' in result) this.notice.set(result.error);
+    else this.commit(result.nodes);
+  }
+
+  /** A step's name as the dropdowns show it: its kind, what it does, and a number where two would read the same. */
+  protected nodeLabel(n: CanvasNode): string {
+    const card = this.describeNode(n);
+    const base = card.detail ? `${card.title} — ${card.detail}` : card.title;
+    const same = this.nodes().filter((x) => {
+      const c = this.describeNode(x);
+      return (c.detail ? `${c.title} — ${c.detail}` : c.title) === base;
+    });
+    return same.length > 1 ? `${base} (${same.indexOf(n) + 1})` : base;
+  }
+
+  /** What a canvas card says about a step, in a few words. */
+  protected readonly describeNode = (n: CanvasNode): CanvasCard => {
+    const meta = KIND_META[n.kind];
+    const title = n.kind === AutomationNodeKind.Trigger ? 'When this happens' : (meta?.label ?? 'Step');
+    const icon = meta?.icon ?? 'automation';
+    const s = { localId: n.id, kind: n.kind, config: n.config } as BuilderStep;
+    const clip = (t: string) => (t.length > 34 ? t.slice(0, 33) + '…' : t);
+    let detail = '';
+    switch (n.kind) {
+      case AutomationNodeKind.Trigger:
+        detail = this.trigger() === AutomationTriggerKind.InboundKeyword ? `Keywords: ${this.keywords() || '—'}` : 'Set above';
+        break;
+      case AutomationNodeKind.End:
+        detail = 'The journey stops';
+        break;
+      case AutomationNodeKind.SendSessionMessage:
+        detail = this.cfg(s, 'text').trim() ? `“${this.cfg(s, 'text').trim()}”` : 'No message yet';
+        break;
+      case AutomationNodeKind.SendTemplate:
+        detail = this.templateOptions().find((t) => t.id === this.cfg(s, 'templateId'))?.name ?? 'No template chosen';
+        break;
+      case AutomationNodeKind.Wait:
+        detail = `${this.waitAmount(s)} ${this.waitUnit(s)}`;
+        break;
+      case AutomationNodeKind.WaitForReply:
+        detail = `Up to ${this.num(s, 'hours') ?? 48} hours`;
+        break;
+      case AutomationNodeKind.Condition: {
+        const field = this.fieldChoice(s) === CUSTOM_ATTRIBUTE
+          ? this.attributeKey(s) || 'attribute'
+          : (CONDITION_FIELDS.find((f) => f.value === this.cfg(s, 'field'))?.label ?? 'field');
+        const op = OPERATORS.find((o) => o.value === this.cfg(s, 'operator'));
+        detail = `${field} ${op?.label ?? '?'}${op?.needsValue ? ' ' + (this.cfg(s, 'value') || '…') : ''}`;
+        break;
+      }
+      case AutomationNodeKind.AssignAgent:
+        detail = this.agentOptions().find((a) => a.id === this.cfg(s, 'userId'))?.name ?? 'Nobody chosen';
+        break;
+      case AutomationNodeKind.UpdateAttribute:
+        detail = this.cfg(s, 'key') ? `${this.cfg(s, 'key')} = ${this.cfg(s, 'value')}` : 'No attribute yet';
+        break;
+      case AutomationNodeKind.CreateEnquiry:
+        detail = this.cfg(s, 'subject') || 'From automation';
+        break;
+      case AutomationNodeKind.Webhook:
+        detail = this.webhookOptions().find((w) => w.id === this.cfg(s, 'subscriptionId'))?.name ?? 'No endpoint chosen';
+        break;
+      case AutomationNodeKind.StartFlow:
+        detail = "Doesn't run yet";
+        break;
+    }
+    return { title, detail: clip(detail), icon };
+  };
+
   // ---- Validation -----------------------------------------------------------
+
+  /** What is wrong with one step's settings, worded to follow "Step 3 (Send a message): ". */
+  private stepProblems(s: Pick<BuilderStep, 'kind' | 'config'>): string[] {
+    const step = s as BuilderStep;
+    const out: string[] = [];
+    switch (s.kind) {
+      case AutomationNodeKind.SendSessionMessage:
+        if (!this.cfg(step, 'text').trim()) out.push('write the message.');
+        break;
+      case AutomationNodeKind.SendTemplate:
+        if (!this.cfg(step, 'templateId')) out.push('choose a template.');
+        break;
+      case AutomationNodeKind.AssignAgent:
+        if (!this.cfg(step, 'userId')) out.push('choose who to assign to — without one it clears the owner.');
+        break;
+      case AutomationNodeKind.UpdateAttribute:
+        if (!this.cfg(step, 'key').trim()) out.push('give the attribute a name.');
+        break;
+      case AutomationNodeKind.Webhook:
+        if (!this.cfg(step, 'subscriptionId')) out.push('choose one of your webhook endpoints.');
+        break;
+      case AutomationNodeKind.Condition: {
+        const field = this.cfg(step, 'field');
+        const known = CONDITION_FIELDS.some((f) => f.value === field);
+        const attribute = field.toLowerCase().startsWith(CUSTOM_ATTRIBUTE) && field.length > CUSTOM_ATTRIBUTE.length;
+        if (!known && !attribute) out.push("pick what to check — this field isn't one the engine can read.");
+        if (!OPERATORS.some((o) => o.value === this.cfg(step, 'operator'))) out.push('pick how to compare it.');
+        else if (this.needsValue(step) && !this.cfg(step, 'value').trim()) out.push('give the value to compare against.');
+        break;
+      }
+    }
+    return out;
+  }
 
   private collectIssues(list: BuilderStep[], where: string): string[] {
     const out: string[] = [];
     list.forEach((s, i) => {
       const at = `${where}Step ${i + 1} (${this.label(s.kind)})`;
-      switch (s.kind) {
-        case AutomationNodeKind.SendSessionMessage:
-          if (!this.cfg(s, 'text').trim()) out.push(`${at}: write the message.`);
-          break;
-        case AutomationNodeKind.SendTemplate:
-          if (!this.cfg(s, 'templateId')) out.push(`${at}: choose a template.`);
-          break;
-        case AutomationNodeKind.AssignAgent:
-          if (!this.cfg(s, 'userId')) out.push(`${at}: choose who to assign to — without one it clears the owner.`);
-          break;
-        case AutomationNodeKind.UpdateAttribute:
-          if (!this.cfg(s, 'key').trim()) out.push(`${at}: give the attribute a name.`);
-          break;
-        case AutomationNodeKind.Webhook:
-          if (!this.cfg(s, 'subscriptionId')) out.push(`${at}: choose one of your webhook endpoints.`);
-          break;
-        case AutomationNodeKind.Condition: {
-          const field = this.cfg(s, 'field');
-          const known = CONDITION_FIELDS.some((f) => f.value === field);
-          const attribute = field.toLowerCase().startsWith(CUSTOM_ATTRIBUTE) && field.length > CUSTOM_ATTRIBUTE.length;
-          if (!known && !attribute) out.push(`${at}: pick what to check — this field isn't one the engine can read.`);
-          if (!OPERATORS.some((o) => o.value === this.cfg(s, 'operator'))) out.push(`${at}: pick how to compare it.`);
-          else if (this.needsValue(s) && !this.cfg(s, 'value').trim()) out.push(`${at}: give the value to compare against.`);
-          break;
-        }
-      }
+      out.push(...this.stepProblems(s).map((p) => `${at}: ${p}`));
       if (s.then?.length) out.push(...this.collectIssues(s.then, `${at} › if true › `));
       if (s.otherwise?.length) out.push(...this.collectIssues(s.otherwise, `${at} › otherwise › `));
     });
     return out;
   }
 
+  /** The canvas's steps with something to fix, by id, so they can be outlined and listed. */
+  protected readonly canvasProblems = computed(() => {
+    const out = new Map<string, string[]>();
+    for (const n of this.nodes()) {
+      if (isFixed(n.kind)) continue;
+      const problems = this.stepProblems(n);
+      if (problems.length) out.set(n.id, problems);
+    }
+    return out;
+  });
+
+  protected readonly flagged = computed(() => new Set(this.canvasProblems().keys()));
+
+  protected readonly canvasIssues = computed(() =>
+    [...this.canvasProblems()].flatMap(([id, problems]) => {
+      const n = this.nodes().find((x) => x.id === id)!;
+      return problems.map((p) => ({ id, text: `${this.label(n.kind)}: ${p}` }));
+    }),
+  );
+
+  /** Saved, but no contact will ever get to them — worth saying, not worth refusing a save over. */
+  protected readonly stranded = computed(() => (this.mode() === 'canvas' ? unreachable(this.nodes()) : []));
+
   // ---- Save -----------------------------------------------------------------
 
   protected readonly canSave = computed(
-    () => !this.saving() && !this.loading() && this.notRepresentable() === null,
+    () => !this.saving() && !this.loading() && (this.mode() === 'canvas' || this.notRepresentable() === null),
   );
 
   protected async save(): Promise<void> {
-    const problems = this.issues();
-    if (problems.length > 0) {
-      this.error.set(`Fix ${problems.length} thing${problems.length === 1 ? '' : 's'} first — see the list above.`);
+    const count = this.mode() === 'canvas' ? this.canvasIssues().length : this.issues().length;
+    if (count > 0) {
+      this.error.set(
+        `Fix ${count} thing${count === 1 ? '' : 's'} first — ${this.mode() === 'canvas' ? 'the steps marked with ! on the canvas' : 'see the list above'}.`,
+      );
       return;
     }
 
     this.saving.set(true);
     this.error.set(null);
     try {
+      const nodes = this.mode() === 'canvas' ? toDtos(this.nodes()) : toDtos(this.graphFromSteps());
       await this.store.saveAutomation(this.automationId(), {
         name: this.name().trim(),
         channelId: this.channelId(),
         trigger: this.trigger(),
         triggerConfigJson: this.triggerConfigJson(),
-        nodes: stepsToGraph(this.steps()),
+        nodes,
       });
       this.saved.set(true);
     } catch (e: unknown) {

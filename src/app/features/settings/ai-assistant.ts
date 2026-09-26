@@ -22,7 +22,21 @@ const SEED_SETTINGS: ChatbotSettingsDto = {
   persona: 'Polite and concise. We are Meridian Automation, an ABB and Siemens channel partner.',
   handoffMessage: "Thanks for your message — I'm passing this to our team, who will reply here shortly.",
   maxRepliesPerConversation: 6,
+  answerWhatsApp: true,
+  answerInstagram: false,
+  answerMessenger: false,
+  answerEmail: false,
 };
+
+/** The channels the assistant can answer on, in the order the form lists them. */
+export const ASSISTANT_CHANNELS = [
+  { key: 'answerWhatsApp', label: 'WhatsApp' },
+  { key: 'answerInstagram', label: 'Instagram direct messages' },
+  { key: 'answerMessenger', label: 'Facebook Messenger' },
+  { key: 'answerEmail', label: 'Email replies' },
+] as const;
+
+export type AssistantChannelKey = (typeof ASSISTANT_CHANNELS)[number]['key'];
 
 const SEED_STATUS: ChatbotStatusDto = {
   modelConfigured: false,
@@ -102,6 +116,10 @@ export class ArAiAssistant {
   protected readonly persona = signal('');
   protected readonly handoffMessage = signal('');
   protected readonly maxReplies = signal(6);
+  protected readonly channels = ASSISTANT_CHANNELS;
+  protected readonly answerOn = signal<Record<AssistantChannelKey, boolean>>({
+    answerWhatsApp: true, answerInstagram: false, answerMessenger: false, answerEmail: false,
+  });
   protected readonly savingSettings = signal(false);
 
   // ---- try a question ----
@@ -157,6 +175,16 @@ export class ArAiAssistant {
     this.persona.set(s.persona ?? '');
     this.handoffMessage.set(s.handoffMessage);
     this.maxReplies.set(s.maxRepliesPerConversation);
+    this.answerOn.set({
+      answerWhatsApp: s.answerWhatsApp ?? true,
+      answerInstagram: s.answerInstagram ?? false,
+      answerMessenger: s.answerMessenger ?? false,
+      answerEmail: s.answerEmail ?? false,
+    });
+  }
+
+  protected setChannel(key: AssistantChannelKey, on: boolean): void {
+    this.answerOn.update((c) => ({ ...c, [key]: on }));
   }
 
   private async refreshStatus(): Promise<void> {
@@ -176,6 +204,7 @@ export class ArAiAssistant {
         persona: this.persona().trim() || null,
         handoffMessage: this.handoffMessage().trim(),
         maxRepliesPerConversation: this.maxReplies(),
+        ...this.answerOn(),
       };
       if (!environment.useMockData) {
         this.applySettings(await firstValueFrom(this.api.updateSettings(input)));

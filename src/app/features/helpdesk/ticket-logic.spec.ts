@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ServiceTicketDto, TicketPriority, TicketStatus } from '../../proxy/support';
-import { dueLabel, isFinished, isOverdue, PRIORITY_SLA_HOURS } from './ticket-logic';
+import { dueLabel, hoursByPriority, isFinished, isOverdue, PRIORITY_SLA_HOURS } from './ticket-logic';
 
 const ticket = (over: Partial<ServiceTicketDto> = {}): Pick<ServiceTicketDto, 'status' | 'dueAtUtc' | 'isOverdue'> => ({
   status: TicketStatus.Open,
@@ -16,6 +16,16 @@ describe('PRIORITY_SLA_HOURS', () => {
     expect(PRIORITY_SLA_HOURS[TicketPriority.High]).toBe(8);
     expect(PRIORITY_SLA_HOURS[TicketPriority.Normal]).toBe(24);
     expect(PRIORITY_SLA_HOURS[TicketPriority.Low]).toBe(72);
+  });
+});
+
+describe('hoursByPriority', () => {
+  it('reads the workspaces own settings into the same shape as the fixed table', () => {
+    const map = hoursByPriority({ urgentHours: 1, highHours: 2, normalHours: 3, lowHours: 4 });
+    expect(map[TicketPriority.Urgent]).toBe(1);
+    expect(map[TicketPriority.High]).toBe(2);
+    expect(map[TicketPriority.Normal]).toBe(3);
+    expect(map[TicketPriority.Low]).toBe(4);
   });
 });
 

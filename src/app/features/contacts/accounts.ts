@@ -10,6 +10,7 @@ import {
 import { CustomerAccountRollupDto } from '../../proxy/contacts';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
+import { ArErpLedger } from './erp-ledger';
 
 interface Draft {
   name: string;
@@ -31,7 +32,7 @@ const BLANK: Draft = { name: '', industry: '', city: '', state: '', website: '',
  */
 @Component({
   selector: 'ar-accounts',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox, ArErpLedger],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './accounts.html',
   styleUrl: './accounts.scss',

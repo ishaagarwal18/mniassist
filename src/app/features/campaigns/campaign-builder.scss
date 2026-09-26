@@ -40,6 +40,7 @@
 .timing input { margin-top: 2px; }
 .timing strong { color: var(--ar-ink-900); font-weight: 600; }
 .timing__hint { display: block; margin-top: 2px; color: var(--ar-ink-400); font-size: 11px; line-height: 1.5; max-width: 78ch; }
+.timing__coverage { display: block; margin-top: 4px; color: var(--ar-teal-600); font: 500 11.5px var(--ar-font-sans); }
 
 .checks { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .check { display: flex; gap: 10px; font: 400 12px var(--ar-font-sans); color: var(--ar-ink-700); }

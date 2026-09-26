@@ -60,6 +60,8 @@ export interface EmailSyncResultDto {
   imported: number;
   skipped: number;
   bounces: number;
+  /** Spam-complaint reports that stopped email to an address. */
+  complaints?: number;
   moreWaiting: boolean;
 }
 

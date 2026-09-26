@@ -366,3 +366,23 @@
   border-color: var(--ar-teal-600);
   background: var(--ar-white);
 }
+
+.composer__sms-note {
+  margin: 0 0 8px;
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+.composer__sms-preview {
+  margin: 6px 0 8px;
+  padding: 8px 10px;
+  border-radius: var(--ar-radius-control);
+  background: var(--ar-bg-100);
+  font: 400 13px/1.5 var(--ar-font-sans);
+  color: var(--ar-ink-800);
+  white-space: pre-wrap;
+}
+.composer__sms-error {
+  margin: 0 0 8px;
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-warn-600);
+}

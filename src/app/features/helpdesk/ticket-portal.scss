@@ -1,0 +1,50 @@
+:host { display: block; min-height: 100vh; background: #f3f5f8; }
+
+.tp {
+  --tp-line: #c9d1dc;
+  --tp-ink: #16202e;
+  --tp-soft: #5b6676;
+  --tp-accent: #0b6b63;
+  --tp-bad: #b42318;
+  padding: 24px 16px 48px;
+  font: 400 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--tp-ink);
+}
+
+.tp__card {
+  max-width: 520px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px;
+  background: #fff; border: 1px solid var(--tp-line); border-radius: 10px;
+}
+.tp__card--done { background: #eaf6ee; border-color: #9ccfae; }
+.tp__title { margin: 0; font-size: 22px; line-height: 1.25; text-wrap: balance; }
+.tp__intro { margin: -6px 0 0; color: var(--tp-soft); }
+.tp__note { max-width: 520px; margin: 48px auto; text-align: center; color: var(--tp-soft); }
+.tp__ref { margin: 4px 0 0; }
+
+.tp__field { display: flex; flex-direction: column; gap: 6px; }
+.tp__label { font-weight: 600; font-size: 14px; }
+.tp__opt { font-weight: 400; color: var(--tp-soft); }
+.tp__req { font-style: normal; color: var(--tp-bad); margin-left: 2px; }
+.tp__input {
+  width: 100%; box-sizing: border-box; padding: 10px 12px; font: inherit; color: inherit; background: #fff;
+  border: 1px solid var(--tp-line); border-radius: 8px;
+}
+.tp__input:focus-visible, .tp__btn:focus-visible, .tp__chk input:focus-visible { outline: 2px solid var(--tp-accent); outline-offset: 2px; }
+.tp__input[aria-invalid='true'], .tp__chk input[aria-invalid='true'] { border-color: var(--tp-bad); outline-color: var(--tp-bad); }
+textarea.tp__input { resize: vertical; min-height: 96px; }
+.tp__err { margin: 0; font-size: 13px; color: var(--tp-bad); }
+.tp__fail { margin: 0; padding: 10px 12px; border-radius: 8px; background: #fdeceb; color: var(--tp-bad); font-weight: 500; }
+
+.tp__chk { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; cursor: pointer; }
+.tp__chk input { margin-top: 3px; width: 18px; height: 18px; flex: none; }
+
+.tp__btn {
+  align-self: flex-start; padding: 11px 22px; font: 600 15px inherit; color: #fff; background: var(--tp-accent);
+  border: 0; border-radius: 8px; cursor: pointer;
+}
+.tp__btn[disabled] { opacity: 0.6; cursor: progress; }
+
+/* Off-screen, not display:none: a bot that skips hidden fields would then skip the trap too. */
+.tp__trap { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+
+@media (max-width: 480px) { .tp__card { padding: 18px; } .tp__btn { width: 100%; } }

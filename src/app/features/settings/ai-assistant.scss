@@ -177,3 +177,23 @@
     grid-template-columns: 1fr;
   }
 }
+
+.ai__channels {
+  margin: 4px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-control);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+.ai__channels:disabled {
+  opacity: 0.55;
+}
+.ai__channels legend {
+  padding: 0 4px;
+}
+.ai__channels .ai__hint {
+  flex-basis: 100%;
+  margin: 2px 0 0;
+}

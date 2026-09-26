@@ -6,6 +6,7 @@ import {
   CState,
   Preflight,
   Report,
+  sendTimeCoverage,
 } from '../../core/services/campaign.service';
 import { ChannelService } from '../../core/services/channel.service';
 import { count, inr } from '../../core/util/format';
@@ -122,6 +123,7 @@ export class ArCampaignBuilder {
   }
 
   protected canSend = computed(() => this.preflight()?.canSend ?? false);
+  protected readonly coverage = sendTimeCoverage;
 
   protected readonly savingTiming = signal(false);
 

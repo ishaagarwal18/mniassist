@@ -60,6 +60,11 @@ export interface ChatbotSettingsDto {
   persona?: string | null;
   handoffMessage: string;
   maxRepliesPerConversation: number;
+  /** Channels it answers on. SMS is never offered: replies there must be DLT-registered templates. */
+  answerWhatsApp: boolean;
+  answerInstagram: boolean;
+  answerMessenger: boolean;
+  answerEmail: boolean;
 }
 
 export interface ChatbotStatusDto {

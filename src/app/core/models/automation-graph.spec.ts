@@ -2,6 +2,7 @@ import { AutomationNodeDto } from '../../proxy/automation';
 import { AutomationNodeKind } from '../../proxy/messaging';
 import {
   BuilderStep,
+  anchorsOf,
   appendStep,
   graphToSteps,
   moveStep,
@@ -173,6 +174,36 @@ describe('automation step tree ↔ node graph', () => {
     ] as AutomationNodeDto[];
 
     expect(graphToSteps(nodes).representable).toBe(false);
+  });
+
+  it('keeps stored node ids, places and the trigger/End, so a save updates the graph rather than replacing it', () => {
+    const stored = [
+      { id: 't', kind: K.Trigger, nextNodeId: 'a', positionX: 16, positionY: 0 },
+      { id: 'a', kind: K.SendSessionMessage, nextNodeId: 'e', configJson: '{"text":"hi"}', positionX: 64, positionY: 160 },
+      { id: 'e', kind: K.End, positionX: 16, positionY: 320 },
+    ] as AutomationNodeDto[];
+
+    const parsed = graphToSteps(stored);
+    const saved = stepsToGraph(parsed.steps, sequentialIds, anchorsOf(stored));
+
+    expect(saved.map((x) => x.id)).toEqual(['t', 'a', 'e']);
+    expect(saved.find((x) => x.id === 'a')).toMatchObject({ positionX: 64, positionY: 160, nextNodeId: 'e' });
+    expect(saved.find((x) => x.id === 'e')).toMatchObject({ positionX: 16, positionY: 320 });
+  });
+
+  it('gives a step added in the list a fresh id alongside the kept ones', () => {
+    const stored = [
+      { id: 't', kind: K.Trigger, nextNodeId: 'a' },
+      { id: 'a', kind: K.Wait, nextNodeId: 'e', configJson: '{}' },
+      { id: 'e', kind: K.End },
+    ] as AutomationNodeDto[];
+    const parsed = graphToSteps(stored);
+
+    const saved = stepsToGraph([...parsed.steps, step(K.AssignAgent)], sequentialIds, anchorsOf(stored));
+
+    const assign = saved.find((x) => x.kind === K.AssignAgent)!;
+    expect(assign.id).toMatch(/^id-/);
+    expect(saved.find((x) => x.id === 'a')!.nextNodeId).toBe(assign.id);
   });
 
   it('refuses a loop instead of following it forever', () => {

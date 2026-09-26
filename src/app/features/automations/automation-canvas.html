@@ -1,0 +1,143 @@
+<div
+  #viewport
+  class="cv__viewport"
+  tabindex="0"
+  role="application"
+  aria-label="Automation canvas. Select a step with Tab, move it with the arrow keys, delete it with Delete, undo with Ctrl+Z."
+  [class.cv__viewport--wiring]="!!wire()"
+  (pointerdown)="onBackgroundDown($event)"
+  (pointermove)="onMove($event)"
+  (pointerup)="onUp($event)"
+  (pointercancel)="onCancel()"
+  (wheel)="onWheel($event)"
+  (keydown)="onKey($event)"
+>
+  <div
+    class="cv__world"
+    [style.width.px]="worldSize().w"
+    [style.height.px]="worldSize().h"
+    [style.transform]="'translate(' + pan().x + 'px,' + pan().y + 'px) scale(' + zoom() + ')'"
+    [style.background-size.px]="GRID * 2"
+  >
+    <svg class="cv__edges" [attr.width]="worldSize().w" [attr.height]="worldSize().h" aria-hidden="true">
+      <defs>
+        <marker id="cv-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto">
+          <path d="M0 0L8 4L0 8z" fill="currentColor" />
+        </marker>
+      </defs>
+      @for (e of edges(); track e.key) {
+        <g class="cv__edge" [class.cv__edge--else]="e.otherwise" [class.cv__edge--on]="selectedEdge() === e.key">
+          <path class="cv__edge-hit" [attr.d]="e.d" (pointerdown)="selectEdge($event, e.key)" />
+          <path class="cv__edge-line" [attr.d]="e.d" marker-end="url(#cv-arrow)" />
+        </g>
+      }
+      @if (wirePathD(); as d) {
+        <path class="cv__wire" [class.cv__wire--ok]="wire()?.ok" [attr.d]="d" />
+      }
+    </svg>
+
+    @for (e of edges(); track e.key) {
+      @if (selectedEdge() === e.key) {
+        <button
+          type="button"
+          class="cv__edge-del"
+          [style.left.px]="e.mx - 11"
+          [style.top.px]="e.my - 11"
+          title="Remove this link"
+          aria-label="Remove this link"
+          (pointerdown)="$event.stopPropagation()"
+          (click)="deleteEdge(e.key)"
+        >
+          ×
+        </button>
+      }
+    }
+
+    @for (n of view(); track n.id) {
+      @let card = cardOf(n);
+      <div
+        class="cn"
+        role="button"
+        tabindex="0"
+        [attr.data-node-id]="n.id"
+        [attr.aria-label]="ariaFor(n)"
+        [attr.aria-pressed]="selected() === n.id"
+        [class.cn--sel]="selected() === n.id"
+        [class.cn--trigger]="n.kind === NK.Trigger"
+        [class.cn--end]="n.kind === NK.End"
+        [class.cn--branch]="ports(n.kind).length === 2"
+        [class.cn--flag]="flagged().has(n.id)"
+        [class.cn--target]="wire()?.over === n.id && wire()?.ok"
+        [class.cn--nope]="wire()?.over === n.id && !wire()?.ok"
+        [style.left.px]="n.x"
+        [style.top.px]="n.y"
+        [style.width.px]="W"
+        [style.height.px]="H"
+        (pointerdown)="onNodeDown($event, n)"
+        (focus)="select.emit(n.id)"
+      >
+        @if (hasInput(n.kind)) {
+          <span class="cn__in" aria-hidden="true"></span>
+        }
+        <div class="cn__row">
+          <span class="cn__mark"><ar-icon [name]="card.icon" [size]="14" /></span>
+          <span class="cn__title">{{ card.title }}</span>
+          @if (n.entered != null) {
+            <span class="cn__count" title="Contacts in · out">{{ n.entered }}·{{ n.exited ?? 0 }}</span>
+          }
+          @if (flagged().has(n.id)) {
+            <span class="cn__warn" title="Needs attention">!</span>
+          }
+        </div>
+        <div class="cn__detail">{{ card.detail }}</div>
+        <div class="cn__ports">
+          @for (p of ports(n.kind); track p) {
+            <span
+              class="cn__port"
+              [class.cn__port--else]="p === 'no'"
+              [class.cn__port--open]="!linkOf(n, p)"
+              [style.left.%]="p === 'yes' ? 27 : p === 'no' ? 73 : 50"
+              [title]="'Drag to the step that comes ' + (p === 'next' ? 'next' : 'on ' + portLabel(n.kind, p))"
+              (pointerdown)="onPortDown($event, n, p)"
+            >
+              @if (p !== 'next') {
+                <span class="cn__port-label">{{ portLabel(n.kind, p) }}</span>
+              }
+            </span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<div class="cv__palette" aria-label="Add a step">
+  <span class="cv__palette-title">Add a step</span>
+  @for (item of palette(); track item.kind) {
+    <button
+      type="button"
+      class="cv__chip"
+      [title]="'Drag onto the canvas, or click to add in the middle'"
+      (pointerdown)="onPaletteDown($event, item)"
+      (click)="onPaletteClick($event, item)"
+    >
+      <ar-icon [name]="item.icon" [size]="13" />
+      <span>{{ item.label }}</span>
+    </button>
+  }
+</div>
+
+<div class="cv__tools">
+  <button type="button" class="cv__tool" title="Zoom out" aria-label="Zoom out" (click)="zoomBy(1 / 1.2)">−</button>
+  <span class="cv__zoom">{{ (zoom() * 100).toFixed(0) }}%</span>
+  <button type="button" class="cv__tool" title="Zoom in" aria-label="Zoom in" (click)="zoomBy(1.2)">+</button>
+  <button type="button" class="cv__tool cv__tool--text" (click)="fit()">Fit</button>
+  <button type="button" class="cv__tool cv__tool--text" title="Lay every step out from the trigger down" (click)="tidy.emit()">Tidy up</button>
+  <button type="button" class="cv__tool cv__tool--text" [disabled]="!canUndo()" title="Undo (Ctrl+Z)" (click)="undo.emit()">Undo</button>
+</div>
+
+@if (ghost(); as g) {
+  <div class="cv__ghost" [style.left.px]="g.x" [style.top.px]="g.y" aria-hidden="true">
+    <ar-icon [name]="g.icon" [size]="13" /> {{ g.label }}
+  </div>
+}

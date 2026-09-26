@@ -1,9 +1,13 @@
 <ar-topbar
   [title]="name() || 'Automation'"
-  subtitle="Step builder"
-  help="Steps run top to bottom. 'If…' and 'Wait for a reply' branch: the steps below them run when the condition holds or the contact replies, and their 'Otherwise' list runs when it doesn't or they stay quiet. Each path ends when it runs out of steps."
+  [subtitle]="mode() === 'canvas' ? 'Canvas' : 'Step list'"
+  help="Build the automation as a list of steps, or on the canvas as boxes and arrows. On the canvas, drag a step to move it, drag from a dot on its bottom edge to another step to join them, and drag new steps in from the palette. 'If…' and 'Wait for a reply' have two ways out; a way out with nothing joined ends the journey there. Loops are not allowed."
 >
   <a class="ab__back" routerLink="/automations">← All automations</a>
+  <div class="ab__seg" role="group" aria-label="View">
+    <button type="button" [class.on]="mode() === 'list'" [attr.aria-pressed]="mode() === 'list'" (click)="switchTo('list')">List</button>
+    <button type="button" [class.on]="mode() === 'canvas'" [attr.aria-pressed]="mode() === 'canvas'" (click)="switchTo('canvas')">Canvas</button>
+  </div>
   @if (saved()) {
     <span class="ab__saved">Saved</span>
   }
@@ -11,6 +15,184 @@
     {{ saving() ? 'Saving…' : 'Save' }}
   </button>
 </ar-topbar>
+
+<!-- One step's settings, the same form whether the step is in the list or selected on the canvas. -->
+<ng-template #config let-step>
+  @switch (step.kind) {
+    @case (NK.SendSessionMessage) {
+      <label class="ar-field">
+        <span class="ar-field__label">Message</span>
+        <textarea
+          class="ar-field__input"
+          rows="2"
+          [value]="cfg(step, 'text')"
+          (input)="setCfg(step.localId, 'text', $any($event.target).value)"
+        ></textarea>
+      </label>
+      <p class="node__blurb">Free-form, so it only goes out while the 24-hour window is open.</p>
+    }
+    @case (NK.SendTemplate) {
+      <label class="ar-field">
+        <span class="ar-field__label">Template</span>
+        <select class="ar-field__input" (change)="setCfg(step.localId, 'templateId', $any($event.target).value)">
+          <option value="">Choose a template…</option>
+          @for (t of templateOptions(); track t.id) {
+            <option [value]="t.id" [selected]="t.id === cfg(step, 'templateId')">{{ t.name }}</option>
+          }
+        </select>
+      </label>
+    }
+    @case (NK.Wait) {
+      <div class="ar-field-row">
+        <label class="ar-field ab__narrow">
+          <span class="ar-field__label">Wait for</span>
+          <input
+            class="ar-field__input"
+            type="number"
+            min="1"
+            [value]="waitAmount(step)"
+            (input)="setWait(step, +$any($event.target).value, waitUnit(step))"
+          />
+        </label>
+        <label class="ar-field ab__narrow">
+          <span class="ar-field__label">&nbsp;</span>
+          <select class="ar-field__input" (change)="setWait(step, waitAmount(step), $any($event.target).value)">
+            @for (u of units; track u) {
+              <option [value]="u" [selected]="u === waitUnit(step)">{{ u }}</option>
+            }
+          </select>
+        </label>
+      </div>
+    }
+    @case (NK.WaitForReply) {
+      <label class="ar-field ab__narrow">
+        <span class="ar-field__label">Wait for a reply (hours)</span>
+        <input
+          class="ar-field__input"
+          type="number"
+          min="1"
+          [value]="cfg(step, 'hours')"
+          (input)="setNum(step.localId, 'hours', $any($event.target).value)"
+        />
+      </label>
+    }
+    @case (NK.Condition) {
+      <div class="ar-field-row">
+        <label class="ar-field">
+          <span class="ar-field__label">If the contact's</span>
+          <select class="ar-field__input" (change)="setFieldChoice(step.localId, $any($event.target).value)">
+            @for (f of conditionFields; track f.value) {
+              <option [value]="f.value" [selected]="f.value === fieldChoice(step)">{{ f.label }}</option>
+            }
+            <option value="attr." [selected]="fieldChoice(step) === 'attr.'">Custom attribute…</option>
+          </select>
+        </label>
+        @if (fieldChoice(step) === 'attr.') {
+          <label class="ar-field">
+            <span class="ar-field__label">Attribute key</span>
+            <input
+              class="ar-field__input"
+              placeholder="plant_location"
+              [value]="attributeKey(step)"
+              (input)="setAttributeKey(step.localId, $any($event.target).value)"
+            />
+          </label>
+        }
+        <label class="ar-field">
+          <span class="ar-field__label">&nbsp;</span>
+          <select class="ar-field__input" (change)="setCfg(step.localId, 'operator', $any($event.target).value)">
+            @for (o of operators; track o.value) {
+              <option [value]="o.value" [selected]="o.value === cfg(step, 'operator')">{{ o.label }}</option>
+            }
+          </select>
+        </label>
+        @if (needsValue(step)) {
+          <label class="ar-field">
+            <span class="ar-field__label">Value</span>
+            <input
+              class="ar-field__input"
+              [value]="cfg(step, 'value')"
+              (input)="setCfg(step.localId, 'value', $any($event.target).value)"
+            />
+          </label>
+        }
+      </div>
+    }
+    @case (NK.AssignAgent) {
+      <label class="ar-field">
+        <span class="ar-field__label">Assign to</span>
+        <select class="ar-field__input" (change)="setCfg(step.localId, 'userId', $any($event.target).value)">
+          <option value="">Choose a person…</option>
+          @for (a of agentOptions(); track a.id) {
+            <option [value]="a.id" [selected]="a.id === cfg(step, 'userId')">{{ a.name }}</option>
+          }
+        </select>
+      </label>
+    }
+    @case (NK.UpdateAttribute) {
+      <div class="ar-field-row">
+        <label class="ar-field">
+          <span class="ar-field__label">Attribute key</span>
+          <input
+            class="ar-field__input"
+            [value]="cfg(step, 'key')"
+            (input)="setCfg(step.localId, 'key', $any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Set it to</span>
+          <input
+            class="ar-field__input"
+            [value]="cfg(step, 'value')"
+            (input)="setCfg(step.localId, 'value', $any($event.target).value)"
+          />
+        </label>
+      </div>
+    }
+    @case (NK.CreateEnquiry) {
+      <div class="ar-field-row">
+        <label class="ar-field">
+          <span class="ar-field__label">Enquiry title</span>
+          <input
+            class="ar-field__input"
+            placeholder="From automation"
+            [value]="cfg(step, 'subject')"
+            (input)="setCfg(step.localId, 'subject', $any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Owner <span class="ar-field__opt">(optional)</span></span>
+          <select class="ar-field__input" (change)="setCfg(step.localId, 'ownerUserId', $any($event.target).value)">
+            <option value="">Unassigned</option>
+            @for (a of agentOptions(); track a.id) {
+              <option [value]="a.id" [selected]="a.id === cfg(step, 'ownerUserId')">{{ a.name }}</option>
+            }
+          </select>
+        </label>
+      </div>
+    }
+    @case (NK.Webhook) {
+      <label class="ar-field">
+        <span class="ar-field__label">Notify endpoint</span>
+        <select class="ar-field__input" (change)="setCfg(step.localId, 'subscriptionId', $any($event.target).value)">
+          <option value="">Choose an endpoint…</option>
+          @for (w of webhookOptions(); track w.id) {
+            <option [value]="w.id" [selected]="w.id === cfg(step, 'subscriptionId')">{{ w.name }}</option>
+          }
+        </select>
+      </label>
+      <p class="node__blurb">
+        Endpoints are added under Integrations. This sends them an “automation step” event.
+      </p>
+    }
+    @case (NK.StartFlow) {
+      <p class="node__blurb node__blurb--warn">
+        The engine doesn't run this step yet — it passes straight through. Delete it, or start
+        the flow from a template or campaign instead.
+      </p>
+    }
+  }
+</ng-template>
 
 <!--
   One list of steps, drawn recursively: the top-level chain, and the "Otherwise" list a
@@ -38,181 +220,11 @@
           <button type="button" class="node__btn node__btn--del" title="Delete" (click)="remove(step.localId)">×</button>
         </div>
 
-        @switch (step.kind) {
-          @case (NK.SendSessionMessage) {
-            <label class="ar-field">
-              <span class="ar-field__label">Message</span>
-              <textarea
-                class="ar-field__input"
-                rows="2"
-                [value]="cfg(step, 'text')"
-                (input)="setCfg(step.localId, 'text', $any($event.target).value)"
-              ></textarea>
-            </label>
-            <p class="node__blurb">Free-form, so it only goes out while the 24-hour window is open.</p>
-          }
-          @case (NK.SendTemplate) {
-            <label class="ar-field">
-              <span class="ar-field__label">Template</span>
-              <select class="ar-field__input" (change)="setCfg(step.localId, 'templateId', $any($event.target).value)">
-                <option value="">Choose a template…</option>
-                @for (t of templateOptions(); track t.id) {
-                  <option [value]="t.id" [selected]="t.id === cfg(step, 'templateId')">{{ t.name }}</option>
-                }
-              </select>
-            </label>
-          }
-          @case (NK.Wait) {
-            <div class="ar-field-row">
-              <label class="ar-field ab__narrow">
-                <span class="ar-field__label">Wait for</span>
-                <input
-                  class="ar-field__input"
-                  type="number"
-                  min="1"
-                  [value]="waitAmount(step)"
-                  (input)="setWait(step, +$any($event.target).value, waitUnit(step))"
-                />
-              </label>
-              <label class="ar-field ab__narrow">
-                <span class="ar-field__label">&nbsp;</span>
-                <select class="ar-field__input" (change)="setWait(step, waitAmount(step), $any($event.target).value)">
-                  @for (u of units; track u) {
-                    <option [value]="u" [selected]="u === waitUnit(step)">{{ u }}</option>
-                  }
-                </select>
-              </label>
-            </div>
-          }
-          @case (NK.WaitForReply) {
-            <label class="ar-field ab__narrow">
-              <span class="ar-field__label">Wait for a reply (hours)</span>
-              <input
-                class="ar-field__input"
-                type="number"
-                min="1"
-                [value]="cfg(step, 'hours')"
-                (input)="setNum(step.localId, 'hours', $any($event.target).value)"
-              />
-            </label>
-            <p class="node__blurb">If they reply, the steps below this one run.</p>
-          }
-          @case (NK.Condition) {
-            <div class="ar-field-row">
-              <label class="ar-field">
-                <span class="ar-field__label">If the contact's</span>
-                <select class="ar-field__input" (change)="setFieldChoice(step.localId, $any($event.target).value)">
-                  @for (f of conditionFields; track f.value) {
-                    <option [value]="f.value" [selected]="f.value === fieldChoice(step)">{{ f.label }}</option>
-                  }
-                  <option value="attr." [selected]="fieldChoice(step) === 'attr.'">Custom attribute…</option>
-                </select>
-              </label>
-              @if (fieldChoice(step) === 'attr.') {
-                <label class="ar-field">
-                  <span class="ar-field__label">Attribute key</span>
-                  <input
-                    class="ar-field__input"
-                    placeholder="plant_location"
-                    [value]="attributeKey(step)"
-                    (input)="setAttributeKey(step.localId, $any($event.target).value)"
-                  />
-                </label>
-              }
-              <label class="ar-field">
-                <span class="ar-field__label">&nbsp;</span>
-                <select class="ar-field__input" (change)="setCfg(step.localId, 'operator', $any($event.target).value)">
-                  @for (o of operators; track o.value) {
-                    <option [value]="o.value" [selected]="o.value === cfg(step, 'operator')">{{ o.label }}</option>
-                  }
-                </select>
-              </label>
-              @if (needsValue(step)) {
-                <label class="ar-field">
-                  <span class="ar-field__label">Value</span>
-                  <input
-                    class="ar-field__input"
-                    [value]="cfg(step, 'value')"
-                    (input)="setCfg(step.localId, 'value', $any($event.target).value)"
-                  />
-                </label>
-              }
-            </div>
-            <p class="node__blurb">If it holds, the steps below this one run.</p>
-          }
-          @case (NK.AssignAgent) {
-            <label class="ar-field">
-              <span class="ar-field__label">Assign to</span>
-              <select class="ar-field__input" (change)="setCfg(step.localId, 'userId', $any($event.target).value)">
-                <option value="">Choose a person…</option>
-                @for (a of agentOptions(); track a.id) {
-                  <option [value]="a.id" [selected]="a.id === cfg(step, 'userId')">{{ a.name }}</option>
-                }
-              </select>
-            </label>
-          }
-          @case (NK.UpdateAttribute) {
-            <div class="ar-field-row">
-              <label class="ar-field">
-                <span class="ar-field__label">Attribute key</span>
-                <input
-                  class="ar-field__input"
-                  [value]="cfg(step, 'key')"
-                  (input)="setCfg(step.localId, 'key', $any($event.target).value)"
-                />
-              </label>
-              <label class="ar-field">
-                <span class="ar-field__label">Set it to</span>
-                <input
-                  class="ar-field__input"
-                  [value]="cfg(step, 'value')"
-                  (input)="setCfg(step.localId, 'value', $any($event.target).value)"
-                />
-              </label>
-            </div>
-          }
-          @case (NK.CreateEnquiry) {
-            <div class="ar-field-row">
-              <label class="ar-field">
-                <span class="ar-field__label">Enquiry title</span>
-                <input
-                  class="ar-field__input"
-                  placeholder="From automation"
-                  [value]="cfg(step, 'subject')"
-                  (input)="setCfg(step.localId, 'subject', $any($event.target).value)"
-                />
-              </label>
-              <label class="ar-field">
-                <span class="ar-field__label">Owner <span class="ar-field__opt">(optional)</span></span>
-                <select class="ar-field__input" (change)="setCfg(step.localId, 'ownerUserId', $any($event.target).value)">
-                  <option value="">Unassigned</option>
-                  @for (a of agentOptions(); track a.id) {
-                    <option [value]="a.id" [selected]="a.id === cfg(step, 'ownerUserId')">{{ a.name }}</option>
-                  }
-                </select>
-              </label>
-            </div>
-          }
-          @case (NK.Webhook) {
-            <label class="ar-field">
-              <span class="ar-field__label">Notify endpoint</span>
-              <select class="ar-field__input" (change)="setCfg(step.localId, 'subscriptionId', $any($event.target).value)">
-                <option value="">Choose an endpoint…</option>
-                @for (w of webhookOptions(); track w.id) {
-                  <option [value]="w.id" [selected]="w.id === cfg(step, 'subscriptionId')">{{ w.name }}</option>
-                }
-              </select>
-            </label>
-            <p class="node__blurb">
-              Endpoints are added under Integrations. This sends them an “automation step” event.
-            </p>
-          }
-          @case (NK.StartFlow) {
-            <p class="node__blurb node__blurb--warn">
-              The engine doesn't run this step yet — it passes straight through. Delete it, or start
-              the flow from a template or campaign instead.
-            </p>
-          }
+        <ng-container *ngTemplateOutlet="config; context: { $implicit: step }" />
+        @if (step.kind === NK.WaitForReply) {
+          <p class="node__blurb">If they reply, the steps below this one run.</p>
+        } @else if (step.kind === NK.Condition) {
+          <p class="node__blurb">If it holds, the steps below this one run.</p>
         }
 
         @if (isBranching(step.kind)) {
@@ -282,17 +294,20 @@
   }
 </ng-template>
 
-<div class="ab ar-scroll">
+<div class="ab ar-scroll" [class.ab--wide]="mode() === 'canvas'">
   @if (loading()) {
     <p class="ab__empty">Loading…</p>
   } @else {
-    @if (notRepresentable(); as why) {
+    @if (mode() === 'list' && notRepresentable(); as why) {
       <p class="ab__warn">
-        This automation can't be edited here: {{ why }}. The step list would rewrite it into
-        something different, so Save is turned off. Its steps are shown as far as they can be read.
+        This automation can't be shown as a list: {{ why }}. Open it on the Canvas to edit it — Save is
+        turned off here so the list doesn't rewrite it into something different.
       </p>
     }
-    @if (issues().length > 0) {
+    @if (notice(); as n) {
+      <p class="ab__warn" role="status">{{ n }}</p>
+    }
+    @if (mode() === 'list' && issues().length > 0) {
       <ul class="ab__issues">
         @for (issue of issues(); track $index) {
           <li>{{ issue }}</li>
@@ -308,100 +323,184 @@
       <div class="node__mark"><ar-icon name="automation" [size]="15" /></div>
       <div class="node__body">
         <h2 class="node__title">When this happens</h2>
-        <label class="ar-field">
-          <span class="ar-field__label">Automation name</span>
-          <input class="ar-field__input" [value]="name()" (input)="name.set($any($event.target).value)" />
-        </label>
-        @if (trigger() === TK.InboundKeyword) {
+        <div class="ab__trigger-fields">
           <label class="ar-field">
-            <span class="ar-field__label">Keywords <span class="ar-field__opt">(comma-separated)</span></span>
-            <input
-              class="ar-field__input"
-              placeholder="PRICE, RATE, QUOTE"
-              [value]="keywords()"
-              (input)="keywords.set($any($event.target).value)"
-            />
+            <span class="ar-field__label">Automation name</span>
+            <input class="ar-field__input" [value]="name()" (input)="name.set($any($event.target).value)" />
           </label>
-        } @else if (trigger() === TK.EnquiryStageChanged) {
-          <label class="ar-field">
-            <span class="ar-field__label">Pipeline <span class="ar-field__opt">optional</span></span>
-            <select
-              class="ar-field__input"
-              (change)="stagePipelineId.set($any($event.target).value); stageId.set('')"
-            >
-              <option value="" [selected]="!stagePipelineId()">Any pipeline</option>
-              @for (p of pipelines(); track p.id) {
-                <option [value]="p.id" [selected]="p.id === stagePipelineId()">{{ p.name }}</option>
-              }
-            </select>
-          </label>
-          @if (stagePipelineId()) {
+          @if (trigger() === TK.InboundKeyword) {
             <label class="ar-field">
-              <span class="ar-field__label">When a deal reaches</span>
-              <select class="ar-field__input" (change)="stageId.set($any($event.target).value)">
-                <option value="" [selected]="!stageId()">Any stage</option>
-                @for (s of stagesOfPipeline(); track s.id) {
-                  <option [value]="s.id" [selected]="s.id === stageId()">{{ s.name }}</option>
+              <span class="ar-field__label">Keywords <span class="ar-field__opt">(comma-separated)</span></span>
+              <input
+                class="ar-field__input"
+                placeholder="PRICE, RATE, QUOTE"
+                [value]="keywords()"
+                (input)="keywords.set($any($event.target).value)"
+              />
+            </label>
+          } @else if (trigger() === TK.EnquiryStageChanged) {
+            <label class="ar-field">
+              <span class="ar-field__label">Pipeline <span class="ar-field__opt">optional</span></span>
+              <select
+                class="ar-field__input"
+                (change)="stagePipelineId.set($any($event.target).value); stageId.set('')"
+              >
+                <option value="" [selected]="!stagePipelineId()">Any pipeline</option>
+                @for (p of pipelines(); track p.id) {
+                  <option [value]="p.id" [selected]="p.id === stagePipelineId()">{{ p.name }}</option>
                 }
               </select>
             </label>
+            @if (stagePipelineId()) {
+              <label class="ar-field">
+                <span class="ar-field__label">When a deal reaches</span>
+                <select class="ar-field__input" (change)="stageId.set($any($event.target).value)">
+                  <option value="" [selected]="!stageId()">Any stage</option>
+                  @for (s of stagesOfPipeline(); track s.id) {
+                    <option [value]="s.id" [selected]="s.id === stageId()">{{ s.name }}</option>
+                  }
+                </select>
+              </label>
+            }
+          } @else {
+            <p class="node__blurb">Trigger: {{ trigger() }} — configured on the automation list.</p>
           }
-        } @else {
-          <p class="node__blurb">Trigger: {{ trigger() }} — configured on the automation list.</p>
-        }
+        </div>
       </div>
     </section>
 
-    <ng-container *ngTemplateOutlet="stepList; context: { $implicit: steps(), owner: 'root' }" />
+    @if (mode() === 'list') {
+      <ng-container *ngTemplateOutlet="stepList; context: { $implicit: steps(), owner: 'root' }" />
 
-    <!-- ── Flow map: the same automation drawn as the graph the engine runs ─────────── -->
-    <section class="map">
-      <h3 class="map__title">Flow map</h3>
-      @if (flowMap(); as m) {
-        <svg
-          class="map__svg"
-          role="img"
-          aria-label="The automation drawn as a flow: solid arrows are the main path, dashed arrows are the otherwise path"
-          [attr.viewBox]="'0 0 ' + m.width + ' ' + m.height"
-          [style.max-width.px]="m.width"
-        >
-          <defs>
-            <marker id="ab-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
-              <path d="M0 0L8 4L0 8z" fill="currentColor" />
-            </marker>
-          </defs>
-          @for (e of m.edges; track $index) {
-            <path
-              [attr.d]="e.d"
-              class="map__edge"
-              [class.map__edge--else]="e.otherwise"
-              marker-end="url(#ab-arrow)"
-            />
-            @if (e.label) {
-              <text class="map__edgelabel" [attr.x]="e.lx" [attr.y]="e.ly">{{ e.label }}</text>
+      <!-- ── Flow map: the same automation drawn as the graph the engine runs ─────────── -->
+      <section class="map">
+        <h3 class="map__title">Flow map</h3>
+        @if (flowMap(); as m) {
+          <svg
+            class="map__svg"
+            role="img"
+            aria-label="The automation drawn as a flow: solid arrows are the main path, dashed arrows are the otherwise path"
+            [attr.viewBox]="'0 0 ' + m.width + ' ' + m.height"
+            [style.max-width.px]="m.width"
+          >
+            <defs>
+              <marker id="ab-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+                <path d="M0 0L8 4L0 8z" fill="currentColor" />
+              </marker>
+            </defs>
+            @for (e of m.edges; track $index) {
+              <path
+                [attr.d]="e.d"
+                class="map__edge"
+                [class.map__edge--else]="e.otherwise"
+                marker-end="url(#ab-arrow)"
+              />
+              @if (e.label) {
+                <text class="map__edgelabel" [attr.x]="e.lx" [attr.y]="e.ly">{{ e.label }}</text>
+              }
+            }
+            @for (n of m.nodes; track n.id) {
+              <g [attr.transform]="'translate(' + n.x + ',' + n.y + ')'">
+                <rect
+                  class="map__node"
+                  [class.map__node--branch]="n.branching"
+                  [class.map__node--end]="n.terminal"
+                  [attr.width]="m.nodeW"
+                  [attr.height]="m.nodeH"
+                  rx="8"
+                />
+                <text class="map__nodetext" [attr.x]="m.nodeW / 2" [attr.y]="m.nodeH / 2 + 4">{{ n.label }}</text>
+              </g>
+            }
+          </svg>
+        }
+      </section>
+
+      <div class="rail"><span class="rail__line rail__line--end"></span></div>
+      <section class="node node--end">
+        <div class="node__mark"><ar-icon name="check" [size]="15" /></div>
+        <div class="node__body"><h3 class="node__title">End</h3></div>
+      </section>
+    } @else {
+      <!-- ── Canvas ─────────────────────────────────────────────────── -->
+      <div class="ab__canvas">
+        <ar-automation-canvas
+          class="ab__board"
+          [nodes]="nodes()"
+          [selected]="selectedId()"
+          [flagged]="flagged()"
+          [describe]="describeNode"
+          [palette]="palette"
+          [canUndo]="canUndo()"
+          (edit)="commit($event)"
+          (select)="selectedId.set($event)"
+          (add)="addFromPalette($event)"
+          (refused)="notice.set($event)"
+          (undo)="undoCanvas()"
+          (tidy)="tidyCanvas()"
+        />
+
+        <aside class="ab__panel" aria-label="Selected step">
+          @if (selectedNode(); as n) {
+            <div class="node__head">
+              <ar-icon [name]="meta(n.kind).icon" [size]="15" />
+              <h3 class="node__title">{{ n.kind === NK.Trigger ? 'When this happens' : meta(n.kind).label }}</h3>
+              @if (n.entered != null) {
+                <ar-chip tone="neutral">{{ n.entered }} in · {{ n.exited ?? 0 }} out</ar-chip>
+              }
+            </div>
+
+            @if (n.kind === NK.Trigger) {
+              <p class="node__blurb">The trigger's settings are above. Every contact it enrols starts here.</p>
+            } @else if (n.kind === NK.End) {
+              <p class="node__blurb">
+                A path that reaches End stops. So does a way out with nothing joined to it — End just makes it explicit.
+              </p>
+            } @else if (selectedStep(); as step) {
+              <ng-container *ngTemplateOutlet="config; context: { $implicit: step }" />
+              @for (p of canvasProblems().get(n.id) ?? []; track p) {
+                <p class="ab__panel-issue">{{ p }}</p>
+              }
+            }
+
+            @for (p of ports(n.kind); track p) {
+              <label class="ar-field">
+                <span class="ar-field__label">{{ portName(n.kind, p) }}</span>
+                <select class="ar-field__input" (change)="setLink(n.id, p, $any($event.target).value)">
+                  <option value="" [selected]="!linkOf(n, p)">Nothing — the journey ends here</option>
+                  @for (t of targetsFor(n, p); track t.id) {
+                    <option [value]="t.id" [selected]="t.id === linkOf(n, p)">{{ t.label }}</option>
+                  }
+                </select>
+              </label>
+            }
+
+            @if (!isFixed(n.kind)) {
+              <button ar-button type="button" variant="ghost" (click)="deleteSelected()">Delete step</button>
+            }
+          } @else {
+            <p class="node__blurb">
+              Select a step to change it. Drag from the dot on a step's bottom edge to the step that should come next; a
+              dot left hollow ends the journey there.
+            </p>
+            @if (canvasIssues().length > 0) {
+              <p class="ab__panel-h">To fix before saving</p>
+              <ul class="ab__panel-list">
+                @for (i of canvasIssues(); track $index) {
+                  <li><button type="button" class="ab__link" (click)="selectedId.set(i.id)">{{ i.text }}</button></li>
+                }
+              </ul>
             }
           }
-          @for (n of m.nodes; track n.id) {
-            <g [attr.transform]="'translate(' + n.x + ',' + n.y + ')'">
-              <rect
-                class="map__node"
-                [class.map__node--branch]="n.branching"
-                [class.map__node--end]="n.terminal"
-                [attr.width]="m.nodeW"
-                [attr.height]="m.nodeH"
-                rx="8"
-              />
-              <text class="map__nodetext" [attr.x]="m.nodeW / 2" [attr.y]="m.nodeH / 2 + 4">{{ n.label }}</text>
-            </g>
-          }
-        </svg>
-      }
-    </section>
 
-    <div class="rail"><span class="rail__line rail__line--end"></span></div>
-    <section class="node node--end">
-      <div class="node__mark"><ar-icon name="check" [size]="15" /></div>
-      <div class="node__body"><h3 class="node__title">End</h3></div>
-    </section>
+          @if (stranded().length > 0) {
+            <p class="ab__panel-note">
+              {{ stranded().length }} step{{ stranded().length === 1 ? ' is' : 's are' }} not joined to the trigger, so no
+              contact will reach {{ stranded().length === 1 ? 'it. It is saved as it is.' : 'them. They are saved as they are.' }}
+            </p>
+          }
+        </aside>
+      </div>
+    }
   }
 </div>

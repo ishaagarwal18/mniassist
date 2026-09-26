@@ -1,5 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+
+import { environment } from '../../../environments/environment';
+import { SmsChannelService, SmsTemplateDto } from '../../proxy/sms/sms-channel.service';
 import { InboxService } from '../../core/services/inbox.service';
+import { previewSms, sendableSmsTemplates, smsVariablesComplete } from './sms-logic';
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../core/auth/permission';
+import { PaymentService } from '../../proxy/payments/payment.service';
+import { amountProblem } from '../payments/payment-logic';
 import { Conversation } from '../../core/models/conversation.model';
 import { untilLabel } from '../../core/util/format';
 import { tickingNow } from '../../core/util/now';
@@ -106,6 +115,112 @@ export class ArInbox {
       }
       this.draft.set('');
       this.attached.set(null);
+    } finally {
+      this.sending.set(false);
+    }
+  }
+
+  // ---- SMS replies: an approved DLT template, never free text -----------------------------------------------------
+
+  private readonly sms = inject(SmsChannelService);
+  private smsTemplatesLoaded = false;
+  protected readonly smsTemplates = signal<SmsTemplateDto[]>([]);
+  protected readonly smsTemplate = signal<SmsTemplateDto | null>(null);
+  protected readonly smsValues = signal<Record<string, string>>({});
+  protected readonly smsError = signal<string | null>(null);
+
+  protected readonly smsPreview = computed(() => {
+    const t = this.smsTemplate();
+    return t ? previewSms(t, this.smsValues()) : '';
+  });
+
+  protected readonly smsReady = computed(() => {
+    const t = this.smsTemplate();
+    return !!t && smsVariablesComplete(t, this.smsValues());
+  });
+
+  constructor() {
+    // Templates are fetched the first time an SMS conversation is opened, not for every inbox visit.
+    effect(() => {
+      if (!this.selected()?.sms || this.smsTemplatesLoaded || environment.useMockData) return;
+      this.smsTemplatesLoaded = true;
+      untracked(() => {
+        firstValueFrom(this.sms.getTemplates())
+          .then((all) => this.smsTemplates.set(sendableSmsTemplates(all)))
+          .catch(() => this.smsTemplatesLoaded = false);
+      });
+    });
+  }
+
+  protected pickSmsTemplate(id: string): void {
+    this.smsTemplate.set(this.smsTemplates().find((t) => t.id === id) ?? null);
+    this.smsValues.set({});
+  }
+
+  protected smsValue(name: string): string {
+    return Object.hasOwn(this.smsValues(), name) ? this.smsValues()[name] : '';
+  }
+
+  protected setSmsValue(name: string, value: string): void {
+    this.smsValues.update((v) => ({ ...v, [name]: value }));
+  }
+
+  protected async sendSms(contactId: string | undefined): Promise<void> {
+    const t = this.smsTemplate();
+    if (!t || !contactId || !this.smsReady()) return;
+    this.sending.set(true);
+    this.smsError.set(null);
+    try {
+      await firstValueFrom(this.sms.send({ contactId, templateId: t.id, variables: this.smsValues() }));
+      this.smsTemplate.set(null);
+      this.smsValues.set({});
+      this.inbox.reload();
+    } catch (e: unknown) {
+      this.smsError.set((e as { error?: { error?: { message?: string } } })?.error?.error?.message ?? 'The SMS could not be sent.');
+    } finally {
+      this.sending.set(false);
+    }
+  }
+
+  // ---- Payment requests (BillDesk) -----------------------------------------------------------------------------------
+
+  private readonly paymentsApi = inject(PaymentService);
+  protected readonly canRequestPayment = grantedPolicy('AutoReach.Payments.Request', inject(PermissionService));
+  protected readonly paymentOpen = signal(false);
+  protected readonly payAmount = signal('');
+  protected readonly payDescription = signal('');
+  protected readonly payError = signal<string | null>(null);
+
+  protected openPayment(): void {
+    this.payAmount.set('');
+    this.payDescription.set('');
+    this.payError.set(null);
+    this.paymentOpen.set(true);
+  }
+
+  protected async requestPayment(conversationId: string): Promise<void> {
+    const problem = amountProblem(this.payAmount());
+    if (problem) {
+      this.payError.set(problem);
+      return;
+    }
+    if (!this.payDescription().trim()) {
+      this.payError.set("Say what it's for, so the customer recognises it.");
+      return;
+    }
+
+    this.sending.set(true);
+    this.payError.set(null);
+    try {
+      await firstValueFrom(this.paymentsApi.create({
+        conversationId,
+        amount: Number(this.payAmount().trim().replace(/,/g, '')),
+        description: this.payDescription().trim(),
+      }));
+      this.paymentOpen.set(false);
+      this.inbox.reload();
+    } catch (e: unknown) {
+      this.payError.set((e as { error?: { error?: { message?: string } } })?.error?.error?.message ?? 'The payment link could not be sent.');
     } finally {
       this.sending.set(false);
     }

@@ -248,7 +248,10 @@
           <p class="es__hint">
             @if (r.succeeded) {
               {{ r.imported }} {{ r.imported === 1 ? 'reply' : 'replies' }} added, {{ r.skipped }} skipped, {{ r.bounces }}
-              {{ r.bounces === 1 ? 'address' : 'addresses' }} stopped after a failed-delivery notice.
+              {{ r.bounces === 1 ? 'address' : 'addresses' }} stopped after failed deliveries{{ r.complaints ? ',' : '.' }}
+              @if (r.complaints) {
+                {{ r.complaints }} after a spam complaint.
+              }
               @if (r.moreWaiting) {
                 More is waiting; check again.
               }

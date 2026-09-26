@@ -14,6 +14,7 @@ import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
+import { ArErpSyncSection } from './erp-sync-section';
 
 /** The CRM kinds with real deal/contact sync — matches ICrmDealSync/ICrmContactSync's
  * actual registered implementations, not every IntegrationKind. */
@@ -112,7 +113,7 @@ const DELIVERY_TONE: Record<string, ChipTone> = {
  */
 @Component({
   selector: 'ar-integrations',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArDialog, ArErpSyncSection],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './integrations.html',
   styleUrl: './integrations.scss',

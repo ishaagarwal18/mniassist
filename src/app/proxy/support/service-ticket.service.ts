@@ -12,7 +12,9 @@ import type {
   ServiceTicketCommentDto,
   ServiceTicketDetailDto,
   ServiceTicketDto,
+  ServiceTicketSettingsDto,
   ServiceTicketSummaryDto,
+  SetServiceTicketSettingsInput,
   SetTicketPriorityInput,
   SetTicketStatusInput,
   UpdateServiceTicketDetailsInput,
@@ -103,6 +105,18 @@ export class ServiceTicketService {
   recordSatisfaction = (id: string, input: RecordTicketSatisfactionInput, config?: Partial<Rest.Config>) =>
     this.restService.request<RecordTicketSatisfactionInput, ServiceTicketDto>(
       { method: 'POST', url: `/api/auto-reach/service-ticket/${id}/record-satisfaction`, body: input },
+      { apiName: this.apiName, ...config },
+    );
+
+  getSettings = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ServiceTicketSettingsDto>(
+      { method: 'GET', url: '/api/auto-reach/service-ticket/settings' },
+      { apiName: this.apiName, ...config },
+    );
+
+  setSettings = (input: SetServiceTicketSettingsInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<SetServiceTicketSettingsInput, ServiceTicketSettingsDto>(
+      { method: 'POST', url: '/api/auto-reach/service-ticket/set-settings', body: input },
       { apiName: this.apiName, ...config },
     );
 }

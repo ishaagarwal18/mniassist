@@ -271,6 +271,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Channels',
       },
       {
+        label: 'Payments',
+        icon: 'billing',
+        route: '/settings/payments',
+        permission: 'AutoReach.Payments',
+      },
+      {
         label: 'Support access',
         icon: 'user',
         route: '/settings/support-access',

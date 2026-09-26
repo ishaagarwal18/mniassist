@@ -1,5 +1,6 @@
 export * from './crm-oauth.service';
 export * from './crm-sync.service';
+export * from './erp-sync.service';
 export * from './integration-kind.enum';
 export * from './integration-state.enum';
 export * from './integration.service';

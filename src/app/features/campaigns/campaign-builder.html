@@ -106,6 +106,9 @@
                   Anyone without enough history goes out at the normal time, and no one is held more
                   than a day. Takes effect when the campaign is sent.
                 </span>
+                @if (preflight(); as pf) {
+                  <span class="timing__coverage">{{ coverage(pf.learnedSendHourRecipients, pf.recipients) }}</span>
+                }
               </span>
             </label>
           }

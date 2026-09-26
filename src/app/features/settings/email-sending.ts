@@ -298,7 +298,7 @@ export class ArEmailSending {
     this.syncResult.set(null);
     try {
       const result = this.mock
-        ? { succeeded: true, imported: 0, skipped: 0, bounces: 0, moreWaiting: false }
+        ? { succeeded: true, imported: 0, skipped: 0, bounces: 0, complaints: 0, moreWaiting: false }
         : await firstValueFrom(this.api.syncNow());
       this.syncResult.set(result);
       if (!this.mock) this.apply(await firstValueFrom(this.api.getOrCreate()));

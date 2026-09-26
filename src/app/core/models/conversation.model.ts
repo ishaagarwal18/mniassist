@@ -49,8 +49,10 @@ export interface Conversation {
   readonly phoneE164: string;
   /** Set only for a channel that is not WhatsApp (Messenger, Instagram) — those contacts have no phone. */
   readonly channel?: string;
-  /** True for a channel with no service window to reopen (email): the composer is never locked. */
+  /** True for a channel with no service window to reopen (email, SMS): the composer is never locked. */
   readonly windowless?: boolean;
+  /** An SMS conversation: replies are approved DLT templates only, never free text. */
+  readonly sms?: boolean;
   readonly snippet: string;
   readonly at: string;
   readonly unread: number;
