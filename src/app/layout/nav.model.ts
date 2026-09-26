@@ -122,6 +122,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.InstalledBase',
       },
       {
+        label: 'AMC renewals',
+        icon: 'refresh',
+        route: '/renewals',
+        permission: 'AutoReach.Renewals',
+      },
+      {
         label: 'Documents',
         icon: 'document',
         route: '/documents',

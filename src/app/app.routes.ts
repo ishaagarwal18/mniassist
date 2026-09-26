@@ -153,6 +153,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/pipeline/quotations').then((m) => m.ArQuotations),
       },
       {
+        path: 'renewals',
+        title: 'AMC renewals · AutoReach',
+        loadComponent: () => import('./features/pipeline/renewals').then((m) => m.ArRenewals),
+      },
+      {
         path: 'installed-base',
         title: 'Installed base · AutoReach',
         loadComponent: () =>

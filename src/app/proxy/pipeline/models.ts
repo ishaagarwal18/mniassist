@@ -40,6 +40,10 @@ export interface CreateUpdateInstalledAssetDto {
   amcEndsOn?: string | null;
   calibrationDueOn?: string | null;
   preventiveMaintenanceIntervalDays?: number | null;
+  /** The current AMC term's value in paise, before GST — the renewal quote starts from it. */
+  amcValueInPaise?: number | null;
+  /** AMC term in months; empty means twelve. */
+  amcTermMonths?: number | null;
 }
 
 export interface CreateUpdateQuotationDto {
@@ -175,6 +179,8 @@ export interface InstalledAssetDto extends FullAuditedEntityDto<string> {
   preventiveMaintenanceIntervalDays?: number | null;
   lastServicedOn?: string | null;
   isRetired?: boolean;
+  amcValueInPaise?: number | null;
+  amcTermMonths?: number | null;
   nextDueKind?: ReminderKind | null;
   nextDueOn?: string | null;
 }

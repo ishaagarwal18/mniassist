@@ -54,6 +54,28 @@
     </div>
     <div class="ar-field-row">
       <label class="ar-field">
+        <span class="ar-field__label">AMC value (₹, before GST) <span class="ar-field__opt">(optional)</span></span>
+        <input
+          class="ar-field__input"
+          inputmode="decimal"
+          placeholder="e.g. 42000"
+          [value]="f().amcValue"
+          (input)="patchAsset('amcValue', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">AMC term (months) <span class="ar-field__opt">(default 12)</span></span>
+        <input
+          class="ar-field__input"
+          inputmode="numeric"
+          placeholder="12"
+          [value]="f().amcTermMonths"
+          (input)="patchAsset('amcTermMonths', $any($event.target).value)"
+        />
+      </label>
+    </div>
+    <div class="ar-field-row">
+      <label class="ar-field">
         <span class="ar-field__label">Make</span>
         <input
           class="ar-field__input"

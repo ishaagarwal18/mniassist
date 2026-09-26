@@ -5,6 +5,7 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { ArContactPicker } from './contact-picker';
+import { amcCommercials } from './renewal-logic';
 
 /**
  * Installed base (M10). Every machine with its AMC / calibration / warranty dates —
@@ -39,6 +40,8 @@ export class ArInstalledBase {
     siteName: '',
     siteCity: '',
     amcEndsOn: '',
+    amcValue: '',
+    amcTermMonths: '',
   });
 
   protected patchAsset(key: keyof ReturnType<ArInstalledBase['f']>, value: string): void {
@@ -55,6 +58,8 @@ export class ArInstalledBase {
       siteName: '',
       siteCity: '',
       amcEndsOn: '',
+      amcValue: '',
+      amcTermMonths: '',
     });
     this.error.set(null);
     this.dialogOpen.set(true);
@@ -64,6 +69,11 @@ export class ArInstalledBase {
     const v = this.f();
     if (!v.description.trim()) {
       window.alert('Describe the machine — e.g. “Line 3 VFD panel”.');
+      return;
+    }
+    const amc = amcCommercials(v.amcValue, v.amcTermMonths);
+    if (typeof amc === 'string') {
+      this.error.set(amc);
       return;
     }
     this.saving.set(true);
@@ -78,6 +88,8 @@ export class ArInstalledBase {
         siteName: v.siteName.trim() || undefined,
         siteCity: v.siteCity.trim() || undefined,
         amcEndsOn: v.amcEndsOn || undefined,
+        amcValueInPaise: amc.valueInPaise,
+        amcTermMonths: amc.termMonths,
       });
       this.dialogOpen.set(false);
     } catch (e: unknown) {

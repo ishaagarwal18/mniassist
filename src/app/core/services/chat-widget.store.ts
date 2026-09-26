@@ -49,6 +49,7 @@ export const SOURCE_LABEL: Record<LeadSource, string> = {
   [LeadSource.Referral]: 'Referral',
   [LeadSource.Import]: 'Import',
   [LeadSource.Dealer]: 'Dealer',
+  [LeadSource.Renewal]: 'AMC renewal',
 };
 
 function toEntryPoint(dto: ChatEntryPointDto): ChatEntryPoint {
