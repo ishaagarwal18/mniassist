@@ -89,3 +89,18 @@ export function upliftBasisPoints(percentText: string): number | null {
   const bp = Math.round(Number(t) * 100);
   return bp < -5000 || bp > 10000 ? null : bp;
 }
+
+/** The chip on an installed-base row: what the machine's latest AMC renewal is doing. */
+export function renewalChip(status: RenewalStatus): { label: string; tone: ChipTone } {
+  const tone: ChipTone =
+    status === RenewalStatus.Won
+      ? 'good'
+      : status === RenewalStatus.Interested
+        ? 'teal'
+        : status === RenewalStatus.Quoted
+          ? 'amber'
+          : status === RenewalStatus.Lapsed
+            ? 'bad'
+            : 'neutral';
+  return { label: `Renewal: ${RENEWAL_STATUS_LABEL[status].toLowerCase()}`, tone };
+}

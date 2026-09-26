@@ -154,6 +154,11 @@
             <span> · {{ a.site }}</span>
           }
         </p>
+        @if (renewal(a); as r) {
+          <a class="asset__renewal" routerLink="/renewals" title="Open the AMC Renewal Desk">
+            <ar-chip [tone]="r.tone" [dot]="true">{{ r.label }}</ar-chip>
+          </a>
+        }
       </div>
       <div class="asset__due">
         @if (a.nextDueKind) {

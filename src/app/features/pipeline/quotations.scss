@@ -70,3 +70,35 @@
   gap: 4px;
   justify-content: flex-end;
 }
+
+.issue__check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font: 400 13px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+  margin: 4px 0;
+}
+.issue__notice {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font: 500 13px var(--ar-font-sans);
+  color: var(--ar-good-700, #067647);
+  background: var(--ar-good-50, #ecfdf3);
+}
+.issue__notice--warn {
+  color: var(--ar-amber-800, #93370d);
+  background: var(--ar-amber-50, #fffaeb);
+}
+.issue__x {
+  border: 0;
+  background: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: inherit;
+}

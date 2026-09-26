@@ -3,6 +3,7 @@ import {
   amcCommercials,
   daysLeft,
   groupByStatus,
+  renewalChip,
   renewalTone,
   upliftBasisPoints,
   upliftPercent,
@@ -81,5 +82,11 @@ describe('renewal logic', () => {
     expect(upliftBasisPoints('-10')).toBe(-1000);
     expect(upliftBasisPoints('abc')).toBeNull();
     expect(upliftBasisPoints('150')).toBeNull();
+  });
+  it('labels the installed-base renewal chip', () => {
+    expect(renewalChip(RenewalStatus.Quoted)).toEqual({ label: 'Renewal: quoted', tone: 'amber' });
+    expect(renewalChip(RenewalStatus.Won).tone).toBe('good');
+    expect(renewalChip(RenewalStatus.Lapsed).tone).toBe('bad');
+    expect(renewalChip(RenewalStatus.Contacted).label).toBe('Renewal: reminded');
   });
 });

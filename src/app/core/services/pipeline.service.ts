@@ -131,6 +131,14 @@ export interface EnquiryDetail {
   conversationId?: string;
   quotations: Quotation[];
   timeline: EnquiryEvent[];
+  /** Set when this enquiry is an AMC renewal from the Renewal Desk. */
+  renewalOf?: {
+    assetId: string;
+    description: string;
+    serial?: string;
+    site?: string;
+    amcEndsOn?: string;
+  };
 }
 export interface Asset {
   id: string;
@@ -141,6 +149,9 @@ export interface Asset {
   nextDueKind?: string;
   nextDueOn?: string;
   retired: boolean;
+  /** The latest AMC renewal's status (RenewalStatus) and the end date it renews. */
+  renewalStatus?: number;
+  renewalEndsOn?: string;
 }
 
 const STAGE: Record<EnquiryStage, Stage> = {
@@ -229,6 +240,8 @@ function asset(a: InstalledAssetDto): Asset {
     nextDueKind: a.nextDueKind != null ? DUE_KIND[a.nextDueKind] : undefined,
     nextDueOn: a.nextDueOn ?? undefined,
     retired: a.isRetired ?? false,
+    renewalStatus: a.renewalStatus ?? undefined,
+    renewalEndsOn: a.renewalEndsOn ?? undefined,
   };
 }
 
@@ -298,6 +311,15 @@ function enquiryDetail(d: EnquiryDetailDto & { id?: string }): EnquiryDetail {
     })),
     lostReason: d.lostReason ?? undefined,
     conversationId: d.conversationId ?? undefined,
+    renewalOf: d.renewalOf
+      ? {
+          assetId: d.renewalOf.installedAssetId,
+          description: d.renewalOf.description,
+          serial: d.renewalOf.serialNumber ?? undefined,
+          site: d.renewalOf.siteName ?? undefined,
+          amcEndsOn: d.renewalOf.amcEndsOn ?? undefined,
+        }
+      : undefined,
     quotations: (d.quotations ?? []).map(quotation),
     timeline: (d.timeline ?? [])
       .map(enquiryEvent)
@@ -751,6 +773,20 @@ export class PipelineStore {
         },
       ],
     };
+  }
+
+  /** Issues a draft or revised quotation; returns what happened on WhatsApp when that was asked for. */
+  async issueQuote(
+    id: string,
+    validUntilIso: string,
+    sendOnWhatsApp: boolean,
+    templateId: string | null,
+  ): Promise<{ sent?: boolean | null; note?: string | null }> {
+    const dto = await firstValueFrom(
+      this.quotationApi.issue(id, { validUntilUtc: validUntilIso, sendOnWhatsApp, templateId }),
+    );
+    this.reload();
+    return { sent: dto.sentOnWhatsApp, note: dto.whatsAppNote };
   }
 
   async markQuoteWon(id: string): Promise<void> {

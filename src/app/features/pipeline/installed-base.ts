@@ -5,7 +5,9 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { ArContactPicker } from './contact-picker';
-import { amcCommercials } from './renewal-logic';
+import { RouterLink } from '@angular/router';
+import { RenewalStatus } from '../../proxy/pipeline/amc-renewal.service';
+import { amcCommercials, renewalChip } from './renewal-logic';
 
 /**
  * Installed base (M10). Every machine with its AMC / calibration / warranty dates —
@@ -14,7 +16,7 @@ import { amcCommercials } from './renewal-logic';
  */
 @Component({
   selector: 'ar-installed-base',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArContactPicker],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArContactPicker, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './installed-base.html',
   styleUrl: './installed-base.scss',
@@ -124,6 +126,10 @@ export class ArInstalledBase {
     if (d < 0) return 'bad';
     if (d <= 14) return 'amber';
     return 'neutral';
+  }
+
+  protected renewal(a: Asset): { label: string; tone: ChipTone } | null {
+    return a.renewalStatus == null ? null : renewalChip(a.renewalStatus as RenewalStatus);
   }
 
   protected async recordService(a: Asset): Promise<void> {

@@ -1,3 +1,4 @@
+import { TemplateService } from '../../core/services/template.service';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -48,6 +49,7 @@ const STATE_TONE: Record<QState, ChipTone> = {
 export class ArQuotations {
   private readonly store = inject(PipelineStore);
   private readonly signatures = inject(QuotationSignatureService);
+  private readonly templateStore = inject(TemplateService);
 
   protected readonly quotes = this.store.quotes;
   protected readonly loading = this.store.loading;
@@ -180,6 +182,61 @@ export class ArQuotations {
     const days = Math.round((new Date(q.nextFollowUpAt).getTime() - Date.now()) / 86_400_000);
     if (days <= 0) return 'due now';
     return `in ${days}d`;
+  }
+
+  // ---- Issue dialog -----------------------------------------------------
+  protected readonly issuing = signal<Quotation | null>(null);
+  protected readonly validDays = signal('30');
+  protected readonly issueSendWa = signal(true);
+  protected readonly issueTemplateId = signal('');
+  protected readonly issueError = signal<string | null>(null);
+  protected readonly issueNotice = signal<{ tone: 'good' | 'warn'; text: string } | null>(null);
+  /** Approved templates for when the customer's 24-hour window is closed (name, reference and total fill the variables). */
+  protected readonly issueTemplates = computed(() =>
+    this.templateStore.all().filter((t) => t.status === 'approved' && t.variableCount <= 3),
+  );
+
+  protected canIssue(q: Quotation): boolean {
+    return q.state === 'draft' || q.state === 'revised';
+  }
+
+  protected openIssue(q: Quotation): void {
+    this.validDays.set('30');
+    this.issueSendWa.set(true);
+    this.issueTemplateId.set('');
+    this.issueError.set(null);
+    this.issuing.set(q);
+  }
+
+  protected async issue(): Promise<void> {
+    const q = this.issuing();
+    if (!q) return;
+    const days = Number(this.validDays());
+    if (!Number.isInteger(days) || days < 1 || days > 365) {
+      this.issueError.set('Valid for must be a whole number of days, 1 to 365.');
+      return;
+    }
+    this.busy.set(q.id);
+    this.issueError.set(null);
+    try {
+      const validUntil = new Date(Date.now() + days * 86_400_000).toISOString();
+      const result = await this.store.issueQuote(
+        q.id,
+        validUntil,
+        this.issueSendWa(),
+        this.issueSendWa() && this.issueTemplateId() ? this.issueTemplateId() : null,
+      );
+      this.issuing.set(null);
+      this.issueNotice.set(
+        result.note
+          ? { tone: result.sent ? 'good' : 'warn', text: `${q.reference} issued. ${result.note}` }
+          : { tone: 'good', text: `${q.reference} issued.` },
+      );
+    } catch (e: unknown) {
+      this.issueError.set(e instanceof Error ? e.message : 'The quotation could not be issued.');
+    } finally {
+      this.busy.set(null);
+    }
   }
 
   protected async won(q: Quotation): Promise<void> {

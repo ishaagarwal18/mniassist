@@ -82,6 +82,16 @@ export interface EnquiryDetailDto extends EnquiryDto {
   timeline?: EnquiryEventDto[];
   quotations?: QuotationDto[];
   scoreFactors?: EnquiryScoreFactorDto[];
+  /** The machine this enquiry renews the AMC of, when it came from the Renewal Desk. */
+  renewalOf?: RenewalAssetDto | null;
+}
+
+export interface RenewalAssetDto {
+  installedAssetId: string;
+  description: string;
+  serialNumber?: string | null;
+  siteName?: string | null;
+  amcEndsOn?: string | null;
 }
 
 export interface EnquiryScoreFactorDto {
@@ -181,6 +191,9 @@ export interface InstalledAssetDto extends FullAuditedEntityDto<string> {
   isRetired?: boolean;
   amcValueInPaise?: number | null;
   amcTermMonths?: number | null;
+  /** Where the machine's latest AMC renewal stands (RenewalStatus), when the Renewal Desk tracks one. */
+  renewalStatus?: number | null;
+  renewalEndsOn?: string | null;
   nextDueKind?: ReminderKind | null;
   nextDueOn?: string | null;
 }
@@ -205,6 +218,9 @@ export interface PlanRemindersInput {
 }
 
 export interface QuotationDto extends FullAuditedEntityDto<string> {
+  /** Only on the response to issuing: whether it went to the customer on WhatsApp, and what happened. */
+  sentOnWhatsApp?: boolean | null;
+  whatsAppNote?: string | null;
   reference?: string;
   enquiryId?: string;
   contactId?: string;

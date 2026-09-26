@@ -58,7 +58,81 @@
   <ar-quote-editor [quotationId]="id" (closed)="editorClosed($event)" />
 }
 
+@if (issuing(); as iq) {
+  <ar-dialog [title]="'Issue ' + iq.reference" (dismiss)="issuing.set(null)">
+    <p class="q__dialog-note">
+      Issuing makes the PDF final and starts the follow-up cadence. Total
+      {{ money(iq.totalInPaise) }} including GST.
+    </p>
+    <label class="ar-field" for="issue-days">
+      <span class="ar-field__label">Valid for (days)</span>
+      <input
+        id="issue-days"
+        class="ar-field__input"
+        inputmode="numeric"
+        [value]="validDays()"
+        (input)="validDays.set($any($event.target).value)"
+      />
+    </label>
+    <label class="issue__check" for="issue-wa">
+      <input
+        id="issue-wa"
+        type="checkbox"
+        [checked]="issueSendWa()"
+        (change)="issueSendWa.set($any($event.target).checked)"
+      />
+      Send the PDF to the customer on WhatsApp
+    </label>
+    @if (issueSendWa()) {
+      <label class="ar-field" for="issue-template">
+        <span class="ar-field__label"
+          >Template if their 24-hour window is closed
+          <span class="ar-field__opt">(fills name, reference and total)</span></span
+        >
+        <select
+          id="issue-template"
+          class="ar-field__input"
+          [value]="issueTemplateId()"
+          (change)="issueTemplateId.set($any($event.target).value)"
+        >
+          <option value="">None: send only if the window is open</option>
+          @for (t of issueTemplates(); track t.id) {
+            <option [value]="t.id">{{ t.name }}</option>
+          }
+        </select>
+      </label>
+      <p class="q__dialog-note">
+        If the customer messaged in the last 24 hours, the PDF itself goes. Otherwise WhatsApp only
+        accepts an approved template. You will be told if nothing could be sent.
+      </p>
+    }
+    @if (issueError(); as e) {
+      <p class="q__dialog-err">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="issuing.set(null)">Cancel</button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="busy() === iq.id"
+        (click)="issue()"
+      >
+        {{ busy() === iq.id ? 'Issuing…' : 'Issue' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
+
 <div class="q ar-scroll">
+  @if (issueNotice(); as n) {
+    <p class="issue__notice" [class.issue__notice--warn]="n.tone === 'warn'" role="status">
+      <span>{{ n.text }}</span>
+      <button type="button" class="issue__x" aria-label="Dismiss" (click)="issueNotice.set(null)">
+        ×
+      </button>
+    </p>
+  }
   @if (loading()) {
     <p class="q__empty">Loading…</p>
   }
@@ -114,6 +188,11 @@
             @if (signingAvailable && (canSign(q) || sigChip(q))) {
               <button ar-button variant="ghost" [disabled]="!!busy()" (click)="signingFor.set(q)">
                 Signature
+              </button>
+            }
+            @if (canIssue(q)) {
+              <button ar-button variant="primary" [disabled]="!!busy()" (click)="openIssue(q)">
+                Issue
               </button>
             }
             <button ar-button variant="ghost" [disabled]="!!busy()" (click)="download(q)">

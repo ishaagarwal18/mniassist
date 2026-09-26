@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 
+import { RouterLink } from '@angular/router';
 import { EnquiryStage, LostReasonCategory } from '../../proxy/pipeline';
 import { EnquiryDetail, PipelineStore } from '../../core/services/pipeline.service';
 import { inrCompact } from '../../core/util/format';
@@ -25,7 +26,7 @@ import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
  */
 @Component({
   selector: 'ar-enquiry-drawer',
-  imports: [ArButton, ArChip, ArEnquiryActivities, ArEnquiryCalls, ArEnquiryTickets],
+  imports: [ArButton, ArChip, ArEnquiryActivities, ArEnquiryCalls, ArEnquiryTickets, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="scrim" (click)="close.emit()"></div>
@@ -41,6 +42,23 @@ import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
                 <span class="dh__co"> · {{ d.company }}</span>
               }
             </p>
+            @if (d.renewalOf; as r) {
+              <a class="dh__renewal" routerLink="/installed-base" title="Open the installed base">
+                <ar-chip tone="teal" [dot]="true">AMC renewal</ar-chip>
+                <span
+                  >of {{ r.description }}
+                  @if (r.serial) {
+                    <span class="ar-mono"> ({{ r.serial }})</span>
+                  }
+                  @if (r.site) {
+                    · {{ r.site }}
+                  }
+                  @if (r.amcEndsOn) {
+                    · ends {{ day(r.amcEndsOn) }}
+                  }
+                </span>
+              </a>
+            }
           </div>
           <button type="button" class="dh__x" aria-label="Close" (click)="close.emit()">×</button>
         </header>
@@ -273,6 +291,19 @@ import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
     .dh__title {
       margin: 4px 0 0;
       font: 600 16px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .dh__renewal {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+      text-decoration: none;
+    }
+    .dh__renewal:hover span {
       color: var(--ar-ink-900);
     }
     .dh__contact {
@@ -554,5 +585,13 @@ export class ArEnquiryDrawer {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  protected day(iso: string): string {
+    return new Date(iso).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 }
