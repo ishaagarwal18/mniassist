@@ -43,6 +43,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Contacts',
       },
       {
+        label: 'Account health',
+        icon: 'analytics',
+        route: '/account-health',
+        permission: 'AutoReach.Contacts',
+      },
+      {
         label: 'Duplicates',
         icon: 'contacts',
         route: '/contacts/duplicates',
@@ -126,6 +132,24 @@ export const NAV: readonly NavGroup[] = [
         icon: 'refresh',
         route: '/renewals',
         permission: 'AutoReach.Renewals',
+      },
+      {
+        label: 'Spares due',
+        icon: 'machine',
+        route: '/spares',
+        permission: 'AutoReach.InstalledBase',
+      },
+      {
+        label: 'Collections',
+        icon: 'billing',
+        route: '/collections',
+        permission: 'AutoReach.Collections',
+      },
+      {
+        label: 'Field app',
+        icon: 'phone',
+        route: '/field',
+        permission: 'AutoReach.Helpdesk.Update',
       },
       {
         label: 'Documents',
@@ -298,6 +322,12 @@ export const NAV: readonly NavGroup[] = [
         label: 'Compliance',
         icon: 'shield',
         route: '/compliance',
+        permission: 'AutoReach.Compliance',
+      },
+      {
+        label: 'DPDP readiness',
+        icon: 'shield',
+        route: '/compliance/dpdp',
         permission: 'AutoReach.Compliance',
       },
       {

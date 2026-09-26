@@ -80,9 +80,75 @@
         @if (thread.contactId && (!thread.channel || thread.channel === 'Email' || thread.sms)) {
           <button ar-button variant="ghost" icon="phone" (click)="calling.set(true)">Call</button>
         }
+        <button
+          ar-button
+          variant="ghost"
+          icon="bolt"
+          [disabled]="summaryBusy()"
+          title="A few lines for whoever picks this up next"
+          (click)="summarise(thread.id)"
+        >
+          {{ summaryBusy() ? 'Summarising…' : 'Summarise' }}
+        </button>
+        @if (!thread.channel) {
+          <button
+            ar-button
+            variant="ghost"
+            icon="phone"
+            title="Ask the customer for permission to call them on WhatsApp"
+            (click)="askToCall(thread.id)"
+          >
+            Ask to call
+          </button>
+        }
         <button ar-button variant="ghost" icon="user">Assign</button>
         <button ar-button variant="ghost" icon="check">Resolve</button>
       </header>
+
+      @if (summary(); as s) {
+        @if (s.conversationId === thread.id) {
+          <aside class="thread__summary" aria-label="Conversation summary">
+            @if (s.text) {
+              <p>{{ s.text }}</p>
+              <span class="thread__summary-by"
+                >Written by {{ s.by }} · check before relying on it</span
+              >
+            } @else {
+              <p>
+                No summary:
+                {{
+                  s.by.startsWith('AutoReach')
+                    ? 'the AI assistant is not on this plan or not set up.'
+                    : s.by
+                }}
+              </p>
+            }
+            <button
+              type="button"
+              class="thread__summary-x"
+              aria-label="Close summary"
+              (click)="summary.set(null)"
+            >
+              ×
+            </button>
+          </aside>
+        }
+      }
+      @if (callPermission(); as cp) {
+        @if (cp.conversationId === thread.id) {
+          <aside class="thread__summary" role="status">
+            <p>{{ cp.note }}</p>
+            <button
+              type="button"
+              class="thread__summary-x"
+              aria-label="Close"
+              (click)="callPermission.set(null)"
+            >
+              ×
+            </button>
+          </aside>
+        }
+      }
 
       <ol class="thread__messages">
         @for (m of thread.messages; track m.id) {
@@ -93,6 +159,15 @@
                   <a class="bubble__media" [href]="media.url" target="_blank" rel="noopener">
                     <img [src]="media.url" alt="Attached image" loading="lazy" />
                   </a>
+                  @if (m.direction === 'in' && !thread.channel && canQuote) {
+                    <button
+                      type="button"
+                      class="bubble__action"
+                      (click)="readPhoto(thread.id, m.id)"
+                    >
+                      Quote from this photo
+                    </button>
+                  }
                 }
                 @case ('video') {
                   <video
@@ -391,6 +466,94 @@
             >
               {{ sending() ? 'Sending…' : 'Send payment link' }}
             </button>
+          </div>
+        </ar-dialog>
+      }
+
+      @if (photo()) {
+        <ar-dialog title="Quote from photo" (dismiss)="photo.set(null)">
+          @if (photoBusy() && !photoReading()) {
+            <p class="composer__sms-note">Reading the photo…</p>
+          }
+          @if (photoReading(); as r) {
+            <p class="composer__sms-note">
+              {{
+                r.kind === 'nameplate'
+                  ? 'Nameplate'
+                  : r.kind === 'rfq'
+                    ? 'Request for quotation'
+                    : 'Photo'
+              }}
+              @if (r.manufacturer || r.model) {
+                · <strong>{{ r.manufacturer }} {{ r.model }}</strong>
+              }
+              @if (r.serialNumber) {
+                · S/N <span class="ar-mono">{{ r.serialNumber }}</span>
+              }
+              @if (r.ratings) {
+                · {{ r.ratings }}
+              }
+            </p>
+            <ul class="photo-lines">
+              @for (l of r.lines; track $index) {
+                <li>
+                  <span class="photo-lines__q ar-mono">{{ l.quantity }} ×</span>
+                  <span class="photo-lines__d">
+                    {{ l.description }}
+                    @if (l.partNumber) {
+                      <span class="ar-mono"> · {{ l.partNumber }}</span>
+                    }
+                    @if (l.catalogue; as c) {
+                      <small
+                        >{{ matchLabel(l.match) }}: {{ c.name }} ({{ c.partNumber }}) ·
+                        {{ money(c.unitPriceInPaise) }}</small
+                      >
+                    } @else {
+                      <small>{{ matchLabel(l.match) }}: goes in at ₹0 for you to price</small>
+                    }
+                  </span>
+                  <ar-chip
+                    [tone]="
+                      l.match === 'exact' ? 'good' : l.match === 'similar' ? 'warn' : 'neutral'
+                    "
+                  >
+                    {{ matchLabel(l.match) }}
+                  </ar-chip>
+                </li>
+              } @empty {
+                <li>Nothing could be read from this photo.</li>
+              }
+            </ul>
+            @if (r.note) {
+              <p class="composer__sms-note">Unclear: {{ r.note }}</p>
+            }
+            <p class="composer__sms-note">
+              Read by AI. Part numbers are copied as written; check them before the quote goes out.
+            </p>
+          }
+          @if (photoDraft(); as d) {
+            <p class="composer__sms-note" role="status">
+              Draft <strong>{{ d.quotation.reference }}</strong> created on a new enquiry
+              {{ d.unpriced ? '· ' + d.unpriced + ' line(s) need a price' : '' }}.
+              <a routerLink="/quotations">Open Quotations →</a>
+            </p>
+          }
+          @if (photoError(); as e) {
+            <p class="composer__sms-error" role="alert">{{ e }}</p>
+          }
+          <div dialogActions>
+            <button ar-button type="button" variant="ghost" (click)="photo.set(null)">Close</button>
+            @if (photoReading()?.lines?.length && !photoDraft()) {
+              <button
+                ar-button
+                type="button"
+                variant="primary"
+                [disabled]="photoBusy()"
+                (click)="draftFromPhoto()"
+              >
+                {{ photoBusy() ? 'Drafting…' : 'Draft quotation' }}
+              </button>
+            }
           </div>
         </ar-dialog>
       }

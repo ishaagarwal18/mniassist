@@ -25,6 +25,11 @@ jobs:
       - name: Format check
         run: npx prettier --check "src/**/*.{ts,html,scss}"
 
+      # The API proxies are hand-written: every route they call must exist in the API's published routes
+      # (src/app/proxy/api-routes.snapshot.json, refreshed with --refresh <api url> when the API changes).
+      - name: Proxy routes
+        run: node scripts/check-proxy-routes.mjs
+
       - name: Build
         run: npx ng build --configuration production
 

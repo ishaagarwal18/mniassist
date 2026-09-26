@@ -403,3 +403,9 @@ export interface TemplateLintResultDto {
   items?: TemplateLintItemDto[];
   hasErrors?: boolean;
 }
+
+export interface ConversationSummaryDto {
+  providerName: string;
+  summary?: string | null;
+  messagesRead: number;
+}

@@ -40,8 +40,7 @@ export class AtRiskAlertService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/auto-reach/at-risk-alert/${id}/assign`,
-        params: { userId },
+        url: `/api/auto-reach/at-risk-alert/${id}/assign/${userId}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -51,7 +50,7 @@ export class AtRiskAlertService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/auto-reach/at-risk-alert/${id}/add-note`,
+        url: `/api/auto-reach/at-risk-alert/${id}/note`,
         params: { note },
       },
       { apiName: this.apiName, ...config },

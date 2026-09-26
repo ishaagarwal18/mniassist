@@ -97,7 +97,7 @@ export class PriceListService {
 
   resolveForContact = (contactId: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, PriceListDto>(
-      { method: 'GET', url: `/api/auto-reach/price-list/resolve-for-contact/${contactId}` },
+      { method: 'POST', url: `/api/auto-reach/price-list/resolve-for-contact/${contactId}` },
       { apiName: this.apiName, ...config },
     );
 }

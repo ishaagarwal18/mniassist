@@ -11,10 +11,86 @@
     />
     Show retired
   </label>
+  <button ar-button type="button" variant="ghost" icon="download" (click)="openImport()">
+    Import AMC values
+  </button>
   <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
     Register machine
   </button>
 </ar-topbar>
+
+@if (importOpen()) {
+  <ar-dialog title="Import AMC values" (dismiss)="importOpen.set(false)">
+    <p class="ib__hint">
+      A CSV with one row per machine already on the register, matched by serial number. Columns:
+      <span class="ar-mono">serial, amc_value, amc_end, term_months</span> (value in rupees, end
+      date as 2027-03-31 or 31/03/2027). Blank cells leave that field as it is. Check first; nothing
+      is saved until you apply.
+    </p>
+    <label class="ar-field" for="ib-csv-file">
+      <span class="ar-field__label">CSV file</span>
+      <input
+        id="ib-csv-file"
+        class="ar-field__input"
+        type="file"
+        accept=".csv,text/csv"
+        (change)="pickCsv($event)"
+      />
+    </label>
+    <label class="ar-field" for="ib-csv">
+      <span class="ar-field__label">…or paste it</span>
+      <textarea
+        id="ib-csv"
+        class="ar-field__input ar-mono"
+        rows="6"
+        placeholder="serial,amc_value,amc_end,term_months&#10;VP-2291,42000,2027-03-31,12"
+        [value]="csv()"
+        (input)="csv.set($any($event.target).value); importResult.set(null)"
+      ></textarea>
+    </label>
+    @if (importResult(); as r) {
+      <p class="ib__hint" role="status">
+        {{ r.dryRun ? 'Check:' : 'Done:' }} {{ r.rows }} row(s) · {{ r.updated }}
+        {{ r.dryRun ? 'would change' : 'updated' }} · {{ r.unchanged }} unchanged ·
+        {{ r.problems.length }} problem(s)
+      </p>
+      @if (r.problems.length) {
+        <ul class="ib__problems">
+          @for (p of r.problems; track p.line) {
+            <li>
+              Line {{ p.line }}{{ p.serialNumber ? ' (' + p.serialNumber + ')' : '' }}:
+              {{ p.problem }}
+            </li>
+          }
+        </ul>
+      }
+    }
+    @if (importError(); as e) {
+      <p class="ib__err" role="alert">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="importOpen.set(false)">Close</button>
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        [disabled]="importing() || !csv().trim()"
+        (click)="runImport(true)"
+      >
+        Check
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="importing() || !importResult()?.dryRun || !importResult()?.updated"
+        (click)="runImport(false)"
+      >
+        {{ importing() ? 'Applying…' : 'Apply ' + (importResult()?.updated ?? 0) + ' change(s)' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 @if (dialogOpen()) {
   <ar-dialog title="Register a machine" (dismiss)="dialogOpen.set(false)">

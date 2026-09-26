@@ -26,6 +26,18 @@ import { ChannelService } from '../../core/services/channel.service';
 import { ArChannelHealthStrip } from '../../ui/channel-health-strip';
 import { ArDocumentPicker, PickedDocument } from './document-picker';
 import { ArCallDialog } from '../calls/call-dialog';
+import { InboxService as InboxApi } from '../../proxy/messaging/inbox.service';
+import {
+  WhatsAppCallService,
+  CallPermissionDto,
+} from '../../proxy/messaging/whats-app-call.service';
+import {
+  PhotoDraftDto,
+  PhotoQuoteService,
+  PhotoReadingDto,
+} from '../../proxy/pipeline/photo-quote.service';
+import { inr } from '../../core/util/format';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'ar-inbox',
@@ -40,6 +52,7 @@ import { ArCallDialog } from '../calls/call-dialog';
     ArChannelHealthStrip,
     ArDocumentPicker,
     ArCallDialog,
+    RouterLink,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './inbox.html',
@@ -104,6 +117,148 @@ export class ArInbox {
     } finally {
       this.suggestBusy.set(false);
     }
+  }
+
+  // ---- Hand-off summary (Q5) -------------------------------------------------------------------------------------------
+  private readonly inboxApi = inject(InboxApi);
+  protected readonly summary = signal<{
+    conversationId: string;
+    text: string | null;
+    by: string;
+  } | null>(null);
+  protected readonly summaryBusy = signal(false);
+
+  protected async summarise(conversationId: string): Promise<void> {
+    this.summaryBusy.set(true);
+    try {
+      if (environment.useMockData) {
+        this.summary.set({
+          conversationId,
+          text: 'Wants a quote for 2 × ACS580 drives (7.5 kW). Asked about lead time; nothing promised yet. Waiting on quantity confirmation.',
+          by: 'sample',
+        });
+        return;
+      }
+      const r = await firstValueFrom(this.inboxApi.summarise(conversationId));
+      this.summary.set({ conversationId, text: r.summary ?? null, by: r.providerName });
+    } catch (e: unknown) {
+      this.summary.set({
+        conversationId,
+        text: null,
+        by: this.problem(e, 'The summary could not be written.'),
+      });
+    } finally {
+      this.summaryBusy.set(false);
+    }
+  }
+
+  // ---- Quote from a nameplate or RFQ photo (S2) ------------------------------------------------------------------------
+  private readonly photos = inject(PhotoQuoteService);
+  protected readonly photo = signal<{ conversationId: string; messageId: string } | null>(null);
+  protected readonly photoReading = signal<PhotoReadingDto | null>(null);
+  protected readonly photoDraft = signal<PhotoDraftDto | null>(null);
+  protected readonly photoBusy = signal(false);
+  protected readonly photoError = signal<string | null>(null);
+  protected readonly canQuote = grantedPolicy(
+    'AutoReach.Quotations.Create',
+    inject(PermissionService),
+  );
+
+  protected async readPhoto(conversationId: string, messageId: string): Promise<void> {
+    this.photo.set({ conversationId, messageId });
+    this.photoReading.set(null);
+    this.photoDraft.set(null);
+    this.photoError.set(null);
+    this.photoBusy.set(true);
+    try {
+      this.photoReading.set(
+        environment.useMockData
+          ? {
+              kind: 'nameplate',
+              manufacturer: 'ABB',
+              model: 'ACS580-01-017A-4',
+              serialNumber: '3G1234567',
+              ratings: '7.5 kW, 415 V, 50 Hz',
+              note: null,
+              lines: [
+                {
+                  description: 'ABB ACS580 drive 7.5 kW',
+                  partNumber: 'ACS580-01-017A-4',
+                  quantity: 1,
+                  match: 'exact',
+                  catalogue: {
+                    partNumber: 'ACS580-01-017A-4',
+                    name: 'ACS580 7.5 kW drive',
+                    unitPriceInPaise: 86_500_00,
+                  },
+                },
+              ],
+            }
+          : await firstValueFrom(this.photos.read({ conversationId, messageId })),
+      );
+    } catch (e: unknown) {
+      this.photoError.set(this.problem(e, 'The photo could not be read.'));
+    } finally {
+      this.photoBusy.set(false);
+    }
+  }
+
+  protected async draftFromPhoto(): Promise<void> {
+    const p = this.photo();
+    if (!p || environment.useMockData) return;
+    this.photoBusy.set(true);
+    this.photoError.set(null);
+    try {
+      this.photoDraft.set(await firstValueFrom(this.photos.draft({ ...p, enquiryId: null })));
+    } catch (e: unknown) {
+      this.photoError.set(this.problem(e, 'The quotation could not be drafted.'));
+    } finally {
+      this.photoBusy.set(false);
+    }
+  }
+
+  protected money(paise: number | null | undefined): string {
+    return paise == null ? '—' : inr(paise);
+  }
+
+  protected matchLabel(match: string): string {
+    return match === 'exact' ? 'In catalogue' : match === 'similar' ? 'Similar part' : 'Not found';
+  }
+
+  // ---- WhatsApp call permission (M3) -----------------------------------------------------------------------------------
+  private readonly callsApi = inject(WhatsAppCallService);
+  protected readonly callPermission = signal<{
+    conversationId: string;
+    value: CallPermissionDto | null;
+    note?: string;
+  } | null>(null);
+
+  protected async askToCall(conversationId: string): Promise<void> {
+    try {
+      const value = environment.useMockData
+        ? ({
+            state: 'Requested',
+            canCall: false,
+            requestedAtUtc: new Date().toISOString(),
+            isPermanent: false,
+          } as CallPermissionDto)
+        : await firstValueFrom(this.callsApi.requestPermission(conversationId));
+      this.callPermission.set({
+        conversationId,
+        value,
+        note: 'Asked. They can now call you on WhatsApp; their answer shows here.',
+      });
+    } catch (e: unknown) {
+      this.callPermission.set({
+        conversationId,
+        value: null,
+        note: this.problem(e, 'The request could not be sent.'),
+      });
+    }
+  }
+
+  private problem(e: unknown, fallback: string): string {
+    return (e as { error?: { error?: { message?: string } } })?.error?.error?.message ?? fallback;
   }
 
   protected useSuggestion(text: string): void {

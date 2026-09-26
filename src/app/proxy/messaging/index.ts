@@ -20,5 +20,5 @@ export * from './template-lint-severity.enum';
 export * from './template-quality.enum';
 export * from './template-status.enum';
 export * from './template.service';
-export * from './whats-app-webhook.service';
 export * from './window-origin.enum';
+export * from './whats-app-call.service';

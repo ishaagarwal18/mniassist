@@ -7,3 +7,4 @@ export * from './data-request-kind.enum';
 export * from './data-request-state.enum';
 export * from './models';
 export * from './retained-data-class.enum';
+export * from './dpdp-readiness.service';

@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "check:routes": "node scripts/check-proxy-routes.mjs",
+    "refresh:routes": "node scripts/check-proxy-routes.mjs --refresh https://localhost:44320"
   },
   "private": true,
   "packageManager": "npm@10.9.7",

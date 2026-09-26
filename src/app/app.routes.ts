@@ -56,6 +56,13 @@ export const routes: Routes = [
     loadComponent: () => import('./features/legal/privacy-policy').then((m) => m.ArPrivacyPolicy),
   },
   {
+    // The field engineer's phone app: signed in, but no app shell. Works offline once loaded.
+    path: 'field',
+    title: 'Field · AutoReach',
+    canActivate: [appAuthGuard],
+    loadComponent: () => import('./features/field/field').then((m) => m.ArField),
+  },
+  {
     path: '',
     component: ArAppShell,
     canActivate: [appAuthGuard],
@@ -157,6 +164,27 @@ export const routes: Routes = [
         path: 'renewals',
         title: 'AMC renewals · AutoReach',
         loadComponent: () => import('./features/pipeline/renewals').then((m) => m.ArRenewals),
+      },
+      {
+        path: 'spares',
+        title: 'Spares due · AutoReach',
+        loadComponent: () => import('./features/pipeline/spares').then((m) => m.ArSpares),
+      },
+      {
+        path: 'collections',
+        title: 'Collections · AutoReach',
+        loadComponent: () => import('./features/payments/collections').then((m) => m.ArCollections),
+      },
+      {
+        path: 'account-health',
+        title: 'Account health · AutoReach',
+        loadComponent: () =>
+          import('./features/contacts/account-health').then((m) => m.ArAccountHealth),
+      },
+      {
+        path: 'compliance/dpdp',
+        title: 'DPDP readiness · AutoReach',
+        loadComponent: () => import('./features/compliance/dpdp').then((m) => m.ArDpdp),
       },
       {
         path: 'installed-base',

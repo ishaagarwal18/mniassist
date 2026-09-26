@@ -76,3 +76,24 @@
   margin-top: 6px;
   text-decoration: none;
 }
+
+.ib__hint {
+  margin: 0;
+  font: 400 12.5px/1.5 var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+
+.ib__err {
+  margin: 0;
+  font: 500 12.5px var(--ar-font-sans);
+  color: var(--ar-bad-600, #b42318);
+}
+
+.ib__problems {
+  margin: 0;
+  padding-left: 18px;
+  max-height: 160px;
+  overflow-y: auto;
+  font: 400 12.5px/1.5 var(--ar-font-sans);
+  color: var(--ar-bad-600, #b42318);
+}

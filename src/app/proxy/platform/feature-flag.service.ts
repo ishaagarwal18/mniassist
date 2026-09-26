@@ -39,7 +39,7 @@ export class FeatureFlagService {
 
   set = (input: SetFeatureFlagInput, config?: Partial<Rest.Config>) =>
     this.restService.request<any, FeatureFlagDto>(
-      { method: 'POST', url: '/api/auto-reach/feature-flag', body: input },
+      { method: 'POST', url: '/api/auto-reach/feature-flag/set', body: input },
       { apiName: this.apiName, ...config },
     );
 

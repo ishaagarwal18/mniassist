@@ -508,3 +508,17 @@ export interface ForecastHistoryDto {
   closedChangeInPaise?: number | null;
   accuracy?: ForecastAccuracyDto[];
 }
+
+export interface AmcImportProblemDto {
+  line: number;
+  serialNumber?: string | null;
+  problem: string;
+}
+
+export interface AmcImportResultDto {
+  dryRun: boolean;
+  rows: number;
+  updated: number;
+  unchanged: number;
+  problems: AmcImportProblemDto[];
+}

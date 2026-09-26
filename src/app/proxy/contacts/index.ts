@@ -19,3 +19,4 @@ export * from './duplicate-reason.enum';
 export * from './models';
 export * from './segment.service';
 export * from './suppression-reason.enum';
+export * from './account-health.service';

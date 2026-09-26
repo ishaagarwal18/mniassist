@@ -18,7 +18,6 @@ import * as Notifications from './notifications';
 import * as Pipeline from './pipeline';
 import * as Platform from './platform';
 import * as Volo from './volo';
-import * as Webhooks from './webhooks';
 export {
   Administration,
   Analytics,
@@ -40,5 +39,4 @@ export {
   Pipeline,
   Platform,
   Volo,
-  Webhooks,
 };

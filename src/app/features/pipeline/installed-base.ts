@@ -8,6 +8,7 @@ import { ArContactPicker } from './contact-picker';
 import { RouterLink } from '@angular/router';
 import { RenewalStatus } from '../../proxy/pipeline/amc-renewal.service';
 import { amcCommercials, renewalChip } from './renewal-logic';
+import type { AmcImportResultDto } from '../../proxy/pipeline/models';
 
 /**
  * Installed base (M10). Every machine with its AMC / calibration / warranty dates —
@@ -45,6 +46,49 @@ export class ArInstalledBase {
     amcValue: '',
     amcTermMonths: '',
   });
+
+  // ---- AMC import ------------------------------------------------------------------------
+  protected readonly importOpen = signal(false);
+  protected readonly csv = signal('');
+  protected readonly importing = signal(false);
+  protected readonly importResult = signal<AmcImportResultDto | null>(null);
+  protected readonly importError = signal<string | null>(null);
+
+  protected openImport(): void {
+    this.csv.set('');
+    this.importResult.set(null);
+    this.importError.set(null);
+    this.importOpen.set(true);
+  }
+
+  protected async pickCsv(event: Event): Promise<void> {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    if (file.size > 2_000_000) {
+      this.importError.set(
+        'That file is over 2 MB. Split it into smaller files of up to 5,000 rows.',
+      );
+      return;
+    }
+    this.csv.set(await file.text());
+    this.importResult.set(null);
+  }
+
+  protected async runImport(dryRun: boolean): Promise<void> {
+    this.importing.set(true);
+    this.importError.set(null);
+    try {
+      const result = await this.store.importAmc(this.csv(), dryRun);
+      this.importResult.set(result);
+    } catch (e: unknown) {
+      this.importError.set(
+        (e as { error?: { error?: { message?: string } } })?.error?.error?.message ??
+          'The file could not be imported.',
+      );
+    } finally {
+      this.importing.set(false);
+    }
+  }
 
   protected patchAsset(key: keyof ReturnType<ArInstalledBase['f']>, value: string): void {
     this.f.update((s) => ({ ...s, [key]: value }));

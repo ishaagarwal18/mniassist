@@ -85,8 +85,7 @@ export class TemplateService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: '/api/auto-reach/template/language-groups',
-        params: { channelId },
+        url: `/api/auto-reach/template/language-groups/${channelId ?? ''}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -99,10 +98,10 @@ export class TemplateService {
   ) =>
     this.restService.request<any, TemplateDto>(
       {
-        method: 'GET',
+        method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/auto-reach/template/resolve-for-locale',
-        params: { channelId, name, languageCode },
+        url: `/api/auto-reach/template/resolve-for-locale/${channelId}`,
+        params: { name, languageCode },
       },
       { apiName: this.apiName, ...config },
     );

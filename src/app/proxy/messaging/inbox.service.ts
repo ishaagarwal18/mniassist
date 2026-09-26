@@ -13,6 +13,7 @@ import type {
   SendMessageInput,
   SnoozeConversationInput,
   SuggestedRepliesDto,
+  ConversationSummaryDto,
 } from './models';
 import { RestService, Rest } from '@abp/ng.core';
 import type { PagedResultDto, PagedResultRequestDto } from '@abp/ng.core';
@@ -163,6 +164,17 @@ export class InboxService {
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/inbox/search',
         body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Q5: a few lines for whoever picks the conversation up next. summary is null without a model. */
+  summarise = (conversationId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ConversationSummaryDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/inbox/summarise/${conversationId}`,
       },
       { apiName: this.apiName, ...config },
     );

@@ -1,4 +1,5 @@
 import type {
+  AmcImportResultDto,
   CreateUpdateInstalledAssetDto,
   GetInstalledAssetListInput,
   InstalledAssetDto,
@@ -79,6 +80,18 @@ export class InstalledAssetService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/installed-asset/${id}/retire`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Loads AMC value, end date and term by serial number from CSV. Nothing is saved while dryRun is true. */
+  importAmc = (input: { csv: string; dryRun: boolean }, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, AmcImportResultDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/installed-asset/import-amc',
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );

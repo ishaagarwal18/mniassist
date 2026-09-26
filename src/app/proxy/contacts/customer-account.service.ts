@@ -91,8 +91,8 @@ export class CustomerAccountService {
     this.restService.request<any, void>(
       {
         method: 'POST',
-        url: '/api/auto-reach/customer-account/set-contact-account',
-        params: { accountId },
+        // accountId is a path segment; empty (take the contacts off any account) is an optional segment on the API.
+        url: `/api/auto-reach/customer-account/set-contact-account/${accountId ?? ''}`,
         body: contactIds,
       },
       { apiName: this.apiName, ...config },

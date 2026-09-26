@@ -1,3 +1,4 @@
+import type { AmcImportResultDto } from '../../proxy/pipeline/models';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
@@ -806,6 +807,13 @@ export class PipelineStore {
   async recordService(id: string): Promise<void> {
     await firstValueFrom(this.assetApi.recordService(id, new Date().toISOString()));
     this.assetsResource.reload();
+  }
+
+  /** Loads AMC values and end dates by serial number from CSV. Saves nothing while dryRun is true. */
+  async importAmc(csv: string, dryRun: boolean): Promise<AmcImportResultDto> {
+    const result = await firstValueFrom(this.assetApi.importAmc({ csv, dryRun }));
+    if (!dryRun) this.assetsResource.reload();
+    return result;
   }
 
   async retireAsset(id: string): Promise<void> {

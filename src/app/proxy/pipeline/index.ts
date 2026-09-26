@@ -25,3 +25,5 @@ export * from './quotation-signature.models';
 export * from './quotation-signature.service';
 export * from './quote-signing.service';
 export * from './amc-renewal.service';
+export * from './photo-quote.service';
+export * from './spares.service';
