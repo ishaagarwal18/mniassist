@@ -1,82 +1,150 @@
 import { PermissionService } from '@abp/ng.core';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  ElementRef,
-  computed,
-  inject,
-  signal,
-  viewChild,
-} from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 
 import { environment } from '../../environments/environment';
 import { grantedPolicy } from '../core/auth/permission';
-import { formatDuration } from '../core/services/softphone-logic';
-import { WhatsAppCallDto, WhatsAppCallService } from '../proxy/messaging/whats-app-call.service';
+import { WhatsAppCallSession } from '../core/services/whatsapp-call.session';
+import { CallAgentDto } from '../proxy/messaging/whats-app-call.service';
 import { ArButton, ArIcon } from '../ui';
 
-/** How often the inbox asks whether a WhatsApp call is ringing. Meta rings for about a minute. */
+/** How often the app asks whether a customer's WhatsApp call is ringing. Meta rings for about a minute. */
 const POLL_MS = 4000;
 
-/** Waits until the browser has gathered its ICE candidates, so the SDP answer carries them (Meta takes no trickle ICE). */
-export function iceGathered(pc: RTCPeerConnection, timeoutMs = 3000): Promise<void> {
-  if (pc.iceGatheringState === 'complete') return Promise.resolve();
-  return new Promise((resolve) => {
-    const done = () => {
-      pc.removeEventListener('icegatheringstatechange', check);
-      clearTimeout(timer);
-      resolve();
-    };
-    const check = () => pc.iceGatheringState === 'complete' && done();
-    const timer = setTimeout(done, timeoutMs);
-    pc.addEventListener('icegatheringstatechange', check);
-  });
-}
-
 /**
- * M3: WhatsApp voice calls from customers, answered in the browser. Docked in the app shell next to the softphone. Rings when Meta
- * reports a call to a Meta-connected number; Answer builds a WebRTC answer to the customer's offer and hands it to Meta through the
- * API. Built from Meta's published Calling API; not yet tried against a live number.
+ * M3: WhatsApp voice calls, docked in the app shell next to the softphone. Rings when a customer calls a Meta-connected number,
+ * shows an agent's own call while it dials, carries the live call (recorded when the workspace records calls), and hands it to a
+ * colleague. Built from Meta's published Calling API; not yet tried
+ * against a live number.
  */
 @Component({
   selector: 'ar-whatsapp-call-bar',
   imports: [ArButton, ArIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (live(); as c) {
+    @if (session.live(); as c) {
       <div class="wc wc--live" role="status">
         <ar-icon name="phone" [size]="15" />
         <span class="wc__who">{{ c.contactName || '+' + c.contactWaId }}</span>
-        <span class="wc__state ar-mono">WhatsApp call · {{ elapsed() }}</span>
-        <button ar-button type="button" variant="ghost" (click)="toggleMute()">
-          {{ muted() ? 'Unmute' : 'Mute' }}
+        <span class="wc__state ar-mono">WhatsApp call · {{ session.elapsed() }}</span>
+        @if (session.recording()) {
+          <span class="wc__rec" title="Tell the customer this call is being recorded"
+            >● Recording</span
+          >
+        }
+        <button ar-button type="button" variant="ghost" (click)="session.toggleMute()">
+          {{ session.muted() ? 'Unmute' : 'Mute' }}
         </button>
-        <button ar-button type="button" variant="primary" (click)="hangUp()">Hang up</button>
+        @if (!session.viaTransfer()) {
+          @if (session.offering(); as name) {
+            <span class="wc__state">Offering to {{ name }}…</span>
+            <button ar-button type="button" variant="ghost" (click)="session.cancelOffer()">
+              Keep call
+            </button>
+          } @else {
+            <button ar-button type="button" variant="ghost" (click)="openTransfer()">
+              Transfer
+            </button>
+          }
+        }
+        <button ar-button type="button" variant="primary" (click)="session.hangUp()">
+          Hang up
+        </button>
+        @if (session.recording()) {
+          <span class="wc__hint">Tell the customer the call is recorded.</span>
+        }
+        @if (picking()) {
+          <div class="wc__pick">
+            <label for="wc-agent" class="wc__state">Transfer to</label>
+            <select
+              id="wc-agent"
+              class="ar-field__input"
+              (change)="pick($any($event.target).value)"
+            >
+              <option value="">Choose a colleague…</option>
+              @for (a of agents(); track a.userId) {
+                <option [value]="a.userId">{{ a.name }}</option>
+              }
+            </select>
+            <button type="button" class="wc__x" aria-label="Close" (click)="picking.set(false)">
+              ×
+            </button>
+          </div>
+        }
       </div>
-    } @else if (ringing(); as c) {
+    } @else if (session.relayingTo(); as name) {
+      <div class="wc wc--relay" role="status">
+        <ar-icon name="phone" [size]="15" />
+        <span class="wc__who">Call handed to {{ name }}</span>
+        <span class="wc__state"
+          >Keep this tab open until the call ends: the audio passes through it.</span
+        >
+      </div>
+    } @else if (session.dialling(); as d) {
+      <div class="wc wc--ring" role="status">
+        <ar-icon name="phone" [size]="15" />
+        <span class="wc__who">{{ d.name }}</span>
+        <span class="wc__state">{{ d.call ? 'Ringing on WhatsApp…' : 'Connecting…' }}</span>
+        <button ar-button type="button" variant="ghost" (click)="session.hangUp()">Cancel</button>
+      </div>
+    } @else if (session.incoming(); as t) {
+      <div class="wc wc--ring" role="alert">
+        <ar-icon name="phone" [size]="15" />
+        <span class="wc__who">{{ t.fromName || 'A colleague' }}</span>
+        <span class="wc__state"
+          >is transferring a WhatsApp call with {{ t.contactName || '+' + t.contactWaId }}</span
+        >
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="session.busy()"
+          (click)="session.declineTransfer(t)"
+        >
+          Decline
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="session.busy()"
+          (click)="session.acceptTransfer(t)"
+        >
+          {{ session.busy() ? 'Connecting…' : 'Take call' }}
+        </button>
+      </div>
+    } @else if (session.ringing(); as c) {
       <div class="wc wc--ring" role="alert">
         <ar-icon name="phone" [size]="15" />
         <span class="wc__who">{{ c.contactName || '+' + c.contactWaId }}</span>
         <span class="wc__state">is calling on WhatsApp</span>
-        <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="reject(c)">
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="session.busy()"
+          (click)="session.reject(c)"
+        >
           Decline
         </button>
-        <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="answer(c)">
-          {{ busy() ? 'Connecting…' : 'Answer' }}
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="session.busy()"
+          (click)="session.answer(c)"
+        >
+          {{ session.busy() ? 'Connecting…' : 'Answer' }}
         </button>
       </div>
     }
-    @if (error(); as e) {
+    @if (session.error(); as e) {
       <div class="wc wc--err" role="alert">
         <span>{{ e }}</span>
-        <button type="button" class="wc__x" aria-label="Dismiss" (click)="error.set(null)">
+        <button type="button" class="wc__x" aria-label="Dismiss" (click)="session.error.set(null)">
           ×
         </button>
       </div>
     }
-    <audio #remote autoplay hidden></audio>
   `,
   styles: `
     :host {
@@ -111,6 +179,29 @@ export function iceGathered(pc: RTCPeerConnection, timeoutMs = 3000): Promise<vo
     .wc--live {
       border-color: var(--ar-good-600, #067647);
     }
+    .wc--relay {
+      border-color: var(--ar-line-200);
+      background: var(--ar-bg-100);
+    }
+    .wc__rec {
+      font: 600 12px var(--ar-font-sans);
+      color: var(--ar-bad-600, #b42318);
+    }
+    .wc__hint {
+      flex-basis: 100%;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .wc__pick {
+      flex-basis: 100%;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .wc__pick select {
+      flex: 1;
+      min-width: 0;
+    }
     .wc--err {
       color: var(--ar-bad-600, #b42318);
     }
@@ -140,129 +231,31 @@ export function iceGathered(pc: RTCPeerConnection, timeoutMs = 3000): Promise<vo
   `,
 })
 export class ArWhatsAppCallBar {
-  private readonly api = inject(WhatsAppCallService);
+  protected readonly session = inject(WhatsAppCallSession);
+  protected readonly picking = signal(false);
+  protected readonly agents = signal<CallAgentDto[]>([]);
+
+  protected async openTransfer(): Promise<void> {
+    this.picking.set(true);
+    try {
+      this.agents.set(await this.session.agents());
+    } catch {
+      this.session.error.set('Could not load your colleagues.');
+      this.picking.set(false);
+    }
+  }
+
+  protected pick(userId: string): void {
+    const agent = this.agents().find((a) => a.userId === userId);
+    if (!agent) return;
+    this.picking.set(false);
+    void this.session.transfer(agent);
+  }
   private readonly canUse = grantedPolicy('AutoReach.Inbox', inject(PermissionService));
-  private readonly remote = viewChild<ElementRef<HTMLAudioElement>>('remote');
-
-  protected readonly ringing = signal<WhatsAppCallDto | null>(null);
-  protected readonly live = signal<WhatsAppCallDto | null>(null);
-  protected readonly busy = signal(false);
-  protected readonly muted = signal(false);
-  protected readonly error = signal<string | null>(null);
-  private readonly startedAt = signal<number | null>(null);
-  private readonly tick = signal(0);
-
-  protected readonly elapsed = computed(() => {
-    this.tick();
-    const t = this.startedAt();
-    return t ? formatDuration(Math.round((Date.now() - t) / 1000)) : '0:00';
-  });
-
-  private pc: RTCPeerConnection | null = null;
-  private mic: MediaStream | null = null;
-  private dismissed = new Set<string>();
 
   constructor() {
     if (!this.canUse || environment.useMockData) return;
-    const poll = setInterval(() => void this.poll(), POLL_MS);
-    const clock = setInterval(() => this.tick.update((n) => n + 1), 1000);
-    inject(DestroyRef).onDestroy(() => {
-      clearInterval(poll);
-      clearInterval(clock);
-      this.cleanup();
-    });
-  }
-
-  private async poll(): Promise<void> {
-    if (this.live() || this.busy() || document.hidden) return;
-    try {
-      const calls = await firstValueFrom(this.api.getRinging());
-      this.ringing.set(calls.find((c) => c.offerSdp && !this.dismissed.has(c.id)) ?? null);
-    } catch {
-      // A missed poll is harmless: the next one is four seconds away.
-    }
-  }
-
-  protected async answer(call: WhatsAppCallDto): Promise<void> {
-    if (!call.offerSdp) return;
-    this.busy.set(true);
-    this.error.set(null);
-    try {
-      this.mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-      this.pc = pc;
-      this.mic.getTracks().forEach((t) => pc.addTrack(t, this.mic!));
-      pc.ontrack = (e) => {
-        const audio = this.remote()?.nativeElement;
-        if (audio) audio.srcObject = e.streams[0];
-      };
-      pc.onconnectionstatechange = () => {
-        if (pc.connectionState === 'failed' || pc.connectionState === 'closed') this.ended();
-      };
-
-      await pc.setRemoteDescription({ type: 'offer', sdp: call.offerSdp });
-      await pc.setLocalDescription(await pc.createAnswer());
-      await iceGathered(pc);
-
-      const answered = await firstValueFrom(
-        this.api.answer(call.id, pc.localDescription?.sdp ?? ''),
-      );
-      this.ringing.set(null);
-      this.live.set(answered);
-      this.startedAt.set(Date.now());
-    } catch (e: unknown) {
-      this.cleanup();
-      this.error.set(
-        e instanceof DOMException && e.name === 'NotAllowedError'
-          ? 'Allow microphone access in the browser to answer calls.'
-          : ((e as { error?: { error?: { message?: string } } })?.error?.error?.message ??
-              'The call could not be answered. It may have stopped ringing.'),
-      );
-      this.ringing.set(null);
-    } finally {
-      this.busy.set(false);
-    }
-  }
-
-  protected async reject(call: WhatsAppCallDto): Promise<void> {
-    this.dismissed.add(call.id);
-    this.ringing.set(null);
-    try {
-      await firstValueFrom(this.api.reject(call.id));
-    } catch {
-      // Meta stops ringing by itself after a minute either way.
-    }
-  }
-
-  protected async hangUp(): Promise<void> {
-    const call = this.live();
-    this.ended();
-    if (call) {
-      try {
-        await firstValueFrom(this.api.hangUp(call.id));
-      } catch {
-        // The customer may already have hung up; the webhook closes the log either way.
-      }
-    }
-  }
-
-  protected toggleMute(): void {
-    const next = !this.muted();
-    this.mic?.getAudioTracks().forEach((t) => (t.enabled = !next));
-    this.muted.set(next);
-  }
-
-  private ended(): void {
-    this.cleanup();
-    this.live.set(null);
-    this.startedAt.set(null);
-    this.muted.set(false);
-  }
-
-  private cleanup(): void {
-    this.mic?.getTracks().forEach((t) => t.stop());
-    this.mic = null;
-    this.pc?.close();
-    this.pc = null;
+    const poll = setInterval(() => void this.session.poll(), POLL_MS);
+    inject(DestroyRef).onDestroy(() => clearInterval(poll));
   }
 }

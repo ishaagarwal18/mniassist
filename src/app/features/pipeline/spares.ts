@@ -7,8 +7,11 @@ import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
+import { TemplateService } from '../../proxy/messaging/template.service';
+import { TemplateStatus } from '../../proxy/messaging/template-status.enum';
 import {
   ConsumableRuleDto,
+  SparesReminderSettingsDto,
   SaveConsumableRuleInput,
   SpareReorderDto,
   SparesService,
@@ -136,6 +139,9 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
         >
           Rules ({{ rules().length }})
         </button>
+        <button ar-button type="button" variant="ghost" icon="send" (click)="openReminders()">
+          Customer reminders{{ reminders().enabled ? ' · on' : '' }}
+        </button>
       }
     </ar-topbar>
 
@@ -206,6 +212,13 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
                     </span>
                   </div>
                   <ar-chip [tone]="tone(r)" [dot]="true">{{ dueLabel(r) }}</ar-chip>
+                  @if (r.callRequestedAtUtc) {
+                    <ar-chip tone="amber">Asked for a call</ar-chip>
+                  } @else if (r.followedUpAtUtc) {
+                    <ar-chip tone="neutral">Followed up {{ shortDate(r.followedUpAtUtc) }}</ar-chip>
+                  } @else if (r.remindedAtUtc) {
+                    <ar-chip tone="neutral">Reminded {{ shortDate(r.remindedAtUtc) }}</ar-chip>
+                  }
                   @if (r.state === 'Quoted') {
                     <a class="row__link" routerLink="/quotations">Quoted →</a>
                   }
@@ -238,6 +251,102 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
         }
       }
     </div>
+
+    @if (remindersOpen()) {
+      <ar-dialog title="Remind customers on WhatsApp" (dismiss)="remindersOpen.set(false)">
+        <p class="sp__hint">
+          Once a day, each customer with parts coming due gets one message listing them, from your
+          approved template. Body values in order: customer name, the parts due, the earliest due
+          date. The first quick-reply button (e.g. “Send quotation”) drafts the quote for all their
+          due parts; the second (e.g. “Call me”) alerts the team. Each part is reminded once.
+        </p>
+        <label class="rem__check" for="sp-rem-on">
+          <input
+            id="sp-rem-on"
+            type="checkbox"
+            [checked]="remEnabled()"
+            (change)="remEnabled.set($any($event.target).checked)"
+          />
+          Send reminders automatically
+        </label>
+        <label class="ar-field" for="sp-rem-tpl">
+          <span class="ar-field__label">Approved WhatsApp template</span>
+          <select
+            id="sp-rem-tpl"
+            class="ar-field__input"
+            [value]="remTemplateId()"
+            (change)="remTemplateId.set($any($event.target).value)"
+          >
+            <option value="">Choose a template…</option>
+            @for (t of templates(); track t.id) {
+              <option [value]="t.id">{{ t.name }} ({{ t.lang }})</option>
+            }
+          </select>
+        </label>
+        <label class="ar-field" for="sp-rem-fu">
+          <span class="ar-field__label"
+            >Follow up if there's no answer after (days)
+            <span class="ar-field__opt"
+              >(0 = no follow-up; a tap or any message counts as an answer)</span
+            ></span
+          >
+          <input
+            id="sp-rem-fu"
+            class="ar-field__input"
+            inputmode="numeric"
+            [value]="remFollowUpDays()"
+            (input)="remFollowUpDays.set($any($event.target).value)"
+          />
+        </label>
+        @if (remFollowUpDays() !== '0' && remFollowUpDays().trim() !== '') {
+          <label class="ar-field" for="sp-rem-futpl">
+            <span class="ar-field__label"
+              >Follow-up template
+              <span class="ar-field__opt"
+                >(optional; the reminder is sent again if blank)</span
+              ></span
+            >
+            <select
+              id="sp-rem-futpl"
+              class="ar-field__input"
+              [value]="remFollowUpTemplateId()"
+              (change)="remFollowUpTemplateId.set($any($event.target).value)"
+            >
+              <option value="">Same as the reminder</option>
+              @for (t of templates(); track t.id) {
+                <option [value]="t.id">{{ t.name }} ({{ t.lang }})</option>
+              }
+            </select>
+          </label>
+        }
+        @if (remError(); as e) {
+          <p class="sp__err" role="alert">{{ e }}</p>
+        }
+        <div dialogActions>
+          <button ar-button type="button" variant="ghost" (click)="remindersOpen.set(false)">
+            Close
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="busy() === 'remind' || !reminders().enabled"
+            (click)="remindNow()"
+          >
+            {{ busy() === 'remind' ? 'Sending…' : 'Send due reminders now' }}
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="busy() === 'rem-save'"
+            (click)="saveReminders()"
+          >
+            {{ busy() === 'rem-save' ? 'Saving…' : 'Save' }}
+          </button>
+        </div>
+      </ar-dialog>
+    }
 
     @if (rulesOpen()) {
       <ar-dialog title="Spare part rules" (dismiss)="rulesOpen.set(false)">
@@ -466,6 +575,12 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
       grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       gap: 8px;
     }
+    .rem__check {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font: 500 13px var(--ar-font-sans);
+    }
     .sp__hint {
       margin: 0;
       font: 400 13px/1.5 var(--ar-font-sans);
@@ -508,6 +623,103 @@ export class ArSpares {
   protected readonly quotedRef = signal<string | null>(null);
 
   protected readonly rulesOpen = signal(false);
+
+  // ---- Customer reminders -------------------------------------------------------------
+  private readonly templatesApi = inject(TemplateService);
+  protected readonly reminders = signal<SparesReminderSettingsDto>({
+    enabled: false,
+    templateId: null,
+    followUpAfterDays: 0,
+  });
+  protected readonly remFollowUpDays = signal('0');
+  protected readonly remFollowUpTemplateId = signal('');
+  protected readonly remindersOpen = signal(false);
+  protected readonly remEnabled = signal(false);
+  protected readonly remTemplateId = signal('');
+  protected readonly remError = signal<string | null>(null);
+  protected readonly templates = signal<{ id: string; name: string; lang: string }[]>([]);
+
+  protected shortDate(isoDate: string): string {
+    return new Date(isoDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  }
+
+  protected async openReminders(): Promise<void> {
+    this.remError.set(null);
+    this.remEnabled.set(this.reminders().enabled);
+    this.remTemplateId.set(this.reminders().templateId ?? '');
+    this.remFollowUpDays.set(String(this.reminders().followUpAfterDays ?? 0));
+    this.remFollowUpTemplateId.set(this.reminders().followUpTemplateId ?? '');
+    this.remindersOpen.set(true);
+    if (environment.useMockData || this.templates().length) return;
+    try {
+      const list = await firstValueFrom(
+        this.templatesApi.getList({ status: TemplateStatus.Approved, maxResultCount: 200 }),
+      );
+      this.templates.set(
+        (list.items ?? []).map((t) => ({
+          id: t.id!,
+          name: t.name ?? 'Template',
+          lang: t.languageCode ?? '',
+        })),
+      );
+    } catch (e: unknown) {
+      this.remError.set(this.problem(e, 'Could not load the templates.'));
+    }
+  }
+
+  protected async saveReminders(): Promise<void> {
+    if (this.remEnabled() && !this.remTemplateId()) {
+      this.remError.set('Choose an approved template before switching reminders on.');
+      return;
+    }
+    this.busy.set('rem-save');
+    this.remError.set(null);
+    try {
+      const days = Number(this.remFollowUpDays().trim() || '0');
+      if (!Number.isInteger(days) || days < 0 || days > 30) {
+        this.remError.set('Follow up after 0 (off) to 30 days.');
+        return;
+      }
+      const input: SparesReminderSettingsDto = {
+        enabled: this.remEnabled(),
+        templateId: this.remTemplateId() || null,
+        followUpAfterDays: days,
+        followUpTemplateId: days > 0 ? this.remFollowUpTemplateId() || null : null,
+      };
+      this.reminders.set(
+        environment.useMockData
+          ? input
+          : await firstValueFrom(this.api.updateReminderSettings(input)),
+      );
+      this.notice.set(
+        input.enabled
+          ? 'Customer reminders are on. They go out with the daily check.'
+          : 'Customer reminders are off.',
+      );
+      this.remindersOpen.set(false);
+    } catch (e: unknown) {
+      this.remError.set(this.problem(e, 'The settings could not be saved.'));
+    } finally {
+      this.busy.set(null);
+    }
+  }
+
+  protected async remindNow(): Promise<void> {
+    this.busy.set('remind');
+    this.remError.set(null);
+    try {
+      const n = environment.useMockData ? 0 : await firstValueFrom(this.api.remind());
+      this.notice.set(
+        n ? `${n} customer${n === 1 ? '' : 's'} reminded.` : 'Nobody is due a reminder right now.',
+      );
+      this.remindersOpen.set(false);
+      await this.load();
+    } catch (e: unknown) {
+      this.remError.set(this.problem(e, 'The reminders could not be sent.'));
+    } finally {
+      this.busy.set(null);
+    }
+  }
   protected readonly draft = signal<SaveConsumableRuleInput>({ ...EMPTY_RULE });
   protected readonly ruleError = signal<string | null>(null);
 
@@ -544,6 +756,11 @@ export class ArSpares {
         this.due.set(SEED_DUE);
         this.rules.set(SEED_RULES);
         return;
+      }
+      if (this.canManage) {
+        firstValueFrom(this.api.getReminderSettings())
+          .then((r) => this.reminders.set(r))
+          .catch(() => undefined);
       }
       const [due, rules] = await Promise.all([
         firstValueFrom(this.api.getDue()),

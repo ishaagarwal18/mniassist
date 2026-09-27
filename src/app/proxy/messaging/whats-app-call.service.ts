@@ -11,13 +11,41 @@ export interface WhatsAppCallDto {
   contactWaId?: string | null;
   conversationId?: string | null;
   status: WhatsAppCallStatus;
-  /** Only while ringing. */
+  direction: 'Inbound' | 'Outbound';
+  /** Inbound, only while ringing. */
   offerSdp?: string | null;
+  /** Outbound, once the customer picks up. */
+  answerSdp?: string | null;
   rangAtUtc: string;
   answeredAtUtc?: string | null;
   answeredByUserId?: string | null;
   endedAtUtc?: string | null;
   durationSeconds: number;
+  hasRecording: boolean;
+  transferCount: number;
+}
+
+export interface WhatsAppCallSettingsDto {
+  recordCalls: boolean;
+}
+
+export interface CallAgentDto {
+  userId: string;
+  name: string;
+}
+
+export interface CallTransferDto {
+  id: string;
+  callId: string;
+  fromUserId?: string | null;
+  fromName?: string | null;
+  toUserId: string;
+  toName?: string | null;
+  contactName?: string | null;
+  contactWaId?: string | null;
+  state: 'Offered' | 'Accepted' | 'Declined' | 'Cancelled' | 'Expired';
+  offerSdp?: string | null;
+  answerSdp?: string | null;
 }
 
 export interface CallPermissionDto {
@@ -75,6 +103,143 @@ export class WhatsAppCallService {
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/whats-app-call/${id}/answer`,
         body: { sdpAnswer },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Calls the conversation's customer with the browser's SDP offer. Needs their call permission. */
+  start = (conversationId: string, sdpOffer: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppCallDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/whats-app-call/start/${conversationId}`,
+        body: { sdpOffer },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  get = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppCallDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/whats-app-call/${id}`,
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  getSettings = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppCallSettingsDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/settings',
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  updateSettings = (input: WhatsAppCallSettingsDto, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppCallSettingsDto>(
+      {
+        method: 'PUT',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/settings',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** FormData with CallId and File. */
+  uploadRecording = (form: FormData, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppCallDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/upload-recording',
+        body: form,
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  getRecording = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, Blob>(
+      {
+        method: 'GET',
+        responseType: 'blob',
+        url: `/api/auto-reach/whats-app-call/${id}/recording`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getAgents = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CallAgentDto[]>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/agents',
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  transfer = (id: string, toUserId: string, sdpOffer: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CallTransferDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/whats-app-call/${id}/transfer`,
+        body: { toUserId, sdpOffer },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getIncomingTransfers = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CallTransferDto[]>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/incoming-transfers',
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  getTransfer = (transferId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CallTransferDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/whats-app-call/transfer/${transferId}`,
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  acceptTransfer = (transferId: string, sdpAnswer: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CallTransferDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/whats-app-call/accept-transfer/${transferId}`,
+        body: { sdpAnswer },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  declineTransfer = (transferId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CallTransferDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/whats-app-call/decline-transfer/${transferId}`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  cancelTransfer = (transferId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CallTransferDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/whats-app-call/cancel-transfer/${transferId}`,
       },
       { apiName: this.apiName, ...config },
     );

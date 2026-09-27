@@ -38,6 +38,7 @@ import {
 } from '../../proxy/pipeline/photo-quote.service';
 import { inr } from '../../core/util/format';
 import { RouterLink } from '@angular/router';
+import { WhatsAppCallSession } from '../../core/services/whatsapp-call.session';
 
 @Component({
   selector: 'ar-inbox',
@@ -197,7 +198,7 @@ export class ArInbox {
           : await firstValueFrom(this.photos.read({ conversationId, messageId })),
       );
     } catch (e: unknown) {
-      this.photoError.set(this.problem(e, 'The photo could not be read.'));
+      this.photoError.set(this.problem(e, 'The file could not be read.'));
     } finally {
       this.photoBusy.set(false);
     }
@@ -217,6 +218,16 @@ export class ArInbox {
     }
   }
 
+  /** PDFs, Excel (.xlsx) sheets and CSVs can be read into a draft quote; images have their own button. */
+  protected isQuotable(mimeType: string): boolean {
+    return [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv',
+    ].includes(mimeType);
+  }
+
   protected money(paise: number | null | undefined): string {
     return paise == null ? '—' : inr(paise);
   }
@@ -227,6 +238,7 @@ export class ArInbox {
 
   // ---- WhatsApp call permission (M3) -----------------------------------------------------------------------------------
   private readonly callsApi = inject(WhatsAppCallService);
+  protected readonly calls = inject(WhatsAppCallSession);
   protected readonly callPermission = signal<{
     conversationId: string;
     value: CallPermissionDto | null;

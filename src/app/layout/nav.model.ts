@@ -104,6 +104,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Inbox',
       },
       {
+        label: 'WhatsApp calls',
+        icon: 'phone',
+        route: '/calls/whatsapp',
+        permission: 'AutoReach.Inbox',
+      },
+      {
         label: 'Helpdesk',
         icon: 'help',
         route: '/helpdesk',

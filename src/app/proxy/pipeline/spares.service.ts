@@ -38,6 +38,18 @@ export interface SpareReorderDto {
   daysToDue: number;
   state: 'Due' | 'Quoted';
   quotationId?: string | null;
+  remindedAtUtc?: string | null;
+  callRequestedAtUtc?: string | null;
+  followedUpAtUtc?: string | null;
+}
+
+export interface SparesReminderSettingsDto {
+  enabled: boolean;
+  templateId?: string | null;
+  /** Follow up once this many days after an unanswered reminder; 0 = off. */
+  followUpAfterDays: number;
+  /** Null sends the reminder template again. */
+  followUpTemplateId?: string | null;
 }
 
 export interface SparesQuoteResultDto {
@@ -125,6 +137,38 @@ export class SparesService {
         method: 'POST',
         url: `/api/auto-reach/spares/${id}/mark-replaced`,
         params: { replacedOn },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getReminderSettings = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, SparesReminderSettingsDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/spares/reminder-settings',
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  updateReminderSettings = (input: SparesReminderSettingsDto, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, SparesReminderSettingsDto>(
+      {
+        method: 'PUT',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/spares/reminder-settings',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Sends due reminders now. Returns how many customers were messaged. */
+  remind = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, number>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/spares/remind',
       },
       { apiName: this.apiName, ...config },
     );

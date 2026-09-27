@@ -100,6 +100,16 @@
           >
             Ask to call
           </button>
+          <button
+            ar-button
+            variant="ghost"
+            icon="phone"
+            title="Call on WhatsApp (the customer must have allowed calls)"
+            [disabled]="calls.onCall"
+            (click)="calls.dial(thread.id, thread.contactName)"
+          >
+            Call on WhatsApp
+          </button>
         }
         <button ar-button variant="ghost" icon="user">Assign</button>
         <button ar-button variant="ghost" icon="check">Resolve</button>
@@ -185,6 +195,20 @@
                     <ar-icon name="document" [size]="16" />
                     <span>{{ media.fileName || 'Attachment' }}</span>
                   </a>
+                  @if (
+                    m.direction === 'in' &&
+                    !thread.channel &&
+                    canQuote &&
+                    isQuotable(media.mimeType)
+                  ) {
+                    <button
+                      type="button"
+                      class="bubble__action"
+                      (click)="readPhoto(thread.id, m.id)"
+                    >
+                      Quote from this document
+                    </button>
+                  }
                 }
               }
             }
@@ -471,9 +495,9 @@
       }
 
       @if (photo()) {
-        <ar-dialog title="Quote from photo" (dismiss)="photo.set(null)">
+        <ar-dialog title="Draft a quote from this file" (dismiss)="photo.set(null)">
           @if (photoBusy() && !photoReading()) {
-            <p class="composer__sms-note">Reading the photo…</p>
+            <p class="composer__sms-note">Reading the file…</p>
           }
           @if (photoReading(); as r) {
             <p class="composer__sms-note">
@@ -482,7 +506,7 @@
                   ? 'Nameplate'
                   : r.kind === 'rfq'
                     ? 'Request for quotation'
-                    : 'Photo'
+                    : 'File'
               }}
               @if (r.manufacturer || r.model) {
                 · <strong>{{ r.manufacturer }} {{ r.model }}</strong>

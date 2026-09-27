@@ -235,6 +235,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/calls/calls').then((m) => m.ArCalls),
       },
       {
+        path: 'calls/whatsapp',
+        title: 'WhatsApp calls · AutoReach',
+        loadComponent: () =>
+          import('./features/calls/whatsapp-calls').then((m) => m.ArWhatsAppCalls),
+      },
+      {
         path: 'helpdesk',
         title: 'Helpdesk · AutoReach',
         loadComponent: () => import('./features/helpdesk/helpdesk').then((m) => m.ArHelpdesk),
