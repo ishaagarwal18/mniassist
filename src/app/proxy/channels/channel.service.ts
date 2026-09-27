@@ -65,6 +65,17 @@ export class ChannelService {
       { apiName: this.apiName, ...config },
     );
 
+  /** Adds the industrial-library templates this number doesn't have yet, as drafts. Returns how many were added. */
+  addLibraryTemplates = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, number>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/channel/${id}/library-templates`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
   get = (id: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, ChannelDto>(
       {

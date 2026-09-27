@@ -29,6 +29,8 @@ const PRICING: Record<ApiPricingCategory, PricingCategory> = {
   [ApiPricingCategory.Utility]: 'utility',
   [ApiPricingCategory.Authentication]: 'authentication',
   [ApiPricingCategory.Service]: 'service',
+  // Priced separately only when a rate exists; in reports it is utility.
+  [ApiPricingCategory.UtilityInWindow]: 'utility',
 };
 
 const TEMPLATE_CAT: Record<ApiTemplateCategory, TemplatePerformance['category']> = {

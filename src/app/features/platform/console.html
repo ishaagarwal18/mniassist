@@ -170,6 +170,74 @@
     </table>
   </section>
 
+  @if (rateOpen()) {
+    <ar-dialog title="Schedule a rate" (dismiss)="rateOpen.set(false)">
+      <label class="ar-field" for="rc-cat">
+        <span class="ar-field__label">Category</span>
+        <select
+          id="rc-cat"
+          class="ar-field__input"
+          [value]="rateCategory()"
+          (change)="rateCategory.set(+$any($event.target).value)"
+        >
+          @for (c of rateCategories; track c.value) {
+            <option [value]="c.value">{{ c.label }}</option>
+          }
+        </select>
+      </label>
+      <label class="ar-field" for="rc-meta">
+        <span class="ar-field__label">What Meta charges (₹ per message)</span>
+        <input
+          id="rc-meta"
+          class="ar-field__input"
+          inputmode="decimal"
+          [value]="rateMeta()"
+          (input)="rateMeta.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field" for="rc-sell">
+        <span class="ar-field__label">What tenants pay (₹ per message)</span>
+        <input
+          id="rc-sell"
+          class="ar-field__input"
+          inputmode="decimal"
+          [value]="rateSell()"
+          (input)="rateSell.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field" for="rc-from">
+        <span class="ar-field__label">Effective from</span>
+        <input
+          id="rc-from"
+          class="ar-field__input"
+          type="date"
+          [value]="rateFrom()"
+          (input)="rateFrom.set($any($event.target).value)"
+        />
+      </label>
+      <p class="block__sub">
+        The current rate for the category, if any, is closed on that date and kept in the history.
+      </p>
+      @if (rateError(); as e) {
+        <p class="rate__err" role="alert">{{ e }}</p>
+      }
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="rateOpen.set(false)">
+          Cancel
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="rateSaving()"
+          (click)="saveRate()"
+        >
+          {{ rateSaving() ? 'Saving…' : 'Schedule' }}
+        </button>
+      </div>
+    </ar-dialog>
+  }
+
   <section class="block">
     <h2 class="block__title">Rate history</h2>
     <p class="block__sub">
@@ -177,6 +245,16 @@
       a scheduled one appears here before it bills. Superseded rates are kept rather than
       overwritten — a campaign report from December has to keep costing what it cost.
     </p>
+    <p class="block__sub">
+      Service messages and utility templates sent inside the 24-hour window cost nothing until a
+      rate exists for them. Add one here only once Meta confirms it charges; service messages then
+      have a free allowance per number per month (<span class="ar-mono"
+        >Billing:ServiceMessages:FreePerChannelPerMonth</span
+      >).
+    </p>
+    <button ar-button type="button" variant="ghost" icon="plus" (click)="openRate()">
+      Schedule a rate
+    </button>
 
     <div class="rates">
       @for (r of rates(); track r.category) {

@@ -6,10 +6,23 @@
   <button ar-button variant="ghost" icon="refresh" [disabled]="busy()" (click)="sync()">
     Sync from Meta
   </button>
+  <button
+    ar-button
+    variant="ghost"
+    icon="template"
+    [disabled]="busy()"
+    title="Adds industrial templates this number doesn't have yet (such as quotation_ready, which carries a quotation PDF) as drafts"
+    (click)="addLibrary()"
+  >
+    Add library templates
+  </button>
   <button ar-button variant="primary" icon="plus" (click)="newTemplate()">New template</button>
 </ar-topbar>
 
 <div class="tpl ar-scroll">
+  @if (notice(); as n) {
+    <p class="tpl__notice" role="status">{{ n }}</p>
+  }
   <div class="tpl__stats">
     <ar-stat-tile label="Templates" [value]="counts().total + ''" />
     <ar-stat-tile

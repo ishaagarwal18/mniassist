@@ -88,6 +88,25 @@ export class ArTemplates {
     }
   }
 
+  protected readonly notice = signal<string | null>(null);
+
+  protected async addLibrary(): Promise<void> {
+    this.busy.set(true);
+    this.notice.set(null);
+    try {
+      const added = await this.store.addLibraryTemplates();
+      this.notice.set(
+        added
+          ? `${added} library template${added === 1 ? '' : 's'} added as drafts. Review and submit them to Meta.`
+          : 'This number already has every library template.',
+      );
+    } catch {
+      this.notice.set('The library templates could not be added.');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
   protected async sync(): Promise<void> {
     this.busy.set(true);
     try {

@@ -365,6 +365,7 @@
     "POST /api/auto-reach/channel/complete-onboarding-step/{}",
     "POST /api/auto-reach/channel/complete-solution-partner-onboarding/{}",
     "POST /api/auto-reach/channel/regenerate-solution-partner-embed-link/{}",
+    "POST /api/auto-reach/channel/{}/library-templates",
     "POST /api/auto-reach/channel/{}/request-display-name",
     "POST /api/auto-reach/channel/{}/set-two-step-pin",
     "POST /api/auto-reach/chat-entry-point",

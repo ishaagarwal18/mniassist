@@ -1,3 +1,4 @@
+import { ChannelService as ChannelApi } from '../../proxy/channels/channel.service';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
@@ -386,6 +387,7 @@ function localDraft(
 export class TemplateService {
   private readonly api = inject(TemplateApi);
   private readonly channels = inject(ChannelService);
+  private readonly channelApi = inject(ChannelApi);
 
   readonly filter = signal('');
   private readonly reloadTick = signal(0);
@@ -623,6 +625,15 @@ export class TemplateService {
         languageCode: 'en',
       }),
     );
+  }
+
+  /** Adds the industrial-library templates missing from this number (such as quotation_ready) as drafts. */
+  async addLibraryTemplates(): Promise<number> {
+    const channelId = this.channels.active()?.id;
+    if (!channelId || environment.useMockData) return 0;
+    const added = await firstValueFrom(this.channelApi.addLibraryTemplates(channelId));
+    this.reload();
+    return added;
   }
 
   async syncFromMeta(): Promise<number> {

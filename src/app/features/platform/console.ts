@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { forkJoin, map } from 'rxjs';
+import { firstValueFrom, forkJoin, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { PlatformAdminService } from '../../proxy/administration';
@@ -11,7 +11,7 @@ import { MessagingTier } from '../../proxy/channels/messaging-tier.enum';
 import { QualityRating } from '../../proxy/channels/quality-rating.enum';
 import { PricingCategory } from '../../proxy/messaging/pricing-category.enum';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip, ArStatTile } from '../../ui';
+import { ArButton, ArChip, ArDialog, ArStatTile } from '../../ui';
 
 type Quality = 'green' | 'yellow' | 'red' | 'unknown';
 
@@ -87,6 +87,7 @@ const CATEGORY: Record<PricingCategory, string> = {
   [PricingCategory.Utility]: 'Utility',
   [PricingCategory.Authentication]: 'Authentication',
   [PricingCategory.Service]: 'Service',
+  [PricingCategory.UtilityInWindow]: 'Utility, in service window',
 };
 
 const SEED_METRICS: PlatformMetrics = {
@@ -260,7 +261,7 @@ function toRateHistory(cards: RateCardDto[]): RateHistory[] {
  */
 @Component({
   selector: 'ar-platform-console',
-  imports: [ArTopbar, ArButton, ArChip, ArStatTile],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArStatTile],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './console.html',
   styleUrl: './console.scss',
@@ -270,6 +271,78 @@ export class ArPlatformConsole {
   private readonly atRisk = inject(AtRiskStore);
 
   protected readonly atRiskOnly = signal(false);
+
+  // ---- scheduling a rate (Q2: service and in-window utility are priced only once a row exists) ----
+  protected readonly rateCategories = [
+    PricingCategory.Marketing,
+    PricingCategory.Utility,
+    PricingCategory.Authentication,
+    PricingCategory.Service,
+    PricingCategory.UtilityInWindow,
+  ].map((value) => ({ value, label: CATEGORY[value] }));
+  protected readonly rateOpen = signal(false);
+  protected readonly rateCategory = signal<PricingCategory>(PricingCategory.Service);
+  protected readonly rateMeta = signal('');
+  protected readonly rateSell = signal('');
+  protected readonly rateFrom = signal('');
+  protected readonly rateSaving = signal(false);
+  protected readonly rateError = signal<string | null>(null);
+
+  protected openRate(): void {
+    this.rateError.set(null);
+    this.rateMeta.set('');
+    this.rateSell.set('');
+    this.rateFrom.set(new Date().toISOString().slice(0, 10));
+    this.rateOpen.set(true);
+  }
+
+  protected async saveRate(): Promise<void> {
+    const meta = Number(this.rateMeta().trim());
+    const sell = Number(this.rateSell().trim());
+    if (
+      !Number.isFinite(meta) ||
+      !Number.isFinite(sell) ||
+      meta < 0 ||
+      sell < 0 ||
+      this.rateSell().trim() === ''
+    ) {
+      this.rateError.set('Enter both rates in rupees, e.g. 0.12 or 0.86 (stored to the paisa).');
+      return;
+    }
+    if (!this.rateFrom()) {
+      this.rateError.set('Choose the date the rate takes effect.');
+      return;
+    }
+    const input = {
+      countryCode: 'IN',
+      category: this.rateCategory(),
+      metaRateInPaise: Math.round(meta * 100),
+      sellRateInPaise: Math.round(sell * 100),
+      effectiveFromUtc: `${this.rateFrom()}T00:00:00Z`,
+    };
+    this.rateSaving.set(true);
+    this.rateError.set(null);
+    try {
+      const open = this.resource
+        .value()
+        .cards.find(
+          (c) =>
+            c.category === input.category && c.countryCode === 'IN' && c.effectiveToUtc == null,
+        );
+      await firstValueFrom(
+        open?.id ? this.api.supersedeRateCard(open.id, input) : this.api.createRateCard(input),
+      );
+      this.rateOpen.set(false);
+      this.resource.reload();
+    } catch (e: unknown) {
+      this.rateError.set(
+        (e as { error?: { error?: { message?: string } } })?.error?.error?.message ??
+          'The rate could not be saved.',
+      );
+    } finally {
+      this.rateSaving.set(false);
+    }
+  }
 
   // ---- At-risk queue (M15-3) -----------------------------------------
   protected readonly alerts = this.atRisk.alerts;
@@ -328,9 +401,15 @@ export class ArPlatformConsole {
             lastActivityAt: t.lastActivityUtc ?? undefined,
           })),
           rates: toRateHistory(r.rates.items ?? []),
+          cards: r.rates.items ?? [],
         })),
       ),
-    defaultValue: { metrics: SEED_METRICS, tenants: SEED_TENANTS, rates: SEED_RATES },
+    defaultValue: {
+      metrics: SEED_METRICS,
+      tenants: SEED_TENANTS,
+      rates: SEED_RATES,
+      cards: [] as RateCardDto[],
+    },
   });
 
   protected readonly metrics = computed(() =>

@@ -143,3 +143,9 @@
   align-items: center;
   gap: 8px;
 }
+
+.tpl__notice {
+  margin: 0;
+  font: 500 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-700, #344054);
+}
