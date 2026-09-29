@@ -1,3 +1,4 @@
+import { categoryLabel } from '../../features/billing/meta-invoice-logic';
 import {
   InvoiceDto,
   InvoiceState as InvoiceStateDto,
@@ -103,15 +104,17 @@ export function toReconciliationRun(dto: ReconciliationRunDto): ReconciliationRu
     periodLabel: `${formatDay(dto.periodStartUtc)} – ${formatDay(dto.periodEndUtc)}`,
     ranAt: dto.runAtUtc ?? '',
     source: dto.source ?? '',
-    ourConversations: dto.ourConversationCount ?? 0,
-    metaConversations: dto.metaConversationCount ?? 0,
+    unit: dto.countsMessages ? 'messages' : 'conversations',
+    ourCount: (dto.countsMessages ? dto.ourMessageCount : dto.ourConversationCount) ?? 0,
+    metaCount: (dto.countsMessages ? dto.metaMessageCount : dto.metaConversationCount) ?? 0,
+    needsAttention: dto.needsAttention ?? false,
     ourCostInPaise: dto.ourCostInPaise ?? 0,
     metaCostInPaise: dto.metaCostInPaise ?? 0,
     varianceBasisPoints: dto.costVarianceBasisPoints ?? 0,
     withinTolerance: dto.withinTolerance ?? true,
     acknowledged: dto.acknowledgedAtUtc != null,
     variances: (dto.variances ?? []).map((v) => ({
-      category: String(v.category),
+      category: categoryLabel(v.category),
       ourCount: v.ourCount ?? 0,
       metaCount: v.metaCount ?? 0,
       ourCostInPaise: v.ourCostInPaise ?? 0,

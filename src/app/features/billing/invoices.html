@@ -3,11 +3,130 @@
   [subtitle]="subtitle()"
   help="GST invoices and reconciliation in one place. An unresolved variance — a mismatch nobody's confirmed yet — is called out separately from what's simply outstanding."
 >
-  <button ar-button type="button" variant="ghost" icon="refresh">Reconcile</button>
+  <button ar-button type="button" variant="ghost" icon="refresh" (click)="openReconcile()">
+    Check Meta's invoice
+  </button>
   <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
     Generate invoice
   </button>
 </ar-topbar>
+
+@if (recOpen()) {
+  <ar-dialog title="Check Meta's invoice" (dismiss)="recOpen.set(false)">
+    @if (recResult(); as r) {
+      <p class="recd__result" [class.recd__result--bad]="!r.withinTolerance">
+        @if (r.withinTolerance) {
+          The invoice matches the meter: {{ count(r.metaCount) }} paid messages,
+          {{ inr(r.metaCostInPaise) }} ({{ variancePercent(r.varianceBasisPoints) }}, inside
+          tolerance).
+        } @else {
+          Off by {{ variancePercent(r.varianceBasisPoints) }}: the meter says
+          {{ inr(r.ourCostInPaise) }}, Meta invoiced {{ inr(r.metaCostInPaise) }}. The run below
+          shows which category and the likely cause.
+        }
+      </p>
+    } @else {
+      <p class="recd__hint">
+        Copy the WhatsApp lines from Meta's invoice for one number and one month: paid messages and
+        the amount in rupees before GST. Free messages (service, and utility inside the 24-hour
+        window) aren't on the invoice and aren't entered.
+      </p>
+      <div class="recd__row">
+        <label class="ar-field" for="rec-channel">
+          <span class="ar-field__label">WhatsApp number</span>
+          <select
+            id="rec-channel"
+            class="ar-field__input"
+            [value]="recChannel()"
+            (change)="recChannel.set($any($event.target).value)"
+          >
+            @for (c of recChannels(); track c.id) {
+              <option [value]="c.id">{{ c.number }}</option>
+            }
+          </select>
+        </label>
+        <label class="ar-field" for="rec-month">
+          <span class="ar-field__label">Month</span>
+          <input
+            id="rec-month"
+            class="ar-field__input"
+            type="month"
+            [value]="recMonth()"
+            (input)="recMonth.set($any($event.target).value)"
+          />
+        </label>
+      </div>
+      <label class="ar-field" for="rec-source">
+        <span class="ar-field__label">Invoice number</span>
+        <input
+          id="rec-source"
+          class="ar-field__input"
+          placeholder="FBADS-IN-2026-0917"
+          [value]="recSource()"
+          (input)="recSource.set($any($event.target).value)"
+        />
+      </label>
+      <table class="ar-table recd__lines">
+        <caption class="sr-only">
+          Lines from Meta's invoice
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Category</th>
+            <th scope="col">Paid messages</th>
+            <th scope="col">Amount, ₹</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of categories; track c.key) {
+            <tr>
+              <th scope="row">{{ c.label }}</th>
+              <td>
+                <input
+                  class="ar-field__input"
+                  inputmode="numeric"
+                  [attr.id]="'rec-n-' + c.key"
+                  [attr.aria-label]="c.label + ' paid messages'"
+                  [value]="line(c.key).messages"
+                  (input)="setLine(c.key, 'messages', $any($event.target).value)"
+                />
+              </td>
+              <td>
+                <input
+                  class="ar-field__input"
+                  inputmode="decimal"
+                  [attr.id]="'rec-a-' + c.key"
+                  [attr.aria-label]="c.label + ' amount in rupees'"
+                  [value]="line(c.key).amount"
+                  (input)="setLine(c.key, 'amount', $any($event.target).value)"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+    @if (recError(); as e) {
+      <p class="recd__error" role="alert">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="recOpen.set(false)">
+        {{ recResult() ? 'Done' : 'Cancel' }}
+      </button>
+      @if (!recResult()) {
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="recBusy()"
+          (click)="reconcile()"
+        >
+          {{ recBusy() ? 'Checking…' : 'Check against the meter' }}
+        </button>
+      }
+    </div>
+  </ar-dialog>
+}
 
 @if (dialogOpen()) {
   <ar-dialog title="Generate a GST invoice" (dismiss)="dialogOpen.set(false)">
@@ -225,7 +344,16 @@
           </ar-chip>
         </header>
 
-        <p class="rec__source">{{ r.source }}</p>
+        <p class="rec__source">
+          {{ r.source }} · {{ count(r.ourCount) }}
+          {{ r.unit === 'messages' ? 'paid messages' : 'conversations' }} metered,
+          {{ count(r.metaCount) }} on Meta's side
+          @if (r.needsAttention) {
+            <button type="button" class="rec__ack" (click)="acknowledge(r)">Mark as checked</button>
+          } @else if (!r.withinTolerance) {
+            · checked
+          }
+        </p>
 
         <table class="ar-table rec__table">
           <caption class="sr-only">
@@ -234,6 +362,7 @@
           <thead>
             <tr>
               <th scope="col">Category</th>
+              <th scope="col" class="num">Messages (ours / Meta)</th>
               <th scope="col" class="num">Ours</th>
               <th scope="col" class="num">Meta</th>
               <th scope="col" class="num">Difference</th>
@@ -248,6 +377,7 @@
                     <p class="rec__cause">{{ v.likelyCause }}</p>
                   }
                 </td>
+                <td class="num ar-mono">{{ count(v.ourCount) }} / {{ count(v.metaCount) }}</td>
                 <td class="num ar-mono">{{ inr(v.ourCostInPaise) }}</td>
                 <td class="num ar-mono">{{ inr(v.metaCostInPaise) }}</td>
                 <td

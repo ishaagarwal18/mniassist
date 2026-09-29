@@ -67,12 +67,15 @@ export interface ReconciliationVariance {
 
 export interface ReconciliationRun {
   readonly id: string;
+  readonly needsAttention: boolean;
   readonly channelNumber: string;
   readonly periodLabel: string;
   readonly ranAt: string;
   readonly source: string;
-  readonly ourConversations: number;
-  readonly metaConversations: number;
+  /** What the counts are: paid messages (Meta's unit since 1 July 2025), or conversations for older runs. */
+  readonly unit: 'messages' | 'conversations';
+  readonly ourCount: number;
+  readonly metaCount: number;
   readonly ourCostInPaise: number;
   readonly metaCostInPaise: number;
   readonly varianceBasisPoints: number;

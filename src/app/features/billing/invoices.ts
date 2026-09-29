@@ -1,7 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+
+import { environment } from '../../../environments/environment';
+import { ChannelService } from '../../proxy/channels/channel.service';
+import {
+  INVOICE_CATEGORIES,
+  InvoiceLine,
+  lastMonth,
+  metaFigures,
+  monthRange,
+} from './meta-invoice-logic';
 
 import { OpsService } from '../../core/services/ops.service';
-import { Invoice, InvoiceState } from '../../core/models/ops.model';
+import { Invoice, InvoiceState, ReconciliationRun } from '../../core/models/ops.model';
 import { count, inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
@@ -58,6 +69,101 @@ export class ArInvoices {
     gstin: '',
     address: '',
   });
+
+  // ---- Close a month against Meta's invoice ------------------------------------------------------------------------------
+  private readonly channelsApi = inject(ChannelService);
+  protected readonly categories = INVOICE_CATEGORIES;
+  protected readonly recOpen = signal(false);
+  protected readonly recBusy = signal(false);
+  protected readonly recError = signal<string | null>(null);
+  protected readonly recResult = signal<ReconciliationRun | null>(null);
+  protected readonly recChannels = signal<{ id: string; number: string }[]>([]);
+  protected readonly recChannel = signal('');
+  protected readonly recMonth = signal(lastMonth());
+  protected readonly recSource = signal('');
+  protected readonly recLines = signal<Record<string, InvoiceLine>>({});
+
+  protected async openReconcile(): Promise<void> {
+    this.recError.set(null);
+    this.recResult.set(null);
+    this.recMonth.set(lastMonth());
+    this.recSource.set('');
+    this.recLines.set({});
+    this.recOpen.set(true);
+    if (environment.useMockData) {
+      this.recChannels.set([{ id: 'ch-1', number: '+91 90210 44xxx' }]);
+      this.recChannel.set('ch-1');
+      return;
+    }
+    try {
+      const page = await firstValueFrom(this.channelsApi.getList({ maxResultCount: 50 }));
+      const list = (page.items ?? []).map((c) => ({
+        id: c.id!,
+        number: c.displayPhoneNumber ?? c.id!,
+      }));
+      this.recChannels.set(list);
+      this.recChannel.set(list[0]?.id ?? '');
+    } catch {
+      this.recError.set("Couldn't load your WhatsApp numbers.");
+    }
+  }
+
+  protected line(key: string): InvoiceLine {
+    return this.recLines()[key] ?? { messages: '', amount: '' };
+  }
+
+  protected setLine(key: string, field: keyof InvoiceLine, value: string): void {
+    this.recLines.update((l) => ({
+      ...l,
+      [key]: { ...(l[key] ?? { messages: '', amount: '' }), [field]: value },
+    }));
+  }
+
+  protected async reconcile(): Promise<void> {
+    const period = monthRange(this.recMonth());
+    if (!this.recChannel() || !period) {
+      this.recError.set('Choose the number and the month the invoice covers.');
+      return;
+    }
+    if (!this.recSource().trim()) {
+      this.recError.set('Enter the invoice number, so the run says what it was checked against.');
+      return;
+    }
+    const figures = metaFigures(this.recLines());
+    if ('error' in figures) {
+      this.recError.set(figures.error);
+      return;
+    }
+    this.recBusy.set(true);
+    this.recError.set(null);
+    try {
+      const run = await this.ops.reconcileInvoice({
+        channelId: this.recChannel(),
+        periodStartUtc: period.startUtc,
+        periodEndUtc: period.endUtc,
+        source: this.recSource().trim(),
+        metaFigures: figures.figures,
+      });
+      if (run) this.recResult.set(run);
+      else this.recOpen.set(false);
+    } catch (e: unknown) {
+      this.recError.set(
+        (e as { error?: { error?: { message?: string } } })?.error?.error?.message ??
+          'The invoice could not be checked.',
+      );
+    } finally {
+      this.recBusy.set(false);
+    }
+  }
+
+  protected async acknowledge(run: ReconciliationRun): Promise<void> {
+    const note = window.prompt(
+      `Mark the ${run.periodLabel} variance on ${run.channelNumber} as checked? Say what you found (optional):`,
+      '',
+    );
+    if (note === null) return;
+    await this.ops.acknowledgeReconciliation(run.id, note.trim());
+  }
 
   protected patchInvoice(key: keyof ReturnType<ArInvoices['g']>, value: string): void {
     this.g.update((s) => ({ ...s, [key]: value }));

@@ -114,6 +114,9 @@ export interface InvoiceListRequestDto extends PagedAndSortedResultRequestDto {
 }
 
 export interface MetaBilledFigureDto {
+  /** Paid messages on the invoice line (Meta bills per message since 1 July 2025). */
+  messageCount?: number;
+  /** Only for statements from before per-message pricing. */
   conversationCount?: number;
   costInPaise?: number;
 }
@@ -155,6 +158,10 @@ export interface ReconciliationRunDto extends EntityDto<string> {
   source?: string;
   ourConversationCount?: number;
   metaConversationCount?: number;
+  /** True for runs in paid messages; older runs compared conversations. */
+  countsMessages?: boolean;
+  ourMessageCount?: number;
+  metaMessageCount?: number;
   ourCostInPaise?: number;
   metaCostInPaise?: number;
   costVarianceInPaise?: number;
@@ -183,7 +190,8 @@ export interface RunReconciliationDto {
   channelId?: string;
   periodStartUtc?: string;
   periodEndUtc?: string;
-  metaFigures?: Record<PricingCategory, MetaBilledFigureDto>;
+  /** Keyed by the category's name (Marketing, Utility, Authentication). */
+  metaFigures?: Partial<Record<keyof typeof PricingCategory, MetaBilledFigureDto>>;
   source: string;
   toleranceBasisPoints?: number | null;
 }

@@ -7,6 +7,7 @@ import { NotificationService as NotificationApi } from '../../proxy/notification
 import {
   GenerateInvoiceDto,
   InvoiceService as InvoiceApi,
+  RunReconciliationDto,
   ReconciliationService as ReconciliationApi,
 } from '../../proxy/billing';
 import { WebhookSubscriptionService as WebhookApi } from '../../proxy/integrations';
@@ -252,9 +253,11 @@ export class OpsService {
       channelNumber: '+91 90210 44xxx',
       periodLabel: '01 Jul – 31 Jul 2026',
       ranAt: '2026-08-02',
-      source: 'Meta statement export, 02 Aug',
-      ourConversations: 37_592,
-      metaConversations: 36_918,
+      source: 'Meta invoice FBADS-IN-2026-0731',
+      needsAttention: true,
+      unit: 'messages',
+      ourCount: 37_592,
+      metaCount: 36_918,
       ourCostInPaise: 2_86_240_00,
       metaCostInPaise: 2_81_072_00,
       varianceBasisPoints: 184,
@@ -269,7 +272,7 @@ export class OpsService {
           metaCostInPaise: 2_39_480_00,
           likelyCause:
             'We counted more than Meta billed. Most often a withheld message (131049) metered as ' +
-            'billable, or a conversation we opened twice inside one 24-hour window.',
+            'paid, or a message Meta later marked free (a free entry point).',
         },
         {
           category: 'Utility',
@@ -521,6 +524,21 @@ export class OpsService {
     if (environment.useMockData) return;
     await firstValueFrom(this.invoiceApi.generate(input));
     this.invoicesResource.reload();
+  }
+
+  /** Closes a month against Meta's invoice. Returns the run so the page can say whether it matched. */
+  async reconcileInvoice(input: RunReconciliationDto): Promise<ReconciliationRun | null> {
+    if (environment.useMockData) return null;
+    const run = await firstValueFrom(this.reconciliationApi.run(input));
+    this.reconciliationResource.reload();
+    return toReconciliationRun(run);
+  }
+
+  /** Someone looked at a variance and is closing it, with a note saying why. */
+  async acknowledgeReconciliation(id: string, note: string): Promise<void> {
+    if (environment.useMockData) return;
+    await firstValueFrom(this.reconciliationApi.acknowledge(id, { note: note || undefined }));
+    this.reconciliationResource.reload();
   }
 
   async createWebhook(url: string, description: string, events: WebhookEvent[]): Promise<void> {
