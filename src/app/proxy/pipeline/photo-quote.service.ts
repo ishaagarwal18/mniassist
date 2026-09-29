@@ -12,6 +12,8 @@ export interface ReadPhotoInput {
 export interface DraftQuoteFromPhotoInput extends ReadPhotoInput {
   /** Null opens a new enquiry for the conversation's customer. */
   enquiryId?: string | null;
+  /** Other files from the same conversation to read into the same draft (up to 4 more). */
+  moreMessageIds?: string[] | null;
 }
 
 /** exact = priced from the catalogue or a price list; similar = a suggestion only; none = nothing found. */

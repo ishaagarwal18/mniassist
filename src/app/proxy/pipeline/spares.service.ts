@@ -41,6 +41,8 @@ export interface SpareReorderDto {
   remindedAtUtc?: string | null;
   callRequestedAtUtc?: string | null;
   followedUpAtUtc?: string | null;
+  /** Follow-ups sent so far for this reminder. */
+  followUpCount: number;
 }
 
 export interface SparesReminderSettingsDto {
@@ -50,6 +52,8 @@ export interface SparesReminderSettingsDto {
   followUpAfterDays: number;
   /** Null sends the reminder template again. */
   followUpTemplateId?: string | null;
+  /** How many follow-ups, 1–3, each the same number of days after the last. */
+  maxFollowUps: number;
 }
 
 export interface SparesQuoteResultDto {

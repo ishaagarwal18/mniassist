@@ -16,6 +16,7 @@ import { ArButton, ArChip } from '../../ui';
 import { ArEnquiryActivities } from '../activities/enquiry-activities';
 import { ArEnquiryCalls } from '../calls/enquiry-calls';
 import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
+import { ArEnquiryNetwork } from '../network/enquiry-network';
 
 /**
  * The enquiry card, opened. A slide-over rather than a route because the board is
@@ -26,7 +27,15 @@ import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
  */
 @Component({
   selector: 'ar-enquiry-drawer',
-  imports: [ArButton, ArChip, ArEnquiryActivities, ArEnquiryCalls, ArEnquiryTickets, RouterLink],
+  imports: [
+    ArButton,
+    ArChip,
+    ArEnquiryActivities,
+    ArEnquiryCalls,
+    ArEnquiryTickets,
+    ArEnquiryNetwork,
+    RouterLink,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="scrim" (click)="close.emit()"></div>
@@ -203,6 +212,12 @@ import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
               [contactName]="d.contact"
             />
           </section>
+
+          <ar-enquiry-network
+            class="sec"
+            [enquiryId]="d.id"
+            [open]="d.stage !== 'won' && d.stage !== 'lost'"
+          />
 
           <section class="sec">
             <h3 class="sec__t">Add a note</h3>

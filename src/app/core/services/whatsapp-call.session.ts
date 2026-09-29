@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import {
+  WhatsAppCallSettingsDto,
   CallAgentDto,
   CallTransferDto,
   WhatsAppCallDto,
@@ -18,7 +19,25 @@ const TRANSFER_TIMEOUT_MS = 45_000;
 /** While relaying a transferred call, how often to check whether it has ended. */
 const RELAY_POLL_MS = 3000;
 
-const ICE_SERVERS: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
+const DEFAULT_ICE: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
+
+/** The standard "this call is recorded" notice when the workspace has no clip of its own: two short 1400 Hz beeps. */
+export function recordingTone(
+  ctx: BaseAudioContext,
+  into: AudioNode,
+  at = ctx.currentTime,
+): number {
+  for (const start of [0, 0.7]) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.value = 1400;
+    gain.gain.value = 0.2;
+    osc.connect(gain).connect(into);
+    osc.start(at + start);
+    osc.stop(at + start + 0.35);
+  }
+  return 1.05;
+}
 
 /** Waits until the browser has gathered its ICE candidates, so the SDP carries them (no trickle ICE anywhere here). */
 export function iceGathered(pc: RTCPeerConnection, timeoutMs = 3000): Promise<void> {
@@ -102,7 +121,7 @@ export class WhatsAppCallSession {
   private recordMix: MediaStreamAudioDestinationNode | null = null;
   private micSource: MediaStreamAudioSourceNode | null = null;
   private recordChunks: Blob[] = [];
-  private recordCalls: boolean | null = null;
+  private settings: WhatsAppCallSettingsDto | null = null;
 
   get onCall(): boolean {
     return (
@@ -234,7 +253,7 @@ export class WhatsAppCallSession {
     this.offering.set(to.name);
     let transferId: string | null = null;
     try {
-      const agentPc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+      const agentPc = new RTCPeerConnection({ iceServers: await this.iceServers() });
       this.agentPc = agentPc;
       this.customerStream
         .getAudioTracks()
@@ -333,7 +352,7 @@ export class WhatsAppCallSession {
     this.error.set(null);
     try {
       this.mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+      const pc = new RTCPeerConnection({ iceServers: await this.iceServers() });
       this.pc = pc;
       this.mic.getTracks().forEach((track) => pc.addTrack(track, this.mic!));
       pc.ontrack = (e) => this.play(e.streams[0] ?? new MediaStream([e.track]));
@@ -393,7 +412,7 @@ export class WhatsAppCallSession {
 
   private async connectCustomer(): Promise<RTCPeerConnection> {
     this.mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const pc = new RTCPeerConnection({ iceServers: await this.iceServers() });
     this.pc = pc;
     this.mic.getTracks().forEach((t) => pc.addTrack(t, this.mic!));
     pc.ontrack = (e) => {
@@ -429,19 +448,39 @@ export class WhatsAppCallSession {
     this.clock ??= setInterval(() => this.tick.update((n) => n + 1), 1000);
   }
 
-  /** Mixes my microphone and the customer into one track and records it, when the workspace records calls. */
-  private async startRecording(): Promise<void> {
+  /** The workspace's call settings, fetched once per page. Null when they can't be read (calls still work, unrecorded). */
+  private async loadSettings(): Promise<WhatsAppCallSettingsDto | null> {
     try {
-      this.recordCalls ??= (await firstValueFrom(this.api.getSettings())).recordCalls;
+      this.settings ??= await firstValueFrom(this.api.getSettings());
     } catch {
-      this.recordCalls = null;
-      return;
+      return null;
     }
+    return this.settings;
+  }
+
+  /** STUN/TURN servers from the workspace's configuration; the public STUN server when none are set. */
+  private async iceServers(): Promise<RTCIceServer[]> {
+    const configured = (await this.loadSettings())?.iceServers ?? [];
+    return configured.length
+      ? configured.map((s) => ({
+          urls: s.urls,
+          username: s.username ?? undefined,
+          credential: s.credential ?? undefined,
+        }))
+      : DEFAULT_ICE;
+  }
+
+  /**
+   * Mixes my microphone and the customer into one track and records it, when the workspace records calls. Before anything
+   * else the customer hears the recording notice: the workspace's own clip, or two beeps. It goes into the recording too.
+   */
+  private async startRecording(): Promise<void> {
+    const settings = await this.loadSettings();
     const type =
       typeof MediaRecorder === 'undefined'
         ? null
         : recordingType((t) => MediaRecorder.isTypeSupported(t));
-    if (!this.recordCalls || !type || !this.mic || !this.customerStream) return;
+    if (!settings?.recordCalls || !type || !this.mic || !this.customerStream) return;
 
     this.recordCtx = new AudioContext();
     this.recordMix = this.recordCtx.createMediaStreamDestination();
@@ -454,6 +493,39 @@ export class WhatsAppCallSession {
     this.recorder.ondataavailable = (e) => e.data.size && this.recordChunks.push(e.data);
     this.recorder.start(5000);
     this.recording.set(true);
+
+    await this.announce(!!settings.hasAnnouncement);
+  }
+
+  /**
+   * Plays the recording notice to the customer: my microphone and the notice are mixed into what the customer's leg sends,
+   * so I can keep talking over the end of it. Best effort: a notice that can't play never stops the call.
+   */
+  private async announce(hasClip: boolean): Promise<void> {
+    const ctx = this.recordCtx;
+    const sender = this.pc?.getSenders().find((x) => x.track?.kind === 'audio');
+    if (!ctx || !sender || !this.micSource || !this.recordMix) return;
+    try {
+      const outgoing = ctx.createMediaStreamDestination();
+      this.micSource.connect(outgoing);
+
+      const notice = ctx.createGain();
+      notice.connect(outgoing);
+      notice.connect(this.recordMix);
+      if (hasClip) {
+        const blob = await firstValueFrom(this.api.getAnnouncement());
+        const clip = ctx.createBufferSource();
+        clip.buffer = await ctx.decodeAudioData(await blob.arrayBuffer());
+        clip.connect(notice);
+        clip.start();
+      } else {
+        recordingTone(ctx, notice);
+      }
+
+      await sender.replaceTrack(outgoing.stream.getAudioTracks()[0]);
+    } catch {
+      // The call carries on without the notice; the agent was already told to say it.
+    }
   }
 
   private addToRecording(stream: MediaStream): void {

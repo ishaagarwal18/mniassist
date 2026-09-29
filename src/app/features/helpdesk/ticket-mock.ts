@@ -368,6 +368,7 @@ export class MockServiceTicketApi {
       lowHours: input.lowHours,
       portalEnabled: input.portalEnabled,
       portalUrl,
+      signOffTemplateId: input.signOffTemplateId ?? null,
     };
     return of({ ...this.s.settings });
   };

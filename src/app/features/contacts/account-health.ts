@@ -10,10 +10,88 @@ import {
   AccountHealthDto,
   AccountHealthService,
   HealthBand,
+  HealthWeightsDto,
   RenewalForecastDto,
 } from '../../proxy/contacts/account-health.service';
-import { ArButton, ArChip } from '../../ui';
+import { ArButton, ArChip, ArDialog } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
+
+/** The original fixed rules: what a workspace that never tunes anything scores with. */
+const DEFAULT_WEIGHTS: HealthWeightsDto = {
+  start: 75,
+  healthyFrom: 70,
+  watchFrom: 45,
+  neverMessaged: 10,
+  silentOver90Days: 10,
+  silentOver180Days: 20,
+  inTouchThisMonth: 5,
+  perOpenTicket: 5,
+  openTicketsCap: 15,
+  perOverdueTicket: 10,
+  overdueTicketsCap: 20,
+  lowSatisfaction: 15,
+  highSatisfaction: 5,
+  overdueInvoices: 15,
+  perRenewalLost: 15,
+  renewalsLostCap: 30,
+  perRenewalWon: 5,
+  renewalsWonCap: 10,
+  perQuoteWon: 5,
+  quotesWonCap: 15,
+  perQuoteLost: 3,
+  quotesLostCap: 9,
+};
+
+type WeightKey = keyof HealthWeightsDto;
+
+/** The tuning form, in the order a person reads the score: where it starts, then what takes points away and what adds them. */
+const WEIGHT_GROUPS: {
+  title: string;
+  fields: { key: WeightKey; label: string; sign?: '+' | '−' }[];
+}[] = [
+  {
+    title: 'Score and bands',
+    fields: [
+      { key: 'start', label: 'Everyone starts at' },
+      { key: 'healthyFrom', label: 'Healthy from' },
+      { key: 'watchFrom', label: 'Watch from (below: at risk)' },
+    ],
+  },
+  {
+    title: 'Contact',
+    fields: [
+      { key: 'neverMessaged', label: 'Never messaged', sign: '−' },
+      { key: 'silentOver90Days', label: 'Silent over 90 days', sign: '−' },
+      { key: 'silentOver180Days', label: 'Silent over 180 days', sign: '−' },
+      { key: 'inTouchThisMonth', label: 'In touch this month', sign: '+' },
+    ],
+  },
+  {
+    title: 'Service',
+    fields: [
+      { key: 'perOpenTicket', label: 'Each open ticket', sign: '−' },
+      { key: 'openTicketsCap', label: 'Open tickets, at most', sign: '−' },
+      { key: 'perOverdueTicket', label: 'Each overdue ticket', sign: '−' },
+      { key: 'overdueTicketsCap', label: 'Overdue tickets, at most', sign: '−' },
+      { key: 'lowSatisfaction', label: 'Low satisfaction (below 3★)', sign: '−' },
+      { key: 'highSatisfaction', label: 'High satisfaction (4.5★ and up)', sign: '+' },
+    ],
+  },
+  {
+    title: 'Money and sales',
+    fields: [
+      { key: 'overdueInvoices', label: 'Overdue invoices', sign: '−' },
+      { key: 'perRenewalLost', label: 'Each AMC renewal lost', sign: '−' },
+      { key: 'renewalsLostCap', label: 'Renewals lost, at most', sign: '−' },
+      { key: 'perRenewalWon', label: 'Each AMC renewal won', sign: '+' },
+      { key: 'renewalsWonCap', label: 'Renewals won, at most', sign: '+' },
+      { key: 'perQuoteWon', label: 'Each quote won (12 months)', sign: '+' },
+      { key: 'quotesWonCap', label: 'Quotes won, at most', sign: '+' },
+      { key: 'perQuoteLost', label: 'Each quote lost (12 months)', sign: '−' },
+      { key: 'quotesLostCap', label: 'Quotes lost, at most', sign: '−' },
+    ],
+  },
+];
 
 const now = new Date().toISOString();
 const month = (offset: number) => {
@@ -95,7 +173,7 @@ const BAND_LABEL: Record<HealthBand, string> = {
  */
 @Component({
   selector: 'ar-account-health',
-  imports: [ArTopbar, ArButton, ArChip],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -114,8 +192,62 @@ const BAND_LABEL: Record<HealthBand, string> = {
         >
           {{ busy() ? 'Scoring…' : 'Rescore now' }}
         </button>
+        <button ar-button type="button" variant="ghost" icon="settings" (click)="openTune()">
+          Tune scoring
+        </button>
       }
     </ar-topbar>
+
+    @if (tuneOpen()) {
+      <ar-dialog title="Tune the health score" (dismiss)="tuneOpen.set(false)">
+        <p class="ah__hint">
+          Points from 0 to 100. Penalties are taken away, rewards added; “at most” caps how much one
+          kind of signal can move a score. Saving rescores every customer.
+        </p>
+        @for (g of weightGroups; track g.title) {
+          <fieldset class="tune">
+            <legend>{{ g.title }}</legend>
+            @for (f of g.fields; track f.key) {
+              <label class="tune__row" [for]="'hw-' + f.key">
+                <span
+                  >{{ f.label }}
+                  @if (f.sign) {
+                    <span class="tune__sign" [class.neg]="f.sign === '−'">{{ f.sign }}</span>
+                  }
+                </span>
+                <input
+                  [id]="'hw-' + f.key"
+                  class="ar-field__input tune__input"
+                  inputmode="numeric"
+                  [value]="weights()[f.key]"
+                  (input)="setWeight(f.key, $any($event.target).value)"
+                />
+              </label>
+            }
+          </fieldset>
+        }
+        @if (tuneError(); as e) {
+          <p class="ah__err" role="alert">{{ e }}</p>
+        }
+        <div dialogActions>
+          <button ar-button type="button" variant="ghost" (click)="weights.set(defaults)">
+            Restore defaults
+          </button>
+          <button ar-button type="button" variant="ghost" (click)="tuneOpen.set(false)">
+            Cancel
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="busy()"
+            (click)="saveWeights()"
+          >
+            {{ busy() ? 'Saving and rescoring…' : 'Save and rescore' }}
+          </button>
+        </div>
+      </ar-dialog>
+    }
 
     <div class="ah ar-scroll">
       @if (forecast(); as f) {
@@ -431,6 +563,40 @@ const BAND_LABEL: Record<HealthBand, string> = {
       font: 500 12.5px var(--ar-font-sans);
       color: var(--ar-bad-600, #b42318);
     }
+    .tune {
+      border: 1px solid var(--ar-line-200);
+      border-radius: 8px;
+      margin: 0 0 10px;
+      padding: 8px 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 6px 16px;
+    }
+    .tune legend {
+      font: 600 12px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+      padding: 0 4px;
+    }
+    .tune__row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font: 400 13px var(--ar-font-sans);
+    }
+    .tune__input {
+      width: 64px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .tune__sign {
+      margin-left: 4px;
+      font-weight: 600;
+      color: var(--ar-good-600, #067647);
+    }
+    .tune__sign.neg {
+      color: var(--ar-bad-600, #b42318);
+    }
     @media (max-width: 560px) {
       .ah {
         padding-inline: 12px;
@@ -500,6 +666,56 @@ export class ArAccountHealth {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  // ---- Tuning -------------------------------------------------------------------------
+  protected readonly weightGroups = WEIGHT_GROUPS;
+  protected readonly defaults = DEFAULT_WEIGHTS;
+  protected readonly tuneOpen = signal(false);
+  protected readonly weights = signal<HealthWeightsDto>({ ...DEFAULT_WEIGHTS });
+  protected readonly tuneError = signal<string | null>(null);
+
+  protected async openTune(): Promise<void> {
+    this.tuneError.set(null);
+    this.tuneOpen.set(true);
+    if (environment.useMockData) return;
+    try {
+      this.weights.set(await firstValueFrom(this.api.getWeights()));
+    } catch (e: unknown) {
+      this.tuneError.set(this.problem(e, 'Could not load the current points.'));
+    }
+  }
+
+  protected setWeight(key: WeightKey, value: string): void {
+    this.weights.update((w) => ({ ...w, [key]: Number(value.trim()) }));
+  }
+
+  protected async saveWeights(): Promise<void> {
+    const w = this.weights();
+    if (Object.values(w).some((v) => !Number.isInteger(v) || v < 0 || v > 100)) {
+      this.tuneError.set('Use whole numbers from 0 to 100.');
+      return;
+    }
+    if (w.watchFrom >= w.healthyFrom) {
+      this.tuneError.set('“Watch from” must be below “Healthy from”.');
+      return;
+    }
+    this.busy.set(true);
+    this.tuneError.set(null);
+    try {
+      if (!environment.useMockData)
+        this.weights.set(await firstValueFrom(this.api.updateWeights(w)));
+      this.tuneOpen.set(false);
+      await this.load();
+    } catch (e: unknown) {
+      this.tuneError.set(this.problem(e, 'The points could not be saved.'));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  private problem(e: unknown, fallback: string): string {
+    return (e as { error?: { error?: { message?: string } } })?.error?.error?.message ?? fallback;
   }
 
   protected async recompute(): Promise<void> {

@@ -110,6 +110,17 @@
           >
             Call on WhatsApp
           </button>
+          @if (canReorder && thread.contactId) {
+            <button
+              ar-button
+              variant="ghost"
+              icon="send"
+              title="Send the customer their spares re-order link"
+              (click)="reorderFor.set({ id: thread.contactId, name: thread.contactName })"
+            >
+              Re-order link
+            </button>
+          }
         }
         <button ar-button variant="ghost" icon="user">Assign</button>
         <button ar-button variant="ghost" icon="check">Resolve</button>
@@ -173,7 +184,7 @@
                     <button
                       type="button"
                       class="bubble__action"
-                      (click)="readPhoto(thread.id, m.id)"
+                      (click)="readPhoto(thread.id, m.id, thread.messages)"
                     >
                       Quote from this photo
                     </button>
@@ -204,7 +215,7 @@
                     <button
                       type="button"
                       class="bubble__action"
-                      (click)="readPhoto(thread.id, m.id)"
+                      (click)="readPhoto(thread.id, m.id, thread.messages)"
                     >
                       Quote from this document
                     </button>
@@ -551,6 +562,23 @@
             @if (r.note) {
               <p class="composer__sms-note">Unclear: {{ r.note }}</p>
             }
+            @if (photoOthers().length && !photoDraft()) {
+              <fieldset class="photo-more">
+                <legend>Also read into the same quotation (up to 4)</legend>
+                @for (o of photoOthers(); track o.id) {
+                  <label [for]="'pm-' + o.id">
+                    <input
+                      type="checkbox"
+                      [id]="'pm-' + o.id"
+                      [checked]="photoMore().includes(o.id)"
+                      [disabled]="!photoMore().includes(o.id) && photoMore().length >= 4"
+                      (change)="toggleMore(o.id, $any($event.target).checked)"
+                    />
+                    {{ o.label }}
+                  </label>
+                }
+              </fieldset>
+            }
             <p class="composer__sms-note">
               Read by AI. Part numbers are copied as written; check them before the quote goes out.
             </p>
@@ -575,11 +603,25 @@
                 [disabled]="photoBusy()"
                 (click)="draftFromPhoto()"
               >
-                {{ photoBusy() ? 'Drafting…' : 'Draft quotation' }}
+                {{
+                  photoBusy()
+                    ? 'Drafting…'
+                    : photoMore().length
+                      ? 'Draft from ' + (photoMore().length + 1) + ' files'
+                      : 'Draft quotation'
+                }}
               </button>
             }
           </div>
         </ar-dialog>
+      }
+
+      @if (reorderFor(); as r) {
+        <ar-send-reorder-link
+          [contactId]="r.id"
+          [contactName]="r.name"
+          (closed)="reorderFor.set(null)"
+        />
       }
 
       @if (pickerOpen()) {

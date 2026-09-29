@@ -25,8 +25,18 @@ export interface WhatsAppCallDto {
   transferCount: number;
 }
 
+export interface IceServerDto {
+  urls: string[];
+  username?: string | null;
+  credential?: string | null;
+}
+
 export interface WhatsAppCallSettingsDto {
   recordCalls: boolean;
+  /** Read-only. */
+  hasAnnouncement?: boolean;
+  /** Read-only: STUN/TURN servers from the API's configuration. */
+  iceServers?: IceServerDto[];
 }
 
 export interface CallAgentDto {
@@ -170,6 +180,38 @@ export class WhatsAppCallService {
         url: `/api/auto-reach/whats-app-call/${id}/recording`,
       },
       { apiName: this.apiName, ...config },
+    );
+
+  /** FormData with File: the workspace's "this call is recorded" clip. */
+  uploadAnnouncement = (form: FormData, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppCallSettingsDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/upload-announcement',
+        body: form,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  deleteAnnouncement = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppCallSettingsDto>(
+      {
+        method: 'DELETE',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/announcement',
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getAnnouncement = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, Blob>(
+      {
+        method: 'GET',
+        responseType: 'blob',
+        url: '/api/auto-reach/whats-app-call/announcement',
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
     );
 
   getAgents = (config?: Partial<Rest.Config>) =>

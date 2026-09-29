@@ -37,6 +37,7 @@ const SEED_DUE: SpareReorderDto[] = [
     dueOn: iso(-6),
     daysToDue: -6,
     state: 'Due',
+    followUpCount: 0,
   },
   {
     id: 'r2',
@@ -52,6 +53,7 @@ const SEED_DUE: SpareReorderDto[] = [
     dueOn: iso(4),
     daysToDue: 4,
     state: 'Due',
+    followUpCount: 0,
   },
   {
     id: 'r3',
@@ -68,6 +70,7 @@ const SEED_DUE: SpareReorderDto[] = [
     daysToDue: 21,
     state: 'Quoted',
     quotationId: 'q1',
+    followUpCount: 0,
   },
 ];
 const SEED_RULES: ConsumableRuleDto[] = [
@@ -215,7 +218,10 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
                   @if (r.callRequestedAtUtc) {
                     <ar-chip tone="amber">Asked for a call</ar-chip>
                   } @else if (r.followedUpAtUtc) {
-                    <ar-chip tone="neutral">Followed up {{ shortDate(r.followedUpAtUtc) }}</ar-chip>
+                    <ar-chip tone="neutral"
+                      >Followed up{{ r.followUpCount > 1 ? ' ' + r.followUpCount + '×, last' : '' }}
+                      {{ shortDate(r.followedUpAtUtc) }}</ar-chip
+                    >
                   } @else if (r.remindedAtUtc) {
                     <ar-chip tone="neutral">Reminded {{ shortDate(r.remindedAtUtc) }}</ar-chip>
                   }
@@ -258,7 +264,8 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
           Once a day, each customer with parts coming due gets one message listing them, from your
           approved template. Body values in order: customer name, the parts due, the earliest due
           date. The first quick-reply button (e.g. “Send quotation”) drafts the quote for all their
-          due parts; the second (e.g. “Call me”) alerts the team. Each part is reminded once.
+          due parts; the second (e.g. “Call me”) alerts the team. Each part is reminded once, then
+          followed up up to three times if you choose.
         </p>
         <label class="rem__check" for="sp-rem-on">
           <input
@@ -299,6 +306,22 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
           />
         </label>
         @if (remFollowUpDays() !== '0' && remFollowUpDays().trim() !== '') {
+          <label class="ar-field" for="sp-rem-max">
+            <span class="ar-field__label"
+              >Follow-ups at most
+              <span class="ar-field__opt">(each the same number of days after the last)</span></span
+            >
+            <select
+              id="sp-rem-max"
+              class="ar-field__input"
+              [value]="remMaxFollowUps()"
+              (change)="remMaxFollowUps.set($any($event.target).value)"
+            >
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </label>
           <label class="ar-field" for="sp-rem-futpl">
             <span class="ar-field__label"
               >Follow-up template
@@ -630,8 +653,10 @@ export class ArSpares {
     enabled: false,
     templateId: null,
     followUpAfterDays: 0,
+    maxFollowUps: 1,
   });
   protected readonly remFollowUpDays = signal('0');
+  protected readonly remMaxFollowUps = signal('1');
   protected readonly remFollowUpTemplateId = signal('');
   protected readonly remindersOpen = signal(false);
   protected readonly remEnabled = signal(false);
@@ -649,6 +674,7 @@ export class ArSpares {
     this.remTemplateId.set(this.reminders().templateId ?? '');
     this.remFollowUpDays.set(String(this.reminders().followUpAfterDays ?? 0));
     this.remFollowUpTemplateId.set(this.reminders().followUpTemplateId ?? '');
+    this.remMaxFollowUps.set(String(this.reminders().maxFollowUps ?? 1));
     this.remindersOpen.set(true);
     if (environment.useMockData || this.templates().length) return;
     try {
@@ -685,6 +711,7 @@ export class ArSpares {
         templateId: this.remTemplateId() || null,
         followUpAfterDays: days,
         followUpTemplateId: days > 0 ? this.remFollowUpTemplateId() || null : null,
+        maxFollowUps: days > 0 ? Number(this.remMaxFollowUps()) || 1 : 1,
       };
       this.reminders.set(
         environment.useMockData

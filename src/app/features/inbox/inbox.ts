@@ -25,6 +25,7 @@ import { ArAvatar, ArButton, ArChip, ArDialog, ArIcon, ArSearchBox } from '../..
 import { ChannelService } from '../../core/services/channel.service';
 import { ArChannelHealthStrip } from '../../ui/channel-health-strip';
 import { ArDocumentPicker, PickedDocument } from './document-picker';
+import { ArSendReorderLink } from '../reorder/send-reorder-link';
 import { ArCallDialog } from '../calls/call-dialog';
 import { InboxService as InboxApi } from '../../proxy/messaging/inbox.service';
 import {
@@ -43,6 +44,7 @@ import { WhatsAppCallSession } from '../../core/services/whatsapp-call.session';
 @Component({
   selector: 'ar-inbox',
   imports: [
+    ArSendReorderLink,
     ArTopbar,
     ArAvatar,
     ArChip,
@@ -160,13 +162,47 @@ export class ArInbox {
   protected readonly photoDraft = signal<PhotoDraftDto | null>(null);
   protected readonly photoBusy = signal(false);
   protected readonly photoError = signal<string | null>(null);
+  /** The customer's other readable attachments in this conversation, and the ones chosen to go into the same draft. */
+  protected readonly photoOthers = signal<{ id: string; label: string }[]>([]);
+  protected readonly photoMore = signal<string[]>([]);
   protected readonly canQuote = grantedPolicy(
     'AutoReach.Quotations.Create',
     inject(PermissionService),
   );
 
-  protected async readPhoto(conversationId: string, messageId: string): Promise<void> {
+  // ---- Spares re-order portal: send this customer their personal link -------------------------------------------------
+  protected readonly canReorder = grantedPolicy(
+    'AutoReach.ReorderPortal.SendLinks',
+    inject(PermissionService),
+  );
+  protected readonly reorderFor = signal<{ id: string; name: string } | null>(null);
+
+  protected async readPhoto(
+    conversationId: string,
+    messageId: string,
+    messages: readonly {
+      id: string;
+      direction: string;
+      media?: { kind: string; mimeType: string; fileName?: string | null } | null;
+    }[] = [],
+  ): Promise<void> {
     this.photo.set({ conversationId, messageId });
+    this.photoMore.set([]);
+    this.photoOthers.set(
+      messages
+        .filter(
+          (m) =>
+            m.id !== messageId &&
+            m.direction === 'in' &&
+            !!m.media &&
+            (m.media.kind === 'image' || this.isQuotable(m.media.mimeType)),
+        )
+        .slice(-12)
+        .map((m) => ({
+          id: m.id,
+          label: m.media!.kind === 'image' ? 'Photo' : m.media!.fileName || 'Document',
+        })),
+    );
     this.photoReading.set(null);
     this.photoDraft.set(null);
     this.photoError.set(null);
@@ -210,7 +246,11 @@ export class ArInbox {
     this.photoBusy.set(true);
     this.photoError.set(null);
     try {
-      this.photoDraft.set(await firstValueFrom(this.photos.draft({ ...p, enquiryId: null })));
+      this.photoDraft.set(
+        await firstValueFrom(
+          this.photos.draft({ ...p, enquiryId: null, moreMessageIds: this.photoMore() }),
+        ),
+      );
     } catch (e: unknown) {
       this.photoError.set(this.problem(e, 'The quotation could not be drafted.'));
     } finally {
@@ -218,7 +258,13 @@ export class ArInbox {
     }
   }
 
-  /** PDFs, Excel (.xlsx) sheets and CSVs can be read into a draft quote; images have their own button. */
+  protected toggleMore(id: string, on: boolean): void {
+    this.photoMore.update((ids) =>
+      on ? [...ids.filter((x) => x !== id), id].slice(0, 4) : ids.filter((x) => x !== id),
+    );
+  }
+
+  /** PDFs, Excel (.xlsx and .xls) sheets and CSVs can be read into a draft quote; images have their own button. */
   protected isQuotable(mimeType: string): boolean {
     return [
       'application/pdf',

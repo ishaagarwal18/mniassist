@@ -32,6 +32,8 @@ export interface DpdpReadinessDto {
   gaps: number;
   needsReview: number;
   noticeDraft: string;
+  /** The same draft by language (en, hi, mr). Hindi and Marathi are machine-written: review before use. */
+  noticeDrafts: Record<string, string>;
 }
 
 /** M5: DPDP readiness. */

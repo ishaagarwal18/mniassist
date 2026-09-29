@@ -459,3 +459,26 @@
 .photo-lines__q {
   color: var(--ar-ink-500);
 }
+
+.photo-more {
+  border: 1px solid var(--ar-line-200);
+  border-radius: 8px;
+  margin: 4px 0 0;
+  padding: 6px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 400 12.5px var(--ar-font-sans);
+
+  legend {
+    font: 600 12px var(--ar-font-sans);
+    color: var(--ar-ink-500);
+    padding: 0 4px;
+  }
+
+  label {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+}

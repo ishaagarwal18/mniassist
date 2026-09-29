@@ -146,10 +146,28 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.InstalledBase',
       },
       {
+        label: 'Re-orders',
+        icon: 'send',
+        route: '/reorders',
+        permission: 'AutoReach.ReorderPortal',
+      },
+      {
+        label: 'Stock',
+        icon: 'machine',
+        route: '/stock',
+        permission: 'AutoReach.Inventory',
+      },
+      {
         label: 'Collections',
         icon: 'billing',
         route: '/collections',
         permission: 'AutoReach.Collections',
+      },
+      {
+        label: 'Dealer network',
+        icon: 'tower',
+        route: '/network',
+        permission: 'AutoReach.Network',
       },
       {
         label: 'Field app',

@@ -40,7 +40,10 @@ async function refresh(base) {
     }
   }
   const sorted = [...routes].sort();
-  writeFileSync(snapshotPath, JSON.stringify({ source: '/api/abp/api-definition', routes: sorted }, null, 2) + '\n');
+  writeFileSync(
+    snapshotPath,
+    JSON.stringify({ source: '/api/abp/api-definition', routes: sorted }, null, 2) + '\n',
+  );
   console.log(`Wrote ${sorted.length} routes to ${relative(root, snapshotPath)}.`);
 }
 
@@ -56,13 +59,20 @@ function proxyFiles(dir) {
 function callsIn(file) {
   const text = readFileSync(file, 'utf8');
   const calls = [];
+  // A proxy may keep its prefix in `private base = '/api/...'` and build `${this.base}/...`: resolve it so those calls are checked too.
+  const base = /\bbase\s*=\s*'([^']+)'/.exec(text)?.[1];
   const re = /method:\s*'([A-Z]+)'[\s\S]{0,200}?url:\s*(?:'([^']+)'|`([^`]+)`)/g;
   let m;
   while ((m = re.exec(text))) {
-    const url = m[2] ?? m[3];
+    const url = (m[2] ?? m[3]).replace('${this.base}', base ?? '${this.base}');
     if (!url.startsWith('/api/')) continue;
     const line = text.slice(0, m.index).split('\n').length;
-    calls.push({ method: m[1], url, route: `${m[1]} ${normalise(url)}`, where: `${relative(root, file)}:${line}` });
+    calls.push({
+      method: m[1],
+      url,
+      route: `${m[1]} ${normalise(url)}`,
+      where: `${relative(root, file)}:${line}`,
+    });
   }
   return calls;
 }
@@ -82,7 +92,9 @@ async function main() {
   if (missing.length) {
     console.error(`${missing.length} proxy call(s) have no matching API route:`);
     for (const c of missing) console.error(`  ${c.where}  ${c.method} ${c.url}`);
-    console.error('\nFix the proxy, or refresh the snapshot if the API changed: node scripts/check-proxy-routes.mjs --refresh <api url>');
+    console.error(
+      '\nFix the proxy, or refresh the snapshot if the API changed: node scripts/check-proxy-routes.mjs --refresh <api url>',
+    );
     process.exit(1);
   }
   console.log(`All ${calls.length} proxy calls match an API route.`);

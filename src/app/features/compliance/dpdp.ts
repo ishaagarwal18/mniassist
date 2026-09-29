@@ -72,7 +72,18 @@ const SEED: DpdpReadinessDto = {
   ],
   noticeDraft:
     'DRAFT FOR LEGAL REVIEW — NOT LEGAL ADVICE\n\nPrivacy notice — Sun Energy Automation Pvt Ltd\n…',
+  noticeDrafts: {
+    en: 'DRAFT FOR LEGAL REVIEW — NOT LEGAL ADVICE\n\nPrivacy notice — Sun Energy Automation Pvt Ltd\n…',
+    hi: 'कानूनी समीक्षा के लिए मसौदा — यह कानूनी सलाह नहीं है\n\nगोपनीयता सूचना — Sun Energy Automation Pvt Ltd\n…',
+    mr: 'कायदेशीर पुनरावलोकनासाठी मसुदा — हा कायदेशीर सल्ला नाही\n\nगोपनीयता सूचना — Sun Energy Automation Pvt Ltd\n…',
+  },
 };
+
+const NOTICE_LANGUAGES: { code: string; label: string }[] = [
+  { code: 'en', label: 'English' },
+  { code: 'hi', label: 'हिन्दी' },
+  { code: 'mr', label: 'मराठी' },
+];
 
 const FIELDS: {
   key: keyof DpdpProfileDto;
@@ -195,17 +206,31 @@ const FIELDS: {
           <h2 id="dp-notice">Privacy notice draft</h2>
           <p class="dp__hint">
             Generated from your details and retention periods. Have a lawyer review it before you
-            publish it; then record the link and the review date above. English only: translate
-            after approval.
+            publish it; then record the link and the review date above. The Hindi and Marathi
+            versions are machine-written starting points: have a native speaker check them too.
           </p>
-          <pre class="notice">{{ d.noticeDraft }}</pre>
+          <div class="langs" role="tablist" aria-label="Notice language">
+            @for (l of languages; track l.code) {
+              <button
+                type="button"
+                role="tab"
+                class="langs__tab"
+                [attr.aria-selected]="language() === l.code"
+                [attr.lang]="l.code"
+                (click)="language.set(l.code); copied.set(false)"
+              >
+                {{ l.label }}
+              </button>
+            }
+          </div>
+          <pre class="notice" role="tabpanel" [attr.lang]="language()">{{ notice(d) }}</pre>
           <div class="actions">
             <button
               ar-button
               type="button"
               variant="ghost"
               icon="download"
-              (click)="copy(d.noticeDraft)"
+              (click)="copy(notice(d))"
             >
               {{ copied() ? 'Copied' : 'Copy text' }}
             </button>
@@ -290,6 +315,29 @@ const FIELDS: {
       gap: 8px;
       justify-content: flex-end;
     }
+    .langs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .langs__tab {
+      border: 1px solid var(--ar-line-200);
+      background: var(--ar-white);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font: 500 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-700, #344054);
+      cursor: pointer;
+    }
+    .langs__tab[aria-selected='true'] {
+      background: var(--ar-ink-900, #101828);
+      border-color: var(--ar-ink-900, #101828);
+      color: var(--ar-white);
+    }
+    .langs__tab:focus-visible {
+      outline: 2px solid var(--ar-teal-600, #0d9488);
+      outline-offset: 2px;
+    }
     .notice {
       margin: 0;
       padding: 12px;
@@ -330,6 +378,12 @@ export class ArDpdp {
   protected readonly profile = signal<DpdpProfileDto>({});
   protected readonly busy = signal(false);
   protected readonly copied = signal(false);
+  protected readonly languages = NOTICE_LANGUAGES;
+  protected readonly language = signal('en');
+
+  protected notice(d: DpdpReadinessDto): string {
+    return d.noticeDrafts?.[this.language()] ?? d.noticeDraft;
+  }
   protected readonly error = signal<string | null>(null);
   protected readonly saveError = signal<string | null>(null);
 

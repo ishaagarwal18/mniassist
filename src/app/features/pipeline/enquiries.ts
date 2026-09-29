@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { EnquiryCard, PickerOption, PipelineStore } from '../../core/services/pipeline.service';
 import { LeadSource } from '../../proxy/pipeline';
@@ -35,7 +35,10 @@ export class ArEnquiries {
   protected readonly openCount = this.store.openEnquiryCount;
   protected readonly pipelineValue = this.store.pipelineValueInPaise;
 
-  protected readonly selectedId = signal<string | null>(null);
+  /** A link can open one enquiry straight away: /enquiries?open={id} (the dealer network's accepted leads use it). */
+  protected readonly selectedId = signal<string | null>(
+    inject(ActivatedRoute).snapshot.queryParamMap.get('open'),
+  );
 
   // ---- New enquiry dialog ---------------------------------------------
   protected readonly sources = [

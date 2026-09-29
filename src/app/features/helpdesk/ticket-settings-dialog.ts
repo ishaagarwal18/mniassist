@@ -1,6 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { environment } from '../../../environments/environment';
+import { TemplateService } from '../../proxy/messaging/template.service';
+import { TemplateCategory } from '../../proxy/messaging/template-category.enum';
+import { TemplateStatus } from '../../proxy/messaging/template-status.enum';
 import { ServiceTicketSettingsDto, TicketPriority } from '../../proxy/support';
 import { ArButton, ArDialog } from '../../ui';
 import { errorMessage } from '../activities/activity-logic';
@@ -108,6 +112,35 @@ import { ServiceTicketGateway } from './ticket-mock';
             } @else {
               <p class="ts__hint">Its address is given once you save.</p>
             }
+          }
+        </section>
+
+        <section class="ts__section">
+          <h2 class="ts__h">Field visit sign-off code</h2>
+          <p class="ts__hint">
+            The customer confirms a finished visit with a six-digit code on WhatsApp. If they
+            haven't messaged in 24 hours, WhatsApp only delivers it through an approved
+            authentication template (one variable for the code, with a copy-code button).
+          </p>
+          <label class="ar-field" for="ts-signoff">
+            <span class="ar-field__label">Authentication template</span>
+            <select
+              id="ts-signoff"
+              class="ar-field__input"
+              [value]="signOffTemplateId()"
+              (change)="signOffTemplateId.set($any($event.target).value)"
+            >
+              <option value="">None: only inside the 24-hour window</option>
+              @for (t of authTemplates(); track t.id) {
+                <option [value]="t.id">{{ t.name }} ({{ t.lang }})</option>
+              }
+            </select>
+          </label>
+          @if (authTemplates().length === 0) {
+            <p class="ts__hint">
+              No approved authentication templates yet. Create one under Templates (category:
+              Authentication) and it appears here once Meta approves it.
+            </p>
           }
         </section>
 
@@ -219,6 +252,9 @@ export class ArTicketSettingsDialog {
   protected readonly lowHours = signal(PRIORITY_SLA_HOURS[TicketPriority.Low]);
   protected readonly portalEnabled = signal(false);
   protected readonly portalUrl = signal<string | null>(null);
+  protected readonly signOffTemplateId = signal('');
+  protected readonly authTemplates = signal<{ id: string; name: string; lang: string }[]>([]);
+  private readonly templatesApi = inject(TemplateService);
 
   protected readonly hoursValid = () =>
     [this.urgentHours(), this.highHours(), this.normalHours(), this.lowHours()].every(
@@ -227,6 +263,29 @@ export class ArTicketSettingsDialog {
 
   constructor() {
     void this.load();
+    void this.loadTemplates();
+  }
+
+  private async loadTemplates(): Promise<void> {
+    if (environment.useMockData) return;
+    try {
+      const list = await firstValueFrom(
+        this.templatesApi.getList({
+          status: TemplateStatus.Approved,
+          category: TemplateCategory.Authentication,
+          maxResultCount: 200,
+        }),
+      );
+      this.authTemplates.set(
+        (list.items ?? []).map((t) => ({
+          id: t.id!,
+          name: t.name ?? 'Template',
+          lang: t.languageCode ?? '',
+        })),
+      );
+    } catch {
+      // The picker stays empty; the rest of the settings still work.
+    }
   }
 
   private async load(): Promise<void> {
@@ -248,6 +307,7 @@ export class ArTicketSettingsDialog {
     this.lowHours.set(s.lowHours);
     this.portalEnabled.set(s.portalEnabled);
     this.portalUrl.set(s.portalUrl ?? null);
+    this.signOffTemplateId.set(s.signOffTemplateId ?? '');
   }
 
   protected async save(): Promise<void> {
@@ -264,6 +324,7 @@ export class ArTicketSettingsDialog {
             normalHours: this.normalHours(),
             lowHours: this.lowHours(),
             portalEnabled: this.portalEnabled(),
+            signOffTemplateId: this.signOffTemplateId() || null,
           }),
         ),
       );

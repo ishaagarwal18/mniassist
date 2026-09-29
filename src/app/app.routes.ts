@@ -51,6 +51,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/helpdesk/ticket-portal').then((m) => m.ArTicketPortal),
   },
   {
+    // A customer's spares re-order page, from their personal WhatsApp link: no login, no app shell. A code to their WhatsApp opens it.
+    path: 'r/:token',
+    title: 'Re-order spares',
+    loadComponent: () => import('./features/reorder/reorder-page').then((m) => m.ArReorderPage),
+  },
+  {
     path: 'privacy',
     title: 'Privacy Policy · AutoReach',
     loadComponent: () => import('./features/legal/privacy-policy').then((m) => m.ArPrivacyPolicy),
@@ -174,6 +180,27 @@ export const routes: Routes = [
         path: 'collections',
         title: 'Collections · AutoReach',
         loadComponent: () => import('./features/payments/collections').then((m) => m.ArCollections),
+      },
+      {
+        path: 'stock',
+        title: 'Stock · AutoReach',
+        loadComponent: () => import('./features/inventory/stock').then((m) => m.ArStock),
+      },
+      {
+        path: 'reorders',
+        title: 'Re-orders · AutoReach',
+        loadComponent: () => import('./features/reorder/reorders').then((m) => m.ArReorders),
+      },
+      {
+        path: 'network',
+        title: 'Dealer network · AutoReach',
+        loadComponent: () => import('./features/network/network').then((m) => m.ArNetwork),
+      },
+      {
+        path: 'network/incoming',
+        title: 'Leads for us · AutoReach',
+        data: { tab: 'incoming' },
+        loadComponent: () => import('./features/network/network').then((m) => m.ArNetwork),
       },
       {
         path: 'account-health',

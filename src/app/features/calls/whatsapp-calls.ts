@@ -7,7 +7,7 @@ import { grantedPolicy } from '../../core/auth/permission';
 import { formatDuration } from '../../core/services/softphone-logic';
 import { ArTopbar } from '../../layout/topbar';
 import { WhatsAppCallDto, WhatsAppCallService } from '../../proxy/messaging/whats-app-call.service';
-import { ArButton, ArChip } from '../../ui';
+import { ArButton, ArChip, ArDialog } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
 
 const ago = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
@@ -61,7 +61,7 @@ const SEED: WhatsAppCallDto[] = [
  */
 @Component({
   selector: 'ar-whatsapp-calls',
-  imports: [ArTopbar, ArButton, ArChip],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -80,6 +80,11 @@ const SEED: WhatsAppCallDto[] = [
           />
           Record calls
         </label>
+        @if (recordCalls()) {
+          <button ar-button type="button" variant="ghost" (click)="openNotice()">
+            Recording notice{{ hasNotice() ? ' · your clip' : ' · tone' }}
+          </button>
+        }
       }
       <label class="wa__toggle" for="wa-missed">
         <input
@@ -91,6 +96,53 @@ const SEED: WhatsAppCallDto[] = [
         Missed only
       </label>
     </ar-topbar>
+
+    @if (noticeOpen()) {
+      <ar-dialog title="Recording notice" (dismiss)="closeNotice()">
+        <p class="wa__hint">
+          When recording starts, the customer hears this. Without a clip of your own they hear two
+          short beeps. Record a line such as “This call is recorded for quality and training” and
+          upload it: audio only, up to 1 MB.
+        </p>
+        @if (noticeUrl(); as url) {
+          <audio controls preload="none" [src]="url" aria-label="Current recording notice"></audio>
+        } @else if (hasNotice()) {
+          <button ar-button type="button" variant="ghost" (click)="previewNotice()">
+            Play the current clip
+          </button>
+        } @else {
+          <p class="wa__hint">No clip yet: customers hear the tone.</p>
+        }
+        <label class="ar-field" for="wa-notice-file">
+          <span class="ar-field__label">{{ hasNotice() ? 'Replace with' : 'Upload a clip' }}</span>
+          <input
+            id="wa-notice-file"
+            class="ar-field__input"
+            type="file"
+            accept="audio/*"
+            [disabled]="saving()"
+            (change)="uploadNotice($any($event.target))"
+          />
+        </label>
+        @if (noticeError(); as e) {
+          <p class="wa__err" role="alert">{{ e }}</p>
+        }
+        <div dialogActions>
+          @if (hasNotice()) {
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="saving()"
+              (click)="removeNotice()"
+            >
+              Use the tone instead
+            </button>
+          }
+          <button ar-button type="button" variant="primary" (click)="closeNotice()">Done</button>
+        </div>
+      </ar-dialog>
+    }
 
     <div class="wa ar-scroll">
       @if (error(); as e) {
@@ -241,6 +293,10 @@ export class ArWhatsAppCalls {
   protected readonly loading = signal(true);
   protected readonly missedOnly = signal(false);
   protected readonly recordCalls = signal(false);
+  protected readonly hasNotice = signal(false);
+  protected readonly noticeOpen = signal(false);
+  protected readonly noticeUrl = signal<string | null>(null);
+  protected readonly noticeError = signal<string | null>(null);
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly audio = signal<Record<string, string>>({});
@@ -249,7 +305,10 @@ export class ArWhatsAppCalls {
     void this.load();
     if (!environment.useMockData) {
       firstValueFrom(this.api.getSettings())
-        .then((s) => this.recordCalls.set(s.recordCalls))
+        .then((s) => {
+          this.recordCalls.set(s.recordCalls);
+          this.hasNotice.set(!!s.hasAnnouncement);
+        })
         .catch(() => undefined);
     }
     inject(DestroyRef).onDestroy(() =>
@@ -298,6 +357,79 @@ export class ArWhatsAppCalls {
       }
     } catch {
       this.error.set('The recording setting could not be changed.');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected openNotice(): void {
+    this.noticeError.set(null);
+    this.noticeOpen.set(true);
+  }
+
+  protected closeNotice(): void {
+    const url = this.noticeUrl();
+    if (url) URL.revokeObjectURL(url);
+    this.noticeUrl.set(null);
+    this.noticeOpen.set(false);
+  }
+
+  protected async previewNotice(): Promise<void> {
+    try {
+      const blob = await firstValueFrom(this.api.getAnnouncement());
+      this.noticeUrl.set(URL.createObjectURL(blob));
+    } catch {
+      this.noticeError.set('The clip could not be loaded.');
+    }
+  }
+
+  protected async uploadNotice(input: HTMLInputElement): Promise<void> {
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('audio/')) {
+      this.noticeError.set('Choose an audio file (MP3, M4A, OGG or WAV).');
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      this.noticeError.set('That clip is over 1 MB. Keep it to a few seconds.');
+      return;
+    }
+    this.saving.set(true);
+    this.noticeError.set(null);
+    try {
+      if (environment.useMockData) {
+        this.hasNotice.set(true);
+      } else {
+        const form = new FormData();
+        form.append('file', file, file.name);
+        this.hasNotice.set(
+          !!(await firstValueFrom(this.api.uploadAnnouncement(form))).hasAnnouncement,
+        );
+      }
+      const old = this.noticeUrl();
+      if (old) URL.revokeObjectURL(old);
+      this.noticeUrl.set(URL.createObjectURL(file));
+    } catch (e: unknown) {
+      this.noticeError.set(
+        (e as { error?: { error?: { message?: string } } })?.error?.error?.message ??
+          'The clip could not be uploaded.',
+      );
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected async removeNotice(): Promise<void> {
+    this.saving.set(true);
+    try {
+      if (!environment.useMockData) await firstValueFrom(this.api.deleteAnnouncement());
+      this.hasNotice.set(false);
+      const url = this.noticeUrl();
+      if (url) URL.revokeObjectURL(url);
+      this.noticeUrl.set(null);
+    } catch {
+      this.noticeError.set('The clip could not be removed.');
     } finally {
       this.saving.set(false);
     }

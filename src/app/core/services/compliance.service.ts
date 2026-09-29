@@ -72,6 +72,7 @@ const CLASS: Record<RetainedDataClass, string> = {
   [RetainedDataClass.Exports]: 'Exports',
   [RetainedDataClass.AuditLog]: 'Audit log',
   [RetainedDataClass.ConsentRecords]: 'Consent records',
+  [RetainedDataClass.CallRecordings]: 'WhatsApp call recordings',
 };
 const SEV: Record<BreachSeverity, string> = {
   [BreachSeverity.Low]: 'low',

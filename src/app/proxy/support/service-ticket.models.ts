@@ -118,6 +118,8 @@ export interface ServiceTicketSettingsDto {
   portalEnabled: boolean;
   /** Set only once the portal has been turned on at least once; the slug it was given stays put after that. */
   portalUrl?: string | null;
+  /** The approved authentication template for sign-off codes outside the 24-hour window. */
+  signOffTemplateId?: string | null;
 }
 
 export interface SetServiceTicketSettingsInput {
@@ -126,4 +128,5 @@ export interface SetServiceTicketSettingsInput {
   normalHours: number;
   lowHours: number;
   portalEnabled: boolean;
+  signOffTemplateId?: string | null;
 }

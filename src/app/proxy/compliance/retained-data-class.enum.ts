@@ -7,6 +7,7 @@ export enum RetainedDataClass {
   Exports = 3,
   AuditLog = 4,
   ConsentRecords = 5,
+  CallRecordings = 6,
 }
 
 export const retainedDataClassOptions = mapEnumToOptions(RetainedDataClass);
