@@ -165,6 +165,8 @@ export class ArInbox {
   /** The customer's other readable attachments in this conversation, and the ones chosen to go into the same draft. */
   protected readonly photoOthers = signal<{ id: string; label: string }[]>([]);
   protected readonly photoMore = signal<string[]>([]);
+  /** Files read into one draft besides the first: twelve in all (DraftQuoteFromPhotoInput.MaxMoreFiles). */
+  protected readonly maxMoreFiles = 11;
   protected readonly canQuote = grantedPolicy(
     'AutoReach.Quotations.Create',
     inject(PermissionService),
@@ -260,7 +262,9 @@ export class ArInbox {
 
   protected toggleMore(id: string, on: boolean): void {
     this.photoMore.update((ids) =>
-      on ? [...ids.filter((x) => x !== id), id].slice(0, 4) : ids.filter((x) => x !== id),
+      on
+        ? [...ids.filter((x) => x !== id), id].slice(0, this.maxMoreFiles)
+        : ids.filter((x) => x !== id),
     );
   }
 

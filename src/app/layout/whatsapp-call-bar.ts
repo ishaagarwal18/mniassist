@@ -78,6 +78,10 @@ const POLL_MS = 4000;
         <span class="wc__state"
           >Keep this tab open until the call ends: the audio passes through it.</span
         >
+        <span class="wc__hint"
+          >Closing or reloading this tab cuts off the customer and {{ name }}. The browser will ask
+          before it closes.</span
+        >
       </div>
     } @else if (session.dialling(); as d) {
       <div class="wc wc--ring" role="status">
@@ -134,6 +138,62 @@ const POLL_MS = 4000;
           (click)="session.answer(c)"
         >
           {{ session.busy() ? 'Connecting…' : 'Answer' }}
+        </button>
+      </div>
+    }
+    @if (session.relayLost(); as lost) {
+      <div class="wc wc--err" role="alert">
+        <span
+          >The call with <b>{{ lost.call.contactName || '+' + lost.call.contactWaId }}</b> was cut
+          off: {{ lost.fromName }}'s tab, which was carrying it, closed or lost its connection. The
+          customer didn't hang up.</span
+        >
+        @if (lost.call.conversationId) {
+          <button ar-button type="button" variant="primary" (click)="session.callBack()">
+            Call back
+          </button>
+        }
+        <button
+          type="button"
+          class="wc__x"
+          aria-label="Dismiss"
+          (click)="session.relayLost.set(null)"
+        >
+          ×
+        </button>
+      </div>
+    }
+    @if (session.rejoinable(); as c) {
+      <div class="wc wc--ring" role="alert">
+        <ar-icon name="phone" [size]="15" />
+        <span
+          >You're not connected to your call with <b>{{ c.contactName || '+' + c.contactWaId }}</b
+          >. The customer is still on the line.</span
+        >
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="session.busy()"
+          (click)="session.rejoin(c)"
+        >
+          {{ session.busy() ? 'Connecting…' : 'Rejoin' }}
+        </button>
+        <button
+          type="button"
+          class="wc__x"
+          aria-label="Dismiss"
+          (click)="session.rejoinable.set(null)"
+        >
+          ×
+        </button>
+      </div>
+    }
+    @if (session.notice(); as n) {
+      <div class="wc" role="status">
+        <span>{{ n }}</span>
+        <button type="button" class="wc__x" aria-label="Dismiss" (click)="session.notice.set(null)">
+          ×
         </button>
       </div>
     }

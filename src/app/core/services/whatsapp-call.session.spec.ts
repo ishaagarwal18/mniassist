@@ -1,4 +1,18 @@
-import { recordingType } from './whatsapp-call.session';
+import { recordingType, transferLinkOutcome } from './whatsapp-call.session';
+
+describe('A transferred call losing its relay', () => {
+  it('is the normal end when the call itself has ended', () => {
+    expect(transferLinkOutcome({ endedAtUtc: '2026-09-30T10:00:00Z' })).toBe('call-ended');
+  });
+
+  it("is a lost relay when the call is still on: the customer didn't hang up", () => {
+    expect(transferLinkOutcome({ endedAtUtc: null })).toBe('relay-lost');
+  });
+
+  it("says nothing when the call can't be read", () => {
+    expect(transferLinkOutcome(null)).toBe('unknown');
+  });
+});
 
 describe('WhatsApp call recording format', () => {
   it('prefers Opus in WebM, then Ogg, then MP4', () => {

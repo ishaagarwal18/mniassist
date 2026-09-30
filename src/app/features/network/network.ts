@@ -11,6 +11,7 @@ import {
   DealerNetworkService,
   NetworkMembershipDto,
   NetworkOfferDto,
+  NetworkTranscriptLineDto,
 } from '../../proxy/network/dealer-network.service';
 import {
   DealerLinkDto,
@@ -442,12 +443,36 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
                       </button>
                     </div>
                   } @else if (o.dealerEnquiryId) {
-                    <a
-                      class="offer__link"
-                      routerLink="/enquiries"
-                      [queryParams]="{ open: o.dealerEnquiryId }"
-                      >Open the enquiry →</a
-                    >
+                    <div class="offer__acts">
+                      @if (o.hasConversation) {
+                        <button
+                          ar-button
+                          type="button"
+                          variant="ghost"
+                          [disabled]="busy() === o.id"
+                          (click)="openConversation(o)"
+                        >
+                          Conversation
+                        </button>
+                      }
+                      @if (o.state === 'Accepted') {
+                        <button
+                          ar-button
+                          type="button"
+                          variant="ghost"
+                          [disabled]="busy() === o.id"
+                          (click)="handBack(o)"
+                        >
+                          Hand back
+                        </button>
+                      }
+                      <a
+                        class="offer__link"
+                        routerLink="/enquiries"
+                        [queryParams]="{ open: o.dealerEnquiryId }"
+                        >Open the enquiry →</a
+                      >
+                    </div>
                   }
                 </li>
               }
@@ -562,6 +587,30 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
       </ar-dialog>
     }
 
+    @if (conversation(); as c) {
+      <ar-dialog
+        [title]="'Conversation with ' + c.offer.oemName"
+        (dismiss)="conversation.set(null)"
+      >
+        <p class="nw__hint">
+          {{ c.offer.oemName }}'s WhatsApp conversation with the customer before the lead came to
+          you ({{ c.offer.oemEnquiryReference }}). A copy: reply from your own inbox.
+        </p>
+        <ol class="chat" aria-label="Messages">
+          @for (m of c.lines; track $index) {
+            <li class="chat__m" [class.chat__m--them]="!m.fromCustomer">
+              <small
+                >{{ m.fromCustomer ? 'Customer' : c.offer.oemName }} · {{ date(m.atUtc) }}</small
+              >
+              <span>{{ m.text }}</span>
+            </li>
+          } @empty {
+            <li class="nw__hint">No messages were shared.</li>
+          }
+        </ol>
+      </ar-dialog>
+    }
+
     @if (settingsOpen()) {
       <ar-dialog title="Network settings" (dismiss)="settingsOpen.set(false)">
         <label class="check" for="nw-reroute">
@@ -602,6 +651,22 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
             [value]="settings().consentNote ?? ''"
             (input)="patchSettings({ consentNote: $any($event.target).value })"
           ></textarea>
+        </label>
+        <label class="check" for="nw-share">
+          <input
+            id="nw-share"
+            type="checkbox"
+            [checked]="!!settings().shareConversation"
+            (change)="patchSettings({ shareConversation: $any($event.target).checked })"
+          />
+          <span
+            >Give the dealer who accepts the customer's WhatsApp conversation with you
+            <small
+              >The last 100 messages, as a read-only copy; photos and documents are named, not sent.
+              Only switch this on if your consent wording tells customers their conversation may be
+              shared with the dealer.</small
+            ></span
+          >
         </label>
         @if (dialogError(); as e) {
           <p class="nw__err" role="alert">{{ e }}</p>
@@ -909,6 +974,36 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
     }
     .dealer--ended {
       opacity: 0.6;
+    }
+    .chat {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 60vh;
+      overflow: auto;
+    }
+    .chat__m {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-width: 85%;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: var(--ar-bg-100);
+      font: 400 13px/1.45 var(--ar-font-sans);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .chat__m--them {
+      align-self: flex-end;
+      background: var(--ar-teal-50, #e6f6f4);
+    }
+    .chat__m small {
+      color: var(--ar-ink-500);
+      font-size: 11px;
     }
     .dealer__head,
     .offer__head {
@@ -1586,6 +1681,33 @@ export class ArNetwork {
     }
   }
 
+  /** The OEM's WhatsApp conversation with the customer, when the OEM shared it. */
+  protected readonly conversation = signal<{
+    offer: NetworkOfferDto;
+    lines: NetworkTranscriptLineDto[];
+  } | null>(null);
+
+  protected async openConversation(o: NetworkOfferDto): Promise<void> {
+    this.busy.set(o.id);
+    this.error.set(null);
+    try {
+      const lines = environment.useMockData
+        ? [
+            {
+              atUtc: new Date().toISOString(),
+              fromCustomer: true,
+              text: 'Need a 15 kW drive for a borewell pump',
+            },
+          ]
+        : await firstValueFrom(this.dealerApi.getConversation(o.id));
+      this.conversation.set({ offer: o, lines });
+    } catch (e: unknown) {
+      this.error.set(problem(e, 'The conversation could not be loaded.'));
+    } finally {
+      this.busy.set(null);
+    }
+  }
+
   protected async decline(o: NetworkOfferDto): Promise<void> {
     const reason = window.prompt(
       `Decline this lead from ${o.oemName}? Tell them why (optional):`,
@@ -1599,6 +1721,27 @@ export class ArNetwork {
       this.notice.set('Declined. It goes back to the OEM.');
     } catch (e: unknown) {
       this.error.set(problem(e, 'That did not work. Try again.'));
+    } finally {
+      this.busy.set(null);
+    }
+  }
+
+  /** Gives back an accepted lead: our enquiry closes as lost, and the OEM gets the lead back (or its next dealer does). */
+  protected async handBack(o: NetworkOfferDto): Promise<void> {
+    const reason = window.prompt(
+      `Hand this lead back to ${o.oemName}? Your enquiry for it closes as lost, and ${o.oemName} ` +
+        `won't offer it to you again. Tell them why:`,
+      '',
+    );
+    if (reason === null) return;
+    this.busy.set(o.id);
+    this.error.set(null);
+    try {
+      if (!environment.useMockData) await firstValueFrom(this.dealerApi.handBack(o.id, { reason }));
+      this.offers.update((list) => list.filter((x) => x.id !== o.id));
+      this.notice.set(`Handed back to ${o.oemName}. Your enquiry for it is closed as lost.`);
+    } catch (e: unknown) {
+      this.error.set(problem(e, 'The lead could not be handed back.'));
     } finally {
       this.busy.set(null);
     }

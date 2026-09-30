@@ -564,14 +564,14 @@
             }
             @if (photoOthers().length && !photoDraft()) {
               <fieldset class="photo-more">
-                <legend>Also read into the same quotation (up to 4)</legend>
+                <legend>Also read into the same quotation (up to {{ maxMoreFiles }})</legend>
                 @for (o of photoOthers(); track o.id) {
                   <label [for]="'pm-' + o.id">
                     <input
                       type="checkbox"
                       [id]="'pm-' + o.id"
                       [checked]="photoMore().includes(o.id)"
-                      [disabled]="!photoMore().includes(o.id) && photoMore().length >= 4"
+                      [disabled]="!photoMore().includes(o.id) && photoMore().length >= maxMoreFiles"
                       (change)="toggleMore(o.id, $any($event.target).checked)"
                     />
                     {{ o.label }}

@@ -14,8 +14,8 @@ export interface NetworkOfferDto {
   id: string;
   oemName: string;
   oemEnquiryReference: string;
-  /** Offered, Accepted, Won or Lost (Declined only in the answer to a decline). */
-  state: 'Offered' | 'Accepted' | 'Won' | 'Lost' | 'Declined';
+  /** Offered, Accepted, Won or Lost (Declined and HandedBack only in the answer to those actions). */
+  state: 'Offered' | 'Accepted' | 'Won' | 'Lost' | 'Declined' | 'HandedBack';
   offeredAtUtc?: string | null;
   answerByUtc?: string | null;
   acceptedAtUtc?: string | null;
@@ -29,6 +29,16 @@ export interface NetworkOfferDto {
   consentNote: string;
   /** The enquiry made in this workspace on accepting. */
   dealerEnquiryId?: string | null;
+  /** The OEM shared its WhatsApp conversation with the customer (see getConversation). */
+  hasConversation?: boolean;
+}
+
+/** One message of the OEM's conversation with the customer, as shared with the dealer. */
+export interface NetworkTranscriptLineDto {
+  atUtc: string;
+  /** True for the customer, false for the OEM's team. */
+  fromCustomer: boolean;
+  text: string;
 }
 
 /** S3, the dealer's side: join an OEM's network and answer the leads it offers. */
@@ -80,6 +90,27 @@ export class DealerNetworkService {
         headers: { Accept: 'application/json' },
         url: `${this.base}/${id}/decline`,
         body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  handBack = (id: string, input: NetworkReasonInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, NetworkOfferDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `${this.base}/${id}/hand-back`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getConversation = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, NetworkTranscriptLineDto[]>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `${this.base}/${id}/conversation`,
       },
       { apiName: this.apiName, ...config },
     );

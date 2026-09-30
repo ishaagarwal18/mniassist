@@ -116,6 +116,8 @@ export interface RoutingSuggestionDto {
   lead?: NetworkLeadDto | null;
   candidates: RoutingCandidateDto[];
   consentNote: string;
+  /** The dealer who accepts also gets the customer's WhatsApp conversation with the OEM. */
+  sharesConversation?: boolean;
 }
 
 export interface RouteLeadInput {
@@ -133,6 +135,8 @@ export interface NetworkSettingsDto {
   rerouteAutomatically: boolean;
   answerWithinHours: number;
   consentNote?: string | null;
+  /** Give the dealer who accepts a copy of the customer's WhatsApp conversation (last 100 messages). */
+  shareConversation?: boolean;
   /** Read only: Enterprise, or the OEM network add-on. Joining a network as a dealer needs no plan. */
   canRunNetwork?: boolean;
 }

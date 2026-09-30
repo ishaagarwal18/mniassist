@@ -18,6 +18,8 @@ const ANSWER_TIMEOUT_MS = 75_000;
 const TRANSFER_TIMEOUT_MS = 45_000;
 /** While relaying a transferred call, how often to check whether it has ended. */
 const RELAY_POLL_MS = 3000;
+/** A transferred call whose link to the relaying tab stays interrupted this long has lost that tab. */
+const RELAY_LOST_MS = 6000;
 
 const DEFAULT_ICE: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
 
@@ -63,6 +65,18 @@ export function recordingType(isSupported: (type: string) => boolean): string | 
   );
 }
 
+/**
+ * Why the link to the colleague relaying a transferred call went: the call ended (the customer hung up, and the relaying tab let
+ * go), or only the relay did (that tab closed or lost its connection while the call was still on). Unknown when the call couldn't
+ * be read.
+ */
+export function transferLinkOutcome(
+  call: Pick<WhatsAppCallDto, 'endedAtUtc'> | null,
+): 'call-ended' | 'relay-lost' | 'unknown' {
+  if (!call) return 'unknown';
+  return call.endedAtUtc ? 'call-ended' : 'relay-lost';
+}
+
 function problem(e: unknown, fallback: string): string {
   if (e instanceof DOMException && e.name === 'NotAllowedError') {
     return 'Allow microphone access in the browser to make or take calls.';
@@ -75,9 +89,14 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /**
  * M3: the one WhatsApp call this browser tab is on, whichever way it started.
  *
- * Recording: when the workspace records calls, both sides are mixed in the browser holding the customer's leg and uploaded when
- * the call ends. Transfer: Meta can't move a call, so this browser keeps the customer's leg and relays audio to the colleague over a
- * browser-to-browser link; its own microphone goes quiet and the tab must stay open until the call ends.
+ * Two ways to carry a call, chosen by the API (settings.serverRelay):
+ *
+ * - With the call relay, a server holds the customer's leg and this browser connects to it. A transfer is the colleague's
+ *   browser connecting; this one lets go. A closed or reloaded tab doesn't cut the customer off: the agent can rejoin. The relay
+ *   records the call.
+ * - Without it, this browser holds the customer's leg. Recording: both sides are mixed here and uploaded when the call ends.
+ *   Transfer: Meta can't move a call, so this browser keeps the customer's leg and relays audio to the colleague over a
+ *   browser-to-browser link; its own microphone goes quiet and the tab must stay open until the call ends.
  */
 @Injectable({ providedIn: 'root' })
 export class WhatsAppCallSession {
@@ -95,6 +114,18 @@ export class WhatsAppCallSession {
   readonly relayingTo = signal<string | null>(null);
   /** The call came to me by transfer: hang-up ends it for everyone. */
   readonly viaTransfer = signal(false);
+  /**
+   * A call transferred to me was cut off because the colleague's tab relaying it closed or lost its connection. The customer
+   * didn't hang up; the call bar offers to call them back.
+   */
+  readonly relayLost = signal<{ call: WhatsAppCallDto; fromName: string } | null>(null);
+  /**
+   * With the call relay: a live call of mine this tab isn't connected to (its link dropped, or the page was reloaded). The customer
+   * is still on the line; the call bar offers to rejoin.
+   */
+  readonly rejoinable = signal<WhatsAppCallDto | null>(null);
+  /** A short confirmation for the call bar, e.g. once a call has been handed on. */
+  readonly notice = signal<string | null>(null);
   readonly recording = signal(false);
   readonly busy = signal(false);
   readonly muted = signal(false);
@@ -116,12 +147,29 @@ export class WhatsAppCallSession {
   private readonly dismissed = new Set<string>();
   private clock: ReturnType<typeof setInterval> | null = null;
 
+  private relayLostTimer: ReturnType<typeof setTimeout> | null = null;
+  private checkedForLiveCall = false;
   private recorder: MediaRecorder | null = null;
   private recordCtx: AudioContext | null = null;
   private recordMix: MediaStreamAudioDestinationNode | null = null;
   private micSource: MediaStreamAudioSourceNode | null = null;
   private recordChunks: Blob[] = [];
   private settings: WhatsAppCallSettingsDto | null = null;
+
+  constructor() {
+    // Closing or reloading the tab ends a call it carries: the customer's leg lives here, and so does the relay of a call handed
+    // to a colleague. Browsers show their own "Leave page?" text; the call bar explains why.
+    window.addEventListener('beforeunload', (e) => {
+      if (!this.carriesCall) return;
+      e.preventDefault();
+      e.returnValue = '';
+    });
+  }
+
+  /** This tab holds a customer's call, as the agent on it or as the relay for a colleague. */
+  get carriesCall(): boolean {
+    return !!this.live() || !!this.dialling()?.call || !!this.relayingTo();
+  }
 
   get onCall(): boolean {
     return (
@@ -132,6 +180,10 @@ export class WhatsAppCallSession {
   /** Checks for a customer's call ringing and a colleague's transfer. Called by the call bar on a timer. */
   async poll(): Promise<void> {
     if (document.hidden) return;
+    if (!this.checkedForLiveCall) {
+      this.checkedForLiveCall = true;
+      await this.findCallToRejoin();
+    }
     if (!this.onCall) {
       try {
         const calls = await firstValueFrom(this.api.getRinging());
@@ -143,7 +195,9 @@ export class WhatsAppCallSession {
     if (!this.live() && !this.relayingTo()) {
       try {
         const offers = await firstValueFrom(this.api.getIncomingTransfers());
-        this.incoming.set(offers.find((t) => t.offerSdp && !this.dismissed.has(t.id)) ?? null);
+        this.incoming.set(
+          offers.find((t) => (t.offerSdp || t.viaRelay) && !this.dismissed.has(t.id)) ?? null,
+        );
       } catch {
         // As above.
       }
@@ -157,12 +211,22 @@ export class WhatsAppCallSession {
     this.busy.set(true);
     this.error.set(null);
     try {
+      if (await this.viaRelay()) {
+        const relay = await this.connectRelay();
+        const answered = await firstValueFrom(
+          this.api.answer(call.id, { sdpOffer: relay.localDescription?.sdp ?? '' }),
+        );
+        await relay.setRemoteDescription({ type: 'answer', sdp: answered.agentAnswerSdp ?? '' });
+        this.ringing.set(null);
+        await this.goLive(answered);
+        return;
+      }
       const pc = await this.connectCustomer();
       await pc.setRemoteDescription({ type: 'offer', sdp: call.offerSdp });
       await pc.setLocalDescription(await pc.createAnswer());
       await iceGathered(pc);
       const answered = await firstValueFrom(
-        this.api.answer(call.id, pc.localDescription?.sdp ?? ''),
+        this.api.answer(call.id, { sdpAnswer: pc.localDescription?.sdp ?? '' }),
       );
       this.ringing.set(null);
       await this.goLive(answered);
@@ -194,12 +258,19 @@ export class WhatsAppCallSession {
     this.error.set(null);
     this.dialling.set({ call: null, name });
     try {
-      const pc = await this.connectCustomer();
-      await pc.setLocalDescription(await pc.createOffer({ offerToReceiveAudio: true }));
-      await iceGathered(pc);
+      const relayed = await this.viaRelay();
+      const pc = relayed ? await this.connectRelay() : await this.connectCustomer();
+      if (!relayed) {
+        await pc.setLocalDescription(await pc.createOffer({ offerToReceiveAudio: true }));
+        await iceGathered(pc);
+      }
       let call = await firstValueFrom(
         this.api.start(conversationId, pc.localDescription?.sdp ?? ''),
       );
+      if (relayed) {
+        // Connected to the relay now; the relay rings the customer and picks up their answer itself.
+        await pc.setRemoteDescription({ type: 'answer', sdp: call.agentAnswerSdp ?? '' });
+      }
       this.dialling.set({ call, name });
       this.busy.set(false);
 
@@ -207,8 +278,8 @@ export class WhatsAppCallSession {
       while (this.dialling() && Date.now() < deadline) {
         await wait(ANSWER_POLL_MS);
         call = await firstValueFrom(this.api.get(call.id));
-        if (call.answerSdp) {
-          await pc.setRemoteDescription({ type: 'answer', sdp: call.answerSdp });
+        if (relayed ? call.status === 'Answered' : !!call.answerSdp) {
+          if (!relayed) await pc.setRemoteDescription({ type: 'answer', sdp: call.answerSdp! });
           this.dialling.set(null);
           await this.goLive(call);
           return;
@@ -247,6 +318,10 @@ export class WhatsAppCallSession {
    */
   async transfer(to: CallAgentDto): Promise<void> {
     const call = this.live();
+    if (call?.viaRelay) {
+      await this.transferOnRelay(call, to);
+      return;
+    }
     const customerLeg = this.pc;
     if (!call || !customerLeg || !this.customerStream) return;
     this.error.set(null);
@@ -323,6 +398,49 @@ export class WhatsAppCallSession {
     }
   }
 
+  /**
+   * With the call relay: offer the call; the colleague's browser joins the relay when they take it, and becomes the one the
+   * customer hears. Then this tab simply lets go: nothing of the call lives here.
+   */
+  private async transferOnRelay(call: WhatsAppCallDto, to: CallAgentDto): Promise<void> {
+    this.error.set(null);
+    this.offering.set(to.name);
+    let transferId: string | null = null;
+    try {
+      transferId = (await firstValueFrom(this.api.transfer(call.id, to.userId, null))).id;
+      const deadline = Date.now() + TRANSFER_TIMEOUT_MS;
+      while (this.offering() && Date.now() < deadline) {
+        await wait(ANSWER_POLL_MS);
+        const t = await firstValueFrom(this.api.getTransfer(transferId));
+        if (t.state === 'Accepted') {
+          this.offering.set(null);
+          this.notice.set(`Call handed to ${to.name}.`);
+          // A moment for their audio to reach the relay, which then lets my leg go; leaving now would only mean a beat of silence.
+          await wait(1500);
+          this.ended();
+          return;
+        }
+        if (t.state !== 'Offered') {
+          throw new Error(
+            t.state === 'Declined' ? `${to.name} declined the call.` : `${to.name} didn't answer.`,
+          );
+        }
+      }
+      if (!this.offering()) {
+        await firstValueFrom(this.api.cancelTransfer(transferId)).catch(() => undefined);
+        return;
+      }
+      throw new Error(`${to.name} didn't answer.`);
+    } catch (e: unknown) {
+      if (transferId)
+        await firstValueFrom(this.api.cancelTransfer(transferId)).catch(() => undefined);
+      this.offering.set(null);
+      this.error.set(
+        e instanceof Error ? e.message : problem(e, 'The call could not be transferred.'),
+      );
+    }
+  }
+
   /** Stops waiting for the colleague; the call stays with me. */
   cancelOffer(): void {
     this.offering.set(null);
@@ -347,6 +465,10 @@ export class WhatsAppCallSession {
   // ---- transfer: a colleague hands me their call ---------------------------------------------------------------------
 
   async acceptTransfer(t: CallTransferDto): Promise<void> {
+    if (t.viaRelay) {
+      await this.acceptTransferOnRelay(t);
+      return;
+    }
     if (!t.offerSdp) return;
     this.busy.set(true);
     this.error.set(null);
@@ -356,13 +478,26 @@ export class WhatsAppCallSession {
       this.pc = pc;
       this.mic.getTracks().forEach((track) => pc.addTrack(track, this.mic!));
       pc.ontrack = (e) => this.play(e.streams[0] ?? new MediaStream([e.track]));
+      // This link runs to the colleague's tab, not to Meta. If it goes, find out whether the call ended or only the relay did.
       pc.onconnectionstatechange = () => {
-        if (pc.connectionState === 'failed' || pc.connectionState === 'closed') this.ended();
+        const state = pc.connectionState;
+        if (this.relayLostTimer) {
+          clearTimeout(this.relayLostTimer);
+          this.relayLostTimer = null;
+        }
+        if (state === 'failed' || state === 'closed') {
+          void this.linkLost(t);
+        } else if (state === 'disconnected') {
+          // A brief network blip recovers by itself; a closed tab doesn't.
+          this.relayLostTimer = setTimeout(() => void this.linkLost(t), RELAY_LOST_MS);
+        }
       };
       await pc.setRemoteDescription({ type: 'offer', sdp: t.offerSdp });
       await pc.setLocalDescription(await pc.createAnswer());
       await iceGathered(pc);
-      await firstValueFrom(this.api.acceptTransfer(t.id, pc.localDescription?.sdp ?? ''));
+      await firstValueFrom(
+        this.api.acceptTransfer(t.id, { sdpAnswer: pc.localDescription?.sdp ?? '' }),
+      );
       this.incoming.set(null);
       this.viaTransfer.set(true);
       const call = await firstValueFrom(this.api.get(t.callId));
@@ -374,6 +509,88 @@ export class WhatsAppCallSession {
       this.error.set(problem(e, 'The transferred call could not be taken.'));
     } finally {
       this.busy.set(false);
+    }
+  }
+
+  /**
+   * The link to the colleague relaying my transferred call is gone. When the call itself ended (the customer hung up, or the
+   * colleague's tab saw it end), that's the normal end. Otherwise the relaying tab closed or lost its connection: the customer is
+   * cut off without having hung up, so say so, end the call properly, and offer to call them back.
+   */
+  private async linkLost(t: CallTransferDto): Promise<void> {
+    if (!this.viaTransfer()) return;
+    const call = await firstValueFrom(this.api.get(t.callId)).catch(() => null);
+    this.ended();
+    if (call && transferLinkOutcome(call) === 'relay-lost') {
+      this.relayLost.set({ call, fromName: t.fromName || 'your colleague' });
+      await firstValueFrom(this.api.hangUp(call.id)).catch(() => undefined);
+    }
+  }
+
+  /** Calls back the customer whose transferred call was cut off. */
+  async callBack(): Promise<void> {
+    const lost = this.relayLost();
+    this.relayLost.set(null);
+    if (!lost?.call.conversationId) return;
+    await this.dial(
+      lost.call.conversationId,
+      lost.call.contactName || '+' + (lost.call.contactWaId ?? ''),
+    );
+  }
+
+  /** With the call relay: my browser joins the relay and takes over speaking to the customer. */
+  private async acceptTransferOnRelay(t: CallTransferDto): Promise<void> {
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      const relay = await this.connectRelay();
+      const taken = await firstValueFrom(
+        this.api.acceptTransfer(t.id, { sdpOffer: relay.localDescription?.sdp ?? '' }),
+      );
+      await relay.setRemoteDescription({ type: 'answer', sdp: taken.agentAnswerSdp ?? '' });
+      this.incoming.set(null);
+      this.live.set(await firstValueFrom(this.api.get(t.callId)));
+      this.recording.set(!!(await this.loadSettings())?.recordCalls);
+      this.startClock();
+    } catch (e: unknown) {
+      this.cleanup();
+      this.incoming.set(null);
+      this.error.set(problem(e, 'The transferred call could not be taken.'));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** With the call relay: connect this tab to a live call of mine again. The customer never left. */
+  async rejoin(call: WhatsAppCallDto): Promise<void> {
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      const relay = await this.connectRelay();
+      const back = await firstValueFrom(
+        this.api.rejoin(call.id, relay.localDescription?.sdp ?? ''),
+      );
+      await relay.setRemoteDescription({ type: 'answer', sdp: back.agentAnswerSdp ?? '' });
+      this.rejoinable.set(null);
+      this.live.set(back);
+      this.recording.set(!!(await this.loadSettings())?.recordCalls);
+      this.startClock();
+    } catch (e: unknown) {
+      this.cleanup();
+      this.error.set(problem(e, 'The call could not be rejoined. It may have ended.'));
+      this.rejoinable.set(null);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** After a reload: a live call of mine on the relay, to offer rejoining. */
+  private async findCallToRejoin(): Promise<void> {
+    if (!(await this.viaRelay()) || this.onCall) return;
+    try {
+      this.rejoinable.set(await firstValueFrom(this.api.getMyLiveCall()));
+    } catch {
+      // Nothing to rejoin, as far as we can tell.
     }
   }
 
@@ -409,6 +626,52 @@ export class WhatsAppCallSession {
   }
 
   // ---- internals ------------------------------------------------------------------------------------------------------
+
+  private async viaRelay(): Promise<boolean> {
+    return !!(await this.loadSettings())?.serverRelay;
+  }
+
+  /**
+   * With the call relay: this tab's link to it, carrying my microphone out and the customer in. Returns once the offer (with its
+   * candidates) is ready to send. If the link drops while I'm on the call, the customer is still on the line: offer to rejoin.
+   */
+  private async connectRelay(): Promise<RTCPeerConnection> {
+    this.mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const pc = new RTCPeerConnection({ iceServers: await this.iceServers() });
+    this.pc = pc;
+    this.mic.getTracks().forEach((t) => pc.addTrack(t, this.mic!));
+    pc.ontrack = (e) => {
+      this.customerStream = e.streams[0] ?? new MediaStream([e.track]);
+      this.play(this.customerStream);
+    };
+    pc.onconnectionstatechange = () => {
+      const state = pc.connectionState;
+      if (this.relayLostTimer) {
+        clearTimeout(this.relayLostTimer);
+        this.relayLostTimer = null;
+      }
+      if (pc !== this.pc) return;
+      if (state === 'failed' || state === 'closed') {
+        void this.relayLinkLost();
+      } else if (state === 'disconnected') {
+        this.relayLostTimer = setTimeout(() => void this.relayLinkLost(), RELAY_LOST_MS);
+      }
+    };
+    await pc.setLocalDescription(await pc.createOffer({ offerToReceiveAudio: true }));
+    await iceGathered(pc);
+    return pc;
+  }
+
+  /** My link to the relay dropped. If the call is still on, it waits for me there. */
+  private async relayLinkLost(): Promise<void> {
+    const call = this.live();
+    if (!call?.viaRelay) return;
+    this.ended();
+    const now = await firstValueFrom(this.api.get(call.id)).catch(() => null);
+    if (now && !now.endedAtUtc) {
+      this.rejoinable.set(now);
+    }
+  }
 
   private async connectCustomer(): Promise<RTCPeerConnection> {
     this.mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
@@ -476,6 +739,16 @@ export class WhatsAppCallSession {
    */
   private async startRecording(): Promise<void> {
     const settings = await this.loadSettings();
+    if (this.live()?.viaRelay) {
+      // The relay records the call. This tab only plays the notice to the customer, mixed into what it sends.
+      this.recording.set(!!settings?.recordCalls);
+      if (!settings?.recordCalls || !this.mic) return;
+      this.recordCtx = new AudioContext();
+      this.recordMix = this.recordCtx.createMediaStreamDestination();
+      this.micSource = this.recordCtx.createMediaStreamSource(this.mic);
+      await this.announce(!!settings.hasAnnouncement);
+      return;
+    }
     const type =
       typeof MediaRecorder === 'undefined'
         ? null
@@ -563,6 +836,10 @@ export class WhatsAppCallSession {
   }
 
   private ended(): void {
+    if (this.relayLostTimer) {
+      clearTimeout(this.relayLostTimer);
+      this.relayLostTimer = null;
+    }
     this.cleanup();
     this.live.set(null);
     this.viaTransfer.set(false);

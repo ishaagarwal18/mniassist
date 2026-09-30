@@ -23,6 +23,10 @@ export interface WhatsAppCallDto {
   durationSeconds: number;
   hasRecording: boolean;
   transferCount: number;
+  /** The call relay holds the customer's side. */
+  viaRelay?: boolean;
+  /** With the call relay, in the reply to answering, calling or rejoining: the relay's answer for this browser. */
+  agentAnswerSdp?: string | null;
 }
 
 export interface IceServerDto {
@@ -37,6 +41,8 @@ export interface WhatsAppCallSettingsDto {
   hasAnnouncement?: boolean;
   /** Read-only: STUN/TURN servers from the API's configuration. */
   iceServers?: IceServerDto[];
+  /** Read-only: calls are held by the call relay, not the answering browser. */
+  serverRelay?: boolean;
 }
 
 export interface CallAgentDto {
@@ -56,6 +62,10 @@ export interface CallTransferDto {
   state: 'Offered' | 'Accepted' | 'Declined' | 'Cancelled' | 'Expired';
   offerSdp?: string | null;
   answerSdp?: string | null;
+  /** On the relay: the colleague joins the relay; nothing passes between the browsers. */
+  viaRelay?: boolean;
+  /** With the call relay, in the reply to accepting: the relay's answer for this browser. */
+  agentAnswerSdp?: string | null;
 }
 
 export interface CallPermissionDto {
@@ -106,13 +116,18 @@ export class WhatsAppCallService {
       { apiName: this.apiName, ...config },
     );
 
-  answer = (id: string, sdpAnswer: string, config?: Partial<Rest.Config>) =>
+  /** Without the call relay: the browser's answer to the customer. With it: the browser's offer to the relay. */
+  answer = (
+    id: string,
+    input: { sdpAnswer?: string | null; sdpOffer?: string | null },
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<any, WhatsAppCallDto>(
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/whats-app-call/${id}/answer`,
-        body: { sdpAnswer },
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );
@@ -224,7 +239,12 @@ export class WhatsAppCallService {
       { apiName: this.apiName, ...config },
     );
 
-  transfer = (id: string, toUserId: string, sdpOffer: string, config?: Partial<Rest.Config>) =>
+  transfer = (
+    id: string,
+    toUserId: string,
+    sdpOffer: string | null,
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<any, CallTransferDto>(
       {
         method: 'POST',
@@ -255,13 +275,18 @@ export class WhatsAppCallService {
       { apiName: this.apiName, skipHandleError: true, ...config },
     );
 
-  acceptTransfer = (transferId: string, sdpAnswer: string, config?: Partial<Rest.Config>) =>
+  /** Without the call relay: my answer to the colleague's offer. With it: my browser's offer to the relay. */
+  acceptTransfer = (
+    transferId: string,
+    input: { sdpAnswer?: string | null; sdpOffer?: string | null },
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<any, CallTransferDto>(
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/whats-app-call/accept-transfer/${transferId}`,
-        body: { sdpAnswer },
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );
@@ -284,6 +309,29 @@ export class WhatsAppCallService {
         url: `/api/auto-reach/whats-app-call/cancel-transfer/${transferId}`,
       },
       { apiName: this.apiName, ...config },
+    );
+
+  /** With the call relay: my browser joins again a live call I'm on (after a reload or a dropped connection). */
+  rejoin = (id: string, sdpOffer: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppCallDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/whats-app-call/${id}/rejoin`,
+        body: { sdpOffer },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** With the call relay: the live call I'm on, if any. */
+  getMyLiveCall = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppCallDto | null>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/my-live-call',
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
     );
 
   reject = (id: string, config?: Partial<Rest.Config>) =>

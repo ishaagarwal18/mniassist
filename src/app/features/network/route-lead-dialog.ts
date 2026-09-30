@@ -98,7 +98,11 @@ const MOCK_SUGGESTION: RoutingSuggestionDto = {
             (change)="consent.set($any($event.target).checked)"
           />
           <span
-            >The customer may be contacted by a dealer. <small>{{ sg.consentNote }}</small></span
+            >The customer may be contacted by a dealer{{
+              sg.sharesConversation
+                ? ', and the dealer who accepts will see their WhatsApp conversation with us'
+                : ''
+            }}. <small>{{ sg.consentNote }}</small></span
           >
         </label>
       } @else if (!error()) {
