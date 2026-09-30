@@ -173,7 +173,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
       [subtitle]="subtitle()"
       help="For OEMs and their dealers. As the OEM: invite your dealers, give each a territory, and route enquiries to whoever covers the customer; you then see the dealer's stage, quotes and activity on every lead. As a dealer: enter the OEM's invite code, then accept or decline the leads it sends you."
     >
-      @if (canManage && tab() !== incomingTab) {
+      @if (canManage && runsNetwork() && tab() !== incomingTab) {
         <button ar-button type="button" variant="ghost" icon="settings" (click)="openSettings()">
           Settings
         </button>
@@ -184,7 +184,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
     </ar-topbar>
 
     <div class="nw">
-      <ar-tabs [tabs]="tabs" [(active)]="tab" />
+      <ar-tabs [tabs]="tabs()" [(active)]="tab" />
 
       <div class="nw__body ar-scroll">
         @if (error(); as e) {
@@ -339,6 +339,13 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
           }
 
           @case (incomingTab) {
+            @if (!runsNetwork()) {
+              <p class="nw__hint">
+                Joining an OEM's dealer network and receiving its leads is free on every plan.
+                Running your own dealer network (inviting dealers and routing leads to them) is part
+                of Enterprise.
+              </p>
+            }
             @if (canManage) {
               <form class="join" (submit)="$event.preventDefault(); join()">
                 <label class="ar-field" for="nw-code">
@@ -581,13 +588,17 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
         </label>
         <label class="ar-field" for="nw-consent">
           <span class="ar-field__label"
-            >How your customers learn a dealer may contact them
-            <span class="ar-field__opt">(recorded on every lead you route)</span></span
+            >Consent wording: how your customers learn a dealer may contact them
+            <span class="ar-field__opt"
+              >(your team confirms it before routing; recorded on every lead and shown to the
+              dealer; leave blank for the standard wording)</span
+            ></span
           >
           <textarea
             id="nw-consent"
             class="ar-field__input"
             rows="3"
+            maxlength="512"
             [value]="settings().consentNote ?? ''"
             (input)="patchSettings({ consentNote: $any($event.target).value })"
           ></textarea>
@@ -1069,7 +1080,14 @@ export class ArNetwork {
   protected readonly leadsTab = TAB_LEADS;
   protected readonly dealersTab = TAB_DEALERS;
   protected readonly incomingTab = TAB_INCOMING;
-  protected readonly tabs = [TAB_LEADS, TAB_DEALERS, TAB_INCOMING] as const;
+  /**
+   * Whether this workspace can run its own network (Enterprise, or the add-on). Until the answer arrives, assume it can: the server
+   * checks anyway. A workspace that can't sees only the dealer side, which is free on every plan.
+   */
+  protected readonly runsNetwork = signal(true);
+  protected readonly tabs = computed(() =>
+    this.runsNetwork() ? [TAB_LEADS, TAB_DEALERS, TAB_INCOMING] : [TAB_INCOMING],
+  );
   protected readonly tab = signal<string>(
     inject(ActivatedRoute).snapshot.data['tab'] === 'incoming' ? TAB_INCOMING : TAB_LEADS,
   );
@@ -1150,6 +1168,10 @@ export class ArNetwork {
           this.error.set(problem(e, 'Part of the network could not be loaded.')),
         );
     await Promise.all([
+      settle(firstValueFrom(this.api.getSettings()), (v) => {
+        this.runsNetwork.set(v.canRunNetwork !== false);
+        if (v.canRunNetwork === false) this.tab.set(TAB_INCOMING);
+      }),
       settle(firstValueFrom(this.api.getDealers()), (v) => this.dealers.set(v)),
       settle(firstValueFrom(this.api.getLeads()), (v) => this.leads.set(v)),
       settle(firstValueFrom(this.dealerApi.getMemberships()), (v) => this.memberships.set(v)),

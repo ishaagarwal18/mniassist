@@ -227,6 +227,8 @@ export interface WalletDto extends EntityDto<string> {
   lastTopUpAtUtc?: string | null;
   isLow?: boolean;
   estimatedDaysRemaining?: number | null;
+  /** When per-message charges start, while still ahead; until then delivered messages are recorded but not charged. */
+  chargesStartOnUtc?: string | null;
 }
 
 export interface WalletTransactionDto extends EntityDto<string> {

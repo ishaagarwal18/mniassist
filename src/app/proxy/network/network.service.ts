@@ -133,6 +133,8 @@ export interface NetworkSettingsDto {
   rerouteAutomatically: boolean;
   answerWithinHours: number;
   consentNote?: string | null;
+  /** Read only: Enterprise, or the OEM network add-on. Joining a network as a dealer needs no plan. */
+  canRunNetwork?: boolean;
 }
 
 /** S3, the OEM's side of the dealer network. */

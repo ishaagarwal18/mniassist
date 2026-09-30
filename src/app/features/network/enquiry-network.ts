@@ -33,12 +33,12 @@ import { ArRouteLeadDialog } from './route-lead-dialog';
             }
             <a routerLink="/network">Details →</a>
           </p>
-          @if (l.state === 'Unrouted' && canRoute && open()) {
+          @if (l.state === 'Unrouted' && canRoute && runsNetwork() && open()) {
             <button ar-button type="button" variant="ghost" (click)="routing.set(true)">
               Route again
             </button>
           }
-        } @else if (canRoute && open()) {
+        } @else if (canRoute && runsNetwork() && open()) {
           <p class="en__hint">Send this enquiry to the dealer covering the customer's area.</p>
           <button ar-button type="button" variant="ghost" (click)="routing.set(true)">
             Route to a dealer
@@ -96,10 +96,20 @@ export class ArEnquiryNetwork {
 
   protected readonly lead = signal<NetworkLeadDto | null>(null);
   protected readonly routing = signal(false);
+  /** Only a workspace that runs a network (Enterprise, or the add-on) routes enquiries; a dealer's own enquiries have nowhere to go. */
+  protected readonly runsNetwork = signal(false);
   protected readonly visible = () =>
-    this.canSee && (!!this.lead() || (this.canRoute && this.open()));
+    this.canSee && (!!this.lead() || (this.canRoute && this.runsNetwork() && this.open()));
 
   constructor() {
+    if (this.canRoute && !environment.useMockData) {
+      firstValueFrom(this.api.getSettings())
+        .then((s) => this.runsNetwork.set(s.canRunNetwork !== false))
+        .catch(() => undefined);
+    } else if (environment.useMockData) {
+      this.runsNetwork.set(true);
+    }
+
     effect(() => {
       const id = this.enquiryId();
       this.lead.set(null);

@@ -9,6 +9,13 @@
 </ar-topbar>
 
 <div class="bl ar-scroll">
+  @if (d().chargesStartOn; as start) {
+    <ar-banner tone="warn">
+      From {{ chargeDay(start) }}, each delivered WhatsApp message Meta charges for is charged to
+      this wallet at your plan's rate. Messages until then are recorded but not charged. Top up, or
+      switch on auto top-up, so campaigns keep sending.
+    </ar-banner>
+  }
   <div class="bl__grid">
     <section class="card">
       <h2 class="card__h">Wallet</h2>

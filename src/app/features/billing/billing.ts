@@ -13,7 +13,7 @@ import {
 } from '../../proxy/billing';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip, ArMeter, ArStatTile } from '../../ui';
+import { ArBanner, ArButton, ArChip, ArMeter, ArStatTile } from '../../ui';
 
 const PLAN_NAME: Record<SubscriptionPlan, string> = {
   [SubscriptionPlan.Starter]: 'Starter',
@@ -41,6 +41,7 @@ const SEED = {
   balanceInPaise: 18_420_00,
   isLow: false,
   daysRemaining: 21,
+  chargesStartOn: null as string | null,
   autoTopUp: true,
   autoAmountInPaise: 20_000_00,
   plan: SubscriptionPlan.Growth,
@@ -102,7 +103,7 @@ const SEED = {
  */
 @Component({
   selector: 'ar-billing',
-  imports: [ArTopbar, ArButton, ArChip, ArMeter, ArStatTile, DecimalPipe],
+  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArMeter, ArStatTile, DecimalPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './billing.html',
   styleUrl: './billing.scss',
@@ -129,6 +130,7 @@ export class ArBilling {
           balanceInPaise: r.wallet.balanceInPaise,
           isLow: r.wallet.isLow,
           daysRemaining: r.wallet.estimatedDaysRemaining ?? null,
+          chargesStartOn: r.wallet.chargesStartOnUtc ?? null,
           autoTopUp: r.wallet.autoTopUpEnabled,
           autoAmountInPaise: r.wallet.autoTopUpAmountInPaise,
           plan: r.sub.plan,
@@ -163,6 +165,15 @@ export class ArBilling {
       ? { ...SEED, daysRemaining: SEED.daysRemaining as number | null }
       : this.resource.value(),
   );
+
+  /** "15 October 2026": the day per-message charges start. */
+  protected chargeDay(iso: string): string {
+    return new Date(iso).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  }
 
   protected readonly planName = computed(() =>
     this.d().plan != null ? PLAN_NAME[this.d().plan!] : PLAN_NAME[0],
