@@ -132,7 +132,8 @@
             @if (s.text) {
               <p>{{ s.text }}</p>
               <span class="thread__summary-by"
-                >Written by {{ s.by }} · check before relying on it</span
+                ><ar-icon name="sparkle" [size]="12" /> AI summary · written by {{ s.by }} · check
+                before relying on it</span
               >
             } @else {
               <p>
@@ -337,6 +338,9 @@
 
             @if (suggestions().length > 0) {
               <div class="composer__suggest">
+                <span class="composer__suggest-h">
+                  <ar-icon name="sparkle" [size]="13" /> AI suggested replies
+                </span>
                 @for (s of suggestions(); track $index) {
                   <button type="button" class="composer__suggest-chip" (click)="useSuggestion(s)">
                     {{ s }}
@@ -368,12 +372,13 @@
               }
               <button
                 type="button"
-                class="composer__tool"
-                title="Suggest replies"
+                class="composer__tool composer__tool--ai"
+                title="Suggest replies with AI"
+                aria-label="Suggest replies with AI"
                 [disabled]="suggestBusy()"
                 (click)="suggestReplies()"
               >
-                <ar-icon name="bolt" [size]="17" />
+                <ar-icon name="sparkle" [size]="17" />
               </button>
               <input
                 #fileInput

@@ -13,7 +13,7 @@ const STEP_LABEL: Record<OnboardingStep, string> = {
   [OnboardingStep.FacebookLogin]: 'Sign in with Facebook',
   [OnboardingStep.WabaCreated]: 'Create the WhatsApp Business Account',
   [OnboardingStep.NumberVerified]: 'Verify the phone number',
-  [OnboardingStep.AccessGranted]: 'Grant AutoReach access',
+  [OnboardingStep.AccessGranted]: 'Grant MNI Assist access',
   [OnboardingStep.WebhooksSubscribed]: 'Subscribe to webhooks',
   [OnboardingStep.NumberRegistered]: 'Register the number on the Cloud API',
   [OnboardingStep.MetadataRead]: 'Read the number metadata',
@@ -49,7 +49,7 @@ const PROVIDER_LABELS: readonly string[] = ['Meta (direct)', 'Gupshup (Solution 
       @if (provider() === providerTabs[0]) {
         <p class="cn__p">
           Connecting a number runs Meta's embedded signup: you sign in with the Facebook account
-          that owns the business, pick or add the phone number, and grant AutoReach permission to
+          that owns the business, pick or add the phone number, and grant MNI Assist permission to
           send on it. It opens in a Meta window.
         </p>
 

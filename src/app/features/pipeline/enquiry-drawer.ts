@@ -487,7 +487,7 @@ import { ArEnquiryNetwork } from '../network/enquiry-network';
       margin-top: 5px;
       border-radius: 50%;
       flex: none;
-      background: var(--ar-amber-500);
+      background: var(--ar-blue-500);
     }
     .tl__head {
       margin: 0;

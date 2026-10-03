@@ -38,6 +38,8 @@ import { AgencyActingStore } from '../core/services/agency-acting.store';
       display: flex;
       flex-direction: column;
       height: 100%;
+      /* A soft cobalt light falloff in the dark theme; nothing in light. */
+      background-image: var(--ar-page-glow);
     }
     .shell__content {
       flex: 1;
@@ -53,14 +55,14 @@ import { AgencyActingStore } from '../core/services/agency-acting.store';
       gap: 12px;
       padding: 8px 16px;
       background: var(--ar-amber-500);
-      color: var(--ar-ink-900);
+      color: var(--ar-on-attention);
       font: 500 12.5px var(--ar-font-sans);
     }
     .shell__acting button {
-      border: 1px solid var(--ar-ink-900);
+      border: 1px solid var(--ar-on-attention);
       border-radius: var(--ar-radius-chip);
       background: transparent;
-      color: var(--ar-ink-900);
+      color: var(--ar-on-attention);
       font: 600 11.5px var(--ar-font-sans);
       padding: 3px 10px;
       cursor: pointer;

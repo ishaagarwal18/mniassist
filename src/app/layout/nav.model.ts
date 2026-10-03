@@ -8,6 +8,9 @@ export interface NavItem {
 
   /** ABP policy name; the item is hidden when it is not granted. May be an OR list. */
   readonly permission?: string;
+
+  /** An AI feature: drawn with the teal AI marker instead of the blue one. */
+  readonly ai?: boolean;
 }
 
 export interface NavGroup {
@@ -320,9 +323,10 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'AI assistant',
-        icon: 'automation',
+        icon: 'sparkle',
         route: '/settings/ai-assistant',
         permission: 'AutoReach.Integrations',
+        ai: true,
       },
       {
         label: 'Email sending',

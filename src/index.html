@@ -2,15 +2,37 @@
 <html lang="en-IN">
   <head>
     <meta charset="utf-8" />
-    <title>AutoReach</title>
+    <title>MNI Assist</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" href="favicon.ico" />
+    <meta
+      name="description"
+      content="MNI Assist — AI Business Engagement Platform for Industrial Companies."
+    />
+    <link rel="icon" type="image/png" href="brand/mni-assist-icon.png" />
+    <link rel="apple-touch-icon" href="brand/mni-assist-icon.png" />
+    <script>
+      // Apply a saved dark theme before Angular starts, so a reload doesn't flash
+      // white. Same rule as isThemedPath() in core/services/theme-logic.ts:
+      // public customer pages always stay light.
+      (function () {
+        try {
+          var p = location.pathname;
+          var isPublic =
+            p === '/' ||
+            /^\/(sign|f|pay|t|r|reorder|catalogue)\//.test(p) ||
+            /^\/(privacy|field)(\/|$)/.test(p);
+          if (localStorage.getItem('ar.theme') === 'dark' && !isPublic) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap"
     />
   </head>
   <body>

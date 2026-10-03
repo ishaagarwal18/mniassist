@@ -231,7 +231,7 @@ function normaliseAssets(dto: ChatEntryPointAssetsDto): ChatEntryPointAssets {
 
 function mockWidget(waLink: string, label: string): string {
   return (
-    '<!-- AutoReach WhatsApp button -->\n' +
+    '<!-- MNI Assist WhatsApp button -->\n' +
     "<script>(function(){var a=document.createElement('a');" +
     `a.href='${waLink}';a.target='_blank';a.rel='noopener';` +
     `a.setAttribute('aria-label','${label.replace(/'/g, '')}');` +

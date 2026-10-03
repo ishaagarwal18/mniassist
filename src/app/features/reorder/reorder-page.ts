@@ -456,15 +456,16 @@ type Step = 'loading' | 'unavailable' | 'code' | 'portal' | 'done';
     :host {
       display: block;
       min-height: 100vh;
-      background: #f2f3ef;
-      --rp-ink: #1c2227;
-      --rp-soft: #5a646c;
-      --rp-line: #d6dad2;
-      --rp-card: #ffffff;
-      --rp-accent: #b4470f;
-      --rp-good: #17703b;
-      --rp-warn: #9a5b00;
-      --rp-bad: #b42318;
+      background: var(--ar-bg-100);
+      --rp-ink: var(--ar-ink-900);
+      --rp-soft: var(--ar-ink-500);
+      --rp-line: var(--ar-line-300);
+      --rp-card: var(--ar-white);
+      --rp-accent: var(--ar-blue-600);
+      --rp-on-accent: #ffffff;
+      --rp-good: var(--ar-green-600);
+      --rp-warn: var(--ar-amber-600);
+      --rp-bad: var(--ar-red-600);
       color: var(--rp-ink);
       font:
         400 15px/1.5 system-ui,
@@ -493,8 +494,8 @@ type Step = 'loading' | 'unavailable' | 'code' | 'portal' | 'done';
       gap: 10px;
     }
     .rp__card--done {
-      background: #eaf5ec;
-      border-color: #a8d3b4;
+      background: var(--ar-green-100);
+      border-color: var(--ar-green-200);
     }
     .rp__eyebrow {
       margin: 0;
@@ -754,7 +755,8 @@ export class ArReorderPage {
   protected readonly site = signal('');
   protected readonly note = signal('');
   protected readonly done = signal<PublicReorderSubmittedDto | null>(null);
-  protected readonly reasons = signal<Record<string, string>>({});
+  /** Typed reason per item; an item nobody has typed for has no entry. */
+  protected readonly reasons = signal<Partial<Record<string, string>>>({});
   protected readonly decided = signal<string | null>(null);
   protected readonly newPassword = signal('');
   protected readonly passwordSaved = signal(false);

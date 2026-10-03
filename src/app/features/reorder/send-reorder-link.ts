@@ -118,7 +118,7 @@ export class ArSendReorderLink {
       this.result.set(
         environment.useMockData
           ? {
-              url: 'https://app.autoreach.in/r/host.mockToken',
+              url: 'https://mniassist.com/r/host.mockToken',
               expiresAtUtc: new Date(Date.now() + 7 * 86_400_000).toISOString(),
               sent: true,
             }

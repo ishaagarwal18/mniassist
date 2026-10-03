@@ -29,8 +29,9 @@ import { ArIcon } from './icon';
       border-radius: var(--ar-radius-control);
     }
     :host:focus-within {
-      border-color: var(--ar-amber-500);
+      border-color: var(--ar-blue-500);
       background: var(--ar-white);
+      box-shadow: var(--ar-focus-ring);
     }
     .ar-search__icon {
       color: var(--ar-ink-400);

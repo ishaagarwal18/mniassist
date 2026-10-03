@@ -81,7 +81,7 @@ export class WebFormMockStore {
       viewCount: 0,
       submissionCount: 0,
       creationTime: new Date().toISOString(),
-      publicUrl: `https://app.autoreach.in/f/h.${slug}`,
+      publicUrl: `https://mniassist.com/f/h.${slug}`,
       ...d,
       submitLabel: d.submitLabel || 'Send',
       successMessage:

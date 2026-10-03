@@ -35,7 +35,7 @@
   background: var(--ar-bg-100);
 }
 .tab--on {
-  background: var(--ar-amber-100);
+  background: var(--ar-blue-100);
   color: var(--ar-ink-900);
 }
 .tab__n {
@@ -68,7 +68,7 @@
 /* Unread is carried by a left rail rather than a background tint — a tinted row
    fights the severity colour on the chip beside it. */
 .row--unread {
-  border-left: 3px solid var(--ar-amber-500);
+  border-left: 3px solid var(--ar-blue-500);
 }
 .row--critical.row--unread {
   border-left-color: var(--ar-red-500);
@@ -132,7 +132,7 @@
 .row__link,
 .row__mark {
   font: 500 12px var(--ar-font-sans);
-  color: var(--ar-amber-600);
+  color: var(--ar-blue-600);
   background: none;
   border: 0;
   padding: 0;

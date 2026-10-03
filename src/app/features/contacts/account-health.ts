@@ -179,7 +179,7 @@ const BAND_LABEL: Record<HealthBand, string> = {
     <ar-topbar
       title="Account health"
       [subtitle]="subtitle()"
-      help="A score out of 100 for each customer, from what AutoReach already records: how recently they messaged, open and late service tickets, satisfaction, overdue invoices, renewals and quotes won or lost. It starts at 75; each reason shows its points. Recomputed every night."
+      help="A score out of 100 for each customer, from what MNI Assist already records: how recently they messaged, open and late service tickets, satisfaction, overdue invoices, renewals and quotes won or lost. It starts at 75; each reason shows its points. Recomputed every night."
     >
       @if (canRecompute) {
         <button
@@ -474,8 +474,8 @@ const BAND_LABEL: Record<HealthBand, string> = {
       border-right: 0;
     }
     .seg button[aria-pressed='true'] {
-      background: var(--ar-ink-900);
-      color: var(--ar-white);
+      background: var(--ar-inverse-bg);
+      color: var(--ar-inverse-fg);
     }
     .seg__n {
       opacity: 0.7;

@@ -192,8 +192,8 @@ import { displayNumber, looksLikeNumber, toE164Digits } from './call-logic';
       color: var(--ar-ink-600);
     }
     .cd__seg button.on {
-      background: var(--ar-ink-900);
-      color: var(--ar-white);
+      background: var(--ar-inverse-bg);
+      color: var(--ar-inverse-fg);
     }
   `,
 })

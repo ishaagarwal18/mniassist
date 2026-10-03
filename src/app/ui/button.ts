@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { ArIcon, IconName } from './icon';
 
-export type ButtonVariant = 'primary' | 'ghost' | 'quiet' | 'danger';
+/** `ai` is for actions that run AI (draft, suggest, summarise) — teal, and only there. */
+export type ButtonVariant = 'primary' | 'ghost' | 'quiet' | 'danger' | 'ai';
 
 @Component({
   selector: 'button[ar-button]',
@@ -30,8 +31,13 @@ export type ButtonVariant = 'primary' | 'ghost' | 'quiet' | 'danger';
       cursor: pointer;
       white-space: nowrap;
       transition:
-        background-color 0.12s ease,
-        border-color 0.12s ease;
+        background-color var(--ar-ease),
+        border-color var(--ar-ease),
+        box-shadow var(--ar-ease);
+    }
+    :host(:focus-visible) {
+      outline: none;
+      box-shadow: var(--ar-focus-ring);
     }
     :host(:disabled) {
       opacity: 0.5;
@@ -39,22 +45,35 @@ export type ButtonVariant = 'primary' | 'ghost' | 'quiet' | 'danger';
     }
 
     :host(.ar-btn--primary) {
-      background: var(--ar-amber-600);
+      background: var(--ar-primary);
       color: #fff;
-      border: 1px solid var(--ar-amber-600);
+      border: 1px solid var(--ar-primary);
+      box-shadow: var(--ar-glow-primary);
     }
     :host(.ar-btn--primary):hover:not(:disabled) {
-      background: #8c4a0c;
-      border-color: #8c4a0c;
+      background: var(--ar-primary-hover);
+      border-color: var(--ar-primary-hover);
+    }
+
+    :host(.ar-btn--ai) {
+      background: var(--ar-ai-fill);
+      color: #fff;
+      border: 1px solid var(--ar-ai-fill);
+    }
+    :host(.ar-btn--ai):hover:not(:disabled) {
+      background: var(--ar-ai-fill-hover);
+      border-color: var(--ar-ai-fill-hover);
     }
 
     :host(.ar-btn--ghost) {
       background: var(--ar-white);
-      color: var(--ar-ink-700);
+      color: var(--ar-ink-900);
       border: 1px solid var(--ar-line-300);
+      box-shadow: var(--ar-shadow-card);
     }
     :host(.ar-btn--ghost):hover:not(:disabled) {
       background: var(--ar-bg-50);
+      border-color: var(--ar-ink-400);
     }
 
     :host(.ar-btn--quiet) {
@@ -73,7 +92,7 @@ export type ButtonVariant = 'primary' | 'ghost' | 'quiet' | 'danger';
     }
     :host(.ar-btn--danger):hover:not(:disabled) {
       background: var(--ar-red-100);
-      border-color: var(--ar-red-100);
+      border-color: var(--ar-red-200);
     }
   `,
 })

@@ -7,6 +7,9 @@ import { environment } from '../../../environments/environment';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { BrandingService } from '../../proxy/branding';
 import { ArButton, ArIcon } from '../../ui';
+import { ArThemeToggle } from '../../layout/theme-toggle';
+import { ArAuthShowcase } from './auth-showcase';
+import { ArBrand } from '../../layout/brand';
 
 /**
  * The sign-in screen. Username + password (ABP's password grant in real mode; any
@@ -15,22 +18,18 @@ import { ArButton, ArIcon } from '../../ui';
  */
 @Component({
   selector: 'ar-login',
-  imports: [ArButton, ArIcon, RouterLink],
+  imports: [ArButton, ArIcon, RouterLink, ArThemeToggle, ArAuthShowcase, ArBrand],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <ar-auth-showcase class="lg__show" />
     <div class="lg">
+      <div class="lg__top"><ar-theme-toggle /></div>
       <form class="lg__card" (submit)="submit($event)">
         <div class="lg__brand">
-          @if (workspaceLogo(); as logo) {
-            <span class="lg__mark lg__mark--logo"><img [src]="logo" alt="" /></span>
-          } @else {
-            <span class="lg__mark" [style.background]="workspacePrimaryColor() || null">
-              <ar-icon name="bolt" [size]="16" [strokeWidth]="0" />
-            </span>
-          }
-          <span class="lg__name">AutoReach</span>
+          <ar-brand [logoSrc]="workspaceLogo()" />
         </div>
-        <h1 class="lg__title">Sign in to your workspace</h1>
+        <h1 class="lg__title">Welcome back</h1>
+        <p class="lg__sub">Sign in to your workspace to pick up where your team left off.</p>
 
         @if (error(); as e) {
           <p class="lg__error">{{ e }}</p>
@@ -90,94 +89,87 @@ import { ArButton, ArIcon } from '../../ui';
         @if (mock) {
           <p class="lg__hint">Demo build — any username and password will sign you in.</p>
         } @else {
-          <a class="lg__link" routerLink="/signup">Create a workspace</a>
           <a class="lg__link lg__link--forgot" routerLink="/forgot-password">Forgot password?</a>
+          <p class="lg__new">
+            New to MNI Assist? <a class="lg__link" routerLink="/signup">Create a workspace</a>
+          </p>
         }
       </form>
+      <ul class="lg__trust" aria-label="Security">
+        <li><ar-icon name="shield" [size]="14" /> Encrypted sign-in</li>
+        <li><ar-icon name="check" [size]="14" /> DPDP-ready consent records</li>
+        <li><ar-icon name="user" [size]="14" /> Role-based access</li>
+      </ul>
       <p class="lg__foot">
-        AutoReach — WhatsApp marketing for industrial automation ·
+        MNI Assist — AI Business Engagement Platform for Industrial Companies ·
         <a routerLink="/privacy" class="lg__foot-link">Privacy policy</a>
       </p>
     </div>
   `,
   styles: `
     :host {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       min-height: 100vh;
       background: var(--ar-bg-100);
     }
     .lg {
-      flex: 1;
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 18px;
-      padding: 24px;
+      padding: 72px 24px 32px;
+    }
+    .lg__top {
+      position: absolute;
+      top: 20px;
+      right: 24px;
     }
     .lg__card {
-      width: 340px;
+      width: 380px;
       max-width: 100%;
-      padding: 28px 26px 24px;
+      padding: 32px 30px 26px;
       background: var(--ar-white);
       border: 1px solid var(--ar-line-200);
-      border-radius: var(--ar-radius-card);
-      box-shadow: 0 10px 40px rgba(15, 23, 32, 0.08);
-      text-align: center;
+      border-radius: var(--ar-radius-modal);
+      box-shadow: var(--ar-shadow-pop);
     }
     .lg__brand {
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: 9px;
-      margin-bottom: 16px;
-    }
-    .lg__mark {
-      width: 26px;
-      height: 26px;
-      border-radius: 6px;
-      background: var(--ar-amber-500);
-      color: var(--ar-ink-900);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-    .lg__mark--logo {
-      background: var(--ar-white, #fff);
-    }
-    .lg__mark--logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-    .lg__name {
-      font: 600 17px var(--ar-font-sans);
-      color: var(--ar-ink-900);
-      letter-spacing: -0.015em;
+      margin-bottom: 22px;
     }
     .lg__title {
-      margin: 0 0 16px;
-      font: 600 16px var(--ar-font-sans);
+      margin: 0;
+      font: 700 24px var(--ar-font-sans);
+      letter-spacing: -0.02em;
       color: var(--ar-ink-900);
     }
+    .lg__sub {
+      margin: 6px 0 22px;
+      font: 400 13.5px/1.5 var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
     .lg__error {
-      margin: 0 0 12px;
-      padding: 8px 10px;
+      margin: 0 0 14px;
+      padding: 9px 11px;
+      border: 1px solid var(--ar-red-200);
       border-radius: var(--ar-radius-inset);
       background: var(--ar-red-100);
       color: var(--ar-red-600);
-      font: 400 12px var(--ar-font-sans);
+      font: 400 12.5px var(--ar-font-sans);
     }
     .lg__field {
       display: block;
-      text-align: left;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
     .lg__field > span {
       display: block;
-      margin-bottom: 4px;
-      font: 500 12px var(--ar-font-sans);
+      margin-bottom: 5px;
+      font: 500 12.5px var(--ar-font-sans);
       color: var(--ar-ink-700);
     }
     .lg__opt {
@@ -189,37 +181,75 @@ import { ArButton, ArIcon } from '../../ui';
       display: flex;
       align-items: center;
       gap: 7px;
-      margin-bottom: 16px;
-      font: 400 12px var(--ar-font-sans);
+      margin-bottom: 18px;
+      font: 400 12.5px var(--ar-font-sans);
       color: var(--ar-ink-500);
     }
     .lg__card button[ar-button] {
       width: 100%;
+      height: 40px;
+      justify-content: center;
+      font-size: 14px;
     }
     .lg__hint {
       margin: 14px 0 0;
-      font: 400 11.5px var(--ar-font-sans);
+      font: 400 12px var(--ar-font-sans);
       color: var(--ar-ink-400);
+      text-align: center;
     }
     .lg__link {
-      margin-top: 12px;
-      border: 0;
-      background: transparent;
-      color: var(--ar-teal-600);
-      font: 500 12px var(--ar-font-sans);
-      cursor: pointer;
+      color: var(--ar-blue-600);
+      font: 500 12.5px var(--ar-font-sans);
     }
     .lg__link--forgot {
       display: block;
+      margin-top: 14px;
+      text-align: center;
+    }
+    .lg__new {
+      margin: 18px 0 0;
+      padding-top: 16px;
+      border-top: 1px solid var(--ar-line-200);
+      text-align: center;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .lg__trust {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px 18px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
+    .lg__trust li {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .lg__trust ar-icon {
+      color: var(--ar-green-600);
     }
     .lg__foot {
       margin: 0;
       font: 400 11.5px var(--ar-font-sans);
       color: var(--ar-ink-400);
+      text-align: center;
     }
     .lg__foot-link {
       color: inherit;
       text-decoration: underline;
+    }
+    @media (max-width: 960px) {
+      :host {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .lg__show {
+        display: none;
+      }
     }
   `,
 })

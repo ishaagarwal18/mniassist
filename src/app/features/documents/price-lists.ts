@@ -28,7 +28,7 @@ interface ItemRow {
     <ar-topbar
       title="Price lists"
       subtitle="Region & distributor-tier pricing"
-      help="Prices scoped by region and distributor tier. When a broadcast goes out, AutoReach resolves the single most specific active list for each distributor automatically."
+      help="Prices scoped by region and distributor tier. When a broadcast goes out, MNI Assist resolves the single most specific active list for each distributor automatically."
     >
       <button ar-button variant="primary" icon="plus" (click)="openNew()">New price list</button>
     </ar-topbar>

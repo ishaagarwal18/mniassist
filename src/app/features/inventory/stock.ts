@@ -141,8 +141,8 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
           <section class="setup">
             <h2>Stock comes with the re-order portal add-on</h2>
             <p class="st__hint">
-              Ask your AutoReach contact to switch on the re-order portal. Anything already recorded
-              here stays readable.
+              Ask your MNI Assist contact to switch on the re-order portal. Anything already
+              recorded here stays readable.
             </p>
           </section>
         } @else if (s.keptIn === 'Erp') {
@@ -1187,7 +1187,7 @@ export class ArStock {
   protected readonly keptOptions: { value: StockKeptIn; label: string; hint: string }[] = [
     {
       value: 'AutoReach',
-      label: 'Here, in AutoReach',
+      label: 'Here, in MNI Assist',
       hint: 'Levels, movements and counts here; the portal shows availability.',
     },
     {
@@ -1195,7 +1195,11 @@ export class ArStock {
       label: 'In Tally or SAP',
       hint: 'Read from the ERP on each sync; the portal shows availability from it.',
     },
-    { value: 'NotTracked', label: "We don't track stock", hint: 'No stock anywhere in AutoReach.' },
+    {
+      value: 'NotTracked',
+      label: "We don't track stock",
+      hint: 'No stock anywhere in MNI Assist.',
+    },
   ];
 
   constructor() {

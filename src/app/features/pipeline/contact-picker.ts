@@ -57,7 +57,7 @@ import { PickerOption, PipelineStore } from '../../core/services/pipeline.servic
       border: 0;
       cursor: pointer;
       font: 500 12px var(--ar-font-sans);
-      color: var(--ar-amber-600);
+      color: var(--ar-blue-600);
     }
     .cp__list {
       list-style: none;

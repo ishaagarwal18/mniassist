@@ -35,8 +35,8 @@
   color: var(--ar-ink-600);
 }
 .cl__seg button.on {
-  background: var(--ar-ink-900);
-  color: var(--ar-white);
+  background: var(--ar-inverse-bg);
+  color: var(--ar-inverse-fg);
 }
 .cl__chk {
   display: flex;
@@ -132,9 +132,9 @@
   color: var(--ar-ink-700);
 }
 .cl__btn--go {
-  background: var(--ar-teal-600);
+  background: var(--ar-primary);
   border-color: var(--ar-teal-600);
-  color: var(--ar-white);
+  color: #fff;
 }
 .cl__btn:focus-visible {
   outline: 2px solid var(--ar-teal-600);

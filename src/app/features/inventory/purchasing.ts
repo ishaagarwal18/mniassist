@@ -674,7 +674,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
       font-size: 11.5px;
       padding: 0 6px;
       border-radius: 999px;
-      background: var(--ar-amber-100, #fef3c7);
+      background: var(--ar-blue-100);
       color: var(--ar-amber-800, #92400e);
     }
     .tbl {

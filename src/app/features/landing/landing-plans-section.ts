@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core
 import { RouterLink } from '@angular/router';
 
 import { ArIcon } from '../../ui';
-import { Cycle, LANDING_PLANS, limitLines, priceLabel } from './landing-plans';
+import { Cycle, LANDING_PLANS, limitLines, planKey, priceLabel } from './landing-plans';
 
 /** The landing page's plan cards and billing-cycle toggle. Its own component so
  *  the page's styles stay inside the per-component style budget. */
@@ -59,6 +59,7 @@ import { Cycle, LANDING_PLANS, limitLines, priceLabel } from './landing-plans';
             class="btn"
             [class.btn--primary]="p.featured"
             [routerLink]="signedIn() ? '/billing' : '/signup'"
+            [queryParams]="{ plan: planKey(p) }"
           >
             {{ signedIn() ? 'Manage plan' : 'Get started' }}
           </a>
@@ -99,12 +100,15 @@ import { Cycle, LANDING_PLANS, limitLines, priceLabel } from './landing-plans';
       cursor: pointer;
     }
     .toggle button.on {
-      background: var(--ar-ink-900);
+      background: var(--ar-navy);
       color: #fff;
     }
     .toggle em {
       font-style: normal;
-      color: var(--ar-amber-500);
+      color: var(--ar-green-600);
+    }
+    .toggle button.on em {
+      color: #6fd394;
     }
     .plans {
       display: grid;
@@ -123,7 +127,7 @@ import { Cycle, LANDING_PLANS, limitLines, priceLabel } from './landing-plans';
       border-radius: var(--ar-radius-card);
     }
     .plan--featured {
-      border: 2px solid var(--ar-amber-600);
+      border: 2px solid var(--ar-blue-500);
     }
     .plan__tag {
       position: absolute;
@@ -131,7 +135,7 @@ import { Cycle, LANDING_PLANS, limitLines, priceLabel } from './landing-plans';
       left: 18px;
       padding: 2px 9px;
       border-radius: 999px;
-      background: var(--ar-amber-600);
+      background: var(--ar-blue-500);
       color: #fff;
       font: 600 11px var(--ar-font-sans);
     }
@@ -202,16 +206,16 @@ import { Cycle, LANDING_PLANS, limitLines, priceLabel } from './landing-plans';
     }
     .btn--primary {
       border-color: transparent;
-      background: var(--ar-amber-600);
+      background: var(--ar-blue-500);
       color: #fff;
     }
     .btn--primary:hover {
       border-color: transparent;
-      background: var(--ar-amber-500);
+      background: var(--ar-blue-600);
     }
     .btn:focus-visible,
     .toggle button:focus-visible {
-      outline: 2px solid var(--ar-teal-600);
+      outline: 2px solid var(--ar-blue-500);
       outline-offset: 2px;
     }
     .note {
@@ -238,4 +242,5 @@ export class ArLandingPlans {
   protected readonly plans = LANDING_PLANS;
   protected readonly priceLabel = priceLabel;
   protected readonly limitLines = limitLines;
+  protected readonly planKey = planKey;
 }

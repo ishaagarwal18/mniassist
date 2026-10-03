@@ -11,8 +11,8 @@ import { BrandingStore } from '../../core/services/branding.store';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArBanner } from '../../ui';
 
-const DEFAULT_PRIMARY = '#C4711E'; // --ar-amber-500
-const DEFAULT_ACCENT = '#0C6169'; // --ar-teal-600
+const DEFAULT_PRIMARY = '#1769FF'; // --ar-blue-500
+const DEFAULT_ACCENT = '#1769FF'; // --ar-blue-500, the sidebar's active marker
 
 /**
  * Tenant branding (M14-ish — not in the original build spec's numbering, added on

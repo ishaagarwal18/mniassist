@@ -28,7 +28,7 @@ import { initials } from '../core/util/format';
       color: var(--ar-ink-500);
     }
     :host(.ar-avatar--teal) {
-      background: var(--ar-teal-600);
+      background: var(--ar-primary);
       color: #fff;
     }
   `,

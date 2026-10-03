@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ArIcon } from '../../ui';
+import { ArBrand } from '../../layout/brand';
 
 /**
  * Public privacy policy — no auth guard, reachable by Meta's App Review team
@@ -13,7 +13,7 @@ import { ArIcon } from '../../ui';
  * rights and their 30-day SLA) is taken from the actual domain model —
  * `RetentionPolicy.DefaultDaysFor`, `DataRequestKind`, `ConsentSource` — not
  * invented, so this page does not silently drift from what the product
- * actually does. Contact emails point at getautoreach.com (chosen and
+ * actually does. Contact emails point at mniassist.com (the product domain;
  * confirmed available via registry RDAP — see the go-live tracker's a1/a2
  * notes). What this page still cannot supply on its own: the registered
  * business address and the Grievance Officer's actual name, plus a legal
@@ -24,29 +24,26 @@ import { ArIcon } from '../../ui';
  */
 @Component({
   selector: 'ar-privacy-policy',
-  imports: [RouterLink, ArIcon],
+  imports: [RouterLink, ArBrand],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="pp">
       <header class="pp__head">
-        <a class="pp__brand" routerLink="/login">
-          <span class="pp__mark"><ar-icon name="bolt" [size]="14" [strokeWidth]="0" /></span>
-          <span>AutoReach</span>
-        </a>
-        <a class="pp__back" routerLink="/login">Back to sign in</a>
+        <ar-brand />
+        <a class="pp__back" routerLink="/">← Back to home</a>
       </header>
 
       <main class="pp__doc">
         <h1>Privacy Policy</h1>
         <p class="pp__meta">
-          Last updated: <strong>[DD Month YYYY]</strong> · Applies to the AutoReach platform
-          operated by <strong>Sun Energy &amp; Automation</strong> ("AutoReach", "we", "us").
+          Last updated: <strong>[DD Month YYYY]</strong> · Applies to the MNI Assist platform
+          operated by <strong>Emnisoft Pvt Ltd</strong> ("MNI Assist", "we", "us").
         </p>
 
         <p>
-          AutoReach is a WhatsApp, SMS, Email, Instagram and Messenger marketing platform built for
+          MNI Assist is a WhatsApp, SMS, Email, Instagram and Messenger marketing platform built for
           industrial automation businesses in India to reach their own customers. This policy
-          explains what personal data we process when a business (a "tenant") uses AutoReach to
+          explains what personal data we process when a business (a "tenant") uses MNI Assist to
           message <em>its</em> customers ("contacts"), and what data we collect about the tenant's
           own team members who use the product.
         </p>
@@ -201,7 +198,7 @@ import { ArIcon } from '../../ui';
         </ul>
         <p>
           Every request like this is logged and answered within <strong>30 days</strong>. To ask a
-          tenant to action one of these on AutoReach's infrastructure, contact us directly (below)
+          tenant to action one of these on MNI Assist's infrastructure, contact us directly (below)
           and we will route it to the responsible tenant and confirm once it is done.
         </p>
 
@@ -215,11 +212,11 @@ import { ArIcon } from '../../ui';
 
         <h2>7. Who is responsible for your data</h2>
         <p>
-          If you received a message through AutoReach, the business that messaged you (the "tenant")
-          is who asked for your consent and is responsible for deciding what to send you — they are
-          the data fiduciary under India's Digital Personal Data Protection Act, 2023. AutoReach
-          (Sun Energy &amp; Automation) processes that data on the tenant's instructions, as its
-          data processor / significant processing platform.
+          If you received a message through MNI Assist, the business that messaged you (the
+          "tenant") is who asked for your consent and is responsible for deciding what to send you —
+          they are the data fiduciary under India's Digital Personal Data Protection Act, 2023. MNI
+          Assist (Emnisoft Pvt Ltd) processes that data on the tenant's instructions, as
+          its data processor / significant processing platform.
         </p>
 
         <h2>8. Grievance officer &amp; complaints</h2>
@@ -229,7 +226,7 @@ import { ArIcon } from '../../ui';
         </p>
         <p class="pp__callout">
           <strong>[Grievance Officer name]</strong><br />
-          Email: <strong>grievance&#64;getautoreach.com</strong><br />
+          Email: <strong>grievance&#64;mniassist.com</strong><br />
           Address: <strong>[Registered business address]</strong>
         </p>
         <p>
@@ -239,8 +236,8 @@ import { ArIcon } from '../../ui';
 
         <h2>9. Children</h2>
         <p>
-          AutoReach is a business-to-business messaging tool. It is not directed at children, and we
-          do not knowingly process the personal data of anyone under 18 as a contact in their own
+          MNI Assist is a business-to-business messaging tool. It is not directed at children, and
+          we do not knowingly process the personal data of anyone under 18 as a contact in their own
           right.
         </p>
 
@@ -252,7 +249,7 @@ import { ArIcon } from '../../ui';
 
         <h2>11. Contact us</h2>
         <p>
-          Email: <strong>privacy&#64;getautoreach.com</strong><br />
+          Email: <strong>privacy&#64;mniassist.com</strong><br />
           Post: <strong>[Registered business address]</strong>
         </p>
       </main>
@@ -274,24 +271,6 @@ import { ArIcon } from '../../ui';
       align-items: center;
       justify-content: space-between;
       margin-bottom: 32px;
-    }
-    .pp__brand {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font: 700 14px var(--ar-font-sans);
-      color: var(--ar-ink-900);
-      text-decoration: none;
-    }
-    .pp__mark {
-      width: 24px;
-      height: 24px;
-      border-radius: 6px;
-      background: var(--ar-ink-900);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
     .pp__back {
       font: 500 12.5px var(--ar-font-sans);

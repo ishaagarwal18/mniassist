@@ -47,7 +47,7 @@ const HEIGHT = 200;
     }
     .pad {
       position: relative;
-      border: 1px dashed var(--sg-line, #b8c0cc);
+      border: 1px dashed var(--sg-line, var(--ar-line-300));
       border-radius: 8px;
       background: #fff;
     }
@@ -79,7 +79,7 @@ const HEIGHT = 200;
       font:
         500 12px system-ui,
         sans-serif;
-      color: var(--sg-accent, #0b6b63);
+      color: var(--sg-accent, var(--ar-blue-600));
       text-decoration: underline;
     }
     .pad__clear:disabled {

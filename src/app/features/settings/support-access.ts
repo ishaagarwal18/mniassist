@@ -31,7 +31,7 @@ export class ArSupportAccess {
 
   protected readonly subtitle = computed(() => {
     const n = this.active().length;
-    if (n === 0) return 'No one from AutoReach can access your account';
+    if (n === 0) return 'No one from MNI Assist can access your account';
     return `${n} active grant${n === 1 ? '' : 's'}`;
   });
 

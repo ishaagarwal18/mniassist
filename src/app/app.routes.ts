@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { ArAppShell } from './layout/app-shell';
 import { appAuthGuard } from './core/auth/auth.guard';
 
 /** Every feature is lazily loaded — the shell and the design system are the
@@ -10,34 +9,34 @@ export const routes: Routes = [
     // Must stay ahead of the shell below, whose empty path would otherwise claim `/`.
     path: '',
     pathMatch: 'full',
-    title: 'AutoReach · WhatsApp marketing for industrial automation',
+    title: 'MNI Assist · AI Business Engagement Platform for Industrial Companies',
     loadComponent: () => import('./features/landing/landing').then((m) => m.ArLanding),
   },
   {
     path: 'login',
-    title: 'Sign in · AutoReach',
+    title: 'Sign in · MNI Assist',
     loadComponent: () => import('./features/account/login').then((m) => m.ArLogin),
   },
   {
     path: 'signup',
-    title: 'Create a workspace · AutoReach',
+    title: 'Create a workspace · MNI Assist',
     loadComponent: () => import('./features/account/signup').then((m) => m.ArSignup),
   },
   {
     path: 'forgot-password',
-    title: 'Reset your password · AutoReach',
+    title: 'Reset your password · MNI Assist',
     loadComponent: () =>
       import('./features/account/forgot-password').then((m) => m.ArForgotPassword),
   },
   {
     path: 'reset-password',
-    title: 'Choose a new password · AutoReach',
+    title: 'Choose a new password · MNI Assist',
     loadComponent: () => import('./features/account/reset-password').then((m) => m.ArResetPassword),
   },
   {
     // The customer's signing page: no login, no app shell. The link is the credential.
     path: 'sign/:token',
-    title: 'Review and sign · AutoReach',
+    title: 'Review and sign · MNI Assist',
     loadComponent: () => import('./features/signing/quote-signing').then((m) => m.ArQuoteSigning),
   },
   {
@@ -79,376 +78,378 @@ export const routes: Routes = [
   },
   {
     path: 'privacy',
-    title: 'Privacy Policy · AutoReach',
+    title: 'Privacy Policy · MNI Assist',
     loadComponent: () => import('./features/legal/privacy-policy').then((m) => m.ArPrivacyPolicy),
   },
   {
     // The field engineer's phone app: signed in, but no app shell. Works offline once loaded.
     path: 'field',
-    title: 'Field · AutoReach',
+    title: 'Field · MNI Assist',
     canActivate: [appAuthGuard],
     loadComponent: () => import('./features/field/field').then((m) => m.ArField),
   },
   {
     path: '',
-    component: ArAppShell,
+    // Lazy like every screen: the shell brings the sidebar, call bars and SignalR,
+    // which a visitor to the public pages (landing, sign-in, pay links) never needs.
+    loadComponent: () => import('./layout/app-shell').then((m) => m.ArAppShell),
     canActivate: [appAuthGuard],
     canActivateChild: [appAuthGuard],
     children: [
       {
         path: 'home',
-        title: 'Home · AutoReach',
+        title: 'Home · MNI Assist',
         loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.ArDashboard),
       },
       {
         path: 'getting-started',
-        title: 'Get started · AutoReach',
+        title: 'Get started · MNI Assist',
         loadComponent: () =>
           import('./features/onboarding/wizard').then((m) => m.ArOnboardingWizard),
       },
       {
         path: 'inbox',
-        title: 'Inbox · AutoReach',
+        title: 'Inbox · MNI Assist',
         loadComponent: () => import('./features/inbox/inbox').then((m) => m.ArInbox),
       },
       {
         path: 'contacts',
-        title: 'Contacts · AutoReach',
+        title: 'Contacts · MNI Assist',
         loadComponent: () => import('./features/contacts/contacts').then((m) => m.ArContacts),
       },
       {
         path: 'contacts/segments',
-        title: 'Audience builder · AutoReach',
+        title: 'Audience builder · MNI Assist',
         loadComponent: () => import('./features/contacts/segments').then((m) => m.ArSegments),
       },
       {
         path: 'contacts/accounts',
-        title: 'Accounts · AutoReach',
+        title: 'Accounts · MNI Assist',
         loadComponent: () => import('./features/contacts/accounts').then((m) => m.ArAccounts),
       },
       {
         path: 'contacts/duplicates',
-        title: 'Duplicates · AutoReach',
+        title: 'Duplicates · MNI Assist',
         loadComponent: () => import('./features/contacts/duplicates').then((m) => m.ArDuplicates),
       },
       {
         path: 'campaigns',
-        title: 'Campaigns · AutoReach',
+        title: 'Campaigns · MNI Assist',
         loadComponent: () =>
           import('./features/campaigns/campaign-builder').then((m) => m.ArCampaignBuilder),
       },
       {
         path: 'templates',
-        title: 'Templates · AutoReach',
+        title: 'Templates · MNI Assist',
         loadComponent: () => import('./features/templates/templates').then((m) => m.ArTemplates),
       },
       {
         path: 'templates/new',
-        title: 'New template · AutoReach',
+        title: 'New template · MNI Assist',
         loadComponent: () =>
           import('./features/templates/template-composer').then((m) => m.ArTemplateComposer),
       },
       {
         path: 'templates/:id/edit',
-        title: 'Edit template · AutoReach',
+        title: 'Edit template · MNI Assist',
         loadComponent: () =>
           import('./features/templates/template-composer').then((m) => m.ArTemplateComposer),
       },
       {
         path: 'analytics',
-        title: 'Analytics · AutoReach',
+        title: 'Analytics · MNI Assist',
         loadComponent: () => import('./features/analytics/analytics').then((m) => m.ArAnalytics),
       },
       {
         path: 'analytics/dashboards',
-        title: 'Custom dashboards · AutoReach',
+        title: 'Custom dashboards · MNI Assist',
         loadComponent: () =>
           import('./features/analytics/dashboards').then((m) => m.ArCustomDashboards),
       },
       {
         path: 'enquiries',
-        title: 'Enquiries · AutoReach',
+        title: 'Enquiries · MNI Assist',
         loadComponent: () => import('./features/pipeline/enquiries').then((m) => m.ArEnquiries),
       },
       {
         path: 'enquiries/pipelines',
-        title: 'Pipelines · AutoReach',
+        title: 'Pipelines · MNI Assist',
         loadComponent: () =>
           import('./features/pipeline/pipeline-stages').then((m) => m.ArPipelineStages),
       },
       {
         path: 'forecast',
-        title: 'Forecast · AutoReach',
+        title: 'Forecast · MNI Assist',
         loadComponent: () => import('./features/pipeline/forecast').then((m) => m.ArForecast),
       },
       {
         path: 'quotations',
-        title: 'Quotations · AutoReach',
+        title: 'Quotations · MNI Assist',
         loadComponent: () => import('./features/pipeline/quotations').then((m) => m.ArQuotations),
       },
       {
         path: 'renewals',
-        title: 'AMC renewals · AutoReach',
+        title: 'AMC renewals · MNI Assist',
         loadComponent: () => import('./features/pipeline/renewals').then((m) => m.ArRenewals),
       },
       {
         path: 'spares',
-        title: 'Spares due · AutoReach',
+        title: 'Spares due · MNI Assist',
         loadComponent: () => import('./features/pipeline/spares').then((m) => m.ArSpares),
       },
       {
         path: 'collections',
-        title: 'Collections · AutoReach',
+        title: 'Collections · MNI Assist',
         loadComponent: () => import('./features/payments/collections').then((m) => m.ArCollections),
       },
       {
         path: 'stock',
-        title: 'Stock · AutoReach',
+        title: 'Stock · MNI Assist',
         loadComponent: () => import('./features/inventory/stock').then((m) => m.ArStock),
       },
       {
         path: 'purchasing',
-        title: 'Purchasing · AutoReach',
+        title: 'Purchasing · MNI Assist',
         loadComponent: () => import('./features/inventory/purchasing').then((m) => m.ArPurchasing),
       },
       {
         path: 'reorders',
-        title: 'Re-orders · AutoReach',
+        title: 'Re-orders · MNI Assist',
         loadComponent: () => import('./features/reorder/reorders').then((m) => m.ArReorders),
       },
       {
         path: 'network',
-        title: 'Dealer network · AutoReach',
+        title: 'Dealer network · MNI Assist',
         loadComponent: () => import('./features/network/network').then((m) => m.ArNetwork),
       },
       {
         path: 'network/incoming',
-        title: 'Leads for us · AutoReach',
+        title: 'Leads for us · MNI Assist',
         data: { tab: 'incoming' },
         loadComponent: () => import('./features/network/network').then((m) => m.ArNetwork),
       },
       {
         path: 'account-health',
-        title: 'Account health · AutoReach',
+        title: 'Account health · MNI Assist',
         loadComponent: () =>
           import('./features/contacts/account-health').then((m) => m.ArAccountHealth),
       },
       {
         path: 'compliance/dpdp',
-        title: 'DPDP readiness · AutoReach',
+        title: 'DPDP readiness · MNI Assist',
         loadComponent: () => import('./features/compliance/dpdp').then((m) => m.ArDpdp),
       },
       {
         path: 'installed-base',
-        title: 'Installed base · AutoReach',
+        title: 'Installed base · MNI Assist',
         loadComponent: () =>
           import('./features/pipeline/installed-base').then((m) => m.ArInstalledBase),
       },
       {
         path: 'compliance',
-        title: 'Compliance · AutoReach',
+        title: 'Compliance · MNI Assist',
         loadComponent: () => import('./features/compliance/compliance').then((m) => m.ArCompliance),
       },
       {
         path: 'automations',
-        title: 'Automations · AutoReach',
+        title: 'Automations · MNI Assist',
         loadComponent: () =>
           import('./features/automations/automations').then((m) => m.ArAutomations),
       },
       {
         path: 'automations/:id',
-        title: 'Automation builder · AutoReach',
+        title: 'Automation builder · MNI Assist',
         loadComponent: () =>
           import('./features/automations/automation-builder').then((m) => m.ArAutomationBuilder),
       },
       {
         path: 'flows',
-        title: 'Flows · AutoReach',
+        title: 'Flows · MNI Assist',
         loadComponent: () => import('./features/flows/flows').then((m) => m.ArFlows),
       },
       {
         path: 'flows/:id',
-        title: 'Flow designer · AutoReach',
+        title: 'Flow designer · MNI Assist',
         loadComponent: () => import('./features/flows/flow-designer').then((m) => m.ArFlowDesigner),
       },
       {
         path: 'tasks',
-        title: 'Tasks · AutoReach',
+        title: 'Tasks · MNI Assist',
         loadComponent: () => import('./features/activities/tasks').then((m) => m.ArTasks),
       },
       {
         path: 'forms',
-        title: 'Web forms · AutoReach',
+        title: 'Web forms · MNI Assist',
         loadComponent: () => import('./features/forms/forms').then((m) => m.ArWebForms),
       },
       {
         path: 'calls',
-        title: 'Calls · AutoReach',
+        title: 'Calls · MNI Assist',
         loadComponent: () => import('./features/calls/calls').then((m) => m.ArCalls),
       },
       {
         path: 'calls/whatsapp',
-        title: 'WhatsApp calls · AutoReach',
+        title: 'WhatsApp calls · MNI Assist',
         loadComponent: () =>
           import('./features/calls/whatsapp-calls').then((m) => m.ArWhatsAppCalls),
       },
       {
         path: 'helpdesk',
-        title: 'Helpdesk · AutoReach',
+        title: 'Helpdesk · MNI Assist',
         loadComponent: () => import('./features/helpdesk/helpdesk').then((m) => m.ArHelpdesk),
       },
       {
         path: 'meetings',
-        title: 'Meetings · AutoReach',
+        title: 'Meetings · MNI Assist',
         loadComponent: () => import('./features/activities/meetings').then((m) => m.ArMeetings),
       },
       {
         path: 'documents',
-        title: 'Documents · AutoReach',
+        title: 'Documents · MNI Assist',
         loadComponent: () => import('./features/documents/documents').then((m) => m.ArDocuments),
       },
       {
         path: 'documents/products',
-        title: 'Products · AutoReach',
+        title: 'Products · MNI Assist',
         loadComponent: () => import('./features/documents/products').then((m) => m.ArProducts),
       },
       {
         path: 'documents/price-lists',
-        title: 'Price lists · AutoReach',
+        title: 'Price lists · MNI Assist',
         loadComponent: () => import('./features/documents/price-lists').then((m) => m.ArPriceLists),
       },
       {
         path: 'billing',
-        title: 'Billing · AutoReach',
+        title: 'Billing · MNI Assist',
         loadComponent: () => import('./features/billing/billing').then((m) => m.ArBilling),
       },
       {
         path: 'channels',
-        title: 'Channels · AutoReach',
+        title: 'Channels · MNI Assist',
         loadComponent: () => import('./features/channels/channels').then((m) => m.ArChannels),
       },
       {
         path: 'channels/numbers',
-        title: 'Numbers · AutoReach',
+        title: 'Numbers · MNI Assist',
         loadComponent: () => import('./features/channels/numbers').then((m) => m.ArNumbers),
       },
       {
         path: 'channels/widget',
-        title: 'Chat links & QR · AutoReach',
+        title: 'Chat links & QR · MNI Assist',
         loadComponent: () =>
           import('./features/channels/chat-widgets').then((m) => m.ArChatWidgets),
       },
       {
         path: 'channels/migrate',
-        title: 'Migrate a number · AutoReach',
+        title: 'Migrate a number · MNI Assist',
         loadComponent: () =>
           import('./features/channels/migrate-number').then((m) => m.ArMigrateNumber),
       },
       {
         path: 'channels/catalogue',
-        title: 'Catalogue · AutoReach',
+        title: 'Catalogue · MNI Assist',
         loadComponent: () => import('./features/channels/catalogue').then((m) => m.ArCatalogue),
       },
       {
         path: 'channels/voice-ivr',
-        title: 'Voice / IVR · AutoReach',
+        title: 'Voice / IVR · MNI Assist',
         loadComponent: () => import('./features/channels/voice-ivr').then((m) => m.ArVoiceIvr),
       },
       {
         path: 'notifications',
-        title: 'Notifications · AutoReach',
+        title: 'Notifications · MNI Assist',
         loadComponent: () =>
           import('./features/notifications/notifications').then((m) => m.ArNotifications),
       },
       {
         path: 'billing/invoices',
-        title: 'Invoices · AutoReach',
+        title: 'Invoices · MNI Assist',
         loadComponent: () => import('./features/billing/invoices').then((m) => m.ArInvoices),
       },
       {
         path: 'settings',
-        title: 'Settings · AutoReach',
+        title: 'Settings · MNI Assist',
         loadComponent: () => import('./features/settings/settings').then((m) => m.ArSettings),
       },
       {
         path: 'settings/profile',
-        title: 'Your profile · AutoReach',
+        title: 'Your profile · MNI Assist',
         loadComponent: () => import('./features/account/profile').then((m) => m.ArProfile),
       },
       {
         path: 'settings/members',
-        title: 'Members & invites · AutoReach',
+        title: 'Members & invites · MNI Assist',
         loadComponent: () => import('./features/settings/members').then((m) => m.ArMembers),
       },
       {
         path: 'settings/branding',
-        title: 'Branding · AutoReach',
+        title: 'Branding · MNI Assist',
         loadComponent: () => import('./features/settings/branding').then((m) => m.ArBranding),
       },
       {
         path: 'admin/tenants',
-        title: 'Workspaces · AutoReach',
+        title: 'Workspaces · MNI Assist',
         loadComponent: () => import('./features/admin/tenants').then((m) => m.ArAdminTenants),
       },
       {
         path: 'admin/users',
-        title: 'Users · AutoReach',
+        title: 'Users · MNI Assist',
         loadComponent: () => import('./features/admin/users').then((m) => m.ArAdminUsers),
       },
       {
         path: 'admin/roles',
-        title: 'Roles & permissions · AutoReach',
+        title: 'Roles & permissions · MNI Assist',
         loadComponent: () => import('./features/admin/roles').then((m) => m.ArAdminRoles),
       },
       {
         path: 'settings/reports',
-        title: 'Scheduled reports · AutoReach',
+        title: 'Scheduled reports · MNI Assist',
         loadComponent: () =>
           import('./features/settings/reports').then((m) => m.ArScheduledReports),
       },
       {
         path: 'settings/integrations',
-        title: 'Integrations · AutoReach',
+        title: 'Integrations · MNI Assist',
         loadComponent: () =>
           import('./features/settings/integrations').then((m) => m.ArIntegrations),
       },
       {
         path: 'settings/ai-assistant',
-        title: 'AI assistant · AutoReach',
+        title: 'AI assistant · MNI Assist',
         loadComponent: () =>
           import('./features/settings/ai-assistant').then((m) => m.ArAiAssistant),
       },
       {
         path: 'settings/payments',
-        title: 'Payments · AutoReach',
+        title: 'Payments · MNI Assist',
         loadComponent: () =>
           import('./features/payments/payments-settings').then((m) => m.ArPaymentsSettings),
       },
       {
         path: 'settings/email-sending',
-        title: 'Email sending · AutoReach',
+        title: 'Email sending · MNI Assist',
         loadComponent: () =>
           import('./features/settings/email-sending').then((m) => m.ArEmailSending),
       },
       {
         path: 'settings/support-access',
-        title: 'Support access · AutoReach',
+        title: 'Support access · MNI Assist',
         loadComponent: () =>
           import('./features/settings/support-access').then((m) => m.ArSupportAccess),
       },
       {
         path: 'settings/agency',
-        title: 'Agency mode · AutoReach',
+        title: 'Agency mode · MNI Assist',
         loadComponent: () => import('./features/settings/agency').then((m) => m.ArAgency),
       },
       {
         path: 'platform',
-        title: 'Platform · AutoReach',
+        title: 'Platform · MNI Assist',
         loadComponent: () => import('./features/platform/console').then((m) => m.ArPlatformConsole),
       },
       {
         path: 'platform/feature-flags',
-        title: 'Feature flags · AutoReach',
+        title: 'Feature flags · MNI Assist',
         loadComponent: () =>
           import('./features/platform/feature-flags').then((m) => m.ArFeatureFlags),
       },

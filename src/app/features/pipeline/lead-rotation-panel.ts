@@ -67,7 +67,8 @@ export class ArLeadRotationPanel {
   protected readonly chosenSources = signal<ReadonlySet<LeadSource>>(new Set());
   protected readonly rows = signal<Row[]>([]);
   protected readonly nextUserId = signal<string | null>(null);
-  protected readonly load = signal<Record<string, number>>({});
+  /** Open-lead count per user; a user with none has no entry. */
+  protected readonly load = signal<Partial<Record<string, number>>>({});
   protected readonly atCap = signal<ReadonlySet<string>>(new Set());
   protected readonly dirty = signal(false);
   protected readonly busy = signal(false);

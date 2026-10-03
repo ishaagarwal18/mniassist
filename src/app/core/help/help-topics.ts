@@ -102,7 +102,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     steps: [
       'Work down the checklist from the top. Each item links to the screen that completes it.',
       'Verify your number with Send code and Confirm when asked.',
-      'Use Mark done for steps you finished outside AutoReach.',
+      'Use Mark done for steps you finished outside MNI Assist.',
       'Click Dismiss when you no longer need the checklist.',
     ],
   },
@@ -181,7 +181,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     benefits: [
       'Know which customers are at risk before they leave.',
       'Every score shows its reasons, so you know what to fix.',
-      'Scores update every night from what AutoReach already records.',
+      'Scores update every night from what MNI Assist already records.',
     ],
     steps: [
       'Filter to At risk to see the customers who need attention first.',
@@ -579,7 +579,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   },
   'channels/migrate': {
     benefits: [
-      'Keep your existing business number when moving to AutoReach.',
+      'Keep your existing business number when moving to MNI Assist.',
       'Use automation, campaigns and team inboxes on that number.',
       'A guided process, confirmed with you before anything starts.',
     ],
@@ -688,7 +688,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   },
   'settings/branding': {
     benefits: [
-      'AutoReach looks like your own product to your team.',
+      'MNI Assist looks like your own product to your team.',
       'Your logo and colours apply for everyone in the workspace.',
       'Return to the default look at any time.',
     ],
@@ -700,7 +700,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   },
   'settings/integrations': {
     benefits: [
-      'Send AutoReach events to your other systems automatically.',
+      'Send MNI Assist events to your other systems automatically.',
       'Keep your CRM in step without retyping.',
       'A delivery log shows exactly what was sent and what failed.',
     ],
@@ -739,18 +739,18 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   'settings/email-sending': {
     benefits: [
       'Marketing email goes out under your own sender name.',
-      'Use AutoReach’s relay, or your own mail server.',
+      'Use MNI Assist’s relay, or your own mail server.',
       'Every email gets a one-click unsubscribe automatically.',
     ],
     steps: [
       'Set the sender name and address.',
-      'Choose AutoReach’s shared relay, or enter your own SMTP server.',
+      'Choose MNI Assist’s shared relay, or enter your own SMTP server.',
       'Use Pause, Resume or Disconnect when needed.',
     ],
   },
   'settings/support-access': {
     benefits: [
-      'Let AutoReach support see the problem without sharing your password.',
+      'Let MNI Assist support see the problem without sharing your password.',
       'Access is temporary and every action is logged.',
       'You can end it at any moment.',
     ],
@@ -787,7 +787,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   'compliance/dpdp': {
     benefits: [
       'See how ready you are for the DPDP Act, 2023.',
-      'Most checks are filled in from what AutoReach already records.',
+      'Most checks are filled in from what MNI Assist already records.',
       'Get a privacy notice draft, in English, Hindi and Marathi, to give your lawyer.',
     ],
     steps: [
@@ -800,7 +800,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   },
   'admin/users': {
     benefits: [
-      'Manage every login on this AutoReach installation.',
+      'Manage every login on this MNI Assist installation.',
       'Fix access problems for any workspace.',
     ],
     steps: [

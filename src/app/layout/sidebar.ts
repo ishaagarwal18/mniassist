@@ -3,32 +3,51 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
 import { NAV, NavGroup } from './nav.model';
 import { ArAvatar, ArIcon } from '../ui';
+import { ArBrand } from './brand';
 import { OpsService } from '../core/services/ops.service';
 import { InboxService } from '../core/services/inbox.service';
 import { CurrentUserService } from '../core/services/current-user.service';
 import { BrandingStore } from '../core/services/branding.store';
+import { ThemeService } from '../core/services/theme.service';
 import { grantedPolicy } from '../core/auth/permission';
+
+const COLLAPSED_KEY = 'ar.sidebar.collapsed';
+
+function readCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 @Component({
   selector: 'ar-sidebar',
-  imports: [RouterLink, RouterLinkActive, ArIcon, ArAvatar],
+  imports: [RouterLink, RouterLinkActive, ArIcon, ArAvatar, ArBrand],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[class.sb--collapsed]': 'collapsed()' },
   template: `
     <div class="sb__top">
       <div class="sb__brand">
-        @if (branding.logoDataUrl(); as logo) {
-          <span class="sb__mark sb__mark--logo" aria-hidden="true"
-            ><img [src]="logo" alt=""
-          /></span>
-        } @else {
-          <span class="sb__mark" aria-hidden="true"
-            ><ar-icon name="bolt" [size]="13" [strokeWidth]="0"
-          /></span>
-        }
-        <span class="sb__name">AutoReach</span>
+        <ar-brand
+          class="sb__logo"
+          onDark
+          size="sm"
+          [iconOnly]="collapsed()"
+          [logoSrc]="branding.logoDataUrl()"
+        />
+        <button
+          class="sb__collapse"
+          type="button"
+          [attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
+          [attr.aria-expanded]="!collapsed()"
+          (click)="toggleCollapsed()"
+        >
+          <ar-icon name="chevron" [size]="14" />
+        </button>
       </div>
       <button class="sb__tenant" type="button">
-        <span class="sb__tenant-name">{{ account.currentTenantName() || 'AutoReach' }}</span>
+        <span class="sb__tenant-name">{{ account.currentTenantName() || 'MNI Assist' }}</span>
         <ar-icon name="chevdown" [size]="14" />
       </button>
     </div>
@@ -43,9 +62,11 @@ import { grantedPolicy } from '../core/auth/permission';
                /settings and prefix matching lights up two items at once. -->
           <a
             class="sb__item"
+            [class.sb__item--ai]="item.ai"
             [routerLink]="item.route"
             routerLinkActive="sb__item--on"
             [routerLinkActiveOptions]="{ exact: true }"
+            [attr.title]="collapsed() ? item.label : null"
             #rla="routerLinkActive"
           >
             <span class="sb__bar" aria-hidden="true"></span>
@@ -65,6 +86,16 @@ import { grantedPolicy } from '../core/auth/permission';
           <a class="sb__menu-item" routerLink="/settings/profile" role="menuitem" (click)="close()">
             <ar-icon name="user" [size]="15" /> Your profile
           </a>
+          <button
+            class="sb__menu-item"
+            type="button"
+            role="menuitemcheckbox"
+            [attr.aria-checked]="theme.theme() === 'dark'"
+            (click)="toggleTheme($event)"
+          >
+            <ar-icon [name]="theme.theme() === 'dark' ? 'sun' : 'moon'" [size]="15" />
+            {{ theme.theme() === 'dark' ? 'Light theme' : 'Dark theme' }}
+          </button>
           <button class="sb__menu-item" type="button" role="menuitem" (click)="signOut()">
             <ar-icon name="link" [size]="15" /> Sign out
           </button>
@@ -82,246 +113,11 @@ import { grantedPolicy } from '../core/auth/permission';
           <span class="sb__user-name">{{ account.fullName() }}</span>
           <span class="sb__user-role">{{ account.primaryRole() }}</span>
         </span>
-        <ar-icon name="chevdown" [size]="15" />
+        <ar-icon class="sb__user-chev" name="chevdown" [size]="15" />
       </button>
     </div>
   `,
-  styles: `
-    :host {
-      width: 216px;
-      flex: none;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      background: var(--ar-nav);
-      color: var(--ar-nav-text);
-    }
-    .sb__top {
-      padding: 16px 16px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .sb__brand {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-    .sb__mark {
-      width: 22px;
-      height: 22px;
-      border-radius: 5px;
-      flex: none;
-      /* A tenant's own primary colour, once set — see BrandingStore. Falls back to
-         AutoReach's own accent so an unbranded workspace looks exactly as before. */
-      background: var(--ar-tenant-primary, var(--ar-amber-500));
-      color: var(--ar-nav);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-    .sb__mark--logo {
-      background: var(--ar-white, #fff);
-    }
-    .sb__mark--logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-    .sb__name {
-      font: 600 15px var(--ar-font-sans);
-      color: #fff;
-      letter-spacing: -0.015em;
-    }
-    .sb__tenant {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      width: 100%;
-      height: 34px;
-      padding: 0 10px;
-      cursor: pointer;
-      background: var(--ar-nav-hi);
-      border: 1px solid #303945;
-      border-radius: var(--ar-radius-control);
-      color: var(--ar-nav-dim);
-      transition: border-color 0.12s ease;
-    }
-    /* No existing brand colour has a claim on this border (unlike --ar-teal-600,
-       which already means "link/tip" everywhere), so it's a genuinely new, safe
-       place for a tenant's own accent to show up, rather than repainting a colour
-       that already carries meaning somewhere else in the app. */
-    .sb__tenant:hover,
-    .sb__tenant:focus-visible {
-      border-color: var(--ar-tenant-accent, #303945);
-    }
-    .sb__tenant-name {
-      font: 500 12px var(--ar-font-sans);
-      color: #dde3ea;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .sb__nav {
-      flex: 1;
-      min-height: 0;
-      overflow-y: auto;
-      padding: 4px 10px 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .sb__heading {
-      padding: 14px 8px 6px;
-      font: 600 9.5px var(--ar-font-sans);
-      letter-spacing: 0.11em;
-      text-transform: uppercase;
-      color: var(--ar-nav-dim);
-    }
-    .sb__item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      height: 33px;
-      padding: 0 8px;
-      border-radius: var(--ar-radius-control);
-      color: var(--ar-nav-text);
-      text-decoration: none;
-    }
-    .sb__item:hover {
-      background: #20262e;
-      color: #dde3ea;
-    }
-    .sb__bar {
-      width: 3px;
-      height: 16px;
-      border-radius: 2px;
-      margin-left: -4px;
-      flex: none;
-      background: transparent;
-    }
-    .sb__label {
-      flex: 1;
-      font: 400 13px var(--ar-font-sans);
-    }
-    .sb__item--on {
-      background: var(--ar-nav-hi);
-      color: #fff;
-    }
-    .sb__item--on .sb__bar {
-      /* Deliberately not --ar-tenant-primary here: the active-item icon colour below
-         is verified against amber-500 specifically for contrast (see .sb__item--on
-         ar-icon and .sb__badge below) — swapping only the thin indicator bar keeps
-         that pairing untouched while still giving a branded workspace its own accent. */
-      background: var(--ar-tenant-accent, var(--ar-amber-500));
-    }
-    .sb__item--on .sb__label {
-      font-weight: 500;
-    }
-    .sb__item--on ar-icon {
-      color: var(--ar-amber-500);
-    }
-    .sb__item ar-icon {
-      color: var(--ar-nav-dim);
-    }
-    .sb__badge {
-      min-width: 19px;
-      height: 17px;
-      padding: 0 5px;
-      border-radius: 9px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #303945;
-      color: #c4ccd6;
-      font: 600 10.5px var(--ar-font-sans);
-    }
-    .sb__item--on .sb__badge {
-      background: var(--ar-amber-500);
-      /* var(--ar-nav) on amber-500 was 4.46:1 — just under WCAG AA's 4.5:1.
-         ar-ink-900 (darker) clears it at 4.86:1. amber-500 itself is left
-         untouched — it doubles as --ar-chart-marketing, validated separately. */
-      color: var(--ar-ink-900);
-    }
-
-    .sb__foot {
-      position: relative;
-      border-top: 1px solid var(--ar-nav-line);
-    }
-    .sb__user {
-      width: 100%;
-      padding: 12px 14px 14px;
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      color: var(--ar-nav-dim);
-      background: transparent;
-      border: 0;
-      cursor: pointer;
-      text-align: left;
-    }
-    .sb__user:hover,
-    .sb__user--open {
-      background: #20262e;
-    }
-    .sb__user-text {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    .sb__user-name {
-      font: 500 12px var(--ar-font-sans);
-      color: #dde3ea;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .sb__user-role {
-      font: 400 10.5px var(--ar-font-sans);
-      color: var(--ar-nav-dim);
-    }
-    .sb__user ar-icon {
-      color: var(--ar-nav-dim);
-    }
-
-    .sb__menu {
-      position: absolute;
-      left: 10px;
-      right: 10px;
-      bottom: calc(100% - 4px);
-      background: var(--ar-nav-hi);
-      border: 1px solid #303945;
-      border-radius: var(--ar-radius-control);
-      padding: 4px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-      z-index: 10;
-    }
-    .sb__menu-item {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      width: 100%;
-      padding: 8px 9px;
-      border: 0;
-      border-radius: var(--ar-radius-control);
-      background: transparent;
-      color: var(--ar-nav-text);
-      cursor: pointer;
-      text-decoration: none;
-      font: 400 12.5px var(--ar-font-sans);
-    }
-    .sb__menu-item:hover {
-      background: #20262e;
-      color: #dde3ea;
-    }
-    .sb__menu-item ar-icon {
-      color: var(--ar-nav-dim);
-    }
-  `,
+  styleUrl: './sidebar.scss',
 })
 export class ArSidebar {
   private readonly inbox = inject(InboxService);
@@ -329,8 +125,27 @@ export class ArSidebar {
   private readonly permissions = inject(PermissionService);
   protected readonly account = inject(CurrentUserService);
   protected readonly branding = inject(BrandingStore);
+  protected readonly theme = inject(ThemeService);
 
   protected readonly menuOpen = signal(false);
+
+  /** Icons-only mode, remembered per browser. */
+  protected readonly collapsed = signal(readCollapsed());
+
+  protected toggleCollapsed(): void {
+    this.collapsed.update((v) => !v);
+    try {
+      localStorage.setItem(COLLAPSED_KEY, this.collapsed() ? '1' : '0');
+    } catch {
+      /* storage blocked: the choice just won't persist */
+    }
+  }
+
+  /** Keeps the menu open, so the switch can be flipped back and forth to compare. */
+  protected toggleTheme(event: Event): void {
+    event.stopPropagation();
+    this.theme.toggle();
+  }
 
   protected toggleMenu(event: Event): void {
     event.stopPropagation();

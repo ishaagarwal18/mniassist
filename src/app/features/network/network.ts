@@ -262,7 +262,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
           @case (dealersTab) {
             @if (dealers().length === 0) {
               <p class="nw__hint">
-                No dealers yet. Invite one: they get a code to enter in their own AutoReach
+                No dealers yet. Invite one: they get a code to enter in their own MNI Assist
                 workspace, and from then on you can send them leads in their territory.
               </p>
             }
@@ -490,7 +490,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
         @if (created(); as c) {
           <p class="nw__hint">
             Send <b>{{ c.dealerName }}</b> this code. They enter it under Dealer network → Leads for
-            us in their own AutoReach workspace. It works once, for 14 days.
+            us in their own MNI Assist workspace. It works once, for 14 days.
           </p>
           <p class="bigcode ar-mono">{{ c.inviteCode }}</p>
         } @else {
@@ -893,9 +893,9 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
       cursor: pointer;
     }
     .filters__f[aria-pressed='true'] {
-      background: var(--ar-ink-900, #101828);
-      border-color: var(--ar-ink-900, #101828);
-      color: var(--ar-white);
+      background: var(--ar-inverse-bg);
+      border-color: var(--ar-inverse-bg);
+      color: var(--ar-inverse-fg);
     }
     .list {
       list-style: none;

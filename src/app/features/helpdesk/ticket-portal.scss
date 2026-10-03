@@ -1,15 +1,15 @@
 :host {
   display: block;
   min-height: 100vh;
-  background: #f3f5f8;
+  background: var(--ar-bg-100);
 }
 
 .tp {
-  --tp-line: #c9d1dc;
-  --tp-ink: #16202e;
-  --tp-soft: #5b6676;
-  --tp-accent: #0b6b63;
-  --tp-bad: #b42318;
+  --tp-line: var(--ar-line-300);
+  --tp-ink: var(--ar-ink-900);
+  --tp-soft: var(--ar-ink-500);
+  --tp-accent: var(--ar-blue-600);
+  --tp-bad: var(--ar-red-600);
   padding: 24px 16px 48px;
   font:
     400 15px/1.5 system-ui,
@@ -32,8 +32,8 @@
   border-radius: 10px;
 }
 .tp__card--done {
-  background: #eaf6ee;
-  border-color: #9ccfae;
+  background: var(--ar-green-100);
+  border-color: var(--ar-green-200);
 }
 .tp__title {
   margin: 0;
@@ -107,7 +107,7 @@ textarea.tp__input {
   margin: 0;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #fdeceb;
+  background: var(--ar-red-100);
   color: var(--tp-bad);
   font-weight: 500;
 }

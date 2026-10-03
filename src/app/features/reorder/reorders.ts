@@ -129,7 +129,7 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
       @if (settings(); as s) {
         @if (!s.included) {
           <p class="ro__banner">
-            The re-order portal is an add-on. Ask your AutoReach contact to switch it on for this
+            The re-order portal is an add-on. Ask your MNI Assist contact to switch it on for this
             workspace.
           </p>
         } @else if (!s.enabled) {
@@ -138,7 +138,7 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
           </p>
         } @else if (!s.showsStock) {
           <p class="ro__hint">
-            Customers don't see stock availability: stock isn't kept in AutoReach.
+            Customers don't see stock availability: stock isn't kept in MNI Assist.
             <a routerLink="/stock">Set up stock →</a>
           </p>
         }

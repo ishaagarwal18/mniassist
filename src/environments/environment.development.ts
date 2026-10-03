@@ -16,11 +16,11 @@ export const environment = {
 
   application: {
     baseUrl: 'http://localhost:4200',
-    name: 'AutoReach',
+    name: 'MNI Assist',
   },
 
   oAuthConfig: {
-    issuer: 'https://localhost:44394/',
+    issuer: 'https://localhost:44320/',
     redirectUri: 'http://localhost:4200',
     clientId: 'AutoReach_App',
     // Resource-owner password grant: the /login form posts credentials straight
@@ -33,11 +33,11 @@ export const environment = {
 
   apis: {
     default: {
-      url: 'https://localhost:44394',
+      url: 'https://localhost:44320',
       rootNamespace: 'Mni.AutoReach',
     },
     AutoReach: {
-      url: 'https://localhost:44394',
+      url: 'https://localhost:44320',
       rootNamespace: 'Mni.AutoReach',
     },
   },

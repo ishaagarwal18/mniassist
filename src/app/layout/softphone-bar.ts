@@ -184,7 +184,7 @@ import { ArButton, ArIcon } from '../ui';
       white-space: nowrap;
     }
     .sp__row--ring ar-icon {
-      color: var(--ar-amber-600);
+      color: var(--ar-blue-600);
     }
 
     .sp__keys {

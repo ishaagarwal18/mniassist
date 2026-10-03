@@ -43,7 +43,7 @@ export class ArPipelineStages {
   private readonly selectedId = signal<string | null>(null);
   protected readonly selected = computed(() => {
     const all = this.pipelines();
-    return all.find((p) => p.id === this.selectedId()) ?? all.find((p) => p.isDefault) ?? all[0];
+    return all.find((p) => p.id === this.selectedId()) ?? all.find((p) => p.isDefault) ?? all.at(0);
   });
   protected readonly openStages = computed(() =>
     (this.selected()?.stages ?? []).filter((s) => !s.isFixed),

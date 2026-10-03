@@ -154,12 +154,12 @@ import { DAY_NAMES, NO_REPEAT, RecurrenceDraft, WEEK_ORDER, recurrenceProblem } 
       color: var(--ar-ink-600);
     }
     .rp__day.on {
-      background: var(--ar-ink-900);
-      color: var(--ar-white);
+      background: var(--ar-inverse-bg);
+      color: var(--ar-inverse-fg);
       border-color: var(--ar-ink-900);
     }
     .rp__day:focus-visible {
-      outline: 2px solid var(--ar-amber-500);
+      outline: 2px solid var(--ar-blue-500);
       outline-offset: 2px;
     }
     .rp__hint {

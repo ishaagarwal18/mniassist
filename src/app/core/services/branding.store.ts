@@ -32,9 +32,13 @@ export class BrandingStore {
 
   /** Mock mode has no server-side branding to fetch — showing AutoReach's own
    *  defaults there (rather than a fabricated tenant colour) is the honest choice. */
-  readonly branding = computed<TenantBrandingDto | null>(() =>
-    environment.useMockData ? null : (this.resource.value() ?? null),
-  );
+  readonly branding = computed<TenantBrandingDto | null>(() => {
+    if (environment.useMockData) return null;
+    // A failed load (e.g. 403 for the host, which has no tenant branding) must
+    // fall back to the defaults. Reading value() of an errored resource throws,
+    // and that would abort change detection for every view showing branding.
+    return this.resource.hasValue() ? (this.resource.value() ?? null) : null;
+  });
 
   readonly tenantName = computed(() => this.branding()?.tenantName ?? null);
   readonly primaryColor = computed(() => this.branding()?.primaryColor ?? null);

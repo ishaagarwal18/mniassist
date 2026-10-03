@@ -144,13 +144,14 @@ type Step = 'loading' | 'unavailable' | 'sign-in' | 'code';
   `,
   styles: `
     :host {
-      --si-ink: #1c2227;
-      --si-soft: #5a646c;
-      --si-line: #d6dad2;
-      --si-card: #ffffff;
-      --si-bg: #f4f5f1;
-      --si-accent: #b4470f;
-      --si-bad: #b42318;
+      --si-ink: var(--ar-ink-900);
+      --si-soft: var(--ar-ink-500);
+      --si-line: var(--ar-line-300);
+      --si-card: var(--ar-white);
+      --si-bg: var(--ar-bg-100);
+      --si-accent: var(--ar-blue-600);
+      --si-on-accent: #ffffff;
+      --si-bad: var(--ar-red-600);
       display: block;
       min-height: 100%;
       background: var(--si-bg);
@@ -162,12 +163,13 @@ type Step = 'loading' | 'unavailable' | 'sign-in' | 'code';
     }
     @media (prefers-color-scheme: dark) {
       :host {
-        --si-ink: #e7e9e4;
-        --si-soft: #a2abb3;
-        --si-line: #2e353c;
-        --si-card: #1b2026;
-        --si-bg: #13171b;
-        --si-accent: #f08a4b;
+        --si-ink: #e6edf5;
+        --si-soft: #a6b4c5;
+        --si-line: #1d3654;
+        --si-card: #10263d;
+        --si-bg: var(--ar-navy);
+        --si-accent: #6ea2ff;
+        --si-on-accent: var(--ar-navy);
         --si-bad: #ff8b7e;
       }
     }
@@ -233,7 +235,7 @@ type Step = 'loading' | 'unavailable' | 'sign-in' | 'code';
       border: 0;
       border-radius: 8px;
       background: var(--si-accent);
-      color: #fff;
+      color: var(--si-on-accent);
       cursor: pointer;
     }
     .si__btn:disabled {

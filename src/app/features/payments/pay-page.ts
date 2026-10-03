@@ -65,7 +65,7 @@ import { PAYMENT_STATUS_LABEL, postToCheckout, rupees } from './payment-logic';
     :host {
       display: block;
       min-height: 100vh;
-      background: #f3f5f8;
+      background: var(--ar-bg-100);
     }
     .pay {
       padding: 32px 16px 48px;
@@ -75,14 +75,14 @@ import { PAYMENT_STATUS_LABEL, postToCheckout, rupees } from './payment-logic';
         'Segoe UI',
         Roboto,
         sans-serif;
-      color: #16202e;
+      color: var(--ar-ink-900);
     }
     .pay__card {
       max-width: 440px;
       margin: 0 auto;
       padding: 28px 24px;
       background: #fff;
-      border: 1px solid #c9d1dc;
+      border: 1px solid var(--ar-line-300);
       border-radius: 12px;
       display: flex;
       flex-direction: column;
@@ -90,12 +90,12 @@ import { PAYMENT_STATUS_LABEL, postToCheckout, rupees } from './payment-logic';
       text-align: center;
     }
     .pay__card--paid {
-      border-color: #9ccfae;
-      background: #f3faf5;
+      border-color: var(--ar-green-200);
+      background: var(--ar-green-100);
     }
     .pay__payee {
       margin: 0;
-      color: #5b6676;
+      color: var(--ar-ink-500);
       font-size: 14px;
     }
     .pay__amount {
@@ -110,7 +110,7 @@ import { PAYMENT_STATUS_LABEL, postToCheckout, rupees } from './payment-logic';
     .pay__ref {
       margin: 0;
       font-size: 13px;
-      color: #5b6676;
+      color: var(--ar-ink-500);
     }
     .pay__mono {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -120,13 +120,13 @@ import { PAYMENT_STATUS_LABEL, postToCheckout, rupees } from './payment-logic';
       padding: 13px 22px;
       font: 600 16px inherit;
       color: #fff;
-      background: #0b6b63;
+      background: var(--ar-blue-600);
       border: 0;
       border-radius: 8px;
       cursor: pointer;
     }
     .pay__btn:focus-visible {
-      outline: 2px solid #0b6b63;
+      outline: 2px solid var(--ar-blue-600);
       outline-offset: 3px;
     }
     .pay__btn[disabled] {
@@ -136,25 +136,25 @@ import { PAYMENT_STATUS_LABEL, postToCheckout, rupees } from './payment-logic';
     .pay__small {
       margin: 0;
       font-size: 12.5px;
-      color: #5b6676;
+      color: var(--ar-ink-500);
     }
     .pay__note {
       max-width: 440px;
       margin: 16px auto;
-      color: #5b6676;
+      color: var(--ar-ink-500);
       text-align: center;
     }
     .pay__done {
       margin: 8px 0 0;
       font-weight: 600;
-      color: #1d6b3a;
+      color: var(--ar-green-600);
     }
     .pay__fail {
       margin: 4px 0 0;
       padding: 10px 12px;
       border-radius: 8px;
-      background: #fdeceb;
-      color: #b42318;
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
       font-size: 14px;
     }
   `,

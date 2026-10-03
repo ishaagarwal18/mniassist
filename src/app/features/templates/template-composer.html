@@ -100,7 +100,8 @@
         <div class="grp__hrow">
           <h2 class="grp__h">Body</h2>
           <button type="button" class="tc__ai-toggle" (click)="aiOpen.set(!aiOpen())">
-            {{ aiOpen() ? 'Hide AI draft' : '✨ Draft with AI' }}
+            <ar-icon name="sparkle" [size]="14" />
+            {{ aiOpen() ? 'Hide AI draft' : 'Draft with AI' }}
           </button>
         </div>
 

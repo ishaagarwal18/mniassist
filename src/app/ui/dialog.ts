@@ -34,7 +34,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
     .dlg__scrim {
       position: absolute;
       inset: 0;
-      background: rgba(16, 20, 26, 0.4);
+      background: var(--ar-backdrop);
     }
     .dlg {
       position: relative;
@@ -43,8 +43,8 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       display: flex;
       flex-direction: column;
       background: var(--ar-white);
-      border-radius: var(--ar-radius-card);
-      box-shadow: 0 24px 60px rgba(16, 20, 26, 0.28);
+      border-radius: var(--ar-radius-modal);
+      box-shadow: var(--ar-shadow-pop);
     }
     .dlg__head {
       display: flex;

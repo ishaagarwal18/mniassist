@@ -52,7 +52,8 @@ export class ArCustomDashboards {
   protected readonly metrics = computed(() => this.catalogueResource.value().items ?? []);
 
   protected readonly current = computed(
-    () => this.dashboards().find((d) => d.id === this.selectedId()) ?? this.dashboards()[0] ?? null,
+    () =>
+      this.dashboards().find((d) => d.id === this.selectedId()) ?? this.dashboards().at(0) ?? null,
   );
 
   private readonly renderResource = rxResource({

@@ -1,26 +1,29 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { readApiError } from '../../core/util/api-error';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { TenantSignupService } from '../../proxy/registration';
-import { ArButton, ArIcon } from '../../ui';
+import { ArButton } from '../../ui';
+import { ArBrand } from '../../layout/brand';
+import { planByKey, planKey, priceLabel } from '../landing/landing-plans';
 
 /**
  * Anonymous "create your workspace" screen. Creates the tenant + its admin, then
  * signs in as that admin. Rendered outside the app shell, like /login.
+ * Arriving from a plan on the landing page (`?plan=growth`), it shows that plan
+ * and, once the workspace exists, opens Billing to activate it.
  */
 @Component({
   selector: 'ar-signup',
-  imports: [ArButton, ArIcon, RouterLink],
+  imports: [ArButton, RouterLink, ArBrand],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="lg">
       <form class="lg__card" (submit)="submit($event)">
         <div class="lg__brand">
-          <span class="lg__mark"><ar-icon name="bolt" [size]="16" [strokeWidth]="0" /></span>
-          <span class="lg__name">AutoReach</span>
+          <ar-brand />
         </div>
 
         @if (done()) {
@@ -28,6 +31,15 @@ import { ArButton, ArIcon } from '../../ui';
           <p class="lg__hint">Signing you in to {{ workspace() }}…</p>
         } @else {
           <h1 class="lg__title">Create your workspace</h1>
+
+          @if (plan(); as p) {
+            <div class="lg__plan">
+              <span>
+                You're getting the <strong>{{ p.name }}</strong> plan · {{ price(p) }}/month + GST
+              </span>
+              <a routerLink="/" fragment="plans" class="lg__plan-change">Change</a>
+            </div>
+          }
 
           @if (error(); as e) {
             <p class="lg__error">{{ e }}</p>
@@ -87,7 +99,7 @@ import { ArButton, ArIcon } from '../../ui';
         }
       </form>
       <p class="lg__foot">
-        AutoReach — WhatsApp marketing for industrial automation ·
+        MNI Assist — AI Business Engagement Platform for Industrial Companies ·
         <a routerLink="/privacy" class="lg__foot-link">Privacy policy</a>
       </p>
     </div>
@@ -124,21 +136,6 @@ import { ArButton, ArIcon } from '../../ui';
       gap: 9px;
       margin-bottom: 16px;
     }
-    .lg__mark {
-      width: 26px;
-      height: 26px;
-      border-radius: 6px;
-      background: var(--ar-amber-500);
-      color: var(--ar-ink-900);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .lg__name {
-      font: 600 17px var(--ar-font-sans);
-      color: var(--ar-ink-900);
-      letter-spacing: -0.015em;
-    }
     .lg__title {
       margin: 0 0 16px;
       font: 600 16px var(--ar-font-sans);
@@ -151,6 +148,27 @@ import { ArButton, ArIcon } from '../../ui';
       background: var(--ar-red-100);
       color: var(--ar-red-600);
       font: 400 12px var(--ar-font-sans);
+    }
+    .lg__plan {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 0 0 16px;
+      padding: 10px 12px;
+      border: 1px solid var(--ar-blue-200);
+      border-radius: var(--ar-radius-inset);
+      background: var(--ar-blue-100);
+      font: 400 12.5px/1.45 var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .lg__plan strong {
+      color: var(--ar-ink-900);
+    }
+    .lg__plan-change {
+      flex: none;
+      font-weight: 600;
+      color: var(--ar-blue-600);
     }
     .lg__field {
       display: block;
@@ -202,6 +220,13 @@ export class ArSignup {
   private readonly account = inject(CurrentUserService);
   private readonly router = inject(Router);
 
+  /** The plan chosen on the landing page, if the link carried one. */
+  protected readonly plan = signal(
+    planByKey(inject(ActivatedRoute).snapshot.queryParamMap.get('plan')),
+  );
+  protected readonly price = (p: NonNullable<ReturnType<typeof planByKey>>) =>
+    priceLabel(p, 'monthly');
+
   protected readonly workspace = signal('');
   protected readonly fullName = signal('');
   protected readonly email = signal('');
@@ -241,6 +266,11 @@ export class ArSignup {
       this.done.set(true);
       // ABP seeds the first user as "admin"; sign in scoped to the new workspace.
       await this.account.signIn('admin', this.password(), true, name);
+      // Straight to Billing to activate the plan they picked, if they picked one.
+      const chosen = this.plan();
+      if (chosen) {
+        await this.router.navigate(['/billing'], { queryParams: { plan: planKey(chosen) } });
+      }
     } catch (e) {
       this.error.set(readApiError(e, 'Could not create the workspace.'));
       this.done.set(false);

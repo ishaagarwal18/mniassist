@@ -420,7 +420,7 @@ export class ArEmailSending {
       this.apply(next);
       this.notice.set(
         this.route() === 'shared'
-          ? 'Mail now goes through the AutoReach shared relay.'
+          ? 'Mail now goes through the MNI Assist shared relay.'
           : 'Saved. Send a test email to confirm your server accepts it.',
       );
     } catch (e) {

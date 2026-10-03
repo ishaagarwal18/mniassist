@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { ArTopbar } from '../../layout/topbar';
+import { ArThemeToggle } from '../../layout/theme-toggle';
 import { ArBanner, ArButton, ArCard } from '../../ui';
 
 /**
@@ -10,7 +11,7 @@ import { ArBanner, ArButton, ArCard } from '../../ui';
  */
 @Component({
   selector: 'ar-profile',
-  imports: [ArTopbar, ArBanner, ArButton, ArCard],
+  imports: [ArTopbar, ArBanner, ArButton, ArCard, ArThemeToggle],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './profile.html',
   styleUrl: './profile.scss',

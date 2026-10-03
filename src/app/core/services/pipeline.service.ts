@@ -531,7 +531,7 @@ export class PipelineStore {
   /** The pipeline on screen: the chosen one, else the default. */
   readonly currentPipeline = computed(() => {
     const all = this.pipelines();
-    return all.find((p) => p.id === this.pipelineId()) ?? all.find((p) => p.isDefault) ?? all[0];
+    return all.find((p) => p.id === this.pipelineId()) ?? all.find((p) => p.isDefault) ?? all.at(0);
   });
 
   private readonly boardResource = rxResource({

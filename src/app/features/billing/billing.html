@@ -9,6 +9,18 @@
 </ar-topbar>
 
 <div class="bl ar-scroll">
+  @if (requested(); as r) {
+    <ar-banner tone="teal">
+      You chose the <strong>{{ r.name }}</strong> plan · {{ r.price }}/month + GST. Activate it to
+      unlock its features and limits. WhatsApp message charges are paid from the wallet below.
+      <span banner-actions class="bl__req-actions">
+        <button ar-button variant="primary" [disabled]="busy()" (click)="activateRequested()">
+          Activate {{ r.name }}
+        </button>
+        <button ar-button variant="quiet" (click)="dismissRequested()">Not now</button>
+      </span>
+    </ar-banner>
+  }
   @if (d().chargesStartOn; as start) {
     <ar-banner tone="warn">
       From {{ chargeDay(start) }}, each delivered WhatsApp message Meta charges for is charged to

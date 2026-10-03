@@ -95,13 +95,13 @@
   padding: 0;
   cursor: pointer;
   font: 500 12px var(--ar-font-sans);
-  color: var(--ar-amber-600);
+  color: var(--ar-blue-600);
 }
 .link:hover {
   text-decoration: underline;
 }
 .link:focus-visible {
-  outline: 2px solid var(--ar-amber-500);
+  outline: 2px solid var(--ar-blue-500);
   outline-offset: 2px;
   border-radius: 3px;
 }
@@ -161,9 +161,9 @@
   color: var(--ar-ink-900);
 }
 .sel:focus-visible {
-  outline: 2px solid var(--ar-amber-500);
+  outline: 2px solid var(--ar-blue-500);
   outline-offset: -1px;
-  border-color: var(--ar-amber-500);
+  border-color: var(--ar-blue-500);
 }
 .sel--mode {
   font-weight: 500;
@@ -210,7 +210,7 @@
   color: var(--ar-red-600);
 }
 .row__del:focus-visible {
-  outline: 2px solid var(--ar-amber-500);
+  outline: 2px solid var(--ar-blue-500);
   outline-offset: 1px;
 }
 
@@ -251,11 +251,11 @@
   background: var(--ar-bg-50);
 }
 .saved__item--on {
-  border-color: var(--ar-amber-500);
-  background: var(--ar-amber-100);
+  border-color: var(--ar-blue-500);
+  background: var(--ar-blue-100);
 }
 .saved__item:focus-visible {
-  outline: 2px solid var(--ar-amber-500);
+  outline: 2px solid var(--ar-blue-500);
   outline-offset: 1px;
 }
 .saved__name {

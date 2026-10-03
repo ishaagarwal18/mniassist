@@ -1,7 +1,7 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
-import { provideAbpCore, withOptions } from '@abp/ng.core';
+import { DISABLE_PROJECT_NAME, provideAbpCore, withOptions } from '@abp/ng.core';
 import { provideAbpOAuth } from '@abp/ng.oauth';
 
 import { routes } from './app.routes';
@@ -14,6 +14,9 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptorsFromDi()),
     { provide: HTTP_INTERCEPTORS, useClass: AgencyActingInterceptor, multi: true },
+    // Route titles already carry the brand ("Inbox · MNI Assist"). Without this ABP
+    // appends " | " plus the API's AppName, or "MyProjectName" when it has none.
+    { provide: DISABLE_PROJECT_NAME, useValue: true },
     provideAbpCore(
       withOptions({
         environment,

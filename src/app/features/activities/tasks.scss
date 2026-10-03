@@ -83,11 +83,11 @@
   color: var(--ar-ink-600);
 }
 .tk__seg button.on {
-  background: var(--ar-ink-900);
-  color: var(--ar-white);
+  background: var(--ar-inverse-bg);
+  color: var(--ar-inverse-fg);
 }
 .tk__seg button:focus-visible {
-  outline: 2px solid var(--ar-amber-500);
+  outline: 2px solid var(--ar-blue-500);
   outline-offset: -2px;
 }
 
@@ -170,7 +170,7 @@
   font-family: var(--ar-font-sans);
 }
 .tk__main:focus-visible {
-  outline: 2px solid var(--ar-amber-500);
+  outline: 2px solid var(--ar-blue-500);
   outline-offset: 2px;
 }
 .tk__title {

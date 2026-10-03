@@ -358,7 +358,7 @@ export class MockServiceTicketApi {
 
     // The portal's address, once given, stays put even while the portal is switched off — the same as the server's own behaviour.
     const portalUrl = input.portalEnabled
-      ? (this.s.settings.portalUrl ?? 'https://app.autoreach.in/t/h.mocktkt01')
+      ? (this.s.settings.portalUrl ?? 'https://mniassist.com/t/h.mocktkt01')
       : this.s.settings.portalUrl;
 
     this.s.settings = {

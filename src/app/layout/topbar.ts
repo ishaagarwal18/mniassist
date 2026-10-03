@@ -10,6 +10,7 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { ArIcon } from '../ui';
 import { helpTopicFor } from '../core/help/help-topics';
+import { ArThemeToggle } from './theme-toggle';
 
 /**
  * Every screen's header, and — since `help` is set on essentially every call
@@ -25,7 +26,7 @@ import { helpTopicFor } from '../core/help/help-topics';
  */
 @Component({
   selector: 'ar-topbar',
-  imports: [ArIcon],
+  imports: [ArIcon, ArThemeToggle],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="tb__titles">
@@ -49,6 +50,7 @@ import { helpTopicFor } from '../core/help/help-topics';
       }
     </div>
     <div class="tb__actions"><ng-content /></div>
+    <ar-theme-toggle compact class="tb__theme" />
 
     @if (open()) {
       @if (topic; as t) {
@@ -112,7 +114,8 @@ import { helpTopicFor } from '../core/help/help-topics';
       align-items: center;
       gap: 16px;
       padding: 0 22px;
-      background: var(--ar-white);
+      background: var(--ar-header-bg);
+      backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--ar-line-200);
     }
     .tb__titles {
@@ -139,6 +142,16 @@ import { helpTopicFor } from '../core/help/help-topics';
       display: flex;
       align-items: center;
       gap: 10px;
+    }
+    .tb__theme {
+      margin-left: 2px;
+      padding-left: 12px;
+      border-left: 1px solid var(--ar-line-200);
+    }
+    /* Nothing to separate from on screens without header actions. */
+    .tb__actions:empty + .tb__theme {
+      padding-left: 0;
+      border-left: 0;
     }
 
     .tb__help {

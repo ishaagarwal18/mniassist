@@ -1,7 +1,7 @@
 <ar-topbar
   title="Email sending"
   subtitle="Sender identity and delivery route"
-  help="Marketing email goes out from the sender you set here, either through AutoReach's shared relay or through your own SMTP server. Every marketing email carries a one-click unsubscribe link automatically."
+  help="Marketing email goes out from the sender you set here, either through MNI Assist's shared relay or through your own SMTP server. Every marketing email carries a one-click unsubscribe link automatically."
 />
 
 <div class="es ar-scroll">
@@ -17,7 +17,7 @@
     @if (c.unsubscribeProblem; as problem) {
       <ar-banner tone="warn">
         Marketing email is paused platform-wide: unsubscribe links cannot be built ({{ problem }}).
-        Ask your AutoReach administrator to fix this — sending without an unsubscribe link is not
+        Ask your MNI Assist administrator to fix this — sending without an unsubscribe link is not
         allowed.
       </ar-banner>
     }
@@ -86,7 +86,7 @@
           (change)="route.set('shared')"
         />
         <span>
-          <strong>AutoReach shared relay</strong>
+          <strong>MNI Assist shared relay</strong>
           <span class="es__hint"
             >Nothing to set up. Mail shares a sending reputation with other workspaces, and replies
             come to your reply-to address.</span
@@ -201,7 +201,7 @@
       </label>
       @if (c.trackOpens && c.trackingProblem; as problem) {
         <ar-banner tone="warn">
-          Tracking is on but cannot work yet ({{ problem }}). Ask your AutoReach administrator to
+          Tracking is on but cannot work yet ({{ problem }}). Ask your MNI Assist administrator to
           fix this.
         </ar-banner>
       }

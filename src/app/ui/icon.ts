@@ -78,6 +78,22 @@ const ICONS = {
   ],
   send: [p('M3.5 10 16.5 4l-4 12.5-3-5.5z')],
   bolt: [p('M11 2.5 4.5 11h4l-.5 6.5L15 9h-4z')],
+
+  // Theme switch: the sun means "switch to light", the moon "switch to dark".
+  sun: [
+    c(10, 10, 3.2),
+    p(
+      'M10 2.5v1.8M10 15.7v1.8M2.5 10h1.8M15.7 10h1.8M4.7 4.7l1.3 1.3M14 14l1.3 1.3M4.7 15.3 6 14M14 6l1.3-1.3',
+    ),
+  ],
+  moon: [p('M15.5 12.2A6.2 6.2 0 0 1 7.8 4.5 6.2 6.2 0 1 0 15.5 12.2z')],
+
+  // AI. A four-point spark with a smaller one beside it: the one glyph that
+  // marks something as machine-generated or machine-suggested. Use it nowhere else.
+  sparkle: [
+    p('M8.5 3l1.5 4.2 4.2 1.5-4.2 1.5-1.5 4.2L7 10.2 2.8 8.7 7 7.2z'),
+    p('M15 12.5l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z'),
+  ],
   dots: [c(4.5, 10, 1.2), c(10, 10, 1.2), c(15.5, 10, 1.2)],
   user: [c(10, 7, 2.5), p('M5 16c0-2.5 2.2-4 5-4s5 1.5 5 4')],
   refresh: [p('M16 10a6 6 0 1 1-1.8-4.3'), p('M16.5 3v3.5H13')],

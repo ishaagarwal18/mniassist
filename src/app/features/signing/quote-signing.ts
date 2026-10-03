@@ -51,8 +51,8 @@ export class ArQuoteSigning {
   /** Set once the customer has acted on this visit. */
   protected readonly outcome = signal<SigningResultDto | null>(null);
 
-  protected readonly accent = computed(() => safeColor(this.view()?.accentColor, '#0b6b63'));
-  protected readonly primary = computed(() => safeColor(this.view()?.primaryColor, '#16202e'));
+  protected readonly accent = computed(() => safeColor(this.view()?.accentColor, '#1258e0')); // --ar-blue-600
+  protected readonly primary = computed(() => safeColor(this.view()?.primaryColor, '#17202a')); // --ar-ink-900
   protected readonly canSubmit = computed(
     () =>
       this.typedName().trim().length >= 2 &&

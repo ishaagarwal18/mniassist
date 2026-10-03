@@ -1,7 +1,7 @@
 <ar-topbar
   title="Your profile"
   subtitle="Your name, contact details and password"
-  help="Your own name, contact details and password — nothing here is visible to other workspaces."
+  help="Your own name, contact details, password and how MNI Assist looks for you — nothing here is visible to other workspaces."
 />
 
 <div class="pf ar-scroll">
@@ -134,6 +134,16 @@
           </div>
         </ar-card>
       }
+
+      <ar-card heading="Appearance">
+        <div class="pf__appearance">
+          <p class="pf__note">
+            Choose light or dark. It applies to this browser only, and pages your customers open
+            always stay light.
+          </p>
+          <ar-theme-toggle />
+        </div>
+      </ar-card>
     </div>
   }
 </div>

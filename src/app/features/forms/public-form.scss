@@ -1,18 +1,18 @@
 :host {
   display: block;
   min-height: 100vh;
-  background: #f3f5f8;
+  background: var(--ar-bg-100);
 }
 :host-context(.pf--embedded) {
   background: transparent;
 }
 
 .pf {
-  --pf-line: #c9d1dc;
-  --pf-ink: #16202e;
-  --pf-soft: #5b6676;
-  --pf-accent: #0b6b63;
-  --pf-bad: #b42318;
+  --pf-line: var(--ar-line-300);
+  --pf-ink: var(--ar-ink-900);
+  --pf-soft: var(--ar-ink-500);
+  --pf-accent: var(--ar-blue-600);
+  --pf-bad: var(--ar-red-600);
   padding: 24px 16px 48px;
   font:
     400 15px/1.5 system-ui,
@@ -43,8 +43,8 @@
   box-shadow: none;
 }
 .pf__card--done {
-  background: #eaf6ee;
-  border-color: #9ccfae;
+  background: var(--ar-green-100);
+  border-color: var(--ar-green-200);
 }
 .pf__title {
   margin: 0;
@@ -116,7 +116,7 @@ textarea.pf__input {
   margin: 0;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #fdeceb;
+  background: var(--ar-red-100);
   color: var(--pf-bad);
   font-weight: 500;
 }

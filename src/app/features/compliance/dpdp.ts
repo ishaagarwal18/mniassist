@@ -17,7 +17,7 @@ import type { ChipTone } from '../../ui/chip';
 
 const SEED: DpdpReadinessDto = {
   profile: {
-    legalName: 'Sun Energy Automation Pvt Ltd',
+    legalName: 'Emnisoft Pvt Ltd',
     address: null,
     grievanceOfficerName: null,
     purposes: 'Sending quotations and order updates on WhatsApp\nScheduling service visits',
@@ -71,11 +71,11 @@ const SEED: DpdpReadinessDto = {
     },
   ],
   noticeDraft:
-    'DRAFT FOR LEGAL REVIEW — NOT LEGAL ADVICE\n\nPrivacy notice — Sun Energy Automation Pvt Ltd\n…',
+    'DRAFT FOR LEGAL REVIEW — NOT LEGAL ADVICE\n\nPrivacy notice — Emnisoft Pvt Ltd\n…',
   noticeDrafts: {
-    en: 'DRAFT FOR LEGAL REVIEW — NOT LEGAL ADVICE\n\nPrivacy notice — Sun Energy Automation Pvt Ltd\n…',
-    hi: 'कानूनी समीक्षा के लिए मसौदा — यह कानूनी सलाह नहीं है\n\nगोपनीयता सूचना — Sun Energy Automation Pvt Ltd\n…',
-    mr: 'कायदेशीर पुनरावलोकनासाठी मसुदा — हा कायदेशीर सल्ला नाही\n\nगोपनीयता सूचना — Sun Energy Automation Pvt Ltd\n…',
+    en: 'DRAFT FOR LEGAL REVIEW — NOT LEGAL ADVICE\n\nPrivacy notice — Emnisoft Pvt Ltd\n…',
+    hi: 'कानूनी समीक्षा के लिए मसौदा — यह कानूनी सलाह नहीं है\n\nगोपनीयता सूचना — Emnisoft Pvt Ltd\n…',
+    mr: 'कायदेशीर पुनरावलोकनासाठी मसुदा — हा कायदेशीर सल्ला नाही\n\nगोपनीयता सूचना — Emnisoft Pvt Ltd\n…',
   },
 };
 
@@ -125,7 +125,7 @@ const FIELDS: {
     <ar-topbar
       title="DPDP readiness"
       subtitle="Digital Personal Data Protection Act, 2023"
-      help="A working checklist, not legal advice. Most checks read what AutoReach already records (consent evidence, opt-outs, retention, requests, breaches); the rest need the details below. The notice draft is a starting point for your lawyer."
+      help="A working checklist, not legal advice. Most checks read what MNI Assist already records (consent evidence, opt-outs, retention, requests, breaches); the rest need the details below. The notice draft is a starting point for your lawyer."
     >
       <a ar-button variant="ghost" routerLink="/compliance">Requests, retention & breaches</a>
     </ar-topbar>
@@ -330,9 +330,9 @@ const FIELDS: {
       cursor: pointer;
     }
     .langs__tab[aria-selected='true'] {
-      background: var(--ar-ink-900, #101828);
-      border-color: var(--ar-ink-900, #101828);
-      color: var(--ar-white);
+      background: var(--ar-inverse-bg);
+      border-color: var(--ar-inverse-bg);
+      color: var(--ar-inverse-fg);
     }
     .langs__tab:focus-visible {
       outline: 2px solid var(--ar-teal-600, #0d9488);

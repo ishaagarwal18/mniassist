@@ -13,10 +13,10 @@ describe('erp sync form', () => {
       debtorsGroup: '',
       cardCodePrefix: '',
     });
-    const form = readErpForm({ erp: { customers: true, invoices: true }, company: 'Sun Energy' });
+    const form = readErpForm({ erp: { customers: true, invoices: true }, company: 'Emnisoft Pvt Ltd' });
     expect(form.customers).toBe(true);
     expect(form.salesOrders).toBe(false);
-    expect(form.company).toBe('Sun Energy');
+    expect(form.company).toBe('Emnisoft Pvt Ltd');
   });
 
   it('writes Tally names, keeps the gateway URL, and drops blanks', () => {
@@ -26,7 +26,7 @@ describe('erp sync form', () => {
       {
         ...readErpForm({}),
         customers: true,
-        company: ' Sun Energy ',
+        company: ' Emnisoft Pvt Ltd ',
         salesLedger: '',
         cardCodePrefix: 'AR',
       },
@@ -35,7 +35,7 @@ describe('erp sync form', () => {
     expect(next).toEqual({
       url: 'http://tally:9000',
       erp: { customers: true, salesOrders: false, invoices: false, stock: false },
-      company: 'Sun Energy',
+      company: 'Emnisoft Pvt Ltd',
     });
     expect(config.salesLedger).toBe('Old'); // the original is not mutated
   });
@@ -43,7 +43,7 @@ describe('erp sync form', () => {
   it('writes only the SAP prefix for SAP, and removes erp when everything is off', () => {
     const next = applyErpForm(
       { erp: { invoices: true }, db: 'SBODEMO' },
-      { ...readErpForm({}), cardCodePrefix: 'C', company: 'X' },
+      { ...readErpForm({}), cardCodePrefix: 'C', company: 'Emnisoft Pvt Ltd' },
       IntegrationKind.SapB1,
     );
     expect(next).toEqual({ db: 'SBODEMO', cardCodePrefix: 'C' });

@@ -40,7 +40,7 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
     .ar-tab--on {
       font-weight: 600;
       color: var(--ar-ink-900);
-      border-bottom-color: var(--ar-amber-500);
+      border-bottom-color: var(--ar-blue-500);
     }
   `,
 })

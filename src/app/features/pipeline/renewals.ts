@@ -444,8 +444,8 @@ const SEED_SUMMARY: RenewalSummaryDto = {
       border-right: 0;
     }
     .seg button[aria-pressed='true'] {
-      background: var(--ar-ink-900);
-      color: var(--ar-white);
+      background: var(--ar-inverse-bg);
+      color: var(--ar-inverse-fg);
     }
     .rn__search {
       flex: 1 1 240px;

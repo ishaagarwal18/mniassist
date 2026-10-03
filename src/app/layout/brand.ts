@@ -1,0 +1,123 @@
+import { ChangeDetectionStrategy, Component, booleanAttribute, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
+
+/** The product's name and tagline, in one place. */
+export const BRAND_NAME = 'MNI Assist';
+export const BRAND_TAGLINE = 'AI Business Engagement Platform for Industrial Companies.';
+
+/**
+ * The MNI Assist logo and wordmark. Always a link to the public landing page.
+ * `onDark` puts the logo on a small white tile, because the navy "M" in the
+ * artwork would disappear on navy. `logoSrc` swaps in a workspace's own logo
+ * (tenant branding); the link and name stay.
+ */
+@Component({
+  selector: 'ar-brand',
+  imports: [RouterLink],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.br--dark]': 'onDark()',
+    '[class.br--lg]': 'size() === "lg"',
+    '[class.br--sm]': 'size() === "sm"',
+  },
+  template: `
+    <a class="br" routerLink="/" [attr.aria-label]="name + ' home'">
+      <span class="br__mark" aria-hidden="true">
+        <img [src]="logoSrc() || 'brand/mni-assist-logo.png'" alt="" />
+      </span>
+      @if (!iconOnly()) {
+        <span class="br__text">
+          <span class="br__name">{{ name }}</span>
+          @if (tagline()) {
+            <span class="br__tag">{{ tag }}</span>
+          }
+        </span>
+      }
+    </a>
+  `,
+  styles: `
+    :host {
+      display: inline-flex;
+      min-width: 0;
+      --br-h: 32px;
+    }
+    :host(.br--sm) {
+      --br-h: 26px;
+    }
+    :host(.br--lg) {
+      --br-h: 40px;
+    }
+    .br {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      color: var(--ar-ink-900);
+      text-decoration: none;
+      border-radius: var(--ar-radius-control);
+    }
+    .br:focus-visible {
+      outline: 2px solid var(--ar-blue-500);
+      outline-offset: 3px;
+    }
+    .br__mark {
+      flex: none;
+      display: grid;
+      place-items: center;
+      line-height: 0;
+    }
+    .br__mark img {
+      /* A fixed height, not 100%: the wrapper has no definite height, and a
+         percentage would fall back to the image's full natural size. */
+      height: var(--br-h);
+      width: auto;
+      max-width: none;
+      display: block;
+    }
+    :host(.br--dark) .br,
+    :host-context([data-theme='dark']) .br {
+      color: #fff;
+    }
+    :host(.br--dark) .br__mark,
+    :host-context([data-theme='dark']) .br__mark {
+      padding: 3px 5px;
+      border-radius: 7px;
+      background: #fff;
+    }
+    :host(.br--dark) .br__mark img,
+    :host-context([data-theme='dark']) .br__mark img {
+      height: calc(var(--br-h) - 6px);
+    }
+    .br__text {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .br__name {
+      font: 700 calc(var(--br-h) * 0.5) var(--ar-font-sans);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+    .br__tag {
+      margin-top: 3px;
+      max-width: 34ch;
+      font: 500 12px/1.35 var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
+    :host(.br--dark) .br__tag {
+      color: #94a3b8;
+    }
+  `,
+})
+export class ArBrand {
+  readonly onDark = input(false, { transform: booleanAttribute });
+  readonly iconOnly = input(false, { transform: booleanAttribute });
+  readonly tagline = input(false, { transform: booleanAttribute });
+  readonly size = input<'sm' | 'md' | 'lg'>('md');
+  /** A workspace's own uploaded logo, shown in place of the MNI Assist mark. */
+  readonly logoSrc = input<string | null>(null);
+
+  protected readonly name = BRAND_NAME;
+  protected readonly tag = BRAND_TAGLINE;
+}

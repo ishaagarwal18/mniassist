@@ -181,8 +181,8 @@ import { ArButton, ArChip, ArMeter } from '../../ui';
       border-radius: var(--ar-radius-card);
     }
     .step--next {
-      border-color: var(--ar-amber-500);
-      box-shadow: 0 0 0 1px var(--ar-amber-500) inset;
+      border-color: var(--ar-blue-500);
+      box-shadow: 0 0 0 1px var(--ar-blue-500) inset;
     }
     /* No opacity dimming here: composited over --ar-ink-500's already-modest
        5.84:1 headroom, 0.7 opacity dropped .step__d's text to ~3.0:1 — below
@@ -205,7 +205,7 @@ import { ArButton, ArChip, ArMeter } from '../../ui';
       color: var(--ar-teal-600);
     }
     .step--next .step__mark {
-      background: var(--ar-amber-500);
+      background: var(--ar-primary);
       color: #fff;
     }
     .step__body {
@@ -237,7 +237,7 @@ import { ArButton, ArChip, ArMeter } from '../../ui';
       margin-right: 12px;
       text-decoration: none;
       font: 500 12.5px var(--ar-font-sans);
-      color: var(--ar-amber-600);
+      color: var(--ar-blue-600);
     }
     .step__open:hover {
       text-decoration: underline;

@@ -67,15 +67,15 @@ import { ArMeter } from './meter';
       box-shadow: 0 0 0 3px var(--ar-line-200);
     }
     .chs__dot--green {
-      background: var(--ar-green-600);
+      background: var(--ar-green-500);
       box-shadow: 0 0 0 3px var(--ar-green-100);
     }
     .chs__dot--yellow {
-      background: var(--ar-warn-600);
+      background: var(--ar-warn-500);
       box-shadow: 0 0 0 3px var(--ar-warn-100);
     }
     .chs__dot--red {
-      background: var(--ar-red-600);
+      background: var(--ar-red-500);
       box-shadow: 0 0 0 3px var(--ar-red-100);
     }
     .chs__quality {

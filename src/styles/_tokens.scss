@@ -1,69 +1,133 @@
-/* AutoReach design tokens — Direction A "Instrument panel".
-   Values are lifted verbatim from the design-system artboard; nothing is
-   rounded to a 4/8px grid. Change a value here and it changes everywhere. */
+/* AutoReach design tokens — "Industrial Intelligence".
+   Every colour, type face, radius and shadow in the app comes from here; change
+   a value and it changes everywhere.
+
+   Roles, roughly 70 / 20 / 8 / 2 by area:
+   - Neutrals: page, surfaces, text and lines.
+   - Navy and blue: the shell, primary actions, links, selection, focus.
+   - Teal (--ar-ai-*): AI and automation only. Never a general accent.
+   - Amber: attention only. Pending, warning, needs-a-look. Never the brand.
+
+   Contrast: every *text* pairing below is at least 4.5:1 (WCAG 2.1 AA) on the
+   light backgrounds it is used on: white, --ar-bg-50, --ar-bg-100 and the
+   matching -100 tint. Bright brand values (#1769FF, #00B8A9, #FFB020, #12B76A,
+   #F04438) are kept for fills, markers and indicators; text uses the darker
+   step of the same hue. See a11y-audit/RESULTS.md for the audit method. */
 :root {
-  /* Surface and text */
-  --ar-ink-900: #14181d;
-  --ar-ink-700: #333b45;
-  --ar-ink-500: #5c6672;
-  /* Darkened from the original #7B8794 — that value was 3.66:1 on white,
-     below WCAG 2.1 AA's 4.5:1 minimum for normal text, and this token is the
-     app's workhorse "muted" text colour (58 files). Verified at >=4.5:1
-     against every light background it's actually used on: white, --ar-bg-50,
-     --ar-bg-100, --ar-amber-100 and --ar-teal-100 (see a11y-audit/RESULTS.md
-     in autoreach-web for the numbers and the tool that found this). */
-  --ar-ink-400: #616d75;
-  --ar-line-300: #d7dce2;
-  --ar-line-200: #e7eaef;
-  --ar-bg-100: #f4f6f8;
-  --ar-bg-50: #fafbfc;
-  --ar-white: #ffffff;
+  /* Neutrals */
+  --ar-ink-900: #17202a; /* primary text */
+  --ar-ink-700: #344054; /* strong secondary */
+  --ar-ink-500: #475467; /* secondary text */
+  /* Muted text. #667085 from the brand sheet is 4.3:1 on --ar-blue-100, so
+     this is one step darker: 5.4:1 on white, 4.8:1 on --ar-blue-100. */
+  --ar-ink-400: #5f6b7c;
+  --ar-line-300: #d9e1ea; /* borders */
+  --ar-line-200: #eaecf0; /* hairlines, separators */
+  --ar-bg-100: #f5f7fa; /* page background */
+  --ar-bg-50: #f9fafb; /* raised-but-quiet surfaces */
+  --ar-white: #ffffff; /* cards */
+  --ar-surface-dark: #101828;
 
-  /* Accent — safety amber */
-  --ar-amber-600: #a85b12;
-  --ar-amber-500: #c4711e;
-  --ar-amber-200: #f2dfc4;
-  --ar-amber-100: #fbf1e3;
+  /* Brand navy — shell, dark sections, the mark */
+  --ar-navy: #0b1f33;
 
-  /* Free-window / utility teal */
-  /* Darkened from #0F7F86 (4.15:1 on --ar-teal-100 — below AA's 4.5:1) to
-     #0C6169 (6.24:1). White-on-this-background (the teal avatar) only
-     improves, since darkening a background raises contrast for light text. */
-  --ar-teal-600: #0c6169;
-  --ar-teal-100: #e4f2f3;
+  /* Interactive blue — primary actions, links, selection, focus */
+  --ar-blue-700: #0e47b8; /* text on blue tints, pressed */
+  --ar-blue-600: #1258e0; /* links and blue text; primary hover */
+  --ar-blue-500: #1769ff; /* primary fill, indicators, focus ring */
+  --ar-blue-200: #c7d9ff; /* selected borders */
+  --ar-blue-100: #ebf2ff; /* selected backgrounds */
 
-  /* Status — reserved, never reused as a series colour */
-  --ar-green-600: #1f7a4d;
-  --ar-green-100: #e7f3ec;
-  --ar-warn-600: #8a5a00;
-  --ar-warn-100: #fcf3df;
-  --ar-red-600: #b02a25;
-  --ar-red-100: #fbeae9;
+  /* Fills that carry text. Separate from the text colours above because in the
+     dark theme text turns light while these must stay strong behind white text. */
+  --ar-primary: #1769ff; /* primary buttons, badges with white text */
+  --ar-primary-hover: #1258e0;
+  --ar-ai-fill: #0a776f; /* AI buttons with white text */
+  --ar-ai-fill-hover: #075e58;
+  --ar-inverse-bg: #17202a; /* selected segment pills */
+  --ar-inverse-fg: #ffffff;
+  --ar-on-attention: #17202a; /* text on an amber fill, both themes */
+
+  /* AI and automation — teal, used sparingly */
+  --ar-ai-800: #075e58; /* AI button hover */
+  --ar-ai-700: #0a776f; /* AI text and AI button fill (white text 5.4:1, 4.9:1 on --ar-ai-100) */
+  --ar-ai-500: #00b8a9; /* AI markers, sparkle, left rules */
+  --ar-ai-200: #a6ebe4;
+  --ar-ai-100: #e6f8f6;
+
+  /* Attention — amber, used sparingly */
+  --ar-amber-600: #b54708; /* attention text */
+  --ar-amber-500: #ffb020; /* attention markers and fills (dark text on top) */
+  --ar-amber-200: #fedf89;
+  --ar-amber-100: #fffaeb;
+
+  /* Status — reserved, never reused as a chart series colour */
+  --ar-green-600: #067647; /* success text */
+  --ar-green-500: #12b76a; /* success markers */
+  --ar-green-200: #abefc6;
+  --ar-green-100: #ecfdf3;
+  --ar-warn-600: #b54708;
+  --ar-warn-500: #f79009;
+  --ar-warn-100: #fffaeb;
+  --ar-red-600: #c4320a; /* danger text and button fill (white text 5.5:1) */
+  --ar-red-500: #f04438; /* danger markers */
+  --ar-red-200: #fecdca;
+  --ar-red-100: #fef3f2;
+  --ar-info-600: #175cd3;
+  --ar-info-500: #2e90fa;
+  --ar-info-200: #b2ddff;
+  --ar-info-100: #eff8ff;
+
+  /* Deprecated aliases — the old "utility teal" was the link/interactive
+     colour, which is blue now. Kept so nothing unstyles; new code uses
+     --ar-blue-* for interaction and --ar-ai-* for AI. */
+  --ar-teal-700: var(--ar-blue-700);
+  --ar-teal-600: var(--ar-blue-600);
+  --ar-teal-100: var(--ar-blue-100);
+  /* Names some screens reference that never existed; they fell back to
+     hard-coded hex values. Defined so those screens follow the palette. */
+  --ar-teal-500: var(--ar-blue-500);
+  --ar-teal-50: var(--ar-blue-100);
+  --ar-line-100: var(--ar-line-200);
+  --ar-ink-800: var(--ar-ink-900);
+  --ar-ink-600: var(--ar-ink-500);
+  --ar-ink-300: #98a2b3; /* decorative only: icons, disabled borders. Not for text. */
+  --ar-bg-200: #eef1f5;
+  --ar-surface: var(--ar-white);
+  --ar-hover: var(--ar-bg-100);
+  --ar-good-700: var(--ar-green-600);
+  --ar-good-600: var(--ar-green-600);
+  --ar-good-50: var(--ar-green-100);
+  --ar-bad-600: var(--ar-red-600);
+  --ar-amber-800: var(--ar-amber-600);
+  --ar-amber-700: var(--ar-amber-600);
+  --ar-amber-50: var(--ar-amber-100);
+  --ar-warn-50: var(--ar-warn-100);
 
   /* Sidebar */
-  --ar-nav: #1b2027;
-  --ar-nav-hi: #242b34;
-  --ar-nav-line: #2a323c;
-  --ar-nav-text: #a6b0bc;
-  /* Lightened from #6E7A88 (3.74:1 on --ar-nav) to #8994A1 (5.31:1) — used
-     only against the dark sidebar background (sidebar.ts), never elsewhere. */
-  --ar-nav-dim: #8994a1;
+  --ar-nav: var(--ar-navy);
+  --ar-nav-hi: #132c47; /* hover */
+  --ar-nav-active: rgba(23, 105, 255, 0.18);
+  --ar-nav-line: #1d3654;
+  --ar-nav-text: #cbd5e1;
+  --ar-nav-dim: #94a3b8; /* 6.5:1 on --ar-nav */
 
-  /* Chart categorical — validated for CVD separation, chroma and contrast.
+  /* Chart categorical — chosen for CVD separation and contrast on white.
      Do not substitute without re-running the palette validator. */
-  --ar-chart-marketing: #c4711e;
-  --ar-chart-utility: #0e8f84;
+  --ar-chart-marketing: #1769ff;
+  --ar-chart-utility: #0e9384;
   --ar-chart-service: #7a4fa8;
 
   /* Type */
-  --ar-font-sans: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+  --ar-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --ar-font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
 
-  /* Radii — nothing is a pill except the mobile composer */
-  --ar-radius-chip: 4px;
-  --ar-radius-control: 6px;
-  --ar-radius-inset: 7px;
-  --ar-radius-card: 8px;
+  /* Radii — pills only for status, tags and filters */
+  --ar-radius-chip: 6px;
+  --ar-radius-control: 7px;
+  --ar-radius-inset: 8px;
+  --ar-radius-card: 10px;
+  --ar-radius-modal: 12px;
 
   /* Density */
   --ar-control-h: 32px;
@@ -71,5 +135,108 @@
   --ar-gap-card: 14px;
   --ar-pad-card: 18px;
 
-  --ar-shadow-pop: 0 4px 14px rgba(20, 24, 29, 0.12);
+  /* Elevation — barely there */
+  --ar-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --ar-shadow-pop: 0 8px 24px rgba(16, 24, 40, 0.1);
+  --ar-focus-ring: 0 0 0 3px rgba(23, 105, 255, 0.25);
+  --ar-backdrop: rgba(11, 31, 51, 0.45); /* behind dialogs */
+
+  --ar-ease: 160ms ease;
+
+  /* Depth effects. Neutral in light mode; the dark theme gives them substance. */
+  --ar-input-bg: var(--ar-white); /* text fields sit slightly recessed in dark */
+  --ar-card-sheen: none; /* a faint top-down highlight on cards in dark */
+  --ar-page-glow: none; /* a soft cobalt light falloff at the top of the app */
+  --ar-glow-primary: var(--ar-shadow-card); /* primary button lift */
+  --ar-header-bg: var(--ar-white); /* the page header bar */
+}
+
+/* Dark theme — "Industrial Intelligence" after dark. Opted into per browser
+   (ThemeService sets data-theme="dark" on <html>); public customer pages always
+   stay light. Designed in layers, not inverted: the sidebar is the darkest
+   plane, then the page, then cards, then raised panels, each a clear step up.
+   Hues are kept low in saturation so text reads crisp rather than blue-tinted,
+   and cobalt, mint and amber stay the only real colour on screen. Every text
+   pairing is at least 4.5:1 against the surfaces and tints it sits on. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ar-ink-900: #f1f5f9;
+  --ar-ink-700: #dbe3ee;
+  --ar-ink-500: #b4c0d1;
+  --ar-ink-400: #8f9db3; /* 6.3:1 on cards, 5.3:1 on --ar-blue-100 */
+  --ar-ink-300: #4b5b73;
+  --ar-line-300: #2a3a55;
+  --ar-line-200: #1c2940;
+  --ar-bg-200: #1b2a44;
+  --ar-bg-100: #0a111e; /* page */
+  --ar-bg-50: #16233a; /* raised: table heads, hovers, chips */
+  --ar-white: #111b2e; /* cards and surfaces */
+  --ar-surface-dark: #04080f;
+  --ar-input-bg: #0c1524;
+
+  --ar-blue-700: #a5c8ff;
+  --ar-blue-600: #6ea8fe; /* links: 7.1:1 on cards */
+  --ar-blue-500: #3b82f6; /* markers, focus */
+  --ar-blue-200: #23406f;
+  --ar-blue-100: #15284a;
+
+  --ar-primary: #2563eb; /* white text 5.2:1 */
+  --ar-primary-hover: #3171f0;
+  --ar-ai-fill: #0f766e;
+  --ar-ai-fill-hover: #11857c;
+  --ar-inverse-bg: #e2e8f0;
+  --ar-inverse-fg: #0a111e;
+
+  --ar-ai-800: #11857c;
+  --ar-ai-700: #2dd4bf;
+  --ar-ai-500: #2dd4bf;
+  --ar-ai-200: #15564f;
+  --ar-ai-100: #0c2b32;
+
+  --ar-amber-600: #fbbf24;
+  --ar-amber-500: #fbbf24;
+  --ar-amber-200: #5a4314;
+  --ar-amber-100: #2a210f;
+
+  --ar-green-600: #4ade80;
+  --ar-green-500: #34d399; /* softer than pure green for bars and dots */
+  --ar-green-200: #1d4d38;
+  --ar-green-100: #0e2a1f;
+  --ar-warn-600: #fbbf24;
+  --ar-warn-500: #f59e0b;
+  --ar-warn-100: #2a210f;
+  --ar-red-600: #f87171;
+  --ar-red-500: #ef4444;
+  --ar-red-200: #642631;
+  --ar-red-100: #2f1720;
+  --ar-info-600: #38bdf8;
+  --ar-info-500: #0ea5e9;
+  --ar-info-200: #164e6e;
+  --ar-info-100: #0c2638;
+
+  --ar-navy: #060c17;
+  --ar-nav-hi: #0f1a2c;
+  --ar-nav-active: rgba(59, 130, 246, 0.16);
+  --ar-nav-line: #152035;
+  --ar-nav-text: #cbd5e1;
+  --ar-nav-dim: #8f9db3;
+
+  --ar-chart-marketing: #3b82f6;
+  --ar-chart-utility: #2dd4bf;
+  --ar-chart-service: #a78bfa;
+
+  /* Cards: a hairline of light along the top edge, then a soft drop. */
+  --ar-shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 3px rgba(0, 0, 0, 0.45);
+  --ar-shadow-pop: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 16px 40px rgba(0, 0, 0, 0.55);
+  --ar-focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.45);
+  --ar-backdrop: rgba(2, 6, 14, 0.7);
+  --ar-card-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0) 60%);
+  --ar-page-glow: radial-gradient(
+    1100px 520px at 75% -12%,
+    rgba(37, 99, 235, 0.12),
+    rgba(37, 99, 235, 0) 70%
+  );
+  --ar-glow-primary: 0 0 0 1px rgba(96, 165, 250, 0.25), 0 6px 18px rgba(37, 99, 235, 0.35);
+  --ar-header-bg: rgba(17, 27, 46, 0.72);
 }

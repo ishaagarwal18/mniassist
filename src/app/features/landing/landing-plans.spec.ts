@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { LANDING_PLANS, limitLines, periodFeeInPaise, priceLabel } from './landing-plans';
+import {
+  LANDING_PLANS,
+  limitLines,
+  periodFeeInPaise,
+  planByKey,
+  planKey,
+  priceLabel,
+} from './landing-plans';
 
 const plan = (name: string) => LANDING_PLANS.find((p) => p.name === name)!;
 
@@ -35,5 +42,21 @@ describe('landing plans', () => {
     ]);
     expect(limitLines(plan('Pro'))[2]).toBe('1,00,000 contacts');
     expect(limitLines(plan('Enterprise'))[2]).toBe('Unlimited contacts');
+  });
+});
+
+describe('plan links', () => {
+  it('round-trips every plan through its key', () => {
+    for (const p of LANDING_PLANS) expect(planByKey(planKey(p))).toBe(p);
+  });
+
+  it('ignores case and surrounding spaces', () => {
+    expect(planByKey(' Growth ')?.name).toBe('Growth');
+  });
+
+  it('rejects anything that is not a plan', () => {
+    expect(planByKey('free')).toBeUndefined();
+    expect(planByKey('')).toBeUndefined();
+    expect(planByKey(null)).toBeUndefined();
   });
 });

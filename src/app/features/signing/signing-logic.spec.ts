@@ -46,8 +46,8 @@ describe('sharing the link', () => {
   });
 
   it('words the message with the reference and who it is from', () => {
-    expect(shareText('QTN-1', 'Asha', url, 'Sun Energy')).toContain(
-      'quotation QTN-1 from Sun Energy',
+    expect(shareText('QTN-1', 'Asha', url, 'Emnisoft Pvt Ltd')).toContain(
+      'quotation QTN-1 from Emnisoft Pvt Ltd',
     );
     expect(shareText('QTN-1', 'Asha', url)).not.toContain(' from ');
   });

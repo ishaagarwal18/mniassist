@@ -77,10 +77,10 @@
   width: 100%;
 }
 .trend__seg--mkt {
-  background: var(--ar-amber-500);
+  background: var(--ar-chart-marketing);
 }
 .trend__seg--utl {
-  background: var(--ar-teal-500, #2f9e8f);
+  background: var(--ar-chart-utility);
 }
 .trend__seg--svc {
   background: var(--ar-line-300);
@@ -107,10 +107,10 @@
   border-radius: 2px;
 }
 .legend__i--mkt::before {
-  background: var(--ar-amber-500);
+  background: var(--ar-chart-marketing);
 }
 .legend__i--utl::before {
-  background: var(--ar-teal-500, #2f9e8f);
+  background: var(--ar-chart-utility);
 }
 .legend__i--svc::before {
   background: var(--ar-line-300);

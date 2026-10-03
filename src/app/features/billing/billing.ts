@@ -1,6 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, forkJoin, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -13,6 +14,7 @@ import {
 } from '../../proxy/billing';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
+import { planByKey, priceLabel } from '../landing/landing-plans';
 import { ArBanner, ArButton, ArChip, ArMeter, ArStatTile } from '../../ui';
 
 const PLAN_NAME: Record<SubscriptionPlan, string> = {
@@ -111,6 +113,21 @@ const SEED = {
 export class ArBilling {
   private readonly walletApi = inject(WalletService);
   private readonly billingApi = inject(BillingService);
+  private readonly router = inject(Router);
+
+  /**
+   * The plan a link asked for (`/billing?plan=growth`), from the landing page's
+   * plan buttons or straight after sign-up. Shown as a banner to activate it.
+   */
+  private readonly requestedKey = signal(inject(ActivatedRoute).snapshot.queryParamMap.get('plan'));
+  protected readonly requested = computed(() => {
+    const chosen = planByKey(this.requestedKey());
+    if (!chosen) return null;
+    // Plan names match the enum's member names (Starter, Growth, Pro, Enterprise).
+    const plan = SubscriptionPlan[chosen.name as keyof typeof SubscriptionPlan];
+    if (plan === undefined || plan === this.d().plan) return null;
+    return { plan, name: chosen.name, price: priceLabel(chosen, 'monthly') };
+  });
 
   protected readonly busy = signal(false);
   private readonly tick = signal(0);
@@ -240,6 +257,18 @@ export class ArBilling {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  protected async activateRequested(): Promise<void> {
+    const r = this.requested();
+    if (!r) return;
+    await this.changePlan(r.plan);
+    if (this.d().plan === r.plan || !this.requested()) this.dismissRequested();
+  }
+
+  protected dismissRequested(): void {
+    this.requestedKey.set(null);
+    void this.router.navigate([], { queryParams: { plan: null }, replaceUrl: true });
   }
 
   protected async changePlan(plan: SubscriptionPlan): Promise<void> {

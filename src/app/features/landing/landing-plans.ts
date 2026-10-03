@@ -100,3 +100,14 @@ export function limitLines(plan: LandingPlan): string[] {
     plan.contacts === null ? 'Unlimited contacts' : `${count(plan.contacts)} contacts`,
   ];
 }
+
+/** The plan's key in links, e.g. `/signup?plan=growth`. */
+export function planKey(plan: LandingPlan): string {
+  return plan.name.toLowerCase();
+}
+
+/** The plan a `?plan=` link asks for, or undefined for anything unrecognised. */
+export function planByKey(key: string | null | undefined): LandingPlan | undefined {
+  const k = (key ?? '').trim().toLowerCase();
+  return LANDING_PLANS.find((p) => planKey(p) === k);
+}

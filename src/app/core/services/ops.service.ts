@@ -140,7 +140,7 @@ export class OpsService {
       id: 'n-6',
       kind: 'SupportAccessStarted',
       tone: 'info',
-      title: 'AutoReach support has entered your account',
+      title: 'MNI Assist support has entered your account',
       body:
         'p.deshmukh started a read-only support session under the access you granted: ' +
         '“Investigating stuck campaign #4180”.',
@@ -185,7 +185,7 @@ export class OpsService {
       totalInPaise: 5_73_763_00,
       lines: [
         {
-          description: 'AutoReach Growth plan — 01 Jul 2026 – 31 Jul 2026',
+          description: 'MNI Assist Growth plan — 01 Jul 2026 – 31 Jul 2026',
           sac: '998434',
           quantity: 1,
           taxableValueInPaise: 2_00_000_00,

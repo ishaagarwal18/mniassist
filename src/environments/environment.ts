@@ -12,13 +12,13 @@ export const environment = {
   useMockData: false,
 
   application: {
-    baseUrl: 'https://app.autoreach.example',
-    name: 'AutoReach',
+    baseUrl: 'https://mniassist.com',
+    name: 'MNI Assist',
   },
 
   oAuthConfig: {
-    issuer: 'https://auth.autoreach.example/',
-    redirectUri: 'https://app.autoreach.example',
+    issuer: 'https://api.mniassist.com/',
+    redirectUri: 'https://mniassist.com',
     clientId: 'AutoReach_App',
     // Resource-owner password grant — the in-app /login form posts straight to
     // /connect/token. See environment.development.ts.
@@ -29,11 +29,11 @@ export const environment = {
 
   apis: {
     default: {
-      url: 'https://api.autoreach.example',
+      url: 'https://api.mniassist.com',
       rootNamespace: 'Mni.AutoReach',
     },
     AutoReach: {
-      url: 'https://api.autoreach.example',
+      url: 'https://api.mniassist.com',
       rootNamespace: 'Mni.AutoReach',
     },
   },

@@ -20,8 +20,10 @@ export type StatTone = 'neutral' | 'good' | 'warn' | 'bad' | 'teal' | 'amber';
       flex-direction: column;
       gap: 7px;
       background: var(--ar-white);
+      background-image: var(--ar-card-sheen);
       border: 1px solid var(--ar-line-200);
       border-radius: var(--ar-radius-card);
+      box-shadow: var(--ar-shadow-card);
       padding: 16px;
     }
     .ar-stat__value {
@@ -46,7 +48,7 @@ export type StatTone = 'neutral' | 'good' | 'warn' | 'bad' | 'teal' | 'amber';
       color: var(--ar-red-600);
     }
     .ar-stat__note--teal {
-      color: var(--ar-teal-600);
+      color: var(--ar-blue-600);
     }
     .ar-stat__note--amber {
       color: var(--ar-amber-600);

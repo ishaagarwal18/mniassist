@@ -1,17 +1,14 @@
 <header class="nav">
   <div class="wrap nav__row">
-    <a class="brand" routerLink="/">
-      <span class="brand__mark"><ar-icon name="bolt" [size]="14" [strokeWidth]="0" /></span>
-      AutoReach
-    </a>
+    <ar-brand onDark />
     <nav class="nav__links" aria-label="Sections">
-      <button type="button" (click)="scrollTo('features')">Features</button>
-      <button type="button" (click)="scrollTo('how')">How it works</button>
-      <button type="button" (click)="scrollTo('plans')">Plans</button>
+      @for (s of sections; track s.id) {
+        <button type="button" (click)="scrollTo(s.id)">{{ s.label }}</button>
+      }
     </nav>
     <div class="nav__cta">
       @if (signedIn()) {
-        <a class="btn btn--primary" routerLink="/home">Open AutoReach</a>
+        <a class="btn btn--primary" routerLink="/home">Open MNI Assist</a>
       } @else {
         <a class="btn btn--ghost" routerLink="/login">Log in</a>
         <a class="btn btn--primary nav__signup" routerLink="/signup">Create a workspace</a>
@@ -24,60 +21,62 @@
   <section class="hero">
     <div class="wrap hero__grid">
       <div class="hero__copy">
-        <p class="eyebrow">WhatsApp marketing for industrial automation</p>
-        <h1>Every machine you sell is a customer conversation waiting to happen.</h1>
+        <p class="eyebrow">
+          <ar-icon name="sparkle" [size]="13" /> AI Business Engagement Platform for Industrial
+          Companies
+        </p>
+        <h1>Turn every customer conversation into business growth.</h1>
         <p class="hero__lede">
-          AutoReach brings your enquiries, quotations, AMC renewals and spares re-orders into
-          WhatsApp, where your customers already are, and runs the follow-ups for you.
+          Customer engagement, support, CRM and aftermarket sales in one platform, built for
+          machinery makers, OEMs and their dealers. On WhatsApp, where your customers already are.
         </p>
         <div class="hero__cta">
           @if (signedIn()) {
-            <a class="btn btn--primary btn--lg" routerLink="/home">Open AutoReach</a>
+            <a class="btn btn--primary btn--lg" routerLink="/home">Open MNI Assist</a>
           } @else {
             <a class="btn btn--primary btn--lg" routerLink="/signup">Create a workspace</a>
-            <a class="btn btn--light btn--lg" routerLink="/login">Log in</a>
           }
+          <button type="button" class="btn btn--light btn--lg" (click)="scrollTo('plans')">
+            See plans &amp; pricing
+          </button>
         </div>
-        <ul class="chips" aria-label="Channels">
-          @for (c of channels; track c) {
-            <li>{{ c }}</li>
+        <ul class="proof" aria-label="Platform facts">
+          @for (f of proof; track f.text) {
+            <li><ar-icon [name]="f.icon" [size]="14" />{{ f.text }}</li>
           }
         </ul>
       </div>
 
-      <figure class="chat" aria-label="Example: a spares reminder on WhatsApp">
-        <div class="chat__bar">
-          <span class="chat__avatar">VA</span>
-          <span>
-            <strong>Vertex Automation</strong>
-            <small>Business account</small>
+      <ar-landing-chat />
+    </div>
+
+    <ol class="wrap story" aria-label="How a conversation becomes business">
+      @for (s of story; track s.title) {
+        <li class="story__step" [class.story__step--ai]="s.ai">
+          <span class="story__t">
+            @if (s.ai) {
+              <ar-icon name="sparkle" [size]="12" />
+            }
+            {{ s.title }}
           </span>
-        </div>
-        <div class="chat__body">
-          <p class="msg msg--in">
-            Hello Mr. Kulkarni, the air filter kit on your <b>VMC-850</b> (Serial 21-0457) is due
-            for replacement in 12 days.
-            <span class="msg__meta">Utility · 10:02 am</span>
-          </p>
-          <div class="msg__buttons">
-            <span>Re-order spares</span>
-            <span>Book a service visit</span>
-          </div>
-          <p class="msg msg--out">Re-order spares <span class="msg__meta">10:04 am ✓✓</span></p>
-          <p class="msg msg--in">
-            Your price for 2 × AF-850 filter kit is ₹6,840 + GST. Tap to confirm and pay.
-            <span class="msg__meta">10:04 am</span>
-          </p>
-        </div>
-        <figcaption>Example conversation</figcaption>
-      </figure>
+          <span class="story__d">{{ s.text }}</span>
+        </li>
+      }
+    </ol>
+  </section>
+
+  <section class="band" id="industries">
+    <div class="wrap">
+      <p class="eyebrow eyebrow--dark">Built for</p>
+      <h2>Made for the way industrial businesses sell and service</h2>
+      <ar-landing-industries />
     </div>
   </section>
 
-  <section class="band" id="features">
+  <section class="band band--alt" id="features">
     <div class="wrap">
       <p class="eyebrow eyebrow--dark">What it does</p>
-      <h2>One workspace from first enquiry to the tenth spares order</h2>
+      <h2>One platform from first enquiry to the tenth spares order</h2>
       <div class="pillars">
         @for (p of pillars; track p.title) {
           <article class="pillar">
@@ -95,30 +94,23 @@
     </div>
   </section>
 
+  <section class="band" id="ai">
+    <div class="wrap"><ar-landing-ai /></div>
+  </section>
+
   <section class="band band--alt">
-    <div class="wrap trust">
-      <div>
-        <p class="eyebrow eyebrow--dark">Built to stay on the right side of Meta</p>
-        <h2>Fewer blocked numbers, fewer surprises</h2>
+    <div class="wrap">
+      <p class="eyebrow eyebrow--dark">Built to stay on the right side of Meta</p>
+      <h2>Fewer blocked numbers, fewer surprises</h2>
+      <div class="trust">
+        @for (t of trust; track t.title) {
+          <article class="trust__item">
+            <span class="trust__icon"><ar-icon [name]="t.icon" [size]="18" /></span>
+            <h3>{{ t.title }}</h3>
+            <p>{{ t.text }}</p>
+          </article>
+        }
       </div>
-      <ul class="trust__list">
-        <li>
-          <strong>Consent first.</strong> Every contact carries its consent evidence, and opt-outs
-          are honoured the moment a campaign sends.
-        </li>
-        <li>
-          <strong>Limits you can see.</strong> Your number's quality and daily sending limit are on
-          every screen, with a warning before you reach them.
-        </li>
-        <li>
-          <strong>Templates checked before review.</strong> Common rejection reasons are flagged
-          before you submit to Meta.
-        </li>
-        <li>
-          <strong>DPDP ready.</strong> Data requests, retention and a breach log, with a working
-          readiness checklist for the DPDP Act, 2023.
-        </li>
-      </ul>
     </div>
   </section>
 
@@ -127,8 +119,9 @@
       <p class="eyebrow eyebrow--dark">How it works</p>
       <h2>Three steps to your first campaign</h2>
       <ol class="steps">
-        @for (s of steps; track s.title) {
+        @for (s of steps; track s.title; let i = $index) {
           <li>
+            <span class="steps__n">{{ i + 1 }}</span>
             <h3>{{ s.title }}</h3>
             <p>{{ s.text }}</p>
           </li>
@@ -145,24 +138,60 @@
     </div>
   </section>
 
+  <section class="band" id="faq">
+    <div class="wrap">
+      <p class="eyebrow eyebrow--dark">Questions</p>
+      <h2>Before you buy</h2>
+      <ar-landing-faq />
+    </div>
+  </section>
+
   <section class="final">
     <div class="wrap final__row">
-      <h2>Start the conversations your competitors are missing.</h2>
+      <div>
+        <h2>Start the conversations your competitors are missing.</h2>
+        <p class="final__sub">Pick a plan, create your workspace and connect your number.</p>
+      </div>
       <div class="hero__cta">
         @if (signedIn()) {
-          <a class="btn btn--primary btn--lg" routerLink="/home">Open AutoReach</a>
+          <a class="btn btn--primary btn--lg" routerLink="/home">Open MNI Assist</a>
         } @else {
-          <a class="btn btn--primary btn--lg" routerLink="/signup">Create a workspace</a>
-          <a class="btn btn--light btn--lg" routerLink="/login">Log in</a>
+          <a class="btn btn--white btn--lg" routerLink="/signup">Create a workspace</a>
         }
+        <button type="button" class="btn btn--light btn--lg" (click)="scrollTo('plans')">
+          Compare plans
+        </button>
       </div>
     </div>
   </section>
 </main>
 
 <footer class="foot">
-  <div class="wrap foot__row">
-    <span>© {{ year }} Sun Energy &amp; Automation · AutoReach</span>
-    <a routerLink="/privacy">Privacy policy</a>
+  <div class="wrap foot__grid">
+    <div class="foot__brand">
+      <ar-brand tagline />
+    </div>
+    <nav class="foot__col" aria-label="Product">
+      <strong>Product</strong>
+      @for (s of sections; track s.id) {
+        <button type="button" (click)="scrollTo(s.id)">{{ s.label }}</button>
+      }
+    </nav>
+    <nav class="foot__col" aria-label="Account">
+      <strong>Account</strong>
+      <a routerLink="/signup">Create a workspace</a>
+      <a routerLink="/login">Log in</a>
+      <a routerLink="/forgot-password">Reset password</a>
+    </nav>
+    <nav class="foot__col" aria-label="Legal">
+      <strong>Legal</strong>
+      <a routerLink="/privacy">Privacy policy</a>
+    </nav>
+  </div>
+  <div class="wrap foot__base">
+    <span
+      >© {{ year }} Emnisoft Pvt Ltd. MNI Assist is a product of Emnisoft Pvt Ltd.</span
+    >
+    <span>mniassist.com</span>
   </div>
 </footer>

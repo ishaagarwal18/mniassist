@@ -16,8 +16,10 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     :host {
       display: block;
       background: var(--ar-white);
+      background-image: var(--ar-card-sheen);
       border: 1px solid var(--ar-line-200);
       border-radius: var(--ar-radius-card);
+      box-shadow: var(--ar-shadow-card);
       padding: var(--ar-pad-card);
     }
     .ar-card__head {

@@ -36,16 +36,16 @@ export type MeterTone = 'amber' | 'teal' | 'good' | 'warn' | 'bad' | 'ink';
       background: var(--ar-amber-500);
     }
     .ar-meter__fill--teal {
-      background: var(--ar-teal-600);
+      background: var(--ar-blue-500);
     }
     .ar-meter__fill--good {
-      background: var(--ar-green-600);
+      background: var(--ar-green-500);
     }
     .ar-meter__fill--warn {
-      background: var(--ar-warn-600);
+      background: var(--ar-warn-500);
     }
     .ar-meter__fill--bad {
-      background: var(--ar-red-600);
+      background: var(--ar-red-500);
     }
     .ar-meter__fill--ink {
       background: var(--ar-ink-400);
