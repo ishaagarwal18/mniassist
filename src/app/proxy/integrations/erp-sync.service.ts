@@ -24,6 +24,8 @@ export interface ErpSyncConnectionStatusDto {
   customersEnabled: boolean;
   salesOrdersEnabled: boolean;
   invoicesEnabled: boolean;
+  /** Stock is read from the ERP on each pass. */
+  stockEnabled?: boolean;
   customersSynced: number;
   salesOrdersCreated: number;
   invoicesHeld: number;
@@ -42,6 +44,8 @@ export interface ErpSyncRunResultDto {
   stillFailing: number;
   invoices: number;
   invoiceError?: string | null;
+  stockItems?: number;
+  stockError?: string | null;
 }
 
 export interface ErpInvoiceDto {

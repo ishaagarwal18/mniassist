@@ -18,6 +18,7 @@ import {
 } from '../../proxy/pipeline/spares.service';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
+import { ArSendReorderLink } from '../reorder/send-reorder-link';
 
 const day = 86_400_000;
 const iso = (days: number) => new Date(Date.now() + days * day).toISOString();
@@ -114,7 +115,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
  */
 @Component({
   selector: 'ar-spares',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSendReorderLink, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -197,6 +198,18 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
                   }}
                 </button>
               }
+              @if (canReorder) {
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  icon="send"
+                  title="Send the customer their spares re-order link"
+                  (click)="reorderFor.set({ id: g.contactId, name: g.name })"
+                >
+                  Re-order link
+                </button>
+              }
             </header>
             <ul class="rows">
               @for (r of g.rows; track r.id) {
@@ -258,14 +271,24 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
       }
     </div>
 
+    @if (reorderFor(); as r) {
+      <ar-send-reorder-link
+        [contactId]="r.id"
+        [contactName]="r.name"
+        (closed)="reorderFor.set(null)"
+      />
+    }
+
     @if (remindersOpen()) {
       <ar-dialog title="Remind customers on WhatsApp" (dismiss)="remindersOpen.set(false)">
         <p class="sp__hint">
           Once a day, each customer with parts coming due gets one message listing them, from your
           approved template. Body values in order: customer name, the parts due, the earliest due
           date. The first quick-reply button (e.g. “Send quotation”) drafts the quote for all their
-          due parts; the second (e.g. “Call me”) alerts the team. Each part is reminded once, then
-          followed up up to three times if you choose.
+          due parts; the second (e.g. “Call me”) alerts the team. A URL button ending in
+          <span class="ar-mono">/r/&#123;&#123;1&#125;&#125;</span> (e.g. “Re-order online”) opens
+          the customer's own re-order page; it needs the re-order portal switched on. Each part is
+          reminded once, then followed up up to three times if you choose.
         </p>
         <label class="rem__check" for="sp-rem-on">
           <input
@@ -636,6 +659,11 @@ export class ArSpares {
   private readonly permissions = inject(PermissionService);
   protected readonly canManage = grantedPolicy('AutoReach.InstalledBase.Update', this.permissions);
   protected readonly canQuote = grantedPolicy('AutoReach.Quotations.Create', this.permissions);
+  protected readonly canReorder = grantedPolicy(
+    'AutoReach.ReorderPortal.SendLinks',
+    this.permissions,
+  );
+  protected readonly reorderFor = signal<{ id: string; name: string } | null>(null);
 
   protected readonly due = signal<SpareReorderDto[]>([]);
   protected readonly rules = signal<ConsumableRuleDto[]>([]);

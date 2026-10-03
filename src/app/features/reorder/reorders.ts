@@ -11,6 +11,7 @@ import { TemplateCategory } from '../../proxy/messaging/template-category.enum';
 import { TemplateStatus } from '../../proxy/messaging/template-status.enum';
 import { TemplateService } from '../../proxy/messaging/template.service';
 import {
+  ReorderApprovalDto,
   ReorderPortalService,
   ReorderPortalSettingsDto,
   ReorderRequestDto,
@@ -19,6 +20,14 @@ import { ArButton, ArChip, ArDialog } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
 import { ArContactPicker } from '../pipeline/contact-picker';
 import { rupees } from './reorder-logic';
+import { ArReorderBuyers } from './reorder-buyers';
+import { ArReorderDispatch, ArReorderShippingSettings } from './reorder-shipping';
+import { SHIPMENT_STATE } from './shipping-logic';
+import {
+  ShipmentDto,
+  ShipmentStatus,
+  ShippingService,
+} from '../../proxy/shipping/shipping.service';
 import { ArSendReorderLink } from './send-reorder-link';
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
@@ -67,7 +76,18 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
  */
 @Component({
   selector: 'ar-reorders',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArContactPicker, ArSendReorderLink, RouterLink],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArContactPicker,
+    ArSendReorderLink,
+    ArReorderBuyers,
+    ArReorderDispatch,
+    ArReorderShippingSettings,
+    RouterLink,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -76,6 +96,18 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
       help="Customers open a personal link from WhatsApp, confirm with a code sent to their number, and see their machines with the spares due, at their own prices. What they send arrives here as a draft quotation for you to check and issue."
     >
       @if (canSettings) {
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          icon="contacts"
+          (click)="buyersOpen.set(true)"
+        >
+          Companies
+        </button>
+        <button ar-button type="button" variant="ghost" (click)="shippingOpen.set(true)">
+          Shipping
+        </button>
         <button ar-button type="button" variant="ghost" icon="settings" (click)="openSettings()">
           Portal settings
         </button>
@@ -90,6 +122,9 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
     <div class="ro ar-scroll">
       @if (error(); as e) {
         <p class="ro__err" role="alert">{{ e }}</p>
+      }
+      @if (notice(); as n) {
+        <p class="ro__ok" role="status">{{ n }}</p>
       }
       @if (settings(); as s) {
         @if (!s.included) {
@@ -109,6 +144,35 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
         }
       }
 
+      @if (approvals().length) {
+        <h2 class="ro__h">Waiting for the customer's approver</h2>
+        <div class="tbl">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Received</th>
+                <th scope="col">Buyer</th>
+                <th scope="col">Company</th>
+                <th scope="col" class="num">Parts</th>
+                <th scope="col" class="num">Before GST</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (a of approvals(); track a.id) {
+                <tr>
+                  <td>{{ when(a.creationTime) }}</td>
+                  <td>{{ a.contactName || 'Buyer' }}</td>
+                  <td>{{ a.companyName || '—' }}</td>
+                  <td class="num">{{ a.lineCount }}</td>
+                  <td class="num">{{ money(a.subtotalInPaise) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <h2 class="ro__h">Requests</h2>
+      }
+
       @if (requests().length === 0) {
         <p class="ro__hint">
           No requests yet. Send a customer their link from here, or from their conversation in the
@@ -126,6 +190,7 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
                 <th scope="col" class="num">Before GST</th>
                 <th scope="col">PO / delivery</th>
                 <th scope="col">Status</th>
+                <th scope="col">Delivery</th>
               </tr>
             </thead>
             <tbody>
@@ -151,6 +216,62 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
                     <ar-chip [tone]="state(r.state).tone" [dot]="true">{{
                       state(r.state).label
                     }}</ar-chip>
+                    @if (r.creditNote) {
+                      <span class="sub ro__credit">Outside credit terms: {{ r.creditNote }}</span>
+                    }
+                  </td>
+                  <td>
+                    @if (shipmentOf(r.quotationId); as s) {
+                      <ar-chip [tone]="shipState(s.status).tone" [dot]="true">{{
+                        shipState(s.status).label
+                      }}</ar-chip>
+                      <span class="sub"
+                        >{{ s.carrier }} · <span class="ar-mono">{{ s.trackingNumber }}</span></span
+                      >
+                      @if (s.lastUpdate) {
+                        <span class="sub">{{ s.lastUpdate }}</span>
+                      }
+                      @if (s.status !== 'Delivered') {
+                        <span class="ro__acts">
+                          @if (s.status === 'Dispatched') {
+                            <button
+                              type="button"
+                              class="ro__act"
+                              (click)="setShipment(s, 'InTransit')"
+                            >
+                              In transit
+                            </button>
+                          }
+                          <button
+                            type="button"
+                            class="ro__act"
+                            (click)="setShipment(s, 'Delivered')"
+                          >
+                            Delivered
+                          </button>
+                          <button
+                            type="button"
+                            class="ro__act"
+                            (click)="setShipment(s, 'Exception')"
+                          >
+                            Problem
+                          </button>
+                        </span>
+                      }
+                    } @else if (r.state === 'Won') {
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        (click)="
+                          dispatchFor.set({ id: r.quotationId, reference: r.quotationReference })
+                        "
+                      >
+                        Dispatch
+                      </button>
+                    } @else {
+                      —
+                    }
                   </td>
                 </tr>
               }
@@ -182,6 +303,23 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
           </button>
         </div>
       </ar-dialog>
+    }
+
+    @if (dispatchFor(); as d) {
+      <ar-reorder-dispatch
+        [quotationId]="d.id"
+        [reference]="d.reference"
+        [shiprocket]="shiprocketReady()"
+        (closed)="dispatched($event)"
+      />
+    }
+
+    @if (shippingOpen()) {
+      <ar-reorder-shipping-settings (closed)="shippingOpen.set(false); loadShipping()" />
+    }
+
+    @if (buyersOpen()) {
+      <ar-reorder-buyers (closed)="buyersOpen.set(false)" />
     }
 
     @if (sendTo(); as c) {
@@ -301,6 +439,59 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
             />
           </label>
         </div>
+        <label class="check" for="ro-exact">
+          <input
+            id="ro-exact"
+            type="checkbox"
+            [disabled]="!settings()?.showsStock"
+            [checked]="!!form().showExactStock"
+            (change)="patch({ showExactStock: $any($event.target).checked })"
+          />
+          Show customers exact quantities (“12 in stock”) instead of in stock, limited or on order
+        </label>
+        <label class="check" for="ro-signin">
+          <input
+            id="ro-signin"
+            type="checkbox"
+            [checked]="!!form().passwordSignIn"
+            (change)="patch({ passwordSignIn: $any($event.target).checked })"
+          />
+          Customers can also sign in with their WhatsApp number and a password
+        </label>
+        <label class="check" for="ro-catalogue">
+          <input
+            id="ro-catalogue"
+            type="checkbox"
+            [checked]="!!form().publicCatalogue"
+            (change)="patch({ publicCatalogue: $any($event.target).checked })"
+          />
+          Public catalogue: anyone can look up your parts and send an enquiry
+        </label>
+        @if (form().publicCatalogue) {
+          <label class="check" for="ro-catprices">
+            <input
+              id="ro-catprices"
+              type="checkbox"
+              [checked]="!!form().catalogueShowsPrices"
+              (change)="patch({ catalogueShowsPrices: $any($event.target).checked })"
+            />
+            Show list prices in the public catalogue (otherwise “price on request”)
+          </label>
+          @if (settings()?.catalogueUrl) {
+            <p class="ro__hint">
+              Catalogue: <span class="ar-mono">{{ settings()?.catalogueUrl }}</span
+              >. Enquiries arrive as quotation drafts from “Public catalogue”; the number isn't
+              verified, so call before quoting.
+            </p>
+          }
+        }
+        @if (form().passwordSignIn && settings()?.signInUrl) {
+          <p class="ro__hint">
+            Sign-in page: <span class="ar-mono">{{ settings()?.signInUrl }}</span
+            >. A customer sets a password with a code sent to their WhatsApp, or from their re-order
+            page.
+          </p>
+        }
         <label class="ar-field" for="ro-linktpl">
           <span class="ar-field__label"
             >Link template
@@ -373,6 +564,11 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
       flex-direction: column;
       gap: 12px;
     }
+    .ro__h {
+      margin: 6px 0 0;
+      font: 600 14px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
     .ro__hint {
       margin: 0;
       font: 400 13px/1.5 var(--ar-font-sans);
@@ -434,6 +630,29 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
       color: var(--ar-ink-500);
       font-size: 12px;
     }
+    .ro__ok {
+      margin: 0;
+      font: 500 12.5px var(--ar-font-sans);
+      color: var(--ar-good-600, #067647);
+    }
+    .ro__acts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 2px;
+    }
+    .ro__act {
+      border: 0;
+      background: none;
+      padding: 0 4px 0 0;
+      color: var(--ar-teal-700, #0f766e);
+      font: 500 12px var(--ar-font-sans);
+      cursor: pointer;
+    }
+    .ro__credit {
+      color: var(--ar-amber-800, #92400e);
+      max-width: 40ch;
+    }
     .check {
       display: flex;
       gap: 8px;
@@ -490,6 +709,7 @@ export class ArReorders {
   protected readonly settings = signal<ReorderPortalSettingsDto | null>(null);
   protected readonly requests = signal<ReorderRequestDto[]>([]);
   protected readonly error = signal<string | null>(null);
+  protected readonly notice = signal<string | null>(null);
   protected readonly dialogError = signal<string | null>(null);
   protected readonly busy = signal(false);
 
@@ -498,6 +718,13 @@ export class ArReorders {
   protected readonly sendTo = signal<PickerOption | null>(null);
 
   protected readonly settingsOpen = signal(false);
+  protected readonly buyersOpen = signal(false);
+  protected readonly shippingOpen = signal(false);
+  protected readonly dispatchFor = signal<{ id: string; reference: string } | null>(null);
+  protected readonly shipments = signal<ShipmentDto[]>([]);
+  protected readonly shiprocketReady = signal(false);
+  private readonly shippingApi = inject(ShippingService);
+  protected readonly approvals = signal<ReorderApprovalDto[]>([]);
   protected readonly form = signal<ReorderPortalSettingsDto>({
     enabled: false,
     linkLifetimeDays: 7,
@@ -529,14 +756,61 @@ export class ArReorders {
       return;
     }
     try {
-      const [settings, requests] = await Promise.all([
+      const [settings, requests, approvals] = await Promise.all([
         firstValueFrom(this.api.getSettings()),
         firstValueFrom(this.api.getRequests()),
+        firstValueFrom(this.api.getApprovals()),
       ]);
       this.settings.set(settings);
       this.requests.set(requests);
+      this.approvals.set(approvals);
+      await this.loadShipping();
     } catch (e: unknown) {
       this.error.set(problem(e, 'Could not load re-orders.'));
+    }
+  }
+
+  protected async loadShipping(): Promise<void> {
+    if (environment.useMockData) return;
+    try {
+      const [shipments, shipping] = await Promise.all([
+        firstValueFrom(this.shippingApi.getShipments()),
+        firstValueFrom(this.shippingApi.getSettings()),
+      ]);
+      this.shipments.set(shipments);
+      this.shiprocketReady.set(!!shipping.shiprocketConnected);
+    } catch {
+      // Delivery is extra on this page: without it the requests still show.
+    }
+  }
+
+  protected shipmentOf(quotationId: string): ShipmentDto | undefined {
+    return this.shipments().find((s) => s.quotationId === quotationId);
+  }
+
+  protected shipState(s: ShipmentStatus): { label: string; tone: ChipTone } {
+    return SHIPMENT_STATE[s] ?? { label: s, tone: 'neutral' };
+  }
+
+  protected dispatched(s: ShipmentDto | null): void {
+    this.dispatchFor.set(null);
+    if (!s) return;
+    this.shipments.update((list) => [s, ...list.filter((x) => x.id !== s.id)]);
+    this.notice.set(
+      `${s.quotationReference ?? 'The order'} dispatched with ${s.carrier}.` +
+        (s.customerNotified ? ' The customer has been told on WhatsApp.' : ''),
+    );
+  }
+
+  protected async setShipment(s: ShipmentDto, status: ShipmentStatus): Promise<void> {
+    this.error.set(null);
+    try {
+      const updated = environment.useMockData
+        ? { ...s, status }
+        : await firstValueFrom(this.shippingApi.updateStatus(s.id, status));
+      this.shipments.update((list) => list.map((x) => (x.id === s.id ? updated : x)));
+    } catch (e: unknown) {
+      this.error.set(problem(e, 'The delivery status could not be saved.'));
     }
   }
 

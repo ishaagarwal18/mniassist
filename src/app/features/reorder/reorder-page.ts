@@ -9,10 +9,20 @@ import {
   PublicReorderPortalDto,
   PublicReorderSubmittedDto,
   ReorderPublicService,
-  StockBand,
 } from '../../proxy/reorder/reorder-public.service';
 import { apiMessage } from '../signing/signing-logic';
-import { BAND_LABEL, CartLine, dueLabel, parseQuantity, rupees, totals } from './reorder-logic';
+import {
+  CartLine,
+  dueLabel,
+  parseQuantity,
+  readSession,
+  rupees,
+  sessionKeyFor,
+  stockText,
+  totals,
+  writeSession,
+} from './reorder-logic';
+import { deliveryLabel } from './shipping-logic';
 
 type Step = 'loading' | 'unavailable' | 'code' | 'portal' | 'done';
 
@@ -92,7 +102,81 @@ type Step = 'loading' | 'unavailable' | 'code' | 'portal' | 'done';
               @if (p.intro) {
                 <p class="rp__soft">{{ p.intro }}</p>
               }
+              @if (p.accountNotice) {
+                <p class="rp__notice" role="note">{{ p.accountNotice }}</p>
+              }
             </header>
+
+            @if (p.pending?.length) {
+              <section class="rp__machine" aria-label="Waiting for your approval">
+                <h2>Waiting for your approval</h2>
+                @for (a of p.pending; track a.id) {
+                  <div class="rp__held">
+                    <p>
+                      <b>{{ a.sentBy }}</b> · {{ day(a.sentAtUtc) }} ·
+                      {{ money(a.subtotalInPaise) }} before GST
+                    </p>
+                    <ul class="rp__lines">
+                      @for (l of a.lines; track l.partNumber) {
+                        <li>
+                          <span
+                            >{{ l.quantity }} × {{ l.description }}
+                            <span class="rp__mono">{{ l.partNumber }}</span></span
+                          >
+                          <span class="rp__num">{{
+                            l.unitPriceInPaise > 0
+                              ? money(l.unitPriceInPaise * l.quantity)
+                              : 'to be quoted'
+                          }}</span>
+                        </li>
+                      }
+                    </ul>
+                    @if (a.poNumber || a.deliverySite || a.note) {
+                      <p class="rp__soft">
+                        @if (a.poNumber) {
+                          PO {{ a.poNumber }}.
+                        }
+                        @if (a.deliverySite) {
+                          Deliver to {{ a.deliverySite }}.
+                        }
+                        @if (a.note) {
+                          “{{ a.note }}”
+                        }
+                      </p>
+                    }
+                    <label [for]="'rp-reason-' + a.id"
+                      >Reason, if you decline <span class="rp__soft">(optional)</span></label
+                    >
+                    <input
+                      [id]="'rp-reason-' + a.id"
+                      [value]="reasons()[a.id] ?? ''"
+                      (input)="setReason(a.id, $any($event.target).value)"
+                    />
+                    <div class="rp__actions">
+                      <button
+                        type="button"
+                        class="rp__btn"
+                        [disabled]="busy()"
+                        (click)="decide(a.id, true)"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        class="rp__link"
+                        [disabled]="busy()"
+                        (click)="decide(a.id, false)"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                }
+              </section>
+            }
+            @if (decided(); as m) {
+              <p class="rp__ok" role="status">{{ m }}</p>
+            }
 
             @for (m of p.machines; track $index) {
               <section class="rp__machine" [attr.aria-label]="m.description">
@@ -167,6 +251,9 @@ type Step = 'loading' | 'unavailable' | 'code' | 'portal' | 'done';
                     <b>{{ money(sum().totalInPaise) }}</b>
                   </dd>
                 </dl>
+                @if (p.paymentTermsDays) {
+                  <p class="rp__soft">Payment: {{ p.paymentTermsDays }} days from invoice.</p>
+                }
                 @if (sum().unpriced) {
                   <p class="rp__soft">
                     {{ sum().unpriced }} part{{ sum().unpriced === 1 ? '' : 's' }} will be priced in
@@ -210,17 +297,76 @@ type Step = 'loading' | 'unavailable' | 'code' | 'portal' | 'done';
               </p>
             </section>
 
+            @if (p.passwordSignIn && !p.hasPassword && !passwordSaved()) {
+              <section class="rp__machine" aria-label="Sign in faster">
+                <h2>Next time, sign in with a password</h2>
+                <p class="rp__soft">
+                  Choose a password and you can open this page any time at
+                  <span class="rp__mono">{{ p.signInUrl }}</span> with your WhatsApp number, without
+                  waiting for a link.
+                </p>
+                <label for="rp-newpass"
+                  >Password
+                  <span class="rp__soft">(8 or more characters, a letter and a number)</span></label
+                >
+                <input
+                  id="rp-newpass"
+                  type="password"
+                  autocomplete="new-password"
+                  [value]="newPassword()"
+                  (input)="newPassword.set($any($event.target).value)"
+                />
+                <div class="rp__actions">
+                  <button
+                    type="button"
+                    class="rp__btn"
+                    [disabled]="busy() || newPassword().length < 8"
+                    (click)="savePassword()"
+                  >
+                    Save password
+                  </button>
+                </div>
+              </section>
+            }
+            @if (passwordSaved()) {
+              <p class="rp__ok" role="status">
+                Password saved. Next time, sign in at {{ p.signInUrl }}.
+              </p>
+            }
+
             @if (p.recent.length) {
-              <section class="rp__machine" aria-label="Your recent requests">
+              <section class="rp__machine" aria-label="Recent requests">
                 <h2>Recent requests</h2>
                 <ul class="rp__lines">
-                  @for (r of p.recent; track r.reference) {
+                  @for (r of p.recent; track $index) {
                     <li>
                       <span
                         ><span class="rp__mono">{{ r.reference }}</span> ·
-                        {{ day(r.sentAtUtc) }}</span
-                      >
-                      <span>{{ r.status }}</span>
+                        {{ day(r.sentAtUtc) }}
+                        @if (r.sentBy) {
+                          · by {{ r.sentBy }}
+                        }
+                        @if (r.reason) {
+                          <span class="rp__soft rp__small"> · “{{ r.reason }}”</span>
+                        }
+                      </span>
+                      <span>
+                        {{ r.delivery ? delivery(r.delivery) : r.status }}
+                        @if (r.trackingUrl) {
+                          ·
+                          <a class="rp__track" [href]="r.trackingUrl" target="_blank" rel="noopener"
+                            >Track</a
+                          >
+                        }
+                        @if (r.carrier) {
+                          <span class="rp__soft rp__small"
+                            ><br />{{ r.carrier }} {{ r.trackingNumber }}
+                            @if (r.expectedOn && r.delivery !== 'Delivered') {
+                              · by {{ day(r.expectedOn) }}
+                            }
+                          </span>
+                        }
+                      </span>
                     </li>
                   }
                 </ul>
@@ -231,19 +377,31 @@ type Step = 'loading' | 'unavailable' | 'code' | 'portal' | 'done';
         @case ('done') {
           @if (done(); as d) {
             <section class="rp__card rp__card--done">
-              <h1 class="rp__title">{{ d.payUrl ? 'Order placed' : 'Request sent' }}</h1>
+              <h1 class="rp__title">
+                {{
+                  d.heldForApproval
+                    ? 'Sent for approval'
+                    : d.payUrl
+                      ? 'Order placed'
+                      : 'Request sent'
+                }}
+              </h1>
               <p>{{ d.message }}</p>
               @if (d.payUrl) {
                 <a class="rp__btn rp__pay" [href]="d.payUrl"
                   >Pay {{ money(d.subtotalInPaise + d.taxInPaise) }} now</a
                 >
               }
-              <p>
-                Reference <b class="rp__mono">{{ d.reference }}</b> ·
-                {{ money(d.subtotalInPaise + d.taxInPaise) }} including GST{{
-                  d.unpriced ? ', plus ' + d.unpriced + ' part(s) to be priced' : ''
-                }}.
-              </p>
+              @if (d.heldForApproval) {
+                <p>{{ money(d.subtotalInPaise) }} before GST.</p>
+              } @else {
+                <p>
+                  Reference <b class="rp__mono">{{ d.reference }}</b> ·
+                  {{ money(d.subtotalInPaise + d.taxInPaise) }} including GST{{
+                    d.unpriced ? ', plus ' + d.unpriced + ' part(s) to be priced' : ''
+                  }}.
+                </p>
+              }
               <button type="button" class="rp__link" (click)="again()">Order something else</button>
             </section>
           }
@@ -260,10 +418,8 @@ type Step = 'loading' | 'unavailable' | 'code' | 'portal' | 'done';
             @if (due != null) {
               <span [class.rp__due]="due <= 0">{{ dueText(due) }}</span>
             }
-            @if (part.availability) {
-              <span class="rp__band" [attr.data-band]="part.availability">{{
-                band(part.availability)
-              }}</span>
+            @if (stock(part); as s) {
+              <span class="rp__band" [attr.data-band]="part.availability">{{ s }}</span>
             }
           </span>
         </div>
@@ -392,6 +548,37 @@ type Step = 'loading' | 'unavailable' | 'code' | 'portal' | 'done';
     .rp__bad {
       color: var(--rp-bad);
       font-weight: 500;
+    }
+    .rp__track {
+      color: var(--rp-accent);
+      font-weight: 600;
+    }
+    .rp__ok {
+      color: var(--rp-good);
+      font-weight: 500;
+    }
+    .rp__notice {
+      margin: 4px 0 0;
+      padding: 8px 10px;
+      border-left: 3px solid var(--rp-warn);
+      color: var(--rp-warn);
+      font-weight: 500;
+    }
+    .rp__held {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-block: 10px;
+      border-top: 1px solid var(--rp-line);
+    }
+    .rp__held p {
+      margin: 0;
+    }
+    .rp__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
     }
     .rp__btn {
       align-self: flex-start;
@@ -550,7 +737,7 @@ type Step = 'loading' | 'unavailable' | 'code' | 'portal' | 'done';
 export class ArReorderPage {
   private readonly api = inject(ReorderPublicService);
   private readonly token = inject(ActivatedRoute).snapshot.paramMap.get('token') ?? '';
-  private readonly sessionKey = 'reorder-session:' + this.token.slice(-12);
+  private readonly sessionKey = sessionKeyFor(this.token);
 
   protected readonly step = signal<Step>('loading');
   protected readonly link = signal<PublicReorderLinkDto | null>(null);
@@ -567,6 +754,10 @@ export class ArReorderPage {
   protected readonly site = signal('');
   protected readonly note = signal('');
   protected readonly done = signal<PublicReorderSubmittedDto | null>(null);
+  protected readonly reasons = signal<Record<string, string>>({});
+  protected readonly decided = signal<string | null>(null);
+  protected readonly newPassword = signal('');
+  protected readonly passwordSaved = signal(false);
 
   private session = '';
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -725,6 +916,42 @@ export class ArReorderPage {
     }
   }
 
+  protected async savePassword(): Promise<void> {
+    this.busy.set(true);
+    this.problem.set(null);
+    try {
+      await firstValueFrom(this.api.setPassword(this.token, this.session, this.newPassword()));
+      this.newPassword.set('');
+      this.passwordSaved.set(true);
+    } catch (e: unknown) {
+      this.problem.set(apiMessage(e, "The password couldn't be saved. Try again."));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected setReason(id: string, text: string): void {
+    this.reasons.update((r) => ({ ...r, [id]: text }));
+  }
+
+  /** An approver decides a colleague's held request; the page reloads to show what is left. */
+  protected async decide(id: string, approve: boolean): Promise<void> {
+    this.busy.set(true);
+    this.problem.set(null);
+    this.decided.set(null);
+    try {
+      const result = await firstValueFrom(
+        this.api.decide(this.token, this.session, id, approve, this.reasons()[id]?.trim() || null),
+      );
+      this.decided.set(result.message);
+      await this.loadPortal(this.session);
+    } catch (e: unknown) {
+      this.problem.set(apiMessage(e, "That couldn't be saved. Reload the page and try again."));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
   protected async again(): Promise<void> {
     this.cart.set(new Map());
     this.po.set('');
@@ -738,8 +965,12 @@ export class ArReorderPage {
     return rupees(Math.round(paise));
   }
 
-  protected band(b: StockBand): string {
-    return BAND_LABEL[b] ?? b;
+  protected delivery(status: string): string {
+    return deliveryLabel(status);
+  }
+
+  protected stock(part: PublicReorderPartDto): string {
+    return stockText(part);
   }
 
   protected dueText(days: number): string {
@@ -752,19 +983,3 @@ export class ArReorderPage {
 }
 
 // The session lives only in this browser tab, and the page works without it (it just asks for a new code).
-function readSession(key: string): string | null {
-  try {
-    return sessionStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeSession(key: string, value: string | null): void {
-  try {
-    if (value) sessionStorage.setItem(key, value);
-    else sessionStorage.removeItem(key);
-  } catch {
-    // Private windows can refuse storage; the page still works.
-  }
-}

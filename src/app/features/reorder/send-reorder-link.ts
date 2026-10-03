@@ -18,7 +18,7 @@ import { ArButton, ArDialog } from '../../ui';
 
 /**
  * Sends one customer their personal re-order link on WhatsApp, and shows the link either way so it can be copied. Used from the
- * Re-orders page and from a conversation in the inbox.
+ * Re-orders page, a conversation in the inbox, the spares board and the contact drawer.
  */
 @Component({
   selector: 'ar-send-reorder-link',

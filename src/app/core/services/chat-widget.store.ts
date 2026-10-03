@@ -52,6 +52,8 @@ export const SOURCE_LABEL: Record<LeadSource, string> = {
   [LeadSource.Renewal]: 'AMC renewal',
   [LeadSource.Spares]: 'Spares due',
   [LeadSource.OemNetwork]: 'OEM network',
+  [LeadSource.ReorderPortal]: 'Re-order portal',
+  [LeadSource.PublicCatalogue]: 'Public catalogue',
 };
 
 function toEntryPoint(dto: ChatEntryPointDto): ChatEntryPoint {

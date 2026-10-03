@@ -1,4 +1,6 @@
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { grantedPolicy } from '../../core/auth/permission';
 import { AccountStore } from '../../core/services/account.store';
 import { ContactService } from '../../core/services/contact.service';
 import { ConsentSource, Contact } from '../../core/models/contact.model';
@@ -7,6 +9,7 @@ import { count } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArAvatar, ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 import { ChipTone } from '../../ui/chip';
+import { ArSendReorderLink } from '../reorder/send-reorder-link';
 
 const CONSENT_LABEL: Record<ConsentSource, string> = {
   website: 'Website form',
@@ -32,7 +35,7 @@ const CONSENT_TONE: Record<ConsentSource, ChipTone> = {
 
 @Component({
   selector: 'ar-contacts',
-  imports: [ArTopbar, ArSearchBox, ArChip, ArAvatar, ArButton, ArDialog],
+  imports: [ArTopbar, ArSearchBox, ArChip, ArAvatar, ArButton, ArDialog, ArSendReorderLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './contacts.html',
   styleUrl: './contacts.scss',
@@ -40,6 +43,13 @@ const CONSENT_TONE: Record<ConsentSource, ChipTone> = {
 export class ArContacts {
   private readonly store = inject(ContactService);
   private readonly accountStore = inject(AccountStore);
+
+  /** Spares re-order portal: send a customer their personal link from their row. */
+  protected readonly canReorder = grantedPolicy(
+    'AutoReach.ReorderPortal.SendLinks',
+    inject(PermissionService),
+  );
+  protected readonly reorderFor = signal<{ id: string; name: string } | null>(null);
 
   protected readonly segments = this.store.segments;
   protected readonly suppression = this.store.suppression;

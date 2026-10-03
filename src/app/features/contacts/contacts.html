@@ -148,6 +148,9 @@
             <th scope="col">Consent</th>
             <th scope="col">Score</th>
             <th scope="col">Last activity</th>
+            @if (canReorder) {
+              <th scope="col"><span class="sr-only">Actions</span></th>
+            }
           </tr>
         </thead>
         <tbody>
@@ -180,10 +183,26 @@
                 }
               </td>
               <td>{{ c.lastActivity }}</td>
+              @if (canReorder) {
+                <td class="row-actions">
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    icon="send"
+                    title="Send {{ c.name }} their spares re-order link"
+                    (click)="reorderFor.set({ id: c.id, name: c.name })"
+                  >
+                    Re-order link
+                  </button>
+                </td>
+              }
             </tr>
           } @empty {
             <tr>
-              <td colspan="8" class="empty">No contacts match “{{ query() }}”.</td>
+              <td [attr.colspan]="canReorder ? 9 : 8" class="empty">
+                No contacts match “{{ query() }}”.
+              </td>
             </tr>
           }
         </tbody>
@@ -195,3 +214,7 @@
     </div>
   </section>
 </div>
+
+@if (reorderFor(); as r) {
+  <ar-send-reorder-link [contactId]="r.id" [contactName]="r.name" (closed)="reorderFor.set(null)" />
+}

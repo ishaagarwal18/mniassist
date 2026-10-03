@@ -57,6 +57,19 @@ export const routes: Routes = [
     loadComponent: () => import('./features/reorder/reorder-page').then((m) => m.ArReorderPage),
   },
   {
+    // A distributor's password sign-in page for the re-order portal: number and password, or a WhatsApp code to set one.
+    path: 'reorder/:code',
+    title: 'Sign in · Re-order spares',
+    loadComponent: () =>
+      import('./features/reorder/reorder-sign-in').then((m) => m.ArReorderSignIn),
+  },
+  {
+    // A distributor's public catalogue: anyone looks up parts and sends an enquiry. No login, no app shell.
+    path: 'catalogue/:code',
+    title: 'Spares catalogue',
+    loadComponent: () => import('./features/reorder/catalogue-page').then((m) => m.ArCataloguePage),
+  },
+  {
     path: 'privacy',
     title: 'Privacy Policy · AutoReach',
     loadComponent: () => import('./features/legal/privacy-policy').then((m) => m.ArPrivacyPolicy),
@@ -185,6 +198,11 @@ export const routes: Routes = [
         path: 'stock',
         title: 'Stock · AutoReach',
         loadComponent: () => import('./features/inventory/stock').then((m) => m.ArStock),
+      },
+      {
+        path: 'purchasing',
+        title: 'Purchasing · AutoReach',
+        loadComponent: () => import('./features/inventory/purchasing').then((m) => m.ArPurchasing),
       },
       {
         path: 'reorders',

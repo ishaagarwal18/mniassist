@@ -158,6 +158,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Inventory',
       },
       {
+        label: 'Purchasing',
+        icon: 'document',
+        route: '/purchasing',
+        permission: 'AutoReach.Inventory',
+      },
+      {
         label: 'Collections',
         icon: 'billing',
         route: '/collections',

@@ -26,6 +26,8 @@ export interface PublicReorderPartDto {
   suggestedQuantity: number;
   dueInDays?: number | null;
   availability?: StockBand | null;
+  /** How many are available now, when the workspace shows exact stock; null otherwise. */
+  availableQuantity?: number | null;
 }
 
 export interface PublicReorderMachineDto {
@@ -37,9 +39,32 @@ export interface PublicReorderMachineDto {
 
 export interface PublicReorderHistoryDto {
   reference: string;
+  /** With sales, Quoted, Ordered, Closed, Waiting for approval, Not approved. */
   status: string;
   totalInPaise: number;
   sentAtUtc: string;
+  /** The colleague who sent it; null when it was this buyer. */
+  sentBy?: string | null;
+  /** Why an approver declined it. */
+  reason?: string | null;
+  /** Once dispatched: Dispatched, InTransit, OutForDelivery, Delivered or Exception, with the carrier and docket. */
+  delivery?: string | null;
+  carrier?: string | null;
+  trackingNumber?: string | null;
+  trackingUrl?: string | null;
+  expectedOn?: string | null;
+}
+
+/** A colleague's request waiting for this approver. */
+export interface PublicReorderApprovalDto {
+  id: string;
+  sentBy: string;
+  sentAtUtc: string;
+  subtotalInPaise: number;
+  poNumber?: string | null;
+  deliverySite?: string | null;
+  note?: string | null;
+  lines: { partNumber: string; description: string; quantity: number; unitPriceInPaise: number }[];
 }
 
 export interface PublicReorderPortalDto {
@@ -52,6 +77,26 @@ export interface PublicReorderPortalDto {
   orderAndPay?: boolean;
   machines: PublicReorderMachineDto[];
   recent: PublicReorderHistoryDto[];
+  /** This buyer approves the company's held requests. */
+  isApprover?: boolean;
+  /** For an approver: colleagues' requests waiting for them. */
+  pending?: PublicReorderApprovalDto[];
+  /** Payment terms in days from invoice; null when none are set. */
+  paymentTermsDays?: number | null;
+  /** Shown when the account needs a word before new orders are confirmed. */
+  accountNotice?: string | null;
+  /** The workspace lets customers sign in with a password, at this address. */
+  passwordSignIn?: boolean;
+  signInUrl?: string | null;
+  /** This buyer already has a password. */
+  hasPassword?: boolean;
+}
+
+/** Where a signed-in customer goes: their page at /r/{token}, with the session already started. */
+export interface PublicSignedInDto {
+  token: string;
+  session: string;
+  expiresAtUtc: string;
 }
 
 export interface SubmitReorderInput {
@@ -68,6 +113,8 @@ export interface PublicReorderSubmittedDto {
   unpriced: number;
   /** "Order and pay": where to pay. Null when the request went to sales for a quotation. */
   payUrl?: string | null;
+  /** The request waits for an approver at the customer's company. */
+  heldForApproval?: boolean;
   message: string;
 }
 
@@ -127,6 +174,67 @@ export class ReorderPublicService {
         method: 'POST',
         url: this.url(token, '/submit'),
         body: input,
+        headers: this.session(session),
+      },
+      { apiName: this.apiName, ...this.own },
+    );
+
+  /** A buyer on their page chooses a password for the workspace's sign-in page. */
+  setPassword = (token: string, session: string, password: string) =>
+    this.restService.request<any, void>(
+      {
+        method: 'POST',
+        url: this.url(token, '/password'),
+        body: { password },
+        headers: this.session(session),
+      },
+      { apiName: this.apiName, ...this.own },
+    );
+
+  // ---- The workspace's password sign-in page (/reorder/{code}) -----------------------------------------------------------
+
+  private signInUrl = (code: string, tail = '') => `/api/reorder/sign-in/${code}${tail}`;
+
+  openSignIn = (code: string) =>
+    this.restService.request<any, { heading?: string | null; intro?: string | null }>(
+      { method: 'GET', url: this.signInUrl(code) },
+      { apiName: this.apiName, ...this.own },
+    );
+
+  signIn = (code: string, phone: string, password: string) =>
+    this.restService.request<any, PublicSignedInDto>(
+      { method: 'POST', url: this.signInUrl(code), body: { phone, password } },
+      { apiName: this.apiName, ...this.own },
+    );
+
+  sendSignInCode = (code: string, phone: string) =>
+    this.restService.request<any, { message: string; validForMinutes: number }>(
+      { method: 'POST', url: this.signInUrl(code, '/code'), body: { phone } },
+      { apiName: this.apiName, ...this.own },
+    );
+
+  setPasswordWithCode = (code: string, phone: string, whatsAppCode: string, password: string) =>
+    this.restService.request<any, PublicSignedInDto>(
+      {
+        method: 'POST',
+        url: this.signInUrl(code, '/password'),
+        body: { phone, code: whatsAppCode, password },
+      },
+      { apiName: this.apiName, ...this.own },
+    );
+
+  decide = (
+    token: string,
+    session: string,
+    approvalId: string,
+    approve: boolean,
+    reason?: string | null,
+  ) =>
+    this.restService.request<any, { state: string; message: string }>(
+      {
+        method: 'POST',
+        url: this.url(token, `/approvals/${approvalId}`),
+        body: { approve, reason },
         headers: this.session(session),
       },
       { apiName: this.apiName, ...this.own },

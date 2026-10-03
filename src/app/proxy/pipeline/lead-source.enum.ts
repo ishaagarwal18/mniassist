@@ -12,6 +12,8 @@ export enum LeadSource {
   Renewal = 8,
   Spares = 9,
   OemNetwork = 10,
+  ReorderPortal = 11,
+  PublicCatalogue = 12,
 }
 
 export const leadSourceOptions = mapEnumToOptions(LeadSource);

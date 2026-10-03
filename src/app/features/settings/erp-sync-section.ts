@@ -165,6 +165,17 @@ const SEED: ErpSyncConnectionStatusDto[] = [
               />
               Invoices and outstanding — read back for customers already in {{ kindLabel(c.kind) }}
             </label>
+            <label class="erp__check">
+              <input
+                id="erp-stock"
+                type="checkbox"
+                [checked]="f.stock"
+                (change)="patch({ stock: $any($event.target).checked })"
+              />
+              Stock on hand — read back so the re-order portal shows availability, when stock is
+              kept in {{ kindLabel(c.kind) }} (Stock → Settings). Items match catalogue parts by
+              part number.
+            </label>
 
             @if (c.kind === 1) {
               <label class="ar-field" for="erp-company">
@@ -377,7 +388,7 @@ export class ArErpSyncSection {
   }
 
   protected anyOn(c: ErpSyncConnectionStatusDto): boolean {
-    return c.customersEnabled || c.salesOrdersEnabled || c.invoicesEnabled;
+    return c.customersEnabled || c.salesOrdersEnabled || c.invoicesEnabled || !!c.stockEnabled;
   }
 
   protected when(iso?: string | null): string {

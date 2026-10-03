@@ -7,6 +7,7 @@ describe('erp sync form', () => {
       customers: false,
       salesOrders: false,
       invoices: false,
+      stock: false,
       company: '',
       salesLedger: '',
       debtorsGroup: '',
@@ -33,7 +34,7 @@ describe('erp sync form', () => {
     );
     expect(next).toEqual({
       url: 'http://tally:9000',
-      erp: { customers: true, salesOrders: false, invoices: false },
+      erp: { customers: true, salesOrders: false, invoices: false, stock: false },
       company: 'Sun Energy',
     });
     expect(config.salesLedger).toBe('Old'); // the original is not mutated
@@ -68,5 +69,16 @@ describe('erp sync form', () => {
     ).toBe(
       '1 of 2 retried records went through; invoices could not be read: Tally is not running.',
     );
+    expect(
+      describeRun({ retried: 0, recovered: 0, stillFailing: 0, invoices: 0, stockItems: 412 }),
+    ).toBe('Nothing was waiting to retry; 0 invoices read; stock read for 412 items.');
+  });
+
+  it('keeps stock reading on its own', () => {
+    const next = applyErpForm({}, { ...readErpForm({}), stock: true }, IntegrationKind.Tally);
+    expect(next).toEqual({
+      erp: { customers: false, salesOrders: false, invoices: false, stock: true },
+    });
+    expect(readErpForm(next).stock).toBe(true);
   });
 });

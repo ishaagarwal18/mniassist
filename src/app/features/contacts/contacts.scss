@@ -109,6 +109,10 @@
   font: 500 12.5px var(--ar-font-sans);
   color: var(--ar-ink-900);
 }
+.row-actions {
+  text-align: right;
+  white-space: nowrap;
+}
 .empty {
   text-align: center;
   color: var(--ar-ink-400);

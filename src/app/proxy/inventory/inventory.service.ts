@@ -39,7 +39,58 @@ export interface StockItemDto {
   reserved: number;
   available: number;
   isLow: boolean;
+  /** None, Batch or Serial. */
+  tracking?: StockTracking;
+  /** Still to arrive on sent purchase orders. */
+  onOrder?: number;
+  /** Moving average cost per unit, in paise. */
+  averageCostInPaise?: number | null;
+  /** On hand at the average cost. */
+  valueInPaise?: number | null;
   locations: StockLevelDto[];
+}
+
+export type StockTracking = 'None' | 'Batch' | 'Serial';
+
+export interface StockLotDto {
+  id: string;
+  productId: string;
+  partNumber: string;
+  locationId: string;
+  locationName: string;
+  kind: 'Batch' | 'Serial';
+  number: string;
+  expiresOn?: string | null;
+  expired: boolean;
+  onHand: number;
+  receivedAtUtc: string;
+}
+
+export interface ErpStockDto {
+  itemCode: string;
+  itemName?: string | null;
+  warehouse?: string | null;
+  onHand: number;
+  committed: number;
+  available: number;
+  /** The catalogue part with this part number; null when the item isn't in the catalogue. */
+  productId?: string | null;
+  productName?: string | null;
+  syncedAtUtc: string;
+}
+
+export interface ErpStockReadDto {
+  rows: number;
+  matched: number;
+  error?: string | null;
+  anyConnection: boolean;
+}
+
+export interface StockLotLine {
+  number: string;
+  /** For a batch; a serial is always 1. */
+  quantity: number;
+  expiresOn?: string | null;
 }
 
 export interface StockMovementDto {
@@ -55,6 +106,11 @@ export interface StockMovementDto {
   quotationId?: string | null;
   occurredAtUtc: string;
   creatorId?: string | null;
+  /** The batch or serial number moved, for a tracked part. */
+  lotNumber?: string | null;
+  /** What each unit was worth when it moved, in paise. */
+  unitCostInPaise?: number | null;
+  purchaseOrderId?: string | null;
 }
 
 export interface StockQuantityInput {
@@ -63,6 +119,10 @@ export interface StockQuantityInput {
   /** Signed for an adjustment; the counted figure for a count. */
   quantity: number;
   reason?: string | null;
+  /** For a part tracked by batch or serial. */
+  lots?: StockLotLine[] | null;
+  /** Receiving: each unit's cost in paise before GST; moves the average cost. */
+  unitCostInPaise?: number | null;
 }
 
 export interface StockImportLineDto {
@@ -74,6 +134,8 @@ export interface StockImportLineDto {
   productName?: string | null;
   onHandNow?: number | null;
   error?: string | null;
+  lot?: string | null;
+  expiresOn?: string | null;
 }
 
 export interface StockImportCheckDto {
@@ -245,6 +307,62 @@ export class InventoryService {
         headers: { Accept: 'application/json' },
         url: `${this.base}/apply-import`,
         body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  setTracking = (
+    input: { productId: string; tracking: StockTracking },
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, StockItemDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `${this.base}/set-tracking`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getLots = (
+    productId?: string | null,
+    locationId?: string | null,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, StockLotDto[]>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `${this.base}/lots`,
+        params: { productId: productId || undefined, locationId: locationId || undefined },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getErpStock = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ErpStockDto[]>(
+      { method: 'GET', headers: { Accept: 'application/json' }, url: `${this.base}/erp-stock` },
+      { apiName: this.apiName, ...config },
+    );
+
+  readErpStock = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ErpStockReadDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `${this.base}/read-erp-stock`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getTrace = (number: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, StockMovementDto[]>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `${this.base}/trace`,
+        params: { number },
       },
       { apiName: this.apiName, ...config },
     );

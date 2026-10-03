@@ -6,6 +6,8 @@ export interface ErpForm {
   customers: boolean;
   salesOrders: boolean;
   invoices: boolean;
+  /** Stock on hand read back, for workspaces that keep stock in the ERP. */
+  stock: boolean;
   /** Tally: the company to post into when more than one is open. */
   company: string;
   /** Tally: the ledger sales orders credit. */
@@ -26,6 +28,7 @@ export function readErpForm(config: Record<string, unknown>): ErpForm {
     customers: erp['customers'] === true,
     salesOrders: erp['salesOrders'] === true,
     invoices: erp['invoices'] === true,
+    stock: erp['stock'] === true,
     company: text('company'),
     salesLedger: text('salesLedger'),
     debtorsGroup: text('debtorsGroup'),
@@ -43,11 +46,12 @@ export function applyErpForm(
   kind: IntegrationKind,
 ): Record<string, unknown> {
   const next: Record<string, unknown> = { ...config };
-  if (form.customers || form.salesOrders || form.invoices) {
+  if (form.customers || form.salesOrders || form.invoices || form.stock) {
     next['erp'] = {
       customers: form.customers,
       salesOrders: form.salesOrders,
       invoices: form.invoices,
+      stock: form.stock,
     };
   } else {
     delete next['erp'];
@@ -82,5 +86,8 @@ export function describeRun(r: ErpSyncRunResultDto): string {
     );
   if (r.invoiceError) parts.push(`invoices could not be read: ${r.invoiceError}`);
   else parts.push(`${r.invoices} invoice${r.invoices === 1 ? '' : 's'} read`);
+  if (r.stockError) parts.push(`stock could not be read: ${r.stockError}`);
+  else if (r.stockItems)
+    parts.push(`stock read for ${r.stockItems} item${r.stockItems === 1 ? '' : 's'}`);
   return parts.join('; ') + '.';
 }

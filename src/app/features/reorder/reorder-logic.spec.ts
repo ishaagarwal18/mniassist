@@ -1,5 +1,13 @@
 import type { PublicReorderPartDto } from '../../proxy/reorder/reorder-public.service';
-import { dueLabel, parseQuantity, rupees, totals } from './reorder-logic';
+import {
+  dueLabel,
+  parseDays,
+  parseQuantity,
+  parseRupees,
+  rupees,
+  stockText,
+  totals,
+} from './reorder-logic';
 
 const part = (price: number, gst = 1800): PublicReorderPartDto => ({
   partNumber: 'P' + price,
@@ -46,5 +54,35 @@ describe('re-order logic', () => {
   it('shows rupees the Indian way', () => {
     expect(rupees(1_85_000_00)).toBe('₹1,85,000');
     expect(rupees(1_850_50)).toBe('₹1,850.50');
+  });
+
+  it('shows the exact quantity when the workspace chooses it, and the band otherwise', () => {
+    expect(stockText({ availability: 'InStock', availableQuantity: 12, unit: 'no' })).toBe(
+      '12 in stock',
+    );
+    expect(stockText({ availability: 'Limited', availableQuantity: 2.5, unit: 'L' })).toBe(
+      '2.5 L in stock',
+    );
+    expect(stockText({ availability: 'OnOrder', availableQuantity: 0, unit: 'no' })).toBe(
+      'On order',
+    );
+    expect(stockText({ availability: 'Limited', availableQuantity: null, unit: 'no' })).toBe(
+      'Limited stock',
+    );
+    expect(stockText({ availability: null, availableQuantity: null, unit: 'no' })).toBe('');
+  });
+
+  it('reads rupees as staff type them', () => {
+    expect(parseRupees('25000')).toBe(25_000_00);
+    expect(parseRupees('₹ 25,000.50')).toBe(25_000_50);
+    expect(parseRupees('')).toBeNull();
+    expect(parseRupees('25k')).toBeUndefined();
+  });
+
+  it('reads whole days up to a year', () => {
+    expect(parseDays('30')).toBe(30);
+    expect(parseDays(' ')).toBeNull();
+    expect(parseDays('400')).toBeUndefined();
+    expect(parseDays('2.5')).toBeUndefined();
   });
 });
