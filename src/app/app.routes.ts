@@ -6,6 +6,14 @@ import { appAuthGuard } from './core/auth/auth.guard';
  *  only things in the initial bundle. */
 export const routes: Routes = [
   {
+    // The public front page: what AutoReach is and what it costs. No login, no app shell.
+    // Must stay ahead of the shell below, whose empty path would otherwise claim `/`.
+    path: '',
+    pathMatch: 'full',
+    title: 'AutoReach · WhatsApp marketing for industrial automation',
+    loadComponent: () => import('./features/landing/landing').then((m) => m.ArLanding),
+  },
+  {
     path: 'login',
     title: 'Sign in · AutoReach',
     loadComponent: () => import('./features/account/login').then((m) => m.ArLogin),
@@ -87,7 +95,6 @@ export const routes: Routes = [
     canActivate: [appAuthGuard],
     canActivateChild: [appAuthGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'home' },
       {
         path: 'home',
         title: 'Home · AutoReach',

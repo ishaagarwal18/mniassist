@@ -198,6 +198,9 @@ export class CurrentUserService {
         } catch {
           /* ignore */
         }
+        // ABP's password flow ends sign-out on `/`, which is now the public front
+        // page. Finish on the sign-in screen instead, the same as mock mode.
+        void this.router.navigateByUrl('/login');
       },
     });
   }
