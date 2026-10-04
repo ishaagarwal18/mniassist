@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { FlowFieldType, FlowService } from '../../proxy/flows';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton } from '../../ui';
+import { ArSelect } from '../../ui/select';
 
 interface FieldRow {
   name: string;
@@ -36,7 +37,7 @@ const FIELD_TYPES = [
  */
 @Component({
   selector: 'ar-flow-designer',
-  imports: [RouterLink, ArTopbar, ArButton],
+  imports: [RouterLink, ArTopbar, ArButton, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './flow-designer.html',
   styleUrl: './flow-designer.scss',

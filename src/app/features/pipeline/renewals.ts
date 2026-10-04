@@ -15,6 +15,7 @@ import {
 } from '../../proxy/pipeline/amc-renewal.service';
 import { SalesPipelineDto, SalesPipelineService } from '../../proxy/pipeline';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import {
   RENEWAL_STATUS_LABEL,
   daysLeft,
@@ -109,7 +110,7 @@ const SEED_SUMMARY: RenewalSummaryDto = {
  */
 @Component({
   selector: 'ar-renewals',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, RouterLink, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

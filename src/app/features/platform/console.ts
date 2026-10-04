@@ -12,6 +12,8 @@ import { QualityRating } from '../../proxy/channels/quality-rating.enum';
 import { PricingCategory } from '../../proxy/messaging/pricing-category.enum';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArStatTile } from '../../ui';
+import { ArDateInput } from '../../ui/date-input';
+import { ArSelect } from '../../ui/select';
 
 type Quality = 'green' | 'yellow' | 'red' | 'unknown';
 
@@ -261,7 +263,7 @@ function toRateHistory(cards: RateCardDto[]): RateHistory[] {
  */
 @Component({
   selector: 'ar-platform-console',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArStatTile],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArStatTile, ArSelect, ArDateInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './console.html',
   styleUrl: './console.scss',

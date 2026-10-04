@@ -205,7 +205,7 @@
   width: 18px;
   height: 18px;
   flex: none;
-  accent-color: var(--sg-accent, var(--ar-blue-600));
+  --ar-check-fill: var(--sg-accent, var(--ar-blue-600));
 }
 
 .sg__err {

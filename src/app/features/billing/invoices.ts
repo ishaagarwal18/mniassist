@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -16,6 +17,9 @@ import { Invoice, InvoiceState, ReconciliationRun } from '../../core/models/ops.
 import { count, inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArDateInput } from '../../ui/date-input';
+import { ArGrid } from '../../ui/grid';
+import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 
 /** The first day of last month → the last day of last month, as yyyy-mm-dd. */
@@ -45,7 +49,7 @@ const STATE_TONE: Record<InvoiceState, ChipTone> = {
  */
 @Component({
   selector: 'ar-invoices',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ArDateInput, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './invoices.html',
   styleUrl: './invoices.scss',

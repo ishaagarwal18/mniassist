@@ -12,6 +12,7 @@ import {
 } from '../../proxy/analytics';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 
 interface WidgetRow {
   metricKey: string;
@@ -26,7 +27,7 @@ interface WidgetRow {
  */
 @Component({
   selector: 'ar-custom-dashboards',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboards.html',
   styleUrl: './dashboards.scss',

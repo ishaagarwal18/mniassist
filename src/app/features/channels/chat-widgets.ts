@@ -11,6 +11,7 @@ import {
 import { LeadSource } from '../../proxy/pipeline/lead-source.enum';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 
 interface Draft {
   channelId: string;
@@ -27,7 +28,7 @@ interface Draft {
  */
 @Component({
   selector: 'ar-chat-widgets',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './chat-widgets.html',
   styleUrl: './chat-widgets.scss',

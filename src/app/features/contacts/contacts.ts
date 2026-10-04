@@ -1,5 +1,6 @@
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { grantedPolicy } from '../../core/auth/permission';
 import { AccountStore } from '../../core/services/account.store';
 import { ContactService } from '../../core/services/contact.service';
@@ -8,6 +9,8 @@ import { DecisionRole } from '../../proxy/contacts';
 import { count } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArAvatar, ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
+import { ArGrid } from '../../ui/grid';
+import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 import { ArSendReorderLink } from '../reorder/send-reorder-link';
 
@@ -35,7 +38,18 @@ const CONSENT_TONE: Record<ConsentSource, ChipTone> = {
 
 @Component({
   selector: 'ar-contacts',
-  imports: [ArTopbar, ArSearchBox, ArChip, ArAvatar, ArButton, ArDialog, ArSendReorderLink],
+  imports: [
+    ArTopbar,
+    ArSearchBox,
+    ArChip,
+    ArAvatar,
+    ArButton,
+    ArDialog,
+    ArSendReorderLink,
+    ArSelect,
+    ArGrid,
+    GridModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './contacts.html',
   styleUrl: './contacts.scss',
@@ -95,6 +109,22 @@ export class ArContacts {
         c.phoneE164.includes(q),
     );
   });
+
+  /** Grid rows: every column a plain value, so sorting, filtering and export see what is shown. */
+  protected readonly rows = computed(() =>
+    this.visible().map((c) => ({
+      id: c.id,
+      name: c.name,
+      company: c.company,
+      role: c.attributes.decisionRole ?? '—',
+      systems: this.systems(c),
+      amcExpiry: c.amcExpiry ?? '—',
+      consent: this.consentLabel(c),
+      consentTone: this.consentTone(c),
+      score: c.score,
+      lastActivity: c.lastActivity,
+    })),
+  );
 
   protected consentLabel(c: Contact): string {
     return CONSENT_LABEL[c.consent.source];

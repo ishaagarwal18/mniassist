@@ -20,14 +20,6 @@
   align-items: center;
   gap: 12px;
 }
-.wk__nav {
-  display: inline-flex;
-  gap: 4px;
-}
-.wk__range {
-  font: 600 14px var(--ar-font-sans);
-  color: var(--ar-ink-900);
-}
 .wk__chk {
   margin-left: auto;
   display: flex;
@@ -63,110 +55,73 @@
   font: 500 12px var(--ar-font-sans);
 }
 
-.wk__grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(148px, 1fr));
-  gap: 8px;
-  align-items: start;
-  min-width: 0;
-}
-.wk__grid--loading {
-  opacity: 0.6;
-}
-.wk__day {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-  padding: 8px;
-  background: var(--ar-white);
+/* The calendar: a Syncfusion Scheduler filling the rest of the page. */
+.wk__cal {
+  flex: 1;
+  min-height: 520px;
   border: 1px solid var(--ar-line-200);
   border-radius: var(--ar-radius-card);
+  overflow: hidden;
+  background: var(--ar-white);
+  transition: opacity var(--ar-ease);
 }
-.wk__day--today {
-  border-color: var(--ar-teal-600);
-  box-shadow: 0 0 0 1px var(--ar-teal-600);
-}
-.wk__dh {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-.wk__dn {
-  font: 600 12px var(--ar-font-sans);
-  color: var(--ar-ink-900);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-.wk__dd {
-  font: 400 12px var(--ar-font-sans);
-  color: var(--ar-ink-400);
-}
-.wk__add {
-  margin-left: auto;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  background: none;
-  border: 1px solid var(--ar-line-200);
-  border-radius: 50%;
-  cursor: pointer;
-  color: var(--ar-ink-600);
-  line-height: 1;
-}
-.wk__add:hover,
-.wk__add:focus-visible {
-  border-color: var(--ar-teal-600);
-  color: var(--ar-teal-600);
-  outline: none;
-}
-.wk__none {
-  margin: 0;
-  font: 400 12px var(--ar-font-sans);
-  color: var(--ar-ink-300, var(--ar-ink-400));
+.wk__cal--loading {
+  opacity: 0.6;
 }
 
+/* Inside an appointment (the event template). Syncfusion draws the box; these
+   lay out what is in it. */
 .mc {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 7px 9px;
-  text-align: left;
-  cursor: pointer;
-  background: var(--ar-bg-100);
-  border: 1px solid var(--ar-line-200);
-  border-left: 3px solid var(--ar-teal-600);
-  border-radius: var(--ar-radius-control);
+  gap: 1px;
+  padding: 3px 6px;
   font-family: var(--ar-font-sans);
-}
-.mc:hover,
-.mc:focus-visible {
-  border-color: var(--ar-teal-600);
-  outline: none;
-}
-.mc--off {
-  opacity: 0.55;
-  border-left-color: var(--ar-ink-400);
-}
-.mc--off .mc__title {
-  text-decoration: line-through;
-}
-.mc--ask {
-  border-left-color: var(--ar-amber-500);
+  overflow: hidden;
 }
 .mc__time {
-  font: 500 11.5px var(--ar-font-sans);
-  color: var(--ar-ink-600);
+  font: 500 11px var(--ar-font-sans);
   font-variant-numeric: tabular-nums;
+  opacity: 0.85;
 }
 .mc__title {
-  font: 600 12.5px var(--ar-font-sans);
-  color: var(--ar-ink-900);
+  font: 600 12px var(--ar-font-sans);
   overflow-wrap: anywhere;
 }
 .mc__meta {
   font: 400 11px var(--ar-font-sans);
-  color: var(--ar-ink-400);
+  opacity: 0.8;
+}
+
+/* The Scheduler's own DOM carries no component scope, hence ::ng-deep. */
+:host ::ng-deep .e-schedule {
+  font-family: var(--ar-font-sans);
+  border: 0;
+
+  .e-appointment {
+    background: var(--ar-teal-600);
+    border: 0;
+    border-left: 3px solid var(--ar-teal-700, var(--ar-teal-600));
+    border-radius: var(--ar-radius-control);
+    color: #fff;
+  }
+  .e-appointment.mc-ask {
+    background: var(--ar-amber-500);
+    border-left-color: var(--ar-amber-600, var(--ar-amber-500));
+    color: var(--ar-on-attention, #1d1d1d);
+  }
+  .e-appointment.mc-off {
+    opacity: 0.55;
+    background: var(--ar-ink-400);
+    border-left-color: var(--ar-ink-400);
+  }
+  .e-appointment.mc-off .mc__title {
+    text-decoration: line-through;
+  }
+  .e-agenda-view .e-appointment,
+  .e-month-view .e-appointment {
+    color: #fff;
+  }
 }
 
 /* The detail panel */

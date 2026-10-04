@@ -17,6 +17,7 @@ import {
   ReorderRequestDto,
 } from '../../proxy/reorder/reorder-portal.service';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import type { ChipTone } from '../../ui/chip';
 import { ArContactPicker } from '../pipeline/contact-picker';
 import { rupees } from './reorder-logic';
@@ -87,6 +88,7 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
     ArReorderDispatch,
     ArReorderShippingSettings,
     RouterLink,
+    ArSelect,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

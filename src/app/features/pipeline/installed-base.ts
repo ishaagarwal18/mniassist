@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Asset, PickerOption, PipelineStore } from '../../core/services/pipeline.service';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArDateInput } from '../../ui/date-input';
 import { ChipTone } from '../../ui/chip';
 import { ArContactPicker } from './contact-picker';
 import { RouterLink } from '@angular/router';
@@ -17,7 +18,7 @@ import type { AmcImportResultDto } from '../../proxy/pipeline/models';
  */
 @Component({
   selector: 'ar-installed-base',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArContactPicker, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArContactPicker, RouterLink, ArDateInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './installed-base.html',
   styleUrl: './installed-base.scss',

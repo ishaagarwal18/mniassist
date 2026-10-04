@@ -10,6 +10,7 @@ import {
 } from '../../core/models/segment.model';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip } from '../../ui';
+import { ArSelect } from '../../ui/select';
 
 /**
  * The audience builder.
@@ -27,7 +28,7 @@ import { ArBanner, ArButton, ArChip } from '../../ui';
  */
 @Component({
   selector: 'ar-segments',
-  imports: [NgTemplateOutlet, ArTopbar, ArBanner, ArButton, ArChip],
+  imports: [NgTemplateOutlet, ArTopbar, ArBanner, ArButton, ArChip, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './segments.html',
   styleUrl: './segments.scss',

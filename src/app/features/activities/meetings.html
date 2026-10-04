@@ -205,22 +205,6 @@
 
 <div class="wk ar-scroll">
   <div class="wk__bar">
-    <div class="wk__nav" role="group" aria-label="Week">
-      <button
-        ar-button
-        type="button"
-        variant="ghost"
-        (click)="shift(-1)"
-        aria-label="Previous week"
-      >
-        ‹
-      </button>
-      <button ar-button type="button" variant="ghost" (click)="today()">Today</button>
-      <button ar-button type="button" variant="ghost" (click)="shift(1)" aria-label="Next week">
-        ›
-      </button>
-    </div>
-    <span class="wk__range">{{ heading() }}</span>
     @if (directory.canSeeAll) {
       <div class="wk__seg" role="group" aria-label="Whose meetings">
         <button type="button" [class.on]="scope() === 'mine'" (click)="scope.set('mine')">
@@ -246,53 +230,52 @@
     <p class="wk__err" role="alert">{{ error() }}</p>
   }
 
-  <div class="wk__grid" [class.wk__grid--loading]="loading()">
-    @for (d of days(); track d.day.getTime()) {
-      <section
-        class="wk__day"
-        [class.wk__day--today]="isToday(d.day)"
-        [attr.aria-label]="dayName(d.day) + ' ' + dayNumber(d.day)"
-      >
-        <header class="wk__dh">
-          <span class="wk__dn">{{ dayName(d.day) }}</span>
-          <span class="wk__dd">{{ dayNumber(d.day) }}</span>
-          <button
-            type="button"
-            class="wk__add"
-            [attr.aria-label]="'Schedule on ' + dayName(d.day) + ' ' + dayNumber(d.day)"
-            (click)="addOn(d.day)"
-          >
-            +
-          </button>
-        </header>
-
-        @for (m of d.items; track m.id) {
-          <button
-            type="button"
-            class="mc"
-            [class.mc--off]="m.status === Status.Cancelled"
-            [class.mc--ask]="needsMyAnswer(m)"
-            (click)="open(m)"
-          >
-            <span class="mc__time">{{ range(m) }}</span>
-            <span class="mc__title">{{ m.title }}</span>
-            <span class="mc__meta">
-              {{ kindLabel[m.kind!] }}
-              @if (m.attendees && m.attendees.length > 1) {
-                · {{ m.attendees.length }} people
-              }
-              @if (m.status !== Status.Scheduled) {
-                · {{ statusLabel[m.status!] }}
-              }
-              @if (needsMyAnswer(m)) {
-                · <strong>Reply</strong>
-              }
-            </span>
-          </button>
-        } @empty {
-          <p class="wk__none">Nothing</p>
-        }
-      </section>
-    }
+  <div class="wk__cal" [class.wk__cal--loading]="loading()">
+    <ejs-schedule
+      id="meetings-schedule"
+      height="100%"
+      currentView="Week"
+      startHour="07:00"
+      endHour="21:00"
+      [selectedDate]="today"
+      [firstDayOfWeek]="1"
+      [workHours]="{ highlight: true, start: '09:00', end: '18:00' }"
+      [timeScale]="{ enable: true, interval: 60, slotCount: 2 }"
+      [eventSettings]="eventSettings()"
+      [showQuickInfo]="false"
+      [allowDragAndDrop]="false"
+      [allowResizing]="false"
+      [allowKeyboardInteraction]="true"
+      (actionComplete)="onAction($event)"
+      (popupOpen)="$event.cancel = true"
+      (eventClick)="onEventClick($event)"
+      (cellClick)="onCellClick($event)"
+      (eventRendered)="onEventRendered($event)"
+    >
+      <e-views>
+        <e-view option="Day" />
+        <e-view option="Week" />
+        <e-view option="Month" />
+        <e-view option="Agenda" />
+      </e-views>
+      <ng-template #eventSettingsTemplate let-e>
+        <span class="mc">
+          <span class="mc__time">{{ range(e.meeting) }}</span>
+          <span class="mc__title">{{ e.Subject }}</span>
+          <span class="mc__meta">
+            {{ kindOf(e.meeting) }}
+            @if (e.meeting.attendees && e.meeting.attendees.length > 1) {
+              · {{ e.meeting.attendees.length }} people
+            }
+            @if (e.meeting.status !== Status.Scheduled) {
+              · {{ statusOf(e.meeting) }}
+            }
+            @if (needsMyAnswer(e.meeting)) {
+              · <strong>Reply</strong>
+            }
+          </span>
+        </span>
+      </ng-template>
+    </ejs-schedule>
   </div>
 </div>

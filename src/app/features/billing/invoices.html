@@ -269,31 +269,55 @@
         </dl>
 
         @if (v.lines.length) {
-          <table class="ar-table lines">
-            <caption class="sr-only">
-              Invoice lines
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Description</th>
-                <th scope="col">SAC</th>
-                <th scope="col" class="num">Qty</th>
-                <th scope="col" class="num">Rate</th>
-                <th scope="col" class="num">Taxable</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (l of v.lines; track l.description) {
-                <tr>
-                  <td>{{ l.description }}</td>
-                  <td class="ar-mono">{{ l.sac }}</td>
-                  <td class="num ar-mono">{{ count(l.quantity) }}</td>
-                  <td class="num ar-mono">{{ ratePercent(l.gstRateBasisPoints) }}</td>
-                  <td class="num ar-mono">{{ inr(l.taxableValueInPaise) }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <ejs-grid
+            class="lines"
+            arGrid="invoice-lines"
+            [arGridTools]="false"
+            [dataSource]="v.lines"
+            aria-label="Invoice lines"
+          >
+            <e-columns>
+              <e-column field="description" headerText="Description" />
+              <e-column field="sac" headerText="SAC" width="110">
+                <ng-template #template let-l
+                  ><span class="ar-mono">{{ l.sac }}</span></ng-template
+                >
+              </e-column>
+              <e-column
+                field="quantity"
+                headerText="Qty"
+                type="number"
+                textAlign="Right"
+                width="100"
+              >
+                <ng-template #template let-l>
+                  <span class="ar-mono">{{ count(l.quantity) }}</span>
+                </ng-template>
+              </e-column>
+              <e-column
+                field="gstRateBasisPoints"
+                headerText="Rate"
+                type="number"
+                textAlign="Right"
+                width="90"
+              >
+                <ng-template #template let-l>
+                  <span class="ar-mono">{{ ratePercent(l.gstRateBasisPoints) }}</span>
+                </ng-template>
+              </e-column>
+              <e-column
+                field="taxableValueInPaise"
+                headerText="Taxable"
+                type="number"
+                textAlign="Right"
+                width="130"
+              >
+                <ng-template #template let-l>
+                  <span class="ar-mono">{{ inr(l.taxableValueInPaise) }}</span>
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
         }
 
         <dl class="totals">
@@ -355,41 +379,71 @@
           }
         </p>
 
-        <table class="ar-table rec__table">
-          <caption class="sr-only">
-            Variance by pricing category
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Category</th>
-              <th scope="col" class="num">Messages (ours / Meta)</th>
-              <th scope="col" class="num">Ours</th>
-              <th scope="col" class="num">Meta</th>
-              <th scope="col" class="num">Difference</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (v of r.variances; track v.category) {
-              <tr>
-                <td>
-                  {{ v.category }}
-                  @if (v.likelyCause) {
-                    <p class="rec__cause">{{ v.likelyCause }}</p>
-                  }
-                </td>
-                <td class="num ar-mono">{{ count(v.ourCount) }} / {{ count(v.metaCount) }}</td>
-                <td class="num ar-mono">{{ inr(v.ourCostInPaise) }}</td>
-                <td class="num ar-mono">{{ inr(v.metaCostInPaise) }}</td>
-                <td
-                  class="num ar-mono"
+        <ejs-grid
+          class="rec__table"
+          arGrid="invoice-variance"
+          [arGridTools]="false"
+          [dataSource]="r.variances"
+          aria-label="Variance by pricing category"
+        >
+          <e-columns>
+            <e-column field="category" headerText="Category">
+              <ng-template #template let-v>
+                {{ v.category }}
+                @if (v.likelyCause) {
+                  <p class="rec__cause">{{ v.likelyCause }}</p>
+                }
+              </ng-template>
+            </e-column>
+            <e-column
+              field="ourCount"
+              headerText="Messages (ours / Meta)"
+              type="number"
+              textAlign="Right"
+            >
+              <ng-template #template let-v>
+                <span class="ar-mono">{{ count(v.ourCount) }} / {{ count(v.metaCount) }}</span>
+              </ng-template>
+            </e-column>
+            <e-column
+              field="ourCostInPaise"
+              headerText="Ours"
+              type="number"
+              textAlign="Right"
+              width="120"
+            >
+              <ng-template #template let-v>
+                <span class="ar-mono">{{ inr(v.ourCostInPaise) }}</span>
+              </ng-template>
+            </e-column>
+            <e-column
+              field="metaCostInPaise"
+              headerText="Meta"
+              type="number"
+              textAlign="Right"
+              width="120"
+            >
+              <ng-template #template let-v>
+                <span class="ar-mono">{{ inr(v.metaCostInPaise) }}</span>
+              </ng-template>
+            </e-column>
+            <e-column
+              headerText="Difference"
+              textAlign="Right"
+              width="130"
+              [allowFiltering]="false"
+            >
+              <ng-template #template let-v>
+                <span
+                  class="ar-mono"
                   [class.rec__delta--over]="v.ourCostInPaise > v.metaCostInPaise"
                 >
                   {{ inr(v.ourCostInPaise - v.metaCostInPaise) }}
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+                </span>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </section>
     }
   </section>

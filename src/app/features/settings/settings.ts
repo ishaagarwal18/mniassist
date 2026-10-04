@@ -5,7 +5,8 @@ import { RouterLink } from '@angular/router';
 import { SettingsStore } from '../../core/services/settings.service';
 import { SessionStore } from '../../core/services/session.store';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArBanner, ArCard, ArChip } from '../../ui';
+import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
+import { ArSelect } from '../../ui/select';
 
 /**
  * The workspace's general settings. Today this is the single-sign-on panel — the one
@@ -14,7 +15,7 @@ import { ArButton, ArBanner, ArCard, ArChip } from '../../ui';
  */
 @Component({
   selector: 'ar-settings',
-  imports: [FormsModule, RouterLink, ArTopbar, ArButton, ArBanner, ArCard, ArChip],
+  imports: [FormsModule, RouterLink, ArTopbar, ArButton, ArBanner, ArCard, ArChip, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './settings.html',
   styleUrl: './settings.scss',

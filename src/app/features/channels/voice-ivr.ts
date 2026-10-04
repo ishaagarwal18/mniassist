@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 
 import { VoiceService } from '../../core/services/voice.service';
 import { ChannelState } from '../../proxy/channels/channel-state.enum';
@@ -10,6 +11,8 @@ import {
 } from '../../proxy/voice';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArGrid } from '../../ui/grid';
+import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 
 interface PromptDraft {
@@ -59,7 +62,7 @@ const STATE_TONE: Record<ChannelState, ChipTone> = {
  */
 @Component({
   selector: 'ar-voice-ivr',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './voice-ivr.html',
   styleUrl: './voice-ivr.scss',

@@ -11,6 +11,8 @@ import {
   ShippingSettingsDto,
 } from '../../proxy/shipping/shipping.service';
 import { ArButton, ArDialog } from '../../ui';
+import { ArDateInput } from '../../ui/date-input';
+import { ArSelect } from '../../ui/select';
 import { parseRupees, rupees } from './reorder-logic';
 import { isPincode, isTrackingUrl, parseKg } from './shipping-logic';
 
@@ -24,7 +26,7 @@ function problem(e: unknown, fallback: string): string {
  */
 @Component({
   selector: 'ar-reorder-dispatch',
-  imports: [ArDialog, ArButton],
+  imports: [ArDialog, ArButton, ArDateInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog [title]="'Dispatch ' + reference()" (dismiss)="closed.emit(null)">
@@ -325,7 +327,7 @@ export class ArReorderDispatch {
 /** Shipping settings: Shiprocket's API user (optional), the pickup PIN code, and how customers are told. */
 @Component({
   selector: 'ar-reorder-shipping-settings',
-  imports: [ArDialog, ArButton],
+  imports: [ArDialog, ArButton, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog title="Shipping" (dismiss)="closed.emit()">

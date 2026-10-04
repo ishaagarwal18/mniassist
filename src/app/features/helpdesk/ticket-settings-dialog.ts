@@ -7,6 +7,7 @@ import { TemplateCategory } from '../../proxy/messaging/template-category.enum';
 import { TemplateStatus } from '../../proxy/messaging/template-status.enum';
 import { ServiceTicketSettingsDto, TicketPriority } from '../../proxy/support';
 import { ArButton, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { errorMessage } from '../activities/activity-logic';
 import { PRIORITY_SLA_HOURS } from './ticket-logic';
 import { ServiceTicketGateway } from './ticket-mock';
@@ -17,7 +18,7 @@ import { ServiceTicketGateway } from './ticket-mock';
  */
 @Component({
   selector: 'ar-ticket-settings-dialog',
-  imports: [ArDialog, ArButton],
+  imports: [ArDialog, ArButton, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog title="Helpdesk settings" (dismiss)="closed.emit(changed())">

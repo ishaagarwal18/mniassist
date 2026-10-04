@@ -8,6 +8,7 @@ import { FlowFunnelDto, FlowService } from '../../proxy/flows';
 import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 
 const SEED_FUNNEL: FlowFunnelDto = {
@@ -57,7 +58,7 @@ const STATE_TONE: Record<FState, ChipTone> = {
  */
 @Component({
   selector: 'ar-flows',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './flows.html',
   styleUrl: './flows.scss',

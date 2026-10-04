@@ -10,6 +10,7 @@ import {
   ReorderPortalService,
 } from '../../proxy/reorder/reorder-portal.service';
 import { ArButton, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { parseDays, parseRupees, rupees } from './reorder-logic';
 
 /** The credit form as typed: rupees and days stay text until saved. */
@@ -39,7 +40,7 @@ const MOCK_BUYERS: ReorderBuyerDto[] = [
  */
 @Component({
   selector: 'ar-reorder-buyers',
-  imports: [ArDialog, ArButton],
+  imports: [ArDialog, ArButton, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog title="Customer company: buyers and credit" (dismiss)="closed.emit()">

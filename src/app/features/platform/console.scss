@@ -53,7 +53,7 @@
   cursor: pointer;
 }
 .toggle input {
-  accent-color: var(--ar-blue-500);
+  --ar-check-fill: var(--ar-blue-500);
   width: 15px;
   height: 15px;
 }

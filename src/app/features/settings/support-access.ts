@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 
 import { OpsService } from '../../core/services/ops.service';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip } from '../../ui';
+import { ArGrid } from '../../ui/grid';
 
 /**
  * The tenant's view of, and control over, AutoReach support entering their account.
@@ -15,7 +17,7 @@ import { ArBanner, ArButton, ArChip } from '../../ui';
  */
 @Component({
   selector: 'ar-support-access',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip],
+  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './support-access.html',
   styleUrl: './support-access.scss',
@@ -28,6 +30,33 @@ export class ArSupportAccess {
 
   protected readonly active = computed(() => this.grants().filter((g) => g.active));
   protected readonly past = computed(() => this.grants().filter((g) => !g.active));
+
+  /** Grid rows: plain values to sort, filter and export by. */
+  protected readonly sessionRows = computed(() =>
+    this.sessions().map((s) => ({
+      id: s.id,
+      engineer: s.engineer,
+      started: this.when(s.startedAt),
+      duration: this.duration(s),
+      writeEnabled: s.writeEnabled,
+      access: s.writeEnabled ? 'Read and write' : 'Read only',
+      actionCount: s.actionCount,
+      writeCount: s.writeCount,
+    })),
+  );
+  protected readonly pastRows = computed(() =>
+    this.past().map((g) => ({
+      id: g.id,
+      reason: g.reason,
+      granted: this.when(g.grantedAt),
+      ended: g.revokedAt
+        ? `Revoked ${this.when(g.revokedAt)}`
+        : `Expired ${this.when(g.expiresAt)}`,
+      allowsWrite: g.allowsWrite,
+      access: g.allowsWrite ? 'Read and write' : 'Read only',
+      sessionCount: g.sessionCount,
+    })),
+  );
 
   protected readonly subtitle = computed(() => {
     const n = this.active().length;

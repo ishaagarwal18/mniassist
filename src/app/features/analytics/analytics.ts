@@ -1,5 +1,12 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  CategoryService,
+  ChartModule,
+  LegendService,
+  StackingColumnSeriesService,
+  TooltipService,
+} from '@syncfusion/ej2-angular-charts';
 
 import {
   AnalyticsRange,
@@ -7,10 +14,12 @@ import {
   ConversionDimension,
 } from '../../core/services/analytics.service';
 import { PipelineStore } from '../../core/services/pipeline.service';
+import { chartColours } from '../../core/ui/chart-colours';
 import { AnalyticsExportFormat } from '../../proxy/analytics';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArStatTile } from '../../ui';
+import { ArSelect } from '../../ui/select';
 
 interface TrendBar {
   readonly date: string;
@@ -28,7 +37,8 @@ interface TrendBar {
  */
 @Component({
   selector: 'ar-analytics',
-  imports: [ArTopbar, ArButton, ArStatTile, DecimalPipe],
+  imports: [ArTopbar, ArButton, ArStatTile, DecimalPipe, ArSelect, ChartModule],
+  providers: [StackingColumnSeriesService, CategoryService, LegendService, TooltipService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './analytics.html',
   styleUrl: './analytics.scss',
@@ -92,7 +102,23 @@ export class ArAnalytics {
     })),
   );
 
-  protected readonly peak = computed(() => Math.max(1, ...this.bars().map((b) => b.total)));
+  protected readonly colours = chartColours({
+    marketing: '--ar-chart-marketing',
+    utility: '--ar-chart-utility',
+    service: '--ar-line-300',
+  });
+  protected readonly xAxis = {
+    valueType: 'Category',
+    majorGridLines: { width: 0 },
+    majorTickLines: { width: 0 },
+    labelIntersectAction: 'Hide',
+  } as const;
+  protected readonly yAxis = {
+    minimum: 0,
+    lineStyle: { width: 0 },
+    majorTickLines: { width: 0 },
+    labelFormat: 'n0',
+  } as const;
 
   protected setRange(days: AnalyticsRange): void {
     this.store.setRange(days);
@@ -114,10 +140,6 @@ export class ArAnalytics {
 
   protected pct(fraction: number): string {
     return `${(fraction * 100).toFixed(1)}%`;
-  }
-
-  protected height(value: number): string {
-    return `${Math.max(1, (value / this.peak()) * 100)}%`;
   }
 
   protected minutes(m?: number): string {

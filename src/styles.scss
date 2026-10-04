@@ -194,3 +194,194 @@ body .e-dlg-overlay {
   background-color: var(--ar-backdrop);
   opacity: 1;
 }
+
+/* Syncfusion pickers that replaced native selects and date inputs
+   (ui/select.ts, ui/date-input.ts). The wrapper carries the native control's
+   classes so each screen's layout rules (width, flex, margins) still apply;
+   these rules undo the box styling those classes gave the native control and
+   match the text fields above. */
+:where(.ar-sf-select, .ar-sf-date) {
+  height: 36px;
+}
+.e-input-group.e-control-wrapper:is(.ar-sf-select, .ar-sf-date) {
+  min-height: 0;
+  padding: 0;
+  font: 400 13px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+  background: var(--ar-input-bg);
+  border: 1px solid var(--ar-line-300);
+  border-radius: var(--ar-radius-control);
+  box-shadow: none;
+  transition:
+    border-color var(--ar-ease),
+    box-shadow var(--ar-ease);
+
+  &:hover:not(.e-disabled) {
+    border-color: var(--ar-ink-400);
+  }
+  &.e-input-focus {
+    border-color: var(--ar-blue-500);
+    box-shadow: var(--ar-focus-ring);
+  }
+  input.e-input {
+    height: 100%;
+    min-height: 0;
+    padding: 0 0 0 10px;
+    text-indent: 0;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+  }
+  .e-input-group-icon {
+    min-height: 0;
+    color: var(--ar-ink-400);
+  }
+}
+.e-ddl.e-popup,
+.e-datepicker.e-popup-wrapper,
+.e-datetimepicker.e-popup-wrapper {
+  font-family: var(--ar-font-sans);
+}
+
+/* Checkboxes and radios, drawn like Syncfusion's: a filled primary box with a
+   white tick, a ring with a primary dot. Still real inputs, so bindings,
+   keyboard and labels are unchanged. A screen can recolour the fill with
+   --ar-check-fill (the e-sign page uses the seller's accent). */
+input:is([type='checkbox'], [type='radio']):not(.e-control) {
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  vertical-align: -3px;
+  background: var(--ar-input-bg);
+  border: 1px solid var(--ar-ink-400);
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    background-color var(--ar-ease),
+    border-color var(--ar-ease),
+    box-shadow var(--ar-ease);
+
+  &::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    transform: scale(0);
+    transition: transform var(--ar-ease);
+  }
+  &:hover:not(:disabled) {
+    border-color: var(--ar-check-fill, var(--ar-primary));
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--ar-focus-ring);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+input[type='checkbox']:not(.e-control) {
+  &::after {
+    background: #fff;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.5 5.2 4 7.6l4.6-5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+  &:indeterminate::after {
+    height: 2px;
+    border-radius: 1px;
+    mask: none;
+  }
+  &:is(:checked, :indeterminate) {
+    background: var(--ar-check-fill, var(--ar-primary));
+    border-color: var(--ar-check-fill, var(--ar-primary));
+    &::after {
+      transform: scale(1);
+    }
+  }
+}
+input[type='radio']:not(.e-control) {
+  border-radius: 50%;
+  &::after {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ar-check-fill, var(--ar-primary));
+  }
+  &:checked {
+    border-color: var(--ar-check-fill, var(--ar-primary));
+    &::after {
+      transform: scale(1);
+    }
+  }
+}
+
+/* Syncfusion data grids (ui/grid.ts), in the house table style: a card with
+   small uppercase headers. Colours come from the tokens so both themes match
+   the rest of the app. */
+.e-grid.ar-grid {
+  font-family: var(--ar-font-sans);
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-card);
+  box-shadow: var(--ar-shadow-card);
+  overflow: hidden;
+
+  .e-toolbar,
+  .e-toolbar .e-toolbar-items,
+  .e-gridheader,
+  .e-headercontent,
+  .e-headercell,
+  .e-gridcontent,
+  .e-content,
+  .e-table,
+  .e-row,
+  .e-emptyrow td,
+  .e-gridpager {
+    background: var(--ar-white);
+  }
+  .e-toolbar {
+    border-bottom: 1px solid var(--ar-line-200);
+  }
+  .e-toolbar .e-tbar-btn-text,
+  .e-toolbar .e-tbar-btn .e-icons {
+    font-size: 12.5px;
+    color: var(--ar-ink-700);
+  }
+  .e-gridheader {
+    border-bottom: 1px solid var(--ar-line-200);
+  }
+  .e-headercell,
+  .e-headercontent .e-headercell {
+    background: var(--ar-bg-50);
+  }
+  .e-headercell .e-headertext {
+    font: 600 10.5px var(--ar-font-sans);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ar-ink-400);
+  }
+  .e-rowcell {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font: 400 13px var(--ar-font-sans);
+    color: var(--ar-ink-500);
+    border-color: var(--ar-line-200);
+  }
+  .e-row:hover .e-rowcell {
+    background: var(--ar-bg-50);
+  }
+  .e-emptyrow td {
+    padding: 26px 12px;
+    text-align: center;
+    font: 400 13px var(--ar-font-sans);
+    color: var(--ar-ink-400);
+  }
+  .e-gridpager {
+    border-top: 1px solid var(--ar-line-200);
+    font-size: 12.5px;
+  }
+}

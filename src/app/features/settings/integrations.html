@@ -159,37 +159,46 @@
 
       <section class="panel">
         <h3 class="panel__title panel__title--sub">Recent deliveries</h3>
-        <table class="ar-table">
-          <caption class="sr-only">
-            Recent webhook deliveries
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Event</th>
-              <th scope="col">State</th>
-              <th scope="col" class="num">Attempts</th>
-              <th scope="col" class="num">Status</th>
-              <th scope="col">When</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (d of relevantDeliveries(); track d.id) {
-              <tr>
-                <td class="ar-mono">{{ eventLabel(d.event) }}</td>
-                <td>
-                  <ar-chip [tone]="deliveryTone(d.state)">{{ d.state }}</ar-chip>
-                </td>
-                <td class="num ar-mono">{{ d.attempts }}</td>
-                <td class="num ar-mono">{{ d.statusCode ?? '—' }}</td>
-                <td class="ar-mono">{{ when(d.createdAt) }}</td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="5" class="empty">No deliveries yet.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+        <ejs-grid
+          arGrid="webhook-deliveries"
+          [dataSource]="deliveryRows()"
+          aria-label="Recent webhook deliveries"
+        >
+          <e-columns>
+            <e-column field="event" headerText="Event">
+              <ng-template #template let-d
+                ><span class="ar-mono">{{ d.event }}</span></ng-template
+              >
+            </e-column>
+            <e-column field="state" headerText="State" width="140">
+              <ng-template #template let-d>
+                <ar-chip [tone]="d.tone">{{ d.state }}</ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column
+              field="attempts"
+              headerText="Attempts"
+              type="number"
+              textAlign="Right"
+              width="110"
+            >
+              <ng-template #template let-d
+                ><span class="ar-mono">{{ d.attempts }}</span></ng-template
+              >
+            </e-column>
+            <e-column field="status" headerText="Status" textAlign="Right" width="100">
+              <ng-template #template let-d
+                ><span class="ar-mono">{{ d.status }}</span></ng-template
+              >
+            </e-column>
+            <e-column field="when" headerText="When" width="150">
+              <ng-template #template let-d
+                ><span class="ar-mono">{{ d.when }}</span></ng-template
+              >
+            </e-column>
+          </e-columns>
+          <ng-template #emptyRecordTemplate>No deliveries yet.</ng-template>
+        </ejs-grid>
       </section>
     } @else {
       <p class="empty">No endpoints configured.</p>

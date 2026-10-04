@@ -44,22 +44,49 @@
     @if (loading()) {
       <p class="card__empty">Loading…</p>
     } @else {
-      <div class="trend" role="img" aria-label="Daily message volume by category">
-        @for (b of bars(); track b.date) {
-          <div class="trend__col" [title]="b.label + ' · ' + b.total + ' messages'">
-            <div class="trend__stack">
-              <span class="trend__seg trend__seg--mkt" [style.height]="height(b.marketing)"></span>
-              <span class="trend__seg trend__seg--utl" [style.height]="height(b.utility)"></span>
-              <span class="trend__seg trend__seg--svc" [style.height]="height(b.service)"></span>
-            </div>
-          </div>
-        }
-      </div>
-      <div class="legend">
-        <span class="legend__i legend__i--mkt">Marketing</span>
-        <span class="legend__i legend__i--utl">Utility</span>
-        <span class="legend__i legend__i--svc">Service</span>
-      </div>
+      <ejs-chart
+        id="analytics-volume-chart"
+        height="240px"
+        background="transparent"
+        [theme]="colours().theme"
+        [primaryXAxis]="xAxis"
+        [primaryYAxis]="yAxis"
+        [chartArea]="{ border: { width: 0 } }"
+        [tooltip]="{ enable: true, shared: true }"
+        [legendSettings]="{ visible: true, position: 'Bottom' }"
+        aria-label="Daily message volume by category"
+      >
+        <e-series-collection>
+          <e-series
+            [dataSource]="bars()"
+            type="StackingColumn"
+            xName="label"
+            yName="marketing"
+            name="Marketing"
+            [fill]="colours().marketing"
+            [columnWidth]="0.7"
+          />
+          <e-series
+            [dataSource]="bars()"
+            type="StackingColumn"
+            xName="label"
+            yName="utility"
+            name="Utility"
+            [fill]="colours().utility"
+            [columnWidth]="0.7"
+          />
+          <e-series
+            [dataSource]="bars()"
+            type="StackingColumn"
+            xName="label"
+            yName="service"
+            name="Service"
+            [fill]="colours().service"
+            [columnWidth]="0.7"
+            [cornerRadius]="{ topLeft: 3, topRight: 3 }"
+          />
+        </e-series-collection>
+      </ejs-chart>
     }
   </section>
 

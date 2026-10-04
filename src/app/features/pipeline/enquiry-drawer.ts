@@ -13,6 +13,7 @@ import { EnquiryStage, LostReasonCategory } from '../../proxy/pipeline';
 import { EnquiryDetail, PipelineStore } from '../../core/services/pipeline.service';
 import { inrCompact } from '../../core/util/format';
 import { ArButton, ArChip } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { ArEnquiryActivities } from '../activities/enquiry-activities';
 import { ArEnquiryCalls } from '../calls/enquiry-calls';
 import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
@@ -35,6 +36,7 @@ import { ArEnquiryNetwork } from '../network/enquiry-network';
     ArEnquiryTickets,
     ArEnquiryNetwork,
     RouterLink,
+    ArSelect,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

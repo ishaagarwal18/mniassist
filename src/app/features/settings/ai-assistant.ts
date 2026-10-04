@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -14,6 +15,7 @@ import {
 import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
+import { ArGrid } from '../../ui/grid';
 import { ChipTone } from '../../ui/chip';
 
 const SEED_SETTINGS: ChatbotSettingsDto = {
@@ -95,7 +97,7 @@ const OUTCOME_LABEL: Record<ChatbotOutcome, string> = {
  */
 @Component({
   selector: 'ar-ai-assistant',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArDialog, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './ai-assistant.html',
   styleUrl: './ai-assistant.scss',
@@ -108,6 +110,30 @@ export class ArAiAssistant {
   protected readonly status = signal<ChatbotStatusDto | null>(null);
   protected readonly articles = signal<KnowledgeArticleDto[]>([]);
   protected readonly recent = signal<ChatbotReplyDto[]>([]);
+
+  /** Grid rows: plain values to sort, filter and export by, plus the article for the actions. */
+  protected readonly articleRows = computed(() =>
+    this.articles().map((a) => ({
+      article: a,
+      title: a.title,
+      lastIndexError: a.lastIndexError,
+      sourceLabel: a.source === KnowledgeSource.Manual ? 'Written here' : 'Library',
+      chunkCount: a.chunkCount,
+      indexed: this.when(a.indexedAtUtc),
+      isEnabled: a.isEnabled,
+    })),
+  );
+  protected readonly recentRows = computed(() =>
+    this.recent().map((r) => ({
+      id: r.id,
+      outcome: this.outcomeLabel(r.outcome),
+      tone: this.outcomeTone(r.outcome),
+      question: r.question ?? '—',
+      answer: r.answer ?? r.reason ?? '—',
+      score: this.score(r.topScore),
+      when: this.when(r.createdAtUtc),
+    })),
+  );
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
 

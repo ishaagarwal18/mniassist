@@ -1,24 +1,51 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-
+import {
+  ChangeDetectionStrategy,
+  Component,
+  TemplateRef,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { DragEventArgs, KanbanModule } from '@syncfusion/ej2-angular-kanban';
 
 import { EnquiryCard, PickerOption, PipelineStore } from '../../core/services/pipeline.service';
 import { LeadSource } from '../../proxy/pipeline';
+import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
+import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
 import { inrCompact } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { ArEnquiryDrawer } from './enquiry-drawer';
 import { ArContactPicker } from './contact-picker';
 
+// Syncfusion checks the licence in each component's constructor, before ours runs.
+registerSyncfusionLicense();
+
+/** A board column's key: the stage's id, or the built-in bucket where there is none (mock data). */
+const columnKey = (stageId: string | undefined, stage: string) => stageId ?? stage;
+
 /**
- * Enquiry pipeline (M10). A column per stage; each card advances one stage at a
- * time — the API records the move and the stage-change event, so the board is a
- * view over the real pipeline rather than a local kanban. Opening a card slides in
- * the detail drawer without leaving the board.
+ * Enquiry pipeline (M10). A Syncfusion Kanban with a column per stage. A card is
+ * dragged to another stage, or advanced one stage with its button; either way the
+ * API records the move and the stage-change event, so the board is a view over the
+ * real pipeline rather than a local kanban. Opening a card slides in the detail
+ * drawer without leaving the board.
  */
 @Component({
   selector: 'ar-enquiries',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArEnquiryDrawer, ArContactPicker],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArEnquiryDrawer,
+    ArContactPicker,
+    ArSelect,
+    KanbanModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './enquiries.html',
   styleUrl: './enquiries.scss',
@@ -34,6 +61,50 @@ export class ArEnquiries {
   protected readonly loading = this.store.loading;
   protected readonly openCount = this.store.openEnquiryCount;
   protected readonly pipelineValue = this.store.pipelineValueInPaise;
+
+  private readonly headerTemplate = viewChild<TemplateRef<unknown>>('headerTemplate');
+
+  /** Kanban columns and cards, flattened from the store's board. */
+  protected readonly columns = computed(() => {
+    const template = this.headerTemplate();
+    return this.board().map((col) => ({
+      keyField: columnKey(col.stageId, col.stage),
+      headerText: col.label,
+      showItemCount: false,
+      ...(template ? { template } : {}),
+    }));
+  });
+  protected readonly cards = computed(() =>
+    this.board().flatMap((col) =>
+      col.cards.map((card) => ({ ...card, column: columnKey(col.stageId, col.stage), card })),
+    ),
+  );
+  protected readonly moveError = signal<string | null>(null);
+
+  constructor() {
+    ensureSyncfusionTheme('kanban');
+  }
+
+  protected columnMeta(key: string): string {
+    const col = this.board().find((c) => columnKey(c.stageId, c.stage) === key);
+    return col ? `${col.count} · ${this.value(col.valueInPaise)}` : '';
+  }
+
+  /** A card dropped on another stage moves the real enquiry there. */
+  protected async onDrop(args: DragEventArgs): Promise<void> {
+    for (const moved of args.data) {
+      const card = moved['card'] as EnquiryCard;
+      const to = moved['column'] as string;
+      if (!card || to === columnKey(card.stageId, card.stage)) continue;
+      this.moveError.set(null);
+      try {
+        await this.store.moveEnquiryToStage(card.id, to);
+      } catch (e: unknown) {
+        this.moveError.set(e instanceof Error ? e.message : 'The enquiry could not be moved.');
+        this.store.reload(); // put the card back where the server says it is
+      }
+    }
+  }
 
   /** A link can open one enquiry straight away: /enquiries?open={id} (the dealer network's accepted leads use it). */
   protected readonly selectedId = signal<string | null>(

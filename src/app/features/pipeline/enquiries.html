@@ -81,64 +81,61 @@
   </ar-dialog>
 }
 
-<div class="board ar-scroll">
+<div class="board">
   @if (loading()) {
     <p class="board__empty">Loading the pipeline…</p>
   }
-  @for (col of board(); track col.stageId ?? col.stage) {
-    <section class="col">
-      <header class="col__head">
-        <h2 class="col__t">{{ col.label }}</h2>
-        <span class="col__meta">{{ col.count }} · {{ value(col.valueInPaise) }}</span>
-      </header>
-      <div class="col__cards">
-        @for (card of col.cards; track card.id) {
-          <article
-            class="card"
-            tabindex="0"
-            role="button"
-            (click)="selectedId.set(card.id)"
-            (keydown.enter)="selectedId.set(card.id)"
-          >
-            <div class="card__ref ar-mono">{{ card.reference }}</div>
-            <h3 class="card__title">{{ card.title }}</h3>
-            <p class="card__contact">
-              {{ card.contact
-              }}<span class="card__co">{{ card.company ? ' · ' + card.company : '' }}</span>
-            </p>
-            <div class="card__foot">
-              <span class="card__val">{{ value(card.valueInPaise) }}</span>
-              <div class="card__meta">
-                @if (card.owner) {
-                  <ar-chip tone="neutral" [mono]="true">{{ card.owner }}</ar-chip>
-                }
-                @if (card.score != null) {
-                  <ar-chip
-                    [tone]="
-                      card.band === 'hot' ? 'good' : card.band === 'warm' ? 'amber' : 'neutral'
-                    "
-                    >{{ card.band === 'hot' ? 'Hot' : card.band === 'warm' ? 'Warm' : 'Cold' }}
-                    {{ card.score }}</ar-chip
-                  >
-                }
-                <ar-chip [tone]="card.daysInStage > 10 ? 'amber' : 'neutral'"
-                  >{{ card.daysInStage }}d</ar-chip
-                >
-              </div>
-            </div>
-            @if (next(card); as n) {
-              <button ar-button type="button" variant="ghost" (click)="advance(card, $event)">
-                Advance → {{ n.label }}
-              </button>
-            }
-          </article>
-        }
-        @if (col.cards.length === 0) {
-          <p class="col__none">Nothing here.</p>
-        }
-      </div>
-    </section>
+  @if (moveError(); as e) {
+    <p class="board__err" role="alert">{{ e }}</p>
   }
+  <ejs-kanban
+    id="enquiry-board"
+    keyField="column"
+    height="100%"
+    [dataSource]="cards()"
+    [columns]="columns()"
+    [cardSettings]="{ headerField: 'id', template: cardTemplate, selectionType: 'None' }"
+    [allowDragAndDrop]="true"
+    (dragStop)="onDrop($event)"
+    (cardClick)="selectedId.set($event.data['id'])"
+    (dialogOpen)="$event.cancel = true"
+  >
+  </ejs-kanban>
+  <ng-template #headerTemplate let-col>
+    <span class="col__head">
+      <span class="col__t">{{ col.headerText }}</span>
+      <span class="col__meta">{{ columnMeta(col.keyField) }}</span>
+    </span>
+  </ng-template>
+  <ng-template #cardTemplate let-c>
+    <article class="card" tabindex="0" (keydown.enter)="selectedId.set(c.id)">
+      <div class="card__ref ar-mono">{{ c.reference }}</div>
+      <h3 class="card__title">{{ c.title }}</h3>
+      <p class="card__contact">
+        {{ c.contact }}<span class="card__co">{{ c.company ? ' · ' + c.company : '' }}</span>
+      </p>
+      <div class="card__foot">
+        <span class="card__val">{{ value(c.valueInPaise) }}</span>
+        <div class="card__meta">
+          @if (c.owner) {
+            <ar-chip tone="neutral" [mono]="true">{{ c.owner }}</ar-chip>
+          }
+          @if (c.score != null) {
+            <ar-chip [tone]="c.band === 'hot' ? 'good' : c.band === 'warm' ? 'amber' : 'neutral'"
+              >{{ c.band === 'hot' ? 'Hot' : c.band === 'warm' ? 'Warm' : 'Cold' }}
+              {{ c.score }}</ar-chip
+            >
+          }
+          <ar-chip [tone]="c.daysInStage > 10 ? 'amber' : 'neutral'">{{ c.daysInStage }}d</ar-chip>
+        </div>
+      </div>
+      @if (next(c.card); as n) {
+        <button ar-button type="button" variant="ghost" (click)="advance(c.card, $event)">
+          Advance → {{ n.label }}
+        </button>
+      }
+    </article>
+  </ng-template>
 </div>
 
 @if (selectedId(); as id) {

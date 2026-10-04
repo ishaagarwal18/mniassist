@@ -42,6 +42,12 @@ import {
  * reconciliation run that is out of tolerance, a webhook that disabled itself, a
  * support grant that is read-only and about to expire.
  */
+
+/** A resource's value, or its default (empty) value once a request has failed. */
+function settled<T>(resource: { hasValue(): boolean; value(): T }, fallback = [] as T): T {
+  return resource.hasValue() ? resource.value() : fallback;
+}
+
 @Injectable({ providedIn: 'root' })
 export class OpsService {
   private readonly notificationApi = inject(NotificationApi);
@@ -463,11 +469,14 @@ export class OpsService {
   private readonly readLocally = signal<ReadonlySet<string>>(new Set());
 
   // ---- public views --------------------------------------------------------
+  // A failed request (a 403 for a user without the permission, say) reads as an
+  // empty list: Angular's resource.value() throws once a request has failed,
+  // which would take the whole screen down with it.
 
   readonly notifications = computed<readonly OpsNotification[]>(() => {
     const base = environment.useMockData
       ? this.notificationSeed
-      : this.notificationsResource.value();
+      : settled(this.notificationsResource);
     const read = this.readLocally();
     return base.map((n) => (read.has(n.id) ? { ...n, read: true } : n));
   });
@@ -479,25 +488,25 @@ export class OpsService {
   );
 
   readonly invoices = computed<readonly Invoice[]>(() =>
-    environment.useMockData ? this.invoiceSeed : this.invoicesResource.value(),
+    environment.useMockData ? this.invoiceSeed : settled(this.invoicesResource),
   );
 
   readonly reconciliationRuns = computed<readonly ReconciliationRun[]>(() =>
-    environment.useMockData ? this.reconciliationSeed : this.reconciliationResource.value(),
+    environment.useMockData ? this.reconciliationSeed : settled(this.reconciliationResource),
   );
 
   readonly webhooks = computed<readonly WebhookSubscription[]>(() =>
-    environment.useMockData ? this.webhookSeed : this.webhooksResource.value(),
+    environment.useMockData ? this.webhookSeed : settled(this.webhooksResource),
   );
 
   readonly deliveries = computed<readonly WebhookDelivery[]>(() => this.deliverySeed);
 
   readonly grants = computed<readonly SupportGrant[]>(() =>
-    environment.useMockData ? this.grantSeed : this.grantsResource.value(),
+    environment.useMockData ? this.grantSeed : settled(this.grantsResource),
   );
 
   readonly sessions = computed<readonly SupportSession[]>(() =>
-    environment.useMockData ? this.sessionSeed : this.sessionsResource.value(),
+    environment.useMockData ? this.sessionSeed : settled(this.sessionsResource),
   );
 
   // ---- actions -------------------------------------------------------------

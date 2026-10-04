@@ -584,7 +584,7 @@ export class PipelineStore {
   );
   readonly openEnquiryCount = computed(() => this.board().reduce((n, c) => n + c.count, 0));
 
-  private reload(): void {
+  reload(): void {
     this.tick.update((n) => n + 1);
   }
 

@@ -278,38 +278,57 @@
       </p>
     }
     @if (chart(); as ch) {
-      <svg
-        class="fc__chart"
-        [attr.viewBox]="'0 0 ' + ch.w + ' ' + ch.h"
-        role="img"
-        aria-label="Expected and closed over the period"
-      >
-        @if (ch.targetY != null) {
-          <line
-            class="fc__c-target"
-            x1="8"
-            [attr.y1]="ch.targetY"
-            [attr.x2]="ch.w - 8"
-            [attr.y2]="ch.targetY"
-          />
-        }
-        <polyline class="fc__c-exp" [attr.points]="ch.expected" fill="none" />
-        <polyline class="fc__c-won" [attr.points]="ch.closed" fill="none" />
-        @for (d of ch.dots; track d.label) {
-          <circle class="fc__c-dot" [attr.cx]="d.x" [attr.cy]="d.y" r="3" />
-        }
-        <text class="fc__c-tx" x="8" [attr.y]="ch.h - 4">{{ ch.first }}</text>
-        <text class="fc__c-tx" [attr.x]="ch.w - 8" [attr.y]="ch.h - 4" text-anchor="end">
-          {{ ch.last }}
-        </text>
-      </svg>
-      <p class="fc__legend">
-        <span class="fc__k fc__k--exp"></span> Expected
-        <span class="fc__k fc__k--won"></span> Closed
-        @if (ch.targetY != null) {
-          <span class="fc__k fc__k--tgt"></span> Target
-        }
-      </p>
+      <div class="fc__chart">
+        <ejs-chart
+          id="fc-history-chart"
+          height="220px"
+          background="transparent"
+          [theme]="colours().theme"
+          [primaryXAxis]="xAxis"
+          [primaryYAxis]="yAxis"
+          [chartArea]="{ border: { width: 0 } }"
+          [tooltip]="{ enable: true, shared: true }"
+          [legendSettings]="{ visible: true, position: 'Bottom' }"
+          [crosshair]="{ enable: false }"
+          (axisLabelRender)="moneyAxisLabel($event)"
+          (sharedTooltipRender)="moneyTooltip($event)"
+          aria-label="Expected and closed over the period"
+        >
+          <e-series-collection>
+            <e-series
+              [dataSource]="ch.points"
+              type="Line"
+              xName="day"
+              yName="expected"
+              name="Expected"
+              [width]="2"
+              [fill]="colours().expected"
+              [marker]="{ visible: true, width: 6, height: 6 }"
+            />
+            <e-series
+              [dataSource]="ch.points"
+              type="Line"
+              xName="day"
+              yName="closed"
+              name="Closed"
+              [width]="2"
+              [fill]="colours().closed"
+            />
+            @if (ch.hasTarget) {
+              <e-series
+                [dataSource]="ch.points"
+                type="Line"
+                xName="day"
+                yName="target"
+                name="Target"
+                dashArray="4,4"
+                [width]="1"
+                [fill]="colours().target"
+              />
+            }
+          </e-series-collection>
+        </ejs-chart>
+      </div>
     } @else {
       <p class="fc__empty">
         No history for this period yet. A snapshot is saved each day, or use the button to save one

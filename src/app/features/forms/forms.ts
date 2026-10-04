@@ -22,6 +22,7 @@ import {
   WebFormSubmissionDto,
 } from '../../proxy/web-forms';
 import { ArButton, ArChip } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { errorMessage } from '../activities/activity-logic';
 import {
   KIND_CHOICES,
@@ -95,7 +96,7 @@ function blank(): CreateUpdateWebFormDto {
  */
 @Component({
   selector: 'ar-web-forms',
-  imports: [ArTopbar, ArButton, ArChip],
+  imports: [ArTopbar, ArButton, ArChip, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './forms.html',
   styleUrl: './forms.scss',

@@ -12,6 +12,7 @@ import {
 } from '../../proxy/analytics';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 
 const KINDS = [
   { value: ScheduledReportKind.ExecutiveSummary, label: 'Executive summary' },
@@ -57,7 +58,7 @@ const BLANK: Draft = {
  */
 @Component({
   selector: 'ar-scheduled-reports',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './reports.html',
   styleUrl: './reports.scss',

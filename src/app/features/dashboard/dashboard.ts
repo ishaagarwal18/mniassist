@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { RouterLink } from '@angular/router';
 
 import { ChannelService } from '../../core/services/channel.service';
@@ -16,6 +17,7 @@ import {
   ArMeter,
   ArStatTile,
 } from '../../ui';
+import { ArGrid } from '../../ui/grid';
 
 @Component({
   selector: 'ar-dashboard',
@@ -29,6 +31,8 @@ import {
     ArButton,
     ArMeter,
     ArChannelHealthStrip,
+    ArGrid,
+    GridModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.html',

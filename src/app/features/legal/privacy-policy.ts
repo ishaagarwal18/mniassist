@@ -215,8 +215,8 @@ import { ArBrand } from '../../layout/brand';
           If you received a message through MNI Assist, the business that messaged you (the
           "tenant") is who asked for your consent and is responsible for deciding what to send you —
           they are the data fiduciary under India's Digital Personal Data Protection Act, 2023. MNI
-          Assist (Emnisoft Pvt Ltd) processes that data on the tenant's instructions, as
-          its data processor / significant processing platform.
+          Assist (Emnisoft Pvt Ltd) processes that data on the tenant's instructions, as its data
+          processor / significant processing platform.
         </p>
 
         <h2>8. Grievance officer &amp; complaints</h2>

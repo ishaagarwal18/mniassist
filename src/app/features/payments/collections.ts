@@ -14,6 +14,7 @@ import {
 import { TemplateService } from '../../proxy/messaging/template.service';
 import { TemplateStatus } from '../../proxy/messaging/template-status.enum';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import type { ChipTone } from '../../ui/chip';
 
 const day = 86_400_000;
@@ -96,7 +97,7 @@ const SEED: CollectionBoardDto = {
  */
 @Component({
   selector: 'ar-collections',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

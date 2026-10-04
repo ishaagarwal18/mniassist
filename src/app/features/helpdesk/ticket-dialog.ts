@@ -3,6 +3,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { ServiceTicketDto, TicketPriority } from '../../proxy/support';
 import { ArButton, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { errorMessage } from '../activities/activity-logic';
 import {
   PRIORITY_CHOICES,
@@ -16,7 +17,7 @@ import { ServiceTicketGateway } from './ticket-mock';
  *  linked straight to it. */
 @Component({
   selector: 'ar-ticket-dialog',
-  imports: [ArDialog, ArButton],
+  imports: [ArDialog, ArButton, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog [title]="'Raise a ticket for ' + contactName()" (dismiss)="closed.emit(null)">

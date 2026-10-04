@@ -6,9 +6,24 @@ import {
   inject,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
+import {
+  ActionEventArgs,
+  AgendaService,
+  CellClickEventArgs,
+  DayService,
+  EventClickArgs,
+  EventRenderedArgs,
+  MonthService,
+  ScheduleComponent,
+  ScheduleModule,
+  WeekService,
+} from '@syncfusion/ej2-angular-schedule';
 import { firstValueFrom } from 'rxjs';
 
+import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
+import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
 import { ArTopbar } from '../../layout/topbar';
 import { AttendeeResponse, MeetingDto, MeetingStatus } from '../../proxy/activities';
 import { ArButton, ArChip } from '../../ui';
@@ -23,21 +38,34 @@ import {
   downloadTextFile,
   durationLabel,
   errorMessage,
-  groupByDay,
   minutesBetween,
-  sameDay,
+  startOfDay,
   timeRange,
   weekOf,
 } from './activity-logic';
 import { ArMeetingDialog } from './meeting-dialog';
 
+// Syncfusion checks the licence in each component's constructor, before ours runs.
+registerSyncfusionLicense();
+
+/** A meeting as the Scheduler draws it; `meeting` is what the detail panel opens. */
+interface CalendarEvent {
+  Id: string;
+  Subject: string;
+  StartTime: Date;
+  EndTime: Date;
+  Location?: string;
+  meeting: MeetingDto;
+}
+
 /**
- * Meetings: the week ahead, day by day. Yours by default; those allowed can look across the team. Scheduling checks everyone's calendars, a
+ * Meetings: a Syncfusion Scheduler calendar (day, week, month, agenda), the week ahead by default. Yours by default; those allowed can look across the team. Scheduling checks everyone's calendars, a
  * meeting can be answered, finished, cancelled, and handed to a calendar app as a file.
  */
 @Component({
   selector: 'ar-meetings',
-  imports: [ArTopbar, ArButton, ArChip, ArMeetingDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArMeetingDialog, ScheduleModule],
+  providers: [DayService, WeekService, MonthService, AgendaService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './meetings.html',
   styleUrl: './meetings.scss',
@@ -52,7 +80,6 @@ export class ArMeetings {
   protected readonly statusLabel = STATUS_LABEL;
   protected readonly responseLabel = RESPONSE_LABEL;
 
-  protected readonly anchor = signal(new Date());
   protected readonly scope = signal<'mine' | 'everyone'>('mine');
   protected readonly showCancelled = signal(false);
 
@@ -61,12 +88,28 @@ export class ArMeetings {
   protected readonly error = signal<string | null>(null);
   protected readonly busy = signal(false);
 
-  protected readonly week = computed(() => weekOf(this.anchor()));
-  protected readonly days = computed(() =>
-    groupByDay(this.meetings(), (m) => m.startUtc, this.week().days),
-  );
+  private readonly schedule = viewChild(ScheduleComponent);
+  protected readonly today = new Date();
+  /** The dates the calendar shows; it reports them when the user moves or changes view. */
+  protected readonly shown = signal<{ from: Date; to: Date }>(weekOf(this.today));
+
+  protected readonly eventSettings = computed(() => ({
+    dataSource: this.meetings()
+      .filter((m) => m.startUtc && m.endUtc)
+      .map((m): CalendarEvent => ({
+        Id: m.id!,
+        Subject: m.title ?? 'Meeting',
+        StartTime: new Date(m.startUtc!),
+        EndTime: new Date(m.endUtc!),
+        Location: m.location ?? undefined,
+        meeting: m,
+      })),
+    allowAdding: false,
+    allowEditing: false,
+    allowDeleting: false,
+  }));
   protected readonly heading = computed(() => {
-    const { from, to } = this.week();
+    const { from, to } = this.shown();
     const last = addDays(to, -1);
     const f = (d: Date, year = false) =>
       d.toLocaleDateString('en-IN', {
@@ -91,10 +134,11 @@ export class ArMeetings {
   private readonly tick = signal(0);
 
   constructor() {
+    ensureSyncfusionTheme('schedule');
     void this.directory.load();
 
     effect(() => {
-      this.anchor();
+      this.shown();
       this.scope();
       this.showCancelled();
       this.tick();
@@ -106,7 +150,7 @@ export class ArMeetings {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const { from, to } = this.week();
+      const { from, to } = this.shown();
       this.meetings.set(
         await firstValueFrom(
           this.api.getList({
@@ -128,25 +172,56 @@ export class ArMeetings {
     this.tick.update((n) => n + 1);
   }
 
-  // ---- the week ---------------------------------------------------------------------
+  // ---- the calendar ------------------------------------------------------------------
 
-  protected shift(weeks: number): void {
-    this.anchor.set(addDays(this.week().from, weeks * 7));
+  protected onAction(args: ActionEventArgs): void {
+    if (args.requestType !== 'dateNavigate' && args.requestType !== 'viewNavigate') return;
+    const dates = this.schedule()?.getCurrentViewDates() ?? [];
+    if (dates.length === 0) return;
+    const from = startOfDay(dates[0]);
+    const to = addDays(startOfDay(dates[dates.length - 1]), 1);
+    const now = this.shown();
+    if (from.getTime() !== now.from.getTime() || to.getTime() !== now.to.getTime()) {
+      this.shown.set({ from, to });
+    }
   }
-  protected today(): void {
-    this.anchor.set(new Date());
+
+  protected onEventClick(args: EventClickArgs): void {
+    args.cancel = true;
+    const event = (Array.isArray(args.event) ? args.event[0] : args.event) as CalendarEvent;
+    if (event?.meeting) this.open(event.meeting);
   }
-  protected isToday(day: Date): boolean {
-    return sameDay(day, new Date());
+
+  /** A click on an empty slot schedules a meeting then, unless that time has gone. */
+  protected onCellClick(args: CellClickEventArgs): void {
+    args.cancel = true;
+    const at = args.isAllDay
+      ? new Date(
+          args.startTime.getFullYear(),
+          args.startTime.getMonth(),
+          args.startTime.getDate(),
+          10,
+          0,
+        )
+      : args.startTime;
+    this.presetStart.set(at.getTime() < Date.now() ? null : at);
+    this.creating.set(true);
   }
-  protected dayName(day: Date): string {
-    return day.toLocaleDateString('en-IN', { weekday: 'short' });
+
+  protected onEventRendered(args: EventRenderedArgs): void {
+    const m = (args.data as CalendarEvent).meeting;
+    args.element.classList.toggle('mc-off', m.status === MeetingStatus.Cancelled);
+    args.element.classList.toggle('mc-ask', this.needsMyAnswer(m));
   }
-  protected dayNumber(day: Date): string {
-    return day.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-  }
+
   protected range(m: MeetingDto): string {
     return timeRange(m.startUtc!, m.endUtc!);
+  }
+  protected kindOf(m: MeetingDto): string {
+    return m.kind == null ? '' : this.kindLabel[m.kind];
+  }
+  protected statusOf(m: MeetingDto): string {
+    return m.status == null ? '' : this.statusLabel[m.status];
   }
   protected length(m: MeetingDto): string {
     return durationLabel(minutesBetween(m.startUtc!, m.endUtc!));
@@ -157,13 +232,6 @@ export class ArMeetings {
       day: 'numeric',
       month: 'long',
     });
-  }
-
-  protected addOn(day: Date): void {
-    // 10 am on that day, or the next half hour if it is today and already past.
-    const at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 10, 0);
-    this.presetStart.set(at.getTime() < Date.now() ? null : at);
-    this.creating.set(true);
   }
 
   // ---- what a meeting is to me ---------------------------------------------------------

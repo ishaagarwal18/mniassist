@@ -21,6 +21,8 @@ import {
   SlotDto,
 } from '../../proxy/activities';
 import { ArButton, ArDialog } from '../../ui';
+import { ArDateInput } from '../../ui/date-input';
+import { ArSelect } from '../../ui/select';
 import { ActivityDirectory } from './activity-directory';
 import { ActivityGateway } from './activity-mock';
 import { ArRecurrencePicker } from './recurrence-picker';
@@ -55,7 +57,7 @@ const REMINDERS: { label: string; minutes: number }[] = [
  */
 @Component({
   selector: 'ar-meeting-dialog',
-  imports: [ArDialog, ArButton, ArRecurrencePicker],
+  imports: [ArDialog, ArButton, ArRecurrencePicker, ArSelect, ArDateInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog

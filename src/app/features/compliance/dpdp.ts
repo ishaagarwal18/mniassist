@@ -70,8 +70,7 @@ const SEED: DpdpReadinessDto = {
       section: 'profile',
     },
   ],
-  noticeDraft:
-    'DRAFT FOR LEGAL REVIEW — NOT LEGAL ADVICE\n\nPrivacy notice — Emnisoft Pvt Ltd\n…',
+  noticeDraft: 'DRAFT FOR LEGAL REVIEW — NOT LEGAL ADVICE\n\nPrivacy notice — Emnisoft Pvt Ltd\n…',
   noticeDrafts: {
     en: 'DRAFT FOR LEGAL REVIEW — NOT LEGAL ADVICE\n\nPrivacy notice — Emnisoft Pvt Ltd\n…',
     hi: 'कानूनी समीक्षा के लिए मसौदा — यह कानूनी सलाह नहीं है\n\nगोपनीयता सूचना — Emnisoft Pvt Ltd\n…',

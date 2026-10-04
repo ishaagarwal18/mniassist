@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { FeatureFlagDto, FeatureFlagService } from '../../proxy/platform';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 
 const KEYS = [{ value: 'mm-lite', label: 'Marketing Messages Lite (MM Lite send path)' }];
 
@@ -14,7 +15,7 @@ const KEYS = [{ value: 'mm-lite', label: 'Marketing Messages Lite (MM Lite send 
  */
 @Component({
   selector: 'ar-feature-flags',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './feature-flags.html',
   styleUrl: './feature-flags.scss',

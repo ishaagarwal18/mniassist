@@ -18,6 +18,7 @@ import {
   TicketStatus,
 } from '../../proxy/support';
 import { ArButton, ArChip, ArSearchBox, ArStatTile } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 import { errorMessage } from '../activities/activity-logic';
 import { ArTicketDetailDialog } from './ticket-detail-dialog';
@@ -51,6 +52,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
     ArStatTile,
     ArTicketDetailDialog,
     ArTicketSettingsDialog,
+    ArSelect,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './helpdesk.html',

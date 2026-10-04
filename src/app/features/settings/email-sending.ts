@@ -10,6 +10,7 @@ import {
 } from '../../proxy/email/email-channel.service';
 import { EmailOAuthProvider, EmailOAuthService } from '../../proxy/email/email-oauth.service';
 import { ArBanner, ArButton } from '../../ui';
+import { ArSelect } from '../../ui/select';
 
 const SEED: EmailChannelDto = {
   id: 'demo',
@@ -50,7 +51,7 @@ type Route = 'shared' | 'own';
  */
 @Component({
   selector: 'ar-email-sending',
-  imports: [ArTopbar, ArBanner, ArButton],
+  imports: [ArTopbar, ArBanner, ArButton, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './email-sending.html',
   styleUrl: './email-sending.scss',

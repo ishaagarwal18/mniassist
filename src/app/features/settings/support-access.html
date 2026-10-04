@@ -59,81 +59,89 @@
       write count is there so you do not have to take that on trust.
     </p>
 
-    <table class="ar-table">
-      <caption class="sr-only">
-        Support sessions
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">Engineer</th>
-          <th scope="col">Started</th>
-          <th scope="col">Duration</th>
-          <th scope="col">Access</th>
-          <th scope="col" class="num">Actions</th>
-          <th scope="col" class="num">Changes</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (s of sessions(); track s.id) {
-          <tr>
-            <td class="ar-mono">{{ s.engineer }}</td>
-            <td class="ar-mono">{{ when(s.startedAt) }}</td>
-            <td class="ar-mono">{{ duration(s) }}</td>
-            <td>
-              <ar-chip [tone]="s.writeEnabled ? 'warn' : 'neutral'">
-                {{ s.writeEnabled ? 'Read and write' : 'Read only' }}
-              </ar-chip>
-            </td>
-            <td class="num ar-mono">{{ s.actionCount }}</td>
-            <td class="num ar-mono" [class.sa__wrote]="s.writeCount > 0">{{ s.writeCount }}</td>
-          </tr>
-        } @empty {
-          <tr>
-            <td colspan="6" class="empty">No support sessions on record.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+    <ejs-grid arGrid="support-sessions" [dataSource]="sessionRows()" aria-label="Support sessions">
+      <e-columns>
+        <e-column field="engineer" headerText="Engineer">
+          <ng-template #template let-s
+            ><span class="ar-mono">{{ s.engineer }}</span></ng-template
+          >
+        </e-column>
+        <e-column field="started" headerText="Started">
+          <ng-template #template let-s
+            ><span class="ar-mono">{{ s.started }}</span></ng-template
+          >
+        </e-column>
+        <e-column field="duration" headerText="Duration" width="120">
+          <ng-template #template let-s
+            ><span class="ar-mono">{{ s.duration }}</span></ng-template
+          >
+        </e-column>
+        <e-column field="access" headerText="Access" width="150">
+          <ng-template #template let-s>
+            <ar-chip [tone]="s.writeEnabled ? 'warn' : 'neutral'">{{ s.access }}</ar-chip>
+          </ng-template>
+        </e-column>
+        <e-column
+          field="actionCount"
+          headerText="Actions"
+          type="number"
+          textAlign="Right"
+          width="100"
+        >
+          <ng-template #template let-s
+            ><span class="ar-mono">{{ s.actionCount }}</span></ng-template
+          >
+        </e-column>
+        <e-column
+          field="writeCount"
+          headerText="Changes"
+          type="number"
+          textAlign="Right"
+          width="100"
+        >
+          <ng-template #template let-s>
+            <span class="ar-mono" [class.sa__wrote]="s.writeCount > 0">{{ s.writeCount }}</span>
+          </ng-template>
+        </e-column>
+      </e-columns>
+      <ng-template #emptyRecordTemplate>No support sessions on record.</ng-template>
+    </ejs-grid>
   </section>
 
   @if (past().length) {
     <section class="block">
       <h3 class="block__title">Expired and revoked grants</h3>
-      <table class="ar-table">
-        <caption class="sr-only">
-          Past grants
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Reason</th>
-            <th scope="col">Granted</th>
-            <th scope="col">Ended</th>
-            <th scope="col">Access</th>
-            <th scope="col" class="num">Sessions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (g of past(); track g.id) {
-            <tr>
-              <td>{{ g.reason }}</td>
-              <td class="ar-mono">{{ when(g.grantedAt) }}</td>
-              <td class="ar-mono">
-                @if (g.revokedAt) {
-                  Revoked {{ when(g.revokedAt) }}
-                } @else {
-                  Expired {{ when(g.expiresAt) }}
-                }
-              </td>
-              <td>
-                <ar-chip [tone]="g.allowsWrite ? 'warn' : 'neutral'">
-                  {{ g.allowsWrite ? 'Read and write' : 'Read only' }}
-                </ar-chip>
-              </td>
-              <td class="num ar-mono">{{ g.sessionCount }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
+      <ejs-grid arGrid="past-support-grants" [dataSource]="pastRows()" aria-label="Past grants">
+        <e-columns>
+          <e-column field="reason" headerText="Reason" />
+          <e-column field="granted" headerText="Granted" width="150">
+            <ng-template #template let-g
+              ><span class="ar-mono">{{ g.granted }}</span></ng-template
+            >
+          </e-column>
+          <e-column field="ended" headerText="Ended" width="190">
+            <ng-template #template let-g
+              ><span class="ar-mono">{{ g.ended }}</span></ng-template
+            >
+          </e-column>
+          <e-column field="access" headerText="Access" width="150">
+            <ng-template #template let-g>
+              <ar-chip [tone]="g.allowsWrite ? 'warn' : 'neutral'">{{ g.access }}</ar-chip>
+            </ng-template>
+          </e-column>
+          <e-column
+            field="sessionCount"
+            headerText="Sessions"
+            type="number"
+            textAlign="Right"
+            width="110"
+          >
+            <ng-template #template let-g
+              ><span class="ar-mono">{{ g.sessionCount }}</span></ng-template
+            >
+          </e-column>
+        </e-columns>
+      </ejs-grid>
     </section>
   }
 </div>

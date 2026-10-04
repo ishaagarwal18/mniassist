@@ -17,6 +17,7 @@ import {
   SparesService,
 } from '../../proxy/pipeline/spares.service';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import type { ChipTone } from '../../ui/chip';
 import { ArSendReorderLink } from '../reorder/send-reorder-link';
 
@@ -115,7 +116,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
  */
 @Component({
   selector: 'ar-spares',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSendReorderLink, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSendReorderLink, RouterLink, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

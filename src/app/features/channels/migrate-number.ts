@@ -10,6 +10,7 @@ import {
 } from '../../proxy/channels';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip } from '../../ui';
+import { ArSelect } from '../../ui/select';
 
 /**
  * Guided migration of a number from the WhatsApp Business app to the Cloud API
@@ -18,7 +19,7 @@ import { ArButton, ArChip } from '../../ui';
  */
 @Component({
   selector: 'ar-migrate-number',
-  imports: [ArTopbar, ArButton, ArChip],
+  imports: [ArTopbar, ArButton, ArChip, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './migrate-number.html',
   styleUrl: './migrate-number.scss',

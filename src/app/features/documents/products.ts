@@ -11,6 +11,7 @@ import {
   ProductService,
 } from '../../proxy/library';
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { parseProductRows } from './product-import';
 
 /**
@@ -19,7 +20,7 @@ import { parseProductRows } from './product-import';
  */
 @Component({
   selector: 'ar-products',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './products.html',
   styleUrl: './products.scss',

@@ -285,99 +285,107 @@
       contents to anyone who asked.
     </p>
 
-    <table class="ar-table">
-      <caption class="sr-only">
-        Knowledge articles
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">Article</th>
-          <th scope="col">Source</th>
-          <th scope="col" class="num">Passages</th>
-          <th scope="col">Indexed</th>
-          <th scope="col">In use</th>
-          <th scope="col"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (a of articles(); track a.id) {
-          <tr>
-            <td>
-              {{ a.title }}
-              @if (a.lastIndexError) {
-                <div class="ai__err">{{ a.lastIndexError }}</div>
-              }
-            </td>
-            <td>
-              <ar-chip tone="neutral">{{
-                a.source === Source.Manual ? 'Written here' : 'Library'
-              }}</ar-chip>
-            </td>
-            <td class="num ar-mono">{{ a.chunkCount }}</td>
-            <td class="ar-mono">{{ when(a.indexedAtUtc) }}</td>
-            <td>
-              <input
-                type="checkbox"
-                [checked]="a.isEnabled"
-                [attr.aria-label]="'Use ' + a.title"
-                (change)="toggleArticle(a)"
-              />
-            </td>
-            <td class="ai__row-actions">
-              @if (a.source === Source.Manual) {
-                <button ar-button type="button" variant="ghost" (click)="openArticle(a)">
+    <ejs-grid
+      arGrid="knowledge-articles"
+      [dataSource]="articleRows()"
+      aria-label="Knowledge articles"
+    >
+      <e-columns>
+        <e-column field="title" headerText="Article">
+          <ng-template #template let-a>
+            {{ a.title }}
+            @if (a.lastIndexError) {
+              <div class="ai__err">{{ a.lastIndexError }}</div>
+            }
+          </ng-template>
+        </e-column>
+        <e-column field="sourceLabel" headerText="Source" width="140">
+          <ng-template #template let-a>
+            <ar-chip tone="neutral">{{ a.sourceLabel }}</ar-chip>
+          </ng-template>
+        </e-column>
+        <e-column
+          field="chunkCount"
+          headerText="Passages"
+          type="number"
+          textAlign="Right"
+          width="110"
+        >
+          <ng-template #template let-a
+            ><span class="ar-mono">{{ a.chunkCount }}</span></ng-template
+          >
+        </e-column>
+        <e-column field="indexed" headerText="Indexed" width="150">
+          <ng-template #template let-a
+            ><span class="ar-mono">{{ a.indexed }}</span></ng-template
+          >
+        </e-column>
+        <e-column field="isEnabled" headerText="In use" type="boolean" width="100">
+          <ng-template #template let-a>
+            <input
+              type="checkbox"
+              [checked]="a.isEnabled"
+              [attr.aria-label]="'Use ' + a.title"
+              (change)="toggleArticle(a.article)"
+            />
+          </ng-template>
+        </e-column>
+        <e-column
+          headerText="Actions"
+          width="170"
+          textAlign="Right"
+          [allowSorting]="false"
+          [allowFiltering]="false"
+          [showInColumnChooser]="false"
+        >
+          <ng-template #template let-a>
+            <span class="ai__row-actions">
+              @if (a.article.source === Source.Manual) {
+                <button ar-button type="button" variant="ghost" (click)="openArticle(a.article)">
                   Edit
                 </button>
               }
-              <button ar-button type="button" variant="ghost" (click)="removeArticle(a)">
+              <button ar-button type="button" variant="ghost" (click)="removeArticle(a.article)">
                 Delete
               </button>
-            </td>
-          </tr>
-        } @empty {
-          <tr>
-            <td colspan="6" class="empty">
-              Nothing here yet. Add an article, or sync your Library, so the assistant has something
-              to answer from.
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
+            </span>
+          </ng-template>
+        </e-column>
+      </e-columns>
+      <ng-template #emptyRecordTemplate>
+        Nothing here yet. Add an article, or sync your Library, so the assistant has something to
+        answer from.
+      </ng-template>
+    </ejs-grid>
   </section>
 
   <section class="panel">
     <h2 class="panel__title">Recent decisions</h2>
-    <table class="ar-table">
-      <caption class="sr-only">
-        What the assistant did with recent messages
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">Outcome</th>
-          <th scope="col">Customer asked</th>
-          <th scope="col">Assistant said / why not</th>
-          <th scope="col" class="num">Score</th>
-          <th scope="col">When</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of recent(); track r.id) {
-          <tr>
-            <td>
-              <ar-chip [tone]="outcomeTone(r.outcome)">{{ outcomeLabel(r.outcome) }}</ar-chip>
-            </td>
-            <td>{{ r.question ?? '—' }}</td>
-            <td>{{ r.answer ?? r.reason ?? '—' }}</td>
-            <td class="num ar-mono">{{ score(r.topScore) }}</td>
-            <td class="ar-mono">{{ when(r.createdAtUtc) }}</td>
-          </tr>
-        } @empty {
-          <tr>
-            <td colspan="5" class="empty">No decisions yet.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+    <ejs-grid
+      arGrid="assistant-decisions"
+      [dataSource]="recentRows()"
+      aria-label="What the assistant did with recent messages"
+    >
+      <e-columns>
+        <e-column field="outcome" headerText="Outcome" width="150">
+          <ng-template #template let-r>
+            <ar-chip [tone]="r.tone">{{ r.outcome }}</ar-chip>
+          </ng-template>
+        </e-column>
+        <e-column field="question" headerText="Customer asked" />
+        <e-column field="answer" headerText="Assistant said / why not" />
+        <e-column field="score" headerText="Score" textAlign="Right" width="100">
+          <ng-template #template let-r
+            ><span class="ar-mono">{{ r.score }}</span></ng-template
+          >
+        </e-column>
+        <e-column field="when" headerText="When" width="150">
+          <ng-template #template let-r
+            ><span class="ar-mono">{{ r.when }}</span></ng-template
+          >
+        </e-column>
+      </e-columns>
+      <ng-template #emptyRecordTemplate>No decisions yet.</ng-template>
+    </ejs-grid>
   </section>
 </div>

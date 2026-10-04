@@ -14,6 +14,7 @@ import { PipelineStore, QState, Quotation } from '../../core/services/pipeline.s
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { environment } from '../../../environments/environment';
 import {
   QuotationSignatureService,
@@ -41,7 +42,7 @@ const STATE_TONE: Record<QState, ChipTone> = {
  */
 @Component({
   selector: 'ar-quotations',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArQuoteEditor, ArQuoteSignatureDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArQuoteEditor, ArQuoteSignatureDialog, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quotations.html',
   styleUrl: './quotations.scss',

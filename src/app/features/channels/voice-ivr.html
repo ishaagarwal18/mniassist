@@ -317,39 +317,47 @@
             {{ p.inputTimeoutSeconds }}s for input.
           </p>
 
-          <table class="ar-table vi__branches">
-            <thead>
-              <tr>
-                <th>Digit</th>
-                <th>Action</th>
-                <th>Target</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (b of p.branches; track b.digit) {
-                <tr>
-                  <td class="ar-mono">{{ b.digit === '*' ? '(no match)' : b.digit }}</td>
-                  <td>{{ actionLabel(b.action) }}</td>
-                  <td>{{ branchTarget(b) }}</td>
-                  <td>
-                    <button
-                      ar-button
-                      variant="quiet"
-                      [disabled]="busy()"
-                      (click)="removeBranch(p.id!, b.digit)"
-                    >
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="4" class="vi__no-branches">No branches configured.</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <ejs-grid
+            class="vi__branches"
+            arGrid="ivr-branches"
+            [arGridTools]="false"
+            [dataSource]="p.branches"
+            aria-label="Menu branches"
+          >
+            <e-columns>
+              <e-column field="digit" headerText="Digit" width="120">
+                <ng-template #template let-b>
+                  <span class="ar-mono">{{ b.digit === '*' ? '(no match)' : b.digit }}</span>
+                </ng-template>
+              </e-column>
+              <e-column field="action" headerText="Action">
+                <ng-template #template let-b>{{ actionLabel(b.action) }}</ng-template>
+              </e-column>
+              <e-column headerText="Target" [allowFiltering]="false">
+                <ng-template #template let-b>{{ branchTarget(b) }}</ng-template>
+              </e-column>
+              <e-column
+                headerText="Actions"
+                width="130"
+                textAlign="Right"
+                [allowSorting]="false"
+                [allowFiltering]="false"
+                [showInColumnChooser]="false"
+              >
+                <ng-template #template let-b>
+                  <button
+                    ar-button
+                    variant="quiet"
+                    [disabled]="busy()"
+                    (click)="removeBranch(p.id!, b.digit)"
+                  >
+                    Remove
+                  </button>
+                </ng-template>
+              </e-column>
+            </e-columns>
+            <ng-template #emptyRecordTemplate>No branches configured.</ng-template>
+          </ejs-grid>
 
           <button
             ar-button

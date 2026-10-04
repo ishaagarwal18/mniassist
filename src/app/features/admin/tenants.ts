@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
@@ -7,6 +8,7 @@ import { readApiError } from '../../core/util/api-error';
 import { TenantDto, TenantService } from '../../proxy/tenant-management';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArCard, ArDialog } from '../../ui';
+import { ArGrid } from '../../ui/grid';
 
 const SEED: TenantDto[] = [
   { id: 't-1', name: 'vertex-automation' },
@@ -21,7 +23,7 @@ const SEED: TenantDto[] = [
  */
 @Component({
   selector: 'ar-admin-tenants',
-  imports: [ArTopbar, ArCard, ArButton, ArBanner, ArDialog],
+  imports: [ArTopbar, ArCard, ArButton, ArBanner, ArDialog, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -44,31 +46,33 @@ const SEED: TenantDto[] = [
         }
 
         <ar-card heading="All workspaces">
-          <table class="ar-table">
-            <thead>
-              <tr>
-                <th scope="col">Name</th>
-                <th scope="col" class="ta-actions"></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (t of tenants(); track t.id) {
-                <tr>
-                  <td class="ar-mono">{{ t.name }}</td>
-                  <td class="ta-actions">
+          <ejs-grid arGrid="workspaces" [dataSource]="tenants()" aria-label="All workspaces">
+            <e-columns>
+              <e-column field="name" headerText="Name">
+                <ng-template #template let-t>
+                  <span class="ar-mono">{{ t.name }}</span>
+                </ng-template>
+              </e-column>
+              <e-column
+                headerText="Actions"
+                width="170"
+                textAlign="Right"
+                [allowSorting]="false"
+                [allowFiltering]="false"
+                [showInColumnChooser]="false"
+              >
+                <ng-template #template let-t>
+                  <span class="ta-actions">
                     <button type="button" class="link" (click)="openRename(t)">Rename</button>
                     <button type="button" class="link link--danger" (click)="remove(t)">
                       Delete
                     </button>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="2" class="ta-empty">No workspaces yet.</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+                  </span>
+                </ng-template>
+              </e-column>
+            </e-columns>
+            <ng-template #emptyRecordTemplate>No workspaces yet.</ng-template>
+          </ejs-grid>
         </ar-card>
       </div>
     </div>

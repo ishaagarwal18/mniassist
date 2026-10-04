@@ -22,6 +22,7 @@ import { untilLabel } from '../../core/util/format';
 import { tickingNow } from '../../core/util/now';
 import { ArTopbar } from '../../layout/topbar';
 import { ArAvatar, ArButton, ArChip, ArDialog, ArIcon, ArSearchBox } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { ChannelService } from '../../core/services/channel.service';
 import { ArChannelHealthStrip } from '../../ui/channel-health-strip';
 import { ArDocumentPicker, PickedDocument } from './document-picker';
@@ -56,6 +57,7 @@ import { WhatsAppCallSession } from '../../core/services/whatsapp-call.session';
     ArDocumentPicker,
     ArCallDialog,
     RouterLink,
+    ArSelect,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './inbox.html',

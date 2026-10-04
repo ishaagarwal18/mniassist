@@ -67,34 +67,37 @@
 
       <ar-card heading="Recent campaigns">
         <a card-actions routerLink="/campaigns" class="page__link">View all</a>
-        <table class="ar-table">
-          <thead>
-            <tr>
-              <th scope="col">Campaign</th>
-              <th scope="col">State</th>
-              <th scope="col" class="num">Sent</th>
-              <th scope="col" class="num">Recipients</th>
-              <th scope="col" class="num">Cost</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (c of recent(); track c.name) {
-              <tr>
-                <td class="strong">{{ c.name }}</td>
-                <td>
-                  <ar-chip [tone]="chipToneFor(c.state)">{{ c.state }}</ar-chip>
-                </td>
-                <td class="num">{{ count(c.sent) }}</td>
-                <td class="num">{{ count(c.recipients) }}</td>
-                <td class="num" [class.free]="c.free">{{ c.cost }}</td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="5" class="page__muted">No campaigns yet.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+        <ejs-grid
+          arGrid="recent-campaigns"
+          [arGridTools]="false"
+          [dataSource]="recent()"
+          aria-label="Recent campaigns"
+        >
+          <e-columns>
+            <e-column field="name" headerText="Campaign">
+              <ng-template #template let-c>
+                <span class="strong">{{ c.name }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="state" headerText="State">
+              <ng-template #template let-c>
+                <ar-chip [tone]="chipToneFor(c.state)">{{ c.state }}</ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column field="sent" headerText="Sent" type="number" textAlign="Right">
+              <ng-template #template let-c>{{ count(c.sent) }}</ng-template>
+            </e-column>
+            <e-column field="recipients" headerText="Recipients" type="number" textAlign="Right">
+              <ng-template #template let-c>{{ count(c.recipients) }}</ng-template>
+            </e-column>
+            <e-column field="cost" headerText="Cost" textAlign="Right">
+              <ng-template #template let-c>
+                <span [class.free]="c.free">{{ c.cost }}</span>
+              </ng-template>
+            </e-column>
+          </e-columns>
+          <ng-template #emptyRecordTemplate>No campaigns yet.</ng-template>
+        </ejs-grid>
       </ar-card>
     </div>
 

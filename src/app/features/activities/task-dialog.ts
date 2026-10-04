@@ -18,6 +18,8 @@ import {
   TaskPriority,
 } from '../../proxy/activities';
 import { ArButton, ArDialog } from '../../ui';
+import { ArDateInput } from '../../ui/date-input';
+import { ArSelect } from '../../ui/select';
 import { ActivityDirectory } from './activity-directory';
 import { ActivityGateway } from './activity-mock';
 import {
@@ -42,7 +44,7 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
 /** Making and changing a task. */
 @Component({
   selector: 'ar-task-dialog',
-  imports: [ArDialog, ArButton, ArRecurrencePicker],
+  imports: [ArDialog, ArButton, ArRecurrencePicker, ArSelect, ArDateInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog [title]="task() ? 'Edit task' : 'New task'" (dismiss)="closed.emit()">

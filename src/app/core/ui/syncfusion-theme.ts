@@ -1,21 +1,42 @@
 /**
- * Loads the Syncfusion stylesheet (public/vendor/syncfusion/syncfusion.css, built
- * by scripts/build-syncfusion-theme.mjs) the first time a Syncfusion-based
- * component renders. It is large, so it is kept out of the initial bundle and
- * never loaded on the public pages that don't use it. index.html adds the same
- * link early on app pages, so a full page load doesn't flash unstyled controls;
- * this covers in-app navigation from a public page (e.g. landing -> sign-in).
+ * Loads Syncfusion's stylesheets (public/vendor/syncfusion/, built by
+ * scripts/build-syncfusion-theme.mjs) the first time a Syncfusion-based
+ * component renders. They are large, so they stay out of the initial bundle and
+ * never load on the public pages. The core bundle holds the theme's variables
+ * and the common controls; grid, schedule and kanban are separate bundles that
+ * load only on screens that use them. index.html adds the core link early on app
+ * pages so a full page load doesn't flash unstyled controls.
  */
+export type SyncfusionBundle = 'core' | 'grid' | 'schedule' | 'kanban';
+
+/** Bump with the @syncfusion/* version so browsers fetch the new files. */
+const VERSION = '35.1.37';
+
+const FILE: Record<SyncfusionBundle, string> = {
+  core: 'syncfusion',
+  grid: 'syncfusion-grid',
+  schedule: 'syncfusion-schedule',
+  kanban: 'syncfusion-kanban',
+};
+
+/** The core link's id; index.html uses the same one. */
 export const SYNCFUSION_THEME_ID = 'sf-theme';
 
-/** Bump with the @syncfusion/* version so browsers fetch the new file. */
-export const SYNCFUSION_THEME_HREF = 'vendor/syncfusion/syncfusion.css?v=35.1.37';
+export function syncfusionThemeHref(bundle: SyncfusionBundle): string {
+  return `vendor/syncfusion/${FILE[bundle]}.css?v=${VERSION}`;
+}
 
-export function ensureSyncfusionTheme(doc: Document | undefined = globalThis.document): void {
-  if (!doc || doc.getElementById(SYNCFUSION_THEME_ID)) return;
+export function ensureSyncfusionTheme(
+  bundle: SyncfusionBundle = 'core',
+  doc: Document | undefined = globalThis.document,
+): void {
+  if (!doc) return;
+  if (bundle !== 'core') ensureSyncfusionTheme('core', doc);
+  const id = bundle === 'core' ? SYNCFUSION_THEME_ID : `sf-theme-${bundle}`;
+  if (doc.getElementById(id)) return;
   const link = doc.createElement('link');
-  link.id = SYNCFUSION_THEME_ID;
+  link.id = id;
   link.rel = 'stylesheet';
-  link.href = SYNCFUSION_THEME_HREF;
+  link.href = syncfusionThemeHref(bundle);
   doc.head.appendChild(link);
 }

@@ -19,6 +19,8 @@ import {
 } from '../../proxy/inventory/inventory.service';
 import { ProductService } from '../../proxy/library/product.service';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArDateInput } from '../../ui/date-input';
+import { ArSelect } from '../../ui/select';
 import { parseRupees, rupees } from '../reorder/reorder-logic';
 import { MOVE_LABEL, MoveKind, parseLots, parseMove, qty } from './stock-logic';
 
@@ -96,7 +98,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
  */
 @Component({
   selector: 'ar-stock',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ArDateInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

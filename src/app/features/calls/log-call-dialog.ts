@@ -3,6 +3,8 @@ import { firstValueFrom } from 'rxjs';
 
 import { CallLogDto, CallOutcome, VoiceCallDirection } from '../../proxy/voice';
 import { ArButton, ArDialog } from '../../ui';
+import { ArDateInput } from '../../ui/date-input';
+import { ArSelect } from '../../ui/select';
 import { errorMessage, fromLocalInput, toLocalInput } from '../activities/activity-logic';
 import { CallGateway } from './call-mock';
 import { OUTCOME_CHOICES, OUTCOME_LABEL } from './call-logic';
@@ -10,7 +12,7 @@ import { OUTCOME_CHOICES, OUTCOME_LABEL } from './call-logic';
 /** Writing up a call made or taken on the rep's own phone, so the contact's and the deal's history is complete. */
 @Component({
   selector: 'ar-log-call-dialog',
-  imports: [ArDialog, ArButton],
+  imports: [ArDialog, ArButton, ArSelect, ArDateInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog [title]="'Log a call with ' + contactName()" (dismiss)="closed.emit(null)">

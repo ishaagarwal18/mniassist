@@ -1,8 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 
 import { Member, WORKSPACE_ROLES, WorkspaceStore } from '../../core/services/workspace.store';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip } from '../../ui';
+import { ArGrid } from '../../ui/grid';
+import { ArSelect } from '../../ui/select';
 
 /**
  * Users & roles (M07). Who is in the workspace, what each can do, and who has been
@@ -15,7 +18,7 @@ import { ArBanner, ArButton, ArChip } from '../../ui';
  */
 @Component({
   selector: 'ar-members',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip],
+  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArSelect, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './members.html',
   styleUrl: './members.scss',
@@ -36,6 +39,47 @@ export class ArMembers {
   protected readonly closedInvites = computed(() =>
     this.invitations().filter((i) => i.state !== 'pending' && i.state !== 'accepted'),
   );
+
+  /** Grid rows: plain values to sort, filter and export by, plus the member for the actions. */
+  protected readonly activeRows = computed(() => this.active().map((m) => this.memberRow(m)));
+  protected readonly deactivatedRows = computed(() =>
+    this.deactivated().map((m) => this.memberRow(m)),
+  );
+  protected readonly pendingRows = computed(() =>
+    this.pendingInvites().map((i) => ({
+      id: i.id,
+      email: i.email,
+      roleName: i.roleName,
+      team: i.teamName ?? '—',
+      sent: this.when(i.invitedAt),
+      expiry: this.expiresIn(i.expiresAt),
+      isExpired: i.isExpired,
+    })),
+  );
+  protected readonly closedRows = computed(() =>
+    this.closedInvites().map((i) => ({
+      id: i.id,
+      email: i.email,
+      roleName: i.roleName,
+      state: i.state,
+      sent: this.when(i.invitedAt),
+    })),
+  );
+
+  private memberRow(m: Member) {
+    return {
+      member: m,
+      userId: m.userId,
+      initials: this.initials(m),
+      name: m.name ?? m.userName,
+      email: m.email,
+      roles: m.roles,
+      roleText: m.roles.length ? m.roles.join(', ') : '—',
+      teams: m.teamNames.length ? m.teamNames.join(', ') : '—',
+      open: m.openConversationCount,
+      sessionsEnded: this.when(m.sessionsRevokedAt),
+    };
+  }
 
   protected readonly subtitle = computed(() => {
     const n = this.active().length;

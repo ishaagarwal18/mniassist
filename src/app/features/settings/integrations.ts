@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
 
 import { OpsService } from '../../core/services/ops.service';
@@ -13,6 +14,7 @@ import {
 import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
+import { ArGrid } from '../../ui/grid';
 import { ChipTone } from '../../ui/chip';
 import { ArErpSyncSection } from './erp-sync-section';
 
@@ -133,7 +135,7 @@ const DELIVERY_TONE: Record<string, ChipTone> = {
  */
 @Component({
   selector: 'ar-integrations',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArDialog, ArErpSyncSection],
+  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArDialog, ArErpSyncSection, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './integrations.html',
   styleUrl: './integrations.scss',
@@ -511,6 +513,19 @@ export class ArIntegrations {
       ? this.deliveries().filter((d) => d.state === 'abandoned')
       : this.deliveries().filter((d) => d.state !== 'abandoned');
   });
+
+  /** Grid rows: plain values to sort, filter and export by. */
+  protected readonly deliveryRows = computed(() =>
+    this.relevantDeliveries().map((d) => ({
+      id: d.id,
+      event: this.eventLabel(d.event),
+      state: d.state,
+      tone: this.deliveryTone(d.state),
+      attempts: d.attempts,
+      status: d.statusCode ?? '—',
+      when: this.when(d.createdAt),
+    })),
+  );
 
   protected select(id: string): void {
     this.selectedId.set(id);

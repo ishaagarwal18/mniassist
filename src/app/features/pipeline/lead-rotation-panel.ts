@@ -18,6 +18,7 @@ import {
   LeadSource,
 } from '../../proxy/pipeline';
 import { ArButton, ArChip } from '../../ui';
+import { ArSelect } from '../../ui/select';
 
 interface Row {
   userId: string;
@@ -45,7 +46,7 @@ const SOURCES: { value: LeadSource; label: string }[] = [
  */
 @Component({
   selector: 'ar-lead-rotation-panel',
-  imports: [ArButton, ArChip],
+  imports: [ArButton, ArChip, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './lead-rotation-panel.html',
   styleUrl: './lead-rotation-panel.scss',

@@ -1,6 +1,17 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
+import {
+  CategoryService,
+  ChartModule,
+  IAxisLabelRenderEventArgs,
+  ISharedTooltipRenderEventArgs,
+  LegendService,
+  LineSeriesService,
+  TooltipService,
+} from '@syncfusion/ej2-angular-charts';
+
 import { ForecastStore } from '../../core/services/forecast.store';
+import { chartColours } from '../../core/ui/chart-colours';
 import { PipelineStore } from '../../core/services/pipeline.service';
 import { WorkspaceStore } from '../../core/services/workspace.store';
 import { inrCompact } from '../../core/util/format';
@@ -15,6 +26,7 @@ import {
 } from '../../proxy/pipeline';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 
 const STAGE_LABEL: Record<number, string> = {
   [EnquiryStage.New]: 'New',
@@ -54,7 +66,8 @@ interface QuotaRow {
  */
 @Component({
   selector: 'ar-forecast',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ChartModule],
+  providers: [LineSeriesService, CategoryService, LegendService, TooltipService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './forecast.html',
   styleUrl: './forecast.scss',
@@ -88,45 +101,48 @@ export class ArForecast {
 
   // ---- the trend chart -----------------------------------------------------
 
+  /** The period's daily snapshots, for the history chart. Values stay in paise; the axis and tooltip format them. */
   protected readonly chart = computed(() => {
     const points = this.history().points ?? [];
-    const w = 560;
-    const h = 150;
-    const pad = { l: 8, r: 8, t: 10, b: 18 };
-    if (points.length === 0) {
-      return null;
-    }
-
-    const top = Math.max(
-      1,
-      ...points.flatMap((p) => [
-        p.targetInPaise ?? 0,
-        p.expectedInPaise ?? 0,
-        p.closedInPaise ?? 0,
-      ]),
-    );
-    const x = (i: number) =>
-      points.length === 1 ? w / 2 : pad.l + (i * (w - pad.l - pad.r)) / (points.length - 1);
-    const y = (v: number) => h - pad.b - (v / top) * (h - pad.t - pad.b);
-    const line = (pick: (p: (typeof points)[number]) => number) =>
-      points.map((p, i) => `${x(i).toFixed(1)},${y(pick(p)).toFixed(1)}`).join(' ');
-
-    const target = points[points.length - 1].targetInPaise ?? 0;
+    if (points.length === 0) return null;
     return {
-      w,
-      h,
-      expected: line((p) => p.expectedInPaise ?? 0),
-      closed: line((p) => p.closedInPaise ?? 0),
-      targetY: target > 0 ? y(target) : null,
-      dots: points.map((p, i) => ({
-        x: x(i),
-        y: y(p.expectedInPaise ?? 0),
-        label: this.day(p.date),
+      points: points.map((p) => ({
+        day: this.day(p.date),
+        expected: p.expectedInPaise ?? 0,
+        closed: p.closedInPaise ?? 0,
+        target: p.targetInPaise ?? 0,
       })),
-      first: this.day(points[0].date),
-      last: this.day(points[points.length - 1].date),
+      hasTarget: (points[points.length - 1].targetInPaise ?? 0) > 0,
     };
   });
+
+  protected readonly colours = chartColours({
+    expected: '--ar-teal-500',
+    closed: '--ar-ink-900',
+    target: '--ar-amber-500',
+  });
+  protected readonly xAxis = {
+    valueType: 'Category',
+    majorGridLines: { width: 0 },
+    majorTickLines: { width: 0 },
+    labelIntersectAction: 'Hide',
+  } as const;
+  protected readonly yAxis = {
+    minimum: 0,
+    lineStyle: { width: 0 },
+    majorTickLines: { width: 0 },
+    labelStyle: { size: '11px' },
+  } as const;
+
+  protected moneyAxisLabel(args: IAxisLabelRenderEventArgs): void {
+    if (args.axis.orientation === 'Vertical') args.text = this.money(args.value);
+  }
+
+  protected moneyTooltip(args: ISharedTooltipRenderEventArgs): void {
+    args.text = (args.data ?? []).map(
+      (d) => `${d.seriesName}: <b>${this.money(Number(d.pointY))}</b>`,
+    );
+  }
 
   protected readonly changeText = computed(() => {
     const h = this.history();

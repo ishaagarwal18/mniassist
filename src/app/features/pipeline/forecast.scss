@@ -270,54 +270,9 @@
   color: var(--ar-ink-700);
 }
 .fc__chart {
-  width: 100%;
   max-width: 620px;
-  height: auto;
+  padding: 8px 12px 4px;
   background: var(--ar-white);
   border: 1px solid var(--ar-line-200);
   border-radius: var(--ar-radius-card);
-}
-.fc__c-exp {
-  stroke: var(--ar-teal-500);
-  stroke-width: 2;
-}
-.fc__c-won {
-  stroke: var(--ar-ink-900);
-  stroke-width: 2;
-}
-.fc__c-target {
-  stroke: var(--ar-amber-500);
-  stroke-width: 1;
-  stroke-dasharray: 4 4;
-}
-.fc__c-dot {
-  fill: var(--ar-teal-500);
-}
-.fc__c-tx {
-  fill: var(--ar-ink-400);
-  font: 400 10px var(--ar-font-sans);
-}
-.fc__legend {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  font: 400 11.5px var(--ar-font-sans);
-  color: var(--ar-ink-500);
-}
-.fc__k {
-  display: inline-block;
-  width: 14px;
-  height: 3px;
-  margin-left: 8px;
-  border-radius: 2px;
-}
-.fc__k--exp {
-  background: var(--ar-teal-500);
-}
-.fc__k--won {
-  background: var(--ar-ink-900);
-}
-.fc__k--tgt {
-  background: var(--ar-amber-500);
 }

@@ -13,7 +13,8 @@ export const environment = {
   production: false,
 
   /** Syncfusion licence key (paste yours here). Empty shows Syncfusion's licence notice. */
-  syncfusionLicenseKey: 'Ngo9BigBOggjHTQxAR8/V1JBaF5cXmRCd1p/TH5YfUNzdUVEY1ZUTXxaS1ZhSXxVd0VjXX9ecXJUQmJVVkF9XEc=',
+  syncfusionLicenseKey:
+    'Ngo9BigBOggjHTQxAR8/V1JBaF5cXmRCd1p/TH5YfUNzdUVEY1ZUTXxaS1ZhSXxVd0VjXX9ecXJUQmJVVkF9XEc=',
 
   useMockData: false,
 

@@ -13,7 +13,10 @@ describe('erp sync form', () => {
       debtorsGroup: '',
       cardCodePrefix: '',
     });
-    const form = readErpForm({ erp: { customers: true, invoices: true }, company: 'Emnisoft Pvt Ltd' });
+    const form = readErpForm({
+      erp: { customers: true, invoices: true },
+      company: 'Emnisoft Pvt Ltd',
+    });
     expect(form.customers).toBe(true);
     expect(form.salesOrders).toBe(false);
     expect(form.company).toBe('Emnisoft Pvt Ltd');

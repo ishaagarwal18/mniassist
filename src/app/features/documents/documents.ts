@@ -11,6 +11,7 @@ import {
 } from '../../proxy/library';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
+import { ArSelect } from '../../ui/select';
 
 interface Doc {
   id: string;
@@ -81,7 +82,7 @@ function toDoc(d: LibraryDocumentDto): Doc {
  */
 @Component({
   selector: 'ar-documents',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './documents.html',
   styleUrl: './documents.scss',

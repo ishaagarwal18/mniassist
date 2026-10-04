@@ -19,6 +19,7 @@ import {
   TicketStatus,
 } from '../../proxy/support';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 import { errorMessage } from '../activities/activity-logic';
 import { ActivityDirectory } from '../activities/activity-directory';
@@ -50,7 +51,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
  *  composer that sends through the ticket's own conversation. */
 @Component({
   selector: 'ar-ticket-detail-dialog',
-  imports: [ArDialog, ArButton, ArChip],
+  imports: [ArDialog, ArButton, ArChip, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog [title]="loaded()?.reference || 'Ticket'" (dismiss)="closed.emit(changed())">

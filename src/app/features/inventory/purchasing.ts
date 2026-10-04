@@ -16,6 +16,8 @@ import {
 } from '../../proxy/inventory/purchasing.service';
 import { ProductService } from '../../proxy/library/product.service';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArDateInput } from '../../ui/date-input';
+import { ArSelect } from '../../ui/select';
 import { rupees } from '../reorder/reorder-logic';
 import { DraftLine, ORDER_STATE, draftTotal, readLines } from './purchasing-logic';
 import { parseLots, qty } from './stock-logic';
@@ -89,7 +91,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
  */
 @Component({
   selector: 'ar-purchasing',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, RouterLink, ArSelect, ArDateInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

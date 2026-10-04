@@ -18,6 +18,7 @@ import {
 import { DraftedTemplateDto } from '../../proxy/messaging';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArIcon } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { IconName } from '../../ui/icon';
 
 interface BodySegment {
@@ -65,7 +66,7 @@ const HEADER_MEDIA_ICON: Record<TemplateHeaderKind, IconName> = {
  */
 @Component({
   selector: 'ar-template-composer',
-  imports: [RouterLink, ArTopbar, ArButton, ArChip, ArIcon],
+  imports: [RouterLink, ArTopbar, ArButton, ArChip, ArIcon, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './template-composer.html',
   styleUrl: './template-composer.scss',

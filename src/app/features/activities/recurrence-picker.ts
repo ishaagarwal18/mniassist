@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
 
 import { RecurrenceFrequency, Weekday } from '../../proxy/activities';
+import { ArDateInput } from '../../ui/date-input';
+import { ArSelect } from '../../ui/select';
 import { DAY_NAMES, NO_REPEAT, RecurrenceDraft, WEEK_ORDER, recurrenceProblem } from './recurrence';
 
 /**
@@ -10,6 +12,7 @@ import { DAY_NAMES, NO_REPEAT, RecurrenceDraft, WEEK_ORDER, recurrenceProblem } 
  */
 @Component({
   selector: 'ar-recurrence-picker',
+  imports: [ArSelect, ArDateInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="rp">

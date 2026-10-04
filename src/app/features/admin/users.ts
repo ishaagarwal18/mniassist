@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
@@ -7,6 +8,7 @@ import { readApiError } from '../../core/util/api-error';
 import { IdentityRoleDto, IdentityUserDto, IdentityUserService } from '../../proxy/identity';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArCard, ArChip, ArDialog } from '../../ui';
+import { ArGrid } from '../../ui/grid';
 
 const SEED: IdentityUserDto[] = [
   {
@@ -31,7 +33,7 @@ interface Row extends IdentityUserDto {
  */
 @Component({
   selector: 'ar-admin-users',
-  imports: [ArTopbar, ArCard, ArButton, ArChip, ArBanner, ArDialog],
+  imports: [ArTopbar, ArCard, ArButton, ArChip, ArBanner, ArDialog, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -54,48 +56,49 @@ interface Row extends IdentityUserDto {
         }
 
         <ar-card heading="Workspace users">
-          <table class="ar-table">
-            <thead>
-              <tr>
-                <th scope="col">User</th>
-                <th scope="col">Email</th>
-                <th scope="col">Roles</th>
-                <th scope="col"></th>
-                <th scope="col" class="ta-actions"></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (u of users(); track u.id) {
-                <tr>
-                  <td>
-                    <div class="u-name">{{ display(u) }}</div>
-                    <div class="u-sub ar-mono">{{ u.userName }}</div>
-                  </td>
-                  <td>{{ u.email }}</td>
-                  <td>
-                    @for (r of u.roleNames; track r) {
-                      <ar-chip tone="neutral">{{ r }}</ar-chip>
-                    }
-                  </td>
-                  <td>
-                    @if (!u.isActive) {
-                      <ar-chip tone="amber">Inactive</ar-chip>
-                    }
-                  </td>
-                  <td class="ta-actions">
-                    <button type="button" class="link" (click)="openEdit(u)">Edit</button>
-                    <button type="button" class="link link--danger" (click)="remove(u)">
+          <ejs-grid arGrid="users" [dataSource]="rows()" aria-label="Workspace users">
+            <e-columns>
+              <e-column field="displayName" headerText="User">
+                <ng-template #template let-u>
+                  <div class="u-name">{{ u.displayName }}</div>
+                  <div class="u-sub ar-mono">{{ u.userName }}</div>
+                </ng-template>
+              </e-column>
+              <e-column field="email" headerText="Email" />
+              <e-column field="roles" headerText="Roles">
+                <ng-template #template let-u>
+                  @for (r of u.roleNames; track r) {
+                    <ar-chip tone="neutral">{{ r }}</ar-chip>
+                  }
+                </ng-template>
+              </e-column>
+              <e-column field="status" headerText="Status" width="120">
+                <ng-template #template let-u>
+                  @if (!u.isActive) {
+                    <ar-chip tone="amber">Inactive</ar-chip>
+                  }
+                </ng-template>
+              </e-column>
+              <e-column
+                headerText="Actions"
+                width="150"
+                textAlign="Right"
+                [allowSorting]="false"
+                [allowFiltering]="false"
+                [showInColumnChooser]="false"
+              >
+                <ng-template #template let-u>
+                  <span class="ta-actions">
+                    <button type="button" class="link" (click)="openEdit(u.user)">Edit</button>
+                    <button type="button" class="link link--danger" (click)="remove(u.user)">
                       Delete
                     </button>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="5" class="ta-empty">No users.</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+                  </span>
+                </ng-template>
+              </e-column>
+            </e-columns>
+            <ng-template #emptyRecordTemplate>No users.</ng-template>
+          </ejs-grid>
         </ar-card>
       </div>
     </div>
@@ -288,6 +291,20 @@ export class ArAdminUsers {
     (this.mock ? SEED : this.resource.value().items).map((u) => ({
       ...u,
       roleNames: u.roleNames ?? [],
+    })),
+  );
+  /** Grid rows: plain values to sort, filter and export by, plus the user for the actions. */
+  protected readonly rows = computed(() =>
+    this.users().map((u) => ({
+      id: u.id,
+      user: u,
+      displayName: this.display(u),
+      userName: u.userName,
+      email: u.email,
+      roleNames: u.roleNames,
+      roles: u.roleNames.join(', '),
+      isActive: u.isActive,
+      status: u.isActive ? 'Active' : 'Inactive',
     })),
   );
   protected readonly subtitle = computed(() => {

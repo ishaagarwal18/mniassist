@@ -52,6 +52,7 @@ import { WorkspaceStore } from '../../core/services/workspace.store';
 import { AutomationNodeKind, AutomationTriggerKind } from '../../proxy/messaging';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArIcon } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { IconName } from '../../ui/icon';
 
 const KIND_META: Record<
@@ -174,7 +175,16 @@ const UNDO_DEPTH = 50;
  */
 @Component({
   selector: 'ar-automation-builder',
-  imports: [RouterLink, NgTemplateOutlet, ArTopbar, ArButton, ArChip, ArIcon, ArAutomationCanvas],
+  imports: [
+    RouterLink,
+    NgTemplateOutlet,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArIcon,
+    ArAutomationCanvas,
+    ArSelect,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './automation-builder.html',
   styleUrl: './automation-builder.scss',

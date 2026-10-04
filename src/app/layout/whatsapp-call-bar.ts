@@ -6,6 +6,7 @@ import { grantedPolicy } from '../core/auth/permission';
 import { WhatsAppCallSession } from '../core/services/whatsapp-call.session';
 import { CallAgentDto } from '../proxy/messaging/whats-app-call.service';
 import { ArButton, ArIcon } from '../ui';
+import { ArSelect } from '../ui/select';
 
 /** How often the app asks whether a customer's WhatsApp call is ringing. Meta rings for about a minute. */
 const POLL_MS = 4000;
@@ -18,7 +19,7 @@ const POLL_MS = 4000;
  */
 @Component({
   selector: 'ar-whatsapp-call-bar',
-  imports: [ArButton, ArIcon],
+  imports: [ArButton, ArIcon, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (session.live(); as c) {

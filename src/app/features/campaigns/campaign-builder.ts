@@ -12,6 +12,7 @@ import { ChannelService } from '../../core/services/channel.service';
 import { count, inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 
 const STATE_TONE: Record<CState, ChipTone> = {
@@ -31,7 +32,7 @@ const STATE_TONE: Record<CState, ChipTone> = {
  */
 @Component({
   selector: 'ar-campaign-builder',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './campaign-builder.html',
   styleUrl: './campaign-builder.scss',

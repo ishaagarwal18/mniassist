@@ -7,6 +7,7 @@ import { PipelineStore } from '../../core/services/pipeline.service';
 import { AutomationTriggerKind } from '../../proxy/messaging';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 
 const STATE_TONE: Record<WState, ChipTone> = { draft: 'neutral', active: 'good', paused: 'amber' };
@@ -18,7 +19,7 @@ const STATE_TONE: Record<WState, ChipTone> = { draft: 'neutral', active: 'good',
  */
 @Component({
   selector: 'ar-automations',
-  imports: [RouterLink, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [RouterLink, ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './automations.html',
   styleUrl: './automations.scss',

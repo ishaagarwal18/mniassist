@@ -76,86 +76,103 @@
   <!-- ── Members ─────────────────────────────────────────────────────── -->
   <section class="block">
     <h2 class="block__t">Members</h2>
-    <table class="ar-table">
-      <caption class="sr-only">
-        Workspace members
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">Person</th>
-          <th scope="col">Roles</th>
-          <th scope="col">Teams</th>
-          <th scope="col" class="num">Open</th>
-          <th scope="col"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (m of active(); track m.userId) {
-          <tr>
-            <th scope="row" class="mb__person">
-              <span class="mb__avatar" aria-hidden="true">{{ initials(m) }}</span>
+    <ejs-grid arGrid="members" [dataSource]="activeRows()" aria-label="Workspace members">
+      <e-columns>
+        <e-column field="name" headerText="Person">
+          <ng-template #template let-m>
+            <span class="mb__person">
+              <span class="mb__avatar" aria-hidden="true">{{ m.initials }}</span>
               <span class="mb__id">
-                <span class="mb__name">{{ m.name ?? m.userName }}</span>
+                <span class="mb__name">{{ m.name }}</span>
                 <span class="mb__email">{{ m.email }}</span>
               </span>
-            </th>
-            <td>
-              <span class="mb__chips">
-                @for (r of m.roles; track r) {
-                  <ar-chip [tone]="roleTone(r)">{{ r }}</ar-chip>
-                } @empty {
-                  <span class="mb__none">No role</span>
-                }
-              </span>
-            </td>
-            <td class="mb__teams">{{ m.teamNames.length ? m.teamNames.join(', ') : '—' }}</td>
-            <td class="num ar-mono">{{ m.openConversationCount }}</td>
-            <td class="mb__act">
-              <button type="button" class="link" (click)="revokeSessions(m)">Sign out</button>
-              <button type="button" class="link link--danger" (click)="deactivate(m)">
+            </span>
+          </ng-template>
+        </e-column>
+        <e-column field="roleText" headerText="Roles">
+          <ng-template #template let-m>
+            <span class="mb__chips">
+              @for (r of m.roles; track r) {
+                <ar-chip [tone]="roleTone(r)">{{ r }}</ar-chip>
+              } @empty {
+                <span class="mb__none">No role</span>
+              }
+            </span>
+          </ng-template>
+        </e-column>
+        <e-column field="teams" headerText="Teams">
+          <ng-template #template let-m
+            ><span class="mb__teams">{{ m.teams }}</span></ng-template
+          >
+        </e-column>
+        <e-column field="open" headerText="Open" type="number" textAlign="Right" width="90">
+          <ng-template #template let-m
+            ><span class="ar-mono">{{ m.open }}</span></ng-template
+          >
+        </e-column>
+        <e-column
+          headerText="Actions"
+          width="190"
+          textAlign="Right"
+          [allowSorting]="false"
+          [allowFiltering]="false"
+          [showInColumnChooser]="false"
+        >
+          <ng-template #template let-m>
+            <span class="mb__act">
+              <button type="button" class="link" (click)="revokeSessions(m.member)">
+                Sign out
+              </button>
+              <button type="button" class="link link--danger" (click)="deactivate(m.member)">
                 Deactivate
               </button>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
+            </span>
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
   </section>
 
   @if (deactivated().length) {
     <section class="block">
       <h2 class="block__t">Deactivated</h2>
-      <table class="ar-table">
-        <caption class="sr-only">
-          Deactivated members
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Person</th>
-            <th scope="col">Last roles</th>
-            <th scope="col">Sessions ended</th>
-            <th scope="col"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (m of deactivated(); track m.userId) {
-            <tr class="mb__off">
-              <th scope="row" class="mb__person">
-                <span class="mb__avatar mb__avatar--off" aria-hidden="true">{{ initials(m) }}</span>
+      <ejs-grid
+        arGrid="deactivated-members"
+        [dataSource]="deactivatedRows()"
+        aria-label="Deactivated members"
+      >
+        <e-columns>
+          <e-column field="name" headerText="Person">
+            <ng-template #template let-m>
+              <span class="mb__person">
+                <span class="mb__avatar mb__avatar--off" aria-hidden="true">{{ m.initials }}</span>
                 <span class="mb__id">
-                  <span class="mb__name">{{ m.name ?? m.userName }}</span>
+                  <span class="mb__name">{{ m.name }}</span>
                   <span class="mb__email">{{ m.email }}</span>
                 </span>
-              </th>
-              <td>{{ m.roles.length ? m.roles.join(', ') : '—' }}</td>
-              <td class="ar-mono">{{ when(m.sessionsRevokedAt) }}</td>
-              <td class="mb__act">
-                <button type="button" class="link" (click)="reactivate(m)">Reactivate</button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+              </span>
+            </ng-template>
+          </e-column>
+          <e-column field="roleText" headerText="Last roles" />
+          <e-column field="sessionsEnded" headerText="Sessions ended">
+            <ng-template #template let-m>
+              <span class="ar-mono">{{ m.sessionsEnded }}</span>
+            </ng-template>
+          </e-column>
+          <e-column
+            headerText="Actions"
+            width="140"
+            textAlign="Right"
+            [allowSorting]="false"
+            [allowFiltering]="false"
+            [showInColumnChooser]="false"
+          >
+            <ng-template #template let-m>
+              <button type="button" class="link" (click)="reactivate(m.member)">Reactivate</button>
+            </ng-template>
+          </e-column>
+        </e-columns>
+      </ejs-grid>
     </section>
   }
 
@@ -165,31 +182,43 @@
     @if (pendingInvites().length === 0) {
       <p class="block__empty">No invitations waiting to be accepted.</p>
     } @else {
-      <table class="ar-table">
-        <caption class="sr-only">
-          Pending invitations
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Email</th>
-            <th scope="col">Role</th>
-            <th scope="col">Team</th>
-            <th scope="col">Sent</th>
-            <th scope="col">Expiry</th>
-            <th scope="col"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (i of pendingInvites(); track i.id) {
-            <tr>
-              <td class="ar-mono">{{ i.email }}</td>
-              <td>
-                <ar-chip [tone]="roleTone(i.roleName)">{{ i.roleName }}</ar-chip>
-              </td>
-              <td>{{ i.teamName ?? '—' }}</td>
-              <td class="ar-mono">{{ when(i.invitedAt) }}</td>
-              <td [class.mb__stale]="i.isExpired">{{ expiresIn(i.expiresAt) }}</td>
-              <td class="mb__act">
+      <ejs-grid
+        arGrid="pending-invitations"
+        [dataSource]="pendingRows()"
+        aria-label="Pending invitations"
+      >
+        <e-columns>
+          <e-column field="email" headerText="Email">
+            <ng-template #template let-i
+              ><span class="ar-mono">{{ i.email }}</span></ng-template
+            >
+          </e-column>
+          <e-column field="roleName" headerText="Role" width="140">
+            <ng-template #template let-i>
+              <ar-chip [tone]="roleTone(i.roleName)">{{ i.roleName }}</ar-chip>
+            </ng-template>
+          </e-column>
+          <e-column field="team" headerText="Team" width="140" />
+          <e-column field="sent" headerText="Sent" width="150">
+            <ng-template #template let-i
+              ><span class="ar-mono">{{ i.sent }}</span></ng-template
+            >
+          </e-column>
+          <e-column field="expiry" headerText="Expiry" width="140">
+            <ng-template #template let-i>
+              <span [class.mb__stale]="i.isExpired">{{ i.expiry }}</span>
+            </ng-template>
+          </e-column>
+          <e-column
+            headerText="Actions"
+            width="170"
+            textAlign="Right"
+            [allowSorting]="false"
+            [allowFiltering]="false"
+            [showInColumnChooser]="false"
+          >
+            <ng-template #template let-i>
+              <span class="mb__act">
                 <button type="button" class="link" (click)="resend(i.id)">Resend</button>
                 <button
                   type="button"
@@ -198,33 +227,40 @@
                 >
                   Revoke
                 </button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+              </span>
+            </ng-template>
+          </e-column>
+        </e-columns>
+      </ejs-grid>
     }
 
     @if (closedInvites().length) {
       <details class="mb__closed">
         <summary>Revoked and expired invitations ({{ closedInvites().length }})</summary>
-        <table class="ar-table">
-          <caption class="sr-only">
-            Closed invitations
-          </caption>
-          <tbody>
-            @for (i of closedInvites(); track i.id) {
-              <tr>
-                <td class="ar-mono">{{ i.email }}</td>
-                <td>{{ i.roleName }}</td>
-                <td>
-                  <ar-chip tone="neutral">{{ i.state }}</ar-chip>
-                </td>
-                <td class="ar-mono">{{ when(i.invitedAt) }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+        <ejs-grid
+          arGrid="closed-invitations"
+          [dataSource]="closedRows()"
+          aria-label="Closed invitations"
+        >
+          <e-columns>
+            <e-column field="email" headerText="Email">
+              <ng-template #template let-i
+                ><span class="ar-mono">{{ i.email }}</span></ng-template
+              >
+            </e-column>
+            <e-column field="roleName" headerText="Role" />
+            <e-column field="state" headerText="State" width="130">
+              <ng-template #template let-i>
+                <ar-chip tone="neutral">{{ i.state }}</ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column field="sent" headerText="Sent" width="150">
+              <ng-template #template let-i
+                ><span class="ar-mono">{{ i.sent }}</span></ng-template
+              >
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </details>
     }
   </section>

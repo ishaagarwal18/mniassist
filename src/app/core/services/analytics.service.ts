@@ -274,8 +274,14 @@ export class AnalyticsStore {
   });
 
   readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
+  /** A failed request (a 403 without the permission, say) reads as no data: Angular's
+   *  resource.value() throws once a request has failed, which would freeze the screen. */
   private readonly data = computed<Bundle>(() =>
-    environment.useMockData ? SEED : this.resource.value(),
+    environment.useMockData
+      ? SEED
+      : this.resource.hasValue()
+        ? this.resource.value()
+        : { trend: [], categories: [], templates: [], agents: [] },
   );
 
   readonly trend = computed(() => this.data().trend);
@@ -315,8 +321,12 @@ export class AnalyticsStore {
     defaultValue: SEED_CONVERSION,
   });
 
-  readonly conversion = computed(() =>
-    environment.useMockData ? SEED_CONVERSION : this.conversionResource.value(),
+  readonly conversion = computed<ConversionReportDto>(() =>
+    environment.useMockData
+      ? SEED_CONVERSION
+      : this.conversionResource.hasValue()
+        ? this.conversionResource.value()
+        : { dimension: this.conversionDimension(), rows: [] },
   );
 
   setConversionDimension(d: ConversionDimension): void {
@@ -340,8 +350,12 @@ export class AnalyticsStore {
     defaultValue: SEED_MM_LITE,
   });
 
-  readonly mmLite = computed(() =>
-    environment.useMockData ? SEED_MM_LITE : this.mmLiteResource.value(),
+  readonly mmLite = computed<MarketingLiteComparisonDto>(() =>
+    environment.useMockData
+      ? SEED_MM_LITE
+      : this.mmLiteResource.hasValue()
+        ? this.mmLiteResource.value()
+        : {},
   );
 
   /** Downloads the category / template / agent tables in the chosen format. M12-6. */

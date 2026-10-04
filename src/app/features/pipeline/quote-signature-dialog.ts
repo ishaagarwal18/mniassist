@@ -19,6 +19,7 @@ import {
   SigningDeliveryDto,
 } from '../../proxy/pipeline';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 import {
   SIGNATURE_STATUS_LABEL,
@@ -43,7 +44,7 @@ const TONE: Record<SignatureRequestStatus, ChipTone> = {
  */
 @Component({
   selector: 'ar-quote-signature-dialog',
-  imports: [ArDialog, ArButton, ArChip],
+  imports: [ArDialog, ArButton, ArChip, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog [title]="'Signature · ' + reference()" (dismiss)="closed.emit()">

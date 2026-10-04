@@ -11,6 +11,7 @@ import {
   PaymentService,
 } from '../../proxy/payments/payment.service';
 import { ArButton, ArChip } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 import { apiMessage } from '../signing/signing-logic';
 import { PAYMENT_STATUS_LABEL, rupees } from './payment-logic';
@@ -29,7 +30,7 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
  */
 @Component({
   selector: 'ar-payments-settings',
-  imports: [ArTopbar, ArButton, ArChip],
+  imports: [ArTopbar, ArButton, ArChip, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

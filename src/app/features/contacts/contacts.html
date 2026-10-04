@@ -134,79 +134,79 @@
     </div>
 
     <div class="table-pane__body ar-scroll">
-      <table class="ar-table">
-        <caption class="sr-only">
-          Contacts in the selected segment
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Contact</th>
-            <th scope="col">Company / plant</th>
-            <th scope="col">Role</th>
-            <th scope="col">Systems</th>
-            <th scope="col">AMC expiry</th>
-            <th scope="col">Consent</th>
-            <th scope="col">Score</th>
-            <th scope="col">Last activity</th>
-            @if (canReorder) {
-              <th scope="col"><span class="sr-only">Actions</span></th>
-            }
-          </tr>
-        </thead>
-        <tbody>
-          @for (c of visible(); track c.id) {
-            <tr>
-              <td>
-                <span class="who">
-                  <ar-avatar [name]="c.name" [size]="26" />
-                  <span class="who__name">{{ c.name }}</span>
+      <ejs-grid
+        arGrid="contacts"
+        [arGridSearch]="false"
+        [dataSource]="rows()"
+        aria-label="Contacts in the selected segment"
+      >
+        <e-columns>
+          <e-column field="name" headerText="Contact" width="170">
+            <ng-template #template let-c>
+              <span class="who">
+                <ar-avatar [name]="c.name" [size]="26" />
+                <span class="who__name">{{ c.name }}</span>
+              </span>
+            </ng-template>
+          </e-column>
+          <e-column field="company" headerText="Company / plant" />
+          <e-column field="role" headerText="Role" />
+          <e-column field="systems" headerText="Systems" />
+          <e-column field="amcExpiry" headerText="AMC expiry" width="120" />
+          <e-column field="consent" headerText="Consent" width="150">
+            <ng-template #template let-c>
+              <ar-chip [tone]="c.consentTone">{{ c.consent }}</ar-chip>
+            </ng-template>
+          </e-column>
+          <e-column field="score" headerText="Score" type="number" textAlign="Right" width="90">
+            <ng-template #template let-c>
+              @if (c.score != null) {
+                <span
+                  class="score"
+                  [class.score--warm]="c.score >= 60"
+                  [class.score--cold]="c.score < 25"
+                >
+                  {{ c.score }}
                 </span>
-              </td>
-              <td>{{ c.company }}</td>
-              <td>{{ c.attributes.decisionRole ?? '—' }}</td>
-              <td>{{ systems(c) }}</td>
-              <td class="num">{{ c.amcExpiry ?? '—' }}</td>
-              <td>
-                <ar-chip [tone]="consentTone(c)">{{ consentLabel(c) }}</ar-chip>
-              </td>
-              <td class="num">
-                @if (c.score != null) {
-                  <span
-                    class="score"
-                    [class.score--warm]="c.score >= 60"
-                    [class.score--cold]="c.score < 25"
-                  >
-                    {{ c.score }}
-                  </span>
-                } @else {
-                  —
-                }
-              </td>
-              <td>{{ c.lastActivity }}</td>
-              @if (canReorder) {
-                <td class="row-actions">
-                  <button
-                    ar-button
-                    type="button"
-                    variant="ghost"
-                    icon="send"
-                    title="Send {{ c.name }} their spares re-order link"
-                    (click)="reorderFor.set({ id: c.id, name: c.name })"
-                  >
-                    Re-order link
-                  </button>
-                </td>
+              } @else {
+                —
               }
-            </tr>
-          } @empty {
-            <tr>
-              <td [attr.colspan]="canReorder ? 9 : 8" class="empty">
-                No contacts match “{{ query() }}”.
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+            </ng-template>
+          </e-column>
+          <e-column field="lastActivity" headerText="Last activity" />
+          <e-column
+            headerText="Actions"
+            width="150"
+            textAlign="Right"
+            [visible]="canReorder"
+            [showInColumnChooser]="false"
+            [allowSorting]="false"
+            [allowFiltering]="false"
+          >
+            <ng-template #template let-c>
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                icon="send"
+                title="Send {{ c.name }} their spares re-order link"
+                (click)="reorderFor.set({ id: c.id, name: c.name })"
+              >
+                Re-order link
+              </button>
+            </ng-template>
+          </e-column>
+        </e-columns>
+        <ng-template #emptyRecordTemplate>
+          <span class="empty">
+            @if (query()) {
+              No contacts match “{{ query() }}”.
+            } @else {
+              No contacts in this segment yet.
+            }
+          </span>
+        </ng-template>
+      </ejs-grid>
 
       <p class="table-pane__foot">
         Showing {{ count(visible().length) }} of {{ count(segmentCount()) }} in this segment

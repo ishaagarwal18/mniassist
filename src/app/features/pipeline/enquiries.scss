@@ -34,8 +34,10 @@
 }
 .col__head {
   display: flex;
+  width: 100%;
   align-items: baseline;
   justify-content: space-between;
+  gap: 8px;
 }
 .col__t {
   margin: 0;
@@ -90,8 +92,10 @@
 }
 .card__foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 4px;
   margin-top: 2px;
 }
 .card__val {
@@ -100,6 +104,7 @@
 }
 .card__meta {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
 }
 

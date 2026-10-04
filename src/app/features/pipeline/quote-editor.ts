@@ -18,6 +18,7 @@ import {
   RepriceResultDto,
 } from '../../proxy/pipeline';
 import { ArButton } from '../../ui';
+import { ArSelect } from '../../ui/select';
 import {
   QuoteRow,
   belowListPaise,
@@ -40,7 +41,7 @@ import { QuoteEditorApi } from './quote-editor.api';
  */
 @Component({
   selector: 'ar-quote-editor',
-  imports: [ArButton],
+  imports: [ArButton, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quote-editor.html',
   styleUrl: './quote-editor.scss',

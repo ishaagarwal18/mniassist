@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { CreateUpdatePriceListDto, PriceListDto, PriceListService } from '../../proxy/library';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArDateInput } from '../../ui/date-input';
 
 interface ItemRow {
   sku: string;
@@ -22,7 +23,7 @@ interface ItemRow {
  */
 @Component({
   selector: 'ar-price-lists',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArDateInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
