@@ -15,6 +15,7 @@ import {
   DuplicateReason,
   SuppressionReason,
 } from '../../proxy/contacts';
+import { settled } from '../util/resource';
 
 /** Sample pairs for the mock-data build, so the screen is not empty offline. */
 const MOCK_PAIRS: ContactDuplicatePairDto[] = [
@@ -87,12 +88,18 @@ export class DuplicateStore {
           (!this.highOnly() || p.confidence === DuplicateConfidence.High),
       );
     }
-    return this.resource.value().items;
+    return settled(this.resource, { items: [] as ContactDuplicatePairDto[], total: 0 }).items;
   });
 
   /** Pairs beyond the ones listed — the server pages at 100. */
   readonly moreThanShown = computed(() =>
-    environment.useMockData ? 0 : Math.max(0, this.resource.value().total - this.pairs().length),
+    environment.useMockData
+      ? 0
+      : Math.max(
+          0,
+          settled(this.resource, { items: [] as ContactDuplicatePairDto[], total: 0 }).total -
+            this.pairs().length,
+        ),
   );
 
   reload(): void {

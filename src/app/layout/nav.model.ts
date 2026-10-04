@@ -165,6 +165,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Inventory',
       },
       {
+        label: 'Stock planning',
+        icon: 'analytics',
+        route: '/stock/planning',
+        permission: 'AutoReach.Inventory',
+      },
+      {
         label: 'Purchasing',
         icon: 'document',
         route: '/purchasing',
@@ -262,6 +268,12 @@ export const NAV: readonly NavGroup[] = [
         icon: 'analytics',
         route: '/analytics',
         permission: 'AutoReach.Analytics',
+      },
+      {
+        label: 'Business reports',
+        icon: 'document',
+        route: '/reports',
+        permission: 'AutoReach.Inventory || AutoReach.Payments',
       },
       {
         label: 'Custom dashboards',

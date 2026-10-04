@@ -11,6 +11,7 @@ import {
   CustomerAccountService,
 } from '../../proxy/contacts';
 import { readApiError } from '../util/api-error';
+import { settled } from '../util/resource';
 
 /** The deepest an account tree may go — the same limit the server enforces. */
 export const MAX_ACCOUNT_DEPTH = 5;
@@ -203,7 +204,7 @@ export class AccountStore {
       this.reloadTick();
       return this.recount(this.seed);
     }
-    return this.resource.value();
+    return settled(this.resource, [] as CustomerAccount[]);
   });
 
   /** Accounts matching the search box. */

@@ -123,7 +123,8 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
           Receive stock
         </button>
       }
-      @if (canSettings) {
+      <!-- Without the add-on the server refuses every setting; the banner below says why. -->
+      @if (canSettings && settings()?.included !== false) {
         <button ar-button type="button" variant="ghost" icon="settings" (click)="openSettings()">
           Settings
         </button>
@@ -838,17 +839,18 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
               >Default location (portal requests and won quotations)</span
             >
             <select
-              required
               id="st-default"
               class="ar-field__input"
               [value]="defaultLocation()"
               (change)="defaultLocation.set($any($event.target).value)"
             >
-              <option value="">
-                {{ locations().length ? 'Choose…' : 'Main store (created now)' }}
+              <!-- Empty is a real choice: the server keeps the current default, or
+                   makes "Main store" when there is no location yet. -->
+              <option value="" [selected]="!defaultLocation()">
+                {{ locations().length ? 'Keep the current default' : 'Main store (created now)' }}
               </option>
               @for (l of activeLocations(); track l.id) {
-                <option [value]="l.id">{{ l.name }}</option>
+                <option [value]="l.id" [selected]="l.id === defaultLocation()">{{ l.name }}</option>
               }
             </select>
           </label>
@@ -1615,6 +1617,8 @@ export class ArStock {
           );
       this.locations.update((list) => [...list, made]);
       this.newLocation.set('');
+      // The first place stock can go is the obvious default.
+      if (!this.defaultLocation() && made.id) this.defaultLocation.set(made.id);
     } catch (e: unknown) {
       this.dialogError.set(problem(e, 'The location could not be added.'));
     } finally {

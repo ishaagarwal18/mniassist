@@ -10,6 +10,7 @@ import {
 } from '../../proxy/marketing';
 import { LeadSource } from '../../proxy/pipeline/lead-source.enum';
 import { ChannelService } from './channel.service';
+import { settled } from '../util/resource';
 
 export interface ChatEntryPoint {
   readonly id: string;
@@ -117,7 +118,7 @@ export class ChatWidgetStore {
       this.reloadTick();
       return this.seed;
     }
-    return this.resource.value();
+    return settled(this.resource, [] as ChatEntryPoint[]);
   });
 
   reload(): void {

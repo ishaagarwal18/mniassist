@@ -73,11 +73,7 @@
       @if (newPipelineId()) {
         <label class="ar-field">
           <span class="ar-field__label">When a deal reaches</span>
-          <select
-            required
-            class="ar-field__input"
-            (change)="newStageId.set($any($event.target).value)"
-          >
+          <select class="ar-field__input" (change)="newStageId.set($any($event.target).value)">
             <option value="" [selected]="!newStageId()">Any stage</option>
             @for (s of stagesOfNewPipeline(); track s.id) {
               <option [value]="s.id" [selected]="s.id === newStageId()">{{ s.name }}</option>

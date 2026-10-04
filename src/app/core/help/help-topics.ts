@@ -100,10 +100,10 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Dismissing it only hides the list. Nothing is lost.',
     ],
     steps: [
-      'Work down the checklist from the top. Each item links to the screen that completes it.',
-      'Verify your number with Send code and Confirm when asked.',
-      'Use Mark done for steps you finished outside MNI Assist.',
-      'Click Dismiss when you no longer need the checklist.',
+      'The rail at the top shows every step; ticked ones are done. It opens on the next one to do.',
+      'Use Go and do it to open the screen that completes the step, or verify your number right here.',
+      'Click I’ve done this for steps you finished outside MNI Assist; it moves on to the next one.',
+      'Use Back, Skip for now or the rail to move between steps. Dismiss hides the whole checklist.',
     ],
   },
   inbox: {
@@ -363,6 +363,42 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Open To check and issue, check each request, and issue the quotation.',
       'When paid or ordered, mark Dispatch, In transit and Delivered as it ships.',
       'Use Portal settings, Companies and Shipping to set up how the portal works.',
+    ],
+  },
+  'stock/planning': {
+    summary:
+      'Projects every stocked part forward: how fast it is used, how long the stock in hand and on order lasts, the day it runs out, and what to order now to stay covered through the supplier’s lead time.',
+    benefits: [
+      'See stock-outs coming weeks ahead, not when a customer is waiting.',
+      'Order the right quantity: enough for the lead time, a safety buffer and the next month, not a guess.',
+      'Spot money tied up in parts nobody has used for months, and in more stock than you will need.',
+    ],
+    steps: [
+      'Start with the parts marked Out and Order now; the list is sorted by urgency.',
+      'Pick a part to see its projected balance week by week against its reorder point.',
+      'Adjust the assumptions (usage window, safety days, cover) to match how you buy.',
+      'Raise the purchase orders from Purchasing; parts on order count as soon as the order is sent.',
+    ],
+    tips: [
+      'Usage is what was issued from stock in the window. A part sold without being issued from stock looks unused.',
+      'Lead time comes from the supplier of the part’s latest purchase order; set it on the supplier.',
+    ],
+  },
+  reports: {
+    summary:
+      'The owner’s view of stock and money: what stock is worth, how it turns over and which parts carry the business; what customers owe, how old it is and how fast payment links get paid.',
+    benefits: [
+      'Know the value of stock on the shelves and how many days of sales it represents.',
+      'See which few parts carry most of the value (ABC), and which have not moved in 90 days.',
+      'Follow collections: what was collected, how quickly links are paid, who owes the most and for how long.',
+    ],
+    steps: [
+      'Choose the period at the top; every figure and chart follows it.',
+      'Switch between the Stock and Payments tabs.',
+      'Export any table to Excel or CSV from its toolbar to share it.',
+    ],
+    tips: [
+      'Receivables (ageing, DSO, top debtors) need the ERP connection; payment-link figures work on their own.',
     ],
   },
   stock: {

@@ -4,6 +4,7 @@ import { firstValueFrom, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { SessionService } from '../../proxy/identity/session.service';
+import { settled } from '../util/resource';
 
 export interface UserSession {
   readonly sessionId: string;
@@ -71,7 +72,7 @@ export class SessionStore {
 
   readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
   readonly sessions = computed<readonly UserSession[]>(() =>
-    environment.useMockData ? SEED : this.resource.value(),
+    environment.useMockData ? SEED : settled(this.resource, [] as UserSession[]),
   );
 
   async revoke(sessionId: string): Promise<void> {

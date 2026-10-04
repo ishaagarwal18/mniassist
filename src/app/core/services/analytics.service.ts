@@ -23,6 +23,7 @@ import {
 } from '../models/analytics.model';
 import { ChannelService } from './channel.service';
 import { ToastService } from '../ui/toast.service';
+import { settled } from '../util/resource';
 
 const PRICING: Record<ApiPricingCategory, PricingCategory> = {
   [ApiPricingCategory.Unknown]: 'unknown',
@@ -282,7 +283,7 @@ export class AnalyticsStore {
     environment.useMockData
       ? SEED
       : this.resource.hasValue()
-        ? this.resource.value()
+        ? settled(this.resource, SEED)
         : { trend: [], categories: [], templates: [], agents: [] },
   );
 
@@ -327,7 +328,7 @@ export class AnalyticsStore {
     environment.useMockData
       ? SEED_CONVERSION
       : this.conversionResource.hasValue()
-        ? this.conversionResource.value()
+        ? settled(this.conversionResource, SEED_CONVERSION)
         : { dimension: this.conversionDimension(), rows: [] },
   );
 
@@ -356,7 +357,7 @@ export class AnalyticsStore {
     environment.useMockData
       ? SEED_MM_LITE
       : this.mmLiteResource.hasValue()
-        ? this.mmLiteResource.value()
+        ? settled(this.mmLiteResource, SEED_MM_LITE)
         : {},
   );
 

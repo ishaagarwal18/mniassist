@@ -5,6 +5,7 @@ import { firstValueFrom, forkJoin, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { WorkspaceMemberService } from '../../proxy/identity';
 import { InvitationState } from '../../proxy/identity/invitation-state.enum';
+import { settled } from '../util/resource';
 
 export interface Member {
   readonly userId: string;
@@ -172,11 +173,17 @@ export class WorkspaceStore {
   readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
 
   readonly members = computed<readonly Member[]>(() =>
-    environment.useMockData ? SEED_MEMBERS : this.resource.value().members,
+    environment.useMockData
+      ? SEED_MEMBERS
+      : settled(this.resource, { members: [] as Member[], invitations: [] as Invitation[] })
+          .members,
   );
 
   readonly invitations = computed<readonly Invitation[]>(() =>
-    environment.useMockData ? SEED_INVITES : this.resource.value().invitations,
+    environment.useMockData
+      ? SEED_INVITES
+      : settled(this.resource, { members: [] as Member[], invitations: [] as Invitation[] })
+          .invitations,
   );
 
   private reload(): void {

@@ -11,6 +11,7 @@ import {
   DataRequestState,
   RetainedDataClass,
 } from '../../proxy/compliance';
+import { settled } from '../util/resource';
 
 export type ReqKind = 'access' | 'correction' | 'erasure' | 'consentWithdrawal';
 export type ReqState = 'received' | 'inProgress' | 'fulfilled' | 'rejected';
@@ -239,7 +240,12 @@ export class ComplianceStore {
           policies: SEED_POLICIES,
           breaches: [] as Breach[],
         }
-      : this.resource.value(),
+      : settled(this.resource, {
+          overview: SEED_OVERVIEW,
+          requests: SEED_REQUESTS,
+          policies: SEED_POLICIES,
+          breaches: [] as Breach[],
+        }),
   );
 
   readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());

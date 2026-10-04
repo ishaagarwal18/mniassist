@@ -5,6 +5,7 @@ import { firstValueFrom, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { OnboardingChecklistService } from '../../proxy/identity';
 import { OnboardingChecklistStep } from '../../proxy/identity/onboarding-checklist-step.enum';
+import { settled } from '../util/resource';
 
 export interface ChecklistItem {
   readonly step: OnboardingChecklistStep;
@@ -124,7 +125,7 @@ export class OnboardingStore {
 
   readonly checklist = computed<Checklist>(() => {
     if (this.local()) return this.local()!;
-    return environment.useMockData ? SEED : this.resource.value();
+    return environment.useMockData ? SEED : settled(this.resource, SEED);
   });
 
   readonly progress = computed(() => {

@@ -529,6 +529,26 @@ export class OpsService {
 
   // ---- create-dialog actions ---------------------------------------------
 
+  /** Lets MNI Assist support into this workspace for a while; it expires on its own. */
+  async grantSupport(input: {
+    reason: string;
+    durationHours: number;
+    allowsWrite: boolean;
+    ticketRef?: string | null;
+  }): Promise<void> {
+    if (environment.useMockData) return;
+    await firstValueFrom(this.supportApi.grant(input));
+    this.grantsResource.reload();
+  }
+
+  /** Ends a grant at once, closing any session in progress. */
+  async revokeSupport(grantId: string): Promise<void> {
+    if (environment.useMockData) return;
+    await firstValueFrom(this.supportApi.revoke(grantId));
+    this.grantsResource.reload();
+    this.sessionsResource.reload();
+  }
+
   async generateInvoice(input: GenerateInvoiceDto): Promise<void> {
     if (environment.useMockData) return;
     await firstValueFrom(this.invoiceApi.generate(input));

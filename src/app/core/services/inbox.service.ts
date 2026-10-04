@@ -7,6 +7,7 @@ import { InboxService as InboxApi } from '../../proxy/messaging';
 import { toConversation, toMessage } from '../api/mapping';
 import { Conversation } from '../models/conversation.model';
 import { InboxRealtimeService } from '../realtime/inbox-realtime.service';
+import { settled } from '../util/resource';
 
 const inHours = (h: number) => new Date(Date.now() + h * 3_600_000);
 
@@ -170,7 +171,7 @@ export class InboxService {
   });
 
   readonly conversations = computed<readonly Conversation[]>(() =>
-    environment.useMockData ? this.seed : this.listResource.value(),
+    environment.useMockData ? this.seed : settled(this.listResource, [] as Conversation[]),
   );
 
   readonly selectedId = computed(() => this._selectedId() ?? this.conversations()[0]?.id ?? null);
@@ -181,17 +182,36 @@ export class InboxService {
 
     return environment.useMockData
       ? conversation
-      : { ...conversation, messages: this.messagesResource.value() };
+      : {
+          ...conversation,
+          messages: settled(this.messagesResource, [] as ReturnType<typeof toMessage>[]),
+        };
   });
 
   readonly unassignedCount = computed(() =>
-    environment.useMockData ? 12 : this.countsResource.value().unassigned,
+    environment.useMockData
+      ? 12
+      : settled(this.countsResource, {
+          all: 0,
+          unassigned: 0,
+          mine: 0,
+          unread: 0,
+          windowClosingSoon: 0,
+          snoozed: 0,
+        }).unassigned,
   );
 
   readonly unreadTotal = computed(() =>
     environment.useMockData
       ? this.conversations().reduce((n, c) => n + c.unread, 0)
-      : this.countsResource.value().unread,
+      : settled(this.countsResource, {
+          all: 0,
+          unassigned: 0,
+          mine: 0,
+          unread: 0,
+          windowClosingSoon: 0,
+          snoozed: 0,
+        }).unread,
   );
 
   readonly loading = computed(() => !environment.useMockData && this.listResource.isLoading());

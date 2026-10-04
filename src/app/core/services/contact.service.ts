@@ -11,6 +11,7 @@ import {
 } from '../../proxy/contacts';
 import { toContact, toSegment } from '../api/mapping';
 import { Contact, Segment } from '../models/contact.model';
+import { settled } from '../util/resource';
 
 /**
  * Contacts, saved segments and the suppression buckets.
@@ -247,19 +248,25 @@ export class ContactService {
   });
 
   readonly contacts = computed<readonly Contact[]>(() =>
-    environment.useMockData ? this.seedContacts : this.contactsResource.value().items,
+    environment.useMockData
+      ? this.seedContacts
+      : settled(this.contactsResource, { items: [] as Contact[], totalCount: 0 }).items,
   );
 
   readonly totalCount = computed(() =>
-    environment.useMockData ? this.seedContacts.length : this.contactsResource.value().totalCount,
+    environment.useMockData
+      ? this.seedContacts.length
+      : settled(this.contactsResource, { items: [] as Contact[], totalCount: 0 }).totalCount,
   );
 
   readonly segments = computed<readonly Segment[]>(() =>
-    environment.useMockData ? this.seedSegments : this.segmentsResource.value(),
+    environment.useMockData ? this.seedSegments : settled(this.segmentsResource, [] as Segment[]),
   );
 
   readonly suppression = computed<readonly Segment[]>(() =>
-    environment.useMockData ? this.seedSuppression : this.suppressionResource.value(),
+    environment.useMockData
+      ? this.seedSuppression
+      : settled(this.suppressionResource, [] as Segment[]),
   );
 
   readonly loading = computed(() => !environment.useMockData && this.contactsResource.isLoading());

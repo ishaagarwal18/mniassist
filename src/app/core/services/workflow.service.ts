@@ -16,6 +16,7 @@ import {
   FlowState,
 } from '../../proxy/messaging';
 import { FlowDto, FlowService } from '../../proxy/flows';
+import { settled } from '../util/resource';
 
 /** A one-screen placeholder so a freshly created flow is valid JSON; the screen
  *  designer fills in the rest. */
@@ -195,7 +196,7 @@ export class WorkflowStore {
       this.automationApi
         .getList({ skipCount: 0, maxResultCount: 100 })
         .pipe(map((p) => (p.items ?? []).map(automation))),
-    defaultValue: SEED_AUTOMATIONS,
+    defaultValue: [],
   });
 
   private readonly flowsResource = rxResource({
@@ -204,14 +205,14 @@ export class WorkflowStore {
       this.flowApi
         .getList({ skipCount: 0, maxResultCount: 100 })
         .pipe(map((p) => (p.items ?? []).map(flow))),
-    defaultValue: SEED_FLOWS,
+    defaultValue: [],
   });
 
   readonly automations = computed(() =>
-    environment.useMockData ? SEED_AUTOMATIONS : this.automationsResource.value(),
+    environment.useMockData ? SEED_AUTOMATIONS : settled(this.automationsResource, []),
   );
   readonly flows = computed(() =>
-    environment.useMockData ? SEED_FLOWS : this.flowsResource.value(),
+    environment.useMockData ? SEED_FLOWS : settled(this.flowsResource, []),
   );
   readonly loadingAutomations = computed(
     () => !environment.useMockData && this.automationsResource.isLoading(),

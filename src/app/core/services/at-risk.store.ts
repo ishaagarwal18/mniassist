@@ -5,6 +5,7 @@ import { firstValueFrom, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AtRiskAlertService } from '../../proxy/administration/at-risk-alert.service';
 import { AtRiskAlertStatus, AtRiskReason } from '../../proxy/administration/at-risk-reason.enum';
+import { settled } from '../util/resource';
 
 export interface AtRiskAlert {
   readonly id: string;
@@ -94,7 +95,7 @@ export class AtRiskStore {
   });
 
   readonly alerts = computed<readonly AtRiskAlert[]>(() =>
-    environment.useMockData ? SEED : this.resource.value(),
+    environment.useMockData ? SEED : settled(this.resource, [] as AtRiskAlert[]),
   );
   readonly openCount = computed(() => this.alerts().filter((a) => a.status !== 'resolved').length);
 

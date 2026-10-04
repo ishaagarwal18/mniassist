@@ -109,6 +109,31 @@ export class ArCompliance {
   }
 
   protected async fulfil(r: DpdpRequest): Promise<void> {
+    // Nothing can be exported or erased for someone who matches no contact: the
+    // right answer is to tell them no personal data is held.
+    if (!r.contact) {
+      const reject = await this.dialogs.confirm({
+        title: 'No contact matches this request',
+        message: `Nobody in your contacts matches “${r.requester}”, so there is nothing to export, correct or erase.`,
+        details: [
+          'Check the phone number or email on the request; a typo is the usual cause.',
+          'If you hold no data about this person, reject the request and tell them so.',
+        ],
+        confirmText: 'Reject: no data held',
+        cancelText: 'Close',
+      });
+      if (!reject) return;
+      this.busy.set(r.id);
+      try {
+        await this.store.reject(
+          r.id,
+          'We hold no personal data linked to the phone number or email you gave us.',
+        );
+      } finally {
+        this.busy.set(null);
+      }
+      return;
+    }
     if (
       !(await this.dialogs.confirm({
         title: `Fulfil this ${this.kindLabel(r.kind)} request?`,

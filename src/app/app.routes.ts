@@ -208,6 +208,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/inventory/stock').then((m) => m.ArStock),
       },
       {
+        path: 'stock/planning',
+        title: 'Stock planning · MNI Assist',
+        loadComponent: () =>
+          import('./features/inventory/stock-planning').then((m) => m.ArStockPlanning),
+      },
+      {
+        path: 'reports',
+        title: 'Business reports · MNI Assist',
+        loadComponent: () =>
+          import('./features/reports/business-reports').then((m) => m.ArBusinessReports),
+      },
+      {
         path: 'purchasing',
         title: 'Purchasing · MNI Assist',
         loadComponent: () => import('./features/inventory/purchasing').then((m) => m.ArPurchasing),

@@ -11,6 +11,7 @@ import {
   CampaignState,
   PreflightCheck,
 } from '../../proxy/campaigns';
+import { settled } from '../util/resource';
 
 export type CState =
   'draft' | 'scheduled' | 'running' | 'paused' | 'completed' | 'cancelled' | 'suspended';
@@ -217,7 +218,7 @@ export class CampaignStore {
       this.api
         .getList({ skipCount: 0, maxResultCount: 100 })
         .pipe(map((p) => (p.items ?? []).map(toCampaign))),
-    defaultValue: SEED,
+    defaultValue: [],
   });
 
   readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
@@ -230,7 +231,7 @@ export class CampaignStore {
           ...c,
           optimiseSendTime: this.mockOptimise()[c.id] ?? c.optimiseSendTime,
         }))
-      : this.resource.value(),
+      : settled(this.resource, []),
   );
 
   private reload(): void {

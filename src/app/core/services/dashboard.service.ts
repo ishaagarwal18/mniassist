@@ -4,6 +4,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { environment } from '../../../environments/environment';
 import { AnalyticsService as AnalyticsApi, DashboardDto } from '../../proxy/analytics';
 import { ChannelHealthDto, QualityRating } from '../../proxy/channels';
+import { settled } from '../util/resource';
 
 /** A client-side "needs you today" item derived from the dashboard snapshot. */
 export interface ActionItem {
@@ -124,7 +125,9 @@ export class DashboardStore {
   readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
 
   readonly data = computed<Dashboard>(() =>
-    environment.useMockData ? SEED : normalise(this.resource.value()),
+    environment.useMockData
+      ? SEED
+      : normalise(settled(this.resource, undefined as DashboardDto | undefined)),
   );
 
   readonly volume = computed(() => this.data().volume);

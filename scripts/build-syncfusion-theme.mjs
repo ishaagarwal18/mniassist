@@ -68,6 +68,7 @@ const BUNDLES = {
   ],
   'syncfusion-grid': [
     'grid/grid-lite.css',
+    'treegrid/treegrid-lite.css',
     'pager/pager-lite.css',
     'excel-filter/excel-filter-lite.css',
     'context-menu/context-menu-lite.css',

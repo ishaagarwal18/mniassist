@@ -9,6 +9,12 @@ import { GetPermissionListResultDto, PermissionsService } from '../../proxy/perm
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArCard, ArChip, ArDialog } from '../../ui';
 import { ConfirmService } from '../../core/ui/confirm.service';
+import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
+import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
+import { FilterService, ToolbarService, TreeGridModule } from '@syncfusion/ej2-angular-treegrid';
+
+// Syncfusion checks the licence in each component's constructor, before ours runs.
+registerSyncfusionLicense();
 
 const SEED: IdentityRoleDto[] = [
   { id: 'r-1', name: 'admin', isDefault: false, isStatic: true, isPublic: true },
@@ -23,7 +29,8 @@ const SEED: IdentityRoleDto[] = [
  */
 @Component({
   selector: 'ar-admin-roles',
-  imports: [ArTopbar, ArCard, ArButton, ArChip, ArBanner, ArDialog],
+  imports: [ArTopbar, ArCard, ArButton, ArChip, ArBanner, ArDialog, TreeGridModule],
+  providers: [ToolbarService, FilterService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -81,23 +88,58 @@ const SEED: IdentityRoleDto[] = [
           } @else if (permsLoading()) {
             <p class="hint">Loading…</p>
           } @else {
-            @for (g of groups(); track g.name) {
-              <div class="pgroup">
-                <h3 class="pgroup__t">{{ g.displayName }}</h3>
-                <div class="pgroup__items">
-                  @for (p of g.permissions; track p.name) {
-                    <label class="chk" [style.paddingLeft.px]="p.parentName ? 16 : 0">
+            <!-- Groups are the top rows, permissions nest under them (and under their
+                 parent permission). Ticking a group or a parent ticks everything under
+                 it; ticking a child also ticks its parent, which ABP requires. -->
+            <ejs-treegrid
+              #tree
+              id="role-permissions"
+              class="ar-grid perms"
+              [dataSource]="treeRows()"
+              idMapping="id"
+              parentIdMapping="parentId"
+              [treeColumnIndex]="0"
+              [toolbar]="['Search', 'ExpandAll', 'CollapseAll']"
+              gridLines="Horizontal"
+              [enableHover]="true"
+              [allowSelection]="false"
+              height="460"
+            >
+              <e-columns>
+                <e-column field="name" headerText="Permission">
+                  <ng-template #template let-r>
+                    <label
+                      class="perm"
+                      [class.perm--group]="r.isGroup"
+                      (click)="$event.stopPropagation()"
+                    >
                       <input
                         type="checkbox"
-                        [checked]="ticked().has(p.name)"
-                        (change)="toggle(p.name, $any($event.target).checked)"
+                        [checked]="stateOf(r.id) === 'all'"
+                        [indeterminate]="stateOf(r.id) === 'some'"
+                        [attr.aria-label]="(r.isGroup ? 'All of ' : '') + r.name"
+                        (change)="toggleRow(r.id, $any($event.target).checked)"
                       />
-                      {{ p.displayName }}
+                      <span>{{ r.name }}</span>
                     </label>
-                  }
-                </div>
-              </div>
-            }
+                  </ng-template>
+                </e-column>
+                <e-column field="key" headerText="Permission key" width="300">
+                  <ng-template #template let-r>
+                    <span class="ar-mono perm__key">{{ r.key }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Granted" width="120" textAlign="Right">
+                  <ng-template #template let-r>
+                    @if (r.isGroup) {
+                      <span class="perm__count">{{ countIn(r.id) }}</span>
+                    } @else if (stateOf(r.id) === 'all') {
+                      <ar-chip tone="good">Granted</ar-chip>
+                    }
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-treegrid>
             <div class="save-row">
               <button
                 ar-button
@@ -163,6 +205,30 @@ const SEED: IdentityRoleDto[] = [
     }
   `,
   styles: `
+    .perms {
+      display: block;
+      margin-bottom: 12px;
+    }
+    .perm {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .perm--group {
+      font-weight: 600;
+      color: var(--ar-ink-900);
+    }
+    .perm__key {
+      font-size: 11.5px;
+      color: var(--ar-ink-400);
+    }
+    .perm__count {
+      font: 600 12px var(--ar-font-mono);
+      color: var(--ar-ink-500);
+    }
     .page {
       padding: 20px;
       display: flex;
@@ -211,23 +277,6 @@ const SEED: IdentityRoleDto[] = [
       color: var(--ar-ink-400);
       font: 400 12px var(--ar-font-sans);
     }
-    .pgroup {
-      padding: 10px 0;
-      border-top: 1px solid var(--ar-line-200);
-    }
-    .pgroup:first-of-type {
-      border-top: 0;
-    }
-    .pgroup__t {
-      margin: 0 0 6px;
-      font: 600 12px var(--ar-font-sans);
-      color: var(--ar-ink-700);
-    }
-    .pgroup__items {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
     .chk {
       display: flex;
       align-items: center;
@@ -263,6 +312,10 @@ export class ArAdminRoles {
   private readonly permApi = inject(PermissionsService);
   private readonly mock = environment.useMockData;
 
+  constructor() {
+    ensureSyncfusionTheme('grid');
+  }
+
   private readonly tick = signal(0);
   private readonly rolesResource = rxResource({
     params: () => (this.mock ? undefined : { t: this.tick() }),
@@ -290,6 +343,94 @@ export class ArAdminRoles {
   });
 
   protected readonly permsLoading = computed(() => this.permsResource.isLoading());
+
+  // ---- the permission tree -------------------------------------------------
+
+  /** Flat rows for the TreeGrid: each group, then its permissions under the group or their parent. */
+  protected readonly treeRows = computed(() => {
+    const rows: {
+      id: string;
+      parentId: string | null;
+      name: string;
+      key: string;
+      isGroup: boolean;
+    }[] = [];
+    for (const g of this.groups()) {
+      const gid = 'group:' + g.name;
+      rows.push({
+        id: gid,
+        parentId: null,
+        name: g.displayName ?? g.name ?? '',
+        key: '',
+        isGroup: true,
+      });
+      for (const p of g.permissions) {
+        rows.push({
+          id: p.name,
+          parentId: p.parentName ?? gid,
+          name: p.displayName ?? p.name,
+          key: p.name,
+          isGroup: false,
+        });
+      }
+    }
+    return rows;
+  });
+
+  /** Every permission under a row (a group or a parent permission), the row itself included when it is one. */
+  private readonly below = computed(() => {
+    const children = new Map<string, string[]>();
+    for (const r of this.treeRows()) {
+      if (r.parentId) children.set(r.parentId, [...(children.get(r.parentId) ?? []), r.id]);
+    }
+    const all = new Map<string, string[]>();
+    const walk = (id: string): string[] => {
+      const cached = all.get(id);
+      if (cached) return cached;
+      const out = (children.get(id) ?? []).flatMap((c) => [c, ...walk(c)]);
+      all.set(id, out);
+      return out;
+    };
+    for (const r of this.treeRows()) walk(r.id);
+    return { all, parentOf: new Map(this.treeRows().map((r) => [r.id, r.parentId])) };
+  });
+
+  private permsUnder(id: string): string[] {
+    const under = this.below().all.get(id) ?? [];
+    return id.startsWith('group:') ? under : [id, ...under];
+  }
+
+  /** all, some or none of the permissions under the row are ticked. */
+  protected stateOf(id: string): 'all' | 'some' | 'none' {
+    const names = this.permsUnder(id);
+    const ticked = this.ticked();
+    const on = names.filter((n) => ticked.has(n)).length;
+    return on === 0 ? 'none' : on === names.length ? 'all' : 'some';
+  }
+
+  protected countIn(groupId: string): string {
+    const names = this.permsUnder(groupId);
+    const ticked = this.ticked();
+    return `${names.filter((n) => ticked.has(n)).length} / ${names.length}`;
+  }
+
+  protected toggleRow(id: string, on: boolean): void {
+    const next = new Set(this.ticked());
+    for (const n of this.permsUnder(id)) {
+      if (on) next.add(n);
+      else next.delete(n);
+    }
+    // A child permission needs its parent permission.
+    if (on && !id.startsWith('group:')) {
+      let parent = this.below().parentOf.get(id);
+      while (parent && !parent.startsWith('group:')) {
+        next.add(parent);
+        parent = this.below().parentOf.get(parent);
+      }
+    }
+    this.draft.set(next);
+    this.loadedInto.set(this.selected());
+  }
   protected readonly groups = computed(() => this.permsResource.value().groups);
 
   /** Names currently ticked, seeded from the loaded grid and edited locally. */

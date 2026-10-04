@@ -97,7 +97,13 @@
           <tr [class.tbl__row--busy]="busy() === r.id">
             <td>{{ kindLabel(r.kind) }}</td>
             <td class="ar-mono">{{ r.requester }}</td>
-            <td>{{ r.contact ?? '—' }}</td>
+            <td>
+              @if (r.contact) {
+                {{ r.contact }}
+              } @else {
+                <ar-chip tone="warn" title="No contact matches the requester">No match</ar-chip>
+              }
+            </td>
             <td>{{ when(r.receivedAt) }}</td>
             <td>
               <ar-chip [tone]="slaTone(r)">{{ slaLabel(r) }}</ar-chip>

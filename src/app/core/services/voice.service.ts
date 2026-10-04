@@ -19,6 +19,7 @@ import {
   VoiceNumberSeries,
 } from '../../proxy/voice';
 import { readApiError } from '../util/api-error';
+import { settled } from '../util/resource';
 
 /**
  * IVR prompt store for the channel's own admin screen (M11's follow-up: a real
@@ -115,15 +116,17 @@ export class VoiceService {
 
   /** What would go wrong for a caller in the current menu — from the same rules a live call runs. */
   readonly issues = computed<readonly IvrIssueDto[]>(() =>
-    environment.useMockData ? [] : this.issuesResource.value(),
+    environment.useMockData ? [] : settled(this.issuesResource, [] as IvrIssueDto[]),
   );
 
   readonly channel = computed<VoiceChannelDto | undefined>(() =>
-    environment.useMockData ? this.mockChannel() : this.channelResource.value(),
+    environment.useMockData ? this.mockChannel() : settled(this.channelResource, undefined),
   );
 
   readonly prompts = computed<readonly IvrPromptDto[]>(() =>
-    environment.useMockData ? this.mockPrompts() : this.promptsResource.value(),
+    environment.useMockData
+      ? this.mockPrompts()
+      : settled(this.promptsResource, [] as IvrPromptDto[]),
   );
 
   readonly loading = computed(

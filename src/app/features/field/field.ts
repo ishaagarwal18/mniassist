@@ -6,12 +6,16 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { FieldJobDto, FieldServiceService } from '../../proxy/support/field-service.service';
 import { LocalVisit, fitWithin, startVisit, visitFor } from './field-logic';
 import { FieldStore } from './field-store';
+import { ArBrand } from '../../layout/brand';
+import { ArButton, ArChip, ArIcon, ArMeter } from '../../ui';
+import { ChipTone } from '../../ui/chip';
 
 const SEED_DAY = {
   generatedAtUtc: new Date().toISOString(),
@@ -62,269 +66,448 @@ async function shrink(file: File): Promise<Blob> {
  */
 @Component({
   selector: 'ar-field',
+  imports: [RouterLink, ArBrand, ArButton, ArChip, ArIcon, ArMeter],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <header class="top">
-      <div>
-        <h1>Today's jobs</h1>
-        <p class="top__s">
-          <span class="dot" [class.dot--on]="store.online()"></span>
-          {{ store.online() ? 'Online' : 'Offline — changes are saved on this phone' }}
-          @if (store.summary().waiting) {
-            · {{ store.summary().waiting }} visit(s) waiting to send
-          }
+    <div class="app">
+      <header class="bar">
+        <a class="bar__brand" routerLink="/home" title="Back to MNI Assist">
+          <ar-brand size="sm" />
+        </a>
+        <span class="bar__title">Field</span>
+        <span class="pill" [class.pill--on]="store.online()">
+          <span class="pill__dot"></span>{{ store.online() ? 'Online' : 'Offline' }}
+        </span>
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          icon="refresh"
+          [disabled]="store.syncing() || !store.online()"
+          (click)="store.sync()"
+        >
+          {{ store.syncing() ? 'Syncing…' : 'Sync' }}
+        </button>
+      </header>
+
+      @if (!store.online()) {
+        <p class="offline">
+          You're offline. Notes, ticks and photos are kept on this phone and sent when there is
+          signal.
         </p>
-      </div>
-      <button
-        type="button"
-        class="btn btn--ghost"
-        [disabled]="store.syncing() || !store.online()"
-        (click)="store.sync()"
-      >
-        {{ store.syncing() ? 'Syncing…' : 'Sync' }}
-      </button>
-    </header>
+      }
+      @if (store.summary().waiting) {
+        <p class="offline offline--wait">
+          {{ store.summary().waiting }} visit{{ store.summary().waiting === 1 ? '' : 's' }}
+          waiting to send.
+        </p>
+      }
+      @for (p of store.problems(); track $index) {
+        <p class="err" role="alert">{{ p }}</p>
+      }
 
-    @for (p of store.problems(); track $index) {
-      <p class="err" role="alert">{{ p }}</p>
-    }
+      @if (open(); as j) {
+        <!-- ===== One job ===== -->
+        <section class="job" [attr.aria-label]="j.reference">
+          <button type="button" class="back" (click)="openId.set(null)">
+            <ar-icon name="chevron" [size]="14" class="back__icon" /> All jobs
+          </button>
 
-    @if (open(); as j) {
-      <section class="job" [attr.aria-label]="j.reference">
-        <button type="button" class="back" (click)="openId.set(null)">← All jobs</button>
-        <h2>{{ j.subject }}</h2>
-        <p class="muted">{{ j.reference }} · {{ j.priority }}</p>
-        @if (j.description) {
-          <p>{{ j.description }}</p>
-        }
-
-        <div class="card">
-          <b>{{ j.companyName || j.customerName }}</b>
-          @if (j.customerName && j.companyName) {
-            <span class="muted">{{ j.customerName }}</span>
-          }
-          @if (j.phone) {
-            <a class="btn btn--ghost" [href]="'tel:' + j.phone">Call {{ j.phone }}</a>
-          }
-        </div>
-
-        @if (j.asset; as a) {
-          <div class="card">
-            <b>{{ a.description }}</b>
-            <dl class="facts">
-              @if (a.make || a.model) {
-                <dt>Model</dt>
-                <dd>{{ a.make }} {{ a.model }}</dd>
-              }
-              @if (a.serialNumber) {
-                <dt>Serial</dt>
-                <dd class="mono">{{ a.serialNumber }}</dd>
-              }
-              @if (a.site) {
-                <dt>Site</dt>
-                <dd>{{ a.site }}</dd>
-              }
-              @if (a.amcEndsOn) {
-                <dt>AMC ends</dt>
-                <dd>{{ date(a.amcEndsOn) }}</dd>
-              }
-              @if (a.warrantyEndsOn) {
-                <dt>Warranty ends</dt>
-                <dd>{{ date(a.warrantyEndsOn) }}</dd>
-              }
-              @if (a.lastServicedOn) {
-                <dt>Last service</dt>
-                <dd>{{ date(a.lastServicedOn) }}</dd>
-              }
-            </dl>
-          </div>
-        }
-
-        @if (visit(); as v) {
-          @if (v.state === 'SignedOff') {
-            <p class="ok">Signed off by {{ v.signedByName }}. The ticket is resolved.</p>
-          } @else {
-            <label class="field" for="fv-notes">
-              <span>Work done</span>
-              <textarea
-                id="fv-notes"
-                rows="5"
-                [value]="v.notes"
-                (change)="setNotes(v, $any($event.target).value)"
-              ></textarea>
-            </label>
-            <fieldset class="field">
-              <legend>Checklist</legend>
-              @for (c of v.checklist; track $index) {
-                <label class="check"
-                  ><input
-                    type="checkbox"
-                    [checked]="c.done"
-                    (change)="tick(v, $index, $any($event.target).checked)"
-                  />
-                  {{ c.label }}</label
+          <div class="hero" [class]="'hero hero--' + priorityTone(j.priority)">
+            <div class="hero__chips">
+              <ar-chip [tone]="priorityTone(j.priority)">{{ j.priority }}</ar-chip>
+              <ar-chip tone="neutral" [mono]="true">{{ j.reference }}</ar-chip>
+              @if (j.dueAtUtc) {
+                <ar-chip [tone]="dueSoon(j.dueAtUtc) ? 'warn' : 'neutral'"
+                  >Due {{ time(j.dueAtUtc) }}</ar-chip
                 >
               }
-            </fieldset>
-            <div class="field">
-              <span>Photos ({{ v.photoIds.length }})</span>
-              <div class="thumbs">
-                @for (id of v.photoIds; track id) {
-                  <img [src]="thumbs()[id] || ''" alt="Visit photo" />
+            </div>
+            <h2 class="hero__t">{{ j.subject }}</h2>
+            @if (j.description) {
+              <p class="hero__d">{{ j.description }}</p>
+            }
+          </div>
+
+          <div class="card">
+            <p class="card__k">Customer</p>
+            <b class="card__t">{{ j.companyName || j.customerName }}</b>
+            @if (j.customerName && j.companyName) {
+              <span class="muted">{{ j.customerName }}</span>
+            }
+            @if (j.phone) {
+              <div class="row">
+                <a ar-button variant="ghost" icon="phone" [href]="'tel:' + j.phone">Call</a>
+                <a
+                  ar-button
+                  variant="ghost"
+                  icon="send"
+                  [href]="'https://wa.me/' + digits(j.phone)"
+                  target="_blank"
+                  rel="noopener"
+                  >WhatsApp</a
+                >
+              </div>
+            }
+          </div>
+
+          @if (j.asset; as a) {
+            <div class="card">
+              <p class="card__k">Machine</p>
+              <b class="card__t">{{ a.description }}</b>
+              <dl class="facts">
+                @if (a.make || a.model) {
+                  <dt>Model</dt>
+                  <dd>{{ a.make }} {{ a.model }}</dd>
+                }
+                @if (a.serialNumber) {
+                  <dt>Serial</dt>
+                  <dd class="ar-mono">{{ a.serialNumber }}</dd>
+                }
+                @if (a.site) {
+                  <dt>Site</dt>
+                  <dd>{{ a.site }}</dd>
+                }
+                @if (a.amcEndsOn) {
+                  <dt>AMC ends</dt>
+                  <dd>{{ date(a.amcEndsOn) }}</dd>
+                }
+                @if (a.warrantyEndsOn) {
+                  <dt>Warranty ends</dt>
+                  <dd>{{ date(a.warrantyEndsOn) }}</dd>
+                }
+                @if (a.lastServicedOn) {
+                  <dt>Last service</dt>
+                  <dd>{{ date(a.lastServicedOn) }}</dd>
+                }
+              </dl>
+            </div>
+          }
+
+          @if (visit(); as v) {
+            @if (v.state === 'SignedOff') {
+              <div class="done">
+                <ar-icon name="check" [size]="22" />
+                <div>
+                  <b>Signed off by {{ v.signedByName }}</b>
+                  <p>The ticket is resolved. Nothing more to do here.</p>
+                </div>
+              </div>
+            } @else {
+              <div class="card">
+                <p class="card__k">Visit · step 1 of 2</p>
+                <label class="ar-field" for="fv-notes">
+                  <span class="ar-field__label">Work done</span>
+                  <textarea
+                    id="fv-notes"
+                    class="ar-field__input"
+                    rows="5"
+                    placeholder="What you found, what you changed, parts used"
+                    [value]="v.notes"
+                    (change)="setNotes(v, $any($event.target).value)"
+                  ></textarea>
+                </label>
+
+                <div class="checklist">
+                  <div class="checklist__head">
+                    <span class="ar-field__label">Checklist</span>
+                    <span class="muted">{{ doneCount(v) }}/{{ v.checklist.length }}</span>
+                  </div>
+                  <ar-meter
+                    [value]="doneCount(v)"
+                    [max]="v.checklist.length || 1"
+                    tone="good"
+                    [thickness]="5"
+                    label="Checklist progress"
+                  />
+                  @for (c of v.checklist; track $index) {
+                    <label class="check" [class.check--done]="c.done">
+                      <input
+                        type="checkbox"
+                        [checked]="c.done"
+                        (change)="tick(v, $index, $any($event.target).checked)"
+                      />
+                      <span>{{ c.label }}</span>
+                    </label>
+                  }
+                </div>
+
+                <div class="photos">
+                  <span class="ar-field__label">Photos ({{ v.photoIds.length }})</span>
+                  <div class="thumbs">
+                    @for (id of v.photoIds; track id) {
+                      <img [src]="thumbs()[id] || ''" alt="Visit photo" />
+                    }
+                    <label class="thumbs__add" for="fv-photo" title="Take a photo">
+                      <ar-icon name="camera" [size]="22" />
+                      <span>Add</span>
+                    </label>
+                  </div>
+                  <input
+                    id="fv-photo"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    hidden
+                    (change)="photo(v, $event)"
+                  />
+                </div>
+              </div>
+
+              <div class="card sign">
+                <p class="card__k">Customer sign-off · step 2 of 2</p>
+                @if (!store.online()) {
+                  <p class="muted">
+                    Needs signal: a code is sent to the customer on WhatsApp. Everything else is
+                    saved.
+                  </p>
+                } @else if (v.state !== 'AwaitingSignOff' && !codeSent()) {
+                  <p class="muted">
+                    When the work is done, send the customer a code on WhatsApp to confirm it.
+                  </p>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="primary"
+                    icon="send"
+                    [disabled]="busy()"
+                    (click)="requestCode(v)"
+                  >
+                    {{ busy() ? 'Sending…' : 'Send sign-off code' }}
+                  </button>
+                } @else {
+                  <p class="muted">
+                    Ask the customer for the 6-digit code they just got on WhatsApp.
+                  </p>
+                  <div class="ar-field-row">
+                    <label class="ar-field" for="fv-code">
+                      <span class="ar-field__label">Code</span>
+                      <input
+                        id="fv-code"
+                        class="ar-field__input code"
+                        inputmode="numeric"
+                        maxlength="6"
+                        autocomplete="one-time-code"
+                        placeholder="••••••"
+                        [value]="code()"
+                        (input)="code.set($any($event.target).value)"
+                      />
+                    </label>
+                    <label class="ar-field" for="fv-name">
+                      <span class="ar-field__label">Signed by</span>
+                      <input
+                        id="fv-name"
+                        class="ar-field__input"
+                        placeholder="Name of the person signing"
+                        [value]="signer()"
+                        (input)="signer.set($any($event.target).value)"
+                      />
+                    </label>
+                  </div>
+                  <div class="row">
+                    <button
+                      ar-button
+                      type="button"
+                      variant="primary"
+                      icon="check"
+                      [disabled]="busy() || code().length !== 6 || !signer().trim()"
+                      (click)="confirm(v)"
+                    >
+                      {{ busy() ? 'Checking…' : 'Confirm sign-off' }}
+                    </button>
+                    <button
+                      ar-button
+                      type="button"
+                      variant="ghost"
+                      [disabled]="busy()"
+                      (click)="requestCode(v)"
+                    >
+                      Send a new code
+                    </button>
+                  </div>
+                }
+                @if (signError(); as e) {
+                  <p class="err" role="alert">{{ e }}</p>
                 }
               </div>
-              <label class="btn btn--ghost" for="fv-photo">Take a photo</label>
-              <input
-                id="fv-photo"
-                type="file"
-                accept="image/*"
-                capture="environment"
-                hidden
-                (change)="photo(v, $event)"
-              />
-            </div>
-
-            <div class="sign">
-              <h3>Customer sign-off</h3>
-              @if (!store.online()) {
-                <p class="muted">Needs signal: the code is sent to the customer on WhatsApp.</p>
-              } @else if (v.state !== 'AwaitingSignOff' && !codeSent()) {
-                <button type="button" class="btn" [disabled]="busy()" (click)="requestCode(v)">
-                  {{ busy() ? 'Sending…' : 'Send sign-off code to customer' }}
-                </button>
-              } @else {
-                <p class="muted">
-                  Ask the customer for the 6-digit code they just got on WhatsApp.
-                </p>
-                <label class="field" for="fv-code"
-                  ><span>Code</span>
-                  <input
-                    id="fv-code"
-                    inputmode="numeric"
-                    maxlength="6"
-                    autocomplete="one-time-code"
-                    [value]="code()"
-                    (input)="code.set($any($event.target).value)"
-                  />
-                </label>
-                <label class="field" for="fv-name"
-                  ><span>Signed by</span>
-                  <input
-                    id="fv-name"
-                    [value]="signer()"
-                    (input)="signer.set($any($event.target).value)"
-                  />
-                </label>
-                <button
-                  type="button"
-                  class="btn"
-                  [disabled]="busy() || code().length !== 6 || !signer().trim()"
-                  (click)="confirm(v)"
-                >
-                  {{ busy() ? 'Checking…' : 'Confirm sign-off' }}
-                </button>
-                <button
-                  type="button"
-                  class="btn btn--ghost"
-                  [disabled]="busy()"
-                  (click)="requestCode(v)"
-                >
-                  Send a new code
-                </button>
-              }
-              @if (signError(); as e) {
-                <p class="err" role="alert">{{ e }}</p>
-              }
-            </div>
-          }
-        } @else {
-          <button type="button" class="btn" (click)="arrive(j)">
-            I've arrived — start the visit
-          </button>
-        }
-      </section>
-    } @else {
-      <ul class="jobs">
-        @for (j of jobs(); track j.ticketId) {
-          <li>
-            <button type="button" class="jobrow" (click)="openId.set(j.ticketId)">
-              <b>{{ j.subject }}</b>
-              <span class="muted"
-                >{{ j.companyName || j.customerName }} · {{ j.asset?.site || '' }}</span
-              >
-              <span class="muted"
-                >{{ j.reference }} · {{ j.priority
-                }}{{ j.dueAtUtc ? ' · due ' + time(j.dueAtUtc) : '' }}{{ state(j) }}</span
-              >
+            }
+          } @else {
+            <button ar-button type="button" variant="primary" class="wide" (click)="arrive(j)">
+              I've arrived — start the visit
             </button>
-          </li>
-        } @empty {
-          <li class="muted">
-            {{
-              store.day()
-                ? 'No open tickets are assigned to you.'
-                : 'Connect once to download today’s jobs; after that they work offline.'
-            }}
-          </li>
+          }
+        </section>
+      } @else {
+        <!-- ===== Today ===== -->
+        <div class="today">
+          <h1>Today's jobs</h1>
+          <p class="muted">{{ todayLabel }}</p>
+        </div>
+        <section class="tiles" aria-label="Today at a glance">
+          <div class="tile">
+            <b>{{ jobs().length }}</b
+            ><span>jobs</span>
+          </div>
+          <div class="tile">
+            <b>{{ dueSoonCount() }}</b
+            ><span>due in 4 h</span>
+          </div>
+          <div class="tile">
+            <b>{{ signedCount() }}</b
+            ><span>signed off</span>
+          </div>
+        </section>
+
+        <ul class="jobs">
+          @for (j of jobs(); track j.ticketId) {
+            <li>
+              <button
+                type="button"
+                class="jobrow"
+                [class]="'jobrow jobrow--' + priorityTone(j.priority)"
+                (click)="openId.set(j.ticketId)"
+              >
+                <span class="jobrow__main">
+                  <span class="jobrow__chips">
+                    <ar-chip [tone]="priorityTone(j.priority)">{{ j.priority }}</ar-chip>
+                    @if (stateLabel(j); as s) {
+                      <ar-chip [tone]="s === 'Signed off' ? 'good' : 'teal'">{{ s }}</ar-chip>
+                    }
+                  </span>
+                  <b class="jobrow__t">{{ j.subject }}</b>
+                  <span class="muted">{{ j.companyName || j.customerName }}</span>
+                  <span class="jobrow__meta">
+                    @if (j.asset?.site) {
+                      <span>{{ j.asset?.site }}</span>
+                    }
+                    @if (j.dueAtUtc) {
+                      <span [class.late]="dueSoon(j.dueAtUtc)">Due {{ time(j.dueAtUtc) }}</span>
+                    }
+                    <span class="ar-mono">{{ j.reference }}</span>
+                  </span>
+                </span>
+                <ar-icon name="chevron" [size]="16" class="jobrow__go" />
+              </button>
+            </li>
+          } @empty {
+            <li class="empty">
+              <ar-icon name="check" [size]="22" />
+              {{
+                store.day()
+                  ? 'No open tickets are assigned to you. Enjoy the quiet.'
+                  : 'Connect once to download today’s jobs; after that they work offline.'
+              }}
+            </li>
+          }
+        </ul>
+        @if (store.lastSyncedAt(); as at) {
+          <p class="muted small">Last synced {{ time(at) }}</p>
         }
-      </ul>
-      @if (store.lastSyncedAt(); as at) {
-        <p class="muted small">Last synced {{ time(at) }}</p>
       }
-    }
+    </div>
   `,
   styles: `
     :host {
       display: block;
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 12px 16px 48px;
+      min-height: 100vh;
+      background: var(--ar-bg-100);
+      background-image: var(--ar-page-glow);
       font: 400 15px/1.45 var(--ar-font-sans);
       color: var(--ar-ink-900);
-      background: var(--ar-bg-100);
-      min-height: 100vh;
+    }
+    .app {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 16px 48px;
       box-sizing: border-box;
     }
     h1 {
       margin: 0;
-      font-size: 20px;
+      font: 600 22px var(--ar-font-sans);
     }
-    h2 {
-      margin: 8px 0 2px;
-      font-size: 18px;
-    }
-    h3 {
-      margin: 0 0 6px;
-      font-size: 15px;
-    }
-    .top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
+
+    /* The bar */
+    .bar {
       position: sticky;
-      top: env(safe-area-inset-top, 0px);
-      background: var(--ar-bg-100);
-      padding: 6px 0 10px;
-      z-index: 1;
-    }
-    .top__s {
-      margin: 2px 0 0;
-      font-size: 13px;
-      color: var(--ar-ink-500);
+      top: 0;
+      z-index: 5;
       display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 -16px 12px;
+      padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px;
+      background: var(--ar-header-bg, var(--ar-white));
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--ar-line-200);
+    }
+    .bar__brand {
+      display: flex;
+      text-decoration: none;
+    }
+    .bar__title {
+      flex: 1;
+      padding-left: 10px;
+      border-left: 1px solid var(--ar-line-200);
+      font: 600 15px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .pill {
+      display: inline-flex;
       align-items: center;
       gap: 6px;
-      flex-wrap: wrap;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--ar-amber-100, var(--ar-bg-50));
+      font: 600 12px var(--ar-font-sans);
+      color: var(--ar-amber-600);
     }
-    .dot {
-      width: 8px;
-      height: 8px;
+    .pill--on {
+      background: color-mix(in srgb, var(--ar-green-500) 14%, transparent);
+      color: var(--ar-green-500);
+    }
+    .pill__dot {
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      background: var(--ar-amber-500, #f59e0b);
+      background: currentColor;
     }
-    .dot--on {
-      background: var(--ar-good-600, #067647);
+    .offline {
+      margin: 0 0 10px;
+      padding: 10px 12px;
+      border-radius: var(--ar-radius-card);
+      background: var(--ar-amber-100, var(--ar-bg-50));
+      color: var(--ar-ink-700);
+      font-size: 13.5px;
+    }
+    .offline--wait {
+      background: var(--ar-blue-100);
+    }
+
+    /* Today */
+    .today {
+      margin: 6px 0 12px;
+    }
+    .tiles {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .tile {
+      display: flex;
+      flex-direction: column;
+      padding: 12px 14px;
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card);
+      box-shadow: var(--ar-shadow-card);
+    }
+    .tile b {
+      font: 600 22px var(--ar-font-sans);
+    }
+    .tile span {
+      font-size: 12.5px;
+      color: var(--ar-ink-500);
     }
     .jobs {
       list-style: none;
@@ -332,37 +515,159 @@ async function shrink(file: File): Promise<Blob> {
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
     .jobrow {
       width: 100%;
-      text-align: left;
       display: flex;
-      flex-direction: column;
-      gap: 2px;
-      padding: 12px 14px;
-      border: 1px solid var(--ar-line-200);
-      border-radius: 10px;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 14px 14px 16px;
+      text-align: left;
       background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-left: 4px solid var(--ar-line-300);
+      border-radius: var(--ar-radius-card);
+      box-shadow: var(--ar-shadow-card);
       font: inherit;
       color: inherit;
       cursor: pointer;
+      transition:
+        border-color var(--ar-ease),
+        transform var(--ar-ease);
+    }
+    .jobrow:hover,
+    .jobrow:focus-visible {
+      border-color: var(--ar-primary);
+      outline: none;
+    }
+    .jobrow:active {
+      transform: scale(0.99);
+    }
+    .jobrow--bad {
+      border-left-color: var(--ar-red-500);
+    }
+    .jobrow--warn,
+    .jobrow--amber {
+      border-left-color: var(--ar-amber-500);
+    }
+    .jobrow--neutral {
+      border-left-color: var(--ar-blue-500);
+    }
+    .jobrow__main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .jobrow__chips {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+    .jobrow__t {
+      font: 600 15.5px var(--ar-font-sans);
+    }
+    .jobrow__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 12px;
+      font-size: 12.5px;
+      color: var(--ar-ink-400);
+    }
+    .jobrow__go {
+      color: var(--ar-ink-400);
+    }
+    .late {
+      color: var(--ar-red-600);
+      font-weight: 600;
+    }
+    .empty {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 18px;
+      border: 1px dashed var(--ar-line-300);
+      border-radius: var(--ar-radius-card);
+      color: var(--ar-ink-500);
+    }
+
+    /* One job */
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin: 2px 0 10px;
+      padding: 6px 0;
+      border: 0;
+      background: none;
+      font: 600 14px var(--ar-font-sans);
+      color: var(--ar-primary);
+      cursor: pointer;
+    }
+    .back__icon {
+      transform: rotate(180deg);
+    }
+    .hero {
+      padding: 16px;
+      border-radius: var(--ar-radius-card);
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-top: 4px solid var(--ar-blue-500);
+      box-shadow: var(--ar-shadow-card);
+    }
+    .hero--bad {
+      border-top-color: var(--ar-red-500);
+    }
+    .hero--warn,
+    .hero--amber {
+      border-top-color: var(--ar-amber-500);
+    }
+    .hero__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .hero__t {
+      margin: 10px 0 4px;
+      font: 600 19px/1.3 var(--ar-font-sans);
+    }
+    .hero__d {
+      margin: 0;
+      color: var(--ar-ink-500);
     }
     .card {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      padding: 12px 14px;
-      margin: 10px 0;
-      border: 1px solid var(--ar-line-200);
-      border-radius: 10px;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 14px 16px;
       background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card);
+      box-shadow: var(--ar-shadow-card);
+    }
+    .card__k {
+      margin: 0;
+      font: 600 10.5px var(--ar-font-sans);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--ar-ink-400);
+    }
+    .card__t {
+      font: 600 16px var(--ar-font-sans);
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
     }
     .facts {
       display: grid;
       grid-template-columns: auto 1fr;
-      gap: 2px 12px;
-      margin: 4px 0 0;
+      gap: 4px 14px;
+      margin: 0;
       font-size: 14px;
     }
     .facts dt {
@@ -371,113 +676,108 @@ async function shrink(file: File): Promise<Blob> {
     .facts dd {
       margin: 0;
     }
-    .field {
+    .checklist {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      margin: 12px 0;
-      border: 0;
-      padding: 0;
+      gap: 6px;
+      margin-top: 6px;
     }
-    .field > span,
-    .field legend {
-      font-weight: 600;
-      font-size: 14px;
-      padding: 0;
-    }
-    textarea,
-    input:not([type='checkbox']) {
-      font: inherit;
-      padding: 10px;
-      border: 1px solid var(--ar-line-200);
-      border-radius: 8px;
-      background: var(--ar-white);
-      width: 100%;
-      box-sizing: border-box;
+    .checklist__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
     }
     .check {
       display: flex;
-      gap: 10px;
       align-items: center;
-      padding: 6px 0;
-      font-size: 15px;
+      gap: 12px;
+      min-height: 44px;
+      padding: 0 10px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-bg-50);
+      font-size: 14.5px;
+      cursor: pointer;
     }
     .check input {
       width: 20px;
       height: 20px;
     }
-    .thumbs {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
+    .check--done span {
+      color: var(--ar-ink-400);
+      text-decoration: line-through;
     }
-    .thumbs img {
-      width: 72px;
-      height: 72px;
-      object-fit: cover;
-      border-radius: 6px;
-      background: var(--ar-line-200);
-    }
-    .sign {
-      margin-top: 16px;
-      padding: 12px 14px;
-      border: 1px solid var(--ar-line-200);
-      border-radius: 10px;
-      background: var(--ar-white);
+    .photos {
       display: flex;
       flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .thumbs {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
       gap: 8px;
     }
-    .btn {
-      display: inline-flex;
-      justify-content: center;
+    .thumbs img,
+    .thumbs__add {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-line-200);
+    }
+    .thumbs__add {
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      min-height: 44px;
-      padding: 0 16px;
-      border-radius: 8px;
-      border: 0;
-      background: var(--ar-ink-900);
-      color: var(--ar-white);
-      font: 600 15px var(--ar-font-sans);
+      justify-content: center;
+      gap: 2px;
+      background: var(--ar-bg-50);
+      border: 1.5px dashed var(--ar-line-300);
+      color: var(--ar-primary);
+      font: 600 12px var(--ar-font-sans);
       cursor: pointer;
-      text-decoration: none;
     }
-    .btn--ghost {
-      background: var(--ar-white);
+    .code {
+      letter-spacing: 0.4em;
+      font: 600 18px var(--ar-font-mono);
+      text-align: center;
+    }
+    .done {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-top: 12px;
+      padding: 16px;
+      border-radius: var(--ar-radius-card);
+      background: color-mix(in srgb, var(--ar-green-500) 12%, var(--ar-white));
+      color: var(--ar-green-500);
+    }
+    .done b {
       color: var(--ar-ink-900);
-      border: 1px solid var(--ar-line-200);
     }
-    .btn:disabled {
-      opacity: 0.55;
+    .done p {
+      margin: 2px 0 0;
+      color: var(--ar-ink-500);
     }
-    .back {
-      border: 0;
-      background: none;
-      padding: 4px 0;
-      font: 600 14px var(--ar-font-sans);
-      color: var(--ar-teal-700, #0f766e);
-      cursor: pointer;
+    .wide {
+      width: 100%;
+      height: 48px;
+      margin-top: 14px;
+      font-size: 15px;
     }
     .muted {
       color: var(--ar-ink-500);
       font-size: 13.5px;
+      margin: 0;
     }
     .small {
       font-size: 12px;
-      margin-top: 12px;
-    }
-    .mono {
-      font-family: var(--ar-font-mono, ui-monospace, monospace);
+      margin-top: 14px;
     }
     .err {
       margin: 6px 0;
-      color: var(--ar-bad-600, #b42318);
+      color: var(--ar-red-600);
       font-weight: 500;
-    }
-    .ok {
-      margin: 12px 0;
-      color: var(--ar-good-600, #067647);
-      font-weight: 600;
     }
   `,
 })
@@ -552,6 +852,50 @@ export class ArField {
       hour: 'numeric',
       minute: '2-digit',
     });
+  }
+
+  protected readonly todayLabel = new Date().toLocaleDateString('en-IN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+
+  protected priorityTone(priority: string | null | undefined): ChipTone {
+    switch ((priority ?? '').toLowerCase()) {
+      case 'urgent':
+        return 'bad';
+      case 'high':
+        return 'warn';
+      case 'low':
+        return 'neutral';
+      default:
+        return 'neutral';
+    }
+  }
+
+  /** Due within four hours, or already late. */
+  protected dueSoon(isoDate: string): boolean {
+    return new Date(isoDate).getTime() - Date.now() < 4 * 3_600_000;
+  }
+
+  protected readonly dueSoonCount = computed(
+    () => this.jobs().filter((j) => j.dueAtUtc && this.dueSoon(j.dueAtUtc)).length,
+  );
+  protected readonly signedCount = computed(
+    () => this.jobs().filter((j) => this.stateLabel(j) === 'Signed off').length,
+  );
+
+  protected stateLabel(j: FieldJobDto): string | null {
+    const v = visitFor(j, this.store.visits()[j.ticketId]);
+    return !v ? null : v.state === 'SignedOff' ? 'Signed off' : 'In progress';
+  }
+
+  protected doneCount(v: LocalVisit): number {
+    return v.checklist.filter((c) => c.done).length;
+  }
+
+  protected digits(phone: string): string {
+    return phone.replace(/\D/g, '');
   }
 
   protected state(j: FieldJobDto): string {

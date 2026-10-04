@@ -1,9 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 
 import { OpsService } from '../../core/services/ops.service';
 import { ArTopbar } from '../../layout/topbar';
-import { ArBanner, ArButton, ArChip } from '../../ui';
+import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
+import { ArSelect } from '../../ui/select';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { CurrentUserService } from '../../core/services/current-user.service';
+import { SupportGrant } from '../../core/models/ops.model';
 import { ArGrid } from '../../ui/grid';
 
 /**
@@ -17,7 +21,7 @@ import { ArGrid } from '../../ui/grid';
  */
 @Component({
   selector: 'ar-support-access',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArGrid, GridModule],
+  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArDialog, ArSelect, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './support-access.html',
   styleUrl: './support-access.scss',
@@ -25,7 +29,71 @@ import { ArGrid } from '../../ui/grid';
 export class ArSupportAccess {
   private readonly ops = inject(OpsService);
 
+  private readonly dialogs = inject(ConfirmService);
+  /** Grants belong to a workspace; a host (platform) user has none to give. */
+  protected readonly isHost = inject(CurrentUserService).isHost;
+
   protected readonly grants = this.ops.grants;
+
+  // ---- granting and revoking --------------------------------------------------
+
+  protected readonly durations = [
+    { hours: 1, label: '1 hour' },
+    { hours: 4, label: '4 hours' },
+    { hours: 24, label: '1 day' },
+    { hours: 72, label: '3 days' },
+    { hours: 168, label: '7 days (the longest allowed)' },
+  ];
+  protected readonly grantOpen = signal(false);
+  protected readonly reason = signal('');
+  protected readonly hours = signal(4);
+  protected readonly ticket = signal('');
+  protected readonly allowsWrite = signal(false);
+  protected readonly busy = signal(false);
+
+  protected openGrant(): void {
+    this.reason.set('');
+    this.hours.set(4);
+    this.ticket.set('');
+    this.allowsWrite.set(false);
+    this.grantOpen.set(true);
+  }
+
+  /** The dialog has checked the reason before this runs. */
+  protected async grant(): Promise<void> {
+    this.busy.set(true);
+    try {
+      await this.ops.grantSupport({
+        reason: this.reason().trim(),
+        durationHours: this.hours(),
+        allowsWrite: this.allowsWrite(),
+        ticketRef: this.ticket().trim() || null,
+      });
+      this.grantOpen.set(false);
+    } catch {
+      /* the server's reason is shown as a toast; the dialog stays open */
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async revoke(g: SupportGrant): Promise<void> {
+    const ok = await this.dialogs.confirm({
+      title: 'Revoke support access?',
+      message: 'Support loses access at once and any session in progress is closed.',
+      confirmText: 'Revoke now',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    this.busy.set(true);
+    try {
+      await this.ops.revokeSupport(g.id);
+    } catch {
+      /* shown as a toast */
+    } finally {
+      this.busy.set(false);
+    }
+  }
   protected readonly sessions = this.ops.sessions;
 
   protected readonly active = computed(() => this.grants().filter((g) => g.active));

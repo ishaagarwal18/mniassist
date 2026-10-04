@@ -9,6 +9,7 @@ import {
   LineSeriesService,
   TooltipService,
 } from '@syncfusion/ej2-angular-charts';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 
 import { ForecastStore } from '../../core/services/forecast.store';
 import { chartColours } from '../../core/ui/chart-colours';
@@ -25,7 +26,8 @@ import {
   StageWeightsDto,
 } from '../../proxy/pipeline';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArBanner, ArButton, ArCard, ArChip, ArDialog, ArStatTile } from '../../ui';
+import { ArGrid } from '../../ui/grid';
 import { ArSelect } from '../../ui/select';
 
 const STAGE_LABEL: Record<number, string> = {
@@ -66,7 +68,19 @@ interface QuotaRow {
  */
 @Component({
   selector: 'ar-forecast',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ChartModule],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArSelect,
+    ChartModule,
+    ArStatTile,
+    ArBanner,
+    ArCard,
+    ArGrid,
+    GridModule,
+  ],
   providers: [LineSeriesService, CategoryService, LegendService, TooltipService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './forecast.html',
@@ -80,6 +94,7 @@ export class ArForecast {
   protected readonly forecast = this.store.forecast;
   protected readonly loading = this.store.loading;
   protected readonly failed = this.store.failed;
+  protected readonly notInPlan = this.store.notInPlan;
   protected readonly kind = this.store.kind;
   protected readonly pipelineId = this.store.pipelineId;
   protected readonly Kind = SalesPeriodKind;
@@ -209,12 +224,71 @@ export class ArForecast {
   }
 
   protected previous(): void {
-    this.store.go(this.forecast().previousPeriodStart);
+    this.store.step(-1);
   }
 
   protected next(): void {
-    this.store.go(this.forecast().nextPeriodStart);
+    this.store.step(1);
   }
+
+  /** The server's name for the period; worked out here while it loads or if it failed. */
+  protected readonly periodLabel = computed(() => {
+    const named = this.forecast().label;
+    if (named) return named;
+    const start = this.store.periodStart();
+    const d = start ? new Date(start.slice(0, 10) + 'T00:00:00') : new Date();
+    const month = d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+    return this.kind() === SalesPeriodKind.Quarter ? `Quarter from ${month}` : month;
+  });
+
+  // ---- grid rows: plain values to sort, filter and export by ----------------
+
+  protected readonly ownerRows = computed(() =>
+    this.owners().map((o) => ({
+      owner: o,
+      name: o.ownerName ?? 'Unassigned',
+      target: o.targetInPaise ?? 0,
+      closed: o.closedInPaise ?? 0,
+      expected: o.expectedInPaise ?? 0,
+      commit: o.commitInPaise ?? 0,
+      bestCase: o.bestCaseInPaise ?? 0,
+      projected: o.projectedAttainment ?? null,
+      deals: o.openDeals ?? 0,
+    })),
+  );
+  protected readonly dealRows = computed(() =>
+    this.deals().map((d) => ({
+      deal: d,
+      reference: d.reference ?? '',
+      title: d.title || 'Untitled',
+      contact: d.contactName ?? '',
+      owner: d.ownerName ?? '',
+      stage: this.stage(d.stage),
+      due: d.expectedClose ? new Date(d.expectedClose) : null,
+      value: d.valueInPaise ?? 0,
+      source: this.sourceText(d),
+      chance: d.chancePercent ?? 0,
+      weighted: d.weightedInPaise ?? 0,
+    })),
+  );
+  protected readonly chanceRows = computed(() =>
+    (this.forecast().chances ?? []).map((c) => ({
+      stage: this.stage(c.stage),
+      configured: c.configuredPercent ?? 0,
+      effective: c.effectivePercent ?? 0,
+      basis: this.basisText(c.basis, c.sample),
+    })),
+  );
+  protected readonly accuracyRows = computed(() =>
+    (this.history().accuracy ?? []).map((a) => ({
+      period: a.label ?? '',
+      target: a.targetInPaise ?? 0,
+      atStart: a.expectedAtStartInPaise ?? null,
+      atMid: a.expectedAtMidpointInPaise ?? null,
+      won: a.actualInPaise ?? 0,
+      error: this.errorText(a.midpointError),
+    })),
+  );
 
   protected today(): void {
     this.store.today();
@@ -228,7 +302,8 @@ export class ArForecast {
 
   protected async openQuotas(): Promise<void> {
     this.error.set(null);
-    const existing = await this.store.quotas();
+    // If the current quotas cannot be read, the dialog still opens to set new ones.
+    const existing = await this.store.quotas().catch(() => []);
     const rupeesOf = (userId: string | null) => {
       const q = existing.find((x) => (x.userId ?? null) === userId);
       return q?.targetInPaise ? String(Math.round(q.targetInPaise / 100)) : '';

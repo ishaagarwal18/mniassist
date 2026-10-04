@@ -14,6 +14,8 @@ import {
   SalesPeriodKind,
   SalesQuotaDto,
 } from '../../proxy/pipeline';
+import { isPlanRefusal } from '../http/api-feedback';
+import { settled } from '../util/resource';
 
 const CR = 1_00_00_000 * 100;
 const L = 1_00_000 * 100;
@@ -203,6 +205,17 @@ const MOCK_HISTORY: ForecastHistoryDto = {
  * The sales forecast for a period, and the quotas and assumptions behind it. The period, pipeline and person
  * being looked at are signals; changing one refetches.
  */
+/** What a screen shows before the first answer, or when the request failed: nothing, not sample figures. */
+const EMPTY: SalesForecastDto = { owners: [], deals: [], chances: [] };
+const EMPTY_HISTORY: ForecastHistoryDto = { points: [], accuracy: [] };
+
+/** A date inside the period `steps` months or quarters away from `anchor` (YYYY-MM-DD, local). */
+export function shiftPeriod(anchor: Date, kind: SalesPeriodKind, steps: number): string {
+  const months = kind === SalesPeriodKind.Quarter ? 3 : 1;
+  const d = new Date(anchor.getFullYear(), anchor.getMonth() + steps * months, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ForecastStore {
   private readonly api = inject(SalesForecastService);
@@ -225,14 +238,20 @@ export class ForecastStore {
           },
     stream: ({ params }) =>
       this.api.get({ kind: params.kind, periodStart: params.start, pipelineId: params.pipeline }),
-    defaultValue: MOCK,
+    defaultValue: EMPTY,
   });
 
+  // A failed request reads as empty (resource.value() throws once a request has
+  // failed, which froze the whole screen), and the error is shown as a toast.
   readonly forecast = computed<SalesForecastDto>(() =>
-    environment.useMockData ? MOCK : this.resource.value(),
+    environment.useMockData ? MOCK : this.resource.hasValue() ? this.resource.value() : EMPTY,
   );
   readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
   readonly failed = computed(() => !environment.useMockData && this.resource.error() != null);
+  /** The plan does not include forecasting: a note, not an error. */
+  readonly notInPlan = computed(
+    () => !environment.useMockData && isPlanRefusal(this.resource.error()),
+  );
 
   private readonly historyResource = rxResource({
     params: () =>
@@ -240,12 +259,16 @@ export class ForecastStore {
         ? undefined
         : { kind: this.kind(), start: this.periodStart(), tick: this.tick() },
     stream: ({ params }) => this.api.getHistory({ kind: params.kind, periodStart: params.start }),
-    defaultValue: MOCK_HISTORY,
+    defaultValue: EMPTY_HISTORY,
   });
 
   /** How the period's forecast has moved, and how earlier periods' forecasts turned out. */
   readonly history = computed<ForecastHistoryDto>(() =>
-    environment.useMockData ? MOCK_HISTORY : this.historyResource.value(),
+    environment.useMockData
+      ? MOCK_HISTORY
+      : this.historyResource.hasValue()
+        ? settled(this.historyResource, EMPTY_HISTORY)
+        : EMPTY_HISTORY,
   );
 
   setKind(kind: SalesPeriodKind): void {
@@ -257,6 +280,13 @@ export class ForecastStore {
     if (start) this.periodStart.set(start);
   }
 
+  /** One period back or forward from the one shown, worked out here so it works even when a load failed. */
+  step(direction: -1 | 1): void {
+    const anchor = this.periodStart() ?? this.forecast().periodStart ?? null;
+    const from = anchor ? new Date(anchor.slice(0, 10) + 'T00:00:00') : new Date();
+    this.periodStart.set(shiftPeriod(from, this.kind(), direction));
+  }
+
   today(): void {
     this.periodStart.set(null);
   }
@@ -265,10 +295,17 @@ export class ForecastStore {
     this.tick.update((n) => n + 1);
   }
 
+  /** The start of the period shown, even before (or without) the server's answer. */
+  private shownStart(): string {
+    return (
+      this.forecast().periodStart ?? this.periodStart() ?? shiftPeriod(new Date(), this.kind(), 0)
+    );
+  }
+
   async quotas(): Promise<SalesQuotaDto[]> {
     if (environment.useMockData) return [];
     return firstValueFrom(
-      this.api.getQuotas({ kind: this.kind(), periodStart: this.forecast().periodStart }),
+      this.api.getQuotas({ kind: this.kind(), periodStart: this.shownStart() }),
     );
   }
 
@@ -278,7 +315,7 @@ export class ForecastStore {
       this.api.setQuota({
         userId,
         kind: this.kind(),
-        periodStart: this.forecast().periodStart!,
+        periodStart: this.shownStart(),
         targetInPaise: Math.round(rupees * 100),
       }),
     );

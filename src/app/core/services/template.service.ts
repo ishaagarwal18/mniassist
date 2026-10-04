@@ -31,6 +31,7 @@ import {
   TemplateStatus,
 } from '../models/template.model';
 import { ChannelService } from './channel.service';
+import { settled } from '../util/resource';
 
 const STATUS: Record<ApiStatus, TemplateStatus> = {
   [ApiStatus.Draft]: 'draft',
@@ -474,7 +475,7 @@ export class TemplateService {
       this.seedTick();
       return this.seedList;
     }
-    return this.resource.value();
+    return settled(this.resource, [] as Template[]);
   });
 
   readonly templates = computed<readonly Template[]>(() => {

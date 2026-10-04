@@ -1,6 +1,6 @@
 <ar-topbar
   title="Forecast"
-  [subtitle]="forecast().label ?? ''"
+  [subtitle]="periodLabel()"
   help="What you are on course to sell in a month or quarter. Expected weights each open deal due in the period by how likely its stage is to win. Commit is what is won plus deals in Negotiation. Best case is everything scheduled landing. Deals with no close date, or a date that has passed, are listed but not counted."
 >
   <select
@@ -32,49 +32,72 @@
       </button>
     </div>
     <div class="fc__nav">
-      <button ar-button variant="ghost" aria-label="Previous period" (click)="previous()">←</button>
-      <b class="fc__label">{{ forecast().label }}</b>
-      <button ar-button variant="ghost" aria-label="Next period" (click)="next()">→</button>
-      <button ar-button variant="ghost" (click)="today()">Today</button>
+      <button
+        ar-button
+        variant="ghost"
+        class="fc__arrow fc__arrow--back"
+        icon="chevron"
+        aria-label="Previous period"
+        title="Previous period"
+        (click)="previous()"
+      ></button>
+      <b class="fc__label">{{ periodLabel() }}</b>
+      <button
+        ar-button
+        variant="ghost"
+        class="fc__arrow"
+        icon="chevron"
+        aria-label="Next period"
+        title="Next period"
+        (click)="next()"
+      ></button>
+      <button ar-button variant="ghost" (click)="today()">This period</button>
     </div>
   </div>
 
-  @if (failed()) {
-    <p class="fc__err">Could not load the forecast. Check your connection and reload.</p>
+  @if (notInPlan()) {
+    <ar-banner tone="teal">
+      Sales forecasting is not part of this workspace's plan. Upgrade on the Billing page to see
+      what you are on course to sell.
+    </ar-banner>
+  } @else if (failed()) {
+    <ar-banner tone="bad">
+      The forecast could not be loaded. The reason is shown in the message at the top right; try
+      again with “This period”.
+    </ar-banner>
   }
 
   @if (team(); as t) {
     <section class="fc__cards" [class.fc__cards--loading]="loading()">
-      <article class="stat">
-        <span class="stat__k">Target</span>
-        <b class="stat__v">{{ t.targetInPaise ? money(t.targetInPaise) : '—' }}</b>
-        <span class="stat__s">{{ t.targetInPaise ? 'set for the period' : 'no quota set' }}</span>
-      </article>
-      <article class="stat">
-        <span class="stat__k">Closed</span>
-        <b class="stat__v">{{ money(t.closedInPaise) }}</b>
-        <span class="stat__s">{{ pct(t.attainment) }} of target</span>
-      </article>
-      <article class="stat stat--main">
-        <span class="stat__k">Expected</span>
-        <b class="stat__v">{{ money(t.expectedInPaise) }}</b>
-        <span class="stat__s">{{ pct(t.projectedAttainment) }} of target</span>
-      </article>
-      <article class="stat">
-        <span class="stat__k">Commit</span>
-        <b class="stat__v">{{ money(t.commitInPaise) }}</b>
-        <span class="stat__s">won + Negotiation</span>
-      </article>
-      <article class="stat">
-        <span class="stat__k">Best case</span>
-        <b class="stat__v">{{ money(t.bestCaseInPaise) }}</b>
-        <span class="stat__s">if everything lands</span>
-      </article>
-      <article class="stat">
-        <span class="stat__k">Still to find</span>
-        <b class="stat__v">{{ t.targetInPaise ? money(t.gapInPaise) : '—' }}</b>
-        <span class="stat__s">on the expected figure</span>
-      </article>
+      <ar-stat-tile
+        label="Target"
+        [value]="t.targetInPaise ? money(t.targetInPaise) : '—'"
+        [note]="t.targetInPaise ? 'set for the period' : 'no quota set'"
+      />
+      <ar-stat-tile
+        label="Closed"
+        [value]="money(t.closedInPaise)"
+        [note]="pct(t.attainment) + ' of target'"
+        tone="good"
+      />
+      <ar-stat-tile
+        label="Expected"
+        [value]="money(t.expectedInPaise)"
+        [note]="pct(t.projectedAttainment) + ' of target'"
+        tone="teal"
+      />
+      <ar-stat-tile label="Commit" [value]="money(t.commitInPaise)" note="won + Negotiation" />
+      <ar-stat-tile
+        label="Best case"
+        [value]="money(t.bestCaseInPaise)"
+        note="if everything lands"
+      />
+      <ar-stat-tile
+        label="Still to find"
+        [value]="t.targetInPaise ? money(t.gapInPaise) : '—'"
+        note="on the expected figure"
+        [tone]="(t.gapInPaise ?? 0) > 0 ? 'amber' : 'neutral'"
+      />
     </section>
 
     @if (t.targetInPaise) {
@@ -89,6 +112,8 @@
         <span class="fc__meter-won" [style.width.%]="closedShare()"></span>
       </div>
     }
+  } @else if (!loading() && !failed()) {
+    <ar-banner tone="teal">Nothing is due, won or targeted in {{ periodLabel() }} yet.</ar-banner>
   }
 
   @if (
@@ -135,99 +160,80 @@
     </section>
   }
 
-  <section class="fc__block">
-    <h2 class="fc__h">By person</h2>
+  <ar-card heading="By person">
     @if (owners().length === 0) {
       <p class="fc__empty">Nothing due, won or targeted in this period.</p>
     } @else {
-      <div class="fc__table-wrap">
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th>Owner</th>
-              <th class="num">Target</th>
-              <th class="num">Closed</th>
-              <th class="num">Expected</th>
-              <th class="num">Commit</th>
-              <th class="num">Best case</th>
-              <th class="num">Projected</th>
-              <th class="num">Deals</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (o of owners(); track o.ownerUserId ?? 'none') {
-              <tr>
-                <td>{{ o.ownerName }}</td>
-                <td class="num">{{ o.targetInPaise ? money(o.targetInPaise) : '—' }}</td>
-                <td class="num">{{ money(o.closedInPaise) }}</td>
-                <td class="num">{{ money(o.expectedInPaise) }}</td>
-                <td class="num">{{ money(o.commitInPaise) }}</td>
-                <td class="num">{{ money(o.bestCaseInPaise) }}</td>
-                <td class="num">
-                  @if (o.projectedAttainment != null) {
-                    <ar-chip [tone]="tone(o)">{{ pct(o.projectedAttainment) }}</ar-chip>
-                  } @else {
-                    <span class="fc__muted">no quota</span>
-                  }
-                </td>
-                <td class="num">{{ o.openDeals }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+      <ejs-grid arGrid="forecast-by-person" [arGridSearch]="false" [dataSource]="ownerRows()">
+        <e-columns>
+          <e-column field="name" headerText="Owner" />
+          <e-column field="target" headerText="Target" type="number" textAlign="Right">
+            <ng-template #template let-r>{{ r.target ? money(r.target) : '—' }}</ng-template>
+          </e-column>
+          <e-column field="closed" headerText="Closed" type="number" textAlign="Right">
+            <ng-template #template let-r>{{ money(r.closed) }}</ng-template>
+          </e-column>
+          <e-column field="expected" headerText="Expected" type="number" textAlign="Right">
+            <ng-template #template let-r>{{ money(r.expected) }}</ng-template>
+          </e-column>
+          <e-column field="commit" headerText="Commit" type="number" textAlign="Right">
+            <ng-template #template let-r>{{ money(r.commit) }}</ng-template>
+          </e-column>
+          <e-column field="bestCase" headerText="Best case" type="number" textAlign="Right">
+            <ng-template #template let-r>{{ money(r.bestCase) }}</ng-template>
+          </e-column>
+          <e-column field="projected" headerText="Projected" type="number" textAlign="Right">
+            <ng-template #template let-r>
+              @if (r.projected != null) {
+                <ar-chip [tone]="tone(r.owner)">{{ pct(r.projected) }}</ar-chip>
+              } @else {
+                <span class="fc__muted">no quota</span>
+              }
+            </ng-template>
+          </e-column>
+          <e-column field="deals" headerText="Deals" type="number" textAlign="Right" width="90" />
+        </e-columns>
+      </ejs-grid>
     }
-  </section>
+  </ar-card>
 
-  <section class="fc__block">
-    <h2 class="fc__h">Deals due this period</h2>
+  <ar-card heading="Deals due this period">
     @if (deals().length === 0) {
       <p class="fc__empty">No open deals are due to close in this period.</p>
     } @else {
-      <div class="fc__table-wrap">
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th>Deal</th>
-              <th>Owner</th>
-              <th>Stage</th>
-              <th>Due</th>
-              <th class="num">Value</th>
-              <th class="num">Chance</th>
-              <th class="num">Weighted</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (d of deals(); track d.enquiryId) {
-              <tr>
-                <td>
-                  <span class="fc__ref">{{ d.reference }}</span>
-                  {{ d.title || 'Untitled' }}
-                  @if (d.contactName) {
-                    <span class="fc__muted"> · {{ d.contactName }}</span>
-                  }
-                </td>
-                <td>{{ d.ownerName }}</td>
-                <td>{{ stage(d.stage) }}</td>
-                <td>{{ day(d.expectedClose) }}</td>
-                <td class="num">
-                  {{ money(d.valueInPaise) }}
-                  <span class="fc__src" [class.fc__src--none]="d.valueSource === Source.None">{{
-                    sourceText(d)
-                  }}</span>
-                </td>
-                <td class="num">{{ d.chancePercent }}%</td>
-                <td class="num">{{ money(d.weightedInPaise) }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+      <ejs-grid arGrid="forecast-deals" [dataSource]="dealRows()">
+        <e-columns>
+          <e-column field="title" headerText="Deal" width="280">
+            <ng-template #template let-r>
+              <span class="fc__ref">{{ r.reference }}</span> {{ r.title }}
+              @if (r.contact) {
+                <span class="fc__muted"> · {{ r.contact }}</span>
+              }
+            </ng-template>
+          </e-column>
+          <e-column field="owner" headerText="Owner" />
+          <e-column field="stage" headerText="Stage" />
+          <e-column field="due" headerText="Due" type="date" format="d MMM" />
+          <e-column field="value" headerText="Value" type="number" textAlign="Right">
+            <ng-template #template let-r>
+              {{ money(r.value) }}
+              <span class="fc__src" [class.fc__src--none]="r.deal.valueSource === Source.None">{{
+                r.source
+              }}</span>
+            </ng-template>
+          </e-column>
+          <e-column field="chance" headerText="Chance" type="number" textAlign="Right" width="100">
+            <ng-template #template let-r>{{ r.chance }}%</ng-template>
+          </e-column>
+          <e-column field="weighted" headerText="Weighted" type="number" textAlign="Right">
+            <ng-template #template let-r>{{ money(r.weighted) }}</ng-template>
+          </e-column>
+        </e-columns>
+      </ejs-grid>
     }
-  </section>
+  </ar-card>
 
-  <section class="fc__block">
-    <h2 class="fc__h">How likely each stage is to win</h2>
+  <ar-card heading="How likely each stage is to win">
     <p class="fc__sub">
       @if (forecast().learnFromHistory) {
         Starts from your settings and is moved by what happened to deals you have closed in the last
@@ -237,39 +243,34 @@
         them.
       }
     </p>
-    <div class="fc__table-wrap">
-      <table class="tbl">
-        <thead>
-          <tr>
-            <th>Stage</th>
-            <th class="num">Your setting</th>
-            <th class="num">Used</th>
-            <th>Based on</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (c of forecast().chances ?? []; track c.stage) {
-            <tr>
-              <td>{{ stage(c.stage) }}</td>
-              <td class="num">{{ c.configuredPercent }}%</td>
-              <td class="num">
-                <b>{{ c.effectivePercent }}%</b>
-              </td>
-              <td class="fc__muted">{{ basisText(c.basis, c.sample) }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </section>
+    <ejs-grid arGrid="forecast-stage-chances" [arGridTools]="false" [dataSource]="chanceRows()">
+      <e-columns>
+        <e-column field="stage" headerText="Stage" />
+        <e-column field="configured" headerText="Your setting" type="number" textAlign="Right">
+          <ng-template #template let-r>{{ r.configured }}%</ng-template>
+        </e-column>
+        <e-column field="effective" headerText="Used" type="number" textAlign="Right">
+          <ng-template #template let-r
+            ><b>{{ r.effective }}%</b></ng-template
+          >
+        </e-column>
+        <e-column field="basis" headerText="Based on" />
+      </e-columns>
+      <ng-template #emptyRecordTemplate>No stages to show for this pipeline.</ng-template>
+    </ejs-grid>
+  </ar-card>
 
-  <section class="fc__block">
-    <div class="fc__hrow">
-      <h2 class="fc__h">How this forecast has moved</h2>
-      <button ar-button variant="ghost" [disabled]="busy()" (click)="saveSnapshot()">
-        Save today's forecast
-      </button>
-    </div>
+  <ar-card heading="How this forecast has moved">
+    <button
+      card-actions
+      ar-button
+      variant="ghost"
+      icon="download"
+      [disabled]="busy()"
+      (click)="saveSnapshot()"
+    >
+      Save today's forecast
+    </button>
     @if (changeText(); as c) {
       <p class="fc__sub">
         <ar-chip [tone]="(history().expectedChangeInPaise ?? 0) >= 0 ? 'good' : 'amber'">{{
@@ -338,40 +339,28 @@
 
     @if ((history().accuracy ?? []).length > 0) {
       <h3 class="fc__h2">How earlier forecasts turned out</h3>
-      <div class="fc__table-wrap">
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th>Period</th>
-              <th class="num">Target</th>
-              <th class="num">Forecast at start</th>
-              <th class="num">Forecast mid-period</th>
-              <th class="num">Actually won</th>
-              <th>Mid-period forecast was</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (a of history().accuracy; track a.periodStart) {
-              <tr>
-                <td>{{ a.label }}</td>
-                <td class="num">{{ a.targetInPaise ? money(a.targetInPaise) : '—' }}</td>
-                <td class="num">
-                  {{ a.expectedAtStartInPaise == null ? '—' : money(a.expectedAtStartInPaise) }}
-                </td>
-                <td class="num">
-                  {{
-                    a.expectedAtMidpointInPaise == null ? '—' : money(a.expectedAtMidpointInPaise)
-                  }}
-                </td>
-                <td class="num">{{ money(a.actualInPaise) }}</td>
-                <td class="fc__muted">{{ errorText(a.midpointError) }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+      <ejs-grid arGrid="forecast-accuracy" [arGridTools]="false" [dataSource]="accuracyRows()">
+        <e-columns>
+          <e-column field="period" headerText="Period" />
+          <e-column field="target" headerText="Target" type="number" textAlign="Right">
+            <ng-template #template let-r>{{ r.target ? money(r.target) : '—' }}</ng-template>
+          </e-column>
+          <e-column field="atStart" headerText="Forecast at start" type="number" textAlign="Right">
+            <ng-template #template let-r>{{
+              r.atStart == null ? '—' : money(r.atStart)
+            }}</ng-template>
+          </e-column>
+          <e-column field="atMid" headerText="Forecast mid-period" type="number" textAlign="Right">
+            <ng-template #template let-r>{{ r.atMid == null ? '—' : money(r.atMid) }}</ng-template>
+          </e-column>
+          <e-column field="won" headerText="Actually won" type="number" textAlign="Right">
+            <ng-template #template let-r>{{ money(r.won) }}</ng-template>
+          </e-column>
+          <e-column field="error" headerText="Mid-period forecast was" />
+        </e-columns>
+      </ejs-grid>
     }
-  </section>
+  </ar-card>
 </div>
 
 @if (quotaOpen()) {
@@ -432,7 +421,7 @@
     </label>
     <label class="ar-field">
       <span class="ar-field__label">Chances for</span>
-      <select required class="ar-field__input" (change)="setScope($any($event.target).value)">
+      <select class="ar-field__input" (change)="setScope($any($event.target).value)">
         <option value="" [selected]="!scope()">Every pipeline (the default)</option>
         @for (p of pipelines(); track p.id) {
           <option [value]="p.id" [selected]="p.id === scope()">

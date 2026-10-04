@@ -26,6 +26,7 @@ import {
   SalesPipelineService,
 } from '../../proxy/pipeline';
 import { ContactService as ContactApi } from '../../proxy/contacts';
+import { settled } from '../util/resource';
 
 /** id + a human label, for the contact / enquiry pickers in the create dialogs. */
 export interface PickerOption {
@@ -520,12 +521,12 @@ export class PipelineStore {
   private readonly pipelinesResource = rxResource({
     params: () => (environment.useMockData ? undefined : { tick: this.pipelineTick() }),
     stream: () => this.pipelineApi.getList().pipe(map((r) => r.items ?? [])),
-    defaultValue: MOCK_PIPELINES,
+    defaultValue: [],
   });
 
   /** Every pipeline with its stages, default first. */
   readonly pipelines = computed<SalesPipelineDto[]>(() =>
-    environment.useMockData ? MOCK_PIPELINES : this.pipelinesResource.value(),
+    environment.useMockData ? MOCK_PIPELINES : settled(this.pipelinesResource, []),
   );
 
   /** The pipeline on screen: the chosen one, else the default. */
@@ -541,7 +542,7 @@ export class PipelineStore {
       this.enquiryApi
         .getBoard({ openOnly: true, pipelineId: params.pipeline })
         .pipe(map((r) => (r.items ?? []).map(boardColumn))),
-    defaultValue: SEED_BOARD,
+    defaultValue: [],
   });
 
   private readonly quotesResource = rxResource({
@@ -550,7 +551,7 @@ export class PipelineStore {
       this.quotationApi
         .getList({ skipCount: 0, maxResultCount: 100 })
         .pipe(map((p) => (p.items ?? []).map(quotation))),
-    defaultValue: SEED_QUOTES,
+    defaultValue: [],
   });
 
   private readonly assetsResource = rxResource({
@@ -559,17 +560,17 @@ export class PipelineStore {
       this.assetApi
         .getList({ includeRetired: params.retired, skipCount: 0, maxResultCount: 200 })
         .pipe(map((p) => (p.items ?? []).map(asset))),
-    defaultValue: SEED_ASSETS,
+    defaultValue: [],
   });
 
   readonly board = computed(() =>
-    environment.useMockData ? SEED_BOARD : this.boardResource.value(),
+    environment.useMockData ? SEED_BOARD : settled(this.boardResource, []),
   );
   readonly quotes = computed(() =>
-    environment.useMockData ? SEED_QUOTES : this.quotesResource.value(),
+    environment.useMockData ? SEED_QUOTES : settled(this.quotesResource, []),
   );
   readonly assets = computed(() =>
-    environment.useMockData ? SEED_ASSETS : this.assetsResource.value(),
+    environment.useMockData ? SEED_ASSETS : settled(this.assetsResource, []),
   );
   readonly loading = computed(
     () =>

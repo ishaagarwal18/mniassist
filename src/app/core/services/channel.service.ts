@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environment';
 import { ChannelHealthDto, ChannelService as ChannelApi } from '../../proxy/channels';
 import { Channel, TIER_LIMIT } from '../models/channel.model';
 import { toChannel } from '../api/mapping';
+import { settled } from '../util/resource';
 
 /**
  * Channel store. The computed views below are what the UI binds to; where the
@@ -60,7 +61,12 @@ export class ChannelService {
   private readonly _activeId = signal<string | null>(null);
 
   readonly channels = computed<readonly Channel[]>(() =>
-    environment.useMockData ? this.seed : this.channelsResource.value().channels,
+    environment.useMockData
+      ? this.seed
+      : settled(this.channelsResource, {
+          channels: [] as Channel[],
+          health: new Map<string, ChannelHealthDto>(),
+        }).channels,
   );
 
   readonly loading = computed(() => !environment.useMockData && this.channelsResource.isLoading());
@@ -78,7 +84,12 @@ export class ChannelService {
 
   private readonly activeHealth = computed<ChannelHealthDto | undefined>(() => {
     const active = this.active();
-    return active ? this.channelsResource.value().health.get(active.id) : undefined;
+    return active
+      ? settled(this.channelsResource, {
+          channels: [] as Channel[],
+          health: new Map<string, ChannelHealthDto>(),
+        }).health.get(active.id)
+      : undefined;
   });
 
   /**

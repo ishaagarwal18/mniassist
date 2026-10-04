@@ -231,6 +231,12 @@ const QUIET_READ_CODES = new Set([
   'AutoReach:BrandingRequiresTenant',
 ]);
 
+/** A refusal because the workspace's plan does not include the feature. */
+export function isPlanRefusal(err: unknown): boolean {
+  const body = (err as { error?: { error?: { code?: string } } } | null)?.error;
+  return body?.error?.code === 'AutoReach:PlanFeatureNotIncluded';
+}
+
 export function isQuietFailure(method: string, err: HttpErrorResponse): boolean {
   const code = ((err.error ?? {}) as { error?: { code?: string } }).error?.code;
   return method.toUpperCase() === 'GET' && !!code && QUIET_READ_CODES.has(code);

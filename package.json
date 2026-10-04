@@ -36,6 +36,7 @@
     "@syncfusion/ej2-angular-popups": "35.1.37",
     "@syncfusion/ej2-angular-progressbar": "35.1.37",
     "@syncfusion/ej2-angular-schedule": "35.1.37",
+    "@syncfusion/ej2-angular-treegrid": "35.1.37",
     "@syncfusion/ej2-base": "35.1.37",
     "@syncfusion/ej2-tailwind3-theme": "35.1.37",
     "rxjs": "~7.8.0",

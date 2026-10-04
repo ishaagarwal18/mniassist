@@ -21,6 +21,15 @@ import { ThemeService } from '../core/services/theme.service';
 import { grantedPolicy } from '../core/auth/permission';
 
 const COLLAPSED_KEY = 'ar.sidebar.collapsed';
+const FOLDED_KEY = 'ar.sidebar.foldedGroups';
+
+function readFolded(): ReadonlySet<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(FOLDED_KEY) ?? '[]') as string[]);
+  } catch {
+    return new Set();
+  }
+}
 
 function readCollapsed(): boolean {
   try {
@@ -67,9 +76,20 @@ function readCollapsed(): boolean {
     <nav class="sb__nav" aria-label="Main">
       @for (group of nav; track group.heading) {
         @if (group.heading) {
-          <div class="sb__heading">{{ group.heading }}</div>
+          <!-- A heading folds its group away; the group holding this page stays open. -->
+          <button
+            type="button"
+            class="sb__heading"
+            [class.sb__heading--folded]="isFolded(group)"
+            [attr.aria-expanded]="!isFolded(group)"
+            [attr.title]="isFolded(group) ? 'Show ' + group.heading : 'Hide ' + group.heading"
+            (click)="toggleGroup(group)"
+          >
+            <span>{{ group.heading }}</span>
+            <ar-icon class="sb__heading-chev" name="chevdown" [size]="12" />
+          </button>
         }
-        @for (item of group.items; track item.route) {
+        @for (item of isFolded(group) ? [] : group.items; track item.route) {
           <!-- One item is lit: the one whose route is the longest match for the page,
                so /settings/support-access lights Support access, not Settings too,
                and a sub-page (/enquiries/pipelines, /inbox?c=…) keeps its parent lit. -->
@@ -141,6 +161,29 @@ export class ArSidebar {
 
   protected readonly menuOpen = signal(false);
 
+  /** Menu groups folded away by their heading, remembered per browser. */
+  private readonly folded = signal<ReadonlySet<string>>(readFolded());
+
+  /** Folded, unless it holds the page on screen (or the bar shows icons only). */
+  protected isFolded(group: NavGroup): boolean {
+    if (!group.heading || this.collapsed() || !this.folded().has(group.heading)) return false;
+    return !group.items.some((i) => i.route === this.active());
+  }
+
+  protected toggleGroup(group: NavGroup): void {
+    const name = group.heading;
+    if (!name) return;
+    const next = new Set(this.folded());
+    if (this.isFolded(group)) next.delete(name);
+    else next.add(name);
+    this.folded.set(next);
+    try {
+      localStorage.setItem(FOLDED_KEY, JSON.stringify([...next]));
+    } catch {
+      /* storage blocked: the choice just won't persist */
+    }
+  }
+
   /** Icons-only mode, remembered per browser. */
   protected readonly collapsed = signal(readCollapsed());
 
@@ -209,7 +252,8 @@ export class ArSidebar {
 
   protected badgeFor(kind: 'inbox' | 'enquiries' | 'alerts' | undefined): number | null {
     if (kind === 'inbox') return this.inbox.unassignedCount() ?? null;
-    if (kind === 'enquiries') return 4;
+    // No cheap open-enquiry count exists yet; a fixed number here was wrong for every workspace.
+    if (kind === 'enquiries') return null;
 
     // Unread notifications, not unread criticals. A badge that only counts the worst
     // alerts teaches people that a badge of zero means nothing is waiting.

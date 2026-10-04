@@ -25,6 +25,7 @@ import {
   updateClauseAt,
   type SegmentClause,
 } from '../models/segment.model';
+import { settled } from '../util/resource';
 
 const LIFECYCLE = Object.fromEntries(
   Object.entries(ContactLifecycle).map(([k, v]) => [v, k]),
@@ -278,15 +279,15 @@ export class SegmentStore {
   readonly loading = computed(() => !environment.useMockData && this.previewResource.isLoading());
 
   readonly preview = computed<SegmentPreview>(() =>
-    environment.useMockData ? SEED_PREVIEW : this.previewResource.value(),
+    environment.useMockData ? SEED_PREVIEW : settled(this.previewResource, EMPTY_PREVIEW),
   );
 
   readonly savedSegments = computed<readonly SavedSegment[]>(() =>
-    environment.useMockData ? SEED_SAVED : this.savedResource.value(),
+    environment.useMockData ? SEED_SAVED : settled(this.savedResource, [] as SavedSegment[]),
   );
 
   readonly walletBalanceInPaise = computed(() =>
-    environment.useMockData ? 3_41_000 : this.walletResource.value(),
+    environment.useMockData ? 3_41_000 : settled(this.walletResource, 3_41_000),
   );
 
   // ---- Rule editing -------------------------------------------------------

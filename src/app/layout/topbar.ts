@@ -130,6 +130,9 @@ import { ArThemeToggle } from './theme-toggle';
   styles: `
     :host {
       position: relative;
+      /* Its own layer above the page, so the help popover is never under a grid,
+         calendar or chart; still below Syncfusion's popups and dialogs (1000+). */
+      z-index: 900;
       height: 56px;
       flex: none;
       display: flex;
@@ -227,7 +230,7 @@ import { ArThemeToggle } from './theme-toggle';
       position: absolute;
       top: 50px;
       right: 22px;
-      z-index: 30;
+      z-index: 1;
       width: min(340px, calc(100vw - 44px));
       background: var(--ar-white);
       border: 1px solid var(--ar-line-200);

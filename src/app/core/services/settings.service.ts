@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { SaveSsoConfigurationInput, TenantSsoConfigurationDto } from '../../proxy/identity';
 import { SsoService } from '../../proxy/controllers';
+import { settled } from '../util/resource';
 
 const SSO_SEED: TenantSsoConfigurationDto = {
   isConfigured: false,
@@ -27,7 +28,7 @@ export class SettingsStore {
 
   readonly ssoLoading = computed(() => !environment.useMockData && this.ssoResource.isLoading());
   readonly sso = computed<TenantSsoConfigurationDto>(() =>
-    environment.useMockData ? SSO_SEED : (this.ssoResource.value() ?? SSO_SEED),
+    environment.useMockData ? SSO_SEED : (settled(this.ssoResource, SSO_SEED) ?? SSO_SEED),
   );
 
   async saveSso(input: SaveSsoConfigurationInput): Promise<void> {
