@@ -25,6 +25,15 @@
           if (localStorage.getItem('ar.theme') === 'dark' && !isPublic) {
             document.documentElement.setAttribute('data-theme', 'dark');
           }
+          // App pages use Syncfusion controls: start their stylesheet now so the first
+          // paint is styled. Same file and id as core/ui/syncfusion-theme.ts.
+          if (!isPublic) {
+            var sf = document.createElement('link');
+            sf.id = 'sf-theme';
+            sf.rel = 'stylesheet';
+            sf.href = 'vendor/syncfusion/syncfusion.css?v=35.1.37';
+            document.head.appendChild(sf);
+          }
         } catch (e) {}
       })();
     </script>

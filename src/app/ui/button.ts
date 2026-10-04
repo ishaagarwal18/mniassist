@@ -1,21 +1,37 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+
+import { ensureSyncfusionTheme } from '../core/ui/syncfusion-theme';
 import { ArIcon, IconName } from './icon';
 
 /** `ai` is for actions that run AI (draft, suggest, summarise) — teal, and only there. */
 export type ButtonVariant = 'primary' | 'ghost' | 'quiet' | 'danger' | 'ai';
 
+/** Syncfusion's button classes for each variant. `ai` is ours: Syncfusion has no AI style. */
+const SF_CLASSES: Record<ButtonVariant, string> = {
+  primary: 'e-primary',
+  ghost: '',
+  quiet: 'e-flat',
+  danger: 'e-outline e-danger',
+  ai: 'e-primary',
+};
+
+/**
+ * A Syncfusion button (`e-btn`, Tailwind 3 theme recoloured to the brand) on a
+ * real `<button>`, so keyboard and form behaviour come free. Our styles only
+ * set the compact enterprise density and the AI variant.
+ */
 @Component({
   selector: 'button[ar-button]',
   imports: [ArIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[class]': '"ar-btn ar-btn--" + variant()',
+    '[class]': 'hostClass()',
     '[attr.type]': 'type()',
     '[attr.disabled]': 'disabled() || null',
   },
   template: `
     @if (icon(); as i) {
-      <ar-icon [name]="i" [size]="15" />
+      <ar-icon class="e-btn-icon" [name]="i" [size]="15" />
     }
     <ng-content />
   `,
@@ -23,76 +39,34 @@ export type ButtonVariant = 'primary' | 'ghost' | 'quiet' | 'danger' | 'ai';
     :host {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 7px;
       height: var(--ar-control-h);
       padding: 0 13px;
-      border-radius: var(--ar-radius-control);
       font: 500 13px var(--ar-font-sans);
-      cursor: pointer;
+      line-height: 1;
       white-space: nowrap;
-      transition:
-        background-color var(--ar-ease),
-        border-color var(--ar-ease),
-        box-shadow var(--ar-ease);
+      text-transform: none;
     }
     :host(:focus-visible) {
       outline: none;
       box-shadow: var(--ar-focus-ring);
     }
-    :host(:disabled) {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
     :host(.ar-btn--primary) {
-      background: var(--ar-primary);
-      color: #fff;
-      border: 1px solid var(--ar-primary);
       box-shadow: var(--ar-glow-primary);
     }
-    :host(.ar-btn--primary):hover:not(:disabled) {
-      background: var(--ar-primary-hover);
-      border-color: var(--ar-primary-hover);
-    }
-
     :host(.ar-btn--ai) {
       background: var(--ar-ai-fill);
+      border-color: var(--ar-ai-fill);
       color: #fff;
-      border: 1px solid var(--ar-ai-fill);
     }
     :host(.ar-btn--ai):hover:not(:disabled) {
       background: var(--ar-ai-fill-hover);
       border-color: var(--ar-ai-fill-hover);
     }
-
-    :host(.ar-btn--ghost) {
-      background: var(--ar-white);
-      color: var(--ar-ink-900);
-      border: 1px solid var(--ar-line-300);
-      box-shadow: var(--ar-shadow-card);
-    }
-    :host(.ar-btn--ghost):hover:not(:disabled) {
-      background: var(--ar-bg-50);
-      border-color: var(--ar-ink-400);
-    }
-
-    :host(.ar-btn--quiet) {
-      background: transparent;
-      color: var(--ar-ink-500);
-      border: 1px solid transparent;
-    }
-    :host(.ar-btn--quiet):hover:not(:disabled) {
-      background: var(--ar-bg-100);
-    }
-
-    :host(.ar-btn--danger) {
-      background: var(--ar-white);
-      color: var(--ar-red-600);
-      border: 1px solid var(--ar-line-300);
-    }
-    :host(.ar-btn--danger):hover:not(:disabled) {
-      background: var(--ar-red-100);
-      border-color: var(--ar-red-200);
+    .e-btn-icon {
+      margin: 0;
+      width: auto;
     }
   `,
 })
@@ -101,4 +75,12 @@ export class ArButton {
   readonly icon = input<IconName | null>(null);
   readonly type = input<'button' | 'submit'>('button');
   readonly disabled = input(false);
+
+  protected readonly hostClass = computed(
+    () => `e-btn ${SF_CLASSES[this.variant()]} ar-btn ar-btn--${this.variant()}`,
+  );
+
+  constructor() {
+    ensureSyncfusionTheme();
+  }
 }

@@ -1,52 +1,45 @@
 import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
-import { ArIcon } from './icon';
+import { InputEventArgs, TextBoxComponent } from '@syncfusion/ej2-angular-inputs';
 
+import { registerSyncfusionLicense } from '../core/ui/syncfusion-license';
+import { ensureSyncfusionTheme } from '../core/ui/syncfusion-theme';
+
+/**
+ * A Syncfusion text box (`ejs-textbox`) with a search icon and a clear button.
+ * Two-way bindable as before: `[(query)]="term"`.
+ */
 @Component({
   selector: 'ar-search-box',
-  imports: [ArIcon],
+  imports: [TextBoxComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-icon name="search" [size]="15" class="ar-search__icon" />
-    <input
-      class="ar-search__input"
+    <ejs-textbox
+      #box
+      cssClass="ar-search"
       type="search"
-      [attr.placeholder]="placeholder()"
-      [attr.aria-label]="placeholder()"
+      [placeholder]="placeholder()"
       [value]="query()"
-      (input)="query.set($any($event.target).value)"
+      [showClearButton]="true"
+      [htmlAttributes]="{ 'aria-label': placeholder() }"
+      (created)="box.addIcon('prepend', 'e-icons e-search')"
+      (input)="onInput($event)"
+      (change)="onInput($event)"
     />
   `,
   styles: `
     :host {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      display: block;
+      min-width: 0;
+    }
+    :host ::ng-deep .e-input-group.ar-search {
       height: var(--ar-control-h);
-      padding: 0 10px;
-      min-width: 0;
-      background: var(--ar-bg-100);
-      border: 1px solid var(--ar-line-200);
-      border-radius: var(--ar-radius-control);
-    }
-    :host:focus-within {
-      border-color: var(--ar-blue-500);
-      background: var(--ar-white);
-      box-shadow: var(--ar-focus-ring);
-    }
-    .ar-search__icon {
-      color: var(--ar-ink-400);
-    }
-    .ar-search__input {
-      flex: 1;
-      min-width: 0;
-      border: 0;
-      background: transparent;
-      outline: none;
+      margin: 0;
       font: 400 12.5px var(--ar-font-sans);
-      color: var(--ar-ink-900);
     }
-    .ar-search__input::placeholder {
-      color: var(--ar-ink-400);
+    :host ::ng-deep .e-input-group.ar-search input.e-input {
+      height: 100%;
+      min-height: 0;
+      font: inherit;
     }
   `,
 })
@@ -54,4 +47,14 @@ export class ArSearchBox {
   readonly placeholder = input('Search');
   /** Two-way bindable: [(query)]="term" */
   readonly query = model('');
+
+  constructor() {
+    registerSyncfusionLicense();
+    ensureSyncfusionTheme();
+  }
+
+  protected onInput(args: InputEventArgs | { value?: string | null }): void {
+    const value = args.value ?? '';
+    if (value !== this.query()) this.query.set(value);
+  }
 }

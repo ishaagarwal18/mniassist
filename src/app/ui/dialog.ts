@@ -1,75 +1,53 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { BeforeCloseEventArgs, DialogComponent } from '@syncfusion/ej2-angular-popups';
+
+import { registerSyncfusionLicense } from '../core/ui/syncfusion-license';
+import { ensureSyncfusionTheme } from '../core/ui/syncfusion-theme';
 
 /**
- * A modal shell: scrim, a centred panel, a titled header with a close control, a
- * content slot and a footer slot for the actions. Deliberately unopinionated about
- * what goes inside — every "New…" flow in the app is a short form, and they differ
- * enough that a generic form builder would fit none of them well.
+ * A modal Syncfusion dialog (`ejs-dialog`): overlay, centred panel, titled header
+ * with a close control, a content slot and a footer slot for the actions.
+ * Deliberately unopinionated about what goes inside — every "New…" flow in the
+ * app is a short form, and they differ enough that a generic form builder would
+ * fit none of them well.
  *
  * The host owns visibility (`@if (open())`), so there is no `open` input; this
- * component assumes it is only in the DOM when it should be shown.
+ * component assumes it is only in the DOM when it should be shown. Syncfusion's
+ * dialog would close itself on ×, Esc or an overlay click; here those only
+ * *ask* (`dismiss`), and the host decides — so a screen can keep a dialog open
+ * while it saves, exactly as before. Visual overrides live in styles.scss
+ * (`.ar-dialog`), because Syncfusion moves the dialog to the end of <body>.
  */
 @Component({
   selector: 'ar-dialog',
+  imports: [DialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="dlg__scrim" (click)="dismiss.emit()"></div>
-    <div class="dlg" role="dialog" aria-modal="true" [attr.aria-label]="title()">
-      <header class="dlg__head">
-        <h2 class="dlg__title">{{ title() }}</h2>
-        <button type="button" class="dlg__x" aria-label="Close" (click)="dismiss.emit()">×</button>
-      </header>
-      <div class="dlg__body"><ng-content /></div>
-      <footer class="dlg__foot"><ng-content select="[dialogActions]" /></footer>
-    </div>
+    <ejs-dialog
+      cssClass="ar-dialog"
+      [visible]="true"
+      [isModal]="true"
+      [showCloseIcon]="true"
+      [closeOnEscape]="true"
+      [header]="title()"
+      width="min(460px, calc(100vw - 32px))"
+      [animationSettings]="{ effect: 'Fade', duration: 150 }"
+      (beforeClose)="onBeforeClose($event)"
+      (overlayClick)="dismiss.emit()"
+    >
+      <ng-template #content>
+        <div class="dlg__body"><ng-content /></div>
+      </ng-template>
+      <ng-template #footerTemplate>
+        <div class="dlg__foot"><ng-content select="[dialogActions]" /></div>
+      </ng-template>
+    </ejs-dialog>
   `,
   styles: `
     :host {
-      position: fixed;
-      inset: 0;
-      z-index: 50;
-      display: grid;
-      place-items: center;
-    }
-    .dlg__scrim {
-      position: absolute;
-      inset: 0;
-      background: var(--ar-backdrop);
-    }
-    .dlg {
-      position: relative;
-      width: min(460px, calc(100vw - 32px));
-      max-height: calc(100vh - 64px);
-      display: flex;
-      flex-direction: column;
-      background: var(--ar-white);
-      border-radius: var(--ar-radius-modal);
-      box-shadow: var(--ar-shadow-pop);
-    }
-    .dlg__head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--ar-line-200);
-    }
-    .dlg__title {
-      margin: 0;
-      font: 600 15px var(--ar-font-sans);
-      color: var(--ar-ink-900);
-    }
-    .dlg__x {
-      background: none;
-      border: 0;
-      font-size: 22px;
-      line-height: 1;
-      cursor: pointer;
-      color: var(--ar-ink-400);
+      display: contents;
     }
     .dlg__body {
-      padding: 18px 20px;
-      overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 14px;
@@ -78,12 +56,21 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       display: flex;
       justify-content: flex-end;
       gap: 8px;
-      padding: 14px 20px;
-      border-top: 1px solid var(--ar-line-200);
     }
   `,
 })
 export class ArDialog {
   readonly title = input.required<string>();
   readonly dismiss = output<void>();
+
+  constructor() {
+    registerSyncfusionLicense();
+    ensureSyncfusionTheme();
+  }
+
+  /** Close requests (× or Esc) become a dismiss request; the host decides. */
+  protected onBeforeClose(args: BeforeCloseEventArgs): void {
+    args.cancel = true;
+    this.dismiss.emit();
+  }
 }
