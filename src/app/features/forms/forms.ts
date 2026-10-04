@@ -33,6 +33,7 @@ import {
   targetsFor,
 } from './form-logic';
 import { WebFormGateway } from './form-mock';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 type View =
   | { mode: 'list' }
@@ -102,6 +103,7 @@ function blank(): CreateUpdateWebFormDto {
   styleUrl: './forms.scss',
 })
 export class ArWebForms {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(WebFormGateway).api;
   private readonly permissions = inject(PermissionService);
 
@@ -309,9 +311,11 @@ export class ArWebForms {
 
   protected async remove(f: WebFormDto): Promise<void> {
     if (
-      !window.confirm(
-        `Delete "${f.name}"? Its address stops working. The contacts and enquiries it made stay.`,
-      )
+      !(await this.dialogs.delete(
+        'this form',
+        f.name,
+        'Its address stops working. The contacts and enquiries it made stay.',
+      ))
     )
       return;
     await this.run(() => firstValueFrom(this.api.delete(f.id)), 'The form could not be deleted.');

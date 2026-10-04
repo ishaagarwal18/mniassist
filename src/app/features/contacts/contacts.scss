@@ -21,8 +21,75 @@
   flex-direction: column;
   gap: 4px;
 }
+.segs {
+  transition: width var(--ar-ease);
+}
+.segs__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+}
 .segs__head {
-  margin: 0 0 4px;
+  margin: 0;
+}
+.segs--collapsed {
+  width: 52px;
+  padding: 16px 0;
+  align-items: center;
+}
+.segs--collapsed .segs__toggle ar-icon {
+  transform: none;
+}
+
+/* "Fill in from" a visiting card photo or a vCard, in the New contact dialog. */
+.fill {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px dashed var(--ar-line-300);
+  border-radius: var(--ar-radius-card);
+  background: var(--ar-bg-50);
+}
+.fill__label {
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+  margin-right: 2px;
+}
+.fill__btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--ar-line-300);
+  border-radius: var(--ar-radius-control);
+  background: var(--ar-white);
+  font: 500 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+  cursor: pointer;
+}
+.fill__btn:hover {
+  border-color: var(--ar-primary);
+  color: var(--ar-primary);
+}
+.fill__btn--busy {
+  opacity: 0.7;
+  cursor: progress;
+}
+.fill__btn input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.fill__note {
+  margin: 0;
+  font: 400 12px/1.5 var(--ar-font-sans);
+  color: var(--ar-teal-600);
 }
 .segs__rule {
   height: 1px;

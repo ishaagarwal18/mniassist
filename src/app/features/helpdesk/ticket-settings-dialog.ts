@@ -34,6 +34,8 @@ import { ServiceTicketGateway } from './ticket-mock';
             <label class="ar-field" for="ts-urgent">
               <span class="ar-field__label">Urgent</span>
               <input
+                required
+                min="1"
                 id="ts-urgent"
                 class="ar-field__input"
                 type="number"
@@ -46,6 +48,8 @@ import { ServiceTicketGateway } from './ticket-mock';
             <label class="ar-field" for="ts-high">
               <span class="ar-field__label">High</span>
               <input
+                required
+                min="1"
                 id="ts-high"
                 class="ar-field__input"
                 type="number"
@@ -58,6 +62,8 @@ import { ServiceTicketGateway } from './ticket-mock';
             <label class="ar-field" for="ts-normal">
               <span class="ar-field__label">Normal</span>
               <input
+                required
+                min="1"
                 id="ts-normal"
                 class="ar-field__input"
                 type="number"
@@ -70,6 +76,8 @@ import { ServiceTicketGateway } from './ticket-mock';
             <label class="ar-field" for="ts-low">
               <span class="ar-field__label">Low</span>
               <input
+                required
+                min="1"
                 id="ts-low"
                 class="ar-field__input"
                 type="number"
@@ -124,7 +132,9 @@ import { ServiceTicketGateway } from './ticket-mock';
             authentication template (one variable for the code, with a copy-code button).
           </p>
           <label class="ar-field" for="ts-signoff">
-            <span class="ar-field__label">Authentication template</span>
+            <span class="ar-field__label"
+              >Authentication template <span class="ar-field__opt">optional</span></span
+            >
             <select
               id="ts-signoff"
               class="ar-field__input"

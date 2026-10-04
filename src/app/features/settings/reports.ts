@@ -13,6 +13,7 @@ import {
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 const KINDS = [
   { value: ScheduledReportKind.ExecutiveSummary, label: 'Executive summary' },
@@ -64,6 +65,7 @@ const BLANK: Draft = {
   styleUrl: './reports.scss',
 })
 export class ArScheduledReports {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(ScheduledReportService);
 
   protected readonly kinds = KINDS;
@@ -180,7 +182,7 @@ export class ArScheduledReports {
   }
 
   protected async remove(r: ScheduledReportDto): Promise<void> {
-    if (!r.id || !confirm(`Delete "${r.name}"?`)) return;
+    if (!r.id || !(await this.dialogs.delete('this scheduled report', r.name))) return;
     await firstValueFrom(this.api.delete(r.id));
     this.tick.update((n) => n + 1);
   }

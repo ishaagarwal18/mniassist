@@ -12,6 +12,7 @@ import {
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 import { ArSelect } from '../../ui/select';
+import { ToastService } from '../../core/ui/toast.service';
 
 interface Doc {
   id: string;
@@ -88,6 +89,7 @@ function toDoc(d: LibraryDocumentDto): Doc {
   styleUrl: './documents.scss',
 })
 export class ArDocuments {
+  private readonly toasts = inject(ToastService);
   private readonly api = inject(LibraryService);
 
   protected readonly query = signal('');
@@ -131,11 +133,11 @@ export class ArDocuments {
   protected async upload(): Promise<void> {
     const f = this.file();
     if (!f) {
-      window.alert('Choose a file to upload.');
+      this.toasts.warning('Choose a file to upload.', 'Document');
       return;
     }
     if (!this.title().trim()) {
-      window.alert('Give the document a title.');
+      this.toasts.warning('Give the document a title.', 'Document');
       return;
     }
     this.uploading.set(true);

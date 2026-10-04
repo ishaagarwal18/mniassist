@@ -14,6 +14,7 @@ import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 interface PromptDraft {
   name: string;
@@ -68,6 +69,7 @@ const STATE_TONE: Record<ChannelState, ChipTone> = {
   styleUrl: './voice-ivr.scss',
 })
 export class ArVoiceIvr {
+  private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(VoiceService);
 
   protected readonly channel = this.store.channel;
@@ -230,7 +232,7 @@ export class ArVoiceIvr {
 
   protected async removePrompt(p: IvrPromptDto): Promise<void> {
     if (this.busy()) return;
-    if (!window.confirm(`Delete "${p.name}"? This can't be undone.`)) return;
+    if (!(await this.dialogs.delete('this menu', p.name))) return;
 
     this.busy.set(true);
     try {
@@ -275,7 +277,15 @@ export class ArVoiceIvr {
 
   protected async removeBranch(promptId: string, digit: string): Promise<void> {
     if (this.busy()) return;
-    if (!window.confirm(`Remove the branch for "${digit}"?`)) return;
+    if (
+      !(await this.dialogs.confirm({
+        title: 'Remove this branch?',
+        message: `Callers pressing “${digit}” will no longer be routed by it.`,
+        confirmText: 'Remove',
+        tone: 'danger',
+      }))
+    )
+      return;
 
     this.busy.set(true);
     try {

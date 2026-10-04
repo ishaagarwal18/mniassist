@@ -11,6 +11,7 @@ import {
 import { EmailOAuthProvider, EmailOAuthService } from '../../proxy/email/email-oauth.service';
 import { ArBanner, ArButton } from '../../ui';
 import { ArSelect } from '../../ui/select';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 const SEED: EmailChannelDto = {
   id: 'demo',
@@ -57,6 +58,7 @@ type Route = 'shared' | 'own';
   styleUrl: './email-sending.scss',
 })
 export class ArEmailSending {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(EmailChannelService);
   private readonly oauth = inject(EmailOAuthService);
   private readonly mock = environment.useMockData;
@@ -282,7 +284,12 @@ export class ArEmailSending {
     if (this.savingImap()) return;
     if (
       action === 'remove' &&
-      !window.confirm('Disconnect this mailbox? Its saved password is deleted.')
+      !(await this.dialogs.confirm({
+        title: 'Disconnect this mailbox?',
+        message: 'Replies stop syncing and its saved password is deleted.',
+        confirmText: 'Disconnect',
+        tone: 'danger',
+      }))
     )
       return;
     this.begin(this.savingImap);

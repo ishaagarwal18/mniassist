@@ -11,7 +11,7 @@ import { map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { LibraryService } from '../../proxy/library';
-import { ArIcon } from '../../ui';
+import { ArDraggable, ArIcon } from '../../ui';
 
 export interface PickedDocument {
   id: string;
@@ -70,11 +70,11 @@ const SEED: Row[] = [
  */
 @Component({
   selector: 'ar-document-picker',
-  imports: [ArIcon],
+  imports: [ArIcon, ArDraggable],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="dp__scrim" (click)="close.emit()"></div>
-    <div class="dp" role="dialog" aria-label="Attach a document">
+    <div class="dp" role="dialog" aria-label="Attach a document" arDraggable=".dp__head">
       <header class="dp__head">
         <ar-icon name="search" [size]="15" />
         <input

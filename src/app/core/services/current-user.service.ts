@@ -108,6 +108,25 @@ export class CurrentUserService {
     };
   });
 
+  private readonly configTenant = toSignal(
+    MOCK ? of(undefined) : this.config.getOne$('currentTenant'),
+    { initialValue: undefined },
+  );
+
+  /**
+   * The workspace the signed-in user belongs to, from the server's view of the
+   * session; empty for a host (platform) user, who belongs to none. Mock mode
+   * shows the seeded workspace.
+   */
+  readonly tenantName = computed(() => {
+    if (MOCK) return 'Vertex Automation';
+    const t = (this.configTenant() ?? {}) as { isAvailable?: boolean; name?: string };
+    return t.isAvailable ? (t.name ?? this.currentTenantName()) : '';
+  });
+
+  /** Signed in on the host side (platform administration), not in a workspace. */
+  readonly isHost = computed(() => !MOCK && this.isAuthenticated() && !this.tenantName());
+
   readonly isAuthenticated = computed(() =>
     MOCK ? this.mockSignedIn() : this.user().isAuthenticated,
   );

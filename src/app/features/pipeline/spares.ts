@@ -20,6 +20,7 @@ import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import type { ChipTone } from '../../ui/chip';
 import { ArSendReorderLink } from '../reorder/send-reorder-link';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 const day = 86_400_000;
 const iso = (days: number) => new Date(Date.now() + days * day).toISOString();
@@ -303,6 +304,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
         <label class="ar-field" for="sp-rem-tpl">
           <span class="ar-field__label">Approved WhatsApp template</span>
           <select
+            required
             id="sp-rem-tpl"
             class="ar-field__input"
             [value]="remTemplateId()"
@@ -430,6 +432,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
           <label class="ar-field" for="sp-asset">
             <span class="ar-field__label">Machine (make and model, or its part number)</span>
             <input
+              required
               id="sp-asset"
               class="ar-field__input"
               placeholder="Atlas Copco GA 37"
@@ -441,6 +444,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
             <label class="ar-field" for="sp-part">
               <span class="ar-field__label">Spare part number</span>
               <input
+                required
                 id="sp-part"
                 class="ar-field__input ar-mono"
                 placeholder="AF-2901"
@@ -465,6 +469,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
             <label class="ar-field" for="sp-qty">
               <span class="ar-field__label">Per machine</span>
               <input
+                required
                 id="sp-qty"
                 class="ar-field__input"
                 inputmode="decimal"
@@ -475,6 +480,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
             <label class="ar-field" for="sp-int">
               <span class="ar-field__label">Every (days)</span>
               <input
+                required
                 id="sp-int"
                 class="ar-field__input"
                 inputmode="numeric"
@@ -485,6 +491,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
             <label class="ar-field" for="sp-lead">
               <span class="ar-field__label">Show ahead (days)</span>
               <input
+                required
                 id="sp-lead"
                 class="ar-field__input"
                 inputmode="numeric"
@@ -656,6 +663,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
   `,
 })
 export class ArSpares {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(SparesService);
   private readonly permissions = inject(PermissionService);
   protected readonly canManage = grantedPolicy('AutoReach.InstalledBase.Update', this.permissions);
@@ -953,9 +961,11 @@ export class ArSpares {
 
   protected async deleteRule(u: ConsumableRuleDto): Promise<void> {
     if (
-      !window.confirm(
-        `Delete the rule for ${u.assetLabel} (${u.partNumber})? Parts it put on this board are dismissed.`,
-      )
+      !(await this.dialogs.delete(
+        'this rule',
+        `${u.assetLabel} (${u.partNumber})`,
+        'Parts it put on this board are dismissed.',
+      ))
     )
       return;
     try {

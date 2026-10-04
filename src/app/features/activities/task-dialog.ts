@@ -31,6 +31,7 @@ import {
 } from './activity-logic';
 import { ArRecurrencePicker } from './recurrence-picker';
 import { NO_REPEAT, RecurrenceDraft, recurrenceProblem, toDraft, toRecurrence } from './recurrence';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 /** How long before it is due to remind the assignee. */
 const REMINDERS: { label: string; minutes: number | null }[] = [
@@ -51,6 +52,8 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
       <label class="ar-field">
         <span class="ar-field__label">What has to be done</span>
         <input
+          required
+          maxlength="256"
           id="task-title"
           class="ar-field__input"
           [value]="title()"
@@ -72,6 +75,7 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
         <label class="ar-field">
           <span class="ar-field__label">Priority</span>
           <select
+            required
             id="task-priority"
             class="ar-field__input"
             (change)="priority.set(+$any($event.target).value)"
@@ -87,6 +91,7 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
         <label class="ar-field">
           <span class="ar-field__label">Who does it</span>
           <select
+            required
             id="task-assignee"
             class="ar-field__input"
             (change)="assignee.set($any($event.target).value)"
@@ -101,6 +106,7 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
         <label class="ar-field">
           <span class="ar-field__label">Remind them</span>
           <select
+            required
             id="task-reminder"
             class="ar-field__input"
             [disabled]="!due()"
@@ -181,7 +187,7 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
           ar-button
           type="button"
           variant="primary"
-          [disabled]="busy() || !title().trim() || !!repeatProblem()"
+          [disabled]="busy() || !!repeatProblem()"
           (click)="save()"
         >
           {{ busy() ? 'Saving…' : 'Save' }}
@@ -206,6 +212,7 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
   `,
 })
 export class ArTaskDialog implements OnInit {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(ActivityGateway).tasks;
   protected readonly directory = inject(ActivityDirectory);
 
@@ -292,7 +299,7 @@ export class ArTaskDialog implements OnInit {
   }
 
   protected async remove(t: CrmTaskDto): Promise<void> {
-    if (!window.confirm(`Delete "${t.title}"?`)) return;
+    if (!(await this.dialogs.delete('this task', t.title))) return;
     await this.run(async () => {
       await firstValueFrom(this.api.delete(t.id!));
       this.deleted.emit(t.id!);

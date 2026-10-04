@@ -153,7 +153,11 @@
         @if ((d.pipeline.enquiryCount ?? 0) > 0) {
           <label class="ar-field">
             <span class="ar-field__label">Move enquiries to</span>
-            <select class="ar-field__input" (change)="moveTo.set($any($event.target).value)">
+            <select
+              required
+              class="ar-field__input"
+              (change)="moveTo.set($any($event.target).value)"
+            >
               <option value="">Choose a pipeline…</option>
               @for (o of others(d.pipeline); track o.id) {
                 <option [value]="o.id">{{ o.name }}</option>
@@ -188,6 +192,8 @@
         <label class="ar-field">
           <span class="ar-field__label">Name</span>
           <input
+            required
+            maxlength="64"
             class="ar-field__input"
             maxlength="64"
             [value]="name()"
@@ -210,7 +216,11 @@
         @if (d.kind === 'stage' && !d.stage?.isFixed) {
           <label class="ar-field">
             <span class="ar-field__label">Counts as</span>
-            <select class="ar-field__input" (change)="bucket.set(+$any($event.target).value)">
+            <select
+              required
+              class="ar-field__input"
+              (change)="bucket.set(+$any($event.target).value)"
+            >
               @for (b of buckets; track b.value) {
                 <option [value]="b.value" [selected]="b.value === bucket()">
                   {{ b.label }} — {{ b.hint }}

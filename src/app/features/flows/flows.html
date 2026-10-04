@@ -16,6 +16,8 @@
     <label class="ar-field">
       <span class="ar-field__label">Name</span>
       <input
+        required
+        maxlength="128"
         class="ar-field__input"
         [value]="newName()"
         (input)="newName.set($any($event.target).value)"
@@ -23,7 +25,7 @@
     </label>
     <label class="ar-field">
       <span class="ar-field__label">Channel</span>
-      <select class="ar-field__input" (change)="newChannel.set($any($event.target).value)">
+      <select required class="ar-field__input" (change)="newChannel.set($any($event.target).value)">
         @for (ch of channels(); track ch.id) {
           <option [value]="ch.id" [selected]="ch.id === newChannel()">
             {{ ch.displayName }} · {{ ch.displayPhone }}

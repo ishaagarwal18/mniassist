@@ -9,7 +9,9 @@ import {
   isGroup,
 } from '../../core/models/segment.model';
 import { ArTopbar } from '../../layout/topbar';
-import { ArBanner, ArButton, ArChip } from '../../ui';
+import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { ArContactImport } from './contact-import-dialog';
 import { ArSelect } from '../../ui/select';
 
 /**
@@ -28,13 +30,23 @@ import { ArSelect } from '../../ui/select';
  */
 @Component({
   selector: 'ar-segments',
-  imports: [NgTemplateOutlet, ArTopbar, ArBanner, ArButton, ArChip, ArSelect],
+  imports: [
+    NgTemplateOutlet,
+    ArTopbar,
+    ArBanner,
+    ArButton,
+    ArChip,
+    ArSelect,
+    ArDialog,
+    ArContactImport,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './segments.html',
   styleUrl: './segments.scss',
 })
 export class ArSegments {
   private readonly store = inject(SegmentStore);
+  private readonly dialogs = inject(ConfirmService);
 
   protected readonly rule = this.store.rule;
   protected readonly preview = this.store.preview;
@@ -132,17 +144,42 @@ export class ArSegments {
     }
   }
 
+  protected readonly importOpen = signal(false);
+  protected readonly saveOpen = signal(false);
+  protected readonly saveName = signal('');
+  protected readonly saveDescription = signal('');
+  protected readonly saving = signal(false);
+
+  protected openSave(): void {
+    this.saveName.set('');
+    this.saveDescription.set('');
+    this.saveOpen.set(true);
+  }
+
+  /** The dialog has checked the name before this runs. */
   protected async saveSegment(): Promise<void> {
-    const name = window.prompt('Name this segment:')?.trim();
-    if (!name) return;
-    const description = window.prompt('Description (optional):')?.trim() || undefined;
-    await this.store.save(name, description);
+    this.saving.set(true);
+    try {
+      await this.store.save(this.saveName().trim(), this.saveDescription().trim() || undefined);
+      this.saveOpen.set(false);
+    } catch {
+      /* the server's reason is shown as a toast; the dialog stays open */
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   protected async deleteSaved(id: string, event: Event): Promise<void> {
     event.stopPropagation();
     const segment = this.saved().find((s) => s.id === id);
-    if (segment && window.confirm(`Delete “${segment.name}”?`)) {
+    if (
+      segment &&
+      (await this.dialogs.delete(
+        'this segment',
+        segment.name,
+        'Campaigns already sent are not affected; scheduled ones that use it will need a new audience.',
+      ))
+    ) {
       await this.store.remove(id);
       if (this.openSegmentId() === id) this.openSegmentId.set(null);
     }

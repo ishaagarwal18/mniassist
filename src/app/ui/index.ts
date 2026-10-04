@@ -11,3 +11,4 @@ export * from './meter';
 export * from './avatar';
 export * from './channel-health-strip';
 export * from './dialog';
+export * from './draggable';

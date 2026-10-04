@@ -7,6 +7,8 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArStatTile } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 
 const KIND_LABEL: Record<ReqKind, string> = {
   access: 'Access',
@@ -29,6 +31,8 @@ const KIND_LABEL: Record<ReqKind, string> = {
   styleUrl: './compliance.scss',
 })
 export class ArCompliance {
+  private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(ComplianceStore);
 
   protected readonly loading = this.store.loading;
@@ -64,7 +68,10 @@ export class ArCompliance {
   protected async saveRequest(): Promise<void> {
     const who = this.requester().trim();
     if (!who) {
-      window.alert('Enter how the data principal identified themselves — a phone number or email.');
+      this.toasts.warning(
+        'Enter how the data principal identified themselves — a phone number or email.',
+        'Request',
+      );
       return;
     }
     this.saving.set(true);
@@ -102,8 +109,18 @@ export class ArCompliance {
   }
 
   protected async fulfil(r: DpdpRequest): Promise<void> {
-    const warn = r.kind === 'erasure' ? '\n\nErasure is irreversible.' : '';
-    if (!window.confirm(`Fulfil this ${this.kindLabel(r.kind)} request?${warn}`)) return;
+    if (
+      !(await this.dialogs.confirm({
+        title: `Fulfil this ${this.kindLabel(r.kind)} request?`,
+        message:
+          r.kind === 'erasure'
+            ? 'Their personal data is erased. Erasure cannot be undone.'
+            : 'The request is carried out and marked fulfilled.',
+        confirmText: 'Fulfil',
+        tone: r.kind === 'erasure' ? 'danger' : 'primary',
+      }))
+    )
+      return;
     this.busy.set(r.id);
     try {
       await this.store.fulfil(r.id);
@@ -113,7 +130,11 @@ export class ArCompliance {
   }
 
   protected async reject(r: DpdpRequest): Promise<void> {
-    const reason = window.prompt('Reason for rejecting this request:')?.trim();
+    const reason = await this.dialogs.ask(
+      'Reject this request?',
+      { label: 'Reason for rejecting', multiline: true, required: true, maxLength: 500 },
+      'The data principal is told why.',
+    );
     if (!reason) return;
     this.busy.set(r.id);
     try {

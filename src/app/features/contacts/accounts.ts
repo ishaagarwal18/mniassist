@@ -12,6 +12,7 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ArErpLedger } from './erp-ledger';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 interface Draft {
   name: string;
@@ -47,6 +48,7 @@ const BLANK: Draft = {
   styleUrl: './accounts.scss',
 })
 export class ArAccounts {
+  private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(AccountStore);
 
   protected readonly rows = this.store.rows;
@@ -137,7 +139,13 @@ export class ArAccounts {
       a.childCount > 0
         ? ` Its ${a.childCount} subsidiar${a.childCount === 1 ? 'y moves' : 'ies move'} up a level.`
         : '';
-    if (!confirm(`Delete "${a.name}"? Its ${a.contactCount} contact(s) will be ungrouped.${subs}`))
+    if (
+      !(await this.dialogs.delete(
+        'this account',
+        a.name,
+        `Its ${a.contactCount} contact(s) will be ungrouped.${subs}`,
+      ))
+    )
       return;
     await this.store.remove(a.id);
   }

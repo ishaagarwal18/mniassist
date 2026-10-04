@@ -10,6 +10,8 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 
 const SEED_FUNNEL: FlowFunnelDto = {
   flowName: 'RFQ intake',
@@ -64,6 +66,8 @@ const STATE_TONE: Record<FState, ChipTone> = {
   styleUrl: './flows.scss',
 })
 export class ArFlows {
+  private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(WorkflowStore);
   private readonly flowApi = inject(FlowService);
   private readonly router = inject(Router);
@@ -111,7 +115,7 @@ export class ArFlows {
 
   protected async createFlow(): Promise<void> {
     if (!this.newName().trim() || !this.newChannel()) {
-      window.alert('Give the flow a name and pick a channel.');
+      this.toasts.warning('Give the flow a name and pick a channel.', 'Flow');
       return;
     }
     this.saving.set(true);
@@ -157,9 +161,12 @@ export class ArFlows {
 
   protected async deprecate(f: Flow): Promise<void> {
     if (
-      !window.confirm(
-        `Deprecate "${f.name}"? It stays live for in-flight sessions but cannot be sent again.`,
-      )
+      !(await this.dialogs.confirm({
+        title: `Deprecate “${f.name}”?`,
+        message: 'It stays live for sessions already in progress, but cannot be sent again.',
+        confirmText: 'Deprecate',
+        tone: 'danger',
+      }))
     )
       return;
     this.busy.set(f.id);

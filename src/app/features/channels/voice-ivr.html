@@ -379,6 +379,8 @@
     <label class="ar-field">
       <span class="ar-field__label">Internal name</span>
       <input
+        required
+        maxlength="128"
         class="ar-field__input"
         [value]="draft().name"
         maxlength="128"
@@ -389,6 +391,7 @@
     <label class="ar-field">
       <span class="ar-field__label">Spoken text</span>
       <textarea
+        required
         class="ar-field__input"
         rows="3"
         maxlength="1024"
@@ -404,6 +407,9 @@
       <label class="ar-field">
         <span class="ar-field__label">Max digits to collect</span>
         <input
+          required
+          min="1"
+          max="20"
           class="ar-field__input"
           type="number"
           min="1"
@@ -415,6 +421,9 @@
       <label class="ar-field">
         <span class="ar-field__label">Input timeout (seconds)</span>
         <input
+          required
+          min="1"
+          max="60"
           class="ar-field__input"
           type="number"
           min="1"
@@ -453,6 +462,9 @@
     <label class="ar-field">
       <span class="ar-field__label">Digit</span>
       <input
+        required
+        pattern="[0-9*#]"
+        title="One key: 0–9, * or #."
         class="ar-field__input ar-mono"
         maxlength="1"
         placeholder="1, 2… or * for no match"
@@ -463,6 +475,7 @@
     <label class="ar-field">
       <span class="ar-field__label">Action</span>
       <select
+        required
         class="ar-field__input"
         [value]="branchDraft().action"
         (change)="patchBranch('action', +$any($event.target).value)"
@@ -477,6 +490,7 @@
       <label class="ar-field">
         <span class="ar-field__label">Target prompt</span>
         <select
+          required
           class="ar-field__input"
           [value]="branchDraft().nextPromptId"
           (change)="patchBranch('nextPromptId', $any($event.target).value)"
@@ -491,6 +505,9 @@
       <label class="ar-field">
         <span class="ar-field__label">Transfer to (E.164)</span>
         <input
+          required
+          pattern="\+?\d{8,15}"
+          title="The number with country code, e.g. +919820011234."
           class="ar-field__input ar-mono"
           placeholder="919000000000"
           [value]="branchDraft().transferToNumber"

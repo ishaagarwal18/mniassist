@@ -25,6 +25,8 @@ import { SIGNATURE_STATUS_LABEL } from '../signing/signing-logic';
 import { ArQuoteEditor } from './quote-editor';
 import { ArQuoteSignatureDialog } from './quote-signature-dialog';
 import { ChipTone } from '../../ui/chip';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 
 const STATE_TONE: Record<QState, ChipTone> = {
   draft: 'neutral',
@@ -48,6 +50,8 @@ const STATE_TONE: Record<QState, ChipTone> = {
   styleUrl: './quotations.scss',
 })
 export class ArQuotations {
+  private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(PipelineStore);
   private readonly signatures = inject(QuotationSignatureService);
   private readonly templateStore = inject(TemplateService);
@@ -132,7 +136,7 @@ export class ArQuotations {
 
   protected async createQuotation(): Promise<void> {
     if (!this.enquiryId()) {
-      window.alert('Pick the enquiry this quotation is for.');
+      this.toasts.warning('Pick the enquiry this quotation is for.', 'Quotation');
       return;
     }
     this.saving.set(true);
@@ -250,7 +254,13 @@ export class ArQuotations {
   }
 
   protected async lost(q: Quotation): Promise<void> {
-    const reason = window.prompt('Why was this quotation lost?')?.trim();
+    const reason = await this.dialogs.ask('Mark this quotation lost?', {
+      label: 'Why was it lost?',
+      multiline: true,
+      required: true,
+      maxLength: 500,
+      placeholder: 'e.g. Price, lead time, went with a competitor',
+    });
     if (!reason) return;
     this.busy.set(q.id);
     try {

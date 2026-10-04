@@ -13,6 +13,7 @@ import {
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { parseProductRows } from './product-import';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 /**
  * The product catalogue: part numbers, what each is called and what it lists for. Quotation lines are
@@ -26,6 +27,7 @@ import { parseProductRows } from './product-import';
   styleUrl: './products.scss',
 })
 export class ArProducts {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(ProductService);
 
   protected readonly filter = signal('');
@@ -162,7 +164,14 @@ export class ArProducts {
   }
 
   protected async remove(p: ProductDto): Promise<void> {
-    if (!p.id || !confirm(`Delete ${p.partNumber}? Quotations already written keep their lines.`))
+    if (
+      !p.id ||
+      !(await this.dialogs.delete(
+        'this product',
+        p.partNumber,
+        'Quotations already written keep their lines.',
+      ))
+    )
       return;
     await firstValueFrom(this.api.delete(p.id));
     this.tick.update((n) => n + 1);

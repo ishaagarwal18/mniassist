@@ -412,7 +412,11 @@
   <ar-dialog title="Forecast assumptions" (dismiss)="assumptionsOpen.set(false)">
     <label class="ar-field">
       <span class="ar-field__label">Financial year starts in</span>
-      <select class="ar-field__input" (change)="fiscalStart.set(+$any($event.target).value)">
+      <select
+        required
+        class="ar-field__input"
+        (change)="fiscalStart.set(+$any($event.target).value)"
+      >
         @for (m of months; track m; let i = $index) {
           <option [value]="i + 1" [selected]="i + 1 === fiscalStart()">{{ m }}</option>
         }
@@ -428,7 +432,7 @@
     </label>
     <label class="ar-field">
       <span class="ar-field__label">Chances for</span>
-      <select class="ar-field__input" (change)="setScope($any($event.target).value)">
+      <select required class="ar-field__input" (change)="setScope($any($event.target).value)">
         <option value="" [selected]="!scope()">Every pipeline (the default)</option>
         @for (p of pipelines(); track p.id) {
           <option [value]="p.id" [selected]="p.id === scope()">

@@ -35,6 +35,7 @@ import {
   title,
 } from './network-logic';
 import { ArRouteLeadDialog, problem } from './route-lead-dialog';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 const TAB_LEADS = 'Routed leads';
 const TAB_DEALERS = 'Dealers';
@@ -498,6 +499,8 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
             <label class="ar-field" for="nw-name">
               <span class="ar-field__label">Dealer's name</span>
               <input
+                required
+                maxlength="128"
                 id="nw-name"
                 class="ar-field__input"
                 placeholder="Pune Automation Pvt Ltd"
@@ -523,7 +526,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
             />
           </label>
           <label class="ar-field" for="nw-cities">
-            <span class="ar-field__label">Cities</span>
+            <span class="ar-field__label">Cities <span class="ar-field__opt">optional</span></span>
             <input
               id="nw-cities"
               class="ar-field__input"
@@ -533,7 +536,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
             />
           </label>
           <label class="ar-field" for="nw-states">
-            <span class="ar-field__label">States</span>
+            <span class="ar-field__label">States <span class="ar-field__opt">optional</span></span>
             <input
               id="nw-states"
               class="ar-field__input"
@@ -628,6 +631,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
         <label class="ar-field" for="nw-hours">
           <span class="ar-field__label">Hours a dealer has to accept (1–168)</span>
           <input
+            required
             id="nw-hours"
             class="ar-field__input"
             inputmode="numeric"
@@ -1166,6 +1170,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
   `,
 })
 export class ArNetwork {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(NetworkService);
   private readonly dealerApi = inject(DealerNetworkService);
   private readonly permissions = inject(PermissionService);
@@ -1428,9 +1433,12 @@ export class ArNetwork {
   ): Promise<void> {
     if (
       action === 'end' &&
-      !window.confirm(
-        `End the link with ${d.dealerName}? Leads waiting for them come back to you; leads they accepted stay with them.`,
-      )
+      !(await this.dialogs.confirm({
+        title: `End the link with ${d.dealerName}?`,
+        message: 'Leads waiting for them come back to you; leads they accepted stay with them.',
+        confirmText: 'End link',
+        tone: 'danger',
+      }))
     )
       return;
     this.busy.set(d.id);
@@ -1588,18 +1596,26 @@ export class ArNetwork {
     });
   }
 
-  protected recall(d: NetworkLeadDetailDto): Promise<void> {
-    const reason = window.prompt(
-      `Take ${d.oemEnquiryReference} back from ${d.dealerName}? Reason (optional):`,
-      '',
-    );
-    if (reason === null) return Promise.resolve();
+  protected async recall(d: NetworkLeadDetailDto): Promise<void> {
+    const answer = await this.dialogs.prompt({
+      title: `Take ${d.oemEnquiryReference} back?`,
+      message: `${d.dealerName} loses the lead, and you can route it again.`,
+      fields: [{ key: 'reason', label: 'Reason', maxLength: 500 }],
+      confirmText: 'Take back',
+    });
+    if (!answer) return;
+    const reason = answer['reason'];
     return this.leadAction(d, () => firstValueFrom(this.api.recall(d.id, { reason })));
   }
 
-  protected closeLead(d: NetworkLeadDetailDto): Promise<void> {
-    const reason = window.prompt('Close this lead without a dealer? Reason (optional):', '');
-    if (reason === null) return Promise.resolve();
+  protected async closeLead(d: NetworkLeadDetailDto): Promise<void> {
+    const answer = await this.dialogs.prompt({
+      title: 'Close this lead without a dealer?',
+      fields: [{ key: 'reason', label: 'Reason', maxLength: 500 }],
+      confirmText: 'Close lead',
+    });
+    if (!answer) return;
+    const reason = answer['reason'];
     return this.leadAction(d, async () => {
       await firstValueFrom(this.api.close(d.id, { reason }));
       this.lead.set(null);
@@ -1643,9 +1659,12 @@ export class ArNetwork {
 
   protected async leave(m: NetworkMembershipDto): Promise<void> {
     if (
-      !window.confirm(
-        `Leave ${m.oemName}'s network? Leads you already accepted stay here; they stop seeing updates.`,
-      )
+      !(await this.dialogs.confirm({
+        title: `Leave ${m.oemName}'s network?`,
+        message: 'Leads you already accepted stay here; they stop seeing updates.',
+        confirmText: 'Leave network',
+        tone: 'danger',
+      }))
     )
       return;
     this.busy.set(m.id);
@@ -1709,11 +1728,14 @@ export class ArNetwork {
   }
 
   protected async decline(o: NetworkOfferDto): Promise<void> {
-    const reason = window.prompt(
-      `Decline this lead from ${o.oemName}? Tell them why (optional):`,
-      '',
-    );
-    if (reason === null) return;
+    const answer = await this.dialogs.prompt({
+      title: `Decline this lead from ${o.oemName}?`,
+      message: 'It goes back to them to offer elsewhere.',
+      fields: [{ key: 'reason', label: 'Tell them why', multiline: true, maxLength: 500 }],
+      confirmText: 'Decline',
+    });
+    if (!answer) return;
+    const reason = answer['reason'];
     this.busy.set(o.id);
     try {
       if (!environment.useMockData) await firstValueFrom(this.dealerApi.decline(o.id, { reason }));
@@ -1728,12 +1750,16 @@ export class ArNetwork {
 
   /** Gives back an accepted lead: our enquiry closes as lost, and the OEM gets the lead back (or its next dealer does). */
   protected async handBack(o: NetworkOfferDto): Promise<void> {
-    const reason = window.prompt(
-      `Hand this lead back to ${o.oemName}? Your enquiry for it closes as lost, and ${o.oemName} ` +
-        `won't offer it to you again. Tell them why:`,
-      '',
-    );
-    if (reason === null) return;
+    const answer = await this.dialogs.prompt({
+      title: `Hand this lead back to ${o.oemName}?`,
+      message: `Your enquiry for it closes as lost, and ${o.oemName} won't offer it to you again.`,
+      fields: [
+        { key: 'reason', label: 'Tell them why', multiline: true, required: true, maxLength: 500 },
+      ],
+      confirmText: 'Hand back',
+    });
+    if (!answer) return;
+    const reason = answer['reason'];
     this.busy.set(o.id);
     this.error.set(null);
     try {

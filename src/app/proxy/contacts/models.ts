@@ -397,3 +397,21 @@ export interface DismissDuplicateInput {
   contactAId?: string;
   contactBId?: string;
 }
+
+export interface BusinessCardDto {
+  name?: string | null;
+  designation?: string | null;
+  company?: string | null;
+  phones?: string[];
+  email?: string | null;
+  website?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  note?: string | null;
+}
+
+export interface ReadBusinessCardInput {
+  content: string;
+  mediaType: string;
+}

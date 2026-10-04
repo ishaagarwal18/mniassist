@@ -6,6 +6,7 @@ import { CreateUpdatePriceListDto, PriceListDto, PriceListService } from '../../
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArDateInput } from '../../ui/date-input';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 interface ItemRow {
   sku: string;
@@ -72,6 +73,8 @@ interface ItemRow {
         <label class="ar-field">
           <span class="ar-field__label">Name</span>
           <input
+            required
+            maxlength="128"
             class="ar-field__input"
             [value]="name()"
             (input)="name.set($any($event.target).value)"
@@ -102,6 +105,7 @@ interface ItemRow {
         <label class="ar-field pl__narrow">
           <span class="ar-field__label">Effective from</span>
           <input
+            required
             class="ar-field__input"
             type="date"
             [value]="effectiveFrom()"
@@ -257,6 +261,7 @@ interface ItemRow {
   `,
 })
 export class ArPriceLists {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(PriceListService);
 
   private readonly tick = signal(0);
@@ -366,7 +371,7 @@ export class ArPriceLists {
   }
 
   protected async remove(l: PriceListDto): Promise<void> {
-    if (!l.id || !confirm(`Delete "${l.name}"?`)) return;
+    if (!l.id || !(await this.dialogs.delete('this price list', l.name))) return;
     await firstValueFrom(this.api.delete(l.id));
     this.tick.update((n) => n + 1);
   }

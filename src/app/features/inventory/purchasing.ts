@@ -319,6 +319,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
           <label class="ar-field" for="pu-supplier">
             <span class="ar-field__label">Supplier</span>
             <select
+              required
               id="pu-supplier"
               class="ar-field__input"
               [value]="ed.supplierId"
@@ -333,6 +334,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
           <label class="ar-field" for="pu-location">
             <span class="ar-field__label">Receive into</span>
             <select
+              required
               id="pu-location"
               class="ar-field__input"
               [value]="ed.locationId"
@@ -367,6 +369,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
               <label class="ar-field" [for]="'pu-q-' + i">
                 <span class="ar-field__label">Quantity</span>
                 <input
+                  required
                   class="ar-field__input"
                   inputmode="decimal"
                   [id]="'pu-q-' + i"
@@ -377,6 +380,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
               <label class="ar-field" [for]="'pu-c-' + i">
                 <span class="ar-field__label">₹ each</span>
                 <input
+                  required
                   class="ar-field__input"
                   inputmode="decimal"
                   [id]="'pu-c-' + i"
@@ -457,6 +461,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
             <label class="ar-field" [for]="'pu-rq-' + i">
               <span class="ar-field__label">Arrived</span>
               <input
+                required
                 class="ar-field__input"
                 inputmode="decimal"
                 [id]="'pu-rq-' + i"
@@ -466,7 +471,9 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
             </label>
             @if (row.tracking === 'Serial') {
               <label class="ar-field pu__wide" [for]="'pu-rn-' + i">
-                <span class="ar-field__label">Serial numbers, one per line</span>
+                <span class="ar-field__label"
+                  >Serial numbers, one per line <span class="ar-field__opt">optional</span></span
+                >
                 <textarea
                   class="ar-field__input ar-mono"
                   rows="3"
@@ -478,7 +485,9 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
             }
             @if (row.tracking === 'Batch') {
               <label class="ar-field" [for]="'pu-rn-' + i">
-                <span class="ar-field__label">Batch</span>
+                <span class="ar-field__label"
+                  >Batch <span class="ar-field__opt">optional</span></span
+                >
                 <input
                   class="ar-field__input ar-mono"
                   [id]="'pu-rn-' + i"
@@ -487,7 +496,9 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
                 />
               </label>
               <label class="ar-field" [for]="'pu-re-' + i">
-                <span class="ar-field__label">Expiry</span>
+                <span class="ar-field__label"
+                  >Expiry <span class="ar-field__opt">optional</span></span
+                >
                 <input
                   class="ar-field__input"
                   type="date"
@@ -535,6 +546,8 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
         <label class="ar-field" for="pu-sname">
           <span class="ar-field__label">Name</span>
           <input
+            required
+            maxlength="128"
             id="pu-sname"
             class="ar-field__input"
             [value]="s.form.name"
@@ -613,7 +626,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
             ar-button
             type="button"
             variant="primary"
-            [disabled]="busy() || !s.form.name.trim()"
+            [disabled]="busy()"
             (click)="saveSupplier()"
           >
             {{ busy() ? 'Saving…' : 'Save' }}

@@ -16,7 +16,7 @@
     </p>
     <label class="ar-field">
       <span class="ar-field__label">Request type</span>
-      <select class="ar-field__input" (change)="newKind.set(+$any($event.target).value)">
+      <select required class="ar-field__input" (change)="newKind.set(+$any($event.target).value)">
         @for (k of requestKinds; track k.value) {
           <option [value]="k.value" [selected]="k.value === newKind()">{{ k.label }}</option>
         }
@@ -25,6 +25,7 @@
     <label class="ar-field">
       <span class="ar-field__label">Requester identifier</span>
       <input
+        required
         class="ar-field__input"
         placeholder="Phone or email they gave"
         [value]="requester()"

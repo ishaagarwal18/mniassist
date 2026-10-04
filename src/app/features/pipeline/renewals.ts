@@ -321,6 +321,7 @@ const SEED_SUMMARY: RenewalSummaryDto = {
         <label class="ar-field" for="rn-uplift">
           <span class="ar-field__label">Yearly uplift (%)</span>
           <input
+            required
             id="rn-uplift"
             class="ar-field__input"
             inputmode="decimal"
@@ -343,6 +344,7 @@ const SEED_SUMMARY: RenewalSummaryDto = {
         <label class="ar-field" for="rn-pipeline">
           <span class="ar-field__label">Pipeline for renewal enquiries</span>
           <select
+            required
             id="rn-pipeline"
             class="ar-field__input"
             [value]="pipelineId()"

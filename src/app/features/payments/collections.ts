@@ -234,6 +234,7 @@ const SEED: CollectionBoardDto = {
         <label class="ar-field" for="cl-tpl">
           <span class="ar-field__label">Approved WhatsApp template</span>
           <select
+            required
             id="cl-tpl"
             class="ar-field__input"
             [value]="templateId()"

@@ -11,6 +11,7 @@ import {
 import { AgencyActingStore } from '../../core/services/agency-acting.store';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip } from '../../ui';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 /**
  * Agency mode (M01-8). A client issues an invite code and gives it to their agency;
@@ -25,6 +26,7 @@ import { ArButton, ArChip } from '../../ui';
   styleUrl: './agency.scss',
 })
 export class ArAgency {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(AgencyService);
   protected readonly acting = inject(AgencyActingStore);
 
@@ -76,7 +78,16 @@ export class ArAgency {
   }
 
   protected async revoke(link: AgencyLinkDto): Promise<void> {
-    if (!window.confirm(`Revoke ${link.agencyDisplayName ?? 'this agency'}'s access?`)) return;
+    if (
+      !(await this.dialogs.confirm({
+        title: `Revoke ${link.agencyDisplayName ?? 'this agency'}'s access?`,
+        message:
+          'They can no longer view or act in your workspace. You can invite them again later.',
+        confirmText: 'Revoke access',
+        tone: 'danger',
+      }))
+    )
+      return;
     this.busy.set(link.id);
     try {
       await firstValueFrom(this.api.revokeLink(link.id));
@@ -103,7 +114,15 @@ export class ArAgency {
   }
 
   protected async leave(client: AgencyClientSnapshotDto): Promise<void> {
-    if (!window.confirm(`Stop managing ${client.clientDisplayName}?`)) return;
+    if (
+      !(await this.dialogs.confirm({
+        title: `Stop managing ${client.clientDisplayName}?`,
+        message: 'Your agency loses access to their workspace.',
+        confirmText: 'Stop managing',
+        tone: 'danger',
+      }))
+    )
+      return;
     this.busy.set(client.linkId);
     try {
       await firstValueFrom(this.api.leaveClient(client.linkId));

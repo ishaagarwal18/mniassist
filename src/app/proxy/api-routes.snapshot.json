@@ -375,6 +375,7 @@
     "POST /api/auto-reach/automation/{}/simulate/{}",
     "POST /api/auto-reach/billing/change-plan",
     "POST /api/auto-reach/branding/upload-logo",
+    "POST /api/auto-reach/business-card/read",
     "POST /api/auto-reach/call/log-manual",
     "POST /api/auto-reach/call/report-softphone-inbound",
     "POST /api/auto-reach/call/set-my-number",

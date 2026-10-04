@@ -5,56 +5,137 @@
   "
   help="Your full customer list. Consent is shown with both a label and a colour — an imported list is flagged as the weakest evidence you have that someone agreed to be messaged."
 >
-  <button ar-button type="button" variant="ghost" icon="download">Import</button>
+  <button ar-button type="button" variant="ghost" icon="upload" (click)="importOpen.set(true)">
+    Import
+  </button>
   <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
     New contact
   </button>
 </ar-topbar>
 
+@if (importOpen()) {
+  <ar-contact-import (closed)="importOpen.set(false)" (imported)="afterImport()" />
+}
+
 @if (dialogOpen()) {
-  <ar-dialog title="New contact" (dismiss)="dialogOpen.set(false)">
+  <ar-dialog
+    title="New contact"
+    width="min(560px, calc(100vw - 32px))"
+    (dismiss)="dialogOpen.set(false)"
+  >
+    <div class="fill" data-novalidate>
+      <span class="fill__label">Fill in from</span>
+      <label class="fill__btn" [class.fill__btn--busy]="reading()">
+        <ar-icon name="camera" [size]="15" />
+        {{ reading() === 'card' ? 'Reading the card…' : 'A visiting card photo' }}
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          [disabled]="!!reading()"
+          (change)="readCard($event)"
+        />
+      </label>
+      <label class="fill__btn">
+        <ar-icon name="card" [size]="15" />
+        A vCard (.vcf)
+        <input
+          type="file"
+          accept=".vcf,.vcard,text/vcard,text/x-vcard"
+          [disabled]="!!reading()"
+          (change)="readVcard($event)"
+        />
+      </label>
+    </div>
+    @if (filledFrom(); as from) {
+      <p class="fill__note" role="status">
+        Filled in from {{ from }}. Check each field before adding.
+        @if (otherPhones().length) {
+          Other numbers on it: {{ otherPhones().join(', ') }}.
+        }
+      </p>
+    }
+
     <label class="ar-field">
       <span class="ar-field__label">WhatsApp number</span>
       <input
         class="ar-field__input"
         type="tel"
+        required
         placeholder="919821012345"
         [value]="form().waId"
         (input)="patchText('waId', $any($event.target).value)"
       />
+      <span class="ar-field__hint">With country code, e.g. 91 for India.</span>
     </label>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Name</span>
+        <input
+          class="ar-field__input"
+          required
+          maxlength="128"
+          [value]="form().displayName"
+          (input)="patchText('displayName', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Designation <span class="ar-field__opt">optional</span></span>
+        <input
+          class="ar-field__input"
+          maxlength="128"
+          [value]="form().designation"
+          (input)="patchText('designation', $any($event.target).value)"
+        />
+      </label>
+    </div>
     <label class="ar-field">
-      <span class="ar-field__label">Name</span>
+      <span class="ar-field__label">Company <span class="ar-field__opt">optional</span></span>
       <input
         class="ar-field__input"
-        [value]="form().displayName"
-        (input)="patchText('displayName', $any($event.target).value)"
-      />
-    </label>
-    <label class="ar-field">
-      <span class="ar-field__label">Company</span>
-      <input
-        class="ar-field__input"
+        maxlength="256"
         [value]="form().companyName"
         (input)="patchText('companyName', $any($event.target).value)"
       />
     </label>
     <div class="ar-field-row">
       <label class="ar-field">
-        <span class="ar-field__label">City</span>
+        <span class="ar-field__label">Email <span class="ar-field__opt">optional</span></span>
         <input
           class="ar-field__input"
+          type="email"
+          maxlength="256"
+          [value]="form().email"
+          (input)="patchText('email', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Decision role</span>
+        <select class="ar-field__input" required (change)="patchRole($any($event.target).value)">
+          @for (r of roles; track r.value) {
+            <option [value]="r.value" [selected]="r.value === form().role">{{ r.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">City <span class="ar-field__opt">optional</span></span>
+        <input
+          class="ar-field__input"
+          maxlength="64"
           [value]="form().city"
           (input)="patchText('city', $any($event.target).value)"
         />
       </label>
       <label class="ar-field">
-        <span class="ar-field__label">Decision role</span>
-        <select class="ar-field__input" (change)="patchRole($any($event.target).value)">
-          @for (r of roles; track r.value) {
-            <option [value]="r.value" [selected]="r.value === form().role">{{ r.label }}</option>
-          }
-        </select>
+        <span class="ar-field__label">State <span class="ar-field__opt">optional</span></span>
+        <input
+          class="ar-field__input"
+          maxlength="64"
+          [value]="form().state"
+          (input)="patchText('state', $any($event.target).value)"
+        />
       </label>
     </div>
 
@@ -76,28 +157,44 @@
 }
 
 <div class="contacts">
-  <nav class="segs" aria-label="Segments">
-    <p class="ar-label segs__head">Segments</p>
-    @for (s of segments(); track s.id) {
+  <nav class="segs" [class.segs--collapsed]="segsCollapsed()" aria-label="Segments">
+    <div class="segs__top">
+      @if (!segsCollapsed()) {
+        <p class="ar-label segs__head">Segments</p>
+      }
       <button
-        class="seg"
         type="button"
-        [class.seg--on]="s.id === activeSegment()"
-        [attr.aria-pressed]="s.id === activeSegment()"
-        (click)="activeSegment.set(s.id)"
+        class="ar-pane-toggle segs__toggle"
+        [attr.aria-expanded]="!segsCollapsed()"
+        [attr.aria-label]="segsCollapsed() ? 'Show segments' : 'Collapse segments'"
+        [title]="segsCollapsed() ? 'Show segments' : 'Collapse segments'"
+        (click)="segsCollapsed.toggle()"
       >
-        <span class="seg__name">{{ s.name }}</span>
-        <span class="ar-mono seg__count">{{ count(s.count) }}</span>
+        <ar-icon name="chevron" [size]="14" />
       </button>
-    }
+    </div>
+    @if (!segsCollapsed()) {
+      @for (s of segments(); track s.id) {
+        <button
+          class="seg"
+          type="button"
+          [class.seg--on]="s.id === activeSegment()"
+          [attr.aria-pressed]="s.id === activeSegment()"
+          (click)="activeSegment.set(s.id)"
+        >
+          <span class="seg__name">{{ s.name }}</span>
+          <span class="ar-mono seg__count">{{ count(s.count) }}</span>
+        </button>
+      }
 
-    <hr class="segs__rule" />
-    <p class="ar-label segs__head">Suppressed</p>
-    @for (s of suppression(); track s.id) {
-      <div class="seg seg--static">
-        <span class="seg__name">{{ s.name }}</span>
-        <span class="ar-mono seg__count">{{ count(s.count) }}</span>
-      </div>
+      <hr class="segs__rule" />
+      <p class="ar-label segs__head">Suppressed</p>
+      @for (s of suppression(); track s.id) {
+        <div class="seg seg--static">
+          <span class="seg__name">{{ s.name }}</span>
+          <span class="ar-mono seg__count">{{ count(s.count) }}</span>
+        </div>
+      }
     }
   </nav>
 

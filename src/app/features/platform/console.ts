@@ -14,6 +14,7 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArStatTile } from '../../ui';
 import { ArDateInput } from '../../ui/date-input';
 import { ArSelect } from '../../ui/select';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 type Quality = 'green' | 'yellow' | 'red' | 'unknown';
 
@@ -269,6 +270,7 @@ function toRateHistory(cards: RateCardDto[]): RateHistory[] {
   styleUrl: './console.scss',
 })
 export class ArPlatformConsole {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(PlatformAdminService);
   private readonly atRisk = inject(AtRiskStore);
 
@@ -354,8 +356,14 @@ export class ArPlatformConsole {
     void this.atRisk.acknowledge(id);
   }
 
-  protected resolveAlert(id: string): void {
-    const note = window.prompt('Closing note (what did you do?):')?.trim();
+  protected async resolveAlert(id: string): Promise<void> {
+    const note = await this.dialogs.ask('Resolve this alert?', {
+      label: 'Closing note',
+      placeholder: 'What did you do?',
+      multiline: true,
+      maxLength: 1000,
+    });
+    if (note === null) return;
     void this.atRisk.resolve(id, note || undefined);
   }
 

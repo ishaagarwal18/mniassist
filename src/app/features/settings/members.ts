@@ -6,6 +6,8 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { ArSelect } from '../../ui/select';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 
 /**
  * Users & roles (M07). Who is in the workspace, what each can do, and who has been
@@ -24,6 +26,8 @@ import { ArSelect } from '../../ui/select';
   styleUrl: './members.scss',
 })
 export class ArMembers {
+  private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(WorkspaceStore);
 
   protected readonly roles = WORKSPACE_ROLES;
@@ -109,7 +113,7 @@ export class ArMembers {
   protected async sendInvite(): Promise<void> {
     const email = this.inviteEmail().trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      window.alert('Enter a valid email address.');
+      this.toasts.warning('Enter a valid email address, like name@company.com.', 'Invitation');
       return;
     }
     this.inviteBusy.set(true);
@@ -127,7 +131,14 @@ export class ArMembers {
   }
 
   protected async revokeInvite(id: string, email: string): Promise<void> {
-    if (window.confirm(`Revoke the invitation to ${email}?`)) {
+    if (
+      await this.dialogs.confirm({
+        title: 'Revoke invitation?',
+        message: `The invitation to ${email} stops working at once. You can invite them again later.`,
+        confirmText: 'Revoke',
+        tone: 'danger',
+      })
+    ) {
       await this.store.revokeInvitation(id);
     }
   }
@@ -138,47 +149,58 @@ export class ArMembers {
     const others = this.active().filter((m) => m.userId !== member.userId);
     let handoverToUserId: string | undefined;
 
-    if (member.openConversationCount > 0) {
-      const names = others.map((m, i) => `${i + 1}. ${m.name ?? m.userName}`).join('\n');
-      const pick = window.prompt(
-        `${member.name ?? member.userName} has ${member.openConversationCount} open ` +
-          `conversation${member.openConversationCount === 1 ? '' : 's'}. Hand them to which member?\n\n${names}\n\n` +
-          `Enter a number, or leave blank to unassign them.`,
-      );
-      if (pick === null) return;
-      const idx = Number(pick) - 1;
-      if (pick.trim() && others[idx]) handoverToUserId = others[idx].userId;
-    } else if (
-      !window.confirm(
-        `Deactivate ${member.name ?? member.userName}? Their sessions end immediately.`,
-      )
-    ) {
-      return;
-    }
-
-    const reason =
-      window.prompt('Reason (optional, kept on the audit record):')?.trim() || undefined;
+    const who = member.name ?? member.userName;
+    const open = member.openConversationCount;
+    const answer = await this.dialogs.prompt({
+      title: `Deactivate ${who}?`,
+      message:
+        `Their sessions end immediately and they can no longer sign in.` +
+        (open > 0
+          ? ` They have ${open} open conversation${open === 1 ? '' : 's'}; choose who takes them over, or leave them unassigned.`
+          : ''),
+      fields: [
+        ...(open > 0
+          ? [
+              {
+                key: 'handover',
+                label: 'Hand conversations to',
+                options: others.map((m) => ({ value: m.userId, label: m.name ?? m.userName })),
+              },
+            ]
+          : []),
+        { key: 'reason', label: 'Reason', hint: 'Kept on the audit record.', maxLength: 500 },
+      ],
+      confirmText: 'Deactivate',
+    });
+    if (!answer) return;
+    handoverToUserId = answer['handover'] || undefined;
+    const reason = answer['reason'] || undefined;
     const moved = await this.store.deactivate(member.userId, handoverToUserId, reason);
     if (moved > 0) {
-      window.alert(`${moved} conversation${moved === 1 ? '' : 's'} handed over.`);
+      this.toasts.success(`${moved} conversation${moved === 1 ? '' : 's'} handed over.`, 'Member');
     }
   }
 
   protected async reactivate(member: Member): Promise<void> {
-    if (window.confirm(`Reactivate ${member.name ?? member.userName}?`)) {
+    if (
+      await this.dialogs.confirm({
+        title: `Reactivate ${member.name ?? member.userName}?`,
+        message: 'They can sign in again with their last roles.',
+        confirmText: 'Reactivate',
+      })
+    ) {
       await this.store.reactivate(member.userId);
     }
   }
 
   protected async revokeSessions(member: Member): Promise<void> {
-    if (
-      window.confirm(
-        `Sign ${member.name ?? member.userName} out of every device? They can sign back in.`,
-      )
-    ) {
-      const reason = window.prompt('Reason (optional):')?.trim() || undefined;
-      await this.store.revokeSessions(member.userId, reason);
-    }
+    const answer = await this.dialogs.prompt({
+      title: `Sign ${member.name ?? member.userName} out everywhere?`,
+      message: 'Every device they are signed in on is signed out. They can sign back in.',
+      fields: [{ key: 'reason', label: 'Reason', maxLength: 500 }],
+      confirmText: 'Sign out',
+    });
+    if (answer) await this.store.revokeSessions(member.userId, answer['reason'] || undefined);
   }
 
   // ---- Formatting -----------------------------------------------------

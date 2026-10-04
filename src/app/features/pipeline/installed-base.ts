@@ -10,6 +10,8 @@ import { RouterLink } from '@angular/router';
 import { RenewalStatus } from '../../proxy/pipeline/amc-renewal.service';
 import { amcCommercials, renewalChip } from './renewal-logic';
 import type { AmcImportResultDto } from '../../proxy/pipeline/models';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 
 /**
  * Installed base (M10). Every machine with its AMC / calibration / warranty dates —
@@ -24,6 +26,8 @@ import type { AmcImportResultDto } from '../../proxy/pipeline/models';
   styleUrl: './installed-base.scss',
 })
 export class ArInstalledBase {
+  private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(PipelineStore);
 
   protected readonly assets = this.store.assets;
@@ -115,7 +119,7 @@ export class ArInstalledBase {
   protected async registerMachine(): Promise<void> {
     const v = this.f();
     if (!v.description.trim()) {
-      window.alert('Describe the machine — e.g. “Line 3 VFD panel”.');
+      this.toasts.warning('Describe the machine — e.g. “Line 3 VFD panel”.', 'Installed base');
       return;
     }
     const amc = amcCommercials(v.amcValue, v.amcTermMonths);
@@ -187,7 +191,15 @@ export class ArInstalledBase {
   }
 
   protected async retire(a: Asset): Promise<void> {
-    if (!window.confirm(`Retire "${a.description}"? Its reminders stop.`)) return;
+    if (
+      !(await this.dialogs.confirm({
+        title: 'Retire this machine?',
+        message: `“${a.description}” is retired and its service and AMC reminders stop.`,
+        confirmText: 'Retire',
+        tone: 'danger',
+      }))
+    )
+      return;
     this.busy.set(a.id);
     try {
       await this.store.retireAsset(a.id);

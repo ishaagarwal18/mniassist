@@ -75,6 +75,8 @@
     <label class="ar-field">
       <span class="ar-field__label">Name</span>
       <input
+        required
+        maxlength="128"
         class="ar-field__input"
         [value]="name()"
         (input)="name.set($any($event.target).value)"

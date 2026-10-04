@@ -26,7 +26,16 @@ import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
 import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
 import { ArTopbar } from '../../layout/topbar';
 import { AttendeeResponse, MeetingDto, MeetingStatus } from '../../proxy/activities';
-import { ArButton, ArChip } from '../../ui';
+import { ArButton, ArChip, ArDraggable } from '../../ui';
+import { ToastService } from '../../core/ui/toast.service';
+import {
+  googleCalendarUrl,
+  mailtoUrl,
+  meetingText,
+  outlookCalendarUrl,
+  teamsMeetingUrl,
+  whatsappUrl,
+} from './meeting-share';
 import { ChipTone } from '../../ui/chip';
 import { ActivityDirectory } from './activity-directory';
 import { ActivityGateway } from './activity-mock';
@@ -64,7 +73,7 @@ interface CalendarEvent {
  */
 @Component({
   selector: 'ar-meetings',
-  imports: [ArTopbar, ArButton, ArChip, ArMeetingDialog, ScheduleModule],
+  imports: [ArTopbar, ArButton, ArChip, ArMeetingDialog, ScheduleModule, ArDraggable],
   providers: [DayService, WeekService, MonthService, AgendaService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './meetings.html',
@@ -276,6 +285,46 @@ export class ArMeetings {
 
   protected isLink(m: MeetingDto): boolean {
     return !!m.meetingUrl;
+  }
+
+  // ---- sharing --------------------------------------------------------------------------
+
+  private readonly toasts = inject(ToastService);
+
+  private shareable(m: MeetingDto) {
+    return {
+      title: m.title ?? 'Meeting',
+      description: m.description,
+      startUtc: m.startUtc!,
+      endUtc: m.endUtc!,
+      location: m.location,
+      meetingUrl: m.meetingUrl,
+      organizerName: m.organizerName,
+    };
+  }
+  private emails(m: MeetingDto): string[] {
+    return (m.attendees ?? []).map((a) => a.email ?? '').filter((e) => e.includes('@'));
+  }
+
+  /** Links for the detail panel: email and WhatsApp, and other people's calendars. */
+  protected readonly share = {
+    mail: (m: MeetingDto) => mailtoUrl(this.shareable(m), this.emails(m)),
+    whatsapp: (m: MeetingDto) => whatsappUrl(this.shareable(m)),
+    google: (m: MeetingDto) => googleCalendarUrl(this.shareable(m)),
+    outlook: (m: MeetingDto) => outlookCalendarUrl(this.shareable(m)),
+    teams: (m: MeetingDto) => teamsMeetingUrl(this.shareable(m), this.emails(m)),
+  };
+
+  protected async copyDetails(m: MeetingDto): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(meetingText(this.shareable(m)).replace(/\*/g, ''));
+      this.toasts.success('The meeting details are on your clipboard.', 'Copied');
+    } catch {
+      this.toasts.warning(
+        'This browser did not allow copying. Select the details and copy them instead.',
+        'Copy',
+      );
+    }
   }
 
   // ---- acting on one ----------------------------------------------------------------------

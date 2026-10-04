@@ -3,9 +3,62 @@
   [subtitle]="subtitle()"
   help="Audiences are saved rules, not frozen lists — membership is re-checked the moment a campaign actually sends, so a same-day opt-out is always honoured."
 >
-  <button ar-button variant="ghost" icon="contacts">Import contacts</button>
-  <button ar-button variant="primary" icon="plus" (click)="saveSegment()">Save segment</button>
+  <button ar-button variant="ghost" icon="upload" (click)="importOpen.set(true)">
+    Import contacts
+  </button>
+  <button ar-button variant="primary" icon="plus" (click)="openSave()">Save segment</button>
 </ar-topbar>
+
+@if (importOpen()) {
+  <ar-contact-import (closed)="importOpen.set(false)" (imported)="importOpen.set(false)" />
+}
+
+@if (saveOpen()) {
+  <ar-dialog title="Save segment" (dismiss)="saveOpen.set(false)">
+    <p class="sg__save-lead">
+      Saves the rule, not today's list: whoever matches is worked out again each time a campaign
+      sends. It matches <strong>{{ preview().totalMatching }}</strong> contact{{
+        preview().totalMatching === 1 ? '' : 's'
+      }}
+      right now.
+    </p>
+    <label class="ar-field">
+      <span class="ar-field__label">Name</span>
+      <input
+        class="ar-field__input"
+        required
+        minlength="2"
+        maxlength="128"
+        placeholder="e.g. AMC due in 60 days — Pune"
+        [value]="saveName()"
+        (input)="saveName.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Description <span class="ar-field__opt">optional</span></span>
+      <textarea
+        class="ar-field__input"
+        rows="3"
+        maxlength="512"
+        placeholder="Who this is for and when to use it"
+        [value]="saveDescription()"
+        (input)="saveDescription.set($any($event.target).value)"
+      ></textarea>
+    </label>
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="saveOpen.set(false)">Cancel</button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="saving()"
+        (click)="saveSegment()"
+      >
+        {{ saving() ? 'Saving…' : 'Save segment' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 <div class="sg ar-scroll">
   <div class="sg__cols">

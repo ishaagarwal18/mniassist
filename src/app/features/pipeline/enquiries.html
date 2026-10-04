@@ -27,6 +27,8 @@
     <label class="ar-field">
       <span class="ar-field__label">Title</span>
       <input
+        required
+        maxlength="256"
         class="ar-field__input"
         placeholder="e.g. VFD retrofit — packing line"
         [value]="title()"
@@ -44,7 +46,9 @@
     </label>
     <div class="ar-field-row">
       <label class="ar-field">
-        <span class="ar-field__label">Est. value (₹)</span>
+        <span class="ar-field__label"
+          >Est. value (₹) <span class="ar-field__opt">optional</span></span
+        >
         <input
           class="ar-field__input"
           inputmode="numeric"
@@ -54,7 +58,7 @@
       </label>
       <label class="ar-field">
         <span class="ar-field__label">Source</span>
-        <select class="ar-field__input" (change)="source.set(+$any($event.target).value)">
+        <select required class="ar-field__input" (change)="source.set(+$any($event.target).value)">
           @for (s of sources; track s.value) {
             <option [value]="s.value" [selected]="s.value === source()">{{ s.label }}</option>
           }

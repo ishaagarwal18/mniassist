@@ -7,9 +7,14 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
+import { PermissionService } from '@abp/ng.core';
 import { ArIcon } from '../ui';
 import { helpTopicFor } from '../core/help/help-topics';
+import { grantedPolicy } from '../core/auth/permission';
+import { InboxService } from '../core/services/inbox.service';
+import { OpsService } from '../core/services/ops.service';
+import { NAV, NavItem } from './nav.model';
 import { ArThemeToggle } from './theme-toggle';
 
 /**
@@ -26,31 +31,48 @@ import { ArThemeToggle } from './theme-toggle';
  */
 @Component({
   selector: 'ar-topbar',
-  imports: [ArIcon, ArThemeToggle],
+  imports: [ArIcon, ArThemeToggle, RouterLink, RouterLinkActive],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="tb__titles">
       <div class="tb__title-row">
         <h1 class="tb__title">{{ title() }}</h1>
-        @if (summary()) {
-          <button
-            type="button"
-            class="tb__help"
-            [class.tb__help--on]="open()"
-            [attr.aria-expanded]="open()"
-            [attr.aria-label]="'About ' + title()"
-            (click)="toggle($event)"
-          >
-            <ar-icon name="help" [size]="14" />
-          </button>
-        }
       </div>
       @if (subtitle()) {
         <p class="tb__sub">{{ subtitle() }}</p>
       }
     </div>
     <div class="tb__actions"><ng-content /></div>
-    <ar-theme-toggle compact class="tb__theme" />
+    <div class="tb__tools">
+      @if (summary()) {
+        <button
+          type="button"
+          class="tb__tool"
+          [class.tb__tool--on]="open()"
+          [attr.aria-expanded]="open()"
+          [attr.aria-label]="'Help: about ' + title()"
+          title="Help"
+          (click)="toggle($event)"
+        >
+          <ar-icon name="help" [size]="17" />
+        </button>
+      }
+      @for (item of tools; track item.route) {
+        <a
+          class="tb__tool"
+          [routerLink]="item.route"
+          routerLinkActive="tb__tool--on"
+          [attr.aria-label]="item.label + (badgeFor(item) ? ', ' + badgeFor(item) + ' new' : '')"
+          [title]="item.label"
+        >
+          <ar-icon [name]="item.icon" [size]="17" />
+          @if (badgeFor(item); as n) {
+            <span class="tb__badge">{{ n > 99 ? '99+' : n }}</span>
+          }
+        </a>
+      }
+      <ar-theme-toggle compact class="tb__theme" />
+    </div>
 
     @if (open()) {
       @if (topic; as t) {
@@ -143,42 +165,68 @@ import { ArThemeToggle } from './theme-toggle';
       align-items: center;
       gap: 10px;
     }
-    .tb__theme {
-      margin-left: 2px;
+    .tb__tools {
+      display: flex;
+      align-items: center;
+      gap: 4px;
       padding-left: 12px;
       border-left: 1px solid var(--ar-line-200);
     }
     /* Nothing to separate from on screens without header actions. */
-    .tb__actions:empty + .tb__theme {
+    .tb__actions:empty + .tb__tools {
       padding-left: 0;
       border-left: 0;
     }
-
-    .tb__help {
-      flex: none;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid var(--ar-line-300);
-      background: var(--ar-bg-50);
-      color: var(--ar-ink-400);
-      cursor: pointer;
-      padding: 0;
+    .tb__theme {
+      margin-left: 6px;
     }
-    .tb__help:hover,
-    .tb__help--on {
-      color: var(--ar-teal-600);
-      border-color: var(--ar-teal-600);
-      background: var(--ar-teal-100);
+    .tb__tool {
+      position: relative;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: var(--ar-radius-control);
+      background: transparent;
+      color: var(--ar-ink-500);
+      cursor: pointer;
+      text-decoration: none;
+      transition:
+        background-color var(--ar-ease),
+        color var(--ar-ease);
+    }
+    .tb__tool:hover,
+    .tb__tool:focus-visible {
+      background: var(--ar-bg-100);
+      color: var(--ar-ink-900);
+      outline: none;
+    }
+    .tb__tool--on {
+      background: var(--ar-blue-100);
+      color: var(--ar-primary);
+      border-color: color-mix(in srgb, var(--ar-primary) 25%, transparent);
+    }
+    .tb__badge {
+      position: absolute;
+      top: 2px;
+      right: 1px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 8px;
+      background: var(--ar-red-500);
+      color: #fff;
+      font: 600 9.5px/16px var(--ar-font-sans);
+      text-align: center;
+      box-shadow: 0 0 0 2px var(--ar-header-bg, var(--ar-white));
     }
 
     .tb__pop {
       position: absolute;
-      top: 46px;
-      left: 22px;
+      top: 50px;
+      right: 22px;
       z-index: 30;
       width: min(340px, calc(100vw - 44px));
       background: var(--ar-white);
@@ -281,6 +329,23 @@ export class ArTopbar {
   protected readonly summary = computed(() => this.topic?.summary ?? this.help());
 
   protected readonly open = signal(false);
+
+  private readonly inbox = inject(InboxService);
+  private readonly ops = inject(OpsService);
+
+  /** Inbox and Notifications, as icons beside the theme switch, for those allowed to see them. */
+  protected readonly tools: readonly NavItem[] = (() => {
+    const permissions = inject(PermissionService);
+    return NAV.flatMap((g) => g.items).filter(
+      (i) => i.top && grantedPolicy(i.permission, permissions),
+    );
+  })();
+
+  protected badgeFor(item: NavItem): number | null {
+    if (item.badge === 'inbox') return this.inbox.unassignedCount() || null;
+    if (item.badge === 'alerts') return this.ops.unreadCount() || null;
+    return null;
+  }
 
   protected toggle(event: Event): void {
     event.stopPropagation();

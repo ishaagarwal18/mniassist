@@ -8,6 +8,7 @@ import { OnboardingStep } from '../../proxy/channels/onboarding-step.enum';
 import { GupshupOnboardingStep } from '../../proxy/channels/gupshup-onboarding-step.enum';
 import type { SolutionPartnerOnboardingSessionDto } from '../../proxy/channels/models';
 import { ArButton, ArDialog, ArTabs } from '../../ui';
+import { ToastService } from '../../core/ui/toast.service';
 
 const STEP_LABEL: Record<OnboardingStep, string> = {
   [OnboardingStep.FacebookLogin]: 'Sign in with Facebook',
@@ -172,6 +173,7 @@ const PROVIDER_LABELS: readonly string[] = ['Meta (direct)', 'Gupshup (Solution 
   `,
 })
 export class ArConnectNumberDialog {
+  private readonly toasts = inject(ToastService);
   private readonly api = inject(ChannelApi);
 
   readonly close = output<void>();
@@ -194,7 +196,10 @@ export class ArConnectNumberDialog {
         completed: false,
         nextLabel: STEP_LABEL[OnboardingStep.WabaCreated],
       });
-      window.alert('Embedded signup opens a Meta window — not available in the mock build.');
+      this.toasts.warning(
+        'Embedded signup opens a Meta window — not available in the mock build.',
+        'Connect a number',
+      );
       return;
     }
     this.metaBusy.set(true);
@@ -229,7 +234,10 @@ export class ArConnectNumberDialog {
         nextLabel: GUPSHUP_STEP_LABEL[GupshupOnboardingStep.EmbedLinkIssued],
         embedLink: null,
       });
-      window.alert('Gupshup signup opens a hosted page — not available in the mock build.');
+      this.toasts.warning(
+        'Gupshup signup opens a hosted page — not available in the mock build.',
+        'Connect a number',
+      );
       return;
     }
     this.gupshupBusy.set(true);

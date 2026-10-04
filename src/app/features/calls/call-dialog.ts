@@ -70,6 +70,7 @@ import { displayNumber, looksLikeNumber, toE164Digits } from './call-logic';
           <label class="ar-field" for="cd-number">
             <span class="ar-field__label">Ring me on</span>
             <input
+              required
               id="cd-number"
               class="ar-field__input"
               inputmode="tel"

@@ -42,6 +42,8 @@
     <label class="ar-field">
       <span class="ar-field__label">Name</span>
       <input
+        required
+        maxlength="128"
         class="ar-field__input"
         [value]="draft().name"
         (input)="patch('name', $any($event.target).value)"
@@ -51,6 +53,7 @@
       <label class="ar-field">
         <span class="ar-field__label">Report</span>
         <select
+          required
           class="ar-field__input"
           [value]="draft().kind"
           (change)="patch('kind', +$any($event.target).value)"
@@ -63,6 +66,7 @@
       <label class="ar-field">
         <span class="ar-field__label">Cadence</span>
         <select
+          required
           class="ar-field__input"
           [value]="draft().cadence"
           (change)="patch('cadence', +$any($event.target).value)"
@@ -76,6 +80,9 @@
     <label class="ar-field rep__narrow">
       <span class="ar-field__label">Send at (hour, IST)</span>
       <input
+        required
+        min="0"
+        max="23"
         class="ar-field__input"
         type="number"
         min="0"

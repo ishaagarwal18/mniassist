@@ -41,6 +41,8 @@ import {
 import { inr } from '../../core/util/format';
 import { RouterLink } from '@angular/router';
 import { WhatsAppCallSession } from '../../core/services/whatsapp-call.session';
+import { ToastService } from '../../core/ui/toast.service';
+import { persistedToggle } from '../../core/util/persisted-toggle';
 
 @Component({
   selector: 'ar-inbox',
@@ -64,6 +66,7 @@ import { WhatsAppCallSession } from '../../core/services/whatsapp-call.session';
   styleUrl: './inbox.scss',
 })
 export class ArInbox {
+  private readonly toasts = inject(ToastService);
   private readonly inbox = inject(InboxService);
   private readonly channels = inject(ChannelService);
 
@@ -72,6 +75,18 @@ export class ArInbox {
 
   protected readonly channel = this.channels.active;
   protected readonly conversations = this.inbox.conversations;
+
+  /** The list can fold to a strip of avatars, for more room to read and write. */
+  protected readonly listCollapsed = persistedToggle('ar.inbox.listCollapsed');
+  protected readonly listQuery = signal('');
+  protected readonly shownConversations = computed(() => {
+    const q = this.listQuery().trim().toLowerCase();
+    const all = this.conversations();
+    if (!q) return all;
+    return all.filter((c) =>
+      [c.contactName, c.company, c.snippet, c.channel].some((v) => v?.toLowerCase().includes(q)),
+    );
+  });
   protected readonly selected = this.inbox.selected;
   protected readonly unassigned = this.inbox.unassignedCount;
 
@@ -491,7 +506,7 @@ export class ArInbox {
 
   protected shareLocation(): void {
     if (!navigator.geolocation) {
-      window.alert('This browser cannot read a location.');
+      this.toasts.warning('This browser cannot read a location.', 'Location');
       return;
     }
     this.sending.set(true);
@@ -510,7 +525,10 @@ export class ArInbox {
       },
       () => {
         this.sending.set(false);
-        window.alert('Could not read your location — check the browser permission.');
+        this.toasts.warning(
+          'Could not read your location — check the browser permission.',
+          'Location',
+        );
       },
       { enableHighAccuracy: true, timeout: 10_000 },
     );
@@ -538,7 +556,7 @@ export class ArInbox {
       .map((t) => t.trim())
       .filter(Boolean);
     if (!this.btnBody().trim() || titles.length === 0) {
-      window.alert('A message and at least one button are needed.');
+      this.toasts.warning('A message and at least one button are needed.', 'Buttons');
       return;
     }
     this.sending.set(true);

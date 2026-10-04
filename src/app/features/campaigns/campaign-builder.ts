@@ -14,6 +14,8 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 
 const STATE_TONE: Record<CState, ChipTone> = {
   draft: 'neutral',
@@ -38,6 +40,8 @@ const STATE_TONE: Record<CState, ChipTone> = {
   styleUrl: './campaign-builder.scss',
 })
 export class ArCampaignBuilder {
+  private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(CampaignStore);
   protected readonly channels = inject(ChannelService).channels;
 
@@ -58,7 +62,7 @@ export class ArCampaignBuilder {
 
   protected async createCampaign(): Promise<void> {
     if (!this.newName().trim() || !this.newChannel()) {
-      window.alert('Give the campaign a name and pick a channel.');
+      this.toasts.warning('Give the campaign a name and pick a channel.', 'Campaign');
       return;
     }
     this.saving.set(true);
@@ -171,9 +175,17 @@ export class ArCampaignBuilder {
   protected resume(c: Campaign): Promise<void> {
     return this.act(() => this.store.resume(c.id));
   }
-  protected cancel(c: Campaign): Promise<void> {
-    if (!window.confirm(`Cancel "${c.name}"? Already-dispatched messages are not recalled.`))
-      return Promise.resolve();
+  protected async cancel(c: Campaign): Promise<void> {
+    if (
+      !(await this.dialogs.confirm({
+        title: `Cancel “${c.name}”?`,
+        message: 'No more messages go out. Messages already dispatched are not recalled.',
+        confirmText: 'Cancel campaign',
+        cancelText: 'Keep it',
+        tone: 'danger',
+      }))
+    )
+      return;
     return this.act(() => this.store.cancel(c.id));
   }
 }

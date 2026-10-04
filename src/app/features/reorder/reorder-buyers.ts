@@ -52,6 +52,7 @@ const MOCK_BUYERS: ReorderBuyerDto[] = [
       <label class="ar-field" for="rb-account">
         <span class="ar-field__label">Company</span>
         <select
+          required
           id="rb-account"
           class="ar-field__input"
           [value]="accountId()"
@@ -90,6 +91,7 @@ const MOCK_BUYERS: ReorderBuyerDto[] = [
             <label class="ar-field" [for]="'rb-role-' + b.contactId">
               <span class="ar-field__label">Role</span>
               <select
+                required
                 class="ar-field__input"
                 [id]="'rb-role-' + b.contactId"
                 [value]="b.role"
@@ -192,7 +194,9 @@ const MOCK_BUYERS: ReorderBuyerDto[] = [
         </label>
         @if (creditForm().onHold) {
           <label class="ar-field" for="rb-hold-reason">
-            <span class="ar-field__label">Reason (staff only)</span>
+            <span class="ar-field__label"
+              >Reason (staff only) <span class="ar-field__opt">optional</span></span
+            >
             <input
               id="rb-hold-reason"
               class="ar-field__input"

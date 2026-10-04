@@ -101,6 +101,8 @@
     <label class="ar-field">
       <span class="ar-field__label">Name</span>
       <input
+        required
+        maxlength="200"
         class="ar-field__input"
         [disabled]="linked()"
         [value]="form().name"
@@ -121,6 +123,8 @@
       <label class="ar-field">
         <span class="ar-field__label">Price (₹)</span>
         <input
+          required
+          min="0"
           class="ar-field__input"
           type="number"
           min="0"

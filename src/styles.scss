@@ -385,3 +385,119 @@ input[type='radio']:not(.e-control) {
     font-size: 12.5px;
   }
 }
+
+/* Field problems found by the form checks (ui/form-validation.ts). */
+.ar-field__hint {
+  font: 400 11px/1.4 var(--ar-font-sans);
+  color: var(--ar-ink-400);
+}
+.ar-field__error {
+  font: 500 11.5px/1.4 var(--ar-font-sans);
+  color: var(--ar-red-600);
+}
+.ar-invalid,
+.ar-invalid:hover,
+.e-input-group.e-control-wrapper.ar-invalid {
+  border-color: var(--ar-red-500) !important;
+}
+.ar-invalid:focus-visible,
+.e-input-group.e-control-wrapper.ar-invalid.e-input-focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ar-red-500) 25%, transparent) !important;
+}
+
+/* Toasts (layout/toast-host.ts): a coloured edge and icon per tone. Above
+   every dialog and its overlay, so an error from a dialog's request is seen. */
+#ar-toasts {
+  position: fixed !important;
+  top: 12px !important;
+  right: 12px !important;
+  z-index: 2147483000 !important;
+}
+#ar-toasts .e-toast {
+  border: 1px solid var(--ar-line-200);
+  border-left-width: 4px;
+  border-radius: var(--ar-radius-card);
+  background: var(--ar-white);
+  box-shadow: var(--ar-shadow-pop);
+  font-family: var(--ar-font-sans);
+
+  .e-toast-title {
+    font: 600 13px var(--ar-font-sans);
+    color: var(--ar-ink-900);
+  }
+  .e-toast-content {
+    font: 400 12.5px/1.5 var(--ar-font-sans);
+    color: var(--ar-ink-600, var(--ar-ink-500));
+  }
+  .e-toast-close-icon {
+    color: var(--ar-ink-400);
+  }
+  &.ar-toast--success {
+    border-left-color: var(--ar-green-500);
+    .e-toast-icon,
+    .e-toast-progress {
+      color: var(--ar-green-500);
+      background-color: var(--ar-green-500);
+    }
+    .e-toast-icon {
+      background-color: transparent;
+    }
+  }
+  &.ar-toast--error {
+    border-left-color: var(--ar-red-500);
+    .e-toast-icon {
+      color: var(--ar-red-500);
+    }
+    .e-toast-progress {
+      background-color: var(--ar-red-500);
+    }
+  }
+  &.ar-toast--warning {
+    border-left-color: var(--ar-amber-500);
+    .e-toast-icon {
+      color: var(--ar-amber-500);
+    }
+    .e-toast-progress {
+      background-color: var(--ar-amber-500);
+    }
+  }
+  &.ar-toast--info {
+    border-left-color: var(--ar-blue-500);
+    .e-toast-icon {
+      color: var(--ar-blue-500);
+    }
+    .e-toast-progress {
+      background-color: var(--ar-blue-500);
+    }
+  }
+}
+
+/* Dialogs move by their header. */
+.e-dialog.ar-dialog .e-dlg-header-content {
+  cursor: move;
+}
+
+/* The button that folds a side pane (contacts segments, inbox list). */
+.ar-pane-toggle {
+  flex: none;
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-control);
+  background: var(--ar-white);
+  color: var(--ar-ink-500);
+  cursor: pointer;
+}
+.ar-pane-toggle ar-icon {
+  transform: rotate(180deg); /* points back at the pane it folds */
+}
+.ar-pane-toggle:hover,
+.ar-pane-toggle:focus-visible {
+  color: var(--ar-ink-900);
+  border-color: var(--ar-ink-400);
+  outline: none;
+}

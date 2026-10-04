@@ -11,6 +11,9 @@ export interface NavItem {
 
   /** An AI feature: drawn with the teal AI marker instead of the blue one. */
   readonly ai?: boolean;
+
+  /** Shown as an icon in every screen's header (beside the theme switch), not in the sidebar. */
+  readonly top?: boolean;
 }
 
 export interface NavGroup {
@@ -24,13 +27,14 @@ export const NAV: readonly NavGroup[] = [
     items: [
       { label: 'Home', icon: 'home', route: '/home' },
       { label: 'Get started', icon: 'check', route: '/getting-started' },
-      { label: 'Notifications', icon: 'alert', route: '/notifications', badge: 'alerts' },
+      { label: 'Notifications', icon: 'bell', route: '/notifications', badge: 'alerts', top: true },
       {
         label: 'Inbox',
         icon: 'inbox',
         route: '/inbox',
         badge: 'inbox',
         permission: 'AutoReach.Inbox',
+        top: true,
       },
       { label: 'Contacts', icon: 'contacts', route: '/contacts', permission: 'AutoReach.Contacts' },
       {

@@ -22,6 +22,7 @@ import {
   TrendPoint,
 } from '../models/analytics.model';
 import { ChannelService } from './channel.service';
+import { ToastService } from '../ui/toast.service';
 
 const PRICING: Record<ApiPricingCategory, PricingCategory> = {
   [ApiPricingCategory.Unknown]: 'unknown',
@@ -209,6 +210,7 @@ const SEED: Bundle = {
 
 @Injectable({ providedIn: 'root' })
 export class AnalyticsStore {
+  private readonly toasts = inject(ToastService);
   private readonly api = inject(AnalyticsApi);
   private readonly channels = inject(ChannelService);
 
@@ -361,7 +363,7 @@ export class AnalyticsStore {
   /** Downloads the category / template / agent tables in the chosen format. M12-6. */
   async export(format: AnalyticsExportFormat): Promise<void> {
     if (environment.useMockData) {
-      window.alert('Export needs the API — it is disabled in the standalone build.');
+      this.toasts.info('Export needs the API — it is disabled in the standalone build.', 'Export');
       return;
     }
     const blob = await firstValueFrom(

@@ -8,6 +8,7 @@ import { IdentityRoleDto, IdentityRoleService } from '../../proxy/identity';
 import { GetPermissionListResultDto, PermissionsService } from '../../proxy/permission-management';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArCard, ArChip, ArDialog } from '../../ui';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 const SEED: IdentityRoleDto[] = [
   { id: 'r-1', name: 'admin', isDefault: false, isStatic: true, isPublic: true },
@@ -121,6 +122,8 @@ const SEED: IdentityRoleDto[] = [
         <label class="fld">
           <span class="fld__k">Name</span>
           <input
+            required
+            maxlength="256"
             class="ar-field__input"
             [value]="rName()"
             (input)="rName.set($any($event.target).value)"
@@ -150,7 +153,7 @@ const SEED: IdentityRoleDto[] = [
             ar-button
             type="button"
             variant="primary"
-            [disabled]="roleBusy() || !rName().trim()"
+            [disabled]="roleBusy()"
             (click)="saveRole()"
           >
             {{ roleBusy() ? 'Saving…' : 'Save' }}
@@ -255,6 +258,7 @@ const SEED: IdentityRoleDto[] = [
   `,
 })
 export class ArAdminRoles {
+  private readonly dialogs = inject(ConfirmService);
   private readonly roleApi = inject(IdentityRoleService);
   private readonly permApi = inject(PermissionsService);
   private readonly mock = environment.useMockData;
@@ -417,7 +421,8 @@ export class ArAdminRoles {
 
   protected async removeRole(): Promise<void> {
     const r = this.roles().find((x) => x.name === this.selected());
-    if (!r || !confirm(`Delete role "${r.name}"?`)) return;
+    if (!r || !(await this.dialogs.delete('this role', r.name, 'Users lose its permissions.')))
+      return;
     this.error.set(null);
     try {
       await firstValueFrom(this.roleApi.delete(r.id));

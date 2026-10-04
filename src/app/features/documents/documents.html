@@ -17,6 +17,8 @@
     <label class="ar-field">
       <span class="ar-field__label">Title</span>
       <input
+        required
+        maxlength="256"
         class="ar-field__input"
         [value]="title()"
         (input)="title.set($any($event.target).value)"
@@ -46,6 +48,7 @@
     <label class="ar-field">
       <span class="ar-field__label">Access</span>
       <select
+        required
         class="ar-field__input"
         [value]="visibility()"
         (change)="visibility.set(+$any($event.target).value)"

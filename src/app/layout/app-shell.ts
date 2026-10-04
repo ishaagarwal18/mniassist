@@ -3,11 +3,13 @@ import { RouterOutlet } from '@angular/router';
 import { ArSidebar } from './sidebar';
 import { ArSoftphoneBar } from './softphone-bar';
 import { ArWhatsAppCallBar } from './whatsapp-call-bar';
+import { ArToastHost } from './toast-host';
+import { ArConfirmHost } from './confirm-host';
 import { AgencyActingStore } from '../core/services/agency-acting.store';
 
 @Component({
   selector: 'ar-app-shell',
-  imports: [RouterOutlet, ArSidebar, ArSoftphoneBar, ArWhatsAppCallBar],
+  imports: [RouterOutlet, ArSidebar, ArSoftphoneBar, ArWhatsAppCallBar, ArToastHost, ArConfirmHost],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-sidebar />
@@ -24,6 +26,8 @@ import { AgencyActingStore } from '../core/services/agency-acting.store';
     </main>
     <ar-softphone-bar />
     <ar-whatsapp-call-bar />
+    <ar-toast-host />
+    <ar-confirm-host />
   `,
   styles: `
     :host {

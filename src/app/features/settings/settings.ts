@@ -7,6 +7,7 @@ import { SessionStore } from '../../core/services/session.store';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
 import { ArSelect } from '../../ui/select';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 /**
  * The workspace's general settings. Today this is the single-sign-on panel — the one
@@ -21,6 +22,7 @@ import { ArSelect } from '../../ui/select';
   styleUrl: './settings.scss',
 })
 export class ArSettings {
+  private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(SettingsStore);
   private readonly sessionStore = inject(SessionStore);
 
@@ -29,14 +31,26 @@ export class ArSettings {
 
   protected readonly sessions = this.sessionStore.sessions;
 
-  protected revokeSession(sessionId: string): void {
-    if (window.confirm('Sign this device out?')) {
+  protected async revokeSession(sessionId: string): Promise<void> {
+    if (
+      await this.dialogs.confirm({
+        title: 'Sign this device out?',
+        message: 'It has to sign in again to use your account.',
+        confirmText: 'Sign out',
+      })
+    ) {
       void this.sessionStore.revoke(sessionId);
     }
   }
 
-  protected revokeOtherSessions(): void {
-    if (window.confirm('Sign out every other device?')) {
+  protected async revokeOtherSessions(): Promise<void> {
+    if (
+      await this.dialogs.confirm({
+        title: 'Sign out every other device?',
+        message: 'This one stays signed in; every other device has to sign in again.',
+        confirmText: 'Sign out others',
+      })
+    ) {
       void this.sessionStore.revokeOthers();
     }
   }

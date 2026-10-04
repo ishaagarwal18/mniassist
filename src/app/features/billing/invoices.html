@@ -35,6 +35,7 @@
         <label class="ar-field" for="rec-channel">
           <span class="ar-field__label">WhatsApp number</span>
           <select
+            required
             id="rec-channel"
             class="ar-field__input"
             [value]="recChannel()"
@@ -48,6 +49,7 @@
         <label class="ar-field" for="rec-month">
           <span class="ar-field__label">Month</span>
           <input
+            required
             id="rec-month"
             class="ar-field__input"
             type="month"
@@ -59,6 +61,7 @@
       <label class="ar-field" for="rec-source">
         <span class="ar-field__label">Invoice number</span>
         <input
+          required
           id="rec-source"
           class="ar-field__input"
           placeholder="FBADS-IN-2026-0917"
@@ -137,6 +140,7 @@
       <label class="ar-field">
         <span class="ar-field__label">Period start</span>
         <input
+          required
           class="ar-field__input"
           type="date"
           [value]="g().periodStart"
@@ -146,6 +150,7 @@
       <label class="ar-field">
         <span class="ar-field__label">Period end</span>
         <input
+          required
           class="ar-field__input"
           type="date"
           [value]="g().periodEnd"
@@ -156,6 +161,7 @@
     <label class="ar-field">
       <span class="ar-field__label">Customer legal name</span>
       <input
+        required
         class="ar-field__input"
         [value]="g().legalName"
         (input)="patchInvoice('legalName', $any($event.target).value)"
@@ -173,6 +179,9 @@
       <label class="ar-field">
         <span class="ar-field__label">Place of supply (state code)</span>
         <input
+          required
+          pattern="\d{2}"
+          title="Two digits, e.g. 27 for Maharashtra."
           class="ar-field__input"
           inputmode="numeric"
           maxlength="2"

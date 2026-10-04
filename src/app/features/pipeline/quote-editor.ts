@@ -17,7 +17,7 @@ import {
   QuotePriceSource,
   RepriceResultDto,
 } from '../../proxy/pipeline';
-import { ArButton } from '../../ui';
+import { ArButton, ArDraggable } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import {
   QuoteRow,
@@ -33,6 +33,7 @@ import {
   totalsOf,
 } from './quote-pricing';
 import { QuoteEditorApi } from './quote-editor.api';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 /**
  * Writes the lines of a draft quotation. Parts are picked from the product catalogue and priced for
@@ -41,12 +42,13 @@ import { QuoteEditorApi } from './quote-editor.api';
  */
 @Component({
   selector: 'ar-quote-editor',
-  imports: [ArButton, ArSelect],
+  imports: [ArButton, ArSelect, ArDraggable],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quote-editor.html',
   styleUrl: './quote-editor.scss',
 })
 export class ArQuoteEditor implements OnInit {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(QuoteEditorApi);
 
   readonly quotationId = input.required<string>();
@@ -355,8 +357,18 @@ export class ArQuoteEditor implements OnInit {
 
   protected changedLines = computed(() => (this.reprice()?.lines ?? []).filter((l) => l.changed));
 
-  protected close(): void {
-    if (this.dirty() && !confirm('Discard the changes to this quotation?')) return;
+  protected async close(): Promise<void> {
+    if (
+      this.dirty() &&
+      !(await this.dialogs.confirm({
+        title: 'Discard your changes?',
+        message: 'The changes to this quotation have not been saved.',
+        confirmText: 'Discard',
+        cancelText: 'Keep editing',
+        tone: 'danger',
+      }))
+    )
+      return;
     this.closed.emit(false);
   }
 }

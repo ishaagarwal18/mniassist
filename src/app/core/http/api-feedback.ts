@@ -1,0 +1,294 @@
+/**
+ * What to tell the user about an API call: "Contact created", "Enquiry moved",
+ * or what went wrong. Pure functions, so the rules are unit-tested apart from
+ * the interceptor that applies them (api-feedback.interceptor.ts).
+ */
+import { HttpErrorResponse } from '@angular/common/http';
+
+/** API calls that change nothing, or that a screen already reports in its own way. */
+const QUIET_ACTIONS = new Set([
+  // reads, previews and calculations sent as POST
+  'dry-run',
+  'inspect',
+  'preview',
+  'preview-merge',
+  'read',
+  'read-erp-stock',
+  'read-card',
+  'search',
+  'search-by-part-number',
+  'search-catalogue',
+  'suggest',
+  'suggest-replies',
+  'suggest-slots',
+  'lint',
+  'lookup-statuses',
+  'count',
+  'evaluate',
+  'check-conflicts',
+  'check-import',
+  'simulate',
+  'simulate-ivr',
+  'render',
+  'resolve',
+  'resolve-for-contact',
+  'resolve-for-locale',
+  'resolve-price',
+  'poll',
+  'preflight',
+  'normalise',
+  'summarise',
+  'draft',
+  'prompt',
+  'recompute',
+  'recompute-score',
+  'scan',
+  'test',
+  // downloads
+  'download',
+  'download-pdf',
+  'download-response',
+  'export',
+  'generate-pdf',
+  'ics',
+  // background and housekeeping
+  'mark-read',
+  'report-softphone-event',
+  'report-softphone-inbound',
+  'refresh',
+  // calls and sessions, which have their own live UI
+  'join',
+  'leave',
+  'hang-up',
+  'answer',
+  'place-call',
+  'start-session',
+  'end-session',
+  'start-softphone-call',
+  'enter-client',
+  'leave-client',
+  'end-acting-session',
+  'checkout',
+  // public and sign-in flows, which have their own pages
+  'register',
+  'forgot-password',
+  'forgot-workspace',
+  'reset-password',
+  'request-code',
+  'verify',
+  'sign',
+  'public',
+  'code',
+]);
+
+/** Path segments that only say which API this is. */
+const API_PREFIXES = new Set(['api', 'auto-reach', 'identity', 'multi-tenancy', 'account', 'app']);
+
+const PAST: Record<string, string> = {
+  move: 'Moved',
+  'move-to-pipeline': 'Moved',
+  send: 'Sent',
+  'send-now': 'Sent',
+  'send-link': 'Link sent',
+  'send-media': 'Sent',
+  'send-location': 'Sent',
+  'send-interactive': 'Sent',
+  'send-test': 'Test sent',
+  'send-test-email': 'Test email sent',
+  cancel: 'Cancelled',
+  complete: 'Completed',
+  close: 'Closed',
+  reopen: 'Reopened',
+  assign: 'Assigned',
+  'auto-assign': 'Assigned',
+  publish: 'Published',
+  pause: 'Paused',
+  resume: 'Resumed',
+  halt: 'Stopped',
+  approve: 'Approved',
+  reject: 'Rejected',
+  revoke: 'Revoked',
+  invite: 'Invitation sent',
+  'resend-invitation': 'Invitation resent',
+  activate: 'Activated',
+  deactivate: 'Deactivated',
+  reactivate: 'Reactivated',
+  merge: 'Merged',
+  import: 'Imported',
+  'apply-import': 'Imported',
+  'import-amc': 'Imported',
+  'mark-won': 'Marked as won',
+  'mark-lost': 'Marked as lost',
+  'mark-paid': 'Marked as paid',
+  'mark-sent': 'Marked as sent',
+  'mark-no-show': 'Marked as no-show',
+  'mark-all-read': 'All marked as read',
+  schedule: 'Scheduled',
+  reschedule: 'Rescheduled',
+  respond: 'Answer saved',
+  snooze: 'Snoozed',
+  dismiss: 'Dismissed',
+  'dismiss-duplicate': 'Dismissed',
+  acknowledge: 'Acknowledged',
+  retry: 'Retried',
+  'retry-delivery': 'Retried',
+  'sync-now': 'Sync started',
+  'sync-from-meta': 'Sync started',
+  'sync-channel': 'Sync started',
+  resync: 'Sync started',
+  run: 'Started',
+  'run-now': 'Started',
+  'rotate-key': 'Key rotated',
+  'rotate-secret': 'Secret rotated',
+  regenerate: 'Regenerated',
+  grant: 'Granted',
+  'grant-consent': 'Consent recorded',
+  link: 'Linked',
+  'link-existing': 'Linked',
+  accept: 'Accepted',
+  decline: 'Declined',
+  void: 'Voided',
+  issue: 'Issued',
+  dispatch: 'Dispatched',
+  receive: 'Received',
+  fulfil: 'Fulfilled',
+  'fulfil-request': 'Fulfilled',
+  adjust: 'Adjusted',
+  transfer: 'Transferred',
+  suspend: 'Suspended',
+  'withdraw-marketing-consent': 'Consent withdrawn',
+  'top-up': 'Topped up',
+  'change-plan': 'Plan changed',
+  'change-password': 'Password changed',
+  note: 'Note added',
+  comment: 'Comment added',
+  'conversation-note': 'Note added',
+  upload: 'Uploaded',
+  'upload-logo': 'Logo uploaded',
+  'upload-photo': 'Photo uploaded',
+  'upload-recording': 'Recording uploaded',
+  'upload-announcement': 'Announcement uploaded',
+  'take-snapshot': 'Snapshot saved',
+  reorder: 'Order saved',
+  'reorder-stages': 'Order saved',
+  deprecate: 'Deprecated',
+  retire: 'Retired',
+  recall: 'Recalled',
+  withdraw: 'Withdrawn',
+  'set-default': 'Made default',
+  'clear-password': 'Password cleared',
+};
+
+const isId = (s: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s) || /^\d+$/.test(s);
+
+const humanise = (s: string) => {
+  const t = s.replace(/[-_]+/g, ' ').trim();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};
+
+/** The success toast for a finished call, or null when this call should pass quietly. */
+export function successFor(method: string, url: string): { title: string; content: string } | null {
+  const m = method.toUpperCase();
+  if (m !== 'POST' && m !== 'PUT' && m !== 'DELETE' && m !== 'PATCH') return null;
+  let path: string;
+  try {
+    path = new URL(url, 'http://x').pathname;
+  } catch {
+    return null;
+  }
+  if (!path.startsWith('/api/') || path.startsWith('/api/abp/')) return null;
+  const parts = path
+    .split('/')
+    .filter((p) => p && !API_PREFIXES.has(p) && !isId(p))
+    .map((p) => decodeURIComponent(p));
+  if (parts.length === 0) return null;
+  const entity = parts[0];
+  const action = parts.length > 1 ? parts[parts.length - 1] : null;
+  if (action && QUIET_ACTIONS.has(action)) return null;
+  if (!action && QUIET_ACTIONS.has(entity)) return null;
+
+  const title = humanise(entity);
+  if (m === 'DELETE') return { title, content: `${title} deleted.` };
+  if (!action) return { title, content: m === 'POST' ? `${title} created.` : `${title} updated.` };
+  if (PAST[action]) return { title, content: `${PAST[action]}.` };
+  if (action.startsWith('set-') || action.startsWith('save') || m === 'PUT') {
+    return { title, content: 'Changes saved.' };
+  }
+  if (action.startsWith('revoke')) return { title, content: 'Revoked.' };
+  if (action.startsWith('mark-')) return { title, content: 'Updated.' };
+  return { title, content: 'Saved.' };
+}
+
+/**
+ * Server answers that only say a feature is not available here (not in the plan,
+ * or a workspace-only setting asked for by a host user). The app checks for these
+ * in the background (the softphone, the branding), so on a read they would toast
+ * on every page; on an action the person took they are still shown.
+ */
+const QUIET_READ_CODES = new Set([
+  'AutoReach:PlanFeatureNotIncluded',
+  'AutoReach:BrandingRequiresTenant',
+]);
+
+export function isQuietFailure(method: string, err: HttpErrorResponse): boolean {
+  const code = ((err.error ?? {}) as { error?: { code?: string } }).error?.code;
+  return method.toUpperCase() === 'GET' && !!code && QUIET_READ_CODES.has(code);
+}
+
+/** The error toast for a failed call: what the server said, in the user's words where it gave them. */
+export function errorFor(err: HttpErrorResponse): { title: string; content: string } {
+  if (err.status === 0) {
+    return {
+      title: 'Cannot reach the server',
+      content:
+        'Check your connection and try again. If it keeps happening, the service may be down.',
+    };
+  }
+  const body = (err.error ?? {}) as Record<string, unknown>;
+  const e = (body['error'] ?? {}) as {
+    code?: string;
+    message?: string;
+    details?: string;
+    validationErrors?: { message?: string; members?: string[] }[];
+  };
+  const lines: string[] = [];
+  if (e.message) lines.push(e.message);
+  if (e.details && e.details !== e.message) lines.push(e.details);
+  for (const v of e.validationErrors ?? []) if (v.message) lines.push(`• ${v.message}`);
+  if (lines.length === 0 && typeof body['error_description'] === 'string') {
+    lines.push(body['error_description'] as string);
+  }
+
+  // ABP answers a broken business rule with 403 too; it carries a code, a
+  // missing permission does not.
+  const title = e.code
+    ? 'Couldn’t complete that'
+    : err.status === 400 || err.status === 422
+      ? 'Please check the details'
+      : err.status === 401
+        ? 'Signed out'
+        : err.status === 403
+          ? 'Not allowed'
+          : err.status === 404
+            ? 'Not found'
+            : err.status === 409
+              ? 'Already changed'
+              : err.status >= 500
+                ? 'Server error'
+                : 'Request failed';
+  if (lines.length === 0) {
+    lines.push(
+      err.status === 401
+        ? 'Your session has ended. Sign in again to continue.'
+        : err.status === 403
+          ? 'Your role does not allow this. Ask an administrator for access.'
+          : err.status === 404
+            ? 'It may have been deleted or moved.'
+            : err.status >= 500
+              ? 'The server hit a problem. Try again in a moment.'
+              : `The request failed (${err.status}).`,
+    );
+  }
+  return { title, content: lines.join('\n').slice(0, 600) };
+}

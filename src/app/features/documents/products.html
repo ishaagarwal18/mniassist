@@ -97,6 +97,8 @@
       <label class="ar-field">
         <span class="ar-field__label">Part number</span>
         <input
+          required
+          maxlength="64"
           id="product-part"
           class="ar-field__input"
           [value]="partNumber()"
@@ -106,6 +108,7 @@
       <label class="ar-field">
         <span class="ar-field__label">Unit</span>
         <input
+          required
           id="product-unit"
           class="ar-field__input"
           [value]="unit()"
@@ -116,6 +119,7 @@
     <label class="ar-field">
       <span class="ar-field__label">Name</span>
       <input
+        required
         id="product-name"
         class="ar-field__input"
         [value]="name()"
@@ -135,6 +139,7 @@
       <label class="ar-field">
         <span class="ar-field__label">List price ₹</span>
         <input
+          required
           id="product-price"
           class="ar-field__input"
           inputmode="decimal"
@@ -205,6 +210,7 @@
     <label class="ar-field">
       <span class="ar-field__label">Rows</span>
       <textarea
+        required
         id="product-import"
         class="ar-field__input pd__paste"
         rows="8"

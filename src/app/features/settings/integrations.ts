@@ -17,6 +17,7 @@ import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { ChipTone } from '../../ui/chip';
 import { ArErpSyncSection } from './erp-sync-section';
+import { ToastService } from '../../core/ui/toast.service';
 
 /** The CRM kinds with real deal/contact sync — matches ICrmDealSync/ICrmContactSync's
  * actual registered implementations, not every IntegrationKind. */
@@ -141,6 +142,7 @@ const DELIVERY_TONE: Record<string, ChipTone> = {
   styleUrl: './integrations.scss',
 })
 export class ArIntegrations {
+  private readonly toasts = inject(ToastService);
   private readonly ops = inject(OpsService);
   private readonly crmSync = inject(CrmSyncService);
   private readonly integrations = inject(IntegrationService);
@@ -471,11 +473,11 @@ export class ArIntegrations {
 
   protected async createEndpoint(): Promise<void> {
     if (!/^https:\/\/.+/.test(this.url().trim())) {
-      window.alert('The endpoint must be an https URL.');
+      this.toasts.warning('The endpoint must be an https URL.', 'Webhook');
       return;
     }
     if (this.events().size === 0) {
-      window.alert('Pick at least one event to send.');
+      this.toasts.warning('Pick at least one event to send.', 'Webhook');
       return;
     }
     this.saving.set(true);

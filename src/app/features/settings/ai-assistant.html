@@ -16,6 +16,8 @@
     <label class="ar-field">
       <span class="ar-field__label">Title</span>
       <input
+        required
+        maxlength="256"
         class="ar-field__input"
         placeholder="e.g. Warranty and returns"
         [value]="draftTitle()"
@@ -25,6 +27,7 @@
     <label class="ar-field">
       <span class="ar-field__label">Text</span>
       <textarea
+        required
         class="ar-field__input ai__textarea"
         rows="9"
         placeholder="Write it the way you'd want a customer to hear it. One topic per article retrieves best."

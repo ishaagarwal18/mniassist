@@ -29,6 +29,7 @@ import {
   signingUrl,
   whatsappShareLink,
 } from '../signing/signing-logic';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 const TONE: Record<SignatureRequestStatus, ChipTone> = {
   [SignatureRequestStatus.Pending]: 'amber',
@@ -57,6 +58,8 @@ const TONE: Record<SignatureRequestStatus, ChipTone> = {
         <label class="ar-field">
           <span class="ar-field__label">Who signs</span>
           <input
+            required
+            maxlength="128"
             id="sig-name"
             class="ar-field__input"
             [value]="name()"
@@ -90,6 +93,9 @@ const TONE: Record<SignatureRequestStatus, ChipTone> = {
         <label class="ar-field qs__narrow">
           <span class="ar-field__label">Link works for (days)</span>
           <input
+            required
+            min="1"
+            max="90"
             id="sig-days"
             class="ar-field__input"
             type="number"
@@ -268,13 +274,7 @@ const TONE: Record<SignatureRequestStatus, ChipTone> = {
       <div dialogActions>
         <button ar-button type="button" variant="ghost" (click)="closed.emit()">Close</button>
         @if (canRequest()) {
-          <button
-            ar-button
-            type="button"
-            variant="primary"
-            [disabled]="busy() || !name().trim()"
-            (click)="request()"
-          >
+          <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="request()">
             {{ busy() ? 'Working…' : link() ? 'Make a new link' : 'Create link' }}
           </button>
         }
@@ -378,6 +378,7 @@ const TONE: Record<SignatureRequestStatus, ChipTone> = {
   `,
 })
 export class ArQuoteSignatureDialog implements OnInit {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(QuotationSignatureService);
   private readonly templates = inject(TemplateService);
 
@@ -493,7 +494,16 @@ export class ArQuoteSignatureDialog implements OnInit {
   }
 
   protected async withdraw(r: SignatureRequestDto): Promise<void> {
-    if (!r.id || !window.confirm('Withdraw this request? Its link will stop working.')) return;
+    if (
+      !r.id ||
+      !(await this.dialogs.confirm({
+        title: 'Withdraw this signature request?',
+        message: 'Its link stops working. You can send a new request later.',
+        confirmText: 'Withdraw',
+        tone: 'danger',
+      }))
+    )
+      return;
     this.busy.set(true);
     this.error.set(null);
     try {

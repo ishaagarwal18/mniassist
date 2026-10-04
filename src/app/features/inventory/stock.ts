@@ -354,6 +354,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
           <label class="ar-field" for="st-product">
             <span class="ar-field__label">Part</span>
             <input
+              required
               id="st-product"
               class="ar-field__input"
               placeholder="Search the catalogue by part number or name"
@@ -376,6 +377,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
         <label class="ar-field" for="st-location">
           <span class="ar-field__label">Location</span>
           <select
+            required
             id="st-location"
             class="ar-field__input"
             [value]="moveLocation()"
@@ -389,6 +391,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
         <label class="ar-field" for="st-qty">
           <span class="ar-field__label">{{ quantityLabel() }}</span>
           <input
+            required
             id="st-qty"
             class="ar-field__input"
             inputmode="decimal"
@@ -600,7 +603,9 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
       <ar-dialog title="Trace a batch or serial number" (dismiss)="traceOpen.set(false)">
         <form class="st__pair" (submit)="$event.preventDefault(); trace(traceQuery())">
           <label class="ar-field" for="st-trace">
-            <span class="ar-field__label">Batch or serial number</span>
+            <span class="ar-field__label"
+              >Batch or serial number <span class="ar-field__opt">optional</span></span
+            >
             <input
               id="st-trace"
               class="ar-field__input ar-mono"
@@ -833,6 +838,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
               >Default location (portal requests and won quotations)</span
             >
             <select
+              required
               id="st-default"
               class="ar-field__input"
               [value]="defaultLocation()"

@@ -62,6 +62,7 @@
       <label class="ar-field">
         <span class="ar-field__label">Channel</span>
         <select
+          required
           class="ar-field__input"
           [value]="draft().channelId"
           (change)="patch('channelId', $any($event.target).value)"
@@ -76,6 +77,8 @@
     <label class="ar-field">
       <span class="ar-field__label">Name</span>
       <input
+        required
+        maxlength="128"
         class="ar-field__input"
         [value]="draft().name"
         placeholder="Website — contact page"
@@ -86,6 +89,7 @@
     <label class="ar-field">
       <span class="ar-field__label">Source</span>
       <select
+        required
         class="ar-field__input"
         [value]="draft().source"
         (change)="patch('source', +$any($event.target).value)"

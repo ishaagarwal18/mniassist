@@ -24,6 +24,8 @@ import { ServiceTicketGateway } from './ticket-mock';
       <label class="ar-field" for="tk-subject">
         <span class="ar-field__label">What's wrong</span>
         <input
+          required
+          maxlength="256"
           id="tk-subject"
           class="ar-field__input"
           maxlength="200"
@@ -48,6 +50,7 @@ import { ServiceTicketGateway } from './ticket-mock';
         <label class="ar-field" for="tk-priority">
           <span class="ar-field__label">Priority</span>
           <select
+            required
             id="tk-priority"
             class="ar-field__input"
             (change)="priority.set(+$any($event.target).value)"
@@ -80,13 +83,7 @@ import { ServiceTicketGateway } from './ticket-mock';
 
       <div dialogActions>
         <button ar-button type="button" variant="ghost" (click)="closed.emit(null)">Cancel</button>
-        <button
-          ar-button
-          type="button"
-          variant="primary"
-          [disabled]="busy() || !subject().trim()"
-          (click)="save()"
-        >
+        <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
           {{ busy() ? 'Raising…' : 'Raise ticket' }}
         </button>
       </div>

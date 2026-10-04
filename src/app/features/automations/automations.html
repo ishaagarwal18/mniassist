@@ -16,6 +16,8 @@
     <label class="ar-field">
       <span class="ar-field__label">Name</span>
       <input
+        required
+        maxlength="128"
         class="ar-field__input"
         [value]="newName()"
         (input)="newName.set($any($event.target).value)"
@@ -23,7 +25,7 @@
     </label>
     <label class="ar-field">
       <span class="ar-field__label">Channel</span>
-      <select class="ar-field__input" (change)="newChannel.set($any($event.target).value)">
+      <select required class="ar-field__input" (change)="newChannel.set($any($event.target).value)">
         @for (ch of channels(); track ch.id) {
           <option [value]="ch.id" [selected]="ch.id === newChannel()">
             {{ ch.displayName }} · {{ ch.displayPhone }}
@@ -33,7 +35,11 @@
     </label>
     <label class="ar-field">
       <span class="ar-field__label">Trigger</span>
-      <select class="ar-field__input" (change)="newTrigger.set(+$any($event.target).value)">
+      <select
+        required
+        class="ar-field__input"
+        (change)="newTrigger.set(+$any($event.target).value)"
+      >
         @for (t of triggers; track t.value) {
           <option [value]="t.value" [selected]="t.value === newTrigger()">{{ t.label }}</option>
         }
@@ -43,6 +49,7 @@
       <label class="ar-field">
         <span class="ar-field__label">Keyword</span>
         <input
+          required
           class="ar-field__input"
           placeholder="e.g. PRICE"
           [value]="newKeyword()"
@@ -66,7 +73,11 @@
       @if (newPipelineId()) {
         <label class="ar-field">
           <span class="ar-field__label">When a deal reaches</span>
-          <select class="ar-field__input" (change)="newStageId.set($any($event.target).value)">
+          <select
+            required
+            class="ar-field__input"
+            (change)="newStageId.set($any($event.target).value)"
+          >
             <option value="" [selected]="!newStageId()">Any stage</option>
             @for (s of stagesOfNewPipeline(); track s.id) {
               <option [value]="s.id" [selected]="s.id === newStageId()">{{ s.name }}</option>

@@ -388,6 +388,8 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
         <label class="ar-field" for="ro-heading">
           <span class="ar-field__label">Heading on the page</span>
           <input
+            required
+            maxlength="128"
             id="ro-heading"
             class="ar-field__input"
             placeholder="Acme Drives · spares re-order"
@@ -411,6 +413,7 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
           <label class="ar-field" for="ro-days">
             <span class="ar-field__label">Links work for (days)</span>
             <input
+              required
               id="ro-days"
               class="ar-field__input"
               inputmode="numeric"
@@ -433,6 +436,7 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
           <label class="ar-field" for="ro-limited">
             <span class="ar-field__label">“Limited stock” below</span>
             <input
+              required
               id="ro-limited"
               class="ar-field__input"
               inputmode="numeric"

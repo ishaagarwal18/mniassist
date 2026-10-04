@@ -1,5 +1,14 @@
-import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { filter, map } from 'rxjs';
 import { PermissionService } from '@abp/ng.core';
 import { NAV, NavGroup } from './nav.model';
 import { ArAvatar, ArIcon } from '../ui';
@@ -23,7 +32,7 @@ function readCollapsed(): boolean {
 
 @Component({
   selector: 'ar-sidebar',
-  imports: [RouterLink, RouterLinkActive, ArIcon, ArAvatar, ArBrand],
+  imports: [RouterLink, ArIcon, ArAvatar, ArBrand],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[class.sb--collapsed]': 'collapsed()' },
   template: `
@@ -46,10 +55,13 @@ function readCollapsed(): boolean {
           <ar-icon name="chevron" [size]="14" />
         </button>
       </div>
-      <button class="sb__tenant" type="button">
-        <span class="sb__tenant-name">{{ account.currentTenantName() || 'MNI Assist' }}</span>
-        <ar-icon name="chevdown" [size]="14" />
-      </button>
+      <!-- The workspace a tenant user works in. A host (platform) user is in no
+           workspace, so there is nothing to name. -->
+      @if (account.tenantName(); as name) {
+        <div class="sb__tenant" [title]="name">
+          <span class="sb__tenant-name">{{ name }}</span>
+        </div>
+      }
     </div>
 
     <nav class="sb__nav" aria-label="Main">
@@ -58,16 +70,16 @@ function readCollapsed(): boolean {
           <div class="sb__heading">{{ group.heading }}</div>
         }
         @for (item of group.items; track item.route) {
-          <!-- Exact matching, because /settings/support-access is a prefix match for
-               /settings and prefix matching lights up two items at once. -->
+          <!-- One item is lit: the one whose route is the longest match for the page,
+               so /settings/support-access lights Support access, not Settings too,
+               and a sub-page (/enquiries/pipelines, /inbox?c=…) keeps its parent lit. -->
           <a
             class="sb__item"
             [class.sb__item--ai]="item.ai"
+            [class.sb__item--on]="item.route === active()"
+            [attr.aria-current]="item.route === active() ? 'page' : null"
             [routerLink]="item.route"
-            routerLinkActive="sb__item--on"
-            [routerLinkActiveOptions]="{ exact: true }"
             [attr.title]="collapsed() ? item.label : null"
-            #rla="routerLinkActive"
           >
             <span class="sb__bar" aria-hidden="true"></span>
             <ar-icon [name]="item.icon" [size]="16" />
@@ -164,11 +176,36 @@ export class ArSidebar {
     if (this.menuOpen()) this.menuOpen.set(false);
   }
 
-  /** NAV with items the current user cannot see filtered out (all visible on seed data). */
+  /** NAV with items the current user cannot see, and the header's items, filtered out. */
   protected readonly nav: readonly NavGroup[] = NAV.map((group) => ({
     ...group,
-    items: group.items.filter((item) => grantedPolicy(item.permission, this.permissions)),
+    items: group.items.filter(
+      (item) => !item.top && grantedPolicy(item.permission, this.permissions),
+    ),
   })).filter((group) => group.items.length > 0);
+
+  private readonly router = inject(Router);
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map((e) => e.urlAfterRedirects),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  /** The route of the item to light: the longest nav route the current path starts with. */
+  protected readonly active = computed(() => {
+    const path = (this.url() ?? '').split(/[?#;]/)[0];
+    let best = '';
+    for (const group of this.nav) {
+      for (const { route } of group.items) {
+        if ((path === route || path.startsWith(route + '/')) && route.length > best.length) {
+          best = route;
+        }
+      }
+    }
+    return best;
+  });
 
   protected badgeFor(kind: 'inbox' | 'enquiries' | 'alerts' | undefined): number | null {
     if (kind === 'inbox') return this.inbox.unassignedCount() ?? null;

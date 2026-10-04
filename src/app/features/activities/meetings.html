@@ -19,7 +19,13 @@
 
 @if (detail(); as m) {
   <div class="dt__scrim" (click)="closeDetail()"></div>
-  <div class="dt" role="dialog" aria-modal="true" [attr.aria-label]="m.title">
+  <div
+    class="dt"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="m.title"
+    arDraggable=".dt__head"
+  >
     <header class="dt__head">
       <div>
         <h2 class="dt__title">{{ m.title }}</h2>
@@ -168,15 +174,72 @@
         </div>
       }
 
+      <h3 class="dt__h">Share and add to a calendar</h3>
+      <div class="dt__share">
+        @if (m.meetingUrl) {
+          <a
+            ar-button
+            variant="primary"
+            icon="video"
+            [href]="m.meetingUrl"
+            target="_blank"
+            rel="noopener"
+            >Join</a
+          >
+        }
+        <a ar-button variant="ghost" icon="mail" [href]="share.mail(m)">Email</a>
+        <a
+          ar-button
+          variant="ghost"
+          icon="send"
+          [href]="share.whatsapp(m)"
+          target="_blank"
+          rel="noopener"
+          >WhatsApp</a
+        >
+        <button ar-button type="button" variant="ghost" icon="copy" (click)="copyDetails(m)">
+          Copy details
+        </button>
+      </div>
+      <div class="dt__share">
+        <a
+          ar-button
+          variant="ghost"
+          icon="link"
+          [href]="share.google(m)"
+          target="_blank"
+          rel="noopener"
+          >Google Calendar</a
+        >
+        <a
+          ar-button
+          variant="ghost"
+          icon="link"
+          [href]="share.outlook(m)"
+          target="_blank"
+          rel="noopener"
+          >Outlook / Microsoft 365</a
+        >
+        <a
+          ar-button
+          variant="ghost"
+          icon="video"
+          [href]="share.teams(m)"
+          target="_blank"
+          rel="noopener"
+          >Teams meeting</a
+        >
+        <button ar-button type="button" variant="ghost" icon="download" (click)="addToCalendar(m)">
+          .ics file
+        </button>
+      </div>
+
       @if (error(); as msg) {
         <p class="dt__err" role="alert">{{ msg }}</p>
       }
     </div>
 
     <footer class="dt__foot">
-      <button ar-button type="button" variant="ghost" (click)="addToCalendar(m)">
-        Add to calendar
-      </button>
       @if (m.status === Status.Scheduled && canChange(m) && !outcomeOpen() && !cancelOpen()) {
         <button ar-button type="button" variant="ghost" (click)="edit(m)">Edit</button>
         <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="noShow(m)">

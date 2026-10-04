@@ -16,6 +16,8 @@ import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { planByKey, priceLabel } from '../landing/landing-plans';
 import { ArBanner, ArButton, ArChip, ArMeter, ArStatTile } from '../../ui';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 
 const PLAN_NAME: Record<SubscriptionPlan, string> = {
   [SubscriptionPlan.Starter]: 'Starter',
@@ -111,6 +113,8 @@ const SEED = {
   styleUrl: './billing.scss',
 })
 export class ArBilling {
+  private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly walletApi = inject(WalletService);
   private readonly billingApi = inject(BillingService);
   private readonly router = inject(Router);
@@ -242,10 +246,29 @@ export class ArBilling {
   }
 
   protected async topUp(): Promise<void> {
-    const rupees = Number(window.prompt('Top-up amount (₹):', '20000'));
-    if (!(rupees >= 100)) return;
-    const reference = window.prompt('Payment reference from the gateway:')?.trim();
-    if (!reference) return;
+    const answer = await this.dialogs.prompt({
+      title: 'Top up the wallet',
+      fields: [
+        {
+          key: 'rupees',
+          label: 'Amount (₹)',
+          type: 'number',
+          value: '20000',
+          min: 100,
+          required: true,
+        },
+        {
+          key: 'reference',
+          label: 'Payment reference from the gateway',
+          required: true,
+          maxLength: 128,
+        },
+      ],
+      confirmText: 'Top up',
+    });
+    if (!answer) return;
+    const rupees = Number(answer['rupees']);
+    const reference = answer['reference'];
     this.busy.set(true);
     try {
       await firstValueFrom(
@@ -253,7 +276,7 @@ export class ArBilling {
       );
       this.tick.update((n) => n + 1);
     } catch {
-      window.alert('The payment could not be verified.');
+      this.toasts.error('The payment could not be verified.', 'Top-up');
     } finally {
       this.busy.set(false);
     }
@@ -273,7 +296,14 @@ export class ArBilling {
 
   protected async changePlan(plan: SubscriptionPlan): Promise<void> {
     if (plan === this.d().plan) return;
-    if (!window.confirm(`Move to the ${this.planLabel(plan)} plan?`)) return;
+    if (
+      !(await this.dialogs.confirm({
+        title: `Move to the ${this.planLabel(plan)} plan?`,
+        message: 'The new plan and its limits apply straight away.',
+        confirmText: 'Change plan',
+      }))
+    )
+      return;
     this.busy.set(true);
     try {
       await firstValueFrom(this.billingApi.changePlan({ plan }));

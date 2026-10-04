@@ -20,6 +20,7 @@ import { OUTCOME_CHOICES, OUTCOME_LABEL } from './call-logic';
         <label class="ar-field" for="lc-dir">
           <span class="ar-field__label">Direction</span>
           <select
+            required
             id="lc-dir"
             class="ar-field__input"
             (change)="direction.set(+$any($event.target).value)"
@@ -31,6 +32,7 @@ import { OUTCOME_CHOICES, OUTCOME_LABEL } from './call-logic';
         <label class="ar-field" for="lc-when">
           <span class="ar-field__label">Started</span>
           <input
+            required
             id="lc-when"
             class="ar-field__input"
             type="datetime-local"
@@ -45,6 +47,9 @@ import { OUTCOME_CHOICES, OUTCOME_LABEL } from './call-logic';
         <label class="ar-field" for="lc-min">
           <span class="ar-field__label">Minutes on the call</span>
           <input
+            required
+            min="0"
+            max="600"
             id="lc-min"
             class="ar-field__input"
             type="number"
@@ -57,6 +62,7 @@ import { OUTCOME_CHOICES, OUTCOME_LABEL } from './call-logic';
         <label class="ar-field" for="lc-outcome">
           <span class="ar-field__label">How it went</span>
           <select
+            required
             id="lc-outcome"
             class="ar-field__input"
             (change)="outcome.set(+$any($event.target).value)"

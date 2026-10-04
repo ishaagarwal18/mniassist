@@ -9,6 +9,7 @@ import { IdentityRoleDto, IdentityUserDto, IdentityUserService } from '../../pro
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArCard, ArChip, ArDialog } from '../../ui';
 import { ArGrid } from '../../ui/grid';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 const SEED: IdentityUserDto[] = [
   {
@@ -111,6 +112,8 @@ interface Row extends IdentityUserDto {
         <label class="fld">
           <span class="fld__k">Username</span>
           <input
+            required
+            maxlength="256"
             class="ar-field__input"
             autocapitalize="none"
             [disabled]="mode === 'edit'"
@@ -120,7 +123,7 @@ interface Row extends IdentityUserDto {
         </label>
         <div class="fld-row">
           <label class="fld">
-            <span class="fld__k">First name</span>
+            <span class="fld__k">First name <span class="ar-field__opt">optional</span></span>
             <input
               class="ar-field__input"
               [value]="fName()"
@@ -128,7 +131,7 @@ interface Row extends IdentityUserDto {
             />
           </label>
           <label class="fld">
-            <span class="fld__k">Last name</span>
+            <span class="fld__k">Last name <span class="ar-field__opt">optional</span></span>
             <input
               class="ar-field__input"
               [value]="fSurname()"
@@ -139,6 +142,7 @@ interface Row extends IdentityUserDto {
         <label class="fld">
           <span class="fld__k">Email</span>
           <input
+            required
             class="ar-field__input"
             type="email"
             [value]="fEmail()"
@@ -149,6 +153,8 @@ interface Row extends IdentityUserDto {
           <label class="fld">
             <span class="fld__k">Password</span>
             <input
+              required
+              minlength="6"
               class="ar-field__input"
               type="password"
               [value]="fPassword()"
@@ -183,13 +189,7 @@ interface Row extends IdentityUserDto {
 
         <div dialogActions>
           <button ar-button type="button" variant="ghost" (click)="dialog.set(null)">Cancel</button>
-          <button
-            ar-button
-            type="button"
-            variant="primary"
-            [disabled]="busy() || !canSave()"
-            (click)="save()"
-          >
+          <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
             {{ busy() ? 'Saving…' : 'Save' }}
           </button>
         </div>
@@ -265,6 +265,7 @@ interface Row extends IdentityUserDto {
   `,
 })
 export class ArAdminUsers {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(IdentityUserService);
   private readonly mock = environment.useMockData;
 
@@ -396,7 +397,8 @@ export class ArAdminUsers {
   }
 
   protected async remove(u: Row): Promise<void> {
-    if (!confirm(`Delete user "${u.userName}"?`)) return;
+    if (!(await this.dialogs.delete('this user', u.userName, 'They can no longer sign in.')))
+      return;
     this.error.set(null);
     try {
       await firstValueFrom(this.api.delete(u.id));

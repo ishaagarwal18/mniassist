@@ -9,6 +9,7 @@ import { TenantDto, TenantService } from '../../proxy/tenant-management';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArCard, ArDialog } from '../../ui';
 import { ArGrid } from '../../ui/grid';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 const SEED: TenantDto[] = [
   { id: 't-1', name: 'vertex-automation' },
@@ -85,6 +86,8 @@ const SEED: TenantDto[] = [
         <label class="fld">
           <span class="fld__k">Workspace name</span>
           <input
+            required
+            maxlength="64"
             class="ar-field__input"
             autocapitalize="none"
             placeholder="e.g. vertex-automation"
@@ -97,6 +100,7 @@ const SEED: TenantDto[] = [
           <label class="fld">
             <span class="fld__k">Admin email</span>
             <input
+              required
               class="ar-field__input"
               type="email"
               [value]="fEmail()"
@@ -106,6 +110,8 @@ const SEED: TenantDto[] = [
           <label class="fld">
             <span class="fld__k">Admin password</span>
             <input
+              required
+              minlength="6"
               class="ar-field__input"
               type="password"
               [value]="fPassword()"
@@ -116,13 +122,7 @@ const SEED: TenantDto[] = [
 
         <div dialogActions>
           <button ar-button type="button" variant="ghost" (click)="dialog.set(null)">Cancel</button>
-          <button
-            ar-button
-            type="button"
-            variant="primary"
-            [disabled]="busy() || !canSave()"
-            (click)="save()"
-          >
+          <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
             {{ busy() ? 'Saving…' : mode === 'create' ? 'Create workspace' : 'Save' }}
           </button>
         </div>
@@ -170,6 +170,7 @@ const SEED: TenantDto[] = [
   `,
 })
 export class ArAdminTenants {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(TenantService);
   private readonly mock = environment.useMockData;
 
@@ -252,7 +253,14 @@ export class ArAdminTenants {
   }
 
   protected async remove(t: TenantDto): Promise<void> {
-    if (!confirm(`Delete workspace "${t.name}"? This removes all of its data.`)) return;
+    if (
+      !(await this.dialogs.delete(
+        'this workspace',
+        t.name,
+        'All of its data is removed. This cannot be undone.',
+      ))
+    )
+      return;
     this.error.set(null);
     try {
       await firstValueFrom(this.api.delete(t.id));

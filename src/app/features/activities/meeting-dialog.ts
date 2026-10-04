@@ -21,6 +21,7 @@ import {
   SlotDto,
 } from '../../proxy/activities';
 import { ArButton, ArDialog } from '../../ui';
+import { GOOGLE_MEET_NEW_URL, ZOOM_SCHEDULE_URL, teamsMeetingUrl } from './meeting-share';
 import { ArDateInput } from '../../ui/date-input';
 import { ArSelect } from '../../ui/select';
 import { ActivityDirectory } from './activity-directory';
@@ -67,6 +68,8 @@ const REMINDERS: { label: string; minutes: number }[] = [
       <label class="ar-field">
         <span class="ar-field__label">Title</span>
         <input
+          required
+          maxlength="256"
           id="mt-title"
           class="ar-field__input"
           [value]="title()"
@@ -78,6 +81,7 @@ const REMINDERS: { label: string; minutes: number }[] = [
         <label class="ar-field">
           <span class="ar-field__label">Starts</span>
           <input
+            required
             id="mt-start"
             class="ar-field__input"
             type="datetime-local"
@@ -88,6 +92,7 @@ const REMINDERS: { label: string; minutes: number }[] = [
         <label class="ar-field">
           <span class="ar-field__label">Length</span>
           <select
+            required
             id="mt-duration"
             class="ar-field__input"
             (change)="duration.set(+$any($event.target).value)"
@@ -103,6 +108,7 @@ const REMINDERS: { label: string; minutes: number }[] = [
         <label class="ar-field">
           <span class="ar-field__label">Kind</span>
           <select
+            required
             id="mt-kind"
             class="ar-field__input"
             (change)="kind.set(+$any($event.target).value)"
@@ -115,6 +121,7 @@ const REMINDERS: { label: string; minutes: number }[] = [
         <label class="ar-field">
           <span class="ar-field__label">Remind</span>
           <select
+            required
             id="mt-reminder"
             class="ar-field__input"
             (change)="reminder.set(+$any($event.target).value)"
@@ -135,9 +142,17 @@ const REMINDERS: { label: string; minutes: number }[] = [
         <input
           id="mt-where"
           class="ar-field__input"
+          maxlength="512"
+          placeholder="Plant office, Pune — or https://meet.google.com/…"
           [value]="where()"
           (input)="where.set($any($event.target).value)"
         />
+        <span class="mt__links">
+          Online? Get a link from
+          <a [href]="meetNew" target="_blank" rel="noopener">Google Meet</a> ·
+          <a [href]="teamsLink()" target="_blank" rel="noopener">Microsoft Teams</a> ·
+          <a [href]="zoomNew" target="_blank" rel="noopener">Zoom</a>, then paste it here.
+        </span>
       </label>
 
       @if (!meeting()) {
@@ -282,7 +297,7 @@ const REMINDERS: { label: string; minutes: number }[] = [
           ar-button
           type="button"
           variant="primary"
-          [disabled]="busy() || !title().trim() || !validTimes() || !!repeatProblem()"
+          [disabled]="busy() || !validTimes() || !!repeatProblem()"
           (click)="save()"
         >
           {{ busy() ? 'Saving…' : conflictLines().length || forced() ? 'Schedule anyway' : 'Save' }}
@@ -291,6 +306,14 @@ const REMINDERS: { label: string; minutes: number }[] = [
     </ar-dialog>
   `,
   styles: `
+    .mt__links {
+      font: 400 11.5px/1.5 var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
+    .mt__links a {
+      color: var(--ar-primary);
+      font-weight: 500;
+    }
     .mt__people {
       margin: 0 0 10px;
       padding: 0;
@@ -393,6 +416,20 @@ const REMINDERS: { label: string; minutes: number }[] = [
   `,
 })
 export class ArMeetingDialog implements OnInit, OnDestroy {
+  protected readonly meetNew = GOOGLE_MEET_NEW_URL;
+  protected readonly zoomNew = ZOOM_SCHEDULE_URL;
+  /** Teams' new-meeting form, filled in with this meeting's title and time. */
+  protected teamsLink(): string {
+    const start = this.start() ? new Date(this.start()) : new Date();
+    const end = new Date(start.getTime() + (this.duration() || 30) * 60_000);
+    return teamsMeetingUrl({
+      title: this.title() || 'Meeting',
+      description: this.description(),
+      startUtc: start.toISOString(),
+      endUtc: end.toISOString(),
+    });
+  }
+
   private readonly api = inject(ActivityGateway).meetings;
   protected readonly directory = inject(ActivityDirectory);
 

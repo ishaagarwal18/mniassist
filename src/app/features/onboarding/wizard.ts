@@ -5,6 +5,7 @@ import { ChecklistItem, OnboardingStore } from '../../core/services/onboarding.s
 import { OnboardingChecklistStep } from '../../proxy/identity/onboarding-checklist-step.enum';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArMeter } from '../../ui';
+import { ToastService } from '../../core/ui/toast.service';
 
 /**
  * Get started (M07-1). The nine things a new tenant does before the product is
@@ -258,6 +259,7 @@ import { ArButton, ArChip, ArMeter } from '../../ui';
   `,
 })
 export class ArOnboardingWizard {
+  private readonly toasts = inject(ToastService);
   protected readonly store = inject(OnboardingStore);
 
   protected readonly checklist = this.store.checklist;
@@ -291,7 +293,7 @@ export class ArOnboardingWizard {
 
   protected async confirmOtp(): Promise<void> {
     if (!/^\d{4,6}$/.test(this.otpCode().trim())) {
-      window.alert('Enter the code from the SMS.');
+      this.toasts.warning('Enter the code from the SMS.', 'Verification');
       return;
     }
     this.busy.set(true);
@@ -300,7 +302,10 @@ export class ArOnboardingWizard {
       this.otpSent.set(false);
       this.otpCode.set('');
     } catch {
-      window.alert('That code did not match. Request a new one and try again.');
+      this.toasts.warning(
+        'That code did not match. Request a new one and try again.',
+        'Verification',
+      );
     } finally {
       this.busy.set(false);
     }

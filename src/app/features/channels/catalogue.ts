@@ -21,6 +21,7 @@ import { ProductDto, ProductService } from '../../proxy/library';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ChipTone } from '../../ui/chip';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 interface ProductForm {
   retailerId: string;
@@ -58,6 +59,7 @@ const STATE_LABEL: Record<CatalogueSyncState, string> = {
   styleUrl: './catalogue.scss',
 })
 export class ArCatalogue {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(CatalogueService);
   private readonly channels = inject(ChannelService);
   private readonly productApi = inject(ProductService);
@@ -287,7 +289,15 @@ export class ArCatalogue {
   }
 
   protected async remove(p: CatalogueProductDto): Promise<void> {
-    if (!window.confirm(`Remove "${p.name}" from the catalogue?`)) return;
+    if (
+      !(await this.dialogs.confirm({
+        title: 'Remove from the catalogue?',
+        message: `“${p.name}” is removed from the WhatsApp catalogue.`,
+        confirmText: 'Remove',
+        tone: 'danger',
+      }))
+    )
+      return;
     try {
       await firstValueFrom(this.api.delete(p.id));
       this.tick.update((n) => n + 1);

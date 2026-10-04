@@ -10,16 +10,35 @@
 </ar-topbar>
 
 <div class="inbox">
-  <section class="list" aria-label="Conversations">
-    <div class="list__search"><ar-search-box placeholder="Search conversations" /></div>
+  <section class="list" [class.list--collapsed]="listCollapsed()" aria-label="Conversations">
+    <div class="list__search">
+      @if (!listCollapsed()) {
+        <ar-search-box style="flex: 1" placeholder="Search conversations" [(query)]="listQuery" />
+      }
+      <button
+        type="button"
+        class="ar-pane-toggle list__toggle"
+        [attr.aria-expanded]="!listCollapsed()"
+        [attr.aria-label]="
+          listCollapsed() ? 'Show the conversation list' : 'Collapse the conversation list'
+        "
+        [title]="listCollapsed() ? 'Show the conversation list' : 'Collapse the conversation list'"
+        (click)="listCollapsed.toggle()"
+      >
+        <ar-icon name="chevron" [size]="14" />
+      </button>
+    </div>
     <ul class="list__items">
-      @for (c of conversations(); track c.id) {
+      @for (c of shownConversations(); track c.id) {
         <li>
           <button
             class="conv"
             type="button"
             [class.conv--on]="c.id === selectedId()"
             [attr.aria-current]="c.id === selectedId() ? 'true' : null"
+            [attr.title]="
+              listCollapsed() ? c.contactName + (c.company ? ' · ' + c.company : '') : null
+            "
             (click)="select(c.id)"
           >
             <ar-avatar [name]="c.contactName" [size]="32" />
@@ -41,6 +60,12 @@
             </span>
           </button>
         </li>
+      } @empty {
+        @if (listQuery() && !listCollapsed()) {
+          <li class="ar-field__hint" style="display: block; padding: 18px 14px">
+            No conversations match “{{ listQuery() }}”.
+          </li>
+        }
       }
     </ul>
   </section>
@@ -471,6 +496,7 @@
           <label class="ar-field" for="pay-amount">
             <span class="ar-field__label">Amount (₹)</span>
             <input
+              required
               id="pay-amount"
               class="ar-field__input"
               inputmode="decimal"
@@ -482,6 +508,8 @@
           <label class="ar-field" for="pay-desc">
             <span class="ar-field__label">What it's for</span>
             <input
+              required
+              maxlength="128"
               id="pay-desc"
               class="ar-field__input"
               maxlength="200"
@@ -638,6 +666,7 @@
           <label class="ar-field">
             <span class="ar-field__label">Message</span>
             <textarea
+              required
               class="ar-field__input"
               rows="2"
               aria-label="Button message body"

@@ -9,6 +9,8 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 
 const STATE_TONE: Record<WState, ChipTone> = { draft: 'neutral', active: 'good', paused: 'amber' };
 
@@ -25,6 +27,8 @@ const STATE_TONE: Record<WState, ChipTone> = { draft: 'neutral', active: 'good',
   styleUrl: './automations.scss',
 })
 export class ArAutomations {
+  private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(WorkflowStore);
   protected readonly channels = inject(ChannelService).channels;
   protected readonly pipelines = inject(PipelineStore).pipelines;
@@ -78,11 +82,11 @@ export class ArAutomations {
 
   protected async createAutomation(): Promise<void> {
     if (!this.newName().trim() || !this.newChannel()) {
-      window.alert('Give the automation a name and pick a channel.');
+      this.toasts.warning('Give the automation a name and pick a channel.', 'Automation');
       return;
     }
     if (this.newTrigger() === AutomationTriggerKind.InboundKeyword && !this.newKeyword().trim()) {
-      window.alert('A keyword trigger needs at least one keyword.');
+      this.toasts.warning('A keyword trigger needs at least one keyword.', 'Automation');
       return;
     }
     this.saving.set(true);
@@ -135,7 +139,11 @@ export class ArAutomations {
   }
 
   protected async simulate(a: Automation): Promise<void> {
-    const contactId = window.prompt('Contact id to dry-run against:')?.trim();
+    const contactId = await this.dialogs.ask(
+      'Dry-run this automation',
+      { label: 'Contact id', required: true, placeholder: 'The contact to run it against' },
+      'Nothing is sent: you see the steps it would take.',
+    );
     if (!contactId) return;
     this.busy.set(a.id);
     try {

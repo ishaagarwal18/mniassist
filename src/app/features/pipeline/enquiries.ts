@@ -20,6 +20,7 @@ import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ArEnquiryDrawer } from './enquiry-drawer';
 import { ArContactPicker } from './contact-picker';
+import { ToastService } from '../../core/ui/toast.service';
 
 // Syncfusion checks the licence in each component's constructor, before ours runs.
 registerSyncfusionLicense();
@@ -51,6 +52,7 @@ const columnKey = (stageId: string | undefined, stage: string) => stageId ?? sta
   styleUrl: './enquiries.scss',
 })
 export class ArEnquiries {
+  private readonly toasts = inject(ToastService);
   private readonly store = inject(PipelineStore);
   private readonly router = inject(Router);
 
@@ -142,11 +144,11 @@ export class ArEnquiries {
   protected async createEnquiry(): Promise<void> {
     const c = this.contact();
     if (!c) {
-      window.alert('Pick the contact this enquiry is for.');
+      this.toasts.warning('Pick the contact this enquiry is for.', 'Enquiry');
       return;
     }
     if (!this.title().trim()) {
-      window.alert('Give the enquiry a short title.');
+      this.toasts.warning('Give the enquiry a short title.', 'Enquiry');
       return;
     }
     const rupees = Number(this.valueRupees().replace(/[^\d.]/g, ''));

@@ -83,6 +83,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
             <label class="ar-field" for="td-status">
               <span class="ar-field__label">Status</span>
               <select
+                required
                 id="td-status"
                 class="ar-field__input"
                 [disabled]="savingField() === 'status'"
@@ -96,6 +97,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
             <label class="ar-field" for="td-priority">
               <span class="ar-field__label">Priority</span>
               <select
+                required
                 id="td-priority"
                 class="ar-field__input"
                 [disabled]="savingField() === 'priority'"
@@ -109,7 +111,9 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
           </div>
 
           <label class="ar-field" for="td-assignee">
-            <span class="ar-field__label">Assigned to</span>
+            <span class="ar-field__label"
+              >Assigned to <span class="ar-field__opt">optional</span></span
+            >
             <select
               id="td-assignee"
               class="ar-field__input"

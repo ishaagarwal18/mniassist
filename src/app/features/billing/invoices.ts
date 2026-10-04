@@ -21,6 +21,8 @@ import { ArDateInput } from '../../ui/date-input';
 import { ArGrid } from '../../ui/grid';
 import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 
 /** The first day of last month → the last day of last month, as yyyy-mm-dd. */
 function lastMonthRange(): { start: string; end: string } {
@@ -55,6 +57,8 @@ const STATE_TONE: Record<InvoiceState, ChipTone> = {
   styleUrl: './invoices.scss',
 })
 export class ArInvoices {
+  private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly ops = inject(OpsService);
 
   protected readonly invoices = this.ops.invoices;
@@ -161,9 +165,10 @@ export class ArInvoices {
   }
 
   protected async acknowledge(run: ReconciliationRun): Promise<void> {
-    const note = window.prompt(
-      `Mark the ${run.periodLabel} variance on ${run.channelNumber} as checked? Say what you found (optional):`,
-      '',
+    const note = await this.dialogs.ask(
+      'Mark this variance as checked?',
+      { label: 'What did you find?', multiline: true, maxLength: 1000 },
+      `The ${run.periodLabel} variance on ${run.channelNumber}.`,
     );
     if (note === null) return;
     await this.ops.acknowledgeReconciliation(run.id, note.trim());
@@ -190,7 +195,10 @@ export class ArInvoices {
   protected async generate(): Promise<void> {
     const v = this.g();
     if (!v.legalName.trim() || !/^\d{2}$/.test(v.stateCode.trim())) {
-      window.alert('Customer legal name and a 2-digit place-of-supply state code are required.');
+      this.toasts.warning(
+        'Customer legal name and a 2-digit place-of-supply state code are required.',
+        'Invoice',
+      );
       return;
     }
     this.saving.set(true);

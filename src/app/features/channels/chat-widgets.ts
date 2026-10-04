@@ -12,6 +12,7 @@ import { LeadSource } from '../../proxy/pipeline/lead-source.enum';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 interface Draft {
   channelId: string;
@@ -34,6 +35,7 @@ interface Draft {
   styleUrl: './chat-widgets.scss',
 })
 export class ArChatWidgets {
+  private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(ChatWidgetStore);
   protected readonly channels = inject(ChannelService);
 
@@ -128,7 +130,14 @@ export class ArChatWidgets {
   }
 
   protected async remove(entry: ChatEntryPoint): Promise<void> {
-    if (!confirm(`Delete "${entry.name}"? The link and QR code will stop being tracked.`)) return;
+    if (
+      !(await this.dialogs.delete(
+        'this chat link',
+        entry.name,
+        'The link and QR code stop being tracked.',
+      ))
+    )
+      return;
     await this.store.remove(entry.id);
   }
 

@@ -13,6 +13,7 @@ import {
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 interface WidgetRow {
   metricKey: string;
@@ -33,6 +34,7 @@ interface WidgetRow {
   styleUrl: './dashboards.scss',
 })
 export class ArCustomDashboards {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(CustomDashboardService);
 
   private readonly tick = signal(0);
@@ -160,7 +162,7 @@ export class ArCustomDashboards {
 
   protected async removeDashboard(): Promise<void> {
     const d = this.current();
-    if (!d || !window.confirm(`Delete "${d.name}"?`)) return;
+    if (!d || !(await this.dialogs.delete('this dashboard', d.name))) return;
     try {
       await firstValueFrom(this.api.delete(d.id));
       this.selectedId.set(null);

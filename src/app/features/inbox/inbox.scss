@@ -19,8 +19,26 @@
   border-right: 1px solid var(--ar-line-200);
 }
 .list__search {
+  display: flex;
   padding: 12px 14px;
   border-bottom: 1px solid var(--ar-line-200);
+}
+/* Folded: a strip of avatars. */
+.list--collapsed {
+  width: 64px;
+  .list__search {
+    padding-inline: 18px;
+  }
+  .list__toggle ar-icon {
+    transform: none;
+  }
+  .conv {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  .conv__body {
+    display: none;
+  }
 }
 .list__items {
   flex: 1;

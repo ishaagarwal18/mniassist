@@ -10,6 +10,7 @@ import { QualityRating } from '../../proxy/channels/quality-rating.enum';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip } from '../../ui';
 import { ArConnectNumberDialog } from './connect-number-dialog';
+import { ToastService } from '../../core/ui/toast.service';
 
 type Quality = 'green' | 'yellow' | 'red' | 'unknown';
 type NameReviewState = 'pending' | 'approved' | 'rejected';
@@ -106,6 +107,7 @@ const SEED: readonly ManagedNumber[] = [
   styleUrl: './numbers.scss',
 })
 export class ArNumbers {
+  private readonly toasts = inject(ToastService);
   private readonly api = inject(ChannelApi);
 
   protected readonly connectOpen = signal(false);
@@ -192,7 +194,7 @@ export class ArNumbers {
   protected async setPin(channelId: string): Promise<void> {
     const pin = this.draftPin().trim();
     if (!/^\d{6}$/.test(pin)) {
-      window.alert('The PIN must be exactly six digits.');
+      this.toasts.warning('The PIN must be exactly six digits.', 'Two-step PIN');
       return;
     }
     this.busy.set(true);

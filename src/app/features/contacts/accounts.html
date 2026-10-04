@@ -78,6 +78,8 @@
     <label class="ar-field">
       <span class="ar-field__label">Name</span>
       <input
+        required
+        maxlength="256"
         class="ar-field__input"
         [value]="draft().name"
         (input)="patch('name', $any($event.target).value)"
@@ -85,7 +87,7 @@
     </label>
     <div class="ar-field-row">
       <label class="ar-field">
-        <span class="ar-field__label">Industry</span>
+        <span class="ar-field__label">Industry <span class="ar-field__opt">optional</span></span>
         <input
           class="ar-field__input"
           [value]="draft().industry"
@@ -93,7 +95,7 @@
         />
       </label>
       <label class="ar-field">
-        <span class="ar-field__label">Website</span>
+        <span class="ar-field__label">Website <span class="ar-field__opt">optional</span></span>
         <input
           class="ar-field__input"
           [value]="draft().website"
@@ -103,7 +105,7 @@
     </div>
     <div class="ar-field-row">
       <label class="ar-field">
-        <span class="ar-field__label">City</span>
+        <span class="ar-field__label">City <span class="ar-field__opt">optional</span></span>
         <input
           class="ar-field__input"
           [value]="draft().city"
@@ -111,7 +113,7 @@
         />
       </label>
       <label class="ar-field">
-        <span class="ar-field__label">State</span>
+        <span class="ar-field__label">State <span class="ar-field__opt">optional</span></span>
         <input
           class="ar-field__input"
           [value]="draft().state"

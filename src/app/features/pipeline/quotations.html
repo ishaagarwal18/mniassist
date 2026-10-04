@@ -16,7 +16,11 @@
     <label class="ar-field">
       <span class="ar-field__label">Enquiry</span>
       @if (enquiryOptions().length) {
-        <select class="ar-field__input" (change)="enquiryId.set($any($event.target).value)">
+        <select
+          required
+          class="ar-field__input"
+          (change)="enquiryId.set($any($event.target).value)"
+        >
           @for (o of enquiryOptions(); track o.id) {
             <option [value]="o.id" [selected]="o.id === enquiryId()">{{ o.label }}</option>
           }
@@ -67,6 +71,7 @@
     <label class="ar-field" for="issue-days">
       <span class="ar-field__label">Valid for (days)</span>
       <input
+        required
         id="issue-days"
         class="ar-field__input"
         inputmode="numeric"

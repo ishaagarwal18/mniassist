@@ -175,6 +175,7 @@
       <label class="ar-field" for="rc-cat">
         <span class="ar-field__label">Category</span>
         <select
+          required
           id="rc-cat"
           class="ar-field__input"
           [value]="rateCategory()"
@@ -188,6 +189,7 @@
       <label class="ar-field" for="rc-meta">
         <span class="ar-field__label">What Meta charges (₹ per message)</span>
         <input
+          required
           id="rc-meta"
           class="ar-field__input"
           inputmode="decimal"
@@ -198,6 +200,7 @@
       <label class="ar-field" for="rc-sell">
         <span class="ar-field__label">What tenants pay (₹ per message)</span>
         <input
+          required
           id="rc-sell"
           class="ar-field__input"
           inputmode="decimal"
@@ -208,6 +211,7 @@
       <label class="ar-field" for="rc-from">
         <span class="ar-field__label">Effective from</span>
         <input
+          required
           id="rc-from"
           class="ar-field__input"
           type="date"

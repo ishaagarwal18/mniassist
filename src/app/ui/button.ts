@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  input,
+} from '@angular/core';
 
 import { ensureSyncfusionTheme } from '../core/ui/syncfusion-theme';
 import { ArIcon, IconName } from './icon';
@@ -17,16 +24,17 @@ const SF_CLASSES: Record<ButtonVariant, string> = {
 
 /**
  * A Syncfusion button (`e-btn`, Tailwind 3 theme recoloured to the brand) on a
- * real `<button>`, so keyboard and form behaviour come free. Our styles only
+ * real `<button>` (or `<a>` for links that look like buttons), so keyboard and
+ * form behaviour come free. Our styles only
  * set the compact enterprise density and the AI variant.
  */
 @Component({
-  selector: 'button[ar-button]',
+  selector: 'button[ar-button], a[ar-button]',
   imports: [ArIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class]': 'hostClass()',
-    '[attr.type]': 'type()',
+    '[attr.type]': 'isLink ? null : type()',
     '[attr.disabled]': 'disabled() || null',
   },
   template: `
@@ -47,6 +55,7 @@ const SF_CLASSES: Record<ButtonVariant, string> = {
       line-height: 1;
       white-space: nowrap;
       text-transform: none;
+      text-decoration: none;
     }
     :host(:focus-visible) {
       outline: none;
@@ -79,6 +88,10 @@ export class ArButton {
   protected readonly hostClass = computed(
     () => `e-btn ${SF_CLASSES[this.variant()]} ar-btn ar-btn--${this.variant()}`,
   );
+
+  /** On an `<a ar-button>` (a link styled as a button) there is no button type. */
+  protected readonly isLink =
+    inject<ElementRef<HTMLElement>>(ElementRef).nativeElement.tagName === 'A';
 
   constructor() {
     ensureSyncfusionTheme();

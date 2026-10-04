@@ -17,6 +17,7 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { ChipTone } from '../../ui/chip';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 const SEED_SETTINGS: ChatbotSettingsDto = {
   enabled: false,
@@ -103,6 +104,7 @@ const OUTCOME_LABEL: Record<ChatbotOutcome, string> = {
   styleUrl: './ai-assistant.scss',
 })
 export class ArAiAssistant {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(AiAssistantService);
 
   protected readonly Source = KnowledgeSource;
@@ -371,7 +373,13 @@ export class ArAiAssistant {
   }
 
   protected async removeArticle(article: KnowledgeArticleDto): Promise<void> {
-    if (!window.confirm(`Delete "${article.title}"? The assistant will stop answering from it.`))
+    if (
+      !(await this.dialogs.delete(
+        'this article',
+        article.title,
+        'The assistant stops answering from it.',
+      ))
+    )
       return;
     try {
       if (!environment.useMockData) {

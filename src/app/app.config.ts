@@ -7,6 +7,7 @@ import { provideAbpOAuth } from '@abp/ng.oauth';
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
 import { AgencyActingInterceptor } from './core/http/agency-acting.interceptor';
+import { ApiFeedbackInterceptor } from './core/http/api-feedback.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -14,6 +15,8 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptorsFromDi()),
     { provide: HTTP_INTERCEPTORS, useClass: AgencyActingInterceptor, multi: true },
+    // Toasts for every create/update/delete and for every server error.
+    { provide: HTTP_INTERCEPTORS, useClass: ApiFeedbackInterceptor, multi: true },
     // Route titles already carry the brand ("Inbox · MNI Assist"). Without this ABP
     // appends " | " plus the API's AppName, or "MyProjectName" when it has none.
     { provide: DISABLE_PROJECT_NAME, useValue: true },

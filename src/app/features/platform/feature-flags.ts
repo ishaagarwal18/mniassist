@@ -6,6 +6,7 @@ import { FeatureFlagDto, FeatureFlagService } from '../../proxy/platform';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 const KEYS = [{ value: 'mm-lite', label: 'Marketing Messages Lite (MM Lite send path)' }];
 
@@ -21,6 +22,7 @@ const KEYS = [{ value: 'mm-lite', label: 'Marketing Messages Lite (MM Lite send 
   styleUrl: './feature-flags.scss',
 })
 export class ArFeatureFlags {
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(FeatureFlagService);
 
   protected readonly keys = KEYS;
@@ -99,7 +101,7 @@ export class ArFeatureFlags {
   }
 
   protected async remove(f: FeatureFlagDto): Promise<void> {
-    if (!f.id || !confirm(`Delete this ${this.keyLabel(f.key)} row?`)) return;
+    if (!f.id || !(await this.dialogs.delete(`this ${this.keyLabel(f.key)} row`))) return;
     await firstValueFrom(this.api.delete(f.id));
     this.tick.update((n) => n + 1);
   }

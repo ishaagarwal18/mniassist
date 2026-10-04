@@ -34,6 +34,8 @@ function problem(e: unknown, fallback: string): string {
         <label class="ar-field" for="sh-carrier">
           <span class="ar-field__label">Transporter or courier</span>
           <input
+            required
+            maxlength="128"
             id="sh-carrier"
             class="ar-field__input"
             placeholder="VRL Logistics"
@@ -44,6 +46,8 @@ function problem(e: unknown, fallback: string): string {
         <label class="ar-field" for="sh-docket">
           <span class="ar-field__label">Docket, LR or AWB number</span>
           <input
+            required
+            maxlength="64"
             id="sh-docket"
             class="ar-field__input ar-mono"
             [value]="docket()"
@@ -397,6 +401,8 @@ export class ArReorderDispatch {
         <label class="ar-field" for="ss-pin">
           <span class="ar-field__label">Pickup PIN code</span>
           <input
+            pattern="d{6}"
+            title="Six digits."
             id="ss-pin"
             class="ar-field__input"
             inputmode="numeric"
