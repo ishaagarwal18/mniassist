@@ -1,5 +1,13 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import { RouterLink } from '@angular/router';
 import {
   CategoryService,
   ChartModule,
@@ -7,18 +15,26 @@ import {
   StackingColumnSeriesService,
   TooltipService,
 } from '@syncfusion/ej2-angular-charts';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { firstValueFrom } from 'rxjs';
 
-import {
-  AnalyticsRange,
-  AnalyticsStore,
-  ConversionDimension,
-} from '../../core/services/analytics.service';
+import { environment } from '../../../environments/environment';
+import { AnalyticsStore, ConversionDimension } from '../../core/services/analytics.service';
+import { ChannelService } from '../../core/services/channel.service';
 import { PipelineStore } from '../../core/services/pipeline.service';
+import { ReportPeriodStore } from '../../core/services/report-period.store';
 import { chartColours } from '../../core/ui/chart-colours';
-import { AnalyticsExportFormat } from '../../proxy/analytics';
 import { inr } from '../../core/util/format';
+import { formatKpi, kpiNote } from '../../core/util/kpi';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArStatTile } from '../../ui';
+import {
+  AnalyticsExportFormat,
+  AnalyticsService,
+  ConversionEnquiryDto,
+} from '../../proxy/analytics';
+import { ArBanner, ArButton, ArDialog, ArIcon, ArStatTile } from '../../ui';
+import { ArGrid } from '../../ui/grid';
+import { ArPeriodPicker } from '../../ui/period-picker';
 import { ArSelect } from '../../ui/select';
 
 interface TrendBar {
@@ -30,14 +46,45 @@ interface TrendBar {
   readonly total: number;
 }
 
+type Outcome = 'won' | 'lost' | 'open';
+
+interface DrillRow {
+  readonly id: string;
+  readonly reference: string;
+  readonly title: string | null;
+  readonly contact: string;
+  readonly company: string | null;
+  readonly outcomeText: string;
+  readonly value: number | null;
+  readonly owner: string;
+  readonly when: string;
+}
+
+const OUTCOME_LABEL: Record<Outcome, string> = { won: 'Won', lost: 'Lost', open: 'Open' };
+
 /**
- * Analytics (M12). Volume trend, spend by category, and the two per-actor tables —
- * template performance and agent performance — that the API only started answering
- * once the reporting read models were written.
+ * Analytics (M12). The period's headline figures against the period before, daily volume,
+ * spend by category, template and agent performance, and how the pipeline converts. Every
+ * table row leads somewhere: a template to its editor, an agent to their conversations, a
+ * conversion figure to the enquiries that make it up.
  */
 @Component({
   selector: 'ar-analytics',
-  imports: [ArTopbar, ArButton, ArStatTile, DecimalPipe, ArSelect, ChartModule],
+  imports: [
+    RouterLink,
+    ArTopbar,
+    ArBanner,
+    ArButton,
+    ArDialog,
+    ArIcon,
+    ArStatTile,
+    DecimalPipe,
+    ArSelect,
+    ArPeriodPicker,
+    ArGrid,
+    GridModule,
+    ChartModule,
+  ],
   providers: [StackingColumnSeriesService, CategoryService, LegendService, TooltipService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './analytics.html',
@@ -45,15 +92,68 @@ interface TrendBar {
 })
 export class ArAnalytics {
   private readonly store = inject(AnalyticsStore);
+  private readonly api = inject(AnalyticsService);
 
   protected readonly loading = this.store.loading;
-  protected readonly range = this.store.range;
-  protected readonly categories = this.store.categories;
-  protected readonly templates = this.store.templates;
-  protected readonly agents = this.store.agents;
+  protected readonly notInPlan = this.store.notInPlan;
+  protected readonly period = inject(ReportPeriodStore);
+
+  /** The headline figures, each with its change on the period before when comparing. */
+  protected readonly kpis = computed(() => {
+    const compare = this.period.compare();
+    const previous = this.period.previousLabel();
+    return (this.store.summary()?.kpis ?? []).map((k) => ({
+      key: k.key,
+      label: k.label,
+      value: formatKpi(k.unit, k.current),
+      ...kpiNote(k, compare, previous),
+    }));
+  });
   protected readonly totals = this.store.totals;
   protected readonly conversion = this.store.conversion;
   protected readonly mmLite = this.store.mmLite;
+
+  // Grid rows carry plain numbers (rupees, fractions) so sorting, filtering and export see values.
+  protected readonly categoryRows = computed(() =>
+    this.store.categories().map((c) => ({
+      category: c.category.charAt(0).toUpperCase() + c.category.slice(1),
+      count: c.count,
+      share: c.shareOfVolume,
+      spend: c.spendInPaise / 100,
+    })),
+  );
+  protected readonly templateRows = computed(() =>
+    this.store.templates().map((t) => ({
+      templateId: t.templateId,
+      name: t.name,
+      category: t.category,
+      sent: t.sent,
+      delivered: t.deliveryRate,
+      read: t.readRate,
+      reply: t.replyRate,
+    })),
+  );
+  protected readonly agentRows = computed(() =>
+    this.store.agents().map((a) => ({
+      userId: a.userId,
+      userName: a.userName,
+      conversations: a.conversationsHandled,
+      messages: a.messagesSent,
+      firstReply: a.medianFirstResponseMinutes ?? null,
+      enquiries: a.enquiriesCreated,
+    })),
+  );
+  protected readonly conversionRows = computed(() =>
+    (this.conversion().rows ?? []).map((r) => ({
+      key: r.key ?? '',
+      label: r.label ?? '',
+      won: r.won ?? 0,
+      lost: r.lost ?? 0,
+      open: r.open ?? 0,
+      winRate: r.winRate ?? 0,
+      wonValue: (r.wonValueInPaise ?? 0) / 100,
+    })),
+  );
 
   protected readonly mmLiteRows = computed(() => {
     const c = this.mmLite();
@@ -70,6 +170,13 @@ export class ArAnalytics {
 
   protected readonly pipelines = inject(PipelineStore).pipelines;
   protected readonly conversionPipelineId = this.store.conversionPipelineId;
+
+  protected readonly dimensions: readonly { value: ConversionDimension; label: string }[] = [
+    { value: 'source', label: 'By source' },
+    { value: 'owner', label: 'By owner' },
+    { value: 'stage', label: 'By stage' },
+    { value: 'pipeline', label: 'By pipeline' },
+  ];
 
   protected setConversionDimension(d: ConversionDimension): void {
     this.store.setConversionDimension(d);
@@ -89,7 +196,113 @@ export class ArAnalytics {
           : 'Source';
   }
 
-  protected readonly ranges: readonly AnalyticsRange[] = [7, 30, 90];
+  // ---- the assistant's summary of the period -----------------------------------------
+
+  private readonly channels = inject(ChannelService);
+  protected readonly narrative = signal<{
+    text?: string | null;
+    unavailable?: string | null;
+  } | null>(null);
+  protected readonly narrating = signal(false);
+
+  /** A summary belongs to one period and channel; picking another clears it. */
+  private readonly clearNarrative = effect(() => {
+    this.period.range();
+    this.channels.active();
+    this.narrative.set(null);
+  });
+
+  protected async summarise(): Promise<void> {
+    this.narrating.set(true);
+    try {
+      this.narrative.set(
+        environment.useMockData
+          ? {
+              text: 'Messages were up 14% on the period before and more of them were delivered, while the median first reply fell from 16 to 11 minutes. Won value rose 19% on five more deals, with Referral converting best. Price was the most common reason deals were lost; the lost-reason list and the VFD retrofit campaign, which drew replies but few enquiries, are worth a look.',
+            }
+          : await firstValueFrom(
+              this.api.getNarrative({
+                ...this.period.range(),
+                channelId: this.channels.active()?.id,
+              }),
+            ),
+      );
+    } catch {
+      // Shown as a toast; the button stays available to try again.
+    } finally {
+      this.narrating.set(false);
+    }
+  }
+
+  // ---- drill-down: the enquiries behind a conversion figure --------------------------
+
+  protected readonly drilling = signal<{
+    title: string;
+    loading: boolean;
+    rows: DrillRow[];
+  } | null>(null);
+
+  protected async drill(row: { key: string; label: string }, outcome: Outcome): Promise<void> {
+    const title = `${row.label} · ${OUTCOME_LABEL[outcome].toLowerCase()}`;
+    this.drilling.set({ title, loading: true, rows: [] });
+    try {
+      const items = environment.useMockData
+        ? this.mockDrill(row.label, outcome)
+        : ((
+            await firstValueFrom(
+              this.api.getConversionEnquiries({
+                ...this.period.range(),
+                dimension: this.conversion().dimension ?? 'source',
+                pipelineId: this.conversionPipelineId(),
+                key: row.key,
+                outcome,
+              }),
+            )
+          ).items ?? []);
+      this.drilling.set({ title, loading: false, rows: items.map((e) => this.drillRow(e)) });
+    } catch {
+      // The failure is shown as a toast; close rather than leave a spinner.
+      this.drilling.set(null);
+    }
+  }
+
+  private drillRow(e: ConversionEnquiryDto): DrillRow {
+    const date = e.closedAtUtc ?? e.openedAtUtc;
+    return {
+      id: e.id,
+      reference: e.reference,
+      title: e.title ?? null,
+      contact: e.contact,
+      company: e.company ?? null,
+      outcomeText:
+        e.outcome === 'lost' && e.lostReason ? `Lost · ${e.lostReason}` : OUTCOME_LABEL[e.outcome],
+      value: e.valueInPaise == null ? null : e.valueInPaise / 100,
+      owner: e.owner ?? 'Unassigned',
+      when: new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+    };
+  }
+
+  private mockDrill(label: string, outcome: Outcome): ConversionEnquiryDto[] {
+    return [
+      {
+        id: 'e-1',
+        reference: 'ENQ-2026-0142',
+        title: 'VFD retrofit — packing line',
+        contact: 'Rahul Deshmukh',
+        company: 'Chakan Plastics',
+        outcome,
+        lostReason: outcome === 'lost' ? 'Price too high' : null,
+        valueInPaise: 4_50_00_000,
+        owner: 'ravi.k',
+        source: label,
+        openedAtUtc: new Date(Date.now() - 20 * 86_400_000).toISOString(),
+        closedAtUtc:
+          outcome === 'open' ? null : new Date(Date.now() - 3 * 86_400_000).toISOString(),
+      },
+    ];
+  }
+
+  // ---- chart --------------------------------------------------------------------------
 
   protected readonly bars = computed<TrendBar[]>(() =>
     this.store.trend().map((p) => ({
@@ -120,10 +333,6 @@ export class ArAnalytics {
     labelFormat: 'n0',
   } as const;
 
-  protected setRange(days: AnalyticsRange): void {
-    this.store.setRange(days);
-  }
-
   protected readonly exportFormats = [
     { value: AnalyticsExportFormat.Csv, label: 'CSV' },
     { value: AnalyticsExportFormat.Excel, label: 'Excel' },
@@ -142,7 +351,7 @@ export class ArAnalytics {
     return `${(fraction * 100).toFixed(1)}%`;
   }
 
-  protected minutes(m?: number): string {
+  protected minutes(m?: number | null): string {
     if (m == null) return '—';
     if (m < 60) return `${m} min`;
     return `${Math.floor(m / 60)}h ${m % 60}m`;

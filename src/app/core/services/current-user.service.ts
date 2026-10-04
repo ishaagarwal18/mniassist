@@ -108,6 +108,13 @@ export class CurrentUserService {
     };
   });
 
+  /** The signed-in user's id; null in the standalone build and before sign-in. */
+  readonly id = computed<string | null>(() =>
+    MOCK
+      ? null
+      : ((((this.configUser() ?? {}) as Record<string, unknown>)['id'] as string) ?? null),
+  );
+
   private readonly configTenant = toSignal(
     MOCK ? of(undefined) : this.config.getOne$('currentTenant'),
     { initialValue: undefined },

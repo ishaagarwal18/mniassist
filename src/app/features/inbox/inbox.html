@@ -3,6 +3,16 @@
   help="Every conversation across every connected channel. Once a contact's 24-hour reply window closes, only an approved template can re-open it — the composer locks automatically."
 >
   <ar-chip tone="warn">{{ unassigned() }} unassigned</ar-chip>
+  @if (assignee(); as a) {
+    <button
+      type="button"
+      class="inbox__assignee"
+      [title]="'Only conversations assigned to ' + a.name + '. Click to show all.'"
+      (click)="assignee.set(null)"
+    >
+      Assigned to {{ a.name }} <span aria-hidden="true">×</span>
+    </button>
+  }
   @if (channel(); as ch) {
     <ar-channel-health-strip [channel]="ch" />
   }

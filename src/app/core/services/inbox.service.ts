@@ -27,6 +27,8 @@ export class InboxService {
   readonly filter = signal('');
   readonly unreadOnly = signal(false);
   readonly windowClosingSoon = signal(false);
+  /** Only one agent's conversations (Analytics links here from its agent table); null for everyone's. */
+  readonly assignee = signal<{ id: string; name: string } | null>(null);
 
   constructor() {
     if (environment.useMockData) {
@@ -139,6 +141,7 @@ export class InboxService {
             filter: this.filter(),
             unreadOnly: this.unreadOnly(),
             windowClosingSoon: this.windowClosingSoon(),
+            assignedUserId: this.assignee()?.id,
             skipCount: 0,
             maxResultCount: 50,
           },

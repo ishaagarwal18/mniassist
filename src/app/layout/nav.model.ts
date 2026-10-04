@@ -261,8 +261,15 @@ export const NAV: readonly NavGroup[] = [
     ],
   },
   {
-    heading: 'Account',
+    heading: 'Reports',
     items: [
+      {
+        label: 'All reports',
+        icon: 'document',
+        route: '/reports',
+        permission:
+          'AutoReach.Analytics || AutoReach.Inventory || AutoReach.Payments || AutoReach.Pipeline',
+      },
       {
         label: 'Analytics',
         icon: 'analytics',
@@ -270,9 +277,21 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Analytics',
       },
       {
+        label: 'Campaign results',
+        icon: 'campaign',
+        route: '/analytics/campaigns',
+        permission: 'AutoReach.Analytics',
+      },
+      {
+        label: 'Ad attribution',
+        icon: 'analytics',
+        route: '/analytics/ads',
+        permission: 'AutoReach.Analytics',
+      },
+      {
         label: 'Business reports',
         icon: 'document',
-        route: '/reports',
+        route: '/reports/business',
         permission: 'AutoReach.Inventory || AutoReach.Payments',
       },
       {
@@ -287,6 +306,11 @@ export const NAV: readonly NavGroup[] = [
         route: '/settings/reports',
         permission: 'AutoReach.Analytics',
       },
+    ],
+  },
+  {
+    heading: 'Account',
+    items: [
       { label: 'Channels', icon: 'channel', route: '/channels', permission: 'AutoReach.Channels' },
       {
         label: 'Numbers',

@@ -35,6 +35,15 @@ export interface ScheduledReportDto {
   isActive?: boolean;
   lastRunAtUtc?: string | null;
   nextRunAtUtc?: string;
+  /** What happened on each channel last time, e.g. "Email: sent to 2 · WhatsApp: not sent …". */
+  lastRunNote?: string | null;
+}
+
+export interface ScheduledReportPreviewDto {
+  subject: string;
+  html: string;
+  fromUtc: string;
+  toUtc: string;
 }
 
 export interface CreateUpdateScheduledReportDto {
@@ -79,6 +88,12 @@ export class ScheduledReportService {
   delete = (id: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, void>(
       { method: 'DELETE', url: `/api/auto-reach/scheduled-report/${id}` },
+      { apiName: this.apiName, ...config },
+    );
+
+  preview = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ScheduledReportPreviewDto>(
+      { method: 'POST', url: `/api/auto-reach/scheduled-report/${id}/preview` },
       { apiName: this.apiName, ...config },
     );
 

@@ -512,3 +512,19 @@
     align-items: center;
   }
 }
+
+.inbox__assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--ar-line-200);
+  border-radius: 999px;
+  background: var(--ar-white);
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+  cursor: pointer;
+}
+.inbox__assignee:hover {
+  border-color: var(--ar-ink-400);
+}

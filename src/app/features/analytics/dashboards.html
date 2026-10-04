@@ -1,7 +1,7 @@
 <ar-topbar
   title="Custom dashboards"
   subtitle="Your own view of the numbers that matter"
-  help="Pick metrics from the catalogue and arrange them into your own view. Turn on Shared to make a dashboard visible to your whole team instead of just you."
+  help="Pick metrics from the catalogue, give each its own period, and show it as a number, a percentage bar or a day-by-day trend. Drag tiles to arrange them. Turn on Shared to make a dashboard visible to your whole team."
 >
   <button ar-button type="button" variant="primary" icon="plus" (click)="openNew()">
     New dashboard
@@ -21,7 +21,9 @@
         @if (d.isShared) {
           <ar-chip tone="neutral">Shared</ar-chip>
         }
-        <span class="cd__item-meta">{{ d.widgets.length }} widget(s)</span>
+        <span class="cd__item-meta"
+          >{{ d.widgets.length }} tile{{ d.widgets.length === 1 ? '' : 's' }}</span
+        >
       </button>
     } @empty {
       <p class="cd__empty">No dashboards yet.</p>
@@ -31,30 +33,75 @@
   <section class="cd__view ar-scroll">
     @if (current(); as d) {
       <header class="cd__head">
-        <h2 class="cd__title">{{ d.name }}</h2>
-        <div class="cd__head-actions">
-          <button ar-button type="button" variant="ghost" (click)="openEdit()">Edit</button>
-          <button ar-button type="button" variant="ghost" (click)="removeDashboard()">
-            Delete
-          </button>
+        <div>
+          <h2 class="cd__title">{{ d.name }}</h2>
+          @if (canArrange() && tiles().length > 1) {
+            <p class="cd__hint">Drag a tile to move it, or focus it and press Alt + ← / →.</p>
+          }
         </div>
+        @if (canArrange()) {
+          <div class="cd__head-actions">
+            <button ar-button type="button" variant="ghost" (click)="openEdit()">Edit</button>
+            <button ar-button type="button" variant="ghost" (click)="removeDashboard()">
+              Delete
+            </button>
+          </div>
+        }
       </header>
 
-      @if (rendering()) {
+      @if (rendering() && !rendered()) {
         <p class="cd__empty">Loading…</p>
-      } @else if (rendered(); as r) {
-        @if (r.widgets.length === 0) {
-          <p class="cd__empty">This dashboard has no widgets. Edit it to add some.</p>
+      } @else if (rendered()) {
+        @if (tiles().length === 0) {
+          <p class="cd__empty">This dashboard has no tiles. Edit it to add some.</p>
         } @else {
-          <div class="cd__grid">
-            @for (w of r.widgets; track w.id) {
-              <article class="tile" [class.tile--bar]="w.kind === K.RateBar">
-                <span class="tile__label">{{ w.title }}</span>
-                <span class="tile__value">{{ format(w.value, w.unit) }}</span>
-                @if (w.kind === K.RateBar) {
-                  <span class="tile__track">
-                    <span class="tile__fill" [style.width.%]="w.value * 100"></span>
-                  </span>
+          <div class="cd__grid" (drop)="onTileDrop($event)">
+            @for (w of tiles(); track w.id) {
+              <article
+                class="tile"
+                [class.tile--bar]="w.kind === K.RateBar"
+                [class.tile--trend]="w.kind === K.Trend"
+                [class.tile--movable]="canArrange()"
+                [style.grid-column]="'span ' + w.columnSpan"
+                [attr.draggable]="canArrange() ? 'true' : null"
+                [attr.tabindex]="canArrange() ? 0 : null"
+                [attr.aria-label]="w.title + ', ' + w.rangeLabel"
+                (dragstart)="onTileDragStart($event, w.id)"
+                (dragover)="onTileDragOver($event, w.id)"
+                (dragend)="onTileDragEnd()"
+                (keydown)="nudge($event, w.id)"
+              >
+                <span class="tile__head">
+                  <span class="tile__label">{{ w.title }}</span>
+                  <span class="tile__range">{{ w.rangeLabel }}</span>
+                </span>
+                @if (w.unavailable) {
+                  <span class="tile__value tile__value--off">—</span>
+                  <span class="tile__note">{{ w.unavailable }}</span>
+                } @else {
+                  <span class="tile__value">{{ format(w.value, w.unit) }}</span>
+                  @if (w.kind === K.RateBar) {
+                    <span class="tile__track">
+                      <span class="tile__fill" [style.width.%]="w.value * 100"></span>
+                    </span>
+                  }
+                  @if (spark(w); as s) {
+                    <svg
+                      class="tile__spark"
+                      viewBox="0 0 100 32"
+                      preserveAspectRatio="none"
+                      role="img"
+                      [attr.aria-label]="w.title + ' by day, ' + sparkSpan(w)"
+                    >
+                      <path class="tile__spark-area" [attr.d]="s.area" />
+                      <path
+                        class="tile__spark-line"
+                        [attr.d]="s.line"
+                        vector-effect="non-scaling-stroke"
+                      />
+                    </svg>
+                    <span class="tile__note">{{ sparkSpan(w) }}</span>
+                  }
                 }
               </article>
             }
@@ -70,6 +117,7 @@
 @if (dialogOpen()) {
   <ar-dialog
     [title]="editingId() ? 'Edit dashboard' : 'New dashboard'"
+    width="min(820px, calc(100vw - 32px))"
     (dismiss)="dialogOpen.set(false)"
   >
     <label class="ar-field">
@@ -91,32 +139,115 @@
       Share with everyone in the workspace
     </label>
 
-    <p class="cd__wh">Widgets</p>
-    @for (row of rows(); track $index) {
-      <div class="cd__row">
-        <select
-          class="ar-field__input"
-          title="Metric"
-          [value]="row.metricKey"
-          (change)="setRow($index, 'metricKey', $any($event.target).value)"
-        >
-          @for (m of metrics(); track m.key) {
-            <option [value]="m.key">{{ m.category }} · {{ m.label }}</option>
+    <p class="cd__wh">Tiles <span class="cd__wh-note">drag ⋮⋮ to reorder · up to 12</span></p>
+    @for (row of rows(); track $index; let i = $index; let last = $last) {
+      <div
+        class="cd__row"
+        draggable="true"
+        (dragstart)="onRowDragStart(i)"
+        (dragover)="onRowDragOver($event, i)"
+        (dragend)="onRowDragEnd()"
+      >
+        <span class="cd__grip" aria-hidden="true" title="Drag to reorder">⋮⋮</span>
+        <div class="cd__row-fields">
+          <select
+            class="ar-field__input cd__row-metric"
+            title="Metric"
+            aria-label="Metric"
+            (change)="setRow(i, 'metricKey', $any($event.target).value)"
+          >
+            @for (g of metricGroups(); track g.category) {
+              <optgroup [label]="g.category">
+                @for (m of g.items; track m.key) {
+                  <option [value]="m.key" [selected]="m.key === row.metricKey">
+                    {{ m.label }}
+                  </option>
+                }
+              </optgroup>
+            }
+          </select>
+          <select
+            class="ar-field__input"
+            title="Show as"
+            aria-label="Show as"
+            (change)="setRow(i, 'kind', +$any($event.target).value)"
+          >
+            <option [value]="K.StatTile" [selected]="row.kind === K.StatTile">Number</option>
+            @if (metricOf(row.metricKey)?.unit === 1) {
+              <option [value]="K.RateBar" [selected]="row.kind === K.RateBar">Bar</option>
+            }
+            @if (metricOf(row.metricKey)?.trendable) {
+              <option [value]="K.Trend" [selected]="row.kind === K.Trend">Trend</option>
+            }
+          </select>
+          @if (metricOf(row.metricKey)?.windowed) {
+            <select
+              class="ar-field__input"
+              title="Period"
+              aria-label="Period"
+              (change)="setRow(i, 'range', +$any($event.target).value)"
+            >
+              @for (r of ranges; track r.value) {
+                <option
+                  [value]="r.value"
+                  [selected]="r.value === row.range || (row.range === 0 && r.value === 3)"
+                >
+                  {{ r.label }}
+                </option>
+              }
+            </select>
+          } @else {
+            <span class="cd__row-now">As of now</span>
           }
-        </select>
-        <select
-          class="ar-field__input cd__row-kind"
-          title="Style"
-          [value]="row.kind"
-          (change)="setRow($index, 'kind', +$any($event.target).value)"
-        >
-          <option [value]="K.StatTile">Number</option>
-          <option [value]="K.RateBar">Bar</option>
-        </select>
-        <button type="button" class="cd__row-x" (click)="removeRow($index)">×</button>
+          <select
+            class="ar-field__input"
+            title="Width"
+            aria-label="Width"
+            (change)="setRow(i, 'columnSpan', +$any($event.target).value)"
+          >
+            @for (w of widths; track w.value) {
+              <option [value]="w.value" [selected]="w.value === row.columnSpan">
+                {{ w.label }}
+              </option>
+            }
+          </select>
+          <input
+            class="ar-field__input cd__row-title"
+            maxlength="128"
+            placeholder="Title (optional)"
+            aria-label="Title"
+            [value]="row.title"
+            (input)="setRow(i, 'title', $any($event.target).value)"
+          />
+        </div>
+        <span class="cd__row-move">
+          <button
+            type="button"
+            class="cd__row-x"
+            [disabled]="i === 0"
+            aria-label="Move up"
+            (click)="moveRow(i, -1)"
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            class="cd__row-x"
+            [disabled]="last"
+            aria-label="Move down"
+            (click)="moveRow(i, 1)"
+          >
+            ↓
+          </button>
+          <button type="button" class="cd__row-x" aria-label="Remove tile" (click)="removeRow(i)">
+            ×
+          </button>
+        </span>
       </div>
     }
-    <button type="button" class="cd__add" (click)="addRow()">+ Add widget</button>
+    @if (rows().length < 12) {
+      <button type="button" class="cd__add" (click)="addRow()">+ Add tile</button>
+    }
 
     @if (error(); as e) {
       <p class="cd__err">{{ e }}</p>

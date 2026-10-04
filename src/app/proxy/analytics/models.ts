@@ -12,6 +12,9 @@ export interface AdAttributionDto {
   contacts?: number;
   replied?: number;
   enquiriesCreated?: number;
+  /** Of those enquiries, the ones won, and their value. */
+  won?: number;
+  wonValueInPaise?: number;
   firstSeenUtc?: string;
   lastSeenUtc?: string;
 }
@@ -136,4 +139,83 @@ export interface TrendPointDto {
   utility?: number;
   service?: number;
   spendInPaise?: number;
+}
+
+export enum KpiUnit {
+  Count = 0,
+  Rupees = 1,
+  Rate = 2,
+  Minutes = 3,
+}
+
+export interface KpiDto {
+  key: string;
+  label: string;
+  unit: KpiUnit;
+  current?: number | null;
+  previous?: number | null;
+  higherIsBetter?: boolean | null;
+  /** "workspace" when the figure covers every channel even though one was picked. */
+  scope: string;
+}
+
+export interface AnalyticsSummaryDto {
+  fromUtc: string;
+  toUtc: string;
+  previousFromUtc: string;
+  previousToUtc: string;
+  kpis: KpiDto[];
+}
+
+export interface CampaignResultDto {
+  campaignId: string;
+  name: string;
+  state: number;
+  startedAtUtc?: string | null;
+  sent: number;
+  delivered: number;
+  read: number;
+  failed: number;
+  replied: number;
+  enquiries: number;
+  won: number;
+  wonValueInPaise: number;
+  spendInPaise: number;
+  deliveryRate: number;
+  readRate: number;
+  replyRate: number;
+  costPerEnquiryInPaise?: number | null;
+}
+
+export interface CampaignResultsDto {
+  attributionDays: number;
+  items: CampaignResultDto[];
+}
+
+export interface GetConversionEnquiriesInput extends GetConversionReportInput {
+  key: string;
+  /** "won", "lost" or "open"; empty for all three. */
+  outcome?: string | null;
+}
+
+export interface ConversionEnquiryDto {
+  id: string;
+  reference: string;
+  title?: string | null;
+  contact: string;
+  company?: string | null;
+  outcome: 'won' | 'lost' | 'open';
+  lostReason?: string | null;
+  valueInPaise?: number | null;
+  owner?: string | null;
+  source: string;
+  openedAtUtc: string;
+  closedAtUtc?: string | null;
+}
+
+export interface AnalyticsNarrativeDto {
+  text?: string | null;
+  generatedAtUtc?: string | null;
+  /** Why there is no summary: no model on the server, or the plan leaves it out. */
+  unavailable?: string | null;
 }

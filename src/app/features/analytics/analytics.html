@@ -1,20 +1,9 @@
 <ar-topbar
   title="Analytics"
-  subtitle="Volume, spend and per-actor performance"
-  help="Messaging volume, spend, template and agent performance, and how your pipeline is converting. Switch the date range or export as CSV, Excel or PDF from here."
+  [subtitle]="period.label()"
+  help="Messaging volume, spend, template and agent performance, and how your pipeline is converting. Pick a period at the top; with Compare on, each figure is set against the period just before. Click a row to see what is behind it, or export as CSV, Excel or PDF."
 >
-  <div class="rangepick">
-    @for (r of ranges; track r) {
-      <button
-        ar-button
-        type="button"
-        [variant]="range() === r ? 'primary' : 'ghost'"
-        (click)="setRange(r)"
-      >
-        {{ r }}d
-      </button>
-    }
-  </div>
+  <ar-period-picker />
   <div class="rangepick">
     @for (f of exportFormats; track f.value) {
       <button ar-button type="button" variant="ghost" icon="download" (click)="export(f.value)">
@@ -25,19 +14,58 @@
 </ar-topbar>
 
 <div class="an ar-scroll">
+  @if (notInPlan()) {
+    <ar-banner tone="teal">
+      Spend, template, agent and conversion reports come with full analytics, which your plan does
+      not include. The daily volume chart works on every plan; ask your MNI Assist contact to switch
+      full analytics on.
+    </ar-banner>
+  }
+
   <div class="an__stats">
-    <ar-stat-tile
-      label="Messages in range"
-      [value]="(totals().messages | number: '1.0-0') ?? '0'"
-    />
-    <ar-stat-tile label="Spend in range" [value]="inr(totals().spendInPaise)" />
-    <ar-stat-tile
-      label="Free (in-window)"
-      [value]="(totals().free | number: '1.0-0') ?? '0'"
-      tone="teal"
-      note="Not billed"
-    />
+    @for (k of kpis(); track k.key) {
+      <ar-stat-tile [label]="k.label" [value]="k.value" [note]="k.note" [tone]="k.tone" />
+    } @empty {
+      <ar-stat-tile label="Messages" [value]="(totals().messages | number: '1.0-0') ?? '0'" />
+      <ar-stat-tile label="Spend" [value]="inr(totals().spendInPaise)" />
+      <ar-stat-tile
+        label="Free of charge"
+        [value]="(totals().free | number: '1.0-0') ?? '0'"
+        tone="teal"
+        note="Not billed"
+      />
+    }
   </div>
+
+  <section class="card ai-sum" aria-live="polite">
+    <div class="ai-sum__head">
+      <h2 class="card__h ai-sum__h"><ar-icon name="sparkle" [size]="14" /> Summary</h2>
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        class="ai-sum__btn"
+        [disabled]="narrating()"
+        (click)="summarise()"
+      >
+        {{ narrating() ? 'Writing…' : narrative()?.text ? 'Write again' : 'Summarise this period' }}
+      </button>
+    </div>
+    @if (narrative(); as n) {
+      @if (n.text) {
+        <p class="ai-sum__text">{{ n.text }}</p>
+        <p class="ai-sum__note">
+          Written by the assistant from this page's figures only. Check anything you act on.
+        </p>
+      } @else if (n.unavailable) {
+        <p class="ai-sum__note">{{ n.unavailable }}</p>
+      }
+    } @else {
+      <p class="ai-sum__note">
+        A few sentences on what moved most against the period before, and where to look next.
+      </p>
+    }
+  </section>
 
   <section class="card">
     <h2 class="card__h">Volume by day</h2>
@@ -92,125 +120,125 @@
 
   <section class="card">
     <h2 class="card__h">Spend by category</h2>
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th class="num">Messages</th>
-          <th class="num">Share</th>
-          <th class="num">Spend</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (c of categories(); track c.category) {
-          <tr>
-            <td class="cap">{{ c.category }}</td>
-            <td class="num">{{ c.count | number: '1.0-0' }}</td>
-            <td class="num">{{ pct(c.shareOfVolume) }}</td>
-            <td class="num">{{ c.spendInPaise === 0 ? 'Free' : inr(c.spendInPaise) }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+    <ejs-grid
+      arGrid="spend-by-category"
+      [arGridTools]="false"
+      [dataSource]="categoryRows()"
+      aria-label="Spend by category"
+    >
+      <e-columns>
+        <e-column field="category" headerText="Category" />
+        <e-column field="count" headerText="Messages" type="number" textAlign="Right" format="N0" />
+        <e-column field="share" headerText="Share" type="number" textAlign="Right" format="P1" />
+        <e-column field="spend" headerText="Spend (₹)" type="number" textAlign="Right">
+          <ng-template #template let-c>{{
+            c.spend === 0 ? 'Free' : inr(c.spend * 100)
+          }}</ng-template>
+        </e-column>
+      </e-columns>
+      <ng-template #emptyRecordTemplate>No billed messages in this period.</ng-template>
+    </ejs-grid>
   </section>
 
   <section class="card">
     <h2 class="card__h">Template performance</h2>
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th>Template</th>
-          <th class="num">Sent</th>
-          <th class="num">Delivered</th>
-          <th class="num">Read</th>
-          <th class="num">Reply</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (t of templates(); track t.templateId) {
-          <tr>
-            <td>
-              <span class="ar-mono">{{ t.name }}</span>
-              <span class="muted">· {{ t.category }}</span>
-            </td>
-            <td class="num">{{ t.sent | number: '1.0-0' }}</td>
-            <td class="num">{{ pct(t.deliveryRate) }}</td>
-            <td class="num">{{ pct(t.readRate) }}</td>
-            <td class="num">{{ pct(t.replyRate) }}</td>
-          </tr>
-        }
-        @if (templates().length === 0) {
-          <tr>
-            <td colspan="5" class="muted">No template sends in this range.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+    <ejs-grid
+      arGrid="template-performance"
+      [arGridPageSize]="10"
+      [dataSource]="templateRows()"
+      aria-label="Template performance"
+    >
+      <e-columns>
+        <e-column field="name" headerText="Template" width="220">
+          <ng-template #template let-t>
+            <a class="an__link ar-mono" [routerLink]="['/templates', t.templateId, 'edit']">{{
+              t.name
+            }}</a>
+            <span class="muted"> · {{ t.category }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="sent" headerText="Sent" type="number" textAlign="Right" format="N0" />
+        <e-column
+          field="delivered"
+          headerText="Delivered"
+          type="number"
+          textAlign="Right"
+          format="P1"
+        />
+        <e-column field="read" headerText="Read" type="number" textAlign="Right" format="P1" />
+        <e-column field="reply" headerText="Reply" type="number" textAlign="Right" format="P1" />
+      </e-columns>
+      <ng-template #emptyRecordTemplate>No template sends in this period.</ng-template>
+    </ejs-grid>
   </section>
 
   <section class="card">
     <h2 class="card__h">Agent performance</h2>
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th>Agent</th>
-          <th class="num">Conversations</th>
-          <th class="num">Messages</th>
-          <th class="num">Median first reply</th>
-          <th class="num">Enquiries</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (a of agents(); track a.userId) {
-          <tr>
-            <td class="ar-mono">{{ a.userName }}</td>
-            <td class="num">{{ a.conversationsHandled | number: '1.0-0' }}</td>
-            <td class="num">{{ a.messagesSent | number: '1.0-0' }}</td>
-            <td class="num">{{ minutes(a.medianFirstResponseMinutes) }}</td>
-            <td class="num">{{ a.enquiriesCreated }}</td>
-          </tr>
-        }
-        @if (agents().length === 0) {
-          <tr>
-            <td colspan="5" class="muted">No agent activity in this range.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+    <ejs-grid
+      arGrid="agent-performance"
+      [arGridPageSize]="10"
+      [dataSource]="agentRows()"
+      aria-label="Agent performance"
+    >
+      <e-columns>
+        <e-column field="userName" headerText="Agent" width="180">
+          <ng-template #template let-a>
+            <a
+              class="an__link ar-mono"
+              routerLink="/inbox"
+              [queryParams]="{ assignee: a.userId, name: a.userName }"
+              [title]="'Open ' + a.userName + '\'s conversations'"
+              >{{ a.userName }}</a
+            >
+          </ng-template>
+        </e-column>
+        <e-column
+          field="conversations"
+          headerText="Conversations"
+          type="number"
+          textAlign="Right"
+          format="N0"
+        />
+        <e-column
+          field="messages"
+          headerText="Messages"
+          type="number"
+          textAlign="Right"
+          format="N0"
+        />
+        <e-column
+          field="firstReply"
+          headerText="Median first reply"
+          type="number"
+          textAlign="Right"
+        >
+          <ng-template #template let-a>{{ minutes(a.firstReply) }}</ng-template>
+        </e-column>
+        <e-column
+          field="enquiries"
+          headerText="Enquiries"
+          type="number"
+          textAlign="Right"
+          format="N0"
+        />
+      </e-columns>
+      <ng-template #emptyRecordTemplate>No agent activity in this period.</ng-template>
+    </ejs-grid>
   </section>
 
   <section class="card">
     <div class="card__hrow">
-      <h2 class="card__h">Enquiry conversion</h2>
+      <h2 class="card__h">Enquiry conversion <span class="card__scope">· all channels</span></h2>
       <div class="seg">
-        <button
-          type="button"
-          [class.seg--on]="conversion().dimension === 'source'"
-          (click)="setConversionDimension('source')"
-        >
-          By source
-        </button>
-        <button
-          type="button"
-          [class.seg--on]="conversion().dimension === 'owner'"
-          (click)="setConversionDimension('owner')"
-        >
-          By owner
-        </button>
-        <button
-          type="button"
-          [class.seg--on]="conversion().dimension === 'stage'"
-          (click)="setConversionDimension('stage')"
-        >
-          By stage
-        </button>
-        <button
-          type="button"
-          [class.seg--on]="conversion().dimension === 'pipeline'"
-          (click)="setConversionDimension('pipeline')"
-        >
-          By pipeline
-        </button>
+        @for (d of dimensions; track d.value) {
+          <button
+            type="button"
+            [class.seg--on]="conversion().dimension === d.value"
+            (click)="setConversionDimension(d.value)"
+          >
+            {{ d.label }}
+          </button>
+        }
       </div>
       @if (pipelines().length > 1) {
         <select
@@ -227,35 +255,53 @@
         </select>
       }
     </div>
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th>{{ dimensionLabel(conversion().dimension) }}</th>
-          <th class="num">Won</th>
-          <th class="num">Lost</th>
-          <th class="num">Open</th>
-          <th class="num">Win rate</th>
-          <th class="num">Won value</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of conversion().rows ?? []; track r.key) {
-          <tr>
-            <td>{{ r.label }}</td>
-            <td class="num">{{ r.won }}</td>
-            <td class="num">{{ r.lost }}</td>
-            <td class="num">{{ r.open }}</td>
-            <td class="num">{{ pct(r.winRate ?? 0) }}</td>
-            <td class="num ar-mono">{{ inr(r.wonValueInPaise ?? 0) }}</td>
-          </tr>
-        }
-        @if ((conversion().rows ?? []).length === 0) {
-          <tr>
-            <td colspan="6" class="muted">No closed enquiries in this range.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+    <p class="card__sub">Click a number to see the enquiries behind it.</p>
+    <ejs-grid
+      arGrid="enquiry-conversion"
+      [arGridPageSize]="10"
+      [dataSource]="conversionRows()"
+      aria-label="Enquiry conversion"
+    >
+      <e-columns>
+        <e-column field="label" [headerText]="dimensionLabel(conversion().dimension)" width="180" />
+        <e-column field="won" headerText="Won" type="number" textAlign="Right">
+          <ng-template #template let-r>
+            <button type="button" class="an__drill" [disabled]="!r.won" (click)="drill(r, 'won')">
+              {{ r.won }}
+            </button>
+          </ng-template>
+        </e-column>
+        <e-column field="lost" headerText="Lost" type="number" textAlign="Right">
+          <ng-template #template let-r>
+            <button type="button" class="an__drill" [disabled]="!r.lost" (click)="drill(r, 'lost')">
+              {{ r.lost }}
+            </button>
+          </ng-template>
+        </e-column>
+        <e-column field="open" headerText="Open" type="number" textAlign="Right">
+          <ng-template #template let-r>
+            <button type="button" class="an__drill" [disabled]="!r.open" (click)="drill(r, 'open')">
+              {{ r.open }}
+            </button>
+          </ng-template>
+        </e-column>
+        <e-column
+          field="winRate"
+          headerText="Win rate"
+          type="number"
+          textAlign="Right"
+          format="P1"
+        />
+        <e-column
+          field="wonValue"
+          headerText="Won value (₹)"
+          type="number"
+          textAlign="Right"
+          format="N0"
+        />
+      </e-columns>
+      <ng-template #emptyRecordTemplate>No enquiries opened or closed in this period.</ng-template>
+    </ejs-grid>
 
     @if (lostReasons().length > 0) {
       <p class="card__sub">Why deals were lost</p>
@@ -297,3 +343,62 @@
     </section>
   }
 </div>
+
+@if (drilling(); as d) {
+  <ar-dialog
+    [title]="d.title"
+    width="min(760px, calc(100vw - 32px))"
+    (dismiss)="drilling.set(null)"
+  >
+    <p class="an__drill-sub">
+      {{ period.label() }} · {{ d.rows.length }} enquir{{ d.rows.length === 1 ? 'y' : 'ies'
+      }}{{ d.rows.length >= 200 ? ' (the most recent 200)' : '' }}
+    </p>
+    @if (d.loading) {
+      <p class="card__empty">Loading…</p>
+    } @else {
+      <ejs-grid
+        arGrid="conversion-enquiries"
+        [arGridPageSize]="10"
+        [dataSource]="d.rows"
+        aria-label="Enquiries behind this figure"
+      >
+        <e-columns>
+          <e-column field="reference" headerText="Enquiry" width="200">
+            <ng-template #template let-e>
+              <a class="an__link" routerLink="/enquiries" [queryParams]="{ open: e.id }">{{
+                e.reference
+              }}</a>
+              @if (e.title) {
+                <span class="an__drill-title">{{ e.title }}</span>
+              }
+            </ng-template>
+          </e-column>
+          <e-column field="contact" headerText="Customer" width="170">
+            <ng-template #template let-e>
+              {{ e.contact }}
+              @if (e.company) {
+                <span class="an__drill-title">{{ e.company }}</span>
+              }
+            </ng-template>
+          </e-column>
+          <e-column field="outcomeText" headerText="Outcome" width="150" />
+          <e-column
+            field="value"
+            headerText="Value (₹)"
+            type="number"
+            textAlign="Right"
+            format="N0"
+            width="110"
+          />
+          <e-column field="owner" headerText="Owner" width="110" />
+          <e-column field="when" headerText="Date" width="100" />
+        </e-columns>
+        <ng-template #emptyRecordTemplate>Nothing here.</ng-template>
+      </ejs-grid>
+    }
+    <div dialogActions>
+      <button ar-button variant="ghost" (click)="drilling.set(null)">Close</button>
+    </div>
+  </ar-dialog>
+}

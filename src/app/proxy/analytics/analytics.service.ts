@@ -1,6 +1,11 @@
 import { AnalyticsExportFormat } from './analytics-export-format.enum';
 import type {
   AdAttributionDto,
+  AnalyticsNarrativeDto,
+  AnalyticsSummaryDto,
+  CampaignResultsDto,
+  ConversionEnquiryDto,
+  GetConversionEnquiriesInput,
   AgentPerformanceDto,
   CategoryBreakdownDto,
   ConversionReportDto,
@@ -45,6 +50,57 @@ export class AnalyticsService {
         method: 'GET',
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/analytics/ad-attribution',
+        params: { fromUtc: input.fromUtc, toUtc: input.toUtc, channelId: input.channelId },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getConversionEnquiries = (input: GetConversionEnquiriesInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ListResultDto<ConversionEnquiryDto>>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/analytics/conversion-enquiries',
+        params: {
+          dimension: input.dimension,
+          key: input.key,
+          outcome: input.outcome,
+          pipelineId: input.pipelineId,
+          fromUtc: input.fromUtc,
+          toUtc: input.toUtc,
+        },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getNarrative = (input: GetAnalyticsInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, AnalyticsNarrativeDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/analytics/narrative',
+        params: { fromUtc: input.fromUtc, toUtc: input.toUtc, channelId: input.channelId },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getSummary = (input: GetAnalyticsInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, AnalyticsSummaryDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/analytics/summary',
+        params: { fromUtc: input.fromUtc, toUtc: input.toUtc, channelId: input.channelId },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getCampaignResults = (input: GetAnalyticsInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CampaignResultsDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/analytics/campaign-results',
         params: { fromUtc: input.fromUtc, toUtc: input.toUtc, channelId: input.channelId },
       },
       { apiName: this.apiName, ...config },

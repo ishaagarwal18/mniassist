@@ -4,7 +4,9 @@ import { firstValueFrom, forkJoin, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
+  AnalyticsSummaryDto,
   AnalyticsExportFormat,
+  KpiUnit,
   AnalyticsService as AnalyticsApi,
   ConversionReportDto,
   MarketingLiteComparisonDto,
@@ -22,8 +24,10 @@ import {
   TrendPoint,
 } from '../models/analytics.model';
 import { ChannelService } from './channel.service';
+import { ReportPeriodStore } from './report-period.store';
 import { ToastService } from '../ui/toast.service';
 import { settled } from '../util/resource';
+import { isPlanRefusal } from '../http/api-feedback';
 
 const PRICING: Record<ApiPricingCategory, PricingCategory> = {
   [ApiPricingCategory.Unknown]: 'unknown',
@@ -48,9 +52,6 @@ const TEMPLATE_QUALITY: Record<ApiTemplateQuality, TemplatePerformance['quality'
   [ApiTemplateQuality.Low]: 'low',
 };
 
-/** Range presets, in days back from now. */
-export type AnalyticsRange = 7 | 30 | 90;
-
 interface Bundle {
   trend: TrendPoint[];
   categories: CategoryBreakdown[];
@@ -60,12 +61,104 @@ interface Bundle {
 
 export type ConversionDimension = 'source' | 'owner' | 'stage' | 'pipeline';
 
+const SEED_SUMMARY: AnalyticsSummaryDto = {
+  fromUtc: '',
+  toUtc: '',
+  previousFromUtc: '',
+  previousToUtc: '',
+  kpis: [
+    {
+      key: 'messages',
+      label: 'Messages',
+      unit: KpiUnit.Count,
+      current: 6230,
+      previous: 5480,
+      higherIsBetter: true,
+      scope: 'channel',
+    },
+    {
+      key: 'spend',
+      label: 'Spend',
+      unit: KpiUnit.Rupees,
+      current: 22_54_158,
+      previous: 19_80_000,
+      higherIsBetter: null,
+      scope: 'channel',
+    },
+    {
+      key: 'free',
+      label: 'Free of charge',
+      unit: KpiUnit.Count,
+      current: 2140,
+      previous: 1900,
+      higherIsBetter: true,
+      scope: 'channel',
+    },
+    {
+      key: 'delivery_rate',
+      label: 'Delivered',
+      unit: KpiUnit.Rate,
+      current: 0.968,
+      previous: 0.951,
+      higherIsBetter: true,
+      scope: 'channel',
+    },
+    {
+      key: 'first_reply',
+      label: 'Median first reply',
+      unit: KpiUnit.Minutes,
+      current: 11,
+      previous: 16,
+      higherIsBetter: false,
+      scope: 'channel',
+    },
+    {
+      key: 'new_enquiries',
+      label: 'New enquiries',
+      unit: KpiUnit.Count,
+      current: 48,
+      previous: 41,
+      higherIsBetter: true,
+      scope: 'workspace',
+    },
+    {
+      key: 'won',
+      label: 'Deals won',
+      unit: KpiUnit.Count,
+      current: 24,
+      previous: 19,
+      higherIsBetter: true,
+      scope: 'workspace',
+    },
+    {
+      key: 'won_value',
+      label: 'Won value',
+      unit: KpiUnit.Rupees,
+      current: 4_27_00_000,
+      previous: 3_60_00_000,
+      higherIsBetter: true,
+      scope: 'workspace',
+    },
+    {
+      key: 'win_rate',
+      label: 'Win rate',
+      unit: KpiUnit.Rate,
+      current: 0.571,
+      previous: 0.528,
+      higherIsBetter: true,
+      scope: 'workspace',
+    },
+  ],
+};
+
+const EMPTY_TABLES: Omit<Bundle, 'trend'> = { categories: [], templates: [], agents: [] };
+
 const SEED_CONVERSION: ConversionReportDto = {
   dimension: 'source',
   rows: [
     {
       key: 'Exhibition',
-      label: 'Exhibition',
+      label: 'Exhibition / stall',
       won: 9,
       lost: 6,
       open: 4,
@@ -83,7 +176,7 @@ const SEED_CONVERSION: ConversionReportDto = {
     },
     {
       key: 'ClickToWhatsApp',
-      label: 'ClickToWhatsApp',
+      label: 'Click-to-WhatsApp ad',
       won: 4,
       lost: 3,
       open: 2,
@@ -101,10 +194,10 @@ const SEED_CONVERSION: ConversionReportDto = {
     },
   ],
   lostReasonBreakdown: {
-    PriceTooHigh: 7,
-    LostToCompetitor: 5,
-    NoBudget: 4,
-    ProjectCancelledOrDeferred: 2,
+    'Price too high': 7,
+    'Lost to competitor': 5,
+    'No budget': 4,
+    'Project cancelled / deferred': 2,
   },
 };
 
@@ -215,31 +308,43 @@ export class AnalyticsStore {
   private readonly api = inject(AnalyticsApi);
   private readonly channels = inject(ChannelService);
 
-  readonly range = signal<AnalyticsRange>(30);
+  private readonly period = inject(ReportPeriodStore);
 
-  private readonly resource = rxResource({
-    params: () =>
-      environment.useMockData
-        ? undefined
-        : {
-            fromUtc: new Date(Date.now() - this.range() * 86_400_000).toISOString(),
-            channelId: this.channels.active()?.id,
-          },
+  private params() {
+    return environment.useMockData
+      ? undefined
+      : { ...this.period.range(), channelId: this.channels.active()?.id };
+  }
+
+  /** The daily trend is in every plan; it loads on its own so a plan without full
+   *  analytics still gets its chart. */
+  private readonly trendResource = rxResource({
+    params: () => this.params(),
     stream: ({ params }) =>
-      forkJoin({
-        trend: this.api.getVolumeTrend(params),
-        categories: this.api.getCategoryBreakdown(params),
-        templates: this.api.getTemplatePerformance(params),
-        agents: this.api.getAgentPerformance(params),
-      }).pipe(
-        map((r): Bundle => ({
-          trend: (r.trend.items ?? []).map((t) => ({
+      this.api.getVolumeTrend(params).pipe(
+        map((r) =>
+          (r.items ?? []).map((t) => ({
             date: t.date ?? '',
             marketing: t.marketing ?? 0,
             utility: t.utility ?? 0,
             service: t.service ?? 0,
             spendInPaise: t.spendInPaise ?? 0,
           })),
+        ),
+      ),
+    defaultValue: SEED.trend,
+  });
+
+  /** The tables need the full-analytics plan feature. */
+  private readonly resource = rxResource({
+    params: () => this.params(),
+    stream: ({ params }) =>
+      forkJoin({
+        categories: this.api.getCategoryBreakdown(params),
+        templates: this.api.getTemplatePerformance(params),
+        agents: this.api.getAgentPerformance(params),
+      }).pipe(
+        map((r): Omit<Bundle, 'trend'> => ({
           categories: (r.categories.items ?? []).map((c) => ({
             category:
               c.category != null ? PRICING[c.category] : PRICING[ApiPricingCategory.Unknown],
@@ -276,15 +381,25 @@ export class AnalyticsStore {
     defaultValue: SEED,
   });
 
-  readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
+  readonly loading = computed(
+    () => !environment.useMockData && (this.resource.isLoading() || this.trendResource.isLoading()),
+  );
+
+  /** The workspace's plan leaves out full analytics: the tables answer 403 with
+   *  PlanFeatureNotIncluded, quietly, so the page says why they are empty. */
+  readonly notInPlan = computed(
+    () => !environment.useMockData && isPlanRefusal(this.resource.error()),
+  );
+
   /** A failed request (a 403 without the permission, say) reads as no data: Angular's
    *  resource.value() throws once a request has failed, which would freeze the screen. */
   private readonly data = computed<Bundle>(() =>
     environment.useMockData
       ? SEED
-      : this.resource.hasValue()
-        ? settled(this.resource, SEED)
-        : { trend: [], categories: [], templates: [], agents: [] },
+      : {
+          trend: this.trendResource.hasValue() ? settled(this.trendResource, []) : [],
+          ...(this.resource.hasValue() ? settled(this.resource, EMPTY_TABLES) : EMPTY_TABLES),
+        },
   );
 
   readonly trend = computed(() => this.data().trend);
@@ -301,9 +416,18 @@ export class AnalyticsStore {
     };
   });
 
-  setRange(days: AnalyticsRange): void {
-    this.range.set(days);
-  }
+  // ── Headline figures against the period before ─────────────────────────
+  private readonly summaryResource = rxResource({
+    params: () => this.params(),
+    stream: ({ params }) => this.api.getSummary(params),
+  });
+
+  /** Null until the first answer, and after a failure (shown as a toast). */
+  readonly summary = computed<AnalyticsSummaryDto | null>(() => {
+    if (environment.useMockData) return SEED_SUMMARY;
+    if (this.summaryResource.error() || !this.summaryResource.hasValue()) return null;
+    return this.summaryResource.value() ?? null;
+  });
 
   // ── Conversion report (M10-8) ──────────────────────────────────────────
   readonly conversionDimension = signal<ConversionDimension>('source');
@@ -317,8 +441,9 @@ export class AnalyticsStore {
         : {
             dimension: this.conversionDimension(),
             pipelineId: this.conversionPipelineId(),
-            fromUtc: new Date(Date.now() - this.range() * 86_400_000).toISOString(),
-            channelId: this.channels.active()?.id,
+            // Conversion is a pipeline report and covers every channel: many
+            // enquiries (exhibition, import, dealer) never touched a WhatsApp number.
+            ...this.period.range(),
           },
     stream: ({ params }) => this.api.getConversionReport(params),
     defaultValue: SEED_CONVERSION,
@@ -342,13 +467,7 @@ export class AnalyticsStore {
 
   // ── MM Lite comparison (M05-11) ────────────────────────────────────────
   private readonly mmLiteResource = rxResource({
-    params: () =>
-      environment.useMockData
-        ? undefined
-        : {
-            fromUtc: new Date(Date.now() - this.range() * 86_400_000).toISOString(),
-            channelId: this.channels.active()?.id,
-          },
+    params: () => this.params(),
     stream: ({ params }) => this.api.getMarketingLiteComparison(params),
     defaultValue: SEED_MM_LITE,
   });
@@ -368,24 +487,19 @@ export class AnalyticsStore {
       return;
     }
     const blob = await firstValueFrom(
-      this.api.export(
-        {
-          fromUtc: new Date(Date.now() - this.range() * 86_400_000).toISOString(),
-          channelId: this.channels.active()?.id,
-        },
-        format,
-      ),
+      this.api.export({ ...this.period.range(), channelId: this.channels.active()?.id }, format),
     );
     const ext =
       format === AnalyticsExportFormat.Excel
-        ? 'xls'
+        ? 'xlsx'
         : format === AnalyticsExportFormat.Pdf
           ? 'pdf'
           : 'csv';
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `analytics-${this.range()}d.${ext}`;
+    const { from, to } = this.period.dates();
+    a.download = `analytics-${from}-to-${to}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
   }

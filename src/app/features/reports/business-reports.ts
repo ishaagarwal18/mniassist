@@ -19,13 +19,14 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
 
 import { isPlanRefusal } from '../../core/http/api-feedback';
+import { ReportPeriodStore, UtcRange, changeOf } from '../../core/services/report-period.store';
+import { ArPeriodPicker } from '../../ui/period-picker';
 import { chartColours } from '../../core/ui/chart-colours';
 import { inr, inrCompact } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { BusinessReportService, PaymentReportDto, StockReportDto } from '../../proxy/reports';
 import { ArBanner, ArCard, ArChip, ArStatTile, ArTabs } from '../../ui';
 import { ArGrid } from '../../ui/grid';
-import { ArSelect } from '../../ui/select';
 
 const TABS = ['Stock', 'Payments'] as const;
 type Tab = (typeof TABS)[number];
@@ -47,7 +48,7 @@ type Tab = (typeof TABS)[number];
     ArCard,
     ArChip,
     ArStatTile,
-    ArSelect,
+    ArPeriodPicker,
     ArGrid,
     GridModule,
     ChartModule,
@@ -57,18 +58,10 @@ type Tab = (typeof TABS)[number];
   template: `
     <ar-topbar
       title="Business reports"
-      [subtitle]="rangeLabel()"
+      [subtitle]="period.label()"
       help="Stock and money in one place: stock value, turnover and idle parts; collections, payment speed and what customers owe."
     >
-      <select
-        class="ar-field__input br__range"
-        aria-label="Period"
-        (change)="days.set(+$any($event.target).value)"
-      >
-        @for (d of ranges; track d.days) {
-          <option [value]="d.days" [selected]="d.days === days()">{{ d.label }}</option>
-        }
-      </select>
+      <ar-period-picker />
     </ar-topbar>
 
     <div class="br ar-scroll">
@@ -92,12 +85,19 @@ type Tab = (typeof TABS)[number];
             <ar-stat-tile
               label="Issued (at cost)"
               [value]="money(s.issuedValueInPaise)"
-              note="sent out to customers and jobs"
+              [note]="
+                vs(s.issuedValueInPaise, stockPrev()?.issuedValueInPaise, true)?.text ??
+                'sent out to customers and jobs'
+              "
+              [tone]="vsTone(s.issuedValueInPaise, stockPrev()?.issuedValueInPaise, true)"
             />
             <ar-stat-tile
               label="Received (at cost)"
               [value]="money(s.receivedValueInPaise)"
-              note="bought in or opened"
+              [note]="
+                vs(s.receivedValueInPaise, stockPrev()?.receivedValueInPaise, null)?.text ??
+                'bought in or opened'
+              "
             />
             <ar-stat-tile
               label="Turnover"
@@ -311,8 +311,11 @@ type Tab = (typeof TABS)[number];
             <ar-stat-tile
               label="Collected"
               [value]="money(p.collectedInPaise)"
-              [note]="(p.linksPaid ?? 0) + ' payment links paid'"
-              tone="good"
+              [note]="
+                vs(p.collectedInPaise, paymentsPrev()?.collectedInPaise, true)?.text ??
+                (p.linksPaid ?? 0) + ' payment links paid'
+              "
+              [tone]="vsTone(p.collectedInPaise, paymentsPrev()?.collectedInPaise, true, 'good')"
             />
             <ar-stat-tile
               label="Links paid"
@@ -327,6 +330,14 @@ type Tab = (typeof TABS)[number];
               "
               [tone]="(p.conversionRate ?? 1) < 0.5 ? 'amber' : 'neutral'"
             />
+            @if (vs(p.conversionRate, paymentsPrev()?.conversionRate, true, true); as c) {
+              <ar-stat-tile
+                label="Links paid, change"
+                [value]="c.text"
+                [note]="period.previousLabel()"
+                [tone]="c.good == null ? 'neutral' : c.good ? 'good' : 'bad'"
+              />
+            }
             <ar-stat-tile
               label="Time to pay"
               [value]="hours(p.medianHoursToPay)"
@@ -538,10 +549,6 @@ type Tab = (typeof TABS)[number];
     .br ar-card {
       display: block;
     }
-    .br__range {
-      width: auto;
-      min-width: 150px;
-    }
     .br__tiles {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -658,16 +665,13 @@ export class ArBusinessReports {
 
   protected readonly tabs = TABS;
   protected readonly tab = signal<Tab>('Stock');
-  protected readonly ranges = [
-    { days: 30, label: 'Last 30 days' },
-    { days: 90, label: 'Last 90 days' },
-    { days: 180, label: 'Last 6 months' },
-    { days: 365, label: 'Last 12 months' },
-  ];
-  protected readonly days = signal(90);
+  protected readonly period = inject(ReportPeriodStore);
 
   protected readonly stock = signal<StockReportDto | null>(null);
   protected readonly payments = signal<PaymentReportDto | null>(null);
+  /** The same reports for the period before, when comparing. */
+  protected readonly stockPrev = signal<StockReportDto | null>(null);
+  protected readonly paymentsPrev = signal<PaymentReportDto | null>(null);
   protected readonly loading = signal(false);
   protected readonly stockNotInPlan = signal(false);
 
@@ -691,23 +695,35 @@ export class ArBusinessReports {
     // Load the tab on show for the period chosen; each tab loads once per period.
     effect(() => {
       const tab = this.tab();
-      const days = this.days();
-      untracked(() => void this.load(tab, days));
+      const range = this.period.range();
+      const previous = this.period.compare() ? this.period.previousRange() : null;
+      untracked(() => void this.load(tab, range, previous));
     });
   }
 
-  private loadedFor: Record<Tab, number | null> = { Stock: null, Payments: null };
+  private loadedFor: Record<Tab, string | null> = { Stock: null, Payments: null };
 
-  private async load(tab: Tab, days: number): Promise<void> {
-    if (this.loadedFor[tab] === days) return;
-    const toUtc = new Date();
-    const fromUtc = new Date(toUtc.getTime() - days * 86_400_000);
-    const range = { fromUtc: fromUtc.toISOString(), toUtc: toUtc.toISOString() };
+  private async load(tab: Tab, range: UtcRange, previous: UtcRange | null): Promise<void> {
+    const key = JSON.stringify([range, previous]);
+    if (this.loadedFor[tab] === key) return;
     this.loading.set(true);
     try {
-      if (tab === 'Stock') this.stock.set(await firstValueFrom(this.api.getStock(range)));
-      else this.payments.set(await firstValueFrom(this.api.getPayments(range)));
-      this.loadedFor[tab] = days;
+      if (tab === 'Stock') {
+        const [now, before] = await Promise.all([
+          firstValueFrom(this.api.getStock(range)),
+          previous ? firstValueFrom(this.api.getStock(previous)) : Promise.resolve(null),
+        ]);
+        this.stock.set(now);
+        this.stockPrev.set(before);
+      } else {
+        const [now, before] = await Promise.all([
+          firstValueFrom(this.api.getPayments(range)),
+          previous ? firstValueFrom(this.api.getPayments(previous)) : Promise.resolve(null),
+        ]);
+        this.payments.set(now);
+        this.paymentsPrev.set(before);
+      }
+      this.loadedFor[tab] = key;
     } catch (e: unknown) {
       // Most reasons are shown as a toast; a missing add-on gets its own note.
       if (tab === 'Stock') this.stockNotInPlan.set(isPlanRefusal(e));
@@ -716,9 +732,29 @@ export class ArBusinessReports {
     }
   }
 
-  protected readonly rangeLabel = computed(
-    () => this.ranges.find((r) => r.days === this.days())?.label ?? '',
-  );
+  /** "+12% vs 2 Aug – 31 Aug 2026" against the period before; null when not comparing or nothing to compare. */
+  protected vs(
+    current: number | null | undefined,
+    previous: number | null | undefined,
+    higherIsBetter: boolean | null,
+    rate = false,
+  ): { text: string; good: boolean | null } | null {
+    if (!this.period.compare()) return null;
+    const c = changeOf(current, previous, { rate, higherIsBetter });
+    return c
+      ? { text: rate ? c.text : `${c.text} ${this.period.previousLabel()}`, good: c.good }
+      : null;
+  }
+
+  protected vsTone(
+    current: number | null | undefined,
+    previous: number | null | undefined,
+    higherIsBetter: boolean | null,
+    fallback: 'good' | 'neutral' = 'neutral',
+  ): 'good' | 'bad' | 'neutral' {
+    const c = this.vs(current, previous, higherIsBetter);
+    return c?.good == null ? fallback : c.good ? 'good' : 'bad';
+  }
 
   private monthLabel(iso?: string): string {
     return iso

@@ -161,6 +161,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/analytics/analytics').then((m) => m.ArAnalytics),
       },
       {
+        path: 'analytics/campaigns',
+        title: 'Campaign results · MNI Assist',
+        loadComponent: () =>
+          import('./features/analytics/campaign-results').then((m) => m.ArCampaignResults),
+      },
+      {
+        path: 'analytics/ads',
+        title: 'Ad attribution · MNI Assist',
+        loadComponent: () =>
+          import('./features/analytics/ad-attribution').then((m) => m.ArAdAttribution),
+      },
+      {
         path: 'analytics/dashboards',
         title: 'Custom dashboards · MNI Assist',
         loadComponent: () =>
@@ -215,6 +227,11 @@ export const routes: Routes = [
       },
       {
         path: 'reports',
+        title: 'Reports · MNI Assist',
+        loadComponent: () => import('./features/reports/reports-hub').then((m) => m.ArReportsHub),
+      },
+      {
+        path: 'reports/business',
         title: 'Business reports · MNI Assist',
         loadComponent: () =>
           import('./features/reports/business-reports').then((m) => m.ArBusinessReports),

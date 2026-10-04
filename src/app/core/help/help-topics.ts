@@ -385,6 +385,16 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     ],
   },
   reports: {
+    benefits: [
+      'Every report in one place, grouped by the question it answers.',
+      'Only the reports you have access to are listed.',
+    ],
+    steps: [
+      'Pick the report that answers your question.',
+      'Choose a period at its top; the same period carries over to the other reports.',
+    ],
+  },
+  'reports/business': {
     summary:
       'The owner’s view of stock and money: what stock is worth, how it turns over and which parts carry the business; what customers owe, how old it is and how fast payment links get paid.',
     benefits: [
@@ -548,9 +558,39 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Export for meetings and management reports.',
     ],
     steps: [
-      'Choose a date range.',
+      'Choose a period at the top. Leave Compare on to see each figure against the period just before.',
       'Switch between By stage, By source, By owner and By pipeline.',
       'Export as CSV, Excel or PDF.',
+    ],
+    tips: [
+      'The period you pick is shared by every report screen, so it follows you from page to page.',
+      'Days are counted in India Standard Time, so a message sent at 1 a.m. counts on that day.',
+    ],
+  },
+  'analytics/campaigns': {
+    benefits: [
+      'See what each campaign brought in, not just how many messages were delivered.',
+      'Compare campaigns on reply rate, enquiries and cost per enquiry.',
+      'Know which campaigns to repeat and which to stop.',
+    ],
+    steps: [
+      'Choose a period at the top.',
+      'Read the funnel from Sent to Won to see where people drop off.',
+      'Sort the table by Enquiries or Cost / enquiry; click a campaign to open it.',
+    ],
+    tips: [
+      'An enquiry is credited to a campaign when the recipient opened it within 14 days of the campaign message.',
+    ],
+  },
+  'analytics/ads': {
+    benefits: [
+      'See which Click-to-WhatsApp ads start conversations that turn into enquiries and orders.',
+      'Set each ad against its cost in Meta Ads Manager to see what an enquiry really costs.',
+    ],
+    steps: [
+      'Choose a period at the top.',
+      'Sort by Enquiries or Won value to find the ads worth more budget.',
+      'Click an ad to open it on Facebook or Instagram.',
     ],
   },
   'analytics/dashboards': {

@@ -65,3 +65,25 @@
   display: flex;
   gap: 6px;
 }
+
+.rr__note {
+  margin: 4px 0 0;
+  font: 400 11.5px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+.rr__note--warn {
+  color: var(--ar-amber-600);
+}
+.rep__hint {
+  margin: -4px 0 8px;
+  font: 400 11.5px/1.5 var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+.rep__preview {
+  display: block;
+  width: 100%;
+  height: min(70vh, 640px);
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-control);
+  background: #f4f5f7;
+}

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
@@ -14,6 +15,7 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 
 const KINDS = [
   { value: ScheduledReportKind.ExecutiveSummary, label: 'Executive summary' },
@@ -67,6 +69,13 @@ const BLANK: Draft = {
 export class ArScheduledReports {
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(ScheduledReportService);
+  private readonly toasts = inject(ToastService);
+  private readonly sanitizer = inject(DomSanitizer);
+
+  /** The report being sent right now, so its button shows progress. */
+  protected readonly sending = signal<string | null>(null);
+  /** The preview open in the dialog: the server's own escaped HTML, shown in a sandboxed frame. */
+  protected readonly previewing = signal<{ subject: string; html: SafeHtml } | null>(null);
 
   protected readonly kinds = KINDS;
   protected readonly cadences = CADENCES;
@@ -177,8 +186,31 @@ export class ArScheduledReports {
 
   protected async runNow(r: ScheduledReportDto): Promise<void> {
     if (!r.id) return;
-    await firstValueFrom(this.api.runNow(r.id));
-    this.tick.update((n) => n + 1);
+    this.sending.set(r.id);
+    try {
+      const after = await firstValueFrom(this.api.runNow(r.id));
+      // Success already toasts; a channel that did not go out is worth its own warning.
+      if (after.lastRunNote && this.isProblem(after.lastRunNote)) {
+        this.toasts.warning(after.lastRunNote, r.name ?? 'Report');
+      }
+      this.tick.update((n) => n + 1);
+    } finally {
+      this.sending.set(null);
+    }
+  }
+
+  protected async preview(r: ScheduledReportDto): Promise<void> {
+    if (!r.id) return;
+    const p = await firstValueFrom(this.api.preview(r.id));
+    this.previewing.set({
+      subject: p.subject,
+      html: this.sanitizer.bypassSecurityTrustHtml(p.html),
+    });
+  }
+
+  /** A run note that says something did not go out. */
+  protected isProblem(note: string): boolean {
+    return /not sent|failed|refused|could not|nobody/i.test(note);
   }
 
   protected async remove(r: ScheduledReportDto): Promise<void> {

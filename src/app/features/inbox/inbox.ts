@@ -1,3 +1,4 @@
+import { ActivatedRoute } from '@angular/router';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -383,7 +384,16 @@ export class ArInbox {
     return !!t && smsVariablesComplete(t, this.smsValues());
   });
 
+  /** The agent filter, when the inbox was opened for one agent's conversations. */
+  protected readonly assignee = this.inbox.assignee;
+
   constructor() {
+    // /inbox?assignee={userId}&name={userName}: one agent's queue, from Analytics' agent table.
+    const query = inject(ActivatedRoute).snapshot.queryParamMap;
+    const assigneeId = query.get('assignee');
+    if (assigneeId)
+      this.inbox.assignee.set({ id: assigneeId, name: query.get('name') ?? 'one agent' });
+
     // Templates are fetched the first time an SMS conversation is opened, not for every inbox visit.
     effect(() => {
       if (!this.selected()?.sms || this.smsTemplatesLoaded || environment.useMockData) return;

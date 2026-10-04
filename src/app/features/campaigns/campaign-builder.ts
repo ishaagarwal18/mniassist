@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import {
   Campaign,
@@ -77,6 +86,17 @@ export class ArCampaignBuilder {
   }
 
   protected readonly openId = signal<string | null>(null);
+
+  /** A link can open one campaign straight away: /campaigns?open={id} (Campaign results uses it). */
+  private pendingOpen: string | null = inject(ActivatedRoute).snapshot.queryParamMap.get('open');
+  private readonly openFromLink = effect(() => {
+    const id = this.pendingOpen;
+    const match = id ? this.campaigns().find((c) => c.id === id) : undefined;
+    if (!match) return;
+    this.pendingOpen = null;
+    untracked(() => void this.toggle(match));
+  });
+
   protected readonly preflight = signal<Preflight | null>(null);
   protected readonly report = signal<Report | null>(null);
   protected readonly busy = signal(false);

@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { ChannelService } from '../../core/services/channel.service';
 import { DashboardStore } from '../../core/services/dashboard.service';
 import { CampaignStore } from '../../core/services/campaign.service';
+import { CurrentUserService } from '../../core/services/current-user.service';
 import { count, inr, inrCompact, pct } from '../../core/util/format';
 import { TIER_LIMIT } from '../../core/models/channel.model';
 import { ArTopbar } from '../../layout/topbar';
@@ -44,6 +45,8 @@ export class ArDashboard {
   private readonly campaignStore = inject(CampaignStore);
 
   protected readonly channel = this.channels.active;
+  /** The signed-in workspace; empty for a host user, who belongs to none. */
+  protected readonly workspaceName = inject(CurrentUserService).tenantName;
 
   protected readonly volume = this.dashboard.volume;
   protected readonly inbox = this.dashboard.inbox;
