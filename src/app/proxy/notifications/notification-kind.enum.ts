@@ -29,6 +29,10 @@ export enum NotificationKind {
   AgencySessionStarted = 25,
   LeadAssigned = 26,
   LeadsUnassigned = 27,
+  SubscriptionChanged = 44,
+  TrialEnded = 45,
+  SubscriptionExpired = 46,
+  PlatformAccessStarted = 47,
 }
 
 export const notificationKindOptions = mapEnumToOptions(NotificationKind);

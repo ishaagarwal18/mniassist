@@ -168,6 +168,58 @@ export class OpsService {
       route: '/settings/integrations',
       emailState: 'sent',
     },
+    {
+      id: 'n-8',
+      kind: 'SubscriptionChanged',
+      tone: 'info',
+      title: 'Your plan has been upgraded to Growth',
+      body:
+        'The workspace is now on the Growth plan. New limits and features are active immediately. ' +
+        'Your next invoice will reflect the prorated difference.',
+      occurredAt: OpsService.daysAgo(5),
+      read: true,
+      route: '/billing',
+      emailState: 'sent',
+    },
+    {
+      id: 'n-9',
+      kind: 'TrialEnded',
+      tone: 'warning',
+      title: 'Your 14-day trial has ended',
+      body:
+        'Choose a plan to keep your campaigns, contacts and conversation history. ' +
+        'Without a plan, sending is paused but nothing is deleted for 30 days.',
+      occurredAt: OpsService.daysAgo(6),
+      read: false,
+      route: '/billing',
+      emailState: 'sent',
+    },
+    {
+      id: 'n-10',
+      kind: 'SubscriptionExpired',
+      tone: 'critical',
+      title: 'Your subscription has expired — sending is paused',
+      body:
+        'All outbound messages, campaigns and automations have been paused. ' +
+        'Renew or upgrade your plan in Billing to resume.',
+      occurredAt: OpsService.daysAgo(7),
+      read: false,
+      route: '/billing',
+      emailState: 'sent',
+    },
+    {
+      id: 'n-11',
+      kind: 'PlatformAccessStarted',
+      tone: 'info',
+      title: 'Platform access has been activated for your workspace',
+      body:
+        'An administrator has granted this workspace access to the MNI Assist platform. ' +
+        'All plan features are now available.',
+      occurredAt: OpsService.daysAgo(8),
+      read: true,
+      route: '/settings',
+      emailState: 'sent',
+    },
   ];
 
   private readonly invoiceSeed: readonly Invoice[] = [
