@@ -10,6 +10,7 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArCard, ArChip, ArDialog } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { ConfirmService } from '../../core/ui/confirm.service';
+import { ArUserSecurityDialog } from './user-security-dialog';
 
 const SEED: IdentityUserDto[] = [
   {
@@ -34,7 +35,17 @@ interface Row extends IdentityUserDto {
  */
 @Component({
   selector: 'ar-admin-users',
-  imports: [ArTopbar, ArCard, ArButton, ArChip, ArBanner, ArDialog, ArGrid, GridModule],
+  imports: [
+    ArTopbar,
+    ArCard,
+    ArButton,
+    ArChip,
+    ArBanner,
+    ArDialog,
+    ArGrid,
+    GridModule,
+    ArUserSecurityDialog,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -82,7 +93,7 @@ interface Row extends IdentityUserDto {
               </e-column>
               <e-column
                 headerText="Actions"
-                width="150"
+                width="210"
                 textAlign="Right"
                 [allowSorting]="false"
                 [allowFiltering]="false"
@@ -91,6 +102,9 @@ interface Row extends IdentityUserDto {
                 <ng-template #template let-u>
                   <span class="ta-actions">
                     <button type="button" class="link" (click)="openEdit(u.user)">Edit</button>
+                    <button type="button" class="link" (click)="security.set(u.user)">
+                      Security
+                    </button>
                     <button type="button" class="link link--danger" (click)="remove(u.user)">
                       Delete
                     </button>
@@ -103,6 +117,14 @@ interface Row extends IdentityUserDto {
         </ar-card>
       </div>
     </div>
+
+    @if (security(); as su) {
+      <ar-user-security-dialog
+        [userId]="su.id"
+        [userName]="su.userName"
+        (closed)="security.set(null)"
+      />
+    }
 
     @if (dialog(); as mode) {
       <ar-dialog
@@ -322,6 +344,8 @@ export class ArAdminUsers {
   protected readonly busy = signal(false);
 
   protected readonly dialog = signal<'create' | 'edit' | null>(null);
+  /** The user whose security dialog is open. */
+  protected readonly security = signal<Row | null>(null);
   private readonly editingId = signal<string | null>(null);
   protected readonly fUserName = signal('');
   protected readonly fName = signal('');

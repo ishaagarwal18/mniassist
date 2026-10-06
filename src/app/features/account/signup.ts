@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -8,6 +15,7 @@ import { TenantSignupService } from '../../proxy/registration';
 import { ArButton } from '../../ui';
 import { ArBrand } from '../../layout/brand';
 import { planByKey, planKey, priceLabel } from '../landing/landing-plans';
+import { ArCaptcha } from '../../ui/captcha';
 
 /**
  * Anonymous "create your workspace" screen. Creates the tenant + its admin, then
@@ -17,7 +25,7 @@ import { planByKey, planKey, priceLabel } from '../landing/landing-plans';
  */
 @Component({
   selector: 'ar-signup',
-  imports: [ArButton, RouterLink, ArBrand],
+  imports: [ArButton, RouterLink, ArBrand, ArCaptcha],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="lg">
@@ -90,6 +98,12 @@ import { planByKey, planKey, priceLabel } from '../landing/landing-plans';
               (input)="password.set($any($event.target).value)"
             />
           </label>
+
+          <ar-captcha
+            #captcha
+            (required)="captchaRequired.set($event)"
+            (token)="captchaToken.set($event)"
+          />
 
           <button ar-button type="submit" variant="primary" [disabled]="busy() || !canSubmit()">
             {{ busy() ? 'Creating…' : 'Create workspace' }}
@@ -235,11 +249,17 @@ export class ArSignup {
   protected readonly done = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  /** Until the API says otherwise, assume a check is needed: a fast click must not skip it. */
+  protected readonly captchaRequired = signal(true);
+  protected readonly captchaToken = signal<string | null>(null);
+  private readonly captcha = viewChild<ArCaptcha>('captcha');
+
   protected readonly canSubmit = computed(
     () =>
       /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])$/.test(this.workspace().trim().toLowerCase()) &&
       this.email().trim().length > 0 &&
-      this.password().length >= 6,
+      this.password().length >= 6 &&
+      (!this.captchaRequired() || !!this.captchaToken()),
   );
 
   constructor() {
@@ -261,6 +281,7 @@ export class ArSignup {
           adminEmailAddress: this.email().trim(),
           adminPassword: this.password(),
           adminDisplayName: this.fullName().trim() || undefined,
+          captchaToken: this.captchaToken(),
         }),
       );
       this.done.set(true);
@@ -273,6 +294,8 @@ export class ArSignup {
       }
     } catch (e) {
       this.error.set(readApiError(e, 'Could not create the workspace.'));
+      // A token is single-use; the next attempt needs a new one.
+      this.captcha()?.reset();
       this.done.set(false);
       this.busy.set(false);
     }

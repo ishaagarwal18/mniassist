@@ -18,6 +18,22 @@ export interface ResetPasswordInput {
   newPassword: string;
 }
 
+export interface SendEmailConfirmationInput {
+  workspace?: string | null;
+  email: string;
+}
+
+export interface ConfirmEmailInput {
+  tenantId?: string | null;
+  userId: string;
+  token: string;
+}
+
+export interface EmailConfirmationStatusDto {
+  email?: string | null;
+  emailConfirmed: boolean;
+}
+
 export interface ResetPasswordResultDto {
   succeeded: boolean;
   /** `invalid_token` or `password_rejected`; null on success. */
@@ -52,6 +68,34 @@ export class AccountRecoveryService {
   resetPassword = (input: ResetPasswordInput, config?: Partial<Rest.Config>) =>
     this.restService.request<ResetPasswordInput, ResetPasswordResultDto>(
       { method: 'POST', url: '/api/auto-reach/account-recovery/reset-password', body: input },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  sendEmailConfirmation = (input: SendEmailConfirmationInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<SendEmailConfirmationInput, void>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/account-recovery/send-email-confirmation',
+        body: input,
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  sendMyEmailConfirmation = (config?: Partial<Rest.Config>) =>
+    this.restService.request<void, void>(
+      { method: 'POST', url: '/api/auto-reach/account-recovery/send-my-email-confirmation' },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  getMyEmailStatus = (config?: Partial<Rest.Config>) =>
+    this.restService.request<void, EmailConfirmationStatusDto>(
+      { method: 'GET', url: '/api/auto-reach/account-recovery/my-email-status' },
+      { apiName: this.apiName, ...config },
+    );
+
+  confirmEmail = (input: ConfirmEmailInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<ConfirmEmailInput, ResetPasswordResultDto>(
+      { method: 'POST', url: '/api/auto-reach/account-recovery/confirm-email', body: input },
       { apiName: this.apiName, skipHandleError: true, ...config },
     );
 }

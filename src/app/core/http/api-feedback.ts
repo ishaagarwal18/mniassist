@@ -7,6 +7,21 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 /** API calls that change nothing, or that a screen already reports in its own way. */
 const QUIET_ACTIONS = new Set([
+  // two-step sign-in and devices: the screens say exactly what happened, in their own words.
+  // An "entity/action" pair quiets one endpoint where the action name alone is shared.
+  'start-authenticator-setup',
+  'enable-authenticator',
+  'regenerate-recovery-codes',
+  'reset-for-user',
+  'two-factor/disable',
+  'text-template/restore-default',
+  'send-email-confirmation',
+  'send-my-email-confirmation',
+  'confirm-email',
+  'user-security-admin/lock',
+  'user-security-admin/unlock',
+  'user-security-admin/set-password',
+  'end-current',
   // reads, previews and calculations sent as POST
   'dry-run',
   'inspect',
@@ -205,7 +220,9 @@ export function successFor(method: string, url: string): { title: string; conten
   if (parts.length === 0) return null;
   const entity = parts[0];
   const action = parts.length > 1 ? parts[parts.length - 1] : null;
-  if (action && QUIET_ACTIONS.has(action)) return null;
+  if (action && (QUIET_ACTIONS.has(action) || QUIET_ACTIONS.has(`${entity}/${action}`))) {
+    return null;
+  }
   if (!action && QUIET_ACTIONS.has(entity)) return null;
 
   const title = humanise(entity);
@@ -237,9 +254,24 @@ export function isPlanRefusal(err: unknown): boolean {
   return body?.error?.code === 'AutoReach:PlanFeatureNotIncluded';
 }
 
-export function isQuietFailure(method: string, err: HttpErrorResponse): boolean {
+/**
+ * Endpoints whose failures the screen shows in place, so a toast would say it twice — the
+ * email template preview re-renders as someone types, and a half-typed tag is not news.
+ */
+const QUIET_FAILURE_PATHS = ['/text-template/'];
+const QUIET_FAILURE_ACTIONS = new Set(['preview']);
+
+export function isQuietFailure(method: string, err: HttpErrorResponse, url = ''): boolean {
   const code = ((err.error ?? {}) as { error?: { code?: string } }).error?.code;
-  return method.toUpperCase() === 'GET' && !!code && QUIET_READ_CODES.has(code);
+  if (method.toUpperCase() === 'GET' && !!code && QUIET_READ_CODES.has(code)) return true;
+  let path = '';
+  try {
+    path = new URL(url, 'http://x').pathname;
+  } catch {
+    return false;
+  }
+  const action = path.split('/').filter(Boolean).pop() ?? '';
+  return QUIET_FAILURE_ACTIONS.has(action) && QUIET_FAILURE_PATHS.some((p) => path.includes(p));
 }
 
 /** The error toast for a failed call: what the server said, in the user's words where it gave them. */

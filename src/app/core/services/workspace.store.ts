@@ -4,6 +4,7 @@ import { firstValueFrom, forkJoin, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { WorkspaceMemberService } from '../../proxy/identity';
+import { TwoFactorService } from '../../proxy/identity/two-factor.service';
 import { InvitationState } from '../../proxy/identity/invitation-state.enum';
 import { settled } from '../util/resource';
 
@@ -17,6 +18,7 @@ export interface Member {
   readonly teamNames: readonly string[];
   readonly openConversationCount: number;
   readonly sessionsRevokedAt?: string;
+  readonly twoFactorEnabled?: boolean;
 }
 
 export interface Invitation {
@@ -123,6 +125,7 @@ const SEED_INVITES: readonly Invitation[] = [
 @Injectable({ providedIn: 'root' })
 export class WorkspaceStore {
   private readonly api = inject(WorkspaceMemberService);
+  private readonly twoFactor = inject(TwoFactorService);
 
   private readonly reloadTick = signal(0);
 
@@ -151,6 +154,7 @@ export class WorkspaceStore {
             teamNames: m.teamNames ?? [],
             openConversationCount: m.openConversationCount ?? 0,
             sessionsRevokedAt: m.lastSessionRevokedAtUtc ?? undefined,
+            twoFactorEnabled: m.twoFactorEnabled ?? false,
           })),
           invitations: [...(r.pending.items ?? []), ...(r.closed.items ?? [])].map(
             (i): Invitation => ({
@@ -230,6 +234,14 @@ export class WorkspaceStore {
   async reactivate(userId: string): Promise<void> {
     if (!environment.useMockData) {
       await firstValueFrom(this.api.reactivate(userId));
+      this.reload();
+    }
+  }
+
+  /** Turns off a member's two-step sign-in, for the lost-phone case. */
+  async resetTwoFactor(userId: string): Promise<void> {
+    if (!environment.useMockData) {
+      await firstValueFrom(this.twoFactor.resetForUser(userId));
       this.reload();
     }
   }
