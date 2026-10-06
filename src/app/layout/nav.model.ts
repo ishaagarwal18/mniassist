@@ -236,6 +236,24 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Members',
       },
       {
+        label: 'Sign-in rules',
+        icon: 'shield',
+        route: '/settings/security-policy',
+        permission: 'AutoReach.SecurityPolicy',
+      },
+      {
+        label: 'Email templates',
+        icon: 'mail',
+        route: '/settings/email-templates',
+        permission: 'AutoReach.TextTemplates',
+      },
+      {
+        label: 'Audit log',
+        icon: 'clock',
+        route: '/admin/audit-logs',
+        permission: 'AutoReach.AuditLogs',
+      },
+      {
         label: 'Workspaces',
         icon: 'globe',
         route: '/admin/tenants',

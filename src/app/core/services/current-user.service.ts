@@ -1,17 +1,29 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, Injector, computed, inject, signal } from '@angular/core';
+import { HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
   AbpTenantService,
   AuthService,
   ConfigStateService,
+  PIPE_TO_LOGIN_FN_KEY,
   SessionStateService,
+  TENANT_KEY,
 } from '@abp/ng.core';
-import { firstValueFrom, of } from 'rxjs';
+import { OAuthService } from 'angular-oauth2-oidc';
+import { catchError, firstValueFrom, of } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { ProfileDto, ProfileService, UpdateProfileDto } from '../../proxy/account';
+import { SessionService } from '../../proxy/identity/session.service';
 import { initials } from '../util/format';
+import {
+  SecondFactor,
+  TwoFactorRequiredError,
+  isTwoFactorChallenge,
+  secondFactorParameters,
+} from '../auth/two-factor';
+import { passwordChangeParameters, signInChallenge } from '../auth/sign-in-challenge';
 
 const MOCK = environment.useMockData;
 /** Mock mode has no auth server, so "signed in" is this local flag. Absent = signed out. */
@@ -65,9 +77,11 @@ export class CurrentUserService {
   private readonly auth = inject(AuthService);
   private readonly config = inject(ConfigStateService);
   private readonly api = inject(ProfileService);
+  private readonly sessions = inject(SessionService);
   private readonly router = inject(Router);
   private readonly tenants = inject(AbpTenantService);
   private readonly session = inject(SessionStateService);
+  private readonly injector = inject(Injector);
 
   /** Multi-tenancy is on outside mock mode — the login form offers a workspace field. */
   readonly tenancyEnabled = !MOCK;
@@ -199,7 +213,73 @@ export class CurrentUserService {
       return;
     }
     await this.selectTenant(tenant);
-    await firstValueFrom(this.auth.login({ username, password, rememberMe, redirectUrl: '/home' }));
+    try {
+      await firstValueFrom(
+        this.auth.login({ username, password, rememberMe, redirectUrl: '/home' }),
+      );
+    } catch (e) {
+      if (isTwoFactorChallenge(e)) throw new TwoFactorRequiredError();
+      throw signInChallenge(e) ?? e;
+    }
+  }
+
+  /**
+   * The second half of a two-factor sign-in: the same password grant again, with the
+   * authenticator code or a recovery code. Runs ABP's own after-login steps (app
+   * configuration, remember-me, redirect) exactly as `signIn` does. The workspace was
+   * already chosen by the first attempt.
+   */
+  async completeTwoFactorSignIn(
+    username: string,
+    password: string,
+    rememberMe: boolean,
+    proof: SecondFactor,
+  ): Promise<void> {
+    await this.completeSignIn(username, password, rememberMe, secondFactorParameters(proof));
+  }
+
+  /**
+   * The second half of a sign-in that needed a new password first: the same grant again
+   * with the server's one-time token and the new password. ABP changes the password and
+   * signs in in one step.
+   */
+  async completeSignInWithNewPassword(
+    username: string,
+    password: string,
+    rememberMe: boolean,
+    changePasswordToken: string,
+    newPassword: string,
+  ): Promise<void> {
+    await this.completeSignIn(
+      username,
+      password,
+      rememberMe,
+      passwordChangeParameters(changePasswordToken, newPassword),
+    );
+  }
+
+  /** Repeats the password grant with extra parameters, then ABP's usual after-login steps. */
+  private async completeSignIn(
+    username: string,
+    password: string,
+    rememberMe: boolean,
+    extra: Record<string, string>,
+  ): Promise<void> {
+    if (MOCK) {
+      await this.signIn(username, password, rememberMe);
+      return;
+    }
+    const tenant = this.session.getTenant();
+    const headers = new HttpHeaders(
+      tenant?.id ? { [this.injector.get(TENANT_KEY)]: tenant.id } : {},
+    );
+    await this.injector
+      .get(OAuthService)
+      .fetchTokenUsingGrant('password', { username, password, ...extra }, headers);
+    const afterLogin = this.injector.get(PIPE_TO_LOGIN_FN_KEY);
+    await firstValueFrom(
+      of(null).pipe(afterLogin({ rememberMe, redirectUrl: '/home' }, this.injector)),
+    );
   }
 
   logout(): void {
@@ -215,6 +295,16 @@ export class CurrentUserService {
       void this.router.navigateByUrl('/login');
       return;
     }
+    // End this device's session on the server first, so it leaves the device list and
+    // its tokens stop working even if a copy of them survives. Best effort: a failure
+    // here must never keep someone signed in.
+    this.sessions
+      .endCurrent({ skipHandleError: true })
+      .pipe(catchError(() => of(undefined)))
+      .subscribe(() => this.finishLogout());
+  }
+
+  private finishLogout(): void {
     this.auth.logout().subscribe({
       complete: () => {
         this.session.setTenant(null);

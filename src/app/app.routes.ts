@@ -34,6 +34,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/account/reset-password').then((m) => m.ArResetPassword),
   },
   {
+    path: 'confirm-email',
+    title: 'Confirm your email · MNI Assist',
+    loadComponent: () => import('./features/account/confirm-email').then((m) => m.ArConfirmEmail),
+  },
+  {
     // The customer's signing page: no login, no app shell. The link is the credential.
     path: 'sign/:token',
     title: 'Review and sign · MNI Assist',
@@ -429,6 +434,23 @@ export const routes: Routes = [
         path: 'admin/roles',
         title: 'Roles & permissions · MNI Assist',
         loadComponent: () => import('./features/admin/roles').then((m) => m.ArAdminRoles),
+      },
+      {
+        path: 'settings/security-policy',
+        title: 'Sign-in and password rules · MNI Assist',
+        loadComponent: () =>
+          import('./features/settings/security-policy').then((m) => m.ArSecurityPolicy),
+      },
+      {
+        path: 'settings/email-templates',
+        title: 'Email templates · MNI Assist',
+        loadComponent: () =>
+          import('./features/settings/email-templates').then((m) => m.ArEmailTemplates),
+      },
+      {
+        path: 'admin/audit-logs',
+        title: 'Audit log · MNI Assist',
+        loadComponent: () => import('./features/admin/audit-logs').then((m) => m.ArAdminAuditLogs),
       },
       {
         path: 'settings/reports',

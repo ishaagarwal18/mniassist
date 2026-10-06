@@ -38,7 +38,7 @@ export class ApiFeedbackInterceptor implements HttpInterceptor {
           }
         },
         error: (err: unknown) => {
-          if (err instanceof HttpErrorResponse && !isQuietFailure(req.method, err)) {
+          if (err instanceof HttpErrorResponse && !isQuietFailure(req.method, err, req.url)) {
             const e = errorFor(err);
             this.toasts.error(e.content, e.title);
           }

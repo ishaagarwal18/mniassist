@@ -896,6 +896,54 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Save, then assign the role to users.',
     ],
   },
+  'settings/security-policy': {
+    benefits: [
+      'Stronger passwords and fewer guessed accounts across the workspace.',
+      'Lock accounts after repeated wrong passwords, automatically.',
+    ],
+    steps: [
+      'Set the minimum length and which kinds of characters a password needs.',
+      'Choose how many wrong attempts lock an account, and for how long.',
+      'Optionally ask for a new password every so many days.',
+      'Turn on email confirmation once your team has confirmed their addresses.',
+    ],
+    tips: [
+      'New rules apply to the next password set or sign-in; existing passwords keep working.',
+      'An administrator can unlock someone early from Users → Security.',
+    ],
+  },
+  'settings/email-templates': {
+    benefits: [
+      'Invitations, password resets and quotation emails in your own words.',
+      'See exactly how each email will look before you save it.',
+    ],
+    steps: [
+      'Pick an email on the left.',
+      'Edit the subject and body. Click a variable to insert it where the cursor is.',
+      'Watch the preview, which fills in sample values, then Save.',
+      'Restore default puts the original wording back at any time.',
+    ],
+    tips: [
+      'Keep | html.escape on names and anything else a person typed.',
+      'The layout is the frame every email sits in; {{ content }} is where each email goes.',
+    ],
+  },
+  'admin/audit-logs': {
+    benefits: [
+      'See who changed what, and when, across the workspace.',
+      'Find the request behind an error a teammate reports.',
+    ],
+    steps: [
+      'Pick a time window at the top.',
+      'On Requests, filter by user, URL, method or status, or tick Errors only, then Apply.',
+      'Click a row to see the call, its result, any error and what it changed.',
+      'On Changes, open an entry and choose Full history to see every change to that record.',
+    ],
+    tips: [
+      'Passwords, API keys and other credentials are masked.',
+      'Field-level history is kept for users, roles and workspaces.',
+    ],
+  },
   'admin/tenants': {
     benefits: [
       'See and manage every customer workspace on this installation.',

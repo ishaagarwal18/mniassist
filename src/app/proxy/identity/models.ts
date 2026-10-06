@@ -151,6 +151,7 @@ export interface WorkspaceMemberDto {
   teamNames?: string[];
   openConversationCount?: number;
   lastSessionRevokedAtUtc?: string | null;
+  twoFactorEnabled?: boolean;
 }
 
 // --- SSO (SsoController; the schematics did not emit these because the
@@ -196,4 +197,88 @@ export interface UserSessionDto {
   signedInUtc?: string;
   lastAccessedUtc?: string | null;
   isCurrent?: boolean;
+}
+
+export interface TwoFactorStatusDto {
+  isEnabled: boolean;
+  recoveryCodesLeft: number;
+  hasPassword: boolean;
+}
+
+export interface AuthenticatorSetupDto {
+  sharedKey: string;
+  authenticatorUri: string;
+}
+
+export interface VerifyTwoFactorCodeInput {
+  code: string;
+}
+
+export interface DisableTwoFactorInput {
+  password?: string;
+  code?: string;
+}
+
+export interface RecoveryCodesDto {
+  codes: string[];
+}
+
+export interface GetSecurityLogsInput {
+  skipCount?: number;
+  maxResultCount?: number;
+  startTime?: string;
+  endTime?: string;
+  action?: string;
+  userName?: string;
+  clientIpAddress?: string;
+}
+
+export interface SecurityLogDto {
+  id: string;
+  creationTime: string;
+  action?: string | null;
+  identity?: string | null;
+  userName?: string | null;
+  clientIpAddress?: string | null;
+  browserInfo?: string | null;
+  clientId?: string | null;
+}
+
+export interface UpdateSecurityPolicyDto {
+  passwordRequiredLength: number;
+  passwordRequiredUniqueChars: number;
+  passwordRequireDigit: boolean;
+  passwordRequireLowercase: boolean;
+  passwordRequireUppercase: boolean;
+  passwordRequireNonAlphanumeric: boolean;
+  forcePeriodicPasswordChange: boolean;
+  passwordChangePeriodDays: number;
+  lockoutAllowedForNewUsers: boolean;
+  lockoutMaxFailedAttempts: number;
+  lockoutDurationMinutes: number;
+  requireConfirmedEmail: boolean;
+}
+
+export interface SecurityPolicyDto extends UpdateSecurityPolicyDto {
+  unconfirmedEmailUsers: number;
+}
+
+export interface LockUserInput {
+  until?: string | null;
+}
+
+export interface AdminSetPasswordInput {
+  newPassword: string;
+  mustChangeOnNextSignIn: boolean;
+}
+
+export interface UserSecurityStatusDto {
+  userId: string;
+  isLockedOut: boolean;
+  lockedOutUntil?: string | null;
+  failedSignInAttempts: number;
+  emailConfirmed: boolean;
+  twoFactorEnabled: boolean;
+  mustChangePasswordOnNextSignIn: boolean;
+  lastPasswordChangeTime?: string | null;
 }

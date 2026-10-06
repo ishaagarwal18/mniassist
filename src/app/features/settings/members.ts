@@ -1,9 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { firstValueFrom } from 'rxjs';
 
 import { Member, WORKSPACE_ROLES, WorkspaceStore } from '../../core/services/workspace.store';
 import { ArTopbar } from '../../layout/topbar';
-import { ArBanner, ArButton, ArChip } from '../../ui';
+import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
+import { SessionService } from '../../proxy/identity/session.service';
+import type { UserSessionDto } from '../../proxy/identity/models';
+import { environment } from '../../../environments/environment';
+import { readApiError } from '../../core/util/api-error';
+import { ArHasPermissionDirective } from '../../core/auth/permission';
 import { ArGrid } from '../../ui/grid';
 import { ArSelect } from '../../ui/select';
 import { ConfirmService } from '../../core/ui/confirm.service';
@@ -20,7 +26,17 @@ import { ToastService } from '../../core/ui/toast.service';
  */
 @Component({
   selector: 'ar-members',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArSelect, ArGrid, GridModule],
+  imports: [
+    ArTopbar,
+    ArBanner,
+    ArButton,
+    ArChip,
+    ArSelect,
+    ArGrid,
+    GridModule,
+    ArHasPermissionDirective,
+    ArDialog,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './members.html',
   styleUrl: './members.scss',
@@ -82,6 +98,7 @@ export class ArMembers {
       teams: m.teamNames.length ? m.teamNames.join(', ') : '—',
       open: m.openConversationCount,
       sessionsEnded: this.when(m.sessionsRevokedAt),
+      twoStep: m.twoFactorEnabled ? 'On' : 'Off',
     };
   }
 
@@ -191,6 +208,77 @@ export class ArMembers {
     ) {
       await this.store.reactivate(member.userId);
     }
+  }
+
+  protected async resetTwoFactor(member: Member): Promise<void> {
+    const who = member.name ?? member.userName;
+    if (
+      await this.dialogs.confirm({
+        title: `Turn off two-step verification for ${who}?`,
+        message:
+          'Do this only when you are sure it is them — usually they have lost their phone and their recovery codes. They sign in with just their password and can set it up again.',
+        confirmText: 'Turn off',
+      })
+    ) {
+      await this.store.resetTwoFactor(member.userId);
+      this.toasts.success(`Two-step verification turned off for ${who}.`);
+    }
+  }
+
+  // ---- A member's devices ----------------------------------------------
+
+  private readonly sessionApi = inject(SessionService);
+  protected readonly devicesOf = signal<Member | null>(null);
+  protected readonly devices = signal<UserSessionDto[] | null>(null);
+  protected readonly devicesError = signal<string | null>(null);
+
+  protected async openDevices(member: Member): Promise<void> {
+    this.devicesOf.set(member);
+    this.devices.set(null);
+    this.devicesError.set(null);
+    await this.loadDevices(member);
+  }
+
+  private async loadDevices(member: Member): Promise<void> {
+    try {
+      const r = environment.useMockData
+        ? { items: [] as UserSessionDto[] }
+        : await firstValueFrom(this.sessionApi.getUserSessions(member.userId));
+      if (this.devicesOf() === member) this.devices.set(r.items ?? []);
+    } catch (e) {
+      this.devicesError.set(readApiError(e));
+    }
+  }
+
+  protected async endDevice(member: Member, s: UserSessionDto): Promise<void> {
+    const confirmed = await this.dialogs.confirm({
+      title: 'Sign this device out?',
+      message: `${s.deviceInfo || s.device || 'This device'} has to sign in again. ${member.name ?? member.userName}'s other devices stay signed in.`,
+      confirmText: 'Sign out',
+    });
+    if (!confirmed) return;
+    try {
+      await firstValueFrom(this.sessionApi.revokeUserSession(member.userId, s.sessionId));
+      await this.loadDevices(member);
+    } catch (e) {
+      this.devicesError.set(readApiError(e));
+    }
+  }
+
+  protected async endAllDevices(member: Member): Promise<void> {
+    this.devicesOf.set(null);
+    await this.revokeSessions(member);
+  }
+
+  protected lastActive(s: UserSessionDto): string {
+    const iso = s.lastAccessedUtc ?? s.signedInUtc;
+    if (!iso) return 'unknown';
+    const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.round(hrs / 24)}d ago`;
   }
 
   protected async revokeSessions(member: Member): Promise<void> {

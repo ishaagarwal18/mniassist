@@ -9,6 +9,7 @@
     <p class="pf__empty">Loading…</p>
   } @else {
     <div class="pf__col">
+      <ar-email-confirmation-banner />
       <ar-card heading="Your details">
         @if (detailsError(); as e) {
           <ar-banner tone="bad">{{ e }}</ar-banner>

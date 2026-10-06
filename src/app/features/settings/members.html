@@ -105,6 +105,13 @@
             ><span class="mb__teams">{{ m.teams }}</span></ng-template
           >
         </e-column>
+        <e-column field="twoStep" headerText="2-step" width="100">
+          <ng-template #template let-m>
+            <ar-chip [tone]="m.member.twoFactorEnabled ? 'good' : 'neutral'">{{
+              m.twoStep
+            }}</ar-chip>
+          </ng-template>
+        </e-column>
         <e-column field="open" headerText="Open" type="number" textAlign="Right" width="90">
           <ng-template #template let-m
             ><span class="ar-mono">{{ m.open }}</span></ng-template
@@ -112,7 +119,7 @@
         </e-column>
         <e-column
           headerText="Actions"
-          width="190"
+          width="270"
           textAlign="Right"
           [allowSorting]="false"
           [allowFiltering]="false"
@@ -120,8 +127,23 @@
         >
           <ng-template #template let-m>
             <span class="mb__act">
-              <button type="button" class="link" (click)="revokeSessions(m.member)">
-                Sign out
+              @if (m.member.twoFactorEnabled) {
+                <button
+                  *arHasPermission="'AutoReach.Members.ResetTwoFactor'"
+                  type="button"
+                  class="link"
+                  (click)="resetTwoFactor(m.member)"
+                >
+                  Reset 2-step
+                </button>
+              }
+              <button
+                *arHasPermission="'AutoReach.Members.RevokeSessions'"
+                type="button"
+                class="link"
+                (click)="openDevices(m.member)"
+              >
+                Devices
               </button>
               <button type="button" class="link link--danger" (click)="deactivate(m.member)">
                 Deactivate
@@ -265,3 +287,48 @@
     }
   </section>
 </div>
+
+@if (devicesOf(); as m) {
+  <ar-dialog
+    [title]="'Devices · ' + (m.name ?? m.userName)"
+    width="min(560px, calc(100vw - 32px))"
+    (dismiss)="devicesOf.set(null)"
+  >
+    @if (devicesError(); as e) {
+      <ar-banner tone="bad">{{ e }}</ar-banner>
+    }
+    @if (devices(); as list) {
+      @if (list.length) {
+        <ul class="dv">
+          @for (s of list; track s.sessionId) {
+            <li class="dv__row">
+              <span class="dv__id">
+                <span class="dv__name">{{ s.deviceInfo || s.device || 'Unknown device' }}</span>
+                <span class="dv__meta">
+                  {{ s.ipAddresses || '—' }} · signed in {{ when(s.signedInUtc) }} · last active
+                  {{ lastActive(s) }}
+                </span>
+              </span>
+              <button type="button" class="link link--danger" (click)="endDevice(m, s)">
+                Sign out
+              </button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="dv__none">
+          No signed-in devices. Someone signed in before device tracking started appears after their
+          next token refresh.
+        </p>
+      }
+    } @else if (!devicesError()) {
+      <p class="dv__none">Loading…</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="danger" (click)="endAllDevices(m)">
+        Sign out everywhere
+      </button>
+      <button ar-button type="button" variant="ghost" (click)="devicesOf.set(null)">Close</button>
+    </div>
+  </ar-dialog>
+}

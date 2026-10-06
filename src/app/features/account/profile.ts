@@ -4,6 +4,7 @@ import { CurrentUserService } from '../../core/services/current-user.service';
 import { ArTopbar } from '../../layout/topbar';
 import { ArThemeToggle } from '../../layout/theme-toggle';
 import { ArBanner, ArButton, ArCard } from '../../ui';
+import { ArEmailConfirmationBanner } from './email-confirmation-banner';
 
 /**
  * The signed-in user's own profile — name, contact details and password. Backed by
@@ -11,7 +12,7 @@ import { ArBanner, ArButton, ArCard } from '../../ui';
  */
 @Component({
   selector: 'ar-profile',
-  imports: [ArTopbar, ArBanner, ArButton, ArCard, ArThemeToggle],
+  imports: [ArTopbar, ArBanner, ArButton, ArCard, ArThemeToggle, ArEmailConfirmationBanner],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './profile.html',
   styleUrl: './profile.scss',

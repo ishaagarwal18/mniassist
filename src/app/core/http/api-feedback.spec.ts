@@ -43,6 +43,13 @@ describe('successFor', () => {
     ).toBeNull();
     expect(successFor('POST', 'https://api.mniassist.com/connect/token')).toBeNull();
   });
+
+  it('can quiet one endpoint by entity and action without quieting the action everywhere', () => {
+    expect(successFor('POST', `${api}/two-factor/disable`)).toBeNull();
+    expect(successFor('POST', `${api}/two-factor/enable-authenticator`)).toBeNull();
+    expect(successFor('POST', `${api}/session/end-current`)).toBeNull();
+    expect(successFor('POST', `${api}/feature-flag/disable`)).not.toBeNull();
+  });
 });
 
 describe('errorFor', () => {
@@ -85,6 +92,16 @@ describe('errorFor', () => {
 describe('isQuietFailure', () => {
   const failure = (code: string) =>
     new HttpErrorResponse({ status: 403, error: { error: { code, message: 'x' } } });
+
+  it('keeps the email template preview quiet while someone types, and nothing else', () => {
+    const syntax = new HttpErrorResponse({
+      status: 403,
+      error: { error: { code: 'AutoReach:TextTemplateSyntaxError' } },
+    });
+    expect(isQuietFailure('POST', syntax, `${api}/text-template/Invitation/preview`)).toBe(true);
+    expect(isQuietFailure('PUT', syntax, `${api}/text-template/Invitation`)).toBe(false);
+    expect(isQuietFailure('POST', syntax, `${api}/campaign/${id}/preview`)).toBe(false);
+  });
 
   it('keeps background feature checks quiet on reads only', () => {
     expect(isQuietFailure('GET', failure('AutoReach:PlanFeatureNotIncluded'))).toBe(true);

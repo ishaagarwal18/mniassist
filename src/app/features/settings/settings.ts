@@ -8,6 +8,8 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ConfirmService } from '../../core/ui/confirm.service';
+import { ArTwoFactorCard } from './two-factor-card';
+import { ArSignInHistoryCard } from './sign-in-history-card';
 
 /**
  * The workspace's general settings. Today this is the single-sign-on panel — the one
@@ -16,7 +18,18 @@ import { ConfirmService } from '../../core/ui/confirm.service';
  */
 @Component({
   selector: 'ar-settings',
-  imports: [FormsModule, RouterLink, ArTopbar, ArButton, ArBanner, ArCard, ArChip, ArSelect],
+  imports: [
+    FormsModule,
+    RouterLink,
+    ArTopbar,
+    ArButton,
+    ArBanner,
+    ArCard,
+    ArChip,
+    ArSelect,
+    ArTwoFactorCard,
+    ArSignInHistoryCard,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './settings.html',
   styleUrl: './settings.scss',

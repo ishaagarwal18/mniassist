@@ -6,6 +6,8 @@ export interface TenantSignupDto {
   adminEmailAddress: string;
   adminPassword: string;
   adminDisplayName?: string;
+  /** The human-verification token, when the signup page shows a captcha. */
+  captchaToken?: string | null;
 }
 
 export interface TenantSignupResultDto {
