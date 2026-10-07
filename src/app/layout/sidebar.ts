@@ -18,6 +18,7 @@ import { InboxService } from '../core/services/inbox.service';
 import { CurrentUserService } from '../core/services/current-user.service';
 import { BrandingStore } from '../core/services/branding.store';
 import { ThemeService } from '../core/services/theme.service';
+import { PwaService } from '../core/services/pwa.service';
 import { grantedPolicy } from '../core/auth/permission';
 
 const COLLAPSED_KEY = 'ar.sidebar.collapsed';
@@ -128,6 +129,11 @@ function readCollapsed(): boolean {
             <ar-icon [name]="theme.theme() === 'dark' ? 'sun' : 'moon'" [size]="15" />
             {{ theme.theme() === 'dark' ? 'Light theme' : 'Dark theme' }}
           </button>
+          @if (pwa.canInstall()) {
+            <button class="sb__menu-item" type="button" role="menuitem" (click)="installApp($event)">
+              <ar-icon name="download" [size]="15" /> Install app
+            </button>
+          }
           <button class="sb__menu-item" type="button" role="menuitem" (click)="signOut()">
             <ar-icon name="link" [size]="15" /> Sign out
           </button>
@@ -158,6 +164,7 @@ export class ArSidebar {
   protected readonly account = inject(CurrentUserService);
   protected readonly branding = inject(BrandingStore);
   protected readonly theme = inject(ThemeService);
+  protected readonly pwa = inject(PwaService);
 
   protected readonly menuOpen = signal(false);
 
@@ -200,6 +207,12 @@ export class ArSidebar {
   protected toggleTheme(event: Event): void {
     event.stopPropagation();
     this.theme.toggle();
+  }
+
+  protected async installApp(event: Event): Promise<void> {
+    event.stopPropagation();
+    this.menuOpen.set(false);
+    await this.pwa.promptInstall();
   }
 
   protected toggleMenu(event: Event): void {

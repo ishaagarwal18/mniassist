@@ -912,17 +912,17 @@ export class ArField {
     void this.store.start().then(() => this.loadThumbs());
   }
 
-  /** The manifest and service worker, added only on this page so the rest of the app is untouched. */
+  /** The manifest and service worker: covered by root PWA sw.js, with fallback here if booted standalone. */
   private installable(): void {
     if (!this.doc.querySelector('link[rel="manifest"]')) {
       const link = this.doc.createElement('link');
       link.rel = 'manifest';
-      link.href = '/field.webmanifest';
+      link.href = '/manifest.webmanifest';
       this.doc.head.appendChild(link);
     }
     const secure = location.protocol === 'https:' || location.hostname === 'localhost';
-    if (secure && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/field-sw.js').catch(() => undefined);
+    if (secure && 'serviceWorker' in navigator && !navigator.serviceWorker.controller) {
+      navigator.serviceWorker.register('/sw.js').catch(() => undefined);
     }
   }
 

@@ -5,15 +5,38 @@ import { ArSoftphoneBar } from './softphone-bar';
 import { ArWhatsAppCallBar } from './whatsapp-call-bar';
 import { ArToastHost } from './toast-host';
 import { ArConfirmHost } from './confirm-host';
+import { ArIcon } from '../ui';
 import { AgencyActingStore } from '../core/services/agency-acting.store';
+import { PwaService } from '../core/services/pwa.service';
 
 @Component({
   selector: 'ar-app-shell',
-  imports: [RouterOutlet, ArSidebar, ArSoftphoneBar, ArWhatsAppCallBar, ArToastHost, ArConfirmHost],
+  imports: [
+    RouterOutlet,
+    ArSidebar,
+    ArSoftphoneBar,
+    ArWhatsAppCallBar,
+    ArToastHost,
+    ArConfirmHost,
+    ArIcon,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-sidebar />
     <main class="shell__main">
+      @if (!pwa.isOnline()) {
+        <div class="shell__banner shell__banner--offline" role="status">
+          <ar-icon name="alert" [size]="14" />
+          <span>You are currently offline. Running with cached data.</span>
+        </div>
+      }
+      @if (pwa.hasUpdate()) {
+        <div class="shell__banner shell__banner--update" role="status">
+          <ar-icon name="refresh" [size]="14" />
+          <span>A new version of MNI Assist is available.</span>
+          <button type="button" (click)="pwa.applyUpdate()">Update now</button>
+        </div>
+      }
       @if (acting.session(); as s) {
         <div class="shell__acting" role="status">
           <span>
@@ -80,10 +103,41 @@ import { AgencyActingStore } from '../core/services/agency-acting.store';
       padding: 3px 10px;
       cursor: pointer;
     }
+    .shell__banner {
+      flex: none;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 7px 16px;
+      font: 500 12.5px var(--ar-font-sans);
+    }
+    .shell__banner--offline {
+      background: var(--ar-surface-dark);
+      color: var(--ar-white);
+      border-bottom: 1px solid var(--ar-line-300);
+    }
+    .shell__banner--update {
+      background: var(--ar-ai-fill);
+      color: var(--ar-white);
+      justify-content: space-between;
+    }
+    .shell__banner--update button {
+      border: 1px solid var(--ar-white);
+      border-radius: var(--ar-radius-chip);
+      background: transparent;
+      color: var(--ar-white);
+      font: 600 11.5px var(--ar-font-sans);
+      padding: 3px 10px;
+      cursor: pointer;
+    }
+    .shell__banner--update button:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
   `,
 })
 export class ArAppShell {
   protected readonly acting = inject(AgencyActingStore);
+  protected readonly pwa = inject(PwaService);
 
   constructor() {
     void this.acting.refresh();

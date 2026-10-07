@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { routes } from '../../app.routes';
 import { HELP_TOPICS, helpTopicFor } from './help-topics';
 
-/** Every screen inside the app shell, by its declared path. */
+/** Every screen inside the app shell or declared at top-level. */
+const topPaths = routes.map((r) => r.path ?? '').filter((p) => p !== '' && p !== '**');
 const shellPaths = (routes.find((r) => r.path === '' && r.children)?.children ?? [])
   .map((r) => r.path ?? '')
   .filter((p) => p !== '' && p !== '**');
+const allDeclaredPaths = [...shellPaths, ...topPaths];
 
 describe('help topics', () => {
   it('finds the app shell screens', () => {
@@ -19,7 +21,7 @@ describe('help topics', () => {
   });
 
   it('keys every topic by a route that exists', () => {
-    const orphans = Object.keys(HELP_TOPICS).filter((k) => !shellPaths.includes(k));
+    const orphans = Object.keys(HELP_TOPICS).filter((k) => !allDeclaredPaths.includes(k));
     expect(orphans).toEqual([]);
   });
 
