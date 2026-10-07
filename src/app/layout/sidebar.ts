@@ -19,7 +19,8 @@ import { CurrentUserService } from '../core/services/current-user.service';
 import { BrandingStore } from '../core/services/branding.store';
 import { ThemeService } from '../core/services/theme.service';
 import { PwaService } from '../core/services/pwa.service';
-import { grantedPolicy } from '../core/auth/permission';
+import { PlanService } from '../core/services/plan.service';
+import { canAccessNavItem } from '../core/auth/permission';
 
 const COLLAPSED_KEY = 'ar.sidebar.collapsed';
 const FOLDED_KEY = 'ar.sidebar.foldedGroups';
@@ -75,7 +76,7 @@ function readCollapsed(): boolean {
     </div>
 
     <nav class="sb__nav" aria-label="Main">
-      @for (group of nav; track group.heading) {
+      @for (group of nav(); track group.heading) {
         @if (group.heading) {
           <!-- A heading folds its group away; the group holding this page stays open. -->
           <button
@@ -165,6 +166,7 @@ export class ArSidebar {
   protected readonly branding = inject(BrandingStore);
   protected readonly theme = inject(ThemeService);
   protected readonly pwa = inject(PwaService);
+  protected readonly plan = inject(PlanService);
 
   protected readonly menuOpen = signal(false);
 
@@ -232,13 +234,19 @@ export class ArSidebar {
     if (this.menuOpen()) this.menuOpen.set(false);
   }
 
-  /** NAV with items the current user cannot see, and the header's items, filtered out. */
-  protected readonly nav: readonly NavGroup[] = NAV.map((group) => ({
-    ...group,
-    items: group.items.filter(
-      (item) => !item.top && grantedPolicy(item.permission, this.permissions),
-    ),
-  })).filter((group) => group.items.length > 0);
+  /** NAV with items filtered reactively by role permissions, workspace plan, and features. */
+  protected readonly nav = computed<readonly NavGroup[]>(() => {
+    this.plan.plan();
+    this.plan.features();
+    this.account.isHost();
+
+    return NAV.map((group) => ({
+      ...group,
+      items: group.items.filter(
+        (item) => !item.top && canAccessNavItem(item, this.permissions, this.plan, this.account),
+      ),
+    })).filter((group) => group.items.length > 0);
+  });
 
   private readonly router = inject(Router);
   private readonly url = toSignal(
@@ -253,7 +261,7 @@ export class ArSidebar {
   protected readonly active = computed(() => {
     const path = (this.url() ?? '').split(/[?#;]/)[0];
     let best = '';
-    for (const group of this.nav) {
+    for (const group of this.nav()) {
       for (const { route } of group.items) {
         if ((path === route || path.startsWith(route + '/')) && route.length > best.length) {
           best = route;

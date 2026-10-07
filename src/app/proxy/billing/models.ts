@@ -28,6 +28,7 @@ export interface ChangePlanInput {
 }
 
 export interface PlanUsageDto {
+  plan?: SubscriptionPlan;
   channelLimit?: number;
   channelsUsed?: number;
   seatLimit?: number;

@@ -10,6 +10,9 @@ import {
 import { PermissionService } from '@abp/ng.core';
 
 import { environment } from '../../../environments/environment';
+import type { NavItem } from '../../layout/nav.model';
+import type { PlanService } from '../services/plan.service';
+import type { CurrentUserService } from '../services/current-user.service';
 
 /**
  * Reads a granted policy, with two escape hatches so the app never hides everything
@@ -40,6 +43,47 @@ export function grantedPolicy(
     return true;
   }
   return permissions.getGrantedPolicy(name);
+}
+
+/**
+ * Evaluates whether a navigation item or app menu should be displayed
+ * based on role permissions, active subscription plan, unlocked features,
+ * and host vs. tenant segregation.
+ */
+export function canAccessNavItem(
+  item: NavItem,
+  permissions: PermissionService,
+  planService: PlanService,
+  account: CurrentUserService,
+): boolean {
+  // 1. Host vs Tenant role segregation
+  const isHost = account.isHost();
+  if (isHost) {
+    if (item.tenantOnly) {
+      return false;
+    }
+  } else {
+    if (item.hostOnly) {
+      return false;
+    }
+  }
+
+  // 2. Permission check
+  if (item.permission && !grantedPolicy(item.permission, permissions)) {
+    return false;
+  }
+
+  // 3. Subscription Plan check
+  if (item.plan != null && !planService.hasPlan(item.plan)) {
+    return false;
+  }
+
+  // 4. Plan feature check
+  if (item.feature && !planService.hasFeature(item.feature)) {
+    return false;
+  }
+
+  return true;
 }
 
 /**

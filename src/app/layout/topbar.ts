@@ -14,6 +14,9 @@ import { helpTopicFor } from '../core/help/help-topics';
 import { grantedPolicy } from '../core/auth/permission';
 import { InboxService } from '../core/services/inbox.service';
 import { OpsService } from '../core/services/ops.service';
+import { PlanService } from '../core/services/plan.service';
+import { CurrentUserService } from '../core/services/current-user.service';
+import { canAccessNavItem } from '../core/auth/permission';
 import { NAV, NavItem } from './nav.model';
 import { ArThemeToggle } from './theme-toggle';
 
@@ -57,7 +60,7 @@ import { ArThemeToggle } from './theme-toggle';
           <ar-icon name="help" [size]="17" />
         </button>
       }
-      @for (item of tools; track item.route) {
+      @for (item of tools(); track item.route) {
         <a
           class="tb__tool"
           [routerLink]="item.route"
@@ -335,14 +338,20 @@ export class ArTopbar {
 
   private readonly inbox = inject(InboxService);
   private readonly ops = inject(OpsService);
+  private readonly permissions = inject(PermissionService);
+  private readonly plan = inject(PlanService);
+  private readonly account = inject(CurrentUserService);
 
   /** Inbox and Notifications, as icons beside the theme switch, for those allowed to see them. */
-  protected readonly tools: readonly NavItem[] = (() => {
-    const permissions = inject(PermissionService);
+  protected readonly tools = computed<readonly NavItem[]>(() => {
+    this.plan.plan();
+    this.plan.features();
+    this.account.isHost();
+
     return NAV.flatMap((g) => g.items).filter(
-      (i) => i.top && grantedPolicy(i.permission, permissions),
+      (i) => i.top && canAccessNavItem(i, this.permissions, this.plan, this.account),
     );
-  })();
+  });
 
   protected badgeFor(item: NavItem): number | null {
     if (item.badge === 'inbox') return this.inbox.unassignedCount() || null;
