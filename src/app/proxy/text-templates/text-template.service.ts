@@ -1,4 +1,5 @@
 import type {
+  CreateEmailTemplateInput,
   EmailTemplateDto,
   EmailTemplatePreviewDto,
   EmailTemplateSummaryDto,
@@ -35,6 +36,17 @@ export class TextTemplateService {
       { apiName: this.apiName, ...config },
     );
 
+  create = (input: CreateEmailTemplateInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, EmailTemplateDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/text-template',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
   update = (id: string, input: UpdateEmailTemplateInput, config?: Partial<Rest.Config>) =>
     this.restService.request<any, EmailTemplateDto>(
       {
@@ -52,6 +64,15 @@ export class TextTemplateService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/text-template/${id}/restore-default`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  delete = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, void>(
+      {
+        method: 'DELETE',
+        url: `/api/auto-reach/text-template/${id}`,
       },
       { apiName: this.apiName, ...config },
     );

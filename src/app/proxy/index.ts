@@ -7,6 +7,7 @@ import * as Channels from './channels';
 import * as Compliance from './compliance';
 import * as Contacts from './contacts';
 import * as Controllers from './controllers';
+import * as FeatureManagement from './feature-management';
 import * as Flows from './flows';
 import * as Identity from './identity';
 import * as Integrations from './integrations';
@@ -28,6 +29,7 @@ export {
   Compliance,
   Contacts,
   Controllers,
+  FeatureManagement,
   Flows,
   Identity,
   Integrations,
@@ -40,3 +42,4 @@ export {
   Platform,
   Volo,
 };
+

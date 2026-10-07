@@ -26,7 +26,7 @@ import type {
   EmailTemplateVariableDto,
 } from '../../proxy/text-templates/models';
 import { ArTopbar } from '../../layout/topbar';
-import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
+import { ArBanner, ArButton, ArCard, ArChip, ArDialog } from '../../ui';
 import { insertAt, variableSnippet } from './email-templates.logic';
 
 const PREVIEW_DELAY_MS = 600;
@@ -38,14 +38,26 @@ const PREVIEW_DELAY_MS = 600;
  */
 @Component({
   selector: 'ar-email-templates',
-  imports: [ArTopbar, ArCard, ArButton, ArChip, ArBanner],
+  imports: [ArTopbar, ArCard, ArButton, ArChip, ArBanner, ArDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
       title="Email templates"
       subtitle="The wording of invitations, password resets and quotation emails"
       help="Change what the platform's own emails say. The variables listed under each email, such as the workspace name, are filled in when it is sent. Keep the html.escape filter on anything a person typed, such as names. Restore default puts the original wording back."
-    />
+    >
+      @if (canEdit()) {
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          icon="plus"
+          (click)="openCreate()"
+        >
+          New template
+        </button>
+      }
+    </ar-topbar>
 
     <div class="et ar-scroll">
       <nav class="et__list" aria-label="Email templates">
@@ -58,7 +70,9 @@ const PREVIEW_DELAY_MS = 600;
           >
             <span class="et__item-name">{{ t.displayName }}</span>
             <span class="et__item-desc">{{ t.description }}</span>
-            @if (t.isCustomized) {
+            @if (isCustom(t.key)) {
+              <ar-chip tone="teal">Custom</ar-chip>
+            } @else if (t.isCustomized) {
               <ar-chip tone="teal">Customised</ar-chip>
             } @else if (t.usesHostWording) {
               <ar-chip tone="neutral">Platform wording</ar-chip>
@@ -142,7 +156,17 @@ const PREVIEW_DELAY_MS = 600;
                 >
                   Discard changes
                 </button>
-                @if (t.isCustomized) {
+                @if (isCustom(t.key)) {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="busy()"
+                    (click)="deleteCustom()"
+                  >
+                    Delete template
+                  </button>
+                } @else if (t.isCustomized) {
                   <button
                     ar-button
                     type="button"
@@ -180,6 +204,80 @@ const PREVIEW_DELAY_MS = 600;
         }
       </div>
     </div>
+
+    @if (createDialog()) {
+      <ar-dialog title="New email template" (dismiss)="createDialog.set(false)">
+        @if (createError(); as e) {
+          <ar-banner tone="bad">{{ e }}</ar-banner>
+        }
+        <label class="fld">
+          <span class="fld__k">Template Key (unique identifier)</span>
+          <input
+            required
+            class="ar-field__input"
+            maxlength="128"
+            placeholder="e.g. OrderConfirmation"
+            [value]="newKey()"
+            (input)="newKey.set($any($event.target).value)"
+          />
+        </label>
+        <label class="fld">
+          <span class="fld__k">Display Name</span>
+          <input
+            required
+            class="ar-field__input"
+            maxlength="256"
+            placeholder="e.g. Order confirmation"
+            [value]="newDisplayName()"
+            (input)="newDisplayName.set($any($event.target).value)"
+          />
+        </label>
+        <label class="fld">
+          <span class="fld__k">Description</span>
+          <input
+            class="ar-field__input"
+            maxlength="1024"
+            placeholder="e.g. Sent when a customer places an order"
+            [value]="newDesc()"
+            (input)="newDesc.set($any($event.target).value)"
+          />
+        </label>
+        <label class="fld">
+          <span class="fld__k">Subject</span>
+          <input
+            class="ar-field__input"
+            maxlength="512"
+            [placeholder]="'e.g. Order confirmed · {{ model.workspace_name }}'"
+            [value]="newSubject()"
+            (input)="newSubject.set($any($event.target).value)"
+          />
+        </label>
+        <label class="fld">
+          <span class="fld__k">Body (HTML)</span>
+          <textarea
+            class="ar-field__input et__code"
+            rows="8"
+            spellcheck="false"
+            [value]="newBody()"
+            (input)="newBody.set($any($event.target).value)"
+          ></textarea>
+        </label>
+        <div dialogActions>
+          <button ar-button type="button" variant="ghost" (click)="createDialog.set(false)">
+            Cancel
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="creating()"
+            (click)="submitCreate()"
+          >
+            {{ creating() ? 'Creating…' : 'Create template' }}
+          </button>
+        </div>
+      </ar-dialog>
+    }
   `,
   styles: `
     :host {
@@ -198,6 +296,7 @@ const PREVIEW_DELAY_MS = 600;
       grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
       gap: 16px;
       align-items: start;
+      overflow-x: auto;
     }
     @media (max-width: 860px) {
       .et {
@@ -238,6 +337,7 @@ const PREVIEW_DELAY_MS = 600;
       flex-direction: column;
       gap: 16px;
       min-width: 0;
+      overflow-x: auto;
     }
     .et__muted {
       margin: 0 0 12px;
@@ -301,6 +401,17 @@ const PREVIEW_DELAY_MS = 600;
   `,
 })
 export class ArEmailTemplates {
+  private static readonly BUILT_IN_KEYS = new Set([
+    'Layout',
+    'Invitation',
+    'PasswordReset',
+    'PasswordChanged',
+    'ForgotWorkspace',
+    'SigningLink',
+    'SigningCode',
+    'EmailConfirmation',
+  ]);
+
   private readonly api = inject(TextTemplateService);
   private readonly permissions = inject(PermissionService);
   private readonly sanitizer = inject(DomSanitizer);
@@ -333,6 +444,15 @@ export class ArEmailTemplates {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  protected readonly createDialog = signal(false);
+  protected readonly newKey = signal('');
+  protected readonly newDisplayName = signal('');
+  protected readonly newDesc = signal('');
+  protected readonly newSubject = signal('');
+  protected readonly newBody = signal('');
+  protected readonly creating = signal(false);
+  protected readonly createError = signal<string | null>(null);
+
   protected readonly dirty = computed(() => {
     const t = this.template();
     if (!t) return false;
@@ -361,6 +481,83 @@ export class ArEmailTemplates {
       clearTimeout(this.previewTimer);
       this.previewTimer = setTimeout(() => void this.preview(key, subject, body), PREVIEW_DELAY_MS);
     });
+  }
+
+  protected isCustom(key: string): boolean {
+    return !ArEmailTemplates.BUILT_IN_KEYS.has(key);
+  }
+
+  protected openCreate(): void {
+    this.newKey.set('');
+    this.newDisplayName.set('');
+    this.newDesc.set('');
+    this.newSubject.set('{{ model.workspace_name }} — Notification');
+    this.newBody.set(
+      `<h2 style="margin:0 0 10px;font-size:18px">Hello {{ model.recipient_name | html.escape }},</h2>\n<p style="margin:0 0 14px">This is a notification from {{ model.workspace_name | html.escape }}.</p>\n<p style="margin:0 0 14px"><a href="{{ model.action_url | html.escape }}">View details</a></p>`,
+    );
+    this.createError.set(null);
+    this.createDialog.set(true);
+  }
+
+  protected async submitCreate(): Promise<void> {
+    const key = this.newKey().trim();
+    const displayName = this.newDisplayName().trim();
+    if (!key || !displayName) {
+      this.createError.set('Please provide a key and display name.');
+      return;
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(key)) {
+      this.createError.set('Key can only contain letters, numbers, underscores and hyphens.');
+      return;
+    }
+    this.creating.set(true);
+    this.createError.set(null);
+    try {
+      const created = await firstValueFrom(
+        this.api.create({
+          key,
+          displayName,
+          description: this.newDesc().trim() || null,
+          subject: this.newSubject().trim() || null,
+          body: this.newBody(),
+        }),
+      );
+      this.createDialog.set(false);
+      this.listTick.update((n) => n + 1);
+      this.show(created);
+      this.selectedKey.set(created.key);
+      this.toast.success(`Template "${displayName}" created.`);
+    } catch (e) {
+      this.createError.set(readApiError(e));
+    } finally {
+      this.creating.set(false);
+    }
+  }
+
+  protected async deleteCustom(): Promise<void> {
+    const t = this.template();
+    if (!t || this.busy()) return;
+    if (
+      !(await this.dialogs.confirm({
+        title: `Delete "${t.displayName}"?`,
+        message: 'This email template will be permanently removed.',
+        confirmText: 'Delete',
+      }))
+    ) {
+      return;
+    }
+    this.busy.set(true);
+    try {
+      await firstValueFrom(this.api.delete(t.key));
+      this.toast.success('Template deleted.');
+      this.template.set(null);
+      this.selectedKey.set(null);
+      this.listTick.update((n) => n + 1);
+    } catch (e) {
+      this.error.set(readApiError(e));
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   protected async select(key: string): Promise<void> {

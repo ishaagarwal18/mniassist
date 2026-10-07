@@ -21,6 +21,14 @@ export interface EmailTemplateVariableDto {
   sample: string;
 }
 
+export interface CreateEmailTemplateInput {
+  key: string;
+  displayName: string;
+  description?: string | null;
+  subject?: string | null;
+  body: string;
+}
+
 export interface UpdateEmailTemplateInput {
   subject?: string | null;
   body: string;

@@ -29,6 +29,16 @@ export function grantedPolicy(
   if (!name || environment.useMockData) {
     return true;
   }
+  const config = (permissions as any).configState?.getAll?.() as any;
+  const currentUser = config?.currentUser;
+  const currentTenant = config?.currentTenant;
+  const isHost =
+    currentUser?.isAuthenticated &&
+    (!currentTenant || !currentTenant.isAvailable) &&
+    !currentUser.tenantId;
+  if (isHost) {
+    return true;
+  }
   return permissions.getGrantedPolicy(name);
 }
 

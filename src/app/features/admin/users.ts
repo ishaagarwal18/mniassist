@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
+import { PermissionDirective } from '@abp/ng.core';
 
 import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
@@ -11,6 +12,7 @@ import { ArBanner, ArButton, ArCard, ArChip, ArDialog } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ArUserSecurityDialog } from './user-security-dialog';
+import { ArPermissionDialog } from './permission-dialog';
 
 const SEED: IdentityUserDto[] = [
   {
@@ -19,7 +21,9 @@ const SEED: IdentityUserDto[] = [
     name: 'Rahul',
     surname: 'Kanade',
     email: 'admin@vertex-automation.test',
+    phoneNumber: '+91 98765 43210',
     isActive: true,
+    lockoutEnabled: true,
     roleNames: ['admin'],
   },
 ];
@@ -29,12 +33,12 @@ interface Row extends IdentityUserDto {
 }
 
 /**
- * ABP-native user management for a workspace: create, edit, deactivate and delete
- * users, and set which roles each holds. The invitation flow on Members & invites is
- * still the way to bring someone in by email — this is the direct-control view.
+ * ABP-native user management for a workspace using Syncfusion Grid:
+ * create, edit, deactivate, manage permissions, manage security lockout, and delete users.
  */
 @Component({
   selector: 'ar-admin-users',
+  standalone: true,
   imports: [
     ArTopbar,
     ArCard,
@@ -45,6 +49,8 @@ interface Row extends IdentityUserDto {
     ArGrid,
     GridModule,
     ArUserSecurityDialog,
+    ArPermissionDialog,
+    PermissionDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -53,7 +59,14 @@ interface Row extends IdentityUserDto {
       [subtitle]="subtitle()"
       help="Every identity that can sign in to this platform instance, across every workspace. To invite a teammate into one workspace, use Members & invites instead."
     >
-      <button ar-button type="button" variant="primary" icon="plus" (click)="openCreate()">
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        icon="plus"
+        *abpPermission="'AbpIdentity.Users.Create'"
+        (click)="openCreate()"
+      >
         New user
       </button>
     </ar-topbar>
@@ -76,7 +89,14 @@ interface Row extends IdentityUserDto {
                   <div class="u-sub ar-mono">{{ u.userName }}</div>
                 </ng-template>
               </e-column>
-              <e-column field="email" headerText="Email" />
+              <e-column field="email" headerText="Email & Contact">
+                <ng-template #template let-u>
+                  <div>{{ u.email }}</div>
+                  @if (u.phoneNumber) {
+                    <div class="u-sub ar-mono">{{ u.phoneNumber }}</div>
+                  }
+                </ng-template>
+              </e-column>
               <e-column field="roles" headerText="Roles">
                 <ng-template #template let-u>
                   @for (r of u.roleNames; track r) {
@@ -84,16 +104,18 @@ interface Row extends IdentityUserDto {
                   }
                 </ng-template>
               </e-column>
-              <e-column field="status" headerText="Status" width="120">
+              <e-column field="status" headerText="Status" width="130">
                 <ng-template #template let-u>
                   @if (!u.isActive) {
                     <ar-chip tone="amber">Inactive</ar-chip>
+                  } @else {
+                    <ar-chip tone="good">Active</ar-chip>
                   }
                 </ng-template>
               </e-column>
               <e-column
                 headerText="Actions"
-                width="210"
+                width="280"
                 textAlign="Right"
                 [allowSorting]="false"
                 [allowFiltering]="false"
@@ -101,11 +123,36 @@ interface Row extends IdentityUserDto {
               >
                 <ng-template #template let-u>
                   <span class="ta-actions">
-                    <button type="button" class="link" (click)="openEdit(u.user)">Edit</button>
-                    <button type="button" class="link" (click)="security.set(u.user)">
+                    <button
+                      type="button"
+                      class="link"
+                      *abpPermission="'AbpIdentity.Users.Update'"
+                      (click)="openEdit(u.user)"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      class="link"
+                      *abpPermission="'AbpIdentity.Users.ManagePermissions'"
+                      (click)="openPermissions(u.user)"
+                    >
+                      Permissions
+                    </button>
+                    <button
+                      type="button"
+                      class="link"
+                      *abpPermission="'AbpIdentity.Users.Update'"
+                      (click)="security.set(u.user)"
+                    >
                       Security
                     </button>
-                    <button type="button" class="link link--danger" (click)="remove(u.user)">
+                    <button
+                      type="button"
+                      class="link link--danger"
+                      *abpPermission="'AbpIdentity.Users.Delete'"
+                      (click)="remove(u.user)"
+                    >
                       Delete
                     </button>
                   </span>
@@ -117,6 +164,15 @@ interface Row extends IdentityUserDto {
         </ar-card>
       </div>
     </div>
+
+    @if (permsUser(); as pu) {
+      <ar-permission-dialog
+        providerName="U"
+        [providerKey]="pu.id"
+        [entityDisplayName]="display(pu) + ' (' + pu.userName + ')'"
+        (closed)="permsUser.set(null)"
+      />
+    }
 
     @if (security(); as su) {
       <ar-user-security-dialog
@@ -161,16 +217,27 @@ interface Row extends IdentityUserDto {
             />
           </label>
         </div>
-        <label class="fld">
-          <span class="fld__k">Email</span>
-          <input
-            required
-            class="ar-field__input"
-            type="email"
-            [value]="fEmail()"
-            (input)="fEmail.set($any($event.target).value)"
-          />
-        </label>
+        <div class="fld-row">
+          <label class="fld">
+            <span class="fld__k">Email</span>
+            <input
+              required
+              class="ar-field__input"
+              type="email"
+              [value]="fEmail()"
+              (input)="fEmail.set($any($event.target).value)"
+            />
+          </label>
+          <label class="fld">
+            <span class="fld__k">Phone <span class="ar-field__opt">optional</span></span>
+            <input
+              class="ar-field__input"
+              type="tel"
+              [value]="fPhoneNumber()"
+              (input)="fPhoneNumber.set($any($event.target).value)"
+            />
+          </label>
+        </div>
         @if (mode === 'create') {
           <label class="fld">
             <span class="fld__k">Password</span>
@@ -184,14 +251,24 @@ interface Row extends IdentityUserDto {
             />
           </label>
         }
-        <label class="chk">
-          <input
-            type="checkbox"
-            [checked]="fActive()"
-            (change)="fActive.set($any($event.target).checked)"
-          />
-          Active
-        </label>
+        <div class="chk-row">
+          <label class="chk">
+            <input
+              type="checkbox"
+              [checked]="fActive()"
+              (change)="fActive.set($any($event.target).checked)"
+            />
+            Active
+          </label>
+          <label class="chk">
+            <input
+              type="checkbox"
+              [checked]="fLockoutEnabled()"
+              (change)="fLockoutEnabled.set($any($event.target).checked)"
+            />
+            Lockout enabled
+          </label>
+        </div>
 
         <div class="fld">
           <span class="fld__k">Roles</span>
@@ -223,7 +300,7 @@ interface Row extends IdentityUserDto {
       padding: 20px;
     }
     .page__col {
-      max-width: 860px;
+      max-width: 980px;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -264,6 +341,11 @@ interface Row extends IdentityUserDto {
     }
     .fld-row .fld {
       flex: 1;
+    }
+    .chk-row {
+      display: flex;
+      gap: 24px;
+      margin: 4px 0;
     }
     .fld__k {
       display: block;
@@ -316,6 +398,7 @@ export class ArAdminUsers {
       roleNames: u.roleNames ?? [],
     })),
   );
+
   /** Grid rows: plain values to sort, filter and export by, plus the user for the actions. */
   protected readonly rows = computed(() =>
     this.users().map((u) => ({
@@ -324,12 +407,15 @@ export class ArAdminUsers {
       displayName: this.display(u),
       userName: u.userName,
       email: u.email,
+      phoneNumber: u.phoneNumber,
       roleNames: u.roleNames,
       roles: u.roleNames.join(', '),
       isActive: u.isActive,
+      lockoutEnabled: u.lockoutEnabled ?? false,
       status: u.isActive ? 'Active' : 'Inactive',
     })),
   );
+
   protected readonly subtitle = computed(() => {
     const n = this.users().length;
     return `${n} user${n === 1 ? '' : 's'}`;
@@ -346,13 +432,18 @@ export class ArAdminUsers {
   protected readonly dialog = signal<'create' | 'edit' | null>(null);
   /** The user whose security dialog is open. */
   protected readonly security = signal<Row | null>(null);
+  /** The user whose permissions dialog is open. */
+  protected readonly permsUser = signal<Row | null>(null);
+
   private readonly editingId = signal<string | null>(null);
   protected readonly fUserName = signal('');
   protected readonly fName = signal('');
   protected readonly fSurname = signal('');
   protected readonly fEmail = signal('');
+  protected readonly fPhoneNumber = signal('');
   protected readonly fPassword = signal('');
   protected readonly fActive = signal(true);
+  protected readonly fLockoutEnabled = signal(true);
   protected readonly fRoles = signal<string[]>([]);
 
   protected readonly canSave = computed(() => {
@@ -371,8 +462,10 @@ export class ArAdminUsers {
     this.fName.set('');
     this.fSurname.set('');
     this.fEmail.set('');
+    this.fPhoneNumber.set('');
     this.fPassword.set('');
     this.fActive.set(true);
+    this.fLockoutEnabled.set(true);
     this.fRoles.set([]);
     this.error.set(null);
     this.dialog.set('create');
@@ -384,10 +477,16 @@ export class ArAdminUsers {
     this.fName.set(u.name ?? '');
     this.fSurname.set(u.surname ?? '');
     this.fEmail.set(u.email);
+    this.fPhoneNumber.set(u.phoneNumber ?? '');
     this.fActive.set(u.isActive);
+    this.fLockoutEnabled.set(u.lockoutEnabled ?? true);
     this.fRoles.set([...u.roleNames]);
     this.error.set(null);
     this.dialog.set('edit');
+  }
+
+  protected openPermissions(u: Row): void {
+    this.permsUser.set(u);
   }
 
   protected async save(): Promise<void> {
@@ -399,8 +498,9 @@ export class ArAdminUsers {
       name: this.fName().trim() || undefined,
       surname: this.fSurname().trim() || undefined,
       email: this.fEmail().trim(),
+      phoneNumber: this.fPhoneNumber().trim() || undefined,
       isActive: this.fActive(),
-      lockoutEnabled: true,
+      lockoutEnabled: this.fLockoutEnabled(),
       roleNames: this.fRoles(),
     };
     try {

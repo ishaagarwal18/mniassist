@@ -134,80 +134,82 @@ function totals(items: readonly CampaignResultDto[]): Totals {
       </ar-card>
 
       <ar-card heading="By campaign">
-        <ejs-grid arGrid="campaign-results" [dataSource]="rows()" aria-label="Campaign results">
-          <e-columns>
-            <e-column field="name" headerText="Campaign" width="220">
-              <ng-template #template let-c>
-                <a
-                  class="cr__link"
-                  routerLink="/campaigns"
-                  [queryParams]="{ open: c.campaignId }"
-                  >{{ c.name }}</a
-                >
-              </ng-template>
-            </e-column>
-            <e-column field="started" headerText="Started" width="110" />
-            <e-column field="sent" headerText="Sent" type="number" textAlign="Right" width="90" />
-            <e-column
-              field="readPct"
-              headerText="Read"
-              type="number"
-              textAlign="Right"
-              width="80"
-              format="P0"
-            />
-            <e-column
-              field="replied"
-              headerText="Replied"
-              type="number"
-              textAlign="Right"
-              width="90"
-            />
-            <e-column
-              field="replyPct"
-              headerText="Reply rate"
-              type="number"
-              textAlign="Right"
-              width="100"
-              format="P1"
-            />
-            <e-column
-              field="enquiries"
-              headerText="Enquiries"
-              type="number"
-              textAlign="Right"
-              width="100"
-            />
-            <e-column field="won" headerText="Won" type="number" textAlign="Right" width="70" />
-            <e-column
-              field="wonValue"
-              headerText="Won value (₹)"
-              type="number"
-              textAlign="Right"
-              width="130"
-              format="N0"
-            />
-            <e-column
-              field="spend"
-              headerText="Spend (₹)"
-              type="number"
-              textAlign="Right"
-              width="110"
-              format="N0"
-            />
-            <e-column
-              field="costPerEnquiry"
-              headerText="Cost / enquiry (₹)"
-              type="number"
-              textAlign="Right"
-              width="140"
-              format="N0"
-            />
-          </e-columns>
-          <ng-template #emptyRecordTemplate
-            >No campaign messages went out in this period.</ng-template
-          >
-        </ejs-grid>
+        <div class="cr__table-wrap">
+          <ejs-grid arGrid="campaign-results" [dataSource]="rows()" aria-label="Campaign results">
+            <e-columns>
+              <e-column field="name" headerText="Campaign" width="220">
+                <ng-template #template let-c>
+                  <a
+                    class="cr__link"
+                    routerLink="/campaigns"
+                    [queryParams]="{ open: c.campaignId }"
+                    >{{ c.name }}</a
+                  >
+                </ng-template>
+              </e-column>
+              <e-column field="started" headerText="Started" width="110" />
+              <e-column field="sent" headerText="Sent" type="number" textAlign="Right" width="90" />
+              <e-column
+                field="readPct"
+                headerText="Read"
+                type="number"
+                textAlign="Right"
+                width="80"
+                format="P0"
+              />
+              <e-column
+                field="replied"
+                headerText="Replied"
+                type="number"
+                textAlign="Right"
+                width="90"
+              />
+              <e-column
+                field="replyPct"
+                headerText="Reply rate"
+                type="number"
+                textAlign="Right"
+                width="100"
+                format="P1"
+              />
+              <e-column
+                field="enquiries"
+                headerText="Enquiries"
+                type="number"
+                textAlign="Right"
+                width="100"
+              />
+              <e-column field="won" headerText="Won" type="number" textAlign="Right" width="70" />
+              <e-column
+                field="wonValue"
+                headerText="Won value (₹)"
+                type="number"
+                textAlign="Right"
+                width="130"
+                format="N0"
+              />
+              <e-column
+                field="spend"
+                headerText="Spend (₹)"
+                type="number"
+                textAlign="Right"
+                width="110"
+                format="N0"
+              />
+              <e-column
+                field="costPerEnquiry"
+                headerText="Cost / enquiry (₹)"
+                type="number"
+                textAlign="Right"
+                width="140"
+                format="N0"
+              />
+            </e-columns>
+            <ng-template #emptyRecordTemplate
+              >No campaign messages went out in this period.</ng-template
+            >
+          </ejs-grid>
+        </div>
       </ar-card>
     </div>
   `,
@@ -222,6 +224,7 @@ function totals(items: readonly CampaignResultDto[]): Totals {
       flex: 1;
       min-height: 0;
       overflow-y: auto;
+      overflow-x: auto;
       padding: 18px 24px 32px;
       display: flex;
       flex-direction: column;
@@ -229,6 +232,12 @@ function totals(items: readonly CampaignResultDto[]): Totals {
     }
     .cr ar-card {
       display: block;
+      min-width: 0;
+    }
+    .cr__table-wrap {
+      overflow-x: auto;
+      min-width: 0;
+      width: 100%;
     }
     .cr__tiles {
       display: grid;
@@ -241,7 +250,7 @@ function totals(items: readonly CampaignResultDto[]): Totals {
       color: var(--ar-ink-500);
     }
     .cr__link {
-      color: var(--ar-primary);
+      color: var(--ar-teal-600);
       text-decoration: none;
       font-weight: 500;
     }
@@ -266,14 +275,14 @@ function totals(items: readonly CampaignResultDto[]): Totals {
     .funnel__bar {
       height: 12px;
       border-radius: 6px;
-      background: var(--ar-line-100, var(--ar-line-200));
+      background: var(--ar-line-200, #e2e8f0);
       overflow: hidden;
     }
     .funnel__bar span {
       display: block;
       height: 100%;
       border-radius: 6px;
-      background: var(--ar-primary);
+      background: var(--ar-teal-600, #0d9488);
     }
     .funnel__value {
       text-align: right;

@@ -1,19 +1,21 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
-import { DISABLE_PROJECT_NAME, provideAbpCore, withOptions } from '@abp/ng.core';
+import { DISABLE_PROJECT_NAME, PermissionService, provideAbpCore, withOptions } from '@abp/ng.core';
 import { provideAbpOAuth } from '@abp/ng.oauth';
 
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
 import { AgencyActingInterceptor } from './core/http/agency-acting.interceptor';
 import { ApiFeedbackInterceptor } from './core/http/api-feedback.interceptor';
+import { AutoReachPermissionService } from './core/auth/auto-reach-permission.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideHttpClient(withInterceptorsFromDi()),
+    { provide: PermissionService, useClass: AutoReachPermissionService },
     { provide: HTTP_INTERCEPTORS, useClass: AgencyActingInterceptor, multi: true },
     // Toasts for every create/update/delete and for every server error.
     { provide: HTTP_INTERCEPTORS, useClass: ApiFeedbackInterceptor, multi: true },

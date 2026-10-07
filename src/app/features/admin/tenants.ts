@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
+import { PermissionDirective } from '@abp/ng.core';
 
 import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
@@ -10,6 +11,7 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArCard, ArDialog } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { ConfirmService } from '../../core/ui/confirm.service';
+import { ArTenantFeaturesDialog } from './tenant-features-dialog';
 
 const SEED: TenantDto[] = [
   { id: 't-1', name: 'vertex-automation' },
@@ -17,14 +19,23 @@ const SEED: TenantDto[] = [
 ];
 
 /**
- * Host-only workspace management. Creating one provisions its admin, roles and
- * billing defaults server-side; renaming and deleting are the other two things a
- * platform operator needs. Everything inside a workspace is the tenant admin's job,
- * done from Users and Roles.
+ * Host-only workspace management using Syncfusion Grid:
+ * create, rename, delete workspaces, and manage tenant feature flags via ABP Feature Management.
  */
 @Component({
   selector: 'ar-admin-tenants',
-  imports: [ArTopbar, ArCard, ArButton, ArBanner, ArDialog, ArGrid, GridModule],
+  standalone: true,
+  imports: [
+    ArTopbar,
+    ArCard,
+    ArButton,
+    ArBanner,
+    ArDialog,
+    ArGrid,
+    GridModule,
+    ArTenantFeaturesDialog,
+    PermissionDirective,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -32,7 +43,14 @@ const SEED: TenantDto[] = [
       [subtitle]="subtitle()"
       help="Every tenant workspace on this platform instance. Creating one here is a host-admin action — most customers should sign up for their own instead."
     >
-      <button ar-button type="button" variant="primary" icon="plus" (click)="openCreate()">
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        icon="plus"
+        *abpPermission="'AbpTenantManagement.Tenants.Create'"
+        (click)="openCreate()"
+      >
         New workspace
       </button>
     </ar-topbar>
@@ -56,7 +74,7 @@ const SEED: TenantDto[] = [
               </e-column>
               <e-column
                 headerText="Actions"
-                width="170"
+                width="240"
                 textAlign="Right"
                 [allowSorting]="false"
                 [allowFiltering]="false"
@@ -64,8 +82,28 @@ const SEED: TenantDto[] = [
               >
                 <ng-template #template let-t>
                   <span class="ta-actions">
-                    <button type="button" class="link" (click)="openRename(t)">Rename</button>
-                    <button type="button" class="link link--danger" (click)="remove(t)">
+                    <button
+                      type="button"
+                      class="link"
+                      *abpPermission="'AbpTenantManagement.Tenants.ManageFeatures'"
+                      (click)="openFeatures(t)"
+                    >
+                      Features
+                    </button>
+                    <button
+                      type="button"
+                      class="link"
+                      *abpPermission="'AbpTenantManagement.Tenants.Update'"
+                      (click)="openRename(t)"
+                    >
+                      Rename
+                    </button>
+                    <button
+                      type="button"
+                      class="link link--danger"
+                      *abpPermission="'AbpTenantManagement.Tenants.Delete'"
+                      (click)="remove(t)"
+                    >
                       Delete
                     </button>
                   </span>
@@ -77,6 +115,14 @@ const SEED: TenantDto[] = [
         </ar-card>
       </div>
     </div>
+
+    @if (featuresTenant(); as ft) {
+      <ar-tenant-features-dialog
+        [tenantId]="ft.id"
+        [tenantName]="ft.name"
+        (closed)="featuresTenant.set(null)"
+      />
+    }
 
     @if (dialog(); as mode) {
       <ar-dialog
@@ -134,7 +180,7 @@ const SEED: TenantDto[] = [
       padding: 20px;
     }
     .page__col {
-      max-width: 720px;
+      max-width: 800px;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -194,6 +240,9 @@ export class ArAdminTenants {
   protected readonly busy = signal(false);
 
   protected readonly dialog = signal<'create' | 'rename' | null>(null);
+  /** The tenant whose features dialog is open. */
+  protected readonly featuresTenant = signal<TenantDto | null>(null);
+
   private readonly editingId = signal<string | null>(null);
   protected readonly fName = signal('');
   protected readonly fEmail = signal('');
@@ -221,6 +270,10 @@ export class ArAdminTenants {
     this.fName.set(t.name);
     this.error.set(null);
     this.dialog.set('rename');
+  }
+
+  protected openFeatures(t: TenantDto): void {
+    this.featuresTenant.set(t);
   }
 
   protected async save(): Promise<void> {
