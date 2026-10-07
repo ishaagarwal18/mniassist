@@ -6,9 +6,10 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
+    "build:prod": "ng build --configuration production",
     "test": "ng test",
     "check:routes": "node scripts/check-proxy-routes.mjs",
-    "refresh:routes": "node scripts/check-proxy-routes.mjs --refresh https://localhost:44320"
+    "refresh:routes": "node scripts/check-proxy-routes.mjs --refresh https://mniassist.com"
   },
   "private": true,
   "packageManager": "npm@10.9.7",

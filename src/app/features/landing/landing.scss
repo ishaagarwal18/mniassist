@@ -97,13 +97,21 @@ ol {
 .nav__links button {
   border: 0;
   background: none;
-  padding: 6px 10px;
+  padding: 6px 12px;
+  border-radius: var(--ar-radius-control);
   font: 500 13px var(--ar-font-sans);
   color: var(--ar-nav-text);
   cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 .nav__links button:hover {
   color: #fff;
+  background: var(--ar-nav-hi);
+}
+.nav__links button.is-active {
+  color: #fff;
+  background: var(--ar-blue-500);
+  font-weight: 600;
 }
 .nav__cta {
   display: flex;

@@ -3,6 +3,23 @@
   [subtitle]="heading()"
   help="Your week. Scheduling checks everyone's calendars and can suggest times when all are free. Open a meeting to answer it, finish it, cancel it, or add it to your calendar app."
 >
+  <input
+    #icalInput
+    type="file"
+    accept=".ics,text/calendar"
+    style="display: none"
+    (change)="onIcalSelected($event)"
+  />
+  <button
+    ar-button
+    type="button"
+    variant="ghost"
+    icon="download"
+    [disabled]="busy()"
+    (click)="icalInput.click()"
+  >
+    Import iCal
+  </button>
   <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">
     Schedule
   </button>
@@ -228,6 +245,15 @@
           target="_blank"
           rel="noopener"
           >Teams meeting</a
+        >
+        <a
+          ar-button
+          variant="ghost"
+          icon="video"
+          [href]="share.zoom(m)"
+          target="_blank"
+          rel="noopener"
+          >Zoom</a
         >
         <button ar-button type="button" variant="ghost" icon="download" (click)="addToCalendar(m)">
           .ics file

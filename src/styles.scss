@@ -50,7 +50,24 @@ button {
 
 .ar-scroll {
   overflow-y: auto;
+  overflow-x: auto;
   scrollbar-width: thin;
+  scrollbar-color: var(--ar-line-300) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--ar-line-300);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--ar-ink-400);
+  }
 }
 
 /* Editable form rows, used by the "New…" dialogs. `ar-field` (the component) is

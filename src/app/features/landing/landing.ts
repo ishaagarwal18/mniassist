@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, afterNextRender, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, afterNextRender, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { CurrentUserService } from '../../core/services/current-user.service';
@@ -43,6 +43,7 @@ interface Pillar {
 export class ArLanding {
   protected readonly signedIn = inject(CurrentUserService).isAuthenticated;
 
+  protected readonly activeSection = signal<string>('industries');
   protected readonly tagline = BRAND_TAGLINE;
   protected readonly year = new Date().getFullYear();
 
@@ -161,10 +162,41 @@ export class ArLanding {
   constructor() {
     // Links like "/#plans" (the "Change" link on sign-up) land on that section.
     const fragment = inject(ActivatedRoute).snapshot.fragment;
-    if (fragment) afterNextRender(() => this.scrollTo(fragment));
+    if (fragment) {
+      this.activeSection.set(fragment);
+      afterNextRender(() => this.scrollTo(fragment));
+    }
+
+    afterNextRender(() => {
+      this.initScrollSpy();
+    });
+  }
+
+  private initScrollSpy(): void {
+    if (typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible.length > 0 && visible[0].target.id) {
+          this.activeSection.set(visible[0].target.id);
+        }
+      },
+      {
+        rootMargin: '-80px 0px -40% 0px',
+        threshold: [0, 0.2, 0.5, 0.8],
+      },
+    );
+
+    for (const s of this.sections) {
+      const el = document.getElementById(s.id);
+      if (el) observer.observe(el);
+    }
   }
 
   protected scrollTo(id: string): void {
+    this.activeSection.set(id);
     const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     document
       .getElementById(id)

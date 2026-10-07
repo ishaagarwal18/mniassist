@@ -21,7 +21,12 @@ import {
   SlotDto,
 } from '../../proxy/activities';
 import { ArButton, ArDialog } from '../../ui';
-import { GOOGLE_MEET_NEW_URL, ZOOM_SCHEDULE_URL, teamsMeetingUrl } from './meeting-share';
+import {
+  GOOGLE_MEET_NEW_URL,
+  ZOOM_SCHEDULE_URL,
+  googleCalendarUrl,
+  teamsMeetingUrl,
+} from './meeting-share';
 import { ArDateInput } from '../../ui/date-input';
 import { ArSelect } from '../../ui/select';
 import { ActivityDirectory } from './activity-directory';
@@ -147,12 +152,41 @@ const REMINDERS: { label: string; minutes: number }[] = [
           [value]="where()"
           (input)="where.set($any($event.target).value)"
         />
-        <span class="mt__links">
-          Online? Get a link from
-          <a [href]="meetNew" target="_blank" rel="noopener">Google Meet</a> ·
-          <a [href]="teamsLink()" target="_blank" rel="noopener">Microsoft Teams</a> ·
-          <a [href]="zoomNew" target="_blank" rel="noopener">Zoom</a>, then paste it here.
-        </span>
+        <div class="mt__direct-create">
+          <span class="mt__direct-title">Create directly in:</span>
+          <div class="mt__direct-buttons">
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              icon="video"
+              (click)="createInTeams()"
+              title="Create in Microsoft Teams"
+            >
+              Teams
+            </button>
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              icon="link"
+              (click)="createInGoogle()"
+              title="Create in Google Calendar / Meet"
+            >
+              Google Meet
+            </button>
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              icon="video"
+              (click)="createInZoom()"
+              title="Schedule in Zoom"
+            >
+              Zoom
+            </button>
+          </div>
+        </div>
       </label>
 
       @if (!meeting()) {
@@ -314,6 +348,27 @@ const REMINDERS: { label: string; minutes: number }[] = [
       color: var(--ar-primary);
       font-weight: 500;
     }
+    .mt__direct-create {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .mt__direct-title {
+      font: 500 12px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .mt__direct-buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .mt__direct-buttons button {
+      height: 28px;
+      padding: 0 10px;
+      font-size: 12px;
+    }
     .mt__people {
       margin: 0 0 10px;
       padding: 0;
@@ -428,6 +483,37 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
       startUtc: start.toISOString(),
       endUtc: end.toISOString(),
     });
+  }
+
+  protected createInTeams(): void {
+    const url = this.teamsLink();
+    window.open(url, '_blank', 'noopener');
+    if (!this.where()) {
+      this.where.set('Microsoft Teams');
+    }
+  }
+
+  protected createInGoogle(): void {
+    const start = this.start() ? new Date(this.start()) : new Date();
+    const end = new Date(start.getTime() + (this.duration() || 30) * 60_000);
+    const url = googleCalendarUrl({
+      title: this.title() || 'Meeting',
+      description: this.description(),
+      startUtc: start.toISOString(),
+      endUtc: end.toISOString(),
+      location: this.where(),
+    });
+    window.open(url, '_blank', 'noopener');
+    if (!this.where()) {
+      this.where.set('Google Meet');
+    }
+  }
+
+  protected createInZoom(): void {
+    window.open(this.zoomNew, '_blank', 'noopener');
+    if (!this.where()) {
+      this.where.set('Zoom Meeting');
+    }
   }
 
   private readonly api = inject(ActivityGateway).meetings;

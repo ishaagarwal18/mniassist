@@ -3,7 +3,12 @@
     <ar-brand onDark />
     <nav class="nav__links" aria-label="Sections">
       @for (s of sections; track s.id) {
-        <button type="button" (click)="scrollTo(s.id)">{{ s.label }}</button>
+        <button
+          type="button"
+          [class.is-active]="activeSection() === s.id"
+          [attr.aria-current]="activeSection() === s.id ? 'true' : null"
+          (click)="scrollTo(s.id)"
+        >{{ s.label }}</button>
       }
     </nav>
     <div class="nav__cta">

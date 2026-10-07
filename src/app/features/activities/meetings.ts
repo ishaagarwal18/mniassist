@@ -25,10 +25,12 @@ import { firstValueFrom } from 'rxjs';
 import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
 import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
 import { ArTopbar } from '../../layout/topbar';
-import { AttendeeResponse, MeetingDto, MeetingStatus } from '../../proxy/activities';
+import { AttendeeResponse, MeetingDto, MeetingKind, MeetingStatus } from '../../proxy/activities';
 import { ArButton, ArChip, ArDraggable } from '../../ui';
 import { ToastService } from '../../core/ui/toast.service';
 import {
+  GOOGLE_MEET_NEW_URL,
+  ZOOM_SCHEDULE_URL,
   googleCalendarUrl,
   mailtoUrl,
   meetingText,
@@ -48,6 +50,7 @@ import {
   durationLabel,
   errorMessage,
   minutesBetween,
+  parseIcs,
   startOfDay,
   timeRange,
   weekOf,
@@ -313,6 +316,7 @@ export class ArMeetings {
     google: (m: MeetingDto) => googleCalendarUrl(this.shareable(m)),
     outlook: (m: MeetingDto) => outlookCalendarUrl(this.shareable(m)),
     teams: (m: MeetingDto) => teamsMeetingUrl(this.shareable(m), this.emails(m)),
+    zoom: (_m: MeetingDto) => ZOOM_SCHEDULE_URL,
   };
 
   protected async copyDetails(m: MeetingDto): Promise<void> {
@@ -324,6 +328,58 @@ export class ArMeetings {
         'This browser did not allow copying. Select the details and copy them instead.',
         'Copy',
       );
+    }
+  }
+
+  protected async onIcalSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    try {
+      this.busy.set(true);
+      const text = await file.text();
+      const events = parseIcs(text);
+      if (events.length === 0) {
+        this.toasts.warning('No meeting events found in this iCal file.', 'Import iCal');
+        return;
+      }
+
+      let imported = 0;
+      for (const ev of events) {
+        try {
+          await firstValueFrom(
+            this.api.create({
+              title: ev.title,
+              startUtc: ev.startUtc,
+              endUtc: ev.endUtc,
+              location: ev.location,
+              meetingUrl: ev.meetingUrl,
+              description: ev.description,
+              kind: ev.meetingUrl ? MeetingKind.Video : MeetingKind.InPerson,
+              attendeeUserIds: this.directory.meId ? [this.directory.meId] : [],
+            }),
+          );
+          imported++;
+        } catch {
+          // Continue attempting to import remaining events
+        }
+      }
+
+      if (imported > 0) {
+        this.toasts.success(
+          `Imported ${imported} meeting${imported === 1 ? '' : 's'} from iCal.`,
+          'Imported',
+        );
+        await this.reload();
+      } else {
+        this.toasts.error('Could not save the meetings from this iCal file.', 'Import Failed');
+      }
+    } catch {
+      this.toasts.error('Failed to read or parse iCal file.', 'Import Failed');
+    } finally {
+      this.busy.set(false);
+      input.value = '';
     }
   }
 

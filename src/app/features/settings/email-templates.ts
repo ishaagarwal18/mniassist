@@ -182,7 +182,17 @@ const PREVIEW_DELAY_MS = 600;
     </div>
   `,
   styles: `
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      min-width: 0;
+    }
     .et {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
       padding: 20px;
       display: grid;
       grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);

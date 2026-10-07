@@ -976,6 +976,27 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Use Edit or Delete to change or remove a rule.',
     ],
   },
+  field: {
+    summary: 'The field engineer app for tracking today’s jobs, recording site visit checklists, photos, customer sign-off codes and offline sync.',
+    benefits: [
+      'Works completely offline when you have no signal at a customer plant.',
+      'Checklists and photo uploads keep service visit evidence organized.',
+      'One-tap WhatsApp sign-off code sent directly to the customer.',
+      'Automatic sync uploads visits as soon as your device reconnects.',
+    ],
+    steps: [
+      'View your assigned jobs for today on the home screen.',
+      'Tap Start visit when arriving on site to record arrival time.',
+      'Fill in findings, checklist items, and take or attach site photos.',
+      'Tap Request sign-off to send a WhatsApp confirmation code to the customer.',
+      'Enter the customer’s code and tap Complete visit.',
+      'When back online, tap Sync to push your offline updates to the office.',
+    ],
+    tips: [
+      'Install this page to your phone’s home screen via browser menu for quick offline access.',
+      'Site photos are automatically compressed before uploading to save mobile data.',
+    ],
+  },
 };
 
 /** The topic for a route path as `app.routes.ts` declares it, or null. */

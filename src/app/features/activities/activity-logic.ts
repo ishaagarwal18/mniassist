@@ -276,3 +276,121 @@ export function downloadTextFile(
   a.click();
   URL.revokeObjectURL(url);
 }
+
+export interface ParsedIcsEvent {
+  title: string;
+  startUtc: string;
+  endUtc: string;
+  description?: string;
+  location?: string;
+  meetingUrl?: string;
+}
+
+/** Parses iCal text date like 20261008T100000Z or 20261008T100000 or 20261008 into ISO UTC string */
+function parseIcsDate(raw: string): string | null {
+  const clean = raw.trim();
+  const matchTime = clean.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z)?$/);
+  if (matchTime) {
+    const [, y, m, d, hh, mm, ss, z] = matchTime;
+    if (z) {
+      return new Date(Date.UTC(+y, +m - 1, +d, +hh, +mm, +ss)).toISOString();
+    }
+    return new Date(+y, +m - 1, +d, +hh, +mm, +ss).toISOString();
+  }
+  const matchDay = clean.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (matchDay) {
+    const [, y, m, d] = matchDay;
+    return new Date(+y, +m - 1, +d, 9, 0, 0).toISOString();
+  }
+  const parsed = new Date(clean);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+/** Unfolds and parses iCalendar (.ics) format to extract meeting events. */
+export function parseIcs(icsContent: string): ParsedIcsEvent[] {
+  const unfolded = icsContent.replace(/\r\n[ \t]/g, '').replace(/\n[ \t]/g, '');
+  const lines = unfolded.split(/\r?\n/);
+  const events: ParsedIcsEvent[] = [];
+  let inEvent = false;
+  let current: Partial<ParsedIcsEvent> = {};
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (line === 'BEGIN:VEVENT') {
+      inEvent = true;
+      current = {};
+      continue;
+    }
+    if (line === 'END:VEVENT') {
+      if (inEvent && current.title && current.startUtc) {
+        const start = current.startUtc;
+        const end =
+          current.endUtc ?? new Date(new Date(start).getTime() + 30 * 60_000).toISOString();
+        events.push({
+          title: current.title,
+          startUtc: start,
+          endUtc: end,
+          description: current.description,
+          location: current.location,
+          meetingUrl: current.meetingUrl,
+        });
+      }
+      inEvent = false;
+      current = {};
+      continue;
+    }
+    if (!inEvent) continue;
+
+    const colonIdx = line.indexOf(':');
+    if (colonIdx < 0) continue;
+    const propPart = line.slice(0, colonIdx);
+    const value = line
+      .slice(colonIdx + 1)
+      .replace(/\\n/g, '\n')
+      .replace(/\\,/g, ',')
+      .replace(/\\;/g, ';')
+      .replace(/\\\\/g, '\\');
+    const propName = propPart.split(';')[0].toUpperCase();
+
+    switch (propName) {
+      case 'SUMMARY':
+        current.title = value;
+        break;
+      case 'DESCRIPTION':
+        current.description = value;
+        if (!current.meetingUrl) {
+          const urlMatch = value.match(/https?:\/\/[^\s]+/);
+          if (
+            urlMatch &&
+            (urlMatch[0].includes('teams.microsoft.com') ||
+              urlMatch[0].includes('meet.google.com') ||
+              urlMatch[0].includes('zoom.us'))
+          ) {
+            current.meetingUrl = urlMatch[0];
+          }
+        }
+        break;
+      case 'LOCATION':
+        current.location = value;
+        if (!current.meetingUrl && /^https?:\/\//i.test(value)) {
+          current.meetingUrl = value;
+        }
+        break;
+      case 'URL':
+        current.meetingUrl = value;
+        break;
+      case 'DTSTART': {
+        const start = parseIcsDate(value);
+        if (start) current.startUtc = start;
+        break;
+      }
+      case 'DTEND': {
+        const end = parseIcsDate(value);
+        if (end) current.endUtc = end;
+        break;
+      }
+    }
+  }
+
+  return events;
+}

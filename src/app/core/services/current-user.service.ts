@@ -182,7 +182,7 @@ export class CurrentUserService {
     if (!result?.success || !result.tenantId) {
       throw new Error(`Workspace "${wanted}" was not found.`);
     }
-    if (!result.isActive) {
+    if (result.isActive === false) {
       throw new Error(`Workspace "${wanted}" is not active.`);
     }
     this.session.setTenant({ id: result.tenantId, name: result.name ?? wanted, isAvailable: true });

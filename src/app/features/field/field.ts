@@ -14,8 +14,9 @@ import { FieldJobDto, FieldServiceService } from '../../proxy/support/field-serv
 import { LocalVisit, fitWithin, startVisit, visitFor } from './field-logic';
 import { FieldStore } from './field-store';
 import { ArBrand } from '../../layout/brand';
-import { ArButton, ArChip, ArIcon, ArMeter } from '../../ui';
+import { ArButton, ArChip, ArDialog, ArIcon, ArMeter } from '../../ui';
 import { ChipTone } from '../../ui/chip';
+import { helpTopicFor } from '../../core/help/help-topics';
 
 const SEED_DAY = {
   generatedAtUtc: new Date().toISOString(),
@@ -66,7 +67,7 @@ async function shrink(file: File): Promise<Blob> {
  */
 @Component({
   selector: 'ar-field',
-  imports: [RouterLink, ArBrand, ArButton, ArChip, ArIcon, ArMeter],
+  imports: [RouterLink, ArBrand, ArButton, ArChip, ArDialog, ArIcon, ArMeter],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="app">
@@ -87,6 +88,17 @@ async function shrink(file: File): Promise<Blob> {
           (click)="store.sync()"
         >
           {{ store.syncing() ? 'Syncing…' : 'Sync' }}
+        </button>
+        <button
+          type="button"
+          class="bar__tool"
+          [class.bar__tool--on]="helpOpen()"
+          [attr.aria-expanded]="helpOpen()"
+          aria-label="Help: about Field"
+          title="Help"
+          (click)="helpOpen.set(!helpOpen())"
+        >
+          <ar-icon name="help" [size]="17" />
         </button>
       </header>
 
@@ -404,6 +416,42 @@ async function shrink(file: File): Promise<Blob> {
           <p class="muted small">Last synced {{ time(at) }}</p>
         }
       }
+
+      @if (helpOpen() && helpTopic; as t) {
+        <ar-dialog title="Help · Field Service" width="min(540px, calc(100vw - 32px))" (dismiss)="helpOpen.set(false)">
+          <div class="fhelp">
+            @if (t.summary) {
+              <p class="fhelp__summary">{{ t.summary }}</p>
+            }
+
+            <p class="fhelp__label">Key Benefits</p>
+            <ul class="fhelp__list">
+              @for (b of t.benefits; track b) {
+                <li>{{ b }}</li>
+              }
+            </ul>
+
+            <p class="fhelp__label">How to use</p>
+            <ol class="fhelp__steps">
+              @for (s of t.steps; track s) {
+                <li>{{ s }}</li>
+              }
+            </ol>
+
+            @if (t.tips?.length) {
+              <p class="fhelp__label">Tips</p>
+              <ul class="fhelp__list">
+                @for (tip of t.tips; track tip) {
+                  <li>{{ tip }}</li>
+                }
+              </ul>
+            }
+          </div>
+          <div dialogActions>
+            <button ar-button type="button" variant="primary" (click)="helpOpen.set(false)">Got it</button>
+          </div>
+        </ar-dialog>
+      }
     </div>
   `,
   styles: `
@@ -450,6 +498,57 @@ async function shrink(file: File): Promise<Blob> {
       border-left: 1px solid var(--ar-line-200);
       font: 600 15px var(--ar-font-sans);
       color: var(--ar-ink-700);
+    }
+    .bar__tool {
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-white);
+      color: var(--ar-ink-500);
+      cursor: pointer;
+      transition: color var(--ar-ease), border-color var(--ar-ease), background-color var(--ar-ease);
+    }
+    .bar__tool:hover {
+      color: var(--ar-ink-900);
+      border-color: var(--ar-ink-400);
+    }
+    .bar__tool--on {
+      color: var(--ar-blue-500);
+      border-color: var(--ar-blue-500);
+      background: var(--ar-blue-50, rgba(37, 99, 235, 0.08));
+    }
+    .fhelp {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .fhelp__summary {
+      margin: 0 0 6px;
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: var(--ar-ink-800);
+    }
+    .fhelp__label {
+      margin: 8px 0 2px;
+      font: 600 12px var(--ar-font-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--ar-ink-500);
+    }
+    .fhelp__list,
+    .fhelp__steps {
+      margin: 0;
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      line-height: 1.45;
     }
     .pill {
       display: inline-flex;
@@ -787,6 +886,8 @@ export class ArField {
   private readonly doc = inject(DOCUMENT);
 
   protected readonly openId = signal<string | null>(null);
+  protected readonly helpOpen = signal(false);
+  protected readonly helpTopic = helpTopicFor('field');
   protected readonly busy = signal(false);
   protected readonly codeSent = signal(false);
   protected readonly code = signal('');

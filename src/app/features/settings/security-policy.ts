@@ -193,7 +193,17 @@ type Num = {
     </div>
   `,
   styles: `
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      min-width: 0;
+    }
     .sp {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
       padding: 20px;
       max-width: 760px;
       display: flex;

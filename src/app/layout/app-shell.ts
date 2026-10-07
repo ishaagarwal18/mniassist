@@ -48,6 +48,15 @@ import { AgencyActingStore } from '../core/services/agency-acting.store';
     .shell__content {
       flex: 1;
       min-height: 0;
+      min-width: 0;
+      overflow-x: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .shell__content > :not(router-outlet) {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
       display: flex;
       flex-direction: column;
     }
