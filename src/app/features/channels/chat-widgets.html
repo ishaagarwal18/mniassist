@@ -3,7 +3,9 @@
   subtitle="Tracked ways into a WhatsApp chat"
   help="A website button, a printed QR code, or an exhibition link — each one tracked separately. Pausing a link keeps it working but stops it counting new clicks."
 >
-  <button ar-button variant="primary" icon="plus" (click)="openNew()">New link</button>
+  @if (canManage()) {
+    <button ar-button variant="primary" icon="plus" (click)="openNew()">New link</button>
+  }
 </ar-topbar>
 
 <div class="cw ar-scroll">
@@ -46,8 +48,10 @@
       </div>
       <div class="ep__actions">
         <button ar-button variant="primary" (click)="openAssets(e)">Get link &amp; QR</button>
-        <button ar-button variant="ghost" (click)="openEdit(e)">Edit</button>
-        <button ar-button variant="ghost" (click)="remove(e)">Delete</button>
+        @if (canManage()) {
+          <button ar-button variant="ghost" (click)="openEdit(e)">Edit</button>
+          <button ar-button variant="ghost" (click)="remove(e)">Delete</button>
+        }
       </div>
     </article>
   }

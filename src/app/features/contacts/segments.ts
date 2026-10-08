@@ -1,8 +1,11 @@
+import { PermissionService } from '@abp/ng.core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import { SegmentStore } from '../../core/services/segment.store';
 import {
+  SavedSegment,
   SegmentClause,
   SegmentField,
   SegmentGroup,
@@ -45,8 +48,14 @@ import { ArSelect } from '../../ui/select';
   styleUrl: './segments.scss',
 })
 export class ArSegments {
+  private readonly permissions = inject(PermissionService);
   private readonly store = inject(SegmentStore);
   private readonly dialogs = inject(ConfirmService);
+
+  protected readonly canCreate = grantedPolicy('AutoReach.Segments.Create', this.permissions);
+  protected readonly canUpdate = grantedPolicy('AutoReach.Segments.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Segments.Delete', this.permissions);
+  protected readonly canImport = grantedPolicy('AutoReach.Contacts.Import', this.permissions);
 
   protected readonly rule = this.store.rule;
   protected readonly preview = this.store.preview;
@@ -55,6 +64,7 @@ export class ArSegments {
   protected readonly walletPaise = this.store.walletBalanceInPaise;
 
   protected readonly openSegmentId = signal<string | null>('s1');
+  protected readonly editingSegmentId = signal<string | null>(null);
 
   /** Field options grouped for the picker's optgroups. */
   protected readonly fieldGroups = computed(() => {
@@ -151,8 +161,17 @@ export class ArSegments {
   protected readonly saving = signal(false);
 
   protected openSave(): void {
+    this.editingSegmentId.set(null);
     this.saveName.set('');
     this.saveDescription.set('');
+    this.saveOpen.set(true);
+  }
+
+  protected openEdit(s: SavedSegment, event?: Event): void {
+    if (event) event.stopPropagation();
+    this.editingSegmentId.set(s.id);
+    this.saveName.set(s.name);
+    this.saveDescription.set(s.description ?? '');
     this.saveOpen.set(true);
   }
 
@@ -160,7 +179,12 @@ export class ArSegments {
   protected async saveSegment(): Promise<void> {
     this.saving.set(true);
     try {
-      await this.store.save(this.saveName().trim(), this.saveDescription().trim() || undefined);
+      const editId = this.editingSegmentId();
+      if (editId) {
+        await this.store.update(editId, this.saveName().trim(), this.saveDescription().trim() || undefined);
+      } else {
+        await this.store.save(this.saveName().trim(), this.saveDescription().trim() || undefined);
+      }
       this.saveOpen.set(false);
     } catch {
       /* the server's reason is shown as a toast; the dialog stays open */

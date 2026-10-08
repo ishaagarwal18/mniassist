@@ -1,7 +1,9 @@
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, forkJoin, map, of, switchMap } from 'rxjs';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import { environment } from '../../../environments/environment';
 import { ChannelService as ChannelApi } from '../../proxy/channels';
 import { DisplayNameStatus } from '../../proxy/channels/display-name-status.enum';
@@ -107,8 +109,12 @@ const SEED: readonly ManagedNumber[] = [
   styleUrl: './numbers.scss',
 })
 export class ArNumbers {
+  private readonly permissions = inject(PermissionService);
   private readonly toasts = inject(ToastService);
   private readonly api = inject(ChannelApi);
+
+  protected readonly canOnboard = grantedPolicy('AutoReach.Channels.Onboard', this.permissions);
+  protected readonly canManage = grantedPolicy('AutoReach.Channels.Manage', this.permissions);
 
   protected readonly connectOpen = signal(false);
 

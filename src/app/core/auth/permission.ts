@@ -1,6 +1,7 @@
 import {
   Directive,
   Input,
+  Signal,
   TemplateRef,
   ViewContainerRef,
   computed,
@@ -15,9 +16,9 @@ import type { PlanService } from '../services/plan.service';
 import type { CurrentUserService } from '../services/current-user.service';
 
 /**
- * Reads a granted policy, with two escape hatches so the app never hides everything
- * by accident:
+ * Checks if a policy is granted synchronously as a boolean.
  *
+ * Has two escape hatches so the app never hides everything by accident:
  *  - on seeded data there is no application configuration to read grants from, so
  *    every policy reads as granted;
  *  - an empty or missing name is always granted (a nav item with no `permission`).
@@ -25,7 +26,7 @@ import type { CurrentUserService } from '../services/current-user.service';
  * The name may be an OR list — `"AutoReach.Billing || AutoReach.Analytics"` — which
  * matches ABP's own `getGrantedPolicy` behaviour.
  */
-export function grantedPolicy(
+export function checkPolicy(
   name: string | undefined | null,
   permissions: PermissionService,
 ): boolean {
@@ -43,6 +44,16 @@ export function grantedPolicy(
     return true;
   }
   return permissions.getGrantedPolicy(name);
+}
+
+/**
+ * Reads a granted policy as an Angular Signal<boolean>.
+ */
+export function grantedPolicy(
+  name: string | undefined | null,
+  permissions: PermissionService,
+): Signal<boolean> {
+  return computed(() => checkPolicy(name, permissions));
 }
 
 /**
@@ -69,7 +80,7 @@ export function canAccessNavItem(
   }
 
   // 2. Permission check
-  if (item.permission && !grantedPolicy(item.permission, permissions)) {
+  if (item.permission && !checkPolicy(item.permission, permissions)) {
     return false;
   }
 
@@ -102,7 +113,7 @@ export class ArHasPermissionDirective {
   private readonly name = signal<string | undefined>(undefined);
   private rendered = false;
 
-  private readonly granted = computed(() => grantedPolicy(this.name(), this.permissions));
+  private readonly granted = computed(() => checkPolicy(this.name(), this.permissions));
 
   constructor() {
     // getGrantedPolicy is synchronous against the cached config; re-evaluate whenever

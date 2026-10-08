@@ -11,12 +11,14 @@
     />
     Show retired
   </label>
-  <button ar-button type="button" variant="ghost" icon="download" (click)="openImport()">
-    Import AMC values
-  </button>
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
-    Register machine
-  </button>
+  @if (canCreate()) {
+    <button ar-button type="button" variant="ghost" icon="download" (click)="openImport()">
+      Import AMC values
+    </button>
+    <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+      Register machine
+    </button>
+  }
 </ar-topbar>
 
 @if (importOpen()) {
@@ -93,7 +95,7 @@
 }
 
 @if (dialogOpen()) {
-  <ar-dialog title="Register a machine" (dismiss)="dialogOpen.set(false)">
+  <ar-dialog [title]="editingAssetId() ? 'Edit machine' : 'Register a machine'" (dismiss)="dialogOpen.set(false)">
     <div class="ar-field">
       <span class="ar-field__label"
         >Owner contact <span class="ar-field__opt">(optional)</span></span
@@ -206,7 +208,7 @@
         [disabled]="saving()"
         (click)="registerMachine()"
       >
-        {{ saving() ? 'Saving…' : 'Register' }}
+        {{ saving() ? 'Saving…' : (editingAssetId() ? 'Save' : 'Register') }}
       </button>
     </div>
   </ar-dialog>
@@ -248,14 +250,31 @@
       </div>
       <div class="asset__actions">
         @if (!a.retired) {
-          <button ar-button variant="ghost" [disabled]="!!busy()" (click)="recordService(a)">
-            Log service
-          </button>
-          <button ar-button variant="ghost" [disabled]="!!busy()" (click)="retire(a)">
-            Retire
-          </button>
+          @if (canManageReminders()) {
+            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="recordService(a)">
+              Log service
+            </button>
+          }
+          @if (canUpdate()) {
+            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="openEdit(a)">
+              Edit
+            </button>
+            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="retire(a)">
+              Retire
+            </button>
+          }
+          @if (canDelete()) {
+            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="deleteAsset(a)">
+              Delete
+            </button>
+          }
         } @else {
           <ar-chip tone="neutral">Retired</ar-chip>
+          @if (canDelete()) {
+            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="deleteAsset(a)">
+              Delete
+            </button>
+          }
         }
       </div>
     </article>

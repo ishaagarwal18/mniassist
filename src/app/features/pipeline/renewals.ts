@@ -118,7 +118,7 @@ const SEED_SUMMARY: RenewalSummaryDto = {
       [subtitle]="subtitle()"
       help="Every AMC ending in the next 90 days. Reminders go out 30 and 7 days before; when a customer taps “Send quotation”, a renewal quote is drafted from last term's value plus your uplift, ready for you to review and issue."
     >
-      @if (canManage) {
+      @if (canManage()) {
         <button
           ar-button
           type="button"
@@ -130,7 +130,7 @@ const SEED_SUMMARY: RenewalSummaryDto = {
           {{ busy() === 'refresh' ? 'Refreshing…' : 'Refresh' }}
         </button>
       }
-      @if (canSettings) {
+      @if (canSettings()) {
         <button ar-button type="button" variant="ghost" icon="settings" (click)="openSettings()">
           Settings
         </button>
@@ -255,7 +255,7 @@ const SEED_SUMMARY: RenewalSummaryDto = {
                       }
                     </p>
                   }
-                  @if (canManage) {
+                  @if (canManage()) {
                     <div class="card__actions">
                       @if (!r.quotationId) {
                         <button

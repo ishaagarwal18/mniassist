@@ -372,6 +372,12 @@ export class MockServiceTicketApi {
     };
     return of({ ...this.s.settings });
   };
+
+  delete = (id: string): Observable<void> => {
+    const idx = this.s.tickets.findIndex((t) => t.id === id);
+    if (idx !== -1) this.s.tickets.splice(idx, 1);
+    return of(void 0);
+  };
 }
 
 export type ServiceTicketApi = Pick<

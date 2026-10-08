@@ -125,7 +125,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
       [subtitle]="subtitle()"
       help="Filters, fan kits, oils: the parts each machine model wears out, and when. A daily check matches every machine on the installed base to these rules; a part shows here once it's within its lead time. Quote a customer's due parts in one go, or record that the part was changed to restart its clock."
     >
-      @if (canManage) {
+      @if (canManage()) {
         <button
           ar-button
           type="button"
@@ -182,7 +182,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
               <span class="grp__n"
                 >{{ g.rows.length }} part{{ g.rows.length === 1 ? '' : 's' }}</span
               >
-              @if (canQuote && dueIds(g.rows).length > 0) {
+              @if (canQuote() && dueIds(g.rows).length > 0) {
                 <button
                   ar-button
                   type="button"
@@ -200,7 +200,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
                   }}
                 </button>
               }
-              @if (canReorder) {
+              @if (canReorder()) {
                 <button
                   ar-button
                   type="button"
@@ -243,7 +243,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
                   @if (r.state === 'Quoted') {
                     <a class="row__link" routerLink="/quotations">Quoted →</a>
                   }
-                  @if (canManage) {
+                  @if (canManage()) {
                     <button
                       ar-button
                       type="button"
@@ -821,7 +821,7 @@ export class ArSpares {
         this.rules.set(SEED_RULES);
         return;
       }
-      if (this.canManage) {
+      if (this.canManage()) {
         firstValueFrom(this.api.getReminderSettings())
           .then((r) => this.reminders.set(r))
           .catch(() => undefined);

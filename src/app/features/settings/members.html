@@ -3,7 +3,14 @@
   [subtitle]="subtitle()"
   help="Invite teammates and manage who's active. Deactivating someone with open conversations will ask who should inherit them first."
 >
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openInvite()">
+  <button
+    *arHasPermission="'AutoReach.Members.Invite'"
+    ar-button
+    type="button"
+    variant="primary"
+    icon="plus"
+    (click)="openInvite()"
+  >
     Invite someone
   </button>
 </ar-topbar>
@@ -145,7 +152,12 @@
               >
                 Devices
               </button>
-              <button type="button" class="link link--danger" (click)="deactivate(m.member)">
+              <button
+                *arHasPermission="'AutoReach.Members.Deactivate'"
+                type="button"
+                class="link link--danger"
+                (click)="deactivate(m.member)"
+              >
                 Deactivate
               </button>
             </span>
@@ -190,7 +202,14 @@
             [showInColumnChooser]="false"
           >
             <ng-template #template let-m>
-              <button type="button" class="link" (click)="reactivate(m.member)">Reactivate</button>
+              <button
+                *arHasPermission="'AutoReach.Members.Deactivate'"
+                type="button"
+                class="link"
+                (click)="reactivate(m.member)"
+              >
+                Reactivate
+              </button>
             </ng-template>
           </e-column>
         </e-columns>
@@ -241,8 +260,16 @@
           >
             <ng-template #template let-i>
               <span class="mb__act">
-                <button type="button" class="link" (click)="resend(i.id)">Resend</button>
                 <button
+                  *arHasPermission="'AutoReach.Members.Invite'"
+                  type="button"
+                  class="link"
+                  (click)="resend(i.id)"
+                >
+                  Resend
+                </button>
+                <button
+                  *arHasPermission="'AutoReach.Members.Invite'"
                   type="button"
                   class="link link--danger"
                   (click)="revokeInvite(i.id, i.email)"

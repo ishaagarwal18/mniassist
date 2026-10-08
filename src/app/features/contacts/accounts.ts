@@ -13,6 +13,8 @@ import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ArErpLedger } from './erp-ledger';
 import { ConfirmService } from '../../core/ui/confirm.service';
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../core/auth/permission';
 
 interface Draft {
   name: string;
@@ -49,7 +51,12 @@ const BLANK: Draft = {
 })
 export class ArAccounts {
   private readonly dialogs = inject(ConfirmService);
+  private readonly permissions = inject(PermissionService);
   private readonly store = inject(AccountStore);
+
+  protected readonly canCreate = grantedPolicy('AutoReach.Contacts.Create', this.permissions);
+  protected readonly canUpdate = grantedPolicy('AutoReach.Contacts.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Contacts.Delete', this.permissions);
 
   protected readonly rows = this.store.rows;
   protected readonly searching = computed(() => this.store.filter().trim().length > 0);

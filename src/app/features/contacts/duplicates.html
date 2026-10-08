@@ -77,8 +77,12 @@
       </div>
 
       <footer class="pr__actions">
-        <button ar-button variant="ghost" (click)="dismiss(p)">Not duplicates</button>
-        <button ar-button variant="primary" (click)="open(p)">Review &amp; merge</button>
+        @if (canUpdate()) {
+          <button ar-button variant="ghost" (click)="dismiss(p)">Not duplicates</button>
+        }
+        @if (canUpdate() && canDelete()) {
+          <button ar-button variant="primary" (click)="open(p)">Review &amp; merge</button>
+        }
       </footer>
     </article>
   }

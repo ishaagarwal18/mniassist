@@ -3,7 +3,7 @@
   subtitle="Capture leads from your website"
   help="Build a form, put it on your website as a link or an embedded frame, and every submission makes or finds the contact, records what they agreed to, and opens an enquiry in your pipeline. It works alongside WhatsApp Flows and the chat widget."
 >
-  @if (view().mode === 'list' && canManage) {
+  @if (view().mode === 'list' && canManage()) {
     <button ar-button type="button" variant="primary" icon="plus" (click)="startNew()">
       New form
     </button>
@@ -57,7 +57,7 @@
                 <button ar-button type="button" variant="ghost" (click)="openSubmissions(f)">
                   Submissions
                 </button>
-                @if (canManage) {
+                @if (canManage()) {
                   <button ar-button type="button" variant="ghost" (click)="edit(f)">Edit</button>
                   <button ar-button type="button" variant="ghost" (click)="toggle(f)">
                     {{ f.isActive ? 'Turn off' : 'Turn on' }}

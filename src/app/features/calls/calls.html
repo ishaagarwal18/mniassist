@@ -10,7 +10,7 @@
 
 <div class="cl ar-scroll">
   <div class="cl__bar">
-    @if (canSeeAll) {
+    @if (canSeeAll()) {
       <div class="cl__seg" role="group" aria-label="Whose calls">
         <button type="button" [class.on]="scope() === 'mine'" (click)="scope.set('mine')">
           Mine

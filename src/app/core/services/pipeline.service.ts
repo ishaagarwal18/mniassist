@@ -563,14 +563,18 @@ export class PipelineStore {
     defaultValue: [],
   });
 
+  private readonly mockQuotes = signal<Quotation[]>([...SEED_QUOTES]);
+  private readonly mockBoard = signal<BoardColumn[]>([...SEED_BOARD]);
+  private readonly mockAssets = signal<Asset[]>([...SEED_ASSETS]);
+
   readonly board = computed(() =>
-    environment.useMockData ? SEED_BOARD : settled(this.boardResource, []),
+    environment.useMockData ? this.mockBoard() : settled(this.boardResource, []),
   );
   readonly quotes = computed(() =>
-    environment.useMockData ? SEED_QUOTES : settled(this.quotesResource, []),
+    environment.useMockData ? this.mockQuotes() : settled(this.quotesResource, []),
   );
   readonly assets = computed(() =>
-    environment.useMockData ? SEED_ASSETS : settled(this.assetsResource, []),
+    environment.useMockData ? this.mockAssets() : settled(this.assetsResource, []),
   );
   readonly loading = computed(
     () =>
@@ -861,22 +865,138 @@ export class PipelineStore {
   }
 
   async createEnquiry(input: CreateUpdateEnquiryDto): Promise<void> {
-    if (environment.useMockData) return;
+    if (environment.useMockData) {
+      const newCard: EnquiryCard = {
+        id: 'enq-' + Date.now(),
+        reference: `ENQ-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+        title: input.title ?? 'Enquiry',
+        contact: input.contactId ?? 'New Contact',
+        daysInStage: 0,
+        stage: 'new',
+        valueInPaise: input.estimatedValueInPaise ?? undefined,
+      };
+      this.mockBoard.update((cols) =>
+        cols.map((c, i) => (i === 0 ? { ...c, cards: [newCard, ...c.cards], count: c.count + 1 } : c)),
+      );
+      return;
+    }
     await firstValueFrom(this.enquiryApi.create(input));
     this.reload();
   }
 
+  async updateEnquiry(id: string, input: CreateUpdateEnquiryDto): Promise<void> {
+    if (environment.useMockData) {
+      this.mockBoard.update((cols) =>
+        cols.map((col) => ({
+          ...col,
+          cards: col.cards.map((c) =>
+            c.id === id
+              ? {
+                  ...c,
+                  title: input.title || c.title,
+                  valueInPaise: input.estimatedValueInPaise ?? c.valueInPaise,
+                }
+              : c,
+          ),
+        })),
+      );
+      return;
+    }
+    await firstValueFrom(this.enquiryApi.update(id, input));
+    this.reload();
+  }
+
+  async deleteEnquiry(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.mockBoard.update((cols) =>
+        cols.map((col) => {
+          const filtered = col.cards.filter((c) => c.id !== id);
+          return {
+            ...col,
+            cards: filtered,
+            count: filtered.length,
+          };
+        }),
+      );
+      return;
+    }
+    await firstValueFrom(this.enquiryApi.delete(id));
+    this.reload();
+  }
+
   async createQuotation(enquiryId: string): Promise<void> {
-    if (environment.useMockData) return;
+    if (environment.useMockData) {
+      const newQ: Quotation = {
+        id: 'q-' + Date.now(),
+        reference: `QTN-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+        revision: 1,
+        state: 'draft',
+        totalInPaise: 50_000_00,
+        daysSinceIssue: 0,
+        issuedAt: new Date().toISOString().slice(0, 10),
+      };
+      this.mockQuotes.update((list) => [newQ, ...list]);
+      return;
+    }
     await firstValueFrom(
       this.quotationApi.create({ enquiryId, lines: [], taxRateBasisPoints: 1800 }),
     );
     this.quotesResource.reload();
   }
 
+  async deleteQuote(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.mockQuotes.update((list) => list.filter((q) => q.id !== id));
+      return;
+    }
+    await firstValueFrom(this.quotationApi.delete(id));
+    this.quotesResource.reload();
+  }
+
   async createAsset(input: CreateUpdateInstalledAssetDto): Promise<void> {
-    if (environment.useMockData) return;
+    if (environment.useMockData) {
+      const newAsset: Asset = {
+        id: 'a-' + Date.now(),
+        description: input.description,
+        serial: input.serialNumber ?? 'SN-' + Date.now(),
+        make: input.model ?? 'Standard',
+        site: input.siteCity ?? input.siteName ?? 'Pune',
+        retired: false,
+      };
+      this.mockAssets.update((list) => [newAsset, ...list]);
+      return;
+    }
     await firstValueFrom(this.assetApi.create(input));
+    this.assetsResource.reload();
+  }
+
+  async updateAsset(id: string, input: CreateUpdateInstalledAssetDto): Promise<void> {
+    if (environment.useMockData) {
+      this.mockAssets.update((list) =>
+        list.map((a) =>
+          a.id === id
+            ? {
+                ...a,
+                description: input.description,
+                serial: input.serialNumber ?? a.serial,
+                make: input.model ?? a.make,
+                site: input.siteCity ?? input.siteName ?? a.site,
+              }
+            : a,
+        ),
+      );
+      return;
+    }
+    await firstValueFrom(this.assetApi.update(id, input));
+    this.assetsResource.reload();
+  }
+
+  async deleteAsset(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.mockAssets.update((list) => list.filter((a) => a.id !== id));
+      return;
+    }
+    await firstValueFrom(this.assetApi.delete(id));
     this.assetsResource.reload();
   }
 }

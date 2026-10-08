@@ -3,12 +3,73 @@
   [subtitle]="total() + ' tickets'"
   help="Every service ticket raised for a customer, whatever raised it — a WhatsApp Flow submission, a call written up, or by hand from a deal or contact. Reply to the customer from here and it goes out through whichever channel the ticket started on."
 >
-  @if (canManageSettings) {
+  @if (canManageSettings()) {
     <button ar-button type="button" variant="ghost" (click)="settingsOpen.set(true)">
       Settings
     </button>
   }
+  @if (canCreate()) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="openCreate()">
+      New ticket
+    </button>
+  }
 </ar-topbar>
+
+@if (createOpen()) {
+  <ar-dialog title="New ticket" (dismiss)="createOpen.set(false)">
+    <div class="ar-field">
+      <span class="ar-field__label">Contact</span>
+      <ar-contact-picker (picked)="createContact.set($event)" />
+    </div>
+    <label class="ar-field">
+      <span class="ar-field__label">Subject</span>
+      <input
+        required
+        class="ar-field__input"
+        placeholder="e.g. PLC communication error on line 2"
+        [value]="createSubject()"
+        (input)="createSubject.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Priority</span>
+      <select
+        class="ar-field__input"
+        [value]="createPriority()"
+        (change)="createPriority.set(+$any($event.target).value)"
+      >
+        <option [value]="Priority.Urgent">Urgent</option>
+        <option [value]="Priority.High">High</option>
+        <option [value]="Priority.Normal">Normal</option>
+        <option [value]="Priority.Low">Low</option>
+      </select>
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Description <span class="ar-field__opt">(optional)</span></span>
+      <textarea
+        class="ar-field__input"
+        rows="3"
+        [value]="createDescription()"
+        (input)="createDescription.set($any($event.target).value)"
+      ></textarea>
+    </label>
+    @if (error(); as e) {
+      <p class="td__err">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="createOpen.set(false)">Cancel</button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="creatingTicket() || !createSubject().trim() || !createContact()"
+        (click)="createTicket()"
+      >
+        {{ creatingTicket() ? 'Creating…' : 'Create ticket' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 @if (opened(); as id) {
   <ar-ticket-detail-dialog [ticketId]="id" (closed)="closeDetail($event)" />
@@ -35,7 +96,7 @@
   </div>
 
   <div class="hd__bar">
-    @if (canSeeAll) {
+    @if (canSeeAll()) {
       <div class="hd__seg" role="group" aria-label="Whose tickets">
         <button type="button" [class.on]="scope() === 'mine'" (click)="scope.set('mine')">
           Mine

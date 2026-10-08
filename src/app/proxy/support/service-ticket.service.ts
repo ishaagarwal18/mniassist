@@ -32,6 +32,12 @@ export class ServiceTicketService {
       { apiName: this.apiName, ...config },
     );
 
+  delete = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, void>(
+      { method: 'DELETE', url: `/api/auto-reach/service-ticket/${id}` },
+      { apiName: this.apiName, ...config },
+    );
+
   get = (id: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, ServiceTicketDetailDto>(
       { method: 'GET', url: `/api/auto-reach/service-ticket/${id}` },

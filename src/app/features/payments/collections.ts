@@ -105,7 +105,7 @@ const SEED: CollectionBoardDto = {
       [subtitle]="subtitle()"
       help="Unpaid invoices from Tally or SAP. When switched on, the customer gets your approved reminder 3 days before the due date, then at 7 and 15 days overdue. Each stage goes once; reminders stop when the ERP shows the invoice paid."
     >
-      @if (canManage) {
+      @if (canManage()) {
         <button
           ar-button
           type="button"
@@ -172,7 +172,7 @@ const SEED: CollectionBoardDto = {
                 <th scope="col">Due</th>
                 <th scope="col" class="num">Outstanding</th>
                 <th scope="col">Reminders</th>
-                @if (canManage) {
+                @if (canManage()) {
                   <th scope="col"><span class="sr-only">Actions</span></th>
                 }
               </tr>
@@ -199,7 +199,7 @@ const SEED: CollectionBoardDto = {
                       <span class="cl__muted">· last {{ ago(r.lastReminderAtUtc) }}</span>
                     }
                   </td>
-                  @if (canManage) {
+                  @if (canManage()) {
                     <td class="act">
                       <button
                         ar-button

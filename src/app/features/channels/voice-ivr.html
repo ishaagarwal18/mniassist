@@ -3,9 +3,11 @@
   [subtitle]="entryPoint() ? 'Entry point: ' + entryPoint()!.name : 'No entry point set yet'"
   help="Your phone menu is edited here and served to Exotel live, so a change takes effect on the next call. Exotel's dashboard holds only one fixed, menu-independent flow — set it up once under Connect to Exotel."
 >
-  <button ar-button variant="primary" icon="plus" [disabled]="busy()" (click)="openCreate()">
-    New prompt
-  </button>
+  @if (canManage()) {
+    <button ar-button variant="primary" icon="plus" [disabled]="busy()" (click)="openCreate()">
+      New prompt
+    </button>
+  }
 </ar-topbar>
 
 @if (loading()) {
@@ -143,9 +145,11 @@
               <code class="ar-mono">sip:{{ ch.sipUsername }}&#64;{{ ch.sipDomain }}</code>
             }
           </div>
-          <button ar-button variant="ghost" [disabled]="busy()" (click)="startSoftphoneEdit()">
-            {{ ch.softphoneEnabled ? 'Edit' : 'Turn on' }}
-          </button>
+          @if (canManage()) {
+            <button ar-button variant="ghost" [disabled]="busy()" (click)="startSoftphoneEdit()">
+              {{ ch.softphoneEnabled ? 'Edit' : 'Turn on' }}
+            </button>
+          }
         } @else {
           <label class="vi__checkbox">
             <input
@@ -296,19 +300,21 @@
                 <ar-chip tone="teal" [dot]="true">Entry point</ar-chip>
               }
             </div>
-            <div class="vi__card-actions">
-              @if (!p.isEntryPoint) {
-                <button ar-button variant="quiet" [disabled]="busy()" (click)="makeEntryPoint(p)">
-                  Set as entry point
+            @if (canManage()) {
+              <div class="vi__card-actions">
+                @if (!p.isEntryPoint) {
+                  <button ar-button variant="quiet" [disabled]="busy()" (click)="makeEntryPoint(p)">
+                    Set as entry point
+                  </button>
+                }
+                <button ar-button variant="ghost" [disabled]="busy()" (click)="openEdit(p)">
+                  Edit
                 </button>
-              }
-              <button ar-button variant="ghost" [disabled]="busy()" (click)="openEdit(p)">
-                Edit
-              </button>
-              <button ar-button variant="danger" [disabled]="busy()" (click)="removePrompt(p)">
-                Delete
-              </button>
-            </div>
+                <button ar-button variant="danger" [disabled]="busy()" (click)="removePrompt(p)">
+                  Delete
+                </button>
+              </div>
+            }
           </header>
 
           <p class="vi__say">"{{ p.sayText }}"</p>
@@ -345,29 +351,33 @@
                 [showInColumnChooser]="false"
               >
                 <ng-template #template let-b>
-                  <button
-                    ar-button
-                    variant="quiet"
-                    [disabled]="busy()"
-                    (click)="removeBranch(p.id!, b.digit)"
-                  >
-                    Remove
-                  </button>
+                  @if (canManage()) {
+                    <button
+                      ar-button
+                      variant="quiet"
+                      [disabled]="busy()"
+                      (click)="removeBranch(p.id!, b.digit)"
+                    >
+                      Remove
+                    </button>
+                  }
                 </ng-template>
               </e-column>
             </e-columns>
             <ng-template #emptyRecordTemplate>No branches configured.</ng-template>
           </ejs-grid>
 
-          <button
-            ar-button
-            variant="ghost"
-            icon="plus"
-            [disabled]="busy()"
-            (click)="openBranchForm(p.id!)"
-          >
-            Add branch
-          </button>
+          @if (canManage()) {
+            <button
+              ar-button
+              variant="ghost"
+              icon="plus"
+              [disabled]="busy()"
+              (click)="openBranchForm(p.id!)"
+            >
+              Add branch
+            </button>
+          }
         </article>
       }
     </section>

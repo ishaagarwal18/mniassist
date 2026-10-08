@@ -6,17 +6,19 @@
   <button ar-button variant="ghost" icon="refresh" [disabled]="busy()" (click)="sync()">
     Sync from Meta
   </button>
-  <button
-    ar-button
-    variant="ghost"
-    icon="template"
-    [disabled]="busy()"
-    title="Adds industrial templates this number doesn't have yet (such as quotation_ready, which carries a quotation PDF) as drafts"
-    (click)="addLibrary()"
-  >
-    Add library templates
-  </button>
-  <button ar-button variant="primary" icon="plus" (click)="newTemplate()">New template</button>
+  @if (canCreate()) {
+    <button
+      ar-button
+      variant="ghost"
+      icon="template"
+      [disabled]="busy()"
+      title="Adds industrial templates this number doesn't have yet (such as quotation_ready, which carries a quotation PDF) as drafts"
+      (click)="addLibrary()"
+    >
+      Add library templates
+    </button>
+    <button ar-button variant="primary" icon="plus" (click)="newTemplate()">New template</button>
+  }
 </ar-topbar>
 
 <div class="tpl ar-scroll">
@@ -115,12 +117,17 @@
           }
         </span>
         <span class="tp__actions">
-          @if (canEdit(t)) {
+          @if (canUpdate() && canEdit(t)) {
             <button ar-button variant="ghost" (click)="edit(t)">Edit</button>
           }
-          @if (canSubmit(t)) {
+          @if (canSubmitPolicy() && canSubmit(t)) {
             <button ar-button variant="primary" [disabled]="busy()" (click)="submit(t)">
               {{ t.status === 'rejected' ? 'Resubmit to Meta' : 'Submit to Meta' }}
+            </button>
+          }
+          @if (canDelete()) {
+            <button ar-button variant="ghost" [disabled]="busy()" (click)="deleteTemplate(t)">
+              Delete
             </button>
           }
         </span>

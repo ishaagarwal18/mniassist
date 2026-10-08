@@ -315,7 +315,7 @@ export class ArWhatsAppCallBar {
   private readonly canUse = grantedPolicy('AutoReach.Inbox', inject(PermissionService));
 
   constructor() {
-    if (!this.canUse || environment.useMockData) return;
+    if (!this.canUse() || environment.useMockData) return;
     const poll = setInterval(() => void this.session.poll(), POLL_MS);
     inject(DestroyRef).onDestroy(() => clearInterval(poll));
   }

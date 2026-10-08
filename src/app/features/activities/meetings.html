@@ -20,9 +20,11 @@
   >
     Import iCal
   </button>
-  <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">
-    Schedule
-  </button>
+  @if (directory.canCreate) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">
+      Schedule
+    </button>
+  }
 </ar-topbar>
 
 @if (creating() || editing()) {
@@ -267,26 +269,28 @@
 
     <footer class="dt__foot">
       @if (m.status === Status.Scheduled && canChange(m) && !outcomeOpen() && !cancelOpen()) {
-        <button ar-button type="button" variant="ghost" (click)="edit(m)">Edit</button>
-        <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="noShow(m)">
-          No-show
-        </button>
-        <button
-          ar-button
-          type="button"
-          variant="ghost"
-          (click)="note.set(''); cancelOpen.set(true)"
-        >
-          Cancel
-        </button>
-        <button
-          ar-button
-          type="button"
-          variant="primary"
-          (click)="note.set(''); outcomeOpen.set(true)"
-        >
-          Done
-        </button>
+        @if (directory.canUpdate) {
+          <button ar-button type="button" variant="ghost" (click)="edit(m)">Edit</button>
+          <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="noShow(m)">
+            No-show
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            (click)="note.set(''); cancelOpen.set(true)"
+          >
+            Cancel
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            (click)="note.set(''); outcomeOpen.set(true)"
+          >
+            Done
+          </button>
+        }
       }
     </footer>
   </div>

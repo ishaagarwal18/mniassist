@@ -1,5 +1,7 @@
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import { PipelineStore } from '../../core/services/pipeline.service';
 import { EnquiryStage, PipelineStageDto, SalesPipelineDto } from '../../proxy/pipeline';
 import { ArTopbar } from '../../layout/topbar';
@@ -36,7 +38,10 @@ type Dialog =
   styleUrl: './pipeline-stages.scss',
 })
 export class ArPipelineStages {
+  private readonly permissions = inject(PermissionService);
   private readonly store = inject(PipelineStore);
+
+  protected readonly canManage = grantedPolicy('AutoReach.Pipeline.Manage', this.permissions);
 
   protected readonly pipelines = this.store.pipelines;
   protected readonly buckets = BUCKETS;

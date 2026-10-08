@@ -5,12 +5,16 @@
   "
   help="Your full customer list. Consent is shown with both a label and a colour — an imported list is flagged as the weakest evidence you have that someone agreed to be messaged."
 >
-  <button ar-button type="button" variant="ghost" icon="upload" (click)="importOpen.set(true)">
-    Import
-  </button>
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
-    New contact
-  </button>
+  @if (canImport()) {
+    <button ar-button type="button" variant="ghost" icon="upload" (click)="importOpen.set(true)">
+      Import
+    </button>
+  }
+  @if (canCreate()) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+      New contact
+    </button>
+  }
 </ar-topbar>
 
 @if (importOpen()) {
@@ -19,7 +23,7 @@
 
 @if (dialogOpen()) {
   <ar-dialog
-    title="New contact"
+    [title]="editingContactId() ? 'Edit contact' : 'New contact'"
     width="min(560px, calc(100vw - 32px))"
     (dismiss)="dialogOpen.set(false)"
   >
@@ -273,24 +277,48 @@
           <e-column field="lastActivity" headerText="Last activity" />
           <e-column
             headerText="Actions"
-            width="150"
+            width="240"
             textAlign="Right"
-            [visible]="canReorder"
+            [visible]="canReorder() || canUpdate() || canDelete()"
             [showInColumnChooser]="false"
             [allowSorting]="false"
             [allowFiltering]="false"
           >
             <ng-template #template let-c>
-              <button
-                ar-button
-                type="button"
-                variant="ghost"
-                icon="send"
-                title="Send {{ c.name }} their spares re-order link"
-                (click)="reorderFor.set({ id: c.id, name: c.name })"
-              >
-                Re-order link
-              </button>
+              @if (canUpdate()) {
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  title="Edit {{ c.name }}"
+                  (click)="openEdit(c)"
+                >
+                  Edit
+                </button>
+              }
+              @if (canDelete()) {
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  title="Delete {{ c.name }}"
+                  (click)="deleteContact(c)"
+                >
+                  Delete
+                </button>
+              }
+              @if (canReorder()) {
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  icon="send"
+                  title="Send {{ c.name }} their spares re-order link"
+                  (click)="reorderFor.set({ id: c.id, name: c.name })"
+                >
+                  Re-order link
+                </button>
+              }
             </ng-template>
           </e-column>
         </e-columns>

@@ -1,6 +1,8 @@
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import { Automation, WState, WorkflowStore } from '../../core/services/workflow.service';
 import { ChannelService } from '../../core/services/channel.service';
 import { PipelineStore } from '../../core/services/pipeline.service';
@@ -27,11 +29,17 @@ const STATE_TONE: Record<WState, ChipTone> = { draft: 'neutral', active: 'good',
   styleUrl: './automations.scss',
 })
 export class ArAutomations {
+  private readonly permissions = inject(PermissionService);
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(WorkflowStore);
   protected readonly channels = inject(ChannelService).channels;
   protected readonly pipelines = inject(PipelineStore).pipelines;
+
+  protected readonly canCreate = grantedPolicy('AutoReach.Automations.Create', this.permissions);
+  protected readonly canUpdate = grantedPolicy('AutoReach.Automations.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Automations.Delete', this.permissions);
+  protected readonly canActivate = grantedPolicy('AutoReach.Automations.Activate', this.permissions);
 
   protected readonly automations = this.store.automations;
   protected readonly loading = this.store.loadingAutomations;
@@ -150,6 +158,27 @@ export class ArAutomations {
       this.sim.set({ id: a.id, steps: await this.store.simulate(a.id, contactId) });
     } catch {
       this.sim.set({ id: a.id, steps: ['Could not run the simulation.'] });
+    } finally {
+      this.busy.set(null);
+    }
+  }
+
+  protected async deleteAutomation(a: Automation): Promise<void> {
+    if (
+      !(await this.dialogs.delete(
+        'automation',
+        a.name,
+        'This will permanently remove the automation and its steps.',
+      ))
+    ) {
+      return;
+    }
+    this.busy.set(a.id);
+    try {
+      await this.store.deleteAutomation(a.id);
+      this.toasts.success(`“${a.name}” deleted.`);
+    } catch {
+      this.toasts.error(`Could not delete “${a.name}”.`);
     } finally {
       this.busy.set(null);
     }

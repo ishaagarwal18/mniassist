@@ -166,7 +166,7 @@ const FIELDS: {
                     class="ar-field__input"
                     rows="3"
                     [id]="'dp-' + f.key"
-                    [disabled]="!canEdit"
+                    [disabled]="!canEdit()"
                     [value]="value(f.key)"
                     (input)="set(f.key, $any($event.target).value)"
                   ></textarea>
@@ -175,7 +175,7 @@ const FIELDS: {
                     class="ar-field__input"
                     [id]="'dp-' + f.key"
                     [type]="f.type || 'text'"
-                    [disabled]="!canEdit"
+                    [disabled]="!canEdit()"
                     [value]="value(f.key)"
                     (input)="set(f.key, $any($event.target).value)"
                   />
@@ -186,7 +186,7 @@ const FIELDS: {
           @if (saveError(); as e) {
             <p class="dp__err" role="alert">{{ e }}</p>
           }
-          @if (canEdit) {
+          @if (canEdit()) {
             <div class="actions">
               <button
                 ar-button

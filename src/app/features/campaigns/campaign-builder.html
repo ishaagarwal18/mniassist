@@ -3,9 +3,11 @@
   [subtitle]="campaigns().length + ' total'"
   help="A campaign ties one channel, one approved template, one audience and a schedule together. Every send runs through pre-flight checks before anything actually goes out."
 >
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
-    New campaign
-  </button>
+  @if (canCreate()) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+      New campaign
+    </button>
+  }
 </ar-topbar>
 
 @if (dialogOpen()) {
@@ -97,7 +99,7 @@
               <input
                 type="checkbox"
                 [checked]="c.optimiseSendTime"
-                [disabled]="savingTiming()"
+                [disabled]="savingTiming() || !canUpdate()"
                 (change)="setOptimise(c, $event)"
               />
               <span>
@@ -141,14 +143,26 @@
                 }
               </span>
               <div class="panel__actions">
-                <button
-                  ar-button
-                  variant="primary"
-                  [disabled]="busy() || !pf.canSend"
-                  (click)="send(c)"
-                >
-                  {{ pf.canSendImmediately ? 'Send now' : 'Send (spread)' }}
-                </button>
+                @if (canDelete() && c.state !== 'running') {
+                  <button
+                    ar-button
+                    variant="danger"
+                    [disabled]="busy()"
+                    (click)="deleteCampaign(c)"
+                  >
+                    Delete
+                  </button>
+                }
+                @if (canSendPolicy()) {
+                  <button
+                    ar-button
+                    variant="primary"
+                    [disabled]="busy() || !pf.canSend"
+                    (click)="send(c)"
+                  >
+                    {{ pf.canSendImmediately ? 'Send now' : 'Send (spread)' }}
+                  </button>
+                }
               </div>
             </div>
           }
@@ -192,20 +206,32 @@
                 </ul>
               }
               <div class="panel__actions">
-                @if (r.state === 'running') {
-                  <button ar-button variant="ghost" [disabled]="busy()" (click)="pause(c)">
-                    Pause
+                @if (canDelete() && r.state !== 'running') {
+                  <button
+                    ar-button
+                    variant="danger"
+                    [disabled]="busy()"
+                    (click)="deleteCampaign(c)"
+                  >
+                    Delete
                   </button>
                 }
-                @if (r.state === 'paused' || r.state === 'suspended') {
-                  <button ar-button variant="primary" [disabled]="busy()" (click)="resume(c)">
-                    Resume
-                  </button>
-                }
-                @if (r.state === 'running' || r.state === 'paused' || r.state === 'scheduled') {
-                  <button ar-button variant="ghost" [disabled]="busy()" (click)="cancel(c)">
-                    Cancel
-                  </button>
+                @if (canUpdate()) {
+                  @if (r.state === 'running') {
+                    <button ar-button variant="ghost" [disabled]="busy()" (click)="pause(c)">
+                      Pause
+                    </button>
+                  }
+                  @if (r.state === 'paused' || r.state === 'suspended') {
+                    <button ar-button variant="primary" [disabled]="busy()" (click)="resume(c)">
+                      Resume
+                    </button>
+                  }
+                  @if (r.state === 'running' || r.state === 'paused' || r.state === 'scheduled') {
+                    <button ar-button variant="ghost" [disabled]="busy()" (click)="cancel(c)">
+                      Cancel
+                    </button>
+                  }
                 }
               </div>
             </div>

@@ -50,7 +50,7 @@ export class ContactService {
     { id: 'blocked', name: 'Blocked by user', count: 54 },
   ];
 
-  private readonly seedContacts: readonly Contact[] = [
+  private readonly seedContacts = signal<Contact[]>([
     {
       id: 'p1',
       name: 'Sandeep Rao',
@@ -198,7 +198,7 @@ export class ContactService {
       lastActivity: '19 Aug',
       score: 21,
     },
-  ];
+  ]);
 
   private readonly contactsResource = rxResource({
     params: () =>
@@ -249,13 +249,13 @@ export class ContactService {
 
   readonly contacts = computed<readonly Contact[]>(() =>
     environment.useMockData
-      ? this.seedContacts
+      ? this.seedContacts()
       : settled(this.contactsResource, { items: [] as Contact[], totalCount: 0 }).items,
   );
 
   readonly totalCount = computed(() =>
     environment.useMockData
-      ? this.seedContacts.length
+      ? this.seedContacts().length
       : settled(this.contactsResource, { items: [] as Contact[], totalCount: 0 }).totalCount,
   );
 
@@ -289,10 +289,57 @@ export class ContactService {
   }
 
   async create(input: CreateUpdateContactDto): Promise<void> {
-    if (!environment.useMockData) {
-      await firstValueFrom(this.api.create(input));
-      this.contactsResource.reload();
+    if (environment.useMockData) {
+      const newContact: Contact = {
+        id: `c-${Date.now()}`,
+        name: input.displayName || input.waId,
+        phoneE164: '+' + input.waId,
+        company: input.companyName || '—',
+        attributes: {
+          decisionRole: 'Maintenance',
+          ...input.attributes,
+        },
+        consent: { source: 'manual', evidence: 'Direct contact', textVersion: 'v1', grantedAt: new Date().toISOString() },
+        lastActivity: new Date().toISOString(),
+        score: 50,
+      };
+      this.seedContacts.update((list) => [newContact, ...list]);
+      return;
     }
+    await firstValueFrom(this.api.create(input));
+    this.contactsResource.reload();
+  }
+
+  async update(id: string, input: CreateUpdateContactDto): Promise<void> {
+    if (environment.useMockData) {
+      this.seedContacts.update((list) =>
+        list.map((c) =>
+          c.id === id
+            ? {
+                ...c,
+                name: input.displayName ?? c.name,
+                company: input.companyName ?? c.company,
+                attributes: {
+                  ...c.attributes,
+                  ...input.attributes,
+                },
+              }
+            : c,
+        ),
+      );
+      return;
+    }
+    await firstValueFrom(this.api.update(id, input));
+    this.contactsResource.reload();
+  }
+
+  async delete(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.seedContacts.update((list) => list.filter((c) => c.id !== id));
+      return;
+    }
+    await firstValueFrom(this.api.delete(id));
+    this.contactsResource.reload();
   }
 
   /** One count per bucket. maxResultCount 0 asks the server for the total only. */

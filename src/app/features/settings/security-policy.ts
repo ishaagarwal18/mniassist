@@ -265,8 +265,9 @@ export class ArSecurityPolicy {
     { key: 'passwordRequireNonAlphanumeric', label: 'A symbol (! @ # …)' },
   ];
 
-  protected readonly canManage = computed(() =>
-    grantedPolicy('AutoReach.SecurityPolicy.Manage', this.permissions),
+  protected readonly canManage = grantedPolicy(
+    'AutoReach.SecurityPolicy.Manage',
+    this.permissions,
   );
 
   protected readonly policy = signal<SecurityPolicyDto>(DEFAULTS);

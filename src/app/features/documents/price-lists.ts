@@ -1,7 +1,9 @@
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import { CreateUpdatePriceListDto, PriceListDto, PriceListService } from '../../proxy/library';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
@@ -32,7 +34,9 @@ interface ItemRow {
       subtitle="Region & distributor-tier pricing"
       help="Prices scoped by region and distributor tier. When a broadcast goes out, MNI Assist resolves the single most specific active list for each distributor automatically."
     >
-      <button ar-button variant="primary" icon="plus" (click)="openNew()">New price list</button>
+      @if (canCreate()) {
+        <button ar-button variant="primary" icon="plus" (click)="openNew()">New price list</button>
+      }
     </ar-topbar>
 
     <div class="pl ar-scroll">
@@ -58,8 +62,12 @@ interface ItemRow {
             <ar-chip tone="warn">Inactive</ar-chip>
           }
           <div class="pr__act">
-            <button ar-button variant="ghost" (click)="openEdit(l)">Edit</button>
-            <button ar-button variant="ghost" (click)="remove(l)">Delete</button>
+            @if (canUpdate()) {
+              <button ar-button variant="ghost" (click)="openEdit(l)">Edit</button>
+            }
+            @if (canDelete()) {
+              <button ar-button variant="ghost" (click)="remove(l)">Delete</button>
+            }
           </div>
         </article>
       }
@@ -261,8 +269,13 @@ interface ItemRow {
   `,
 })
 export class ArPriceLists {
+  private readonly permissions = inject(PermissionService);
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(PriceListService);
+
+  protected readonly canCreate = grantedPolicy('AutoReach.Library.Create', this.permissions);
+  protected readonly canUpdate = grantedPolicy('AutoReach.Library.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Library.Delete', this.permissions);
 
   private readonly tick = signal(0);
   private readonly resource = rxResource({

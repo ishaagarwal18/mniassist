@@ -175,7 +175,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
       [subtitle]="subtitle()"
       help="For OEMs and their dealers. As the OEM: invite your dealers, give each a territory, and route enquiries to whoever covers the customer; you then see the dealer's stage, quotes and activity on every lead. As a dealer: enter the OEM's invite code, then accept or decline the leads it sends you."
     >
-      @if (canManage && runsNetwork() && tab() !== incomingTab) {
+      @if (canManage() && runsNetwork() && tab() !== incomingTab) {
         <button ar-button type="button" variant="ghost" icon="settings" (click)="openSettings()">
           Settings
         </button>
@@ -284,7 +284,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
                       <small>· valid until {{ date(d.inviteExpiresAtUtc) }}</small>
                     </p>
                   }
-                  @if (canManage && d.state !== 'Ended') {
+                  @if (canManage() && d.state !== 'Ended') {
                     <div class="dealer__acts">
                       @if (d.inviteCode) {
                         <button ar-button type="button" variant="ghost" (click)="copyCode(d)">
@@ -348,7 +348,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
                 of Enterprise.
               </p>
             }
-            @if (canManage) {
+            @if (canManage()) {
               <form class="join" (submit)="$event.preventDefault(); join()">
                 <label class="ar-field" for="nw-code">
                   <span class="ar-field__label">Join an OEM's network with its invite code</span>
@@ -378,7 +378,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
                     <b>{{ m.oemName }}</b>
                     <ar-chip [tone]="linkTone(m.state)">{{ m.state }}</ar-chip>
                     <span class="members__t">Your territory: {{ territory(m.territory) }}</span>
-                    @if (canManage && m.state !== 'Ended') {
+                    @if (canManage() && m.state !== 'Ended') {
                       <button
                         ar-button
                         type="button"
@@ -793,7 +793,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
           <p class="nw__err" role="alert">{{ e }}</p>
         }
         <div dialogActions>
-          @if (canRoute) {
+          @if (canRoute()) {
             @if (d.state === 'Accepted' || d.state === 'Won' || d.state === 'Lost') {
               <button
                 ar-button

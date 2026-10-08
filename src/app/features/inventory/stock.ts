@@ -111,7 +111,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
           Trace a number
         </button>
       }
-      @if (tracking() && canManage) {
+      @if (tracking() && canManage()) {
         <button ar-button type="button" variant="ghost" (click)="openImport()">Import</button>
         <button
           ar-button
@@ -124,7 +124,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
         </button>
       }
       <!-- Without the add-on the server refuses every setting; the banner below says why. -->
-      @if (canSettings && settings()?.included !== false) {
+      @if (canSettings() && settings()?.included !== false) {
         <button ar-button type="button" variant="ghost" icon="settings" (click)="openSettings()">
           Settings
         </button>
@@ -158,7 +158,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
               connection (Settings → Integrations) so every sync reads it.
             </p>
             <div class="bar">
-              @if (canManage) {
+              @if (canManage()) {
                 <button
                   ar-button
                   type="button"
@@ -219,7 +219,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
               Keeping it here lets the re-order portal show customers what's in stock, holds parts
               for their requests, and issues them when a quotation is won.
             </p>
-            @if (canSettings) {
+            @if (canSettings()) {
               <button ar-button type="button" variant="primary" (click)="openSettings()">
                 Set up stock
               </button>
@@ -309,7 +309,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
                       }
                     </td>
                     <td class="acts">
-                      @if (tracking() && canManage) {
+                      @if (tracking() && canManage()) {
                         <button type="button" class="act" (click)="openMove(i, 'receive')">
                           Receive
                         </button>

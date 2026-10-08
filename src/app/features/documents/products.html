@@ -3,10 +3,12 @@
   [subtitle]="total() + ' part' + (total() === 1 ? '' : 's')"
   help="The parts you quote. Each has a part number, a unit and a list price. On a quotation, a price list can set a different price for a customer; the list price here is the fallback, and what discounts are measured against."
 >
-  <button ar-button type="button" variant="ghost" (click)="openImport()">Import</button>
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openNew()">
-    New product
-  </button>
+  @if (canCreate()) {
+    <button ar-button type="button" variant="ghost" (click)="openImport()">Import</button>
+    <button ar-button type="button" variant="primary" icon="plus" (click)="openNew()">
+      New product
+    </button>
+  }
 </ar-topbar>
 
 <div class="pd__bar">
@@ -72,8 +74,12 @@
             <td class="num">{{ money(p.listPriceInPaise ?? 0) }}</td>
             <td class="num muted">{{ gstLabel(p) }}</td>
             <td class="actions">
-              <button ar-button type="button" variant="ghost" (click)="openEdit(p)">Edit</button>
-              <button ar-button type="button" variant="ghost" (click)="remove(p)">Delete</button>
+              @if (canUpdate()) {
+                <button ar-button type="button" variant="ghost" (click)="openEdit(p)">Edit</button>
+              }
+              @if (canDelete()) {
+                <button ar-button type="button" variant="ghost" (click)="remove(p)">Delete</button>
+              }
             </td>
           </tr>
         }

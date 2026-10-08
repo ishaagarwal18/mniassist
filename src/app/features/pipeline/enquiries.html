@@ -12,10 +12,14 @@
       <option [value]="p.id" [selected]="p.id === currentPipeline()?.id">{{ p.name }}</option>
     }
   </select>
-  <button ar-button type="button" variant="ghost" (click)="managePipelines()">Pipelines</button>
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
-    New enquiry
-  </button>
+  @if (canManage()) {
+    <button ar-button type="button" variant="ghost" (click)="managePipelines()">Pipelines</button>
+  }
+  @if (canCreate()) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+      New enquiry
+    </button>
+  }
 </ar-topbar>
 
 @if (dialogOpen()) {

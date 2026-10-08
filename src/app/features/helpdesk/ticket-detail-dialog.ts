@@ -31,6 +31,7 @@ import {
   dueLabel,
   isFinished,
 } from './ticket-logic';
+import { ConfirmService } from '../../core/ui/confirm.service';
 import { ServiceTicketGateway } from './ticket-mock';
 
 const STATUS_TONE: Record<TicketStatus, ChipTone> = {
@@ -78,7 +79,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
           }
         </div>
 
-        @if (canUpdate) {
+        @if (canUpdate()) {
           <div class="ar-field-row">
             <label class="ar-field" for="td-status">
               <span class="ar-field__label">Status</span>
@@ -173,7 +174,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
           }
         </div>
 
-        @if (canReply) {
+        @if (canReply()) {
           <div class="td__compose">
             <div class="td__seg" role="group" aria-label="Note or reply">
               <button type="button" [class.on]="isInternal()" (click)="isInternal.set(true)">
@@ -219,6 +220,11 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
       }
 
       <div dialogActions>
+        @if (canDelete() && loaded(); as t) {
+          <button ar-button type="button" variant="danger" (click)="deleteTicket(t)">
+            Delete ticket
+          </button>
+        }
         <button ar-button type="button" variant="ghost" (click)="closed.emit(changed())">
           Close
         </button>
@@ -371,6 +377,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
 export class ArTicketDetailDialog {
   private readonly api = inject(ServiceTicketGateway).api;
   private readonly permissions = inject(PermissionService);
+  private readonly dialogs = inject(ConfirmService);
   protected readonly directory = inject(ActivityDirectory);
 
   readonly ticketId = input.required<string>();
@@ -386,7 +393,8 @@ export class ArTicketDetailDialog {
   protected readonly isFinished = isFinished;
 
   protected readonly canUpdate = grantedPolicy('AutoReach.Helpdesk.Update', this.permissions);
-  protected readonly canReply = grantedPolicy('AutoReach.Helpdesk.Update', this.permissions);
+  protected readonly canReply = grantedPolicy('AutoReach.Helpdesk.Reply', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Helpdesk.Delete', this.permissions);
 
   protected readonly loaded = signal<ServiceTicketDetailDto | null>(null);
   protected readonly loading = signal(true);
@@ -515,6 +523,25 @@ export class ArTicketDetailDialog {
       this.error.set(errorMessage(e, 'That could not be sent.'));
     } finally {
       this.sending.set(false);
+    }
+  }
+
+  protected async deleteTicket(t: ServiceTicketDetailDto): Promise<void> {
+    if (
+      !(await this.dialogs.delete(
+        'ticket',
+        t.reference,
+        'This ticket and all its comments will be permanently deleted.',
+      ))
+    ) {
+      return;
+    }
+    try {
+      await firstValueFrom(this.api.delete(t.id));
+      this.changed.set(true);
+      this.closed.emit(true);
+    } catch (e: unknown) {
+      this.error.set(errorMessage(e, 'The ticket could not be deleted.'));
     }
   }
 }

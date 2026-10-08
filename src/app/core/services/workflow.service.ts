@@ -208,11 +208,14 @@ export class WorkflowStore {
     defaultValue: [],
   });
 
+  private readonly mockAutomations = signal<Automation[]>([...SEED_AUTOMATIONS]);
+  private readonly mockFlows = signal<Flow[]>([...SEED_FLOWS]);
+
   readonly automations = computed(() =>
-    environment.useMockData ? SEED_AUTOMATIONS : settled(this.automationsResource, []),
+    environment.useMockData ? this.mockAutomations() : settled(this.automationsResource, []),
   );
   readonly flows = computed(() =>
-    environment.useMockData ? SEED_FLOWS : settled(this.flowsResource, []),
+    environment.useMockData ? this.mockFlows() : settled(this.flowsResource, []),
   );
   readonly loadingAutomations = computed(
     () => !environment.useMockData && this.automationsResource.isLoading(),
@@ -226,18 +229,54 @@ export class WorkflowStore {
   }
 
   async setAutomationActive(id: string, active: boolean): Promise<void> {
+    if (environment.useMockData) {
+      this.mockAutomations.update((list) =>
+        list.map((a) => (a.id === id ? { ...a, state: active ? 'active' : 'paused' } : a)),
+      );
+      return;
+    }
     await firstValueFrom(active ? this.automationApi.activate(id) : this.automationApi.pause(id));
     this.reload();
   }
   async simulate(id: string, contactId: string): Promise<string[]> {
     return firstValueFrom(this.automationApi.simulate(id, contactId));
   }
+  async deleteAutomation(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.mockAutomations.update((list) => list.filter((a) => a.id !== id));
+      return;
+    }
+    await firstValueFrom(this.automationApi.delete(id));
+    this.reload();
+  }
   async publishFlow(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.mockFlows.update((list) =>
+        list.map((f) =>
+          f.id === id ? { ...f, state: 'published', publishedAt: new Date().toISOString() } : f,
+        ),
+      );
+      return;
+    }
     await firstValueFrom(this.flowApi.publish(id));
     this.reload();
   }
   async deprecateFlow(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.mockFlows.update((list) =>
+        list.map((f) => (f.id === id ? { ...f, state: 'deprecated' } : f)),
+      );
+      return;
+    }
     await firstValueFrom(this.flowApi.deprecate(id));
+    this.reload();
+  }
+  async deleteFlow(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.mockFlows.update((list) => list.filter((f) => f.id !== id));
+      return;
+    }
+    await firstValueFrom(this.flowApi.delete(id));
     this.reload();
   }
 
@@ -250,7 +289,22 @@ export class WorkflowStore {
     /** Trigger config for triggers that need one, such as the stage an enquiry must reach. */
     triggerConfig?: object,
   ): Promise<void> {
-    if (environment.useMockData) return;
+    if (environment.useMockData) {
+      this.mockAutomations.update((list) => [
+        {
+          id: 'w-' + Date.now(),
+          name: name.trim(),
+          trigger: TRIGGER[trigger] ?? 'Keyword',
+          state: 'paused',
+          enrolled: 0,
+          completed: 0,
+          completionRate: 0,
+          steps: 1,
+        },
+        ...list,
+      ]);
+      return;
+    }
     const triggerConfigJson =
       trigger === AutomationTriggerKind.InboundKeyword && keyword
         ? JSON.stringify({ keywords: [keyword.trim()] })
@@ -265,7 +319,20 @@ export class WorkflowStore {
 
   /** Creates a draft flow with a single empty screen. */
   async createFlow(name: string, channelId: string): Promise<void> {
-    if (environment.useMockData) return;
+    if (environment.useMockData) {
+      this.mockFlows.update((list) => [
+        {
+          id: 'f-' + Date.now(),
+          name: name.trim(),
+          state: 'draft',
+          version: 1,
+          screens: 1,
+          hasEndpoint: false,
+        },
+        ...list,
+      ]);
+      return;
+    }
     await firstValueFrom(
       this.flowApi.create({ name: name.trim(), channelId, definitionJson: STARTER_FLOW_JSON }),
     );

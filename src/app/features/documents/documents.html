@@ -3,17 +3,21 @@
   [subtitle]="documents().length + ' in the library'"
   help="Your datasheet and drawing library, indexed by part number. Set Access to control who can receive a document — public, verified dealers only, or named accounts only."
 >
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
-    Upload document
-  </button>
+  @if (canCreate()) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+      Upload document
+    </button>
+  }
 </ar-topbar>
 
 @if (dialogOpen()) {
-  <ar-dialog title="Upload a document" (dismiss)="dialogOpen.set(false)">
-    <label class="ar-field">
-      <span class="ar-field__label">File</span>
-      <input class="ar-field__input" type="file" (change)="onFile($event)" />
-    </label>
+  <ar-dialog [title]="editingDoc() ? 'Edit document' : 'Upload a document'" (dismiss)="dialogOpen.set(false)">
+    @if (!editingDoc()) {
+      <label class="ar-field">
+        <span class="ar-field__label">File</span>
+        <input class="ar-field__input" type="file" (change)="onFile($event)" />
+      </label>
+    }
     <label class="ar-field">
       <span class="ar-field__label">Title</span>
       <input
@@ -77,8 +81,8 @@
       <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
         Cancel
       </button>
-      <button ar-button type="button" variant="primary" [disabled]="uploading()" (click)="upload()">
-        {{ uploading() ? 'Uploading…' : 'Upload' }}
+      <button ar-button type="button" variant="primary" [disabled]="uploading()" (click)="save()">
+        {{ uploading() ? 'Saving…' : (editingDoc() ? 'Save' : 'Upload') }}
       </button>
     </div>
   </ar-dialog>
@@ -114,8 +118,13 @@
         }
       </div>
       <div class="doc__actions">
-        <button ar-button variant="ghost">Edit</button>
-        <button ar-button variant="ghost">Download</button>
+        @if (canUpdate()) {
+          <button ar-button variant="ghost" (click)="openEdit(d)">Edit</button>
+        }
+        <button ar-button variant="ghost" (click)="downloadDoc(d)">Download</button>
+        @if (canDelete()) {
+          <button ar-button variant="ghost" (click)="deleteDoc(d)">Delete</button>
+        }
       </div>
     </article>
   }

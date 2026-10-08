@@ -1,7 +1,9 @@
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import { FState, Flow, WorkflowStore } from '../../core/services/workflow.service';
 import { ChannelService } from '../../core/services/channel.service';
 import { FlowFunnelDto, FlowService } from '../../proxy/flows';
@@ -66,12 +68,18 @@ const STATE_TONE: Record<FState, ChipTone> = {
   styleUrl: './flows.scss',
 })
 export class ArFlows {
+  private readonly permissions = inject(PermissionService);
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(WorkflowStore);
   private readonly flowApi = inject(FlowService);
   private readonly router = inject(Router);
   protected readonly channels = inject(ChannelService).channels;
+
+  protected readonly canCreate = grantedPolicy('AutoReach.Flows.Create', this.permissions);
+  protected readonly canUpdate = grantedPolicy('AutoReach.Flows.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Flows.Delete', this.permissions);
+  protected readonly canPublish = grantedPolicy('AutoReach.Flows.Publish', this.permissions);
 
   // ---- Funnel (M08-5) -----------------------------------------------
   protected readonly funnelOpen = signal(false);
@@ -172,6 +180,27 @@ export class ArFlows {
     this.busy.set(f.id);
     try {
       await this.store.deprecateFlow(f.id);
+    } finally {
+      this.busy.set(null);
+    }
+  }
+
+  protected async deleteFlow(f: Flow): Promise<void> {
+    if (
+      !(await this.dialogs.delete(
+        'flow',
+        f.name,
+        'This will permanently remove the flow and its screens.',
+      ))
+    ) {
+      return;
+    }
+    this.busy.set(f.id);
+    try {
+      await this.store.deleteFlow(f.id);
+      this.toasts.success(`Flow “${f.name}” deleted.`);
+    } catch {
+      this.toasts.error(`Could not delete “${f.name}”.`);
     } finally {
       this.busy.set(null);
     }

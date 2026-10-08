@@ -99,7 +99,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
       [subtitle]="subtitle()"
       help="Orders to suppliers, received into stock at their cost. Stock is valued at moving average cost, the method Tally's Average Cost and SAP Business One's Moving Average use. Sent orders count as on order on the Stock page."
     >
-      @if (canManage) {
+      @if (canManage()) {
         <button ar-button type="button" variant="ghost" (click)="openSupplier(null)">
           New supplier
         </button>
@@ -183,7 +183,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
                         }}</ar-chip>
                       </td>
                       <td class="acts">
-                        @if (canManage) {
+                        @if (canManage()) {
                           @if (o.state === 'Draft') {
                             <button type="button" class="act" (click)="openOrder(o)">Edit</button>
                             <button type="button" class="act" (click)="markSent(o)">
@@ -254,7 +254,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
                 </tbody>
               </table>
             </div>
-            @if (canManage) {
+            @if (canManage()) {
               <div>
                 <button ar-button type="button" variant="primary" (click)="orderSuggestions()">
                   Start an order for these
@@ -296,7 +296,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
                       </td>
                       <td class="num">{{ s.leadDays != null ? s.leadDays + ' days' : '—' }}</td>
                       <td class="acts">
-                        @if (canManage) {
+                        @if (canManage()) {
                           <button type="button" class="act" (click)="openSupplier(s)">Edit</button>
                         }
                       </td>

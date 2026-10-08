@@ -97,7 +97,7 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
       [subtitle]="subtitle()"
       help="Customers open a personal link from WhatsApp, confirm with a code sent to their number, and see their machines with the spares due, at their own prices. What they send arrives here as a draft quotation for you to check and issue."
     >
-      @if (canSettings) {
+      @if (canSettings()) {
         <button
           ar-button
           type="button"
@@ -114,7 +114,7 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
           Portal settings
         </button>
       }
-      @if (canSend) {
+      @if (canSend()) {
         <button ar-button type="button" variant="primary" icon="send" (click)="pickOpen.set(true)">
           Send a re-order link
         </button>

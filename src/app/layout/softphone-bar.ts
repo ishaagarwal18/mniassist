@@ -17,7 +17,7 @@ import { ArButton, ArIcon } from '../ui';
   imports: [ArButton, ArIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (canUse && softphone.configured()) {
+    @if (canUse() && softphone.configured()) {
       <div class="sp" [class.sp--live]="callState() !== 'idle'">
         @switch (callState()) {
           @case ('idle') {
@@ -221,7 +221,7 @@ export class ArSoftphoneBar {
   protected readonly canDtmf = computed(() => this.connection() === 'registered');
 
   constructor() {
-    if (this.canUse) {
+    if (this.canUse()) {
       void this.softphone.ensureConnected();
     }
   }

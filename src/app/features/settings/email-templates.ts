@@ -422,8 +422,9 @@ export class ArEmailTemplates {
   private readonly subjectInput = viewChild<ElementRef<HTMLInputElement>>('subjectInput');
   private readonly bodyInput = viewChild<ElementRef<HTMLTextAreaElement>>('bodyInput');
 
-  protected readonly canEdit = computed(() =>
-    grantedPolicy('AutoReach.TextTemplates.Edit', this.permissions),
+  protected readonly canEdit = grantedPolicy(
+    'AutoReach.TextTemplates.Edit',
+    this.permissions,
   );
 
   private readonly listTick = signal(0);

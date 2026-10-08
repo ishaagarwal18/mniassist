@@ -609,6 +609,16 @@ export class TemplateService {
     this.reload();
   }
 
+  async delete(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.seedList = this.seedList.filter((t) => t.id !== id);
+      this.seedTick.update((n) => n + 1);
+      return;
+    }
+    await firstValueFrom(this.api.delete(id));
+    this.reload();
+  }
+
   /** AI-assisted body drafting for the composer (M04-10). */
   async draftWithAi(
     goal: string,

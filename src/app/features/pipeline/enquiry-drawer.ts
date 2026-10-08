@@ -1,3 +1,4 @@
+import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,15 +10,18 @@ import {
 } from '@angular/core';
 
 import { RouterLink } from '@angular/router';
-import { EnquiryStage, LostReasonCategory } from '../../proxy/pipeline';
+import { grantedPolicy } from '../../core/auth/permission';
+import { EnquiryStage, LeadSource, LostReasonCategory } from '../../proxy/pipeline';
 import { EnquiryDetail, PipelineStore } from '../../core/services/pipeline.service';
 import { inrCompact } from '../../core/util/format';
-import { ArButton, ArChip } from '../../ui';
+import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ArEnquiryActivities } from '../activities/enquiry-activities';
 import { ArEnquiryCalls } from '../calls/enquiry-calls';
 import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
 import { ArEnquiryNetwork } from '../network/enquiry-network';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 
 /**
  * The enquiry card, opened. A slide-over rather than a route because the board is
@@ -31,6 +35,7 @@ import { ArEnquiryNetwork } from '../network/enquiry-network';
   imports: [
     ArButton,
     ArChip,
+    ArDialog,
     ArEnquiryActivities,
     ArEnquiryCalls,
     ArEnquiryTickets,
@@ -71,8 +76,61 @@ import { ArEnquiryNetwork } from '../network/enquiry-network';
               </a>
             }
           </div>
-          <button type="button" class="dh__x" aria-label="Close" (click)="close.emit()">×</button>
+          <div class="dh__ctrls">
+            @if (canUpdate()) {
+              <button ar-button type="button" variant="ghost" (click)="openEdit(d)">Edit</button>
+            }
+            @if (canDelete()) {
+              <button ar-button type="button" variant="danger" (click)="deleteEnquiry(d)">Delete</button>
+            }
+            <button type="button" class="dh__x" aria-label="Close" (click)="close.emit()">×</button>
+          </div>
         </header>
+
+        @if (editing()) {
+          <ar-dialog title="Edit enquiry" (dismiss)="editing.set(false)">
+            <label class="ar-field">
+              <span class="ar-field__label">Title</span>
+              <input
+                required
+                maxlength="256"
+                class="ar-field__input"
+                [value]="editTitle()"
+                (input)="editTitle.set($any($event.target).value)"
+              />
+            </label>
+            <label class="ar-field">
+              <span class="ar-field__label">Requirement <span class="ar-field__opt">(optional)</span></span>
+              <textarea
+                class="ar-field__input"
+                rows="3"
+                [value]="editRequirement()"
+                (input)="editRequirement.set($any($event.target).value)"
+              ></textarea>
+            </label>
+            <label class="ar-field">
+              <span class="ar-field__label">Est. value (₹) <span class="ar-field__opt">(optional)</span></span>
+              <input
+                class="ar-field__input"
+                inputmode="numeric"
+                [value]="editValueRupees()"
+                (input)="editValueRupees.set($any($event.target).value)"
+              />
+            </label>
+            <div dialogActions>
+              <button ar-button type="button" variant="ghost" (click)="editing.set(false)">Cancel</button>
+              <button
+                ar-button
+                type="button"
+                variant="primary"
+                [disabled]="busy() || !editTitle().trim()"
+                (click)="saveEdit(d)"
+              >
+                {{ busy() ? 'Saving…' : 'Save changes' }}
+              </button>
+            </div>
+          </ar-dialog>
+        }
 
         <div class="dbody ar-scroll">
           <div class="facts">
@@ -328,6 +386,11 @@ import { ArEnquiryNetwork } from '../network/enquiry-network';
       font: 400 12px var(--ar-font-sans);
       color: var(--ar-ink-500);
     }
+    .dh__ctrls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
     .dh__x {
       background: none;
       border: 0;
@@ -516,15 +579,26 @@ import { ArEnquiryNetwork } from '../network/enquiry-network';
   `,
 })
 export class ArEnquiryDrawer {
+  private readonly permissions = inject(PermissionService);
+  private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(PipelineStore);
 
   readonly enquiryId = input.required<string>();
   readonly close = output<void>();
   readonly changed = output<void>();
 
+  protected readonly canUpdate = grantedPolicy('AutoReach.Pipeline.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Pipeline.Delete', this.permissions);
+
   protected readonly detail = signal<EnquiryDetail | null>(null);
   protected readonly busy = signal(false);
   protected readonly noteText = signal('');
+
+  protected readonly editing = signal(false);
+  protected readonly editTitle = signal('');
+  protected readonly editRequirement = signal('');
+  protected readonly editValueRupees = signal('');
 
   protected readonly losing = signal(false);
   protected readonly lostCat = signal<LostReasonCategory>(LostReasonCategory.LostToCompetitor);
@@ -610,5 +684,62 @@ export class ArEnquiryDrawer {
       month: 'short',
       year: 'numeric',
     });
+  }
+
+  protected openEdit(d: EnquiryDetail): void {
+    this.editTitle.set(d.title);
+    this.editRequirement.set(d.requirement ?? '');
+    this.editValueRupees.set(d.valueInPaise ? String(d.valueInPaise / 100) : '');
+    this.editing.set(true);
+  }
+
+  protected async saveEdit(d: EnquiryDetail): Promise<void> {
+    if (!this.editTitle().trim()) {
+      this.toasts.warning('Title is required.', 'Edit enquiry');
+      return;
+    }
+    const rupees = Number(this.editValueRupees().replace(/[^\d.]/g, ''));
+    this.busy.set(true);
+    try {
+      await this.store.updateEnquiry(d.id, {
+        contactId: d.contactId,
+        pipelineId: d.pipelineId,
+        source: LeadSource.Manual,
+        title: this.editTitle().trim(),
+        requirement: this.editRequirement().trim() || undefined,
+        estimatedValueInPaise: rupees > 0 ? Math.round(rupees * 100) : undefined,
+      });
+      this.editing.set(false);
+      this.toasts.success('Enquiry updated.');
+      this.changed.emit();
+      this.detail.set(await this.store.loadEnquiry(d.id));
+    } catch {
+      this.toasts.error('Could not update enquiry.');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async deleteEnquiry(d: EnquiryDetail): Promise<void> {
+    if (
+      !(await this.dialogs.delete(
+        'enquiry',
+        d.reference,
+        'This will permanently delete this enquiry and all linked activities.',
+      ))
+    ) {
+      return;
+    }
+    this.busy.set(true);
+    try {
+      await this.store.deleteEnquiry(d.id);
+      this.toasts.success(`${d.reference} deleted.`);
+      this.changed.emit();
+      this.close.emit();
+    } catch {
+      this.toasts.error(`Could not delete ${d.reference}.`);
+    } finally {
+      this.busy.set(false);
+    }
   }
 }

@@ -1,3 +1,4 @@
+import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,6 +10,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import {
   Campaign,
   CampaignStore,
@@ -49,10 +51,16 @@ const STATE_TONE: Record<CState, ChipTone> = {
   styleUrl: './campaign-builder.scss',
 })
 export class ArCampaignBuilder {
+  private readonly permissions = inject(PermissionService);
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(CampaignStore);
   protected readonly channels = inject(ChannelService).channels;
+
+  protected readonly canCreate = grantedPolicy('AutoReach.Campaigns.Create', this.permissions);
+  protected readonly canUpdate = grantedPolicy('AutoReach.Campaigns.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Campaigns.Delete', this.permissions);
+  protected readonly canSendPolicy = grantedPolicy('AutoReach.Campaigns.Send', this.permissions);
 
   protected readonly campaigns = this.store.campaigns;
   protected readonly loading = this.store.loading;
@@ -207,5 +215,26 @@ export class ArCampaignBuilder {
     )
       return;
     return this.act(() => this.store.cancel(c.id));
+  }
+
+  protected async deleteCampaign(c: Campaign): Promise<void> {
+    const ok = await this.dialogs.delete(
+      'campaign',
+      c.name,
+      'Any unsent messages will be cancelled permanently.',
+    );
+    if (!ok) return;
+    this.busy.set(true);
+    try {
+      await this.store.delete(c.id);
+      this.toasts.success(`Campaign "${c.name}" deleted`);
+      if (this.openId() === c.id) {
+        this.openId.set(null);
+      }
+    } catch (e: unknown) {
+      this.toasts.error(e instanceof Error ? e.message : 'Could not delete campaign');
+    } finally {
+      this.busy.set(false);
+    }
   }
 }

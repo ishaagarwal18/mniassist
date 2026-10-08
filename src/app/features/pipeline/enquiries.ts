@@ -1,3 +1,4 @@
+import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -10,6 +11,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { DragEventArgs, KanbanModule } from '@syncfusion/ej2-angular-kanban';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import { EnquiryCard, PickerOption, PipelineStore } from '../../core/services/pipeline.service';
 import { LeadSource } from '../../proxy/pipeline';
 import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
@@ -52,9 +54,13 @@ const columnKey = (stageId: string | undefined, stage: string) => stageId ?? sta
   styleUrl: './enquiries.scss',
 })
 export class ArEnquiries {
+  private readonly permissions = inject(PermissionService);
   private readonly toasts = inject(ToastService);
   private readonly store = inject(PipelineStore);
   private readonly router = inject(Router);
+
+  protected readonly canCreate = grantedPolicy('AutoReach.Pipeline.Create', this.permissions);
+  protected readonly canManage = grantedPolicy('AutoReach.Pipeline.Manage', this.permissions);
 
   protected readonly pipelines = this.store.pipelines;
   protected readonly currentPipeline = this.store.currentPipeline;

@@ -1,3 +1,4 @@
+import { PermissionService } from '@abp/ng.core';
 import { TemplateService } from '../../core/services/template.service';
 import {
   ChangeDetectionStrategy,
@@ -10,6 +11,7 @@ import {
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import { PipelineStore, QState, Quotation } from '../../core/services/pipeline.service';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
@@ -50,11 +52,17 @@ const STATE_TONE: Record<QState, ChipTone> = {
   styleUrl: './quotations.scss',
 })
 export class ArQuotations {
+  private readonly permissions = inject(PermissionService);
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(PipelineStore);
   private readonly signatures = inject(QuotationSignatureService);
   private readonly templateStore = inject(TemplateService);
+
+  protected readonly canCreate = grantedPolicy('AutoReach.Quotations.Create', this.permissions);
+  protected readonly canUpdate = grantedPolicy('AutoReach.Quotations.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Quotations.Delete', this.permissions);
+  protected readonly canIssuePolicy = grantedPolicy('AutoReach.Quotations.Issue', this.permissions);
 
   protected readonly quotes = this.store.quotes;
   protected readonly loading = this.store.loading;
@@ -202,7 +210,7 @@ export class ArQuotations {
   );
 
   protected canIssue(q: Quotation): boolean {
-    return q.state === 'draft' || q.state === 'revised';
+    return this.canIssuePolicy() && (q.state === 'draft' || q.state === 'revised');
   }
 
   protected openIssue(q: Quotation): void {
@@ -274,6 +282,27 @@ export class ArQuotations {
     this.busy.set(q.id);
     try {
       await this.store.downloadQuote(q.id);
+    } finally {
+      this.busy.set(null);
+    }
+  }
+
+  protected async remove(q: Quotation): Promise<void> {
+    if (
+      !(await this.dialogs.delete(
+        'quotation',
+        q.reference,
+        'This will permanently remove the quotation and its lines.',
+      ))
+    ) {
+      return;
+    }
+    this.busy.set(q.id);
+    try {
+      await this.store.deleteQuote(q.id);
+      this.toasts.success(`${q.reference} deleted.`);
+    } catch {
+      this.toasts.error(`Could not delete ${q.reference}.`);
     } finally {
       this.busy.set(null);
     }

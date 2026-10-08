@@ -9,9 +9,11 @@
   "
   help="What has to be done, and by when. Tick a task to finish it. A task about a deal shows on that deal's timeline once done, and you are reminded before it is due."
 >
-  <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">
-    New task
-  </button>
+  @if (directory.canCreate) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">
+      New task
+    </button>
+  }
 </ar-topbar>
 
 @if (creating() || editing()) {
@@ -44,16 +46,18 @@
     </div>
   }
 
-  <form class="tk__quick" (submit)="$event.preventDefault(); quickAdd()">
-    <input
-      id="task-quick"
-      class="ar-field__input"
-      placeholder="Add a task for yourself and press Enter"
-      aria-label="Add a task"
-      [value]="quickTitle()"
-      (input)="quickTitle.set($any($event.target).value)"
-    />
-  </form>
+  @if (directory.canCreate) {
+    <form class="tk__quick" (submit)="$event.preventDefault(); quickAdd()">
+      <input
+        id="task-quick"
+        class="ar-field__input"
+        placeholder="Add a task for yourself and press Enter"
+        aria-label="Add a task"
+        [value]="quickTitle()"
+        (input)="quickTitle.set($any($event.target).value)"
+      />
+    </form>
+  }
 
   <div class="tk__bar">
     @if (directory.canSeeAll) {

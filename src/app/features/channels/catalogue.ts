@@ -10,6 +10,8 @@ import {
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, of } from 'rxjs';
 
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../core/auth/permission';
 import {
   CatalogueProductAvailability,
   CatalogueProductDto,
@@ -59,10 +61,13 @@ const STATE_LABEL: Record<CatalogueSyncState, string> = {
   styleUrl: './catalogue.scss',
 })
 export class ArCatalogue {
+  private readonly permissions = inject(PermissionService);
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(CatalogueService);
   private readonly channels = inject(ChannelService);
   private readonly productApi = inject(ProductService);
+
+  protected readonly canManage = grantedPolicy('AutoReach.Channels.Manage', this.permissions);
 
   protected readonly channelId = computed(() => this.channels.active()?.id);
   private readonly tick = signal(0);

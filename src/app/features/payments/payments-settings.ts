@@ -40,7 +40,7 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
     />
 
     <div class="pm ar-scroll">
-      @if (canManage) {
+      @if (canManage()) {
         <section class="pm__card">
           <h2 class="pm__h">BillDesk account</h2>
           <div class="pm__grid">
@@ -166,7 +166,7 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
                         <button type="button" class="pm__link" (click)="copy(r.payUrl)">
                           Copy link
                         </button>
-                        @if (canCancel) {
+                        @if (canCancel()) {
                           <button type="button" class="pm__link pm__link--bad" (click)="cancel(r)">
                             Cancel
                           </button>
@@ -321,7 +321,7 @@ export class ArPaymentsSettings {
 
   private async load(): Promise<void> {
     try {
-      if (this.canManage) {
+      if (this.canManage()) {
         const g = await firstValueFrom(this.api.getGateway());
         this.merchantId.set(g.merchantId ?? '');
         this.clientId.set(g.clientId ?? '');

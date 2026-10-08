@@ -141,7 +141,7 @@ const SEED_PREVIEW: SegmentPreview = {
   ],
 };
 
-const SEED_SAVED: readonly SavedSegment[] = [
+let SEED_SAVED: SavedSegment[] = [
   {
     id: 's1',
     name: 'Lapsed quotes — AMC accounts',
@@ -319,6 +319,19 @@ export class SegmentStore {
   // ---- Persistence -------------------------------------------------------
 
   async save(name: string, description: string | undefined): Promise<void> {
+    if (environment.useMockData) {
+      const newSeg: SavedSegment = {
+        id: `s-${Date.now()}`,
+        name: name.trim(),
+        description: description?.trim(),
+        rule: this.rule(),
+        cachedMemberCount: this.preview().totalMatching,
+        isCountStale: false,
+      };
+      SEED_SAVED.unshift(newSeg);
+      this.reloadTick.update((n) => n + 1);
+      return;
+    }
     await firstValueFrom(
       this.api.create({
         name: name.trim(),
@@ -330,7 +343,39 @@ export class SegmentStore {
     this.reloadTick.update((n) => n + 1);
   }
 
+  async update(id: string, name: string, description: string | undefined): Promise<void> {
+    if (environment.useMockData) {
+      const idx = SEED_SAVED.findIndex((s) => s.id === id);
+      if (idx !== -1) {
+        SEED_SAVED[idx] = {
+          ...SEED_SAVED[idx],
+          name: name.trim(),
+          description: description?.trim(),
+          rule: this.rule(),
+          cachedMemberCount: this.preview().totalMatching,
+        };
+      }
+      this.reloadTick.update((n) => n + 1);
+      return;
+    }
+    await firstValueFrom(
+      this.api.update(id, {
+        name: name.trim(),
+        description: description?.trim() || undefined,
+        ruleJson: ruleToJson(this.rule()),
+        isDynamic: true,
+      }),
+    );
+    this.reloadTick.update((n) => n + 1);
+  }
+
   async remove(id: string): Promise<void> {
+    if (environment.useMockData) {
+      const idx = SEED_SAVED.findIndex((s) => s.id === id);
+      if (idx !== -1) SEED_SAVED.splice(idx, 1);
+      this.reloadTick.update((n) => n + 1);
+      return;
+    }
     await firstValueFrom(this.api.delete(id));
     this.reloadTick.update((n) => n + 1);
   }

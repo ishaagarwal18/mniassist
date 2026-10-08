@@ -1,8 +1,11 @@
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { grantedPolicy } from '../../core/auth/permission';
+import { ConfirmService } from '../../core/ui/confirm.service';
 import {
   CreateLibraryDocumentDto,
   DocumentVisibility,
@@ -89,13 +92,21 @@ function toDoc(d: LibraryDocumentDto): Doc {
   styleUrl: './documents.scss',
 })
 export class ArDocuments {
+  private readonly permissions = inject(PermissionService);
   private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(LibraryService);
 
-  protected readonly query = signal('');
+  protected readonly canCreate = grantedPolicy('AutoReach.Library.Create', this.permissions);
+  protected readonly canUpdate = grantedPolicy('AutoReach.Library.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Library.Delete', this.permissions);
 
-  // ---- Upload dialog ---------------------------------------------
+  protected readonly query = signal('');
+  private readonly mockDocs = signal<Doc[]>([...SEED]);
+
+  // ---- Upload / Edit dialog ---------------------------------------------
   protected readonly dialogOpen = signal(false);
+  protected readonly editingDoc = signal<Doc | null>(null);
   protected readonly uploading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly file = signal<File | null>(null);
@@ -112,10 +123,23 @@ export class ArDocuments {
   protected readonly DV = DocumentVisibility;
 
   protected openDialog(): void {
+    this.editingDoc.set(null);
     this.file.set(null);
     this.title.set('');
     this.category.set('');
     this.parts.set('');
+    this.visibility.set(DocumentVisibility.Public);
+    this.allowedAccounts.set('');
+    this.error.set(null);
+    this.dialogOpen.set(true);
+  }
+
+  protected openEdit(d: Doc): void {
+    this.editingDoc.set(d);
+    this.file.set(null);
+    this.title.set(d.title);
+    this.category.set(d.category ?? '');
+    this.parts.set(d.parts.join(', '));
     this.visibility.set(DocumentVisibility.Public);
     this.allowedAccounts.set('');
     this.error.set(null);
@@ -130,49 +154,146 @@ export class ArDocuments {
     }
   }
 
-  protected async upload(): Promise<void> {
-    const f = this.file();
-    if (!f) {
-      this.toasts.warning('Choose a file to upload.', 'Document');
-      return;
-    }
-    if (!this.title().trim()) {
+  protected async save(): Promise<void> {
+    const editing = this.editingDoc();
+    const title = this.title().trim();
+    if (!title) {
       this.toasts.warning('Give the document a title.', 'Document');
       return;
     }
+    const category = this.category().trim();
+    const partsList = this.parts()
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (!editing && !this.file()) {
+      this.toasts.warning('Choose a file to upload.', 'Document');
+      return;
+    }
+
     this.uploading.set(true);
     this.error.set(null);
     try {
-      if (!environment.useMockData) {
-        const body = new FormData();
-        body.append('title', this.title().trim());
-        if (this.category().trim()) body.append('category', this.category().trim());
-        body.append('visibility', String(this.visibility()));
-        if (this.visibility() === DocumentVisibility.NamedAccounts) {
-          for (const a of this.allowedAccounts()
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)) {
-            body.append('allowedAccountIds', a);
+      if (editing) {
+        if (!environment.useMockData) {
+          await firstValueFrom(
+            this.api.update(editing.id, {
+              title,
+              category: category || null,
+              partNumbers: partsList,
+              visibility: this.visibility(),
+              allowedAccountIds:
+                this.visibility() === DocumentVisibility.NamedAccounts
+                  ? this.allowedAccounts()
+                      .split(',')
+                      .map((s) => s.trim())
+                      .filter(Boolean)
+                  : [],
+            }),
+          );
+        } else {
+          this.mockDocs.update((docs) =>
+            docs.map((x) =>
+              x.id === editing.id
+                ? { ...x, title, category: category || undefined, parts: partsList }
+                : x,
+            ),
+          );
+        }
+        this.toasts.success('Document updated.');
+      } else {
+        const f = this.file()!;
+        if (!environment.useMockData) {
+          const body = new FormData();
+          body.append('title', title);
+          if (category) body.append('category', category);
+          body.append('visibility', String(this.visibility()));
+          if (this.visibility() === DocumentVisibility.NamedAccounts) {
+            for (const a of this.allowedAccounts()
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean)) {
+              body.append('allowedAccountIds', a);
+            }
           }
+          for (const p of partsList) {
+            body.append('partNumbers', p);
+          }
+          body.append('file', f, f.name);
+          await firstValueFrom(this.api.create(body as unknown as CreateLibraryDocumentDto));
+        } else {
+          const kb = f.size / 1024;
+          const sizeLabel = kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
+          this.mockDocs.update((docs) => [
+            {
+              id: 'd-' + Date.now(),
+              title,
+              category: category || undefined,
+              sizeLabel,
+              parts: partsList,
+              sendCount: 0,
+            },
+            ...docs,
+          ]);
         }
-        for (const p of this.parts()
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean)) {
-          body.append('partNumbers', p);
-        }
-        body.append('file', f, f.name);
-        // The generated proxy types `create` as the DTO; Angular's HttpClient sends
-        // a FormData body as multipart, which is what the [FromForm] endpoint wants.
-        await firstValueFrom(this.api.create(body as unknown as CreateLibraryDocumentDto));
+        this.toasts.success('Document uploaded.');
       }
       this.resource.reload();
       this.dialogOpen.set(false);
     } catch (e: unknown) {
-      this.error.set(e instanceof Error ? e.message : 'The upload failed.');
+      this.error.set(e instanceof Error ? e.message : 'The action failed.');
     } finally {
       this.uploading.set(false);
+    }
+  }
+
+  protected async deleteDoc(d: Doc): Promise<void> {
+    if (
+      !(await this.dialogs.delete(
+        'document',
+        d.title,
+        'This document will no longer be available in the library.',
+      ))
+    ) {
+      return;
+    }
+    try {
+      if (!environment.useMockData) {
+        await firstValueFrom(this.api.delete(d.id));
+        this.resource.reload();
+      } else {
+        this.mockDocs.update((docs) => docs.filter((x) => x.id !== d.id));
+      }
+      this.toasts.success(`“${d.title}” deleted.`);
+    } catch {
+      this.toasts.error(`Could not delete “${d.title}”.`);
+    }
+  }
+
+  protected async downloadDoc(d: Doc): Promise<void> {
+    try {
+      if (!environment.useMockData) {
+        const blob = await firstValueFrom(this.api.download(d.id));
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = d.title;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const blob = new Blob([`Datasheet: ${d.title}\nPart numbers: ${d.parts.join(', ')}`], {
+          type: 'text/plain',
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${d.title}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      this.toasts.error(`Could not download “${d.title}”.`);
     }
   }
 
@@ -189,7 +310,7 @@ export class ArDocuments {
     () => !environment.useMockData && this.resource.isLoading(),
   );
   protected readonly documents = computed<Doc[]>(() => {
-    const list = environment.useMockData ? SEED : this.resource.value();
+    const list = environment.useMockData ? this.mockDocs() : (this.resource.value() ?? []);
     const q = this.query().trim().toLowerCase();
     return q
       ? list.filter(

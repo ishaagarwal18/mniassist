@@ -17,7 +17,7 @@ import {
   TicketPriority,
   TicketStatus,
 } from '../../proxy/support';
-import { ArButton, ArChip, ArSearchBox, ArStatTile } from '../../ui';
+import { ArButton, ArChip, ArDialog, ArSearchBox, ArStatTile } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 import { errorMessage } from '../activities/activity-logic';
@@ -25,6 +25,8 @@ import { ArTicketDetailDialog } from './ticket-detail-dialog';
 import { PRIORITY_LABEL, STATUS_LABEL, dueLabel } from './ticket-logic';
 import { ArTicketSettingsDialog } from './ticket-settings-dialog';
 import { ServiceTicketGateway } from './ticket-mock';
+import { ArContactPicker } from '../pipeline/contact-picker';
+import { PickerOption } from '../../core/services/pipeline.service';
 
 const STATUS_TONE: Record<TicketStatus, ChipTone> = {
   [TicketStatus.Open]: 'amber',
@@ -48,10 +50,12 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
     ArTopbar,
     ArButton,
     ArChip,
+    ArDialog,
     ArSearchBox,
     ArStatTile,
     ArTicketDetailDialog,
     ArTicketSettingsDialog,
+    ArContactPicker,
     ArSelect,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,10 +74,18 @@ export class ArHelpdesk {
   protected readonly Priority = TicketPriority;
 
   protected readonly canSeeAll = grantedPolicy('AutoReach.Helpdesk.ViewAll', this.permissions);
+  protected readonly canCreate = grantedPolicy('AutoReach.Helpdesk.Create', this.permissions);
   protected readonly canManageSettings = grantedPolicy(
     'AutoReach.Helpdesk.ManageSettings',
     this.permissions,
   );
+
+  protected readonly createOpen = signal(false);
+  protected readonly createContact = signal<PickerOption | null>(null);
+  protected readonly createSubject = signal('');
+  protected readonly createDescription = signal('');
+  protected readonly createPriority = signal<TicketPriority>(TicketPriority.Normal);
+  protected readonly creatingTicket = signal(false);
 
   protected readonly scope = signal<'mine' | 'everyone'>('mine');
   protected readonly status = signal<TicketStatus | null>(null);
@@ -146,5 +158,44 @@ export class ArHelpdesk {
   protected closeSettings(changed: boolean): void {
     this.settingsOpen.set(false);
     if (changed) this.reload();
+  }
+
+  protected openCreate(): void {
+    this.createContact.set(null);
+    this.createSubject.set('');
+    this.createDescription.set('');
+    this.createPriority.set(TicketPriority.Normal);
+    this.error.set(null);
+    this.createOpen.set(true);
+  }
+
+  protected async createTicket(): Promise<void> {
+    const contact = this.createContact();
+    if (!contact) {
+      this.error.set('Please select a contact.');
+      return;
+    }
+    if (!this.createSubject().trim()) {
+      this.error.set('Subject is required.');
+      return;
+    }
+    this.creatingTicket.set(true);
+    this.error.set(null);
+    try {
+      await firstValueFrom(
+        this.api.create({
+          contactId: contact.id,
+          subject: this.createSubject().trim(),
+          description: this.createDescription().trim() || undefined,
+          priority: this.createPriority(),
+        }),
+      );
+      this.createOpen.set(false);
+      this.reload();
+    } catch (e: unknown) {
+      this.error.set(errorMessage(e, 'Could not create ticket.'));
+    } finally {
+      this.creatingTicket.set(false);
+    }
   }
 }

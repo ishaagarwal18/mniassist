@@ -20,6 +20,7 @@ import { shrinkImage } from '../../core/util/image';
 import { persistedToggle } from '../../core/util/persisted-toggle';
 import { firstValueFrom } from 'rxjs';
 import { ToastService } from '../../core/ui/toast.service';
+import { ConfirmService } from '../../core/ui/confirm.service';
 
 const CONSENT_LABEL: Record<ConsentSource, string> = {
   website: 'Website form',
@@ -89,16 +90,23 @@ const EMPTY_FORM: ContactForm = {
 })
 export class ArContacts {
   private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
+  private readonly permissions = inject(PermissionService);
   private readonly store = inject(ContactService);
   private readonly accountStore = inject(AccountStore);
   private readonly cards = inject(BusinessCardService);
 
+  protected readonly canCreate = grantedPolicy('AutoReach.Contacts.Create', this.permissions);
+  protected readonly canUpdate = grantedPolicy('AutoReach.Contacts.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Contacts.Delete', this.permissions);
+  protected readonly canImport = grantedPolicy('AutoReach.Contacts.Import', this.permissions);
   /** Spares re-order portal: send a customer their personal link from their row. */
   protected readonly canReorder = grantedPolicy(
     'AutoReach.ReorderPortal.SendLinks',
-    inject(PermissionService),
+    this.permissions,
   );
   protected readonly reorderFor = signal<{ id: string; name: string } | null>(null);
+  protected readonly editingContactId = signal<string | null>(null);
 
   protected readonly segments = this.store.segments;
   protected readonly suppression = this.store.suppression;
@@ -289,10 +297,49 @@ export class ArContacts {
   }
 
   protected openDialog(): void {
+    this.editingContactId.set(null);
     this.form.set({ ...EMPTY_FORM });
     this.filledFrom.set(null);
     this.otherPhones.set([]);
     this.dialogOpen.set(true);
+  }
+
+  protected openEdit(row: { id: string }): void {
+    const c = this.store.contacts().find((item) => item.id === row.id);
+    if (!c) return;
+    this.editingContactId.set(c.id);
+    this.form.set({
+      waId: c.phoneE164.replace(/[^\d]/g, ''),
+      displayName: c.name || '',
+      designation: c.attributes?.decisionRole || '',
+      companyName: c.company || '',
+      email: (c.attributes as any)?.['email'] || '',
+      website: (c.attributes as any)?.['website'] || '',
+      city: (c.attributes as any)?.['city'] || '',
+      state: (c.attributes as any)?.['state'] || '',
+      role: (Number(c.attributes?.decisionRole) || DecisionRole.Maintenance) as DecisionRole,
+    });
+    this.filledFrom.set(null);
+    this.otherPhones.set([]);
+    this.dialogOpen.set(true);
+  }
+
+  protected async deleteContact(c: { id: string; name: string }): Promise<void> {
+    if (
+      !(await this.dialogs.delete(
+        'this contact',
+        c.name,
+        'Their conversation history and any open enquiries will remain.',
+      ))
+    ) {
+      return;
+    }
+    try {
+      await this.store.delete(c.id);
+      this.toasts.info(`Contact “${c.name}” removed.`, 'Contacts');
+    } catch (e: unknown) {
+      this.toasts.error(e instanceof Error ? e.message : 'Could not delete contact.', 'Contacts');
+    }
   }
 
   protected async saveContact(): Promise<void> {
@@ -310,7 +357,7 @@ export class ArContacts {
       const attributes: Record<string, string> = {};
       if (f.email.trim()) attributes['email'] = f.email.trim();
       if (f.website.trim()) attributes['website'] = f.website.trim();
-      await this.store.create({
+      const payload = {
         waId,
         displayName: f.displayName.trim() || undefined,
         companyName: f.companyName.trim() || undefined,
@@ -319,7 +366,13 @@ export class ArContacts {
         state: f.state.trim() || undefined,
         role: f.role,
         attributes,
-      });
+      };
+      const editId = this.editingContactId();
+      if (editId) {
+        await this.store.update(editId, payload);
+      } else {
+        await this.store.create(payload);
+      }
       this.dialogOpen.set(false);
     } finally {
       this.saving.set(false);

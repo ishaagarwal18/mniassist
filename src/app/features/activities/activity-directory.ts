@@ -2,7 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { ConfigStateService, PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
 
-import { grantedPolicy } from '../../core/auth/permission';
+import { checkPolicy } from '../../core/auth/permission';
 import { PipelineStore } from '../../core/services/pipeline.service';
 import { environment } from '../../../environments/environment';
 import { ActivityUserDto } from '../../proxy/activities';
@@ -30,19 +30,19 @@ export class ActivityDirectory {
 
   /** May see everyone's tasks and meetings, not just their own. */
   get canSeeAll(): boolean {
-    return grantedPolicy('AutoReach.Activities.ViewAll', this.permissions);
+    return checkPolicy('AutoReach.Activities.ViewAll', this.permissions);
   }
 
   get canDelete(): boolean {
-    return grantedPolicy('AutoReach.Activities.Delete', this.permissions);
+    return checkPolicy('AutoReach.Activities.Delete', this.permissions);
   }
 
   get canCreate(): boolean {
-    return grantedPolicy('AutoReach.Activities.Create', this.permissions);
+    return checkPolicy('AutoReach.Activities.Create', this.permissions);
   }
 
   get canUpdate(): boolean {
-    return grantedPolicy('AutoReach.Activities.Update', this.permissions);
+    return checkPolicy('AutoReach.Activities.Update', this.permissions);
   }
 
   readonly enquiryOptions = computed(() => this.pipeline.openEnquiryOptions());

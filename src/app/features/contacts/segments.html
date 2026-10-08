@@ -3,10 +3,14 @@
   [subtitle]="subtitle()"
   help="Audiences are saved rules, not frozen lists — membership is re-checked the moment a campaign actually sends, so a same-day opt-out is always honoured."
 >
-  <button ar-button variant="ghost" icon="upload" (click)="importOpen.set(true)">
-    Import contacts
-  </button>
-  <button ar-button variant="primary" icon="plus" (click)="openSave()">Save segment</button>
+  @if (canImport()) {
+    <button ar-button variant="ghost" icon="upload" (click)="importOpen.set(true)">
+      Import contacts
+    </button>
+  }
+  @if (canCreate()) {
+    <button ar-button variant="primary" icon="plus" (click)="openSave()">Save segment</button>
+  }
 </ar-topbar>
 
 @if (importOpen()) {
@@ -14,7 +18,7 @@
 }
 
 @if (saveOpen()) {
-  <ar-dialog title="Save segment" (dismiss)="saveOpen.set(false)">
+  <ar-dialog [title]="editingSegmentId() ? 'Edit segment' : 'Save segment'" (dismiss)="saveOpen.set(false)">
     <p class="sg__save-lead">
       Saves the rule, not today's list: whoever matches is worked out again each time a campaign
       sends. It matches <strong>{{ preview().totalMatching }}</strong> contact{{
@@ -54,7 +58,7 @@
         [disabled]="saving()"
         (click)="saveSegment()"
       >
-        {{ saving() ? 'Saving…' : 'Save segment' }}
+        {{ saving() ? 'Saving…' : (editingSegmentId() ? 'Update segment' : 'Save segment') }}
       </button>
     </div>
   </ar-dialog>
@@ -227,7 +231,7 @@
         <h3 class="saved__title">Saved segments</h3>
         <ul class="saved__list">
           @for (s of saved(); track s.id) {
-            <li>
+            <li class="saved__row">
               <button
                 type="button"
                 class="saved__item"
@@ -244,6 +248,28 @@
                   }
                 </span>
               </button>
+              <div class="saved__actions">
+                @if (canUpdate()) {
+                  <button
+                    type="button"
+                    class="saved__btn"
+                    title="Edit segment"
+                    (click)="openEdit(s, $event)"
+                  >
+                    Edit
+                  </button>
+                }
+                @if (canDelete()) {
+                  <button
+                    type="button"
+                    class="saved__btn saved__btn--del"
+                    title="Delete segment"
+                    (click)="deleteSaved(s.id, $event)"
+                  >
+                    Delete
+                  </button>
+                }
+              </div>
             </li>
           }
         </ul>

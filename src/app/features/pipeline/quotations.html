@@ -3,9 +3,11 @@
   [subtitle]="awaitingDecision() + ' awaiting a decision'"
   help="Every quotation raised against an enquiry, with whose follow-up is due front and centre. Marking one Lost requires a reason — that feeds the loss-reason breakdown in Analytics."
 >
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
-    New quotation
-  </button>
+  @if (canCreate()) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+      New quotation
+    </button>
+  }
 </ar-topbar>
 
 @if (dialogOpen()) {
@@ -203,10 +205,15 @@
             <button ar-button variant="ghost" [disabled]="!!busy()" (click)="download(q)">
               PDF
             </button>
-            @if (q.state === 'issued' || q.state === 'revised') {
+            @if (canUpdate() && (q.state === 'issued' || q.state === 'revised')) {
               <button ar-button variant="ghost" [disabled]="!!busy()" (click)="won(q)">Won</button>
               <button ar-button variant="ghost" [disabled]="!!busy()" (click)="lost(q)">
                 Lost
+              </button>
+            }
+            @if (canDelete()) {
+              <button ar-button variant="danger" [disabled]="!!busy()" (click)="remove(q)">
+                Delete
               </button>
             }
           </td>

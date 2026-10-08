@@ -1,5 +1,7 @@
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import { DuplicateStore } from '../../core/services/duplicate.store';
 import { ChannelKind } from '../../proxy/channels';
 import {
@@ -61,7 +63,11 @@ const CHANNELS: Record<number, string> = {
   styleUrl: './duplicates.scss',
 })
 export class ArDuplicates {
+  private readonly permissions = inject(PermissionService);
   private readonly store = inject(DuplicateStore);
+
+  protected readonly canUpdate = grantedPolicy('AutoReach.Contacts.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Contacts.Delete', this.permissions);
 
   protected readonly pairs = this.store.pairs;
   protected readonly loading = this.store.loading;

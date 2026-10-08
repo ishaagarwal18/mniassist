@@ -69,7 +69,7 @@ const SEED: WhatsAppCallDto[] = [
       [subtitle]="total() + ' calls'"
       help="Calls customers made to your WhatsApp number and calls your team made to customers who allowed it. When recording is on, the browser on the call records both sides and saves it when the call ends; tell customers that calls are recorded."
     >
-      @if (canRecordings) {
+      @if (canRecordings()) {
         <label class="wa__toggle" for="wa-rec">
           <input
             id="wa-rec"
@@ -180,7 +180,7 @@ const SEED: WhatsAppCallDto[] = [
                   </td>
                   <td class="num">{{ c.durationSeconds ? length(c.durationSeconds) : '—' }}</td>
                   <td>
-                    @if (c.hasRecording && canRecordings) {
+                    @if (c.hasRecording && canRecordings()) {
                       @if (audio()[c.id]; as src) {
                         <audio [src]="src" controls preload="none"></audio>
                       } @else {

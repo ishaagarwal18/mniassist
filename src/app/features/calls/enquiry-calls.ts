@@ -58,7 +58,7 @@ import { ArLogCallDialog } from './log-call-dialog';
     }
 
     <div class="ec__add">
-      @if (canCall) {
+      @if (canCall()) {
         <button
           ar-button
           type="button"

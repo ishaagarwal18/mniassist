@@ -1,6 +1,10 @@
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { grantedPolicy } from '../../core/auth/permission';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 import { TemplateService } from '../../core/services/template.service';
 import {
   Template,
@@ -46,8 +50,19 @@ const QUALITY_TONE: Record<TemplateQuality, ChipTone> = {
   styleUrl: './templates.scss',
 })
 export class ArTemplates {
+  private readonly permissions = inject(PermissionService);
+  private readonly dialogs = inject(ConfirmService);
+  private readonly toasts = inject(ToastService);
   private readonly store = inject(TemplateService);
   private readonly router = inject(Router);
+
+  protected readonly canCreate = grantedPolicy('AutoReach.Templates.Create', this.permissions);
+  protected readonly canUpdate = grantedPolicy('AutoReach.Templates.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Templates.Delete', this.permissions);
+  protected readonly canSubmitPolicy = grantedPolicy(
+    'AutoReach.Templates.Submit',
+    this.permissions,
+  );
 
   protected readonly templates = this.store.templates;
   protected readonly counts = this.store.counts;
@@ -143,5 +158,26 @@ export class ArTemplates {
       month: 'short',
       year: 'numeric',
     });
+  }
+
+  protected async deleteTemplate(t: Template): Promise<void> {
+    if (
+      !(await this.dialogs.delete(
+        'template',
+        t.name,
+        'This will remove the template draft from MNI Assist.',
+      ))
+    ) {
+      return;
+    }
+    this.busy.set(true);
+    try {
+      await this.store.delete(t.id);
+      this.toasts.success(`“${t.name}” deleted.`);
+    } catch {
+      this.toasts.error(`Could not delete “${t.name}”.`);
+    } finally {
+      this.busy.set(false);
+    }
   }
 }

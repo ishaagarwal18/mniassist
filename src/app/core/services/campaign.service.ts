@@ -224,10 +224,11 @@ export class CampaignStore {
   readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
   // Mock mode has no server to hold the toggle, so it lives here for the session.
   private readonly mockOptimise = signal<Record<string, boolean>>({});
+  private readonly mockCampaigns = signal<Campaign[]>([...SEED]);
 
   readonly campaigns = computed(() =>
     environment.useMockData
-      ? SEED.map((c) => ({
+      ? this.mockCampaigns().map((c) => ({
           ...c,
           optimiseSendTime: this.mockOptimise()[c.id] ?? c.optimiseSendTime,
         }))
@@ -245,19 +246,51 @@ export class CampaignStore {
     return toReport(await firstValueFrom(this.api.getReport(id)));
   }
   async sendNow(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.mockCampaigns.update((list) =>
+        list.map((c) => (c.id === id ? { ...c, state: 'running' as CState } : c)),
+      );
+      return;
+    }
     await firstValueFrom(this.api.sendNow(id));
     this.reload();
   }
   async pause(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.mockCampaigns.update((list) =>
+        list.map((c) => (c.id === id ? { ...c, state: 'paused' as CState } : c)),
+      );
+      return;
+    }
     await firstValueFrom(this.api.pause(id));
     this.reload();
   }
   async resume(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.mockCampaigns.update((list) =>
+        list.map((c) => (c.id === id ? { ...c, state: 'running' as CState } : c)),
+      );
+      return;
+    }
     await firstValueFrom(this.api.resume(id));
     this.reload();
   }
   async cancel(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.mockCampaigns.update((list) =>
+        list.map((c) => (c.id === id ? { ...c, state: 'cancelled' as CState } : c)),
+      );
+      return;
+    }
     await firstValueFrom(this.api.cancel(id));
+    this.reload();
+  }
+  async delete(id: string): Promise<void> {
+    if (environment.useMockData) {
+      this.mockCampaigns.update((list) => list.filter((c) => c.id !== id));
+      return;
+    }
+    await firstValueFrom(this.api.delete(id));
     this.reload();
   }
 
@@ -277,7 +310,22 @@ export class CampaignStore {
 
   /** Creates a draft campaign. Template, segment and schedule are set later. */
   async create(name: string, channelId: string): Promise<void> {
-    if (environment.useMockData) return;
+    if (environment.useMockData) {
+      this.mockCampaigns.update((list) => [
+        {
+          id: 'c-' + Date.now(),
+          name: name.trim(),
+          state: 'draft',
+          dispatched: 0,
+          estimatedRecipients: 0,
+          estimatedCostInPaise: 0,
+          optOutRate: 0,
+          optimiseSendTime: false,
+        },
+        ...list,
+      ]);
+      return;
+    }
     await firstValueFrom(this.api.create({ name: name.trim(), channelId }));
     this.reload();
   }

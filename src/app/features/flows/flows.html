@@ -3,9 +3,11 @@
   subtitle="In-chat forms — RFQ intake, booking, tickets"
   help="In-chat forms for structured input — an RFQ intake or a booking works better as a Flow than free-text back-and-forth. Use Funnel to see exactly which question loses people."
 >
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
-    New flow
-  </button>
+  @if (canCreate()) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+      New flow
+    </button>
+  }
 </ar-topbar>
 
 @if (dialogOpen()) {
@@ -78,16 +80,25 @@
         }
       </div>
       <div class="flow__actions">
-        <button ar-button variant="ghost" (click)="design(f)">Design</button>
-        <button ar-button variant="ghost" (click)="openFunnel(f)">Funnel</button>
-        @if (f.state === 'draft' || f.state === 'deprecated') {
-          <button ar-button variant="primary" [disabled]="!!busy()" (click)="publish(f)">
-            {{ f.state === 'deprecated' ? 'Re-publish' : 'Publish to Meta' }}
-          </button>
+        @if (canUpdate()) {
+          <button ar-button variant="ghost" (click)="design(f)">Design</button>
         }
-        @if (f.state === 'published') {
-          <button ar-button variant="ghost" [disabled]="!!busy()" (click)="deprecate(f)">
-            Deprecate
+        <button ar-button variant="ghost" (click)="openFunnel(f)">Funnel</button>
+        @if (canPublish()) {
+          @if (f.state === 'draft' || f.state === 'deprecated') {
+            <button ar-button variant="primary" [disabled]="!!busy()" (click)="publish(f)">
+              {{ f.state === 'deprecated' ? 'Re-publish' : 'Publish to Meta' }}
+            </button>
+          }
+          @if (f.state === 'published') {
+            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="deprecate(f)">
+              Deprecate
+            </button>
+          }
+        }
+        @if (canDelete()) {
+          <button ar-button variant="ghost" [disabled]="!!busy()" (click)="deleteFlow(f)">
+            Delete
           </button>
         }
       </div>

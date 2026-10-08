@@ -60,7 +60,7 @@ const STATUS_TONE: Record<TicketStatus, ChipTone> = {
     }
 
     <div class="et__add">
-      @if (canRaise) {
+      @if (canRaise()) {
         <button
           ar-button
           type="button"

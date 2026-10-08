@@ -3,7 +3,9 @@
   subtitle="Groups, companies & plants your contacts roll up to"
   help="Group contacts by the company or plant they belong to. Put a plant under its company, and a company under its group, up to five levels — a parent's rollup can include everything beneath it."
 >
-  <button ar-button variant="primary" icon="plus" (click)="openNew()">New account</button>
+  @if (canCreate()) {
+    <button ar-button variant="primary" icon="plus" (click)="openNew()">New account</button>
+  }
 </ar-topbar>
 
 <div class="acc ar-scroll">
@@ -58,13 +60,17 @@
       </ar-chip>
       <div class="ac__actions">
         <button ar-button variant="primary" (click)="openRollup(row.account)">Rollup</button>
-        @if (row.depth < maxDepth) {
+        @if (canCreate() && row.depth < maxDepth) {
           <button ar-button variant="ghost" (click)="openNew(row.account.id)">
             Add subsidiary
           </button>
         }
-        <button ar-button variant="ghost" (click)="openEdit(row.account)">Edit</button>
-        <button ar-button variant="ghost" (click)="remove(row.account)">Delete</button>
+        @if (canUpdate()) {
+          <button ar-button variant="ghost" (click)="openEdit(row.account)">Edit</button>
+        }
+        @if (canDelete()) {
+          <button ar-button variant="ghost" (click)="remove(row.account)">Delete</button>
+        }
       </div>
     </article>
   }

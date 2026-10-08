@@ -145,7 +145,7 @@
           >
             Call on WhatsApp
           </button>
-          @if (canReorder && thread.contactId) {
+          @if (canReorder() && thread.contactId) {
             <button
               ar-button
               variant="ghost"
@@ -216,7 +216,7 @@
                   <a class="bubble__media" [href]="media.url" target="_blank" rel="noopener">
                     <img [src]="media.url" alt="Attached image" loading="lazy" />
                   </a>
-                  @if (m.direction === 'in' && !thread.channel && canQuote) {
+                  @if (m.direction === 'in' && !thread.channel && canQuote()) {
                     <button
                       type="button"
                       class="bubble__action"
@@ -245,7 +245,7 @@
                   @if (
                     m.direction === 'in' &&
                     !thread.channel &&
-                    canQuote &&
+                    canQuote() &&
                     isQuotable(media.mimeType)
                   ) {
                     <button
@@ -449,7 +449,7 @@
                   <ar-icon name="flow" [size]="17" />
                 </button>
               }
-              @if (canRequestPayment) {
+              @if (canRequestPayment()) {
                 <button
                   type="button"
                   class="composer__tool"

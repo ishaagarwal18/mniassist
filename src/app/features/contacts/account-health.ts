@@ -181,7 +181,7 @@ const BAND_LABEL: Record<HealthBand, string> = {
       [subtitle]="subtitle()"
       help="A score out of 100 for each customer, from what MNI Assist already records: how recently they messaged, open and late service tickets, satisfaction, overdue invoices, renewals and quotes won or lost. It starts at 75; each reason shows its points. Recomputed every night."
     >
-      @if (canRecompute) {
+      @if (canRecompute()) {
         <button
           ar-button
           type="button"

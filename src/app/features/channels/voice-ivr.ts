@@ -1,6 +1,8 @@
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import { VoiceService } from '../../core/services/voice.service';
 import { ChannelState } from '../../proxy/channels/channel-state.enum';
 import {
@@ -69,8 +71,11 @@ const STATE_TONE: Record<ChannelState, ChipTone> = {
   styleUrl: './voice-ivr.scss',
 })
 export class ArVoiceIvr {
+  private readonly permissions = inject(PermissionService);
   private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(VoiceService);
+
+  protected readonly canManage = grantedPolicy('AutoReach.Channels.Manage', this.permissions);
 
   protected readonly channel = this.store.channel;
   protected readonly prompts = this.store.prompts;

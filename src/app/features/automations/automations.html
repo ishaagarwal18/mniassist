@@ -3,9 +3,11 @@
   subtitle="Keyword bots, drip sequences and journeys"
   help="Chains of steps that run themselves once a trigger fires. New automations start paused — turn one on once you've tested it with Dry-run."
 >
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
-    New automation
-  </button>
+  @if (canCreate()) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+      New automation
+    </button>
+  }
 </ar-topbar>
 
 @if (dialogOpen()) {
@@ -134,18 +136,27 @@
       </div>
 
       <div class="wf__actions">
-        <a class="wf__editlink" [routerLink]="['/automations', a.id]">Edit steps</a>
+        @if (canUpdate()) {
+          <a class="wf__editlink" [routerLink]="['/automations', a.id]">Edit steps</a>
+        }
         <button ar-button type="button" variant="ghost" [disabled]="!!busy()" (click)="simulate(a)">
           Dry-run
         </button>
-        <button
-          ar-button
-          [variant]="a.state === 'active' ? 'ghost' : 'primary'"
-          [disabled]="!!busy()"
-          (click)="toggle(a)"
-        >
-          {{ a.state === 'active' ? 'Pause' : 'Activate' }}
-        </button>
+        @if (canActivate()) {
+          <button
+            ar-button
+            [variant]="a.state === 'active' ? 'ghost' : 'primary'"
+            [disabled]="!!busy()"
+            (click)="toggle(a)"
+          >
+            {{ a.state === 'active' ? 'Pause' : 'Activate' }}
+          </button>
+        }
+        @if (canDelete()) {
+          <button ar-button variant="ghost" [disabled]="!!busy()" (click)="deleteAutomation(a)">
+            Delete
+          </button>
+        }
       </div>
 
       @if (sim(); as s) {

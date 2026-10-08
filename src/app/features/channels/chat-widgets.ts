@@ -1,5 +1,7 @@
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import { ChannelService } from '../../core/services/channel.service';
 import {
   ChatEntryPoint,
@@ -35,9 +37,12 @@ interface Draft {
   styleUrl: './chat-widgets.scss',
 })
 export class ArChatWidgets {
+  private readonly permissions = inject(PermissionService);
   private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(ChatWidgetStore);
   protected readonly channels = inject(ChannelService);
+
+  protected readonly canManage = grantedPolicy('AutoReach.Channels.Manage', this.permissions);
 
   protected readonly sources = ENTRY_POINT_SOURCES;
   protected readonly sourceLabel = SOURCE_LABEL;

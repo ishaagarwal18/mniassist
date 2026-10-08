@@ -5,25 +5,27 @@
   "
   help="Your WhatsApp commerce catalogue for the selected channel. Click Sync to push local changes to Meta — editing an existing product updates it in place rather than duplicating it."
 >
-  <button
-    ar-button
-    type="button"
-    variant="ghost"
-    [disabled]="!channelId()"
-    (click)="openFromProducts()"
-  >
-    Add from products
-  </button>
-  <button ar-button type="button" variant="ghost" (click)="openAdd()">Add product</button>
-  <button
-    ar-button
-    type="button"
-    variant="primary"
-    [disabled]="syncing() || !channelId()"
-    (click)="sync()"
-  >
-    {{ syncing() ? 'Syncing…' : 'Sync to WhatsApp' }}
-  </button>
+  @if (canManage()) {
+    <button
+      ar-button
+      type="button"
+      variant="ghost"
+      [disabled]="!channelId()"
+      (click)="openFromProducts()"
+    >
+      Add from products
+    </button>
+    <button ar-button type="button" variant="ghost" (click)="openAdd()">Add product</button>
+    <button
+      ar-button
+      type="button"
+      variant="primary"
+      [disabled]="syncing() || !channelId()"
+      (click)="sync()"
+    >
+      {{ syncing() ? 'Syncing…' : 'Sync to WhatsApp' }}
+    </button>
+  }
 </ar-topbar>
 
 <div class="cat ar-scroll">
@@ -63,10 +65,12 @@
           <p class="prod__err">{{ p.syncError }}</p>
         }
       </div>
-      <div class="prod__actions">
-        <button ar-button type="button" variant="ghost" (click)="openEdit(p)">Edit</button>
-        <button ar-button type="button" variant="ghost" (click)="remove(p)">Remove</button>
-      </div>
+      @if (canManage()) {
+        <div class="prod__actions">
+          <button ar-button type="button" variant="ghost" (click)="openEdit(p)">Edit</button>
+          <button ar-button type="button" variant="ghost" (click)="remove(p)">Remove</button>
+        </div>
+      }
     </article>
   } @empty {
     @if (channelId() && !loading()) {

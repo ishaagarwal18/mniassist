@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
 
-import { grantedPolicy } from '../../core/auth/permission';
+import { checkPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
 import { ArIcon, IconName } from '../../ui';
 
@@ -224,7 +224,7 @@ export class ArReportsHub {
   protected readonly groups = computed(() =>
     GROUPS.map((g) => ({
       heading: g.heading,
-      reports: g.reports.filter((r) => grantedPolicy(r.permission, this.permissions)),
+      reports: g.reports.filter((r) => checkPolicy(r.permission, this.permissions)),
     })).filter((g) => g.reports.length > 0),
   );
 }

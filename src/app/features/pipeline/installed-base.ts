@@ -1,5 +1,7 @@
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import { Asset, PickerOption, PipelineStore } from '../../core/services/pipeline.service';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
@@ -26,9 +28,18 @@ import { ToastService } from '../../core/ui/toast.service';
   styleUrl: './installed-base.scss',
 })
 export class ArInstalledBase {
+  private readonly permissions = inject(PermissionService);
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(PipelineStore);
+
+  protected readonly canCreate = grantedPolicy('AutoReach.InstalledBase.Create', this.permissions);
+  protected readonly canUpdate = grantedPolicy('AutoReach.InstalledBase.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.InstalledBase.Delete', this.permissions);
+  protected readonly canManageReminders = grantedPolicy(
+    'AutoReach.InstalledBase.ManageReminders',
+    this.permissions,
+  );
 
   protected readonly assets = this.store.assets;
   protected readonly loading = this.store.loading;
@@ -99,7 +110,10 @@ export class ArInstalledBase {
     this.f.update((s) => ({ ...s, [key]: value }));
   }
 
+  protected readonly editingAssetId = signal<string | null>(null);
+
   protected openDialog(): void {
+    this.editingAssetId.set(null);
     this.contact.set(null);
     this.f.set({
       description: '',
@@ -111,6 +125,24 @@ export class ArInstalledBase {
       amcEndsOn: '',
       amcValue: '',
       amcTermMonths: '',
+    });
+    this.error.set(null);
+    this.dialogOpen.set(true);
+  }
+
+  protected openEdit(a: Asset): void {
+    this.editingAssetId.set(a.id);
+    this.contact.set(null);
+    this.f.set({
+      description: a.description,
+      serialNumber: a.serial ?? '',
+      make: a.make ?? '',
+      model: '',
+      siteName: a.site ?? '',
+      siteCity: '',
+      amcEndsOn: a.nextDueOn ? a.nextDueOn.slice(0, 10) : '',
+      amcValue: '',
+      amcTermMonths: '12',
     });
     this.error.set(null);
     this.dialogOpen.set(true);
@@ -130,23 +162,62 @@ export class ArInstalledBase {
     this.saving.set(true);
     this.error.set(null);
     try {
-      await this.store.createAsset({
-        contactId: this.contact()?.id,
-        description: v.description.trim(),
-        serialNumber: v.serialNumber.trim() || undefined,
-        make: v.make.trim() || undefined,
-        model: v.model.trim() || undefined,
-        siteName: v.siteName.trim() || undefined,
-        siteCity: v.siteCity.trim() || undefined,
-        amcEndsOn: v.amcEndsOn || undefined,
-        amcValueInPaise: amc.valueInPaise,
-        amcTermMonths: amc.termMonths,
-      });
+      const editingId = this.editingAssetId();
+      if (editingId) {
+        await this.store.updateAsset(editingId, {
+          contactId: this.contact()?.id,
+          description: v.description.trim(),
+          serialNumber: v.serialNumber.trim() || undefined,
+          make: v.make.trim() || undefined,
+          model: v.model.trim() || undefined,
+          siteName: v.siteName.trim() || undefined,
+          siteCity: v.siteCity.trim() || undefined,
+          amcEndsOn: v.amcEndsOn || undefined,
+          amcValueInPaise: amc.valueInPaise,
+          amcTermMonths: amc.termMonths,
+        });
+        this.toasts.success(`“${v.description.trim()}” updated.`);
+      } else {
+        await this.store.createAsset({
+          contactId: this.contact()?.id,
+          description: v.description.trim(),
+          serialNumber: v.serialNumber.trim() || undefined,
+          make: v.make.trim() || undefined,
+          model: v.model.trim() || undefined,
+          siteName: v.siteName.trim() || undefined,
+          siteCity: v.siteCity.trim() || undefined,
+          amcEndsOn: v.amcEndsOn || undefined,
+          amcValueInPaise: amc.valueInPaise,
+          amcTermMonths: amc.termMonths,
+        });
+        this.toasts.success(`“${v.description.trim()}” registered.`);
+      }
       this.dialogOpen.set(false);
     } catch (e: unknown) {
-      this.error.set(e instanceof Error ? e.message : 'The machine could not be registered.');
+      this.error.set(e instanceof Error ? e.message : 'The machine could not be saved.');
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  protected async deleteAsset(a: Asset): Promise<void> {
+    if (
+      !(await this.dialogs.delete(
+        'machine',
+        a.description,
+        'This permanently removes the machine from the installed base register.',
+      ))
+    ) {
+      return;
+    }
+    this.busy.set(a.id);
+    try {
+      await this.store.deleteAsset(a.id);
+      this.toasts.success(`“${a.description}” deleted.`);
+    } catch {
+      this.toasts.error(`Could not delete “${a.description}”.`);
+    } finally {
+      this.busy.set(null);
     }
   }
 

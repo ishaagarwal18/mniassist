@@ -1,7 +1,9 @@
+import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
+import { grantedPolicy } from '../../core/auth/permission';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import {
@@ -27,8 +29,13 @@ import { ConfirmService } from '../../core/ui/confirm.service';
   styleUrl: './products.scss',
 })
 export class ArProducts {
+  private readonly permissions = inject(PermissionService);
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(ProductService);
+
+  protected readonly canCreate = grantedPolicy('AutoReach.Library.Create', this.permissions);
+  protected readonly canUpdate = grantedPolicy('AutoReach.Library.Update', this.permissions);
+  protected readonly canDelete = grantedPolicy('AutoReach.Library.Delete', this.permissions);
 
   protected readonly filter = signal('');
   protected readonly category = signal('');

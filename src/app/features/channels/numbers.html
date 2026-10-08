@@ -6,9 +6,11 @@
   <button ar-button type="button" variant="ghost" icon="refresh" (click)="refresh()">
     Refresh from Meta
   </button>
-  <button ar-button type="button" variant="primary" icon="plus" (click)="connectOpen.set(true)">
-    Connect a number
-  </button>
+  @if (canOnboard()) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="connectOpen.set(true)">
+      Connect a number
+    </button>
+  }
 </ar-topbar>
 
 @if (connectOpen()) {
@@ -71,33 +73,35 @@
             <p class="blk__note">Approved by Meta. Changing it starts a new review.</p>
           }
 
-          @if (editingName() === n.channelId) {
-            <div class="edit">
-              <input
-                class="edit__in"
-                type="text"
-                [value]="draftName()"
-                (input)="draftName.set($any($event.target).value)"
-                placeholder="Business name as customers should see it"
-                maxlength="128"
-              />
-              <div class="edit__row">
-                <button ar-button variant="primary" (click)="submitName(n.channelId)">
-                  Submit for review
-                </button>
-                <button ar-button variant="ghost" (click)="editingName.set(null)">Cancel</button>
+          @if (canManage()) {
+            @if (editingName() === n.channelId) {
+              <div class="edit">
+                <input
+                  class="edit__in"
+                  type="text"
+                  [value]="draftName()"
+                  (input)="draftName.set($any($event.target).value)"
+                  placeholder="Business name as customers should see it"
+                  maxlength="128"
+                />
+                <div class="edit__row">
+                  <button ar-button variant="primary" (click)="submitName(n.channelId)">
+                    Submit for review
+                  </button>
+                  <button ar-button variant="ghost" (click)="editingName.set(null)">Cancel</button>
+                </div>
+                <p class="edit__hint">
+                  Meta refuses names that do not match the business on your verified Meta Business
+                  Portfolio, and names that are generic ("Sales", "Support").
+                </p>
               </div>
-              <p class="edit__hint">
-                Meta refuses names that do not match the business on your verified Meta Business
-                Portfolio, and names that are generic ("Sales", "Support").
-              </p>
-            </div>
-          } @else {
-            <button ar-button variant="ghost" (click)="startNameEdit(n)">
-              {{
-                n.nameReviewState === 'pending' ? 'Change the requested name' : 'Request a change'
-              }}
-            </button>
+            } @else {
+              <button ar-button variant="ghost" (click)="startNameEdit(n)">
+                {{
+                  n.nameReviewState === 'pending' ? 'Change the requested name' : 'Request a change'
+                }}
+              </button>
+            }
           }
         </section>
 
@@ -116,49 +120,51 @@
             </p>
           }
 
-          @if (editingPin() === n.channelId) {
-            <div class="edit">
-              @if (n.hasTwoStepPin) {
+          @if (canManage()) {
+            @if (editingPin() === n.channelId) {
+              <div class="edit">
+                @if (n.hasTwoStepPin) {
+                  <input
+                    class="edit__in edit__in--pin ar-mono"
+                    type="password"
+                    inputmode="numeric"
+                    maxlength="6"
+                    placeholder="Current PIN"
+                    autocomplete="off"
+                    [value]="draftCurrentPin()"
+                    (input)="draftCurrentPin.set($any($event.target).value)"
+                  />
+                }
                 <input
                   class="edit__in edit__in--pin ar-mono"
                   type="password"
                   inputmode="numeric"
                   maxlength="6"
-                  placeholder="Current PIN"
-                  autocomplete="off"
-                  [value]="draftCurrentPin()"
-                  (input)="draftCurrentPin.set($any($event.target).value)"
+                  placeholder="New six-digit PIN"
+                  autocomplete="new-password"
+                  [value]="draftPin()"
+                  (input)="draftPin.set($any($event.target).value)"
                 />
-              }
-              <input
-                class="edit__in edit__in--pin ar-mono"
-                type="password"
-                inputmode="numeric"
-                maxlength="6"
-                placeholder="New six-digit PIN"
-                autocomplete="new-password"
-                [value]="draftPin()"
-                (input)="draftPin.set($any($event.target).value)"
-              />
-              <div class="edit__row">
-                <button ar-button variant="primary" (click)="setPin(n.channelId)">
-                  {{ n.hasTwoStepPin ? 'Change PIN' : 'Set PIN and register' }}
-                </button>
-                <button ar-button variant="ghost" (click)="editingPin.set(null)">Cancel</button>
+                <div class="edit__row">
+                  <button ar-button variant="primary" (click)="setPin(n.channelId)">
+                    {{ n.hasTwoStepPin ? 'Change PIN' : 'Set PIN and register' }}
+                  </button>
+                  <button ar-button variant="ghost" (click)="editingPin.set(null)">Cancel</button>
+                </div>
+                <p class="edit__hint">
+                  Write it down somewhere safe. If it is lost, Meta will not let you reset it for
+                  seven days, and the number cannot be migrated during that time.
+                </p>
               </div>
-              <p class="edit__hint">
-                Write it down somewhere safe. If it is lost, Meta will not let you reset it for
-                seven days, and the number cannot be migrated during that time.
-              </p>
-            </div>
-          } @else {
-            <button
-              ar-button
-              [variant]="n.hasTwoStepPin ? 'ghost' : 'primary'"
-              (click)="editingPin.set(n.channelId)"
-            >
-              {{ n.hasTwoStepPin ? 'Change PIN' : 'Set PIN' }}
-            </button>
+            } @else {
+              <button
+                ar-button
+                [variant]="n.hasTwoStepPin ? 'ghost' : 'primary'"
+                (click)="editingPin.set(n.channelId)"
+              >
+                {{ n.hasTwoStepPin ? 'Change PIN' : 'Set PIN' }}
+              </button>
+            }
           }
         </section>
       </div>
