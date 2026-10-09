@@ -221,6 +221,12 @@ export const routes: Routes = [
           import('./features/pipeline/ai-negotiator/ai-negotiator').then((m) => m.ArAiNegotiator),
       },
       {
+        path: 'pipeline/projection-plan',
+        title: 'Projection Plan · MNI Assist',
+        loadComponent: () =>
+          import('./features/projections/projection-plan/projection-plan').then((m) => m.ArProjectionPlan),
+      },
+      {
         path: 'sales/orders',
         title: 'Sales orders · MNI Assist',
         loadComponent: () => import('./features/sales/orders/orders').then((m) => m.ArSalesOrders),

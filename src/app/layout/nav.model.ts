@@ -185,6 +185,14 @@ export const NAV: readonly NavGroup[] = [
         tenantOnly: true,
       },
       {
+        label: 'Projection plan',
+        icon: 'analytics',
+        route: '/pipeline/projection-plan',
+        permission: 'AutoReach.ProjectionPlans',
+        feature: 'PipelineCrm',
+        tenantOnly: true,
+      },
+      {
         label: 'Quotations',
         icon: 'quotation',
         route: '/quotations',
