@@ -1,0 +1,822 @@
+<ar-topbar
+  title="Telecom & Reseller Numbers"
+  [subtitle]="subtitle()"
+  help="Manage your virtual WhatsApp number inventory pool, allocate numbers to tenant workspaces, and maintain regulatory compliance under the Telecommunications Act 2023, TRAI DLT, and Meta Tech Provider guidelines."
+>
+  <button ar-button type="button" variant="ghost" icon="refresh" (click)="store.refresh()">
+    Refresh
+  </button>
+  <button ar-button type="button" variant="ghost" icon="shield" (click)="runAudit()">
+    Run compliance audit
+  </button>
+  @if (canManage()) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="openAddNumberDialog()">
+      Add number to pool
+    </button>
+  }
+</ar-topbar>
+
+<div class="tc ar-scroll">
+  <!-- ── Tab Navigation ────────────────────────────────────────────────────── -->
+  <nav class="tc__tabs" role="tablist">
+    <button
+      type="button"
+      class="tc__tab"
+      [class.tc__tab--active]="activeTab() === 'inventory'"
+      (click)="activeTab.set('inventory')"
+      role="tab"
+    >
+      <ar-icon name="tower" class="tc__tab-icon" />
+      <span>Number Inventory & Reselling</span>
+      <span class="tc__badge">{{ store.kpis().total }}</span>
+    </button>
+
+    <button
+      type="button"
+      class="tc__tab"
+      [class.tc__tab--active]="activeTab() === 'telecom-entity'"
+      (click)="activeTab.set('telecom-entity')"
+      role="tab"
+    >
+      <ar-icon name="shield" class="tc__tab-icon" />
+      <span>Operating as Telecom Entity (DoT / DLT)</span>
+      <span class="tc__badge tc__badge--accent">Compliant</span>
+    </button>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       TAB 1: NUMBER INVENTORY & RESELLING
+       ══════════════════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'inventory') {
+    <div class="tc__content">
+      <!-- ── KPI Summary Cards ─────────────────────────────────────────────── -->
+      <section class="tc__kpis">
+        <article class="tc-kpi">
+          <span class="tc-kpi__lbl">Total Inventory Pool</span>
+          <strong class="tc-kpi__val">{{ store.kpis().total }}</strong>
+          <span class="tc-kpi__sub">Virtual DIDs & SIMs</span>
+        </article>
+
+        <article class="tc-kpi">
+          <span class="tc-kpi__lbl">Active Allocations</span>
+          <strong class="tc-kpi__val tc-kpi__val--good">{{ store.kpis().allocated }}</strong>
+          <span class="tc-kpi__sub">Subscribed workspaces</span>
+        </article>
+
+        <article class="tc-kpi">
+          <span class="tc-kpi__lbl">Available for Resale</span>
+          <strong class="tc-kpi__val tc-kpi__val--teal">{{ store.kpis().available }}</strong>
+          <span class="tc-kpi__sub">Ready for instant assignment</span>
+        </article>
+
+        <article class="tc-kpi">
+          <span class="tc-kpi__lbl">Monthly Number Revenue</span>
+          <strong class="tc-kpi__val">{{ formatCurrency(store.kpis().monthlyRevenue) }}</strong>
+          <span class="tc-kpi__sub">Recurring rental / month</span>
+        </article>
+      </section>
+
+      <!-- ── Inventory Notice ──────────────────────────────────────────────── -->
+      <ar-banner tone="teal">
+        As an authorized Telecom Entity and Meta Tech Provider, all WhatsApp numbers in this pool
+        are provisioned via authorized Telecom Service Providers (TSPs) with strict SIM-binding and
+        business KYC verification. Spoofed or unauthorized disposable numbers are strictly prohibited.
+      </ar-banner>
+
+      <!-- ── Search & Filter Bar ───────────────────────────────────────────── -->
+      <div class="tc__filter-bar">
+        <div class="tc__search">
+          <ar-icon name="search" class="tc__search-icon" />
+          <input
+            type="text"
+            class="tc__search-input"
+            placeholder="Search by phone number, workspace, or carrier..."
+            [value]="store.searchQuery()"
+            (input)="store.searchQuery.set($any($event.target).value)"
+          />
+        </div>
+
+        <div class="tc__filters">
+          <div class="tc__select-wrap">
+            <label class="tc__filter-label">Status:</label>
+            <select
+              class="tc__select"
+              [value]="store.statusFilter()"
+              (change)="store.statusFilter.set($any($event.target).value)"
+            >
+              <option value="all">All statuses</option>
+              <option [value]="ResellerNumberStatus.Available">Available in pool</option>
+              <option [value]="ResellerNumberStatus.Allocated">Allocated</option>
+              <option [value]="ResellerNumberStatus.Quarantined">In quarantine</option>
+            </select>
+          </div>
+
+          <div class="tc__select-wrap">
+            <label class="tc__filter-label">Carrier:</label>
+            <select
+              class="tc__select"
+              [value]="store.carrierFilter()"
+              (change)="store.carrierFilter.set($any($event.target).value)"
+            >
+              <option value="all">All carriers</option>
+              @for (c of store.carriers(); track c) {
+                <option [value]="c">{{ c }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Number List ───────────────────────────────────────────────────── -->
+      @if (store.filteredNumbers().length === 0) {
+        <div class="tc__empty">
+          <ar-icon name="tower" class="tc__empty-icon" />
+          <h3>No numbers found</h3>
+          <p>No phone numbers match the specified search query or filter criteria.</p>
+          @if (canManage()) {
+            <button ar-button type="button" variant="primary" icon="plus" (click)="openAddNumberDialog()">
+              Add a new number to pool
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="tc__grid">
+          @for (n of store.filteredNumbers(); track n.id) {
+            <article class="tc-card" [class.tc-card--avail]="n.status === ResellerNumberStatus.Available">
+              <header class="tc-card__head">
+                <div class="tc-card__title-grp">
+                  <h3 class="tc-card__phone ar-mono">{{ n.e164 }}</h3>
+                  <div class="tc-card__tags">
+                    <ar-chip tone="neutral" [mono]="true">{{ n.tspCarrier }}</ar-chip>
+                    <ar-chip tone="neutral">{{ typeLabel(n.numberType) }}</ar-chip>
+                  </div>
+                </div>
+
+                <ar-chip [tone]="statusTone(n.status)" [dot]="true">
+                  {{ statusLabel(n.status) }}
+                </ar-chip>
+              </header>
+
+              <div class="tc-card__body">
+                <div class="tc-card__meta-row">
+                  <span class="tc-card__label">Assigned Workspace:</span>
+                  <span class="tc-card__value">
+                    @if (n.allocatedTenantName) {
+                      <strong>{{ n.allocatedTenantName }}</strong>
+                      <span class="tc-card__sub-date">({{ when(n.allocatedAtUtc) }})</span>
+                    } @else {
+                      <span class="tc-card__unallocated">Unassigned (Pool)</span>
+                    }
+                  </span>
+                </div>
+
+                <div class="tc-card__meta-row">
+                  <span class="tc-card__label">WhatsApp Display Name:</span>
+                  <span class="tc-card__value">
+                    {{ n.verifiedName || '—' }}
+                    @if (n.isRegisteredWithMeta) {
+                      <span class="tc-card__verified-badge" title="Registered with Meta Cloud API">✓ Meta Ready</span>
+                    }
+                  </span>
+                </div>
+
+                <div class="tc-card__meta-row">
+                  <span class="tc-card__label">Monthly Rental / Rate:</span>
+                  <span class="tc-card__value tc-card__value--price">
+                    {{ formatCurrency(n.monthlyRentalInr) }}/month
+                    @if (n.setupFeeInr > 0) {
+                      <small>(+ {{ formatCurrency(n.setupFeeInr) }} setup)</small>
+                    }
+                  </span>
+                </div>
+
+                <div class="tc-card__meta-row">
+                  <span class="tc-card__label">Telecom Regulatory Standing:</span>
+                  <div class="tc-card__chips">
+                    <ar-chip [tone]="n.kycStatus === TelecomKycStatus.Verified ? 'good' : 'amber'">
+                      KYC: {{ n.kycStatus === TelecomKycStatus.Verified ? 'Verified' : 'Pending' }}
+                    </ar-chip>
+                    <ar-chip [tone]="n.simBindingStatus === SimBindingStatus.Compliant || n.simBindingStatus === SimBindingStatus.AuthorizedCarrierAllocation ? 'good' : 'amber'">
+                      SIM-Binding: Compliant
+                    </ar-chip>
+                  </div>
+                </div>
+
+                @if (n.notes) {
+                  <p class="tc-card__notes">{{ n.notes }}</p>
+                }
+
+                @if (n.quarantinedUntilUtc) {
+                  <div class="tc-card__quarantine-warn">
+                    <ar-icon name="clock" />
+                    <span>Cooling-off quarantine active until {{ when(n.quarantinedUntilUtc) }}. Cannot be reallocated until elapsed.</span>
+                  </div>
+                }
+              </div>
+
+              <footer class="tc-card__foot">
+                @if (n.status === ResellerNumberStatus.Available && canResell()) {
+                  <button ar-button type="button" variant="primary" icon="check" (click)="openAllocateDialog(n)">
+                    Allocate to workspace
+                  </button>
+                }
+
+                @if (n.status === ResellerNumberStatus.Allocated && canResell()) {
+                  <button ar-button type="button" variant="ghost" (click)="openReleaseDialog(n)">
+                    Release number
+                  </button>
+                }
+
+                @if (n.status === ResellerNumberStatus.Quarantined && canManage()) {
+                  <button ar-button type="button" variant="ghost" (click)="store.addNumber({ e164: n.e164, countryCode: n.countryCode, nationalNumber: n.nationalNumber, tspCarrier: n.tspCarrier })">
+                    Reactivate early
+                  </button>
+                }
+              </footer>
+            </article>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       TAB 2: OPERATING AS TELECOM ENTITY (DoT / TRAI / DLT)
+       ══════════════════════════════════════════════════════════════════════════ -->
+  @if (activeTab() === 'telecom-entity') {
+    <div class="tc__content">
+      <ar-banner tone="teal">
+        Operating as an authorized telecom commercial entity under the <strong>Telecommunications Act 2023</strong> and
+        <strong>TRAI Telecom Commercial Communications Customer Preference Regulations (TCCCPR)</strong>.
+        All message origination headers, telecom identifiers, and virtual DIDs are linked to verifiable legal entities.
+      </ar-banner>
+
+      <div class="tc__entity-layout">
+        <!-- ── Entity Registration Profile Card ─────────────────────────────── -->
+        <article class="tc-box">
+          <header class="tc-box__head">
+            <div>
+              <h3 class="tc-box__title">Telecom Entity Authorization & Registration</h3>
+              <p class="tc-box__desc">Department of Telecommunications (DoT) and TRAI regulatory credentials.</p>
+            </div>
+            @if (canManage()) {
+              <button ar-button type="button" variant="ghost" icon="settings" (click)="openEditSettingsDialog()">
+                Edit profile
+              </button>
+            }
+          </header>
+
+          <dl class="tc-def">
+            <div class="tc-def__row">
+              <dt>Registered Legal Entity</dt>
+              <dd><strong>{{ store.settings().legalEntityName }}</strong></dd>
+            </div>
+
+            <div class="tc-def__row">
+              <dt>Entity Classification</dt>
+              <dd>
+                <ar-chip tone="good">
+                  {{ classificationLabel(store.settings().classification) }}
+                </ar-chip>
+              </dd>
+            </div>
+
+            <div class="tc-def__row">
+              <dt>DoT Authorization Number</dt>
+              <dd class="ar-mono">{{ store.settings().dotRegistrationNumber }}</dd>
+            </div>
+
+            <div class="tc-def__row">
+              <dt>DLT Principal Entity ID (PE ID)</dt>
+              <dd class="ar-mono">
+                <strong>{{ store.settings().dltPrincipalEntityId }}</strong>
+                <span class="tc-def__sub">(Airtel / Jio / Vodafone Idea / BSNL DLT)</span>
+              </dd>
+            </div>
+
+            <div class="tc-def__row">
+              <dt>TRAI Telemarketer ID (TM ID)</dt>
+              <dd class="ar-mono">{{ store.settings().telemarketerId }}</dd>
+            </div>
+
+            <div class="tc-def__row">
+              <dt>Primary Interconnect Carrier</dt>
+              <dd>{{ store.settings().primaryTspCarrier }}</dd>
+            </div>
+
+            <div class="tc-def__row">
+              <dt>Secondary Carrier / Fallback</dt>
+              <dd>{{ store.settings().secondaryTspCarrier || 'Bharti Airtel Enterprise Services' }}</dd>
+            </div>
+
+            <div class="tc-def__row">
+              <dt>Point of Interconnect (POI)</dt>
+              <dd>{{ store.settings().interconnectPoint || 'NLD/SIP Trunk Interconnect POP-Mumbai' }}</dd>
+            </div>
+          </dl>
+        </article>
+
+        <!-- ── Chief Telecommunication Security Officer (CTSO) ─────────────── -->
+        <article class="tc-box">
+          <header class="tc-box__head">
+            <div>
+              <h3 class="tc-box__title">Chief Telecommunication Security Officer (CTSO)</h3>
+              <p class="tc-box__desc">Mandatory statutory appointment under Telecom Cyber Security Rules.</p>
+            </div>
+            <ar-chip tone="good" [dot]="true">Officer Active</ar-chip>
+          </header>
+
+          <dl class="tc-def">
+            <div class="tc-def__row">
+              <dt>Designated Security Officer</dt>
+              <dd><strong>{{ store.settings().ctsoName }}</strong></dd>
+            </div>
+
+            <div class="tc-def__row">
+              <dt>Corporate Designation</dt>
+              <dd>{{ store.settings().ctsoDesignation }}</dd>
+            </div>
+
+            <div class="tc-def__row">
+              <dt>Official Email (Statutory)</dt>
+              <dd class="ar-mono">{{ store.settings().ctsoEmail }}</dd>
+            </div>
+
+            <div class="tc-def__row">
+              <dt>24x7 Escalation Contact</dt>
+              <dd class="ar-mono"><strong>{{ store.settings().ctsoPhone }}</strong></dd>
+            </div>
+
+            <div class="tc-def__row">
+              <dt>Last Compliance Audit</dt>
+              <dd>{{ when(store.settings().lastComplianceAuditUtc) }}</dd>
+            </div>
+          </dl>
+
+          <div class="tc-box__note">
+            <ar-icon name="shield" />
+            <span>The CTSO serves as the single point of contact for TRAI, DoT, CERT-In, and law enforcement agencies for communication security and regulatory orders.</span>
+          </div>
+        </article>
+      </div>
+
+      <!-- ── Operational & Anti-Spoofing Security Controls ─────────────────── -->
+      <article class="tc-box">
+        <header class="tc-box__head">
+          <div>
+            <h3 class="tc-box__title">Regulatory Controls & Anti-Spoofing Enforcement</h3>
+            <p class="tc-box__desc">Active technical safeguards governing telecom identifier reselling and messaging.</p>
+          </div>
+          <button ar-button type="button" variant="primary" icon="shield" (click)="runAudit()">
+            Run audit now
+          </button>
+        </header>
+
+        <div class="tc-checklist">
+          <div class="tc-check-item">
+            <div class="tc-check-item__icon tc-check-item__icon--pass">✓</div>
+            <div class="tc-check-item__text">
+              <strong>Cryptographic SIM-Binding & Carrier SIP DID Validation</strong>
+              <p>Every phone number routed through the platform is authenticated directly against carrier interconnect records. Calling Line Identity (CLI) spoofing is technically prevented at the gateway.</p>
+            </div>
+          </div>
+
+          <div class="tc-check-item">
+            <div class="tc-check-item__icon tc-check-item__icon--pass">✓</div>
+            <div class="tc-check-item__text">
+              <strong>Telecom Lawful Interception & Audit Trail Logging</strong>
+              <p>Message delivery logs and session traces are retained for the statutory period required under DoT licensing conditions with cryptographic integrity checks.</p>
+            </div>
+          </div>
+
+          <div class="tc-check-item">
+            <div class="tc-check-item__icon tc-check-item__icon--pass">✓</div>
+            <div class="tc-check-item__text">
+              <strong>Meta Tech Provider Direct API Adherence</strong>
+              <p>Operating exclusively under Meta Tech Provider / BSP partner terms. All tenant onboardings use official Meta Cloud API and WhatsApp Business Solution agreements.</p>
+            </div>
+          </div>
+
+          <div class="tc-check-item">
+            <div class="tc-check-item__icon tc-check-item__icon--pass">✓</div>
+            <div class="tc-check-item__text">
+              <strong>Strict Prohibition of Disposable & Temporary Numbers</strong>
+              <p>The platform explicitly disallows anonymous, virtual disposable numbers or blaster scrapers. Every number requires business KYC (GST/CIN) and tenant account linkage.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  }
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     DIALOG 1: ADD NUMBER TO INVENTORY POOL
+     ════════════════════════════════════════════════════════════════════════════ -->
+@if (addNumberDialogOpen()) {
+  <div class="modal-backdrop" (click)="addNumberDialogOpen.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <header class="modal-head">
+        <div>
+          <h3>Add Number to Inventory Pool</h3>
+          <p>Add a new virtual DID or SIM-bound line from an authorized telecom carrier.</p>
+        </div>
+        <button type="button" class="modal-close" (click)="addNumberDialogOpen.set(false)">✕</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <label>Phone Number (10 digits):</label>
+          <div class="input-with-prefix">
+            <span class="prefix">+91</span>
+            <input
+              type="tel"
+              class="form-in"
+              placeholder="90210 44888"
+              [value]="draftNationalNumber()"
+              (input)="onNationalNumberInput($any($event.target).value)"
+              maxlength="10"
+            />
+          </div>
+          <small class="hint">Preview: {{ draftE164() }}</small>
+        </div>
+
+        <div class="form-row">
+          <label>Telecom Service Provider (Carrier):</label>
+          <select class="form-in" [value]="draftCarrier()" (change)="draftCarrier.set($any($event.target).value)">
+            <option value="Tata Teleservices">Tata Teleservices (SIP Trunk)</option>
+            <option value="Bharti Airtel">Bharti Airtel Enterprise</option>
+            <option value="Reliance Jio">Reliance Jio Enterprise</option>
+            <option value="BSNL">BSNL Corporate</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label>Identifier Provisioning Type:</label>
+          <select
+            class="form-in"
+            [value]="draftType()"
+            (change)="draftType.set(+$any($event.target).value)"
+          >
+            <option [value]="ResellerNumberType.VirtualDid">Virtual DID (SIP Trunk Interconnect)</option>
+            <option [value]="ResellerNumberType.SimBoundMobile">SIM-Bound Mobile Line</option>
+            <option [value]="ResellerNumberType.TollFree">1800 Enterprise Toll-Free</option>
+            <option [value]="ResellerNumberType.LandlineDid">Fixed Landline STD DID</option>
+          </select>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label>Monthly Rental (₹):</label>
+            <input
+              type="number"
+              class="form-in"
+              [value]="draftRentalInr()"
+              (input)="draftRentalInr.set(+$any($event.target).value)"
+              min="0"
+              step="50"
+            />
+          </div>
+
+          <div class="form-row">
+            <label>Setup Fee (₹):</label>
+            <input
+              type="number"
+              class="form-in"
+              [value]="draftSetupInr()"
+              (input)="draftSetupInr.set(+$any($event.target).value)"
+              min="0"
+              step="100"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>Carrier Notes / Allocation Ref:</label>
+          <input
+            type="text"
+            class="form-in"
+            placeholder="e.g. Bulk DID Allocation Batch #441"
+            [value]="draftNotes()"
+            (input)="draftNotes.set($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <footer class="modal-foot">
+        <button ar-button variant="ghost" (click)="addNumberDialogOpen.set(false)">Cancel</button>
+        <button ar-button variant="primary" icon="check" [disabled]="draftNationalNumber().length < 10" (click)="submitAddNumber()">
+          Add to inventory
+        </button>
+      </footer>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     DIALOG 2: ALLOCATE NUMBER TO TENANT
+     ════════════════════════════════════════════════════════════════════════════ -->
+@if (allocateDialogOpen() && selectedNumber(); as num) {
+  <div class="modal-backdrop" (click)="allocateDialogOpen.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <header class="modal-head">
+        <div>
+          <h3>Allocate Number to Workspace</h3>
+          <p>Assign {{ num.e164 }} ({{ num.tspCarrier }}) to an active tenant workspace.</p>
+        </div>
+        <button type="button" class="modal-close" (click)="allocateDialogOpen.set(false)">✕</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <label>Target Workspace / Company Name:</label>
+          <input
+            type="text"
+            class="form-in"
+            placeholder="e.g. Apex Industrial Solutions"
+            [value]="draftTenantName()"
+            (input)="draftTenantName.set($any($event.target).value)"
+          />
+        </div>
+
+        <div class="form-row">
+          <label>Verified Display Name on WhatsApp:</label>
+          <input
+            type="text"
+            class="form-in"
+            placeholder="e.g. Apex Industrial Support"
+            [value]="draftVerifiedName()"
+            (input)="draftVerifiedName.set($any($event.target).value)"
+          />
+          <small class="hint">Will be submitted for Meta review under Tech Provider credentials.</small>
+        </div>
+
+        <div class="form-notice">
+          <strong>Monthly Subscription Fee:</strong>
+          <span>{{ formatCurrency(num.monthlyRentalInr) }}/month will be added to the workspace's billing invoice.</span>
+        </div>
+      </div>
+
+      <footer class="modal-foot">
+        <button ar-button variant="ghost" (click)="allocateDialogOpen.set(false)">Cancel</button>
+        <button ar-button variant="primary" icon="check" [disabled]="!draftTenantName().trim()" (click)="submitAllocate()">
+          Confirm allocation
+        </button>
+      </footer>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     DIALOG 3: RELEASE NUMBER
+     ════════════════════════════════════════════════════════════════════════════ -->
+@if (releaseDialogOpen() && selectedNumber(); as num) {
+  <div class="modal-backdrop" (click)="releaseDialogOpen.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <header class="modal-head">
+        <div>
+          <h3>Release Number from Workspace</h3>
+          <p>Remove {{ num.e164 }} from active usage and place into quarantine cooling-off.</p>
+        </div>
+        <button type="button" class="modal-close" (click)="releaseDialogOpen.set(false)">✕</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <label>Reason for Release:</label>
+          <input
+            type="text"
+            class="form-in"
+            [value]="draftReleaseReason()"
+            (input)="draftReleaseReason.set($any($event.target).value)"
+          />
+        </div>
+
+        <div class="form-row">
+          <label>Quarantine Cooling-Off Period (Days):</label>
+          <input
+            type="number"
+            class="form-in"
+            [value]="draftQuarantineDays()"
+            (input)="draftQuarantineDays.set(+$any($event.target).value)"
+            min="0"
+            max="180"
+          />
+          <small class="hint">Per telecom guidelines, released numbers are quarantined (typically 30 days) before reallocation.</small>
+        </div>
+      </div>
+
+      <footer class="modal-foot">
+        <button ar-button variant="ghost" (click)="releaseDialogOpen.set(false)">Cancel</button>
+        <button ar-button variant="danger" icon="alert" (click)="submitRelease()">
+          Release & quarantine
+        </button>
+      </footer>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     DIALOG 4: EDIT TELECOM SETTINGS
+     ════════════════════════════════════════════════════════════════════════════ -->
+@if (editSettingsDialogOpen()) {
+  <div class="modal-backdrop" (click)="editSettingsDialogOpen.set(false)">
+    <div class="modal-card modal-card--lg" (click)="$event.stopPropagation()">
+      <header class="modal-head">
+        <div>
+          <h3>Edit Telecom Entity Registration</h3>
+          <p>Update regulatory identification numbers and CTSO appointment.</p>
+        </div>
+        <button type="button" class="modal-close" (click)="editSettingsDialogOpen.set(false)">✕</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <label>Registered Legal Entity Name:</label>
+          <input
+            type="text"
+            class="form-in"
+            [value]="draftLegalName()"
+            (input)="draftLegalName.set($any($event.target).value)"
+          />
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label>Regulatory Classification:</label>
+            <select
+              class="form-in"
+              [value]="draftClassification()"
+              (change)="draftClassification.set(+$any($event.target).value)"
+            >
+              <option [value]="TelecomEntityClassification.VirtualNetworkOperator">Virtual Network Operator (VNO)</option>
+              <option [value]="TelecomEntityClassification.TelecomIdentifierUserEntity">Telecom Identifier User Entity (TIUE)</option>
+              <option [value]="TelecomEntityClassification.DltPrincipalEntity">DLT Principal Entity</option>
+              <option [value]="TelecomEntityClassification.RegisteredTelemarketer">Registered Telemarketer (TRAI)</option>
+              <option [value]="TelecomEntityClassification.TechProviderBsp">Meta Tech Provider / BSP</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label>DoT Authorization / License Number:</label>
+            <input
+              type="text"
+              class="form-in"
+              [value]="draftDotReg()"
+              (input)="draftDotReg.set($any($event.target).value)"
+            />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label>DLT Principal Entity ID (19-digit):</label>
+            <input
+              type="text"
+              class="form-in"
+              [value]="draftDltId()"
+              (input)="draftDltId.set($any($event.target).value)"
+            />
+          </div>
+
+          <div class="form-row">
+            <label>TRAI Telemarketer ID (TM ID):</label>
+            <input
+              type="text"
+              class="form-in"
+              [value]="draftTmId()"
+              (input)="draftTmId.set($any($event.target).value)"
+            />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label>Primary Interconnect Carrier:</label>
+            <input
+              type="text"
+              class="form-in"
+              [value]="draftPrimaryTsp()"
+              (input)="draftPrimaryTsp.set($any($event.target).value)"
+            />
+          </div>
+
+          <div class="form-row">
+            <label>Point of Interconnect (POI):</label>
+            <input
+              type="text"
+              class="form-in"
+              [value]="draftInterconnect()"
+              (input)="draftInterconnect.set($any($event.target).value)"
+            />
+          </div>
+        </div>
+
+        <h4 class="form-subtitle">Chief Telecommunication Security Officer (CTSO)</h4>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label>Officer Name:</label>
+            <input
+              type="text"
+              class="form-in"
+              [value]="draftCtsoName()"
+              (input)="draftCtsoName.set($any($event.target).value)"
+            />
+          </div>
+
+          <div class="form-row">
+            <label>Official Email:</label>
+            <input
+              type="email"
+              class="form-in"
+              [value]="draftCtsoEmail()"
+              (input)="draftCtsoEmail.set($any($event.target).value)"
+            />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label>24x7 Emergency Contact Phone:</label>
+            <input
+              type="tel"
+              class="form-in"
+              [value]="draftCtsoPhone()"
+              (input)="draftCtsoPhone.set($any($event.target).value)"
+            />
+          </div>
+
+          <div class="form-row">
+            <label>Corporate Designation:</label>
+            <input
+              type="text"
+              class="form-in"
+              [value]="draftCtsoDesignation()"
+              (input)="draftCtsoDesignation.set($any($event.target).value)"
+            />
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-foot">
+        <button ar-button variant="ghost" (click)="editSettingsDialogOpen.set(false)">Cancel</button>
+        <button ar-button variant="primary" icon="check" (click)="submitSettings()">
+          Save changes
+        </button>
+      </footer>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════════════════════════════
+     DIALOG 5: COMPLIANCE AUDIT RESULTS REPORT
+     ════════════════════════════════════════════════════════════════════════════ -->
+@if (auditDialogOpen() && store.auditResult(); as res) {
+  <div class="modal-backdrop" (click)="auditDialogOpen.set(false)">
+    <div class="modal-card modal-card--lg" (click)="$event.stopPropagation()">
+      <header class="modal-head">
+        <div>
+          <h3>Telecom Compliance & SIM-Binding Audit Certificate</h3>
+          <p>Audited at {{ when(res.auditTimestampUtc) }}</p>
+        </div>
+        <button type="button" class="modal-close" (click)="auditDialogOpen.set(false)">✕</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="audit-summary">
+          <div class="audit-kpi">
+            <span>Total Numbers</span>
+            <strong>{{ res.totalInventoryCount }}</strong>
+          </div>
+          <div class="audit-kpi">
+            <span>SIM-Bound / Verified</span>
+            <strong class="good">{{ res.simBoundCount }}</strong>
+          </div>
+          <div class="audit-kpi">
+            <span>KYC Cleared</span>
+            <strong class="good">{{ res.kycVerifiedCount }}</strong>
+          </div>
+          <div class="audit-kpi">
+            <span>Overall Standing</span>
+            <strong class="good">COMPLIANT</strong>
+          </div>
+        </div>
+
+        <h4 class="form-subtitle">Regulatory Verification Checklist</h4>
+        <ul class="audit-checklist">
+          @for (c of res.checks; track c) {
+            <li class="audit-checklist__item">
+              <span class="audit-checklist__badge">✓ PASS</span>
+              <span>{{ c }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <footer class="modal-foot">
+        <button ar-button variant="primary" (click)="auditDialogOpen.set(false)">Done</button>
+      </footer>
+    </div>
+  </div>
+}

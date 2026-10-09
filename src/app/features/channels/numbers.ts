@@ -101,9 +101,11 @@ const SEED: readonly ManagedNumber[] = [
  * PIN is set here and never shown again — there is no screen that needs to read it
  * back, and every log that might capture it is a liability.
  */
+import { RouterLink } from '@angular/router';
+
 @Component({
   selector: 'ar-numbers',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArConnectNumberDialog],
+  imports: [RouterLink, ArTopbar, ArBanner, ArButton, ArChip, ArConnectNumberDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './numbers.html',
   styleUrl: './numbers.scss',

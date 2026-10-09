@@ -6,6 +6,9 @@
   <button ar-button type="button" variant="ghost" icon="refresh" (click)="refresh()">
     Refresh from Meta
   </button>
+  <a ar-button variant="ghost" icon="tower" routerLink="/channels/telecom">
+    Telecom entity & pool
+  </a>
   @if (canOnboard()) {
     <button ar-button type="button" variant="primary" icon="plus" (click)="connectOpen.set(true)">
       Connect a number

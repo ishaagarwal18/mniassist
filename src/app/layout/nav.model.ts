@@ -437,6 +437,12 @@ export const NAV: readonly NavGroup[] = [
         tenantOnly: true,
       },
       {
+        label: 'Telecom & numbers',
+        icon: 'tower',
+        route: '/channels/telecom',
+        permission: 'AutoReach.Telecom || AutoReach.Channels.Manage || AutoReach.Channels',
+      },
+      {
         label: 'Web forms',
         icon: 'template',
         route: '/forms',

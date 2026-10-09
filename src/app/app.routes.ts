@@ -368,6 +368,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/channels/numbers').then((m) => m.ArNumbers),
       },
       {
+        path: 'channels/telecom',
+        title: 'Telecom & Reseller Numbers · MNI Assist',
+        loadComponent: () => import('./features/channels/telecom').then((m) => m.ArTelecom),
+      },
+      {
         path: 'channels/widget',
         title: 'Chat links & QR · MNI Assist',
         loadComponent: () =>

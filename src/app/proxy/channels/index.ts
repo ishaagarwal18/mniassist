@@ -8,3 +8,6 @@ export * from './number-migration.service';
 export * from './onboarding-step.enum';
 export * from './quality-rating.enum';
 export * from './channel-kind.enum';
+export * from './telecom-enums';
+export * from './telecom.models';
+export * from './telecom.service';
