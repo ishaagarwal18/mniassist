@@ -193,6 +193,15 @@ export const NAV: readonly NavGroup[] = [
         tenantOnly: true,
       },
       {
+        label: 'AI Negotiator',
+        icon: 'sparkle',
+        route: '/pipeline/ai-negotiator',
+        permission: 'AutoReach.NegotiationAgent',
+        feature: 'PipelineCrm',
+        ai: true,
+        tenantOnly: true,
+      },
+      {
         label: 'Sales orders',
         icon: 'document',
         route: '/sales/orders',

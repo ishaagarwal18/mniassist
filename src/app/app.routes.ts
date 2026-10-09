@@ -215,6 +215,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/pipeline/quotations').then((m) => m.ArQuotations),
       },
       {
+        path: 'pipeline/ai-negotiator',
+        title: 'Autonomous AI Negotiator · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/ai-negotiator/ai-negotiator').then((m) => m.ArAiNegotiator),
+      },
+      {
         path: 'sales/orders',
         title: 'Sales orders · MNI Assist',
         loadComponent: () => import('./features/sales/orders/orders').then((m) => m.ArSalesOrders),
