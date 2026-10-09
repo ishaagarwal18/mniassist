@@ -12,6 +12,7 @@ import * as Flows from './flows';
 import * as Identity from './identity';
 import * as Integrations from './integrations';
 import * as Library from './library';
+import * as Maintenance from './maintenance';
 import * as Marketing from './marketing';
 import * as Messaging from './messaging';
 import * as Microsoft from './microsoft';
@@ -35,6 +36,7 @@ export {
   Identity,
   Integrations,
   Library,
+  Maintenance,
   Marketing,
   Messaging,
   Microsoft,

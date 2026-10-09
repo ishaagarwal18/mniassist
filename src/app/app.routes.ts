@@ -340,6 +340,14 @@ export const routes: Routes = [
           import('./features/field-service/tickets/field-service-tickets').then((m) => m.FieldServiceTicketsComponent),
       },
       {
+        path: 'field-service/remote-maintenance',
+        title: 'AI Remote Maintenance & Diagnostics · MNI Assist',
+        loadComponent: () =>
+          import('./features/field-service/remote-maintenance/remote-maintenance').then(
+            (m) => m.ArRemoteMaintenance,
+          ),
+      },
+      {
         path: 'finance/chart-of-accounts',
         title: 'Chart of accounts · MNI Assist',
         loadComponent: () =>

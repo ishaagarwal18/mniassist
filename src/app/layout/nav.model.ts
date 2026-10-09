@@ -343,6 +343,14 @@ export const NAV: readonly NavGroup[] = [
         tenantOnly: true,
       },
       {
+        label: 'Remote maintenance (AI)',
+        icon: 'sparkle',
+        route: '/field-service/remote-maintenance',
+        permission: 'AutoReach.RemoteMaintenance',
+        ai: true,
+        tenantOnly: true,
+      },
+      {
         label: 'Chart of accounts',
         icon: 'document',
         route: '/finance/chart-of-accounts',
