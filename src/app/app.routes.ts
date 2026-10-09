@@ -133,6 +133,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/contacts/accounts').then((m) => m.ArAccounts),
       },
       {
+        path: 'contacts/360',
+        title: 'Customer 360 · MNI Assist',
+        loadComponent: () => import('./features/contacts/customer-360').then((m) => m.ArCustomer360),
+      },
+      {
+        path: 'contacts/:id/360',
+        title: 'Customer 360 · MNI Assist',
+        loadComponent: () => import('./features/contacts/customer-360').then((m) => m.ArCustomer360),
+      },
+      {
         path: 'contacts/duplicates',
         title: 'Duplicates · MNI Assist',
         loadComponent: () => import('./features/contacts/duplicates').then((m) => m.ArDuplicates),
@@ -205,6 +215,23 @@ export const routes: Routes = [
         loadComponent: () => import('./features/pipeline/quotations').then((m) => m.ArQuotations),
       },
       {
+        path: 'sales/orders',
+        title: 'Sales orders · MNI Assist',
+        loadComponent: () => import('./features/sales/orders/orders').then((m) => m.ArSalesOrders),
+      },
+      {
+        path: 'sales/challans',
+        title: 'Delivery challans · MNI Assist',
+        loadComponent: () =>
+          import('./features/sales/challans/delivery-challans').then((m) => m.ArDeliveryChallans),
+      },
+      {
+        path: 'sales/invoices',
+        title: 'Sales invoices · MNI Assist',
+        loadComponent: () =>
+          import('./features/sales/invoices/sales-invoices').then((m) => m.ArSalesInvoices),
+      },
+      {
         path: 'renewals',
         title: 'AMC renewals · MNI Assist',
         loadComponent: () => import('./features/pipeline/renewals').then((m) => m.ArRenewals),
@@ -245,6 +272,84 @@ export const routes: Routes = [
         path: 'purchasing',
         title: 'Purchasing · MNI Assist',
         loadComponent: () => import('./features/inventory/purchasing').then((m) => m.ArPurchasing),
+      },
+      {
+        path: 'purchasing/grn',
+        title: 'Goods receipt (GRN) · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/grn/goods-receipt-notes').then((m) => m.GoodsReceiptNotesComponent),
+      },
+      {
+        path: 'purchasing/bills',
+        title: 'Vendor bills · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/bills/vendor-bills').then((m) => m.VendorBillsComponent),
+      },
+      {
+        path: 'purchasing/debit-notes',
+        title: 'Vendor debit notes · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/debit-notes/vendor-debit-notes').then((m) => m.VendorDebitNotesComponent),
+      },
+      {
+        path: 'purchasing/vendor-360',
+        title: 'Vendor 360 · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/vendor-360/vendor-360').then((m) => m.Vendor360Component),
+      },
+      {
+        path: 'purchasing/vendor-360/:id',
+        title: 'Vendor 360 · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/vendor-360/vendor-360').then((m) => m.Vendor360Component),
+      },
+      {
+        path: 'manufacturing/bom',
+        title: 'Bill of materials · MNI Assist',
+        loadComponent: () =>
+          import('./features/manufacturing/bom/bill-of-materials').then((m) => m.BillOfMaterialsComponent),
+      },
+      {
+        path: 'manufacturing/work-orders',
+        title: 'Work orders · MNI Assist',
+        loadComponent: () =>
+          import('./features/manufacturing/work-orders/work-orders').then((m) => m.WorkOrdersComponent),
+      },
+      {
+        path: 'field-service/amc',
+        title: 'AMC contracts · MNI Assist',
+        loadComponent: () =>
+          import('./features/field-service/amc/amc-contracts').then((m) => m.AmcContractsComponent),
+      },
+      {
+        path: 'field-service/tickets',
+        title: 'Field tickets · MNI Assist',
+        loadComponent: () =>
+          import('./features/field-service/tickets/field-service-tickets').then((m) => m.FieldServiceTicketsComponent),
+      },
+      {
+        path: 'finance/chart-of-accounts',
+        title: 'Chart of accounts · MNI Assist',
+        loadComponent: () =>
+          import('./features/finance/chart-of-accounts/chart-of-accounts').then((m) => m.ChartOfAccountsComponent),
+      },
+      {
+        path: 'finance/journal-entries',
+        title: 'Journal vouchers · MNI Assist',
+        loadComponent: () =>
+          import('./features/finance/journal-entries/journal-entries').then((m) => m.JournalEntriesComponent),
+      },
+      {
+        path: 'finance/statements',
+        title: 'Financial statements · MNI Assist',
+        loadComponent: () =>
+          import('./features/finance/statements/financial-statements').then((m) => m.FinancialStatementsComponent),
+      },
+      {
+        path: 'finance/gst-compliance',
+        title: 'GST compliance · MNI Assist',
+        loadComponent: () =>
+          import('./features/finance/gst-compliance/gst-compliance').then((m) => m.GstComplianceComponent),
       },
       {
         path: 'reorders',
