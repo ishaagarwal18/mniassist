@@ -12,6 +12,7 @@ import { ArBanner, ArButton, ArCard, ArDialog } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ArTenantFeaturesDialog } from './tenant-features-dialog';
+import { ArWorkspaceManageDialog } from './workspace-manage-dialog';
 
 const SEED: TenantDto[] = [
   { id: 't-1', name: 'vertex-automation' },
@@ -20,7 +21,8 @@ const SEED: TenantDto[] = [
 
 /**
  * Host-only workspace management using Syncfusion Grid:
- * create, rename, delete workspaces, and manage tenant feature flags via ABP Feature Management.
+ * create, rename, delete workspaces, manage tenant feature flags via ABP Feature Management,
+ * and the platform controls in the Manage dialog: suspend, plan, feature overrides, own database, enter.
  */
 @Component({
   selector: 'ar-admin-tenants',
@@ -34,6 +36,7 @@ const SEED: TenantDto[] = [
     ArGrid,
     GridModule,
     ArTenantFeaturesDialog,
+    ArWorkspaceManageDialog,
     PermissionDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -74,7 +77,7 @@ const SEED: TenantDto[] = [
               </e-column>
               <e-column
                 headerText="Actions"
-                width="240"
+                width="300"
                 textAlign="Right"
                 [allowSorting]="false"
                 [allowFiltering]="false"
@@ -82,6 +85,14 @@ const SEED: TenantDto[] = [
               >
                 <ng-template #template let-t>
                   <span class="ta-actions">
+                    <button
+                      type="button"
+                      class="link"
+                      *abpPermission="'AutoReach.Administration.ManageTenants'"
+                      (click)="manageTenant.set(t)"
+                    >
+                      Manage
+                    </button>
                     <button
                       type="button"
                       class="link"
@@ -121,6 +132,14 @@ const SEED: TenantDto[] = [
         [tenantId]="ft.id"
         [tenantName]="ft.name"
         (closed)="featuresTenant.set(null)"
+      />
+    }
+
+    @if (manageTenant(); as mt) {
+      <ar-workspace-manage-dialog
+        [tenantId]="mt.id"
+        [tenantName]="mt.name"
+        (closed)="manageClosed($event)"
       />
     }
 
@@ -242,6 +261,13 @@ export class ArAdminTenants {
   protected readonly dialog = signal<'create' | 'rename' | null>(null);
   /** The tenant whose features dialog is open. */
   protected readonly featuresTenant = signal<TenantDto | null>(null);
+  /** The tenant whose platform controls (status, plan, database, entry) are open. */
+  protected readonly manageTenant = signal<TenantDto | null>(null);
+
+  protected manageClosed(changed: boolean): void {
+    this.manageTenant.set(null);
+    if (changed) this.reload();
+  }
 
   private readonly editingId = signal<string | null>(null);
   protected readonly fName = signal('');

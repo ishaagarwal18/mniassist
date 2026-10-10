@@ -63,3 +63,63 @@ export interface AtRiskAlertDto {
   notes?: string | null;
   ticketRef?: string | null;
 }
+
+import type { BillingCycle } from '../billing/billing-cycle.enum';
+import type { PlanFeature } from '../billing/plan-feature.enum';
+import type { WorkspaceFeatureMode } from './workspace-feature-mode.enum';
+
+export interface SuspendWorkspaceInput {
+  reason: string;
+}
+
+export interface AssignPlanInput {
+  plan: SubscriptionPlan;
+  cycle: BillingCycle;
+  isTrial: boolean;
+  currentPeriodEndUtc?: string | null;
+  expiresAtUtc?: string | null;
+  monthlyFeeInPaise?: number | null;
+  includedAgentSeats?: number | null;
+}
+
+export interface SetWorkspaceFeatureInput {
+  feature: PlanFeature;
+  mode: WorkspaceFeatureMode;
+}
+
+export interface SetWorkspaceDatabaseInput {
+  connectionString: string;
+}
+
+export interface WorkspaceSubscriptionDto {
+  plan: SubscriptionPlan;
+  cycle: BillingCycle;
+  isTrial: boolean;
+  startedAtUtc: string;
+  currentPeriodEndUtc: string;
+  expiresAtUtc?: string | null;
+  monthlyFeeInPaise: number;
+  includedAgentSeats: number;
+}
+
+export interface WorkspaceFeatureDto {
+  feature: PlanFeature;
+  includedByPlan: boolean;
+  mode: WorkspaceFeatureMode;
+  effective: boolean;
+}
+
+export interface WorkspaceDetailDto {
+  id: string;
+  name: string;
+  creationTime: string;
+  isSuspended: boolean;
+  suspendedReason?: string | null;
+  suspendedAtUtc?: string | null;
+  suspendedBy?: string | null;
+  subscription?: WorkspaceSubscriptionDto | null;
+  features: WorkspaceFeatureDto[];
+  hasOwnDatabase: boolean;
+  databaseLocation?: string | null;
+  memberCount: number;
+}

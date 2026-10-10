@@ -282,3 +282,44 @@ export interface UserSecurityStatusDto {
   mustChangePasswordOnNextSignIn: boolean;
   lastPasswordChangeTime?: string | null;
 }
+
+export interface LinkAccountInput {
+  /** The other account's workspace; empty for the host. */
+  workspace?: string | null;
+  userNameOrEmail: string;
+  password: string;
+  /** Needed when the other account uses two-step verification. */
+  twoFactorCode?: string | null;
+}
+
+export interface LinkedAccountDto {
+  userId: string;
+  tenantId?: string | null;
+  /** Empty for the host. */
+  tenantName?: string | null;
+  userName: string;
+  email?: string | null;
+}
+
+export interface CreateDelegationInput {
+  targetUserId: string;
+  startTime: string;
+  endTime: string;
+}
+
+export interface DelegationDto {
+  id: string;
+  /** The other person: the delegate in "my delegations", the delegator in "delegated to me". */
+  userId: string;
+  userName: string;
+  name?: string | null;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+}
+
+export interface DelegateCandidateDto {
+  userId: string;
+  userName: string;
+  name?: string | null;
+}

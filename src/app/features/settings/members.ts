@@ -14,6 +14,8 @@ import { ArGrid } from '../../ui/grid';
 import { ArSelect } from '../../ui/select';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
+import { AccountSwitcher } from '../../core/auth/account-switch';
+import { CurrentUserService } from '../../core/services/current-user.service';
 
 /**
  * Users & roles (M07). Who is in the workspace, what each can do, and who has been
@@ -207,6 +209,34 @@ export class ArMembers {
       })
     ) {
       await this.store.reactivate(member.userId);
+    }
+  }
+
+  // ---- Acting as a member ---------------------------------------------------
+
+  private readonly switcher = inject(AccountSwitcher);
+  private readonly me = inject(CurrentUserService);
+
+  /** Not oneself, and never another admin: the server refuses those too. */
+  protected canActAs(member: Member): boolean {
+    if (!member.isActive || member.userId === this.me.id()) return false;
+    return !member.roles.some((r) => ['owner', 'admin'].includes(r.toLowerCase()));
+  }
+
+  protected async actAs(member: Member): Promise<void> {
+    const who = member.name ?? member.userName;
+    if (
+      !(await this.dialogs.confirm({
+        title: `Act as ${who}?`,
+        message: `You see and do exactly what ${who} can. Everything is recorded as ${who}'s, with your name beside it, and you cannot act as anyone else until you return.`,
+        confirmText: 'Act as them',
+      }))
+    )
+      return;
+    try {
+      await this.switcher.switchTo({ kind: 'ImpersonateUser', userId: member.userId });
+    } catch (e) {
+      this.toasts.error(readApiError(e));
     }
   }
 

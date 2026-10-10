@@ -100,4 +100,17 @@ export class AuditLogService {
       },
       { apiName: this.apiName, ...config },
     );
+
+  /** The filtered requests as an Excel workbook: requests on one sheet, their changes on another. */
+  export = (input: GetAuditLogsInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, Blob>(
+      {
+        method: 'POST',
+        responseType: 'blob',
+        headers: { Accept: 'application/octet-stream' },
+        url: '/api/auto-reach/audit-log/export',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
 }

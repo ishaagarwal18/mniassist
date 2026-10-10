@@ -10,6 +10,8 @@ import { ArSelect } from '../../ui/select';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ArTwoFactorCard } from './two-factor-card';
 import { ArSignInHistoryCard } from './sign-in-history-card';
+import { ArLinkedAccountsCard } from './linked-accounts-card';
+import { ArDelegationsCard } from './delegations-card';
 
 /**
  * The workspace's general settings. Today this is the single-sign-on panel — the one
@@ -29,6 +31,8 @@ import { ArSignInHistoryCard } from './sign-in-history-card';
     ArSelect,
     ArTwoFactorCard,
     ArSignInHistoryCard,
+    ArLinkedAccountsCard,
+    ArDelegationsCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './settings.html',

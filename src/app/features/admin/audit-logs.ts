@@ -169,9 +169,23 @@ const numberOrUndefined = (s: string) => {
       <button ar-button type="button" variant="ghost" icon="refresh" (click)="refresh()">
         Refresh
       </button>
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        icon="download"
+        [disabled]="exporting()"
+        title="The requests matching the filters as an Excel workbook, with the changes they made"
+        (click)="exportExcel()"
+      >
+        {{ exporting() ? 'Exporting…' : 'Export to Excel' }}
+      </button>
     </ar-topbar>
 
     <div class="al ar-scroll">
+      @if (exportError(); as e) {
+        <ar-banner tone="bad">{{ e }}</ar-banner>
+      }
       <div class="al__tiles">
         @for (t of tiles(); track t.label) {
           <ar-stat-tile [label]="t.label" [value]="t.value" [note]="t.note" [tone]="t.tone" />
@@ -822,6 +836,44 @@ export class ArAdminAuditLogs {
   protected readonly rDraft = signal<RequestFilters>(NO_REQUEST_FILTERS);
   private readonly rApplied = signal<RequestFilters>(NO_REQUEST_FILTERS);
   protected readonly rPage = signal(0);
+
+  protected readonly exporting = signal(false);
+  protected readonly exportError = signal<string | null>(null);
+
+  /** The applied request filters, as both the list and the export send them. */
+  private requestQuery(f: RequestFilters) {
+    return {
+      ...this.range(),
+      userName: trimmed(f.userName),
+      url: trimmed(f.url),
+      httpMethod: f.httpMethod || undefined,
+      httpStatusCode: numberOrUndefined(f.httpStatusCode),
+      hasException: f.errorsOnly ? true : undefined,
+      minExecutionDuration: numberOrUndefined(f.slowerThan),
+    };
+  }
+
+  protected async exportExcel(): Promise<void> {
+    if (this.mock) {
+      this.exportError.set('Export needs the API — it is not available in the standalone build.');
+      return;
+    }
+    this.exporting.set(true);
+    this.exportError.set(null);
+    try {
+      const blob = await firstValueFrom(this.api.export(this.requestQuery(this.rApplied())));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      this.exportError.set(readApiError(e));
+    } finally {
+      this.exporting.set(false);
+    }
+  }
 
   private readonly requestsResource = rxResource({
     params: () =>

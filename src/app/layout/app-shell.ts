@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ArSidebar } from './sidebar';
 import { ArSoftphoneBar } from './softphone-bar';
@@ -8,6 +8,10 @@ import { ArConfirmHost } from './confirm-host';
 import { ArIcon } from '../ui';
 import { AgencyActingStore } from '../core/services/agency-acting.store';
 import { PwaService } from '../core/services/pwa.service';
+import { AccountSwitcher } from '../core/auth/account-switch';
+import { CurrentUserService } from '../core/services/current-user.service';
+import { readApiError } from '../core/util/api-error';
+import { ToastService } from '../core/ui/toast.service';
 
 @Component({
   selector: 'ar-app-shell',
@@ -35,6 +39,21 @@ import { PwaService } from '../core/services/pwa.service';
           <ar-icon name="refresh" [size]="14" />
           <span>A new version of MNI Assist is available.</span>
           <button type="button" (click)="pwa.applyUpdate()">Update now</button>
+        </div>
+      }
+      @if (switcher.actingAs(); as a) {
+        <div class="shell__acting" role="status">
+          <span>
+            You are <strong>{{ user.fullName() }}</strong>
+            @if (user.tenantName()) {
+              in {{ user.tenantName() }}
+            }
+            — signed in as {{ a.userName }}. Everything you do is recorded as theirs, with your name
+            beside it.
+          </span>
+          <button type="button" [disabled]="returning()" (click)="returnToSelf()">
+            {{ returning() ? 'Returning…' : 'Return to your account' }}
+          </button>
         </div>
       }
       @if (acting.session(); as s) {
@@ -138,9 +157,25 @@ import { PwaService } from '../core/services/pwa.service';
 export class ArAppShell {
   protected readonly acting = inject(AgencyActingStore);
   protected readonly pwa = inject(PwaService);
+  protected readonly switcher = inject(AccountSwitcher);
+  protected readonly user = inject(CurrentUserService);
+  private readonly toasts = inject(ToastService);
+  protected readonly returning = signal(false);
 
   constructor() {
     void this.acting.refresh();
+  }
+
+  protected async returnToSelf(): Promise<void> {
+    this.returning.set(true);
+    try {
+      await this.switcher.returnToSelf();
+    } catch (e) {
+      this.returning.set(false);
+      this.toasts.error(
+        readApiError(e, 'Could not return to your account. Sign out and in again.'),
+      );
+    }
   }
 
   protected async exit(): Promise<void> {
