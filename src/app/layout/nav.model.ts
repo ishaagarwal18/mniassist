@@ -501,6 +501,13 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Administration.ManageTenants',
         hostOnly: true,
       },
+      {
+        label: 'Status page',
+        icon: 'shield',
+        route: '/platform/status',
+        permission: 'AutoReach.Administration.ManageTenants',
+        hostOnly: true,
+      },
     ],
   },
   {

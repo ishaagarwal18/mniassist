@@ -18,6 +18,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/account/login').then((m) => m.ArLogin),
   },
   {
+    // The public status page (T-19): no sign-in and no shell, so it opens when sign-in is what is broken.
+    path: 'status',
+    title: 'System status · MNI Assist',
+    loadComponent: () => import('./features/status/status-page').then((m) => m.ArStatusPage),
+  },
+  {
     // Where Google / Microsoft send the browser back after "Sign in with…" (M01-7).
     path: 'login/external',
     title: 'Signing in · MNI Assist',
@@ -678,6 +684,12 @@ export const routes: Routes = [
         title: 'Feature flags · MNI Assist',
         loadComponent: () =>
           import('./features/platform/feature-flags').then((m) => m.ArFeatureFlags),
+      },
+      {
+        path: 'platform/status',
+        title: 'Status page · MNI Assist',
+        loadComponent: () =>
+          import('./features/platform/status-incidents').then((m) => m.ArStatusIncidents),
       },
       { path: '**', redirectTo: 'home' },
     ],

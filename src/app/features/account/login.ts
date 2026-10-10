@@ -270,7 +270,8 @@ import { ArBrand } from '../../layout/brand';
       </ul>
       <p class="lg__foot">
         MNI Assist — AI Business Engagement Platform for Industrial Companies ·
-        <a routerLink="/privacy" class="lg__foot-link">Privacy policy</a>
+        <a routerLink="/privacy" class="lg__foot-link">Privacy policy</a> ·
+        <a routerLink="/status" class="lg__foot-link">System status</a>
       </p>
     </div>
   `,

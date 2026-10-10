@@ -1014,6 +1014,23 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Export data when you need it elsewhere.',
     ],
   },
+  'platform/status': {
+    summary:
+      'What customers read at /status: open incidents, planned maintenance and the last 14 days. The database check is automatic; everything else is what you post here.',
+    benefits: [
+      'Customers see a problem is known before they raise a ticket about it.',
+      'Planned maintenance is announced in advance, in IST.',
+    ],
+    steps: [
+      'New incident: say what is affected and what to do meanwhile, choose the impact and the parts affected, Post.',
+      'Update it at least every hour while it is open (Update → Post update).',
+      'Resolve it with what happened and whether customers need to do anything.',
+    ],
+    tips: [
+      'Write for the customer: "WhatsApp messages are delayed by up to 10 minutes", not "Service Bus backlog".',
+      'Delete only something posted by mistake; a real incident is resolved, so it stays in the history.',
+    ],
+  },
   'platform/feature-flags': {
     benefits: [
       'Try a feature with a few workspaces before everyone.',
