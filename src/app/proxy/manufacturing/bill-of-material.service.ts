@@ -20,7 +20,7 @@ export class BillOfMaterialService {
     return this.restService.request<any, PagedResultDto<BillOfMaterialDto>>(
       {
         method: 'GET',
-        url: '/api/app/bill-of-material',
+        url: '/api/auto-reach/bill-of-material',
         params: {
           filter: input.filter,
           status: input.status,
@@ -38,7 +38,7 @@ export class BillOfMaterialService {
     return this.restService.request<any, BillOfMaterialDto>(
       {
         method: 'GET',
-        url: `/api/app/bill-of-material/${id}`,
+        url: `/api/auto-reach/bill-of-material/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -48,7 +48,7 @@ export class BillOfMaterialService {
     return this.restService.request<any, BillOfMaterialDto>(
       {
         method: 'POST',
-        url: '/api/app/bill-of-material',
+        url: '/api/auto-reach/bill-of-material',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -59,7 +59,7 @@ export class BillOfMaterialService {
     return this.restService.request<any, BillOfMaterialDto>(
       {
         method: 'PUT',
-        url: `/api/app/bill-of-material/${id}`,
+        url: `/api/auto-reach/bill-of-material/${id}`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -70,7 +70,7 @@ export class BillOfMaterialService {
     return this.restService.request<any, BillOfMaterialDto>(
       {
         method: 'POST',
-        url: `/api/app/bill-of-material/${id}/activate`,
+        url: `/api/auto-reach/bill-of-material/${id}/activate`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -80,7 +80,7 @@ export class BillOfMaterialService {
     return this.restService.request<any, BillOfMaterialDto>(
       {
         method: 'POST',
-        url: `/api/app/bill-of-material/${id}/obsolete`,
+        url: `/api/auto-reach/bill-of-material/${id}/obsolete`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -90,7 +90,7 @@ export class BillOfMaterialService {
     return this.restService.request<any, void>(
       {
         method: 'DELETE',
-        url: `/api/app/bill-of-material/${id}`,
+        url: `/api/auto-reach/bill-of-material/${id}`,
       },
       { apiName: this.apiName, ...config },
     );

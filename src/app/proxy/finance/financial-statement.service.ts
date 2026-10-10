@@ -19,7 +19,7 @@ export class FinancialStatementService {
     return this.restService.request<any, TrialBalanceResultDto>(
       {
         method: 'GET',
-        url: '/api/app/financial-statement/trial-balance',
+        url: '/api/auto-reach/financial-statement/trial-balance',
         params: {
           fromDateUtc: input.fromDateUtc,
           toDateUtc: input.toDateUtc,
@@ -33,7 +33,7 @@ export class FinancialStatementService {
     return this.restService.request<any, ProfitAndLossResultDto>(
       {
         method: 'GET',
-        url: '/api/app/financial-statement/profit-and-loss',
+        url: '/api/auto-reach/financial-statement/profit-and-loss',
         params: {
           fromDateUtc: input.fromDateUtc,
           toDateUtc: input.toDateUtc,
@@ -47,7 +47,7 @@ export class FinancialStatementService {
     return this.restService.request<any, BalanceSheetResultDto>(
       {
         method: 'GET',
-        url: '/api/app/financial-statement/balance-sheet',
+        url: '/api/auto-reach/financial-statement/balance-sheet',
         params: {
           fromDateUtc: input.fromDateUtc,
           toDateUtc: input.toDateUtc,

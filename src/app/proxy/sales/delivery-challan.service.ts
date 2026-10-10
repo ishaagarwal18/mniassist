@@ -19,7 +19,7 @@ export class DeliveryChallanService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: '/api/app/delivery-challan',
+        url: '/api/auto-reach/delivery-challan',
         params: {
           filter: input.filter,
           status: input.status,
@@ -39,7 +39,7 @@ export class DeliveryChallanService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: `/api/app/delivery-challan/${id}`,
+        url: `/api/auto-reach/delivery-challan/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -49,7 +49,7 @@ export class DeliveryChallanService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/app/delivery-challan',
+        url: '/api/auto-reach/delivery-challan',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -60,7 +60,7 @@ export class DeliveryChallanService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/delivery-challan/from-sales-order/${salesOrderId}`,
+        url: `/api/auto-reach/delivery-challan/from-sales-order/${salesOrderId}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -70,7 +70,7 @@ export class DeliveryChallanService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/delivery-challan/${id}/dispatch`,
+        url: `/api/auto-reach/delivery-challan/${id}/dispatch`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -81,7 +81,7 @@ export class DeliveryChallanService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/delivery-challan/${id}/delivered`,
+        url: `/api/auto-reach/delivery-challan/${id}/mark-delivered`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -91,7 +91,7 @@ export class DeliveryChallanService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/delivery-challan/${id}/cancel`,
+        url: `/api/auto-reach/delivery-challan/${id}/cancel`,
       },
       { apiName: this.apiName, ...config },
     );

@@ -20,7 +20,7 @@ export class ChartOfAccountService {
     return this.restService.request<any, PagedResultDto<ChartOfAccountDto>>(
       {
         method: 'GET',
-        url: '/api/app/chart-of-account',
+        url: '/api/auto-reach/chart-of-account',
         params: {
           filter: input.filter,
           category: input.category,
@@ -39,7 +39,7 @@ export class ChartOfAccountService {
     return this.restService.request<any, ChartOfAccountDto>(
       {
         method: 'GET',
-        url: `/api/app/chart-of-account/${id}`,
+        url: `/api/auto-reach/chart-of-account/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -49,7 +49,7 @@ export class ChartOfAccountService {
     return this.restService.request<any, ChartOfAccountDto>(
       {
         method: 'POST',
-        url: '/api/app/chart-of-account',
+        url: '/api/auto-reach/chart-of-account',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -60,7 +60,7 @@ export class ChartOfAccountService {
     return this.restService.request<any, ChartOfAccountDto>(
       {
         method: 'PUT',
-        url: `/api/app/chart-of-account/${id}`,
+        url: `/api/auto-reach/chart-of-account/${id}`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -71,7 +71,7 @@ export class ChartOfAccountService {
     return this.restService.request<any, void>(
       {
         method: 'DELETE',
-        url: `/api/app/chart-of-account/${id}`,
+        url: `/api/auto-reach/chart-of-account/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -81,7 +81,7 @@ export class ChartOfAccountService {
     return this.restService.request<any, number>(
       {
         method: 'POST',
-        url: '/api/app/chart-of-account/seed-standard-coa',
+        url: '/api/auto-reach/chart-of-account/seed-standard-coa',
       },
       { apiName: this.apiName, ...config },
     );

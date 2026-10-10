@@ -28,7 +28,7 @@ export class NegotiationAgentService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: '/api/auto-reach/negotiation-agent/policy',
+        url: '/api/auto-reach/negotiation-agent/active-policy',
       },
       { apiName: this.apiName, ...config },
     );
@@ -38,7 +38,7 @@ export class NegotiationAgentService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/auto-reach/negotiation-agent/policy',
+        url: '/api/auto-reach/negotiation-agent/or-update-policy',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -65,7 +65,7 @@ export class NegotiationAgentService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: `/api/auto-reach/negotiation-agent/sessions/${id}`,
+        url: `/api/auto-reach/negotiation-agent/${id}/session`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -75,7 +75,7 @@ export class NegotiationAgentService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/auto-reach/negotiation-agent/evaluate',
+        url: '/api/auto-reach/negotiation-agent/evaluate-counter-offer',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -86,7 +86,7 @@ export class NegotiationAgentService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/auto-reach/negotiation-agent/process-chat',
+        url: '/api/auto-reach/negotiation-agent/process-chat-negotiation',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -97,7 +97,7 @@ export class NegotiationAgentService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/auto-reach/negotiation-agent/simulate',
+        url: '/api/auto-reach/negotiation-agent/simulate-negotiation',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -119,7 +119,7 @@ export class NegotiationAgentService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/auto-reach/negotiation-agent/sessions/${sessionId}/apply-to-quote`,
+        url: `/api/auto-reach/negotiation-agent/apply-to-quotation/${sessionId}`,
       },
       { apiName: this.apiName, ...config },
     );

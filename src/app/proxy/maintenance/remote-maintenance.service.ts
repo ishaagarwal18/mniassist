@@ -23,7 +23,7 @@ export class RemoteMaintenanceService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: '/api/app/remote-maintenance',
+        url: '/api/auto-reach/remote-maintenance',
         params: {
           channel: input.channel,
           status: input.status,
@@ -42,7 +42,7 @@ export class RemoteMaintenanceService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: `/api/app/remote-maintenance/${id}`,
+        url: `/api/auto-reach/remote-maintenance/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -52,7 +52,7 @@ export class RemoteMaintenanceService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/app/remote-maintenance/initiate-session',
+        url: '/api/auto-reach/remote-maintenance/initiate-session',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -63,7 +63,7 @@ export class RemoteMaintenanceService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/app/remote-maintenance/send-channel-turn',
+        url: '/api/auto-reach/remote-maintenance/send-channel-turn',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -74,7 +74,7 @@ export class RemoteMaintenanceService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/app/remote-maintenance/switch-channel',
+        url: '/api/auto-reach/remote-maintenance/switch-channel',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -85,7 +85,7 @@ export class RemoteMaintenanceService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/app/remote-maintenance/escalate-to-field-ticket',
+        url: '/api/auto-reach/remote-maintenance/escalate-to-field-ticket',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -96,7 +96,7 @@ export class RemoteMaintenanceService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/app/remote-maintenance/resolve-remotely',
+        url: '/api/auto-reach/remote-maintenance/resolve-remotely',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -107,7 +107,7 @@ export class RemoteMaintenanceService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: '/api/app/remote-maintenance/stats',
+        url: '/api/auto-reach/remote-maintenance/stats',
       },
       { apiName: this.apiName, ...config },
     );

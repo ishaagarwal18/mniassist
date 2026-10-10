@@ -67,7 +67,7 @@ export class TelecomService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: `/api/auto-reach/telecom/numbers/${id}`,
+        url: `/api/auto-reach/telecom/${id}/number`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -77,7 +77,7 @@ export class TelecomService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: '/api/auto-reach/telecom/available-pool',
+        url: '/api/auto-reach/telecom/available-pool-numbers',
       },
       { apiName: this.apiName, ...config },
     );
@@ -87,7 +87,7 @@ export class TelecomService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/auto-reach/telecom/numbers',
+        url: '/api/auto-reach/telecom/number',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -98,7 +98,7 @@ export class TelecomService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/auto-reach/telecom/numbers/${id}/allocate`,
+        url: `/api/auto-reach/telecom/${id}/allocate-number`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -109,7 +109,7 @@ export class TelecomService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/auto-reach/telecom/numbers/${id}/release`,
+        url: `/api/auto-reach/telecom/${id}/release-number`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -120,7 +120,7 @@ export class TelecomService {
       {
         method: 'PUT',
         headers: { Accept: 'application/json' },
-        url: `/api/auto-reach/telecom/numbers/${id}/kyc`,
+        url: `/api/auto-reach/telecom/${id}/number-kyc`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -131,7 +131,7 @@ export class TelecomService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/auto-reach/telecom/compliance-audit',
+        url: '/api/auto-reach/telecom/run-compliance-audit',
       },
       { apiName: this.apiName, ...config },
     );

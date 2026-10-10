@@ -19,7 +19,7 @@ export class VendorDebitNoteService {
     return this.restService.request<any, PagedResultDto<VendorDebitNoteDto>>(
       {
         method: 'GET',
-        url: '/api/app/vendor-debit-note',
+        url: '/api/auto-reach/vendor-debit-note',
         params: {
           filter: input.filter,
           status: input.status,
@@ -38,7 +38,7 @@ export class VendorDebitNoteService {
     return this.restService.request<any, VendorDebitNoteDto>(
       {
         method: 'GET',
-        url: `/api/app/vendor-debit-note/${id}`,
+        url: `/api/auto-reach/vendor-debit-note/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -48,7 +48,7 @@ export class VendorDebitNoteService {
     return this.restService.request<any, VendorDebitNoteDto>(
       {
         method: 'POST',
-        url: '/api/app/vendor-debit-note',
+        url: '/api/auto-reach/vendor-debit-note',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -59,7 +59,7 @@ export class VendorDebitNoteService {
     return this.restService.request<any, VendorDebitNoteDto>(
       {
         method: 'POST',
-        url: `/api/app/vendor-debit-note/create-from-grn-rejection/${grnId}`,
+        url: `/api/auto-reach/vendor-debit-note/from-grn-rejection/${grnId}`,
         params: { reason },
       },
       { apiName: this.apiName, ...config },
@@ -70,7 +70,7 @@ export class VendorDebitNoteService {
     return this.restService.request<any, VendorDebitNoteDto>(
       {
         method: 'POST',
-        url: `/api/app/vendor-debit-note/${id}/issue`,
+        url: `/api/auto-reach/vendor-debit-note/${id}/issue`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -80,7 +80,7 @@ export class VendorDebitNoteService {
     return this.restService.request<any, VendorDebitNoteDto>(
       {
         method: 'POST',
-        url: `/api/app/vendor-debit-note/${id}/settle`,
+        url: `/api/auto-reach/vendor-debit-note/${id}/settle`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -90,7 +90,7 @@ export class VendorDebitNoteService {
     return this.restService.request<any, VendorDebitNoteDto>(
       {
         method: 'POST',
-        url: `/api/app/vendor-debit-note/${id}/cancel`,
+        url: `/api/auto-reach/vendor-debit-note/${id}/cancel`,
       },
       { apiName: this.apiName, ...config },
     );

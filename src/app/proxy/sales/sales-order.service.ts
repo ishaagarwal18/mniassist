@@ -20,7 +20,7 @@ export class SalesOrderService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: '/api/app/sales-order',
+        url: '/api/auto-reach/sales-order',
         params: {
           filter: input.filter,
           status: input.status,
@@ -39,7 +39,7 @@ export class SalesOrderService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: `/api/app/sales-order/${id}`,
+        url: `/api/auto-reach/sales-order/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -49,7 +49,7 @@ export class SalesOrderService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/app/sales-order',
+        url: '/api/auto-reach/sales-order',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -60,7 +60,7 @@ export class SalesOrderService {
       {
         method: 'PUT',
         headers: { Accept: 'application/json' },
-        url: `/api/app/sales-order/${id}`,
+        url: `/api/auto-reach/sales-order/${id}`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -70,7 +70,7 @@ export class SalesOrderService {
     this.restService.request<any, void>(
       {
         method: 'DELETE',
-        url: `/api/app/sales-order/${id}`,
+        url: `/api/auto-reach/sales-order/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -80,7 +80,7 @@ export class SalesOrderService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/sales-order/${id}/confirm`,
+        url: `/api/auto-reach/sales-order/${id}/confirm`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -90,7 +90,7 @@ export class SalesOrderService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/sales-order/${id}/cancel`,
+        url: `/api/auto-reach/sales-order/${id}/cancel`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -100,7 +100,7 @@ export class SalesOrderService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/app/sales-order/from-quotation',
+        url: '/api/auto-reach/sales-order/from-quotation',
         body: input,
       },
       { apiName: this.apiName, ...config },

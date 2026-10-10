@@ -14,7 +14,8 @@ export class Vendor360Service {
     return this.restService.request<any, Vendor360Dto>(
       {
         method: 'GET',
-        url: `/api/app/vendor360/${supplierId}`,
+        url: '/api/auto-reach/vendor360',
+        params: { supplierId },
       },
       { apiName: this.apiName, ...config },
     );

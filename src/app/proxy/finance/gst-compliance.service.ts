@@ -22,7 +22,7 @@ export class GstComplianceService {
     return this.restService.request<any, PagedResultDto<GstAuditRegisterDto>>(
       {
         method: 'GET',
-        url: '/api/app/gst-compliance',
+        url: '/api/auto-reach/gst-compliance',
         params: {
           filter: input.filter,
           returnPeriod: input.returnPeriod,
@@ -42,7 +42,7 @@ export class GstComplianceService {
     return this.restService.request<any, GstAuditRegisterDto>(
       {
         method: 'GET',
-        url: `/api/app/gst-compliance/${id}`,
+        url: `/api/auto-reach/gst-compliance/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -52,7 +52,7 @@ export class GstComplianceService {
     return this.restService.request<any, GstAuditRegisterDto>(
       {
         method: 'POST',
-        url: '/api/app/gst-compliance',
+        url: '/api/auto-reach/gst-compliance',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -63,7 +63,7 @@ export class GstComplianceService {
     return this.restService.request<any, Gstr1SummaryDto>(
       {
         method: 'GET',
-        url: '/api/app/gst-compliance/gstr1-summary',
+        url: '/api/auto-reach/gst-compliance/gstr1Summary',
         params: { returnPeriod },
       },
       { apiName: this.apiName, ...config },
@@ -74,7 +74,7 @@ export class GstComplianceService {
     return this.restService.request<any, Gstr3bSummaryDto>(
       {
         method: 'GET',
-        url: '/api/app/gst-compliance/gstr3b-summary',
+        url: '/api/auto-reach/gst-compliance/gstr3b-summary',
         params: { returnPeriod },
       },
       { apiName: this.apiName, ...config },
@@ -85,7 +85,7 @@ export class GstComplianceService {
     return this.restService.request<any, GstAuditRegisterDto>(
       {
         method: 'POST',
-        url: `/api/app/gst-compliance/${id}/generate-einvoice`,
+        url: `/api/auto-reach/gst-compliance/${id}/generate-einvoice`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -95,7 +95,7 @@ export class GstComplianceService {
     return this.restService.request<any, GstAuditRegisterDto>(
       {
         method: 'POST',
-        url: `/api/app/gst-compliance/${id}/generate-eway-bill`,
+        url: `/api/auto-reach/gst-compliance/${id}/generate-eway-bill`,
         body: input,
       },
       { apiName: this.apiName, ...config },

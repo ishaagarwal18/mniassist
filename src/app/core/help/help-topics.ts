@@ -18,6 +18,28 @@ export interface HelpTopic {
   readonly tips?: readonly string[];
 }
 
+const CUSTOMER_360: HelpTopic = {
+  benefits: [
+    'Orders, invoices, service tickets and installed machines for one customer, on one screen.',
+    'See what a customer owes and what is open before you call them.',
+  ],
+  steps: [
+    'Open a contact or account and choose Customer 360.',
+    'Review the sections, and open any order, invoice or ticket for the detail.',
+  ],
+};
+
+const VENDOR_360: HelpTopic = {
+  benefits: [
+    'Purchase orders, receipts, bills and debit notes for one vendor, on one screen.',
+    'Shows overdue bills and how reliably the vendor delivers.',
+  ],
+  steps: [
+    'Choose a vendor to see their history.',
+    'Use + Inward GRN to receive goods, or View in Bills to work their bills.',
+  ],
+};
+
 const TEMPLATE_COMPOSER: HelpTopic = {
   benefits: [
     'Catches the issues Meta most often rejects before you submit, so approval is faster.',
@@ -977,7 +999,8 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     ],
   },
   field: {
-    summary: 'The field engineer app for tracking today’s jobs, recording site visit checklists, photos, customer sign-off codes and offline sync.',
+    summary:
+      'The field engineer app for tracking today’s jobs, recording site visit checklists, photos, customer sign-off codes and offline sync.',
     benefits: [
       'Works completely offline when you have no signal at a customer plant.',
       'Checklists and photo uploads keep service visit evidence organized.',
@@ -995,6 +1018,213 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     tips: [
       'Install this page to your phone’s home screen via browser menu for quick offline access.',
       'Site photos are automatically compressed before uploading to save mobile data.',
+    ],
+  },
+  'contacts/360': CUSTOMER_360,
+  'contacts/:id/360': CUSTOMER_360,
+  'pipeline/ai-negotiator': {
+    benefits: [
+      'Answers price questions and counter-offers instantly, within limits you set.',
+      'Never goes below your floor price or above your discount ceiling.',
+      'You can step in on any conversation and take over.',
+    ],
+    steps: [
+      'Set the discount limits and floor margin, then click Save Guardrails.',
+      'Use Run AI Simulation to see how the agent would answer a counter-offer.',
+      'Review the live negotiation sessions and step in where needed.',
+      'When a deal is agreed, click Confirm & Apply to update the quotation.',
+    ],
+  },
+  'pipeline/projection-plan': {
+    benefits: [
+      'One plan for the year, with targets set by period and product.',
+      'Compares the plan with your actual pipeline and sales as they come in.',
+      'Scenarios show the effect of a change before you commit to it.',
+    ],
+    steps: [
+      'Create a plan for the fiscal year, or generate one from your pipeline and past sales.',
+      'Adjust the targets by period, then activate the plan.',
+      'Sync actuals to see how you are tracking, and run scenarios to test changes.',
+    ],
+  },
+  'sales/orders': {
+    benefits: [
+      'Captures the customer PO, delivery terms and line items in one place.',
+      'Delivery challans and tax invoices are created straight from the order.',
+    ],
+    steps: [
+      'Click + New Sales order, choose the customer and add line items.',
+      'Click Confirm Sales Order once the customer PO is in hand.',
+      'Use Create Delivery Challan to ship, or Generate Sales Invoice to bill.',
+    ],
+  },
+  'sales/challans': {
+    benefits: [
+      'Goods can move legally with the vehicle, LR/AWB and e-Way Bill details recorded.',
+      'Turns into a tax invoice once the goods are delivered.',
+    ],
+    steps: [
+      'Create a challan from a confirmed sales order.',
+      'Click Dispatch and enter the vehicle and transport details.',
+      'Click Mark as Delivered when the goods arrive, then bill it with Bill Delivery (Tax Invoice).',
+    ],
+  },
+  'sales/invoices': {
+    benefits: [
+      'Works out CGST + SGST or IGST for you from the place of supply.',
+      'Shows what each customer still owes.',
+    ],
+    steps: [
+      'Create an invoice from a sales order or a delivery challan.',
+      'Check the lines and taxes, then click Issue.',
+      'Click Record Payment when the money arrives.',
+    ],
+  },
+  'purchasing/grn': {
+    benefits: [
+      'Records exactly what arrived at the gate against the purchase order.',
+      'Quality inspection decides what goes into stock and what is sent back.',
+    ],
+    steps: [
+      'Click + Inward Gate Entry (GRN) and enter the items received.',
+      'Click Save & Move to QC Inspection.',
+      'Record accepted and rejected quantities, then Confirm & Approve Put-Away.',
+    ],
+    tips: ['Rejected quantities can become a vendor debit note.'],
+  },
+  'purchasing/bills': {
+    benefits: [
+      'Matches the bill with the purchase order and the GRN before you pay it.',
+      'Flags differences in quantity or price before money goes out.',
+    ],
+    steps: [
+      'Click + Record Vendor Bill and enter the vendor’s invoice details.',
+      'Click Save & Perform 3-Way Match and review any differences.',
+      'Approve the bill, then record the payment when it is made.',
+    ],
+  },
+  'purchasing/debit-notes': {
+    benefits: [
+      'Claims back the value of rejected or short-supplied goods.',
+      'Keeps the vendor’s balance correct for GST input credit.',
+    ],
+    steps: [
+      'Click + Issue Debit Note, or start from a GRN with rejected items.',
+      'Add the items and amounts, then click Issue Debit Note.',
+      'Mark it settled once the vendor has adjusted or refunded it.',
+    ],
+  },
+  'purchasing/vendor-360': VENDOR_360,
+  'purchasing/vendor-360/:id': VENDOR_360,
+  'manufacturing/bom': {
+    benefits: [
+      'Lists every component and quantity that goes into a product.',
+      'Works out the material cost of the product for you.',
+    ],
+    steps: [
+      'Click + Create New BOM and choose the finished product.',
+      'Use + Add Component for each part and its quantity.',
+      'Click Save & Compute Costing, then activate the BOM.',
+    ],
+  },
+  'manufacturing/work-orders': {
+    benefits: [
+      'Tracks a production job from material issue to finished stock.',
+      'Stock is updated automatically when the order is completed.',
+    ],
+    steps: [
+      'Click + Create Work Order and choose the BOM and quantity.',
+      'Release it, then use Issue to Shop Floor to issue the materials.',
+      'Confirm each routing step as it is done.',
+      'Click Complete Order & Update Inventory when the goods are ready.',
+    ],
+  },
+  'field-service/amc': {
+    benefits: [
+      'Keeps every maintenance contract, its visits and its renewal date in one place.',
+      'Shows which visits are due so none are missed.',
+    ],
+    steps: [
+      'Click + Create AMC Contract and enter the customer, period and visits.',
+      'After each visit, click Confirm & Close Visit.',
+      'Use Renew Contract before it expires.',
+    ],
+  },
+  'field-service/tickets': {
+    benefits: [
+      'Every breakdown call is logged, assigned and tracked to closure.',
+      'Spare parts used are recorded against the ticket.',
+    ],
+    steps: [
+      'Click + Raise Service Ticket and describe the problem.',
+      'Use Dispatch Engineer to assign someone.',
+      'Record any spares with Add Replaced Part, then Resolve & Close Ticket.',
+    ],
+  },
+  'field-service/remote-maintenance': {
+    benefits: [
+      'Customers can often fix a problem over WhatsApp or a call, without a site visit.',
+      'The AI suggests diagnostic steps based on the machine and the symptoms.',
+      'Becomes a field ticket automatically when an engineer is needed.',
+    ],
+    steps: [
+      'Start a session for the customer’s machine on WhatsApp or IVR.',
+      'Work through the suggested steps with the customer.',
+      'Resolve it remotely, or escalate it to a field ticket.',
+    ],
+  },
+  'finance/chart-of-accounts': {
+    benefits: [
+      'The ledger accounts that every voucher and statement is built on.',
+      'Starts from a standard Indian chart of accounts that you can extend.',
+    ],
+    steps: [
+      'Load the standard chart of accounts if this workspace has none yet.',
+      'Click Add Account for any ledger you need.',
+      'Edit or deactivate accounts you no longer use.',
+    ],
+  },
+  'finance/journal-entries': {
+    benefits: [
+      'Records adjustments, transfers and other entries that are not invoices or bills.',
+      'Will not post unless debits equal credits.',
+    ],
+    steps: [
+      'Click + New Journal Voucher and choose the voucher type.',
+      'Use + Add Ledger Line for each debit and credit.',
+      'Click Create & Record Voucher, then post it.',
+    ],
+  },
+  'finance/statements': {
+    benefits: [
+      'Trial balance, profit and loss, and balance sheet from your posted entries.',
+      'Pick any period to compare.',
+    ],
+    steps: [
+      'Choose the statement and the date range.',
+      'Review the figures, then use Print Statement to keep a copy.',
+    ],
+  },
+  'finance/gst-compliance': {
+    benefits: [
+      'GSTR-1 and GSTR-3B summaries prepared from your invoices.',
+      'Generates e-invoices and e-Way Bills from the same records.',
+    ],
+    steps: [
+      'Choose the return period to see the summaries.',
+      'Generate the e-invoice for each eligible invoice.',
+      'Use Generate & Sign E-Way Bill for goods that need one.',
+    ],
+  },
+  'channels/telecom': {
+    benefits: [
+      'Manages the phone numbers you hold and resell, with their KYC status.',
+      'The compliance audit checks that every number meets the rules.',
+    ],
+    steps: [
+      'Set up your telecom entity details first.',
+      'Add numbers to the pool, then allocate them to workspaces.',
+      'Keep each number’s KYC up to date, and run the compliance audit regularly.',
     ],
   },
 };

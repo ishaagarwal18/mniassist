@@ -22,7 +22,7 @@ export class FieldServiceTicketService {
     return this.restService.request<any, PagedResultDto<FieldServiceTicketDto>>(
       {
         method: 'GET',
-        url: '/api/app/field-service-ticket',
+        url: '/api/auto-reach/field-service-ticket',
         params: {
           filter: input.filter,
           status: input.status,
@@ -43,7 +43,7 @@ export class FieldServiceTicketService {
     return this.restService.request<any, FieldServiceTicketDto>(
       {
         method: 'GET',
-        url: `/api/app/field-service-ticket/${id}`,
+        url: `/api/auto-reach/field-service-ticket/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -53,7 +53,7 @@ export class FieldServiceTicketService {
     return this.restService.request<any, FieldServiceTicketDto>(
       {
         method: 'POST',
-        url: '/api/app/field-service-ticket',
+        url: '/api/auto-reach/field-service-ticket',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -64,7 +64,7 @@ export class FieldServiceTicketService {
     return this.restService.request<any, FieldServiceTicketDto>(
       {
         method: 'POST',
-        url: `/api/app/field-service-ticket/${id}/assign`,
+        url: `/api/auto-reach/field-service-ticket/${id}/assign`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -75,7 +75,7 @@ export class FieldServiceTicketService {
     return this.restService.request<any, FieldServiceTicketDto>(
       {
         method: 'POST',
-        url: `/api/app/field-service-ticket/${id}/record-spare`,
+        url: `/api/auto-reach/field-service-ticket/${id}/record-spare`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -86,7 +86,7 @@ export class FieldServiceTicketService {
     return this.restService.request<any, FieldServiceTicketDto>(
       {
         method: 'POST',
-        url: `/api/app/field-service-ticket/${id}/resolve`,
+        url: `/api/auto-reach/field-service-ticket/${id}/resolve`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -97,7 +97,7 @@ export class FieldServiceTicketService {
     return this.restService.request<any, FieldServiceTicketDto>(
       {
         method: 'POST',
-        url: `/api/app/field-service-ticket/${id}/close`,
+        url: `/api/auto-reach/field-service-ticket/${id}/close`,
       },
       { apiName: this.apiName, ...config },
     );

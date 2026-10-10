@@ -21,7 +21,7 @@ export class VendorBillService {
     return this.restService.request<any, PagedResultDto<VendorBillDto>>(
       {
         method: 'GET',
-        url: '/api/app/vendor-bill',
+        url: '/api/auto-reach/vendor-bill',
         params: {
           filter: input.filter,
           status: input.status,
@@ -42,7 +42,7 @@ export class VendorBillService {
     return this.restService.request<any, VendorBillDto>(
       {
         method: 'GET',
-        url: `/api/app/vendor-bill/${id}`,
+        url: `/api/auto-reach/vendor-bill/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -52,7 +52,7 @@ export class VendorBillService {
     return this.restService.request<any, VendorBillDto>(
       {
         method: 'POST',
-        url: '/api/app/vendor-bill',
+        url: '/api/auto-reach/vendor-bill',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -63,7 +63,7 @@ export class VendorBillService {
     return this.restService.request<any, VendorBillDto>(
       {
         method: 'POST',
-        url: `/api/app/vendor-bill/create-from-grn/${grnId}`,
+        url: `/api/auto-reach/vendor-bill/from-grn/${grnId}`,
         params: { vendorInvoiceNumber, invoiceDate },
       },
       { apiName: this.apiName, ...config },
@@ -74,7 +74,7 @@ export class VendorBillService {
     return this.restService.request<any, VendorBillDto>(
       {
         method: 'POST',
-        url: `/api/app/vendor-bill/${id}/approve`,
+        url: `/api/auto-reach/vendor-bill/${id}/approve`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -84,7 +84,7 @@ export class VendorBillService {
     return this.restService.request<any, VendorBillDto>(
       {
         method: 'POST',
-        url: `/api/app/vendor-bill/${id}/record-payment`,
+        url: `/api/auto-reach/vendor-bill/${id}/record-payment`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -95,7 +95,7 @@ export class VendorBillService {
     return this.restService.request<any, VendorBillDto>(
       {
         method: 'POST',
-        url: `/api/app/vendor-bill/${id}/reconcile-gstr2b`,
+        url: `/api/auto-reach/vendor-bill/${id}/reconcile-gstr2b`,
         params: { status },
       },
       { apiName: this.apiName, ...config },
@@ -106,7 +106,7 @@ export class VendorBillService {
     return this.restService.request<any, VendorBillDto>(
       {
         method: 'POST',
-        url: `/api/app/vendor-bill/${id}/cancel`,
+        url: `/api/auto-reach/vendor-bill/${id}/cancel`,
       },
       { apiName: this.apiName, ...config },
     );

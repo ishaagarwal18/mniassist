@@ -19,7 +19,7 @@ export class SalesInvoiceService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: '/api/app/sales-invoice',
+        url: '/api/auto-reach/sales-invoice',
         params: {
           filter: input.filter,
           status: input.status,
@@ -39,7 +39,7 @@ export class SalesInvoiceService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: `/api/app/sales-invoice/${id}`,
+        url: `/api/auto-reach/sales-invoice/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -49,7 +49,7 @@ export class SalesInvoiceService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/app/sales-invoice',
+        url: '/api/auto-reach/sales-invoice',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -60,7 +60,7 @@ export class SalesInvoiceService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/sales-invoice/from-sales-order/${salesOrderId}`,
+        url: `/api/auto-reach/sales-invoice/from-sales-order/${salesOrderId}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -70,7 +70,7 @@ export class SalesInvoiceService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/sales-invoice/from-challan/${challanId}`,
+        url: `/api/auto-reach/sales-invoice/from-challan/${challanId}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -80,7 +80,7 @@ export class SalesInvoiceService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/sales-invoice/${id}/issue`,
+        url: `/api/auto-reach/sales-invoice/${id}/issue`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -90,7 +90,7 @@ export class SalesInvoiceService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/sales-invoice/${id}/payment`,
+        url: `/api/auto-reach/sales-invoice/${id}/record-payment`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -101,7 +101,7 @@ export class SalesInvoiceService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/sales-invoice/${id}/cancel`,
+        url: `/api/auto-reach/sales-invoice/${id}/cancel`,
       },
       { apiName: this.apiName, ...config },
     );

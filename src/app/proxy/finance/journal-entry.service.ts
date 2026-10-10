@@ -19,7 +19,7 @@ export class JournalEntryService {
     return this.restService.request<any, PagedResultDto<JournalEntryDto>>(
       {
         method: 'GET',
-        url: '/api/app/journal-entry',
+        url: '/api/auto-reach/journal-entry',
         params: {
           filter: input.filter,
           voucherType: input.voucherType,
@@ -39,7 +39,7 @@ export class JournalEntryService {
     return this.restService.request<any, JournalEntryDto>(
       {
         method: 'GET',
-        url: `/api/app/journal-entry/${id}`,
+        url: `/api/auto-reach/journal-entry/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -49,7 +49,7 @@ export class JournalEntryService {
     return this.restService.request<any, JournalEntryDto>(
       {
         method: 'POST',
-        url: '/api/app/journal-entry',
+        url: '/api/auto-reach/journal-entry',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -60,7 +60,7 @@ export class JournalEntryService {
     return this.restService.request<any, JournalEntryDto>(
       {
         method: 'POST',
-        url: `/api/app/journal-entry/${id}/post`,
+        url: `/api/auto-reach/journal-entry/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -70,7 +70,7 @@ export class JournalEntryService {
     return this.restService.request<any, JournalEntryDto>(
       {
         method: 'POST',
-        url: `/api/app/journal-entry/${id}/cancel`,
+        url: `/api/auto-reach/journal-entry/${id}/cancel`,
       },
       { apiName: this.apiName, ...config },
     );

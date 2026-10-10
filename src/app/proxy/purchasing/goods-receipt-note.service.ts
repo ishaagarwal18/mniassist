@@ -20,7 +20,7 @@ export class GoodsReceiptNoteService {
     return this.restService.request<any, PagedResultDto<GoodsReceiptNoteDto>>(
       {
         method: 'GET',
-        url: '/api/app/goods-receipt-note',
+        url: '/api/auto-reach/goods-receipt-note',
         params: {
           filter: input.filter,
           status: input.status,
@@ -40,7 +40,7 @@ export class GoodsReceiptNoteService {
     return this.restService.request<any, GoodsReceiptNoteDto>(
       {
         method: 'GET',
-        url: `/api/app/goods-receipt-note/${id}`,
+        url: `/api/auto-reach/goods-receipt-note/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -50,7 +50,7 @@ export class GoodsReceiptNoteService {
     return this.restService.request<any, GoodsReceiptNoteDto>(
       {
         method: 'POST',
-        url: '/api/app/goods-receipt-note',
+        url: '/api/auto-reach/goods-receipt-note',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -61,7 +61,7 @@ export class GoodsReceiptNoteService {
     return this.restService.request<any, GoodsReceiptNoteDto>(
       {
         method: 'POST',
-        url: `/api/app/goods-receipt-note/create-from-purchase-order/${purchaseOrderId}`,
+        url: `/api/auto-reach/goods-receipt-note/from-purchase-order/${purchaseOrderId}`,
         params: { challanNumber },
       },
       { apiName: this.apiName, ...config },
@@ -72,7 +72,7 @@ export class GoodsReceiptNoteService {
     return this.restService.request<any, GoodsReceiptNoteDto>(
       {
         method: 'POST',
-        url: `/api/app/goods-receipt-note/${id}/start-inspection`,
+        url: `/api/auto-reach/goods-receipt-note/${id}/start-inspection`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -82,7 +82,7 @@ export class GoodsReceiptNoteService {
     return this.restService.request<any, GoodsReceiptNoteDto>(
       {
         method: 'POST',
-        url: `/api/app/goods-receipt-note/${id}/complete-inspection`,
+        url: `/api/auto-reach/goods-receipt-note/${id}/complete-inspection`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -93,7 +93,7 @@ export class GoodsReceiptNoteService {
     return this.restService.request<any, GoodsReceiptNoteDto>(
       {
         method: 'POST',
-        url: `/api/app/goods-receipt-note/${id}/cancel`,
+        url: `/api/auto-reach/goods-receipt-note/${id}/cancel`,
       },
       { apiName: this.apiName, ...config },
     );

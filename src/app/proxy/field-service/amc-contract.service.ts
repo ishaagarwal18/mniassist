@@ -21,7 +21,7 @@ export class AmcContractService {
     return this.restService.request<any, PagedResultDto<AmcContractDto>>(
       {
         method: 'GET',
-        url: '/api/app/amc-contract',
+        url: '/api/auto-reach/amc-contract',
         params: {
           filter: input.filter,
           status: input.status,
@@ -40,7 +40,7 @@ export class AmcContractService {
     return this.restService.request<any, AmcContractDto>(
       {
         method: 'GET',
-        url: `/api/app/amc-contract/${id}`,
+        url: `/api/auto-reach/amc-contract/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -50,7 +50,7 @@ export class AmcContractService {
     return this.restService.request<any, AmcContractDto>(
       {
         method: 'POST',
-        url: '/api/app/amc-contract',
+        url: '/api/auto-reach/amc-contract',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -61,7 +61,7 @@ export class AmcContractService {
     return this.restService.request<any, AmcContractDto>(
       {
         method: 'POST',
-        url: `/api/app/amc-contract/${id}/complete-visit`,
+        url: `/api/auto-reach/amc-contract/${id}/complete-visit`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -72,7 +72,7 @@ export class AmcContractService {
     return this.restService.request<any, AmcContractDto>(
       {
         method: 'POST',
-        url: `/api/app/amc-contract/${id}/renew`,
+        url: `/api/auto-reach/amc-contract/${id}/renew`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -83,7 +83,7 @@ export class AmcContractService {
     return this.restService.request<any, AmcContractDto>(
       {
         method: 'POST',
-        url: `/api/app/amc-contract/${id}/terminate`,
+        url: `/api/auto-reach/amc-contract/${id}/terminate`,
       },
       { apiName: this.apiName, ...config },
     );

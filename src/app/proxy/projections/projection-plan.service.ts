@@ -21,7 +21,7 @@ export class ProjectionPlanService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: '/api/app/projection-plan',
+        url: '/api/auto-reach/projection-plan',
         params: {
           fiscalYear: input.fiscalYear,
           horizon: input.horizon,
@@ -40,7 +40,7 @@ export class ProjectionPlanService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: `/api/app/projection-plan/${id}`,
+        url: `/api/auto-reach/projection-plan/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -50,7 +50,7 @@ export class ProjectionPlanService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/app/projection-plan',
+        url: '/api/auto-reach/projection-plan',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -61,7 +61,7 @@ export class ProjectionPlanService {
       {
         method: 'PUT',
         headers: { Accept: 'application/json' },
-        url: `/api/app/projection-plan/${id}`,
+        url: `/api/auto-reach/projection-plan/${id}`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -72,7 +72,7 @@ export class ProjectionPlanService {
       {
         method: 'DELETE',
         headers: { Accept: 'application/json' },
-        url: `/api/app/projection-plan/${id}`,
+        url: `/api/auto-reach/projection-plan/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -82,7 +82,7 @@ export class ProjectionPlanService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/projection-plan/${id}/activate-plan`,
+        url: `/api/auto-reach/projection-plan/${id}/activate-plan`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -95,7 +95,7 @@ export class ProjectionPlanService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/app/projection-plan/generate-plan-from-pipeline-and-actuals',
+        url: '/api/auto-reach/projection-plan/generate-plan-from-pipeline-and-actuals',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -106,7 +106,7 @@ export class ProjectionPlanService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/projection-plan/${id}/run-scenario-analysis`,
+        url: `/api/auto-reach/projection-plan/${id}/run-scenario-analysis`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -116,7 +116,7 @@ export class ProjectionPlanService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: '/api/app/projection-plan/executive-dashboard',
+        url: '/api/auto-reach/projection-plan/executive-dashboard',
         params: { fiscalYear },
       },
       { apiName: this.apiName, ...config },
@@ -127,7 +127,7 @@ export class ProjectionPlanService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: `/api/app/projection-plan/${id}/sync-actuals-from-erp`,
+        url: `/api/auto-reach/projection-plan/${id}/sync-actuals-from-erp`,
       },
       { apiName: this.apiName, ...config },
     );

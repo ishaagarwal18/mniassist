@@ -22,7 +22,7 @@ export class WorkOrderService {
     return this.restService.request<any, PagedResultDto<WorkOrderDto>>(
       {
         method: 'GET',
-        url: '/api/app/work-order',
+        url: '/api/auto-reach/work-order',
         params: {
           filter: input.filter,
           status: input.status,
@@ -42,7 +42,7 @@ export class WorkOrderService {
     return this.restService.request<any, WorkOrderDto>(
       {
         method: 'GET',
-        url: `/api/app/work-order/${id}`,
+        url: `/api/auto-reach/work-order/${id}`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -52,7 +52,7 @@ export class WorkOrderService {
     return this.restService.request<any, WorkOrderDto>(
       {
         method: 'POST',
-        url: '/api/app/work-order',
+        url: '/api/auto-reach/work-order',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -63,7 +63,7 @@ export class WorkOrderService {
     return this.restService.request<any, WorkOrderDto>(
       {
         method: 'POST',
-        url: `/api/app/work-order/${id}/release`,
+        url: `/api/auto-reach/work-order/${id}/release`,
       },
       { apiName: this.apiName, ...config },
     );
@@ -73,7 +73,7 @@ export class WorkOrderService {
     return this.restService.request<any, WorkOrderDto>(
       {
         method: 'POST',
-        url: `/api/app/work-order/${id}/issue-material`,
+        url: `/api/auto-reach/work-order/${id}/issue-material`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -84,7 +84,7 @@ export class WorkOrderService {
     return this.restService.request<any, WorkOrderDto>(
       {
         method: 'POST',
-        url: `/api/app/work-order/${id}/complete-step`,
+        url: `/api/auto-reach/work-order/${id}/complete-step`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -95,7 +95,7 @@ export class WorkOrderService {
     return this.restService.request<any, WorkOrderDto>(
       {
         method: 'POST',
-        url: `/api/app/work-order/${id}/complete-work-order`,
+        url: `/api/auto-reach/work-order/${id}/complete-work-order`,
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -106,7 +106,7 @@ export class WorkOrderService {
     return this.restService.request<any, WorkOrderDto>(
       {
         method: 'POST',
-        url: `/api/app/work-order/${id}/cancel`,
+        url: `/api/auto-reach/work-order/${id}/cancel`,
       },
       { apiName: this.apiName, ...config },
     );

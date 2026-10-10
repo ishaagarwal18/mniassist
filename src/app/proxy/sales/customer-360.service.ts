@@ -14,7 +14,8 @@ export class Customer360Service {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: `/api/app/customer360/${customerId}`,
+        url: '/api/auto-reach/customer360',
+        params: { customerId },
       },
       { apiName: this.apiName, ...config },
     );
@@ -24,7 +25,7 @@ export class Customer360Service {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: `/api/app/customer360/account/${accountId}`,
+        url: `/api/auto-reach/customer360/by-account/${accountId}`,
       },
       { apiName: this.apiName, ...config },
     );
