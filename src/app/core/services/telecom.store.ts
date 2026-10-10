@@ -42,9 +42,30 @@ const SEED_SETTINGS: TelecomEntitySettingsDto = {
   metaTechProviderAgreementSigned: true,
   prohibitionOfDisposableNumbersAcknowledged: true,
   lastComplianceAuditUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-  auditNotes: 'Annual DoT and TRAI commercial communications compliance verification completed successfully.',
+  auditNotes:
+    'Annual DoT and TRAI commercial communications compliance verification completed successfully.',
 };
 
+/** What a workspace sees before it has filled in its profile, or while it loads: nothing invented. */
+const EMPTY_SETTINGS: TelecomEntitySettingsDto = {
+  legalEntityName: '',
+  classification: TelecomEntityClassification.VirtualNetworkOperator,
+  dotRegistrationNumber: '',
+  dltPrincipalEntityId: '',
+  telemarketerId: '',
+  primaryTspCarrier: '',
+  ctsoName: '',
+  ctsoEmail: '',
+  ctsoPhone: '',
+  ctsoDesignation: '',
+  simBindingEnforced: false,
+  antiSpoofingAuditPassed: false,
+  lawfulInterceptionLogging: false,
+  metaTechProviderAgreementSigned: false,
+  prohibitionOfDisposableNumbersAcknowledged: false,
+};
+
+// Sample data for the in-browser demo mode (environment.useMockData) only; never shown against the real API.
 const SEED_NUMBERS: ResellerNumberDto[] = [
   {
     id: 'num-1',
@@ -206,7 +227,7 @@ export class TelecomStore {
     params: () => (environment.useMockData ? undefined : { tick: this.reloadTick() }),
     stream: () =>
       environment.useMockData ? of(this.localSettings()) : this.api.getEntitySettings(),
-    defaultValue: SEED_SETTINGS,
+    defaultValue: environment.useMockData ? SEED_SETTINGS : EMPTY_SETTINGS,
   });
 
   private readonly numbersResource = rxResource({
@@ -220,12 +241,14 @@ export class TelecomStore {
               maxResultCount: 200,
             })
             .pipe(),
-    defaultValue: { totalCount: SEED_NUMBERS.length, items: SEED_NUMBERS },
+    defaultValue: environment.useMockData
+      ? { totalCount: SEED_NUMBERS.length, items: SEED_NUMBERS }
+      : { totalCount: 0, items: [] },
   });
 
   readonly settings = computed<TelecomEntitySettingsDto>(() => {
     if (environment.useMockData) return this.localSettings();
-    return this.settingsResource.value() ?? SEED_SETTINGS;
+    return this.settingsResource.value() ?? EMPTY_SETTINGS;
   });
 
   readonly rawNumbers = computed<readonly ResellerNumberDto[]>(() => {
@@ -429,7 +452,8 @@ export class TelecomStore {
           totalInventoryCount: list.length,
           allocatedCount: list.filter((n) => n.status === ResellerNumberStatus.Allocated).length,
           availableCount: list.filter((n) => n.status === ResellerNumberStatus.Available).length,
-          quarantinedCount: list.filter((n) => n.status === ResellerNumberStatus.Quarantined).length,
+          quarantinedCount: list.filter((n) => n.status === ResellerNumberStatus.Quarantined)
+            .length,
           simBoundCount: list.filter(
             (n) =>
               n.simBindingStatus === SimBindingStatus.Compliant ||

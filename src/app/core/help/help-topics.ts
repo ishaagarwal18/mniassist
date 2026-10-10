@@ -1216,6 +1216,20 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Use Generate & Sign E-Way Bill for goods that need one.',
     ],
   },
+  resellers: {
+    benefits: [
+      'Agencies and distributors sell AutoReach under their own brand and domain.',
+      'Commission is worked out from each client invoice and paid out on request.',
+      'The platform team approves every partner, tier and payout.',
+    ],
+    steps: [
+      'Register as a partner; the platform team approves you.',
+      'Set your branding, then set up a custom domain and add the two DNS records shown.',
+      'Add your client workspaces with their plan and wholesale rate.',
+      'Request a payout from Payouts when commission has built up.',
+    ],
+    tips: ['The platform team sees every partner here and approves tiers, domains and payouts.'],
+  },
   'channels/telecom': {
     benefits: [
       'Manages the phone numbers you hold and resell, with their KYC status.',

@@ -20,6 +20,7 @@ import * as Notifications from './notifications';
 import * as Pipeline from './pipeline';
 import * as Platform from './platform';
 import * as Projections from './projections';
+import * as Resellers from './resellers';
 import * as Volo from './volo';
 export {
   Administration,
@@ -44,6 +45,7 @@ export {
   Pipeline,
   Platform,
   Projections,
+  Resellers,
   Volo,
 };
 

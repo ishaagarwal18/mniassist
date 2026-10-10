@@ -1,12 +1,6 @@
 import { PermissionService } from '@abp/ng.core';
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   ResellerNumberDto,
@@ -16,7 +10,12 @@ import {
   TelecomEntityClassification,
   TelecomKycStatus,
 } from '../../proxy/channels';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { of } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { CurrentUserService } from '../../core/services/current-user.service';
 import { TelecomStore } from '../../core/services/telecom.store';
+import { TenantDto, TenantService } from '../../proxy/tenant-management';
 import { ToastService } from '../../core/ui/toast.service';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
@@ -27,15 +26,7 @@ type ActiveTab = 'inventory' | 'telecom-entity';
 @Component({
   selector: 'ar-telecom',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ArTopbar,
-    ArBanner,
-    ArButton,
-    ArChip,
-    ArIcon,
-  ],
+  imports: [CommonModule, FormsModule, ArTopbar, ArBanner, ArButton, ArChip, ArIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './telecom.html',
   styleUrl: './telecom.scss',
@@ -44,6 +35,20 @@ export class ArTelecom {
   protected readonly store = inject(TelecomStore);
   private readonly permissions = inject(PermissionService);
   private readonly toasts = inject(ToastService);
+  private readonly currentUser = inject(CurrentUserService);
+  private readonly tenantApi = inject(TenantService);
+
+  /** Only the host chooses which workspace gets a number; a workspace allocates to itself. */
+  protected readonly isHost = computed(() => this.currentUser.isHost());
+  private readonly tenantsResource = rxResource({
+    params: () => (this.isHost() && !environment.useMockData ? { host: true } : undefined),
+    stream: () => this.tenantApi.getList({ maxResultCount: 1000, sorting: 'name' }),
+    defaultValue: { totalCount: 0, items: [] as TenantDto[] },
+  });
+  protected readonly tenants = computed<readonly TenantDto[]>(
+    () => this.tenantsResource.value().items,
+  );
+  protected readonly draftTenantId = signal('');
 
   protected readonly canManage = grantedPolicy('AutoReach.Telecom.Manage', this.permissions);
   protected readonly canResell = grantedPolicy('AutoReach.Telecom.ResellNumbers', this.permissions);
@@ -148,6 +153,7 @@ export class ArTelecom {
   protected openAllocateDialog(n: ResellerNumberDto): void {
     this.selectedNumber.set(n);
     this.draftTenantName.set('');
+    this.draftTenantId.set('');
     this.draftVerifiedName.set(n.verifiedName ?? '');
     this.allocateDialogOpen.set(true);
   }
@@ -155,14 +161,22 @@ export class ArTelecom {
   protected async submitAllocate(): Promise<void> {
     const num = this.selectedNumber();
     if (!num || !num.id) return;
-    const tenant = this.draftTenantName().trim();
-    if (!tenant) {
-      this.toasts.warning('Please enter the workspace / tenant organization name.', 'Tenant required');
+    const host = this.isHost();
+    const tenantId = this.draftTenantId();
+    const tenant = host
+      ? (this.tenants().find((t) => t.id === tenantId)?.name ?? this.draftTenantName().trim())
+      : 'your workspace';
+    if (host && !tenantId && !environment.useMockData) {
+      this.toasts.warning(
+        'Choose the workspace this number is allocated to.',
+        'Workspace required',
+      );
       return;
     }
 
     try {
       await this.store.allocate(num.id, {
+        tenantId: host && tenantId ? tenantId : undefined,
         tenantName: tenant,
         verifiedName: this.draftVerifiedName().trim() || undefined,
       });
@@ -204,18 +218,18 @@ export class ArTelecom {
 
   protected openEditSettingsDialog(): void {
     const s = this.store.settings();
-    this.draftLegalName.set(s.legalEntityName);
+    this.draftLegalName.set(s.legalEntityName ?? '');
     this.draftClassification.set(s.classification);
-    this.draftDotReg.set(s.dotRegistrationNumber);
-    this.draftDltId.set(s.dltPrincipalEntityId);
-    this.draftTmId.set(s.telemarketerId);
-    this.draftPrimaryTsp.set(s.primaryTspCarrier);
+    this.draftDotReg.set(s.dotRegistrationNumber ?? '');
+    this.draftDltId.set(s.dltPrincipalEntityId ?? '');
+    this.draftTmId.set(s.telemarketerId ?? '');
+    this.draftPrimaryTsp.set(s.primaryTspCarrier ?? '');
     this.draftSecondaryTsp.set(s.secondaryTspCarrier ?? '');
     this.draftInterconnect.set(s.interconnectPoint ?? '');
-    this.draftCtsoName.set(s.ctsoName);
-    this.draftCtsoEmail.set(s.ctsoEmail);
-    this.draftCtsoPhone.set(s.ctsoPhone);
-    this.draftCtsoDesignation.set(s.ctsoDesignation);
+    this.draftCtsoName.set(s.ctsoName ?? '');
+    this.draftCtsoEmail.set(s.ctsoEmail ?? '');
+    this.draftCtsoPhone.set(s.ctsoPhone ?? '');
+    this.draftCtsoDesignation.set(s.ctsoDesignation ?? '');
     this.editSettingsDialogOpen.set(true);
   }
 

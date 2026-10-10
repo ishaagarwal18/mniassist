@@ -580,6 +580,12 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.Telecom || AutoReach.Channels.Manage || AutoReach.Channels',
       },
       {
+        label: 'Reseller programme',
+        icon: 'globe',
+        route: '/resellers',
+        permission: 'AutoReach.Resellers',
+      },
+      {
         label: 'Web forms',
         icon: 'template',
         route: '/forms',

@@ -80,7 +80,8 @@
       <ar-banner tone="teal">
         As an authorized Telecom Entity and Meta Tech Provider, all WhatsApp numbers in this pool
         are provisioned via authorized Telecom Service Providers (TSPs) with strict SIM-binding and
-        business KYC verification. Spoofed or unauthorized disposable numbers are strictly prohibited.
+        business KYC verification. Spoofed or unauthorized disposable numbers are strictly
+        prohibited.
       </ar-banner>
 
       <!-- ── Search & Filter Bar ───────────────────────────────────────────── -->
@@ -134,7 +135,13 @@
           <h3>No numbers found</h3>
           <p>No phone numbers match the specified search query or filter criteria.</p>
           @if (canManage()) {
-            <button ar-button type="button" variant="primary" icon="plus" (click)="openAddNumberDialog()">
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              icon="plus"
+              (click)="openAddNumberDialog()"
+            >
               Add a new number to pool
             </button>
           }
@@ -142,7 +149,10 @@
       } @else {
         <div class="tc__grid">
           @for (n of store.filteredNumbers(); track n.id) {
-            <article class="tc-card" [class.tc-card--avail]="n.status === ResellerNumberStatus.Available">
+            <article
+              class="tc-card"
+              [class.tc-card--avail]="n.status === ResellerNumberStatus.Available"
+            >
               <header class="tc-card__head">
                 <div class="tc-card__title-grp">
                   <h3 class="tc-card__phone ar-mono">{{ n.e164 }}</h3>
@@ -175,7 +185,9 @@
                   <span class="tc-card__value">
                     {{ n.verifiedName || '—' }}
                     @if (n.isRegisteredWithMeta) {
-                      <span class="tc-card__verified-badge" title="Registered with Meta Cloud API">✓ Meta Ready</span>
+                      <span class="tc-card__verified-badge" title="Registered with Meta Cloud API"
+                        >✓ Meta Ready</span
+                      >
                     }
                   </span>
                 </div>
@@ -196,7 +208,14 @@
                     <ar-chip [tone]="n.kycStatus === TelecomKycStatus.Verified ? 'good' : 'amber'">
                       KYC: {{ n.kycStatus === TelecomKycStatus.Verified ? 'Verified' : 'Pending' }}
                     </ar-chip>
-                    <ar-chip [tone]="n.simBindingStatus === SimBindingStatus.Compliant || n.simBindingStatus === SimBindingStatus.AuthorizedCarrierAllocation ? 'good' : 'amber'">
+                    <ar-chip
+                      [tone]="
+                        n.simBindingStatus === SimBindingStatus.Compliant ||
+                        n.simBindingStatus === SimBindingStatus.AuthorizedCarrierAllocation
+                          ? 'good'
+                          : 'amber'
+                      "
+                    >
                       SIM-Binding: Compliant
                     </ar-chip>
                   </div>
@@ -209,14 +228,23 @@
                 @if (n.quarantinedUntilUtc) {
                   <div class="tc-card__quarantine-warn">
                     <ar-icon name="clock" />
-                    <span>Cooling-off quarantine active until {{ when(n.quarantinedUntilUtc) }}. Cannot be reallocated until elapsed.</span>
+                    <span
+                      >Cooling-off quarantine active until {{ when(n.quarantinedUntilUtc) }}. Cannot
+                      be reallocated until elapsed.</span
+                    >
                   </div>
                 }
               </div>
 
               <footer class="tc-card__foot">
                 @if (n.status === ResellerNumberStatus.Available && canResell()) {
-                  <button ar-button type="button" variant="primary" icon="check" (click)="openAllocateDialog(n)">
+                  <button
+                    ar-button
+                    type="button"
+                    variant="primary"
+                    icon="check"
+                    (click)="openAllocateDialog(n)"
+                  >
                     Allocate to workspace
                   </button>
                 }
@@ -228,7 +256,19 @@
                 }
 
                 @if (n.status === ResellerNumberStatus.Quarantined && canManage()) {
-                  <button ar-button type="button" variant="ghost" (click)="store.addNumber({ e164: n.e164, countryCode: n.countryCode, nationalNumber: n.nationalNumber, tspCarrier: n.tspCarrier })">
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    (click)="
+                      store.addNumber({
+                        e164: n.e164,
+                        countryCode: n.countryCode,
+                        nationalNumber: n.nationalNumber,
+                        tspCarrier: n.tspCarrier,
+                      })
+                    "
+                  >
                     Reactivate early
                   </button>
                 }
@@ -246,9 +286,12 @@
   @if (activeTab() === 'telecom-entity') {
     <div class="tc__content">
       <ar-banner tone="teal">
-        Operating as an authorized telecom commercial entity under the <strong>Telecommunications Act 2023</strong> and
-        <strong>TRAI Telecom Commercial Communications Customer Preference Regulations (TCCCPR)</strong>.
-        All message origination headers, telecom identifiers, and virtual DIDs are linked to verifiable legal entities.
+        Operating as an authorized telecom commercial entity under the
+        <strong>Telecommunications Act 2023</strong> and
+        <strong
+          >TRAI Telecom Commercial Communications Customer Preference Regulations (TCCCPR)</strong
+        >. All message origination headers, telecom identifiers, and virtual DIDs are linked to
+        verifiable legal entities.
       </ar-banner>
 
       <div class="tc__entity-layout">
@@ -257,10 +300,18 @@
           <header class="tc-box__head">
             <div>
               <h3 class="tc-box__title">Telecom Entity Authorization & Registration</h3>
-              <p class="tc-box__desc">Department of Telecommunications (DoT) and TRAI regulatory credentials.</p>
+              <p class="tc-box__desc">
+                Department of Telecommunications (DoT) and TRAI regulatory credentials.
+              </p>
             </div>
             @if (canManage()) {
-              <button ar-button type="button" variant="ghost" icon="settings" (click)="openEditSettingsDialog()">
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                icon="settings"
+                (click)="openEditSettingsDialog()"
+              >
                 Edit profile
               </button>
             }
@@ -269,7 +320,9 @@
           <dl class="tc-def">
             <div class="tc-def__row">
               <dt>Registered Legal Entity</dt>
-              <dd><strong>{{ store.settings().legalEntityName }}</strong></dd>
+              <dd>
+                <strong>{{ store.settings().legalEntityName }}</strong>
+              </dd>
             </div>
 
             <div class="tc-def__row">
@@ -306,12 +359,16 @@
 
             <div class="tc-def__row">
               <dt>Secondary Carrier / Fallback</dt>
-              <dd>{{ store.settings().secondaryTspCarrier || 'Bharti Airtel Enterprise Services' }}</dd>
+              <dd>
+                {{ store.settings().secondaryTspCarrier || 'Bharti Airtel Enterprise Services' }}
+              </dd>
             </div>
 
             <div class="tc-def__row">
               <dt>Point of Interconnect (POI)</dt>
-              <dd>{{ store.settings().interconnectPoint || 'NLD/SIP Trunk Interconnect POP-Mumbai' }}</dd>
+              <dd>
+                {{ store.settings().interconnectPoint || 'NLD/SIP Trunk Interconnect POP-Mumbai' }}
+              </dd>
             </div>
           </dl>
         </article>
@@ -321,7 +378,9 @@
           <header class="tc-box__head">
             <div>
               <h3 class="tc-box__title">Chief Telecommunication Security Officer (CTSO)</h3>
-              <p class="tc-box__desc">Mandatory statutory appointment under Telecom Cyber Security Rules.</p>
+              <p class="tc-box__desc">
+                Mandatory statutory appointment under Telecom Cyber Security Rules.
+              </p>
             </div>
             <ar-chip tone="good" [dot]="true">Officer Active</ar-chip>
           </header>
@@ -329,7 +388,9 @@
           <dl class="tc-def">
             <div class="tc-def__row">
               <dt>Designated Security Officer</dt>
-              <dd><strong>{{ store.settings().ctsoName }}</strong></dd>
+              <dd>
+                <strong>{{ store.settings().ctsoName }}</strong>
+              </dd>
             </div>
 
             <div class="tc-def__row">
@@ -344,7 +405,9 @@
 
             <div class="tc-def__row">
               <dt>24x7 Escalation Contact</dt>
-              <dd class="ar-mono"><strong>{{ store.settings().ctsoPhone }}</strong></dd>
+              <dd class="ar-mono">
+                <strong>{{ store.settings().ctsoPhone }}</strong>
+              </dd>
             </div>
 
             <div class="tc-def__row">
@@ -355,7 +418,10 @@
 
           <div class="tc-box__note">
             <ar-icon name="shield" />
-            <span>The CTSO serves as the single point of contact for TRAI, DoT, CERT-In, and law enforcement agencies for communication security and regulatory orders.</span>
+            <span
+              >The CTSO serves as the single point of contact for TRAI, DoT, CERT-In, and law
+              enforcement agencies for communication security and regulatory orders.</span
+            >
           </div>
         </article>
       </div>
@@ -365,7 +431,9 @@
         <header class="tc-box__head">
           <div>
             <h3 class="tc-box__title">Regulatory Controls & Anti-Spoofing Enforcement</h3>
-            <p class="tc-box__desc">Active technical safeguards governing telecom identifier reselling and messaging.</p>
+            <p class="tc-box__desc">
+              Active technical safeguards governing telecom identifier reselling and messaging.
+            </p>
           </div>
           <button ar-button type="button" variant="primary" icon="shield" (click)="runAudit()">
             Run audit now
@@ -377,7 +445,11 @@
             <div class="tc-check-item__icon tc-check-item__icon--pass">✓</div>
             <div class="tc-check-item__text">
               <strong>Cryptographic SIM-Binding & Carrier SIP DID Validation</strong>
-              <p>Every phone number routed through the platform is authenticated directly against carrier interconnect records. Calling Line Identity (CLI) spoofing is technically prevented at the gateway.</p>
+              <p>
+                Every phone number routed through the platform is authenticated directly against
+                carrier interconnect records. Calling Line Identity (CLI) spoofing is technically
+                prevented at the gateway.
+              </p>
             </div>
           </div>
 
@@ -385,7 +457,10 @@
             <div class="tc-check-item__icon tc-check-item__icon--pass">✓</div>
             <div class="tc-check-item__text">
               <strong>Telecom Lawful Interception & Audit Trail Logging</strong>
-              <p>Message delivery logs and session traces are retained for the statutory period required under DoT licensing conditions with cryptographic integrity checks.</p>
+              <p>
+                Message delivery logs and session traces are retained for the statutory period
+                required under DoT licensing conditions with cryptographic integrity checks.
+              </p>
             </div>
           </div>
 
@@ -393,7 +468,10 @@
             <div class="tc-check-item__icon tc-check-item__icon--pass">✓</div>
             <div class="tc-check-item__text">
               <strong>Meta Tech Provider Direct API Adherence</strong>
-              <p>Operating exclusively under Meta Tech Provider / BSP partner terms. All tenant onboardings use official Meta Cloud API and WhatsApp Business Solution agreements.</p>
+              <p>
+                Operating exclusively under Meta Tech Provider / BSP partner terms. All tenant
+                onboardings use official Meta Cloud API and WhatsApp Business Solution agreements.
+              </p>
             </div>
           </div>
 
@@ -401,7 +479,10 @@
             <div class="tc-check-item__icon tc-check-item__icon--pass">✓</div>
             <div class="tc-check-item__text">
               <strong>Strict Prohibition of Disposable & Temporary Numbers</strong>
-              <p>The platform explicitly disallows anonymous, virtual disposable numbers or blaster scrapers. Every number requires business KYC (GST/CIN) and tenant account linkage.</p>
+              <p>
+                The platform explicitly disallows anonymous, virtual disposable numbers or blaster
+                scrapers. Every number requires business KYC (GST/CIN) and tenant account linkage.
+              </p>
             </div>
           </div>
         </div>
@@ -421,7 +502,9 @@
           <h3>Add Number to Inventory Pool</h3>
           <p>Add a new virtual DID or SIM-bound line from an authorized telecom carrier.</p>
         </div>
-        <button type="button" class="modal-close" (click)="addNumberDialogOpen.set(false)">✕</button>
+        <button type="button" class="modal-close" (click)="addNumberDialogOpen.set(false)">
+          ✕
+        </button>
       </header>
 
       <div class="modal-body">
@@ -443,7 +526,11 @@
 
         <div class="form-row">
           <label>Telecom Service Provider (Carrier):</label>
-          <select class="form-in" [value]="draftCarrier()" (change)="draftCarrier.set($any($event.target).value)">
+          <select
+            class="form-in"
+            [value]="draftCarrier()"
+            (change)="draftCarrier.set($any($event.target).value)"
+          >
             <option value="Tata Teleservices">Tata Teleservices (SIP Trunk)</option>
             <option value="Bharti Airtel">Bharti Airtel Enterprise</option>
             <option value="Reliance Jio">Reliance Jio Enterprise</option>
@@ -458,7 +545,9 @@
             [value]="draftType()"
             (change)="draftType.set(+$any($event.target).value)"
           >
-            <option [value]="ResellerNumberType.VirtualDid">Virtual DID (SIP Trunk Interconnect)</option>
+            <option [value]="ResellerNumberType.VirtualDid">
+              Virtual DID (SIP Trunk Interconnect)
+            </option>
             <option [value]="ResellerNumberType.SimBoundMobile">SIM-Bound Mobile Line</option>
             <option [value]="ResellerNumberType.TollFree">1800 Enterprise Toll-Free</option>
             <option [value]="ResellerNumberType.LandlineDid">Fixed Landline STD DID</option>
@@ -505,7 +594,13 @@
 
       <footer class="modal-foot">
         <button ar-button variant="ghost" (click)="addNumberDialogOpen.set(false)">Cancel</button>
-        <button ar-button variant="primary" icon="check" [disabled]="draftNationalNumber().length < 10" (click)="submitAddNumber()">
+        <button
+          ar-button
+          variant="primary"
+          icon="check"
+          [disabled]="draftNationalNumber().length < 10"
+          (click)="submitAddNumber()"
+        >
           Add to inventory
         </button>
       </footer>
@@ -528,16 +623,24 @@
       </header>
 
       <div class="modal-body">
-        <div class="form-row">
-          <label>Target Workspace / Company Name:</label>
-          <input
-            type="text"
-            class="form-in"
-            placeholder="e.g. Apex Industrial Solutions"
-            [value]="draftTenantName()"
-            (input)="draftTenantName.set($any($event.target).value)"
-          />
-        </div>
+        @if (isHost()) {
+          <div class="form-row">
+            <label for="allocate-tenant">Target workspace:</label>
+            <select
+              id="allocate-tenant"
+              class="form-in"
+              [value]="draftTenantId()"
+              (change)="draftTenantId.set($any($event.target).value)"
+            >
+              <option value="">Choose a workspace…</option>
+              @for (t of tenants(); track t.id) {
+                <option [value]="t.id">{{ t.name }}</option>
+              }
+            </select>
+          </div>
+        } @else {
+          <p class="hint">This number will be allocated to your workspace.</p>
+        }
 
         <div class="form-row">
           <label>Verified Display Name on WhatsApp:</label>
@@ -548,18 +651,29 @@
             [value]="draftVerifiedName()"
             (input)="draftVerifiedName.set($any($event.target).value)"
           />
-          <small class="hint">Will be submitted for Meta review under Tech Provider credentials.</small>
+          <small class="hint"
+            >Will be submitted for Meta review under Tech Provider credentials.</small
+          >
         </div>
 
         <div class="form-notice">
           <strong>Monthly Subscription Fee:</strong>
-          <span>{{ formatCurrency(num.monthlyRentalInr) }}/month will be added to the workspace's billing invoice.</span>
+          <span
+            >{{ formatCurrency(num.monthlyRentalInr) }}/month will be added to the workspace's
+            billing invoice.</span
+          >
         </div>
       </div>
 
       <footer class="modal-foot">
         <button ar-button variant="ghost" (click)="allocateDialogOpen.set(false)">Cancel</button>
-        <button ar-button variant="primary" icon="check" [disabled]="!draftTenantName().trim()" (click)="submitAllocate()">
+        <button
+          ar-button
+          variant="primary"
+          icon="check"
+          [disabled]="isHost() && !draftTenantId()"
+          (click)="submitAllocate()"
+        >
           Confirm allocation
         </button>
       </footer>
@@ -602,7 +716,10 @@
             min="0"
             max="180"
           />
-          <small class="hint">Per telecom guidelines, released numbers are quarantined (typically 30 days) before reallocation.</small>
+          <small class="hint"
+            >Per telecom guidelines, released numbers are quarantined (typically 30 days) before
+            reallocation.</small
+          >
         </div>
       </div>
 
@@ -627,7 +744,9 @@
           <h3>Edit Telecom Entity Registration</h3>
           <p>Update regulatory identification numbers and CTSO appointment.</p>
         </div>
-        <button type="button" class="modal-close" (click)="editSettingsDialogOpen.set(false)">✕</button>
+        <button type="button" class="modal-close" (click)="editSettingsDialogOpen.set(false)">
+          ✕
+        </button>
       </header>
 
       <div class="modal-body">
@@ -649,11 +768,21 @@
               [value]="draftClassification()"
               (change)="draftClassification.set(+$any($event.target).value)"
             >
-              <option [value]="TelecomEntityClassification.VirtualNetworkOperator">Virtual Network Operator (VNO)</option>
-              <option [value]="TelecomEntityClassification.TelecomIdentifierUserEntity">Telecom Identifier User Entity (TIUE)</option>
-              <option [value]="TelecomEntityClassification.DltPrincipalEntity">DLT Principal Entity</option>
-              <option [value]="TelecomEntityClassification.RegisteredTelemarketer">Registered Telemarketer (TRAI)</option>
-              <option [value]="TelecomEntityClassification.TechProviderBsp">Meta Tech Provider / BSP</option>
+              <option [value]="TelecomEntityClassification.VirtualNetworkOperator">
+                Virtual Network Operator (VNO)
+              </option>
+              <option [value]="TelecomEntityClassification.TelecomIdentifierUserEntity">
+                Telecom Identifier User Entity (TIUE)
+              </option>
+              <option [value]="TelecomEntityClassification.DltPrincipalEntity">
+                DLT Principal Entity
+              </option>
+              <option [value]="TelecomEntityClassification.RegisteredTelemarketer">
+                Registered Telemarketer (TRAI)
+              </option>
+              <option [value]="TelecomEntityClassification.TechProviderBsp">
+                Meta Tech Provider / BSP
+              </option>
             </select>
           </div>
 
@@ -760,7 +889,9 @@
       </div>
 
       <footer class="modal-foot">
-        <button ar-button variant="ghost" (click)="editSettingsDialogOpen.set(false)">Cancel</button>
+        <button ar-button variant="ghost" (click)="editSettingsDialogOpen.set(false)">
+          Cancel
+        </button>
         <button ar-button variant="primary" icon="check" (click)="submitSettings()">
           Save changes
         </button>
