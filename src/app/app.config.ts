@@ -1,6 +1,6 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withNavigationErrorHandler } from '@angular/router';
 import { DISABLE_PROJECT_NAME, PermissionService, provideAbpCore, withOptions } from '@abp/ng.core';
 import { provideAbpOAuth } from '@abp/ng.oauth';
 
@@ -9,11 +9,18 @@ import { environment } from '../environments/environment';
 import { AgencyActingInterceptor } from './core/http/agency-acting.interceptor';
 import { ApiFeedbackInterceptor } from './core/http/api-feedback.interceptor';
 import { AutoReachPermissionService } from './core/auth/auto-reach-permission.service';
+import { isStaleChunkError, reloadForStaleChunk } from './core/util/stale-chunk';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
+    provideRouter(
+      routes,
+      // A tab from before a deploy asks for chunk files the server no longer has: reload once.
+      withNavigationErrorHandler((e) => {
+        if (isStaleChunkError(e.error)) reloadForStaleChunk();
+      }),
+    ),
     provideHttpClient(withInterceptorsFromDi()),
     { provide: PermissionService, useClass: AutoReachPermissionService },
     { provide: HTTP_INTERCEPTORS, useClass: AgencyActingInterceptor, multi: true },

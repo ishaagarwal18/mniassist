@@ -27,6 +27,10 @@ export const environment = {
     // Resource-owner password grant — the in-app /login form posts straight to
     // /connect/token. See environment.development.ts.
     responseType: 'password',
+    // Sign-in is the password grant (and our account_switch / external_login grants), none of
+    // which sends a nonce, so the library's ID-token check would always report "Wrong nonce:
+    // undefined". The app authorises with the access token alone and never reads the ID token.
+    oidc: false,
     scope: 'openid profile offline_access AutoReach',
     requireHttps: true,
   },

@@ -31,6 +31,10 @@ export const environment = {
     // to /connect/token. "code" would make @abp/ng.oauth redirect to the host's
     // /connect/authorize, which has no login page to render.
     responseType: 'password',
+    // Sign-in is the password grant (and our account_switch / external_login grants), none of
+    // which sends a nonce, so the library's ID-token check would always report "Wrong nonce:
+    // undefined". The app authorises with the access token alone and never reads the ID token.
+    oidc: false,
     scope: 'openid profile offline_access AutoReach',
     requireHttps: false,
   },
