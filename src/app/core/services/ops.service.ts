@@ -601,6 +601,11 @@ export class OpsService {
     this.sessionsResource.reload();
   }
 
+  /** After an invoice is paid online (M11-7). */
+  reloadInvoices(): void {
+    this.invoicesResource.reload();
+  }
+
   async generateInvoice(input: GenerateInvoiceDto): Promise<void> {
     if (environment.useMockData) return;
     await firstValueFrom(this.invoiceApi.generate(input));

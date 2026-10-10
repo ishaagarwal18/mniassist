@@ -253,6 +253,17 @@
                 Due {{ day(v.dueAt) }}
               }
             </p>
+            @if (v.state === 'issued' && canPayOnline()) {
+              <button
+                ar-button
+                type="button"
+                variant="primary"
+                [disabled]="paying()"
+                (click)="payNow(v)"
+              >
+                {{ paying() ? 'Opening…' : 'Pay now' }}
+              </button>
+            }
           </div>
         </header>
 

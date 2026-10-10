@@ -23,6 +23,12 @@ import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
+import { readApiError } from '../../core/util/api-error';
+import { PlatformCheckoutRunner } from '../../core/services/platform-checkout';
+import {
+  PlatformCheckoutService,
+  type CheckoutGatewayDto,
+} from '../../proxy/billing/platform-checkout.service';
 
 /** The first day of last month → the last day of last month, as yyyy-mm-dd. */
 function lastMonthRange(): { start: string; end: string } {
@@ -58,6 +64,39 @@ const STATE_TONE: Record<InvoiceState, ChipTone> = {
 })
 export class ArInvoices {
   private readonly toasts = inject(ToastService);
+  private readonly checkout = inject(PlatformCheckoutRunner);
+  private readonly checkoutApi = inject(PlatformCheckoutService);
+
+  /** Razorpay / PayU, when the platform has either (M11-7). */
+  private readonly gateways = signal<CheckoutGatewayDto[]>([]);
+  protected readonly canPayOnline = computed(() => this.gateways().length > 0);
+  protected readonly paying = signal(false);
+
+  constructor() {
+    if (!environment.useMockData) void this.checkout.gateways().then((g) => this.gateways.set(g));
+  }
+
+  protected async payNow(v: Invoice): Promise<void> {
+    const gateway = await this.checkout.choose(this.gateways(), `Pay invoice ${v.number}`);
+    if (!gateway) return;
+    this.paying.set(true);
+    try {
+      const start = await firstValueFrom(
+        this.checkoutApi.startInvoicePayment({ gateway, invoiceId: v.id }),
+      );
+      const outcome = await this.checkout.pay(start);
+      if (outcome === 'paid') {
+        this.toasts.success(`Invoice ${v.number} is paid. Thank you.`, 'Payment');
+        this.ops.reloadInvoices();
+      } else if (outcome === 'failed') {
+        this.toasts.error('The payment did not go through.', 'Payment');
+      }
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The payment could not be started.'), 'Payment');
+    } finally {
+      this.paying.set(false);
+    }
+  }
   private readonly dialogs = inject(ConfirmService);
   private readonly ops = inject(OpsService);
 

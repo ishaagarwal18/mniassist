@@ -13,6 +13,12 @@ import {
   WalletTransactionType,
 } from '../../proxy/billing';
 import { inr } from '../../core/util/format';
+import { readApiError } from '../../core/util/api-error';
+import { PlatformCheckoutRunner, readCheckoutReturn } from '../../core/services/platform-checkout';
+import {
+  PlatformCheckoutService,
+  type CheckoutGatewayDto,
+} from '../../proxy/billing/platform-checkout.service';
 import { ArTopbar } from '../../layout/topbar';
 import { planByKey, priceLabel } from '../landing/landing-plans';
 import { ArBanner, ArButton, ArChip, ArMeter, ArStatTile } from '../../ui';
@@ -119,6 +125,13 @@ export class ArBilling {
   private readonly walletApi = inject(WalletService);
   private readonly billingApi = inject(BillingService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly checkout = inject(PlatformCheckoutRunner);
+  private readonly checkoutApi = inject(PlatformCheckoutService);
+
+  constructor() {
+    this.announceCheckoutReturn();
+  }
 
   /**
    * The plan a link asked for (`/billing?plan=growth`), from the landing page's
@@ -248,6 +261,12 @@ export class ArBilling {
   }
 
   protected async topUp(): Promise<void> {
+    // Razorpay / PayU, when the platform has either: the payment happens on the gateway's page.
+    const gateways = environment.useMockData ? [] : await this.checkout.gateways();
+    if (gateways.length > 0) {
+      await this.topUpByGateway(gateways);
+      return;
+    }
     const answer = await this.dialogs.prompt({
       title: 'Top up the wallet',
       fields: [
@@ -282,6 +301,80 @@ export class ArBilling {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  private async topUpByGateway(gateways: CheckoutGatewayDto[]): Promise<void> {
+    const answer = await this.dialogs.prompt({
+      title: 'Top up the wallet',
+      message:
+        'You pay on the gateway’s secure page; the wallet is credited as soon as it confirms.',
+      fields: [
+        {
+          key: 'rupees',
+          label: 'Amount (₹)',
+          type: 'number',
+          value: '20000',
+          min: 100,
+          max: 1000000,
+          required: true,
+        },
+        ...(gateways.length > 1
+          ? [
+              {
+                key: 'gateway',
+                label: 'Pay with',
+                value: gateways[0].name,
+                options: gateways.map((g) => ({ value: g.name, label: g.label })),
+                required: true,
+              },
+            ]
+          : []),
+      ],
+      confirmText: 'Continue to payment',
+    });
+    if (!answer) return;
+    const amountInPaise = Math.round(Number(answer['rupees']) * 100);
+    const gateway = answer['gateway'] ?? gateways[0].name;
+    this.busy.set(true);
+    try {
+      const start = await firstValueFrom(this.checkoutApi.startTopUp({ gateway, amountInPaise }));
+      const outcome = await this.checkout.pay(start);
+      if (outcome === 'paid') {
+        this.toasts.success(`${inr(amountInPaise)} added to the wallet.`, 'Top-up');
+        this.tick.update((n) => n + 1);
+      } else if (outcome === 'failed') {
+        this.toasts.error(
+          'The payment did not go through. Nothing was charged to the wallet.',
+          'Top-up',
+        );
+      }
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The payment could not be started.'), 'Top-up');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** Back from PayU: say what happened, then drop the query so a reload doesn't repeat it. */
+  private announceCheckoutReturn(): void {
+    const back = readCheckoutReturn(this.route.snapshot.queryParams);
+    if (!back) return;
+    if (back.outcome === 'paid') this.toasts.success('Payment received. Thank you.', 'Payment');
+    else if (back.outcome === 'failed')
+      this.toasts.error(
+        'The payment did not go through. You have not been charged by us.',
+        'Payment',
+      );
+    else
+      this.toasts.error(
+        'We could not confirm that payment. If money left your account it will be credited once the gateway confirms it.',
+        'Payment',
+      );
+    void this.router.navigate([], {
+      queryParams: { payment: null, checkout: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   protected async activateRequested(): Promise<void> {
