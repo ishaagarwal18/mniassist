@@ -187,6 +187,7 @@ export function toMessage(dto: MessageDto, conversationId?: string): Message {
     opens: dto.openCount ? dto.openCount : undefined,
     lastOpenedAt: dto.lastOpenedAtUtc ? formatClock(dto.lastOpenedAtUtc) : undefined,
     media: toMessageMedia(dto, conversationId),
+    mediaRemoved: dto.mediaScan === 2,
     location:
       dto.locationLatitude != null && dto.locationLongitude != null
         ? {
@@ -219,8 +220,10 @@ function toMessageMedia(dto: MessageDto, conversationId?: string): MessageMedia 
   const base = environment.apis['AutoReach']?.url ?? environment.apis.default.url;
   const mime = dto.mediaMimeType ?? 'application/octet-stream';
 
+  const url = `${base}/api/auto-reach/inbox/${conversationId}/messages/${dto.id}/media`;
   return {
-    url: `${base}/api/auto-reach/inbox/${conversationId}/messages/${dto.id}/media`,
+    url,
+    thumbnailUrl: mime.startsWith('image/') ? `${url}/thumbnail` : undefined,
     mimeType: mime,
     fileName: dto.mediaFileName ?? undefined,
     kind: mime.startsWith('image/')

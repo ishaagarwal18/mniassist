@@ -62,3 +62,31 @@
   gap: 4px;
   flex: none;
 }
+
+.dl__deliveries {
+  overflow-x: auto;
+  max-height: 60vh;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font: 400 13px var(--ar-font-sans);
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 6px 8px;
+    border-top: 1px solid var(--ar-ink-100);
+  }
+
+  th {
+    border-top: 0;
+    font: 600 11.5px var(--ar-font-sans);
+    color: var(--ar-ink-500);
+  }
+}
+
+.dl__old {
+  color: var(--ar-ink-500);
+}

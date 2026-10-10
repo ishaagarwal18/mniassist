@@ -122,4 +122,11 @@ export interface WorkspaceDetailDto {
   hasOwnDatabase: boolean;
   databaseLocation?: string | null;
   memberCount: number;
+  /** The prepaid wallet (M13-2). */
+  walletBalanceInPaise: number;
+  walletGraceOverdraftInPaise: number;
+}
+
+export interface SetWalletGraceInput {
+  graceOverdraftInPaise: number;
 }

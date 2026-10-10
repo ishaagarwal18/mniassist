@@ -182,6 +182,16 @@
                 <span
                   ><b>{{ pct(r.replyRate) }}</b> replied</span
                 >
+                @if (r.hasTrackedLinks) {
+                  <span title="Recipients who tapped a link in the message"
+                    ><b>{{ pct(r.clickRate) }}</b> clicked ({{ count(r.clicked) }})</span
+                  >
+                }
+                @if (r.costPerReplyInPaise != null) {
+                  <span
+                    ><b>{{ inr(r.costPerReplyInPaise) }}</b> per reply</span
+                  >
+                }
                 <span
                   ><b>{{ count(r.failed) }}</b> failed</span
                 >

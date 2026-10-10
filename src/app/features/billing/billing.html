@@ -32,6 +32,12 @@
     <section class="card">
       <h2 class="card__h">Wallet</h2>
       <p class="card__big">{{ money(d().balanceInPaise) }}</p>
+      @if (d().graceInPaise > 0) {
+        <p class="card__sub">
+          Sending carries on up to {{ money(d().graceInPaise) }} below zero, then stops until you
+          top up.
+        </p>
+      }
       @if (runway() !== null) {
         <ar-meter
           [value]="runway()! * 100"

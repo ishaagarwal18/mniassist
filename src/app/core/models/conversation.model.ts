@@ -10,6 +10,8 @@ export interface MessageMedia {
   /** 'image' | 'video' | 'audio' | 'document' — drives which element renders it. */
   readonly kind: 'image' | 'video' | 'audio' | 'document';
   readonly fileName?: string;
+  /** A small preview for an image (T-12); falls back to the image itself on the server. */
+  readonly thumbnailUrl?: string;
 }
 
 export interface MessageLocation {
@@ -35,6 +37,8 @@ export interface Message {
   /** Email only: when it last loaded, as a clock time. */
   readonly lastOpenedAt?: string;
   readonly media?: MessageMedia;
+  /** The attachment failed the virus scan and was never stored (T-12). */
+  readonly mediaRemoved?: boolean;
   readonly location?: MessageLocation;
   /** Present on a reply-button message. */
   readonly buttons?: readonly MessageButton[];

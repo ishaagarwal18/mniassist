@@ -162,3 +162,26 @@ export interface PaymentReportDto {
   ageing?: AgeingBucketDto[];
   topDebtors?: PaymentCustomerDto[];
 }
+
+import type { AnalyticsExportFormat } from '../analytics/analytics-export-format.enum';
+
+export interface RequestAnalyticsExportInput {
+  fromUtc?: string | null;
+  toUtc?: string | null;
+  channelId?: string | null;
+  format: AnalyticsExportFormat;
+}
+
+export interface ReportExportDto {
+  id: string;
+  /** "Analytics" | "AuditLog" */
+  kind: string;
+  format: string;
+  /** "Pending" | "Running" | "Completed" | "Failed" */
+  status: string;
+  fileName?: string | null;
+  sizeInBytes: number;
+  creationTime: string;
+  expiresAtUtc?: string | null;
+  error?: string | null;
+}

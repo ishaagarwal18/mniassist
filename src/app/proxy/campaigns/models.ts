@@ -91,6 +91,11 @@ export interface CampaignReportDto {
   readRate?: number;
   replyRate?: number;
   optOutRate?: number;
+  /** M12-1: whether any link was tracked, recipients who tapped one, and spend per reply. */
+  hasTrackedLinks?: boolean;
+  clicked?: number;
+  clickRate?: number;
+  costPerReplyInPaise?: number | null;
   errors?: CampaignErrorBreakdownDto[];
 }
 

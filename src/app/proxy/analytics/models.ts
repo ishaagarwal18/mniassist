@@ -26,6 +26,20 @@ export interface AgentPerformanceDto {
   messagesSent?: number;
   medianFirstResponseMinutes?: number | null;
   enquiriesCreated?: number;
+  /** Satisfaction answers in the period (M12-4). */
+  csatResponses?: number;
+  /** Share of answers that were "good", 0–100. */
+  csatPercent?: number | null;
+}
+
+export interface TeamSatisfactionDto {
+  teamId: string;
+  name: string;
+  responses: number;
+  csatPercent?: number | null;
+  good: number;
+  okay: number;
+  poor: number;
 }
 
 export interface CategoryBreakdownDto {

@@ -100,6 +100,13 @@ const GROUPS: readonly ReportGroup[] = [
           'A daily, weekly or monthly summary by email, WhatsApp or in-app, with the full report as a PDF.',
         permission: 'AutoReach.Analytics',
       },
+      {
+        title: 'My exports',
+        route: '/reports/exports',
+        icon: 'download',
+        description: 'Exports you asked for, built in the background and kept for seven days.',
+        permission: 'AutoReach.Analytics || AutoReach.AuditLogs',
+      },
     ],
   },
 ];

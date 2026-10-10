@@ -1,5 +1,6 @@
 import type {
   AssignPlanInput,
+  SetWalletGraceInput,
   SetWorkspaceDatabaseInput,
   SetWorkspaceFeatureInput,
   SuspendWorkspaceInput,
@@ -85,6 +86,17 @@ export class HostWorkspaceService {
         method: 'DELETE',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/host-workspace/${id}/database`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  setWalletGrace = (id: string, input: SetWalletGraceInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WorkspaceDetailDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/host-workspace/${id}/set-wallet-grace`,
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );

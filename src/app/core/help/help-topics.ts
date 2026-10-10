@@ -255,6 +255,20 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     ],
   },
   'automations/:id': AUTOMATION_BUILDER,
+  'auto-replies': {
+    benefits: [
+      'Greet every new customer the moment they write, on any plan.',
+      'Tell customers when you are closed, without an agent on duty.',
+      'Set a closure such as Diwali week once, and it switches itself off after.',
+    ],
+    steps: [
+      'Write the welcome message and tick Send a welcome.',
+      'Set your business hours and time zone, and list your holidays.',
+      'Write the away message and choose how long to wait before replying to the same customer again.',
+      'For a closure, tick Out of office, choose the first and last closed day, and write the message.',
+      'Click Save. The line at the top says what a customer writing now would get.',
+    ],
+  },
   flows: {
     benefits: [
       'Collect structured details (an RFQ, a booking, a service ticket) inside WhatsApp.',
@@ -415,6 +429,19 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Pick the report that answers your question.',
       'Choose a period at its top; the same period carries over to the other reports.',
     ],
+  },
+  'reports/exports': {
+    summary:
+      'Large exports — analytics and the audit log — run in the background and land here, with a download link that also goes to your email.',
+    benefits: [
+      'Ask for a year of data without waiting on the page; carry on working while it builds.',
+      'Download it again from here for 7 days, from any device you sign in on.',
+    ],
+    steps: [
+      'Start an export from Analytics or Audit logs; it appears here as Queued, then Ready.',
+      'Select Download when it is Ready, or use the link in the email.',
+    ],
+    tips: ['Links stop working after 7 days and the file is deleted; ask for a fresh export then.'],
   },
   'reports/business': {
     summary:

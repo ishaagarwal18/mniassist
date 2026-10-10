@@ -1,3 +1,4 @@
+import type { DocumentDeliveryDto } from './models';
 import type {
   CreateLibraryDocumentDto,
   GetLibraryListInput,
@@ -31,6 +32,29 @@ export class LibraryService {
       {
         method: 'DELETE',
         url: `/api/auto-reach/library/${id}`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** A new version of the file (M09-1); FormData with a `file` field. */
+  replaceFile = (id: string, body: FormData, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, LibraryDocumentDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/library/${id}/replace-file`,
+        body,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Who received the document, which version, whether they read it (M09-3). */
+  getDeliveries = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, { items: DocumentDeliveryDto[] }>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/library/${id}/deliveries`,
       },
       { apiName: this.apiName, ...config },
     );

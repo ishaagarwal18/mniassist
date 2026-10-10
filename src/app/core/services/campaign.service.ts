@@ -78,6 +78,11 @@ export interface Report {
   deliveryRate: number;
   readRate: number;
   replyRate: number;
+  /** M12-1: only meaningful when the campaign sent a tracked link. */
+  hasTrackedLinks: boolean;
+  clicked: number;
+  clickRate: number;
+  costPerReplyInPaise?: number;
   errors: { code: number; title?: string; count: number; guidance?: string }[];
 }
 
@@ -146,6 +151,10 @@ function toReport(r: CampaignReportDto): Report {
     deliveryRate: r.deliveryRate ?? 0,
     readRate: r.readRate ?? 0,
     replyRate: r.replyRate ?? 0,
+    hasTrackedLinks: r.hasTrackedLinks ?? false,
+    clicked: r.clicked ?? 0,
+    clickRate: r.clickRate ?? 0,
+    costPerReplyInPaise: r.costPerReplyInPaise ?? undefined,
     errors: (r.errors ?? []).map((e) => ({
       code: e.errorCode ?? 0,
       title: e.title ?? undefined,

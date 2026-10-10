@@ -141,8 +141,11 @@ export class ArAnalytics {
       messages: a.messagesSent,
       firstReply: a.medianFirstResponseMinutes ?? null,
       enquiries: a.enquiriesCreated,
+      csat: a.csatPercent ?? null,
+      csatResponses: a.csatResponses ?? 0,
     })),
   );
+  protected readonly teamRows = computed(() => this.store.teams());
   protected readonly conversionRows = computed(() =>
     (this.conversion().rows ?? []).map((r) => ({
       key: r.key ?? '',

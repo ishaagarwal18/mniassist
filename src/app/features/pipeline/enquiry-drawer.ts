@@ -22,6 +22,7 @@ import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
 import { ArEnquiryNetwork } from '../network/enquiry-network';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
+import { PROFILE_FIELDS, profileFilled, profileInput } from './enquiry-profile';
 
 /**
  * The enquiry card, opened. A slide-over rather than a route because the board is
@@ -81,7 +82,9 @@ import { ToastService } from '../../core/ui/toast.service';
               <button ar-button type="button" variant="ghost" (click)="openEdit(d)">Edit</button>
             }
             @if (canDelete()) {
-              <button ar-button type="button" variant="danger" (click)="deleteEnquiry(d)">Delete</button>
+              <button ar-button type="button" variant="danger" (click)="deleteEnquiry(d)">
+                Delete
+              </button>
             }
             <button type="button" class="dh__x" aria-label="Close" (click)="close.emit()">×</button>
           </div>
@@ -100,7 +103,9 @@ import { ToastService } from '../../core/ui/toast.service';
               />
             </label>
             <label class="ar-field">
-              <span class="ar-field__label">Requirement <span class="ar-field__opt">(optional)</span></span>
+              <span class="ar-field__label"
+                >Requirement <span class="ar-field__opt">(optional)</span></span
+              >
               <textarea
                 class="ar-field__input"
                 rows="3"
@@ -109,7 +114,9 @@ import { ToastService } from '../../core/ui/toast.service';
               ></textarea>
             </label>
             <label class="ar-field">
-              <span class="ar-field__label">Est. value (₹) <span class="ar-field__opt">(optional)</span></span>
+              <span class="ar-field__label"
+                >Est. value (₹) <span class="ar-field__opt">(optional)</span></span
+              >
               <input
                 class="ar-field__input"
                 inputmode="numeric"
@@ -117,8 +124,58 @@ import { ToastService } from '../../core/ui/toast.service';
                 (input)="editValueRupees.set($any($event.target).value)"
               />
             </label>
+            <h4 class="rfq__h">RFQ details</h4>
+            <div class="rfq__grid">
+              @for (f of profileFields; track f.key) {
+                <label class="ar-field">
+                  <span class="ar-field__label">{{ f.label }}</span>
+                  @if (f.kind === 'select') {
+                    <select
+                      arNative
+                      class="ar-field__input"
+                      [value]="profileValue(f.key)"
+                      (change)="setProfile(f.key, $any($event.target).value)"
+                    >
+                      <option value="">—</option>
+                      @for (o of f.options; track o) {
+                        <option [value]="o">{{ o }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <input
+                      class="ar-field__input"
+                      maxlength="256"
+                      [attr.inputmode]="f.kind === 'number' ? 'numeric' : null"
+                      [attr.list]="f.suggestions ? 'rfq-' + f.key : null"
+                      [placeholder]="f.placeholder ?? ''"
+                      [value]="profileValue(f.key)"
+                      (input)="setProfile(f.key, $any($event.target).value)"
+                    />
+                    @if (f.suggestions) {
+                      <datalist [id]="'rfq-' + f.key">
+                        @for (s of f.suggestions; track s) {
+                          <option [value]="s"></option>
+                        }
+                      </datalist>
+                    }
+                  }
+                </label>
+              }
+              <label class="ar-field">
+                <span class="ar-field__label">Expected order date</span>
+                <input
+                  arNative
+                  type="date"
+                  class="ar-field__input"
+                  [value]="editOrderDate()"
+                  (change)="editOrderDate.set($any($event.target).value)"
+                />
+              </label>
+            </div>
             <div dialogActions>
-              <button ar-button type="button" variant="ghost" (click)="editing.set(false)">Cancel</button>
+              <button ar-button type="button" variant="ghost" (click)="editing.set(false)">
+                Cancel
+              </button>
               <button
                 ar-button
                 type="button"
@@ -178,6 +235,25 @@ import { ToastService } from '../../core/ui/toast.service';
           @if (d.lostReason) {
             <p class="lost">Lost — {{ d.lostReason }}</p>
           }
+
+          <section class="sec">
+            <h3 class="sec__t">
+              RFQ details
+              <span class="rfq__count">{{ filled(d) }} of 9</span>
+            </h3>
+            <dl class="rfq">
+              @for (f of profileFields; track f.key) {
+                <div>
+                  <dt>{{ f.label }}</dt>
+                  <dd>{{ d.attributes?.[f.key] || '—' }}</dd>
+                </div>
+              }
+              <div>
+                <dt>Expected order date</dt>
+                <dd>{{ d.expectedCloseDate ? day(d.expectedCloseDate) : '—' }}</dd>
+              </div>
+            </dl>
+          </section>
 
           <section class="sec">
             <h3 class="sec__t">Requirement</h3>
@@ -328,6 +404,39 @@ import { ToastService } from '../../core/ui/toast.service';
     </aside>
   `,
   styles: `
+    .rfq {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 8px 16px;
+      margin: 0;
+    }
+    .rfq dt {
+      font: 500 11px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .rfq dd {
+      margin: 2px 0 0;
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-800);
+      overflow-wrap: anywhere;
+    }
+    .rfq__count {
+      margin-left: 8px;
+      font: 400 11.5px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .rfq__h {
+      margin: 14px 0 6px;
+      font: 600 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .rfq__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0 12px;
+    }
     :host {
       position: fixed;
       inset: 0;
@@ -599,6 +708,22 @@ export class ArEnquiryDrawer {
   protected readonly editTitle = signal('');
   protected readonly editRequirement = signal('');
   protected readonly editValueRupees = signal('');
+  protected readonly editProfile = signal<Record<string, string>>({});
+
+  /** A key the enquiry has no value for yet reads as blank. */
+  protected profileValue(key: string): string {
+    return (this.editProfile() as Partial<Record<string, string>>)[key] ?? '';
+  }
+  protected readonly editOrderDate = signal('');
+  protected readonly profileFields = PROFILE_FIELDS;
+
+  protected filled(d: EnquiryDetail): number {
+    return profileFilled(d.attributes, d.expectedCloseDate);
+  }
+
+  protected setProfile(key: string, value: string): void {
+    this.editProfile.update((p) => ({ ...p, [key]: value }));
+  }
 
   protected readonly losing = signal(false);
   protected readonly lostCat = signal<LostReasonCategory>(LostReasonCategory.LostToCompetitor);
@@ -690,6 +815,8 @@ export class ArEnquiryDrawer {
     this.editTitle.set(d.title);
     this.editRequirement.set(d.requirement ?? '');
     this.editValueRupees.set(d.valueInPaise ? String(d.valueInPaise / 100) : '');
+    this.editProfile.set({ ...(d.attributes ?? {}) });
+    this.editOrderDate.set(d.expectedCloseDate ? d.expectedCloseDate.slice(0, 10) : '');
     this.editing.set(true);
   }
 
@@ -699,15 +826,26 @@ export class ArEnquiryDrawer {
       return;
     }
     const rupees = Number(this.editValueRupees().replace(/[^\d.]/g, ''));
+    const profile = profileInput(this.editProfile());
+    if (typeof profile === 'string') {
+      this.toasts.warning(profile, 'Edit enquiry');
+      return;
+    }
     this.busy.set(true);
     try {
+      // What the dialog does not edit goes back as it was: an edit must not unassign the owner
+      // or drop the ad reference.
       await this.store.updateEnquiry(d.id, {
         contactId: d.contactId,
         pipelineId: d.pipelineId,
         source: LeadSource.Manual,
+        sourceRef: d.sourceRef ?? null,
+        ownerUserId: d.ownerUserId ?? null,
         title: this.editTitle().trim(),
         requirement: this.editRequirement().trim() || undefined,
         estimatedValueInPaise: rupees > 0 ? Math.round(rupees * 100) : undefined,
+        expectedCloseDate: this.editOrderDate() ? `${this.editOrderDate()}T00:00:00Z` : null,
+        attributes: profile,
       });
       this.editing.set(false);
       this.toasts.success('Enquiry updated.');

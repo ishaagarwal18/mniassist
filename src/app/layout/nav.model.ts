@@ -115,6 +115,13 @@ export const NAV: readonly NavGroup[] = [
         tenantOnly: true,
       },
       {
+        label: 'Auto-replies',
+        icon: 'clock',
+        route: '/auto-replies',
+        permission: 'AutoReach.Automations',
+        tenantOnly: true,
+      },
+      {
         label: 'Flows',
         icon: 'flow',
         route: '/flows',

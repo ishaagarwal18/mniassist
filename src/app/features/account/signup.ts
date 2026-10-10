@@ -9,6 +9,7 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { TenantSignupService } from '../../proxy/registration';
@@ -87,6 +88,59 @@ import { ArCaptcha } from '../../ui/captcha';
               (input)="email.set($any($event.target).value)"
             />
           </label>
+          <label class="lg__field">
+            <span>Mobile number{{ mobileRequired() ? '' : ' (optional)' }}</span>
+            <span class="lg__row">
+              <input
+                class="ar-field__input"
+                type="tel"
+                name="mobile"
+                autocomplete="tel"
+                placeholder="+91 98200 11234"
+                [disabled]="mobileVerified()"
+                [value]="mobile()"
+                (input)="mobileChanged($any($event.target).value)"
+              />
+              @if (mobileRequired() && !mobileVerified()) {
+                <button
+                  type="button"
+                  class="lg__inline"
+                  [disabled]="sending() || !mobile().trim()"
+                  (click)="sendCode()"
+                >
+                  {{ sending() ? 'Sending…' : verificationId() ? 'Resend' : 'Send code' }}
+                </button>
+              }
+            </span>
+            @if (mobileVerified()) {
+              <em class="lg__note lg__ok">Verified.</em>
+            } @else if (sentTo(); as to) {
+              <em class="lg__note">We sent a 6-digit code to {{ to }}.</em>
+            }
+          </label>
+          @if (mobileRequired() && verificationId() && !mobileVerified()) {
+            <label class="lg__field">
+              <span>Code from the SMS</span>
+              <span class="lg__row">
+                <input
+                  class="ar-field__input"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  maxlength="8"
+                  [value]="code()"
+                  (input)="code.set($any($event.target).value)"
+                />
+                <button
+                  type="button"
+                  class="lg__inline"
+                  [disabled]="sending() || code().trim().length < 6"
+                  (click)="verifyCode()"
+                >
+                  Verify
+                </button>
+              </span>
+            </label>
+          }
           <label class="lg__field">
             <span>Password</span>
             <input
@@ -202,6 +256,27 @@ import { ArCaptcha } from '../../ui/captcha';
       font-style: normal;
       color: var(--ar-ink-400);
     }
+    .lg__row {
+      display: flex;
+      gap: 6px;
+    }
+    .lg__inline {
+      flex: none;
+      padding: 0 10px;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-inset);
+      background: var(--ar-white);
+      color: var(--ar-teal-600);
+      font: 600 12px var(--ar-font-sans);
+      cursor: pointer;
+    }
+    .lg__inline:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    .lg__ok {
+      color: var(--ar-green-600);
+    }
     .lg__card button[ar-button] {
       width: 100%;
       margin-top: 4px;
@@ -249,6 +324,52 @@ export class ArSignup {
   protected readonly done = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  /** M01-1: the owner's mobile, verified by an SMS code when the platform requires it. */
+  protected readonly mobile = signal('');
+  protected readonly mobileRequired = signal(false);
+  protected readonly verificationId = signal<string | null>(null);
+  protected readonly sentTo = signal<string | null>(null);
+  protected readonly code = signal('');
+  protected readonly mobileVerified = signal(false);
+  protected readonly sending = signal(false);
+
+  protected mobileChanged(value: string): void {
+    this.mobile.set(value);
+    this.verificationId.set(null);
+    this.sentTo.set(null);
+    this.mobileVerified.set(false);
+  }
+
+  protected async sendCode(): Promise<void> {
+    this.sending.set(true);
+    this.error.set(null);
+    try {
+      const sent = await firstValueFrom(this.api.sendMobileCode(this.mobile().trim()));
+      this.verificationId.set(sent.verificationId);
+      this.sentTo.set(sent.sentTo);
+      this.code.set('');
+    } catch (e) {
+      this.error.set(readApiError(e, 'Could not send the code.'));
+    } finally {
+      this.sending.set(false);
+    }
+  }
+
+  protected async verifyCode(): Promise<void> {
+    const id = this.verificationId();
+    if (!id) return;
+    this.sending.set(true);
+    this.error.set(null);
+    try {
+      await firstValueFrom(this.api.verifyMobileCode(id, this.code().trim()));
+      this.mobileVerified.set(true);
+    } catch (e) {
+      this.error.set(readApiError(e, 'That code is not right.'));
+    } finally {
+      this.sending.set(false);
+    }
+  }
+
   /** Until the API says otherwise, assume a check is needed: a fast click must not skip it. */
   protected readonly captchaRequired = signal(true);
   protected readonly captchaToken = signal<string | null>(null);
@@ -259,12 +380,18 @@ export class ArSignup {
       /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])$/.test(this.workspace().trim().toLowerCase()) &&
       this.email().trim().length > 0 &&
       this.password().length >= 6 &&
+      (!this.mobileRequired() || this.mobileVerified()) &&
       (!this.captchaRequired() || !!this.captchaToken()),
   );
 
   constructor() {
     if (this.account.isAuthenticated()) {
       void this.router.navigateByUrl('/home');
+    }
+    if (!environment.useMockData) {
+      firstValueFrom(this.api.getMobileVerification())
+        .then((r) => this.mobileRequired.set(r.required))
+        .catch(() => undefined);
     }
   }
 
@@ -282,6 +409,8 @@ export class ArSignup {
           adminPassword: this.password(),
           adminDisplayName: this.fullName().trim() || undefined,
           captchaToken: this.captchaToken(),
+          mobileNumber: this.mobile().trim() || null,
+          mobileVerificationId: this.mobileVerified() ? this.verificationId() : null,
         }),
       );
       this.done.set(true);

@@ -16,6 +16,8 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ToastService } from '../../core/ui/toast.service';
+import { readApiError } from '../../core/util/api-error';
+import type { DocumentDeliveryDto } from '../../proxy/library/models';
 
 interface Doc {
   id: string;
@@ -25,6 +27,7 @@ interface Doc {
   parts: string[];
   sendCount: number;
   lastSentAt?: string;
+  version: number;
 }
 
 const SEED: Doc[] = [
@@ -35,6 +38,7 @@ const SEED: Doc[] = [
     sizeLabel: '1.8 MB',
     parts: ['6ES7214-1AG40-0XB0'],
     sendCount: 214,
+    version: 1,
     lastSentAt: '2026-09-04',
   },
   {
@@ -44,6 +48,7 @@ const SEED: Doc[] = [
     sizeLabel: '620 KB',
     parts: ['131B0080'],
     sendCount: 88,
+    version: 1,
     lastSentAt: '2026-09-01',
   },
   {
@@ -53,6 +58,7 @@ const SEED: Doc[] = [
     sizeLabel: '210 KB',
     parts: [],
     sendCount: 46,
+    version: 1,
   },
   {
     id: 'd-4',
@@ -61,6 +67,7 @@ const SEED: Doc[] = [
     sizeLabel: '3.1 MB',
     parts: ['VX-PL-44'],
     sendCount: 12,
+    version: 1,
     lastSentAt: '2026-08-19',
   },
 ];
@@ -75,6 +82,7 @@ function toDoc(d: LibraryDocumentDto): Doc {
     parts: d.partNumbers ?? [],
     sendCount: d.sendCount ?? 0,
     lastSentAt: d.lastSentAtUtc ?? undefined,
+    version: d.version ?? 1,
   };
 }
 
@@ -233,6 +241,7 @@ export class ArDocuments {
               sizeLabel,
               parts: partsList,
               sendCount: 0,
+              version: 1,
             },
             ...docs,
           ]);
@@ -268,6 +277,48 @@ export class ArDocuments {
       this.toasts.success(`“${d.title}” deleted.`);
     } catch {
       this.toasts.error(`Could not delete “${d.title}”.`);
+    }
+  }
+
+  // ---- versions and deliveries (M09-1, M09-3) ----------------------------------------------
+
+  protected readonly deliveriesFor = signal<Doc | null>(null);
+  protected readonly deliveries = signal<DocumentDeliveryDto[]>([]);
+
+  protected async showDeliveries(d: Doc): Promise<void> {
+    this.deliveriesFor.set(d);
+    this.deliveries.set([]);
+    if (environment.useMockData) return;
+    try {
+      this.deliveries.set((await firstValueFrom(this.api.getDeliveries(d.id))).items ?? []);
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'Could not load the deliveries.'));
+    }
+  }
+
+  protected deliveryState(r: DocumentDeliveryDto): string {
+    return r.failed ? 'Failed' : r.readAtUtc ? 'Read' : r.deliveredAtUtc ? 'Delivered' : 'Sent';
+  }
+
+  protected async replaceFile(d: Doc, input: HTMLInputElement): Promise<void> {
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    if (
+      !(await this.dialogs.confirm({
+        title: `Replace the file of “${d.title}”?`,
+        message: `It becomes version ${d.version + 1}. Every send from now on carries the new file; the old one is not kept.`,
+        confirmText: 'Replace',
+      }))
+    )
+      return;
+    const body = new FormData();
+    body.append('file', file, file.name);
+    try {
+      await firstValueFrom(this.api.replaceFile(d.id, body));
+      this.resource.reload();
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'Could not replace the file.'));
     }
   }
 

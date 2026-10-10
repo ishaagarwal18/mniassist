@@ -43,6 +43,7 @@ interface Txn {
 
 const SEED = {
   balanceInPaise: 18_420_00,
+  graceInPaise: 0,
   isLow: false,
   daysRemaining: 21,
   chargesStartOn: null as string | null,
@@ -149,6 +150,7 @@ export class ArBilling {
         map((r) => ({
           usage: r.usage,
           balanceInPaise: r.wallet.balanceInPaise,
+          graceInPaise: r.wallet.graceOverdraftInPaise ?? 0,
           isLow: r.wallet.isLow,
           daysRemaining: r.wallet.estimatedDaysRemaining ?? null,
           chargesStartOn: r.wallet.chargesStartOnUtc ?? null,

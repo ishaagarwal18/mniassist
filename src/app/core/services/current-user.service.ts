@@ -24,6 +24,7 @@ import {
   secondFactorParameters,
 } from '../auth/two-factor';
 import { passwordChangeParameters, signInChallenge } from '../auth/sign-in-challenge';
+import { EXTERNAL_LOGIN_GRANT } from '../auth/external-login';
 
 const MOCK = environment.useMockData;
 /** Mock mode has no auth server, so "signed in" is this local flag. Absent = signed out. */
@@ -276,6 +277,44 @@ export class CurrentUserService {
     await this.injector
       .get(OAuthService)
       .fetchTokenUsingGrant('password', { username, password, ...extra }, headers);
+    const afterLogin = this.injector.get(PIPE_TO_LOGIN_FN_KEY);
+    await firstValueFrom(
+      of(null).pipe(afterLogin({ rememberMe, redirectUrl: '/home' }, this.injector)),
+    );
+  }
+
+  /**
+   * Signs in with a Google or Microsoft ID token (M01-7) through the auth server's
+   * `external_login` grant, in the workspace typed on the sign-in screen. An account with
+   * two-step verification still needs its code: the first try throws
+   * `TwoFactorRequiredError` and the screen repeats this with the proof.
+   */
+  async signInExternal(
+    provider: string,
+    idToken: string,
+    nonce: string,
+    rememberMe: boolean,
+    workspace: string,
+    proof?: SecondFactor,
+  ): Promise<void> {
+    if (MOCK) throw new Error('Signing in with Google or Microsoft needs the API.');
+    await this.selectTenant(workspace);
+    const tenant = this.session.getTenant();
+    const headers = new HttpHeaders(
+      tenant?.id ? { [this.injector.get(TENANT_KEY)]: tenant.id } : {},
+    );
+    try {
+      await this.injector
+        .get(OAuthService)
+        .fetchTokenUsingGrant(
+          EXTERNAL_LOGIN_GRANT,
+          { provider, id_token: idToken, nonce, ...(proof ? secondFactorParameters(proof) : {}) },
+          headers,
+        );
+    } catch (e) {
+      if (isTwoFactorChallenge(e)) throw new TwoFactorRequiredError();
+      throw e;
+    }
     const afterLogin = this.injector.get(PIPE_TO_LOGIN_FN_KEY);
     await firstValueFrom(
       of(null).pipe(afterLogin({ rememberMe, redirectUrl: '/home' }, this.injector)),

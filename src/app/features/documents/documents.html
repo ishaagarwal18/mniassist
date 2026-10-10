@@ -11,7 +11,10 @@
 </ar-topbar>
 
 @if (dialogOpen()) {
-  <ar-dialog [title]="editingDoc() ? 'Edit document' : 'Upload a document'" (dismiss)="dialogOpen.set(false)">
+  <ar-dialog
+    [title]="editingDoc() ? 'Edit document' : 'Upload a document'"
+    (dismiss)="dialogOpen.set(false)"
+  >
     @if (!editingDoc()) {
       <label class="ar-field">
         <span class="ar-field__label">File</span>
@@ -82,7 +85,7 @@
         Cancel
       </button>
       <button ar-button type="button" variant="primary" [disabled]="uploading()" (click)="save()">
-        {{ uploading() ? 'Saving…' : (editingDoc() ? 'Save' : 'Upload') }}
+        {{ uploading() ? 'Saving…' : editingDoc() ? 'Save' : 'Upload' }}
       </button>
     </div>
   </ar-dialog>
@@ -105,6 +108,7 @@
           @if (d.category) {
             <ar-chip tone="neutral">{{ d.category }}</ar-chip>
           }
+          <ar-chip tone="teal">v{{ d.version }}</ar-chip>
           <span>{{ d.sizeLabel }}</span>
           <span>· {{ d.sendCount }} deliveries</span>
           <span>· last sent {{ when(d.lastSentAt) }}</span>
@@ -121,12 +125,61 @@
         @if (canUpdate()) {
           <button ar-button variant="ghost" (click)="openEdit(d)">Edit</button>
         }
+        <button ar-button variant="ghost" (click)="showDeliveries(d)">Sent to</button>
+        @if (canUpdate()) {
+          <button ar-button variant="ghost" (click)="replaceInput.click()">Replace file</button>
+          <input #replaceInput type="file" hidden (change)="replaceFile(d, replaceInput)" />
+        }
         <button ar-button variant="ghost" (click)="downloadDoc(d)">Download</button>
         @if (canDelete()) {
           <button ar-button variant="ghost" (click)="deleteDoc(d)">Delete</button>
         }
       </div>
     </article>
+  }
+  @if (deliveriesFor(); as doc) {
+    <ar-dialog
+      [title]="'Sent to · ' + doc.title"
+      width="min(640px, calc(100vw - 32px))"
+      (dismiss)="deliveriesFor.set(null)"
+    >
+      <div class="dl__deliveries">
+        <table>
+          <thead>
+            <tr>
+              <th>Contact</th>
+              <th>Version</th>
+              <th>Sent</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of deliveries(); track $index) {
+              <tr>
+                <td>{{ r.contactName }}</td>
+                <td>
+                  v{{ r.version }}
+                  @if (r.version !== doc.version) {
+                    <span class="dl__old"> (old)</span>
+                  }
+                </td>
+                <td>{{ when(r.sentAtUtc) }}</td>
+                <td>{{ deliveryState(r) }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4">Not sent to anyone yet.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="deliveriesFor.set(null)">
+          Close
+        </button>
+      </div>
+    </ar-dialog>
   }
   @if (documents().length === 0 && !loading()) {
     <p class="dl__empty">Nothing in the library. Upload a datasheet and key it to a part number.</p>

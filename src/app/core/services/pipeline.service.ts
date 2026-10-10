@@ -122,6 +122,10 @@ export interface EnquiryDetail {
   contactId?: string;
   company?: string;
   owner?: string;
+  /** Kept so an edit sends the owner, ad reference and attributes back unchanged. */
+  ownerUserId?: string;
+  sourceRef?: string;
+  attributes?: Record<string, string>;
   requirement?: string;
   valueInPaise?: number;
   expectedCloseDate?: string;
@@ -295,6 +299,9 @@ function enquiryDetail(d: EnquiryDetailDto & { id?: string }): EnquiryDetail {
     contactId: d.contactId ?? undefined,
     company: d.contactCompanyName ?? undefined,
     owner: d.ownerUserName ?? undefined,
+    ownerUserId: d.ownerUserId ?? undefined,
+    sourceRef: d.sourceRef ?? undefined,
+    attributes: d.attributes ?? {},
     requirement: d.requirement ?? undefined,
     valueInPaise: d.estimatedValueInPaise ?? undefined,
     expectedCloseDate: d.expectedCloseDate ?? undefined,
@@ -876,7 +883,9 @@ export class PipelineStore {
         valueInPaise: input.estimatedValueInPaise ?? undefined,
       };
       this.mockBoard.update((cols) =>
-        cols.map((c, i) => (i === 0 ? { ...c, cards: [newCard, ...c.cards], count: c.count + 1 } : c)),
+        cols.map((c, i) =>
+          i === 0 ? { ...c, cards: [newCard, ...c.cards], count: c.count + 1 } : c,
+        ),
       );
       return;
     }

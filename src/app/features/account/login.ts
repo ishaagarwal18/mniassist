@@ -12,6 +12,11 @@ import {
 } from '../../core/auth/sign-in-challenge';
 import { AccountRecoveryService } from '../../proxy/identity/account-recovery.service';
 import { BrandingService } from '../../proxy/branding';
+import {
+  ExternalLoginService,
+  type ExternalLoginProviderDto,
+} from '../../proxy/identity/external-login.service';
+import { beginExternalLogin } from '../../core/auth/external-login';
 import { ArButton, ArIcon } from '../../ui';
 import { ArThemeToggle } from '../../layout/theme-toggle';
 import { ArAuthShowcase } from './auth-showcase';
@@ -231,6 +236,23 @@ import { ArBrand } from '../../layout/brand';
             {{ busy() ? 'Signing in…' : 'Sign in' }}
           </button>
 
+          @if (externalProviders().length) {
+            <div class="lg__or"><span>or</span></div>
+            <div class="lg__external">
+              @for (p of externalProviders(); track p.name) {
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="busy()"
+                  (click)="continueWith(p)"
+                >
+                  Sign in with {{ p.name }}
+                </button>
+              }
+            </div>
+          }
+
           @if (mock) {
             <p class="lg__hint">Demo build — any username and password will sign you in.</p>
           } @else {
@@ -359,6 +381,24 @@ import { ArBrand } from '../../layout/brand';
       justify-content: center;
       font-size: 14px;
     }
+    .lg__or {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 16px 0 12px;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .lg__or::before,
+    .lg__or::after {
+      content: '';
+      flex: 1;
+      border-top: 1px solid var(--ar-line-200);
+    }
+    .lg__external {
+      display: grid;
+      gap: 8px;
+    }
     .lg__hint {
       margin: 14px 0 0;
       font: 400 12px var(--ar-font-sans);
@@ -476,10 +516,28 @@ export class ArLogin {
     () => this.username().trim().length > 0 && this.password().length > 0,
   );
 
+  /** Google / Microsoft, when this deployment has client ids for them (M01-7). */
+  protected readonly externalProviders = signal<ExternalLoginProviderDto[]>([]);
+  private readonly externalLogin = inject(ExternalLoginService);
+
   constructor() {
     if (this.account.isAuthenticated()) {
       void this.router.navigateByUrl('/home');
     }
+    if (!this.mock) {
+      this.externalLogin.getProviders({ skipHandleError: true }).subscribe({
+        next: (r) => this.externalProviders.set(r.items ?? []),
+        error: () => this.externalProviders.set([]),
+      });
+    }
+  }
+
+  protected continueWith(p: ExternalLoginProviderDto): void {
+    beginExternalLogin(p, {
+      mode: 'signin',
+      rememberMe: this.rememberMe(),
+      workspace: this.tenant().trim(),
+    });
   }
 
   protected async previewWorkspaceBranding(): Promise<void> {

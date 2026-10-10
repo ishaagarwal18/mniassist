@@ -7,6 +7,7 @@ import type {
   ConversionEnquiryDto,
   GetConversionEnquiriesInput,
   AgentPerformanceDto,
+  TeamSatisfactionDto,
   CategoryBreakdownDto,
   ConversionReportDto,
   DashboardDto,
@@ -140,6 +141,17 @@ export class AnalyticsService {
         method: 'GET',
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/analytics/agent-performance',
+        params: { fromUtc: input.fromUtc, toUtc: input.toUtc, channelId: input.channelId },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getTeamSatisfaction = (input: GetAnalyticsInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ListResultDto<TeamSatisfactionDto>>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/analytics/team-satisfaction',
         params: { fromUtc: input.fromUtc, toUtc: input.toUtc, channelId: input.channelId },
       },
       { apiName: this.apiName, ...config },

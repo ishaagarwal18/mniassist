@@ -42,11 +42,7 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(
-          keys
-            .filter((k) => !k.startsWith(VERSION))
-            .map((k) => caches.delete(k)),
-        ),
+        Promise.all(keys.filter((k) => !k.startsWith(VERSION)).map((k) => caches.delete(k))),
       )
       .then(() => self.clients.claim()),
   );
@@ -166,8 +162,7 @@ self.addEventListener('fetch', (event) => {
 
   // 4. Images, icons, and media -> Cache-First
   const isImage =
-    request.destination === 'image' ||
-    /\.(png|jpg|jpeg|gif|svg|webp|ico)$/i.test(url.pathname);
+    request.destination === 'image' || /\.(png|jpg|jpeg|gif|svg|webp|ico)$/i.test(url.pathname);
 
   if (isImage && url.origin === self.location.origin) {
     event.respondWith(
@@ -196,11 +191,15 @@ self.addEventListener('push', (event) => {
   try {
     const data = event.data.json();
     const title = data.title || 'MNI Assist Notification';
+    // The API sends { title, body, url, tag } (M06-11). A tag replaces the earlier notification
+    // for the same conversation instead of stacking a new one per message.
     const options = {
       body: data.body || '',
       icon: data.icon || '/icons/icon-192x192.png',
       badge: '/icons/favicon-32x32.png',
-      data: data.data || { url: '/' },
+      tag: data.tag || undefined,
+      renotify: !!data.tag,
+      data: { url: data.url || (data.data && data.data.url) || '/' },
     };
     event.waitUntil(self.registration.showNotification(title, options));
   } catch {
@@ -217,11 +216,14 @@ self.addEventListener('push', (event) => {
 // Notification click handler: focus or open URL
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const urlToOpen = (event.notification.data && event.notification.data.url) || '/';
+  const path = (event.notification.data && event.notification.data.url) || '/';
+  const urlToOpen = new URL(path, self.location.origin).href;
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // An open tab of the app goes to the conversation rather than a second tab opening.
       for (const client of windowClients) {
-        if (client.url === urlToOpen && 'focus' in client) {
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          if ('navigate' in client && client.url !== urlToOpen) client.navigate(urlToOpen);
           return client.focus();
         }
       }

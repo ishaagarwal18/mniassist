@@ -37,4 +37,17 @@ export interface AgentPerformance {
   readonly messagesSent: number;
   readonly medianFirstResponseMinutes?: number;
   readonly enquiriesCreated: number;
+  /** Satisfaction answers about this agent's conversations (M12-4). */
+  readonly csatResponses?: number;
+  readonly csatPercent?: number;
+}
+
+export interface TeamSatisfaction {
+  readonly teamId: string;
+  readonly name: string;
+  readonly responses: number;
+  readonly csatPercent?: number;
+  readonly good: number;
+  readonly okay: number;
+  readonly poor: number;
 }

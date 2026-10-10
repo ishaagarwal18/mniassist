@@ -11,7 +11,9 @@ import { ConfirmService } from '../../core/ui/confirm.service';
 import { ArTwoFactorCard } from './two-factor-card';
 import { ArSignInHistoryCard } from './sign-in-history-card';
 import { ArLinkedAccountsCard } from './linked-accounts-card';
+import { ArExternalLoginsCard } from './external-logins-card';
 import { ArDelegationsCard } from './delegations-card';
+import { ArBrowserNotificationsCard } from './browser-notifications-card';
 
 /**
  * The workspace's general settings. Today this is the single-sign-on panel — the one
@@ -32,7 +34,9 @@ import { ArDelegationsCard } from './delegations-card';
     ArTwoFactorCard,
     ArSignInHistoryCard,
     ArLinkedAccountsCard,
+    ArExternalLoginsCard,
     ArDelegationsCard,
+    ArBrowserNotificationsCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './settings.html',

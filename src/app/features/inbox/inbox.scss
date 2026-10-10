@@ -528,3 +528,12 @@
 .inbox__assignee:hover {
   border-color: var(--ar-ink-400);
 }
+
+.bubble__removed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-red-600);
+}

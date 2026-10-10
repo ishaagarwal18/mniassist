@@ -210,11 +210,21 @@
       <ol class="thread__messages">
         @for (m of thread.messages; track m.id) {
           <li class="bubble" [class.bubble--out]="m.direction === 'out'">
+            @if (m.mediaRemoved) {
+              <p class="bubble__removed" role="note">
+                <ar-icon name="shield" [size]="14" />
+                File removed: a virus was found in it, so it was never stored or shown.
+              </p>
+            }
             @if (m.media; as media) {
               @switch (media.kind) {
                 @case ('image') {
                   <a class="bubble__media" [href]="media.url" target="_blank" rel="noopener">
-                    <img [src]="media.url" alt="Attached image" loading="lazy" />
+                    <img
+                      [src]="media.thumbnailUrl ?? media.url"
+                      alt="Attached image"
+                      loading="lazy"
+                    />
                   </a>
                   @if (m.direction === 'in' && !thread.channel && canQuote()) {
                     <button

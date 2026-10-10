@@ -18,6 +18,13 @@ export const routes: Routes = [
     loadComponent: () => import('./features/account/login').then((m) => m.ArLogin),
   },
   {
+    // Where Google / Microsoft send the browser back after "Sign in with…" (M01-7).
+    path: 'login/external',
+    title: 'Signing in · MNI Assist',
+    loadComponent: () =>
+      import('./features/account/external-login-callback').then((m) => m.ArExternalLoginCallback),
+  },
+  {
     path: 'signup',
     title: 'Create a workspace · MNI Assist',
     loadComponent: () => import('./features/account/signup').then((m) => m.ArSignup),
@@ -135,12 +142,14 @@ export const routes: Routes = [
       {
         path: 'contacts/360',
         title: 'Customer 360 · MNI Assist',
-        loadComponent: () => import('./features/contacts/customer-360').then((m) => m.ArCustomer360),
+        loadComponent: () =>
+          import('./features/contacts/customer-360').then((m) => m.ArCustomer360),
       },
       {
         path: 'contacts/:id/360',
         title: 'Customer 360 · MNI Assist',
-        loadComponent: () => import('./features/contacts/customer-360').then((m) => m.ArCustomer360),
+        loadComponent: () =>
+          import('./features/contacts/customer-360').then((m) => m.ArCustomer360),
       },
       {
         path: 'contacts/duplicates',
@@ -224,7 +233,9 @@ export const routes: Routes = [
         path: 'pipeline/projection-plan',
         title: 'Projection Plan · MNI Assist',
         loadComponent: () =>
-          import('./features/projections/projection-plan/projection-plan').then((m) => m.ArProjectionPlan),
+          import('./features/projections/projection-plan/projection-plan').then(
+            (m) => m.ArProjectionPlan,
+          ),
       },
       {
         path: 'sales/orders',
@@ -275,6 +286,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/reports/reports-hub').then((m) => m.ArReportsHub),
       },
       {
+        path: 'reports/exports',
+        title: 'My exports · MNI Assist',
+        loadComponent: () => import('./features/reports/my-exports').then((m) => m.ArMyExports),
+      },
+      {
         path: 'reports/business',
         title: 'Business reports · MNI Assist',
         loadComponent: () =>
@@ -289,7 +305,9 @@ export const routes: Routes = [
         path: 'purchasing/grn',
         title: 'Goods receipt (GRN) · MNI Assist',
         loadComponent: () =>
-          import('./features/purchasing/grn/goods-receipt-notes').then((m) => m.GoodsReceiptNotesComponent),
+          import('./features/purchasing/grn/goods-receipt-notes').then(
+            (m) => m.GoodsReceiptNotesComponent,
+          ),
       },
       {
         path: 'purchasing/bills',
@@ -301,7 +319,9 @@ export const routes: Routes = [
         path: 'purchasing/debit-notes',
         title: 'Vendor debit notes · MNI Assist',
         loadComponent: () =>
-          import('./features/purchasing/debit-notes/vendor-debit-notes').then((m) => m.VendorDebitNotesComponent),
+          import('./features/purchasing/debit-notes/vendor-debit-notes').then(
+            (m) => m.VendorDebitNotesComponent,
+          ),
       },
       {
         path: 'purchasing/vendor-360',
@@ -319,13 +339,17 @@ export const routes: Routes = [
         path: 'manufacturing/bom',
         title: 'Bill of materials · MNI Assist',
         loadComponent: () =>
-          import('./features/manufacturing/bom/bill-of-materials').then((m) => m.BillOfMaterialsComponent),
+          import('./features/manufacturing/bom/bill-of-materials').then(
+            (m) => m.BillOfMaterialsComponent,
+          ),
       },
       {
         path: 'manufacturing/work-orders',
         title: 'Work orders · MNI Assist',
         loadComponent: () =>
-          import('./features/manufacturing/work-orders/work-orders').then((m) => m.WorkOrdersComponent),
+          import('./features/manufacturing/work-orders/work-orders').then(
+            (m) => m.WorkOrdersComponent,
+          ),
       },
       {
         path: 'field-service/amc',
@@ -337,7 +361,9 @@ export const routes: Routes = [
         path: 'field-service/tickets',
         title: 'Field tickets · MNI Assist',
         loadComponent: () =>
-          import('./features/field-service/tickets/field-service-tickets').then((m) => m.FieldServiceTicketsComponent),
+          import('./features/field-service/tickets/field-service-tickets').then(
+            (m) => m.FieldServiceTicketsComponent,
+          ),
       },
       {
         path: 'field-service/remote-maintenance',
@@ -351,25 +377,33 @@ export const routes: Routes = [
         path: 'finance/chart-of-accounts',
         title: 'Chart of accounts · MNI Assist',
         loadComponent: () =>
-          import('./features/finance/chart-of-accounts/chart-of-accounts').then((m) => m.ChartOfAccountsComponent),
+          import('./features/finance/chart-of-accounts/chart-of-accounts').then(
+            (m) => m.ChartOfAccountsComponent,
+          ),
       },
       {
         path: 'finance/journal-entries',
         title: 'Journal vouchers · MNI Assist',
         loadComponent: () =>
-          import('./features/finance/journal-entries/journal-entries').then((m) => m.JournalEntriesComponent),
+          import('./features/finance/journal-entries/journal-entries').then(
+            (m) => m.JournalEntriesComponent,
+          ),
       },
       {
         path: 'finance/statements',
         title: 'Financial statements · MNI Assist',
         loadComponent: () =>
-          import('./features/finance/statements/financial-statements').then((m) => m.FinancialStatementsComponent),
+          import('./features/finance/statements/financial-statements').then(
+            (m) => m.FinancialStatementsComponent,
+          ),
       },
       {
         path: 'finance/gst-compliance',
         title: 'GST compliance · MNI Assist',
         loadComponent: () =>
-          import('./features/finance/gst-compliance/gst-compliance').then((m) => m.GstComplianceComponent),
+          import('./features/finance/gst-compliance/gst-compliance').then(
+            (m) => m.GstComplianceComponent,
+          ),
       },
       {
         path: 'reorders',
@@ -414,6 +448,12 @@ export const routes: Routes = [
         title: 'Automations · MNI Assist',
         loadComponent: () =>
           import('./features/automations/automations').then((m) => m.ArAutomations),
+      },
+      {
+        path: 'auto-replies',
+        title: 'Auto-replies · MNI Assist',
+        loadComponent: () =>
+          import('./features/automations/auto-replies').then((m) => m.ArAutoReplies),
       },
       {
         path: 'automations/:id',

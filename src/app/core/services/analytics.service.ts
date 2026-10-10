@@ -1,3 +1,4 @@
+import { ReportExportService } from '../../proxy/reports/report-export.service';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, forkJoin, map } from 'rxjs';
@@ -20,6 +21,7 @@ import {
   AgentPerformance,
   CategoryBreakdown,
   PricingCategory,
+  TeamSatisfaction,
   TemplatePerformance,
   TrendPoint,
 } from '../models/analytics.model';
@@ -57,6 +59,7 @@ interface Bundle {
   categories: CategoryBreakdown[];
   templates: TemplatePerformance[];
   agents: AgentPerformance[];
+  teams: TeamSatisfaction[];
 }
 
 export type ConversionDimension = 'source' | 'owner' | 'stage' | 'pipeline';
@@ -151,7 +154,12 @@ const SEED_SUMMARY: AnalyticsSummaryDto = {
   ],
 };
 
-const EMPTY_TABLES: Omit<Bundle, 'trend'> = { categories: [], templates: [], agents: [] };
+const EMPTY_TABLES: Omit<Bundle, 'trend'> = {
+  categories: [],
+  templates: [],
+  agents: [],
+  teams: [],
+};
 
 const SEED_CONVERSION: ConversionReportDto = {
   dimension: 'source',
@@ -300,12 +308,14 @@ const SEED: Bundle = {
       enquiriesCreated: 9,
     },
   ],
+  teams: [],
 };
 
 @Injectable({ providedIn: 'root' })
 export class AnalyticsStore {
   private readonly toasts = inject(ToastService);
   private readonly api = inject(AnalyticsApi);
+  private readonly exports = inject(ReportExportService);
   private readonly channels = inject(ChannelService);
 
   private readonly period = inject(ReportPeriodStore);
@@ -343,6 +353,7 @@ export class AnalyticsStore {
         categories: this.api.getCategoryBreakdown(params),
         templates: this.api.getTemplatePerformance(params),
         agents: this.api.getAgentPerformance(params),
+        teams: this.api.getTeamSatisfaction(params),
       }).pipe(
         map((r): Omit<Bundle, 'trend'> => ({
           categories: (r.categories.items ?? []).map((c) => ({
@@ -375,6 +386,17 @@ export class AnalyticsStore {
             messagesSent: a.messagesSent ?? 0,
             medianFirstResponseMinutes: a.medianFirstResponseMinutes ?? undefined,
             enquiriesCreated: a.enquiriesCreated ?? 0,
+            csatResponses: a.csatResponses ?? 0,
+            csatPercent: a.csatPercent ?? undefined,
+          })),
+          teams: (r.teams.items ?? []).map((t) => ({
+            teamId: t.teamId,
+            name: t.name,
+            responses: t.responses,
+            csatPercent: t.csatPercent ?? undefined,
+            good: t.good,
+            okay: t.okay,
+            poor: t.poor,
           })),
         })),
       ),
@@ -406,6 +428,7 @@ export class AnalyticsStore {
   readonly categories = computed(() => this.data().categories);
   readonly templates = computed(() => this.data().templates);
   readonly agents = computed(() => this.data().agents);
+  readonly teams = computed(() => this.data().teams ?? []);
 
   readonly totals = computed(() => {
     const t = this.data().trend;
@@ -486,21 +509,18 @@ export class AnalyticsStore {
       this.toasts.info('Export needs the API — it is disabled in the standalone build.', 'Export');
       return;
     }
-    const blob = await firstValueFrom(
-      this.api.export({ ...this.period.range(), channelId: this.channels.active()?.id }, format),
+    // M12-6: built in the background; the person is told when it is ready and fetches it from
+    // My exports or the emailed link, instead of waiting on the page.
+    await firstValueFrom(
+      this.exports.requestAnalytics({
+        ...this.period.range(),
+        channelId: this.channels.active()?.id,
+        format,
+      }),
     );
-    const ext =
-      format === AnalyticsExportFormat.Excel
-        ? 'xlsx'
-        : format === AnalyticsExportFormat.Pdf
-          ? 'pdf'
-          : 'csv';
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const { from, to } = this.period.dates();
-    a.download = `analytics-${from}-to-${to}.${ext}`;
-    a.click();
-    URL.revokeObjectURL(url);
+    this.toasts.info(
+      'Preparing your export. You’ll be notified when it’s ready; it will be under Reports → My exports.',
+      'Export',
+    );
   }
 }

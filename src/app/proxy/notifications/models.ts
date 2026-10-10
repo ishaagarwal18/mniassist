@@ -27,3 +27,32 @@ export interface NotificationSummaryDto {
   unreadCriticalCount?: number;
   mostRecent?: NotificationDto | null;
 }
+
+import type { WebPushScope } from './web-push-scope.enum';
+
+export interface WebPushConfigDto {
+  enabled: boolean;
+  /** The VAPID public key, base64url: the browser's applicationServerKey. */
+  publicKey?: string | null;
+}
+
+export interface SubscribeWebPushInput {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  scope: WebPushScope;
+  userAgent?: string | null;
+}
+
+export interface UnsubscribeWebPushInput {
+  endpoint: string;
+}
+
+export interface WebPushSubscriptionDto {
+  id: string;
+  endpoint: string;
+  scope: WebPushScope;
+  userAgent?: string | null;
+  creationTime: string;
+  lastSentAtUtc?: string | null;
+}

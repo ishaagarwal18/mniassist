@@ -224,6 +224,8 @@ export interface InboxPollInput {
 }
 
 export interface MessageDto extends EntityDto<string> {
+  /** 0 not scanned, 1 clean, 2 infected (file removed), 3 scan failed. T-12. */
+  mediaScan?: number;
   conversationId?: string;
   direction?: MessageDirection;
   waMessageId?: string | null;
@@ -408,4 +410,50 @@ export interface ConversationSummaryDto {
   providerName: string;
   summary?: string | null;
   messagesRead: number;
+}
+
+import type { AutoReplyKind } from './auto-reply-kind.enum';
+
+/** 0 = Sunday … 6 = Saturday, as .NET's DayOfWeek. */
+export interface BusinessDayDto {
+  day: number;
+  isOpen: boolean;
+  /** "HH:mm" in the workspace's time zone. */
+  opens?: string | null;
+  /** "HH:mm"; earlier than opens for a shift past midnight; equal to it for all day. */
+  closes?: string | null;
+}
+
+export interface HolidayDto {
+  /** "yyyy-MM-dd" */
+  date: string;
+  name: string;
+}
+
+export interface UpdateAutoReplySettingsInput {
+  welcomeEnabled: boolean;
+  welcomeText?: string | null;
+  awayEnabled: boolean;
+  awayText?: string | null;
+  awayCooldownHours: number;
+  outOfOfficeEnabled: boolean;
+  outOfOfficeText?: string | null;
+  outOfOfficeFromUtc?: string | null;
+  outOfOfficeToUtc?: string | null;
+  timeZoneId: string;
+  days: BusinessDayDto[];
+  holidays: HolidayDto[];
+}
+
+export interface AutoReplySettingsDto extends UpdateAutoReplySettingsInput {
+  openNow: boolean;
+  replyingNowWith?: AutoReplyKind | null;
+}
+
+/** The satisfaction question sent when a conversation is resolved (M12-4). */
+export interface CsatSettingsDto {
+  enabled: boolean;
+  question?: string | null;
+  thanksText?: string | null;
+  resurveyAfterDays: number;
 }

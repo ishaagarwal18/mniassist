@@ -394,6 +394,10 @@ export class ArInbox {
     if (assigneeId)
       this.inbox.assignee.set({ id: assigneeId, name: query.get('name') ?? 'one agent' });
 
+    // /inbox?conversation={id}: straight to one conversation, from a browser notification (M06-11).
+    const conversationId = query.get('conversation');
+    if (conversationId) this.inbox.select(conversationId);
+
     // Templates are fetched the first time an SMS conversation is opened, not for every inbox visit.
     effect(() => {
       if (!this.selected()?.sms || this.smsTemplatesLoaded || environment.useMockData) return;

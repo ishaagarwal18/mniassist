@@ -227,6 +227,9 @@ export interface WalletDto extends EntityDto<string> {
   autoTopUpAmountInPaise?: number;
   lastTopUpAtUtc?: string | null;
   isLow?: boolean;
+  /** M13-2: how far below zero sending may go, and balance plus that. */
+  graceOverdraftInPaise?: number;
+  availableInPaise?: number;
   estimatedDaysRemaining?: number | null;
   /** When per-message charges start, while still ahead; until then delivered messages are recorded but not charged. */
   chargesStartOnUtc?: string | null;

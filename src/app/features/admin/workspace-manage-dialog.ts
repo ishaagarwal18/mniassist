@@ -209,6 +209,34 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Database'];
               />
               A trial — it ends at the end of the current period unless it is paid for
             </label>
+            <h4 class="wm__h">Wallet</h4>
+            <p class="wm__p">
+              Balance {{ rupees(d.walletBalanceInPaise) }}. Grace lets sending carry on below zero
+              up to this amount; at zero minus the grace, campaigns stop until a top-up.
+            </p>
+            <div class="wm__row">
+              <label class="fld">
+                <span class="fld__k">Grace allowance (₹)</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="100000"
+                  step="100"
+                  class="ar-field__input"
+                  [value]="graceRupees()"
+                  (input)="graceRupees.set($any($event.target).value)"
+                />
+              </label>
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                [disabled]="busy()"
+                (click)="setGrace(d)"
+              >
+                Save grace
+              </button>
+            </div>
             <div class="wm__row">
               <button
                 ar-button
@@ -379,6 +407,11 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Database'];
       gap: 12px;
       margin-top: 12px;
     }
+    .wm__h {
+      margin: 18px 0 0;
+      font: 600 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
     .wm__check {
       display: flex;
       align-items: center;
@@ -460,6 +493,7 @@ export class ArWorkspaceManageDialog {
   protected readonly changed = signal(false);
   protected readonly form = signal<PlanForm>(planFormFrom(null));
   protected readonly connection = signal('');
+  protected readonly graceRupees = signal('0');
 
   protected readonly summary = computed(() => subscriptionSummary(this.detail()?.subscription));
 
@@ -487,6 +521,7 @@ export class ArWorkspaceManageDialog {
   private show(d: WorkspaceDetailDto): void {
     this.detail.set(d);
     this.form.set(planFormFrom(d.subscription));
+    this.graceRupees.set(String((d.walletGraceOverdraftInPaise ?? 0) / 100));
   }
 
   protected patch(p: Partial<PlanForm>): void {
@@ -564,6 +599,21 @@ export class ArWorkspaceManageDialog {
     await this.run(
       () => firstValueFrom(this.api.assignPlan(d.id, input)),
       `${d.name} is on ${plan}.`,
+    );
+  }
+
+  protected async setGrace(d: WorkspaceDetailDto): Promise<void> {
+    const rupeesValue = Number(this.graceRupees());
+    if (!(rupeesValue >= 0 && rupeesValue <= 100000)) {
+      this.error.set('The grace allowance must be from ₹0 to ₹1,00,000.');
+      return;
+    }
+    await this.run(
+      () =>
+        firstValueFrom(
+          this.api.setWalletGrace(d.id, { graceOverdraftInPaise: Math.round(rupeesValue * 100) }),
+        ),
+      `${d.name} can now go ${rupees(Math.round(rupeesValue * 100))} below zero.`,
     );
   }
 

@@ -9,6 +9,8 @@ import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
 import { settled } from '../../core/util/resource';
 import { AuditLogService } from '../../proxy/auditing/audit-log.service';
+import { ReportExportService } from '../../proxy/reports/report-export.service';
+import { ToastService } from '../../core/ui/toast.service';
 import { EntityChangeType } from '../../proxy/auditing/entity-change-type.enum';
 import { SecurityLogService } from '../../proxy/identity/security-log.service';
 import type { SecurityLogDto } from '../../proxy/identity/models';
@@ -817,6 +819,8 @@ const numberOrUndefined = (s: string) => {
 })
 export class ArAdminAuditLogs {
   private readonly api = inject(AuditLogService);
+  private readonly exports = inject(ReportExportService);
+  private readonly toasts = inject(ToastService);
   private readonly securityLogs = inject(SecurityLogService);
   private readonly mock = environment.useMockData;
 
@@ -861,13 +865,12 @@ export class ArAdminAuditLogs {
     this.exporting.set(true);
     this.exportError.set(null);
     try {
-      const blob = await firstValueFrom(this.api.export(this.requestQuery(this.rApplied())));
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.xlsx`;
-      a.click();
-      URL.revokeObjectURL(url);
+      // M12-6: built in the background; it appears under Reports → My exports when ready.
+      await firstValueFrom(this.exports.requestAuditLog(this.requestQuery(this.rApplied())));
+      this.toasts.info(
+        'Preparing the export. You’ll be notified when it’s ready; it will be under Reports → My exports.',
+        'Audit log',
+      );
     } catch (e) {
       this.exportError.set(readApiError(e));
     } finally {

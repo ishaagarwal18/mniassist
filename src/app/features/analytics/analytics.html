@@ -221,10 +221,60 @@
           textAlign="Right"
           format="N0"
         />
+        <e-column field="csat" headerText="CSAT" type="number" textAlign="Right" width="110">
+          <ng-template #template let-a>
+            @if (a.csat != null) {
+              <span [title]="a.csatResponses + ' answers'">{{ a.csat }}%</span>
+            } @else {
+              —
+            }
+          </ng-template>
+        </e-column>
       </e-columns>
       <ng-template #emptyRecordTemplate>No agent activity in this period.</ng-template>
     </ejs-grid>
   </section>
+
+  @if (teamRows().length) {
+    <section class="card">
+      <h2 class="card__h">Customer satisfaction by team</h2>
+      <p class="card__sub">
+        Answers to the question sent when a conversation is resolved, by the channels each team
+        owns. CSAT is the share of “Good”.
+      </p>
+      <ejs-grid
+        arGrid="team-satisfaction"
+        [dataSource]="teamRows()"
+        aria-label="Customer satisfaction by team"
+      >
+        <e-columns>
+          <e-column field="name" headerText="Team" />
+          <e-column
+            field="responses"
+            headerText="Answers"
+            type="number"
+            textAlign="Right"
+            format="N0"
+            width="110"
+          />
+          <e-column
+            field="csatPercent"
+            headerText="CSAT"
+            type="number"
+            textAlign="Right"
+            width="100"
+          >
+            <ng-template #template let-t>{{
+              t.csatPercent != null ? t.csatPercent + '%' : '—'
+            }}</ng-template>
+          </e-column>
+          <e-column field="good" headerText="Good" type="number" textAlign="Right" width="90" />
+          <e-column field="okay" headerText="Okay" type="number" textAlign="Right" width="90" />
+          <e-column field="poor" headerText="Poor" type="number" textAlign="Right" width="90" />
+        </e-columns>
+      </ejs-grid>
+    </section>
+  }
 
   <section class="card">
     <div class="card__hrow">
