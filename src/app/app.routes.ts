@@ -203,6 +203,13 @@ export const routes: Routes = [
           import('./features/analytics/ad-attribution').then((m) => m.ArAdAttribution),
       },
       {
+        // Facebook sends the person back here after "Connect an ad account".
+        path: 'analytics/ads/callback',
+        title: 'Ad attribution · MNI Assist',
+        loadComponent: () =>
+          import('./features/analytics/ad-attribution').then((m) => m.ArAdAttribution),
+      },
+      {
         path: 'analytics/dashboards',
         title: 'Custom dashboards · MNI Assist',
         loadComponent: () =>

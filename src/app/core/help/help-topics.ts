@@ -633,13 +633,29 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   },
   'analytics/ads': {
     benefits: [
-      'See which Click-to-WhatsApp ads start conversations that turn into enquiries and orders.',
-      'Set each ad against its cost in Meta Ads Manager to see what an enquiry really costs.',
+      'See which Click-to-WhatsApp and lead-form ads bring conversations that turn into enquiries and orders.',
+      'Connect your Meta ad account and each ad shows what it cost, per chat or lead and per enquiry.',
+      'Ads that spent money and brought nothing are listed too, so you know what to switch off.',
     ],
     steps: [
       'Choose a period at the top.',
-      'Sort by Enquiries or Won value to find the ads worth more budget.',
-      'Click an ad to open it on Facebook or Instagram.',
+      'Select Connect an ad account and sign in with someone who can see the ad account in Meta Business Manager.',
+      'Sort by Per enquiry or Won value to find the ads worth more budget.',
+    ],
+    tips: [
+      'MNI Assist only reads spend (Meta’s ads_read permission). It cannot create, change or pause ads.',
+      'Spend updates every six hours. Facebook’s sign-in lasts about 60 days; you are warned a week before it runs out.',
+    ],
+  },
+  'analytics/ads/callback': {
+    summary: 'Finishing the Facebook sign-in for ad spend. Choose the ad accounts to connect.',
+    benefits: [
+      'The Facebook sign-in stays on the server; your browser never holds it.',
+      'The last 90 days of spend are imported as soon as you connect.',
+    ],
+    steps: [
+      'Tick the ad accounts your ads run from.',
+      'Select Connect. Spend appears beside each ad in the report.',
     ],
   },
   'analytics/dashboards': {

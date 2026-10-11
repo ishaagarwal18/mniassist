@@ -17,6 +17,18 @@ export interface AdAttributionDto {
   wonValueInPaise?: number;
   firstSeenUtc?: string;
   lastSeenUtc?: string;
+  /** The ad and campaign as Meta names them, from the ad account or a lead form. */
+  adName?: string | null;
+  campaignName?: string | null;
+  /** Lead-form submissions from this ad. */
+  leadFormLeads?: number;
+  /** In spendCurrency minor units (paise for INR); null when no connected ad account has the ad. */
+  spendMinor?: number | null;
+  spendCurrency?: string | null;
+  impressions?: number;
+  clicks?: number;
+  costPerResultMinor?: number | null;
+  costPerEnquiryMinor?: number | null;
 }
 
 export interface AgentPerformanceDto {
