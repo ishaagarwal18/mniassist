@@ -96,6 +96,34 @@
                   "with": "src/environments/environment.development.ts"
                 }
               ]
+            },
+            "staging": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "8kB",
+                  "maximumError": "10kB"
+                }
+              ],
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "styles": true,
+                "fonts": {
+                  "inline": true
+                }
+              },
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.staging.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -107,7 +135,9 @@
               "buildTarget": "autoreach-web:build:production"
             },
             "development": {
-              "buildTarget": "autoreach-web:build:development"
+              "buildTarget": "autoreach-web:build:development",
+              "prebundle": false,
+              "hmr": false
             }
           },
           "defaultConfiguration": "development"

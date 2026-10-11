@@ -30,6 +30,13 @@ const CONSENT_LABEL: Record<ConsentSource, string> = {
   qr: 'Exhibition QR',
   manual: 'Dealer agreement',
   api: 'API',
+  email_optin: 'Email opt-in',
+  sms_optin: 'SMS opt-in',
+  voice_optin: 'Call opt-in',
+  instagram: 'Instagram message',
+  messenger: 'Messenger message',
+  consent_manager: 'Consent Manager',
+  lead_ad: 'Facebook / Instagram lead form',
 };
 
 /** Import-sourced consent is the weakest evidence and the most common cause of
@@ -42,6 +49,13 @@ const CONSENT_TONE: Record<ConsentSource, ChipTone> = {
   manual: 'neutral',
   api: 'neutral',
   import: 'warn',
+  email_optin: 'good',
+  sms_optin: 'good',
+  voice_optin: 'good',
+  instagram: 'teal',
+  messenger: 'teal',
+  consent_manager: 'good',
+  lead_ad: 'good',
 };
 
 interface ContactForm {

@@ -66,6 +66,13 @@ const CONSENT_SOURCE: Record<ApiConsentSource, ConsentSource> = {
   [ApiConsentSource.QrCode]: 'qr',
   [ApiConsentSource.Manual]: 'manual',
   [ApiConsentSource.Api]: 'api',
+  [ApiConsentSource.EmailOptIn]: 'email_optin',
+  [ApiConsentSource.SmsOptIn]: 'sms_optin',
+  [ApiConsentSource.VoiceOptIn]: 'voice_optin',
+  [ApiConsentSource.InstagramOptIn]: 'instagram',
+  [ApiConsentSource.MessengerOptIn]: 'messenger',
+  [ApiConsentSource.ConsentManager]: 'consent_manager',
+  [ApiConsentSource.LeadAd]: 'lead_ad',
 };
 
 const DECISION_ROLE: Record<

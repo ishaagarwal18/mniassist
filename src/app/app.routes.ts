@@ -549,6 +549,17 @@ export const routes: Routes = [
         loadComponent: () => import('./features/resellers/resellers').then((m) => m.ArResellers),
       },
       {
+        path: 'channels/lead-forms',
+        title: 'Lead forms · MNI Assist',
+        loadComponent: () => import('./features/channels/lead-forms').then((m) => m.ArLeadForms),
+      },
+      {
+        // Facebook sends the person back here after "Connect a Facebook Page".
+        path: 'channels/lead-forms/callback',
+        title: 'Lead forms · MNI Assist',
+        loadComponent: () => import('./features/channels/lead-forms').then((m) => m.ArLeadForms),
+      },
+      {
         path: 'channels/widget',
         title: 'Chat links & QR · MNI Assist',
         loadComponent: () =>

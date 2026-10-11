@@ -690,6 +690,35 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Set the two-step PIN and store it safely. It is shown only once.',
     ],
   },
+  'channels/lead-forms': {
+    summary:
+      'Facebook and Instagram lead ads, straight into enquiries. Connect the Facebook Page your lead ads run on, and every lead-form submission becomes a contact and an enquiry shared out by lead rotation.',
+    benefits: [
+      'No downloading CSVs from Facebook: leads arrive within a minute of someone submitting the form.',
+      'Each enquiry says which form and ad it came from, so you can see which ads bring real enquiries.',
+      'Leads missed while the connection was down are fetched automatically every 15 minutes.',
+    ],
+    steps: [
+      'Connect a Facebook Page, sign in with someone who is an admin of the Page, and allow every permission asked for.',
+      'Choose the Pages to connect. Instagram lead ads come through the Facebook Page linked to the Instagram account.',
+      'Leave "Open an enquiry for each lead" on to put leads in the pipeline, or turn it off to only make contacts.',
+    ],
+    tips: [
+      'Someone who submits your form agrees to be contacted about what they asked for. They are added for marketing only if they tick one of your form’s own disclaimer boxes.',
+      'A lead marked Failed shows why. Fix the cause (for example, connect the Page again), then use Try again.',
+    ],
+  },
+  'channels/lead-forms/callback': {
+    summary: 'Finishing the Facebook sign-in for lead forms. Choose the Pages to connect.',
+    benefits: [
+      'The Page access stays on the server; your browser never holds it.',
+      'Pages already connected are marked, so connecting again only refreshes them.',
+    ],
+    steps: [
+      'Tick the Pages your lead ads run on.',
+      'Select Connect. New leads from those Pages start arriving straight away.',
+    ],
+  },
   'channels/widget': {
     benefits: [
       'Start WhatsApp chats from your website, print and exhibitions.',

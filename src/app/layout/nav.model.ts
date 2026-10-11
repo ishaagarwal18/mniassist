@@ -607,6 +607,13 @@ export const NAV: readonly NavGroup[] = [
         tenantOnly: true,
       },
       {
+        label: 'Lead forms',
+        icon: 'campaign',
+        route: '/channels/lead-forms',
+        permission: 'AutoReach.Channels',
+        tenantOnly: true,
+      },
+      {
         label: 'Chat links & QR',
         icon: 'link',
         route: '/channels/widget',

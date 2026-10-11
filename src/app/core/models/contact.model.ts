@@ -1,5 +1,18 @@
 export type ConsentSource =
-  'website' | 'whatsapp_optin' | 'import' | 'ctwa' | 'qr' | 'manual' | 'api';
+  | 'website'
+  | 'whatsapp_optin'
+  | 'import'
+  | 'ctwa'
+  | 'qr'
+  | 'manual'
+  | 'api'
+  | 'email_optin'
+  | 'sms_optin'
+  | 'voice_optin'
+  | 'instagram'
+  | 'messenger'
+  | 'consent_manager'
+  | 'lead_ad';
 
 export interface ConsentRecord {
   readonly source: ConsentSource;

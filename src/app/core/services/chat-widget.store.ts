@@ -55,6 +55,7 @@ export const SOURCE_LABEL: Record<LeadSource, string> = {
   [LeadSource.OemNetwork]: 'OEM network',
   [LeadSource.ReorderPortal]: 'Re-order portal',
   [LeadSource.PublicCatalogue]: 'Public catalogue',
+  [LeadSource.LeadAd]: 'Facebook / Instagram lead form',
 };
 
 function toEntryPoint(dto: ChatEntryPointDto): ChatEntryPoint {
