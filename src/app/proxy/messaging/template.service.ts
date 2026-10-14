@@ -6,6 +6,7 @@ import type {
   RenderTemplateInput,
   RenderedTemplateDto,
   TemplateDto,
+  SubmitDraftsResultDto,
   TemplateLanguageGroupDto,
   TemplateLintResultDto,
 } from './models';
@@ -134,6 +135,17 @@ export class TemplateService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/template/${id}/submit`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Submits every draft on the channel to Meta; refusals are reported and the rest still go. */
+  submitDrafts = (channelId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, SubmitDraftsResultDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/template/submit-drafts/${channelId}`,
       },
       { apiName: this.apiName, ...config },
     );

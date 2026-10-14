@@ -122,6 +122,40 @@ export class ArTemplates {
     }
   }
 
+  /** Sends every draft to Meta in one go, after a confirmation: once submitted, a template can't be edited. */
+  protected async submitDrafts(): Promise<void> {
+    const drafts = this.counts().draft;
+    if (
+      !(await this.dialogs.confirm({
+        title: `Submit ${drafts} draft${drafts === 1 ? '' : 's'} to Meta?`,
+        message:
+          'Each goes to Meta for review. A submitted template can no longer be edited (only replaced by a new one), so check the drafts first.',
+        confirmText: 'Submit all',
+      }))
+    )
+      return;
+    this.busy.set(true);
+    this.notice.set(null);
+    try {
+      const r = await this.store.submitDrafts();
+      const sent = `${r.submitted} template${r.submitted === 1 ? '' : 's'} submitted to Meta for review.`;
+      if (r.failed.length === 0) {
+        this.toasts.success(sent);
+      } else {
+        this.notice.set(
+          `${sent} ${r.failed.length} not submitted: ` +
+            r.failed.map((f) => `${f.name} (${f.languageCode}): ${f.reason}`).join(' · '),
+        );
+      }
+    } catch {
+      this.notice.set(
+        'The drafts could not be submitted. Check the number is still connected, then try again.',
+      );
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
   protected async sync(): Promise<void> {
     this.busy.set(true);
     try {

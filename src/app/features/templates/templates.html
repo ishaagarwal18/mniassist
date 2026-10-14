@@ -19,6 +19,18 @@
     </button>
     <button ar-button variant="primary" icon="plus" (click)="newTemplate()">New template</button>
   }
+  @if (canSubmitPolicy() && counts().draft > 0) {
+    <button
+      ar-button
+      variant="ghost"
+      icon="send"
+      [disabled]="busy()"
+      title="Sends every draft on this number to Meta for review"
+      (click)="submitDrafts()"
+    >
+      Submit all drafts ({{ counts().draft }})
+    </button>
+  }
 </ar-topbar>
 
 <div class="tpl ar-scroll">

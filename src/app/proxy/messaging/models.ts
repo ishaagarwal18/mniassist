@@ -457,3 +457,17 @@ export interface CsatSettingsDto {
   thanksText?: string | null;
   resurveyAfterDays: number;
 }
+
+/** What one "submit all drafts" run did. */
+export interface SubmitDraftsResultDto {
+  submitted: number;
+  /** Drafts Meta (or a local check) refused, each with the reason; they stay drafts. */
+  failed: SubmitDraftFailureDto[];
+}
+
+export interface SubmitDraftFailureDto {
+  templateId: string;
+  name: string;
+  languageCode: string;
+  reason: string;
+}

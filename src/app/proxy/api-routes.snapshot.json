@@ -870,6 +870,7 @@
     "POST /api/auto-reach/template/draft",
     "POST /api/auto-reach/template/lint",
     "POST /api/auto-reach/template/resolve-for-locale/{}",
+    "POST /api/auto-reach/template/submit-drafts/{}",
     "POST /api/auto-reach/template/sync-from-meta/{}",
     "POST /api/auto-reach/template/{}/render",
     "POST /api/auto-reach/template/{}/submit",

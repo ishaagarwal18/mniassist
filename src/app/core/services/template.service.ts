@@ -1,3 +1,4 @@
+import type { SubmitDraftsResultDto } from '../../proxy/messaging/models';
 import { ChannelService as ChannelApi } from '../../proxy/channels/channel.service';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
@@ -499,6 +500,7 @@ export class TemplateService {
     const list = this.all();
     return {
       total: list.length,
+      draft: list.filter((t) => t.status === 'draft').length,
       pending: list.filter((t) => t.status === 'pending').length,
       rejected: list.filter((t) => t.status === 'rejected').length,
       recategorised: list.filter((t) => !!t.metaAssignedCategory).length,
@@ -645,6 +647,27 @@ export class TemplateService {
     const added = await firstValueFrom(this.channelApi.addLibraryTemplates(channelId));
     this.reload();
     return added;
+  }
+
+  /** Sends every draft on the active number to Meta for review (one call; the server goes through them in turn). */
+  async submitDrafts(): Promise<SubmitDraftsResultDto> {
+    const channelId = this.channels.active()?.id;
+    if (!channelId) return { submitted: 0, failed: [] };
+    if (environment.useMockData) {
+      const drafts = this.seedList.filter((t) => t.status === 'draft').length;
+      this.seedList = this.seedList.map((t) =>
+        t.status === 'draft'
+          ? { ...t, status: 'pending', submittedAt: new Date().toISOString() }
+          : t,
+      );
+      this.seedTick.update((n) => n + 1);
+      return { submitted: drafts, failed: [] };
+    }
+    try {
+      return await firstValueFrom(this.api.submitDrafts(channelId));
+    } finally {
+      this.reload();
+    }
   }
 
   async syncFromMeta(): Promise<number> {
