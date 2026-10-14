@@ -38,7 +38,8 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
     plannedEndDateUtc: new Date(Date.now() + 4 * 86_400_000).toISOString(),
     actualStartDateUtc: new Date(Date.now() - 5 * 86_400_000).toISOString(),
     assignedSupervisor: 'Rameshwar Patil (Production Lead)',
-    remarks: 'High priority order for Pune transmission test rigs. Hydraulic calibration required at 350 bar.',
+    remarks:
+      'High priority order for Pune transmission test rigs. Hydraulic calibration required at 350 bar.',
     creationTime: new Date(Date.now() - 7 * 86_400_000).toISOString(),
     materialIssues: [
       {
@@ -160,7 +161,8 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
     plannedStartDateUtc: new Date(Date.now() + 1 * 86_400_000).toISOString(),
     plannedEndDateUtc: new Date(Date.now() + 12 * 86_400_000).toISOString(),
     assignedSupervisor: 'Sukhvinder Singh',
-    remarks: 'Pre-machining forged rod blanks staged at Bay 1. Strict ultrasonic crack check needed.',
+    remarks:
+      'Pre-machining forged rod blanks staged at Bay 1. Strict ultrasonic crack check needed.',
     creationTime: new Date(Date.now() - 2 * 86_400_000).toISOString(),
     materialIssues: [],
     routingSteps: [
@@ -356,7 +358,9 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                 <td>
                   <div class="wo-ref">
                     <span class="fw-bold">{{ wo.workOrderNumber }}</span>
-                    <span class="text-sub" *ngIf="wo.salesOrderNumber">{{ wo.salesOrderNumber }}</span>
+                    <span class="text-sub" *ngIf="wo.salesOrderNumber">{{
+                      wo.salesOrderNumber
+                    }}</span>
                   </div>
                 </td>
                 <td>
@@ -368,11 +372,17 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                 </td>
                 <td>
                   <div class="qty-progress">
-                    <span class="qty-numbers">{{ wo.producedQuantity }} / {{ wo.plannedQuantity }}</span>
+                    <span class="qty-numbers"
+                      >{{ wo.producedQuantity }} / {{ wo.plannedQuantity }}</span
+                    >
                     <div class="progress-bar-bg">
                       <div
                         class="progress-bar-fill"
-                        [style.width.%]="(wo.plannedQuantity > 0 ? (wo.producedQuantity / wo.plannedQuantity) * 100 : 0)"
+                        [style.width.%]="
+                          wo.plannedQuantity > 0
+                            ? (wo.producedQuantity / wo.plannedQuantity) * 100
+                            : 0
+                        "
                       ></div>
                     </div>
                   </div>
@@ -386,10 +396,7 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                   </ar-chip>
                 </td>
                 <td>
-                  <button
-                    ar-button="ghost"
-                    (click)="selectWorkOrder(wo); $event.stopPropagation()"
-                  >
+                  <button ar-button="ghost" (click)="selectWorkOrder(wo); $event.stopPropagation()">
                     View
                   </button>
                 </td>
@@ -410,7 +417,8 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                 <ar-chip [tone]="getStatusTone(wo.status)">{{ getStatusLabel(wo.status) }}</ar-chip>
               </div>
               <p class="cockpit-sub">
-                Part: <strong>{{ wo.partNumber }}</strong> &bull; Batch: <strong>{{ wo.batchNumber }}</strong> &bull; {{ wo.description }}
+                Part: <strong>{{ wo.partNumber }}</strong> &bull; Batch:
+                <strong>{{ wo.batchNumber }}</strong> &bull; {{ wo.description }}
               </p>
               <p class="cockpit-client" *ngIf="wo.customerName">
                 Customer: <span>{{ wo.customerName }}</span>
@@ -418,7 +426,9 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
             </div>
             <div class="cockpit-actions">
               <button
-                *ngIf="wo.status === WorkOrderStatus.Draft || wo.status === WorkOrderStatus.Scheduled"
+                *ngIf="
+                  wo.status === WorkOrderStatus.Draft || wo.status === WorkOrderStatus.Scheduled
+                "
                 ar-button="primary"
                 (click)="releaseToShopFloor()"
               >
@@ -498,14 +508,24 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                     </td>
                     <td>
                       <div class="wc-name">{{ step.workCenterName }}</div>
-                      <div class="wc-inspector" *ngIf="step.inspectedBy">By: {{ step.inspectedBy }}</div>
+                      <div class="wc-inspector" *ngIf="step.inspectedBy">
+                        By: {{ step.inspectedBy }}
+                      </div>
                     </td>
                     <td>
                       <span>{{ step.actualHours || 0 }} / {{ step.estimatedHours }}h</span>
                     </td>
                     <td>
-                      <ar-chip [tone]="step.qcPassed ? 'good' : (step.isCompleted ? 'warn' : 'neutral')">
-                        {{ step.qcPassed ? 'QC Passed' : (step.isCompleted ? 'Inspection Done' : 'Pending') }}
+                      <ar-chip
+                        [tone]="step.qcPassed ? 'good' : step.isCompleted ? 'warn' : 'neutral'"
+                      >
+                        {{
+                          step.qcPassed
+                            ? 'QC Passed'
+                            : step.isCompleted
+                              ? 'Inspection Done'
+                              : 'Pending'
+                        }}
                       </ar-chip>
                     </td>
                     <td>
@@ -521,7 +541,9 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                     </td>
                   </tr>
                   <tr *ngIf="!wo.routingSteps || wo.routingSteps.length === 0">
-                    <td colspan="6" class="text-center text-muted">No routing steps defined for this work order.</td>
+                    <td colspan="6" class="text-center text-muted">
+                      No routing steps defined for this work order.
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -533,7 +555,10 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
             <div class="materials-header">
               <span class="section-hint">Required BOM components allocated to this batch.</span>
               <button
-                *ngIf="wo.status === WorkOrderStatus.InProgress || wo.status === WorkOrderStatus.Scheduled"
+                *ngIf="
+                  wo.status === WorkOrderStatus.InProgress ||
+                  wo.status === WorkOrderStatus.Scheduled
+                "
                 ar-button="ghost"
                 (click)="openIssueMaterial()"
               >
@@ -567,7 +592,9 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                     </td>
                   </tr>
                   <tr *ngIf="!wo.materialIssues || wo.materialIssues.length === 0">
-                    <td colspan="6" class="text-center text-muted">No material issues recorded yet. Click '+ Issue Material' to allocate parts.</td>
+                    <td colspan="6" class="text-center text-muted">
+                      No material issues recorded yet. Click '+ Issue Material' to allocate parts.
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -591,15 +618,30 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
           </div>
           <div class="form-group">
             <label>Batch Number</label>
-            <input type="text" class="form-control" [(ngModel)]="newWo.batchNumber" placeholder="BAT-2026-..." />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newWo.batchNumber"
+              placeholder="BAT-2026-..."
+            />
           </div>
           <div class="form-group">
             <label>Finished Good Part #</label>
-            <input type="text" class="form-control" [(ngModel)]="newWo.partNumber" placeholder="HV-400-P" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newWo.partNumber"
+              placeholder="HV-400-P"
+            />
           </div>
           <div class="form-group">
             <label>Part Description</label>
-            <input type="text" class="form-control" [(ngModel)]="newWo.description" placeholder="Proportional Directional Hydraulic..." />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newWo.description"
+              placeholder="Proportional Directional Hydraulic..."
+            />
           </div>
           <div class="form-group">
             <label>Planned Production Quantity</label>
@@ -607,7 +649,12 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
           </div>
           <div class="form-group">
             <label>Assigned Supervisor</label>
-            <input type="text" class="form-control" [(ngModel)]="newWo.assignedSupervisor" placeholder="Shop Lead Name" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newWo.assignedSupervisor"
+              placeholder="Shop Lead Name"
+            />
           </div>
           <div class="form-group">
             <label>Planned Start Date</label>
@@ -621,7 +668,12 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
 
         <div class="form-group full-width mt-3">
           <label>Production Notes & Instructions</label>
-          <textarea class="form-control" rows="2" [(ngModel)]="newWo.remarks" placeholder="Special heat treatment or tolerances..."></textarea>
+          <textarea
+            class="form-control"
+            rows="2"
+            [(ngModel)]="newWo.remarks"
+            placeholder="Special heat treatment or tolerances..."
+          ></textarea>
         </div>
 
         <div class="dialog-actions mt-4">
@@ -641,11 +693,21 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
         <div class="form-grid">
           <div class="form-group">
             <label>Component Part #</label>
-            <input type="text" class="form-control" [(ngModel)]="newMaterial.componentPartNumber" placeholder="VB-BODY-400" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newMaterial.componentPartNumber"
+              placeholder="VB-BODY-400"
+            />
           </div>
           <div class="form-group">
             <label>Component Description</label>
-            <input type="text" class="form-control" [(ngModel)]="newMaterial.componentDescription" placeholder="Ductile Iron Casting..." />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newMaterial.componentDescription"
+              placeholder="Ductile Iron Casting..."
+            />
           </div>
           <div class="form-group">
             <label>Required Qty</label>
@@ -661,7 +723,12 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
           </div>
           <div class="form-group">
             <label>Issuing Warehouse</label>
-            <input type="text" class="form-control" [(ngModel)]="newMaterial.issuedFromWarehouse" placeholder="WH-MAIN-RAW" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newMaterial.issuedFromWarehouse"
+              placeholder="WH-MAIN-RAW"
+            />
           </div>
         </div>
 
@@ -680,7 +747,10 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
     >
       <div class="modal-body-container" *ngIf="targetStep() as step">
         <p class="mb-3">
-          Completing step <strong>#{{ step.stepSequence }} - {{ getStageLabel(step.stage) }}</strong> at <em>{{ step.workCenterName }}</em>.
+          Completing step
+          <strong>#{{ step.stepSequence }} - {{ getStageLabel(step.stage) }}</strong> at
+          <em>{{ step.workCenterName }}</em
+          >.
         </p>
 
         <div class="form-grid">
@@ -716,7 +786,8 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
     >
       <div class="modal-body-container" *ngIf="selectedWo() as wo">
         <p class="mb-3">
-          Batch <strong>{{ wo.batchNumber }}</strong> for part <strong>{{ wo.partNumber }}</strong>. Planned: {{ wo.plannedQuantity }} units.
+          Batch <strong>{{ wo.batchNumber }}</strong> for part <strong>{{ wo.partNumber }}</strong
+          >. Planned: {{ wo.plannedQuantity }} units.
         </p>
 
         <div class="form-grid">
@@ -730,7 +801,12 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
           </div>
           <div class="form-group full-width">
             <label>Finished Goods Storage Warehouse & Rack</label>
-            <input type="text" class="form-control" [(ngModel)]="woCompletion.destinationLocation" placeholder="WH-FG-MAIN-BAY4" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="woCompletion.destinationLocation"
+              placeholder="WH-FG-MAIN-BAY4"
+            />
           </div>
           <div class="form-group full-width">
             <label>Completion Remarks</label>
@@ -739,7 +815,9 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
         </div>
 
         <div class="dialog-actions mt-4">
-          <button ar-button="primary" (click)="completeWorkOrder()">Complete Order & Update Inventory</button>
+          <button ar-button="primary" (click)="completeWorkOrder()">
+            Complete Order & Update Inventory
+          </button>
           <button ar-button="ghost" (click)="isCompleteWoOpen.set(false)">Cancel</button>
         </div>
       </div>
@@ -780,8 +858,12 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
         gap: 0.25rem;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 
-        &.amber { border-left: 4px solid #f59e0b; }
-        &.teal { border-left: 4px solid #0d9488; }
+        &.amber {
+          border-left: 4px solid #f59e0b;
+        }
+        &.teal {
+          border-left: 4px solid #0d9488;
+        }
 
         .label {
           font-size: 0.78rem;
@@ -1057,9 +1139,16 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
             font-size: 1.1rem;
             font-weight: 700;
 
-            &.val-success { color: #16a34a; }
-            &.val-danger { color: #dc2626; }
-            &.val-stage { color: #0284c7; font-size: 0.95rem; }
+            &.val-success {
+              color: #16a34a;
+            }
+            &.val-danger {
+              color: #dc2626;
+            }
+            &.val-stage {
+              color: #0284c7;
+              font-size: 0.95rem;
+            }
           }
 
           .val-text {
@@ -1208,14 +1297,30 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
         gap: 0.75rem;
       }
 
-      .fw-bold { font-weight: 600; }
-      .text-success { color: #16a34a; }
-      .text-danger { color: #dc2626; }
-      .text-muted { color: #94a3b8; }
-      .text-center { text-align: center; }
-      .mt-3 { margin-top: 0.75rem; }
-      .mt-4 { margin-top: 1rem; }
-      .mb-3 { margin-bottom: 0.75rem; }
+      .fw-bold {
+        font-weight: 600;
+      }
+      .text-success {
+        color: #16a34a;
+      }
+      .text-danger {
+        color: #dc2626;
+      }
+      .text-muted {
+        color: #94a3b8;
+      }
+      .text-center {
+        text-align: center;
+      }
+      .mt-3 {
+        margin-top: 0.75rem;
+      }
+      .mt-4 {
+        margin-top: 1rem;
+      }
+      .mb-3 {
+        margin-bottom: 0.75rem;
+      }
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -1282,7 +1387,7 @@ export class WorkOrdersComponent {
     const q = this.searchQuery().trim().toLowerCase();
     const sf = this.statusFilter();
 
-    return this.workOrders().filter(wo => {
+    return this.workOrders().filter((wo) => {
       if (sf !== 'ALL' && wo.status.toString() !== sf) return false;
       if (!q) return true;
 
@@ -1298,15 +1403,18 @@ export class WorkOrdersComponent {
 
   readonly stats = computed(() => {
     const list = this.workOrders();
-    const inProgress = list.filter(w => w.status === WorkOrderStatus.InProgress || w.status === WorkOrderStatus.Scheduled).length;
-    const completed = list.filter(w => w.status === WorkOrderStatus.Completed).length;
+    const inProgress = list.filter(
+      (w) => w.status === WorkOrderStatus.InProgress || w.status === WorkOrderStatus.Scheduled,
+    ).length;
+    const completed = list.filter((w) => w.status === WorkOrderStatus.Completed).length;
     const totalPlanned = list.reduce((acc, w) => acc + (w.plannedQuantity || 0), 0);
     const totalProduced = list.reduce((acc, w) => acc + (w.producedQuantity || 0), 0);
     const totalScrapped = list.reduce((acc, w) => acc + (w.scrappedQuantity || 0), 0);
 
-    const scrapRate = totalProduced + totalScrapped > 0
-      ? ((totalScrapped / (totalProduced + totalScrapped)) * 100).toFixed(1)
-      : '0.0';
+    const scrapRate =
+      totalProduced + totalScrapped > 0
+        ? ((totalScrapped / (totalProduced + totalScrapped)) * 100).toFixed(1)
+        : '0.0';
 
     return {
       totalCount: list.length,
@@ -1329,18 +1437,16 @@ export class WorkOrdersComponent {
     if (environment.useMockData) return;
 
     this.isLoading.set(true);
-    this.workOrderService
-      .getList({ maxResultCount: 100 })
-      .subscribe({
-        next: res => {
-          this.workOrders.set(res.items || []);
-          if (res.items && res.items.length > 0) {
-            this.selectedWo.set(res.items[0]);
-          }
-          this.isLoading.set(false);
-        },
-        error: () => this.isLoading.set(false),
-      });
+    this.workOrderService.getList({ maxResultCount: 100 }).subscribe({
+      next: (res) => {
+        this.workOrders.set(res.items || []);
+        if (res.items && res.items.length > 0) {
+          this.selectedWo.set(res.items[0]);
+        }
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false),
+    });
   }
 
   selectWorkOrder(wo: WorkOrderDto): void {
@@ -1429,8 +1535,8 @@ export class WorkOrdersComponent {
 
     if (!environment.useMockData) {
       this.workOrderService.create(this.newWo).subscribe({
-        next: created => {
-          this.workOrders.update(list => [created, ...list]);
+        next: (created) => {
+          this.workOrders.update((list) => [created, ...list]);
           this.selectedWo.set(created);
           this.isCreateOpen.set(false);
         },
@@ -1492,7 +1598,7 @@ export class WorkOrdersComponent {
       ],
     };
 
-    this.workOrders.update(list => [created, ...list]);
+    this.workOrders.update((list) => [created, ...list]);
     this.selectedWo.set(created);
     this.isCreateOpen.set(false);
   }
@@ -1503,7 +1609,7 @@ export class WorkOrdersComponent {
 
     if (!environment.useMockData && sel.id) {
       this.workOrderService.release(sel.id).subscribe({
-        next: updated => {
+        next: (updated) => {
           this.updateWoInState(updated);
         },
       });
@@ -1539,7 +1645,7 @@ export class WorkOrdersComponent {
 
     if (!environment.useMockData && sel.id) {
       this.workOrderService.issueMaterial(sel.id, this.newMaterial).subscribe({
-        next: updated => {
+        next: (updated) => {
           this.updateWoInState(updated);
           this.isIssueMaterialOpen.set(false);
         },
@@ -1586,7 +1692,7 @@ export class WorkOrdersComponent {
 
     if (!environment.useMockData && sel.id) {
       this.workOrderService.completeStep(sel.id, this.stepCompletion).subscribe({
-        next: updated => {
+        next: (updated) => {
           this.updateWoInState(updated);
           this.isCompleteStepOpen.set(false);
         },
@@ -1594,7 +1700,7 @@ export class WorkOrdersComponent {
       return;
     }
 
-    const updatedSteps = (sel.routingSteps || []).map(s => {
+    const updatedSteps = (sel.routingSteps || []).map((s) => {
       if (s.id === step.id) {
         return {
           ...s,
@@ -1608,7 +1714,7 @@ export class WorkOrdersComponent {
       return s;
     });
 
-    const nextIncomplete = updatedSteps.find(s => !s.isCompleted);
+    const nextIncomplete = updatedSteps.find((s) => !s.isCompleted);
     const nextStage = nextIncomplete ? nextIncomplete.stage : RoutingStage.FinishedGoodsReceipt;
 
     const updated: WorkOrderDto = {
@@ -1639,7 +1745,7 @@ export class WorkOrdersComponent {
 
     if (!environment.useMockData && sel.id) {
       this.workOrderService.completeWorkOrder(sel.id, this.woCompletion).subscribe({
-        next: updated => {
+        next: (updated) => {
           this.updateWoInState(updated);
           this.isCompleteWoOpen.set(false);
         },
@@ -1662,7 +1768,7 @@ export class WorkOrdersComponent {
   }
 
   private updateWoInState(updated: WorkOrderDto): void {
-    this.workOrders.update(list => list.map(w => (w.id === updated.id ? updated : w)));
+    this.workOrders.update((list) => list.map((w) => (w.id === updated.id ? updated : w)));
     this.selectedWo.set(updated);
   }
 }

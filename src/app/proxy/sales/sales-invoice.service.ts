@@ -85,7 +85,11 @@ export class SalesInvoiceService {
       { apiName: this.apiName, ...config },
     );
 
-  recordPayment = (id: string, input: RecordSalesInvoicePaymentDto, config?: Partial<Rest.Config>) =>
+  recordPayment = (
+    id: string,
+    input: RecordSalesInvoicePaymentDto,
+    config?: Partial<Rest.Config>,
+  ) =>
     this.restService.request<any, SalesInvoiceDto>(
       {
         method: 'POST',

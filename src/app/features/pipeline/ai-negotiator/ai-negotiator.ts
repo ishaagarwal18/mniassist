@@ -88,7 +88,8 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
     roundCount: 2,
     paymentTerms: '100% Advance',
     volumeUnits: 1,
-    summaryNotes: 'Agreement reached at ₹4,51,200 (6.0% discount, 23.4% margin). Terms: 100% Advance.',
+    summaryNotes:
+      'Agreement reached at ₹4,51,200 (6.0% discount, 23.4% margin). Terms: 100% Advance.',
     completedAtUtc: new Date(Date.now() - 2 * 3600_000).toISOString(),
     offers: [
       {
@@ -101,7 +102,8 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         discountPercent: 12.0,
         marginPercent: 18.2,
         proposedPaymentTerms: 'Net 30',
-        messageContent: 'We have budget constraint of ₹4.2 Lakhs. Can you do 12% discount so we can close today?',
+        messageContent:
+          'We have budget constraint of ₹4.2 Lakhs. Can you do 12% discount so we can close today?',
         actionTaken: NegotiationAction.CounterOffer,
         createdAtUtc: new Date(Date.now() - 3 * 3600_000).toISOString(),
       },
@@ -158,7 +160,8 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         offeredAmountInRupees: 527_000,
         discountPercent: 15.0,
         marginPercent: 13.5,
-        messageContent: 'Competitor is offering same Schneider Altivar 630 drive at ₹5.25 Lakh. Match this price.',
+        messageContent:
+          'Competitor is offering same Schneider Altivar 630 drive at ₹5.25 Lakh. Match this price.',
         actionTaken: NegotiationAction.CounterOffer,
         createdAtUtc: new Date(Date.now() - 1 * 3600_000).toISOString(),
       },
@@ -204,8 +207,10 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
     roundCount: 3,
     paymentTerms: 'Net 45',
     volumeUnits: 2,
-    summaryNotes: 'Escalated to Sales Director: Deal value ₹11.25L exceeds auto-approval threshold of ₹5L.',
-    escalationReason: 'High-value deal (₹11.25L) with 10% discount demand on 2 units requires executive authorization.',
+    summaryNotes:
+      'Escalated to Sales Director: Deal value ₹11.25L exceeds auto-approval threshold of ₹5L.',
+    escalationReason:
+      'High-value deal (₹11.25L) with 10% discount demand on 2 units requires executive authorization.',
     offers: [
       {
         id: 'off-5',
@@ -218,7 +223,8 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         marginPercent: 16.7,
         proposedPaymentTerms: 'Net 45',
         proposedQuantity: 2,
-        messageContent: 'We are ordering 2 automated welding positioners. Need 10% discount and 45 days credit.',
+        messageContent:
+          'We are ordering 2 automated welding positioners. Need 10% discount and 45 days credit.',
         actionTaken: NegotiationAction.CounterOffer,
         createdAtUtc: new Date(Date.now() - 4 * 3600_000).toISOString(),
       },
@@ -290,7 +296,8 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         marginPercent: 15.5,
         messageContent:
           'Thank you Mr. Joshi. We have thoroughly assessed direct OEM pricing. ₹2,62,500 falls below our manufacturing cost basis. Our best and final commercial offer is ₹3,15,000 with complete manufacturer test certificate.',
-        aiReasoning: 'Customer 25% demand creates negative margin (-1.3%). Final BAFO issued at floor margin (15.5%).',
+        aiReasoning:
+          'Customer 25% demand creates negative margin (-1.3%). Final BAFO issued at floor margin (15.5%).',
         actionTaken: NegotiationAction.RejectAndWalkAway,
         createdAtUtc: new Date(Date.now() - 12 * 3600_000).toISOString(),
       },
@@ -398,7 +405,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
               </button>
               <button
                 class="filter-chip"
-                [class.active]="selectedStatusFilter() === NegotiationSessionStatus.EscalatedToHuman"
+                [class.active]="
+                  selectedStatusFilter() === NegotiationSessionStatus.EscalatedToHuman
+                "
                 (click)="selectedStatusFilter.set(NegotiationSessionStatus.EscalatedToHuman)"
               >
                 Escalated
@@ -422,8 +431,12 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                   <div class="item-quote">Quote: {{ ses.quotationReference }}</div>
                   <div class="item-metrics">
                     <span class="metric-val">{{ formatInr(ses.currentAmountInPaise) }}</span>
-                    <span class="metric-margin">Margin: {{ ses.currentMarginPercent | number: '1.1-1' }}%</span>
-                    <span class="metric-discount">{{ ses.currentDiscountPercent | number: '1.1-1' }}% disc</span>
+                    <span class="metric-margin"
+                      >Margin: {{ ses.currentMarginPercent | number: '1.1-1' }}%</span
+                    >
+                    <span class="metric-discount"
+                      >{{ ses.currentDiscountPercent | number: '1.1-1' }}% disc</span
+                    >
                   </div>
                 </div>
               } @empty {
@@ -447,7 +460,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                   <ar-chip [tone]="statusTone(ses.status)">
                     {{ statusLabel(ses.status) }}
                   </ar-chip>
-                  <span class="rounds-badge">Round {{ ses.roundCount }} of {{ policy().maxRounds }}</span>
+                  <span class="rounds-badge"
+                    >Round {{ ses.roundCount }} of {{ policy().maxRounds }}</span
+                  >
                 </div>
               </div>
 
@@ -465,12 +480,24 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                 </div>
                 <div class="meter-stat">
                   <div class="meter-stat-label">Current Offer</div>
-                  <div class="meter-stat-value text-primary">{{ formatInr(ses.currentAmountInPaise) }}</div>
-                  <div class="meter-stat-sub">{{ ses.currentDiscountPercent | number: '1.1-1' }}% Concession</div>
+                  <div class="meter-stat-value text-primary">
+                    {{ formatInr(ses.currentAmountInPaise) }}
+                  </div>
+                  <div class="meter-stat-sub">
+                    {{ ses.currentDiscountPercent | number: '1.1-1' }}% Concession
+                  </div>
                 </div>
                 <div class="meter-stat">
                   <div class="meter-stat-label">Effective Margin</div>
-                  <div class="meter-stat-value" [class.text-good]="ses.currentMarginPercent >= policy().targetMarginPercent" [class.text-amber]="ses.currentMarginPercent < policy().targetMarginPercent && ses.currentMarginPercent >= policy().floorMarginPercent" [class.text-bad]="ses.currentMarginPercent < policy().floorMarginPercent">
+                  <div
+                    class="meter-stat-value"
+                    [class.text-good]="ses.currentMarginPercent >= policy().targetMarginPercent"
+                    [class.text-amber]="
+                      ses.currentMarginPercent < policy().targetMarginPercent &&
+                      ses.currentMarginPercent >= policy().floorMarginPercent
+                    "
+                    [class.text-bad]="ses.currentMarginPercent < policy().floorMarginPercent"
+                  >
                     {{ ses.currentMarginPercent | number: '1.1-1' }}%
                   </div>
                   <div class="meter-stat-sub">Floor: {{ policy().floorMarginPercent }}%</div>
@@ -487,7 +514,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                 <div class="margin-drift-header">
                   <span>Margin Drift Guardrail:</span>
                   <span>
-                    Floor ({{ policy().floorMarginPercent }}%) &rarr; Current ({{ ses.currentMarginPercent | number: '1.1-1' }}%) &rarr; Target ({{ policy().targetMarginPercent }}%)
+                    Floor ({{ policy().floorMarginPercent }}%) &rarr; Current ({{
+                      ses.currentMarginPercent | number: '1.1-1'
+                    }}%) &rarr; Target ({{ policy().targetMarginPercent }}%)
                   </span>
                 </div>
                 <div class="drift-bar-container">
@@ -495,10 +524,17 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                     class="drift-bar-fill"
                     [style.width.%]="calcMarginWidth(ses.currentMarginPercent)"
                     [class.bar-good]="ses.currentMarginPercent >= policy().targetMarginPercent"
-                    [class.bar-amber]="ses.currentMarginPercent < policy().targetMarginPercent && ses.currentMarginPercent >= policy().floorMarginPercent"
+                    [class.bar-amber]="
+                      ses.currentMarginPercent < policy().targetMarginPercent &&
+                      ses.currentMarginPercent >= policy().floorMarginPercent
+                    "
                     [class.bar-bad]="ses.currentMarginPercent < policy().floorMarginPercent"
                   ></div>
-                  <div class="floor-line" [style.left.%]="calcMarginWidth(policy().floorMarginPercent)" title="Floor Margin"></div>
+                  <div
+                    class="floor-line"
+                    [style.left.%]="calcMarginWidth(policy().floorMarginPercent)"
+                    title="Floor Margin"
+                  ></div>
                 </div>
               </div>
 
@@ -513,7 +549,12 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                 <h3>Negotiation Dialogue & AI Reasoning</h3>
                 <div class="chat-thread">
                   @for (turn of ses.offers; track turn.id) {
-                    <div class="chat-bubble-wrap" [class.turn-customer]="turn.sender === OfferSender.Customer" [class.turn-ai]="turn.sender === OfferSender.AiAgent" [class.turn-human]="turn.sender === OfferSender.HumanSalesManager">
+                    <div
+                      class="chat-bubble-wrap"
+                      [class.turn-customer]="turn.sender === OfferSender.Customer"
+                      [class.turn-ai]="turn.sender === OfferSender.AiAgent"
+                      [class.turn-human]="turn.sender === OfferSender.HumanSalesManager"
+                    >
                       <div class="bubble-header">
                         <span class="sender-tag">
                           @if (turn.sender === OfferSender.Customer) {
@@ -525,7 +566,8 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                           }
                         </span>
                         <span class="turn-meta">
-                          Offered: {{ formatInr(turn.offeredAmountInPaise) }} (Margin: {{ turn.marginPercent | number: '1.1-1' }}%)
+                          Offered: {{ formatInr(turn.offeredAmountInPaise) }} (Margin:
+                          {{ turn.marginPercent | number: '1.1-1' }}%)
                         </span>
                       </div>
 
@@ -535,7 +577,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
 
                       @if (turn.aiReasoning) {
                         <div class="ai-rationale-box">
-                          <div class="rationale-head">🧠 Internal AI Strategy & Margin Evaluation:</div>
+                          <div class="rationale-head">
+                            🧠 Internal AI Strategy & Margin Evaluation:
+                          </div>
                           <div class="rationale-text">{{ turn.aiReasoning }}</div>
                         </div>
                       }
@@ -571,7 +615,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
               </div>
             </div>
           } @else {
-            <div class="select-prompt">Select a negotiation session from the list to view its details.</div>
+            <div class="select-prompt">
+              Select a negotiation session from the list to view its details.
+            </div>
           }
         </div>
       }
@@ -582,7 +628,8 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
           <div class="panel-card">
             <h2>Negotiation Guardrails & Algorithm Settings</h2>
             <p class="panel-subtitle">
-              Configure the commercial boundaries and algorithmic levers within which the AI agent operates.
+              Configure the commercial boundaries and algorithmic levers within which the AI agent
+              operates.
             </p>
 
             <div class="form-grid">
@@ -602,19 +649,34 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
 
               <div class="form-group">
                 <label>Target Margin (%)</label>
-                <input type="number" step="0.5" class="form-control" [(ngModel)]="policyForm.targetMarginPercent" />
+                <input
+                  type="number"
+                  step="0.5"
+                  class="form-control"
+                  [(ngModel)]="policyForm.targetMarginPercent"
+                />
                 <span class="field-hint">Desired baseline margin before negotiation</span>
               </div>
 
               <div class="form-group">
                 <label>Floor Margin (%) [Walk-Away Limit]</label>
-                <input type="number" step="0.5" class="form-control" [(ngModel)]="policyForm.floorMarginPercent" />
+                <input
+                  type="number"
+                  step="0.5"
+                  class="form-control"
+                  [(ngModel)]="policyForm.floorMarginPercent"
+                />
                 <span class="field-hint">Strict minimum. AI will NEVER auto-accept below this</span>
               </div>
 
               <div class="form-group">
                 <label>Max Concession Discount (%)</label>
-                <input type="number" step="0.5" class="form-control" [(ngModel)]="policyForm.maxDiscountPercent" />
+                <input
+                  type="number"
+                  step="0.5"
+                  class="form-control"
+                  [(ngModel)]="policyForm.maxDiscountPercent"
+                />
                 <span class="field-hint">Max discount percentage allowed without escalation</span>
               </div>
 
@@ -626,13 +688,23 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
 
               <div class="form-group">
                 <label>Concession Step Size (%)</label>
-                <input type="number" step="0.5" class="form-control" [(ngModel)]="policyForm.concessionStepPercent" />
+                <input
+                  type="number"
+                  step="0.5"
+                  class="form-control"
+                  [(ngModel)]="policyForm.concessionStepPercent"
+                />
                 <span class="field-hint">Discount offered per round on concession curve</span>
               </div>
 
               <div class="form-group">
                 <label>Auto-Approval Threshold (₹)</label>
-                <input type="number" class="form-control" [ngModel]="policyForm.autoApprovalLimitInPaise / 100" (ngModelChange)="policyForm.autoApprovalLimitInPaise = $event * 100" />
+                <input
+                  type="number"
+                  class="form-control"
+                  [ngModel]="policyForm.autoApprovalLimitInPaise / 100"
+                  (ngModelChange)="policyForm.autoApprovalLimitInPaise = $event * 100"
+                />
                 <span class="field-hint">Deals above this value trigger manager sign-off</span>
               </div>
             </div>
@@ -640,12 +712,18 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
             <div class="toggles-grid">
               <label class="toggle-label">
                 <input type="checkbox" [(ngModel)]="policyForm.allowPaymentTermTradeoffs" />
-                <span><strong>Payment Term Levers:</strong> Allow trading discounts for 100% advance or Net 7 payment terms</span>
+                <span
+                  ><strong>Payment Term Levers:</strong> Allow trading discounts for 100% advance or
+                  Net 7 payment terms</span
+                >
               </label>
 
               <label class="toggle-label">
                 <input type="checkbox" [(ngModel)]="policyForm.allowVolumeCommitmentTradeoffs" />
-                <span><strong>Volume Tier Levers:</strong> Require +20% quantity commitment in exchange for lower unit price</span>
+                <span
+                  ><strong>Volume Tier Levers:</strong> Require +20% quantity commitment in exchange
+                  for lower unit price</span
+                >
               </label>
             </div>
 
@@ -672,17 +750,26 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
           <div class="panel-card">
             <h2>Interactive AI Negotiation Sandbox</h2>
             <p class="panel-subtitle">
-              Test how the autonomous agent handles counter-offers across different buyer personas and margin constraints without touching customer conversations.
+              Test how the autonomous agent handles counter-offers across different buyer personas
+              and margin constraints without touching customer conversations.
             </p>
 
             <div class="sim-config-grid">
               <div class="form-group">
                 <label>Buyer Persona</label>
                 <select class="form-control" [(ngModel)]="simPersona">
-                  <option [value]="CustomerPersona.AggressiveProcurement">Aggressive Procurement Officer (Claims competitor is 15% cheaper)</option>
-                  <option [value]="CustomerPersona.BudgetConstrained">Budget-Constrained SME (Limited quarterly funds)</option>
-                  <option [value]="CustomerPersona.VolumeBuyer">Volume Buyer (Wants tier-1 rate on pilot unit)</option>
-                  <option [value]="CustomerPersona.SpeedFocused">Speed-Focused Buyer (Ready to pay 100% advance today)</option>
+                  <option [value]="CustomerPersona.AggressiveProcurement">
+                    Aggressive Procurement Officer (Claims competitor is 15% cheaper)
+                  </option>
+                  <option [value]="CustomerPersona.BudgetConstrained">
+                    Budget-Constrained SME (Limited quarterly funds)
+                  </option>
+                  <option [value]="CustomerPersona.VolumeBuyer">
+                    Volume Buyer (Wants tier-1 rate on pilot unit)
+                  </option>
+                  <option [value]="CustomerPersona.SpeedFocused">
+                    Speed-Focused Buyer (Ready to pay 100% advance today)
+                  </option>
                 </select>
               </div>
 
@@ -698,12 +785,19 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
 
               <div class="form-group">
                 <label>Buyer Demand Discount (%)</label>
-                <input type="number" step="1" class="form-control" [(ngModel)]="simDemandDiscount" />
+                <input
+                  type="number"
+                  step="1"
+                  class="form-control"
+                  [(ngModel)]="simDemandDiscount"
+                />
               </div>
             </div>
 
             <div class="sim-actions">
-              <button ar-button variant="primary" (click)="runSimulation()">Run AI Simulation</button>
+              <button ar-button variant="primary" (click)="runSimulation()">
+                Run AI Simulation
+              </button>
             </div>
 
             @if (simResult(); as res) {
@@ -715,33 +809,47 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                 <div class="sim-metrics-strip">
                   <div class="meter-stat">
                     <div class="meter-stat-label">Final Agreed Price</div>
-                    <div class="meter-stat-value text-primary">{{ formatInr(res.finalAmountInPaise) }}</div>
+                    <div class="meter-stat-value text-primary">
+                      {{ formatInr(res.finalAmountInPaise) }}
+                    </div>
                   </div>
                   <div class="meter-stat">
                     <div class="meter-stat-label">Final Margin</div>
-                    <div class="meter-stat-value text-good">{{ res.finalMarginPercent | number: '1.1-1' }}%</div>
+                    <div class="meter-stat-value text-good">
+                      {{ res.finalMarginPercent | number: '1.1-1' }}%
+                    </div>
                   </div>
                   <div class="meter-stat">
                     <div class="meter-stat-label">Total Discount Conceded</div>
-                    <div class="meter-stat-value text-amber">{{ res.finalDiscountPercent | number: '1.1-1' }}%</div>
+                    <div class="meter-stat-value text-amber">
+                      {{ res.finalDiscountPercent | number: '1.1-1' }}%
+                    </div>
                   </div>
                   <div class="meter-stat">
                     <div class="meter-stat-label">Status</div>
                     <div class="meter-stat-value">
-                      <ar-chip [tone]="statusTone(res.finalStatus)">{{ statusLabel(res.finalStatus) }}</ar-chip>
+                      <ar-chip [tone]="statusTone(res.finalStatus)">{{
+                        statusLabel(res.finalStatus)
+                      }}</ar-chip>
                     </div>
                   </div>
                 </div>
 
                 <div class="chat-thread">
                   @for (turn of res.rounds; track turn.roundNumber) {
-                    <div class="chat-bubble-wrap" [class.turn-customer]="turn.sender === OfferSender.Customer" [class.turn-ai]="turn.sender === OfferSender.AiAgent">
+                    <div
+                      class="chat-bubble-wrap"
+                      [class.turn-customer]="turn.sender === OfferSender.Customer"
+                      [class.turn-ai]="turn.sender === OfferSender.AiAgent"
+                    >
                       <div class="bubble-header">
                         <span class="sender-tag">
-                          {{ turn.sender === OfferSender.Customer ? '👤 Buyer' : '🤖 AI Agent' }} (Round {{ turn.roundNumber }})
+                          {{ turn.sender === OfferSender.Customer ? '👤 Buyer' : '🤖 AI Agent' }}
+                          (Round {{ turn.roundNumber }})
                         </span>
                         <span class="turn-meta">
-                          Amount: {{ formatInr(turn.offeredAmountInPaise) }} · Margin: {{ turn.marginPercent | number: '1.1-1' }}%
+                          Amount: {{ formatInr(turn.offeredAmountInPaise) }} · Margin:
+                          {{ turn.marginPercent | number: '1.1-1' }}%
                         </span>
                       </div>
                       <div class="bubble-body">{{ turn.messageContent }}</div>
@@ -767,15 +875,22 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         <div class="intervention-dialog-body">
           <p>
             You are overriding or concluding autonomous negotiation for
-            <strong>{{ selectedSession()?.sessionCode }}</strong> (Quote: {{ selectedSession()?.quotationReference }}).
+            <strong>{{ selectedSession()?.sessionCode }}</strong> (Quote:
+            {{ selectedSession()?.quotationReference }}).
           </p>
 
           <div class="form-group">
             <label>Intervention Action</label>
             <select class="form-control" [(ngModel)]="interventionForm.action">
-              <option [value]="NegotiationAction.CounterOffer">Counter-Offer with Special Approved Rate</option>
-              <option [value]="NegotiationAction.AcceptOffer">Approve &amp; Close Deal at Current Customer Offer</option>
-              <option [value]="NegotiationAction.RejectAndWalkAway">Reject &amp; Walk Away (Cease Negotiation)</option>
+              <option [value]="NegotiationAction.CounterOffer">
+                Counter-Offer with Special Approved Rate
+              </option>
+              <option [value]="NegotiationAction.AcceptOffer">
+                Approve &amp; Close Deal at Current Customer Offer
+              </option>
+              <option [value]="NegotiationAction.RejectAndWalkAway">
+                Reject &amp; Walk Away (Cease Negotiation)
+              </option>
             </select>
           </div>
 
@@ -786,7 +901,11 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
 
           <div class="form-group">
             <label>Approved Payment Terms</label>
-            <input type="text" class="form-control" [(ngModel)]="interventionForm.overridePaymentTerms" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="interventionForm.overridePaymentTerms"
+            />
           </div>
 
           <div class="form-group">
@@ -802,7 +921,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
 
         <div actions class="dialog-actions">
           <button ar-button variant="ghost" (click)="closeInterventionDialog()">Cancel</button>
-          <button ar-button variant="primary" (click)="submitIntervention()">Confirm &amp; Apply</button>
+          <button ar-button variant="primary" (click)="submitIntervention()">
+            Confirm &amp; Apply
+          </button>
         </div>
       </ar-dialog>
     }
@@ -1366,7 +1487,8 @@ export class ArAiNegotiator {
     () => this.sessions().filter((s) => s.status === NegotiationSessionStatus.Agreed).length,
   );
   readonly escalatedSessionsCount = computed(
-    () => this.sessions().filter((s) => s.status === NegotiationSessionStatus.EscalatedToHuman).length,
+    () =>
+      this.sessions().filter((s) => s.status === NegotiationSessionStatus.EscalatedToHuman).length,
   );
   readonly winRatePercent = computed(() => {
     const total = this.sessions().length;
@@ -1508,7 +1630,8 @@ export class ArAiNegotiator {
           'Thank you. We have recalculated factory dispatch costs. We can offer ₹' +
           ((session.originalAmountInPaise * 0.94) / 100).toLocaleString('en-IN') +
           ' provided dispatch is booked within 48 hours with 100% advance.',
-        aiReasoning: 'Applied ConcessionCurve: conceded 6% against 10% requested. Floor margin maintained at 22.4%.',
+        aiReasoning:
+          'Applied ConcessionCurve: conceded 6% against 10% requested. Floor margin maintained at 22.4%.',
         actionTaken: NegotiationAction.CounterOffer,
         createdAtUtc: new Date().toISOString(),
       };
@@ -1570,7 +1693,12 @@ export class ArAiNegotiator {
           offeredAmountInPaise: Math.round(base * (1 - this.simDemandDiscount / 100)),
           offeredAmountInRupees: Math.round((base * (1 - this.simDemandDiscount / 100)) / 100),
           discountPercent: this.simDemandDiscount,
-          marginPercent: Math.round(((Math.round(base * (1 - this.simDemandDiscount / 100)) - cost) / Math.round(base * (1 - this.simDemandDiscount / 100))) * 1000) / 10,
+          marginPercent:
+            Math.round(
+              ((Math.round(base * (1 - this.simDemandDiscount / 100)) - cost) /
+                Math.round(base * (1 - this.simDemandDiscount / 100))) *
+                1000,
+            ) / 10,
           messageContent: `We have competing offers at ${this.simDemandDiscount}% lower. Can you match ₹${Math.round((base * (1 - this.simDemandDiscount / 100)) / 100).toLocaleString('en-IN')}?`,
           actionTaken: NegotiationAction.CounterOffer,
           createdAtUtc: new Date().toISOString(),
@@ -1618,13 +1746,17 @@ export class ArAiNegotiator {
     const sessionId = session.id;
 
     if (environment.useMockData) {
-      this.toasts.success(`Quotation ${session.quotationReference} updated to Rev 2 with ${session.currentDiscountPercent}% discount applied!`);
+      this.toasts.success(
+        `Quotation ${session.quotationReference} updated to Rev 2 with ${session.currentDiscountPercent}% discount applied!`,
+      );
       return;
     }
 
     this.agentService.applyToQuotation(sessionId).subscribe({
       next: (quote) => {
-        this.toasts.success(`Quotation ${quote.reference} updated to Revision ${quote.revisionNumber} successfully!`);
+        this.toasts.success(
+          `Quotation ${quote.reference} updated to Revision ${quote.revisionNumber} successfully!`,
+        );
       },
       error: (err) => {
         this.toasts.error(err.message || 'Error applying to quotation.');

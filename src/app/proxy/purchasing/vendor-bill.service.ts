@@ -17,7 +17,10 @@ export class VendorBillService {
   private readonly restService = inject(RestService);
   apiName = 'AutoReach';
 
-  getList(input: GetVendorBillsInput, config?: Partial<Rest.Config>): Observable<PagedResultDto<VendorBillDto>> {
+  getList(
+    input: GetVendorBillsInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<PagedResultDto<VendorBillDto>> {
     return this.restService.request<any, PagedResultDto<VendorBillDto>>(
       {
         method: 'GET',
@@ -59,7 +62,12 @@ export class VendorBillService {
     );
   }
 
-  createFromGrn(grnId: string, vendorInvoiceNumber: string, invoiceDate: string, config?: Partial<Rest.Config>): Observable<VendorBillDto> {
+  createFromGrn(
+    grnId: string,
+    vendorInvoiceNumber: string,
+    invoiceDate: string,
+    config?: Partial<Rest.Config>,
+  ): Observable<VendorBillDto> {
     return this.restService.request<any, VendorBillDto>(
       {
         method: 'POST',
@@ -80,7 +88,11 @@ export class VendorBillService {
     );
   }
 
-  recordPayment(id: string, input: RecordVendorBillPaymentDto, config?: Partial<Rest.Config>): Observable<VendorBillDto> {
+  recordPayment(
+    id: string,
+    input: RecordVendorBillPaymentDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<VendorBillDto> {
     return this.restService.request<any, VendorBillDto>(
       {
         method: 'POST',
@@ -91,7 +103,11 @@ export class VendorBillService {
     );
   }
 
-  reconcileGstr2b(id: string, status: Gstr2bMatchStatus, config?: Partial<Rest.Config>): Observable<VendorBillDto> {
+  reconcileGstr2b(
+    id: string,
+    status: Gstr2bMatchStatus,
+    config?: Partial<Rest.Config>,
+  ): Observable<VendorBillDto> {
     return this.restService.request<any, VendorBillDto>(
       {
         method: 'POST',

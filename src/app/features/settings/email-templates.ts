@@ -47,13 +47,7 @@ const PREVIEW_DELAY_MS = 600;
       help="Change what the platform's own emails say. The variables listed under each email, such as the workspace name, are filled in when it is sent. Keep the html.escape filter on anything a person typed, such as names. Restore default puts the original wording back."
     >
       @if (canEdit()) {
-        <button
-          ar-button
-          type="button"
-          variant="primary"
-          icon="plus"
-          (click)="openCreate()"
-        >
+        <button ar-button type="button" variant="primary" icon="plus" (click)="openCreate()">
           New template
         </button>
       }
@@ -422,10 +416,7 @@ export class ArEmailTemplates {
   private readonly subjectInput = viewChild<ElementRef<HTMLInputElement>>('subjectInput');
   private readonly bodyInput = viewChild<ElementRef<HTMLTextAreaElement>>('bodyInput');
 
-  protected readonly canEdit = grantedPolicy(
-    'AutoReach.TextTemplates.Edit',
-    this.permissions,
-  );
+  protected readonly canEdit = grantedPolicy('AutoReach.TextTemplates.Edit', this.permissions);
 
   private readonly listTick = signal(0);
   private readonly listResource = rxResource({

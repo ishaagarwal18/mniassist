@@ -15,7 +15,10 @@ export class FinancialStatementService {
   private readonly restService = inject(RestService);
   apiName = 'AutoReach';
 
-  getTrialBalance(input: GetFinancialStatementInput, config?: Partial<Rest.Config>): Observable<TrialBalanceResultDto> {
+  getTrialBalance(
+    input: GetFinancialStatementInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<TrialBalanceResultDto> {
     return this.restService.request<any, TrialBalanceResultDto>(
       {
         method: 'GET',
@@ -29,7 +32,10 @@ export class FinancialStatementService {
     );
   }
 
-  getProfitAndLoss(input: GetFinancialStatementInput, config?: Partial<Rest.Config>): Observable<ProfitAndLossResultDto> {
+  getProfitAndLoss(
+    input: GetFinancialStatementInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<ProfitAndLossResultDto> {
     return this.restService.request<any, ProfitAndLossResultDto>(
       {
         method: 'GET',
@@ -43,7 +49,10 @@ export class FinancialStatementService {
     );
   }
 
-  getBalanceSheet(input: GetFinancialStatementInput, config?: Partial<Rest.Config>): Observable<BalanceSheetResultDto> {
+  getBalanceSheet(
+    input: GetFinancialStatementInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<BalanceSheetResultDto> {
     return this.restService.request<any, BalanceSheetResultDto>(
       {
         method: 'GET',

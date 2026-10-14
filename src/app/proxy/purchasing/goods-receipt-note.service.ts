@@ -16,7 +16,10 @@ export class GoodsReceiptNoteService {
   private readonly restService = inject(RestService);
   apiName = 'AutoReach';
 
-  getList(input: GetGoodsReceiptNotesInput, config?: Partial<Rest.Config>): Observable<PagedResultDto<GoodsReceiptNoteDto>> {
+  getList(
+    input: GetGoodsReceiptNotesInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<PagedResultDto<GoodsReceiptNoteDto>> {
     return this.restService.request<any, PagedResultDto<GoodsReceiptNoteDto>>(
       {
         method: 'GET',
@@ -46,7 +49,10 @@ export class GoodsReceiptNoteService {
     );
   }
 
-  create(input: CreateGoodsReceiptNoteDto, config?: Partial<Rest.Config>): Observable<GoodsReceiptNoteDto> {
+  create(
+    input: CreateGoodsReceiptNoteDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<GoodsReceiptNoteDto> {
     return this.restService.request<any, GoodsReceiptNoteDto>(
       {
         method: 'POST',
@@ -57,7 +63,11 @@ export class GoodsReceiptNoteService {
     );
   }
 
-  createFromPurchaseOrder(purchaseOrderId: string, challanNumber: string, config?: Partial<Rest.Config>): Observable<GoodsReceiptNoteDto> {
+  createFromPurchaseOrder(
+    purchaseOrderId: string,
+    challanNumber: string,
+    config?: Partial<Rest.Config>,
+  ): Observable<GoodsReceiptNoteDto> {
     return this.restService.request<any, GoodsReceiptNoteDto>(
       {
         method: 'POST',
@@ -78,7 +88,11 @@ export class GoodsReceiptNoteService {
     );
   }
 
-  completeInspection(id: string, input: CompleteQcInspectionDto, config?: Partial<Rest.Config>): Observable<GoodsReceiptNoteDto> {
+  completeInspection(
+    id: string,
+    input: CompleteQcInspectionDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<GoodsReceiptNoteDto> {
     return this.restService.request<any, GoodsReceiptNoteDto>(
       {
         method: 'POST',

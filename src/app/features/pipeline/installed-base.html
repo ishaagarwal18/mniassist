@@ -95,7 +95,10 @@
 }
 
 @if (dialogOpen()) {
-  <ar-dialog [title]="editingAssetId() ? 'Edit machine' : 'Register a machine'" (dismiss)="dialogOpen.set(false)">
+  <ar-dialog
+    [title]="editingAssetId() ? 'Edit machine' : 'Register a machine'"
+    (dismiss)="dialogOpen.set(false)"
+  >
     <div class="ar-field">
       <span class="ar-field__label"
         >Owner contact <span class="ar-field__opt">(optional)</span></span
@@ -208,7 +211,7 @@
         [disabled]="saving()"
         (click)="registerMachine()"
       >
-        {{ saving() ? 'Saving…' : (editingAssetId() ? 'Save' : 'Register') }}
+        {{ saving() ? 'Saving…' : editingAssetId() ? 'Save' : 'Register' }}
       </button>
     </div>
   </ar-dialog>

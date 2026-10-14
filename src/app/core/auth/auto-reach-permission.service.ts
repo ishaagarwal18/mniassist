@@ -12,7 +12,10 @@ import { isHostAdministrator } from './host-access';
 })
 export class AutoReachPermissionService extends PermissionService {
   // ABP's sync checks, permission streams and item filters all use this method.
-  protected override isPolicyGranted(name: string | undefined, grants: Record<string, boolean>): boolean {
+  protected override isPolicyGranted(
+    name: string | undefined,
+    grants: Record<string, boolean>,
+  ): boolean {
     if (!name || environment.useMockData) {
       return true;
     }

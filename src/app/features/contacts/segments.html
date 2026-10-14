@@ -18,7 +18,10 @@
 }
 
 @if (saveOpen()) {
-  <ar-dialog [title]="editingSegmentId() ? 'Edit segment' : 'Save segment'" (dismiss)="saveOpen.set(false)">
+  <ar-dialog
+    [title]="editingSegmentId() ? 'Edit segment' : 'Save segment'"
+    (dismiss)="saveOpen.set(false)"
+  >
     <p class="sg__save-lead">
       Saves the rule, not today's list: whoever matches is worked out again each time a campaign
       sends. It matches <strong>{{ preview().totalMatching }}</strong> contact{{
@@ -58,7 +61,7 @@
         [disabled]="saving()"
         (click)="saveSegment()"
       >
-        {{ saving() ? 'Saving…' : (editingSegmentId() ? 'Update segment' : 'Save segment') }}
+        {{ saving() ? 'Saving…' : editingSegmentId() ? 'Update segment' : 'Save segment' }}
       </button>
     </div>
   </ar-dialog>

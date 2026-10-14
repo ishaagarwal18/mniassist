@@ -33,7 +33,8 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
     scheduledVisitsPerYear: 4,
     visitsCompleted: 2,
     sparesIncluded: true,
-    remarks: 'Critical line equipment. 24x7 helpline with 4-hr on-site SLA for unplanned breakdown.',
+    remarks:
+      'Critical line equipment. 24x7 helpline with 4-hr on-site SLA for unplanned breakdown.',
     creationTime: new Date(Date.now() - 180 * 86_400_000).toISOString(),
     schedules: [
       {
@@ -44,7 +45,8 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
         completedDateUtc: new Date(Date.now() - 149 * 86_400_000).toISOString(),
         assignedEngineer: 'Sunil Deshmukh (Senior Service Eng)',
         isCompleted: true,
-        visitNotes: 'Q1 PM completed. Hydraulic fluid contamination check normal (NAS 6). Proportional valves recalibrated.',
+        visitNotes:
+          'Q1 PM completed. Hydraulic fluid contamination check normal (NAS 6). Proportional valves recalibrated.',
       },
       {
         id: 'vs-2',
@@ -54,7 +56,8 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
         completedDateUtc: new Date(Date.now() - 58 * 86_400_000).toISOString(),
         assignedEngineer: 'Sunil Deshmukh (Senior Service Eng)',
         isCompleted: true,
-        visitNotes: 'Q2 PM completed. Main cylinder seal gland tightened. Pressure transducers zero-drift verified.',
+        visitNotes:
+          'Q2 PM completed. Main cylinder seal gland tightened. Pressure transducers zero-drift verified.',
       },
       {
         id: 'vs-3',
@@ -102,7 +105,8 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
         completedDateUtc: new Date(Date.now() - 79 * 86_400_000).toISOString(),
         assignedEngineer: 'Prakash Rao (Field Lead)',
         isCompleted: true,
-        visitNotes: 'Bi-monthly inspection. Hoist wire rope inspected for wire breaks. Lubricated planetary reducer.',
+        visitNotes:
+          'Bi-monthly inspection. Hoist wire rope inspected for wire breaks. Lubricated planetary reducer.',
       },
       {
         id: 'vs-6',
@@ -112,7 +116,8 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
         completedDateUtc: new Date(Date.now() - 19 * 86_400_000).toISOString(),
         assignedEngineer: 'Prakash Rao (Field Lead)',
         isCompleted: true,
-        visitNotes: 'Drive motor inverter firmware updated. Brake pads replaced via billable spare requisition.',
+        visitNotes:
+          'Drive motor inverter firmware updated. Brake pads replaced via billable spare requisition.',
       },
       {
         id: 'vs-7',
@@ -151,7 +156,8 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
         completedDateUtc: new Date(Date.now() - 9 * 86_400_000).toISOString(),
         assignedEngineer: 'Aman Deep (Specialist)',
         isCompleted: true,
-        visitNotes: 'Final scheduled inspection under current AMC. Spindle runout 0.003mm (within tolerance).',
+        visitNotes:
+          'Final scheduled inspection under current AMC. Spindle runout 0.003mm (within tolerance).',
       },
     ],
   },
@@ -178,7 +184,7 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
         </div>
         <div class="kpi-card teal">
           <span class="label">Annual Contract Value (ACV)</span>
-          <strong class="value">₹{{ (stats().totalAcvPaise / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ stats().totalAcvPaise / 100 | number: '1.2-2' }}</strong>
           <span class="sub">Recurring service revenue</span>
         </div>
         <div class="kpi-card amber">
@@ -189,7 +195,9 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
         <div class="kpi-card">
           <span class="label">PM Visit Completion</span>
           <strong class="value">{{ stats().completionRate }}%</strong>
-          <span class="sub">{{ stats().completedVisits }} of {{ stats().totalVisits }} visits done</span>
+          <span class="sub"
+            >{{ stats().completedVisits }} of {{ stats().totalVisits }} visits done</span
+          >
         </div>
       </section>
 
@@ -265,7 +273,9 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
                 <td>
                   <div class="client-info">
                     <span class="client-name">{{ c.customerName }}</span>
-                    <span class="client-addr" *ngIf="c.customerSiteAddress">{{ c.customerSiteAddress }}</span>
+                    <span class="client-addr" *ngIf="c.customerSiteAddress">{{
+                      c.customerSiteAddress
+                    }}</span>
                   </div>
                 </td>
                 <td>
@@ -280,12 +290,12 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
                 <td>
                   <div class="visit-metric">
                     <span>SLA: {{ c.slaResponseHours }}h</span>
-                    <span class="text-sub">{{ c.visitsCompleted }} / {{ c.scheduledVisitsPerYear }} Visits</span>
+                    <span class="text-sub"
+                      >{{ c.visitsCompleted }} / {{ c.scheduledVisitsPerYear }} Visits</span
+                    >
                   </div>
                 </td>
-                <td class="fw-bold">
-                  ₹{{ (c.contractValueInPaise / 100) | number:'1.2-2' }}
-                </td>
+                <td class="fw-bold">₹{{ c.contractValueInPaise / 100 | number: '1.2-2' }}</td>
                 <td>
                   <ar-chip [tone]="getStatusTone(c.status)">{{ getStatusLabel(c.status) }}</ar-chip>
                 </td>
@@ -303,7 +313,9 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
             <div>
               <div class="cockpit-title-row">
                 <h3>{{ contract.contractNumber }}</h3>
-                <ar-chip [tone]="getStatusTone(contract.status)">{{ getStatusLabel(contract.status) }}</ar-chip>
+                <ar-chip [tone]="getStatusTone(contract.status)">{{
+                  getStatusLabel(contract.status)
+                }}</ar-chip>
               </div>
               <p class="cockpit-sub">
                 Customer: <strong>{{ contract.customerName }}</strong>
@@ -314,7 +326,9 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
             </div>
             <div class="cockpit-actions">
               <button
-                *ngIf="contract.status === AmcStatus.Active || contract.status === AmcStatus.ExpiringSoon"
+                *ngIf="
+                  contract.status === AmcStatus.Active || contract.status === AmcStatus.ExpiringSoon
+                "
                 ar-button="primary"
                 (click)="openRenewModal(contract)"
               >
@@ -333,16 +347,23 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
             <div class="ov-item">
               <span class="lbl">SLA Response Time</span>
               <strong class="val text-primary-dark">{{ contract.slaResponseHours }} Hours</strong>
-              <span class="sub-desc">{{ contract.sparesIncluded ? 'Spares Included (Comp)' : 'Spares Excluded' }}</span>
+              <span class="sub-desc">{{
+                contract.sparesIncluded ? 'Spares Included (Comp)' : 'Spares Excluded'
+              }}</span>
             </div>
             <div class="ov-item">
               <span class="lbl">Contract Period</span>
-              <span class="val-date">{{ contract.startDateUtc | date:'mediumDate' }} - {{ contract.endDateUtc | date:'mediumDate' }}</span>
+              <span class="val-date"
+                >{{ contract.startDateUtc | date: 'mediumDate' }} -
+                {{ contract.endDateUtc | date: 'mediumDate' }}</span
+              >
               <span class="sub-desc">Annual Recurring Service</span>
             </div>
             <div class="ov-item">
               <span class="lbl">Contract Value</span>
-              <strong class="val text-success">₹{{ (contract.contractValueInPaise / 100) | number:'1.2-2' }}</strong>
+              <strong class="val text-success"
+                >₹{{ contract.contractValueInPaise / 100 | number: '1.2-2' }}</strong
+              >
               <span class="sub-desc">Inclusive of scheduled visits</span>
             </div>
           </div>
@@ -369,9 +390,11 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
                 <tbody>
                   <tr *ngFor="let s of contract.schedules">
                     <td class="fw-bold">Visit #{{ s.visitNumber }}</td>
-                    <td>{{ s.scheduledDateUtc | date:'mediumDate' }}</td>
+                    <td>{{ s.scheduledDateUtc | date: 'mediumDate' }}</td>
                     <td>
-                      <span *ngIf="s.completedDateUtc">{{ s.completedDateUtc | date:'mediumDate' }}</span>
+                      <span *ngIf="s.completedDateUtc">{{
+                        s.completedDateUtc | date: 'mediumDate'
+                      }}</span>
                       <span *ngIf="!s.completedDateUtc" class="text-muted">-</span>
                     </td>
                     <td>
@@ -398,7 +421,9 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
                     </td>
                   </tr>
                   <tr *ngIf="!contract.schedules || contract.schedules.length === 0">
-                    <td colspan="6" class="text-center text-muted">No scheduled visits configured.</td>
+                    <td colspan="6" class="text-center text-muted">
+                      No scheduled visits configured.
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -422,26 +447,50 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
           </div>
           <div class="form-group">
             <label>Customer Name</label>
-            <input type="text" class="form-control" [(ngModel)]="newContract.customerName" placeholder="Client Name" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newContract.customerName"
+              placeholder="Client Name"
+            />
           </div>
           <div class="form-group full-width">
             <label>Customer Site Address / Plant Location</label>
-            <input type="text" class="form-control" [(ngModel)]="newContract.customerSiteAddress" placeholder="Plant, Shop, City" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newContract.customerSiteAddress"
+              placeholder="Plant, Shop, City"
+            />
           </div>
           <div class="form-group">
             <label>Equipment Serial Number</label>
-            <input type="text" class="form-control" [(ngModel)]="newContract.equipmentSerialNumber" placeholder="e.g. PR-400T-2024-09" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newContract.equipmentSerialNumber"
+              placeholder="e.g. PR-400T-2024-09"
+            />
           </div>
           <div class="form-group">
             <label>Equipment Model / Machine Name</label>
-            <input type="text" class="form-control" [(ngModel)]="newContract.equipmentModel" placeholder="e.g. Hydraulic Stamping Press 400T" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newContract.equipmentModel"
+              placeholder="e.g. Hydraulic Stamping Press 400T"
+            />
           </div>
           <div class="form-group">
             <label>Contract Type</label>
             <select class="form-control" [(ngModel)]="newContract.contractType">
               <option [ngValue]="AmcContractType.Comprehensive">Comprehensive (With Spares)</option>
-              <option [ngValue]="AmcContractType.NonComprehensive">Non-Comprehensive (Labor Only)</option>
-              <option [ngValue]="AmcContractType.PreventiveOnly">Preventive Maintenance Only</option>
+              <option [ngValue]="AmcContractType.NonComprehensive">
+                Non-Comprehensive (Labor Only)
+              </option>
+              <option [ngValue]="AmcContractType.PreventiveOnly">
+                Preventive Maintenance Only
+              </option>
               <option [ngValue]="AmcContractType.OnDemand">On Demand SLA</option>
             </select>
           </div>
@@ -451,11 +500,20 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
           </div>
           <div class="form-group">
             <label>Annual Contract Value (INR)</label>
-            <input type="number" class="form-control" [ngModel]="newContract.contractValueInPaise / 100" (ngModelChange)="newContract.contractValueInPaise = $event * 100" />
+            <input
+              type="number"
+              class="form-control"
+              [ngModel]="newContract.contractValueInPaise / 100"
+              (ngModelChange)="newContract.contractValueInPaise = $event * 100"
+            />
           </div>
           <div class="form-group">
             <label>Scheduled PM Visits Per Year</label>
-            <input type="number" class="form-control" [(ngModel)]="newContract.scheduledVisitsPerYear" />
+            <input
+              type="number"
+              class="form-control"
+              [(ngModel)]="newContract.scheduledVisitsPerYear"
+            />
           </div>
           <div class="form-group">
             <label>Start Date</label>
@@ -494,17 +552,28 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
     >
       <div class="modal-body-container" *ngIf="targetSchedule() as sched">
         <p class="mb-3">
-          Recording completion for <strong>Visit #{{ sched.visitNumber }}</strong> (Scheduled for {{ sched.scheduledDateUtc | date:'mediumDate' }}).
+          Recording completion for <strong>Visit #{{ sched.visitNumber }}</strong> (Scheduled for
+          {{ sched.scheduledDateUtc | date: 'mediumDate' }}).
         </p>
 
         <div class="form-grid">
           <div class="form-group full-width">
             <label>Service Engineer Who Performed Visit</label>
-            <input type="text" class="form-control" [(ngModel)]="visitCompletion.assignedEngineer" placeholder="Engineer Name" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="visitCompletion.assignedEngineer"
+              placeholder="Engineer Name"
+            />
           </div>
           <div class="form-group full-width">
             <label>Inspection Notes & Maintenance Carried Out</label>
-            <textarea class="form-control" rows="3" [(ngModel)]="visitCompletion.visitNotes" placeholder="Checked oil filters, tightened mounting bolts, verified sensor calibrations..."></textarea>
+            <textarea
+              class="form-control"
+              rows="3"
+              [(ngModel)]="visitCompletion.visitNotes"
+              placeholder="Checked oil filters, tightened mounting bolts, verified sensor calibrations..."
+            ></textarea>
           </div>
         </div>
 
@@ -523,7 +592,8 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
     >
       <div class="modal-body-container" *ngIf="selectedContract() as contract">
         <p class="mb-3">
-          Renewing contract <strong>{{ contract.contractNumber }}</strong> for {{ contract.customerName }} ({{ contract.equipmentSerialNumber }}).
+          Renewing contract <strong>{{ contract.contractNumber }}</strong> for
+          {{ contract.customerName }} ({{ contract.equipmentSerialNumber }}).
         </p>
 
         <div class="form-grid">
@@ -537,7 +607,12 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
           </div>
           <div class="form-group">
             <label>New Contract Value (INR)</label>
-            <input type="number" class="form-control" [ngModel]="renewForm.newContractValueInPaise / 100" (ngModelChange)="renewForm.newContractValueInPaise = $event * 100" />
+            <input
+              type="number"
+              class="form-control"
+              [ngModel]="renewForm.newContractValueInPaise / 100"
+              (ngModelChange)="renewForm.newContractValueInPaise = $event * 100"
+            />
           </div>
           <div class="form-group">
             <label>Contract Type</label>
@@ -591,8 +666,12 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
         gap: 0.25rem;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 
-        &.amber { border-left: 4px solid #f59e0b; }
-        &.teal { border-left: 4px solid #0d9488; }
+        &.amber {
+          border-left: 4px solid #f59e0b;
+        }
+        &.teal {
+          border-left: 4px solid #0d9488;
+        }
 
         .label {
           font-size: 0.78rem;
@@ -850,7 +929,9 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
             font-size: 1.05rem;
             font-weight: 700;
 
-            &.val-serial { color: #0284c7; }
+            &.val-serial {
+              color: #0284c7;
+            }
           }
 
           .val-date {
@@ -982,14 +1063,30 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
         gap: 0.75rem;
       }
 
-      .fw-bold { font-weight: 600; }
-      .text-primary-dark { color: #0369a1; }
-      .text-success { color: #16a34a; }
-      .text-muted { color: #94a3b8; }
-      .text-center { text-align: center; }
-      .mt-3 { margin-top: 0.75rem; }
-      .mt-4 { margin-top: 1rem; }
-      .mb-3 { margin-bottom: 0.75rem; }
+      .fw-bold {
+        font-weight: 600;
+      }
+      .text-primary-dark {
+        color: #0369a1;
+      }
+      .text-success {
+        color: #16a34a;
+      }
+      .text-muted {
+        color: #94a3b8;
+      }
+      .text-center {
+        text-align: center;
+      }
+      .mt-3 {
+        margin-top: 0.75rem;
+      }
+      .mt-4 {
+        margin-top: 1rem;
+      }
+      .mb-3 {
+        margin-bottom: 0.75rem;
+      }
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -1046,7 +1143,7 @@ export class AmcContractsComponent {
     const q = this.searchQuery().trim().toLowerCase();
     const sf = this.statusFilter();
 
-    return this.contracts().filter(c => {
+    return this.contracts().filter((c) => {
       if (sf !== 'ALL' && c.status.toString() !== sf) return false;
       if (!q) return true;
 
@@ -1061,12 +1158,13 @@ export class AmcContractsComponent {
 
   readonly stats = computed(() => {
     const list = this.contracts();
-    const activeCount = list.filter(c => c.status === AmcStatus.Active).length;
-    const expiringSoonCount = list.filter(c => c.status === AmcStatus.ExpiringSoon).length;
+    const activeCount = list.filter((c) => c.status === AmcStatus.Active).length;
+    const expiringSoonCount = list.filter((c) => c.status === AmcStatus.ExpiringSoon).length;
     const totalAcvPaise = list.reduce((acc, c) => acc + (c.contractValueInPaise || 0), 0);
     const totalVisits = list.reduce((acc, c) => acc + (c.scheduledVisitsPerYear || 0), 0);
     const completedVisits = list.reduce((acc, c) => acc + (c.visitsCompleted || 0), 0);
-    const completionRate = totalVisits > 0 ? ((completedVisits / totalVisits) * 100).toFixed(0) : '0';
+    const completionRate =
+      totalVisits > 0 ? ((completedVisits / totalVisits) * 100).toFixed(0) : '0';
 
     return {
       activeCount,
@@ -1089,18 +1187,16 @@ export class AmcContractsComponent {
     if (environment.useMockData) return;
 
     this.isLoading.set(true);
-    this.amcService
-      .getList({ maxResultCount: 100 })
-      .subscribe({
-        next: res => {
-          this.contracts.set(res.items || []);
-          if (res.items && res.items.length > 0) {
-            this.selectedContract.set(res.items[0]);
-          }
-          this.isLoading.set(false);
-        },
-        error: () => this.isLoading.set(false),
-      });
+    this.amcService.getList({ maxResultCount: 100 }).subscribe({
+      next: (res) => {
+        this.contracts.set(res.items || []);
+        if (res.items && res.items.length > 0) {
+          this.selectedContract.set(res.items[0]);
+        }
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false),
+    });
   }
 
   selectContract(c: AmcContractDto): void {
@@ -1178,8 +1274,8 @@ export class AmcContractsComponent {
 
     if (!environment.useMockData) {
       this.amcService.create(this.newContract).subscribe({
-        next: created => {
-          this.contracts.update(list => [created, ...list]);
+        next: (created) => {
+          this.contracts.update((list) => [created, ...list]);
           this.selectedContract.set(created);
           this.isCreateOpen.set(false);
         },
@@ -1238,7 +1334,7 @@ export class AmcContractsComponent {
       ],
     };
 
-    this.contracts.update(list => [created, ...list]);
+    this.contracts.update((list) => [created, ...list]);
     this.selectedContract.set(created);
     this.isCreateOpen.set(false);
   }
@@ -1260,7 +1356,7 @@ export class AmcContractsComponent {
 
     if (!environment.useMockData && sel.id) {
       this.amcService.completeVisit(sel.id, this.visitCompletion).subscribe({
-        next: updated => {
+        next: (updated) => {
           this.updateContractInState(updated);
           this.isCompleteVisitOpen.set(false);
         },
@@ -1268,7 +1364,7 @@ export class AmcContractsComponent {
       return;
     }
 
-    const updatedSchedules = (sel.schedules || []).map(s => {
+    const updatedSchedules = (sel.schedules || []).map((s) => {
       if (s.id === sched.id) {
         return {
           ...s,
@@ -1307,7 +1403,7 @@ export class AmcContractsComponent {
 
     if (!environment.useMockData && sel.id) {
       this.amcService.renew(sel.id, this.renewForm).subscribe({
-        next: updated => {
+        next: (updated) => {
           this.updateContractInState(updated);
           this.isRenewOpen.set(false);
         },
@@ -1331,7 +1427,7 @@ export class AmcContractsComponent {
   }
 
   private updateContractInState(updated: AmcContractDto): void {
-    this.contracts.update(list => list.map(c => (c.id === updated.id ? updated : c)));
+    this.contracts.update((list) => list.map((c) => (c.id === updated.id ? updated : c)));
     this.selectedContract.set(updated);
   }
 }

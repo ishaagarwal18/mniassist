@@ -31,10 +31,7 @@ function createMockAccount(isHost = false, isHostAdmin = false): CurrentUserServ
   } as unknown as CurrentUserService;
 }
 
-function createMockPlanService(
-  plan: SubscriptionPlan,
-  features: string[] = [],
-): PlanService {
+function createMockPlanService(plan: SubscriptionPlan, features: string[] = []): PlanService {
   const normFeatures = new Set(features.map((f) => f.toLowerCase()));
   return {
     plan: () => plan,
@@ -136,7 +133,10 @@ describe('canAccessNavItem - Plan and Permission gating', () => {
   it('hides Quotations on Growth plan, but shows on Pro plan', () => {
     const permissions = createMockPermissions({ 'AutoReach.Quotations': true });
     const growthPlan = createMockPlanService(SubscriptionPlan.Growth, ['AutomationBuilder']);
-    const proPlan = createMockPlanService(SubscriptionPlan.Pro, ['AutomationBuilder', 'PipelineCrm']);
+    const proPlan = createMockPlanService(SubscriptionPlan.Pro, [
+      'AutomationBuilder',
+      'PipelineCrm',
+    ]);
     const account = createMockAccount(false);
 
     expect(canAccessNavItem(quotationsItem, permissions, growthPlan, account)).toBe(false);
@@ -146,7 +146,10 @@ describe('canAccessNavItem - Plan and Permission gating', () => {
   it('hides Dealer network on Pro plan, but shows on Enterprise plan', () => {
     const permissions = createMockPermissions({ 'AutoReach.Network': true });
     const proPlan = createMockPlanService(SubscriptionPlan.Pro, ['PipelineCrm']);
-    const entPlan = createMockPlanService(SubscriptionPlan.Enterprise, ['PipelineCrm', 'OemNetwork']);
+    const entPlan = createMockPlanService(SubscriptionPlan.Enterprise, [
+      'PipelineCrm',
+      'OemNetwork',
+    ]);
     const account = createMockAccount(false);
 
     expect(canAccessNavItem(networkItem, permissions, proPlan, account)).toBe(false);
@@ -167,7 +170,9 @@ describe('canAccessNavItem - Plan and Permission gating', () => {
     expect(canAccessNavItem(quotationsItem, hostPermissions, entPlan, hostAccount)).toBe(false);
 
     // Tenant user NEVER sees host-only platform console
-    expect(canAccessNavItem(platformConsoleItem, hostPermissions, entPlan, tenantAccount)).toBe(false);
+    expect(canAccessNavItem(platformConsoleItem, hostPermissions, entPlan, tenantAccount)).toBe(
+      false,
+    );
   });
 
   it('shows every navigation item to host-admin despite missing grants and a Starter plan', () => {

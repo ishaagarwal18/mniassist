@@ -31,7 +31,8 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
     ticketType: ServiceTicketType.Breakdown,
     priority: ServiceTicketPriority.CriticalEmergency,
     status: ServiceTicketStatus.InProgress,
-    issueDescription: 'Main ram pressure dropping during 350 bar stamping cycle. Line 1 assembly halted.',
+    issueDescription:
+      'Main ram pressure dropping during 350 bar stamping cycle. Line 1 assembly halted.',
     assignedFieldEngineer: 'Sunil Deshmukh (Sr Service Specialist)',
     scheduledVisitDateUtc: new Date(Date.now() - 4 * 3600_000).toISOString(),
     visitStartTimeUtc: new Date(Date.now() - 3 * 3600_000).toISOString(),
@@ -73,7 +74,8 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
     ticketType: ServiceTicketType.Breakdown,
     priority: ServiceTicketPriority.High,
     status: ServiceTicketStatus.InTransit,
-    issueDescription: 'Hoist motor drive tripping with Overcurrent Fault F-002 under heavy 20-ton load.',
+    issueDescription:
+      'Hoist motor drive tripping with Overcurrent Fault F-002 under heavy 20-ton load.',
     assignedFieldEngineer: 'Prakash Rao (Field Lead)',
     scheduledVisitDateUtc: new Date(Date.now() + 2 * 3600_000).toISOString(),
     totalSparesCostInPaise: 0,
@@ -94,7 +96,8 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
     status: ServiceTicketStatus.Resolved,
     issueDescription: 'Quarterly PM check & condenser coil descaling before summer peak load.',
     rootCauseAnalysis: 'Scale deposit in copper heat exchanger tubes due to high water hardness.',
-    resolutionSummary: 'Chemical acid flush and neutralizer wash performed. Flow rate restored to 240 LPM. Refrigerant R410A topped up.',
+    resolutionSummary:
+      'Chemical acid flush and neutralizer wash performed. Flow rate restored to 240 LPM. Refrigerant R410A topped up.',
     assignedFieldEngineer: 'Aman Deep (Specialist)',
     scheduledVisitDateUtc: new Date(Date.now() - 24 * 3600_000).toISOString(),
     customerSignoffName: 'Mahesh Joshi (Plant Maintenance Manager)',
@@ -136,7 +139,8 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
     ticketType: ServiceTicketType.InstallationCommissioning,
     priority: ServiceTicketPriority.High,
     status: ServiceTicketStatus.Assigned,
-    issueDescription: 'Site erection completed. Site engineer needed for wiring sign-off and PLC dry run.',
+    issueDescription:
+      'Site erection completed. Site engineer needed for wiring sign-off and PLC dry run.',
     assignedFieldEngineer: 'Kavita Iyer (Automation Systems Eng)',
     scheduledVisitDateUtc: new Date(Date.now() + 24 * 3600_000).toISOString(),
     totalSparesCostInPaise: 0,
@@ -176,7 +180,7 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
         </div>
         <div class="kpi-card">
           <span class="label">Total Spares Consumed</span>
-          <strong class="value">₹{{ (stats().totalSparesCostPaise / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ stats().totalSparesCostPaise / 100 | number: '1.2-2' }}</strong>
           <span class="sub">Warranty & billable parts</span>
         </div>
       </section>
@@ -249,13 +253,15 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
                 <td>
                   <div class="ticket-ref">
                     <span class="fw-bold">{{ t.ticketNumber }}</span>
-                    <span class="ticket-time">{{ t.creationTime | date:'short' }}</span>
+                    <span class="ticket-time">{{ t.creationTime | date: 'short' }}</span>
                   </div>
                 </td>
                 <td>
                   <div class="client-info">
                     <span class="client-name">{{ t.customerName }}</span>
-                    <span class="client-phone" *ngIf="t.customerContactPhone">&#9742; {{ t.customerContactPhone }}</span>
+                    <span class="client-phone" *ngIf="t.customerContactPhone"
+                      >&#9742; {{ t.customerContactPhone }}</span
+                    >
                   </div>
                 </td>
                 <td>
@@ -294,11 +300,16 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
             <div>
               <div class="cockpit-title-row">
                 <h3>{{ ticket.ticketNumber }}</h3>
-                <ar-chip [tone]="getPriorityTone(ticket.priority)">{{ getPriorityLabel(ticket.priority) }}</ar-chip>
-                <ar-chip [tone]="getStatusTone(ticket.status)">{{ getStatusLabel(ticket.status) }}</ar-chip>
+                <ar-chip [tone]="getPriorityTone(ticket.priority)">{{
+                  getPriorityLabel(ticket.priority)
+                }}</ar-chip>
+                <ar-chip [tone]="getStatusTone(ticket.status)">{{
+                  getStatusLabel(ticket.status)
+                }}</ar-chip>
               </div>
               <p class="cockpit-sub">
-                Customer: <strong>{{ ticket.customerName }}</strong> &bull; {{ ticket.equipmentModel }} ({{ ticket.equipmentSerialNumber }})
+                Customer: <strong>{{ ticket.customerName }}</strong> &bull;
+                {{ ticket.equipmentModel }} ({{ ticket.equipmentSerialNumber }})
               </p>
               <p class="cockpit-addr" *ngIf="ticket.customerSiteAddress">
                 Plant Location: {{ ticket.customerSiteAddress }}
@@ -306,14 +317,21 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
             </div>
             <div class="cockpit-actions">
               <button
-                *ngIf="ticket.status === ServiceTicketStatus.Open || ticket.status === ServiceTicketStatus.Assigned"
+                *ngIf="
+                  ticket.status === ServiceTicketStatus.Open ||
+                  ticket.status === ServiceTicketStatus.Assigned
+                "
                 ar-button="ghost"
                 (click)="openAssignModal(ticket)"
               >
                 Assign Engineer
               </button>
               <button
-                *ngIf="ticket.status === ServiceTicketStatus.InProgress || ticket.status === ServiceTicketStatus.Assigned || ticket.status === ServiceTicketStatus.InTransit"
+                *ngIf="
+                  ticket.status === ServiceTicketStatus.InProgress ||
+                  ticket.status === ServiceTicketStatus.Assigned ||
+                  ticket.status === ServiceTicketStatus.InTransit
+                "
                 ar-button="primary"
                 (click)="openResolveModal(ticket)"
               >
@@ -340,10 +358,13 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
               <h4>Consumed Spare Parts</h4>
               <div class="spares-header-actions">
                 <span class="spares-total">
-                  Total: ₹{{ (ticket.totalSparesCostInPaise / 100) | number:'1.2-2' }}
+                  Total: ₹{{ ticket.totalSparesCostInPaise / 100 | number: '1.2-2' }}
                 </span>
                 <button
-                  *ngIf="ticket.status !== ServiceTicketStatus.Resolved && ticket.status !== ServiceTicketStatus.Closed"
+                  *ngIf="
+                    ticket.status !== ServiceTicketStatus.Resolved &&
+                    ticket.status !== ServiceTicketStatus.Closed
+                  "
                   ar-button="ghost"
                   (click)="openRecordSpareModal(ticket)"
                 >
@@ -369,16 +390,18 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
                     <td class="fw-bold">{{ sp.partNumber }}</td>
                     <td>{{ sp.description }}</td>
                     <td>{{ sp.quantity }}</td>
-                    <td>₹{{ (sp.unitPriceInPaise / 100) | number:'1.2-2' }}</td>
+                    <td>₹{{ sp.unitPriceInPaise / 100 | number: '1.2-2' }}</td>
                     <td>
                       <span class="billable-pill" [class.warranty]="!sp.isBillableToCustomer">
                         {{ sp.isBillableToCustomer ? 'Billable to Client' : 'AMC / Warranty' }}
                       </span>
                     </td>
-                    <td class="fw-bold">₹{{ (sp.lineTotalInPaise / 100) | number:'1.2-2' }}</td>
+                    <td class="fw-bold">₹{{ sp.lineTotalInPaise / 100 | number: '1.2-2' }}</td>
                   </tr>
                   <tr *ngIf="!ticket.sparesConsumed || ticket.sparesConsumed.length === 0">
-                    <td colspan="6" class="text-center text-muted">No spare parts replaced during this visit.</td>
+                    <td colspan="6" class="text-center text-muted">
+                      No spare parts replaced during this visit.
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -393,7 +416,11 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
             </div>
             <div class="signoff-item" *ngIf="ticket.customerSatisfactionRating">
               <span class="lbl">CSAT Rating</span>
-              <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733; ({{ ticket.customerSatisfactionRating }}/5)</span>
+              <span class="stars"
+                >&#9733;&#9733;&#9733;&#9733;&#9733; ({{
+                  ticket.customerSatisfactionRating
+                }}/5)</span
+              >
             </div>
           </div>
         </section>
@@ -414,37 +441,68 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
           </div>
           <div class="form-group">
             <label>Customer Name</label>
-            <input type="text" class="form-control" [(ngModel)]="newTicket.customerName" placeholder="Client Name" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newTicket.customerName"
+              placeholder="Client Name"
+            />
           </div>
           <div class="form-group">
             <label>Customer Site Address</label>
-            <input type="text" class="form-control" [(ngModel)]="newTicket.customerSiteAddress" placeholder="Plant, Bay, City" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newTicket.customerSiteAddress"
+              placeholder="Plant, Bay, City"
+            />
           </div>
           <div class="form-group">
             <label>Customer Contact Phone</label>
-            <input type="text" class="form-control" [(ngModel)]="newTicket.customerContactPhone" placeholder="+91 ..." />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newTicket.customerContactPhone"
+              placeholder="+91 ..."
+            />
           </div>
           <div class="form-group">
             <label>Equipment Serial Number</label>
-            <input type="text" class="form-control" [(ngModel)]="newTicket.equipmentSerialNumber" placeholder="e.g. PR-400T-2024-09" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newTicket.equipmentSerialNumber"
+              placeholder="e.g. PR-400T-2024-09"
+            />
           </div>
           <div class="form-group">
             <label>Equipment Model / Machine</label>
-            <input type="text" class="form-control" [(ngModel)]="newTicket.equipmentModel" placeholder="e.g. Stamping Press" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newTicket.equipmentModel"
+              placeholder="e.g. Stamping Press"
+            />
           </div>
           <div class="form-group">
             <label>Ticket Type</label>
             <select class="form-control" [(ngModel)]="newTicket.ticketType">
               <option [ngValue]="ServiceTicketType.Breakdown">Emergency Breakdown</option>
-              <option [ngValue]="ServiceTicketType.PreventiveMaintenance">Preventive Maintenance</option>
-              <option [ngValue]="ServiceTicketType.InstallationCommissioning">Installation & Commissioning</option>
+              <option [ngValue]="ServiceTicketType.PreventiveMaintenance">
+                Preventive Maintenance
+              </option>
+              <option [ngValue]="ServiceTicketType.InstallationCommissioning">
+                Installation & Commissioning
+              </option>
               <option [ngValue]="ServiceTicketType.Calibration">Instrumentation Calibration</option>
             </select>
           </div>
           <div class="form-group">
             <label>Priority</label>
             <select class="form-control" [(ngModel)]="newTicket.priority">
-              <option [ngValue]="ServiceTicketPriority.CriticalEmergency">Critical Emergency (Production Halted)</option>
+              <option [ngValue]="ServiceTicketPriority.CriticalEmergency">
+                Critical Emergency (Production Halted)
+              </option>
               <option [ngValue]="ServiceTicketPriority.High">High</option>
               <option [ngValue]="ServiceTicketPriority.Medium">Medium</option>
               <option [ngValue]="ServiceTicketPriority.Low">Low</option>
@@ -454,7 +512,12 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
 
         <div class="form-group full-width mt-3">
           <label>Problem Description / Breakdown Symptoms</label>
-          <textarea class="form-control" rows="3" [(ngModel)]="newTicket.issueDescription" placeholder="Describe error codes, hydraulic leaks, PLC alarms..."></textarea>
+          <textarea
+            class="form-control"
+            rows="3"
+            [(ngModel)]="newTicket.issueDescription"
+            placeholder="Describe error codes, hydraulic leaks, PLC alarms..."
+          ></textarea>
         </div>
 
         <div class="dialog-actions mt-4">
@@ -472,17 +535,28 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
     >
       <div class="modal-body-container" *ngIf="selectedTicket() as ticket">
         <p class="mb-3">
-          Assigning engineer for <strong>{{ ticket.ticketNumber }}</strong> ({{ ticket.customerName }}).
+          Assigning engineer for <strong>{{ ticket.ticketNumber }}</strong> ({{
+            ticket.customerName
+          }}).
         </p>
 
         <div class="form-grid">
           <div class="form-group">
             <label>Field Engineer Name</label>
-            <input type="text" class="form-control" [(ngModel)]="assignForm.assignedFieldEngineer" placeholder="Engineer Name" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="assignForm.assignedFieldEngineer"
+              placeholder="Engineer Name"
+            />
           </div>
           <div class="form-group">
             <label>Scheduled On-Site Visit Date/Time</label>
-            <input type="datetime-local" class="form-control" [(ngModel)]="assignForm.scheduledVisitDateUtc" />
+            <input
+              type="datetime-local"
+              class="form-control"
+              [(ngModel)]="assignForm.scheduledVisitDateUtc"
+            />
           </div>
         </div>
 
@@ -503,11 +577,21 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
         <div class="form-grid">
           <div class="form-group">
             <label>Spare Part Number</label>
-            <input type="text" class="form-control" [(ngModel)]="newSpare.partNumber" placeholder="e.g. SK-FKM-90" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newSpare.partNumber"
+              placeholder="e.g. SK-FKM-90"
+            />
           </div>
           <div class="form-group">
             <label>Part Description</label>
-            <input type="text" class="form-control" [(ngModel)]="newSpare.description" placeholder="Viton Seal Kit..." />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newSpare.description"
+              placeholder="Viton Seal Kit..."
+            />
           </div>
           <div class="form-group">
             <label>Quantity Replaced</label>
@@ -515,7 +599,12 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
           </div>
           <div class="form-group">
             <label>Unit Price (INR)</label>
-            <input type="number" class="form-control" [ngModel]="newSpare.unitPriceInPaise / 100" (ngModelChange)="newSpare.unitPriceInPaise = $event * 100" />
+            <input
+              type="number"
+              class="form-control"
+              [ngModel]="newSpare.unitPriceInPaise / 100"
+              (ngModelChange)="newSpare.unitPriceInPaise = $event * 100"
+            />
           </div>
         </div>
 
@@ -546,18 +635,33 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
 
         <div class="form-group full-width">
           <label>Root Cause Analysis (RCA)</label>
-          <textarea class="form-control" rows="2" [(ngModel)]="resolveForm.rootCauseAnalysis" placeholder="Detailed technical cause of machine fault..."></textarea>
+          <textarea
+            class="form-control"
+            rows="2"
+            [(ngModel)]="resolveForm.rootCauseAnalysis"
+            placeholder="Detailed technical cause of machine fault..."
+          ></textarea>
         </div>
 
         <div class="form-group full-width mt-3">
           <label>Resolution Summary & Actions Taken</label>
-          <textarea class="form-control" rows="2" [(ngModel)]="resolveForm.resolutionSummary" placeholder="Replaced valve spool, flushed circuit, restored 350 bar test pressure..."></textarea>
+          <textarea
+            class="form-control"
+            rows="2"
+            [(ngModel)]="resolveForm.resolutionSummary"
+            placeholder="Replaced valve spool, flushed circuit, restored 350 bar test pressure..."
+          ></textarea>
         </div>
 
         <div class="form-grid mt-3">
           <div class="form-group">
             <label>Customer Representative Name</label>
-            <input type="text" class="form-control" [(ngModel)]="resolveForm.customerSignoffName" placeholder="Client Signatory" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="resolveForm.customerSignoffName"
+              placeholder="Client Signatory"
+            />
           </div>
           <div class="form-group">
             <label>Customer Satisfaction Rating (1 to 5 Stars)</label>
@@ -613,8 +717,12 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
         gap: 0.25rem;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 
-        &.bad { border-left: 4px solid #ef4444; }
-        &.teal { border-left: 4px solid #0d9488; }
+        &.bad {
+          border-left: 4px solid #ef4444;
+        }
+        &.teal {
+          border-left: 4px solid #0d9488;
+        }
 
         .label {
           font-size: 0.78rem;
@@ -878,7 +986,8 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
           line-height: 1.4;
         }
 
-        .rca-box, .sol-box {
+        .rca-box,
+        .sol-box {
           font-size: 0.8rem;
           color: #334155;
           padding-top: 0.4rem;
@@ -1030,12 +1139,24 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
         gap: 0.75rem;
       }
 
-      .fw-bold { font-weight: 600; }
-      .text-muted { color: #94a3b8; }
-      .text-center { text-align: center; }
-      .mt-3 { margin-top: 0.75rem; }
-      .mt-4 { margin-top: 1rem; }
-      .mb-3 { margin-bottom: 0.75rem; }
+      .fw-bold {
+        font-weight: 600;
+      }
+      .text-muted {
+        color: #94a3b8;
+      }
+      .text-center {
+        text-align: center;
+      }
+      .mt-3 {
+        margin-top: 0.75rem;
+      }
+      .mt-4 {
+        margin-top: 1rem;
+      }
+      .mb-3 {
+        margin-bottom: 0.75rem;
+      }
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -1094,7 +1215,7 @@ export class FieldServiceTicketsComponent {
     const q = this.searchQuery().trim().toLowerCase();
     const sf = this.statusFilter();
 
-    return this.tickets().filter(t => {
+    return this.tickets().filter((t) => {
       if (sf !== 'ALL' && t.status.toString() !== sf) return false;
       if (!q) return true;
 
@@ -1109,9 +1230,17 @@ export class FieldServiceTicketsComponent {
 
   readonly stats = computed(() => {
     const list = this.tickets();
-    const openCount = list.filter(t => t.status !== ServiceTicketStatus.Resolved && t.status !== ServiceTicketStatus.Closed).length;
-    const criticalCount = list.filter(t => t.priority === ServiceTicketPriority.CriticalEmergency && t.status !== ServiceTicketStatus.Closed).length;
-    const resolvedCount = list.filter(t => t.status === ServiceTicketStatus.Resolved || t.status === ServiceTicketStatus.Closed).length;
+    const openCount = list.filter(
+      (t) => t.status !== ServiceTicketStatus.Resolved && t.status !== ServiceTicketStatus.Closed,
+    ).length;
+    const criticalCount = list.filter(
+      (t) =>
+        t.priority === ServiceTicketPriority.CriticalEmergency &&
+        t.status !== ServiceTicketStatus.Closed,
+    ).length;
+    const resolvedCount = list.filter(
+      (t) => t.status === ServiceTicketStatus.Resolved || t.status === ServiceTicketStatus.Closed,
+    ).length;
     const totalSparesCostPaise = list.reduce((acc, t) => acc + (t.totalSparesCostInPaise || 0), 0);
 
     return {
@@ -1134,18 +1263,16 @@ export class FieldServiceTicketsComponent {
     if (environment.useMockData) return;
 
     this.isLoading.set(true);
-    this.ticketService
-      .getList({ maxResultCount: 100 })
-      .subscribe({
-        next: res => {
-          this.tickets.set(res.items || []);
-          if (res.items && res.items.length > 0) {
-            this.selectedTicket.set(res.items[0]);
-          }
-          this.isLoading.set(false);
-        },
-        error: () => this.isLoading.set(false),
-      });
+    this.ticketService.getList({ maxResultCount: 100 }).subscribe({
+      next: (res) => {
+        this.tickets.set(res.items || []);
+        if (res.items && res.items.length > 0) {
+          this.selectedTicket.set(res.items[0]);
+        }
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false),
+    });
   }
 
   selectTicket(t: FieldServiceTicketDto): void {
@@ -1259,8 +1386,8 @@ export class FieldServiceTicketsComponent {
 
     if (!environment.useMockData) {
       this.ticketService.create(this.newTicket).subscribe({
-        next: created => {
-          this.tickets.update(list => [created, ...list]);
+        next: (created) => {
+          this.tickets.update((list) => [created, ...list]);
           this.selectedTicket.set(created);
           this.isCreateOpen.set(false);
         },
@@ -1286,7 +1413,7 @@ export class FieldServiceTicketsComponent {
       sparesConsumed: [],
     };
 
-    this.tickets.update(list => [created, ...list]);
+    this.tickets.update((list) => [created, ...list]);
     this.selectedTicket.set(created);
     this.isCreateOpen.set(false);
   }
@@ -1305,7 +1432,7 @@ export class FieldServiceTicketsComponent {
 
     if (!environment.useMockData && sel.id) {
       this.ticketService.assign(sel.id, this.assignForm).subscribe({
-        next: updated => {
+        next: (updated) => {
           this.updateTicketInState(updated);
           this.isAssignOpen.set(false);
         },
@@ -1341,7 +1468,7 @@ export class FieldServiceTicketsComponent {
 
     if (!environment.useMockData && sel.id) {
       this.ticketService.recordSpare(sel.id, this.newSpare).subscribe({
-        next: updated => {
+        next: (updated) => {
           this.updateTicketInState(updated);
           this.isRecordSpareOpen.set(false);
         },
@@ -1373,8 +1500,11 @@ export class FieldServiceTicketsComponent {
 
   openResolveModal(ticket: FieldServiceTicketDto): void {
     this.resolveForm = {
-      rootCauseAnalysis: ticket.rootCauseAnalysis || 'Machine wear and seal deterioration under operating pressure.',
-      resolutionSummary: ticket.resolutionSummary || 'Replaced defective components, performed system flush and verified 350 bar test run.',
+      rootCauseAnalysis:
+        ticket.rootCauseAnalysis || 'Machine wear and seal deterioration under operating pressure.',
+      resolutionSummary:
+        ticket.resolutionSummary ||
+        'Replaced defective components, performed system flush and verified 350 bar test run.',
       customerSignoffName: ticket.customerSignoffName || 'Customer Plant In-Charge',
       customerSatisfactionRating: 5,
     };
@@ -1387,7 +1517,7 @@ export class FieldServiceTicketsComponent {
 
     if (!environment.useMockData && sel.id) {
       this.ticketService.resolve(sel.id, this.resolveForm).subscribe({
-        next: updated => {
+        next: (updated) => {
           this.updateTicketInState(updated);
           this.isResolveOpen.set(false);
         },
@@ -1409,7 +1539,7 @@ export class FieldServiceTicketsComponent {
   }
 
   private updateTicketInState(updated: FieldServiceTicketDto): void {
-    this.tickets.update(list => list.map(t => (t.id === updated.id ? updated : t)));
+    this.tickets.update((list) => list.map((t) => (t.id === updated.id ? updated : t)));
     this.selectedTicket.set(updated);
   }
 }

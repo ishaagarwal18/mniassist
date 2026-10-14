@@ -256,7 +256,10 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip],
   template: `
-    <ar-topbar title="Vendor 360 Cockpit" subtitle="Procure-to-Pay supplier dossier, MSME Section 15 compliance, QC scores & ledgers">
+    <ar-topbar
+      title="Vendor 360 Cockpit"
+      subtitle="Procure-to-Pay supplier dossier, MSME Section 15 compliance, QC scores & ledgers"
+    >
       <div class="topbar-actions">
         <select
           class="supplier-selector"
@@ -286,9 +289,15 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
               </ar-chip>
             </div>
             <div class="statutory-badges">
-              <span class="badge-tag">GSTIN: <strong class="font-mono">{{ v.gstin || 'Unregistered' }}</strong></span>
-              <span class="badge-tag">PAN: <strong class="font-mono">{{ v.pan || 'N/A' }}</strong></span>
-              <span class="badge-tag" *ngIf="v.udyamRegistrationNumber">Udyam: <strong class="font-mono">{{ v.udyamRegistrationNumber }}</strong></span>
+              <span class="badge-tag"
+                >GSTIN: <strong class="font-mono">{{ v.gstin || 'Unregistered' }}</strong></span
+              >
+              <span class="badge-tag"
+                >PAN: <strong class="font-mono">{{ v.pan || 'N/A' }}</strong></span
+              >
+              <span class="badge-tag" *ngIf="v.udyamRegistrationNumber"
+                >Udyam: <strong class="font-mono">{{ v.udyamRegistrationNumber }}</strong></span
+              >
             </div>
             <div class="contact-line">
               <span>📍 {{ v.address }}, {{ v.city }}, {{ v.state }} - {{ v.pincode }}</span>
@@ -303,7 +312,9 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
           <strong>{{ v.bankName || 'HDFC Bank Ltd' }}</strong>
           <span class="font-mono">A/C: {{ v.bankAccountNumber || '50200081729381' }}</span>
           <span class="font-mono">IFSC: {{ v.bankIfscCode || 'HDFC0001092' }}</span>
-          <span class="lead-time">Avg Lead Time: <strong>{{ v.leadDays }} days</strong></span>
+          <span class="lead-time"
+            >Avg Lead Time: <strong>{{ v.leadDays }} days</strong></span
+          >
         </div>
       </section>
 
@@ -313,8 +324,9 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
         <div class="alert-text">
           <strong>MSME Section 15 Statutory Overdue Alert:</strong>
           <span>
-            Bills totaling <strong>₹{{ (v.msmeOverdueInPaise / 100) | number:'1.2-2' }}</strong> have exceeded the mandatory 45-day statutory payment window.
-            Compounded interest at 3x RBI repo rate is applicable under Section 16 of the MSMED Act.
+            Bills totaling <strong>₹{{ v.msmeOverdueInPaise / 100 | number: '1.2-2' }}</strong> have
+            exceeded the mandatory 45-day statutory payment window. Compounded interest at 3x RBI
+            repo rate is applicable under Section 16 of the MSMED Act.
           </span>
         </div>
         <button ar-button="danger" (click)="goToBills()">Clear Overdue Bills</button>
@@ -324,20 +336,24 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
       <section class="kpi-grid">
         <div class="kpi-card">
           <span class="label">Lifetime Purchases</span>
-          <strong class="value">₹{{ (v.totalPurchasesInPaise / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ v.totalPurchasesInPaise / 100 | number: '1.2-2' }}</strong>
           <span class="sub">Total gross order value</span>
         </div>
         <div class="kpi-card teal">
           <span class="label">Total Disbursed</span>
-          <strong class="value">₹{{ (v.totalPaidInPaise / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ v.totalPaidInPaise / 100 | number: '1.2-2' }}</strong>
           <span class="sub">Paid via Bank NEFT / RTGS</span>
         </div>
         <div class="kpi-card amber">
           <span class="label">Outstanding Payable</span>
-          <strong class="value">₹{{ (v.outstandingPayableInPaise / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ v.outstandingPayableInPaise / 100 | number: '1.2-2' }}</strong>
           <span class="sub">Net of TDS deductions</span>
         </div>
-        <div class="kpi-card" [class.good]="v.qualityAcceptancePercent >= 95" [class.amber]="v.qualityAcceptancePercent < 95">
+        <div
+          class="kpi-card"
+          [class.good]="v.qualityAcceptancePercent >= 95"
+          [class.amber]="v.qualityAcceptancePercent < 95"
+        >
           <span class="label">Quality Acceptance Rate</span>
           <strong class="value">{{ v.qualityAcceptancePercent }}%</strong>
           <span class="sub">Accepted vs Rejected across GRNs</span>
@@ -360,11 +376,7 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
         >
           Inward GRNs ({{ v.recentGoodsReceiptNotes.length }})
         </button>
-        <button
-          class="tab-btn"
-          [class.active]="activeTab() === 'po'"
-          (click)="activeTab.set('po')"
-        >
+        <button class="tab-btn" [class.active]="activeTab() === 'po'" (click)="activeTab.set('po')">
           Purchase Orders ({{ v.recentPurchaseOrders.length }})
         </button>
         <button
@@ -393,11 +405,13 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
           </thead>
           <tbody>
             <tr *ngFor="let b of v.recentVendorBills">
-              <td class="font-mono"><strong>{{ b.billNumber }}</strong></td>
+              <td class="font-mono">
+                <strong>{{ b.billNumber }}</strong>
+              </td>
               <td>
                 <div class="cell-main">
                   <span>{{ b.vendorInvoiceNumber }}</span>
-                  <span class="sub-text">{{ b.vendorInvoiceDateUtc | date:'mediumDate' }}</span>
+                  <span class="sub-text">{{ b.vendorInvoiceDateUtc | date: 'mediumDate' }}</span>
                 </div>
               </td>
               <td>
@@ -410,10 +424,15 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
                   {{ itcLabel(b.gstr2bMatchStatus) }}
                 </ar-chip>
               </td>
-              <td class="text-right font-mono">₹{{ (b.grandTotalInPaise / 100) | number:'1.2-2' }}</td>
               <td class="text-right font-mono">
-                <span [class.text-danger]="b.balanceDueInPaise > 0" [class.text-good]="b.balanceDueInPaise === 0">
-                  ₹{{ (b.balanceDueInPaise / 100) | number:'1.2-2' }}
+                ₹{{ b.grandTotalInPaise / 100 | number: '1.2-2' }}
+              </td>
+              <td class="text-right font-mono">
+                <span
+                  [class.text-danger]="b.balanceDueInPaise > 0"
+                  [class.text-good]="b.balanceDueInPaise === 0"
+                >
+                  ₹{{ b.balanceDueInPaise / 100 | number: '1.2-2' }}
                 </span>
               </td>
               <td>
@@ -446,11 +465,13 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
           </thead>
           <tbody>
             <tr *ngFor="let g of v.recentGoodsReceiptNotes">
-              <td class="font-mono"><strong>{{ g.grnNumber }}</strong></td>
+              <td class="font-mono">
+                <strong>{{ g.grnNumber }}</strong>
+              </td>
               <td>
                 <div class="cell-main">
                   <span>{{ g.gateEntryNumber || 'N/A' }}</span>
-                  <span class="sub-text">{{ g.gateInTimeUtc | date:'mediumDate' }}</span>
+                  <span class="sub-text">{{ g.gateInTimeUtc | date: 'mediumDate' }}</span>
                 </div>
               </td>
               <td>{{ g.purchaseOrderReference || 'Direct' }}</td>
@@ -466,7 +487,9 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
               </td>
             </tr>
             <tr *ngIf="v.recentGoodsReceiptNotes.length === 0">
-              <td colspan="7" class="empty-state">No goods receipt notes recorded for this supplier.</td>
+              <td colspan="7" class="empty-state">
+                No goods receipt notes recorded for this supplier.
+              </td>
             </tr>
           </tbody>
         </table>
@@ -487,11 +510,15 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
           </thead>
           <tbody>
             <tr *ngFor="let p of v.recentPurchaseOrders">
-              <td class="font-mono"><strong>{{ p.reference }}</strong></td>
-              <td>{{ p.creationTime | date:'mediumDate' }}</td>
-              <td>{{ p.expectedOn ? (p.expectedOn | date:'mediumDate') : 'Immediate' }}</td>
+              <td class="font-mono">
+                <strong>{{ p.reference }}</strong>
+              </td>
+              <td>{{ p.creationTime | date: 'mediumDate' }}</td>
+              <td>{{ p.expectedOn ? (p.expectedOn | date: 'mediumDate') : 'Immediate' }}</td>
               <td>{{ p.lineCount }} line items</td>
-              <td class="text-right font-mono"><strong>₹{{ (p.subtotalInPaise / 100) | number:'1.2-2' }}</strong></td>
+              <td class="text-right font-mono">
+                <strong>₹{{ p.subtotalInPaise / 100 | number: '1.2-2' }}</strong>
+              </td>
               <td>
                 <ar-chip tone="neutral">{{ p.state }}</ar-chip>
               </td>
@@ -518,10 +545,14 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
           </thead>
           <tbody>
             <tr *ngFor="let dn of v.recentDebitNotes">
-              <td class="font-mono"><strong>{{ dn.debitNoteNumber }}</strong></td>
-              <td>{{ dn.issueDateUtc | date:'mediumDate' }}</td>
+              <td class="font-mono">
+                <strong>{{ dn.debitNoteNumber }}</strong>
+              </td>
+              <td>{{ dn.issueDateUtc | date: 'mediumDate' }}</td>
               <td>{{ dn.reason }}</td>
-              <td class="text-right font-mono text-good"><strong>₹{{ (dn.grandTotalInPaise / 100) | number:'1.2-2' }}</strong></td>
+              <td class="text-right font-mono text-good">
+                <strong>₹{{ dn.grandTotalInPaise / 100 | number: '1.2-2' }}</strong>
+              </td>
               <td>
                 <ar-chip [tone]="dn.status === VendorDebitNoteStatus.Settled ? 'good' : 'amber'">
                   {{ dn.status === VendorDebitNoteStatus.Settled ? 'Settled' : 'Issued' }}
@@ -674,7 +705,9 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
         justify-content: space-between;
         gap: 1rem;
 
-        .alert-icon { font-size: 1.5rem; }
+        .alert-icon {
+          font-size: 1.5rem;
+        }
 
         .alert-text {
           flex: 1;
@@ -702,9 +735,16 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
         gap: 0.25rem;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 
-        &.amber { border-left: 4px solid #f59e0b; }
-        &.teal, &.good { border-left: 4px solid #0d9488; }
-        &.red { border-left: 4px solid #ef4444; }
+        &.amber {
+          border-left: 4px solid #f59e0b;
+        }
+        &.teal,
+        &.good {
+          border-left: 4px solid #0d9488;
+        }
+        &.red {
+          border-left: 4px solid #ef4444;
+        }
 
         .label {
           font-size: 0.78rem;
@@ -792,10 +832,18 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
         }
       }
 
-      .text-right { text-align: right; }
-      .text-good { color: #15803d; }
-      .text-danger { color: #b91c1c; }
-      .font-mono { font-family: ui-monospace, monospace; }
+      .text-right {
+        text-align: right;
+      }
+      .text-good {
+        color: #15803d;
+      }
+      .text-danger {
+        color: #b91c1c;
+      }
+      .font-mono {
+        font-family: ui-monospace, monospace;
+      }
 
       .actions-col {
         text-align: right;
@@ -821,8 +869,8 @@ export class Vendor360Component {
   readonly currentVendorId = signal<string>('sup-1');
   readonly activeTab = signal<'bills' | 'grn' | 'po' | 'debit'>('bills');
 
-  readonly vendor = computed(() =>
-    this.allVendors().find((v) => v.id === this.currentVendorId()) || this.allVendors()[0],
+  readonly vendor = computed(
+    () => this.allVendors().find((v) => v.id === this.currentVendorId()) || this.allVendors()[0],
   );
 
   constructor() {
@@ -872,104 +920,146 @@ export class Vendor360Component {
 
   msmeTone(cat: MsmeClassification): ChipTone {
     switch (cat) {
-      case MsmeClassification.Micro: return 'teal';
-      case MsmeClassification.Small: return 'good';
-      case MsmeClassification.Medium: return 'amber';
-      default: return 'neutral';
+      case MsmeClassification.Micro:
+        return 'teal';
+      case MsmeClassification.Small:
+        return 'good';
+      case MsmeClassification.Medium:
+        return 'amber';
+      default:
+        return 'neutral';
     }
   }
 
   msmeLabel(cat: MsmeClassification): string {
     switch (cat) {
-      case MsmeClassification.Micro: return 'MSME (Micro)';
-      case MsmeClassification.Small: return 'MSME (Small)';
-      case MsmeClassification.Medium: return 'MSME (Medium)';
-      default: return 'Large Enterprise';
+      case MsmeClassification.Micro:
+        return 'MSME (Micro)';
+      case MsmeClassification.Small:
+        return 'MSME (Small)';
+      case MsmeClassification.Medium:
+        return 'MSME (Medium)';
+      default:
+        return 'Large Enterprise';
     }
   }
 
   matchTone(status: ThreeWayMatchStatus): ChipTone {
     switch (status) {
-      case ThreeWayMatchStatus.Matched: return 'good';
+      case ThreeWayMatchStatus.Matched:
+        return 'good';
       case ThreeWayMatchStatus.PriceVariance:
-      case ThreeWayMatchStatus.QuantityVariance: return 'bad';
-      default: return 'neutral';
+      case ThreeWayMatchStatus.QuantityVariance:
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 
   matchLabel(status: ThreeWayMatchStatus): string {
     switch (status) {
-      case ThreeWayMatchStatus.Matched: return 'Matched';
-      case ThreeWayMatchStatus.PriceVariance: return 'Rate Discrepancy';
-      case ThreeWayMatchStatus.QuantityVariance: return 'Qty Discrepancy';
-      default: return 'Pending';
+      case ThreeWayMatchStatus.Matched:
+        return 'Matched';
+      case ThreeWayMatchStatus.PriceVariance:
+        return 'Rate Discrepancy';
+      case ThreeWayMatchStatus.QuantityVariance:
+        return 'Qty Discrepancy';
+      default:
+        return 'Pending';
     }
   }
 
   itcTone(status: Gstr2bMatchStatus): ChipTone {
     switch (status) {
-      case Gstr2bMatchStatus.MatchedIn2B: return 'good';
-      case Gstr2bMatchStatus.MissingIn2B: return 'bad';
-      default: return 'neutral';
+      case Gstr2bMatchStatus.MatchedIn2B:
+        return 'good';
+      case Gstr2bMatchStatus.MissingIn2B:
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 
   itcLabel(status: Gstr2bMatchStatus): string {
     switch (status) {
-      case Gstr2bMatchStatus.MatchedIn2B: return 'GSTR-2B ITC OK';
-      default: return 'Pending ITC';
+      case Gstr2bMatchStatus.MatchedIn2B:
+        return 'GSTR-2B ITC OK';
+      default:
+        return 'Pending ITC';
     }
   }
 
   billTone(status: VendorBillStatus): ChipTone {
     switch (status) {
-      case VendorBillStatus.Paid: return 'good';
-      case VendorBillStatus.PartiallyPaid: return 'amber';
-      case VendorBillStatus.Approved: return 'teal';
-      default: return 'neutral';
+      case VendorBillStatus.Paid:
+        return 'good';
+      case VendorBillStatus.PartiallyPaid:
+        return 'amber';
+      case VendorBillStatus.Approved:
+        return 'teal';
+      default:
+        return 'neutral';
     }
   }
 
   billLabel(status: VendorBillStatus): string {
     switch (status) {
-      case VendorBillStatus.Paid: return 'Fully Paid';
-      case VendorBillStatus.PartiallyPaid: return 'Partially Paid';
-      case VendorBillStatus.Approved: return 'Approved';
-      default: return 'Pending';
+      case VendorBillStatus.Paid:
+        return 'Fully Paid';
+      case VendorBillStatus.PartiallyPaid:
+        return 'Partially Paid';
+      case VendorBillStatus.Approved:
+        return 'Approved';
+      default:
+        return 'Pending';
     }
   }
 
   qcTone(status: QcInspectionStatus): ChipTone {
     switch (status) {
-      case QcInspectionStatus.Passed: return 'good';
-      case QcInspectionStatus.PartiallyPassed: return 'warn';
-      case QcInspectionStatus.Failed: return 'bad';
-      default: return 'neutral';
+      case QcInspectionStatus.Passed:
+        return 'good';
+      case QcInspectionStatus.PartiallyPassed:
+        return 'warn';
+      case QcInspectionStatus.Failed:
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 
   qcLabel(status: QcInspectionStatus): string {
     switch (status) {
-      case QcInspectionStatus.Passed: return 'Passed';
-      case QcInspectionStatus.PartiallyPassed: return 'Partial';
-      case QcInspectionStatus.Failed: return 'Failed';
-      default: return 'Pending';
+      case QcInspectionStatus.Passed:
+        return 'Passed';
+      case QcInspectionStatus.PartiallyPassed:
+        return 'Partial';
+      case QcInspectionStatus.Failed:
+        return 'Failed';
+      default:
+        return 'Pending';
     }
   }
 
   grnTone(status: GrnStatus): ChipTone {
     switch (status) {
-      case GrnStatus.Approved: return 'good';
-      case GrnStatus.Billed: return 'teal';
-      default: return 'neutral';
+      case GrnStatus.Approved:
+        return 'good';
+      case GrnStatus.Billed:
+        return 'teal';
+      default:
+        return 'neutral';
     }
   }
 
   grnLabel(status: GrnStatus): string {
     switch (status) {
-      case GrnStatus.Approved: return 'Approved';
-      case GrnStatus.Billed: return 'Billed';
-      default: return 'Inwarded';
+      case GrnStatus.Approved:
+        return 'Approved';
+      case GrnStatus.Billed:
+        return 'Billed';
+      default:
+        return 'Inwarded';
     }
   }
 }

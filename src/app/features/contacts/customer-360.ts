@@ -163,7 +163,8 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
     <ar-topbar
       title="Customer 360 cockpit"
       [subtitle]="data()?.accountName || data()?.customerName || 'Consolidated Customer Dossier'"
-      help="Customer 360 unifies all CRM, Sales Order, GST Invoicing, Service Ticket and Machinery equipment data in a single enterprise cockpit.">
+      help="Customer 360 unifies all CRM, Sales Order, GST Invoicing, Service Ticket and Machinery equipment data in a single enterprise cockpit."
+    >
       <div actions class="actions-row">
         <a ar-button variant="ghost" routerLink="/sales/orders">+ New Order</a>
         <a ar-button variant="ghost" routerLink="/contacts">All Contacts</a>
@@ -215,7 +216,7 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
               }
             </div>
             <div class="kpi-val font-mono">
-              ₹{{ ((c.credit.creditLimitInPaise || 0) / 100) | number: '1.0-0' }}
+              ₹{{ (c.credit.creditLimitInPaise || 0) / 100 | number: '1.0-0' }}
             </div>
             <div class="card-foot text-xs text-muted">
               Terms: {{ c.credit.paymentTermsDays || 'Advance' }} days
@@ -228,10 +229,10 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
               <span class="card-lbl">Outstanding owed</span>
             </div>
             <div class="kpi-val font-mono" [class.text-danger]="c.credit.totalOwedInPaise > 0">
-              ₹{{ (c.credit.totalOwedInPaise / 100) | number: '1.2-2' }}
+              ₹{{ c.credit.totalOwedInPaise / 100 | number: '1.2-2' }}
             </div>
             <div class="card-foot text-xs" [class.text-danger]="c.credit.totalOverdueInPaise > 0">
-              Overdue: ₹{{ (c.credit.totalOverdueInPaise / 100) | number: '1.2-2' }}
+              Overdue: ₹{{ c.credit.totalOverdueInPaise / 100 | number: '1.2-2' }}
             </div>
           </div>
 
@@ -241,7 +242,7 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
               <span class="card-lbl">Active on order</span>
             </div>
             <div class="kpi-val font-mono text-primary">
-              ₹{{ (c.credit.totalOnOrderInPaise / 100) | number: '1.2-2' }}
+              ₹{{ c.credit.totalOnOrderInPaise / 100 | number: '1.2-2' }}
             </div>
             <div class="card-foot text-xs text-muted">
               {{ c.recentOrders.length }} active sales orders
@@ -254,7 +255,7 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
               <span class="card-lbl">Lifetime revenue</span>
             </div>
             <div class="kpi-val font-mono text-success">
-              ₹{{ (c.lifetimeRevenueInPaise / 100) | number: '1.0-0' }}
+              ₹{{ c.lifetimeRevenueInPaise / 100 | number: '1.0-0' }}
             </div>
             <div class="card-foot text-xs text-muted">
               {{ c.totalInvoicesCount }} total invoices billed
@@ -264,19 +265,39 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
 
         <!-- Dossier Navigation Tabs -->
         <div class="dossier-nav">
-          <button class="nav-tab" [class.active]="activeTab() === 'orders'" (click)="activeTab.set('orders')">
+          <button
+            class="nav-tab"
+            [class.active]="activeTab() === 'orders'"
+            (click)="activeTab.set('orders')"
+          >
             Sales Orders ({{ c.recentOrders.length }})
           </button>
-          <button class="nav-tab" [class.active]="activeTab() === 'challans'" (click)="activeTab.set('challans')">
+          <button
+            class="nav-tab"
+            [class.active]="activeTab() === 'challans'"
+            (click)="activeTab.set('challans')"
+          >
             Delivery Challans ({{ c.recentChallans.length }})
           </button>
-          <button class="nav-tab" [class.active]="activeTab() === 'invoices'" (click)="activeTab.set('invoices')">
+          <button
+            class="nav-tab"
+            [class.active]="activeTab() === 'invoices'"
+            (click)="activeTab.set('invoices')"
+          >
             Invoices & Payments ({{ c.recentInvoices.length }})
           </button>
-          <button class="nav-tab" [class.active]="activeTab() === 'tickets'" (click)="activeTab.set('tickets')">
+          <button
+            class="nav-tab"
+            [class.active]="activeTab() === 'tickets'"
+            (click)="activeTab.set('tickets')"
+          >
             Support Tickets ({{ c.openTickets.length }})
           </button>
-          <button class="nav-tab" [class.active]="activeTab() === 'assets'" (click)="activeTab.set('assets')">
+          <button
+            class="nav-tab"
+            [class.active]="activeTab() === 'assets'"
+            (click)="activeTab.set('assets')"
+          >
             Installed Machinery ({{ c.installedAssets.length }})
           </button>
         </div>
@@ -303,16 +324,24 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
                       <span class="po-badge font-mono">{{ o.customerPoNumber || '—' }}</span>
                     </td>
                     <td>{{ o.orderDateUtc | date: 'dd MMM yyyy' }}</td>
-                    <td class="num-col font-bold">₹{{ (o.grandTotalInPaise / 100) | number: '1.2-2' }}</td>
+                    <td class="num-col font-bold">
+                      ₹{{ o.grandTotalInPaise / 100 | number: '1.2-2' }}
+                    </td>
                     <td>
-                      <ar-chip [tone]="getOrderStatusTone(o.status)">{{ getOrderStatusLabel(o.status) }}</ar-chip>
+                      <ar-chip [tone]="getOrderStatusTone(o.status)">{{
+                        getOrderStatusLabel(o.status)
+                      }}</ar-chip>
                     </td>
                     <td class="actions-col">
                       <a ar-button variant="ghost" routerLink="/sales/orders">Open</a>
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="6" class="empty-state">No sales orders found for this customer.</td></tr>
+                  <tr>
+                    <td colspan="6" class="empty-state">
+                      No sales orders found for this customer.
+                    </td>
+                  </tr>
                 }
               </tbody>
             </table>
@@ -343,14 +372,18 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
                     <td class="font-mono text-xs">{{ dc.vehicleNumber || '—' }}</td>
                     <td class="font-mono text-xs">{{ dc.lrNumber || '—' }}</td>
                     <td>
-                      <ar-chip [tone]="getChallanStatusTone(dc.status)">{{ getChallanStatusLabel(dc.status) }}</ar-chip>
+                      <ar-chip [tone]="getChallanStatusTone(dc.status)">{{
+                        getChallanStatusLabel(dc.status)
+                      }}</ar-chip>
                     </td>
                     <td class="actions-col">
                       <a ar-button variant="ghost" routerLink="/sales/challans">View</a>
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="7" class="empty-state">No delivery challans recorded.</td></tr>
+                  <tr>
+                    <td colspan="7" class="empty-state">No delivery challans recorded.</td>
+                  </tr>
                 }
               </tbody>
             </table>
@@ -378,19 +411,25 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
                     <td class="font-mono font-bold text-primary">{{ inv.invoiceNumber }}</td>
                     <td>{{ inv.issueDateUtc | date: 'dd MMM yyyy' }}</td>
                     <td>{{ inv.dueDateUtc | date: 'dd MMM yyyy' }}</td>
-                    <td class="num-col font-bold">₹{{ (inv.grandTotalInPaise / 100) | number: '1.2-2' }}</td>
+                    <td class="num-col font-bold">
+                      ₹{{ inv.grandTotalInPaise / 100 | number: '1.2-2' }}
+                    </td>
                     <td class="num-col font-bold" [class.text-danger]="inv.balanceDueInPaise > 0">
-                      ₹{{ (inv.balanceDueInPaise / 100) | number: '1.2-2' }}
+                      ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
                     </td>
                     <td>
-                      <ar-chip [tone]="getInvoiceStatusTone(inv.status)">{{ getInvoiceStatusLabel(inv.status) }}</ar-chip>
+                      <ar-chip [tone]="getInvoiceStatusTone(inv.status)">{{
+                        getInvoiceStatusLabel(inv.status)
+                      }}</ar-chip>
                     </td>
                     <td class="actions-col">
                       <a ar-button variant="ghost" routerLink="/sales/invoices">View</a>
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="7" class="empty-state">No commercial invoices found.</td></tr>
+                  <tr>
+                    <td colspan="7" class="empty-state">No commercial invoices found.</td>
+                  </tr>
                 }
               </tbody>
             </table>
@@ -416,15 +455,23 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
                   <tr>
                     <td class="font-mono font-bold">{{ t.ticketNumber }}</td>
                     <td class="font-semibold">{{ t.subject }}</td>
-                    <td><ar-chip tone="amber">{{ t.priority }}</ar-chip></td>
-                    <td><ar-chip tone="teal">{{ t.status }}</ar-chip></td>
+                    <td>
+                      <ar-chip tone="amber">{{ t.priority }}</ar-chip>
+                    </td>
+                    <td>
+                      <ar-chip tone="teal">{{ t.status }}</ar-chip>
+                    </td>
                     <td>{{ t.creationTime | date: 'dd MMM yyyy' }}</td>
                     <td class="actions-col">
                       <a ar-button variant="ghost" routerLink="/helpdesk">Desk</a>
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="6" class="empty-state">No open service tickets for this customer.</td></tr>
+                  <tr>
+                    <td colspan="6" class="empty-state">
+                      No open service tickets for this customer.
+                    </td>
+                  </tr>
                 }
               </tbody>
             </table>
@@ -451,16 +498,24 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
                     <td class="font-mono font-bold text-primary">{{ ast.serialNumber }}</td>
                     <td class="font-semibold">{{ ast.modelName }}</td>
                     <td>{{ ast.commissionedDate || '—' }}</td>
-                    <td><ar-chip tone="good">{{ ast.status }}</ar-chip></td>
                     <td>
-                      <ar-chip [tone]="ast.amcStatus === 'Active' ? 'good' : 'bad'">{{ ast.amcStatus }}</ar-chip>
+                      <ar-chip tone="good">{{ ast.status }}</ar-chip>
+                    </td>
+                    <td>
+                      <ar-chip [tone]="ast.amcStatus === 'Active' ? 'good' : 'bad'">{{
+                        ast.amcStatus
+                      }}</ar-chip>
                     </td>
                     <td class="actions-col">
                       <a ar-button variant="ghost" routerLink="/installed-base">Details</a>
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="6" class="empty-state">No machines registered in installed base.</td></tr>
+                  <tr>
+                    <td colspan="6" class="empty-state">
+                      No machines registered in installed base.
+                    </td>
+                  </tr>
                 }
               </tbody>
             </table>
@@ -573,9 +628,15 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
         font-weight: 700;
         color: var(--ar-ink-heavy, #0f172a);
       }
-      .text-success { color: #059669; }
-      .text-danger { color: #dc2626; }
-      .text-primary { color: var(--ar-primary, #0284c7); }
+      .text-success {
+        color: #059669;
+      }
+      .text-danger {
+        color: #dc2626;
+      }
+      .text-primary {
+        color: var(--ar-primary, #0284c7);
+      }
       .dossier-nav {
         display: flex;
         gap: 0.5rem;
@@ -629,8 +690,13 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
         border-radius: 4px;
         font-size: 0.75rem;
       }
-      .num-col { text-align: right; }
-      .actions-col { text-align: right; width: 100px; }
+      .num-col {
+        text-align: right;
+      }
+      .actions-col {
+        text-align: right;
+        width: 100px;
+      }
       .empty-state {
         text-align: center;
         padding: 3rem 1rem;
@@ -668,67 +734,103 @@ export class ArCustomer360 {
 
   getOrderStatusLabel(status: SalesOrderStatus): string {
     switch (status) {
-      case SalesOrderStatus.Draft: return 'Draft';
-      case SalesOrderStatus.Confirmed: return 'Confirmed';
-      case SalesOrderStatus.InProduction: return 'In Production';
-      case SalesOrderStatus.PartiallyDispatched: return 'Partially Dispatched';
-      case SalesOrderStatus.Dispatched: return 'Dispatched';
-      case SalesOrderStatus.Completed: return 'Completed';
-      case SalesOrderStatus.Cancelled: return 'Cancelled';
-      default: return 'Unknown';
+      case SalesOrderStatus.Draft:
+        return 'Draft';
+      case SalesOrderStatus.Confirmed:
+        return 'Confirmed';
+      case SalesOrderStatus.InProduction:
+        return 'In Production';
+      case SalesOrderStatus.PartiallyDispatched:
+        return 'Partially Dispatched';
+      case SalesOrderStatus.Dispatched:
+        return 'Dispatched';
+      case SalesOrderStatus.Completed:
+        return 'Completed';
+      case SalesOrderStatus.Cancelled:
+        return 'Cancelled';
+      default:
+        return 'Unknown';
     }
   }
 
   getOrderStatusTone(status: SalesOrderStatus): ChipTone {
     switch (status) {
-      case SalesOrderStatus.Draft: return 'neutral';
-      case SalesOrderStatus.Confirmed: return 'teal';
-      case SalesOrderStatus.InProduction: return 'amber';
-      case SalesOrderStatus.PartiallyDispatched: return 'warn';
-      case SalesOrderStatus.Dispatched: return 'good';
-      case SalesOrderStatus.Completed: return 'good';
-      case SalesOrderStatus.Cancelled: return 'bad';
-      default: return 'neutral';
+      case SalesOrderStatus.Draft:
+        return 'neutral';
+      case SalesOrderStatus.Confirmed:
+        return 'teal';
+      case SalesOrderStatus.InProduction:
+        return 'amber';
+      case SalesOrderStatus.PartiallyDispatched:
+        return 'warn';
+      case SalesOrderStatus.Dispatched:
+        return 'good';
+      case SalesOrderStatus.Completed:
+        return 'good';
+      case SalesOrderStatus.Cancelled:
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 
   getChallanStatusLabel(status: DeliveryChallanStatus): string {
     switch (status) {
-      case DeliveryChallanStatus.Draft: return 'Draft';
-      case DeliveryChallanStatus.Dispatched: return 'In Transit';
-      case DeliveryChallanStatus.Delivered: return 'Delivered';
-      case DeliveryChallanStatus.Invoiced: return 'Invoiced';
-      default: return 'Unknown';
+      case DeliveryChallanStatus.Draft:
+        return 'Draft';
+      case DeliveryChallanStatus.Dispatched:
+        return 'In Transit';
+      case DeliveryChallanStatus.Delivered:
+        return 'Delivered';
+      case DeliveryChallanStatus.Invoiced:
+        return 'Invoiced';
+      default:
+        return 'Unknown';
     }
   }
 
   getChallanStatusTone(status: DeliveryChallanStatus): ChipTone {
     switch (status) {
-      case DeliveryChallanStatus.Draft: return 'neutral';
-      case DeliveryChallanStatus.Dispatched: return 'amber';
-      case DeliveryChallanStatus.Delivered: return 'good';
-      case DeliveryChallanStatus.Invoiced: return 'teal';
-      default: return 'neutral';
+      case DeliveryChallanStatus.Draft:
+        return 'neutral';
+      case DeliveryChallanStatus.Dispatched:
+        return 'amber';
+      case DeliveryChallanStatus.Delivered:
+        return 'good';
+      case DeliveryChallanStatus.Invoiced:
+        return 'teal';
+      default:
+        return 'neutral';
     }
   }
 
   getInvoiceStatusLabel(status: SalesInvoiceStatus): string {
     switch (status) {
-      case SalesInvoiceStatus.Draft: return 'Draft';
-      case SalesInvoiceStatus.Issued: return 'Issued';
-      case SalesInvoiceStatus.PartiallyPaid: return 'Partially Paid';
-      case SalesInvoiceStatus.Paid: return 'Paid';
-      default: return 'Unknown';
+      case SalesInvoiceStatus.Draft:
+        return 'Draft';
+      case SalesInvoiceStatus.Issued:
+        return 'Issued';
+      case SalesInvoiceStatus.PartiallyPaid:
+        return 'Partially Paid';
+      case SalesInvoiceStatus.Paid:
+        return 'Paid';
+      default:
+        return 'Unknown';
     }
   }
 
   getInvoiceStatusTone(status: SalesInvoiceStatus): ChipTone {
     switch (status) {
-      case SalesInvoiceStatus.Draft: return 'neutral';
-      case SalesInvoiceStatus.Issued: return 'teal';
-      case SalesInvoiceStatus.PartiallyPaid: return 'amber';
-      case SalesInvoiceStatus.Paid: return 'good';
-      default: return 'neutral';
+      case SalesInvoiceStatus.Draft:
+        return 'neutral';
+      case SalesInvoiceStatus.Issued:
+        return 'teal';
+      case SalesInvoiceStatus.PartiallyPaid:
+        return 'amber';
+      case SalesInvoiceStatus.Paid:
+        return 'good';
+      default:
+        return 'neutral';
     }
   }
 }

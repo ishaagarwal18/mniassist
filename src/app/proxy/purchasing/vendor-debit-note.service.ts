@@ -15,7 +15,10 @@ export class VendorDebitNoteService {
   private readonly restService = inject(RestService);
   apiName = 'AutoReach';
 
-  getList(input: GetVendorDebitNotesInput, config?: Partial<Rest.Config>): Observable<PagedResultDto<VendorDebitNoteDto>> {
+  getList(
+    input: GetVendorDebitNotesInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<PagedResultDto<VendorDebitNoteDto>> {
     return this.restService.request<any, PagedResultDto<VendorDebitNoteDto>>(
       {
         method: 'GET',
@@ -44,7 +47,10 @@ export class VendorDebitNoteService {
     );
   }
 
-  create(input: CreateVendorDebitNoteDto, config?: Partial<Rest.Config>): Observable<VendorDebitNoteDto> {
+  create(
+    input: CreateVendorDebitNoteDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<VendorDebitNoteDto> {
     return this.restService.request<any, VendorDebitNoteDto>(
       {
         method: 'POST',
@@ -55,7 +61,11 @@ export class VendorDebitNoteService {
     );
   }
 
-  createFromGrnRejection(grnId: string, reason: string, config?: Partial<Rest.Config>): Observable<VendorDebitNoteDto> {
+  createFromGrnRejection(
+    grnId: string,
+    reason: string,
+    config?: Partial<Rest.Config>,
+  ): Observable<VendorDebitNoteDto> {
     return this.restService.request<any, VendorDebitNoteDto>(
       {
         method: 'POST',

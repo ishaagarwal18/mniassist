@@ -1,5 +1,10 @@
 import { EntityDto, FullAuditedEntityDto, PagedAndSortedResultRequestDto } from '@abp/ng.core';
-import { Gstr2bMatchStatus, ThreeWayMatchStatus, VendorBillStatus, VendorPaymentMode } from './purchasing-enums';
+import {
+  Gstr2bMatchStatus,
+  ThreeWayMatchStatus,
+  VendorBillStatus,
+  VendorPaymentMode,
+} from './purchasing-enums';
 
 export interface VendorBillLineDto extends EntityDto<string> {
   vendorBillId: string;

@@ -386,9 +386,7 @@ const MOCK_COA: ChartOfAccountDto[] = [
         <button ar-button="ghost" (click)="seedStandardAccounts()">
           &#9881; Bootstrap Standard COA
         </button>
-        <button ar-button="primary" (click)="openCreate()">
-          + Add Account
-        </button>
+        <button ar-button="primary" (click)="openCreate()">+ Add Account</button>
       </div>
     </ar-topbar>
 
@@ -402,17 +400,17 @@ const MOCK_COA: ChartOfAccountDto[] = [
         </div>
         <div class="kpi-card teal">
           <span class="label">Total Assets (Debit)</span>
-          <strong class="value">₹{{ (stats().totalAssets / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ stats().totalAssets / 100 | number: '1.2-2' }}</strong>
           <span class="sub">Bank, receivables, inventory, plant</span>
         </div>
         <div class="kpi-card amber">
           <span class="label">Total Liabilities (Credit)</span>
-          <strong class="value">₹{{ (stats().totalLiabilities / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ stats().totalLiabilities / 100 | number: '1.2-2' }}</strong>
           <span class="sub">Payables, GST/TDS, loans</span>
         </div>
         <div class="kpi-card">
           <span class="label">Operating Revenue</span>
-          <strong class="value">₹{{ (stats().totalRevenue / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ stats().totalRevenue / 100 | number: '1.2-2' }}</strong>
           <span class="sub">Product sales, AMC & service</span>
         </div>
       </section>
@@ -508,7 +506,10 @@ const MOCK_COA: ChartOfAccountDto[] = [
                 <span class="subcat-tag">{{ getSubCategoryLabel(acc.subCategory) }}</span>
               </td>
               <td>
-                <span class="nature-tag" [class.nature-dr]="acc.normalBalance === BalanceNature.Debit">
+                <span
+                  class="nature-tag"
+                  [class.nature-dr]="acc.normalBalance === BalanceNature.Debit"
+                >
                   {{ acc.normalBalance === BalanceNature.Debit ? 'Dr (Debit)' : 'Cr (Credit)' }}
                 </span>
               </td>
@@ -518,7 +519,7 @@ const MOCK_COA: ChartOfAccountDto[] = [
                   [class.text-debit]="acc.normalBalance === BalanceNature.Debit"
                   [class.text-credit]="acc.normalBalance === BalanceNature.Credit"
                 >
-                  ₹{{ (acc.currentBalanceInPaise / 100) | number:'1.2-2' }}
+                  ₹{{ acc.currentBalanceInPaise / 100 | number: '1.2-2' }}
                 </span>
               </td>
               <td>
@@ -545,15 +546,29 @@ const MOCK_COA: ChartOfAccountDto[] = [
         <div class="form-grid">
           <div class="form-group">
             <label>Account Code</label>
-            <input type="text" class="form-control" [(ngModel)]="newAccount.accountCode" placeholder="e.g. 1015, 6050" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newAccount.accountCode"
+              placeholder="e.g. 1015, 6050"
+            />
           </div>
           <div class="form-group">
             <label>Account Name</label>
-            <input type="text" class="form-control" [(ngModel)]="newAccount.accountName" placeholder="Account Title" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newAccount.accountName"
+              placeholder="Account Title"
+            />
           </div>
           <div class="form-group">
             <label>Category</label>
-            <select class="form-control" [(ngModel)]="newAccount.category" (change)="onCategoryChange()">
+            <select
+              class="form-control"
+              [(ngModel)]="newAccount.category"
+              (change)="onCategoryChange()"
+            >
               <option [ngValue]="AccountCategory.Asset">Asset (1xxx)</option>
               <option [ngValue]="AccountCategory.Liability">Liability (2xxx)</option>
               <option [ngValue]="AccountCategory.Equity">Equity (3xxx)</option>
@@ -568,18 +583,26 @@ const MOCK_COA: ChartOfAccountDto[] = [
               <option [ngValue]="AccountSubCategory.AccountsReceivable">Accounts Receivable</option>
               <option [ngValue]="AccountSubCategory.Inventory">Inventory</option>
               <option [ngValue]="AccountSubCategory.CurrentAsset">Current Asset</option>
-              <option [ngValue]="AccountSubCategory.NonCurrentAsset">Non-Current / Fixed Asset</option>
+              <option [ngValue]="AccountSubCategory.NonCurrentAsset">
+                Non-Current / Fixed Asset
+              </option>
               <option [ngValue]="AccountSubCategory.AccountsPayable">Accounts Payable</option>
               <option [ngValue]="AccountSubCategory.DutiesAndTaxes">Duties and Taxes</option>
               <option [ngValue]="AccountSubCategory.CurrentLiability">Current Liability</option>
-              <option [ngValue]="AccountSubCategory.NonCurrentLiability">Non-Current Liability</option>
+              <option [ngValue]="AccountSubCategory.NonCurrentLiability">
+                Non-Current Liability
+              </option>
               <option [ngValue]="AccountSubCategory.ShareCapital">Share Capital</option>
               <option [ngValue]="AccountSubCategory.RetainedEarnings">Retained Earnings</option>
               <option [ngValue]="AccountSubCategory.OperatingRevenue">Operating Revenue</option>
               <option [ngValue]="AccountSubCategory.OtherIncome">Other Income</option>
-              <option [ngValue]="AccountSubCategory.CostOfGoodsSold">Cost of Goods Sold (COGS)</option>
+              <option [ngValue]="AccountSubCategory.CostOfGoodsSold">
+                Cost of Goods Sold (COGS)
+              </option>
               <option [ngValue]="AccountSubCategory.OperatingExpense">Operating Expense</option>
-              <option [ngValue]="AccountSubCategory.DepreciationAndAmortization">Depreciation & Amortization</option>
+              <option [ngValue]="AccountSubCategory.DepreciationAndAmortization">
+                Depreciation & Amortization
+              </option>
             </select>
           </div>
           <div class="form-group">
@@ -591,7 +614,12 @@ const MOCK_COA: ChartOfAccountDto[] = [
           </div>
           <div class="form-group">
             <label>Opening Balance (INR)</label>
-            <input type="number" class="form-control" [ngModel]="newAccount.openingBalanceInPaise / 100" (ngModelChange)="newAccount.openingBalanceInPaise = $event * 100" />
+            <input
+              type="number"
+              class="form-control"
+              [ngModel]="newAccount.openingBalanceInPaise / 100"
+              (ngModelChange)="newAccount.openingBalanceInPaise = $event * 100"
+            />
           </div>
         </div>
 
@@ -642,8 +670,12 @@ const MOCK_COA: ChartOfAccountDto[] = [
         gap: 0.25rem;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 
-        &.teal { border-left: 4px solid #0d9488; }
-        &.amber { border-left: 4px solid #f59e0b; }
+        &.teal {
+          border-left: 4px solid #0d9488;
+        }
+        &.amber {
+          border-left: 4px solid #f59e0b;
+        }
 
         .label {
           font-size: 0.78rem;
@@ -792,11 +824,17 @@ const MOCK_COA: ChartOfAccountDto[] = [
         font-size: 0.9rem;
         font-weight: 700;
 
-        &.text-debit { color: #0284c7; }
-        &.text-credit { color: #16a34a; }
+        &.text-debit {
+          color: #0284c7;
+        }
+        &.text-credit {
+          color: #16a34a;
+        }
       }
 
-      .text-right { text-align: right; }
+      .text-right {
+        text-align: right;
+      }
       .empty-cell {
         text-align: center;
         padding: 2.5rem 1rem;
@@ -847,8 +885,12 @@ const MOCK_COA: ChartOfAccountDto[] = [
         gap: 0.75rem;
       }
 
-      .mt-3 { margin-top: 0.75rem; }
-      .mt-4 { margin-top: 1rem; }
+      .mt-3 {
+        margin-top: 0.75rem;
+      }
+      .mt-4 {
+        margin-top: 1rem;
+      }
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -880,7 +922,7 @@ export class ChartOfAccountsComponent {
     const q = this.searchQuery().trim().toLowerCase();
     const cf = this.categoryFilter();
 
-    return this.accounts().filter(a => {
+    return this.accounts().filter((a) => {
       if (cf !== 'ALL' && a.category.toString() !== cf) return false;
       if (!q) return true;
 
@@ -894,9 +936,15 @@ export class ChartOfAccountsComponent {
 
   readonly stats = computed(() => {
     const list = this.accounts();
-    const totalAssets = list.filter(a => a.category === AccountCategory.Asset).reduce((acc, a) => acc + a.currentBalanceInPaise, 0);
-    const totalLiabilities = list.filter(a => a.category === AccountCategory.Liability).reduce((acc, a) => acc + a.currentBalanceInPaise, 0);
-    const totalRevenue = list.filter(a => a.category === AccountCategory.Revenue).reduce((acc, a) => acc + a.currentBalanceInPaise, 0);
+    const totalAssets = list
+      .filter((a) => a.category === AccountCategory.Asset)
+      .reduce((acc, a) => acc + a.currentBalanceInPaise, 0);
+    const totalLiabilities = list
+      .filter((a) => a.category === AccountCategory.Liability)
+      .reduce((acc, a) => acc + a.currentBalanceInPaise, 0);
+    const totalRevenue = list
+      .filter((a) => a.category === AccountCategory.Revenue)
+      .reduce((acc, a) => acc + a.currentBalanceInPaise, 0);
 
     return {
       totalAssets,
@@ -918,7 +966,7 @@ export class ChartOfAccountsComponent {
 
     this.isLoading.set(true);
     this.coaService.getList({ maxResultCount: 200 }).subscribe({
-      next: res => {
+      next: (res) => {
         if (res.items && res.items.length > 0) {
           this.accounts.set(res.items);
         }
@@ -1004,7 +1052,10 @@ export class ChartOfAccountsComponent {
   }
 
   onCategoryChange(): void {
-    if (this.newAccount.category === AccountCategory.Asset || this.newAccount.category === AccountCategory.Expense) {
+    if (
+      this.newAccount.category === AccountCategory.Asset ||
+      this.newAccount.category === AccountCategory.Expense
+    ) {
       this.newAccount.normalBalance = BalanceNature.Debit;
     } else {
       this.newAccount.normalBalance = BalanceNature.Credit;
@@ -1029,8 +1080,8 @@ export class ChartOfAccountsComponent {
 
     if (!environment.useMockData) {
       this.coaService.create(this.newAccount).subscribe({
-        next: created => {
-          this.accounts.update(list => [...list, created]);
+        next: (created) => {
+          this.accounts.update((list) => [...list, created]);
           this.isCreateOpen.set(false);
         },
       });
@@ -1051,7 +1102,7 @@ export class ChartOfAccountsComponent {
       description: this.newAccount.description,
     };
 
-    this.accounts.update(list => [...list, created]);
+    this.accounts.update((list) => [...list, created]);
     this.isCreateOpen.set(false);
   }
 

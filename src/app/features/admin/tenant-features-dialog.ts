@@ -65,7 +65,9 @@ import { ArBanner, ArButton, ArCard, ArDialog } from '../../ui';
                           <input
                             type="checkbox"
                             [checked]="valOf(f) === 'true'"
-                            (change)="setVal(f.name, $any($event.target).checked ? 'true' : 'false')"
+                            (change)="
+                              setVal(f.name, $any($event.target).checked ? 'true' : 'false')
+                            "
                           />
                           <span>{{ valOf(f) === 'true' ? 'Enabled' : 'Disabled' }}</span>
                         </label>
@@ -272,9 +274,7 @@ export class ArTenantFeaturesDialog {
       }
     }
     try {
-      await firstValueFrom(
-        this.featuresApi.update('T', this.tenantId(), { features: updates }),
-      );
+      await firstValueFrom(this.featuresApi.update('T', this.tenantId(), { features: updates }));
       this.notice.set('Features updated.');
       this.closed.emit(true);
     } catch (e) {

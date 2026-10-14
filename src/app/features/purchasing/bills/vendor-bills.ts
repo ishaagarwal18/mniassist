@@ -160,7 +160,10 @@ const MOCK_BILLS: VendorBillDto[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog],
   template: `
-    <ar-topbar title="Vendor Bills & 3-Way Matching" subtitle="Purchase invoices, 3-way reconciliation (PO-GRN-Bill), GST ITC & TDS">
+    <ar-topbar
+      title="Vendor Bills & 3-Way Matching"
+      subtitle="Purchase invoices, 3-way reconciliation (PO-GRN-Bill), GST ITC & TDS"
+    >
       <button ar-button="primary" (click)="openCreateModal()">+ Record Vendor Bill</button>
     </ar-topbar>
 
@@ -169,17 +172,17 @@ const MOCK_BILLS: VendorBillDto[] = [
       <section class="kpi-grid">
         <div class="kpi-card">
           <span class="label">Total Invoiced</span>
-          <strong class="value">₹{{ (totalInvoiced() / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ totalInvoiced() / 100 | number: '1.2-2' }}</strong>
           <span class="sub">{{ allBills().length }} bills booked</span>
         </div>
         <div class="kpi-card teal">
           <span class="label">Total Paid</span>
-          <strong class="value">₹{{ (totalPaid() / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ totalPaid() / 100 | number: '1.2-2' }}</strong>
           <span class="sub">Disbursed via NEFT / RTGS</span>
         </div>
         <div class="kpi-card amber">
           <span class="label">Outstanding Payable</span>
-          <strong class="value">₹{{ (outstandingPayable() / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ outstandingPayable() / 100 | number: '1.2-2' }}</strong>
           <span class="sub">Net of TDS deductions</span>
         </div>
         <div class="kpi-card red" *ngIf="varianceCount() > 0">
@@ -265,15 +268,19 @@ const MOCK_BILLS: VendorBillDto[] = [
               <td>
                 <div class="cell-main">
                   <a class="code-link" (click)="viewBill(b)">{{ b.billNumber }}</a>
-                  <span class="sub-text">Inv: <strong>{{ b.vendorInvoiceNumber }}</strong></span>
-                  <span class="sub-text">Dated: {{ b.vendorInvoiceDateUtc | date:'mediumDate' }}</span>
+                  <span class="sub-text"
+                    >Inv: <strong>{{ b.vendorInvoiceNumber }}</strong></span
+                  >
+                  <span class="sub-text"
+                    >Dated: {{ b.vendorInvoiceDateUtc | date: 'mediumDate' }}</span
+                  >
                 </div>
               </td>
               <td>
                 <div class="cell-main">
                   <strong>{{ b.supplierName }}</strong>
                   <span class="gstin-badge font-mono">{{ b.supplierGstin || 'Unregistered' }}</span>
-                  <span class="sub-text">Due: {{ b.dueDateUtc | date:'mediumDate' }}</span>
+                  <span class="sub-text">Due: {{ b.dueDateUtc | date: 'mediumDate' }}</span>
                 </div>
               </td>
               <td>
@@ -293,17 +300,20 @@ const MOCK_BILLS: VendorBillDto[] = [
                 </ar-chip>
               </td>
               <td class="text-right font-mono">
-                <strong>₹{{ (b.grandTotalInPaise / 100) | number:'1.2-2' }}</strong>
+                <strong>₹{{ b.grandTotalInPaise / 100 | number: '1.2-2' }}</strong>
                 <div class="tax-sub text-muted" *ngIf="b.totalTaxInPaise > 0">
-                  Tax: ₹{{ (b.totalTaxInPaise / 100) | number:'1.2-2' }}
+                  Tax: ₹{{ b.totalTaxInPaise / 100 | number: '1.2-2' }}
                 </div>
                 <div class="tax-sub text-danger" *ngIf="b.tdsDeductedInPaise > 0">
-                  TDS: -₹{{ (b.tdsDeductedInPaise / 100) | number:'1.2-2' }}
+                  TDS: -₹{{ b.tdsDeductedInPaise / 100 | number: '1.2-2' }}
                 </div>
               </td>
               <td class="text-right font-mono">
-                <span [class.text-danger]="b.balanceDueInPaise > 0" [class.text-good]="b.balanceDueInPaise === 0">
-                  ₹{{ (b.balanceDueInPaise / 100) | number:'1.2-2' }}
+                <span
+                  [class.text-danger]="b.balanceDueInPaise > 0"
+                  [class.text-good]="b.balanceDueInPaise === 0"
+                >
+                  ₹{{ b.balanceDueInPaise / 100 | number: '1.2-2' }}
                 </span>
               </td>
               <td>
@@ -327,12 +337,7 @@ const MOCK_BILLS: VendorBillDto[] = [
                   >
                     Pay
                   </button>
-                  <button
-                    ar-button="quiet"
-                    (click)="viewBill(b)"
-                  >
-                    View
-                  </button>
+                  <button ar-button="quiet" (click)="viewBill(b)">View</button>
                 </div>
               </td>
             </tr>
@@ -349,7 +354,13 @@ const MOCK_BILLS: VendorBillDto[] = [
     <!-- Bill Details Dossier Dialog -->
     <ar-dialog
       *ngIf="selectedBill()"
-      [title]="'Vendor Bill: ' + selectedBill()!.billNumber + ' (' + selectedBill()!.vendorInvoiceNumber + ')'"
+      [title]="
+        'Vendor Bill: ' +
+        selectedBill()!.billNumber +
+        ' (' +
+        selectedBill()!.vendorInvoiceNumber +
+        ')'
+      "
       (dismiss)="selectedBill.set(null)"
     >
       <div class="dialog-body" *ngIf="selectedBill() as b">
@@ -357,28 +368,49 @@ const MOCK_BILLS: VendorBillDto[] = [
           <div>
             <span class="meta-label">Vendor / Supplier</span>
             <h4>{{ b.supplierName }}</h4>
-            <p class="sub-text">GSTIN: <span class="font-mono">{{ b.supplierGstin || 'Not provided' }}</span></p>
+            <p class="sub-text">
+              GSTIN: <span class="font-mono">{{ b.supplierGstin || 'Not provided' }}</span>
+            </p>
           </div>
           <div class="meta-status">
             <ar-chip [tone]="billTone(b.status)">{{ billLabel(b.status) }}</ar-chip>
-            <ar-chip [tone]="matchTone(b.threeWayMatchStatus)">3-Way: {{ matchLabel(b.threeWayMatchStatus) }}</ar-chip>
-            <ar-chip [tone]="itcTone(b.gstr2bMatchStatus)">ITC: {{ itcLabel(b.gstr2bMatchStatus) }}</ar-chip>
+            <ar-chip [tone]="matchTone(b.threeWayMatchStatus)"
+              >3-Way: {{ matchLabel(b.threeWayMatchStatus) }}</ar-chip
+            >
+            <ar-chip [tone]="itcTone(b.gstr2bMatchStatus)"
+              >ITC: {{ itcLabel(b.gstr2bMatchStatus) }}</ar-chip
+            >
           </div>
         </div>
 
         <div class="grid-details">
           <div class="info-card">
             <h5>P2P Linkage & Dates</h5>
-            <p><strong>Vendor Invoice Date:</strong> {{ b.vendorInvoiceDateUtc | date:'mediumDate' }}</p>
-            <p><strong>Payment Due Date:</strong> {{ b.dueDateUtc | date:'mediumDate' }}</p>
-            <p><strong>Purchase Order Ref:</strong> {{ b.purchaseOrderReference || 'Direct Booking' }}</p>
+            <p>
+              <strong>Vendor Invoice Date:</strong>
+              {{ b.vendorInvoiceDateUtc | date: 'mediumDate' }}
+            </p>
+            <p><strong>Payment Due Date:</strong> {{ b.dueDateUtc | date: 'mediumDate' }}</p>
+            <p>
+              <strong>Purchase Order Ref:</strong>
+              {{ b.purchaseOrderReference || 'Direct Booking' }}
+            </p>
             <p><strong>Goods Receipt Note:</strong> {{ b.goodsReceiptNoteNumber || 'Direct' }}</p>
           </div>
           <div class="info-card">
             <h5>Tax Withholding & Compliance</h5>
-            <p><strong>TDS Section:</strong> {{ b.tdsSection || 'N/A' }} ({{ b.tdsRateBasisPoints / 100 }}%)</p>
-            <p><strong>TDS Deducted:</strong> ₹{{ (b.tdsDeductedInPaise / 100) | number:'1.2-2' }}</p>
-            <p><strong>Net Payable to Vendor:</strong> <strong>₹{{ (b.netPayableInPaise / 100) | number:'1.2-2' }}</strong></p>
+            <p>
+              <strong>TDS Section:</strong> {{ b.tdsSection || 'N/A' }} ({{
+                b.tdsRateBasisPoints / 100
+              }}%)
+            </p>
+            <p>
+              <strong>TDS Deducted:</strong> ₹{{ b.tdsDeductedInPaise / 100 | number: '1.2-2' }}
+            </p>
+            <p>
+              <strong>Net Payable to Vendor:</strong>
+              <strong>₹{{ b.netPayableInPaise / 100 | number: '1.2-2' }}</strong>
+            </p>
             <p><strong>Reverse Charge (RCM):</strong> {{ b.isReverseCharge ? 'Yes' : 'No' }}</p>
           </div>
         </div>
@@ -400,14 +432,22 @@ const MOCK_BILLS: VendorBillDto[] = [
             </thead>
             <tbody>
               <tr *ngFor="let line of b.lines">
-                <td class="font-mono"><strong>{{ line.partNumber }}</strong></td>
+                <td class="font-mono">
+                  <strong>{{ line.partNumber }}</strong>
+                </td>
                 <td>{{ line.description }}</td>
                 <td class="font-mono">{{ line.hsnCode || '—' }}</td>
                 <td class="text-right font-mono">{{ line.billedQuantity }}</td>
-                <td class="text-right font-mono">₹{{ (line.unitPriceInPaise / 100) | number:'1.2-2' }}</td>
-                <td class="text-right font-mono">₹{{ (line.taxableAmountInPaise / 100) | number:'1.2-2' }}</td>
+                <td class="text-right font-mono">
+                  ₹{{ line.unitPriceInPaise / 100 | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-mono">
+                  ₹{{ line.taxableAmountInPaise / 100 | number: '1.2-2' }}
+                </td>
                 <td class="text-right font-mono">{{ line.taxRateBasisPoints / 100 }}%</td>
-                <td class="text-right font-mono"><strong>₹{{ (line.lineTotalInPaise / 100) | number:'1.2-2' }}</strong></td>
+                <td class="text-right font-mono">
+                  <strong>₹{{ line.lineTotalInPaise / 100 | number: '1.2-2' }}</strong>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -428,11 +468,15 @@ const MOCK_BILLS: VendorBillDto[] = [
             </thead>
             <tbody>
               <tr *ngFor="let p of b.payments">
-                <td>{{ p.paymentDateUtc | date:'mediumDate' }}</td>
-                <td><span class="font-mono">{{ paymentModeLabel(p.paymentMode) }}</span></td>
+                <td>{{ p.paymentDateUtc | date: 'mediumDate' }}</td>
+                <td>
+                  <span class="font-mono">{{ paymentModeLabel(p.paymentMode) }}</span>
+                </td>
                 <td class="font-mono">{{ p.referenceNumber || '—' }}</td>
                 <td>{{ p.tdsCertificateNumber || 'Form 16A Pending' }}</td>
-                <td class="text-right font-mono text-good"><strong>₹{{ (p.amountInPaise / 100) | number:'1.2-2' }}</strong></td>
+                <td class="text-right font-mono text-good">
+                  <strong>₹{{ p.amountInPaise / 100 | number: '1.2-2' }}</strong>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -444,7 +488,7 @@ const MOCK_BILLS: VendorBillDto[] = [
             *ngIf="b.balanceDueInPaise > 0"
             (click)="openPaymentDialog(b)"
           >
-            Disburse Payment (₹{{ (b.balanceDueInPaise / 100) | number:'1.2-2' }})
+            Disburse Payment (₹{{ b.balanceDueInPaise / 100 | number: '1.2-2' }})
           </button>
           <button
             ar-button="ghost"
@@ -466,28 +510,26 @@ const MOCK_BILLS: VendorBillDto[] = [
     >
       <div class="dialog-body" *ngIf="payingBill() as b">
         <p class="dialog-intro">
-          Record bank payment for <strong>{{ b.billNumber }}</strong> to <strong>{{ b.supplierName }}</strong>.
+          Record bank payment for <strong>{{ b.billNumber }}</strong> to
+          <strong>{{ b.supplierName }}</strong
+          >.
         </p>
 
         <div class="payment-highlight">
           <div>
             <span>Net Balance Due:</span>
-            <h3>₹{{ (b.balanceDueInPaise / 100) | number:'1.2-2' }}</h3>
+            <h3>₹{{ b.balanceDueInPaise / 100 | number: '1.2-2' }}</h3>
           </div>
           <div>
             <span>Statutory TDS Withheld:</span>
-            <h4>₹{{ (b.tdsDeductedInPaise / 100) | number:'1.2-2' }}</h4>
+            <h4>₹{{ b.tdsDeductedInPaise / 100 | number: '1.2-2' }}</h4>
           </div>
         </div>
 
         <div class="form-grid mb-3">
           <div class="form-group">
             <label>Payment Amount (₹) *</label>
-            <input
-              type="number"
-              class="form-control"
-              [(ngModel)]="paymentModel.amountRupees"
-            />
+            <input type="number" class="form-control" [(ngModel)]="paymentModel.amountRupees" />
           </div>
           <div class="form-group">
             <label>Disbursement Mode *</label>
@@ -614,11 +656,44 @@ const MOCK_BILLS: VendorBillDto[] = [
           </thead>
           <tbody>
             <tr *ngFor="let item of newBill.lines; let i = index">
-              <td><input type="text" class="form-control" [(ngModel)]="item.partNumber" placeholder="Part #" /></td>
-              <td><input type="text" class="form-control" [(ngModel)]="item.description" placeholder="Description" /></td>
-              <td><input type="text" class="form-control font-mono" [(ngModel)]="item.hsnCode" placeholder="84834000" /></td>
-              <td><input type="number" class="form-control text-right" [(ngModel)]="item.billedQuantity" /></td>
-              <td><input type="number" class="form-control text-right" [(ngModel)]="item.unitPriceRupees" /></td>
+              <td>
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="item.partNumber"
+                  placeholder="Part #"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="item.description"
+                  placeholder="Description"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  class="form-control font-mono"
+                  [(ngModel)]="item.hsnCode"
+                  placeholder="84834000"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  class="form-control text-right"
+                  [(ngModel)]="item.billedQuantity"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  class="form-control text-right"
+                  [(ngModel)]="item.unitPriceRupees"
+                />
+              </td>
               <td>
                 <select class="form-control" [(ngModel)]="item.taxRateBasisPoints">
                   <option [ngValue]="1800">18%</option>
@@ -673,9 +748,15 @@ const MOCK_BILLS: VendorBillDto[] = [
         gap: 0.25rem;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 
-        &.amber { border-left: 4px solid #f59e0b; }
-        &.teal { border-left: 4px solid #0d9488; }
-        &.red { border-left: 4px solid #ef4444; }
+        &.amber {
+          border-left: 4px solid #f59e0b;
+        }
+        &.teal {
+          border-left: 4px solid #0d9488;
+        }
+        &.red {
+          border-left: 4px solid #ef4444;
+        }
 
         .label {
           font-size: 0.78rem;
@@ -907,16 +988,25 @@ const MOCK_BILLS: VendorBillDto[] = [
           text-transform: uppercase;
         }
 
-        h3, h4 {
+        h3,
+        h4 {
           margin: 0.2rem 0 0 0;
           color: #14532d;
         }
       }
 
-      .text-right { text-align: right; }
-      .text-good { color: #15803d; }
-      .text-danger { color: #b91c1c; }
-      .font-mono { font-family: ui-monospace, monospace; }
+      .text-right {
+        text-align: right;
+      }
+      .text-good {
+        color: #15803d;
+      }
+      .text-danger {
+        color: #b91c1c;
+      }
+      .font-mono {
+        font-family: ui-monospace, monospace;
+      }
 
       .form-grid {
         display: grid;
@@ -1272,7 +1362,8 @@ export class VendorBillsComponent {
       };
     });
 
-    const tdsRateBps = this.newBill.tdsSection === '194Q' ? 10 : this.newBill.tdsSection === '194C' ? 100 : 0;
+    const tdsRateBps =
+      this.newBill.tdsSection === '194Q' ? 10 : this.newBill.tdsSection === '194C' ? 100 : 0;
     const tdsDeducted = Math.round(subtotalPaise * (tdsRateBps / 10000));
     const grandTotal = subtotalPaise + totalTaxPaise;
     const netPayable = grandTotal - tdsDeducted;
@@ -1351,70 +1442,103 @@ export class VendorBillsComponent {
 
   paymentModeLabel(mode: VendorPaymentMode): string {
     switch (mode) {
-      case VendorPaymentMode.NeftRtgs: return 'NEFT / RTGS';
-      case VendorPaymentMode.Cheque: return 'Cheque';
-      case VendorPaymentMode.Upi: return 'UPI';
-      case VendorPaymentMode.Cash: return 'Cash';
-      default: return 'Bank';
+      case VendorPaymentMode.NeftRtgs:
+        return 'NEFT / RTGS';
+      case VendorPaymentMode.Cheque:
+        return 'Cheque';
+      case VendorPaymentMode.Upi:
+        return 'UPI';
+      case VendorPaymentMode.Cash:
+        return 'Cash';
+      default:
+        return 'Bank';
     }
   }
 
   matchTone(status: ThreeWayMatchStatus): ChipTone {
     switch (status) {
-      case ThreeWayMatchStatus.Matched: return 'good';
+      case ThreeWayMatchStatus.Matched:
+        return 'good';
       case ThreeWayMatchStatus.PriceVariance:
-      case ThreeWayMatchStatus.QuantityVariance: return 'bad';
-      case ThreeWayMatchStatus.ManualOverride: return 'teal';
-      default: return 'neutral';
+      case ThreeWayMatchStatus.QuantityVariance:
+        return 'bad';
+      case ThreeWayMatchStatus.ManualOverride:
+        return 'teal';
+      default:
+        return 'neutral';
     }
   }
 
   matchLabel(status: ThreeWayMatchStatus): string {
     switch (status) {
-      case ThreeWayMatchStatus.Matched: return 'Matched (3-Way)';
-      case ThreeWayMatchStatus.PriceVariance: return 'Price Discrepancy';
-      case ThreeWayMatchStatus.QuantityVariance: return 'Qty Discrepancy';
-      case ThreeWayMatchStatus.ManualOverride: return 'Overridden';
-      default: return 'Pending Match';
+      case ThreeWayMatchStatus.Matched:
+        return 'Matched (3-Way)';
+      case ThreeWayMatchStatus.PriceVariance:
+        return 'Price Discrepancy';
+      case ThreeWayMatchStatus.QuantityVariance:
+        return 'Qty Discrepancy';
+      case ThreeWayMatchStatus.ManualOverride:
+        return 'Overridden';
+      default:
+        return 'Pending Match';
     }
   }
 
   itcTone(status: Gstr2bMatchStatus): ChipTone {
     switch (status) {
-      case Gstr2bMatchStatus.MatchedIn2B: return 'good';
-      case Gstr2bMatchStatus.MissingIn2B: return 'bad';
-      case Gstr2bMatchStatus.TaxMismatch: return 'warn';
-      default: return 'neutral';
+      case Gstr2bMatchStatus.MatchedIn2B:
+        return 'good';
+      case Gstr2bMatchStatus.MissingIn2B:
+        return 'bad';
+      case Gstr2bMatchStatus.TaxMismatch:
+        return 'warn';
+      default:
+        return 'neutral';
     }
   }
 
   itcLabel(status: Gstr2bMatchStatus): string {
     switch (status) {
-      case Gstr2bMatchStatus.MatchedIn2B: return 'GSTR-2B ITC OK';
-      case Gstr2bMatchStatus.MissingIn2B: return 'Missing in 2B';
-      case Gstr2bMatchStatus.TaxMismatch: return 'Tax Mismatch';
-      default: return 'ITC Pending';
+      case Gstr2bMatchStatus.MatchedIn2B:
+        return 'GSTR-2B ITC OK';
+      case Gstr2bMatchStatus.MissingIn2B:
+        return 'Missing in 2B';
+      case Gstr2bMatchStatus.TaxMismatch:
+        return 'Tax Mismatch';
+      default:
+        return 'ITC Pending';
     }
   }
 
   billTone(status: VendorBillStatus): ChipTone {
     switch (status) {
-      case VendorBillStatus.Paid: return 'good';
-      case VendorBillStatus.PartiallyPaid: return 'amber';
-      case VendorBillStatus.Approved: return 'teal';
-      case VendorBillStatus.Cancelled: return 'bad';
-      default: return 'neutral';
+      case VendorBillStatus.Paid:
+        return 'good';
+      case VendorBillStatus.PartiallyPaid:
+        return 'amber';
+      case VendorBillStatus.Approved:
+        return 'teal';
+      case VendorBillStatus.Cancelled:
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 
   billLabel(status: VendorBillStatus): string {
     switch (status) {
-      case VendorBillStatus.Paid: return 'Fully Paid';
-      case VendorBillStatus.PartiallyPaid: return 'Partially Paid';
-      case VendorBillStatus.Approved: return 'Approved';
-      case VendorBillStatus.Cancelled: return 'Cancelled';
-      case VendorBillStatus.PendingApproval: return 'Pending Approval';
-      default: return 'Draft';
+      case VendorBillStatus.Paid:
+        return 'Fully Paid';
+      case VendorBillStatus.PartiallyPaid:
+        return 'Partially Paid';
+      case VendorBillStatus.Approved:
+        return 'Approved';
+      case VendorBillStatus.Cancelled:
+        return 'Cancelled';
+      case VendorBillStatus.PendingApproval:
+        return 'Pending Approval';
+      default:
+        return 'Draft';
     }
   }
 }

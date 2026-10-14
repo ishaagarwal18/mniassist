@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../../environments/environment';
 import { inr, inrCompact } from '../../../core/util/format';
@@ -826,7 +833,10 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
             {{ formatPaiseCompact(currentPlan()?.actualRevenueInPaise ?? 0) }}
           </div>
           <div class="kpi-subtext">
-            <span>Run-rate Landing: {{ formatPaiseCompact(dashboard()?.forecastedYearEndLandingInPaise ?? 0) }}</span>
+            <span
+              >Run-rate Landing:
+              {{ formatPaiseCompact(dashboard()?.forecastedYearEndLandingInPaise ?? 0) }}</span
+            >
             <span class="pill-badge" [class.positive]="ytdPacing() >= 70">
               {{ ytdPacing() }}% pace
             </span>
@@ -836,12 +846,29 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         <ar-card class="kpi-card">
           <div class="kpi-label">Gross Margin %</div>
           <div class="kpi-value">
-            {{ (currentPlan()?.actualGrossMarginPercent ?? currentPlan()?.targetGrossMarginPercent ?? 0).toFixed(1) }}%
+            {{
+              (
+                currentPlan()?.actualGrossMarginPercent ??
+                currentPlan()?.targetGrossMarginPercent ??
+                0
+              ).toFixed(1)
+            }}%
           </div>
           <div class="kpi-subtext">
             <span>Target: {{ (currentPlan()?.targetGrossMarginPercent ?? 0).toFixed(1) }}%</span>
-            <span class="margin-delta" [class.above]="(currentPlan()?.actualGrossMarginPercent ?? 0) >= (currentPlan()?.targetGrossMarginPercent ?? 0)">
-              {{ ((currentPlan()?.actualGrossMarginPercent ?? 0) - (currentPlan()?.targetGrossMarginPercent ?? 0)).toFixed(1) }}% diff
+            <span
+              class="margin-delta"
+              [class.above]="
+                (currentPlan()?.actualGrossMarginPercent ?? 0) >=
+                (currentPlan()?.targetGrossMarginPercent ?? 0)
+              "
+            >
+              {{
+                (
+                  (currentPlan()?.actualGrossMarginPercent ?? 0) -
+                  (currentPlan()?.targetGrossMarginPercent ?? 0)
+                ).toFixed(1)
+              }}% diff
             </span>
           </div>
         </ar-card>
@@ -933,18 +960,25 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
                     <div class="traj-metrics">
                       <div class="metric-row">
                         <span class="label">Target:</span>
-                        <span class="val font-semibold">{{ formatPaise(q.targetRevenueInPaise) }}</span>
+                        <span class="val font-semibold">{{
+                          formatPaise(q.targetRevenueInPaise)
+                        }}</span>
                       </div>
                       <div class="metric-row">
                         <span class="label">Actual Realized:</span>
                         <span class="val text-good font-semibold">
-                          {{ q.actualRevenueInPaise > 0 ? formatPaise(q.actualRevenueInPaise) : 'In Progress' }}
+                          {{
+                            q.actualRevenueInPaise > 0
+                              ? formatPaise(q.actualRevenueInPaise)
+                              : 'In Progress'
+                          }}
                         </span>
                       </div>
                       <div class="metric-row">
                         <span class="label">Range (Cons - Opt):</span>
                         <span class="val text-neutral">
-                          {{ formatPaiseCompact(q.conservativeInPaise) }} – {{ formatPaiseCompact(q.optimisticInPaise) }}
+                          {{ formatPaiseCompact(q.conservativeInPaise) }} –
+                          {{ formatPaiseCompact(q.optimisticInPaise) }}
                         </span>
                       </div>
                     </div>
@@ -953,7 +987,9 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
                       <div class="progress-bar-bg">
                         <div
                           class="progress-bar-fill"
-                          [style.width.%]="calcPercentage(q.actualRevenueInPaise, q.targetRevenueInPaise)"
+                          [style.width.%]="
+                            calcPercentage(q.actualRevenueInPaise, q.targetRevenueInPaise)
+                          "
                         ></div>
                       </div>
                     }
@@ -978,15 +1014,21 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
                     <div class="bl-stats">
                       <div class="stat-col">
                         <span class="meta-lbl">Target</span>
-                        <span class="meta-val">{{ formatPaiseCompact(bl.projectedRevenueInPaise) }}</span>
+                        <span class="meta-val">{{
+                          formatPaiseCompact(bl.projectedRevenueInPaise)
+                        }}</span>
                       </div>
                       <div class="stat-col">
                         <span class="meta-lbl">Realized</span>
-                        <span class="meta-val text-good">{{ formatPaiseCompact(bl.actualRevenueInPaise) }}</span>
+                        <span class="meta-val text-good">{{
+                          formatPaiseCompact(bl.actualRevenueInPaise)
+                        }}</span>
                       </div>
                       <div class="stat-col">
                         <span class="meta-lbl">Realization</span>
-                        <span class="meta-val font-semibold">{{ bl.realizationPercent.toFixed(1) }}%</span>
+                        <span class="meta-val font-semibold"
+                          >{{ bl.realizationPercent.toFixed(1) }}%</span
+                        >
                       </div>
                     </div>
                     <div class="progress-bar-bg">
@@ -1007,7 +1049,13 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
             <div class="insight-content">
               <h4>AI Projection Strategic Assessment</h4>
               <p>
-                Based on current Q1 & Q2 invoicing run-rates and weighted quotation probability in the pipeline, FY 2026-27 is tracking towards <strong>{{ formatPaiseCompact(dashboard()?.forecastedYearEndLandingInPaise ?? 0) }}</strong> (97.8% of annual plan). Turnkey Automation and AMC renewals show highest resilience, while Drive & Motor deliveries face longer lead-time buffer requirements in Q3.
+                Based on current Q1 & Q2 invoicing run-rates and weighted quotation probability in
+                the pipeline, FY 2026-27 is tracking towards
+                <strong>{{
+                  formatPaiseCompact(dashboard()?.forecastedYearEndLandingInPaise ?? 0)
+                }}</strong>
+                (97.8% of annual plan). Turnkey Automation and AMC renewals show highest resilience,
+                while Drive & Motor deliveries face longer lead-time buffer requirements in Q3.
               </p>
             </div>
           </div>
@@ -1065,13 +1113,28 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
                     <td>
                       <span class="bl-tag">{{ getBusinessLineName(item.businessLine) }}</span>
                     </td>
-                    <td class="text-right font-semibold">{{ formatPaise(item.projectedRevenueInPaise) }}</td>
-                    <td class="text-right text-muted">{{ formatPaise(item.projectedCogsInPaise) }}</td>
-                    <td class="text-center font-medium">{{ item.projectedMarginPercent.toFixed(1) }}%</td>
-                    <td class="text-right text-muted">{{ formatPaiseCompact(item.conservativeRevenueInPaise) }}</td>
-                    <td class="text-right text-muted">{{ formatPaiseCompact(item.optimisticRevenueInPaise) }}</td>
-                    <td class="text-right font-semibold" [class.text-good]="item.actualRevenueInPaise > 0">
-                      {{ item.actualRevenueInPaise > 0 ? formatPaise(item.actualRevenueInPaise) : '—' }}
+                    <td class="text-right font-semibold">
+                      {{ formatPaise(item.projectedRevenueInPaise) }}
+                    </td>
+                    <td class="text-right text-muted">
+                      {{ formatPaise(item.projectedCogsInPaise) }}
+                    </td>
+                    <td class="text-center font-medium">
+                      {{ item.projectedMarginPercent.toFixed(1) }}%
+                    </td>
+                    <td class="text-right text-muted">
+                      {{ formatPaiseCompact(item.conservativeRevenueInPaise) }}
+                    </td>
+                    <td class="text-right text-muted">
+                      {{ formatPaiseCompact(item.optimisticRevenueInPaise) }}
+                    </td>
+                    <td
+                      class="text-right font-semibold"
+                      [class.text-good]="item.actualRevenueInPaise > 0"
+                    >
+                      {{
+                        item.actualRevenueInPaise > 0 ? formatPaise(item.actualRevenueInPaise) : '—'
+                      }}
                     </td>
                     <td class="text-center">{{ item.capacityHoursRequired }} hrs</td>
                     <td class="text-center">
@@ -1083,7 +1146,9 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
                 }
                 @if (filteredItems().length === 0) {
                   <tr>
-                    <td colspan="10" class="empty-state">No projection items match the selected filter.</td>
+                    <td colspan="10" class="empty-state">
+                      No projection items match the selected filter.
+                    </td>
                   </tr>
                 }
               </tbody>
@@ -1104,24 +1169,38 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
             <!-- Conservative -->
             <ar-card class="scenario-card conservative-border">
               <div class="scenario-badge conservative-badge">Conservative (-15%)</div>
-              <div class="scenario-rev">{{ formatPaiseCompact(scenarioResult()?.conservative?.totalRevenueInPaise ?? 0) }}</div>
+              <div class="scenario-rev">
+                {{ formatPaiseCompact(scenarioResult()?.conservative?.totalRevenueInPaise ?? 0) }}
+              </div>
               <div class="scenario-lbl">Revenue Floor</div>
               <div class="scenario-details">
                 <div class="s-row">
                   <span>COGS:</span>
-                  <span class="font-semibold">{{ formatPaiseCompact(scenarioResult()?.conservative?.totalCogsInPaise ?? 0) }}</span>
+                  <span class="font-semibold">{{
+                    formatPaiseCompact(scenarioResult()?.conservative?.totalCogsInPaise ?? 0)
+                  }}</span>
                 </div>
                 <div class="s-row">
                   <span>Gross Margin:</span>
-                  <span class="font-semibold">{{ (scenarioResult()?.conservative?.grossMarginPercent ?? 0).toFixed(1) }}%</span>
+                  <span class="font-semibold"
+                    >{{
+                      (scenarioResult()?.conservative?.grossMarginPercent ?? 0).toFixed(1)
+                    }}%</span
+                  >
                 </div>
                 <div class="s-row">
                   <span>Projected EBITDA:</span>
-                  <span class="font-semibold text-good">{{ formatPaiseCompact(scenarioResult()?.conservative?.projectedEbitdaInPaise ?? 0) }}</span>
+                  <span class="font-semibold text-good">{{
+                    formatPaiseCompact(scenarioResult()?.conservative?.projectedEbitdaInPaise ?? 0)
+                  }}</span>
                 </div>
                 <div class="s-row">
                   <span>Working Capital:</span>
-                  <span class="font-semibold text-warn">{{ formatPaiseCompact(scenarioResult()?.conservative?.workingCapitalRequirementInPaise ?? 0) }}</span>
+                  <span class="font-semibold text-warn">{{
+                    formatPaiseCompact(
+                      scenarioResult()?.conservative?.workingCapitalRequirementInPaise ?? 0
+                    )
+                  }}</span>
                 </div>
               </div>
               <div class="scenario-note">
@@ -1132,24 +1211,36 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
             <!-- Realistic (Base) -->
             <ar-card class="scenario-card realistic-border active-plan-highlight">
               <div class="scenario-badge realistic-badge">Realistic (Base Plan)</div>
-              <div class="scenario-rev text-accent">{{ formatPaiseCompact(scenarioResult()?.realistic?.totalRevenueInPaise ?? 0) }}</div>
+              <div class="scenario-rev text-accent">
+                {{ formatPaiseCompact(scenarioResult()?.realistic?.totalRevenueInPaise ?? 0) }}
+              </div>
               <div class="scenario-lbl">Target Operating Plan</div>
               <div class="scenario-details">
                 <div class="s-row">
                   <span>COGS:</span>
-                  <span class="font-semibold">{{ formatPaiseCompact(scenarioResult()?.realistic?.totalCogsInPaise ?? 0) }}</span>
+                  <span class="font-semibold">{{
+                    formatPaiseCompact(scenarioResult()?.realistic?.totalCogsInPaise ?? 0)
+                  }}</span>
                 </div>
                 <div class="s-row">
                   <span>Gross Margin:</span>
-                  <span class="font-semibold">{{ (scenarioResult()?.realistic?.grossMarginPercent ?? 0).toFixed(1) }}%</span>
+                  <span class="font-semibold"
+                    >{{ (scenarioResult()?.realistic?.grossMarginPercent ?? 0).toFixed(1) }}%</span
+                  >
                 </div>
                 <div class="s-row">
                   <span>Projected EBITDA:</span>
-                  <span class="font-semibold text-good">{{ formatPaiseCompact(scenarioResult()?.realistic?.projectedEbitdaInPaise ?? 0) }}</span>
+                  <span class="font-semibold text-good">{{
+                    formatPaiseCompact(scenarioResult()?.realistic?.projectedEbitdaInPaise ?? 0)
+                  }}</span>
                 </div>
                 <div class="s-row">
                   <span>Working Capital:</span>
-                  <span class="font-semibold text-warn">{{ formatPaiseCompact(scenarioResult()?.realistic?.workingCapitalRequirementInPaise ?? 0) }}</span>
+                  <span class="font-semibold text-warn">{{
+                    formatPaiseCompact(
+                      scenarioResult()?.realistic?.workingCapitalRequirementInPaise ?? 0
+                    )
+                  }}</span>
                 </div>
               </div>
               <div class="scenario-note">
@@ -1160,24 +1251,36 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
             <!-- Optimistic -->
             <ar-card class="scenario-card optimistic-border">
               <div class="scenario-badge optimistic-badge">Optimistic (+15%)</div>
-              <div class="scenario-rev text-good">{{ formatPaiseCompact(scenarioResult()?.optimistic?.totalRevenueInPaise ?? 0) }}</div>
+              <div class="scenario-rev text-good">
+                {{ formatPaiseCompact(scenarioResult()?.optimistic?.totalRevenueInPaise ?? 0) }}
+              </div>
               <div class="scenario-lbl">Upside Potential</div>
               <div class="scenario-details">
                 <div class="s-row">
                   <span>COGS:</span>
-                  <span class="font-semibold">{{ formatPaiseCompact(scenarioResult()?.optimistic?.totalCogsInPaise ?? 0) }}</span>
+                  <span class="font-semibold">{{
+                    formatPaiseCompact(scenarioResult()?.optimistic?.totalCogsInPaise ?? 0)
+                  }}</span>
                 </div>
                 <div class="s-row">
                   <span>Gross Margin:</span>
-                  <span class="font-semibold">{{ (scenarioResult()?.optimistic?.grossMarginPercent ?? 0).toFixed(1) }}%</span>
+                  <span class="font-semibold"
+                    >{{ (scenarioResult()?.optimistic?.grossMarginPercent ?? 0).toFixed(1) }}%</span
+                  >
                 </div>
                 <div class="s-row">
                   <span>Projected EBITDA:</span>
-                  <span class="font-semibold text-good">{{ formatPaiseCompact(scenarioResult()?.optimistic?.projectedEbitdaInPaise ?? 0) }}</span>
+                  <span class="font-semibold text-good">{{
+                    formatPaiseCompact(scenarioResult()?.optimistic?.projectedEbitdaInPaise ?? 0)
+                  }}</span>
                 </div>
                 <div class="s-row">
                   <span>Working Capital:</span>
-                  <span class="font-semibold text-warn">{{ formatPaiseCompact(scenarioResult()?.optimistic?.workingCapitalRequirementInPaise ?? 0) }}</span>
+                  <span class="font-semibold text-warn">{{
+                    formatPaiseCompact(
+                      scenarioResult()?.optimistic?.workingCapitalRequirementInPaise ?? 0
+                    )
+                  }}</span>
                 </div>
               </div>
               <div class="scenario-note">
@@ -1204,9 +1307,16 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
                 <h3 class="plan-title">{{ p.title }}</h3>
                 <p class="plan-notes">{{ p.notes || 'No description provided.' }}</p>
                 <div class="plan-meta-stats">
-                  <span>Target Revenue: <strong>{{ formatPaise(p.targetRevenueInPaise) }}</strong></span>
-                  <span>Margin: <strong>{{ p.targetGrossMarginPercent.toFixed(1) }}%</strong></span>
-                  <span>EBITDA: <strong>{{ formatPaiseCompact(p.targetEbitdaInPaise) }}</strong></span>
+                  <span
+                    >Target Revenue:
+                    <strong>{{ formatPaise(p.targetRevenueInPaise) }}</strong></span
+                  >
+                  <span
+                    >Margin: <strong>{{ p.targetGrossMarginPercent.toFixed(1) }}%</strong></span
+                  >
+                  <span
+                    >EBITDA: <strong>{{ formatPaiseCompact(p.targetEbitdaInPaise) }}</strong></span
+                  >
                 </div>
               </div>
               <div class="plan-card-right">
@@ -1236,11 +1346,18 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         >
           <div class="dialog-form">
             <p class="dialog-explainer">
-              The AI projection engine analyzes historical order-to-cash invoices, pipeline weighted stages, and bill-of-materials costs to synthesize quarterly revenue and capacity targets across all 5 industrial business lines.
+              The AI projection engine analyzes historical order-to-cash invoices, pipeline weighted
+              stages, and bill-of-materials costs to synthesize quarterly revenue and capacity
+              targets across all 5 industrial business lines.
             </p>
             <div class="form-row">
               <label>Fiscal Year</label>
-              <input type="text" [(ngModel)]="genFiscalYear" class="form-input" placeholder="e.g. 2026-27" />
+              <input
+                type="text"
+                [(ngModel)]="genFiscalYear"
+                class="form-input"
+                placeholder="e.g. 2026-27"
+              />
             </div>
             <div class="form-row">
               <label>Annual Growth Rate Target (%)</label>
@@ -1285,18 +1402,25 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
 
       <!-- Modal: Create New Plan -->
       @if (showCreateModal()) {
-        <ar-dialog
-          title="Create Projection Plan"
-          (dismiss)="showCreateModal.set(false)"
-        >
+        <ar-dialog title="Create Projection Plan" (dismiss)="showCreateModal.set(false)">
           <div class="dialog-form">
             <div class="form-row">
               <label>Plan Title *</label>
-              <input type="text" [(ngModel)]="newPlanTitle" class="form-input" placeholder="e.g. FY 2027-28 Executive Expansion Plan" />
+              <input
+                type="text"
+                [(ngModel)]="newPlanTitle"
+                class="form-input"
+                placeholder="e.g. FY 2027-28 Executive Expansion Plan"
+              />
             </div>
             <div class="form-row">
               <label>Fiscal Year *</label>
-              <input type="text" [(ngModel)]="newPlanFiscalYear" class="form-input" placeholder="e.g. 2026-27" />
+              <input
+                type="text"
+                [(ngModel)]="newPlanFiscalYear"
+                class="form-input"
+                placeholder="e.g. 2026-27"
+              />
             </div>
             <div class="form-row">
               <label>Planning Horizon</label>
@@ -1308,7 +1432,12 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
             </div>
             <div class="form-row">
               <label>Notes & Strategic Context</label>
-              <textarea [(ngModel)]="newPlanNotes" rows="3" class="form-input" placeholder="Describe key targets or operational assumptions..."></textarea>
+              <textarea
+                [(ngModel)]="newPlanNotes"
+                rows="3"
+                class="form-input"
+                placeholder="Describe key targets or operational assumptions..."
+              ></textarea>
             </div>
           </div>
           <div dialogActions class="dialog-actions">
@@ -1329,591 +1458,606 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
       }
     </div>
   `,
-  styles: [`
-    .projection-page {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-      padding: 1.5rem;
-      max-width: 1440px;
-      margin: 0 auto;
-    }
-
-    .topbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    /* KPI Grid */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
-    }
-
-    .kpi-card {
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .kpi-label {
-      font-size: 0.8125rem;
-      font-weight: 500;
-      color: var(--color-text-muted, #64748b);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .kpi-value {
-      font-size: 1.875rem;
-      font-weight: 700;
-      line-height: 1.1;
-      color: var(--color-text-primary, #0f172a);
-    }
-
-    .kpi-subtext {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.75rem;
-      color: var(--color-text-muted, #64748b);
-      margin-top: 0.25rem;
-    }
-
-    .pill-badge {
-      padding: 0.125rem 0.375rem;
-      border-radius: 4px;
-      background: var(--color-bg-secondary, #f1f5f9);
-      font-weight: 600;
-    }
-
-    .pill-badge.positive {
-      color: #059669;
-      background: #ecfdf5;
-    }
-
-    .margin-delta {
-      font-weight: 600;
-    }
-
-    .margin-delta.above {
-      color: #059669;
-    }
-
-    .text-accent {
-      color: #3b82f6;
-    }
-
-    .text-good {
-      color: #10b981;
-    }
-
-    .text-warn {
-      color: #f59e0b;
-    }
-
-    .text-muted {
-      color: #94a3b8;
-    }
-
-    /* Tabs */
-    .tab-bar {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      border-bottom: 1px solid var(--color-border, #e2e8f0);
-      padding-bottom: 0.25rem;
-    }
-
-    .tab-btn {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.625rem 1rem;
-      font-size: 0.875rem;
-      font-weight: 500;
-      border: none;
-      background: none;
-      color: var(--color-text-muted, #64748b);
-      cursor: pointer;
-      border-radius: 6px;
-      transition: all 0.15s ease-in-out;
-    }
-
-    .tab-btn:hover {
-      color: var(--color-text-primary, #0f172a);
-      background: var(--color-bg-hover, #f8fafc);
-    }
-
-    .tab-btn.active {
-      color: #2563eb;
-      background: #eff6ff;
-      font-weight: 600;
-    }
-
-    /* Dashboard Layout */
-    .dashboard-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
-      gap: 1.25rem;
-    }
-
-    .section-card {
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .card-head h3 {
-      margin: 0;
-      font-size: 1.0625rem;
-      font-weight: 600;
-      color: var(--color-text-primary, #0f172a);
-    }
-
-    .card-head .subhead {
-      font-size: 0.75rem;
-      color: var(--color-text-muted, #64748b);
-    }
-
-    .trajectories-list, .bl-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .trajectory-item, .bl-item {
-      padding: 0.875rem;
-      background: var(--color-bg-secondary, #f8fafc);
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      border: 1px solid var(--color-border-subtle, #edf2f7);
-    }
-
-    .traj-header, .bl-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .bl-title {
-      font-weight: 600;
-      font-size: 0.9375rem;
-    }
-
-    .bl-share-tag {
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 0.125rem 0.5rem;
-      border-radius: 9999px;
-      background: #e0f2fe;
-      color: #0369a1;
-    }
-
-    .traj-metrics, .bl-stats {
-      display: flex;
-      justify-content: space-between;
-      gap: 0.5rem;
-      font-size: 0.8125rem;
-    }
-
-    .metric-row {
-      display: flex;
-      gap: 0.375rem;
-    }
-
-    .metric-row .label, .stat-col .meta-lbl {
-      color: var(--color-text-muted, #64748b);
-    }
-
-    .stat-col {
-      display: flex;
-      flex-direction: column;
-      gap: 0.125rem;
-    }
-
-    .progress-bar-bg {
-      height: 6px;
-      width: 100%;
-      background: #e2e8f0;
-      border-radius: 9999px;
-      overflow: hidden;
-    }
-
-    .progress-bar-fill {
-      height: 100%;
-      background: #10b981;
-      border-radius: 9999px;
-      transition: width 0.3s ease;
-    }
-
-    .progress-bar-fill.bg-brand {
-      background: #3b82f6;
-    }
-
-    .insights-banner {
-      display: flex;
-      gap: 1rem;
-      align-items: flex-start;
-      background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
-      border: 1px solid #bfdbfe;
-      border-radius: 8px;
-      padding: 1.25rem;
-    }
-
-    .insight-icon {
-      font-size: 1.5rem;
-      color: #2563eb;
-      margin-top: 0.125rem;
-    }
-
-    .insight-content h4 {
-      margin: 0 0 0.375rem;
-      font-size: 0.9375rem;
-      font-weight: 600;
-      color: #1e3a8a;
-    }
-
-    .insight-content p {
-      margin: 0;
-      font-size: 0.875rem;
-      line-height: 1.5;
-      color: #1e293b;
-    }
-
-    /* Matrix Table */
-    .matrix-card {
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .matrix-toolbar {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .filter-group {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.875rem;
-    }
-
-    .filter-group select {
-      padding: 0.375rem 0.75rem;
-      border-radius: 6px;
-      border: 1px solid var(--color-border, #cbd5e1);
-      background: #ffffff;
-      font-size: 0.875rem;
-    }
-
-    .record-counter {
-      margin-left: auto;
-      font-size: 0.8125rem;
-      color: var(--color-text-muted, #64748b);
-    }
-
-    .table-responsive {
-      overflow-x: auto;
-    }
-
-    .projection-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.875rem;
-    }
-
-    .projection-table th {
-      padding: 0.75rem 0.875rem;
-      background: var(--color-bg-secondary, #f8fafc);
-      border-bottom: 2px solid var(--color-border, #e2e8f0);
-      color: var(--color-text-muted, #475569);
-      font-weight: 600;
-      white-space: nowrap;
-    }
-
-    .projection-table td {
-      padding: 0.75rem 0.875rem;
-      border-bottom: 1px solid var(--color-border-subtle, #f1f5f9);
-      vertical-align: middle;
-    }
-
-    .bl-tag {
-      font-weight: 500;
-      color: #1e293b;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 2.5rem !important;
-      color: var(--color-text-muted, #94a3b8);
-      font-style: italic;
-    }
-
-    /* Scenarios */
-    .scenarios-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-
-    .scenario-summary-banner {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 1.25rem;
-    }
-
-    .scenario-summary-banner h3 {
-      margin: 0 0 0.5rem;
-      font-size: 1rem;
-      font-weight: 600;
-    }
-
-    .scenario-summary-banner p {
-      margin: 0;
-      font-size: 0.875rem;
-      line-height: 1.5;
-      color: #334155;
-    }
-
-    .scenario-cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 1.25rem;
-    }
-
-    .scenario-card {
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      border-top-width: 4px;
-    }
-
-    .conservative-border {
-      border-top-color: #64748b;
-    }
-
-    .realistic-border {
-      border-top-color: #3b82f6;
-    }
-
-    .optimistic-border {
-      border-top-color: #10b981;
-    }
-
-    .active-plan-highlight {
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
-    }
-
-    .scenario-badge {
-      display: inline-block;
-      align-self: flex-start;
-      padding: 0.25rem 0.625rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .conservative-badge {
-      background: #f1f5f9;
-      color: #475569;
-    }
-
-    .realistic-badge {
-      background: #eff6ff;
-      color: #1d4ed8;
-    }
-
-    .optimistic-badge {
-      background: #ecfdf5;
-      color: #047857;
-    }
-
-    .scenario-rev {
-      font-size: 2rem;
-      font-weight: 700;
-      line-height: 1.1;
-    }
-
-    .scenario-lbl {
-      font-size: 0.8125rem;
-      color: var(--color-text-muted, #64748b);
-      margin-top: -0.5rem;
-    }
-
-    .scenario-details {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      padding: 0.75rem 0;
-      border-top: 1px solid var(--color-border-subtle, #f1f5f9);
-      border-bottom: 1px solid var(--color-border-subtle, #f1f5f9);
-    }
-
-    .s-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.875rem;
-    }
-
-    .scenario-note {
-      font-size: 0.75rem;
-      color: var(--color-text-muted, #64748b);
-      line-height: 1.4;
-      font-style: italic;
-    }
-
-    /* All Plans */
-    .plans-list-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .plan-card {
-      padding: 1.25rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1.5rem;
-    }
-
-    .plan-card.is-active {
-      border-left: 4px solid #3b82f6;
-    }
-
-    .plan-card-left {
-      display: flex;
-      flex-direction: column;
-      gap: 0.375rem;
-    }
-
-    .plan-top-row {
-      display: flex;
-      align-items: center;
-      gap: 0.625rem;
-    }
-
-    .plan-code {
-      font-weight: 700;
-      font-size: 0.875rem;
-      color: #1e293b;
-    }
-
-    .fy-tag {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #64748b;
-    }
-
-    .plan-title {
-      margin: 0;
-      font-size: 1.0625rem;
-      font-weight: 600;
-    }
-
-    .plan-notes {
-      margin: 0;
-      font-size: 0.8125rem;
-      color: #64748b;
-    }
-
-    .plan-meta-stats {
-      display: flex;
-      gap: 1.5rem;
-      font-size: 0.8125rem;
-      margin-top: 0.25rem;
-      color: #475569;
-    }
-
-    .plan-card-right {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    /* Dialog styling */
-    .dialog-form {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      padding: 0.5rem 0;
-    }
-
-    .dialog-explainer {
-      font-size: 0.8125rem;
-      color: #64748b;
-      line-height: 1.4;
-      background: #f8fafc;
-      padding: 0.75rem;
-      border-radius: 6px;
-      margin: 0;
-    }
-
-    .form-row {
-      display: flex;
-      flex-direction: column;
-      gap: 0.375rem;
-    }
-
-    .form-row label {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: #334155;
-    }
-
-    .form-input {
-      padding: 0.5rem 0.75rem;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
-      font-size: 0.875rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .checkbox-row {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.8125rem;
-      color: #334155;
-      margin-top: 0.25rem;
-    }
-
-    .dialog-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      margin-top: 1.25rem;
-      padding-top: 1rem;
-      border-top: 1px solid #e2e8f0;
-    }
-
-    .text-right { text-align: right; }
-    .text-center { text-align: center; }
-    .font-semibold { font-weight: 600; }
-    .font-medium { font-weight: 500; }
-  `],
+  styles: [
+    `
+      .projection-page {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        padding: 1.5rem;
+        max-width: 1440px;
+        margin: 0 auto;
+      }
+
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      /* KPI Grid */
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+      }
+
+      .kpi-card {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .kpi-label {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--color-text-muted, #64748b);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .kpi-value {
+        font-size: 1.875rem;
+        font-weight: 700;
+        line-height: 1.1;
+        color: var(--color-text-primary, #0f172a);
+      }
+
+      .kpi-subtext {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: var(--color-text-muted, #64748b);
+        margin-top: 0.25rem;
+      }
+
+      .pill-badge {
+        padding: 0.125rem 0.375rem;
+        border-radius: 4px;
+        background: var(--color-bg-secondary, #f1f5f9);
+        font-weight: 600;
+      }
+
+      .pill-badge.positive {
+        color: #059669;
+        background: #ecfdf5;
+      }
+
+      .margin-delta {
+        font-weight: 600;
+      }
+
+      .margin-delta.above {
+        color: #059669;
+      }
+
+      .text-accent {
+        color: #3b82f6;
+      }
+
+      .text-good {
+        color: #10b981;
+      }
+
+      .text-warn {
+        color: #f59e0b;
+      }
+
+      .text-muted {
+        color: #94a3b8;
+      }
+
+      /* Tabs */
+      .tab-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-bottom: 1px solid var(--color-border, #e2e8f0);
+        padding-bottom: 0.25rem;
+      }
+
+      .tab-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: none;
+        background: none;
+        color: var(--color-text-muted, #64748b);
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.15s ease-in-out;
+      }
+
+      .tab-btn:hover {
+        color: var(--color-text-primary, #0f172a);
+        background: var(--color-bg-hover, #f8fafc);
+      }
+
+      .tab-btn.active {
+        color: #2563eb;
+        background: #eff6ff;
+        font-weight: 600;
+      }
+
+      /* Dashboard Layout */
+      .dashboard-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+        gap: 1.25rem;
+      }
+
+      .section-card {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .card-head h3 {
+        margin: 0;
+        font-size: 1.0625rem;
+        font-weight: 600;
+        color: var(--color-text-primary, #0f172a);
+      }
+
+      .card-head .subhead {
+        font-size: 0.75rem;
+        color: var(--color-text-muted, #64748b);
+      }
+
+      .trajectories-list,
+      .bl-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .trajectory-item,
+      .bl-item {
+        padding: 0.875rem;
+        background: var(--color-bg-secondary, #f8fafc);
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        border: 1px solid var(--color-border-subtle, #edf2f7);
+      }
+
+      .traj-header,
+      .bl-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .bl-title {
+        font-weight: 600;
+        font-size: 0.9375rem;
+      }
+
+      .bl-share-tag {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.125rem 0.5rem;
+        border-radius: 9999px;
+        background: #e0f2fe;
+        color: #0369a1;
+      }
+
+      .traj-metrics,
+      .bl-stats {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        font-size: 0.8125rem;
+      }
+
+      .metric-row {
+        display: flex;
+        gap: 0.375rem;
+      }
+
+      .metric-row .label,
+      .stat-col .meta-lbl {
+        color: var(--color-text-muted, #64748b);
+      }
+
+      .stat-col {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+      }
+
+      .progress-bar-bg {
+        height: 6px;
+        width: 100%;
+        background: #e2e8f0;
+        border-radius: 9999px;
+        overflow: hidden;
+      }
+
+      .progress-bar-fill {
+        height: 100%;
+        background: #10b981;
+        border-radius: 9999px;
+        transition: width 0.3s ease;
+      }
+
+      .progress-bar-fill.bg-brand {
+        background: #3b82f6;
+      }
+
+      .insights-banner {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+        border: 1px solid #bfdbfe;
+        border-radius: 8px;
+        padding: 1.25rem;
+      }
+
+      .insight-icon {
+        font-size: 1.5rem;
+        color: #2563eb;
+        margin-top: 0.125rem;
+      }
+
+      .insight-content h4 {
+        margin: 0 0 0.375rem;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #1e3a8a;
+      }
+
+      .insight-content p {
+        margin: 0;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: #1e293b;
+      }
+
+      /* Matrix Table */
+      .matrix-card {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .matrix-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      .filter-group select {
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid var(--color-border, #cbd5e1);
+        background: #ffffff;
+        font-size: 0.875rem;
+      }
+
+      .record-counter {
+        margin-left: auto;
+        font-size: 0.8125rem;
+        color: var(--color-text-muted, #64748b);
+      }
+
+      .table-responsive {
+        overflow-x: auto;
+      }
+
+      .projection-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+      }
+
+      .projection-table th {
+        padding: 0.75rem 0.875rem;
+        background: var(--color-bg-secondary, #f8fafc);
+        border-bottom: 2px solid var(--color-border, #e2e8f0);
+        color: var(--color-text-muted, #475569);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .projection-table td {
+        padding: 0.75rem 0.875rem;
+        border-bottom: 1px solid var(--color-border-subtle, #f1f5f9);
+        vertical-align: middle;
+      }
+
+      .bl-tag {
+        font-weight: 500;
+        color: #1e293b;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 2.5rem !important;
+        color: var(--color-text-muted, #94a3b8);
+        font-style: italic;
+      }
+
+      /* Scenarios */
+      .scenarios-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
+      .scenario-summary-banner {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.25rem;
+      }
+
+      .scenario-summary-banner h3 {
+        margin: 0 0 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .scenario-summary-banner p {
+        margin: 0;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: #334155;
+      }
+
+      .scenario-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.25rem;
+      }
+
+      .scenario-card {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        border-top-width: 4px;
+      }
+
+      .conservative-border {
+        border-top-color: #64748b;
+      }
+
+      .realistic-border {
+        border-top-color: #3b82f6;
+      }
+
+      .optimistic-border {
+        border-top-color: #10b981;
+      }
+
+      .active-plan-highlight {
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+      }
+
+      .scenario-badge {
+        display: inline-block;
+        align-self: flex-start;
+        padding: 0.25rem 0.625rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .conservative-badge {
+        background: #f1f5f9;
+        color: #475569;
+      }
+
+      .realistic-badge {
+        background: #eff6ff;
+        color: #1d4ed8;
+      }
+
+      .optimistic-badge {
+        background: #ecfdf5;
+        color: #047857;
+      }
+
+      .scenario-rev {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+
+      .scenario-lbl {
+        font-size: 0.8125rem;
+        color: var(--color-text-muted, #64748b);
+        margin-top: -0.5rem;
+      }
+
+      .scenario-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.75rem 0;
+        border-top: 1px solid var(--color-border-subtle, #f1f5f9);
+        border-bottom: 1px solid var(--color-border-subtle, #f1f5f9);
+      }
+
+      .s-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.875rem;
+      }
+
+      .scenario-note {
+        font-size: 0.75rem;
+        color: var(--color-text-muted, #64748b);
+        line-height: 1.4;
+        font-style: italic;
+      }
+
+      /* All Plans */
+      .plans-list-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .plan-card {
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+      }
+
+      .plan-card.is-active {
+        border-left: 4px solid #3b82f6;
+      }
+
+      .plan-card-left {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+      }
+
+      .plan-top-row {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+      }
+
+      .plan-code {
+        font-weight: 700;
+        font-size: 0.875rem;
+        color: #1e293b;
+      }
+
+      .fy-tag {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+      }
+
+      .plan-title {
+        margin: 0;
+        font-size: 1.0625rem;
+        font-weight: 600;
+      }
+
+      .plan-notes {
+        margin: 0;
+        font-size: 0.8125rem;
+        color: #64748b;
+      }
+
+      .plan-meta-stats {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.8125rem;
+        margin-top: 0.25rem;
+        color: #475569;
+      }
+
+      .plan-card-right {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      /* Dialog styling */
+      .dialog-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 0.5rem 0;
+      }
+
+      .dialog-explainer {
+        font-size: 0.8125rem;
+        color: #64748b;
+        line-height: 1.4;
+        background: #f8fafc;
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin: 0;
+      }
+
+      .form-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+      }
+
+      .form-row label {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #334155;
+      }
+
+      .form-input {
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.875rem;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8125rem;
+        color: #334155;
+        margin-top: 0.25rem;
+      }
+
+      .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .text-right {
+        text-align: right;
+      }
+      .text-center {
+        text-align: center;
+      }
+      .font-semibold {
+        font-weight: 600;
+      }
+      .font-medium {
+        font-weight: 500;
+      }
+    `,
+  ],
 })
 export class ArProjectionPlan implements OnInit {
   private projectionService = inject(ProjectionPlanService);
@@ -1989,7 +2133,8 @@ export class ArProjectionPlan implements OnInit {
       next: (res) => {
         if (res.items && res.items.length > 0) {
           this.plans.set(res.items);
-          const active = res.items.find((p) => p.status === ProjectionPlanStatus.Active) ?? res.items[0];
+          const active =
+            res.items.find((p) => p.status === ProjectionPlanStatus.Active) ?? res.items[0];
           this.selectPlan(active);
         } else {
           // Fallback to active mock if server has 0 plans
@@ -2042,7 +2187,7 @@ export class ArProjectionPlan implements OnInit {
     if (environment.useMockData) {
       const updated = { ...plan, status: ProjectionPlanStatus.Active };
       this.plans.update((all) =>
-        all.map((p) => (p.id === plan.id ? updated : { ...p, status: ProjectionPlanStatus.Draft }))
+        all.map((p) => (p.id === plan.id ? updated : { ...p, status: ProjectionPlanStatus.Draft })),
       );
       this.currentPlan.set(updated);
       this.toasts.success(`Projection plan ${plan.planCode} activated successfully.`);
@@ -2197,7 +2342,9 @@ export class ArProjectionPlan implements OnInit {
     let filtered = [...items];
 
     if (this.periodFilter !== 'All') {
-      filtered = filtered.filter((i) => i.periodLabel.toLowerCase().includes(this.periodFilter.toLowerCase()));
+      filtered = filtered.filter((i) =>
+        i.periodLabel.toLowerCase().includes(this.periodFilter.toLowerCase()),
+      );
     }
 
     if (this.businessLineFilter !== null) {

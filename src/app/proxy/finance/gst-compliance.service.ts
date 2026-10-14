@@ -18,7 +18,10 @@ export class GstComplianceService {
   private readonly restService = inject(RestService);
   apiName = 'AutoReach';
 
-  getList(input: GetGstAuditRegistersInput, config?: Partial<Rest.Config>): Observable<PagedResultDto<GstAuditRegisterDto>> {
+  getList(
+    input: GetGstAuditRegistersInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<PagedResultDto<GstAuditRegisterDto>> {
     return this.restService.request<any, PagedResultDto<GstAuditRegisterDto>>(
       {
         method: 'GET',
@@ -48,7 +51,10 @@ export class GstComplianceService {
     );
   }
 
-  create(input: CreateGstAuditRegisterDto, config?: Partial<Rest.Config>): Observable<GstAuditRegisterDto> {
+  create(
+    input: CreateGstAuditRegisterDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<GstAuditRegisterDto> {
     return this.restService.request<any, GstAuditRegisterDto>(
       {
         method: 'POST',
@@ -59,7 +65,10 @@ export class GstComplianceService {
     );
   }
 
-  getGstr1Summary(returnPeriod: string, config?: Partial<Rest.Config>): Observable<Gstr1SummaryDto> {
+  getGstr1Summary(
+    returnPeriod: string,
+    config?: Partial<Rest.Config>,
+  ): Observable<Gstr1SummaryDto> {
     return this.restService.request<any, Gstr1SummaryDto>(
       {
         method: 'GET',
@@ -70,7 +79,10 @@ export class GstComplianceService {
     );
   }
 
-  getGstr3bSummary(returnPeriod: string, config?: Partial<Rest.Config>): Observable<Gstr3bSummaryDto> {
+  getGstr3bSummary(
+    returnPeriod: string,
+    config?: Partial<Rest.Config>,
+  ): Observable<Gstr3bSummaryDto> {
     return this.restService.request<any, Gstr3bSummaryDto>(
       {
         method: 'GET',
@@ -91,7 +103,11 @@ export class GstComplianceService {
     );
   }
 
-  generateEWayBill(id: string, input: GenerateEWayBillInput, config?: Partial<Rest.Config>): Observable<GstAuditRegisterDto> {
+  generateEWayBill(
+    id: string,
+    input: GenerateEWayBillInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<GstAuditRegisterDto> {
     return this.restService.request<any, GstAuditRegisterDto>(
       {
         method: 'POST',
