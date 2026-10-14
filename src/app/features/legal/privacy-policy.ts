@@ -36,7 +36,7 @@ import { ArBrand } from '../../layout/brand';
       <main class="pp__doc">
         <h1>Privacy Policy</h1>
         <p class="pp__meta">
-          Last updated: <strong>[DD Month YYYY]</strong> · Applies to the MNI Assist platform
+          Last updated: <strong>[15 10 2026]</strong> · Applies to the MNI Assist platform
           operated by <strong>Emnisoft Pvt Ltd</strong> ("MNI Assist", "we", "us").
         </p>
 
@@ -225,9 +225,9 @@ import { ArBrand } from '../../layout/brand';
           handled with our Grievance Officer:
         </p>
         <p class="pp__callout">
-          <strong>[Grievance Officer name]</strong><br />
-          Email: <strong>grievance&#64;mniassist.com</strong><br />
-          Address: <strong>[Registered business address]</strong>
+          <strong>Pushpendra Kumar Sikarwar</strong><br />
+          Email: <strong>admin&#64;mnisoft.com</strong><br />
+          Address: <strong>708, 7th Floor, Arved Transcube Plaza, 132 Ft Ring Road, Opp. Ranip BRTS, Ranip, Ahmedabad, Gujarat 382480, India</strong>
         </p>
         <p>
           We aim to resolve every complaint within 30 days. If you are not satisfied with our
@@ -249,8 +249,8 @@ import { ArBrand } from '../../layout/brand';
 
         <h2>11. Contact us</h2>
         <p>
-          Email: <strong>privacy&#64;mniassist.com</strong><br />
-          Post: <strong>[Registered business address]</strong>
+          Email: <strong>privacy&#64;mnisoft.com</strong><br />
+          Post: <strong>708, 7th Floor, Arved Transcube Plaza, 132 Ft Ring Road, Opp. Ranip BRTS, Ranip, Ahmedabad, Gujarat 382480, India</strong>
         </p>
       </main>
     </div>
