@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../../environments/environment';
 import { inr, inrCompact } from '../../../core/util/format';
@@ -76,7 +83,7 @@ const MOCK_TURNS_WHATSAPP: MaintenanceDiagnosticTurnDto[] = [
     channel: MaintenanceChannel.WhatsApp,
     inputOrPrompt: 'Autonomous diagnostic inference complete. Transmitting WhatsApp action guide.',
     aiResponseOrGuidance:
-      '🤖 *AutoReach AI Remote Maintenance Assistant*\n━━━━━━━━━━━━━━━━━━━━━\n📍 *Equipment:* Siemens Sinamics G120 (S/N: SN-G120-88412)\n⚠️ *Identified Fault:* F0002 (IGBT Phase Overcurrent)\n🔍 *Root Cause (94.5% match):*\nPhase overcurrent triggered by steep acceleration or motor winding degradation.\n\n🛠️ *Step-by-Step Remediation Guide:*\n*1.* Isolate 415V 3-phase supply and wait for DC bus discharge (<24V).\n*2.* Disconnect motor leads (U,V,W) and test insulation using 500V Megger (>10 MΩ).\n*3.* Inspect mechanical gearbox for rotor binding or bearing freeze.\n*4.* Increase acceleration ramp time parameter P1120 from 2.0s to 5.0s.\n\n📦 *Recommended Spare (In Stock):*\n• 6SL3210-1KE21-3AF1 (Siemens G120 Power Module)\n\n⏱️ *Estimated Downtime:* ~35 mins\n━━━━━━━━━━━━━━━━━━━━━\n👉 *Reply:* \'FIXED\' if resolved | \'STEP [N]\' for guidance | \'ESCALATE\' for field engineer.',
+      "🤖 *AutoReach AI Remote Maintenance Assistant*\n━━━━━━━━━━━━━━━━━━━━━\n📍 *Equipment:* Siemens Sinamics G120 (S/N: SN-G120-88412)\n⚠️ *Identified Fault:* F0002 (IGBT Phase Overcurrent)\n🔍 *Root Cause (94.5% match):*\nPhase overcurrent triggered by steep acceleration or motor winding degradation.\n\n🛠️ *Step-by-Step Remediation Guide:*\n*1.* Isolate 415V 3-phase supply and wait for DC bus discharge (<24V).\n*2.* Disconnect motor leads (U,V,W) and test insulation using 500V Megger (>10 MΩ).\n*3.* Inspect mechanical gearbox for rotor binding or bearing freeze.\n*4.* Increase acceleration ramp time parameter P1120 from 2.0s to 5.0s.\n\n📦 *Recommended Spare (In Stock):*\n• 6SL3210-1KE21-3AF1 (Siemens G120 Power Module)\n\n⏱️ *Estimated Downtime:* ~35 mins\n━━━━━━━━━━━━━━━━━━━━━\n👉 *Reply:* 'FIXED' if resolved | 'STEP [N]' for guidance | 'ESCALATE' for field engineer.",
     actionTaken: 'InitialGuidanceSent',
     createdAtUtc: new Date(Date.now() - 40 * 60_000).toISOString(),
   },
@@ -99,7 +106,8 @@ const MOCK_TURNS_WHATSAPP: MaintenanceDiagnosticTurnDto[] = [
     turnNumber: 4,
     turnType: DiagnosticTurnType.UserPrompt,
     channel: MaintenanceChannel.WhatsApp,
-    inputOrPrompt: 'Set P1120 to 5.5s and started at 25% speed. Extruder is running smooth now! Current is 14.2A.',
+    inputOrPrompt:
+      'Set P1120 to 5.5s and started at 25% speed. Extruder is running smooth now! Current is 14.2A.',
     aiResponseOrGuidance:
       'Great news! Current of 14.2A is well below 18.0A rated capacity. Fault F0002 cleared. Machine marked operational. No on-site visit is needed! Thank you for using MNI 24/7 AI Remote Support! 🚀',
     actionTaken: 'CustomerConfirmedResolution',
@@ -114,7 +122,8 @@ const MOCK_TURNS_IVR: MaintenanceDiagnosticTurnDto[] = [
     turnNumber: 1,
     turnType: DiagnosticTurnType.UserPrompt,
     channel: MaintenanceChannel.IvrPhone,
-    inputOrPrompt: '[Inbound Voice Call] Plant Technician called +91 80 6912 4000 regarding ABB ACS880 Drive.',
+    inputOrPrompt:
+      '[Inbound Voice Call] Plant Technician called +91 80 6912 4000 regarding ABB ACS880 Drive.',
     aiResponseOrGuidance:
       '[IVR Automated Voice Script]\n"Welcome to MNI Industrial Automation 24/7 AI Remote Diagnostics. For your ABB ACS880 Drive, we have identified fault Over-Temperature (F0004) with root cause: Heatsink thermal limit breached (>85°C).\n\nPlease select an option:\nPress 1 to hear step-by-step heatsink and cooling fan check instructions.\nPress 2 to listen to parameter reset guidance.\nPress 9 if the fault is cleared and the machine is running.\nPress 0 to transfer directly to an on-call senior field service engineer."',
     actionTaken: 'IvrWelcomeMenu',
@@ -160,7 +169,8 @@ const MOCK_SESSIONS: RemoteMaintenanceSessionDto[] = [
     status: MaintenanceSessionStatus.ResolvedRemotely,
     severity: MaintenanceSeverity.High,
     faultCode: 'F0002',
-    reportedSymptoms: 'Extruder motor stopped abruptly with IGBT overcurrent trip during batch run.',
+    reportedSymptoms:
+      'Extruder motor stopped abruptly with IGBT overcurrent trip during batch run.',
     telemetrySnapshotJson: JSON.stringify({ temp_c: 62, bus_voltage: 580, motor_current: 24.5 }),
     rootCauseDiagnosis:
       'IGBT phase overcurrent trigger caused by steep acceleration ramp (parameter P1120) under high polymer batch viscosity.',
@@ -177,7 +187,8 @@ const MOCK_SESSIONS: RemoteMaintenanceSessionDto[] = [
     ]),
     estimatedDowntimeMinutes: 35,
     resolvedRemotely: true,
-    resolutionNotes: 'Customer confirmed line operational after P1120 acceleration ramp adjustment via WhatsApp.',
+    resolutionNotes:
+      'Customer confirmed line operational after P1120 acceleration ramp adjustment via WhatsApp.',
     fieldVisitRequired: false,
     diagnosticTurns: MOCK_TURNS_WHATSAPP,
     creationTime: new Date(Date.now() - 45 * 60_000).toISOString(),
@@ -228,8 +239,13 @@ const MOCK_SESSIONS: RemoteMaintenanceSessionDto[] = [
     status: MaintenanceSessionStatus.Diagnosing,
     severity: MaintenanceSeverity.High,
     faultCode: 'ERR_PROFINET_TIMEOUT',
-    reportedSymptoms: 'Flashing red BF (Bus Fault) LED on remote ET200SP IO island. Deaerator pump stopped.',
-    telemetrySnapshotJson: JSON.stringify({ temp_c: 38, bus_voltage: 24.1, ping_loss_percent: 100 }),
+    reportedSymptoms:
+      'Flashing red BF (Bus Fault) LED on remote ET200SP IO island. Deaerator pump stopped.',
+    telemetrySnapshotJson: JSON.stringify({
+      temp_c: 38,
+      bus_voltage: 24.1,
+      ping_loss_percent: 100,
+    }),
     rootCauseDiagnosis:
       'Profinet IO fieldbus cycle communication timeout between central CPU 1515 and distributed IO rack.',
     confidencePercent: 89.5,
@@ -297,13 +313,7 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
           >
             New Diagnostic Session
           </button>
-          <button
-            type="button"
-            ar-button
-            variant="ghost"
-            icon="refresh"
-            (click)="loadData()"
-          >
+          <button type="button" ar-button variant="ghost" icon="refresh" (click)="loadData()">
             Refresh
           </button>
         </div>
@@ -313,11 +323,12 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
       <section class="kpi-grid">
         <ar-card class="kpi-card">
           <div class="kpi-label">Remote Resolution Rate</div>
-          <div class="kpi-value text-good">
-            {{ stats()?.remoteResolutionRatePercent ?? 76.3 }}%
-          </div>
+          <div class="kpi-value text-good">{{ stats()?.remoteResolutionRatePercent ?? 76.3 }}%</div>
           <div class="kpi-subtext">
-            <span>{{ stats()?.resolvedRemotelyCount ?? 29 }} of {{ stats()?.totalSessions ?? 38 }} sessions</span>
+            <span
+              >{{ stats()?.resolvedRemotelyCount ?? 29 }} of
+              {{ stats()?.totalSessions ?? 38 }} sessions</span
+            >
             <ar-chip tone="good">Resolved Remotely</ar-chip>
           </div>
         </ar-card>
@@ -347,9 +358,7 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
 
         <ar-card class="kpi-card">
           <div class="kpi-label">Avg Remediation Time</div>
-          <div class="kpi-value">
-            {{ stats()?.averageResolutionTimeMinutes ?? 26.5 }}m
-          </div>
+          <div class="kpi-value">{{ stats()?.averageResolutionTimeMinutes ?? 26.5 }}m</div>
           <div class="kpi-subtext">
             <span>Downtime reduced by 72%</span>
             <ar-chip tone="neutral">High Velocity</ar-chip>
@@ -402,7 +411,9 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
                 <button
                   type="button"
                   class="ch-btn"
-                  [class.selected]="currentSession()?.preferredChannel === MaintenanceChannel.WhatsApp"
+                  [class.selected]="
+                    currentSession()?.preferredChannel === MaintenanceChannel.WhatsApp
+                  "
                   (click)="switchChannel(MaintenanceChannel.WhatsApp)"
                 >
                   <ar-icon name="send"></ar-icon>
@@ -411,7 +422,9 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
                 <button
                   type="button"
                   class="ch-btn"
-                  [class.selected]="currentSession()?.preferredChannel === MaintenanceChannel.IvrPhone"
+                  [class.selected]="
+                    currentSession()?.preferredChannel === MaintenanceChannel.IvrPhone
+                  "
                   (click)="switchChannel(MaintenanceChannel.IvrPhone)"
                 >
                   <ar-icon name="tower"></ar-icon>
@@ -457,7 +470,9 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
                 </div>
                 <div class="meta-row">
                   <span class="lbl">Fault Code:</span>
-                  <span class="val fault-code-pill">{{ currentSession()?.faultCode ?? 'General Breakdown' }}</span>
+                  <span class="val fault-code-pill">{{
+                    currentSession()?.faultCode ?? 'General Breakdown'
+                  }}</span>
                 </div>
               </div>
 
@@ -479,14 +494,19 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
                   </div>
                   <div class="sensor-box">
                     <span class="sensor-lbl">Motor Current</span>
-                    <span class="sensor-val" [class.val-warn]="(getTelemetry().motor_current ?? 0) > 18">
+                    <span
+                      class="sensor-val"
+                      [class.val-warn]="(getTelemetry().motor_current ?? 0) > 18"
+                    >
                       {{ getTelemetry().motor_current ?? 14.2 }}A
                     </span>
                     <span class="sensor-lim">Rated: 18.0A</span>
                   </div>
                   <div class="sensor-box">
                     <span class="sensor-lbl">Est. Downtime</span>
-                    <span class="sensor-val text-accent">~{{ currentSession()?.estimatedDowntimeMinutes ?? 30 }}m</span>
+                    <span class="sensor-val text-accent"
+                      >~{{ currentSession()?.estimatedDowntimeMinutes ?? 30 }}m</span
+                    >
                     <span class="sensor-lim">Without visit</span>
                   </div>
                 </div>
@@ -521,13 +541,24 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
                 @for (t of currentSession()?.diagnosticTurns ?? []; track t.id) {
                   <div
                     class="turn-bubble"
-                    [class.user-turn]="t.turnType === DiagnosticTurnType.UserPrompt || t.turnType === DiagnosticTurnType.IvrMenuChoice"
-                    [class.ai-turn]="t.turnType === DiagnosticTurnType.RemediationGuidance || t.turnType === DiagnosticTurnType.AiDiagnosis"
+                    [class.user-turn]="
+                      t.turnType === DiagnosticTurnType.UserPrompt ||
+                      t.turnType === DiagnosticTurnType.IvrMenuChoice
+                    "
+                    [class.ai-turn]="
+                      t.turnType === DiagnosticTurnType.RemediationGuidance ||
+                      t.turnType === DiagnosticTurnType.AiDiagnosis
+                    "
                     [class.ivr-bubble]="t.channel === MaintenanceChannel.IvrPhone"
                   >
                     <div class="turn-meta">
                       <span class="turn-sender">
-                        {{ t.turnType === DiagnosticTurnType.UserPrompt || t.turnType === DiagnosticTurnType.IvrMenuChoice ? 'Technician / Caller' : 'AutoReach AI Support' }}
+                        {{
+                          t.turnType === DiagnosticTurnType.UserPrompt ||
+                          t.turnType === DiagnosticTurnType.IvrMenuChoice
+                            ? 'Technician / Caller'
+                            : 'AutoReach AI Support'
+                        }}
                       </span>
                       <span class="turn-time">{{ formatTime(t.createdAtUtc) }}</span>
                     </div>
@@ -573,13 +604,25 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
                     </button>
                   </div>
                   <div class="quick-chips">
-                    <button type="button" class="quick-chip" (click)="quickReply('Insulation measured 25 MΩ. Healthy.')">
+                    <button
+                      type="button"
+                      class="quick-chip"
+                      (click)="quickReply('Insulation measured 25 MΩ. Healthy.')"
+                    >
                       Quick: Insulation Healthy
                     </button>
-                    <button type="button" class="quick-chip" (click)="quickReply('FIXED: Machine running normal.')">
+                    <button
+                      type="button"
+                      class="quick-chip"
+                      (click)="quickReply('FIXED: Machine running normal.')"
+                    >
                       Quick: Fixed &amp; Running
                     </button>
-                    <button type="button" class="quick-chip" (click)="quickReply('ESCALATE: Motor windings burnt.')">
+                    <button
+                      type="button"
+                      class="quick-chip"
+                      (click)="quickReply('ESCALATE: Motor windings burnt.')"
+                    >
                       Quick: Burnt / Escalate
                     </button>
                   </div>
@@ -588,10 +631,18 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
                   <div class="ivr-keypad-panel">
                     <span class="keypad-title">Simulate DTMF Keypress:</span>
                     <div class="keypad-grid">
-                      <button type="button" class="key-btn" (click)="sendIvrDigit('1')">1: Steps</button>
-                      <button type="button" class="key-btn" (click)="sendIvrDigit('2')">2: Reset</button>
-                      <button type="button" class="key-btn" (click)="sendIvrDigit('9')">9: Resolved</button>
-                      <button type="button" class="key-btn key-esc" (click)="sendIvrDigit('0')">0: Engineer</button>
+                      <button type="button" class="key-btn" (click)="sendIvrDigit('1')">
+                        1: Steps
+                      </button>
+                      <button type="button" class="key-btn" (click)="sendIvrDigit('2')">
+                        2: Reset
+                      </button>
+                      <button type="button" class="key-btn" (click)="sendIvrDigit('9')">
+                        9: Resolved
+                      </button>
+                      <button type="button" class="key-btn key-esc" (click)="sendIvrDigit('0')">
+                        0: Engineer
+                      </button>
                     </div>
                   </div>
                 }
@@ -603,7 +654,9 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
               <div class="deck-header">
                 <h3>AI Root Cause &amp; Plan</h3>
                 <div class="confidence-badge">
-                  <span class="conf-num">{{ currentSession()?.confidencePercent?.toFixed(1) }}%</span>
+                  <span class="conf-num"
+                    >{{ currentSession()?.confidencePercent?.toFixed(1) }}%</span
+                  >
                   <span class="conf-lbl">confidence</span>
                 </div>
               </div>
@@ -643,7 +696,9 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
                   type="button"
                   ar-button
                   variant="primary"
-                  [disabled]="currentSession()?.status === MaintenanceSessionStatus.ResolvedRemotely"
+                  [disabled]="
+                    currentSession()?.status === MaintenanceSessionStatus.ResolvedRemotely
+                  "
                   (click)="markResolvedRemotely()"
                 >
                   Mark Resolved Remotely
@@ -652,7 +707,9 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
                   type="button"
                   ar-button
                   variant="danger"
-                  [disabled]="currentSession()?.status === MaintenanceSessionStatus.EscalatedToFieldTicket"
+                  [disabled]="
+                    currentSession()?.status === MaintenanceSessionStatus.EscalatedToFieldTicket
+                  "
                   (click)="openEscalateModal()"
                 >
                   Escalate to Field Visit
@@ -679,9 +736,13 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
               <label>Status:</label>
               <select [(ngModel)]="filterStatus" (change)="applyFilters()">
                 <option [ngValue]="null">All Statuses</option>
-                <option [ngValue]="MaintenanceSessionStatus.ResolvedRemotely">Resolved Remotely</option>
+                <option [ngValue]="MaintenanceSessionStatus.ResolvedRemotely">
+                  Resolved Remotely
+                </option>
                 <option [ngValue]="MaintenanceSessionStatus.Diagnosing">Diagnosing</option>
-                <option [ngValue]="MaintenanceSessionStatus.EscalatedToFieldTicket">Escalated to Field</option>
+                <option [ngValue]="MaintenanceSessionStatus.EscalatedToFieldTicket">
+                  Escalated to Field
+                </option>
               </select>
             </div>
             <div class="record-counter">
@@ -714,8 +775,16 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
                       <span class="fault-code-pill">{{ s.faultCode ?? 'General' }}</span>
                     </td>
                     <td>
-                      <ar-chip [tone]="s.preferredChannel === MaintenanceChannel.WhatsApp ? 'good' : 'teal'">
-                        {{ s.preferredChannel === MaintenanceChannel.WhatsApp ? 'WhatsApp' : 'IVR Phone' }}
+                      <ar-chip
+                        [tone]="
+                          s.preferredChannel === MaintenanceChannel.WhatsApp ? 'good' : 'teal'
+                        "
+                      >
+                        {{
+                          s.preferredChannel === MaintenanceChannel.WhatsApp
+                            ? 'WhatsApp'
+                            : 'IVR Phone'
+                        }}
                       </ar-chip>
                     </td>
                     <td>
@@ -730,12 +799,7 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
                     </td>
                     <td>{{ s.confidencePercent.toFixed(1) }}%</td>
                     <td class="text-right">
-                      <button
-                        type="button"
-                        ar-button
-                        variant="ghost"
-                        (click)="viewInConsole(s)"
-                      >
+                      <button type="button" ar-button variant="ghost" (click)="viewInConsole(s)">
                         Inspect
                       </button>
                     </td>
@@ -756,19 +820,39 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
           <div class="dialog-form">
             <div class="form-row">
               <label>Customer Name *</label>
-              <input type="text" [(ngModel)]="initCustomerName" class="form-input" placeholder="e.g. Tata Motors Powertrain" />
+              <input
+                type="text"
+                [(ngModel)]="initCustomerName"
+                class="form-input"
+                placeholder="e.g. Tata Motors Powertrain"
+              />
             </div>
             <div class="form-row">
               <label>Technician / Contact Phone *</label>
-              <input type="text" [(ngModel)]="initCustomerPhone" class="form-input" placeholder="e.g. +91 98220 54321" />
+              <input
+                type="text"
+                [(ngModel)]="initCustomerPhone"
+                class="form-input"
+                placeholder="e.g. +91 98220 54321"
+              />
             </div>
             <div class="form-row">
               <label>Equipment Model *</label>
-              <input type="text" [(ngModel)]="initEquipmentModel" class="form-input" placeholder="e.g. Siemens Sinamics G120 (7.5 kW)" />
+              <input
+                type="text"
+                [(ngModel)]="initEquipmentModel"
+                class="form-input"
+                placeholder="e.g. Siemens Sinamics G120 (7.5 kW)"
+              />
             </div>
             <div class="form-row">
               <label>Equipment Serial Number *</label>
-              <input type="text" [(ngModel)]="initEquipmentSerial" class="form-input" placeholder="e.g. SN-G120-88412" />
+              <input
+                type="text"
+                [(ngModel)]="initEquipmentSerial"
+                class="form-input"
+                placeholder="e.g. SN-G120-88412"
+              />
             </div>
             <div class="form-row">
               <label>Equipment Category</label>
@@ -788,11 +872,21 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
             </div>
             <div class="form-row">
               <label>Fault Code (from display/HMI)</label>
-              <input type="text" [(ngModel)]="initFaultCode" class="form-input" placeholder="e.g. F0002, F0004, ERR_PROFINET_TIMEOUT" />
+              <input
+                type="text"
+                [(ngModel)]="initFaultCode"
+                class="form-input"
+                placeholder="e.g. F0002, F0004, ERR_PROFINET_TIMEOUT"
+              />
             </div>
             <div class="form-row">
               <label>Reported Symptoms &amp; Fault Description *</label>
-              <textarea [(ngModel)]="initSymptoms" rows="3" class="form-input" placeholder="Describe symptoms, noise, odors, or tripping sequence..."></textarea>
+              <textarea
+                [(ngModel)]="initSymptoms"
+                rows="3"
+                class="form-input"
+                placeholder="Describe symptoms, noise, odors, or tripping sequence..."
+              ></textarea>
             </div>
             <div class="form-row">
               <label>Severity Level</label>
@@ -823,21 +917,29 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
 
       <!-- Modal: Escalate to Field Ticket -->
       @if (showEscalateModal()) {
-        <ar-dialog
-          title="Escalate to On-Site Field Visit"
-          (dismiss)="showEscalateModal.set(false)"
-        >
+        <ar-dialog title="Escalate to On-Site Field Visit" (dismiss)="showEscalateModal.set(false)">
           <div class="dialog-form">
             <p class="dialog-alert">
-              Remote diagnostics could not resolve this fault. An emergency Field Service Ticket will be dispatched with full diagnostic history.
+              Remote diagnostics could not resolve this fault. An emergency Field Service Ticket
+              will be dispatched with full diagnostic history.
             </p>
             <div class="form-row">
               <label>Escalation Reason *</label>
-              <textarea [(ngModel)]="escalateReason" rows="3" class="form-input" placeholder="Specify why remote support was exhausted..."></textarea>
+              <textarea
+                [(ngModel)]="escalateReason"
+                rows="3"
+                class="form-input"
+                placeholder="Specify why remote support was exhausted..."
+              ></textarea>
             </div>
             <div class="form-row">
               <label>Assigned Field Service Engineer</label>
-              <input type="text" [(ngModel)]="escalateEngineer" class="form-input" placeholder="e.g. Mahesh Joshi (Senior Drive Specialist)" />
+              <input
+                type="text"
+                [(ngModel)]="escalateEngineer"
+                class="form-input"
+                placeholder="e.g. Mahesh Joshi (Senior Drive Specialist)"
+              />
             </div>
           </div>
           <div dialogActions class="dialog-actions">
@@ -858,656 +960,689 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
       }
     </div>
   `,
-  styles: [`
-    .remote-maint-page {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-      padding: 1.5rem;
-      max-width: 1480px;
-      margin: 0 auto;
-    }
-
-    .topbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    /* KPI Grid */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
-    }
-
-    .kpi-card {
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .kpi-label {
-      font-size: 0.8125rem;
-      font-weight: 500;
-      color: var(--color-text-muted, #64748b);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .kpi-value {
-      font-size: 1.875rem;
-      font-weight: 700;
-      line-height: 1.1;
-    }
-
-    .channel-split-val {
-      font-size: 1.625rem;
-    }
-
-    .wa-part {
-      color: #059669;
-    }
-
-    .ivr-part {
-      color: #2563eb;
-    }
-
-    .kpi-subtext {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.75rem;
-      color: var(--color-text-muted, #64748b);
-      margin-top: 0.25rem;
-    }
-
-    .pill-badge {
-      padding: 0.125rem 0.375rem;
-      border-radius: 4px;
-      font-weight: 600;
-    }
-
-    .pill-badge.positive {
-      color: #059669;
-      background: #ecfdf5;
-    }
-
-    .text-good { color: #10b981; }
-    .text-accent { color: #3b82f6; }
-    .text-warn { color: #f59e0b; }
-    .text-muted { color: #94a3b8; }
-    .font-semibold { font-weight: 600; }
-    .font-mono { font-family: monospace; }
-    .text-right { text-align: right; }
-
-    /* Tab Bar */
-    .tab-bar {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      border-bottom: 1px solid var(--color-border, #e2e8f0);
-      padding-bottom: 0.25rem;
-    }
-
-    .tab-btn {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.625rem 1rem;
-      font-size: 0.875rem;
-      font-weight: 500;
-      border: none;
-      background: none;
-      color: var(--color-text-muted, #64748b);
-      cursor: pointer;
-      border-radius: 6px;
-      transition: all 0.15s ease-in-out;
-    }
-
-    .tab-btn:hover {
-      color: var(--color-text-primary, #0f172a);
-      background: var(--color-bg-hover, #f8fafc);
-    }
-
-    .tab-btn.active {
-      color: #2563eb;
-      background: #eff6ff;
-      font-weight: 600;
-    }
-
-    /* Console Layout */
-    .console-layout {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .session-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      padding: 0.875rem 1.25rem;
-      background: #ffffff;
-      border: 1px solid var(--color-border, #e2e8f0);
-      border-radius: 8px;
-    }
-
-    .session-picker {
-      display: flex;
-      align-items: center;
-      gap: 0.625rem;
-      font-size: 0.875rem;
-    }
-
-    .session-picker select {
-      padding: 0.375rem 0.75rem;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
-      font-weight: 500;
-      min-width: 320px;
-    }
-
-    .channel-toggle-box {
-      display: flex;
-      align-items: center;
-      gap: 0.625rem;
-    }
-
-    .toggle-label {
-      font-size: 0.8125rem;
-      color: #64748b;
-      font-weight: 600;
-    }
-
-    .toggle-buttons {
-      display: flex;
-      background: #f1f5f9;
-      border-radius: 6px;
-      padding: 2px;
-    }
-
-    .ch-btn {
-      display: flex;
-      align-items: center;
-      gap: 0.375rem;
-      padding: 0.375rem 0.875rem;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      border: none;
-      background: none;
-      border-radius: 4px;
-      cursor: pointer;
-      color: #64748b;
-      transition: all 0.15s ease;
-    }
-
-    .ch-btn.selected {
-      background: #ffffff;
-      color: #0f172a;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    /* Diagnostic 3-Column Grid */
-    .diagnostic-grid {
-      display: grid;
-      grid-template-columns: 320px 1fr 340px;
-      gap: 1.25rem;
-      align-items: start;
-    }
-
-    @media (max-width: 1200px) {
-      .diagnostic-grid {
-        grid-template-columns: 1fr;
+  styles: [
+    `
+      .remote-maint-page {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        padding: 1.5rem;
+        max-width: 1480px;
+        margin: 0 auto;
       }
-    }
 
-    .deck-card, .stream-card {
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
 
-    .deck-header, .stream-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid #f1f5f9;
-      padding-bottom: 0.75rem;
-    }
+      /* KPI Grid */
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+      }
 
-    .deck-header h3 {
-      margin: 0;
-      font-size: 1rem;
-      font-weight: 600;
-    }
+      .kpi-card {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
 
-    .equipment-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      font-size: 0.8125rem;
-    }
+      .kpi-label {
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--color-text-muted, #64748b);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
 
-    .meta-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 0.5rem;
-    }
+      .kpi-value {
+        font-size: 1.875rem;
+        font-weight: 700;
+        line-height: 1.1;
+      }
 
-    .meta-row .lbl {
-      color: #64748b;
-    }
+      .channel-split-val {
+        font-size: 1.625rem;
+      }
 
-    .fault-code-pill {
-      display: inline-block;
-      padding: 0.125rem 0.5rem;
-      background: #fef2f2;
-      color: #b91c1c;
-      font-weight: 700;
-      border-radius: 4px;
-      font-size: 0.75rem;
-    }
+      .wa-part {
+        color: #059669;
+      }
 
-    /* Telemetry Sensors */
-    .sensor-readings h4, .symptom-notes h4, .diagnosis-box h4, .remediation-box h4, .spares-box h4 {
-      margin: 0 0 0.5rem;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
+      .ivr-part {
+        color: #2563eb;
+      }
 
-    .sensors-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
-    }
+      .kpi-subtext {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: var(--color-text-muted, #64748b);
+        margin-top: 0.25rem;
+      }
 
-    .sensor-box {
-      padding: 0.625rem;
-      background: #f8fafc;
-      border-radius: 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 0.125rem;
-      border: 1px solid #edf2f7;
-    }
+      .pill-badge {
+        padding: 0.125rem 0.375rem;
+        border-radius: 4px;
+        font-weight: 600;
+      }
 
-    .sensor-lbl {
-      font-size: 0.6875rem;
-      color: #64748b;
-    }
+      .pill-badge.positive {
+        color: #059669;
+        background: #ecfdf5;
+      }
 
-    .sensor-val {
-      font-size: 1.125rem;
-      font-weight: 700;
-      color: #0f172a;
-    }
+      .text-good {
+        color: #10b981;
+      }
+      .text-accent {
+        color: #3b82f6;
+      }
+      .text-warn {
+        color: #f59e0b;
+      }
+      .text-muted {
+        color: #94a3b8;
+      }
+      .font-semibold {
+        font-weight: 600;
+      }
+      .font-mono {
+        font-family: monospace;
+      }
+      .text-right {
+        text-align: right;
+      }
 
-    .sensor-val.val-hot { color: #dc2626; }
-    .sensor-val.val-warn { color: #d97706; }
+      /* Tab Bar */
+      .tab-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-bottom: 1px solid var(--color-border, #e2e8f0);
+        padding-bottom: 0.25rem;
+      }
 
-    .sensor-lim {
-      font-size: 0.6875rem;
-      color: #94a3b8;
-    }
+      .tab-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: none;
+        background: none;
+        color: var(--color-text-muted, #64748b);
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.15s ease-in-out;
+      }
 
-    .symptom-notes p, .diagnosis-box p {
-      margin: 0;
-      font-size: 0.8125rem;
-      line-height: 1.45;
-      color: #334155;
-    }
+      .tab-btn:hover {
+        color: var(--color-text-primary, #0f172a);
+        background: var(--color-bg-hover, #f8fafc);
+      }
 
-    /* Stream Center Column */
-    .stream-card {
-      min-height: 540px;
-    }
+      .tab-btn.active {
+        color: #2563eb;
+        background: #eff6ff;
+        font-weight: 600;
+      }
 
-    .channel-title {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-weight: 600;
-      font-size: 0.9375rem;
-    }
+      /* Console Layout */
+      .console-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
 
-    .wa-title { color: #059669; }
-    .ivr-title { color: #2563eb; }
+      .session-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.875rem 1.25rem;
+        background: #ffffff;
+        border: 1px solid var(--color-border, #e2e8f0);
+        border-radius: 8px;
+      }
 
-    .stream-channel-sub {
-      font-size: 0.75rem;
-      color: #64748b;
-    }
+      .session-picker {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        font-size: 0.875rem;
+      }
 
-    .turns-container {
-      display: flex;
-      flex-direction: column;
-      gap: 0.875rem;
-      max-height: 400px;
-      overflow-y: auto;
-      padding: 0.5rem;
-      background: #f8fafc;
-      border-radius: 8px;
-    }
+      .session-picker select {
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        font-weight: 500;
+        min-width: 320px;
+      }
 
-    .turn-bubble {
-      padding: 0.875rem;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 0.375rem;
-      font-size: 0.8125rem;
-      border: 1px solid #e2e8f0;
-      background: #ffffff;
-    }
+      .channel-toggle-box {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+      }
 
-    .turn-bubble.user-turn {
-      background: #f0fdf4;
-      border-color: #bbf7d0;
-    }
+      .toggle-label {
+        font-size: 0.8125rem;
+        color: #64748b;
+        font-weight: 600;
+      }
 
-    .turn-bubble.ivr-bubble {
-      background: #f0f9ff;
-      border-color: #bae6fd;
-    }
+      .toggle-buttons {
+        display: flex;
+        background: #f1f5f9;
+        border-radius: 6px;
+        padding: 2px;
+      }
 
-    .turn-meta {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.6875rem;
-      color: #64748b;
-    }
+      .ch-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.875rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        border: none;
+        background: none;
+        border-radius: 4px;
+        cursor: pointer;
+        color: #64748b;
+        transition: all 0.15s ease;
+      }
 
-    .turn-sender { font-weight: 600; }
+      .ch-btn.selected {
+        background: #ffffff;
+        color: #0f172a;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
 
-    .formatted-ai-response {
-      margin: 0;
-      font-family: inherit;
-      white-space: pre-wrap;
-      font-size: 0.8125rem;
-      line-height: 1.45;
-      color: #1e293b;
-    }
+      /* Diagnostic 3-Column Grid */
+      .diagnostic-grid {
+        display: grid;
+        grid-template-columns: 320px 1fr 340px;
+        gap: 1.25rem;
+        align-items: start;
+      }
 
-    .dtmf-chip {
-      background: #e0f2fe;
-      color: #0369a1;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-    }
+      @media (max-width: 1200px) {
+        .diagnostic-grid {
+          grid-template-columns: 1fr;
+        }
+      }
 
-    .action-tag {
-      font-size: 0.6875rem;
-      color: #059669;
-      font-weight: 600;
-      align-self: flex-end;
-    }
+      .deck-card,
+      .stream-card {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
 
-    /* Interaction Input Box */
-    .interaction-input-box {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-top: auto;
-    }
+      .deck-header,
+      .stream-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 0.75rem;
+      }
 
-    .wa-input-row {
-      display: flex;
-      gap: 0.5rem;
-    }
+      .deck-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+      }
 
-    .wa-input-row input {
-      flex: 1;
-      padding: 0.5rem 0.75rem;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
-      font-size: 0.8125rem;
-    }
+      .equipment-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.8125rem;
+      }
 
-    .quick-chips {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
+      .meta-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
 
-    .quick-chip {
-      background: #e2e8f0;
-      border: none;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.6875rem;
-      cursor: pointer;
-      color: #334155;
-      font-weight: 500;
-    }
+      .meta-row .lbl {
+        color: #64748b;
+      }
 
-    .quick-chip:hover {
-      background: #cbd5e1;
-    }
+      .fault-code-pill {
+        display: inline-block;
+        padding: 0.125rem 0.5rem;
+        background: #fef2f2;
+        color: #b91c1c;
+        font-weight: 700;
+        border-radius: 4px;
+        font-size: 0.75rem;
+      }
 
-    .ivr-keypad-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
+      /* Telemetry Sensors */
+      .sensor-readings h4,
+      .symptom-notes h4,
+      .diagnosis-box h4,
+      .remediation-box h4,
+      .spares-box h4 {
+        margin: 0 0 0.5rem;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
 
-    .keypad-title {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #475569;
-    }
+      .sensors-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+      }
 
-    .keypad-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0.5rem;
-    }
+      .sensor-box {
+        padding: 0.625rem;
+        background: #f8fafc;
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+        border: 1px solid #edf2f7;
+      }
 
-    .key-btn {
-      padding: 0.5rem 0.25rem;
-      border: 1px solid #cbd5e1;
-      background: #ffffff;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.1s ease;
-    }
+      .sensor-lbl {
+        font-size: 0.6875rem;
+        color: #64748b;
+      }
 
-    .key-btn:hover {
-      background: #eff6ff;
-      border-color: #3b82f6;
-      color: #1d4ed8;
-    }
+      .sensor-val {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #0f172a;
+      }
 
-    .key-esc {
-      color: #b91c1c;
-    }
+      .sensor-val.val-hot {
+        color: #dc2626;
+      }
+      .sensor-val.val-warn {
+        color: #d97706;
+      }
 
-    /* Right Deck: AI Plan & Remediation */
-    .confidence-badge {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-    }
+      .sensor-lim {
+        font-size: 0.6875rem;
+        color: #94a3b8;
+      }
 
-    .conf-num {
-      font-weight: 700;
-      font-size: 1.125rem;
-      color: #059669;
-      line-height: 1;
-    }
+      .symptom-notes p,
+      .diagnosis-box p {
+        margin: 0;
+        font-size: 0.8125rem;
+        line-height: 1.45;
+        color: #334155;
+      }
 
-    .conf-lbl {
-      font-size: 0.625rem;
-      color: #64748b;
-      text-transform: uppercase;
-    }
+      /* Stream Center Column */
+      .stream-card {
+        min-height: 540px;
+      }
 
-    .diagnosis-box {
-      background: #f8fafc;
-      padding: 0.75rem;
-      border-radius: 6px;
-      border-left: 3px solid #3b82f6;
-    }
+      .channel-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        font-size: 0.9375rem;
+      }
 
-    .steps-list {
-      margin: 0;
-      padding-left: 1.25rem;
-      font-size: 0.8125rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.375rem;
-      line-height: 1.4;
-      color: #334155;
-    }
+      .wa-title {
+        color: #059669;
+      }
+      .ivr-title {
+        color: #2563eb;
+      }
 
-    .spares-list {
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.375rem;
-      font-size: 0.75rem;
-    }
+      .stream-channel-sub {
+        font-size: 0.75rem;
+        color: #64748b;
+      }
 
-    .spares-list li {
-      display: flex;
-      align-items: center;
-      gap: 0.375rem;
-      padding: 0.375rem 0.5rem;
-      background: #f1f5f9;
-      border-radius: 4px;
-      font-weight: 500;
-      color: #1e293b;
-    }
+      .turns-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.875rem;
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 0.5rem;
+        background: #f8fafc;
+        border-radius: 8px;
+      }
 
-    .resolution-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-top: auto;
-      padding-top: 0.75rem;
-      border-top: 1px solid #f1f5f9;
-    }
+      .turn-bubble {
+        padding: 0.875rem;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+        font-size: 0.8125rem;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+      }
 
-    /* History Table */
-    .history-card {
-      padding: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
+      .turn-bubble.user-turn {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+      }
 
-    .history-toolbar {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-    }
+      .turn-bubble.ivr-bubble {
+        background: #f0f9ff;
+        border-color: #bae6fd;
+      }
 
-    .filter-group {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.875rem;
-    }
+      .turn-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.6875rem;
+        color: #64748b;
+      }
 
-    .filter-group select {
-      padding: 0.375rem 0.75rem;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
-      font-size: 0.875rem;
-    }
+      .turn-sender {
+        font-weight: 600;
+      }
 
-    .record-counter {
-      margin-left: auto;
-      font-size: 0.8125rem;
-      color: #64748b;
-    }
+      .formatted-ai-response {
+        margin: 0;
+        font-family: inherit;
+        white-space: pre-wrap;
+        font-size: 0.8125rem;
+        line-height: 1.45;
+        color: #1e293b;
+      }
 
-    .table-responsive {
-      overflow-x: auto;
-    }
+      .dtmf-chip {
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+      }
 
-    .session-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.875rem;
-    }
+      .action-tag {
+        font-size: 0.6875rem;
+        color: #059669;
+        font-weight: 600;
+        align-self: flex-end;
+      }
 
-    .session-table th {
-      padding: 0.75rem 0.875rem;
-      background: #f8fafc;
-      border-bottom: 2px solid #e2e8f0;
-      color: #475569;
-      font-weight: 600;
-      text-align: left;
-    }
+      /* Interaction Input Box */
+      .interaction-input-box {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: auto;
+      }
 
-    .session-table td {
-      padding: 0.75rem 0.875rem;
-      border-bottom: 1px solid #f1f5f9;
-      vertical-align: middle;
-    }
+      .wa-input-row {
+        display: flex;
+        gap: 0.5rem;
+      }
 
-    /* Dialog styling */
-    .dialog-form {
-      display: flex;
-      flex-direction: column;
-      gap: 0.875rem;
-      padding: 0.5rem 0;
-    }
+      .wa-input-row input {
+        flex: 1;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.8125rem;
+      }
 
-    .dialog-alert {
-      padding: 0.75rem;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      border-radius: 6px;
-      color: #991b1b;
-      font-size: 0.8125rem;
-      margin: 0;
-    }
+      .quick-chips {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
 
-    .form-row {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
+      .quick-chip {
+        background: #e2e8f0;
+        border: none;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.6875rem;
+        cursor: pointer;
+        color: #334155;
+        font-weight: 500;
+      }
 
-    .form-row label {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: #334155;
-    }
+      .quick-chip:hover {
+        background: #cbd5e1;
+      }
 
-    .form-input {
-      padding: 0.5rem 0.75rem;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
-      font-size: 0.875rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
+      .ivr-keypad-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
 
-    .dialog-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      margin-top: 1rem;
-      padding-top: 0.875rem;
-      border-top: 1px solid #e2e8f0;
-    }
-  `],
+      .keypad-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #475569;
+      }
+
+      .keypad-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+      }
+
+      .key-btn {
+        padding: 0.5rem 0.25rem;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.1s ease;
+      }
+
+      .key-btn:hover {
+        background: #eff6ff;
+        border-color: #3b82f6;
+        color: #1d4ed8;
+      }
+
+      .key-esc {
+        color: #b91c1c;
+      }
+
+      /* Right Deck: AI Plan & Remediation */
+      .confidence-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+      }
+
+      .conf-num {
+        font-weight: 700;
+        font-size: 1.125rem;
+        color: #059669;
+        line-height: 1;
+      }
+
+      .conf-lbl {
+        font-size: 0.625rem;
+        color: #64748b;
+        text-transform: uppercase;
+      }
+
+      .diagnosis-box {
+        background: #f8fafc;
+        padding: 0.75rem;
+        border-radius: 6px;
+        border-left: 3px solid #3b82f6;
+      }
+
+      .steps-list {
+        margin: 0;
+        padding-left: 1.25rem;
+        font-size: 0.8125rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+        line-height: 1.4;
+        color: #334155;
+      }
+
+      .spares-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+        font-size: 0.75rem;
+      }
+
+      .spares-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.375rem 0.5rem;
+        background: #f1f5f9;
+        border-radius: 4px;
+        font-weight: 500;
+        color: #1e293b;
+      }
+
+      .resolution-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: auto;
+        padding-top: 0.75rem;
+        border-top: 1px solid #f1f5f9;
+      }
+
+      /* History Table */
+      .history-card {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .history-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      .filter-group select {
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.875rem;
+      }
+
+      .record-counter {
+        margin-left: auto;
+        font-size: 0.8125rem;
+        color: #64748b;
+      }
+
+      .table-responsive {
+        overflow-x: auto;
+      }
+
+      .session-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+      }
+
+      .session-table th {
+        padding: 0.75rem 0.875rem;
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+        color: #475569;
+        font-weight: 600;
+        text-align: left;
+      }
+
+      .session-table td {
+        padding: 0.75rem 0.875rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+      }
+
+      /* Dialog styling */
+      .dialog-form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.875rem;
+        padding: 0.5rem 0;
+      }
+
+      .dialog-alert {
+        padding: 0.75rem;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 6px;
+        color: #991b1b;
+        font-size: 0.8125rem;
+        margin: 0;
+      }
+
+      .form-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .form-row label {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #334155;
+      }
+
+      .form-input {
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.875rem;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        padding-top: 0.875rem;
+        border-top: 1px solid #e2e8f0;
+      }
+    `,
+  ],
 })
 export class ArRemoteMaintenance implements OnInit {
   private service = inject(RemoteMaintenanceService);
@@ -1674,7 +1809,8 @@ export class ArRemoteMaintenance implements OnInit {
       let status = cur.status;
 
       if (text.toLowerCase().includes('fixed') || text.toLowerCase().includes('running')) {
-        reply = 'Great news! Extruder running at normal current. Fault cleared and machine operational. Session resolved remotely! 🚀';
+        reply =
+          'Great news! Extruder running at normal current. Fault cleared and machine operational. Session resolved remotely! 🚀';
         resolved = true;
         status = MaintenanceSessionStatus.ResolvedRemotely;
       }
@@ -1732,13 +1868,20 @@ export class ArRemoteMaintenance implements OnInit {
       let spoken = `IVR Spoken: Key '${digit}' processed.`;
       let status = cur.status;
 
-      if (digit === '1') spoken = 'IVR Spoken: Step 1 active. Ensure motor power is isolated. Check resistance across U-V-W phases. Press 9 when complete, or 0 for an engineer.';
-      if (digit === '2') spoken = 'IVR Spoken: Step 2 active. To reset parameter fault, hold Stop/Reset button for 3 seconds until fault LED clears. Press 9 if successful, or 0 to escalate.';
+      if (digit === '1')
+        spoken =
+          'IVR Spoken: Step 1 active. Ensure motor power is isolated. Check resistance across U-V-W phases. Press 9 when complete, or 0 for an engineer.';
+      if (digit === '2')
+        spoken =
+          'IVR Spoken: Step 2 active. To reset parameter fault, hold Stop/Reset button for 3 seconds until fault LED clears. Press 9 if successful, or 0 to escalate.';
       if (digit === '9') {
-        spoken = 'IVR Spoken: Excellent! Verification acknowledged. Session logged as resolved. Have a productive shift!';
+        spoken =
+          'IVR Spoken: Excellent! Verification acknowledged. Session logged as resolved. Have a productive shift!';
         status = MaintenanceSessionStatus.ResolvedRemotely;
       }
-      if (digit === '0') spoken = 'IVR Spoken: Connecting you now to our on-call senior industrial automation field engineer. Please hold...';
+      if (digit === '0')
+        spoken =
+          'IVR Spoken: Connecting you now to our on-call senior industrial automation field engineer. Please hold...';
 
       const newTurn: MaintenanceDiagnosticTurnDto = {
         id: 't-' + Date.now(),
@@ -1866,7 +2009,8 @@ export class ArRemoteMaintenance implements OnInit {
       customerContactPhone: this.initCustomerPhone || '+91 98000 00000',
       equipmentCategory: this.initCategory,
       equipmentModel: this.initEquipmentModel,
-      equipmentSerialNumber: this.initEquipmentSerial || 'SN-AUTO-' + Date.now().toString().slice(-4),
+      equipmentSerialNumber:
+        this.initEquipmentSerial || 'SN-AUTO-' + Date.now().toString().slice(-4),
       preferredChannel: this.initChannel,
       faultCode: this.initFaultCode || undefined,
       reportedSymptoms: this.initSymptoms || 'Equipment stopped during operation.',
@@ -1958,7 +2102,12 @@ export class ArRemoteMaintenance implements OnInit {
     this.filteredSessions.set(list);
   }
 
-  getTelemetry(): { temp_c: number; bus_voltage: number; motor_current?: number; fan_rpm?: number } {
+  getTelemetry(): {
+    temp_c: number;
+    bus_voltage: number;
+    motor_current?: number;
+    fan_rpm?: number;
+  } {
     const raw = this.currentSession()?.telemetrySnapshotJson;
     if (!raw) return { temp_c: 65, bus_voltage: 560, motor_current: 14.2 };
     try {

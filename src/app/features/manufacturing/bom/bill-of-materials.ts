@@ -117,7 +117,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
         itemSequence: 20,
         componentPartNumber: 'ROD-CK45-CR',
         componentDescription: 'Hard Chrome Plated Piston Rod CK45 Dia 50mm',
-        quantityPerUnit: 0.70,
+        quantityPerUnit: 0.7,
         unitOfMeasure: 'MTR',
         scrapPercentage: 1.5,
         unitCostInPaise: 22_000_00,
@@ -162,7 +162,10 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog],
   template: `
-    <ar-topbar title="Bill of Materials (BOM)" subtitle="Multi-level product structures, component routing, scrap allowances & costing">
+    <ar-topbar
+      title="Bill of Materials (BOM)"
+      subtitle="Multi-level product structures, component routing, scrap allowances & costing"
+    >
       <button ar-button="primary" (click)="openCreateModal()">+ Create New BOM</button>
     </ar-topbar>
 
@@ -186,7 +189,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
         </div>
         <div class="kpi-card">
           <span class="label">Avg Production Unit Cost</span>
-          <strong class="value">₹{{ (avgUnitCost() / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ avgUnitCost() / 100 | number: '1.2-2' }}</strong>
           <span class="sub">Including scrap allowance</span>
         </div>
       </section>
@@ -254,7 +257,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
               <td>
                 <div class="cell-main">
                   <a class="code-link" (click)="viewBom(b)">{{ b.bomNumber }}</a>
-                  <span class="sub-text">{{ b.creationTime | date:'mediumDate' }}</span>
+                  <span class="sub-text">{{ b.creationTime | date: 'mediumDate' }}</span>
                 </div>
               </td>
               <td>
@@ -275,7 +278,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
                 <span class="font-mono">{{ b.items.length }} items</span>
               </td>
               <td class="text-right font-mono">
-                <strong>₹{{ (b.totalEstimatedCostInPaise / 100) | number:'1.2-2' }}</strong>
+                <strong>₹{{ b.totalEstimatedCostInPaise / 100 | number: '1.2-2' }}</strong>
                 <span class="sub-text block">/ {{ b.finishedGoodUom }}</span>
               </td>
               <td>
@@ -299,12 +302,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
                   >
                     Activate
                   </button>
-                  <button
-                    ar-button="quiet"
-                    (click)="viewBom(b)"
-                  >
-                    View
-                  </button>
+                  <button ar-button="quiet" (click)="viewBom(b)">View</button>
                 </div>
               </td>
             </tr>
@@ -321,7 +319,9 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
     <!-- BOM Tree & Details Dialog -->
     <ar-dialog
       *ngIf="selectedBom()"
-      [title]="'BOM Structure: ' + selectedBom()!.bomNumber + ' (' + selectedBom()!.revisionCode + ')'"
+      [title]="
+        'BOM Structure: ' + selectedBom()!.bomNumber + ' (' + selectedBom()!.revisionCode + ')'
+      "
       (dismiss)="selectedBom.set(null)"
     >
       <div class="dialog-body" *ngIf="selectedBom() as b">
@@ -329,7 +329,10 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
           <div>
             <span class="meta-label">Assembly Part</span>
             <h4>{{ b.finishedGoodPartNumber }} — {{ b.finishedGoodDescription }}</h4>
-            <p class="sub-text">Base Quantity: {{ b.baseQuantity }} {{ b.finishedGoodUom }} | Revision: {{ b.revisionCode }}</p>
+            <p class="sub-text">
+              Base Quantity: {{ b.baseQuantity }} {{ b.finishedGoodUom }} | Revision:
+              {{ b.revisionCode }}
+            </p>
           </div>
           <div class="meta-status">
             <ar-chip [tone]="bomTone(b.status)">{{ bomLabel(b.status) }}</ar-chip>
@@ -339,7 +342,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
         <div class="cost-summary-box">
           <div>
             <span class="box-label">Total Unit Cost</span>
-            <h3>₹{{ (b.totalEstimatedCostInPaise / 100) | number:'1.2-2' }}</h3>
+            <h3>₹{{ b.totalEstimatedCostInPaise / 100 | number: '1.2-2' }}</h3>
           </div>
           <div>
             <span class="box-label">Components</span>
@@ -374,14 +377,27 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
                 <td class="text-right font-mono">{{ item.quantityPerUnit }}</td>
                 <td>{{ item.unitOfMeasure }}</td>
                 <td class="text-right font-mono text-muted">{{ item.scrapPercentage }}%</td>
-                <td><span class="badge-stage">{{ stageLabel(item.routingStage) }}</span></td>
-                <td class="text-right font-mono">₹{{ (item.unitCostInPaise / 100) | number:'1.2-2' }}</td>
+                <td>
+                  <span class="badge-stage">{{ stageLabel(item.routingStage) }}</span>
+                </td>
                 <td class="text-right font-mono">
-                  <strong>₹{{ ((item.quantityPerUnit * (1 + item.scrapPercentage / 100) * item.unitCostInPaise) / 100) | number:'1.2-2' }}</strong>
+                  ₹{{ item.unitCostInPaise / 100 | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-mono">
+                  <strong
+                    >₹{{
+                      (item.quantityPerUnit *
+                        (1 + item.scrapPercentage / 100) *
+                        item.unitCostInPaise) /
+                        100 | number: '1.2-2'
+                    }}</strong
+                  >
                 </td>
               </tr>
               <tr *ngIf="b.items.length === 0">
-                <td colspan="9" class="empty-state">No components defined in this Bill of Materials.</td>
+                <td colspan="9" class="empty-state">
+                  No components defined in this Bill of Materials.
+                </td>
               </tr>
             </tbody>
           </table>
@@ -395,11 +411,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
           >
             Generate Production Work Order
           </button>
-          <button
-            ar-button="ghost"
-            *ngIf="b.status === BomStatus.Draft"
-            (click)="activateBom(b)"
-          >
+          <button ar-button="ghost" *ngIf="b.status === BomStatus.Draft" (click)="activateBom(b)">
             Release to Production
           </button>
           <button ar-button="quiet" (click)="selectedBom.set(null)">Close</button>
@@ -454,7 +466,12 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
             <label>Base Quantity & UOM</label>
             <div class="uom-group">
               <input type="number" class="form-control" [(ngModel)]="newBom.baseQuantity" />
-              <input type="text" class="form-control uom-input" [(ngModel)]="newBom.finishedGoodUom" placeholder="NOS" />
+              <input
+                type="text"
+                class="form-control uom-input"
+                [(ngModel)]="newBom.finishedGoodUom"
+                placeholder="NOS"
+              />
             </div>
           </div>
         </div>
@@ -475,11 +492,44 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
           </thead>
           <tbody>
             <tr *ngFor="let item of newBom.items; let i = index">
-              <td><input type="text" class="form-control" [(ngModel)]="item.componentPartNumber" placeholder="Part #" /></td>
-              <td><input type="text" class="form-control" [(ngModel)]="item.componentDescription" placeholder="Description" /></td>
-              <td><input type="number" class="form-control text-right" [(ngModel)]="item.quantityPerUnit" /></td>
-              <td><input type="text" class="form-control input-xs" [(ngModel)]="item.unitOfMeasure" placeholder="NOS" /></td>
-              <td><input type="number" class="form-control text-right input-xs" [(ngModel)]="item.scrapPercentage" /></td>
+              <td>
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="item.componentPartNumber"
+                  placeholder="Part #"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="item.componentDescription"
+                  placeholder="Description"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  class="form-control text-right"
+                  [(ngModel)]="item.quantityPerUnit"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  class="form-control input-xs"
+                  [(ngModel)]="item.unitOfMeasure"
+                  placeholder="NOS"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  class="form-control text-right input-xs"
+                  [(ngModel)]="item.scrapPercentage"
+                />
+              </td>
               <td>
                 <select class="form-control input-sm" [(ngModel)]="item.routingStage">
                   <option [ngValue]="RoutingStage.MaterialKitting">Kitting</option>
@@ -490,7 +540,13 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
                   <option [ngValue]="RoutingStage.FinalTesting">Testing</option>
                 </select>
               </td>
-              <td><input type="number" class="form-control text-right" [(ngModel)]="item.unitCostRupees" /></td>
+              <td>
+                <input
+                  type="number"
+                  class="form-control text-right"
+                  [(ngModel)]="item.unitCostRupees"
+                />
+              </td>
               <td>
                 <button ar-button="ghost" (click)="removeItem(i)">x</button>
               </td>
@@ -536,8 +592,12 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
         gap: 0.25rem;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 
-        &.amber { border-left: 4px solid #f59e0b; }
-        &.teal { border-left: 4px solid #0d9488; }
+        &.amber {
+          border-left: 4px solid #f59e0b;
+        }
+        &.teal {
+          border-left: 4px solid #0d9488;
+        }
 
         .label {
           font-size: 0.78rem;
@@ -731,7 +791,8 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
           text-transform: uppercase;
         }
 
-        h3, h4 {
+        h3,
+        h4 {
           margin: 0.2rem 0 0 0;
           color: #14532d;
         }
@@ -761,9 +822,15 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
         }
       }
 
-      .text-right { text-align: right; }
-      .text-muted { color: #64748b; }
-      .font-mono { font-family: ui-monospace, monospace; }
+      .text-right {
+        text-align: right;
+      }
+      .text-muted {
+        color: #64748b;
+      }
+      .font-mono {
+        font-family: ui-monospace, monospace;
+      }
 
       .form-grid {
         display: grid;
@@ -950,7 +1017,11 @@ export class BillOfMaterialsComponent {
 
   createWorkOrderFromBom(b: BillOfMaterialDto) {
     this.router.navigate(['/manufacturing/work-orders'], {
-      queryParams: { bomId: b.id, partNumber: b.finishedGoodPartNumber, description: b.finishedGoodDescription },
+      queryParams: {
+        bomId: b.id,
+        partNumber: b.finishedGoodPartNumber,
+        description: b.finishedGoodDescription,
+      },
     });
   }
 
@@ -1074,32 +1145,48 @@ export class BillOfMaterialsComponent {
 
   stageLabel(stage: RoutingStage): string {
     switch (stage) {
-      case RoutingStage.MaterialKitting: return 'Kitting';
-      case RoutingStage.Machining: return 'Machining';
-      case RoutingStage.Fabrication: return 'Fabrication';
-      case RoutingStage.HeatTreatment: return 'Heat Treatment';
-      case RoutingStage.Assembly: return 'Assembly';
-      case RoutingStage.FinalTesting: return 'Testing';
-      case RoutingStage.FinishedGoodsReceipt: return 'Receipt';
-      default: return 'General';
+      case RoutingStage.MaterialKitting:
+        return 'Kitting';
+      case RoutingStage.Machining:
+        return 'Machining';
+      case RoutingStage.Fabrication:
+        return 'Fabrication';
+      case RoutingStage.HeatTreatment:
+        return 'Heat Treatment';
+      case RoutingStage.Assembly:
+        return 'Assembly';
+      case RoutingStage.FinalTesting:
+        return 'Testing';
+      case RoutingStage.FinishedGoodsReceipt:
+        return 'Receipt';
+      default:
+        return 'General';
     }
   }
 
   bomTone(status: BomStatus): ChipTone {
     switch (status) {
-      case BomStatus.Active: return 'good';
-      case BomStatus.Draft: return 'amber';
-      case BomStatus.Obsolete: return 'bad';
-      default: return 'neutral';
+      case BomStatus.Active:
+        return 'good';
+      case BomStatus.Draft:
+        return 'amber';
+      case BomStatus.Obsolete:
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 
   bomLabel(status: BomStatus): string {
     switch (status) {
-      case BomStatus.Active: return 'Active';
-      case BomStatus.Draft: return 'Draft';
-      case BomStatus.Obsolete: return 'Obsolete';
-      default: return 'Draft';
+      case BomStatus.Active:
+        return 'Active';
+      case BomStatus.Draft:
+        return 'Draft';
+      case BomStatus.Obsolete:
+        return 'Obsolete';
+      default:
+        return 'Draft';
     }
   }
 }

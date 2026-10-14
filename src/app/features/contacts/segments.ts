@@ -181,7 +181,11 @@ export class ArSegments {
     try {
       const editId = this.editingSegmentId();
       if (editId) {
-        await this.store.update(editId, this.saveName().trim(), this.saveDescription().trim() || undefined);
+        await this.store.update(
+          editId,
+          this.saveName().trim(),
+          this.saveDescription().trim() || undefined,
+        );
       } else {
         await this.store.save(this.saveName().trim(), this.saveDescription().trim() || undefined);
       }

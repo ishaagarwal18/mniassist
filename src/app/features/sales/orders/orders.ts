@@ -161,7 +161,8 @@ const MOCK_ORDERS: SalesOrderDto[] = [
     <ar-topbar
       title="Sales orders"
       subtitle="Commercial sales orders received from customers with order acknowledgment, dispatch milestones and billing tracking."
-      help="Sales Orders capture confirmed customer PO numbers, delivery terms, and line items. From here you can issue GST Delivery Challans or Commercial Invoices directly.">
+      help="Sales Orders capture confirmed customer PO numbers, delivery terms, and line items. From here you can issue GST Delivery Challans or Commercial Invoices directly."
+    >
       <div actions class="actions-row">
         <button ar-button variant="primary" (click)="openCreateModal()">+ New Sales order</button>
       </div>
@@ -176,43 +177,50 @@ const MOCK_ORDERS: SalesOrderDto[] = [
             class="ar-input"
             placeholder="Search by order #, PO # or customer..."
             [ngModel]="searchQuery()"
-            (ngModelChange)="searchQuery.set($event)" />
+            (ngModelChange)="searchQuery.set($event)"
+          />
         </div>
         <div class="status-pills">
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === null"
-            (click)="selectedStatus.set(null)">
+            (click)="selectedStatus.set(null)"
+          >
             All ({{ orders().length }})
           </button>
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === SalesOrderStatus.Draft"
-            (click)="selectedStatus.set(SalesOrderStatus.Draft)">
+            (click)="selectedStatus.set(SalesOrderStatus.Draft)"
+          >
             Draft
           </button>
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === SalesOrderStatus.Confirmed"
-            (click)="selectedStatus.set(SalesOrderStatus.Confirmed)">
+            (click)="selectedStatus.set(SalesOrderStatus.Confirmed)"
+          >
             Confirmed
           </button>
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === SalesOrderStatus.PartiallyDispatched"
-            (click)="selectedStatus.set(SalesOrderStatus.PartiallyDispatched)">
+            (click)="selectedStatus.set(SalesOrderStatus.PartiallyDispatched)"
+          >
             Partially dispatched
           </button>
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === SalesOrderStatus.Dispatched"
-            (click)="selectedStatus.set(SalesOrderStatus.Dispatched)">
+            (click)="selectedStatus.set(SalesOrderStatus.Dispatched)"
+          >
             Dispatched
           </button>
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === SalesOrderStatus.Completed"
-            (click)="selectedStatus.set(SalesOrderStatus.Completed)">
+            (click)="selectedStatus.set(SalesOrderStatus.Completed)"
+          >
             Completed
           </button>
         </div>
@@ -255,7 +263,9 @@ const MOCK_ORDERS: SalesOrderDto[] = [
                 </td>
                 <td>{{ order.orderDateUtc | date: 'dd MMM yyyy' }}</td>
                 <td>{{ order.deliveryTerms || 'Standard' }}</td>
-                <td class="num-col font-bold">₹{{ (order.grandTotalInPaise / 100) | number: '1.2-2' }}</td>
+                <td class="num-col font-bold">
+                  ₹{{ order.grandTotalInPaise / 100 | number: '1.2-2' }}
+                </td>
                 <td>
                   <ar-chip [tone]="getStatusTone(order.status)">
                     {{ getStatusLabel(order.status) }}
@@ -271,11 +281,22 @@ const MOCK_ORDERS: SalesOrderDto[] = [
                         Confirm
                       </button>
                     }
-                    @if (order.status === SalesOrderStatus.Confirmed || order.status === SalesOrderStatus.PartiallyDispatched) {
-                      <button class="action-btn success" title="Create Delivery Challan" (click)="createChallan(order)">
+                    @if (
+                      order.status === SalesOrderStatus.Confirmed ||
+                      order.status === SalesOrderStatus.PartiallyDispatched
+                    ) {
+                      <button
+                        class="action-btn success"
+                        title="Create Delivery Challan"
+                        (click)="createChallan(order)"
+                      >
                         Challan
                       </button>
-                      <button class="action-btn primary" title="Generate GST Invoice" (click)="createInvoice(order)">
+                      <button
+                        class="action-btn primary"
+                        title="Generate GST Invoice"
+                        (click)="createInvoice(order)"
+                      >
                         Invoice
                       </button>
                     }
@@ -298,7 +319,8 @@ const MOCK_ORDERS: SalesOrderDto[] = [
     @if (selectedOrder(); as ord) {
       <ar-dialog
         [title]="'Sales Order: ' + ord.orderNumber + ' (' + ord.customerName + ')'"
-        (dismiss)="selectedOrder.set(null)">
+        (dismiss)="selectedOrder.set(null)"
+      >
         <div class="detail-body">
           <div class="meta-grid">
             <div class="meta-item">
@@ -311,11 +333,17 @@ const MOCK_ORDERS: SalesOrderDto[] = [
             </div>
             <div class="meta-item">
               <span class="meta-lbl">Payment Terms</span>
-              <span class="meta-val">{{ ord.paymentTermsDays ? ord.paymentTermsDays + ' days' : 'Advance' }}</span>
+              <span class="meta-val">{{
+                ord.paymentTermsDays ? ord.paymentTermsDays + ' days' : 'Advance'
+              }}</span>
             </div>
             <div class="meta-item">
               <span class="meta-lbl">Expected Delivery</span>
-              <span class="meta-val">{{ ord.expectedDeliveryDateUtc ? (ord.expectedDeliveryDateUtc | date: 'dd MMM yyyy') : 'TBD' }}</span>
+              <span class="meta-val">{{
+                ord.expectedDeliveryDateUtc
+                  ? (ord.expectedDeliveryDateUtc | date: 'dd MMM yyyy')
+                  : 'TBD'
+              }}</span>
             </div>
             <div class="meta-item full">
               <span class="meta-lbl">Shipping Address</span>
@@ -347,10 +375,12 @@ const MOCK_ORDERS: SalesOrderDto[] = [
                   </td>
                   <td class="font-mono text-xs">{{ l.hsnCode || '—' }}</td>
                   <td class="num-col font-bold">{{ l.quantity }}</td>
-                  <td class="num-col">₹{{ (l.unitPriceInPaise / 100) | number: '1.2-2' }}</td>
+                  <td class="num-col">₹{{ l.unitPriceInPaise / 100 | number: '1.2-2' }}</td>
                   <td class="num-col">{{ l.dispatchedQuantity }} / {{ l.quantity }}</td>
                   <td class="num-col">{{ l.invoicedQuantity }} / {{ l.quantity }}</td>
-                  <td class="num-col font-bold">₹{{ (l.lineTotalInPaise / 100) | number: '1.2-2' }}</td>
+                  <td class="num-col font-bold">
+                    ₹{{ l.lineTotalInPaise / 100 | number: '1.2-2' }}
+                  </td>
                 </tr>
               }
             </tbody>
@@ -359,33 +389,44 @@ const MOCK_ORDERS: SalesOrderDto[] = [
           <div class="totals-summary">
             <div class="tot-row">
               <span>Subtotal:</span>
-              <span>₹{{ (ord.subtotalInPaise / 100) | number: '1.2-2' }}</span>
+              <span>₹{{ ord.subtotalInPaise / 100 | number: '1.2-2' }}</span>
             </div>
             <div class="tot-row">
               <span>GST Tax:</span>
-              <span>₹{{ (ord.taxInPaise / 100) | number: '1.2-2' }}</span>
+              <span>₹{{ ord.taxInPaise / 100 | number: '1.2-2' }}</span>
             </div>
             @if (ord.discountInPaise > 0) {
               <div class="tot-row text-success">
                 <span>Discount:</span>
-                <span>-₹{{ (ord.discountInPaise / 100) | number: '1.2-2' }}</span>
+                <span>-₹{{ ord.discountInPaise / 100 | number: '1.2-2' }}</span>
               </div>
             }
             <div class="tot-row grand">
               <span>Grand Total:</span>
-              <span class="font-bold">₹{{ (ord.grandTotalInPaise / 100) | number: '1.2-2' }}</span>
+              <span class="font-bold">₹{{ ord.grandTotalInPaise / 100 | number: '1.2-2' }}</span>
             </div>
           </div>
 
           <div class="drawer-actions">
             @if (ord.status === SalesOrderStatus.Draft) {
-              <button ar-button variant="primary" (click)="confirmOrder(ord)">Confirm Sales Order</button>
+              <button ar-button variant="primary" (click)="confirmOrder(ord)">
+                Confirm Sales Order
+              </button>
             }
-            @if (ord.status === SalesOrderStatus.Confirmed || ord.status === SalesOrderStatus.PartiallyDispatched) {
-              <button ar-button variant="ghost" (click)="createChallan(ord)">Create Delivery Challan</button>
-              <button ar-button variant="primary" (click)="createInvoice(ord)">Generate Sales Invoice</button>
+            @if (
+              ord.status === SalesOrderStatus.Confirmed ||
+              ord.status === SalesOrderStatus.PartiallyDispatched
+            ) {
+              <button ar-button variant="ghost" (click)="createChallan(ord)">
+                Create Delivery Challan
+              </button>
+              <button ar-button variant="primary" (click)="createInvoice(ord)">
+                Generate Sales Invoice
+              </button>
             }
-            <button ar-button variant="ghost" (click)="viewCustomer360(ord.customerId)">Customer 360 Dossier</button>
+            <button ar-button variant="ghost" (click)="viewCustomer360(ord.customerId)">
+              Customer 360 Dossier
+            </button>
           </div>
         </div>
       </ar-dialog>
@@ -393,44 +434,87 @@ const MOCK_ORDERS: SalesOrderDto[] = [
 
     <!-- Create Order Dialog -->
     @if (showCreateDialog()) {
-      <ar-dialog
-        title="Create New Sales Order"
-        (dismiss)="showCreateDialog.set(false)">
+      <ar-dialog title="Create New Sales Order" (dismiss)="showCreateDialog.set(false)">
         <div class="create-form">
           <div class="form-row">
             <div class="form-group flex-1">
               <label>Customer Name *</label>
-              <input type="text" class="ar-input" [(ngModel)]="newOrder.customerName" placeholder="e.g. Kalyani Forge Ltd" />
+              <input
+                type="text"
+                class="ar-input"
+                [(ngModel)]="newOrder.customerName"
+                placeholder="e.g. Kalyani Forge Ltd"
+              />
             </div>
             <div class="form-group flex-1">
               <label>Customer PO Number *</label>
-              <input type="text" class="ar-input" [(ngModel)]="newOrder.customerPoNumber" placeholder="e.g. PO-KF-1029" />
+              <input
+                type="text"
+                class="ar-input"
+                [(ngModel)]="newOrder.customerPoNumber"
+                placeholder="e.g. PO-KF-1029"
+              />
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group flex-1">
               <label>Payment Terms (Days)</label>
-              <input type="number" class="ar-input" [(ngModel)]="newOrder.paymentTermsDays" placeholder="30" />
+              <input
+                type="number"
+                class="ar-input"
+                [(ngModel)]="newOrder.paymentTermsDays"
+                placeholder="30"
+              />
             </div>
             <div class="form-group flex-1">
               <label>Delivery Terms</label>
-              <input type="text" class="ar-input" [(ngModel)]="newOrder.deliveryTerms" placeholder="Ex-Works / FOR Destination" />
+              <input
+                type="text"
+                class="ar-input"
+                [(ngModel)]="newOrder.deliveryTerms"
+                placeholder="Ex-Works / FOR Destination"
+              />
             </div>
           </div>
 
           <div class="form-group">
             <label>Shipping / Site Address</label>
-            <input type="text" class="ar-input" [(ngModel)]="newOrder.shippingAddress" placeholder="Site delivery address" />
+            <input
+              type="text"
+              class="ar-input"
+              [(ngModel)]="newOrder.shippingAddress"
+              placeholder="Site delivery address"
+            />
           </div>
 
           <h4 class="section-title">Order Items</h4>
           @for (item of newOrderLines; track $index) {
             <div class="item-edit-row">
-              <input type="text" class="ar-input flex-2" placeholder="Part Number" [(ngModel)]="item.partNumber" />
-              <input type="text" class="ar-input flex-3" placeholder="Description" [(ngModel)]="item.description" />
-              <input type="number" class="ar-input flex-1" placeholder="Qty" [(ngModel)]="item.quantity" />
-              <input type="number" class="ar-input flex-2" placeholder="Price (₹)" [(ngModel)]="item.unitPrice" />
+              <input
+                type="text"
+                class="ar-input flex-2"
+                placeholder="Part Number"
+                [(ngModel)]="item.partNumber"
+              />
+              <input
+                type="text"
+                class="ar-input flex-3"
+                placeholder="Description"
+                [(ngModel)]="item.description"
+              />
+              <input
+                type="number"
+                class="ar-input flex-1"
+                placeholder="Qty"
+                [(ngModel)]="item.quantity"
+              />
+              <input
+                type="number"
+                class="ar-input flex-2"
+                placeholder="Price (₹)"
+                [(ngModel)]="item.unitPrice"
+              />
               <button class="remove-btn" (click)="removeItemLine($index)">✕</button>
             </div>
           }
@@ -441,7 +525,9 @@ const MOCK_ORDERS: SalesOrderDto[] = [
 
           <div class="dialog-foot">
             <button ar-button variant="ghost" (click)="showCreateDialog.set(false)">Cancel</button>
-            <button ar-button variant="primary" (click)="submitCreateOrder()">Create Sales Order</button>
+            <button ar-button variant="primary" (click)="submitCreateOrder()">
+              Create Sales Order
+            </button>
           </div>
         </div>
       </ar-dialog>
@@ -662,9 +748,15 @@ const MOCK_ORDERS: SalesOrderDto[] = [
         display: flex;
         gap: 1rem;
       }
-      .flex-1 { flex: 1; }
-      .flex-2 { flex: 2; }
-      .flex-3 { flex: 3; }
+      .flex-1 {
+        flex: 1;
+      }
+      .flex-2 {
+        flex: 2;
+      }
+      .flex-3 {
+        flex: 3;
+      }
       .form-group label {
         display: block;
         font-size: 0.75rem;
@@ -728,9 +820,7 @@ export class ArSalesOrders {
     shippingAddress: '',
   };
 
-  newOrderLines = [
-    { partNumber: '', description: '', quantity: 1, unitPrice: 0 },
-  ];
+  newOrderLines = [{ partNumber: '', description: '', quantity: 1, unitPrice: 0 }];
 
   filteredOrders = computed(() => {
     let list = this.orders();
@@ -878,7 +968,11 @@ export class ArSalesOrders {
       },
       error: () => {
         // Mock update
-        const updated = { ...order, status: SalesOrderStatus.Confirmed, confirmedAtUtc: new Date().toISOString() };
+        const updated = {
+          ...order,
+          status: SalesOrderStatus.Confirmed,
+          confirmedAtUtc: new Date().toISOString(),
+        };
         this.updateOrderInList(updated);
       },
     });
@@ -921,27 +1015,43 @@ export class ArSalesOrders {
 
   getStatusLabel(status: SalesOrderStatus): string {
     switch (status) {
-      case SalesOrderStatus.Draft: return 'Draft';
-      case SalesOrderStatus.Confirmed: return 'Confirmed';
-      case SalesOrderStatus.InProduction: return 'In Production';
-      case SalesOrderStatus.PartiallyDispatched: return 'Partially Dispatched';
-      case SalesOrderStatus.Dispatched: return 'Dispatched';
-      case SalesOrderStatus.Completed: return 'Completed';
-      case SalesOrderStatus.Cancelled: return 'Cancelled';
-      default: return 'Unknown';
+      case SalesOrderStatus.Draft:
+        return 'Draft';
+      case SalesOrderStatus.Confirmed:
+        return 'Confirmed';
+      case SalesOrderStatus.InProduction:
+        return 'In Production';
+      case SalesOrderStatus.PartiallyDispatched:
+        return 'Partially Dispatched';
+      case SalesOrderStatus.Dispatched:
+        return 'Dispatched';
+      case SalesOrderStatus.Completed:
+        return 'Completed';
+      case SalesOrderStatus.Cancelled:
+        return 'Cancelled';
+      default:
+        return 'Unknown';
     }
   }
 
   getStatusTone(status: SalesOrderStatus): ChipTone {
     switch (status) {
-      case SalesOrderStatus.Draft: return 'neutral';
-      case SalesOrderStatus.Confirmed: return 'teal';
-      case SalesOrderStatus.InProduction: return 'amber';
-      case SalesOrderStatus.PartiallyDispatched: return 'warn';
-      case SalesOrderStatus.Dispatched: return 'good';
-      case SalesOrderStatus.Completed: return 'good';
-      case SalesOrderStatus.Cancelled: return 'bad';
-      default: return 'neutral';
+      case SalesOrderStatus.Draft:
+        return 'neutral';
+      case SalesOrderStatus.Confirmed:
+        return 'teal';
+      case SalesOrderStatus.InProduction:
+        return 'amber';
+      case SalesOrderStatus.PartiallyDispatched:
+        return 'warn';
+      case SalesOrderStatus.Dispatched:
+        return 'good';
+      case SalesOrderStatus.Completed:
+        return 'good';
+      case SalesOrderStatus.Cancelled:
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 }

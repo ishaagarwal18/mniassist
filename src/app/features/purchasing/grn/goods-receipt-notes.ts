@@ -34,7 +34,8 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
     status: GrnStatus.Approved,
     qcStatus: QcInspectionStatus.Passed,
     inspectedAtUtc: new Date(Date.now() - 1 * 86_400_000).toISOString(),
-    inspectorNotes: '100% dimensions checked per drawing Rev C. No burrs or surface defects detected.',
+    inspectorNotes:
+      '100% dimensions checked per drawing Rev C. No burrs or surface defects detected.',
     remarks: 'Gate verified with security seal intact.',
     creationTime: new Date(Date.now() - 2 * 86_400_000).toISOString(),
     lines: [
@@ -151,7 +152,10 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog],
   template: `
-    <ar-topbar title="Goods Receipt Notes (GRN)" subtitle="Inward warehouse gate entry, QC inspection & put-away management">
+    <ar-topbar
+      title="Goods Receipt Notes (GRN)"
+      subtitle="Inward warehouse gate entry, QC inspection & put-away management"
+    >
       <button ar-button="primary" (click)="openCreateModal()">+ Inward Gate Entry (GRN)</button>
     </ar-topbar>
 
@@ -243,7 +247,7 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
                 <div class="cell-main">
                   <a class="code-link" (click)="viewGrn(g)">{{ g.grnNumber }}</a>
                   <span class="sub-text">Gate: {{ g.gateEntryNumber || 'N/A' }}</span>
-                  <span class="sub-text">{{ g.gateInTimeUtc | date:'mediumDate' }}</span>
+                  <span class="sub-text">{{ g.gateInTimeUtc | date: 'mediumDate' }}</span>
                 </div>
               </td>
               <td>
@@ -284,7 +288,10 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
                 <div class="action-buttons">
                   <button
                     ar-button="ghost"
-                    *ngIf="g.status === GrnStatus.UnderInspection || g.qcStatus === QcInspectionStatus.Pending"
+                    *ngIf="
+                      g.status === GrnStatus.UnderInspection ||
+                      g.qcStatus === QcInspectionStatus.Pending
+                    "
                     (click)="openInspectionDialog(g)"
                   >
                     Inspect
@@ -304,12 +311,7 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
                   >
                     Debit Note
                   </button>
-                  <button
-                    ar-button="ghost"
-                    (click)="viewGrn(g)"
-                  >
-                    View
-                  </button>
+                  <button ar-button="ghost" (click)="viewGrn(g)">View</button>
                 </div>
               </td>
             </tr>
@@ -334,7 +336,9 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
           <div>
             <span class="meta-label">Supplier</span>
             <h4>{{ g.supplierName }}</h4>
-            <p class="sub-text">Challan Ref: {{ g.challanNumber }} | PO: {{ g.purchaseOrderReference || 'N/A' }}</p>
+            <p class="sub-text">
+              Challan Ref: {{ g.challanNumber }} | PO: {{ g.purchaseOrderReference || 'N/A' }}
+            </p>
           </div>
           <div class="meta-status">
             <ar-chip [tone]="grnTone(g.status)">{{ grnLabel(g.status) }}</ar-chip>
@@ -351,7 +355,10 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
           </div>
           <div class="info-card">
             <h5>QC & Put-Away Inspection</h5>
-            <p><strong>Inspection Date:</strong> {{ g.inspectedAtUtc ? (g.inspectedAtUtc | date:'medium') : 'Pending' }}</p>
+            <p>
+              <strong>Inspection Date:</strong>
+              {{ g.inspectedAtUtc ? (g.inspectedAtUtc | date: 'medium') : 'Pending' }}
+            </p>
             <p><strong>QC Findings:</strong> {{ g.inspectorNotes || 'No remarks recorded.' }}</p>
           </div>
         </div>
@@ -372,12 +379,18 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
             </thead>
             <tbody>
               <tr *ngFor="let line of g.lines">
-                <td class="font-mono"><strong>{{ line.partNumber }}</strong></td>
+                <td class="font-mono">
+                  <strong>{{ line.partNumber }}</strong>
+                </td>
                 <td>{{ line.description }}</td>
                 <td class="text-right">{{ line.receivedQuantity }} {{ line.unitOfMeasure }}</td>
-                <td class="text-right text-good"><strong>{{ line.acceptedQuantity }}</strong></td>
+                <td class="text-right text-good">
+                  <strong>{{ line.acceptedQuantity }}</strong>
+                </td>
                 <td class="text-right text-danger">{{ line.rejectedQuantity }}</td>
-                <td><span class="badge-bin">{{ line.storageBin || 'Unassigned' }}</span></td>
+                <td>
+                  <span class="badge-bin">{{ line.storageBin || 'Unassigned' }}</span>
+                </td>
                 <td class="sub-text">{{ line.rejectionReason || '—' }}</td>
               </tr>
             </tbody>
@@ -399,11 +412,7 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
           >
             Create Vendor Bill
           </button>
-          <button
-            ar-button="danger"
-            *ngIf="totalRejected(g) > 0"
-            (click)="createDebitNote(g)"
-          >
+          <button ar-button="danger" *ngIf="totalRejected(g) > 0" (click)="createDebitNote(g)">
             Issue Debit Note for Rejections
           </button>
           <button ar-button="quiet" (click)="selectedGrn.set(null)">Close</button>
@@ -419,7 +428,9 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
     >
       <div class="dialog-body" *ngIf="inspectingGrn() as g">
         <p class="dialog-intro">
-          Verify and record accepted vs rejected items for <strong>{{ g.grnNumber }}</strong> from <strong>{{ g.supplierName }}</strong>.
+          Verify and record accepted vs rejected items for <strong>{{ g.grnNumber }}</strong> from
+          <strong>{{ g.supplierName }}</strong
+          >.
         </p>
 
         <div class="form-group mb-3">
@@ -498,7 +509,9 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
         </div>
 
         <div class="dialog-actions">
-          <button ar-button="primary" (click)="saveQcInspection()">Confirm & Approve Put-Away</button>
+          <button ar-button="primary" (click)="saveQcInspection()">
+            Confirm & Approve Put-Away
+          </button>
           <button ar-button="ghost" (click)="inspectingGrn.set(null)">Cancel</button>
         </div>
       </div>
@@ -581,10 +594,37 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
           </thead>
           <tbody>
             <tr *ngFor="let item of newGrn.lines; let i = index">
-              <td><input type="text" class="form-control" [(ngModel)]="item.partNumber" placeholder="Part #" /></td>
-              <td><input type="text" class="form-control" [(ngModel)]="item.description" placeholder="Description" /></td>
-              <td><input type="number" class="form-control text-right" [(ngModel)]="item.receivedQuantity" /></td>
-              <td><input type="text" class="form-control" [(ngModel)]="item.unitOfMeasure" placeholder="NOS" /></td>
+              <td>
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="item.partNumber"
+                  placeholder="Part #"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="item.description"
+                  placeholder="Description"
+                />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  class="form-control text-right"
+                  [(ngModel)]="item.receivedQuantity"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="item.unitOfMeasure"
+                  placeholder="NOS"
+                />
+              </td>
               <td>
                 <button ar-button="ghost" (click)="removeNewGrnLine(i)">x</button>
               </td>
@@ -630,9 +670,15 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
         gap: 0.25rem;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 
-        &.amber { border-left: 4px solid #f59e0b; }
-        &.teal { border-left: 4px solid #0d9488; }
-        &.red { border-left: 4px solid #ef4444; }
+        &.amber {
+          border-left: 4px solid #f59e0b;
+        }
+        &.teal {
+          border-left: 4px solid #0d9488;
+        }
+        &.red {
+          border-left: 4px solid #ef4444;
+        }
 
         .label {
           font-size: 0.78rem;
@@ -868,10 +914,18 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
         }
       }
 
-      .text-right { text-align: right; }
-      .text-good { color: #15803d; }
-      .text-danger { color: #b91c1c; }
-      .font-mono { font-family: ui-monospace, monospace; }
+      .text-right {
+        text-align: right;
+      }
+      .text-good {
+        color: #15803d;
+      }
+      .text-danger {
+        color: #b91c1c;
+      }
+      .font-mono {
+        font-family: ui-monospace, monospace;
+      }
 
       .form-grid {
         display: grid;
@@ -1016,7 +1070,9 @@ export class GoodsReceiptNotesComponent {
   );
 
   readonly approvedCount = computed(
-    () => this.allGrns().filter((x) => x.status === GrnStatus.Approved || x.status === GrnStatus.Billed).length,
+    () =>
+      this.allGrns().filter((x) => x.status === GrnStatus.Approved || x.status === GrnStatus.Billed)
+        .length,
   );
 
   readonly rejectedCount = computed(
@@ -1078,8 +1134,8 @@ export class GoodsReceiptNotesComponent {
     const newQcStatus = allPassed
       ? QcInspectionStatus.Passed
       : somePassed
-      ? QcInspectionStatus.PartiallyPassed
-      : QcInspectionStatus.Failed;
+        ? QcInspectionStatus.PartiallyPassed
+        : QcInspectionStatus.Failed;
 
     const updatedLines = g.lines.map((orig) => {
       const match = this.qcInspectionModel.lines.find((l) => l.goodsReceiptNoteLineId === orig.id);
@@ -1268,40 +1324,59 @@ export class GoodsReceiptNotesComponent {
 
   qcTone(status: QcInspectionStatus): ChipTone {
     switch (status) {
-      case QcInspectionStatus.Passed: return 'good';
-      case QcInspectionStatus.PartiallyPassed: return 'warn';
-      case QcInspectionStatus.Failed: return 'bad';
-      default: return 'neutral';
+      case QcInspectionStatus.Passed:
+        return 'good';
+      case QcInspectionStatus.PartiallyPassed:
+        return 'warn';
+      case QcInspectionStatus.Failed:
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 
   qcLabel(status: QcInspectionStatus): string {
     switch (status) {
-      case QcInspectionStatus.Passed: return 'QC Passed';
-      case QcInspectionStatus.PartiallyPassed: return 'Partially Passed';
-      case QcInspectionStatus.Failed: return 'QC Failed';
-      default: return 'Awaiting QC';
+      case QcInspectionStatus.Passed:
+        return 'QC Passed';
+      case QcInspectionStatus.PartiallyPassed:
+        return 'Partially Passed';
+      case QcInspectionStatus.Failed:
+        return 'QC Failed';
+      default:
+        return 'Awaiting QC';
     }
   }
 
   grnTone(status: GrnStatus): ChipTone {
     switch (status) {
-      case GrnStatus.Approved: return 'good';
-      case GrnStatus.Billed: return 'teal';
-      case GrnStatus.UnderInspection: return 'amber';
-      case GrnStatus.Rejected: return 'bad';
-      default: return 'neutral';
+      case GrnStatus.Approved:
+        return 'good';
+      case GrnStatus.Billed:
+        return 'teal';
+      case GrnStatus.UnderInspection:
+        return 'amber';
+      case GrnStatus.Rejected:
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 
   grnLabel(status: GrnStatus): string {
     switch (status) {
-      case GrnStatus.Approved: return 'Approved';
-      case GrnStatus.Billed: return 'Billed';
-      case GrnStatus.UnderInspection: return 'Under QC';
-      case GrnStatus.Rejected: return 'Rejected';
-      case GrnStatus.Cancelled: return 'Cancelled';
-      default: return 'Draft';
+      case GrnStatus.Approved:
+        return 'Approved';
+      case GrnStatus.Billed:
+        return 'Billed';
+      case GrnStatus.UnderInspection:
+        return 'Under QC';
+      case GrnStatus.Rejected:
+        return 'Rejected';
+      case GrnStatus.Cancelled:
+        return 'Cancelled';
+      default:
+        return 'Draft';
     }
   }
 }

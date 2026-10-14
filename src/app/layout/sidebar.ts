@@ -131,7 +131,12 @@ function readCollapsed(): boolean {
             {{ theme.theme() === 'dark' ? 'Light theme' : 'Dark theme' }}
           </button>
           @if (pwa.canInstall()) {
-            <button class="sb__menu-item" type="button" role="menuitem" (click)="installApp($event)">
+            <button
+              class="sb__menu-item"
+              type="button"
+              role="menuitem"
+              (click)="installApp($event)"
+            >
               <ar-icon name="download" [size]="15" /> Install app
             </button>
           }
@@ -236,6 +241,7 @@ export class ArSidebar {
 
   /** NAV with items filtered reactively by role permissions, workspace plan, and features. */
   protected readonly nav = computed<readonly NavGroup[]>(() => {
+    this.account.permissionState();
     this.plan.plan();
     this.plan.features();
     this.account.isHost();

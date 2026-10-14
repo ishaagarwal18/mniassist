@@ -418,7 +418,11 @@ async function shrink(file: File): Promise<Blob> {
       }
 
       @if (helpOpen() && helpTopic; as t) {
-        <ar-dialog title="Help · Field Service" width="min(540px, calc(100vw - 32px))" (dismiss)="helpOpen.set(false)">
+        <ar-dialog
+          title="Help · Field Service"
+          width="min(540px, calc(100vw - 32px))"
+          (dismiss)="helpOpen.set(false)"
+        >
           <div class="fhelp">
             @if (t.summary) {
               <p class="fhelp__summary">{{ t.summary }}</p>
@@ -448,7 +452,9 @@ async function shrink(file: File): Promise<Blob> {
             }
           </div>
           <div dialogActions>
-            <button ar-button type="button" variant="primary" (click)="helpOpen.set(false)">Got it</button>
+            <button ar-button type="button" variant="primary" (click)="helpOpen.set(false)">
+              Got it
+            </button>
           </div>
         </ar-dialog>
       }
@@ -510,7 +516,10 @@ async function shrink(file: File): Promise<Blob> {
       background: var(--ar-white);
       color: var(--ar-ink-500);
       cursor: pointer;
-      transition: color var(--ar-ease), border-color var(--ar-ease), background-color var(--ar-ease);
+      transition:
+        color var(--ar-ease),
+        border-color var(--ar-ease),
+        background-color var(--ar-ease);
     }
     .bar__tool:hover {
       color: var(--ar-ink-900);

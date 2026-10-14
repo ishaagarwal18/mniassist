@@ -15,7 +15,10 @@ export class JournalEntryService {
   private readonly restService = inject(RestService);
   apiName = 'AutoReach';
 
-  getList(input: GetJournalEntriesInput, config?: Partial<Rest.Config>): Observable<PagedResultDto<JournalEntryDto>> {
+  getList(
+    input: GetJournalEntriesInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<PagedResultDto<JournalEntryDto>> {
     return this.restService.request<any, PagedResultDto<JournalEntryDto>>(
       {
         method: 'GET',

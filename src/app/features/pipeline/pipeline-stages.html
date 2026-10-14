@@ -42,7 +42,11 @@
       </div>
       @if (canManage()) {
         <div class="pl__actions">
-          <button ar-button variant="ghost" (click)="open({ kind: 'rename-pipeline', pipeline: p })">
+          <button
+            ar-button
+            variant="ghost"
+            (click)="open({ kind: 'rename-pipeline', pipeline: p })"
+          >
             Rename
           </button>
           @if (!p.isDefault) {
@@ -99,7 +103,11 @@
                 {{ s.isFixed ? 'Rename' : 'Edit' }}
               </button>
               @if (!s.isFixed && openStages().length > 1) {
-                <button ar-button variant="ghost" (click)="open({ kind: 'delete-stage', stage: s })">
+                <button
+                  ar-button
+                  variant="ghost"
+                  (click)="open({ kind: 'delete-stage', stage: s })"
+                >
                   Delete
                 </button>
               }

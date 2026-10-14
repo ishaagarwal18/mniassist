@@ -24,7 +24,8 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
     referenceDocumentType: 'SalesInvoice',
     referenceDocumentId: 'inv-1',
     referenceDocumentNumber: 'INV-2026-0082',
-    narration: 'Commercial sales dispatch to Tata Motors Powertrain Ltd for 50x Proportional Valves HV-400-P under GST Rule 55.',
+    narration:
+      'Commercial sales dispatch to Tata Motors Powertrain Ltd for 50x Proportional Valves HV-400-P under GST Rule 55.',
     totalDebitInPaise: 41_30_000_00,
     totalCreditInPaise: 41_30_000_00,
     postedAtUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
@@ -83,7 +84,8 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
     referenceDocumentType: 'GoodsReceiptNote',
     referenceDocumentId: 'grn-1',
     referenceDocumentNumber: 'GRN-2026-0019',
-    narration: 'Procurement of ductile iron castings from Jindal Steel & Power with 3-way matching and GSTR-2B ITC claim.',
+    narration:
+      'Procurement of ductile iron castings from Jindal Steel & Power with 3-way matching and GSTR-2B ITC claim.',
     totalDebitInPaise: 28_32_000_00,
     totalCreditInPaise: 28_32_000_00,
     postedAtUtc: new Date(Date.now() - 5 * 86_400_000).toISOString(),
@@ -175,7 +177,8 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
     entryDateUtc: new Date().toISOString(),
     voucherType: JournalVoucherType.GeneralJournal,
     status: JournalVoucherStatus.Draft,
-    narration: 'Provision for monthly factory 3-phase high-tension power bill and industrial argon welding gas consumption.',
+    narration:
+      'Provision for monthly factory 3-phase high-tension power bill and industrial argon welding gas consumption.',
     totalDebitInPaise: 17_11_000_00,
     totalCreditInPaise: 17_11_000_00,
     lines: [
@@ -255,7 +258,7 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
         </div>
         <div class="kpi-card">
           <span class="label">Total Debits / Credits</span>
-          <strong class="value">₹{{ (stats().totalPostedDebit / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ stats().totalPostedDebit / 100 | number: '1.2-2' }}</strong>
           <span class="sub">100% Balanced entries</span>
         </div>
       </section>
@@ -321,7 +324,7 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
                 <td>
                   <span class="voucher-code">{{ j.entryNumber }}</span>
                 </td>
-                <td>{{ j.entryDateUtc | date:'mediumDate' }}</td>
+                <td>{{ j.entryDateUtc | date: 'mediumDate' }}</td>
                 <td>
                   <span class="type-pill">{{ getVoucherTypeLabel(j.voucherType) }}</span>
                 </td>
@@ -329,7 +332,7 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
                   <span class="narration-snippet">{{ j.narration }}</span>
                 </td>
                 <td class="text-right fw-bold">
-                  ₹{{ (j.totalDebitInPaise / 100) | number:'1.2-2' }}
+                  ₹{{ j.totalDebitInPaise / 100 | number: '1.2-2' }}
                 </td>
                 <td>
                   <ar-chip [tone]="getStatusTone(j.status)">{{ getStatusLabel(j.status) }}</ar-chip>
@@ -349,14 +352,18 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
               <div class="cockpit-title-row">
                 <h3>{{ entry.entryNumber }}</h3>
                 <span class="type-pill">{{ getVoucherTypeLabel(entry.voucherType) }}</span>
-                <ar-chip [tone]="getStatusTone(entry.status)">{{ getStatusLabel(entry.status) }}</ar-chip>
+                <ar-chip [tone]="getStatusTone(entry.status)">{{
+                  getStatusLabel(entry.status)
+                }}</ar-chip>
               </div>
               <p class="cockpit-sub">
-                Dated: <strong>{{ entry.entryDateUtc | date:'longDate' }}</strong>
-                <span *ngIf="entry.referenceDocumentNumber"> &bull; Ref: <strong>{{ entry.referenceDocumentNumber }}</strong></span>
+                Dated: <strong>{{ entry.entryDateUtc | date: 'longDate' }}</strong>
+                <span *ngIf="entry.referenceDocumentNumber">
+                  &bull; Ref: <strong>{{ entry.referenceDocumentNumber }}</strong></span
+                >
               </p>
               <p class="posted-info" *ngIf="entry.postedBy">
-                Posted by {{ entry.postedBy }} on {{ entry.postedAtUtc | date:'medium' }}
+                Posted by {{ entry.postedBy }} on {{ entry.postedAtUtc | date: 'medium' }}
               </p>
             </div>
             <div class="cockpit-actions">
@@ -407,10 +414,21 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
                     <td>{{ l.accountName }}</td>
                     <td class="text-muted">{{ l.lineNarration || '-' }}</td>
                     <td class="text-right font-mono" [class.text-debit]="l.debitAmountInPaise > 0">
-                      {{ l.debitAmountInPaise > 0 ? ('₹' + ((l.debitAmountInPaise / 100) | number:'1.2-2')) : '-' }}
+                      {{
+                        l.debitAmountInPaise > 0
+                          ? '₹' + (l.debitAmountInPaise / 100 | number: '1.2-2')
+                          : '-'
+                      }}
                     </td>
-                    <td class="text-right font-mono" [class.text-credit]="l.creditAmountInPaise > 0">
-                      {{ l.creditAmountInPaise > 0 ? ('₹' + ((l.creditAmountInPaise / 100) | number:'1.2-2')) : '-' }}
+                    <td
+                      class="text-right font-mono"
+                      [class.text-credit]="l.creditAmountInPaise > 0"
+                    >
+                      {{
+                        l.creditAmountInPaise > 0
+                          ? '₹' + (l.creditAmountInPaise / 100 | number: '1.2-2')
+                          : '-'
+                      }}
                     </td>
                   </tr>
                 </tbody>
@@ -418,10 +436,10 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
                   <tr class="totals-row">
                     <td colspan="3" class="fw-bold">Total Vouched Amount</td>
                     <td class="text-right fw-bold text-debit font-mono">
-                      ₹{{ (entry.totalDebitInPaise / 100) | number:'1.2-2' }}
+                      ₹{{ entry.totalDebitInPaise / 100 | number: '1.2-2' }}
                     </td>
                     <td class="text-right fw-bold text-credit font-mono">
-                      ₹{{ (entry.totalCreditInPaise / 100) | number:'1.2-2' }}
+                      ₹{{ entry.totalCreditInPaise / 100 | number: '1.2-2' }}
                     </td>
                   </tr>
                 </tfoot>
@@ -461,13 +479,23 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
           </div>
           <div class="form-group">
             <label>Reference Document #</label>
-            <input type="text" class="form-control" [(ngModel)]="newEntry.referenceDocumentNumber" placeholder="INV-..., GRN-..., PO-..." />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="newEntry.referenceDocumentNumber"
+              placeholder="INV-..., GRN-..., PO-..."
+            />
           </div>
         </div>
 
         <div class="form-group full-width mt-3">
           <label>Narration & Explanation</label>
-          <textarea class="form-control" rows="2" [(ngModel)]="newEntry.narration" placeholder="Explain business transaction..."></textarea>
+          <textarea
+            class="form-control"
+            rows="2"
+            [(ngModel)]="newEntry.narration"
+            placeholder="Explain business transaction..."
+          ></textarea>
         </div>
 
         <h5 class="mt-4 mb-2">Double-Entry Ledger Lines</h5>
@@ -484,16 +512,36 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
           <tbody>
             <tr *ngFor="let line of draftLines(); let i = index">
               <td>
-                <input type="text" class="form-control input-sm" [(ngModel)]="line.accountCode" placeholder="Code (e.g. 1010)" />
+                <input
+                  type="text"
+                  class="form-control input-sm"
+                  [(ngModel)]="line.accountCode"
+                  placeholder="Code (e.g. 1010)"
+                />
               </td>
               <td>
-                <input type="number" class="form-control text-right input-sm" [(ngModel)]="line.debitRupees" (input)="recalculateDraftTotals()" />
+                <input
+                  type="number"
+                  class="form-control text-right input-sm"
+                  [(ngModel)]="line.debitRupees"
+                  (input)="recalculateDraftTotals()"
+                />
               </td>
               <td>
-                <input type="number" class="form-control text-right input-sm" [(ngModel)]="line.creditRupees" (input)="recalculateDraftTotals()" />
+                <input
+                  type="number"
+                  class="form-control text-right input-sm"
+                  [(ngModel)]="line.creditRupees"
+                  (input)="recalculateDraftTotals()"
+                />
               </td>
               <td>
-                <input type="text" class="form-control input-sm" [(ngModel)]="line.lineNarration" placeholder="Notes" />
+                <input
+                  type="text"
+                  class="form-control input-sm"
+                  [(ngModel)]="line.lineNarration"
+                  placeholder="Notes"
+                />
               </td>
               <td>
                 <button ar-button="ghost" class="btn-xs" (click)="removeDraftLine(i)">x</button>
@@ -505,16 +553,22 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
         <div class="lines-actions-row">
           <button ar-button="ghost" (click)="addDraftLine()">+ Add Ledger Line</button>
           <div class="draft-totals">
-            <span>Debit: <strong>₹{{ draftTotalDebit() | number:'1.2-2' }}</strong></span>
-            <span>Credit: <strong>₹{{ draftTotalCredit() | number:'1.2-2' }}</strong></span>
+            <span
+              >Debit: <strong>₹{{ draftTotalDebit() | number: '1.2-2' }}</strong></span
+            >
+            <span
+              >Credit: <strong>₹{{ draftTotalCredit() | number: '1.2-2' }}</strong></span
+            >
             <span [class.text-success]="isDraftBalanced()" [class.text-danger]="!isDraftBalanced()">
-              Diff: <strong>₹{{ (draftTotalDebit() - draftTotalCredit()) | number:'1.2-2' }}</strong>
+              Diff: <strong>₹{{ draftTotalDebit() - draftTotalCredit() | number: '1.2-2' }}</strong>
             </span>
           </div>
         </div>
 
         <div class="dialog-actions mt-4">
-          <button ar-button="primary" [disabled]="!isDraftBalanced()" (click)="createEntry()">Create & Record Voucher</button>
+          <button ar-button="primary" [disabled]="!isDraftBalanced()" (click)="createEntry()">
+            Create & Record Voucher
+          </button>
           <button ar-button="ghost" (click)="isCreateOpen.set(false)">Cancel</button>
         </div>
       </div>
@@ -555,8 +609,12 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
         gap: 0.25rem;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 
-        &.teal { border-left: 4px solid #0d9488; }
-        &.amber { border-left: 4px solid #f59e0b; }
+        &.teal {
+          border-left: 4px solid #0d9488;
+        }
+        &.amber {
+          border-left: 4px solid #f59e0b;
+        }
 
         .label {
           font-size: 0.78rem;
@@ -908,18 +966,44 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
         gap: 0.75rem;
       }
 
-      .fw-bold { font-weight: 600; }
-      .font-mono { font-family: monospace; }
-      .text-debit { color: #0284c7; font-weight: 600; }
-      .text-credit { color: #16a34a; font-weight: 600; }
-      .text-success { color: #16a34a; }
-      .text-danger { color: #dc2626; }
-      .text-muted { color: #64748b; }
-      .text-right { text-align: right; }
-      .mt-3 { margin-top: 0.75rem; }
-      .mt-4 { margin-top: 1rem; }
-      .mb-2 { margin-bottom: 0.5rem; }
-      .mb-3 { margin-bottom: 0.75rem; }
+      .fw-bold {
+        font-weight: 600;
+      }
+      .font-mono {
+        font-family: monospace;
+      }
+      .text-debit {
+        color: #0284c7;
+        font-weight: 600;
+      }
+      .text-credit {
+        color: #16a34a;
+        font-weight: 600;
+      }
+      .text-success {
+        color: #16a34a;
+      }
+      .text-danger {
+        color: #dc2626;
+      }
+      .text-muted {
+        color: #64748b;
+      }
+      .text-right {
+        text-align: right;
+      }
+      .mt-3 {
+        margin-top: 0.75rem;
+      }
+      .mt-4 {
+        margin-top: 1rem;
+      }
+      .mb-2 {
+        margin-bottom: 0.5rem;
+      }
+      .mb-3 {
+        margin-bottom: 0.75rem;
+      }
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -946,20 +1030,40 @@ export class JournalEntriesComponent {
     lines: [],
   };
 
-  readonly draftLines = signal<{ accountCode: string; debitRupees: number; creditRupees: number; lineNarration: string }[]>([
-    { accountCode: '1010', debitRupees: 50000, creditRupees: 0, lineNarration: 'Disbursement from Bank' },
-    { accountCode: '6040', debitRupees: 0, creditRupees: 50000, lineNarration: 'Office expense provision' },
+  readonly draftLines = signal<
+    { accountCode: string; debitRupees: number; creditRupees: number; lineNarration: string }[]
+  >([
+    {
+      accountCode: '1010',
+      debitRupees: 50000,
+      creditRupees: 0,
+      lineNarration: 'Disbursement from Bank',
+    },
+    {
+      accountCode: '6040',
+      debitRupees: 0,
+      creditRupees: 50000,
+      lineNarration: 'Office expense provision',
+    },
   ]);
 
-  readonly draftTotalDebit = computed(() => this.draftLines().reduce((acc, l) => acc + (Number(l.debitRupees) || 0), 0));
-  readonly draftTotalCredit = computed(() => this.draftLines().reduce((acc, l) => acc + (Number(l.creditRupees) || 0), 0));
-  readonly isDraftBalanced = computed(() => Math.abs(this.draftTotalDebit() - this.draftTotalCredit()) === 0 && this.draftTotalDebit() > 0);
+  readonly draftTotalDebit = computed(() =>
+    this.draftLines().reduce((acc, l) => acc + (Number(l.debitRupees) || 0), 0),
+  );
+  readonly draftTotalCredit = computed(() =>
+    this.draftLines().reduce((acc, l) => acc + (Number(l.creditRupees) || 0), 0),
+  );
+  readonly isDraftBalanced = computed(
+    () =>
+      Math.abs(this.draftTotalDebit() - this.draftTotalCredit()) === 0 &&
+      this.draftTotalDebit() > 0,
+  );
 
   readonly filteredEntries = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
     const sf = this.statusFilter();
 
-    return this.journalEntries().filter(j => {
+    return this.journalEntries().filter((j) => {
       if (sf !== 'ALL' && j.status.toString() !== sf) return false;
       if (!q) return true;
 
@@ -973,10 +1077,10 @@ export class JournalEntriesComponent {
 
   readonly stats = computed(() => {
     const list = this.journalEntries();
-    const postedCount = list.filter(j => j.status === JournalVoucherStatus.Posted).length;
-    const draftCount = list.filter(j => j.status === JournalVoucherStatus.Draft).length;
+    const postedCount = list.filter((j) => j.status === JournalVoucherStatus.Posted).length;
+    const draftCount = list.filter((j) => j.status === JournalVoucherStatus.Draft).length;
     const totalPostedDebit = list
-      .filter(j => j.status === JournalVoucherStatus.Posted)
+      .filter((j) => j.status === JournalVoucherStatus.Posted)
       .reduce((acc, j) => acc + j.totalDebitInPaise, 0);
 
     return {
@@ -998,7 +1102,7 @@ export class JournalEntriesComponent {
 
     this.isLoading.set(true);
     this.journalService.getList({ maxResultCount: 100 }).subscribe({
-      next: res => {
+      next: (res) => {
         if (res.items && res.items.length > 0) {
           this.journalEntries.set(res.items);
           this.selectedEntry.set(res.items[0]);
@@ -1069,25 +1173,30 @@ export class JournalEntriesComponent {
     };
     this.draftLines.set([
       { accountCode: '1010', debitRupees: 50000, creditRupees: 0, lineNarration: 'Bank payment' },
-      { accountCode: '6020', debitRupees: 0, creditRupees: 50000, lineNarration: 'Tooling expense' },
+      {
+        accountCode: '6020',
+        debitRupees: 0,
+        creditRupees: 50000,
+        lineNarration: 'Tooling expense',
+      },
     ]);
     this.isCreateOpen.set(true);
   }
 
   addDraftLine(): void {
-    this.draftLines.update(lines => [
+    this.draftLines.update((lines) => [
       ...lines,
       { accountCode: '', debitRupees: 0, creditRupees: 0, lineNarration: '' },
     ]);
   }
 
   removeDraftLine(index: number): void {
-    this.draftLines.update(lines => lines.filter((_, i) => i !== index));
+    this.draftLines.update((lines) => lines.filter((_, i) => i !== index));
   }
 
   recalculateDraftTotals(): void {
     // triggers signal update
-    this.draftLines.update(l => [...l]);
+    this.draftLines.update((l) => [...l]);
   }
 
   createEntry(): void {
@@ -1119,7 +1228,7 @@ export class JournalEntriesComponent {
       })),
     };
 
-    this.journalEntries.update(list => [created, ...list]);
+    this.journalEntries.update((list) => [created, ...list]);
     this.selectedEntry.set(created);
     this.isCreateOpen.set(false);
   }
@@ -1127,7 +1236,7 @@ export class JournalEntriesComponent {
   postEntry(entry: JournalEntryDto): void {
     if (!environment.useMockData && entry.id) {
       this.journalService.post(entry.id).subscribe({
-        next: updated => {
+        next: (updated) => {
           this.updateEntryInState(updated);
         },
       });
@@ -1146,7 +1255,7 @@ export class JournalEntriesComponent {
   cancelEntry(entry: JournalEntryDto): void {
     if (!environment.useMockData && entry.id) {
       this.journalService.cancel(entry.id).subscribe({
-        next: updated => {
+        next: (updated) => {
           this.updateEntryInState(updated);
         },
       });
@@ -1161,7 +1270,7 @@ export class JournalEntriesComponent {
   }
 
   private updateEntryInState(updated: JournalEntryDto): void {
-    this.journalEntries.update(list => list.map(j => (j.id === updated.id ? updated : j)));
+    this.journalEntries.update((list) => list.map((j) => (j.id === updated.id ? updated : j)));
     this.selectedEntry.set(updated);
   }
 }

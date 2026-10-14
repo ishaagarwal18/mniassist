@@ -8,7 +8,9 @@
           [class.is-active]="activeSection() === s.id"
           [attr.aria-current]="activeSection() === s.id ? 'true' : null"
           (click)="scrollTo(s.id)"
-        >{{ s.label }}</button>
+        >
+          {{ s.label }}
+        </button>
       }
     </nav>
     <div class="nav__cta">

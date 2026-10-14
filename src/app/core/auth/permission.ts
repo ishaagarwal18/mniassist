@@ -5,10 +5,13 @@ import {
   TemplateRef,
   ViewContainerRef,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
 import { PermissionService } from '@abp/ng.core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { of, switchMap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import type { NavItem } from '../../layout/nav.model';
@@ -43,7 +46,12 @@ export function grantedPolicy(
   name: string | undefined | null,
   permissions: PermissionService,
 ): Signal<boolean> {
-  return computed(() => checkPolicy(name, permissions));
+  if (!name || environment.useMockData) {
+    return computed(() => true);
+  }
+  return toSignal(permissions.getGrantedPolicy$(name), {
+    initialValue: checkPolicy(name, permissions),
+  });
 }
 
 /**
@@ -109,18 +117,22 @@ export class ArHasPermissionDirective {
   private readonly name = signal<string | undefined>(undefined);
   private rendered = false;
 
-  private readonly granted = computed(() => checkPolicy(this.name(), this.permissions));
+  private readonly granted = toSignal(
+    toObservable(this.name).pipe(
+      switchMap((name) =>
+        !name || environment.useMockData ? of(true) : this.permissions.getGrantedPolicy$(name),
+      ),
+    ),
+    { initialValue: false },
+  );
 
   constructor() {
-    // getGrantedPolicy is synchronous against the cached config; re-evaluate whenever
-    // the input changes. A one-shot check is enough for the nav, which is rebuilt on
-    // navigation anyway.
+    effect(() => this.sync());
   }
 
   @Input()
   set arHasPermission(value: string | undefined) {
     this.name.set(value);
-    this.sync();
   }
 
   private sync(): void {

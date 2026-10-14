@@ -344,6 +344,7 @@ export class ArTopbar {
 
   /** Inbox and Notifications, as icons beside the theme switch, for those allowed to see them. */
   protected readonly tools = computed<readonly NavItem[]>(() => {
+    this.account.permissionState();
     this.plan.plan();
     this.plan.features();
     this.account.isHost();

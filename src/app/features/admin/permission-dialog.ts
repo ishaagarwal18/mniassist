@@ -12,10 +12,7 @@ import { firstValueFrom } from 'rxjs';
 import { FilterService, ToolbarService, TreeGridModule } from '@syncfusion/ej2-angular-treegrid';
 
 import { readApiError } from '../../core/util/api-error';
-import {
-  GetPermissionListResultDto,
-  PermissionsService,
-} from '../../proxy/permission-management';
+import { GetPermissionListResultDto, PermissionsService } from '../../proxy/permission-management';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
 import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
 import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
@@ -62,22 +59,10 @@ interface TreeRow {
             <span class="ar-mono">{{ totalCount() }}</span> permissions
           </div>
           <div class="perm-toolbar__actions">
-            <button
-              ar-button
-              type="button"
-              variant="ghost"
-              size="sm"
-              (click)="grantAll()"
-            >
+            <button ar-button type="button" variant="ghost" size="sm" (click)="grantAll()">
               Grant all
             </button>
-            <button
-              ar-button
-              type="button"
-              variant="ghost"
-              size="sm"
-              (click)="revokeAll()"
-            >
+            <button ar-button type="button" variant="ghost" size="sm" (click)="revokeAll()">
               Revoke all
             </button>
           </div>
@@ -135,9 +120,7 @@ interface TreeRow {
       }
 
       <div dialogActions>
-        <button ar-button type="button" variant="ghost" (click)="closed.emit(false)">
-          Cancel
-        </button>
+        <button ar-button type="button" variant="ghost" (click)="closed.emit(false)">Cancel</button>
         <button
           ar-button
           type="button"

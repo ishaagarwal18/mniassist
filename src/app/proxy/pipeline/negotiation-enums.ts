@@ -7,7 +7,10 @@ export enum NegotiationStrategy {
 
 export const negotiationStrategyOptions = [
   { value: NegotiationStrategy.ConcessionCurve, label: 'Concession Curve (Progressive Steps)' },
-  { value: NegotiationStrategy.PaymentTermTradeoff, label: 'Payment Terms Trade-off (Advance / Net 7)' },
+  {
+    value: NegotiationStrategy.PaymentTermTradeoff,
+    label: 'Payment Terms Trade-off (Advance / Net 7)',
+  },
   { value: NegotiationStrategy.VolumeCommitment, label: 'Volume Tier Requirement (+20% Qty)' },
   { value: NegotiationStrategy.FirmFixed, label: 'Firm Fixed Price (Defend Value & Warranty)' },
 ];

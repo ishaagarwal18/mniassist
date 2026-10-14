@@ -39,7 +39,10 @@ export class ArAutomations {
   protected readonly canCreate = grantedPolicy('AutoReach.Automations.Create', this.permissions);
   protected readonly canUpdate = grantedPolicy('AutoReach.Automations.Update', this.permissions);
   protected readonly canDelete = grantedPolicy('AutoReach.Automations.Delete', this.permissions);
-  protected readonly canActivate = grantedPolicy('AutoReach.Automations.Activate', this.permissions);
+  protected readonly canActivate = grantedPolicy(
+    'AutoReach.Automations.Activate',
+    this.permissions,
+  );
 
   protected readonly automations = this.store.automations;
   protected readonly loading = this.store.loadingAutomations;

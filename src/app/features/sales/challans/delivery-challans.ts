@@ -120,7 +120,8 @@ const MOCK_CHALLANS: DeliveryChallanDto[] = [
     <ar-topbar
       title="Delivery challans"
       subtitle="Statutory delivery documents under GST Rule 55 for dispatch against sales orders, job work, and goods transit."
-      help="In India, goods cannot move without an invoice or a Delivery Challan. Challans track vehicle numbers, Lorry Receipts (LR/AWB), and statutory 12-digit e-Way Bills before invoice generation.">
+      help="In India, goods cannot move without an invoice or a Delivery Challan. Challans track vehicle numbers, Lorry Receipts (LR/AWB), and statutory 12-digit e-Way Bills before invoice generation."
+    >
     </ar-topbar>
 
     <div class="challans-shell">
@@ -132,37 +133,43 @@ const MOCK_CHALLANS: DeliveryChallanDto[] = [
             class="ar-input"
             placeholder="Search by challan #, LR #, vehicle # or customer..."
             [ngModel]="searchQuery()"
-            (ngModelChange)="searchQuery.set($event)" />
+            (ngModelChange)="searchQuery.set($event)"
+          />
         </div>
         <div class="status-pills">
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === null"
-            (click)="selectedStatus.set(null)">
+            (click)="selectedStatus.set(null)"
+          >
             All ({{ challans().length }})
           </button>
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === DeliveryChallanStatus.Draft"
-            (click)="selectedStatus.set(DeliveryChallanStatus.Draft)">
+            (click)="selectedStatus.set(DeliveryChallanStatus.Draft)"
+          >
             Draft
           </button>
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === DeliveryChallanStatus.Dispatched"
-            (click)="selectedStatus.set(DeliveryChallanStatus.Dispatched)">
+            (click)="selectedStatus.set(DeliveryChallanStatus.Dispatched)"
+          >
             Dispatched
           </button>
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === DeliveryChallanStatus.Delivered"
-            (click)="selectedStatus.set(DeliveryChallanStatus.Delivered)">
+            (click)="selectedStatus.set(DeliveryChallanStatus.Delivered)"
+          >
             Delivered
           </button>
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === DeliveryChallanStatus.Invoiced"
-            (click)="selectedStatus.set(DeliveryChallanStatus.Invoiced)">
+            (click)="selectedStatus.set(DeliveryChallanStatus.Invoiced)"
+          >
             Invoiced
           </button>
         </div>
@@ -200,7 +207,11 @@ const MOCK_CHALLANS: DeliveryChallanDto[] = [
                   <span class="type-tag">{{ getChallanTypeLabel(dc.type) }}</span>
                 </td>
                 <td>
-                  {{ dc.dispatchedAtUtc ? (dc.dispatchedAtUtc | date: 'dd MMM yyyy') : (dc.challanDateUtc | date: 'dd MMM yyyy') }}
+                  {{
+                    dc.dispatchedAtUtc
+                      ? (dc.dispatchedAtUtc | date: 'dd MMM yyyy')
+                      : (dc.challanDateUtc | date: 'dd MMM yyyy')
+                  }}
                 </td>
                 <td>
                   @if (dc.vehicleNumber || dc.lrNumber) {
@@ -219,13 +230,24 @@ const MOCK_CHALLANS: DeliveryChallanDto[] = [
                   <div class="row-actions">
                     <button class="action-btn" (click)="selectedChallan.set(dc)">View</button>
                     @if (dc.status === DeliveryChallanStatus.Draft) {
-                      <button class="action-btn primary" (click)="openDispatchDialog(dc)">Dispatch</button>
+                      <button class="action-btn primary" (click)="openDispatchDialog(dc)">
+                        Dispatch
+                      </button>
                     }
                     @if (dc.status === DeliveryChallanStatus.Dispatched) {
-                      <button class="action-btn success" (click)="markDelivered(dc)">Delivered</button>
+                      <button class="action-btn success" (click)="markDelivered(dc)">
+                        Delivered
+                      </button>
                     }
-                    @if (dc.status === DeliveryChallanStatus.Dispatched || dc.status === DeliveryChallanStatus.Delivered) {
-                      <button class="action-btn primary" title="Generate GST Invoice" (click)="createInvoiceFromChallan(dc)">
+                    @if (
+                      dc.status === DeliveryChallanStatus.Dispatched ||
+                      dc.status === DeliveryChallanStatus.Delivered
+                    ) {
+                      <button
+                        class="action-btn primary"
+                        title="Generate GST Invoice"
+                        (click)="createInvoiceFromChallan(dc)"
+                      >
                         Invoice
                       </button>
                     }
@@ -246,7 +268,8 @@ const MOCK_CHALLANS: DeliveryChallanDto[] = [
     @if (selectedChallan(); as dc) {
       <ar-dialog
         [title]="'Delivery Challan: ' + dc.challanNumber + ' (' + dc.customerName + ')'"
-        (dismiss)="selectedChallan.set(null)">
+        (dismiss)="selectedChallan.set(null)"
+      >
         <div class="detail-body">
           <div class="meta-grid">
             <div class="meta-item">
@@ -314,13 +337,22 @@ const MOCK_CHALLANS: DeliveryChallanDto[] = [
 
           <div class="drawer-actions">
             @if (dc.status === DeliveryChallanStatus.Draft) {
-              <button ar-button variant="primary" (click)="openDispatchDialog(dc)">Dispatch Consignment</button>
+              <button ar-button variant="primary" (click)="openDispatchDialog(dc)">
+                Dispatch Consignment
+              </button>
             }
             @if (dc.status === DeliveryChallanStatus.Dispatched) {
-              <button ar-button variant="ghost" (click)="markDelivered(dc)">Mark as Delivered</button>
+              <button ar-button variant="ghost" (click)="markDelivered(dc)">
+                Mark as Delivered
+              </button>
             }
-            @if (dc.status === DeliveryChallanStatus.Dispatched || dc.status === DeliveryChallanStatus.Delivered) {
-              <button ar-button variant="primary" (click)="createInvoiceFromChallan(dc)">Bill Delivery (Tax Invoice)</button>
+            @if (
+              dc.status === DeliveryChallanStatus.Dispatched ||
+              dc.status === DeliveryChallanStatus.Delivered
+            ) {
+              <button ar-button variant="primary" (click)="createInvoiceFromChallan(dc)">
+                Bill Delivery (Tax Invoice)
+              </button>
             }
           </div>
         </div>
@@ -331,30 +363,55 @@ const MOCK_CHALLANS: DeliveryChallanDto[] = [
     @if (dispatchDialogChallan(); as dc) {
       <ar-dialog
         [title]="'Dispatch Challan: ' + dc.challanNumber"
-        (dismiss)="dispatchDialogChallan.set(null)">
+        (dismiss)="dispatchDialogChallan.set(null)"
+      >
         <div class="dispatch-form">
           <div class="form-group">
             <label>Transporter Name *</label>
-            <input type="text" class="ar-input" [(ngModel)]="dispatchInput.transporterName" placeholder="e.g. VRL Logistics, TCI Express" />
+            <input
+              type="text"
+              class="ar-input"
+              [(ngModel)]="dispatchInput.transporterName"
+              placeholder="e.g. VRL Logistics, TCI Express"
+            />
           </div>
           <div class="form-row">
             <div class="form-group flex-1">
               <label>Vehicle Number *</label>
-              <input type="text" class="ar-input" [(ngModel)]="dispatchInput.vehicleNumber" placeholder="e.g. MH 12 AB 1234" />
+              <input
+                type="text"
+                class="ar-input"
+                [(ngModel)]="dispatchInput.vehicleNumber"
+                placeholder="e.g. MH 12 AB 1234"
+              />
             </div>
             <div class="form-group flex-1">
               <label>LR / Docket Number</label>
-              <input type="text" class="ar-input" [(ngModel)]="dispatchInput.lrNumber" placeholder="e.g. VRL-99210" />
+              <input
+                type="text"
+                class="ar-input"
+                [(ngModel)]="dispatchInput.lrNumber"
+                placeholder="e.g. VRL-99210"
+              />
             </div>
           </div>
           <div class="form-group">
             <label>GST e-Way Bill Number (12 digits)</label>
-            <input type="text" class="ar-input font-mono" [(ngModel)]="dispatchInput.ewayBillNumber" placeholder="e.g. 281982736412" />
+            <input
+              type="text"
+              class="ar-input font-mono"
+              [(ngModel)]="dispatchInput.ewayBillNumber"
+              placeholder="e.g. 281982736412"
+            />
           </div>
 
           <div class="dialog-foot">
-            <button ar-button variant="ghost" (click)="dispatchDialogChallan.set(null)">Cancel</button>
-            <button ar-button variant="primary" (click)="submitDispatch(dc)">Confirm Dispatch</button>
+            <button ar-button variant="ghost" (click)="dispatchDialogChallan.set(null)">
+              Cancel
+            </button>
+            <button ar-button variant="primary" (click)="submitDispatch(dc)">
+              Confirm Dispatch
+            </button>
           </div>
         </div>
       </ar-dialog>
@@ -541,7 +598,9 @@ const MOCK_CHALLANS: DeliveryChallanDto[] = [
         display: flex;
         gap: 1rem;
       }
-      .flex-1 { flex: 1; }
+      .flex-1 {
+        flex: 1;
+      }
       .form-group label {
         display: block;
         font-size: 0.75rem;
@@ -694,33 +753,50 @@ export class ArDeliveryChallans {
 
   getChallanTypeLabel(type: DeliveryChallanType): string {
     switch (type) {
-      case DeliveryChallanType.SupplyAgainstOrder: return 'Supply against Order';
-      case DeliveryChallanType.JobWork: return 'Job Work (Rule 55(1)(b))';
-      case DeliveryChallanType.SupplyOnApproval: return 'Supply on Approval';
-      case DeliveryChallanType.MaterialReturn: return 'Material Return';
-      default: return 'Other Supply';
+      case DeliveryChallanType.SupplyAgainstOrder:
+        return 'Supply against Order';
+      case DeliveryChallanType.JobWork:
+        return 'Job Work (Rule 55(1)(b))';
+      case DeliveryChallanType.SupplyOnApproval:
+        return 'Supply on Approval';
+      case DeliveryChallanType.MaterialReturn:
+        return 'Material Return';
+      default:
+        return 'Other Supply';
     }
   }
 
   getStatusLabel(status: DeliveryChallanStatus): string {
     switch (status) {
-      case DeliveryChallanStatus.Draft: return 'Draft';
-      case DeliveryChallanStatus.Dispatched: return 'In Transit';
-      case DeliveryChallanStatus.Delivered: return 'Delivered';
-      case DeliveryChallanStatus.Invoiced: return 'Invoiced';
-      case DeliveryChallanStatus.Cancelled: return 'Cancelled';
-      default: return 'Unknown';
+      case DeliveryChallanStatus.Draft:
+        return 'Draft';
+      case DeliveryChallanStatus.Dispatched:
+        return 'In Transit';
+      case DeliveryChallanStatus.Delivered:
+        return 'Delivered';
+      case DeliveryChallanStatus.Invoiced:
+        return 'Invoiced';
+      case DeliveryChallanStatus.Cancelled:
+        return 'Cancelled';
+      default:
+        return 'Unknown';
     }
   }
 
   getStatusTone(status: DeliveryChallanStatus): ChipTone {
     switch (status) {
-      case DeliveryChallanStatus.Draft: return 'neutral';
-      case DeliveryChallanStatus.Dispatched: return 'amber';
-      case DeliveryChallanStatus.Delivered: return 'good';
-      case DeliveryChallanStatus.Invoiced: return 'teal';
-      case DeliveryChallanStatus.Cancelled: return 'bad';
-      default: return 'neutral';
+      case DeliveryChallanStatus.Draft:
+        return 'neutral';
+      case DeliveryChallanStatus.Dispatched:
+        return 'amber';
+      case DeliveryChallanStatus.Delivered:
+        return 'good';
+      case DeliveryChallanStatus.Invoiced:
+        return 'teal';
+      case DeliveryChallanStatus.Cancelled:
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 }

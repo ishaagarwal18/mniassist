@@ -41,9 +41,18 @@ export enum EquipmentCategory {
 }
 
 export const equipmentCategoryOptions = [
-  { value: EquipmentCategory.PlcAndController, label: 'PLC & Automation Controller (Siemens S7, Rockwell, Omron)' },
-  { value: EquipmentCategory.VfdAndDrive, label: 'VFD & AC Drives (ABB, Schneider, Danfoss, Siemens)' },
-  { value: EquipmentCategory.InstrumentationAndSensor, label: 'Process Instrumentation & Sensors (E+H, Yokogawa)' },
+  {
+    value: EquipmentCategory.PlcAndController,
+    label: 'PLC & Automation Controller (Siemens S7, Rockwell, Omron)',
+  },
+  {
+    value: EquipmentCategory.VfdAndDrive,
+    label: 'VFD & AC Drives (ABB, Schneider, Danfoss, Siemens)',
+  },
+  {
+    value: EquipmentCategory.InstrumentationAndSensor,
+    label: 'Process Instrumentation & Sensors (E+H, Yokogawa)',
+  },
   { value: EquipmentCategory.ServoAndMotion, label: 'Servo & Motion Control Systems' },
   { value: EquipmentCategory.HmiAndScada, label: 'HMI & SCADA Terminals' },
   { value: EquipmentCategory.MechanicalAndHydraulic, label: 'Valves, Actuators & Hydraulics' },

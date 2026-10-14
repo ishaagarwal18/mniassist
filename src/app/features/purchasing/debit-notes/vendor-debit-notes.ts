@@ -98,7 +98,10 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog],
   template: `
-    <ar-topbar title="Vendor Debit Notes" subtitle="Purchase return, QC rejection credit & supplier price adjustment notes">
+    <ar-topbar
+      title="Vendor Debit Notes"
+      subtitle="Purchase return, QC rejection credit & supplier price adjustment notes"
+    >
       <button ar-button="primary" (click)="openCreateModal()">+ Issue Debit Note</button>
     </ar-topbar>
 
@@ -107,17 +110,17 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
       <section class="kpi-grid">
         <div class="kpi-card">
           <span class="label">Total Debit Notes</span>
-          <strong class="value">₹{{ (totalDebitValue() / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ totalDebitValue() / 100 | number: '1.2-2' }}</strong>
           <span class="sub">{{ allDebitNotes().length }} notes recorded</span>
         </div>
         <div class="kpi-card amber">
           <span class="label">Issued & Pending Settlement</span>
-          <strong class="value">₹{{ (pendingSettlementValue() / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ pendingSettlementValue() / 100 | number: '1.2-2' }}</strong>
           <span class="sub">To be adjusted against future bills</span>
         </div>
         <div class="kpi-card teal">
           <span class="label">Settled / Recovered</span>
-          <strong class="value">₹{{ (settledValue() / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ settledValue() / 100 | number: '1.2-2' }}</strong>
           <span class="sub">Fully deducted from vendor payouts</span>
         </div>
       </section>
@@ -175,32 +178,47 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let dn of filteredDebitNotes()" [class.selected]="selectedDebitNote()?.id === dn.id">
+            <tr
+              *ngFor="let dn of filteredDebitNotes()"
+              [class.selected]="selectedDebitNote()?.id === dn.id"
+            >
               <td>
                 <div class="cell-main">
                   <a class="code-link" (click)="viewDebitNote(dn)">{{ dn.debitNoteNumber }}</a>
-                  <span class="sub-text">{{ dn.issueDateUtc | date:'mediumDate' }}</span>
+                  <span class="sub-text">{{ dn.issueDateUtc | date: 'mediumDate' }}</span>
                 </div>
               </td>
               <td>
                 <div class="cell-main">
                   <strong>{{ dn.supplierName }}</strong>
-                  <span class="badge-interstate font-mono">{{ dn.isInterState ? 'IGST (Inter-State)' : 'CGST+SGST (Intra-State)' }}</span>
+                  <span class="badge-interstate font-mono">{{
+                    dn.isInterState ? 'IGST (Inter-State)' : 'CGST+SGST (Intra-State)'
+                  }}</span>
                 </div>
               </td>
               <td>
                 <div class="cell-main">
-                  <span class="sub-text" *ngIf="dn.vendorBillNumber">Bill: <strong>{{ dn.vendorBillNumber }}</strong></span>
-                  <span class="sub-text" *ngIf="dn.goodsReceiptNoteNumber">GRN: {{ dn.goodsReceiptNoteNumber }}</span>
+                  <span class="sub-text" *ngIf="dn.vendorBillNumber"
+                    >Bill: <strong>{{ dn.vendorBillNumber }}</strong></span
+                  >
+                  <span class="sub-text" *ngIf="dn.goodsReceiptNoteNumber"
+                    >GRN: {{ dn.goodsReceiptNoteNumber }}</span
+                  >
                 </div>
               </td>
               <td>
                 <span class="reason-text" [title]="dn.reason">{{ dn.reason }}</span>
               </td>
-              <td class="text-right font-mono">₹{{ (dn.taxableAmountInPaise / 100) | number:'1.2-2' }}</td>
-              <td class="text-right font-mono">₹{{ ((dn.grandTotalInPaise - dn.taxableAmountInPaise) / 100) | number:'1.2-2' }}</td>
               <td class="text-right font-mono">
-                <strong class="text-good">₹{{ (dn.grandTotalInPaise / 100) | number:'1.2-2' }}</strong>
+                ₹{{ dn.taxableAmountInPaise / 100 | number: '1.2-2' }}
+              </td>
+              <td class="text-right font-mono">
+                ₹{{ (dn.grandTotalInPaise - dn.taxableAmountInPaise) / 100 | number: '1.2-2' }}
+              </td>
+              <td class="text-right font-mono">
+                <strong class="text-good"
+                  >₹{{ dn.grandTotalInPaise / 100 | number: '1.2-2' }}</strong
+                >
               </td>
               <td>
                 <ar-chip [tone]="statusTone(dn.status)">
@@ -216,12 +234,7 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
                   >
                     Settle
                   </button>
-                  <button
-                    ar-button="quiet"
-                    (click)="viewDebitNote(dn)"
-                  >
-                    View
-                  </button>
+                  <button ar-button="quiet" (click)="viewDebitNote(dn)">View</button>
                 </div>
               </td>
             </tr>
@@ -256,15 +269,29 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
         <div class="grid-details">
           <div class="info-card">
             <h5>Document References</h5>
-            <p><strong>Issue Date:</strong> {{ dn.issueDateUtc | date:'mediumDate' }}</p>
-            <p><strong>Bill Reference:</strong> {{ dn.vendorBillNumber || 'Open Balance Adjustment' }}</p>
+            <p><strong>Issue Date:</strong> {{ dn.issueDateUtc | date: 'mediumDate' }}</p>
+            <p>
+              <strong>Bill Reference:</strong>
+              {{ dn.vendorBillNumber || 'Open Balance Adjustment' }}
+            </p>
             <p><strong>GRN Reference:</strong> {{ dn.goodsReceiptNoteNumber || 'Direct' }}</p>
           </div>
           <div class="info-card">
             <h5>Financial Recovery</h5>
-            <p><strong>Taxable Adjustment:</strong> ₹{{ (dn.taxableAmountInPaise / 100) | number:'1.2-2' }}</p>
-            <p><strong>GST Adjustment:</strong> ₹{{ ((dn.grandTotalInPaise - dn.taxableAmountInPaise) / 100) | number:'1.2-2' }}</p>
-            <p><strong>Total Recoverable:</strong> <strong class="text-good">₹{{ (dn.grandTotalInPaise / 100) | number:'1.2-2' }}</strong></p>
+            <p>
+              <strong>Taxable Adjustment:</strong> ₹{{
+                dn.taxableAmountInPaise / 100 | number: '1.2-2'
+              }}
+            </p>
+            <p>
+              <strong>GST Adjustment:</strong> ₹{{
+                (dn.grandTotalInPaise - dn.taxableAmountInPaise) / 100 | number: '1.2-2'
+              }}
+            </p>
+            <p>
+              <strong>Total Recoverable:</strong>
+              <strong class="text-good">₹{{ dn.grandTotalInPaise / 100 | number: '1.2-2' }}</strong>
+            </p>
           </div>
         </div>
 
@@ -283,12 +310,20 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
             </thead>
             <tbody>
               <tr *ngFor="let line of dn.lines">
-                <td class="font-mono"><strong>{{ line.partNumber }}</strong></td>
+                <td class="font-mono">
+                  <strong>{{ line.partNumber }}</strong>
+                </td>
                 <td>{{ line.description }}</td>
                 <td class="text-right font-mono">{{ line.quantity }}</td>
-                <td class="text-right font-mono">₹{{ (line.unitPriceInPaise / 100) | number:'1.2-2' }}</td>
-                <td class="text-right font-mono">₹{{ (line.taxableAmountInPaise / 100) | number:'1.2-2' }}</td>
-                <td class="text-right font-mono"><strong>₹{{ (line.lineTotalInPaise / 100) | number:'1.2-2' }}</strong></td>
+                <td class="text-right font-mono">
+                  ₹{{ line.unitPriceInPaise / 100 | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-mono">
+                  ₹{{ line.taxableAmountInPaise / 100 | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-mono">
+                  <strong>₹{{ line.lineTotalInPaise / 100 | number: '1.2-2' }}</strong>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -375,10 +410,32 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
           </thead>
           <tbody>
             <tr *ngFor="let item of newDebitNote.lines; let i = index">
-              <td><input type="text" class="form-control" [(ngModel)]="item.partNumber" placeholder="Part #" /></td>
-              <td><input type="text" class="form-control" [(ngModel)]="item.description" placeholder="Description" /></td>
-              <td><input type="number" class="form-control text-right" [(ngModel)]="item.quantity" /></td>
-              <td><input type="number" class="form-control text-right" [(ngModel)]="item.unitPriceRupees" /></td>
+              <td>
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="item.partNumber"
+                  placeholder="Part #"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="item.description"
+                  placeholder="Description"
+                />
+              </td>
+              <td>
+                <input type="number" class="form-control text-right" [(ngModel)]="item.quantity" />
+              </td>
+              <td>
+                <input
+                  type="number"
+                  class="form-control text-right"
+                  [(ngModel)]="item.unitPriceRupees"
+                />
+              </td>
               <td>
                 <select class="form-control" [(ngModel)]="item.taxRateBasisPoints">
                   <option [ngValue]="1800">18%</option>
@@ -433,9 +490,15 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
         gap: 0.25rem;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 
-        &.amber { border-left: 4px solid #f59e0b; }
-        &.teal { border-left: 4px solid #0d9488; }
-        &.red { border-left: 4px solid #ef4444; }
+        &.amber {
+          border-left: 4px solid #f59e0b;
+        }
+        &.teal {
+          border-left: 4px solid #0d9488;
+        }
+        &.red {
+          border-left: 4px solid #ef4444;
+        }
 
         .label {
           font-size: 0.78rem;
@@ -659,10 +722,18 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
         }
       }
 
-      .text-right { text-align: right; }
-      .text-good { color: #15803d; }
-      .text-danger { color: #b91c1c; }
-      .font-mono { font-family: ui-monospace, monospace; }
+      .text-right {
+        text-align: right;
+      }
+      .text-good {
+        color: #15803d;
+      }
+      .text-danger {
+        color: #b91c1c;
+      }
+      .font-mono {
+        font-family: ui-monospace, monospace;
+      }
 
       .form-grid {
         display: grid;
@@ -960,19 +1031,27 @@ export class VendorDebitNotesComponent {
 
   statusTone(status: VendorDebitNoteStatus): ChipTone {
     switch (status) {
-      case VendorDebitNoteStatus.Settled: return 'good';
-      case VendorDebitNoteStatus.Issued: return 'amber';
-      case VendorDebitNoteStatus.Cancelled: return 'bad';
-      default: return 'neutral';
+      case VendorDebitNoteStatus.Settled:
+        return 'good';
+      case VendorDebitNoteStatus.Issued:
+        return 'amber';
+      case VendorDebitNoteStatus.Cancelled:
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 
   statusLabel(status: VendorDebitNoteStatus): string {
     switch (status) {
-      case VendorDebitNoteStatus.Settled: return 'Settled / Deducted';
-      case VendorDebitNoteStatus.Issued: return 'Issued / Open';
-      case VendorDebitNoteStatus.Cancelled: return 'Cancelled';
-      default: return 'Draft';
+      case VendorDebitNoteStatus.Settled:
+        return 'Settled / Deducted';
+      case VendorDebitNoteStatus.Issued:
+        return 'Issued / Open';
+      case VendorDebitNoteStatus.Cancelled:
+        return 'Cancelled';
+      default:
+        return 'Draft';
     }
   }
 }

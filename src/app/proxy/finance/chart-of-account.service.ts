@@ -16,7 +16,10 @@ export class ChartOfAccountService {
   private readonly restService = inject(RestService);
   apiName = 'AutoReach';
 
-  getList(input: GetChartOfAccountsInput, config?: Partial<Rest.Config>): Observable<PagedResultDto<ChartOfAccountDto>> {
+  getList(
+    input: GetChartOfAccountsInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<PagedResultDto<ChartOfAccountDto>> {
     return this.restService.request<any, PagedResultDto<ChartOfAccountDto>>(
       {
         method: 'GET',
@@ -45,7 +48,10 @@ export class ChartOfAccountService {
     );
   }
 
-  create(input: CreateChartOfAccountDto, config?: Partial<Rest.Config>): Observable<ChartOfAccountDto> {
+  create(
+    input: CreateChartOfAccountDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<ChartOfAccountDto> {
     return this.restService.request<any, ChartOfAccountDto>(
       {
         method: 'POST',
@@ -56,7 +62,11 @@ export class ChartOfAccountService {
     );
   }
 
-  update(id: string, input: UpdateChartOfAccountDto, config?: Partial<Rest.Config>): Observable<ChartOfAccountDto> {
+  update(
+    id: string,
+    input: UpdateChartOfAccountDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<ChartOfAccountDto> {
     return this.restService.request<any, ChartOfAccountDto>(
       {
         method: 'PUT',

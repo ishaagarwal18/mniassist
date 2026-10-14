@@ -16,7 +16,10 @@ export class BillOfMaterialService {
   private readonly restService = inject(RestService);
   apiName = 'AutoReach';
 
-  getList(input: GetBillOfMaterialsInput, config?: Partial<Rest.Config>): Observable<PagedResultDto<BillOfMaterialDto>> {
+  getList(
+    input: GetBillOfMaterialsInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<PagedResultDto<BillOfMaterialDto>> {
     return this.restService.request<any, PagedResultDto<BillOfMaterialDto>>(
       {
         method: 'GET',
@@ -44,7 +47,10 @@ export class BillOfMaterialService {
     );
   }
 
-  create(input: CreateBillOfMaterialDto, config?: Partial<Rest.Config>): Observable<BillOfMaterialDto> {
+  create(
+    input: CreateBillOfMaterialDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<BillOfMaterialDto> {
     return this.restService.request<any, BillOfMaterialDto>(
       {
         method: 'POST',
@@ -55,7 +61,11 @@ export class BillOfMaterialService {
     );
   }
 
-  update(id: string, input: UpdateBillOfMaterialDto, config?: Partial<Rest.Config>): Observable<BillOfMaterialDto> {
+  update(
+    id: string,
+    input: UpdateBillOfMaterialDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<BillOfMaterialDto> {
     return this.restService.request<any, BillOfMaterialDto>(
       {
         method: 'PUT',

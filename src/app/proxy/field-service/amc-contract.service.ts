@@ -17,7 +17,10 @@ export class AmcContractService {
   private readonly restService = inject(RestService);
   apiName = 'AutoReach';
 
-  getList(input: GetAmcContractsInput, config?: Partial<Rest.Config>): Observable<PagedResultDto<AmcContractDto>> {
+  getList(
+    input: GetAmcContractsInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<PagedResultDto<AmcContractDto>> {
     return this.restService.request<any, PagedResultDto<AmcContractDto>>(
       {
         method: 'GET',
@@ -57,7 +60,11 @@ export class AmcContractService {
     );
   }
 
-  completeVisit(id: string, input: CompleteAmcVisitDto, config?: Partial<Rest.Config>): Observable<AmcContractDto> {
+  completeVisit(
+    id: string,
+    input: CompleteAmcVisitDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<AmcContractDto> {
     return this.restService.request<any, AmcContractDto>(
       {
         method: 'POST',
@@ -68,7 +75,11 @@ export class AmcContractService {
     );
   }
 
-  renew(id: string, input: RenewAmcContractDto, config?: Partial<Rest.Config>): Observable<AmcContractDto> {
+  renew(
+    id: string,
+    input: RenewAmcContractDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<AmcContractDto> {
     return this.restService.request<any, AmcContractDto>(
       {
         method: 'POST',

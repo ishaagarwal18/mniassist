@@ -125,7 +125,8 @@ export class PlanService {
           }),
         )
         .subscribe((usage) => {
-          const resolvedPlan: SubscriptionPlan = (usage.plan as SubscriptionPlan) ?? SubscriptionPlan.Starter;
+          const resolvedPlan: SubscriptionPlan =
+            (usage.plan as SubscriptionPlan) ?? SubscriptionPlan.Starter;
           this.plan.set(resolvedPlan);
 
           const featureList = [

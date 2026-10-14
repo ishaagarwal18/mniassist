@@ -161,7 +161,8 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
     <ar-topbar
       title="Commercial sales invoices"
       subtitle="Statutory GST commercial tax invoices, credit notes and debit notes with itemized tax breakdowns and payment receipts."
-      help="Issue GST invoices against orders or delivery challans. Compute statutory CGST+SGST or IGST automatically, track outstanding customer balances, and record payments received.">
+      help="Issue GST invoices against orders or delivery challans. Compute statutory CGST+SGST or IGST automatically, track outstanding customer balances, and record payments received."
+    >
     </ar-topbar>
 
     <div class="invoices-shell">
@@ -169,15 +170,15 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
       <div class="metrics-row">
         <div class="metric-card">
           <span class="m-lbl">Total billed</span>
-          <span class="m-val">₹{{ (totalBilled() / 100) | number: '1.2-2' }}</span>
+          <span class="m-val">₹{{ totalBilled() / 100 | number: '1.2-2' }}</span>
         </div>
         <div class="metric-card">
           <span class="m-lbl">Collections received</span>
-          <span class="m-val text-success">₹{{ (totalCollected() / 100) | number: '1.2-2' }}</span>
+          <span class="m-val text-success">₹{{ totalCollected() / 100 | number: '1.2-2' }}</span>
         </div>
         <div class="metric-card">
           <span class="m-lbl">Outstanding balance</span>
-          <span class="m-val text-danger">₹{{ (totalOutstanding() / 100) | number: '1.2-2' }}</span>
+          <span class="m-val text-danger">₹{{ totalOutstanding() / 100 | number: '1.2-2' }}</span>
         </div>
       </div>
 
@@ -189,37 +190,43 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
             class="ar-input"
             placeholder="Search invoice #, customer or GSTIN..."
             [ngModel]="searchQuery()"
-            (ngModelChange)="searchQuery.set($event)" />
+            (ngModelChange)="searchQuery.set($event)"
+          />
         </div>
         <div class="status-pills">
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === null"
-            (click)="selectedStatus.set(null)">
+            (click)="selectedStatus.set(null)"
+          >
             All ({{ invoices().length }})
           </button>
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === SalesInvoiceStatus.Draft"
-            (click)="selectedStatus.set(SalesInvoiceStatus.Draft)">
+            (click)="selectedStatus.set(SalesInvoiceStatus.Draft)"
+          >
             Draft
           </button>
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === SalesInvoiceStatus.Issued"
-            (click)="selectedStatus.set(SalesInvoiceStatus.Issued)">
+            (click)="selectedStatus.set(SalesInvoiceStatus.Issued)"
+          >
             Issued
           </button>
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === SalesInvoiceStatus.PartiallyPaid"
-            (click)="selectedStatus.set(SalesInvoiceStatus.PartiallyPaid)">
+            (click)="selectedStatus.set(SalesInvoiceStatus.PartiallyPaid)"
+          >
             Partially Paid
           </button>
           <button
             class="pill-btn"
             [class.active]="selectedStatus() === SalesInvoiceStatus.Paid"
-            (click)="selectedStatus.set(SalesInvoiceStatus.Paid)">
+            (click)="selectedStatus.set(SalesInvoiceStatus.Paid)"
+          >
             Paid
           </button>
         </div>
@@ -258,11 +265,13 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
                     {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}
                   </span>
                 </td>
-                <td class="num-col">₹{{ (inv.subtotalInPaise / 100) | number: '1.2-2' }}</td>
-                <td class="num-col">₹{{ (inv.totalTaxInPaise / 100) | number: '1.2-2' }}</td>
-                <td class="num-col font-bold">₹{{ (inv.grandTotalInPaise / 100) | number: '1.2-2' }}</td>
+                <td class="num-col">₹{{ inv.subtotalInPaise / 100 | number: '1.2-2' }}</td>
+                <td class="num-col">₹{{ inv.totalTaxInPaise / 100 | number: '1.2-2' }}</td>
+                <td class="num-col font-bold">
+                  ₹{{ inv.grandTotalInPaise / 100 | number: '1.2-2' }}
+                </td>
                 <td class="num-col font-bold" [class.text-danger]="inv.balanceDueInPaise > 0">
-                  ₹{{ (inv.balanceDueInPaise / 100) | number: '1.2-2' }}
+                  ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
                 </td>
                 <td>
                   <ar-chip [tone]="getStatusTone(inv.status)">
@@ -276,7 +285,9 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
                       <button class="action-btn primary" (click)="issueInvoice(inv)">Issue</button>
                     }
                     @if (inv.balanceDueInPaise > 0 && inv.status !== SalesInvoiceStatus.Draft) {
-                      <button class="action-btn success" (click)="openPaymentDialog(inv)">Pay</button>
+                      <button class="action-btn success" (click)="openPaymentDialog(inv)">
+                        Pay
+                      </button>
                     }
                   </div>
                 </td>
@@ -295,7 +306,8 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
     @if (selectedInvoice(); as inv) {
       <ar-dialog
         [title]="'Tax Invoice: ' + inv.invoiceNumber + ' (' + inv.customerName + ')'"
-        (dismiss)="selectedInvoice.set(null)">
+        (dismiss)="selectedInvoice.set(null)"
+      >
         <div class="detail-body">
           <div class="inv-header-box">
             <div class="inv-col">
@@ -341,17 +353,23 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
                   </td>
                   <td class="font-mono text-xs">{{ l.hsnCode || '—' }}</td>
                   <td class="num-col font-bold">{{ l.quantity }}</td>
-                  <td class="num-col">₹{{ (l.unitPriceInPaise / 100) | number: '1.2-2' }}</td>
-                  <td class="num-col">₹{{ (l.taxableAmountInPaise / 100) | number: '1.2-2' }}</td>
+                  <td class="num-col">₹{{ l.unitPriceInPaise / 100 | number: '1.2-2' }}</td>
+                  <td class="num-col">₹{{ l.taxableAmountInPaise / 100 | number: '1.2-2' }}</td>
                   <td class="num-col text-xs">
                     @if (inv.isInterState) {
-                      IGST {{ l.igstRateBasisPoints / 100 }}%: ₹{{ (l.igstAmountInPaise / 100) | number: '1.2-2' }}
+                      IGST {{ l.igstRateBasisPoints / 100 }}%: ₹{{
+                        l.igstAmountInPaise / 100 | number: '1.2-2'
+                      }}
                     } @else {
-                      CGST {{ l.cgstRateBasisPoints / 100 }}% + SGST {{ l.sgstRateBasisPoints / 100 }}%:
-                      ₹{{ ((l.cgstAmountInPaise + l.sgstAmountInPaise) / 100) | number: '1.2-2' }}
+                      CGST {{ l.cgstRateBasisPoints / 100 }}% + SGST
+                      {{ l.sgstRateBasisPoints / 100 }}%: ₹{{
+                        (l.cgstAmountInPaise + l.sgstAmountInPaise) / 100 | number: '1.2-2'
+                      }}
                     }
                   </td>
-                  <td class="num-col font-bold">₹{{ (l.lineTotalInPaise / 100) | number: '1.2-2' }}</td>
+                  <td class="num-col font-bold">
+                    ₹{{ l.lineTotalInPaise / 100 | number: '1.2-2' }}
+                  </td>
                 </tr>
               }
             </tbody>
@@ -360,34 +378,34 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
           <div class="totals-summary">
             <div class="tot-row">
               <span>Taxable Subtotal:</span>
-              <span>₹{{ (inv.subtotalInPaise / 100) | number: '1.2-2' }}</span>
+              <span>₹{{ inv.subtotalInPaise / 100 | number: '1.2-2' }}</span>
             </div>
             @if (!inv.isInterState) {
               <div class="tot-row">
                 <span>CGST:</span>
-                <span>₹{{ (inv.cgstInPaise / 100) | number: '1.2-2' }}</span>
+                <span>₹{{ inv.cgstInPaise / 100 | number: '1.2-2' }}</span>
               </div>
               <div class="tot-row">
                 <span>SGST:</span>
-                <span>₹{{ (inv.sgstInPaise / 100) | number: '1.2-2' }}</span>
+                <span>₹{{ inv.sgstInPaise / 100 | number: '1.2-2' }}</span>
               </div>
             } @else {
               <div class="tot-row">
                 <span>IGST:</span>
-                <span>₹{{ (inv.igstInPaise / 100) | number: '1.2-2' }}</span>
+                <span>₹{{ inv.igstInPaise / 100 | number: '1.2-2' }}</span>
               </div>
             }
             <div class="tot-row grand">
               <span>Invoice Total:</span>
-              <span class="font-bold">₹{{ (inv.grandTotalInPaise / 100) | number: '1.2-2' }}</span>
+              <span class="font-bold">₹{{ inv.grandTotalInPaise / 100 | number: '1.2-2' }}</span>
             </div>
             <div class="tot-row text-success">
               <span>Paid:</span>
-              <span>₹{{ (inv.paidAmountInPaise / 100) | number: '1.2-2' }}</span>
+              <span>₹{{ inv.paidAmountInPaise / 100 | number: '1.2-2' }}</span>
             </div>
             <div class="tot-row text-danger font-bold">
               <span>Balance Due:</span>
-              <span>₹{{ (inv.balanceDueInPaise / 100) | number: '1.2-2' }}</span>
+              <span>₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}</span>
             </div>
           </div>
 
@@ -409,7 +427,9 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
                     <td>{{ p.paymentDateUtc | date: 'dd MMM yyyy' }}</td>
                     <td>{{ getPaymentModeLabel(p.paymentMode) }}</td>
                     <td class="font-mono text-xs">{{ p.referenceNumber || '—' }}</td>
-                    <td class="num-col font-bold text-success">₹{{ (p.amountInPaise / 100) | number: '1.2-2' }}</td>
+                    <td class="num-col font-bold text-success">
+                      ₹{{ p.amountInPaise / 100 | number: '1.2-2' }}
+                    </td>
                     <td class="text-xs">{{ p.remarks || '—' }}</td>
                   </tr>
                 }
@@ -419,12 +439,18 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
 
           <div class="drawer-actions">
             @if (inv.status === SalesInvoiceStatus.Draft) {
-              <button ar-button variant="primary" (click)="issueInvoice(inv)">Issue Tax Invoice</button>
+              <button ar-button variant="primary" (click)="issueInvoice(inv)">
+                Issue Tax Invoice
+              </button>
             }
             @if (inv.balanceDueInPaise > 0 && inv.status !== SalesInvoiceStatus.Draft) {
-              <button ar-button variant="primary" (click)="openPaymentDialog(inv)">Record Payment</button>
+              <button ar-button variant="primary" (click)="openPaymentDialog(inv)">
+                Record Payment
+              </button>
             }
-            <button ar-button variant="ghost" (click)="viewCustomer360(inv.customerId)">Customer 360 Dossier</button>
+            <button ar-button variant="ghost" (click)="viewCustomer360(inv.customerId)">
+              Customer 360 Dossier
+            </button>
           </div>
         </div>
       </ar-dialog>
@@ -434,7 +460,8 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
     @if (paymentDialogInvoice(); as inv) {
       <ar-dialog
         [title]="'Record Payment for ' + inv.invoiceNumber"
-        (dismiss)="paymentDialogInvoice.set(null)">
+        (dismiss)="paymentDialogInvoice.set(null)"
+      >
         <div class="payment-form">
           <div class="form-group">
             <label>Payment Amount (₹) *</label>
@@ -453,17 +480,31 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
             </div>
             <div class="form-group flex-1">
               <label>UTR / Transaction Ref #</label>
-              <input type="text" class="ar-input font-mono" [(ngModel)]="paymentRef" placeholder="e.g. UTR-9821034" />
+              <input
+                type="text"
+                class="ar-input font-mono"
+                [(ngModel)]="paymentRef"
+                placeholder="e.g. UTR-9821034"
+              />
             </div>
           </div>
           <div class="form-group">
             <label>Remarks</label>
-            <input type="text" class="ar-input" [(ngModel)]="paymentRemarks" placeholder="Bank ledger notes" />
+            <input
+              type="text"
+              class="ar-input"
+              [(ngModel)]="paymentRemarks"
+              placeholder="Bank ledger notes"
+            />
           </div>
 
           <div class="dialog-foot">
-            <button ar-button variant="ghost" (click)="paymentDialogInvoice.set(null)">Cancel</button>
-            <button ar-button variant="primary" (click)="submitPayment(inv)">Confirm Payment</button>
+            <button ar-button variant="ghost" (click)="paymentDialogInvoice.set(null)">
+              Cancel
+            </button>
+            <button ar-button variant="primary" (click)="submitPayment(inv)">
+              Confirm Payment
+            </button>
           </div>
         </div>
       </ar-dialog>
@@ -502,9 +543,15 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
         font-weight: 700;
         color: var(--ar-ink-heavy, #0f172a);
       }
-      .text-success { color: #059669; }
-      .text-danger { color: #dc2626; }
-      .text-right { text-align: right; }
+      .text-success {
+        color: #059669;
+      }
+      .text-danger {
+        color: #dc2626;
+      }
+      .text-right {
+        text-align: right;
+      }
       .filters-bar {
         display: flex;
         gap: 1rem;
@@ -682,7 +729,9 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
         display: flex;
         gap: 1rem;
       }
-      .flex-1 { flex: 1; }
+      .flex-1 {
+        flex: 1;
+      }
       .dialog-foot {
         display: flex;
         justify-content: flex-end;
@@ -714,7 +763,9 @@ export class ArSalesInvoices {
 
   totalBilled = computed(() => this.invoices().reduce((acc, i) => acc + i.grandTotalInPaise, 0));
   totalCollected = computed(() => this.invoices().reduce((acc, i) => acc + i.paidAmountInPaise, 0));
-  totalOutstanding = computed(() => this.invoices().reduce((acc, i) => acc + i.balanceDueInPaise, 0));
+  totalOutstanding = computed(() =>
+    this.invoices().reduce((acc, i) => acc + i.balanceDueInPaise, 0),
+  );
 
   filteredInvoices = computed(() => {
     let list = this.invoices();
@@ -842,34 +893,52 @@ export class ArSalesInvoices {
 
   getPaymentModeLabel(mode: SalesPaymentMode): string {
     switch (mode) {
-      case SalesPaymentMode.NeftRtgs: return 'NEFT / RTGS';
-      case SalesPaymentMode.Upi: return 'UPI';
-      case SalesPaymentMode.Cheque: return 'Cheque';
-      case SalesPaymentMode.Cash: return 'Cash';
-      case SalesPaymentMode.Card: return 'Card';
-      default: return 'Other';
+      case SalesPaymentMode.NeftRtgs:
+        return 'NEFT / RTGS';
+      case SalesPaymentMode.Upi:
+        return 'UPI';
+      case SalesPaymentMode.Cheque:
+        return 'Cheque';
+      case SalesPaymentMode.Cash:
+        return 'Cash';
+      case SalesPaymentMode.Card:
+        return 'Card';
+      default:
+        return 'Other';
     }
   }
 
   getStatusLabel(status: SalesInvoiceStatus): string {
     switch (status) {
-      case SalesInvoiceStatus.Draft: return 'Draft';
-      case SalesInvoiceStatus.Issued: return 'Issued';
-      case SalesInvoiceStatus.PartiallyPaid: return 'Partially Paid';
-      case SalesInvoiceStatus.Paid: return 'Paid';
-      case SalesInvoiceStatus.Cancelled: return 'Cancelled';
-      default: return 'Unknown';
+      case SalesInvoiceStatus.Draft:
+        return 'Draft';
+      case SalesInvoiceStatus.Issued:
+        return 'Issued';
+      case SalesInvoiceStatus.PartiallyPaid:
+        return 'Partially Paid';
+      case SalesInvoiceStatus.Paid:
+        return 'Paid';
+      case SalesInvoiceStatus.Cancelled:
+        return 'Cancelled';
+      default:
+        return 'Unknown';
     }
   }
 
   getStatusTone(status: SalesInvoiceStatus): ChipTone {
     switch (status) {
-      case SalesInvoiceStatus.Draft: return 'neutral';
-      case SalesInvoiceStatus.Issued: return 'teal';
-      case SalesInvoiceStatus.PartiallyPaid: return 'amber';
-      case SalesInvoiceStatus.Paid: return 'good';
-      case SalesInvoiceStatus.Cancelled: return 'bad';
-      default: return 'neutral';
+      case SalesInvoiceStatus.Draft:
+        return 'neutral';
+      case SalesInvoiceStatus.Issued:
+        return 'teal';
+      case SalesInvoiceStatus.PartiallyPaid:
+        return 'amber';
+      case SalesInvoiceStatus.Paid:
+        return 'good';
+      case SalesInvoiceStatus.Cancelled:
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 }

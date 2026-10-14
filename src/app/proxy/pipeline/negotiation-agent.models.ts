@@ -1,5 +1,11 @@
 import { PagedAndSortedResultRequestDto, FullAuditedEntityDto, EntityDto } from '@abp/ng.core';
-import { CustomerPersona, NegotiationAction, NegotiationSessionStatus, NegotiationStrategy, OfferSender } from './negotiation-enums';
+import {
+  CustomerPersona,
+  NegotiationAction,
+  NegotiationSessionStatus,
+  NegotiationStrategy,
+  OfferSender,
+} from './negotiation-enums';
 
 export interface NegotiationPolicyDto extends FullAuditedEntityDto<string> {
   name: string;

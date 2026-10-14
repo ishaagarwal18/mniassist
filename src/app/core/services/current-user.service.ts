@@ -136,6 +136,11 @@ export class CurrentUserService {
     { initialValue: undefined },
   );
 
+  /** Invalidates menu checks when grants change without an identity or plan change. */
+  readonly permissionState = toSignal(MOCK ? of(undefined) : this.config.getOne$('auth'), {
+    initialValue: undefined,
+  });
+
   /**
    * The workspace the signed-in user belongs to, from the server's view of the
    * session; empty for a host (platform) user, who belongs to none. Mock mode
@@ -148,16 +153,24 @@ export class CurrentUserService {
   });
 
   /** Signed in on the host side (platform administration), not in a workspace. */
-  readonly isHost = computed(() => !MOCK && isHostContext({
-    currentUser: this.configUser(),
-    currentTenant: this.configTenant(),
-  }));
+  readonly isHost = computed(
+    () =>
+      !MOCK &&
+      isHostContext({
+        currentUser: this.configUser(),
+        currentTenant: this.configTenant(),
+      }),
+  );
 
   /** Full platform access belongs only to the host's built-in admin role. */
-  readonly isHostAdmin = computed(() => !MOCK && isHostAdministrator({
-    currentUser: this.configUser(),
-    currentTenant: this.configTenant(),
-  }));
+  readonly isHostAdmin = computed(
+    () =>
+      !MOCK &&
+      isHostAdministrator({
+        currentUser: this.configUser(),
+        currentTenant: this.configTenant(),
+      }),
+  );
 
   readonly isAuthenticated = computed(() =>
     MOCK ? this.mockSignedIn() : this.user().isAuthenticated,

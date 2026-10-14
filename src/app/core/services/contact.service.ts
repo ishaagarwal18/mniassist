@@ -299,7 +299,12 @@ export class ContactService {
           decisionRole: 'Maintenance',
           ...input.attributes,
         },
-        consent: { source: 'manual', evidence: 'Direct contact', textVersion: 'v1', grantedAt: new Date().toISOString() },
+        consent: {
+          source: 'manual',
+          evidence: 'Direct contact',
+          textVersion: 'v1',
+          grantedAt: new Date().toISOString(),
+        },
         lastActivity: new Date().toISOString(),
         score: 50,
       };

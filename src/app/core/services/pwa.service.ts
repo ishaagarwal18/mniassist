@@ -17,9 +17,7 @@ export class PwaService {
   private waitingWorker: ServiceWorker | null = null;
 
   /** Network connectivity status */
-  readonly isOnline = signal<boolean>(
-    typeof navigator !== 'undefined' ? navigator.onLine : true,
-  );
+  readonly isOnline = signal<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
 
   /** Whether the app can be installed via the browser prompt */
   readonly canInstall = signal<boolean>(false);
@@ -90,10 +88,7 @@ export class PwaService {
           if (!newWorker) return;
 
           newWorker.addEventListener('statechange', () => {
-            if (
-              newWorker.state === 'installed' &&
-              win.navigator.serviceWorker.controller
-            ) {
+            if (newWorker.state === 'installed' && win.navigator.serviceWorker.controller) {
               this.waitingWorker = newWorker;
               this.hasUpdate.set(true);
             }

@@ -37,7 +37,8 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
     irnHash: '8b4d1b823e59bcf7e1d5204859a0fbc5928d3ef71829e0839218d6e7f8a920b1',
     eInvoiceAckNo: '1120260400821',
     eInvoiceAckDateUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-    signedQrCode: 'https://einvoice1.gst.gov.in/verify?irn=8b4d1b823e59bcf7e1d5204859a0fbc5928d3ef71829e0839218d6e7f8a920b1',
+    signedQrCode:
+      'https://einvoice1.gst.gov.in/verify?irn=8b4d1b823e59bcf7e1d5204859a0fbc5928d3ef71829e0839218d6e7f8a920b1',
     eWayBillStatus: EWayBillStatus.Active,
     ewayBillNumber: '271049283719',
     ewayBillValidUntilUtc: new Date(Date.now() + 2 * 86_400_000).toISOString(),
@@ -135,22 +136,28 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
       <section class="kpi-grid">
         <div class="kpi-card">
           <span class="label">Outward Taxable Value</span>
-          <strong class="value">₹{{ (gstr3b().outwardTaxableInPaise / 100) | number:'1.2-2' }}</strong>
+          <strong class="value"
+            >₹{{ gstr3b().outwardTaxableInPaise / 100 | number: '1.2-2' }}</strong
+          >
           <span class="sub">GSTR-1 Outward B2B / B2C Supplies</span>
         </div>
         <div class="kpi-card amber">
           <span class="label">Total Tax Output Liability</span>
-          <strong class="value">₹{{ (gstr3b().outwardTaxPayableInPaise / 100) | number:'1.2-2' }}</strong>
+          <strong class="value"
+            >₹{{ gstr3b().outwardTaxPayableInPaise / 100 | number: '1.2-2' }}</strong
+          >
           <span class="sub">IGST + CGST + SGST Payable</span>
         </div>
         <div class="kpi-card teal">
           <span class="label">Eligible ITC (GSTR-2B)</span>
-          <strong class="value">₹{{ (gstr3b().eligibleItcInPaise / 100) | number:'1.2-2' }}</strong>
+          <strong class="value">₹{{ gstr3b().eligibleItcInPaise / 100 | number: '1.2-2' }}</strong>
           <span class="sub">3-Way matched vendor invoices</span>
         </div>
         <div class="kpi-card">
           <span class="label">Net GST Payable in Cash</span>
-          <strong class="value text-profit">₹{{ (gstr3b().netGstPayableInCashInPaise / 100) | number:'1.2-2' }}</strong>
+          <strong class="value text-profit"
+            >₹{{ gstr3b().netGstPayableInCashInPaise / 100 | number: '1.2-2' }}</strong
+          >
           <span class="sub">Net cash liability after ITC offset</span>
         </div>
       </section>
@@ -205,24 +212,29 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
                 <td>
                   <span class="fw-bold font-mono">{{ doc.documentNumber }}</span>
                 </td>
-                <td>{{ doc.documentDateUtc | date:'mediumDate' }}</td>
+                <td>{{ doc.documentDateUtc | date: 'mediumDate' }}</td>
                 <td>
                   <div class="client-block">
                     <span class="client-name">{{ doc.counterpartyLegalName }}</span>
-                    <span class="client-gstin font-mono">{{ doc.counterpartyGstin }} (POS: {{ doc.placeOfSupplyStateCode }})</span>
+                    <span class="client-gstin font-mono"
+                      >{{ doc.counterpartyGstin }} (POS: {{ doc.placeOfSupplyStateCode }})</span
+                    >
                   </div>
                 </td>
                 <td>
                   <span class="section-tag">{{ getSectionLabel(doc.section) }}</span>
                 </td>
                 <td class="text-right font-mono">
-                  ₹{{ (doc.taxableAmountInPaise / 100) | number:'1.2-2' }}
+                  ₹{{ doc.taxableAmountInPaise / 100 | number: '1.2-2' }}
                 </td>
                 <td class="text-right font-mono text-tax">
-                  ₹{{ ((doc.igstAmountInPaise + doc.cgstAmountInPaise + doc.sgstAmountInPaise) / 100) | number:'1.2-2' }}
+                  ₹{{
+                    (doc.igstAmountInPaise + doc.cgstAmountInPaise + doc.sgstAmountInPaise) / 100
+                      | number: '1.2-2'
+                  }}
                 </td>
                 <td class="text-right font-mono fw-bold">
-                  ₹{{ (doc.totalInvoiceValueInPaise / 100) | number:'1.2-2' }}
+                  ₹{{ doc.totalInvoiceValueInPaise / 100 | number: '1.2-2' }}
                 </td>
                 <td>
                   <div class="einvoice-cell">
@@ -262,7 +274,13 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
                     >
                       Generate E-Way
                     </button>
-                    <span *ngIf="doc.eInvoiceStatus === EInvoiceStatus.Generated && doc.eWayBillStatus === EWayBillStatus.Active" class="text-success-check">
+                    <span
+                      *ngIf="
+                        doc.eInvoiceStatus === EInvoiceStatus.Generated &&
+                        doc.eWayBillStatus === EWayBillStatus.Active
+                      "
+                      class="text-success-check"
+                    >
                       &#10003; Compliant
                     </span>
                   </div>
@@ -280,37 +298,45 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
             <h4>Table 4: B2B Taxable Invoices</h4>
             <div class="card-metric">
               <span class="num">{{ gstr1().b2bInvoiceCount }} Invoices</span>
-              <strong class="amt">₹{{ (gstr1().totalTaxableValueInPaise / 100) | number:'1.2-2' }}</strong>
+              <strong class="amt"
+                >₹{{ gstr1().totalTaxableValueInPaise / 100 | number: '1.2-2' }}</strong
+              >
             </div>
-            <p class="desc">Outward supplies to registered business entities with GSTIN validation.</p>
+            <p class="desc">
+              Outward supplies to registered business entities with GSTIN validation.
+            </p>
           </div>
 
           <div class="summary-card">
             <h4>Table 9B: Credit & Debit Notes</h4>
             <div class="card-metric">
               <span class="num">{{ gstr1().cdnrCount }} Notes</span>
-              <strong class="amt">₹{{ 200000 | number:'1.2-2' }}</strong>
+              <strong class="amt">₹{{ 200000 | number: '1.2-2' }}</strong>
             </div>
-            <p class="desc">Registered credit notes issued for rate differentials or material returns.</p>
+            <p class="desc">
+              Registered credit notes issued for rate differentials or material returns.
+            </p>
           </div>
 
           <div class="summary-card">
             <h4>Tax Liability Breakdown</h4>
             <div class="tax-breakdown-row">
               <span>Integrated Tax (IGST):</span>
-              <strong>₹{{ (gstr1().totalIgstInPaise / 100) | number:'1.2-2' }}</strong>
+              <strong>₹{{ gstr1().totalIgstInPaise / 100 | number: '1.2-2' }}</strong>
             </div>
             <div class="tax-breakdown-row">
               <span>Central Tax (CGST):</span>
-              <strong>₹{{ (gstr1().totalCgstInPaise / 100) | number:'1.2-2' }}</strong>
+              <strong>₹{{ gstr1().totalCgstInPaise / 100 | number: '1.2-2' }}</strong>
             </div>
             <div class="tax-breakdown-row">
               <span>State Tax (SGST):</span>
-              <strong>₹{{ (gstr1().totalSgstInPaise / 100) | number:'1.2-2' }}</strong>
+              <strong>₹{{ gstr1().totalSgstInPaise / 100 | number: '1.2-2' }}</strong>
             </div>
             <div class="tax-breakdown-total">
               <span>Total Tax Value:</span>
-              <strong class="text-tax">₹{{ (gstr1().totalTaxValueInPaise / 100) | number:'1.2-2' }}</strong>
+              <strong class="text-tax"
+                >₹{{ gstr1().totalTaxValueInPaise / 100 | number: '1.2-2' }}</strong
+              >
             </div>
           </div>
         </div>
@@ -333,19 +359,37 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
             <tbody>
               <tr>
                 <td class="fw-bold">3.1(a) Outward Taxable Supplies (Other than zero rated)</td>
-                <td class="text-right font-mono">₹{{ (gstr3b().outwardTaxableInPaise / 100) | number:'1.2-2' }}</td>
-                <td class="text-right font-mono">₹{{ (gstr1().totalIgstInPaise / 100) | number:'1.2-2' }}</td>
-                <td class="text-right font-mono">₹{{ (gstr1().totalCgstInPaise / 100) | number:'1.2-2' }}</td>
-                <td class="text-right font-mono">₹{{ (gstr1().totalSgstInPaise / 100) | number:'1.2-2' }}</td>
-                <td class="text-right font-mono fw-bold text-tax">₹{{ (gstr3b().outwardTaxPayableInPaise / 100) | number:'1.2-2' }}</td>
+                <td class="text-right font-mono">
+                  ₹{{ gstr3b().outwardTaxableInPaise / 100 | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-mono">
+                  ₹{{ gstr1().totalIgstInPaise / 100 | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-mono">
+                  ₹{{ gstr1().totalCgstInPaise / 100 | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-mono">
+                  ₹{{ gstr1().totalSgstInPaise / 100 | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-mono fw-bold text-tax">
+                  ₹{{ gstr3b().outwardTaxPayableInPaise / 100 | number: '1.2-2' }}
+                </td>
               </tr>
               <tr class="itc-row">
                 <td class="fw-bold">4. Eligible Input Tax Credit (ITC) Available from GSTR-2B</td>
                 <td class="text-right font-mono">-</td>
-                <td class="text-right font-mono">₹{{ ((gstr3b().eligibleItcInPaise * 0.5) / 100) | number:'1.2-2' }}</td>
-                <td class="text-right font-mono">₹{{ ((gstr3b().eligibleItcInPaise * 0.25) / 100) | number:'1.2-2' }}</td>
-                <td class="text-right font-mono">₹{{ ((gstr3b().eligibleItcInPaise * 0.25) / 100) | number:'1.2-2' }}</td>
-                <td class="text-right font-mono fw-bold text-success">₹{{ (gstr3b().eligibleItcInPaise / 100) | number:'1.2-2' }}</td>
+                <td class="text-right font-mono">
+                  ₹{{ (gstr3b().eligibleItcInPaise * 0.5) / 100 | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-mono">
+                  ₹{{ (gstr3b().eligibleItcInPaise * 0.25) / 100 | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-mono">
+                  ₹{{ (gstr3b().eligibleItcInPaise * 0.25) / 100 | number: '1.2-2' }}
+                </td>
+                <td class="text-right font-mono fw-bold text-success">
+                  ₹{{ gstr3b().eligibleItcInPaise / 100 | number: '1.2-2' }}
+                </td>
               </tr>
               <tr class="cash-payable-row">
                 <td class="fw-bold">5. Net Tax Payable in Cash (Electronic Cash Ledger Deposit)</td>
@@ -353,7 +397,9 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
                 <td class="text-right font-mono">-</td>
                 <td class="text-right font-mono">-</td>
                 <td class="text-right font-mono">-</td>
-                <td class="text-right font-mono fw-bold text-profit">₹{{ (gstr3b().netGstPayableInCashInPaise / 100) | number:'1.2-2' }}</td>
+                <td class="text-right font-mono fw-bold text-profit">
+                  ₹{{ gstr3b().netGstPayableInCashInPaise / 100 | number: '1.2-2' }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -369,17 +415,28 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
     >
       <div class="modal-body-container" *ngIf="targetRecord() as doc">
         <p class="mb-3">
-          Generating E-Way Bill for Invoice <strong>{{ doc.documentNumber }}</strong> (Consignee: {{ doc.counterpartyLegalName }}).
+          Generating E-Way Bill for Invoice <strong>{{ doc.documentNumber }}</strong> (Consignee:
+          {{ doc.counterpartyLegalName }}).
         </p>
 
         <div class="form-grid">
           <div class="form-group">
             <label>Vehicle Number (Part B)</label>
-            <input type="text" class="form-control" [(ngModel)]="ewbForm.vehicleNumber" placeholder="e.g. MH-12-QE-4590" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="ewbForm.vehicleNumber"
+              placeholder="e.g. MH-12-QE-4590"
+            />
           </div>
           <div class="form-group">
             <label>Transporter GSTIN</label>
-            <input type="text" class="form-control" [(ngModel)]="ewbForm.transporterGstin" placeholder="27AAACT1234A1Z0" />
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="ewbForm.transporterGstin"
+              placeholder="27AAACT1234A1Z0"
+            />
           </div>
           <div class="form-group">
             <label>Transit Distance (KM)</label>
@@ -388,7 +445,9 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
         </div>
 
         <div class="dialog-actions mt-4">
-          <button ar-button="primary" (click)="confirmGenerateEWayBill()">Generate & Sign E-Way Bill</button>
+          <button ar-button="primary" (click)="confirmGenerateEWayBill()">
+            Generate & Sign E-Way Bill
+          </button>
           <button ar-button="ghost" (click)="isEwbOpen.set(false)">Cancel</button>
         </div>
       </div>
@@ -438,8 +497,12 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
         gap: 0.25rem;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 
-        &.teal { border-left: 4px solid #0d9488; }
-        &.amber { border-left: 4px solid #f59e0b; }
+        &.teal {
+          border-left: 4px solid #0d9488;
+        }
+        &.amber {
+          border-left: 4px solid #f59e0b;
+        }
 
         .label {
           font-size: 0.78rem;
@@ -498,7 +561,8 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
       }
 
-      .data-table, .statement-table {
+      .data-table,
+      .statement-table {
         width: 100%;
         border-collapse: collapse;
         font-size: 0.85rem;
@@ -553,12 +617,14 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
         font-weight: 600;
       }
 
-      .einvoice-cell, .eway-cell {
+      .einvoice-cell,
+      .eway-cell {
         display: flex;
         flex-direction: column;
         gap: 0.2rem;
 
-        .irn-snippet, .ewb-num {
+        .irn-snippet,
+        .ewb-num {
           font-size: 0.72rem;
           color: #64748b;
         }
@@ -676,14 +742,31 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
         gap: 0.75rem;
       }
 
-      .fw-bold { font-weight: 700; }
-      .font-mono { font-family: monospace; }
-      .text-tax { color: #f59e0b; font-weight: 600; }
-      .text-success { color: #16a34a; }
-      .text-profit { color: #059669; }
-      .text-right { text-align: right; }
-      .mb-3 { margin-bottom: 0.75rem; }
-      .mt-4 { margin-top: 1rem; }
+      .fw-bold {
+        font-weight: 700;
+      }
+      .font-mono {
+        font-family: monospace;
+      }
+      .text-tax {
+        color: #f59e0b;
+        font-weight: 600;
+      }
+      .text-success {
+        color: #16a34a;
+      }
+      .text-profit {
+        color: #059669;
+      }
+      .text-right {
+        text-align: right;
+      }
+      .mb-3 {
+        margin-bottom: 0.75rem;
+      }
+      .mt-4 {
+        margin-top: 1rem;
+      }
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -706,8 +789,8 @@ export class GstComplianceComponent {
 
   readonly gstr1 = computed<Gstr1SummaryDto>(() => {
     const list = this.records();
-    const b2b = list.filter(r => r.section === Gstr1Section.B2B_4A).length;
-    const cdnr = list.filter(r => r.section === Gstr1Section.CDNR_9B).length;
+    const b2b = list.filter((r) => r.section === Gstr1Section.B2B_4A).length;
+    const cdnr = list.filter((r) => r.section === Gstr1Section.CDNR_9B).length;
     const taxable = list.reduce((acc, r) => acc + r.taxableAmountInPaise, 0);
     const igst = list.reduce((acc, r) => acc + r.igstAmountInPaise, 0);
     const cgst = list.reduce((acc, r) => acc + r.cgstAmountInPaise, 0);
@@ -756,7 +839,7 @@ export class GstComplianceComponent {
     if (environment.useMockData) return;
 
     this.gstService.getList({ returnPeriod: this.selectedPeriod, maxResultCount: 100 }).subscribe({
-      next: res => {
+      next: (res) => {
         if (res.items && res.items.length > 0) {
           this.records.set(res.items);
         }
@@ -850,7 +933,7 @@ export class GstComplianceComponent {
   generateEInvoice(doc: GstAuditRegisterDto): void {
     if (!environment.useMockData && doc.id) {
       this.gstService.generateEInvoice(doc.id).subscribe({
-        next: updated => this.updateRecordInState(updated),
+        next: (updated) => this.updateRecordInState(updated),
       });
       return;
     }
@@ -882,7 +965,7 @@ export class GstComplianceComponent {
 
     if (!environment.useMockData && doc.id) {
       this.gstService.generateEWayBill(doc.id, this.ewbForm).subscribe({
-        next: updated => {
+        next: (updated) => {
           this.updateRecordInState(updated);
           this.isEwbOpen.set(false);
         },
@@ -904,6 +987,6 @@ export class GstComplianceComponent {
   }
 
   private updateRecordInState(updated: GstAuditRegisterDto): void {
-    this.records.update(list => list.map(r => (r.id === updated.id ? updated : r)));
+    this.records.update((list) => list.map((r) => (r.id === updated.id ? updated : r)));
   }
 }

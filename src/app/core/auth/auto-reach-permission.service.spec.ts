@@ -3,6 +3,7 @@ import { ConfigStateService } from '@abp/ng.core';
 import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { afterEach, describe, expect, it } from 'vitest';
 import { AutoReachPermissionService } from './auto-reach-permission.service';
+import { grantedPolicy } from './permission';
 
 describe('host-admin permission service', () => {
   afterEach(() => TestBed.resetTestingModule());
@@ -14,10 +15,15 @@ describe('host-admin permission service', () => {
       auth: { grantedPolicies: { 'AutoReach.Contacts': true } },
     });
     TestBed.configureTestingModule({
-      providers: [{ provide: ConfigStateService, useValue: {
-        getAll: () => config.value,
-        getAll$: () => config.asObservable(),
-      } }],
+      providers: [
+        {
+          provide: ConfigStateService,
+          useValue: {
+            getAll: () => config.value,
+            getAll$: () => config.asObservable(),
+          },
+        },
+      ],
     });
     return { service: TestBed.inject(AutoReachPermissionService), config };
   }
@@ -28,17 +34,34 @@ describe('host-admin permission service', () => {
     expect(service.getGrantedPolicy(policy)).toBe(true);
     expect(await firstValueFrom(service.getGrantedPolicy$(policy))).toBe(true);
     expect(service.filterItemsByPolicy([{ requiredPolicy: policy }])).toHaveLength(1);
-    expect(await firstValueFrom(service.filterItemsByPolicy$([{ requiredPolicy: policy }]))).toHaveLength(1);
+    expect(
+      await firstValueFrom(service.filterItemsByPolicy$([{ requiredPolicy: policy }])),
+    ).toHaveLength(1);
   });
 
   it('applies actual grants to non-admin host users and tenant admins', async () => {
     const { service, config } = setup(['Agent']);
     expect(service.getGrantedPolicy('AutoReach.Contacts')).toBe(true);
     expect(service.getGrantedPolicy('AutoReach.Channels.Onboard')).toBe(false);
-    config.next({ ...config.value,
+    config.next({
+      ...config.value,
       currentUser: { isAuthenticated: true, roles: ['admin'], tenantId: 'tenant-1' },
       currentTenant: { id: 'tenant-1', isAvailable: true },
     });
-    expect(await firstValueFrom(service.getGrantedPolicy$('AutoReach.Channels.Onboard'))).toBe(false);
+    expect(await firstValueFrom(service.getGrantedPolicy$('AutoReach.Channels.Onboard'))).toBe(
+      false,
+    );
+  });
+
+  it('updates action permissions when server grants change after the screen renders', () => {
+    const { service, config } = setup(['Agent'], 'tenant-1');
+    const canOpenContacts = TestBed.runInInjectionContext(() =>
+      grantedPolicy('AutoReach.Contacts', service),
+    );
+    expect(canOpenContacts()).toBe(true);
+    config.next({ ...config.value, auth: { grantedPolicies: { 'AutoReach.Contacts': false } } });
+    expect(canOpenContacts()).toBe(false);
+    config.next({ ...config.value, auth: { grantedPolicies: { 'AutoReach.Contacts': true } } });
+    expect(canOpenContacts()).toBe(true);
   });
 });

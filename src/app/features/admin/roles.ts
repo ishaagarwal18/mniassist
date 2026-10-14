@@ -111,7 +111,9 @@ export interface RoleTreeRow {
               [disabled]="savingRole() !== null"
               (click)="saveAllDirtyPermissions()"
             >
-              {{ savingRole() !== null ? 'Saving…' : 'Save all changes (' + dirtyRolesCount() + ')' }}
+              {{
+                savingRole() !== null ? 'Saving…' : 'Save all changes (' + dirtyRolesCount() + ')'
+              }}
             </button>
           }
         </span>
@@ -167,7 +169,9 @@ export interface RoleTreeRow {
             <e-column field="key" headerText="Permission key / Details" width="280">
               <ng-template #template let-r>
                 @if (r.isRole) {
-                  <span class="row-role__type">{{ r.isStatic ? 'System role' : 'Custom workspace role' }}</span>
+                  <span class="row-role__type">{{
+                    r.isStatic ? 'System role' : 'Custom workspace role'
+                  }}</span>
                 } @else if (!r.isGroup) {
                   <span class="ar-mono perm__key">{{ r.key }}</span>
                 }
@@ -735,33 +739,138 @@ export class ArAdminRoles {
           name: 'AutoReach',
           displayName: 'AutoReach',
           permissions: [
-            { name: 'AutoReach.Channels', displayName: 'Channels', isGranted: true, parentName: undefined },
-            { name: 'AutoReach.Channels.Manage', displayName: 'Manage channels', isGranted: isAdmin || isManager, parentName: 'AutoReach.Channels' },
-            { name: 'AutoReach.Contacts', displayName: 'Contacts', isGranted: true, parentName: undefined },
-            { name: 'AutoReach.Contacts.Create', displayName: 'Create contacts', isGranted: true, parentName: 'AutoReach.Contacts' },
-            { name: 'AutoReach.Contacts.Update', displayName: 'Update contacts', isGranted: true, parentName: 'AutoReach.Contacts' },
-            { name: 'AutoReach.Contacts.Delete', displayName: 'Delete contacts', isGranted: isAdmin, parentName: 'AutoReach.Contacts' },
-            { name: 'AutoReach.Campaigns', displayName: 'Campaigns', isGranted: true, parentName: undefined },
-            { name: 'AutoReach.Campaigns.Create', displayName: 'Create campaigns', isGranted: isAdmin || isManager, parentName: 'AutoReach.Campaigns' },
-            { name: 'AutoReach.Campaigns.Send', displayName: 'Send campaigns', isGranted: isAdmin, parentName: 'AutoReach.Campaigns' },
-            { name: 'AutoReach.Inbox', displayName: 'Inbox', isGranted: true, parentName: undefined },
-            { name: 'AutoReach.Inbox.Reply', displayName: 'Reply to chats', isGranted: true, parentName: 'AutoReach.Inbox' },
+            {
+              name: 'AutoReach.Channels',
+              displayName: 'Channels',
+              isGranted: true,
+              parentName: undefined,
+            },
+            {
+              name: 'AutoReach.Channels.Manage',
+              displayName: 'Manage channels',
+              isGranted: isAdmin || isManager,
+              parentName: 'AutoReach.Channels',
+            },
+            {
+              name: 'AutoReach.Contacts',
+              displayName: 'Contacts',
+              isGranted: true,
+              parentName: undefined,
+            },
+            {
+              name: 'AutoReach.Contacts.Create',
+              displayName: 'Create contacts',
+              isGranted: true,
+              parentName: 'AutoReach.Contacts',
+            },
+            {
+              name: 'AutoReach.Contacts.Update',
+              displayName: 'Update contacts',
+              isGranted: true,
+              parentName: 'AutoReach.Contacts',
+            },
+            {
+              name: 'AutoReach.Contacts.Delete',
+              displayName: 'Delete contacts',
+              isGranted: isAdmin,
+              parentName: 'AutoReach.Contacts',
+            },
+            {
+              name: 'AutoReach.Campaigns',
+              displayName: 'Campaigns',
+              isGranted: true,
+              parentName: undefined,
+            },
+            {
+              name: 'AutoReach.Campaigns.Create',
+              displayName: 'Create campaigns',
+              isGranted: isAdmin || isManager,
+              parentName: 'AutoReach.Campaigns',
+            },
+            {
+              name: 'AutoReach.Campaigns.Send',
+              displayName: 'Send campaigns',
+              isGranted: isAdmin,
+              parentName: 'AutoReach.Campaigns',
+            },
+            {
+              name: 'AutoReach.Inbox',
+              displayName: 'Inbox',
+              isGranted: true,
+              parentName: undefined,
+            },
+            {
+              name: 'AutoReach.Inbox.Reply',
+              displayName: 'Reply to chats',
+              isGranted: true,
+              parentName: 'AutoReach.Inbox',
+            },
           ],
         },
         {
           name: 'AbpIdentity',
           displayName: 'Identity Management',
           permissions: [
-            { name: 'AbpIdentity.Roles', displayName: 'Roles', isGranted: isAdmin, parentName: undefined },
-            { name: 'AbpIdentity.Roles.Create', displayName: 'Create roles', isGranted: isAdmin, parentName: 'AbpIdentity.Roles' },
-            { name: 'AbpIdentity.Roles.Update', displayName: 'Update roles', isGranted: isAdmin, parentName: 'AbpIdentity.Roles' },
-            { name: 'AbpIdentity.Roles.Delete', displayName: 'Delete roles', isGranted: isAdmin, parentName: 'AbpIdentity.Roles' },
-            { name: 'AbpIdentity.Roles.ManagePermissions', displayName: 'Manage permissions', isGranted: isAdmin, parentName: 'AbpIdentity.Roles' },
-            { name: 'AbpIdentity.Users', displayName: 'Users', isGranted: isAdmin || isManager, parentName: undefined },
-            { name: 'AbpIdentity.Users.Create', displayName: 'Create users', isGranted: isAdmin || isManager, parentName: 'AbpIdentity.Users' },
-            { name: 'AbpIdentity.Users.Update', displayName: 'Update users', isGranted: isAdmin || isManager, parentName: 'AbpIdentity.Users' },
-            { name: 'AbpIdentity.Users.Delete', displayName: 'Delete users', isGranted: isAdmin, parentName: 'AbpIdentity.Users' },
-            { name: 'AbpIdentity.Users.ManagePermissions', displayName: 'Manage user permissions', isGranted: isAdmin, parentName: 'AbpIdentity.Users' },
+            {
+              name: 'AbpIdentity.Roles',
+              displayName: 'Roles',
+              isGranted: isAdmin,
+              parentName: undefined,
+            },
+            {
+              name: 'AbpIdentity.Roles.Create',
+              displayName: 'Create roles',
+              isGranted: isAdmin,
+              parentName: 'AbpIdentity.Roles',
+            },
+            {
+              name: 'AbpIdentity.Roles.Update',
+              displayName: 'Update roles',
+              isGranted: isAdmin,
+              parentName: 'AbpIdentity.Roles',
+            },
+            {
+              name: 'AbpIdentity.Roles.Delete',
+              displayName: 'Delete roles',
+              isGranted: isAdmin,
+              parentName: 'AbpIdentity.Roles',
+            },
+            {
+              name: 'AbpIdentity.Roles.ManagePermissions',
+              displayName: 'Manage permissions',
+              isGranted: isAdmin,
+              parentName: 'AbpIdentity.Roles',
+            },
+            {
+              name: 'AbpIdentity.Users',
+              displayName: 'Users',
+              isGranted: isAdmin || isManager,
+              parentName: undefined,
+            },
+            {
+              name: 'AbpIdentity.Users.Create',
+              displayName: 'Create users',
+              isGranted: isAdmin || isManager,
+              parentName: 'AbpIdentity.Users',
+            },
+            {
+              name: 'AbpIdentity.Users.Update',
+              displayName: 'Update users',
+              isGranted: isAdmin || isManager,
+              parentName: 'AbpIdentity.Users',
+            },
+            {
+              name: 'AbpIdentity.Users.Delete',
+              displayName: 'Delete users',
+              isGranted: isAdmin,
+              parentName: 'AbpIdentity.Users',
+            },
+            {
+              name: 'AbpIdentity.Users.ManagePermissions',
+              displayName: 'Manage user permissions',
+              isGranted: isAdmin,
+              parentName: 'AbpIdentity.Users',
+            },
           ],
         },
       ],

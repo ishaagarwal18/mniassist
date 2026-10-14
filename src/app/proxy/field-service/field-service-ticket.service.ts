@@ -18,7 +18,10 @@ export class FieldServiceTicketService {
   private readonly restService = inject(RestService);
   apiName = 'AutoReach';
 
-  getList(input: GetFieldServiceTicketsInput, config?: Partial<Rest.Config>): Observable<PagedResultDto<FieldServiceTicketDto>> {
+  getList(
+    input: GetFieldServiceTicketsInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<PagedResultDto<FieldServiceTicketDto>> {
     return this.restService.request<any, PagedResultDto<FieldServiceTicketDto>>(
       {
         method: 'GET',
@@ -49,7 +52,10 @@ export class FieldServiceTicketService {
     );
   }
 
-  create(input: CreateFieldServiceTicketDto, config?: Partial<Rest.Config>): Observable<FieldServiceTicketDto> {
+  create(
+    input: CreateFieldServiceTicketDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<FieldServiceTicketDto> {
     return this.restService.request<any, FieldServiceTicketDto>(
       {
         method: 'POST',
@@ -60,7 +66,11 @@ export class FieldServiceTicketService {
     );
   }
 
-  assign(id: string, input: AssignFieldServiceTicketDto, config?: Partial<Rest.Config>): Observable<FieldServiceTicketDto> {
+  assign(
+    id: string,
+    input: AssignFieldServiceTicketDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<FieldServiceTicketDto> {
     return this.restService.request<any, FieldServiceTicketDto>(
       {
         method: 'POST',
@@ -71,7 +81,11 @@ export class FieldServiceTicketService {
     );
   }
 
-  recordSpare(id: string, input: RecordSpareConsumedDto, config?: Partial<Rest.Config>): Observable<FieldServiceTicketDto> {
+  recordSpare(
+    id: string,
+    input: RecordSpareConsumedDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<FieldServiceTicketDto> {
     return this.restService.request<any, FieldServiceTicketDto>(
       {
         method: 'POST',
@@ -82,7 +96,11 @@ export class FieldServiceTicketService {
     );
   }
 
-  resolve(id: string, input: ResolveFieldServiceTicketDto, config?: Partial<Rest.Config>): Observable<FieldServiceTicketDto> {
+  resolve(
+    id: string,
+    input: ResolveFieldServiceTicketDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<FieldServiceTicketDto> {
     return this.restService.request<any, FieldServiceTicketDto>(
       {
         method: 'POST',

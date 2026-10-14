@@ -18,7 +18,10 @@ export class WorkOrderService {
   private readonly restService = inject(RestService);
   apiName = 'AutoReach';
 
-  getList(input: GetWorkOrdersInput, config?: Partial<Rest.Config>): Observable<PagedResultDto<WorkOrderDto>> {
+  getList(
+    input: GetWorkOrdersInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<PagedResultDto<WorkOrderDto>> {
     return this.restService.request<any, PagedResultDto<WorkOrderDto>>(
       {
         method: 'GET',
@@ -69,7 +72,11 @@ export class WorkOrderService {
     );
   }
 
-  issueMaterial(id: string, input: IssueMaterialToWorkOrderDto, config?: Partial<Rest.Config>): Observable<WorkOrderDto> {
+  issueMaterial(
+    id: string,
+    input: IssueMaterialToWorkOrderDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<WorkOrderDto> {
     return this.restService.request<any, WorkOrderDto>(
       {
         method: 'POST',
@@ -80,7 +87,11 @@ export class WorkOrderService {
     );
   }
 
-  completeStep(id: string, input: CompleteRoutingStepDto, config?: Partial<Rest.Config>): Observable<WorkOrderDto> {
+  completeStep(
+    id: string,
+    input: CompleteRoutingStepDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<WorkOrderDto> {
     return this.restService.request<any, WorkOrderDto>(
       {
         method: 'POST',
@@ -91,7 +102,11 @@ export class WorkOrderService {
     );
   }
 
-  completeWorkOrder(id: string, input: CompleteWorkOrderDto, config?: Partial<Rest.Config>): Observable<WorkOrderDto> {
+  completeWorkOrder(
+    id: string,
+    input: CompleteWorkOrderDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<WorkOrderDto> {
     return this.restService.request<any, WorkOrderDto>(
       {
         method: 'POST',
