@@ -85,6 +85,10 @@ export interface OnboardingSessionDto extends EntityDto<string> {
   lastError?: string | null;
   startedAtUtc?: string;
   completedAtUtc?: string | null;
+  /** What the browser opens Meta's Embedded Signup popup with; null when the platform hasn't set them. */
+  metaAppId?: string | null;
+  embeddedSignupConfigurationId?: string | null;
+  graphVersion?: string | null;
 }
 
 // ---- Solution Partner onboarding (Gupshup, decision D-01, spec §4.2) ----------
