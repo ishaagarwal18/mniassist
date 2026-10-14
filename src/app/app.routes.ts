@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { appAuthGuard } from './core/auth/auth.guard';
+import { navAccessGuard } from './core/auth/nav-access.guard';
 
 /** Every feature is lazily loaded — the shell and the design system are the
  *  only things in the initial bundle. */
@@ -112,7 +113,7 @@ export const routes: Routes = [
     // which a visitor to the public pages (landing, sign-in, pay links) never needs.
     loadComponent: () => import('./layout/app-shell').then((m) => m.ArAppShell),
     canActivate: [appAuthGuard],
-    canActivateChild: [appAuthGuard],
+    canActivateChild: [appAuthGuard, navAccessGuard],
     children: [
       {
         path: 'home',

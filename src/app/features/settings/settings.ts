@@ -8,6 +8,24 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ConfirmService } from '../../core/ui/confirm.service';
+import { PermissionService } from '@abp/ng.core';
+import { canOpenUrl } from '../../core/auth/nav-access.guard';
+import { PlanService } from '../../core/services/plan.service';
+import { CurrentUserService } from '../../core/services/current-user.service';
+
+/** Links to other settings screens; each shows only to those who can open it. */
+const MORE_LINKS: readonly { route: string; label: string }[] = [
+  { route: '/settings/profile', label: 'Your profile & password' },
+  { route: '/admin/users', label: 'Users' },
+  { route: '/admin/roles', label: 'Roles & permissions' },
+  { route: '/settings/members', label: 'Members & invites' },
+  { route: '/settings/integrations', label: 'Integrations & API keys' },
+  { route: '/settings/support-access', label: 'Support access' },
+  { route: '/channels', label: 'WhatsApp channels' },
+  { route: '/channels/numbers', label: 'Number management' },
+  { route: '/compliance', label: 'Compliance & retention' },
+  { route: '/billing', label: 'Billing & wallet' },
+];
 import { ArTwoFactorCard } from './two-factor-card';
 import { ArSignInHistoryCard } from './sign-in-history-card';
 import { ArLinkedAccountsCard } from './linked-accounts-card';
@@ -44,6 +62,16 @@ import { ArBrowserNotificationsCard } from './browser-notifications-card';
 })
 export class ArSettings {
   private readonly dialogs = inject(ConfirmService);
+  private readonly permissions = inject(PermissionService);
+  private readonly plans = inject(PlanService);
+  private readonly account = inject(CurrentUserService);
+
+  protected readonly moreLinks = computed(() => {
+    this.account.isHost();
+    return MORE_LINKS.filter((l) =>
+      canOpenUrl(l.route, this.permissions, this.plans, this.account),
+    );
+  });
   private readonly store = inject(SettingsStore);
   private readonly sessionStore = inject(SessionStore);
 
