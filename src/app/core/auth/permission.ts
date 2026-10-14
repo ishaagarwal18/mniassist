@@ -33,16 +33,6 @@ export function checkPolicy(
   if (!name || environment.useMockData) {
     return true;
   }
-  const config = (permissions as any).configState?.getAll?.() as any;
-  const currentUser = config?.currentUser;
-  const currentTenant = config?.currentTenant;
-  const isHost =
-    currentUser?.isAuthenticated &&
-    (!currentTenant || !currentTenant.isAvailable) &&
-    !currentUser.tenantId;
-  if (isHost) {
-    return true;
-  }
   return permissions.getGrantedPolicy(name);
 }
 
@@ -67,7 +57,13 @@ export function canAccessNavItem(
   planService: PlanService,
   account: CurrentUserService,
 ): boolean {
-  // 1. Host vs Tenant role segregation
+  // Platform administrators can open every module, including operational tools.
+  // This does not change the API's tenant data filters or support-access checks.
+  if (account.isHostAdmin()) {
+    return true;
+  }
+
+  // 1. Host vs Tenant role segregation for ordinary accounts
   const isHost = account.isHost();
   if (isHost) {
     if (item.tenantOnly) {

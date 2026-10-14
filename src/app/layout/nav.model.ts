@@ -19,7 +19,7 @@ export interface NavItem {
   /** Shown only for platform host administration. Hidden for tenant workspaces. */
   readonly hostOnly?: boolean;
 
-  /** Shown only in tenant workspace mode. Hidden for host platform administrators. */
+  /** Shown in tenant workspace mode and to the host administrator. */
   readonly tenantOnly?: boolean;
 
   /** An AI feature: drawn with the teal AI marker instead of the blue one. */

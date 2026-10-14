@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PermissionService } from '@abp/ng.core';
 
 import { SubscriptionPlan } from '../../proxy/billing/subscription-plan.enum';
-import { NavItem } from '../../layout/nav.model';
+import { NAV, NavItem } from '../../layout/nav.model';
 import { canAccessNavItem, grantedPolicy } from './permission';
 import { PlanService } from '../services/plan.service';
 import { CurrentUserService } from '../services/current-user.service';
@@ -22,9 +22,10 @@ function createMockPermissions(grants: Record<string, boolean> = {}): Permission
   } as unknown as PermissionService;
 }
 
-function createMockAccount(isHost = false): CurrentUserService {
+function createMockAccount(isHost = false, isHostAdmin = false): CurrentUserService {
   return {
     isHost: () => isHost,
+    isHostAdmin: () => isHostAdmin,
     isAuthenticated: () => true,
     tenantName: () => (isHost ? '' : 'Acme Corp'),
   } as unknown as CurrentUserService;
@@ -152,7 +153,7 @@ describe('canAccessNavItem - Plan and Permission gating', () => {
     expect(canAccessNavItem(networkItem, permissions, entPlan, account)).toBe(true);
   });
 
-  it('segregates host and tenant navigation', () => {
+  it('keeps ordinary host and tenant navigation separate', () => {
     const hostPermissions = createMockPermissions({
       'AutoReach.Administration.ViewPlatformMetrics': true,
       'AutoReach.Quotations': true,
@@ -161,11 +162,21 @@ describe('canAccessNavItem - Plan and Permission gating', () => {
     const hostAccount = createMockAccount(true);
     const tenantAccount = createMockAccount(false);
 
-    // Host sees Platform Console, but does NOT see tenant-only operational tools (Quotations)
+    // An ordinary host user still needs explicit platform permissions.
     expect(canAccessNavItem(platformConsoleItem, hostPermissions, entPlan, hostAccount)).toBe(true);
     expect(canAccessNavItem(quotationsItem, hostPermissions, entPlan, hostAccount)).toBe(false);
 
     // Tenant user NEVER sees host-only platform console
     expect(canAccessNavItem(platformConsoleItem, hostPermissions, entPlan, tenantAccount)).toBe(false);
+  });
+
+  it('shows every navigation item to host-admin despite missing grants and a Starter plan', () => {
+    const permissions = createMockPermissions();
+    const plan = createMockPlanService(SubscriptionPlan.Starter);
+    const account = createMockAccount(true, true);
+
+    for (const item of NAV.flatMap((group) => group.items)) {
+      expect(canAccessNavItem(item, permissions, plan, account), item.route).toBe(true);
+    }
   });
 });

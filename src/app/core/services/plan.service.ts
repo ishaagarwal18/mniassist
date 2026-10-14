@@ -81,11 +81,11 @@ export class PlanService {
     // Refresh plan usage whenever the user or tenant changes
     effect(() => {
       const isAuth = this.account.isAuthenticated();
-      const isHost = this.account.isHost();
+      const isHostAdmin = this.account.isHostAdmin();
       const tenant = this.account.tenantName();
 
       if (isAuth) {
-        if (isHost) {
+        if (isHostAdmin) {
           this.setHostPlan();
         } else {
           void this.refresh();
@@ -106,7 +106,7 @@ export class PlanService {
       return;
     }
 
-    if (this.account.isHost()) {
+    if (this.account.isHostAdmin()) {
       this.setHostPlan();
       return;
     }
@@ -152,7 +152,7 @@ export class PlanService {
    */
   hasPlan(minPlan: SubscriptionPlan | undefined | null): boolean {
     if (minPlan == null) return true;
-    if (this.account.isHost()) return true;
+    if (this.account.isHostAdmin()) return true;
     return this.plan() >= minPlan;
   }
 
@@ -161,7 +161,7 @@ export class PlanService {
    */
   hasFeature(featureName: string | undefined | null): boolean {
     if (!featureName) return true;
-    if (this.account.isHost()) return true;
+    if (this.account.isHostAdmin()) return true;
     return this.features().has(featureName.trim().toLowerCase());
   }
 }

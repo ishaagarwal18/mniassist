@@ -25,6 +25,7 @@ import {
 } from '../auth/two-factor';
 import { passwordChangeParameters, signInChallenge } from '../auth/sign-in-challenge';
 import { EXTERNAL_LOGIN_GRANT } from '../auth/external-login';
+import { isHostAdministrator, isHostContext } from '../auth/host-access';
 
 const MOCK = environment.useMockData;
 /** Mock mode has no auth server, so "signed in" is this local flag. Absent = signed out. */
@@ -147,7 +148,16 @@ export class CurrentUserService {
   });
 
   /** Signed in on the host side (platform administration), not in a workspace. */
-  readonly isHost = computed(() => !MOCK && this.isAuthenticated() && !this.tenantName());
+  readonly isHost = computed(() => !MOCK && isHostContext({
+    currentUser: this.configUser(),
+    currentTenant: this.configTenant(),
+  }));
+
+  /** Full platform access belongs only to the host's built-in admin role. */
+  readonly isHostAdmin = computed(() => !MOCK && isHostAdministrator({
+    currentUser: this.configUser(),
+    currentTenant: this.configTenant(),
+  }));
 
   readonly isAuthenticated = computed(() =>
     MOCK ? this.mockSignedIn() : this.user().isAuthenticated,
