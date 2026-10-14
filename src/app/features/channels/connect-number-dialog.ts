@@ -333,13 +333,16 @@ export class ArConnectNumberDialog {
     this.metaBusy.set(true);
     this.metaBusyLabel.set('Waiting for Meta…');
     try {
-      const code = await openEmbeddedSignup(session.signup.configId);
+      const { code, status, elapsedMs } = await openEmbeddedSignup(session.signup.configId);
       if (!code) {
         this.patchMetaError(
           this.signupError ??
             (this.signupCancelled
-              ? 'The Meta window was closed before signup finished. Continue when you are ready.'
-              : 'Meta did not complete the sign-in. Try again.'),
+              ? `The Meta window was closed before signup finished (at ${this.signupCancelled}). Continue when you are ready.`
+              : elapsedMs < 1500
+                ? 'The Meta window did not open. Allow pop-ups for this site in the browser, then try again.'
+                : `Meta's window closed without finishing the sign-in (Meta status: ${status ?? 'none'}). ` +
+                  'If Meta showed an error in that window, note it and tell your administrator.'),
         );
         return;
       }

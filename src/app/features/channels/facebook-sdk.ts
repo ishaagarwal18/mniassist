@@ -116,20 +116,32 @@ export function parseEmbeddedSignupMessage(event: MessageEvent): EmbeddedSignupE
 
 /**
  * Opens the Embedded Signup popup. Call it straight from a click handler (the SDK must already
- * be loaded) or the browser blocks the window. Resolves with the OAuth code, or null when the
- * popup was closed without one.
+ * be loaded) or the browser blocks the window. Resolves with the OAuth code (null when the popup
+ * closed without one), Meta's login status, and how long the window was open: an answer within a
+ * second or so means the window never really opened.
  */
-export function openEmbeddedSignup(configId: string): Promise<string | null> {
+export function openEmbeddedSignup(
+  configId: string,
+): Promise<{ code: string | null; status: string | null; elapsedMs: number }> {
+  const started = Date.now();
   return new Promise((resolve) => {
     if (!window.FB) {
-      resolve(null);
+      resolve({ code: null, status: 'sdk_missing', elapsedMs: 0 });
       return;
     }
-    window.FB.login((response) => resolve(response.authResponse?.code ?? null), {
-      config_id: configId,
-      response_type: 'code',
-      override_default_response_type: true,
-      extras: { setup: {}, featureType: '', sessionInfoVersion: '3' },
-    });
+    window.FB.login(
+      (response) =>
+        resolve({
+          code: response?.authResponse?.code ?? null,
+          status: response?.status ?? null,
+          elapsedMs: Date.now() - started,
+        }),
+      {
+        config_id: configId,
+        response_type: 'code',
+        override_default_response_type: true,
+        extras: { setup: {}, featureType: '', sessionInfoVersion: '3' },
+      },
+    );
   });
 }
