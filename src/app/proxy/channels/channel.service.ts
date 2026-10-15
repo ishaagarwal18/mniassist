@@ -1,5 +1,6 @@
 import type {
   ChannelDto,
+  ConnectExistingWhatsAppInput,
   ChannelHealthDto,
   ChannelQualitySnapshotDto,
   CompleteEmbeddedSignupInput,
@@ -24,6 +25,12 @@ import { Injectable, inject } from '@angular/core';
 export class ChannelService {
   private restService = inject(RestService);
   apiName = 'AutoReach';
+
+  connectExisting = (input: ConnectExistingWhatsAppInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ChannelDto>(
+      { method: 'POST', url: '/api/auto-reach/channel/connect-existing', body: input },
+      { apiName: this.apiName, ...config },
+    );
 
   completeEmbeddedSignup = (
     sessionId: string,

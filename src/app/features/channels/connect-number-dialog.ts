@@ -50,7 +50,11 @@ const GUPSHUP_STEP_LABEL: Record<GupshupOnboardingStep, string> = {
   [GupshupOnboardingStep.ChannelSeeded]: 'Activate the channel',
 };
 
-const PROVIDER_LABELS: readonly string[] = ['WhatsApp with Facebook', 'Gupshup'];
+const PROVIDER_LABELS: readonly string[] = [
+  'WhatsApp with Facebook',
+  'Existing Cloud API account',
+  'Gupshup',
+];
 
 /**
  * The "connect a number" entry point. Two routes onto the same WhatsAppChannel record
@@ -116,6 +120,58 @@ const PROVIDER_LABELS: readonly string[] = ['WhatsApp with Facebook', 'Gupshup']
         }
         @if (preparationError(); as error) {
           <p class="cn__err" role="alert">{{ error }}</p>
+        }
+      } @else if (provider() === providerTabs[1]) {
+        <p class="cn__p">
+          Connect a number that is already registered with Meta Cloud API. Your number and security
+          PIN stay unchanged.
+        </p>
+        <label class="cn__field">
+          <span>WhatsApp Business Account ID</span>
+          <input
+            class="ar-field__input"
+            name="existingWabaId"
+            inputmode="numeric"
+            maxlength="64"
+            [value]="existingWabaId()"
+            (input)="existingWabaId.set($any($event.target).value)"
+          />
+        </label>
+        <label class="cn__field">
+          <span>Phone number ID</span>
+          <input
+            class="ar-field__input"
+            name="existingPhoneId"
+            inputmode="numeric"
+            maxlength="64"
+            [value]="existingPhoneId()"
+            (input)="existingPhoneId.set($any($event.target).value)"
+          />
+          <small>Use the ID shown in WhatsApp Manager, not the phone number itself.</small>
+        </label>
+        <label class="cn__field">
+          <span>Meta system-user access token</span>
+          <input
+            class="ar-field__input"
+            name="existingAccessToken"
+            type="password"
+            autocomplete="off"
+            maxlength="4096"
+            spellcheck="false"
+            [value]="existingToken()"
+            (input)="existingToken.set($any($event.target).value)"
+          />
+          <small
+            >Use a token for this Meta app with WhatsApp management and messaging permissions and
+            access to this account. It is stored securely and never displayed after
+            connection.</small
+          >
+        </label>
+        @if (existingError()) {
+          <p class="cn__err" role="alert">{{ existingError() }}</p>
+        }
+        @if (existingBusy()) {
+          <p class="cn__status" role="status">Validating your account with Meta…</p>
         }
       } @else {
         <p class="cn__p">
@@ -190,6 +246,16 @@ const PROVIDER_LABELS: readonly string[] = ['WhatsApp with Facebook', 'Gupshup']
               {{ metaBusy() ? 'Preparing Facebook…' : 'Try again' }}
             </button>
           }
+        } @else if (provider() === providerTabs[1]) {
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="existingBusy() || !existingValid()"
+            (click)="connectExisting()"
+          >
+            {{ existingBusy() ? 'Connecting…' : 'Connect existing number' }}
+          </button>
         } @else if (gupshupSession() && !gupshupSession()!.completed) {
           <button
             ar-button
@@ -296,6 +362,7 @@ export class ArConnectNumberDialog implements OnInit {
       this.destroyed = true;
       this.pendingSignup.set(null);
       this.pin.set('');
+      this.existingToken.set('');
     });
   }
 
@@ -307,6 +374,45 @@ export class ArConnectNumberDialog implements OnInit {
 
   protected readonly providerTabs = PROVIDER_LABELS;
   protected readonly provider = signal<string>(PROVIDER_LABELS[0]);
+
+  protected readonly existingWabaId = signal('');
+  protected readonly existingPhoneId = signal('');
+  protected readonly existingToken = signal('');
+  protected readonly existingBusy = signal(false);
+  protected readonly existingError = signal('');
+  protected readonly existingValid = computed(
+    () =>
+      /^[0-9]{1,64}$/.test(this.existingWabaId().trim()) &&
+      /^[0-9]{1,64}$/.test(this.existingPhoneId().trim()) &&
+      !!this.existingToken().trim(),
+  );
+
+  protected async connectExisting(): Promise<void> {
+    if (!this.existingValid() || this.existingBusy()) return;
+    this.existingBusy.set(true);
+    this.existingError.set('');
+    const input = {
+      wabaId: this.existingWabaId().trim(),
+      phoneNumberId: this.existingPhoneId().trim(),
+      accessToken: this.existingToken().trim(),
+    };
+    this.existingToken.set('');
+    try {
+      const channel = await firstValueFrom(this.api.connectExisting(input));
+      if (this.destroyed) return;
+      this.channels.reload();
+      this.toasts.success(`${channel.displayPhoneNumber} connected.`, 'Existing WhatsApp account');
+      this.close.emit();
+    } catch {
+      if (!this.destroyed)
+        this.existingError.set(
+          'The account could not be connected. Check that the IDs belong together, the number is registered with Cloud API, and the token has access and both WhatsApp permissions. Enter the token again to retry.',
+        );
+    } finally {
+      input.accessToken = '';
+      this.existingBusy.set(false);
+    }
+  }
 
   // ---- Meta embedded signup ------------------------------------------------
 

@@ -132,3 +132,8 @@ export interface UpdateChannelInput {
   reservedFraction?: number;
   throughputMps?: number;
 }
+export interface ConnectExistingWhatsAppInput {
+  wabaId: string;
+  phoneNumberId: string;
+  accessToken: string;
+}
