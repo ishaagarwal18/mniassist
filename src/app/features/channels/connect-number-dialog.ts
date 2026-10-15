@@ -23,7 +23,11 @@ import { ArDialog } from '../../ui/dialog';
 import { ArTabs } from '../../ui/tabs';
 import { ToastService } from '../../core/ui/toast.service';
 import { ChannelService as ChannelStore } from '../../core/services/channel.service';
-import { type EmbeddedSignupFinish, parseEmbeddedSignupMessage } from './facebook-sdk';
+import {
+  type EmbeddedSignupFinish,
+  FacebookSdkError,
+  parseEmbeddedSignupMessage,
+} from './facebook-sdk';
 import { FacebookSignupService } from './facebook-signup.service';
 
 const STEP_LABEL: Record<OnboardingStep, string> = {
@@ -353,7 +357,19 @@ export class ArConnectNumberDialog implements OnInit {
     this.metaBusy.set(true);
     this.metaBusyLabel.set('Preparing Facebook sign-in…');
     try {
-      const dto = await firstValueFrom(this.api.getOrStartOnboarding());
+      let dto;
+      try {
+        dto = await firstValueFrom(this.api.getOrStartOnboarding());
+      } catch (e) {
+        // The server refused or could not be reached: say so, not "Facebook could not load".
+        const message = (e as { error?: { error?: { message?: string } } })?.error?.error?.message;
+        this.preparationError.set(
+          message
+            ? `WhatsApp setup could not start: ${message}`
+            : 'WhatsApp setup could not start. Check your connection, then choose Try again.',
+        );
+        return;
+      }
       this.applyMetaSession(dto);
       const signup = this.metaSession()?.signup;
       // Loaded now so the click on "Continue with Facebook" can open the popup straight away.
@@ -362,8 +378,14 @@ export class ArConnectNumberDialog implements OnInit {
         if (!this.destroyed) this.facebookReady.set(true);
       }
     } catch (e) {
+      // Facebook's script itself did not load. Almost always the browser blocking
+      // connect.facebook.net (tracker or ad blocking), rarely the network.
       this.preparationError.set(
-        'Facebook sign-in could not load. Check your connection, then choose Try again.',
+        e instanceof FacebookSdkError
+          ? 'Facebook sign-in could not load. Your browser or network blocked Facebook ' +
+              '(connect.facebook.net): turn off tracking prevention, ad blocking or privacy ' +
+              'shields for this site, or use another browser, then choose Try again.'
+          : 'Facebook sign-in could not load. Check your connection, then choose Try again.',
       );
     } finally {
       this.metaBusy.set(false);
