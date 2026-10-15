@@ -22,18 +22,21 @@ interface FacebookSdk {
     callback: (response: FacebookLoginResponse) => void,
     options: Record<string, unknown>,
   ): void;
+  getLoginStatus(callback: (response: FacebookLoginResponse) => void): void;
 }
 
 declare global {
   interface Window {
     FB?: FacebookSdk;
+    fbAsyncInit?: () => void;
   }
 }
 
 let scriptLoading: Promise<void> | null = null;
 let initialisedFor: string | null = null;
+let loginStatusLoading: Promise<void> | null = null;
 
-/** Loads the SDK once and initialises it for the app; safe to call again. */
+/** Prepares the SDK and its login status before enabling the user's sign-in button. */
 export function loadFacebookSdk(appId: string, graphVersion: string): Promise<void> {
   scriptLoading ??= new Promise<void>((resolve, reject) => {
     if (window.FB) {
@@ -41,25 +44,65 @@ export function loadFacebookSdk(appId: string, graphVersion: string): Promise<vo
       return;
     }
     const s = document.createElement('script');
+    const previousInit = window.fbAsyncInit;
+    let settled = false;
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      s.onerror = null;
+      window.fbAsyncInit = previousInit;
+      if (error) {
+        s.remove();
+        reject(error);
+      } else resolve();
+    };
+    const timer = setTimeout(
+      () => finish(new Error('Facebook sign-in took too long to load. Please try again.')),
+      15000,
+    );
+    window.fbAsyncInit = () => {
+      try {
+        previousInit?.();
+      } finally {
+        finish();
+      }
+    };
     s.src = FACEBOOK_SDK;
     s.async = true;
     s.defer = true;
     s.crossOrigin = 'anonymous';
-    s.onload = () => resolve();
-    s.onerror = () => {
-      scriptLoading = null;
-      reject(new Error('The Facebook SDK failed to load'));
-    };
+    s.onerror = () => finish(new Error('Facebook sign-in could not load. Please try again.'));
     document.head.appendChild(s);
   });
-  return scriptLoading.then(() => {
-    if (!window.FB) throw new Error('The Facebook SDK failed to load');
-    const key = `${appId}|${graphVersion}`;
-    if (initialisedFor !== key) {
-      window.FB.init({ appId, autoLogAppEvents: true, xfbml: false, version: graphVersion });
-      initialisedFor = key;
-    }
-  });
+  return scriptLoading
+    .then(async () => {
+      if (!window.FB) throw new Error('The Facebook SDK failed to load');
+      const key = `${appId}|${graphVersion}`;
+      if (initialisedFor !== key) {
+        window.FB.init({ appId, autoLogAppEvents: true, xfbml: false, version: graphVersion });
+        initialisedFor = key;
+        loginStatusLoading = null;
+      }
+      // The SDK can otherwise fetch login status during FB.login and lose the original
+      // browser click before opening its window. Do this while the dialog is preparing.
+      loginStatusLoading ??= new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(
+          () => reject(new Error('Facebook sign-in took too long to prepare. Please try again.')),
+          10000,
+        );
+        window.FB!.getLoginStatus(() => {
+          clearTimeout(timer);
+          resolve();
+        });
+      });
+      await loginStatusLoading;
+    })
+    .catch((error: unknown) => {
+      scriptLoading = null;
+      loginStatusLoading = null;
+      throw error;
+    });
 }
 
 /** What the popup reports once the business has picked (or created) its WABA and number. */
@@ -117,16 +160,15 @@ export function parseEmbeddedSignupMessage(event: MessageEvent): EmbeddedSignupE
 /**
  * Opens the Embedded Signup popup. Call it straight from a click handler (the SDK must already
  * be loaded) or the browser blocks the window. Resolves with the OAuth code (null when the popup
- * closed without one), Meta's login status, and how long the window was open: an answer within a
- * second or so means the window never really opened.
+ * closed without one) and Meta's login status. A quick response alone does not prove that
+ * the browser blocked a popup: cancellation and Meta configuration failures can also be immediate.
  */
 export function openEmbeddedSignup(
   configId: string,
-): Promise<{ code: string | null; status: string | null; elapsedMs: number }> {
-  const started = Date.now();
+): Promise<{ code: string | null; status: string | null }> {
   return new Promise((resolve) => {
     if (!window.FB) {
-      resolve({ code: null, status: 'sdk_missing', elapsedMs: 0 });
+      resolve({ code: null, status: 'sdk_missing' });
       return;
     }
     window.FB.login(
@@ -134,7 +176,6 @@ export function openEmbeddedSignup(
         resolve({
           code: response?.authResponse?.code ?? null,
           status: response?.status ?? null,
-          elapsedMs: Date.now() - started,
         }),
       {
         config_id: configId,
