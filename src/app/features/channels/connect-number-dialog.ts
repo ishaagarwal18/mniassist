@@ -147,20 +147,11 @@ const PROVIDER_LABELS: readonly string[] = ['WhatsApp with Facebook', 'Gupshup']
               <button
                 ar-button
                 type="button"
-                variant="ghost"
-                [disabled]="metaBusy()"
-                (click)="changeNumber()"
-              >
-                Choose a different number
-              </button>
-              <button
-                ar-button
-                type="button"
                 variant="primary"
                 [disabled]="metaBusy() || !pinValid()"
                 (click)="connectMetaNumber()"
               >
-                {{ metaBusy() ? metaBusyLabel() : 'Connect number' }}
+                {{ metaBusy() ? 'Connecting…' : 'Connect number' }}
               </button>
             } @else if (!s.completed && s.signup && facebookReady()) {
               <button
@@ -172,7 +163,7 @@ const PROVIDER_LABELS: readonly string[] = ['WhatsApp with Facebook', 'Gupshup']
               >
                 {{
                   metaBusy()
-                    ? metaBusyLabel()
+                    ? 'Waiting for Facebook…'
                     : facebookRetry()
                       ? 'Try Facebook again'
                       : 'Continue with Facebook'
@@ -436,13 +427,6 @@ export class ArConnectNumberDialog implements OnInit {
       this.acceptingSignupEvents = false;
       this.metaBusy.set(false);
     }
-  }
-
-  protected changeNumber(): void {
-    this.pendingSignup.set(null);
-    this.pin.set('');
-    this.patchMetaError('');
-    this.facebookRetry.set(false);
   }
 
   protected async connectMetaNumber(): Promise<void> {
