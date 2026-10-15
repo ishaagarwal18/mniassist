@@ -56,6 +56,7 @@ const session = {
 
 describe('guided WhatsApp connection', () => {
   const api = {
+    connectExisting: vi.fn(() => of({ displayPhoneNumber: '+91 79845 77527' })),
     getOrStartOnboarding: vi.fn(() => of(session)),
     completeEmbeddedSignup: vi.fn(() => of({ ...session, completedAtUtc: '2026-10-15' })),
     getOrStartSolutionPartnerOnboarding: vi.fn(() => of({ id: 'gupshup-session' })),
@@ -114,6 +115,34 @@ describe('guided WhatsApp connection', () => {
       return Promise.resolve({ code: 'one-time-code', status: 'connected' });
     });
   }
+
+  it('connects an existing account without Facebook or a PIN and clears the token', async () => {
+    const { fixture, button } = create();
+    button('Existing Cloud API account')!.click();
+    fixture.detectChanges();
+    const set = (name: string, value: string) => {
+      const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+        `input[name="${name}"]`,
+      )!;
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+    };
+    set('existingWabaId', '1796302948057925');
+    set('existingPhoneId', '1301246016412080');
+    set('existingAccessToken', 'private-token');
+    fixture.detectChanges();
+    expect(button('Connect existing number')!.disabled).toBe(false);
+    button('Connect existing number')!.click();
+    await vi.waitFor(() => expect(channels.reload).toHaveBeenCalled());
+    fixture.detectChanges();
+    expect(facebook.launch).not.toHaveBeenCalled();
+    expect(api.completeEmbeddedSignup).not.toHaveBeenCalled();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+        'input[name="existingAccessToken"]',
+      )!.value,
+    ).toBe('');
+  });
 
   it('automatically prepares Facebook and only offers sign-in when it is ready', async () => {
     let ready!: () => void;
