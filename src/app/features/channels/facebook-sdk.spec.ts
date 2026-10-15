@@ -141,6 +141,28 @@ describe('Facebook sign-in readiness', () => {
     ).toBeNull();
   });
 
+  it('goes ahead without login status when Facebook never answers it', async () => {
+    vi.useFakeTimers();
+    const fb = sdk();
+    fb.getLoginStatus = vi.fn(); // never calls back, as when third-party cookies are blocked
+    window.FB = fb;
+    const { loadFacebookSdk } = await import('./facebook-sdk');
+    const loading = loadFacebookSdk('app', 'v25.0');
+    await vi.advanceTimersByTimeAsync(10000);
+    await expect(loading).resolves.toBeUndefined();
+  });
+
+  it('marks a refused script as blocked', async () => {
+    const { loadFacebookSdk, FacebookSdkError } = await import('./facebook-sdk');
+    const failed = loadFacebookSdk('app', 'v25.0');
+    document
+      .querySelector('script[src="https://connect.facebook.net/en_US/sdk.js"]')!
+      .dispatchEvent(new Event('error'));
+    const error = await failed.catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(FacebookSdkError);
+    expect((error as InstanceType<typeof FacebookSdkError>).reason).toBe('blocked');
+  });
+
   it('launches Facebook synchronously with the Embedded Signup configuration', async () => {
     window.FB = sdk();
     vi.mocked(window.FB.login).mockImplementation((callback) =>

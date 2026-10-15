@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ChannelService as ChannelApi } from '../../proxy/channels';
@@ -11,6 +11,7 @@ import { ArDialog } from '../../ui/dialog';
 import { ArTabs } from '../../ui/tabs';
 import { ArConnectNumberDialog } from './connect-number-dialog';
 import { FacebookSignupService } from './facebook-signup.service';
+import { FacebookSdkError } from './facebook-sdk';
 
 // Dialogs and tabs are replaced through TestBed below. Keep their third-party
 // widgets out of Node, where Syncfusion's mixed CJS/ESM exports cannot be loaded.
@@ -193,6 +194,31 @@ describe('guided WhatsApp connection', () => {
     await waitForFacebook();
     expect(button('Continue with Facebook')?.disabled).toBe(false);
     expect(api.getOrStartOnboarding).toHaveBeenCalledTimes(2);
+  });
+
+  it('names a blocked Facebook script instead of blaming the connection', async () => {
+    facebook.prepare.mockRejectedValueOnce(new FacebookSdkError('blocked', 'blocked'));
+    const { fixture } = create();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('blocked Facebook');
+    });
+    expect(fixture.nativeElement.textContent).toContain('connect.facebook.net');
+  });
+
+  it('reports a server refusal as the setup failing, not Facebook', async () => {
+    api.getOrStartOnboarding.mockReturnValueOnce(
+      throwError(() => ({ error: { error: { message: 'Your role cannot manage channels.' } } })),
+    );
+    const { fixture } = create();
+    await vi.waitFor(() => {
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain(
+        'WhatsApp setup could not start: Your role cannot manage channels.',
+      );
+    });
+    expect(fixture.nativeElement.textContent).not.toContain('Facebook sign-in could not load');
+    expect(facebook.prepare).not.toHaveBeenCalled();
   });
 
   it('discards the authorization result if the dialog is closed while Facebook is open', async () => {

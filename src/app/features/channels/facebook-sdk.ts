@@ -32,6 +32,21 @@ declare global {
   }
 }
 
+/**
+ * The SDK script never became usable. `blocked`: the browser refused the script (an ad or
+ * tracker blocker, strict tracking prevention, a network filter). `timeout`: it neither loaded
+ * nor failed within the limit, which blockers that stall requests also cause.
+ */
+export class FacebookSdkError extends Error {
+  constructor(
+    readonly reason: 'blocked' | 'timeout',
+    message: string,
+  ) {
+    super(message);
+    this.name = 'FacebookSdkError';
+  }
+}
+
 let scriptLoading: Promise<void> | null = null;
 let initialisedFor: string | null = null;
 let loginStatusLoading: Promise<void> | null = null;
@@ -58,7 +73,13 @@ export function loadFacebookSdk(appId: string, graphVersion: string): Promise<vo
       } else resolve();
     };
     const timer = setTimeout(
-      () => finish(new Error('Facebook sign-in took too long to load. Please try again.')),
+      () =>
+        finish(
+          new FacebookSdkError(
+            'timeout',
+            'Facebook sign-in took too long to load. Please try again.',
+          ),
+        ),
       15000,
     );
     window.fbAsyncInit = () => {
@@ -72,12 +93,13 @@ export function loadFacebookSdk(appId: string, graphVersion: string): Promise<vo
     s.async = true;
     s.defer = true;
     s.crossOrigin = 'anonymous';
-    s.onerror = () => finish(new Error('Facebook sign-in could not load. Please try again.'));
+    s.onerror = () =>
+      finish(new FacebookSdkError('blocked', 'Facebook sign-in could not load. Please try again.'));
     document.head.appendChild(s);
   });
   return scriptLoading
     .then(async () => {
-      if (!window.FB) throw new Error('The Facebook SDK failed to load');
+      if (!window.FB) throw new FacebookSdkError('blocked', 'The Facebook SDK failed to load');
       const key = `${appId}|${graphVersion}`;
       if (initialisedFor !== key) {
         window.FB.init({ appId, autoLogAppEvents: true, xfbml: false, version: graphVersion });
@@ -85,12 +107,11 @@ export function loadFacebookSdk(appId: string, graphVersion: string): Promise<vo
         loginStatusLoading = null;
       }
       // The SDK can otherwise fetch login status during FB.login and lose the original
-      // browser click before opening its window. Do this while the dialog is preparing.
-      loginStatusLoading ??= new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(
-          () => reject(new Error('Facebook sign-in took too long to prepare. Please try again.')),
-          10000,
-        );
+      // browser click before opening its window. Do this while the dialog is preparing. It is
+      // only a head start: browsers that block third-party cookies may never answer it, so
+      // after a wait sign-in goes ahead without it rather than failing.
+      loginStatusLoading ??= new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, 10000);
         window.FB!.getLoginStatus(() => {
           clearTimeout(timer);
           resolve();
