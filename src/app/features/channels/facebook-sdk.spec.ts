@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { parseEmbeddedSignupMessage } from './facebook-sdk';
 
@@ -52,5 +52,118 @@ describe('parseEmbeddedSignupMessage', () => {
     expect(
       parseEmbeddedSignupMessage(msg('https://www.facebook.com', { type: 'OTHER' })),
     ).toBeNull();
+  });
+});
+
+describe('Facebook sign-in readiness', () => {
+  beforeEach(() => vi.resetModules());
+  afterEach(() => {
+    delete window.FB;
+    delete window.fbAsyncInit;
+    document
+      .querySelectorAll('script[src="https://connect.facebook.net/en_US/sdk.js"]')
+      .forEach((s) => s.remove());
+    vi.useRealTimers();
+  });
+
+  function sdk() {
+    const fb: NonNullable<Window['FB']> = {
+      init: vi.fn(),
+      getLoginStatus: vi.fn((callback) => callback({ status: 'unknown' })),
+      login: vi.fn(),
+    };
+    return fb;
+  }
+
+  it('prepares login status before reporting readiness and reuses the prepared SDK', async () => {
+    const fb = sdk();
+    let statusReady!: () => void;
+    fb.getLoginStatus = vi.fn((callback) => (statusReady = () => callback({ status: 'unknown' })));
+    window.FB = fb;
+    const { loadFacebookSdk } = await import('./facebook-sdk');
+    let ready = false;
+    const loading = loadFacebookSdk('app', 'v25.0').then(() => (ready = true));
+    await Promise.resolve();
+    expect(ready).toBe(false);
+    expect(fb.getLoginStatus).toHaveBeenCalledOnce();
+    statusReady();
+    await loading;
+    await loadFacebookSdk('app', 'v25.0');
+    expect(fb.init).toHaveBeenCalledOnce();
+    expect(fb.getLoginStatus).toHaveBeenCalledOnce();
+  });
+
+  it('waits for the SDK ready callback rather than assuming a downloaded script is ready', async () => {
+    const { loadFacebookSdk } = await import('./facebook-sdk');
+    const loading = loadFacebookSdk('app', 'v25.0');
+    const script = document.querySelector(
+      'script[src="https://connect.facebook.net/en_US/sdk.js"]',
+    )!;
+    expect(script).not.toBeNull();
+    window.FB = sdk();
+    window.fbAsyncInit!();
+    await loading;
+    expect(window.FB.init).toHaveBeenCalledWith({
+      appId: 'app',
+      autoLogAppEvents: true,
+      xfbml: false,
+      version: 'v25.0',
+    });
+  });
+
+  it('allows a fresh script load after a network failure', async () => {
+    const { loadFacebookSdk } = await import('./facebook-sdk');
+    const failed = loadFacebookSdk('app', 'v25.0');
+    const firstScript = document.querySelector(
+      'script[src="https://connect.facebook.net/en_US/sdk.js"]',
+    )!;
+    firstScript.dispatchEvent(new Event('error'));
+    await expect(failed).rejects.toThrow('could not load');
+    const retry = loadFacebookSdk('app', 'v25.0');
+    const retryScript = document.querySelector(
+      'script[src="https://connect.facebook.net/en_US/sdk.js"]',
+    );
+    expect(retryScript).not.toBeNull();
+    expect(retryScript).not.toBe(firstScript);
+    window.FB = sdk();
+    window.fbAsyncInit!();
+    await retry;
+  });
+
+  it('bounds SDK loading so a failed network does not leave the dialog stuck', async () => {
+    vi.useFakeTimers();
+    const { loadFacebookSdk } = await import('./facebook-sdk');
+    const failed = expect(loadFacebookSdk('app', 'v25.0')).rejects.toThrow('too long');
+    await vi.advanceTimersByTimeAsync(15000);
+    await failed;
+    expect(
+      document.querySelector('script[src="https://connect.facebook.net/en_US/sdk.js"]'),
+    ).toBeNull();
+  });
+
+  it('launches Facebook synchronously with the Embedded Signup configuration', async () => {
+    window.FB = sdk();
+    vi.mocked(window.FB.login).mockImplementation((callback) =>
+      callback({ authResponse: { code: 'one-time-code' }, status: 'connected' }),
+    );
+    const { openEmbeddedSignup } = await import('./facebook-sdk');
+    const login = openEmbeddedSignup('configuration');
+    expect(window.FB.login).toHaveBeenCalledWith(expect.any(Function), {
+      config_id: 'configuration',
+      response_type: 'code',
+      override_default_response_type: true,
+      extras: { setup: {}, featureType: '', sessionInfoVersion: '3' },
+    });
+    await expect(login).resolves.toEqual({ code: 'one-time-code', status: 'connected' });
+  });
+
+  it('does not interpret an immediate unknown response as proof of a blocked popup', async () => {
+    window.FB = sdk();
+    vi.mocked(window.FB.login).mockImplementation((callback) => callback({ status: 'unknown' }));
+    const { openEmbeddedSignup } = await import('./facebook-sdk');
+    await expect(openEmbeddedSignup('configuration')).resolves.toEqual({
+      code: null,
+      status: 'unknown',
+    });
   });
 });

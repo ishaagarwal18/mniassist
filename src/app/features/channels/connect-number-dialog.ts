@@ -2,12 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  OnInit,
   computed,
   inject,
   output,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -18,15 +18,13 @@ import type {
   OnboardingSessionDto,
   SolutionPartnerOnboardingSessionDto,
 } from '../../proxy/channels/models';
-import { ArButton, ArDialog, ArTabs } from '../../ui';
+import { ArButton } from '../../ui/button';
+import { ArDialog } from '../../ui/dialog';
+import { ArTabs } from '../../ui/tabs';
 import { ToastService } from '../../core/ui/toast.service';
 import { ChannelService as ChannelStore } from '../../core/services/channel.service';
-import {
-  type EmbeddedSignupFinish,
-  loadFacebookSdk,
-  openEmbeddedSignup,
-  parseEmbeddedSignupMessage,
-} from './facebook-sdk';
+import { type EmbeddedSignupFinish, parseEmbeddedSignupMessage } from './facebook-sdk';
+import { FacebookSignupService } from './facebook-signup.service';
 
 const STEP_LABEL: Record<OnboardingStep, string> = {
   [OnboardingStep.FacebookLogin]: 'Sign in with Facebook',
@@ -48,7 +46,7 @@ const GUPSHUP_STEP_LABEL: Record<GupshupOnboardingStep, string> = {
   [GupshupOnboardingStep.ChannelSeeded]: 'Activate the channel',
 };
 
-const PROVIDER_LABELS: readonly string[] = ['Meta (direct)', 'Gupshup (Solution Partner)'];
+const PROVIDER_LABELS: readonly string[] = ['WhatsApp with Facebook', 'Gupshup'];
 
 /**
  * The "connect a number" entry point. Two routes onto the same WhatsAppChannel record
@@ -59,36 +57,41 @@ const PROVIDER_LABELS: readonly string[] = ['Meta (direct)', 'Gupshup (Solution 
  */
 @Component({
   selector: 'ar-connect-number-dialog',
-  imports: [RouterLink, ArDialog, ArButton, ArTabs],
+  imports: [ArDialog, ArButton, ArTabs],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog title="Connect a WhatsApp number" (dismiss)="close.emit()">
       <ar-tabs [tabs]="providerTabs" [active]="provider()" (activeChange)="provider.set($event)" />
 
       @if (provider() === providerTabs[0]) {
+        <ol class="cn__steps">
+          <li>Sign in with Facebook and choose your business and WhatsApp number.</li>
+          <li>Enter your WhatsApp security PIN to finish connecting.</li>
+        </ol>
         <p class="cn__p">
-          Connecting a number runs Meta's embedded signup: you sign in with the Facebook account
-          that owns the business, pick or add the phone number, and grant MNI Assist permission to
-          send on it. It opens in a Meta window.
+          Facebook opens its own secure sign-in window. Return here when you finish.
         </p>
 
+        @if (metaBusy()) {
+          <p class="cn__status" role="status">{{ metaBusyLabel() }}</p>
+        }
+
         @if (metaSession(); as s) {
-          <p class="cn__status">
-            Onboarding {{ s.completed ? 'complete' : 'in progress' }} — next:
-            <strong>{{ s.nextLabel }}</strong>
-          </p>
+          @if (s.completed) {
+            <p class="cn__status" role="status">Your WhatsApp number is connected.</p>
+          }
           @if (s.error) {
             <p class="cn__err">{{ s.error }}</p>
           }
           @if (!s.completed && !s.signup) {
             <p class="cn__err">
-              Meta signup isn't configured on this platform yet (the Meta app or its Embedded Signup
-              configuration is missing). Ask the platform administrator.
+              WhatsApp connection is not available yet. Please contact your administrator.
             </p>
           }
-          @if (!s.completed && s.signup) {
+          @if (!s.completed && pendingSignup()) {
+            <p class="cn__status">Facebook sign-in complete. Add your PIN to finish.</p>
             <label class="cn__field">
-              <span>Two-step verification PIN</span>
+              <span>WhatsApp security PIN (6 digits)</span>
               <input
                 class="ar-field__input cn__pin"
                 name="twoStepPin"
@@ -96,15 +99,19 @@ const PROVIDER_LABELS: readonly string[] = ['Meta (direct)', 'Gupshup (Solution 
                 inputmode="numeric"
                 autocomplete="off"
                 maxlength="6"
+                aria-describedby="whatsapp-pin-help"
                 [value]="pin()"
                 (input)="pin.set($any($event.target).value)"
               />
-              <small>
-                Six digits. If the number already has a two-step PIN, enter that one; otherwise
-                choose one and keep it safe — WhatsApp asks for it when the number moves.
+              <small id="whatsapp-pin-help">
+                If this number already has a WhatsApp PIN, use it. Otherwise, choose six digits and
+                keep them safe. This is not the verification code sent by SMS.
               </small>
             </label>
           }
+        }
+        @if (preparationError(); as error) {
+          <p class="cn__err" role="alert">{{ error }}</p>
         }
       } @else {
         <p class="cn__p">
@@ -135,22 +142,40 @@ const PROVIDER_LABELS: readonly string[] = ['Meta (direct)', 'Gupshup (Solution 
       <div dialogActions>
         <button ar-button type="button" variant="ghost" (click)="close.emit()">Close</button>
         @if (provider() === providerTabs[0]) {
-          <a ar-button-link routerLink="/getting-started" (click)="close.emit()"
-            >Open the checklist</a
-          >
           @if (metaSession(); as s) {
-            @if (!s.completed && s.signup) {
+            @if (!s.completed && pendingSignup()) {
               <button
                 ar-button
                 type="button"
                 variant="primary"
                 [disabled]="metaBusy() || !pinValid()"
+                (click)="connectMetaNumber()"
+              >
+                {{ metaBusy() ? 'Connecting…' : 'Connect number' }}
+              </button>
+            } @else if (!s.completed && s.signup && facebookReady()) {
+              <button
+                ar-button
+                type="button"
+                variant="primary"
+                [disabled]="metaBusy()"
                 (click)="signupWithFacebook()"
               >
-                {{ metaBusy() ? metaBusyLabel() : 'Continue with Facebook' }}
+                {{
+                  metaBusy()
+                    ? 'Waiting for Facebook…'
+                    : facebookRetry()
+                      ? 'Try Facebook again'
+                      : 'Continue with Facebook'
+                }}
               </button>
             }
-          } @else {
+          }
+          @if (
+            !facebookReady() &&
+            !metaSession()?.completed &&
+            (!metaSession() || metaSession()?.signup)
+          ) {
             <button
               ar-button
               type="button"
@@ -158,7 +183,7 @@ const PROVIDER_LABELS: readonly string[] = ['Meta (direct)', 'Gupshup (Solution 
               [disabled]="metaBusy()"
               (click)="startMeta()"
             >
-              {{ metaBusy() ? 'Starting…' : 'Start setup' }}
+              {{ metaBusy() ? 'Preparing Facebook…' : 'Try again' }}
             </button>
           }
         } @else if (gupshupSession() && !gupshupSession()!.completed) {
@@ -200,6 +225,12 @@ const PROVIDER_LABELS: readonly string[] = ['Meta (direct)', 'Gupshup (Solution 
       font: 400 13px/1.6 var(--ar-font-sans);
       color: var(--ar-ink-700);
     }
+    .cn__steps {
+      margin: 0 0 12px;
+      padding-left: 20px;
+      font: 400 13px/1.7 var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
     ar-tabs {
       margin-bottom: 12px;
     }
@@ -232,30 +263,20 @@ const PROVIDER_LABELS: readonly string[] = ['Meta (direct)', 'Gupshup (Solution 
       letter-spacing: 0.3em;
       font-variant-numeric: tabular-nums;
     }
-    a[ar-button-link] {
-      display: inline-flex;
-      align-items: center;
-      height: var(--ar-control-h);
-      padding: 0 13px;
-      border: 1px solid var(--ar-line-300);
-      border-radius: var(--ar-radius-control);
-      font: 500 13px var(--ar-font-sans);
-      color: var(--ar-ink-700);
-      text-decoration: none;
-    }
   `,
 })
-export class ArConnectNumberDialog {
+export class ArConnectNumberDialog implements OnInit {
   private readonly toasts = inject(ToastService);
   private readonly api = inject(ChannelApi);
   private readonly channels = inject(ChannelStore);
+  private readonly facebook = inject(FacebookSignupService);
 
   constructor() {
     // The signup popup reports the WABA and number it set up by postMessage, separately from
     // the OAuth code FB.login hands back.
     const onMessage = (event: MessageEvent) => {
       const parsed = parseEmbeddedSignupMessage(event);
-      if (!parsed) return;
+      if (!parsed || !this.acceptingSignupEvents) return;
       if (parsed.kind === 'finish') {
         this.signupFinish = parsed.data;
         this.finishWaiter?.(parsed.data);
@@ -266,7 +287,16 @@ export class ArConnectNumberDialog {
       }
     };
     window.addEventListener('message', onMessage);
-    inject(DestroyRef).onDestroy(() => window.removeEventListener('message', onMessage));
+    inject(DestroyRef).onDestroy(() => {
+      window.removeEventListener('message', onMessage);
+      this.destroyed = true;
+      this.pendingSignup.set(null);
+      this.pin.set('');
+    });
+  }
+
+  ngOnInit(): void {
+    void this.startMeta();
   }
 
   readonly close = output<void>();
@@ -288,6 +318,17 @@ export class ArConnectNumberDialog {
   } | null>(null);
   protected readonly pin = signal('');
   protected readonly pinValid = computed(() => /^[0-9]{6}$/.test(this.pin()));
+  protected readonly facebookReady = signal(false);
+  protected readonly facebookRetry = signal(false);
+  protected readonly preparationError = signal<string | null>(null);
+  // Keep the one-time authorization code and PIN in this dialog's memory only.
+  protected readonly pendingSignup = signal<{
+    sessionId: string;
+    authorizationCode: string;
+    finish: EmbeddedSignupFinish;
+  } | null>(null);
+  private acceptingSignupEvents = false;
+  private destroyed = false;
 
   private signupFinish: EmbeddedSignupFinish | null = null;
   private signupCancelled: string | null = null;
@@ -295,6 +336,9 @@ export class ArConnectNumberDialog {
   private finishWaiter: ((d: EmbeddedSignupFinish) => void) | null = null;
 
   protected async startMeta(): Promise<void> {
+    if (this.metaBusy()) return;
+    this.facebookReady.set(false);
+    this.preparationError.set(null);
     if (environment.useMockData) {
       this.metaSession.set({
         completed: false,
@@ -307,16 +351,20 @@ export class ArConnectNumberDialog {
       return;
     }
     this.metaBusy.set(true);
+    this.metaBusyLabel.set('Preparing Facebook sign-in…');
     try {
       const dto = await firstValueFrom(this.api.getOrStartOnboarding());
       this.applyMetaSession(dto);
       const signup = this.metaSession()?.signup;
       // Loaded now so the click on "Continue with Facebook" can open the popup straight away.
       if (signup && dto.completedAtUtc == null) {
-        await loadFacebookSdk(signup.appId, signup.graphVersion);
+        await this.facebook.prepare(signup.appId, signup.graphVersion);
+        if (!this.destroyed) this.facebookReady.set(true);
       }
     } catch (e) {
-      this.setMetaError(e, 'Meta signup could not start. Check your connection and try again.');
+      this.preparationError.set(
+        'Facebook sign-in could not load. Check your connection, then choose Try again.',
+      );
     } finally {
       this.metaBusy.set(false);
     }
@@ -325,49 +373,81 @@ export class ArConnectNumberDialog {
   /** Opens Meta's popup (must run straight from the click), then finishes the setup server-side. */
   protected async signupWithFacebook(): Promise<void> {
     const session = this.metaSession();
-    if (!session?.id || !session.signup || !this.pinValid()) return;
+    if (!session?.id || !session.signup || !this.facebookReady() || this.metaBusy()) return;
 
     this.signupFinish = null;
     this.signupCancelled = null;
     this.signupError = null;
+    this.acceptingSignupEvents = true;
+    this.patchMetaError('');
     this.metaBusy.set(true);
-    this.metaBusyLabel.set('Waiting for Meta…');
+    this.metaBusyLabel.set('Finish sign-in in the Facebook window…');
     try {
-      const { code, status, elapsedMs } = await openEmbeddedSignup(session.signup.configId);
+      const { code, status } = await this.facebook.launch(session.signup.configId);
+      if (this.destroyed) return;
       if (!code) {
+        if (status === 'sdk_missing') {
+          this.facebookReady.set(false);
+          this.preparationError.set(
+            'Facebook sign-in is not ready. Choose Try again to prepare it.',
+          );
+          return;
+        }
         this.patchMetaError(
           this.signupError ??
             (this.signupCancelled
-              ? `The Meta window was closed before signup finished (at ${this.signupCancelled}). Continue when you are ready.`
-              : elapsedMs < 1500
-                ? 'The Meta window did not open. Allow pop-ups for this site in the browser, then try again.'
-                : `Meta's window closed without finishing the sign-in (Meta status: ${status ?? 'none'}). ` +
-                  'If Meta showed an error in that window, note it and tell your administrator.'),
+              ? 'Facebook sign-in was cancelled. Choose Try Facebook again when you are ready.'
+              : 'Facebook sign-in did not finish. Choose Try Facebook again to continue.'),
         );
+        this.facebookRetry.set(true);
         return;
       }
       const finish = this.signupFinish ?? (await this.waitForFinish(8000));
+      if (this.destroyed) return;
       if (!finish) {
-        this.patchMetaError('Meta did not say which number was set up. Try again.');
+        this.patchMetaError(
+          'Facebook did not return your number details. Choose Try Facebook again.',
+        );
+        this.facebookRetry.set(true);
         return;
       }
       if (!finish.businessId) {
-        this.patchMetaError('Meta did not name the business portfolio. Try again.');
+        this.patchMetaError(
+          'Facebook did not return your business details. Choose Try Facebook again.',
+        );
+        this.facebookRetry.set(true);
         return;
       }
 
+      this.pendingSignup.set({ sessionId: session.id, authorizationCode: code, finish });
+    } catch (e) {
+      this.facebookRetry.set(true);
+      this.setMetaError(e, 'Facebook sign-in could not finish. Choose Try Facebook again.');
+    } finally {
+      this.acceptingSignupEvents = false;
+      this.metaBusy.set(false);
+    }
+  }
+
+  protected async connectMetaNumber(): Promise<void> {
+    const pending = this.pendingSignup();
+    if (!pending || !this.pinValid() || this.metaBusy()) return;
+    this.metaBusy.set(true);
+    this.patchMetaError('');
+    try {
       this.metaBusyLabel.set('Connecting the number…');
       const dto = await firstValueFrom(
-        this.api.completeEmbeddedSignup(session.id, {
-          authorizationCode: code,
-          wabaId: finish.wabaId,
-          phoneNumberId: finish.phoneNumberId,
-          businessPortfolioId: finish.businessId,
+        this.api.completeEmbeddedSignup(pending.sessionId, {
+          authorizationCode: pending.authorizationCode,
+          wabaId: pending.finish.wabaId,
+          phoneNumberId: pending.finish.phoneNumberId,
+          businessPortfolioId: pending.finish.businessId!,
           twoStepPin: this.pin(),
         }),
       );
       this.applyMetaSession(dto);
       if (dto.completedAtUtc != null) {
+        this.pendingSignup.set(null);
         this.pin.set('');
         this.channels.reload();
         this.toasts.success(
