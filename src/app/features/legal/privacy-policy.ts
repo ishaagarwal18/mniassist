@@ -149,8 +149,9 @@ import { ArBrand } from '../../layout/brand';
             subscription billing.
           </li>
           <li>
-            <strong>Microsoft Azure</strong> — cloud hosting (database, cache, message queue, secret
-            storage, file storage) in an Indian Azure region where available.
+            <strong>Amazon Web Services (AWS)</strong> — production cloud hosting, including
+            database, cache, message queues, secret storage and file storage, in the Asia Pacific
+            (Mumbai) region in India.
           </li>
         </ul>
         <p>
