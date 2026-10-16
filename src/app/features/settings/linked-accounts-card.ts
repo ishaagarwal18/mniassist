@@ -74,7 +74,7 @@ import { ArBanner, ArButton, ArCard } from '../../ui';
               class="ar-field__input"
               autocapitalize="none"
               maxlength="64"
-              placeholder="e.g. vertex-automation — blank for the platform"
+              placeholder="e.g. Sun Energy-automation — blank for the platform"
               [value]="workspace()"
               (input)="workspace.set($any($event.target).value)"
             />

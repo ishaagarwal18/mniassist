@@ -11,7 +11,7 @@ const start: ExternalLoginState = {
   nonce: 'n-1',
   mode: 'signin',
   rememberMe: true,
-  workspace: 'vertex',
+  workspace: 'Sun Energy',
   startedAt: 1_000,
 };
 

@@ -78,7 +78,7 @@ import {
           class="ar-field__input ar__text"
           maxlength="1024"
           [disabled]="!canManage()"
-          placeholder="Namaste! Thanks for contacting Vertex Automation. Share your machine model or part number and we'll help."
+          placeholder="Namaste! Thanks for contacting Sun Energy Automation. Share your machine model or part number and we'll help."
           [value]="form().welcomeText"
           (input)="patch({ welcomeText: $any($event.target).value })"
         ></textarea>

@@ -61,7 +61,7 @@ import { ArCaptcha } from '../../ui/captcha';
               name="workspace"
               autocapitalize="none"
               autocomplete="organization"
-              placeholder="e.g. vertex-automation"
+              placeholder="e.g. Sun Energy-automation"
               [value]="workspace()"
               (input)="workspace.set($any($event.target).value)"
             />

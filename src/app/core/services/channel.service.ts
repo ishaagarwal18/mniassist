@@ -28,7 +28,7 @@ export class ChannelService {
       wabaId: '1094427xxxxx8813',
       phoneNumberId: '1174403xxxxx221',
       displayPhone: '+91 90210 44xxx',
-      displayName: 'Vertex Automation',
+      displayName: 'Sun Energy Automation',
       nameStatus: 'pending',
       quality: 'green',
       tier: 'tier2',

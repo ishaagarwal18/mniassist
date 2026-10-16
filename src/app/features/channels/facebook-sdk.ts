@@ -202,7 +202,7 @@ export function openEmbeddedSignup(
         config_id: configId,
         response_type: 'code',
         override_default_response_type: true,
-        extras: { setup: {}, featureType: '', sessionInfoVersion: '3' },
+        extras: { sessionInfoVersion: '3' },
       },
     );
   });

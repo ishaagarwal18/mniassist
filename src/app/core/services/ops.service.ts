@@ -161,7 +161,7 @@ export class OpsService {
       tone: 'warning',
       title: 'A webhook endpoint was disabled',
       body:
-        'https://crm.vertexautomation.in/hooks/autoreach failed 20 times in a row and has been ' +
+        'https://crm.Sun Energyautomation.in/hooks/autoreach failed 20 times in a row and has been ' +
         'switched off. Fix the endpoint and re-enable it in Integrations.',
       occurredAt: OpsService.daysAgo(4),
       read: true,
@@ -231,7 +231,7 @@ export class OpsService {
       periodEnd: '2026-07-31',
       issuedAt: '2026-08-01',
       dueAt: '2026-08-08',
-      customerName: 'Vertex Automation Pvt Ltd',
+      customerName: 'Sun Energy Automation Pvt Ltd',
       customerGstin: '27AABCV1234M1ZP',
       placeOfSupply: '27',
       interState: false,
@@ -273,7 +273,7 @@ export class OpsService {
       periodEnd: '2026-06-30',
       issuedAt: '2026-07-01',
       dueAt: '2026-07-08',
-      customerName: 'Vertex Automation Pvt Ltd',
+      customerName: 'Sun Energy Automation Pvt Ltd',
       customerGstin: '27AABCV1234M1ZP',
       placeOfSupply: '27',
       interState: false,
@@ -291,7 +291,7 @@ export class OpsService {
       state: 'draft',
       periodStart: '2026-08-01',
       periodEnd: '2026-08-31',
-      customerName: 'Vertex Automation Pvt Ltd',
+      customerName: 'Sun Energy Automation Pvt Ltd',
       customerGstin: '27AABCV1234M1ZP',
       placeOfSupply: '27',
       interState: false,
@@ -349,7 +349,7 @@ export class OpsService {
   private readonly webhookSeed: readonly WebhookSubscription[] = [
     {
       id: 'wh-1',
-      url: 'https://crm.vertexautomation.in/hooks/autoreach',
+      url: 'https://crm.Sun Energyautomation.in/hooks/autoreach',
       description: 'Zoho CRM lead sync',
       enabled: false,
       events: ['InboundMessage', 'EnquiryCreated', 'ContactOptedOut'],
@@ -360,7 +360,7 @@ export class OpsService {
     },
     {
       id: 'wh-2',
-      url: 'https://hooks.vertexautomation.in/quotations',
+      url: 'https://hooks.Sun Energyautomation.in/quotations',
       description: 'Quotation status → Tally',
       enabled: true,
       events: ['QuotationStatusChanged'],

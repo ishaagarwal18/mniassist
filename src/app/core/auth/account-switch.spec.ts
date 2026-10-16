@@ -10,7 +10,7 @@ describe('accountSwitchParameters', () => {
 
   it('sends the workspace when the host enters one', () => {
     expect(
-      accountSwitchParameters({ kind: 'ManageWorkspace', tenant: { id: 't-1', name: 'vertex' } }),
+      accountSwitchParameters({ kind: 'ManageWorkspace', tenant: { id: 't-1', name: 'Sun Energy' } }),
     ).toEqual({ kind: 'ManageWorkspace', tenant_id: 't-1' });
   });
 
@@ -30,7 +30,7 @@ describe('accountSwitchParameters', () => {
 
   it('never sends a workspace on the way back: the token says where home is', () => {
     expect(
-      accountSwitchParameters({ kind: 'ReturnToSelf', tenant: { id: 't-1', name: 'vertex' } }),
+      accountSwitchParameters({ kind: 'ReturnToSelf', tenant: { id: 't-1', name: 'Sun Energy' } }),
     ).toEqual({ kind: 'ReturnToSelf' });
   });
 });

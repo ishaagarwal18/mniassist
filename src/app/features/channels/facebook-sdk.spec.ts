@@ -174,7 +174,7 @@ describe('Facebook sign-in readiness', () => {
       config_id: 'configuration',
       response_type: 'code',
       override_default_response_type: true,
-      extras: { setup: {}, featureType: '', sessionInfoVersion: '3' },
+      extras: { sessionInfoVersion: '3' },
     });
     await expect(login).resolves.toEqual({ code: 'one-time-code', status: 'connected' });
   });

@@ -8,11 +8,11 @@ describe('parseVCards', () => {
         'VERSION:3.0',
         'FN:Sandeep Rao',
         'N:Rao;Sandeep;;;',
-        'ORG:Vertex Automation;Projects',
+        'ORG:Sun Energy Automation;Projects',
         'TITLE:Plant Head',
         'TEL;TYPE=WORK,VOICE:+91 22 4000 1234',
         'TEL;TYPE=CELL:+91 98200 11234',
-        'EMAIL;TYPE=INTERNET:sandeep@vertex.example',
+        'EMAIL;TYPE=INTERNET:sandeep@Sun Energy.example',
         'ADR;TYPE=WORK:;;Plot 4\\, MIDC;Pune;Maharashtra;411026;India',
         'END:VCARD',
       ].join('\r\n'),
@@ -20,9 +20,9 @@ describe('parseVCards', () => {
     expect(c.name).toBe('Sandeep Rao');
     expect(c.phone).toBe('+919820011234');
     expect(c.phones).toEqual(['+919820011234', '+912240001234']);
-    expect(c.company).toBe('Vertex Automation');
+    expect(c.company).toBe('Sun Energy Automation');
     expect(c.designation).toBe('Plant Head');
-    expect(c.email).toBe('sandeep@vertex.example');
+    expect(c.email).toBe('sandeep@Sun Energy.example');
     expect(c.city).toBe('Pune');
     expect(c.state).toBe('Maharashtra');
   });

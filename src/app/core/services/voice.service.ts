@@ -62,7 +62,7 @@ export class VoiceService {
     {
       id: 'prompt-main',
       name: 'Main menu',
-      sayText: 'Thanks for calling Vertex Automation. Press 1 for sales, 2 for support.',
+      sayText: 'Thanks for calling Sun Energy Automation. Press 1 for sales, 2 for support.',
       isEntryPoint: true,
       maxDigits: 1,
       inputTimeoutSeconds: 5,
