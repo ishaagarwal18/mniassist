@@ -187,19 +187,41 @@ const MAX_BYTES = 8 * 1024 * 1024;
             </label>
             <label class="ar-field">
               <span class="ar-field__label"
-                >Evidence <span class="ar-field__opt">optional but recommended</span></span
+                >Opt-in evidence
+                <span class="ar-field__opt">{{
+                  needsMarketingEvidence() ? 'required' : 'optional'
+                }}</span></span
               >
               <input
                 class="ar-field__input"
                 maxlength="256"
-                placeholder="e.g. IMTEX 2026 badge scans, signed AMC contracts folder"
+                [required]="needsMarketingEvidence()"
+                placeholder="e.g. form submissions recording explicit WhatsApp opt-in"
                 [value]="evidence()"
                 (input)="evidence.set($any($event.target).value)"
               />
               <span class="ar-field__hint"
-                >Kept against every contact in this import, for audits.</span
+                >Recorded for newly created contacts. Existing consent and opt-outs stay
+                unchanged.</span
               >
             </label>
+            @if (needsMarketingEvidence()) {
+              <label class="ar-field">
+                <span class="ar-field__label">Consent notice version</span>
+                <input
+                  class="ar-field__input"
+                  required
+                  maxlength="256"
+                  placeholder="e.g. website-whatsapp-opt-in/en/v3"
+                  [value]="consentTextRef()"
+                  (input)="consentTextRef.set($any($event.target).value)"
+                />
+                <span class="ar-field__hint"
+                  >Identify the wording these people agreed to. A QR scan or badge scan alone is not
+                  marketing consent.</span
+                >
+              </label>
+            }
           }
         }
 
@@ -288,7 +310,7 @@ const MAX_BYTES = 8 * 1024 * 1024;
               ar-button
               type="button"
               variant="primary"
-              [disabled]="busy() || !phoneMapped()"
+              [disabled]="busy() || !phoneMapped() || !consentEvidenceValid()"
               (click)="check()"
             >
               {{ busy() ? 'Checking…' : 'Check the file' }}
@@ -518,6 +540,22 @@ export class ArContactImport {
   protected readonly scope = signal<ConsentScope>(ConsentScope.UtilityOnly);
   protected readonly countryCode = signal('91');
   protected readonly evidence = signal('');
+  protected readonly consentTextRef = signal('');
+  protected readonly needsMarketingEvidence = computed(
+    () =>
+      this.scope() === ConsentScope.MarketingAndUtility &&
+      [
+        ConsentSource.Website,
+        ConsentSource.WhatsAppOptIn,
+        ConsentSource.ClickToWhatsApp,
+        ConsentSource.QrCode,
+      ].includes(this.source()),
+  );
+  protected readonly consentEvidenceValid = computed(
+    () =>
+      !this.needsMarketingEvidence() ||
+      (!!this.evidence().trim() && !!this.consentTextRef().trim()),
+  );
   protected readonly dryRun = signal<ImportDryRunDto | null>(null);
   protected readonly result = signal<ImportResultDto | null>(null);
 
@@ -610,11 +648,13 @@ export class ArContactImport {
       consentSource: this.source(),
       consentScope: this.scope(),
       evidenceReference: this.evidence().trim() || null,
+      consentTextRef: this.consentTextRef().trim() || null,
       defaultCountryCode: this.countryCode() || '91',
     };
   }
 
   protected async check(): Promise<void> {
+    if (!this.consentEvidenceValid()) return;
     this.busy.set(true);
     try {
       this.dryRun.set(

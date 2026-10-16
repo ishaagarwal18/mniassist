@@ -6,6 +6,7 @@ import { grantedPolicy } from '../../core/auth/permission';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { TemplateService } from '../../core/services/template.service';
+import { ChannelService } from '../../core/services/channel.service';
 import {
   Template,
   TemplateCategory,
@@ -54,6 +55,16 @@ export class ArTemplates {
   private readonly dialogs = inject(ConfirmService);
   private readonly toasts = inject(ToastService);
   private readonly store = inject(TemplateService);
+  private readonly channelStore = inject(ChannelService);
+  protected readonly channels = this.channelStore.channels;
+  protected readonly activeChannel = this.channelStore.active;
+
+  protected selectChannel(id: string): void {
+    if (this.busy() || !this.channels().some((channel) => channel.id === id)) return;
+    this.channelStore.select(id);
+    this.notice.set(null);
+    this.store.reload();
+  }
   private readonly router = inject(Router);
 
   protected readonly canCreate = grantedPolicy('AutoReach.Templates.Create', this.permissions);
@@ -157,6 +168,7 @@ export class ArTemplates {
   }
 
   protected async sync(): Promise<void> {
+    if (!this.activeChannel()) return;
     this.busy.set(true);
     try {
       await this.store.syncFromMeta();
