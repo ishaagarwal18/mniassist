@@ -461,10 +461,13 @@ export class TemplateService {
   ];
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.reloadTick() }),
-    stream: () =>
+    params: () =>
+      environment.useMockData || !this.channels.active()?.id
+        ? undefined
+        : { tick: this.reloadTick(), channelId: this.channels.active()!.id },
+    stream: ({ params }) =>
       this.api
-        .getList({ channelId: this.channels.active()?.id, skipCount: 0, maxResultCount: 200 })
+        .getList({ channelId: params.channelId, skipCount: 0, maxResultCount: 200 })
         .pipe(map((page) => (page.items ?? []).map(toTemplate))),
     defaultValue: [] as Template[],
   });

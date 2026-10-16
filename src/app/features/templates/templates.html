@@ -3,7 +3,28 @@
   [subtitle]="subtitle()"
   help="Every WhatsApp message sent outside the 24-hour reply window must be an approved template. Meta reviews and approves each one — not MNI Assist — so check back here for its status before building a campaign around it."
 >
-  <button ar-button variant="ghost" icon="refresh" [disabled]="busy()" (click)="sync()">
+  <label class="ar-field">
+    <span class="ar-field__label">WhatsApp number</span>
+    <select
+      class="ar-field__input"
+      aria-label="WhatsApp number"
+      [disabled]="busy() || !channels().length"
+      (change)="selectChannel($any($event.target).value)"
+    >
+      @for (channel of channels(); track channel.id) {
+        <option [value]="channel.id" [selected]="channel.id === activeChannel()?.id">
+          {{ channel.displayName }} · {{ channel.displayPhone }}
+        </option>
+      }
+    </select>
+  </label>
+  <button
+    ar-button
+    variant="ghost"
+    icon="refresh"
+    [disabled]="busy() || !activeChannel()"
+    (click)="sync()"
+  >
     Sync from Meta
   </button>
   @if (canCreate()) {

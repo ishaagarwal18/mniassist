@@ -4,7 +4,7 @@
   help="Your number's display name and two-step verification PIN — both live with Meta, not MNI Assist. The PIN is shown once, at the moment you set it, and never again."
 >
   <button ar-button type="button" variant="ghost" icon="refresh" (click)="refresh()">
-    Refresh from Meta
+    Refresh
   </button>
   <a ar-button variant="ghost" icon="tower" routerLink="/channels/telecom">
     Telecom entity & pool
@@ -116,10 +116,15 @@
             <p class="blk__val ar-mono">••••••</p>
             <p class="blk__note">{{ age(n.pinUpdatedAt) }}. The PIN is never displayed again.</p>
           } @else {
-            <p class="blk__val blk__val--none">Not set</p>
+            <p class="blk__val blk__val--none">No PIN stored in MNI Assist</p>
             <p class="blk__note">
-              This number is not registered on the Cloud API until a PIN is set. Nothing can be sent
-              or received on it.
+              @if (n.isRegistered) {
+                This number is registered. An existing Cloud API number can connect without storing
+                its PIN here. Check Meta WhatsApp Manager for its current two-step verification
+                setting.
+              } @else {
+                Complete Cloud API registration before sending or receiving messages on this number.
+              }
             </p>
           }
 
@@ -150,7 +155,7 @@
                 />
                 <div class="edit__row">
                   <button ar-button variant="primary" (click)="setPin(n.channelId)">
-                    {{ n.hasTwoStepPin ? 'Change PIN' : 'Set PIN and register' }}
+                    {{ n.hasTwoStepPin || n.isRegistered ? 'Set PIN' : 'Set PIN and register' }}
                   </button>
                   <button ar-button variant="ghost" (click)="editingPin.set(null)">Cancel</button>
                 </div>
