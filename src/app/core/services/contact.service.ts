@@ -235,11 +235,13 @@ export class ContactService {
     stream: () =>
       forkJoin({
         optout: this.countBy(SuppressionReason.OptedOut),
+        stopall: this.countBy(SuppressionReason.AllMessagesOptedOut),
         invalid: this.countBy(SuppressionReason.InvalidNumber),
         blocked: this.countBy(SuppressionReason.BlockedByUser),
       }).pipe(
         map((counts) => [
           { id: 'optout', name: 'Opted out', count: counts.optout },
+          { id: 'stopall', name: 'Stopped all WhatsApp messages', count: counts.stopall },
           { id: 'invalid', name: 'Invalid number', count: counts.invalid },
           { id: 'blocked', name: 'Blocked by user', count: counts.blocked },
         ]),
