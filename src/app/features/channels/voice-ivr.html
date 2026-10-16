@@ -1,7 +1,7 @@
 <ar-topbar
   title="Voice / IVR"
   [subtitle]="entryPoint() ? 'Entry point: ' + entryPoint()!.name : 'No entry point set yet'"
-  help="Your phone menu is edited here and served to Exotel live, so a change takes effect on the next call. Exotel's dashboard holds only one fixed, menu-independent flow — set it up once under Connect to Exotel."
+  help="Use WhatsApp for agent calls and Exotel for phone calls with automated IVR. Connect each provider separately. The prompts below are served to Exotel live."
 >
   @if (canManage()) {
     <button ar-button variant="primary" icon="plus" [disabled]="busy()" (click)="openCreate()">
@@ -9,6 +9,81 @@
     </button>
   }
 </ar-topbar>
+
+<section class="vi__providers" aria-label="Voice providers">
+  <article class="vi__channel">
+    <h2 class="vi__panel-title">WhatsApp voice</h2>
+    <p class="vi__hint">
+      Your team can answer customer calls and call customers who have granted permission. Connect a
+      Meta Cloud API number in Channels and enable calling for that number in Meta. A connected
+      messaging number alone does not confirm calling availability.
+    </p>
+    @if (canManage()) {
+      <a ar-button variant="quiet" routerLink="/channels">Connect WhatsApp number</a>
+    }
+    @if (canCall()) {
+      <a ar-button variant="quiet" routerLink="/calls/whatsapp">WhatsApp calls and recordings</a>
+      <a ar-button variant="quiet" routerLink="/inbox">Open inbox to call a customer</a>
+    }
+  </article>
+  <article class="vi__channel">
+    <h2 class="vi__panel-title">Exotel voice and IVR</h2>
+    <p class="vi__hint">
+      Set up your Exotel number and flow below, then edit greetings, keypad choices and agent
+      transfers. These automated menus apply to Exotel calls. WhatsApp calls use your agents.
+    </p>
+    @if (canManage()) {
+      <button ar-button variant="quiet" (click)="editAccount()">Configure Exotel account</button>
+      @if (accountEditing()) {
+        <form (submit)="$event.preventDefault(); saveAccount()">
+          <label
+            >Exotel phone number
+            <input
+              required
+              [value]="exoPhoneDraft()"
+              (input)="exoPhoneDraft.set($any($event.target).value)"
+            />
+          </label>
+          <label
+            >Account SID
+            <input
+              required
+              [value]="accountSidDraft()"
+              (input)="accountSidDraft.set($any($event.target).value)"
+            />
+          </label>
+          <label
+            >API hostname
+            <select
+              [value]="subdomainDraft()"
+              (change)="subdomainDraft.set($any($event.target).value)"
+            >
+              <option value="api.in.exotel.com">Mumbai (api.in.exotel.com)</option>
+              <option value="api.exotel.com">Singapore (api.exotel.com)</option>
+            </select>
+          </label>
+          <label
+            >API key:API token
+            <input
+              type="password"
+              autocomplete="new-password"
+              [value]="credentialDraft()"
+              (input)="credentialDraft.set($any($event.target).value)"
+            />
+          </label>
+          <p class="vi__hint">
+            Enter key:token on first setup. Leave blank to keep the saved credential. Saving does
+            not verify the account or place a call.
+          </p>
+          <button ar-button type="submit" [disabled]="busy()">Save account</button>
+          <button ar-button type="button" [disabled]="busy()" (click)="cancelAccount()">
+            Cancel
+          </button>
+        </form>
+      }
+    }
+  </article>
+</section>
 
 @if (loading()) {
   <p class="vi__loading">Loading…</p>

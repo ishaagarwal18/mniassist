@@ -12,6 +12,7 @@ import {
   IvrSimulationStepDto,
   SetIvrBranchInput,
   SetSoftphoneInput,
+  SetVoiceAccountInput,
   SimulateIvrInput,
   UpdateIvrPromptInput,
   VoiceChannelDto,
@@ -143,6 +144,23 @@ export class VoiceService {
   reload(): void {
     this.promptsResource.reload();
     this.issuesResource.reload();
+  }
+
+  async setAccount(input: SetVoiceAccountInput): Promise<boolean> {
+    this._error.set(null);
+    if (environment.useMockData) {
+      const { apiCredential: _secret, ...account } = input;
+      this.mockChannel.update((c) => ({ ...c, ...account }));
+      return true;
+    }
+    try {
+      await firstValueFrom(this.api.setAccount(input));
+      this.channelResource.reload();
+      return true;
+    } catch (e) {
+      this._error.set(readApiError(e, 'Could not save the Exotel account.'));
+      return false;
+    }
   }
 
   /** Records the Exotel call-flow URL of the one-time skeleton flow. Blank clears it. */
