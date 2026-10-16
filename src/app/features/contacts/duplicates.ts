@@ -245,6 +245,8 @@ export class ArDuplicates {
   }
 
   private stateText(suppression: SuppressionReason | undefined, scope: number | undefined): string {
+    if (suppression === SuppressionReason.AllMessagesOptedOut)
+      return 'stopped all WhatsApp messages';
     if (suppression === SuppressionReason.OptedOut) return 'opted out of marketing';
     if (suppression) return 'suppressed';
     return scope === 1 ? 'marketing allowed' : 'utility messages only';

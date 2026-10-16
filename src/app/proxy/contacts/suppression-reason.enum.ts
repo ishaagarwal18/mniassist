@@ -9,6 +9,7 @@ export enum SuppressionReason {
   ManuallyExcluded = 5,
   Complained = 6,
   RepeatedSoftBounce = 7,
+  AllMessagesOptedOut = 8,
 }
 
 export const suppressionReasonOptions = mapEnumToOptions(SuppressionReason);
