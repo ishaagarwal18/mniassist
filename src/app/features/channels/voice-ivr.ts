@@ -1,6 +1,14 @@
 import { PermissionService } from '@abp/ng.core';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { RouterLink } from '@angular/router';
 
 import { grantedPolicy } from '../../core/auth/permission';
 import { VoiceService } from '../../core/services/voice.service';
@@ -65,7 +73,7 @@ const STATE_TONE: Record<ChannelState, ChipTone> = {
  */
 @Component({
   selector: 'ar-voice-ivr',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ArGrid, GridModule],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ArGrid, GridModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './voice-ivr.html',
   styleUrl: './voice-ivr.scss',
@@ -76,6 +84,7 @@ export class ArVoiceIvr {
   private readonly store = inject(VoiceService);
 
   protected readonly canManage = grantedPolicy('AutoReach.Channels.Manage', this.permissions);
+  protected readonly canCall = grantedPolicy('AutoReach.Inbox', this.permissions);
 
   protected readonly channel = this.store.channel;
   protected readonly prompts = this.store.prompts;
@@ -84,6 +93,50 @@ export class ArVoiceIvr {
   protected readonly entryPoint = this.store.entryPoint;
 
   protected readonly busy = signal(false);
+  protected readonly accountEditing = signal(false);
+  protected readonly exoPhoneDraft = signal('');
+  protected readonly accountSidDraft = signal('');
+  protected readonly subdomainDraft = signal('api.in.exotel.com');
+  protected readonly credentialDraft = signal('');
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.credentialDraft.set(''));
+  }
+
+  protected editAccount(): void {
+    const ch = this.channel();
+    this.exoPhoneDraft.set(ch?.exoPhone ?? '');
+    this.accountSidDraft.set(ch?.accountSid ?? '');
+    this.subdomainDraft.set(ch?.subdomain || 'api.in.exotel.com');
+    this.credentialDraft.set('');
+    this.accountEditing.set(true);
+  }
+
+  protected cancelAccount(): void {
+    this.credentialDraft.set('');
+    this.accountEditing.set(false);
+  }
+
+  protected async saveAccount(): Promise<void> {
+    if (!this.canManage() || this.busy()) return;
+    this.busy.set(true);
+    const credential = this.credentialDraft().trim();
+    this.credentialDraft.set('');
+    try {
+      if (
+        await this.store.setAccount({
+          exoPhone: this.exoPhoneDraft().trim(),
+          accountSid: this.accountSidDraft().trim(),
+          subdomain: this.subdomainDraft().trim(),
+          numberSeries: this.channel()?.numberSeries,
+          apiCredential: credential || null,
+        })
+      )
+        this.accountEditing.set(false);
+    } finally {
+      this.busy.set(false);
+    }
+  }
 
   protected readonly editingId = signal<string | null>(null);
   protected readonly createOpen = signal(false);
