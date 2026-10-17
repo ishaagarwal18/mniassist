@@ -85,6 +85,31 @@ export function fromLocalInput(value: string | null | undefined): string | null 
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+/**
+ * A date that must not be in the past: a new task's due time, a new meeting's start.
+ * Unchanged from what was saved is always fine, so an overdue task or a meeting that
+ * already happened can still be edited without moving it. A minute's grace covers the
+ * time spent filling the form in.
+ */
+export function pastTimeProblem(
+  localValue: string | null | undefined,
+  savedUtc: string | null | undefined,
+  what: string,
+  now: Date = new Date(),
+): string | null {
+  const chosen = fromLocalInput(localValue);
+  if (!chosen) return null;
+  if (savedUtc && toLocalInput(savedUtc) === localValue) return null;
+  return new Date(chosen).getTime() < now.getTime() - 60_000
+    ? `${what} can't be in the past.`
+    : null;
+}
+
+/** Now, as a datetime-local value: the earliest a date picker offers. */
+export function nowLocalInput(now: Date = new Date()): string {
+  return toLocalInput(now.toISOString());
+}
+
 /** The next half hour, at least a quarter of an hour away: where a new meeting starts unless told otherwise. */
 export function defaultMeetingStart(now: Date): Date {
   const d = new Date(

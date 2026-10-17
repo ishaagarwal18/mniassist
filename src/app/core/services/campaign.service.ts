@@ -318,7 +318,7 @@ export class CampaignStore {
   }
 
   /** Creates a draft campaign. Template, segment and schedule are set later. */
-  async create(name: string, channelId: string): Promise<void> {
+  async create(name: string, channelId: string, templateId: string): Promise<void> {
     if (environment.useMockData) {
       this.mockCampaigns.update((list) => [
         {
@@ -335,7 +335,7 @@ export class CampaignStore {
       ]);
       return;
     }
-    await firstValueFrom(this.api.create({ name: name.trim(), channelId }));
+    await firstValueFrom(this.api.create({ name: name.trim(), channelId, templateId }));
     this.reload();
   }
 }

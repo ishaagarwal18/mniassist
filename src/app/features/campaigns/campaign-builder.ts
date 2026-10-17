@@ -8,7 +8,13 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { readApiError } from '../../core/util/api-error';
+import { TemplateService as TemplateApi } from '../../proxy/messaging/template.service';
+import { TemplateStatus } from '../../proxy/messaging/template-status.enum';
+import type { TemplateDto } from '../../proxy/messaging/models';
 
 import { grantedPolicy } from '../../core/auth/permission';
 import {
@@ -45,7 +51,7 @@ const STATE_TONE: Record<CState, ChipTone> = {
  */
 @Component({
   selector: 'ar-campaign-builder',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './campaign-builder.html',
   styleUrl: './campaign-builder.scss',
@@ -70,24 +76,74 @@ export class ArCampaignBuilder {
   protected readonly saving = signal(false);
   protected readonly newName = signal('');
   protected readonly newChannel = signal('');
+  protected readonly newTemplate = signal('');
+  protected readonly dialogError = signal<string | null>(null);
+
+  /** A WhatsApp campaign sends one approved template: those on the chosen number. */
+  private readonly templateApi = inject(TemplateApi);
+  protected readonly approvedTemplates = signal<TemplateDto[]>([]);
+  protected readonly templatesLoading = signal(false);
+
+  private async loadTemplates(channelId: string): Promise<void> {
+    this.approvedTemplates.set([]);
+    this.newTemplate.set('');
+    if (!channelId || environment.useMockData) return;
+    this.templatesLoading.set(true);
+    try {
+      const page = await firstValueFrom(
+        this.templateApi.getList({
+          channelId,
+          status: TemplateStatus.Approved,
+          maxResultCount: 200,
+          skipCount: 0,
+        }),
+      );
+      if (channelId !== this.newChannel()) return; // the number changed meanwhile
+      const list = [...(page.items ?? [])].sort((a, b) =>
+        (a.name ?? '').localeCompare(b.name ?? ''),
+      );
+      this.approvedTemplates.set(list);
+      this.newTemplate.set(list[0]?.id ?? '');
+    } catch (e: unknown) {
+      this.dialogError.set(readApiError(e, 'The approved templates could not be loaded.'));
+    } finally {
+      this.templatesLoading.set(false);
+    }
+  }
+
+  protected chooseChannel(id: string): void {
+    this.newChannel.set(id);
+    void this.loadTemplates(id);
+  }
 
   protected openDialog(): void {
     this.newName.set('');
+    this.dialogError.set(null);
     this.newChannel.set(this.channels()[0]?.id ?? '');
+    void this.loadTemplates(this.newChannel());
     this.dialogOpen.set(true);
   }
 
   protected async createCampaign(): Promise<void> {
-    if (!this.newName().trim() || !this.newChannel()) {
-      this.toasts.warning('Give the campaign a name and pick a channel.', 'Campaign');
+    if (!this.newName().trim()) {
+      this.dialogError.set('Give the campaign a name.');
       return;
     }
+    if (!this.newChannel()) {
+      this.dialogError.set('Pick the WhatsApp number to send from.');
+      return;
+    }
+    if (!this.newTemplate() && !environment.useMockData) {
+      this.dialogError.set('Pick an approved template to send.');
+      return;
+    }
+    this.dialogError.set(null);
     this.saving.set(true);
     try {
-      await this.store.create(this.newName(), this.newChannel());
+      await this.store.create(this.newName(), this.newChannel(), this.newTemplate());
       this.dialogOpen.set(false);
     } catch (e: unknown) {
-      this.error.set(e instanceof Error ? e.message : 'The campaign could not be created.');
+      this.dialogError.set(readApiError(e, 'The campaign could not be created.'));
     } finally {
       this.saving.set(false);
     }

@@ -18,6 +18,7 @@ import {
   toLocalInput,
   uniqueConflicts,
   weekOf,
+  pastTimeProblem,
 } from './activity-logic';
 
 // Built from local parts, so the tests mean the same thing in any time zone.
@@ -203,5 +204,30 @@ describe('errors from the server', () => {
   it('has a word for each answer', async () => {
     const { RESPONSE_LABEL } = await import('./activity-logic');
     expect(RESPONSE_LABEL[AttendeeResponse.Accepted]).toBe('Accepted');
+  });
+});
+
+describe('pastTimeProblem', () => {
+  const now = new Date('2026-10-18T10:00:00');
+  const local = (d: Date) => toLocalInput(d.toISOString());
+
+  it('refuses a new time in the past', () => {
+    expect(pastTimeProblem(local(new Date('2026-10-17T09:00:00')), null, 'The due date', now)).toBe(
+      "The due date can't be in the past.",
+    );
+  });
+
+  it('allows now, the future and an empty value', () => {
+    expect(pastTimeProblem(local(now), null, 'The due date', now)).toBeNull();
+    expect(pastTimeProblem(local(new Date('2026-10-19T09:00:00')), null, 'x', now)).toBeNull();
+    expect(pastTimeProblem('', null, 'x', now)).toBeNull();
+  });
+
+  it('leaves an already-saved past time alone, so an overdue task can still be edited', () => {
+    const saved = new Date('2026-10-01T09:00:00').toISOString();
+    expect(pastTimeProblem(toLocalInput(saved), saved, 'The due date', now)).toBeNull();
+    expect(
+      pastTimeProblem(local(new Date('2026-10-02T09:00:00')), saved, 'The due date', now),
+    ).toContain('past');
   });
 });

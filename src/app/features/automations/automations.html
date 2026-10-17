@@ -174,3 +174,27 @@
     <p class="au__empty">No automations yet.</p>
   }
 </div>
+
+@if (dryRunFor(); as a) {
+  <ar-dialog [title]="'Dry-run: ' + a.name" (dismiss)="dryRunFor.set(null)">
+    <p class="wf__dry-lead">
+      Nothing is sent. You see the steps it would take for this contact, and where it would stop.
+    </p>
+    <label class="ar-field">
+      <span class="ar-field__label">Contact</span>
+      <ar-contact-picker (picked)="dryRunContact.set($event)" />
+    </label>
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="dryRunFor.set(null)">Cancel</button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="!dryRunContact()"
+        (click)="runDryRun()"
+      >
+        Run dry-run
+      </button>
+    </div>
+  </ar-dialog>
+}

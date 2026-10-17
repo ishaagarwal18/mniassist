@@ -28,6 +28,8 @@ import {
   fromLocalInput,
   toLocalInput,
   utcOffsetMinutes,
+  nowLocalInput,
+  pastTimeProblem,
 } from './activity-logic';
 import { ArRecurrencePicker } from './recurrence-picker';
 import { NO_REPEAT, RecurrenceDraft, recurrenceProblem, toDraft, toRecurrence } from './recurrence';
@@ -68,9 +70,14 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
             id="task-due"
             class="ar-field__input"
             type="datetime-local"
+            [min]="minDue()"
+            [attr.aria-invalid]="!!dueProblem()"
             [value]="due()"
             (input)="due.set($any($event.target).value)"
           />
+          @if (dueProblem(); as e) {
+            <span class="ar-field__error" role="alert">{{ e }}</span>
+          }
         </label>
         <label class="ar-field">
           <span class="ar-field__label">Priority</span>
@@ -187,7 +194,7 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
           ar-button
           type="button"
           variant="primary"
-          [disabled]="busy() || !!repeatProblem()"
+          [disabled]="busy() || !!repeatProblem() || !!dueProblem()"
           (click)="save()"
         >
           {{ busy() ? 'Saving…' : 'Save' }}
@@ -240,6 +247,11 @@ export class ArTaskDialog implements OnInit {
   protected readonly repeatProblem = computed(() =>
     this.due() ? recurrenceProblem(this.repeat(), false) : null,
   );
+  /** A new due time, or a changed one, must not be in the past. */
+  protected readonly minDue = signal(nowLocalInput());
+  protected readonly dueProblem = computed(() =>
+    pastTimeProblem(this.due(), this.task()?.dueAtUtc, 'The due date'),
+  );
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -282,6 +294,10 @@ export class ArTaskDialog implements OnInit {
   }
 
   protected async save(): Promise<void> {
+    if (this.dueProblem()) {
+      this.error.set(this.dueProblem());
+      return;
+    }
     await this.run(async () => {
       const t = this.task();
       const result = await firstValueFrom(

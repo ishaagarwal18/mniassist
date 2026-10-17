@@ -155,6 +155,7 @@ const ICONS = {
   ],
   panel: [r(3, 4, 14, 12, 1.5), p('M8 4v12')],
   close: [p('M5 5l10 10M15 5 5 15')],
+  menu: [p('M3 5.5h14M3 10h14M3 14.5h14')],
   share: [c(14.5, 5, 2), c(5.5, 10, 2), c(14.5, 15, 2), p('M7.3 9.1l5.4-3.1M7.3 10.9l5.4 3.1')],
 } as const satisfies Record<string, readonly Shape[]>;
 

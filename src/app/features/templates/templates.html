@@ -3,58 +3,63 @@
   [subtitle]="subtitle()"
   help="Every WhatsApp message sent outside the 24-hour reply window must be an approved template. Meta reviews and approves each one — not MNI Assist — so check back here for its status before building a campaign around it."
 >
-  <label class="ar-field">
-    <span class="ar-field__label">WhatsApp number</span>
-    <select
-      class="ar-field__input"
-      aria-label="WhatsApp number"
-      [disabled]="busy() || !channels().length"
-      (change)="selectChannel($any($event.target).value)"
-    >
-      @for (channel of channels(); track channel.id) {
-        <option [value]="channel.id" [selected]="channel.id === activeChannel()?.id">
-          {{ channel.displayName }} · {{ channel.displayPhone }}
-        </option>
-      }
-    </select>
-  </label>
-  <button
-    ar-button
-    variant="ghost"
-    icon="refresh"
-    [disabled]="busy() || !activeChannel()"
-    (click)="sync()"
-  >
-    Sync from Meta
-  </button>
   @if (canCreate()) {
-    <button
-      ar-button
-      variant="ghost"
-      icon="template"
-      [disabled]="busy()"
-      title="Adds industrial templates this number doesn't have yet (such as quotation_ready, which carries a quotation PDF) as drafts"
-      (click)="addLibrary()"
-    >
-      Add library templates
-    </button>
     <button ar-button variant="primary" icon="plus" (click)="newTemplate()">New template</button>
-  }
-  @if (canSubmitPolicy() && counts().draft > 0) {
-    <button
-      ar-button
-      variant="ghost"
-      icon="send"
-      [disabled]="busy()"
-      title="Sends every draft on this number to Meta for review"
-      (click)="submitDrafts()"
-    >
-      Submit all drafts ({{ counts().draft }})
-    </button>
   }
 </ar-topbar>
 
 <div class="tpl ar-scroll">
+  <!-- The number these templates belong to, and what can be done to all of them. -->
+  <section class="tpl__numbar" aria-label="WhatsApp number">
+    <label class="ar-field tpl__number">
+      <span class="ar-field__label">WhatsApp number</span>
+      <select
+        class="ar-field__input"
+        aria-label="WhatsApp number"
+        [disabled]="busy() || !channels().length"
+        (change)="selectChannel($any($event.target).value)"
+      >
+        @for (channel of channels(); track channel.id) {
+          <option [value]="channel.id" [selected]="channel.id === activeChannel()?.id">
+            {{ channel.displayName }} · {{ channel.displayPhone }}
+          </option>
+        }
+      </select>
+    </label>
+    <button
+      ar-button
+      variant="ghost"
+      icon="refresh"
+      [disabled]="busy() || !activeChannel()"
+      (click)="sync()"
+    >
+      Sync from Meta
+    </button>
+    @if (canCreate()) {
+      <button
+        ar-button
+        variant="ghost"
+        icon="template"
+        [disabled]="busy()"
+        title="Adds industrial templates this number doesn't have yet (such as quotation_ready, which carries a quotation PDF) as drafts"
+        (click)="addLibrary()"
+      >
+        Add library templates
+      </button>
+    }
+    @if (canSubmitPolicy() && counts().draft > 0) {
+      <button
+        ar-button
+        variant="ghost"
+        icon="send"
+        [disabled]="busy()"
+        title="Sends every draft on this number to Meta for review"
+        (click)="submitDrafts()"
+      >
+        Submit all drafts ({{ counts().draft }})
+      </button>
+    }
+  </section>
   @if (notice(); as n) {
     <p class="tpl__notice" role="status">{{ n }}</p>
   }

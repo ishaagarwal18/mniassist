@@ -7,6 +7,8 @@ import {
   ruleToJson,
   setGroupModeAt,
   updateClauseAt,
+  audienceToJson,
+  audienceFromJson,
 } from './segment.model';
 
 describe('segment rule ↔ ruleJson', () => {
@@ -151,5 +153,44 @@ describe('immutable tree edits', () => {
     const next = setGroupModeAt(nested, [1], 'not');
     expect((next.children[1] as SegmentGroup).mode).toBe('not');
     expect((next.children[0] as SegmentGroup).mode).toBe('all');
+  });
+});
+
+describe('audience with hand-picked people', () => {
+  const people = [
+    { id: '11111111-1111-1111-1111-111111111111', label: 'Asha Rao — Meridian Foods' },
+    { id: '22222222-2222-2222-2222-222222222222', label: 'Vikram Pawar' },
+  ];
+  const rule = {
+    mode: 'all' as const,
+    children: [{ field: 'city', op: 'eq' as const, value: 'Pune' }],
+  };
+
+  it('stores just the people when there is no rule', () => {
+    const json = audienceToJson({ mode: 'all', children: [] }, people);
+    expect(JSON.parse(json)).toEqual({
+      all: [
+        {
+          field: 'contact',
+          op: 'in',
+          values: people.map((p) => p.id),
+          labels: people.map((p) => p.label),
+        },
+      ],
+    });
+    expect(audienceFromJson(json)).toEqual({ rule: { mode: 'all', children: [] }, picked: people });
+  });
+
+  it('stores the people OR the rule, and reads both back', () => {
+    const json = audienceToJson(rule, people);
+    expect(Object.keys(JSON.parse(json))).toEqual(['any']);
+    const back = audienceFromJson(json);
+    expect(back.picked).toEqual(people);
+    expect(back.rule).toEqual(rule);
+  });
+
+  it('leaves a rule without people as it was', () => {
+    expect(audienceToJson(rule, [])).toBe(ruleToJson(rule));
+    expect(audienceFromJson(ruleToJson(rule))).toEqual({ rule, picked: [] });
   });
 });

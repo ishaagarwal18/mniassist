@@ -13,9 +13,12 @@
 @if (dialogOpen()) {
   <ar-dialog title="New campaign" (dismiss)="dialogOpen.set(false)">
     <p class="cm__dialog-note">
-      Creates a draft. Template, audience and schedule are set on the campaign before it can pass
-      pre-flight.
+      Creates a draft that sends one approved template. The audience and schedule are set on the
+      campaign before it can pass pre-flight.
     </p>
+    @if (dialogError(); as e) {
+      <p class="cm__err" role="alert">{{ e }}</p>
+    }
     <label class="ar-field">
       <span class="ar-field__label">Name</span>
       <input
@@ -28,13 +31,37 @@
     </label>
     <label class="ar-field">
       <span class="ar-field__label">Channel</span>
-      <select required class="ar-field__input" (change)="newChannel.set($any($event.target).value)">
+      <select required class="ar-field__input" (change)="chooseChannel($any($event.target).value)">
         @for (ch of channels(); track ch.id) {
           <option [value]="ch.id" [selected]="ch.id === newChannel()">
             {{ ch.displayName }} · {{ ch.displayPhone }}
           </option>
         }
       </select>
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Approved template</span>
+      @if (templatesLoading()) {
+        <span class="cm__dialog-note">Loading approved templates…</span>
+      } @else if (approvedTemplates().length) {
+        <select
+          required
+          class="ar-field__input"
+          (change)="newTemplate.set($any($event.target).value)"
+        >
+          @for (t of approvedTemplates(); track t.id) {
+            <option [value]="t.id" [selected]="t.id === newTemplate()">
+              {{ t.name }} · {{ t.languageCode }}
+            </option>
+          }
+        </select>
+      } @else {
+        <span class="cm__dialog-note">
+          This number has no approved template yet. Submit one on
+          <a routerLink="/templates" (click)="dialogOpen.set(false)">Templates</a> — Meta usually
+          reviews it within minutes to a day.
+        </span>
+      }
     </label>
     <div dialogActions>
       <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
@@ -44,7 +71,7 @@
         ar-button
         type="button"
         variant="primary"
-        [disabled]="saving()"
+        [disabled]="saving() || templatesLoading()"
         (click)="createCampaign()"
       >
         {{ saving() ? 'Creating…' : 'Create draft' }}

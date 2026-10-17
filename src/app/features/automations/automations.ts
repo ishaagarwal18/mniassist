@@ -13,6 +13,8 @@ import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
+import { ArContactPicker } from '../pipeline/contact-picker';
+import { PickerOption } from '../../core/services/pipeline.service';
 
 const STATE_TONE: Record<WState, ChipTone> = { draft: 'neutral', active: 'good', paused: 'amber' };
 
@@ -23,7 +25,7 @@ const STATE_TONE: Record<WState, ChipTone> = { draft: 'neutral', active: 'good',
  */
 @Component({
   selector: 'ar-automations',
-  imports: [RouterLink, ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
+  imports: [RouterLink, ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ArContactPicker],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './automations.html',
   styleUrl: './automations.scss',
@@ -149,16 +151,23 @@ export class ArAutomations {
     }
   }
 
-  protected async simulate(a: Automation): Promise<void> {
-    const contactId = await this.dialogs.ask(
-      'Dry-run this automation',
-      { label: 'Contact id', required: true, placeholder: 'The contact to run it against' },
-      'Nothing is sent: you see the steps it would take.',
-    );
-    if (!contactId) return;
+  // ---- Dry-run: pick the contact to run it against -----------------------------------
+  protected readonly dryRunFor = signal<Automation | null>(null);
+  protected readonly dryRunContact = signal<PickerOption | null>(null);
+
+  protected simulate(a: Automation): void {
+    this.dryRunContact.set(null);
+    this.dryRunFor.set(a);
+  }
+
+  protected async runDryRun(): Promise<void> {
+    const a = this.dryRunFor();
+    const contact = this.dryRunContact();
+    if (!a || !contact) return;
+    this.dryRunFor.set(null);
     this.busy.set(a.id);
     try {
-      this.sim.set({ id: a.id, steps: await this.store.simulate(a.id, contactId) });
+      this.sim.set({ id: a.id, steps: await this.store.simulate(a.id, contact.id) });
     } catch {
       this.sim.set({ id: a.id, steps: ['Could not run the simulation.'] });
     } finally {

@@ -622,6 +622,17 @@ export const routes: Routes = [
         loadComponent: () => import('./features/settings/members').then((m) => m.ArMembers),
       },
       {
+        path: 'settings/teams',
+        title: 'Teams · MNI Assist',
+        loadComponent: () => import('./features/settings/teams').then((m) => m.ArTeams),
+      },
+      {
+        path: 'settings/business-profile',
+        title: 'Business profile · MNI Assist',
+        loadComponent: () =>
+          import('./features/settings/business-profile').then((m) => m.ArBusinessProfile),
+      },
+      {
         path: 'settings/branding',
         title: 'Branding · MNI Assist',
         loadComponent: () => import('./features/settings/branding').then((m) => m.ArBranding),

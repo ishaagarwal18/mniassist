@@ -143,6 +143,8 @@ export function toContact(dto: ContactDto): Contact {
     score: dto.engagementScore ?? 0,
     stored: {
       companyName: dto.companyName ?? undefined,
+      emailAddress: dto.emailAddress ?? attributes['email'] ?? undefined,
+      website: attributes['website'] ?? undefined,
       accountId: dto.accountId ?? undefined,
       city: dto.city ?? undefined,
       state: dto.state ?? undefined,

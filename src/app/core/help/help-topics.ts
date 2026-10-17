@@ -856,6 +856,30 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Click Deactivate when someone leaves. You will choose who inherits their open conversations.',
     ],
   },
+  'settings/teams': {
+    benefits: [
+      'Agents who share a desk (a language, a product line) share its conversations.',
+      'A WhatsApp call menu option rings one team.',
+      'New chats are shared out in turn, to the least busy, or picked by hand.',
+    ],
+    steps: [
+      'Click New team and give it a name, such as "Hindi desk".',
+      'Tick the members, and optionally a lead and the WhatsApp numbers it handles.',
+      'Choose it as the team an option rings under Calls → WhatsApp → Call menu.',
+    ],
+  },
+  'settings/business-profile': {
+    benefits: [
+      'Quotations and invoices show who they are from: legal name, address and GSTIN.',
+      'The GSTIN state decides CGST + SGST or IGST on each sale.',
+      'Completing it ticks "Complete your business profile" on Get started.',
+    ],
+    steps: [
+      'Enter the legal name exactly as on your GST registration.',
+      'Type your GSTIN; the state and PAN fill themselves in.',
+      'Add the registered address and click Save.',
+    ],
+  },
   'settings/branding': {
     benefits: [
       'MNI Assist looks like your own product to your team.',

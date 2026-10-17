@@ -52,12 +52,20 @@
           }}</ar-chip
         >
       }
-      <ar-chip tone="neutral"
-        >{{ row.account.contactCount }} contact{{ row.account.contactCount === 1 ? '' : 's' }}
-        @if (row.account.childCount > 0 && row.subtreeContacts !== row.account.contactCount) {
-          · {{ row.subtreeContacts }} in all
-        }
-      </ar-chip>
+      <!-- The count opens the account's people. -->
+      <button
+        type="button"
+        class="ac__people"
+        [title]="'Show the contacts at ' + row.account.name"
+        (click)="openPeople(row.account, row.subtreeContacts !== row.account.contactCount)"
+      >
+        <ar-chip tone="neutral"
+          >{{ row.account.contactCount }} contact{{ row.account.contactCount === 1 ? '' : 's' }}
+          @if (row.account.childCount > 0 && row.subtreeContacts !== row.account.contactCount) {
+            · {{ row.subtreeContacts }} in all
+          }
+        </ar-chip>
+      </button>
       <div class="ac__actions">
         <button ar-button variant="primary" (click)="openRollup(row.account)">Rollup</button>
         @if (canView360()) {
@@ -252,5 +260,77 @@
     <div dialogActions>
       <button ar-button variant="primary" (click)="rollupOpen.set(false)">Done</button>
     </div>
+  </ar-dialog>
+}
+
+@if (peopleFor(); as acc) {
+  <ar-dialog
+    [title]="'Contacts at ' + acc.name"
+    width="min(640px, calc(100vw - 32px))"
+    (dismiss)="peopleFor.set(null)"
+  >
+    @if (hasSubsidiaryPeople()) {
+      <label class="pp__subs">
+        <input
+          type="checkbox"
+          [checked]="peopleSubs()"
+          (change)="togglePeopleSubs($any($event.target).checked)"
+        />
+        Include contacts at its subsidiaries
+      </label>
+    }
+    @if (peopleLoading()) {
+      <p class="pp__note">Loading contacts…</p>
+    } @else if (peopleError(); as e) {
+      <p class="pp__note pp__note--bad" role="alert">{{ e }}</p>
+    } @else if (people().length === 0) {
+      <p class="pp__note">
+        Nobody is on this account yet. Open a contact on Contacts, choose this account in its
+        Account box, and save.
+      </p>
+    } @else {
+      <ul class="pp">
+        @for (p of people(); track p.id) {
+          <li class="pp__row">
+            <div class="pp__who">
+              <span class="pp__name">{{ p.displayName || p.waId }}</span>
+              <span class="pp__sub">
+                {{ personLine(p) }}
+              </span>
+            </div>
+            <div class="pp__reach">
+              @if (p.waId) {
+                <a class="pp__link ar-mono" [href]="'https://wa.me/' + p.waId" target="_blank"
+                  >+{{ p.waId }}</a
+                >
+              }
+              @if (p.emailAddress || p.attributes?.['email']; as mail) {
+                <a class="pp__link" [href]="'mailto:' + mail">{{ mail }}</a>
+              }
+              @if (p.city) {
+                <span class="pp__sub">{{ p.city }}</span>
+              }
+            </div>
+            <div class="pp__actions">
+              @if (canView360()) {
+                <a
+                  ar-button
+                  variant="ghost"
+                  [routerLink]="['/contacts', p.id, '360']"
+                  (click)="peopleFor.set(null)"
+                  >360</a
+                >
+              }
+            </div>
+          </li>
+        }
+      </ul>
+      @if (peopleTotal() > people().length) {
+        <p class="pp__note">
+          Showing {{ people().length }} of {{ peopleTotal() }}.
+          <a [routerLink]="['/contacts']" (click)="openAllOnContacts(acc)">See all on Contacts</a>
+        </p>
+      }
+    }
   </ar-dialog>
 }

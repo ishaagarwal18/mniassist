@@ -1,3 +1,5 @@
+import { RouterLink } from '@angular/router';
+import { PromptAudioError, toPromptWav } from './prompt-audio';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -42,7 +44,7 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
  */
 @Component({
   selector: 'ar-whatsapp-ivr-dialog',
-  imports: [ArDialog, ArButton, ArBanner],
+  imports: [ArDialog, ArButton, ArBanner, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog
@@ -85,13 +87,14 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
           }
           <label class="ar-field" for="ivr-file">
             <span class="ar-field__label"
-              >{{ s.hasPrompt ? 'Replace with' : 'Upload' }} (WAV or Ogg/Opus, under 30 s)</span
+              >{{ s.hasPrompt ? 'Replace with' : 'Upload' }} a recording (WAV, MP3, M4A or Ogg,
+              under 30 s)</span
             >
             <input
               id="ivr-file"
               class="ar-field__input"
               type="file"
-              accept=".wav,.ogg,.opus,audio/wav,audio/x-wav,audio/ogg"
+              accept="audio/*,.wav,.mp3,.m4a,.ogg,.opus"
               [disabled]="saving()"
               (change)="uploadPrompt($any($event.target))"
             />
@@ -161,7 +164,8 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
           }
           @if (teams().length === 0) {
             <p class="ivr__hint">
-              Create the teams first (for example an English desk and a Hindi desk) under Teams.
+              Create the teams first (for example an English desk and a Hindi desk) under
+              <a routerLink="/settings/teams" (click)="closed.emit()">Settings → Teams</a>.
             </p>
           }
           @if (rows().length < 9) {
@@ -400,21 +404,27 @@ export class ArWhatsAppIvrDialog {
     const file = input.files?.[0];
     input.value = '';
     if (!file) return;
-    if (file.size > 8 * 1024 * 1024) {
-      this.error.set('That file is over 8 MB. Keep the prompt under 30 seconds.');
+    if (file.size > 50 * 1024 * 1024) {
+      this.error.set('That file is over 50 MB. Keep the prompt under 30 seconds.');
       return;
     }
     this.saving.set(true);
     this.error.set(null);
     try {
+      // Whatever was picked becomes the 16-bit mono 48 kHz WAV the server takes, in the browser.
+      const { wav } = await toPromptWav(file);
       if (environment.useMockData) return;
       const form = new FormData();
-      form.append('file', file, file.name);
+      form.append('file', wav, file.name.replace(/\.[^.]+$/, '') + '.wav');
       const s = await firstValueFrom(this.api.uploadIvrPrompt(form));
       this.settings.set(s);
       this.clearPreview();
     } catch (e) {
-      this.error.set(this.message(e, 'The prompt could not be uploaded.'));
+      this.error.set(
+        e instanceof PromptAudioError
+          ? e.message
+          : this.message(e, 'The prompt could not be uploaded.'),
+      );
     } finally {
       this.saving.set(false);
     }

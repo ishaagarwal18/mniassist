@@ -84,6 +84,8 @@ export interface SavedSegment {
   readonly name: string;
   readonly description?: string;
   readonly rule: SegmentGroup;
+  /** People added by hand, on top of whoever the rule matches. */
+  readonly picked?: readonly PickedContact[];
   readonly cachedMemberCount: number;
   readonly isCountStale: boolean;
   readonly lastEvaluatedAt?: string;
@@ -298,6 +300,65 @@ function groupFromJsonObject(obj: Record<string, unknown>): SegmentGroup | null 
   }
 
   return { mode, children };
+}
+
+/** A contact added to an audience by hand, with the name it was picked under. */
+export interface PickedContact {
+  readonly id: string;
+  readonly label: string;
+}
+
+/**
+ * The stored rule for an audience: hand-picked people, plus anyone the rule matches.
+ * Either can be empty. Names ride along in `labels` (the server ignores them) so the
+ * list can be shown again without looking every contact up.
+ */
+export function audienceToJson(rule: SegmentGroup, picked: readonly PickedContact[]): string {
+  if (picked.length === 0) return ruleToJson(rule);
+  const people = {
+    field: 'contact',
+    op: 'in',
+    values: picked.map((p) => p.id),
+    labels: picked.map((p) => p.label),
+  };
+  if (rule.children.length === 0) return JSON.stringify({ all: [people] });
+  return JSON.stringify({ any: [people, groupToJsonObject(rule)] });
+}
+
+/** Splits a stored audience back into its hand-picked people and its rule. */
+export function audienceFromJson(json: string | null | undefined): {
+  rule: SegmentGroup;
+  picked: PickedContact[];
+} {
+  let parsed: Record<string, unknown> | null = null;
+  try {
+    parsed = JSON.parse((json ?? '').trim() || '{}');
+  } catch {
+    parsed = null;
+  }
+  const isPeople = (n: unknown): n is { values: unknown[]; labels?: unknown[] } =>
+    !!n &&
+    typeof n === 'object' &&
+    (n as Record<string, unknown>)['field'] === 'contact' &&
+    Array.isArray((n as Record<string, unknown>)['values']);
+  const toPicked = (n: { values: unknown[]; labels?: unknown[] }): PickedContact[] =>
+    n.values.map((v, i) => ({
+      id: String(v),
+      label: Array.isArray(n.labels) && n.labels[i] != null ? String(n.labels[i]) : String(v),
+    }));
+
+  const all = parsed?.['all'];
+  if (Array.isArray(all) && all.length === 1 && isPeople(all[0])) {
+    return { rule: { mode: 'all', children: [] }, picked: toPicked(all[0]) };
+  }
+  const any = parsed?.['any'];
+  if (Array.isArray(any) && any.length === 2 && isPeople(any[0])) {
+    return {
+      rule: groupFromJsonObject(any[1] as Record<string, unknown>) ?? { mode: 'all', children: [] },
+      picked: toPicked(any[0]),
+    };
+  }
+  return { rule: ruleFromJson(json), picked: [] };
 }
 
 /**

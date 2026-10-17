@@ -106,6 +106,8 @@ export interface ContactDto extends FullAuditedEntityDto<string> {
   waId?: string;
   displayName?: string | null;
   companyName?: string | null;
+  /** The address the email channel sends to and matches replies on. */
+  emailAddress?: string | null;
   accountId?: string | null;
   role?: DecisionRole;
   languageCode?: string;
@@ -206,6 +208,8 @@ export interface CreateUpdateContactDto {
   city?: string | null;
   state?: string | null;
   designation?: string | null;
+  /** The contact's email; blank clears it. */
+  emailAddress?: string | null;
   ownerUserId?: string | null;
   tags?: string[];
   attributes?: Record<string, string>;

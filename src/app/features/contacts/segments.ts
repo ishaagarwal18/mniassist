@@ -15,6 +15,8 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ArContactImport } from './contact-import-dialog';
+import { ArContactPicker } from '../pipeline/contact-picker';
+import { PickerOption } from '../../core/services/pipeline.service';
 import { ArSelect } from '../../ui/select';
 
 /**
@@ -42,6 +44,7 @@ import { ArSelect } from '../../ui/select';
     ArSelect,
     ArDialog,
     ArContactImport,
+    ArContactPicker,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './segments.html',
@@ -58,6 +61,15 @@ export class ArSegments {
   protected readonly canImport = grantedPolicy('AutoReach.Contacts.Import', this.permissions);
 
   protected readonly rule = this.store.rule;
+  protected readonly picked = this.store.picked;
+
+  protected addPerson(p: PickerOption | null): void {
+    if (p) this.store.addPicked({ id: p.id, label: p.label });
+  }
+
+  protected removePerson(id: string): void {
+    this.store.removePicked(id);
+  }
   protected readonly preview = this.store.preview;
   protected readonly saved = this.store.savedSegments;
   protected readonly fields = this.store.fields;
@@ -149,7 +161,7 @@ export class ArSegments {
   protected loadSaved(id: string): void {
     const segment = this.saved().find((s) => s.id === id);
     if (segment) {
-      this.store.setRule(segment.rule);
+      this.store.setRule(segment.rule, segment.picked ?? []);
       this.openSegmentId.set(id);
     }
   }

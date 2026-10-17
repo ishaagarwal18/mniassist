@@ -21,6 +21,7 @@ import { persistedToggle } from '../../core/util/persisted-toggle';
 import { firstValueFrom } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { ToastService } from '../../core/ui/toast.service';
+import { readApiError } from '../../core/util/api-error';
 import { ConfirmService } from '../../core/ui/confirm.service';
 
 const CONSENT_LABEL: Record<ConsentSource, string> = {
@@ -350,8 +351,8 @@ export class ArContacts {
       designation: s?.designation ?? '',
       companyName: s?.companyName ?? c.company ?? '',
       accountId: s?.accountId ?? '',
-      email: (c.attributes as any)?.['email'] || '',
-      website: (c.attributes as any)?.['website'] || '',
+      email: s?.emailAddress ?? '',
+      website: s?.website ?? '',
       city: s?.city ?? '',
       state: s?.state ?? '',
       role: (s?.role ?? DecisionRole.Maintenance) as DecisionRole,
@@ -392,7 +393,6 @@ export class ArContacts {
     this.saving.set(true);
     try {
       const attributes: Record<string, string> = {};
-      if (f.email.trim()) attributes['email'] = f.email.trim();
       if (f.website.trim()) attributes['website'] = f.website.trim();
       const editId = this.editingContactId();
       // What the form doesn't show is sent back as stored; the API applies every field.
@@ -404,6 +404,8 @@ export class ArContacts {
         companyName: account ? account.name : f.companyName.trim() || undefined,
         accountId: account?.id ?? null,
         designation: f.designation.trim() || undefined,
+        // The contact's real email field, which the email channel and Customer 360 use.
+        emailAddress: f.email.trim() || null,
         city: f.city.trim() || undefined,
         state: f.state.trim() || undefined,
         role: f.role,
@@ -418,6 +420,8 @@ export class ArContacts {
         await this.store.create(payload);
       }
       this.dialogOpen.set(false);
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The contact could not be saved.'), 'Contact');
     } finally {
       this.saving.set(false);
     }

@@ -45,6 +45,8 @@ import {
   toLocalInput,
   uniqueConflicts,
   utcOffsetMinutes,
+  nowLocalInput,
+  pastTimeProblem,
 } from './activity-logic';
 
 const DURATIONS = [15, 30, 45, 60, 90, 120, 180, 240];
@@ -90,9 +92,14 @@ const REMINDERS: { label: string; minutes: number }[] = [
             id="mt-start"
             class="ar-field__input"
             type="datetime-local"
+            [min]="minStart()"
+            [attr.aria-invalid]="!!startProblem()"
             [value]="start()"
             (input)="start.set($any($event.target).value)"
           />
+          @if (startProblem(); as e) {
+            <span class="ar-field__error" role="alert">{{ e }}</span>
+          }
         </label>
         <label class="ar-field">
           <span class="ar-field__label">Length</span>
@@ -575,7 +582,14 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
     const f = this.userFilter().trim().toLowerCase();
     return this.directory.users().filter((u) => !f || (u.name ?? '').toLowerCase().includes(f));
   });
-  protected readonly validTimes = computed(() => !!fromLocalInput(this.start()));
+  /** A new meeting, or a moved one, must not start in the past. */
+  protected readonly minStart = signal(nowLocalInput());
+  protected readonly startProblem = computed(() =>
+    pastTimeProblem(this.start(), this.meeting()?.startUtc, 'The meeting'),
+  );
+  protected readonly validTimes = computed(
+    () => !!fromLocalInput(this.start()) && !this.startProblem(),
+  );
 
   constructor() {
     // Whenever the time, length or people change, look at everyone's calendars again (after a short pause for typing).

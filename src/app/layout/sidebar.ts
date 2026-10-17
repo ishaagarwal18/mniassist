@@ -15,6 +15,7 @@ import { PermissionService } from '@abp/ng.core';
 import { NAV, NavGroup } from './nav.model';
 import { ArAvatar, ArIcon } from '../ui';
 import { ArBrand } from './brand';
+import { NavDrawer } from './nav-drawer';
 import { OpsService } from '../core/services/ops.service';
 import { InboxService } from '../core/services/inbox.service';
 import { CurrentUserService } from '../core/services/current-user.service';
@@ -47,7 +48,10 @@ function readCollapsed(): boolean {
   selector: 'ar-sidebar',
   imports: [RouterLink, ArIcon, ArAvatar, ArBrand],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '[class.sb--collapsed]': 'collapsed()' },
+  host: {
+    '[class.sb--collapsed]': 'collapsed()',
+    '[class.sb--open]': 'drawer.open()',
+  },
   template: `
     <div class="sb__top">
       <div class="sb__brand">
@@ -131,7 +135,7 @@ function readCollapsed(): boolean {
             [attr.aria-current]="item.route === active() ? 'page' : null"
             [routerLink]="item.route"
             [attr.title]="collapsed() ? item.label : null"
-            (click)="clearSearch()"
+            (click)="clearSearch(); drawer.close()"
           >
             <span class="sb__bar" aria-hidden="true"></span>
             <ar-icon [name]="item.icon" [size]="16" />
@@ -196,6 +200,7 @@ function readCollapsed(): boolean {
   styleUrl: './sidebar.scss',
 })
 export class ArSidebar {
+  protected readonly drawer = inject(NavDrawer);
   private readonly inbox = inject(InboxService);
   private readonly ops = inject(OpsService);
   private readonly permissions = inject(PermissionService);
@@ -261,6 +266,7 @@ export class ArSidebar {
   }
   protected close(): void {
     this.menuOpen.set(false);
+    this.drawer.close();
   }
   protected signOut(): void {
     this.menuOpen.set(false);

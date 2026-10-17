@@ -19,6 +19,7 @@ import { CurrentUserService } from '../core/services/current-user.service';
 import { canAccessNavItem } from '../core/auth/permission';
 import { NAV, NavItem } from './nav.model';
 import { ArThemeToggle } from './theme-toggle';
+import { NavDrawer } from './nav-drawer';
 
 /**
  * Every screen's header, and — since `help` is set on essentially every call
@@ -37,6 +38,15 @@ import { ArThemeToggle } from './theme-toggle';
   imports: [ArIcon, ArThemeToggle, RouterLink, RouterLinkActive],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <button
+      type="button"
+      class="tb__menu"
+      aria-label="Open the menu"
+      [attr.aria-expanded]="drawer.open()"
+      (click)="drawer.toggle()"
+    >
+      <ar-icon name="menu" [size]="18" />
+    </button>
     <div class="tb__titles">
       <div class="tb__title-row">
         <h1 class="tb__title">{{ title() }}</h1>
@@ -150,6 +160,50 @@ import { ArThemeToggle } from './theme-toggle';
       flex: 1;
       min-width: 0;
     }
+    .tb__menu {
+      display: none;
+      flex: none;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      padding: 0;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-white);
+      color: var(--ar-ink-700);
+      cursor: pointer;
+    }
+    /* A phone: the sidebar is a drawer behind this button, and the header packs tighter. */
+    @media (max-width: 720px) {
+      /* Two rows: menu, title and tools on top; the page's own buttons below. */
+      :host {
+        height: auto;
+        min-height: 56px;
+        flex-wrap: wrap;
+        gap: 8px 10px;
+        padding: 10px 12px;
+      }
+      .tb__menu {
+        display: grid;
+      }
+      .tb__actions {
+        order: 3;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .tb__actions:empty {
+        display: none;
+      }
+      .tb__tools {
+        padding-left: 0;
+        border-left: 0;
+      }
+      /* The theme switch is also in the user menu; the header has no room for it here. */
+      .tb__theme {
+        display: none;
+      }
+    }
     .tb__title-row {
       display: flex;
       align-items: center;
@@ -165,6 +219,10 @@ import { ArThemeToggle } from './theme-toggle';
       margin: 1px 0 0;
       font: 400 11.5px var(--ar-font-sans);
       color: var(--ar-ink-400);
+      /* One line, cut short, when the header is tight: never a word per line. */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .tb__actions {
       display: flex;
@@ -319,6 +377,7 @@ import { ArThemeToggle } from './theme-toggle';
   `,
 })
 export class ArTopbar {
+  protected readonly drawer = inject(NavDrawer);
   readonly title = input.required<string>();
   readonly subtitle = input<string | null>(null);
 

@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ArSidebar } from './sidebar';
+import { NavDrawer } from './nav-drawer';
 import { ArSoftphoneBar } from './softphone-bar';
 import { ArWhatsAppCallBar } from './whatsapp-call-bar';
 import { ArToastHost } from './toast-host';
@@ -27,6 +28,14 @@ import { ToastService } from '../core/ui/toast.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-sidebar />
+    @if (drawer.open()) {
+      <button
+        type="button"
+        class="shell__scrim"
+        aria-label="Close the menu"
+        (click)="drawer.close()"
+      ></button>
+    }
     <main class="shell__main">
       @if (!pwa.isOnline()) {
         <div class="shell__banner shell__banner--offline" role="status">
@@ -77,6 +86,20 @@ import { ToastService } from '../core/ui/toast.service';
       height: 100vh;
       overflow: hidden;
       background: var(--ar-bg-100);
+    }
+    .shell__scrim {
+      display: none;
+    }
+    @media (max-width: 720px) {
+      .shell__scrim {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 1050;
+        border: 0;
+        padding: 0;
+        background: transparent;
+      }
     }
     .shell__main {
       flex: 1;
@@ -155,6 +178,13 @@ import { ToastService } from '../core/ui/toast.service';
   `,
 })
 export class ArAppShell {
+  protected readonly drawer = inject(NavDrawer);
+
+  @HostListener('document:keydown.escape')
+  protected closeDrawer(): void {
+    this.drawer.close();
+  }
+
   protected readonly acting = inject(AgencyActingStore);
   protected readonly pwa = inject(PwaService);
   protected readonly switcher = inject(AccountSwitcher);

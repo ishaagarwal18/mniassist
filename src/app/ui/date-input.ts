@@ -74,6 +74,9 @@ export class ArDateInput implements OnDestroy {
       value: parse(this.native.value) as Date,
       min: this.bound('min'),
       max: this.bound('max'),
+      // With a limit, a typed date outside it becomes the nearest allowed one instead of
+      // staying on screen while the field quietly holds nothing.
+      strictMode: !!(this.bound('min') || this.bound('max')),
       enabled: !this.native.disabled,
       placeholder: this.native.placeholder || undefined,
       width,
@@ -105,6 +108,7 @@ export class ArDateInput implements OnDestroy {
       // Unset bounds read back as Syncfusion's defaults (1900 / 2099), never undefined.
       if (bound && !same(picker[attr], bound)) {
         picker[attr] = bound;
+        picker.strictMode = true;
         dirty = true;
       }
     }

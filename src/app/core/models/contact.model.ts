@@ -51,6 +51,9 @@ export interface Contact {
 
 export interface StoredContactFields {
   readonly companyName?: string;
+  /** The real email field (older saves kept it as an "email" attribute). */
+  readonly emailAddress?: string;
+  readonly website?: string;
   readonly accountId?: string;
   readonly city?: string;
   readonly state?: string;

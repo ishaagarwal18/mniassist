@@ -41,7 +41,7 @@ const STEP_META: Record<
   [OnboardingChecklistStep.CompleteProfile]: {
     label: 'Complete your business profile',
     description: 'Legal name, GSTIN and address — shown on quotations and invoices.',
-    route: '/settings',
+    route: '/settings/business-profile',
   },
   [OnboardingChecklistStep.ConnectChannel]: {
     label: 'Connect a WhatsApp number',

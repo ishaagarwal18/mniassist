@@ -8,7 +8,12 @@ import {
   MAX_ACCOUNT_DEPTH,
   moveProblem,
 } from '../../core/services/account.store';
-import { CustomerAccountRollupDto } from '../../proxy/contacts';
+import { CustomerAccountRollupDto, DecisionRole } from '../../proxy/contacts';
+import type { ContactDto } from '../../proxy/contacts/models';
+import { ContactService as ContactApi } from '../../proxy/contacts/contact.service';
+import { ContactService } from '../../core/services/contact.service';
+import { readApiError } from '../../core/util/api-error';
+import { firstValueFrom } from 'rxjs';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 import { ArSelect } from '../../ui/select';
@@ -59,6 +64,69 @@ export class ArAccounts {
   protected readonly canUpdate = grantedPolicy('AutoReach.Contacts.Update', this.permissions);
   protected readonly canDelete = grantedPolicy('AutoReach.Contacts.Delete', this.permissions);
   protected readonly canView360 = grantedPolicy('AutoReach.Customer360', this.permissions);
+
+  // ---- An account's people, from its contact count ------------------------------------
+  private readonly contactApi = inject(ContactApi);
+  private readonly contactStore = inject(ContactService);
+  protected readonly peopleFor = signal<CustomerAccount | null>(null);
+  protected readonly people = signal<ContactDto[]>([]);
+  protected readonly peopleTotal = signal(0);
+  protected readonly peopleLoading = signal(false);
+  protected readonly peopleError = signal<string | null>(null);
+  protected readonly peopleSubs = signal(false);
+  protected readonly hasSubsidiaryPeople = signal(false);
+
+  protected openPeople(account: CustomerAccount, hasSubsidiaryPeople: boolean): void {
+    this.peopleFor.set(account);
+    this.hasSubsidiaryPeople.set(hasSubsidiaryPeople);
+    // Nobody here but people below: start with them showing.
+    this.peopleSubs.set(hasSubsidiaryPeople && account.contactCount === 0);
+    void this.loadPeople();
+  }
+
+  protected togglePeopleSubs(on: boolean): void {
+    this.peopleSubs.set(on);
+    void this.loadPeople();
+  }
+
+  private async loadPeople(): Promise<void> {
+    const account = this.peopleFor();
+    if (!account) return;
+    this.peopleLoading.set(true);
+    this.peopleError.set(null);
+    try {
+      const page = await firstValueFrom(
+        this.contactApi.getList({
+          accountId: account.id,
+          includeSubsidiaries: this.peopleSubs(),
+          maxResultCount: 100,
+          skipCount: 0,
+          sorting: 'displayName',
+        }),
+      );
+      this.people.set(page.items ?? []);
+      this.peopleTotal.set(page.totalCount ?? 0);
+    } catch (e: unknown) {
+      this.peopleError.set(readApiError(e, 'The contacts could not be loaded.'));
+    } finally {
+      this.peopleLoading.set(false);
+    }
+  }
+
+  /** Contacts, filtered to this account. */
+  protected openAllOnContacts(account: CustomerAccount): void {
+    this.contactStore.filterByAccount(account.id);
+    this.peopleFor.set(null);
+  }
+
+  /** "Purchase manager · Purchase": designation and decision role, whichever are known. */
+  protected personLine(p: ContactDto): string {
+    const role =
+      p.role === undefined || p.role === DecisionRole.Unknown
+        ? ''
+        : (DecisionRole[p.role] ?? '').replace(/([a-z])([A-Z])/g, '$1 $2');
+    return [p.designation, role].filter((s) => !!s).join(' · ') || '—';
+  }
 
   protected readonly rows = this.store.rows;
   protected readonly searching = computed(() => this.store.filter().trim().length > 0);

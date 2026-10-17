@@ -21,6 +21,9 @@ import {
   removeNodeAt,
   ruleFromJson,
   ruleToJson,
+  audienceFromJson,
+  audienceToJson,
+  PickedContact,
   setGroupModeAt,
   updateClauseAt,
   type SegmentClause,
@@ -227,7 +230,7 @@ function toSaved(dto: SegmentDto): SavedSegment {
     id: dto.id!,
     name: dto.name ?? '(unnamed)',
     description: dto.description ?? undefined,
-    rule: ruleFromJson(dto.ruleJson),
+    ...audienceFromJson(dto.ruleJson),
     cachedMemberCount: dto.cachedMemberCount ?? 0,
     isCountStale: dto.isCountStale ?? false,
     lastEvaluatedAt: dto.lastEvaluatedAtUtc ?? undefined,
@@ -249,9 +252,12 @@ export class SegmentStore {
 
   readonly fields = SEGMENT_FIELDS;
   readonly rule = signal<SegmentGroup>(environment.useMockData ? SEED_RULE : EMPTY_RULE);
+  /** Contacts added by hand: in the audience whatever the rule says. */
+  readonly picked = signal<readonly PickedContact[]>([]);
+  private readonly ruleJson = computed(() => audienceToJson(this.rule(), this.picked()));
 
   private readonly previewResource = rxResource({
-    params: () => (environment.useMockData ? undefined : { ruleJson: ruleToJson(this.rule()) }),
+    params: () => (environment.useMockData ? undefined : { ruleJson: this.ruleJson() }),
     stream: ({ params }) =>
       this.api
         .preview({ name: '__preview__', ruleJson: params.ruleJson, isDynamic: true })
@@ -292,8 +298,19 @@ export class SegmentStore {
 
   // ---- Rule editing -------------------------------------------------------
 
-  setRule(rule: SegmentGroup): void {
+  setRule(rule: SegmentGroup, picked: readonly PickedContact[] = []): void {
     this.rule.set(rule);
+    this.picked.set(picked);
+  }
+
+  addPicked(contact: PickedContact): void {
+    this.picked.update((list) =>
+      list.some((p) => p.id === contact.id) ? list : [...list, contact],
+    );
+  }
+
+  removePicked(id: string): void {
+    this.picked.update((list) => list.filter((p) => p.id !== id));
   }
 
   addClause(path: readonly number[]): void {
@@ -325,6 +342,7 @@ export class SegmentStore {
         name: name.trim(),
         description: description?.trim(),
         rule: this.rule(),
+        picked: this.picked(),
         cachedMemberCount: this.preview().totalMatching,
         isCountStale: false,
       };
@@ -336,7 +354,7 @@ export class SegmentStore {
       this.api.create({
         name: name.trim(),
         description: description?.trim() || undefined,
-        ruleJson: ruleToJson(this.rule()),
+        ruleJson: this.ruleJson(),
         isDynamic: true,
       }),
     );
@@ -362,7 +380,7 @@ export class SegmentStore {
       this.api.update(id, {
         name: name.trim(),
         description: description?.trim() || undefined,
-        ruleJson: ruleToJson(this.rule()),
+        ruleJson: this.ruleJson(),
         isDynamic: true,
       }),
     );

@@ -14,6 +14,32 @@
   gap: 14px;
 }
 
+.tpl__numbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 12px;
+  padding: 12px 14px;
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-card);
+}
+/* The number gets the room it needs ("Sun Energy Automation · +91 79845 77527"). */
+.tpl__number {
+  flex: 1 1 280px;
+  min-width: 0;
+  margin: 0;
+}
+.tpl__number select {
+  width: 100%;
+}
+@media (max-width: 560px) {
+  .tpl__numbar > button,
+  .tpl__numbar > :not(.tpl__number) {
+    flex: 1 1 100%;
+  }
+}
+
 .tpl__stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

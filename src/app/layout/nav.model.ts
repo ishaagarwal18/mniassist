@@ -719,6 +719,20 @@ export const NAV: readonly NavGroup[] = [
         tenantOnly: true,
       },
       {
+        label: 'Teams',
+        icon: 'contacts',
+        route: '/settings/teams',
+        permission: 'AutoReach.Teams',
+        tenantOnly: true,
+      },
+      {
+        label: 'Business profile',
+        icon: 'document',
+        route: '/settings/business-profile',
+        permission: 'AutoReach.Branding',
+        tenantOnly: true,
+      },
+      {
         label: 'Branding',
         icon: 'settings',
         route: '/settings/branding',

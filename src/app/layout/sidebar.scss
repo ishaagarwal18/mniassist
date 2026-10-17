@@ -384,3 +384,31 @@
     transition: none;
   }
 }
+
+/* A phone: off-canvas, slid in by the header's menu button. Always full width here,
+   whatever the icons-only setting says, because it overlays the page. */
+@media (max-width: 720px) {
+  :host,
+  :host(.sb--collapsed) {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1100;
+    width: min(280px, 86vw);
+    transform: translateX(-100%);
+    transition: transform var(--ar-ease);
+    box-shadow: none;
+  }
+  :host(.sb--open) {
+    transform: none;
+    box-shadow: 0 0 0 100vmax rgba(15, 23, 42, 0.45);
+  }
+  :host(.sb--collapsed) .sb__label,
+  :host(.sb--collapsed) .sb__tenant,
+  :host(.sb--collapsed) .sb__user-text,
+  :host(.sb--collapsed) .sb__user-chev {
+    display: revert;
+  }
+  .sb__collapse {
+    display: none;
+  }
+}
