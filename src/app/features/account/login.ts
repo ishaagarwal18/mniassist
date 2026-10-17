@@ -193,7 +193,7 @@ import { ArBrand } from '../../layout/brand';
                 name="tenant"
                 autocapitalize="none"
                 autocomplete="organization"
-                placeholder="e.g. vertex-automation"
+                placeholder="e.g. Sun Energy-automation"
                 [value]="tenant()"
                 (input)="tenant.set($any($event.target).value)"
                 (blur)="previewWorkspaceBranding()"

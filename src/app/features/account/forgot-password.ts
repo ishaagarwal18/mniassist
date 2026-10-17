@@ -54,7 +54,7 @@ type Mode = 'password' | 'workspace';
                 class="ar-field__input"
                 name="tenant"
                 autocapitalize="none"
-                placeholder="e.g. vertex-automation"
+                placeholder="e.g. Sun Energy-automation"
                 [value]="workspace()"
                 (input)="workspace.set($any($event.target).value)"
               />

@@ -173,7 +173,7 @@ applies the colours as CSS custom properties (`--ar-tenant-primary`,
 active-nav indicator read them with AutoReach's own defaults as a fallback, so
 an unbranded tenant looks exactly as before. Fixed a real, pre-existing bug
 along the way: the sidebar's tenant name (`.sb__tenant-name`) was a hardcoded
-literal ("Vertex Automation") rather than reading `CurrentUserService`'s own
+literal ("Sun Energy Automation") rather than reading `CurrentUserService`'s own
 `currentTenantName` signal, which already existed and was already correct —
 it just wasn't wired to the one place that needed it.
 

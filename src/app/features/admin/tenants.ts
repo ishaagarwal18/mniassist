@@ -15,7 +15,7 @@ import { ArTenantFeaturesDialog } from './tenant-features-dialog';
 import { ArWorkspaceManageDialog } from './workspace-manage-dialog';
 
 const SEED: TenantDto[] = [
-  { id: 't-1', name: 'vertex-automation' },
+  { id: 't-1', name: 'Sun Energy-automation' },
   { id: 't-2', name: 'meridian-foods' },
 ];
 
@@ -155,7 +155,7 @@ const SEED: TenantDto[] = [
             maxlength="64"
             class="ar-field__input"
             autocapitalize="none"
-            placeholder="e.g. vertex-automation"
+            placeholder="e.g. Sun Energy-automation"
             [value]="fName()"
             (input)="fName.set($any($event.target).value)"
           />

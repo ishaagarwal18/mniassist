@@ -47,7 +47,7 @@ const SEED_USER: CurrentUser = {
   userName: 'rahul.kanade',
   name: 'Rahul',
   surname: 'Kanade',
-  email: 'rahul.kanade@vertexautomation.in',
+  email: 'rahul.kanade@Sun Energyautomation.in',
   phoneNumber: '+91 98200 11234',
   roles: ['admin'],
 };
@@ -147,7 +147,7 @@ export class CurrentUserService {
    * shows the seeded workspace.
    */
   readonly tenantName = computed(() => {
-    if (MOCK) return 'Vertex Automation';
+    if (MOCK) return 'Sun Energy Automation';
     const t = (this.configTenant() ?? {}) as { isAvailable?: boolean; name?: string };
     return t.isAvailable ? (t.name ?? this.currentTenantName()) : '';
   });
