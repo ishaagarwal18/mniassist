@@ -20,7 +20,13 @@
       "Bash(grep -v \"^\\\\s*$\")",
       "mcp__whatsapp_business_tools__whatsapp_biz_businesses",
       "mcp__whatsapp_business_tools__whatsapp_biz_publish_app",
-      "mcp__whatsapp_business_tools__whatsapp_biz_onboarding_status"
+      "mcp__whatsapp_business_tools__whatsapp_biz_onboarding_status",
+      "Bash(cd \"/d/Projects/Latest/Industrial Automation/autoreach-api/src\" && echo \"catalog:\"; grep -rliE \"product_catalog|catalog_id|owned_product_catalogs|/products\" --include=*.cs . | grep -v Migrations | head; echo \"ig publish:\"; grep -rliE \"media_publish|content_publish\" --include=*.cs . | head; echo \"ig api paths:\"; grep -rhoE '\"[^\"]*\\(graph\\\\.instagram|instagram\\)[^\"]*\"' --include=*.cs AutoReach.InstagramApi | sort -u | head; echo \"wa client paths:\"; grep -rhoE '\\(\\\\$\"|\"\\)[^\"]*\\(message_templates|/messages|/register|subscribed_apps|phone_numbers|/calls|call_permission\\)[^\"]*\"' --include=*.cs AutoReach.MetaApi | sort -u | head -20; echo \"scopes requested:\"; grep -rhoE '\"\\(scope|scopes\\)\"[^;]{0,200}|whatsapp_business_[a-z]+|instagram_[a-z_]+|pages_[a-z_]+|ads_[a-z]+|leads_retrieval|catalog_management|business_management' --include=*.cs --include=*.ts . ../../autoreach-web/src 2>/dev/null | sort | uniq -c | sort -rn | head -30)",
+      "Read(//d/Projects/Latest/autoreach-web/**)",
+      "Bash(cd \"/d/Projects/Latest/Industrial Automation/autoreach-api/src\" && grep -n -iE \"catalog\" AutoReach.MetaApi/WhatsAppCloudApiClient.cs | head -5; grep -rn -iE \"catalog_management|instagram_content_publish|instagram_basic\\\\b|instagram_manage_messages\\\\b\" --include=*.cs --include=*.ts --include=*.json . ../../autoreach-web/src 2>/dev/null | grep -v node_modules | head)",
+      "Bash(export MSYS_NO_PATHCONV=1)",
+      "Bash(aws logs *)",
+      "Bash(aws elbv2 *)"
     ],
     "additionalDirectories": [
       "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\src\\AutoReach.Domain\\Messaging",
@@ -29,7 +35,8 @@
       "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\test\\AutoReach.Application.Tests\\Messaging",
       "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\callrelay",
       "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\src\\AutoReach.Application\\Calling",
-      "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\test\\AutoReach.Application.Tests"
+      "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\test\\AutoReach.Application.Tests",
+      "d:\\Projects\\Latest\\Industrial Automation\\docs"
     ]
   }
 }

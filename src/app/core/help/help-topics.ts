@@ -1111,6 +1111,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   },
   'contacts/360': CUSTOMER_360,
   'contacts/:id/360': CUSTOMER_360,
+  'contacts/accounts/:accountId/360': CUSTOMER_360,
   'pipeline/ai-negotiator': {
     benefits: [
       'Answers price questions and counter-offers instantly, within limits you set.',

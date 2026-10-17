@@ -114,6 +114,13 @@ export interface RequestDisplayNameChangeInput {
   displayName: string;
 }
 
+export interface ReleaseChannelInput {
+  /** The number as shown, typed back to confirm. */
+  confirmPhoneNumber: string;
+  /** Also take the number off Meta's Cloud API, so it can be registered elsewhere. */
+  deregisterAtMeta?: boolean;
+}
+
 export interface SetTwoStepPinInput {
   pin: string;
   currentPin?: string | null;

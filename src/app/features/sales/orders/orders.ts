@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -14,6 +14,10 @@ import { SalesOrderStatus } from '../../../proxy/sales/sales-enums';
 import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.service';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ToastService } from '../../../core/ui/toast.service';
+import { PickerOption } from '../../../core/services/pipeline.service';
+import { errorMessage } from '../../activities/activity-logic';
+import { ArContactPicker } from '../../pipeline/contact-picker';
 
 const MOCK_ORDERS: SalesOrderDto[] = [
   {
@@ -155,7 +159,7 @@ const MOCK_ORDERS: SalesOrderDto[] = [
 @Component({
   selector: 'ar-sales-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArContactPicker],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -169,6 +173,12 @@ const MOCK_ORDERS: SalesOrderDto[] = [
     </ar-topbar>
 
     <div class="orders-shell">
+      @if (loadError(); as e) {
+        <p class="load-error" role="alert">
+          {{ e }}
+          <button ar-button variant="ghost" (click)="loadOrders()">Try again</button>
+        </p>
+      }
       <!-- Search & Filters -->
       <div class="filters-bar">
         <div class="search-input-wrap">
@@ -438,12 +448,10 @@ const MOCK_ORDERS: SalesOrderDto[] = [
         <div class="create-form">
           <div class="form-row">
             <div class="form-group flex-1">
-              <label>Customer Name *</label>
-              <input
-                type="text"
-                class="ar-input"
-                [(ngModel)]="newOrder.customerName"
-                placeholder="e.g. Kalyani Forge Ltd"
+              <label>Customer *</label>
+              <ar-contact-picker
+                [initial]="newOrderCustomer()"
+                (picked)="newOrderCustomer.set($event)"
               />
             </div>
             <div class="form-group flex-1">
@@ -523,9 +531,17 @@ const MOCK_ORDERS: SalesOrderDto[] = [
             <button class="add-line-btn" (click)="addItemLine()">+ Add line item</button>
           </div>
 
+          @if (createError(); as e) {
+            <p class="load-error" role="alert">{{ e }}</p>
+          }
           <div class="dialog-foot">
             <button ar-button variant="ghost" (click)="showCreateDialog.set(false)">Cancel</button>
-            <button ar-button variant="primary" (click)="submitCreateOrder()">
+            <button
+              ar-button
+              variant="primary"
+              [disabled]="creating()"
+              (click)="submitCreateOrder()"
+            >
               Create Sales Order
             </button>
           </div>
@@ -535,6 +551,17 @@ const MOCK_ORDERS: SalesOrderDto[] = [
   `,
   styles: [
     `
+      .load-error {
+        margin: 0;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--ar-bad-200, #fecaca);
+        border-radius: 8px;
+        background: var(--ar-bad-50, #fef2f2);
+        color: var(--ar-bad-700, #b91c1c);
+      }
+      .load-error button {
+        margin-left: 0.5rem;
+      }
       .orders-shell {
         padding: 1.5rem;
         display: flex;
@@ -803,17 +830,25 @@ export class ArSalesOrders {
   private readonly challanService = inject(DeliveryChallanService);
   private readonly invoiceService = inject(SalesInvoiceService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly SalesOrderStatus = SalesOrderStatus;
 
-  orders = signal<SalesOrderDto[]>(MOCK_ORDERS);
+  private readonly toasts = inject(ToastService);
+
+  /** Demo rows only in mock mode; a real workspace sees its own orders or none. */
+  orders = signal<SalesOrderDto[]>(environment.useMockData ? MOCK_ORDERS : []);
+  loadError = signal<string | null>(null);
+  /** The customer the new order is for: a real contact, picked or passed as ?customer=. */
+  newOrderCustomer = signal<PickerOption | null>(null);
+  createError = signal<string | null>(null);
+  creating = signal(false);
   searchQuery = signal<string>('');
   selectedStatus = signal<SalesOrderStatus | null>(null);
   selectedOrder = signal<SalesOrderDto | null>(null);
   showCreateDialog = signal<boolean>(false);
 
   newOrder = {
-    customerName: '',
     customerPoNumber: '',
     paymentTermsDays: 30,
     deliveryTerms: 'Ex-Works',
@@ -842,18 +877,34 @@ export class ArSalesOrders {
 
   constructor() {
     this.loadOrders();
+    // ?new=1 opens the order form; &customer=<contact id>&customerName=… picks the customer.
+    const query = this.route.snapshot.queryParamMap;
+    if (query.get('new')) {
+      const customerId = query.get('customer');
+      this.openCreateModal(
+        customerId ? { id: customerId, label: query.get('customerName') || 'Customer' } : null,
+      );
+    }
+    // ?open=<id> (from Customer 360 and other links) opens that record's panel.
+    const openId = query.get('open');
+    if (openId && !environment.useMockData) {
+      this.orderService.get(openId).subscribe({
+        next: (record) => {
+          if (record) this.selectedOrder.set(record);
+        },
+      });
+    }
   }
 
   loadOrders() {
     if (!environment.useMockData) {
       this.orderService.getList({ maxResultCount: 100 }).subscribe({
         next: (res) => {
-          if (res && res.items && res.items.length > 0) {
-            this.orders.set(res.items);
-          }
+          this.orders.set(res?.items ?? []);
+          this.loadError.set(null);
         },
-        error: () => {
-          // fallback to rich mock data
+        error: (e: unknown) => {
+          this.loadError.set(errorMessage(e, 'Sales orders could not be loaded.'));
         },
       });
     }
@@ -863,7 +914,9 @@ export class ArSalesOrders {
     this.selectedOrder.set(order);
   }
 
-  openCreateModal() {
+  openCreateModal(customer: PickerOption | null = null) {
+    this.newOrderCustomer.set(customer);
+    this.createError.set(null);
     this.newOrderLines = [{ partNumber: '', description: '', quantity: 1, unitPrice: 0 }];
     this.showCreateDialog.set(true);
   }
@@ -879,7 +932,13 @@ export class ArSalesOrders {
   }
 
   submitCreateOrder() {
-    if (!this.newOrder.customerName || !this.newOrder.customerPoNumber) {
+    const customer = this.newOrderCustomer();
+    if (!customer) {
+      this.createError.set('Pick the customer this order is for.');
+      return;
+    }
+    if (!this.newOrder.customerPoNumber) {
+      this.createError.set('Enter the customer PO number.');
       return;
     }
 
@@ -895,7 +954,7 @@ export class ArSalesOrders {
       }));
 
     const input: CreateSalesOrderDto = {
-      customerId: '00000000-0000-0000-0000-000000000001',
+      customerId: customer.id,
       customerPoNumber: this.newOrder.customerPoNumber,
       paymentTermsDays: this.newOrder.paymentTermsDays,
       deliveryTerms: this.newOrder.deliveryTerms,
@@ -904,29 +963,39 @@ export class ArSalesOrders {
       lines,
     };
 
+    if (lines.length === 0) {
+      this.createError.set('Add at least one line with a part number and quantity.');
+      return;
+    }
+
     if (!environment.useMockData) {
+      this.creating.set(true);
+      this.createError.set(null);
       this.orderService.create(input).subscribe({
         next: (created) => {
+          this.creating.set(false);
           this.orders.update((list) => [created, ...list]);
           this.showCreateDialog.set(false);
+          this.toasts.success(`Sales order ${created.orderNumber} created.`);
         },
-        error: () => {
-          this.mockCreateOrder(input);
+        error: (e: unknown) => {
+          this.creating.set(false);
+          this.createError.set(errorMessage(e, 'The sales order could not be created.'));
         },
       });
     } else {
-      this.mockCreateOrder(input);
+      this.mockCreateOrder(input, customer.label);
     }
   }
 
-  private mockCreateOrder(input: CreateSalesOrderDto) {
+  private mockCreateOrder(input: CreateSalesOrderDto, customerName: string) {
     const subtotal = input.lines.reduce((acc, l) => acc + l.quantity * l.unitPriceInPaise, 0);
     const tax = Math.round(subtotal * 0.18);
     const created: SalesOrderDto = {
       id: `so-${Date.now()}`,
       orderNumber: `SO-2026-${Math.floor(1000 + Math.random() * 9000)}`,
       customerId: input.customerId,
-      customerName: this.newOrder.customerName,
+      customerName,
       customerPoNumber: input.customerPoNumber,
       status: SalesOrderStatus.Draft,
       paymentTermsDays: input.paymentTermsDays,
@@ -962,43 +1031,54 @@ export class ArSalesOrders {
 
   confirmOrder(order: SalesOrderDto) {
     if (!order.id) return;
+    if (environment.useMockData) {
+      this.updateOrderInList({
+        ...order,
+        status: SalesOrderStatus.Confirmed,
+        confirmedAtUtc: new Date().toISOString(),
+      });
+      return;
+    }
     this.orderService.confirm(order.id).subscribe({
       next: (updated) => {
         this.updateOrderInList(updated);
       },
-      error: () => {
-        // Mock update
-        const updated = {
-          ...order,
-          status: SalesOrderStatus.Confirmed,
-          confirmedAtUtc: new Date().toISOString(),
-        };
-        this.updateOrderInList(updated);
-      },
+      error: (e: unknown) =>
+        this.toasts.error(errorMessage(e, `${order.orderNumber} could not be confirmed.`)),
     });
   }
 
   createChallan(order: SalesOrderDto) {
     if (!order.id) return;
+    if (environment.useMockData) {
+      this.router.navigate(['/sales/challans']);
+      return;
+    }
     this.challanService.createFromSalesOrder(order.id).subscribe({
-      next: () => {
-        this.router.navigate(['/sales/challans']);
+      next: (challan) => {
+        this.router.navigate(['/sales/challans'], { queryParams: { open: challan.id } });
       },
-      error: () => {
-        this.router.navigate(['/sales/challans']);
-      },
+      error: (e: unknown) =>
+        this.toasts.error(
+          errorMessage(e, `A challan could not be raised for ${order.orderNumber}.`),
+        ),
     });
   }
 
   createInvoice(order: SalesOrderDto) {
     if (!order.id) return;
+    if (environment.useMockData) {
+      this.router.navigate(['/sales/invoices']);
+      return;
+    }
     this.invoiceService.createFromSalesOrder(order.id).subscribe({
-      next: () => {
-        this.router.navigate(['/sales/invoices']);
+      next: (invoice) => {
+        this.router.navigate(['/sales/invoices'], { queryParams: { open: invoice.id } });
       },
-      error: () => {
-        this.router.navigate(['/sales/invoices']);
-      },
+      error: (e: unknown) =>
+        this.toasts.error(
+          errorMessage(e, `An invoice could not be raised for ${order.orderNumber}.`),
+        ),
     });
   }
 

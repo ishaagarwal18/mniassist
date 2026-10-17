@@ -60,6 +60,16 @@
       </ar-chip>
       <div class="ac__actions">
         <button ar-button variant="primary" (click)="openRollup(row.account)">Rollup</button>
+        @if (canView360()) {
+          <a
+            ar-button
+            variant="ghost"
+            title="Customer 360 for {{ row.account.name }}"
+            [routerLink]="['/contacts/accounts', row.account.id, '360']"
+          >
+            Customer 360
+          </a>
+        }
         @if (canCreate() && row.depth < maxDepth) {
           <button ar-button variant="ghost" (click)="openNew(row.account.id)">
             Add subsidiary
@@ -210,7 +220,16 @@
           <ul class="roll__contacts">
             @for (c of r.contacts; track c.id) {
               <li>
-                <span class="roll__cn">{{ c.displayName || c.waId }}</span>
+                @if (canView360()) {
+                  <a
+                    class="roll__cn roll__cn--link"
+                    [routerLink]="['/contacts', c.id, '360']"
+                    (click)="rollupOpen.set(false)"
+                    >{{ c.displayName || c.waId }}</a
+                  >
+                } @else {
+                  <span class="roll__cn">{{ c.displayName || c.waId }}</span>
+                }
                 @if (r.includesSubsidiaries && c.accountName) {
                   <span class="roll__cd">{{ c.accountName }}</span>
                 }

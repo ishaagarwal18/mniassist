@@ -1,17 +1,29 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { Customer360Dto } from '../../proxy/sales/customer-360.models';
 import { Customer360Service } from '../../proxy/sales/customer-360.service';
+import { ContactService } from '../../proxy/contacts/contact.service';
+import type { ContactDto, CustomerAccountDto } from '../../proxy/contacts/models';
+import { CustomerAccountService } from '../../proxy/contacts/customer-account.service';
 import {
   DeliveryChallanStatus,
   SalesInvoiceStatus,
   SalesOrderStatus,
 } from '../../proxy/sales/sales-enums';
-import { ArButton, ArChip, ChipTone } from '../../ui';
+import { ArButton, ArChip, ArSearchBox, ChipTone } from '../../ui';
 
 const MOCK_CUSTOMER_360: Customer360Dto = {
   id: 'c1',
@@ -34,6 +46,8 @@ const MOCK_CUSTOMER_360: Customer360Dto = {
   },
   lifetimeRevenueInPaise: 2_450_000_00,
   totalOrdersCount: 6,
+  activeOrdersCount: 1,
+  totalChallansCount: 1,
   totalInvoicesCount: 5,
   openTicketsCount: 1,
   installedAssetsCount: 3,
@@ -157,16 +171,18 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
 @Component({
   selector: 'ar-customer-360',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ArTopbar, ArButton, ArChip],
+  imports: [CommonModule, FormsModule, RouterLink, ArTopbar, ArButton, ArChip, ArSearchBox],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
       title="Customer 360 cockpit"
-      [subtitle]="data()?.accountName || data()?.customerName || 'Consolidated Customer Dossier'"
+      [subtitle]="subtitle()"
       help="Customer 360 unifies all CRM, Sales Order, GST Invoicing, Service Ticket and Machinery equipment data in a single enterprise cockpit."
     >
       <div actions class="actions-row">
-        <a ar-button variant="ghost" routerLink="/sales/orders">+ New Order</a>
+        <a ar-button variant="ghost" routerLink="/sales/orders" [queryParams]="newOrderParams()"
+          >+ New Order</a
+        >
         <a ar-button variant="ghost" routerLink="/contacts">All Contacts</a>
       </div>
     </ar-topbar>
@@ -198,8 +214,34 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
             </div>
           </div>
           <div class="banner-contact">
-            <div class="contact-line">📞 {{ c.phone || 'No phone' }}</div>
-            <div class="contact-line">✉️ {{ c.email || 'No email' }}</div>
+            @if (c.isAccountView) {
+              @if (c.hasSubsidiaries) {
+                <label class="contact-line subs-toggle">
+                  <input
+                    type="checkbox"
+                    [checked]="c.includesSubsidiaries"
+                    (change)="setSubsidiaries($any($event.target).checked)"
+                  />
+                  Include subsidiaries (its companies and plants)
+                </label>
+              }
+              @if (c.contactId) {
+                <div class="contact-line text-muted">
+                  Newest contact:
+                  <a [routerLink]="['/contacts', c.contactId, '360']">{{ c.contactName }}</a>
+                </div>
+              } @else {
+                <div class="contact-line text-muted">No contacts on this account yet</div>
+              }
+            } @else if (c.accountId) {
+              <div class="contact-line">
+                <a [routerLink]="['/contacts/accounts', c.accountId, '360']">Whole account view</a>
+              </div>
+            }
+            @if (!c.isAccountView || c.contactId) {
+              <div class="contact-line">📞 {{ c.phone || 'No phone' }}</div>
+              <div class="contact-line">✉️ {{ c.email || 'No email' }}</div>
+            }
           </div>
         </div>
 
@@ -216,10 +258,24 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
               }
             </div>
             <div class="kpi-val font-mono">
-              ₹{{ (c.credit.creditLimitInPaise || 0) / 100 | number: '1.0-0' }}
+              @if (c.credit.creditLimitInPaise != null) {
+                ₹{{ c.credit.creditLimitInPaise / 100 | number: '1.0-0' }}
+              } @else {
+                No limit set
+              }
             </div>
             <div class="card-foot text-xs text-muted">
-              Terms: {{ c.credit.paymentTermsDays || 'Advance' }} days
+              @if (c.credit.paymentTermsDays != null) {
+                Terms:
+                {{
+                  c.credit.paymentTermsDays === 0 ? 'Advance' : c.credit.paymentTermsDays + ' days'
+                }}
+              } @else {
+                Terms: not set
+              }
+              @if (c.credit.onHold && c.credit.holdReason) {
+                · {{ c.credit.holdReason }}
+              }
             </div>
           </div>
 
@@ -245,7 +301,7 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
               ₹{{ c.credit.totalOnOrderInPaise / 100 | number: '1.2-2' }}
             </div>
             <div class="card-foot text-xs text-muted">
-              {{ c.recentOrders.length }} active sales orders
+              {{ c.activeOrdersCount }} active sales order{{ c.activeOrdersCount === 1 ? '' : 's' }}
             </div>
           </div>
 
@@ -270,37 +326,41 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
             [class.active]="activeTab() === 'orders'"
             (click)="activeTab.set('orders')"
           >
-            Sales Orders ({{ c.recentOrders.length }})
+            Sales Orders ({{ c.totalOrdersCount }})
           </button>
           <button
             class="nav-tab"
             [class.active]="activeTab() === 'challans'"
             (click)="activeTab.set('challans')"
           >
-            Delivery Challans ({{ c.recentChallans.length }})
+            Delivery Challans ({{ c.totalChallansCount }})
           </button>
           <button
             class="nav-tab"
             [class.active]="activeTab() === 'invoices'"
             (click)="activeTab.set('invoices')"
           >
-            Invoices & Payments ({{ c.recentInvoices.length }})
+            Invoices & Payments ({{ c.totalInvoicesCount }})
           </button>
           <button
             class="nav-tab"
             [class.active]="activeTab() === 'tickets'"
             (click)="activeTab.set('tickets')"
           >
-            Support Tickets ({{ c.openTickets.length }})
+            Open Tickets ({{ c.openTicketsCount }})
           </button>
           <button
             class="nav-tab"
             [class.active]="activeTab() === 'assets'"
             (click)="activeTab.set('assets')"
           >
-            Installed Machinery ({{ c.installedAssets.length }})
+            Installed Machinery ({{ c.installedAssetsCount }})
           </button>
         </div>
+
+        @if (moreThanShown(c)) {
+          <p class="state-note text-xs">Showing the latest 10 of each.</p>
+        }
 
         <!-- Tab 1: Orders -->
         @if (activeTab() === 'orders') {
@@ -333,7 +393,13 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
                       }}</ar-chip>
                     </td>
                     <td class="actions-col">
-                      <a ar-button variant="ghost" routerLink="/sales/orders">Open</a>
+                      <a
+                        ar-button
+                        variant="ghost"
+                        routerLink="/sales/orders"
+                        [queryParams]="{ open: o.id }"
+                        >Open</a
+                      >
                     </td>
                   </tr>
                 } @empty {
@@ -377,7 +443,13 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
                       }}</ar-chip>
                     </td>
                     <td class="actions-col">
-                      <a ar-button variant="ghost" routerLink="/sales/challans">View</a>
+                      <a
+                        ar-button
+                        variant="ghost"
+                        routerLink="/sales/challans"
+                        [queryParams]="{ open: dc.id }"
+                        >View</a
+                      >
                     </td>
                   </tr>
                 } @empty {
@@ -423,7 +495,13 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
                       }}</ar-chip>
                     </td>
                     <td class="actions-col">
-                      <a ar-button variant="ghost" routerLink="/sales/invoices">View</a>
+                      <a
+                        ar-button
+                        variant="ghost"
+                        routerLink="/sales/invoices"
+                        [queryParams]="{ open: inv.id }"
+                        >View</a
+                      >
                     </td>
                   </tr>
                 } @empty {
@@ -456,14 +534,22 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
                     <td class="font-mono font-bold">{{ t.ticketNumber }}</td>
                     <td class="font-semibold">{{ t.subject }}</td>
                     <td>
-                      <ar-chip tone="amber">{{ t.priority }}</ar-chip>
+                      <ar-chip [tone]="ticketPriorityTone(t.priority)">{{ t.priority }}</ar-chip>
                     </td>
                     <td>
-                      <ar-chip tone="teal">{{ t.status }}</ar-chip>
+                      <ar-chip [tone]="t.status === 'Pending' ? 'warn' : 'teal'">{{
+                        t.status
+                      }}</ar-chip>
                     </td>
                     <td>{{ t.creationTime | date: 'dd MMM yyyy' }}</td>
                     <td class="actions-col">
-                      <a ar-button variant="ghost" routerLink="/helpdesk">Desk</a>
+                      <a
+                        ar-button
+                        variant="ghost"
+                        routerLink="/helpdesk"
+                        [queryParams]="{ open: t.id }"
+                        >Desk</a
+                      >
                     </td>
                   </tr>
                 } @empty {
@@ -497,17 +583,21 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
                   <tr>
                     <td class="font-mono font-bold text-primary">{{ ast.serialNumber }}</td>
                     <td class="font-semibold">{{ ast.modelName }}</td>
-                    <td>{{ ast.commissionedDate || '—' }}</td>
+                    <td>{{ (ast.commissionedDate | date: 'dd MMM yyyy') || '—' }}</td>
                     <td>
                       <ar-chip tone="good">{{ ast.status }}</ar-chip>
                     </td>
                     <td>
-                      <ar-chip [tone]="ast.amcStatus === 'Active' ? 'good' : 'bad'">{{
-                        ast.amcStatus
-                      }}</ar-chip>
+                      <ar-chip [tone]="amcTone(ast.amcStatus)">{{ ast.amcStatus }}</ar-chip>
                     </td>
                     <td class="actions-col">
-                      <a ar-button variant="ghost" routerLink="/installed-base">Details</a>
+                      <a
+                        ar-button
+                        variant="ghost"
+                        routerLink="/installed-base"
+                        [queryParams]="{ open: ast.id }"
+                        >Details</a
+                      >
                     </td>
                   </tr>
                 } @empty {
@@ -521,11 +611,156 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
             </table>
           </div>
         }
+      } @else if (loading()) {
+        <p class="state-note">Loading Customer 360…</p>
+      } @else {
+        @if (error(); as e) {
+          <p class="state-note state-note--bad" role="alert">{{ e }}</p>
+        }
+        <section class="picker">
+          <h2 class="picker__title">Open a customer</h2>
+          <p class="picker__hint">
+            Search by name, company or WhatsApp number. You can also open Customer 360 from any row
+            on Contacts or Accounts.
+          </p>
+          <ar-search-box
+            placeholder="Search contacts and accounts"
+            [query]="pickerQuery()"
+            (queryChange)="searchContacts($event)"
+          />
+          @if (pickerBusy()) {
+            <p class="picker__hint">Searching…</p>
+          } @else if (
+            pickerQuery().trim() && pickerResults().length === 0 && pickerAccounts().length === 0
+          ) {
+            <p class="picker__hint">Nothing matches “{{ pickerQuery() }}”.</p>
+          }
+          @if (pickerAccounts().length) {
+            <h3 class="picker__group">Accounts</h3>
+            <ul class="picker__list">
+              @for (a of pickerAccounts(); track a.id) {
+                <li>
+                  <a class="picker__item" [routerLink]="['/contacts/accounts', a.id, '360']">
+                    <span class="picker__name">{{ a.name }}</span>
+                    @if (a.city) {
+                      <span class="picker__meta">{{ a.city }}</span>
+                    }
+                    <span class="picker__meta"
+                      >{{ a.contactCount }} contact{{ a.contactCount === 1 ? '' : 's' }}</span
+                    >
+                  </a>
+                </li>
+              }
+            </ul>
+            @if (pickerResults().length) {
+              <h3 class="picker__group">Contacts</h3>
+            }
+          }
+          <ul class="picker__list">
+            @for (p of pickerResults(); track p.id) {
+              <li>
+                <a class="picker__item" [routerLink]="['/contacts', p.id, '360']">
+                  <span class="picker__name">{{ p.displayName || p.waId }}</span>
+                  @if (p.companyName) {
+                    <span class="picker__meta">{{ p.companyName }}</span>
+                  }
+                  <span class="picker__meta">{{ p.waId }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+        </section>
       }
     </div>
   `,
   styles: [
     `
+      /* Text helpers the template uses; nothing global defines them. */
+      .text-muted {
+        color: var(--ar-ink-500);
+      }
+      .text-xs {
+        font-size: 0.75rem;
+      }
+      .font-mono {
+        font-family: var(--ar-font-mono, ui-monospace, monospace);
+      }
+      .font-bold {
+        font-weight: 600;
+      }
+      .font-semibold {
+        font-weight: 500;
+      }
+      .state-note {
+        margin: 0;
+        color: var(--ar-ink-500);
+      }
+      .state-note--bad {
+        color: var(--ar-bad-600, #b91c1c);
+      }
+      .picker {
+        background: var(--ar-surface, #ffffff);
+        border: 1px solid var(--ar-line, #e2e8f0);
+        border-radius: 8px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-width: 640px;
+      }
+      .picker__title {
+        margin: 0;
+        font-size: 1.05rem;
+        color: var(--ar-ink-900);
+      }
+      .picker__hint {
+        margin: 0;
+        color: var(--ar-ink-500);
+        font-size: 0.85rem;
+      }
+      .picker__group {
+        margin: 0.5rem 0 0;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ar-ink-500);
+      }
+      .subs-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+      }
+      .picker__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .picker__item {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem 0.75rem;
+        align-items: baseline;
+        padding: 0.6rem 0.5rem;
+        border-top: 1px solid var(--ar-line, #e2e8f0);
+        text-decoration: none;
+        color: inherit;
+      }
+      .picker__item:hover,
+      .picker__item:focus-visible {
+        background: var(--ar-ink-50, #f8fafc);
+      }
+      .picker__name {
+        color: var(--ar-blue-600);
+        font-weight: 500;
+      }
+      .picker__meta {
+        color: var(--ar-ink-500);
+        font-size: 0.8rem;
+      }
       .dossier-shell {
         padding: 1.5rem;
         display: flex;
@@ -707,29 +942,159 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
 })
 export class ArCustomer360 {
   private readonly c360Service = inject(Customer360Service);
+  private readonly contacts = inject(ContactService);
   private readonly route = inject(ActivatedRoute);
 
-  data = signal<Customer360Dto | null>(MOCK_CUSTOMER_360);
+  data = signal<Customer360Dto | null>(environment.useMockData ? MOCK_CUSTOMER_360 : null);
   activeTab = signal<Tab>('orders');
+  protected readonly loading = signal(false);
+  protected readonly error = signal<string | null>(null);
+
+  /** With no customer in the URL, the page is a contact picker. */
+  protected readonly pickerQuery = signal('');
+  protected readonly pickerResults = signal<ContactDto[]>([]);
+  protected readonly pickerAccounts = signal<CustomerAccountDto[]>([]);
+  private readonly accounts = inject(CustomerAccountService);
+  private readonly router = inject(Router);
+  protected readonly pickerBusy = signal(false);
+  private pickerSeq = 0;
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
-    this.route.params.subscribe((params) => {
-      const id = params['id'];
-      if (id) {
-        this.loadCustomer360(id);
+    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const contactId = params.get('id');
+      const accountId = params.get('accountId');
+      // ?subsidiaries=1 takes in every account beneath this one.
+      const subsidiaries = this.route.snapshot.queryParamMap.get('subsidiaries') === '1';
+      if (contactId) this.load(this.c360Service.get(contactId, { skipHandleError: true }));
+      else if (accountId)
+        this.load(
+          this.c360Service.getByAccount(accountId, subsidiaries, { skipHandleError: true }),
+        );
+      else if (!environment.useMockData) {
+        this.data.set(null);
+        this.searchContacts('');
       }
     });
   }
 
-  loadCustomer360(customerId: string) {
-    if (!environment.useMockData) {
-      this.c360Service.get(customerId).subscribe({
-        next: (res) => {
-          if (res) this.data.set(res);
-        },
-        error: () => {},
-      });
+  private load(request: Observable<Customer360Dto>): void {
+    if (environment.useMockData) return;
+    this.data.set(null);
+    this.error.set(null);
+    this.loading.set(true);
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (res) => {
+        this.loading.set(false);
+        this.data.set(res ?? null);
+        if (!res) this.error.set('This customer could not be found.');
+      },
+      error: (err: { error?: { error?: { message?: string } } }) => {
+        this.loading.set(false);
+        this.error.set(err?.error?.error?.message ?? 'Customer 360 could not be loaded.');
+        this.searchContacts('');
+      },
+    });
+  }
+
+  /** Opens the order form with this customer already picked. */
+  protected readonly newOrderParams = computed(() => {
+    const c = this.data();
+    const contactId = c?.contactId ?? (c && !c.isAccountView ? c.id : null);
+    if (!c || !contactId) return { new: 1 };
+    return { new: 1, customer: contactId, customerName: c.contactName ?? c.customerName };
+  });
+
+  protected readonly subtitle = computed(() => {
+    const c = this.data();
+    if (!c) return 'Pick a customer';
+    if (c.isAccountView) return `${c.customerName} · whole account`;
+    return c.accountName ? `${c.customerName} · ${c.accountName}` : c.customerName;
+  });
+
+  /** True when any tab has more records than the latest ten it lists. */
+  protected moreThanShown(c: Customer360Dto): boolean {
+    return (
+      c.totalOrdersCount > c.recentOrders.length ||
+      c.totalChallansCount > c.recentChallans.length ||
+      c.totalInvoicesCount > c.recentInvoices.length ||
+      c.openTicketsCount > c.openTickets.length ||
+      c.installedAssetsCount > c.installedAssets.length
+    );
+  }
+
+  protected ticketPriorityTone(priority: string): ChipTone {
+    switch (priority) {
+      case 'Urgent':
+        return 'bad';
+      case 'High':
+        return 'warn';
+      case 'Low':
+        return 'neutral';
+      default:
+        return 'amber';
     }
+  }
+
+  protected amcTone(status: string | undefined): ChipTone {
+    if (status === 'Active') return 'good';
+    if (status === 'Expired') return 'bad';
+    return 'neutral';
+  }
+
+  /** Re-reads the account view with or without its subsidiaries, and keeps it in the URL. */
+  protected setSubsidiaries(on: boolean): void {
+    const accountId = this.route.snapshot.paramMap.get('accountId');
+    if (!accountId) return;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { subsidiaries: on ? 1 : null },
+      replaceUrl: true,
+    });
+    this.load(this.c360Service.getByAccount(accountId, on, { skipHandleError: true }));
+  }
+
+  protected searchContacts(term: string): void {
+    this.pickerQuery.set(term);
+    const seq = ++this.pickerSeq;
+    this.pickerBusy.set(true);
+    // Accounts only once something is typed: the empty picker lists recent contacts.
+    if (term.trim()) {
+      this.accounts
+        .getList(
+          { filter: term.trim(), maxResultCount: 8, skipCount: 0 },
+          { skipHandleError: true },
+        )
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (res) => {
+            if (seq === this.pickerSeq) this.pickerAccounts.set(res.items ?? []);
+          },
+          error: () => {
+            if (seq === this.pickerSeq) this.pickerAccounts.set([]);
+          },
+        });
+    } else {
+      this.pickerAccounts.set([]);
+    }
+    this.contacts
+      .getList(
+        { filter: term.trim() || undefined, maxResultCount: 20, skipCount: 0 },
+        { skipHandleError: true },
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (res) => {
+          if (seq !== this.pickerSeq) return;
+          this.pickerBusy.set(false);
+          this.pickerResults.set(res.items ?? []);
+        },
+        error: () => {
+          if (seq !== this.pickerSeq) return;
+          this.pickerBusy.set(false);
+          this.pickerResults.set([]);
+        },
+      });
   }
 
   getOrderStatusLabel(status: SalesOrderStatus): string {

@@ -40,6 +40,15 @@ export interface Customer360InteractionDto {
 }
 
 export interface Customer360Dto extends EntityDto<string> {
+  /** The contact this view is about; for a whole account, its newest contact. */
+  contactId?: string;
+  contactName?: string;
+  /** True when the figures cover every contact on the account, not one person. */
+  isAccountView?: boolean;
+  /** The account has accounts beneath it (companies, plants). */
+  hasSubsidiaries?: boolean;
+  /** The figures include every account beneath this one. */
+  includesSubsidiaries?: boolean;
   customerName: string;
   email?: string;
   phone?: string;
@@ -54,6 +63,9 @@ export interface Customer360Dto extends EntityDto<string> {
 
   lifetimeRevenueInPaise: number;
   totalOrdersCount: number;
+  /** Orders confirmed, in production or part-dispatched. */
+  activeOrdersCount: number;
+  totalChallansCount: number;
   totalInvoicesCount: number;
   openTicketsCount: number;
   installedAssetsCount: number;

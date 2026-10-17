@@ -94,11 +94,26 @@
       </label>
     </div>
     <label class="ar-field">
+      <span class="ar-field__label">Account <span class="ar-field__opt">optional</span></span>
+      <select
+        class="ar-field__input"
+        [value]="form().accountId"
+        (change)="patchText('accountId', $any($event.target).value)"
+      >
+        <option value="" [selected]="!form().accountId">No account</option>
+        @for (a of accountChoices(); track a.id) {
+          <option [value]="a.id" [selected]="a.id === form().accountId">{{ a.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="ar-field">
       <span class="ar-field__label">Company <span class="ar-field__opt">optional</span></span>
       <input
         class="ar-field__input"
+        [readOnly]="!!formAccount()"
+        [title]="formAccount() ? 'Taken from the account. Change the account to change it.' : ''"
         maxlength="256"
-        [value]="form().companyName"
+        [value]="formAccount()?.name ?? form().companyName"
         (input)="patchText('companyName', $any($event.target).value)"
       />
     </label>
@@ -154,7 +169,7 @@
         [disabled]="saving()"
         (click)="saveContact()"
       >
-        {{ saving() ? 'Saving…' : 'Add contact' }}
+        {{ saving() ? 'Saving…' : editingContactId() ? 'Save changes' : 'Add contact' }}
       </button>
     </div>
   </ar-dialog>
@@ -246,7 +261,16 @@
             <ng-template #template let-c>
               <span class="who">
                 <ar-avatar [name]="c.name" [size]="26" />
-                <span class="who__name">{{ c.name }}</span>
+                @if (canView360()) {
+                  <a
+                    class="who__name who__name--link"
+                    [routerLink]="['/contacts', c.id, '360']"
+                    title="Open Customer 360 for {{ c.name }}"
+                    >{{ c.name }}</a
+                  >
+                } @else {
+                  <span class="who__name">{{ c.name }}</span>
+                }
               </span>
             </ng-template>
           </e-column>
@@ -277,14 +301,24 @@
           <e-column field="lastActivity" headerText="Last activity" />
           <e-column
             headerText="Actions"
-            width="240"
+            width="360"
             textAlign="Right"
-            [visible]="canReorder() || canUpdate() || canDelete()"
+            [visible]="canView360() || canReorder() || canUpdate() || canDelete()"
             [showInColumnChooser]="false"
             [allowSorting]="false"
             [allowFiltering]="false"
           >
             <ng-template #template let-c>
+              @if (canView360()) {
+                <a
+                  ar-button
+                  variant="ghost"
+                  title="Customer 360 for {{ c.name }}"
+                  [routerLink]="['/contacts', c.id, '360']"
+                >
+                  360
+                </a>
+              }
               @if (canUpdate()) {
                 <button
                   ar-button

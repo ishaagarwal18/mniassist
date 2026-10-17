@@ -223,7 +223,12 @@
   }
 
   @for (a of assets(); track a.id) {
-    <article class="asset" [class.asset--retired]="a.retired">
+    <article
+      class="asset"
+      [id]="'asset-' + a.id"
+      [class.asset--retired]="a.retired"
+      [class.asset--focus]="a.id === focusId"
+    >
       <div class="asset__main">
         <h2 class="asset__desc">{{ a.description }}</h2>
         <p class="asset__meta">

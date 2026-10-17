@@ -1,10 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   HostListener,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
@@ -73,10 +75,37 @@ function readCollapsed(): boolean {
           <span class="sb__tenant-name">{{ name }}</span>
         </div>
       }
+      <div class="sb__search" role="search">
+        @if (collapsed()) {
+          <button
+            class="sb__search-btn"
+            type="button"
+            aria-label="Search menu"
+            title="Search menu"
+            (click)="openSearch()"
+          >
+            <ar-icon name="search" [size]="15" />
+          </button>
+        } @else {
+          <ar-icon class="sb__search-icon" name="search" [size]="14" />
+          <input
+            #menuSearch
+            class="sb__search-input"
+            type="search"
+            placeholder="Search menu"
+            aria-label="Search menu"
+            autocomplete="off"
+            [value]="menuQuery()"
+            (input)="menuQuery.set($any($event.target).value)"
+            (keydown.enter)="openFirstMatch()"
+            (keydown.escape)="clearSearch()"
+          />
+        }
+      </div>
     </div>
 
     <nav class="sb__nav" aria-label="Main">
-      @for (group of nav(); track group.heading) {
+      @for (group of shown(); track group.heading) {
         @if (group.heading) {
           <!-- A heading folds its group away; the group holding this page stays open. -->
           <button
@@ -102,6 +131,7 @@ function readCollapsed(): boolean {
             [attr.aria-current]="item.route === active() ? 'page' : null"
             [routerLink]="item.route"
             [attr.title]="collapsed() ? item.label : null"
+            (click)="clearSearch()"
           >
             <span class="sb__bar" aria-hidden="true"></span>
             <ar-icon [name]="item.icon" [size]="16" />
@@ -111,6 +141,8 @@ function readCollapsed(): boolean {
             }
           </a>
         }
+      } @empty {
+        <p class="sb__none">No menu items match “{{ menuQuery().trim() }}”.</p>
       }
     </nav>
 
@@ -178,9 +210,10 @@ export class ArSidebar {
   /** Menu groups folded away by their heading, remembered per browser. */
   private readonly folded = signal<ReadonlySet<string>>(readFolded());
 
-  /** Folded, unless it holds the page on screen (or the bar shows icons only). */
+  /** Folded, unless it holds the page on screen (or the bar shows icons only, or a search is on). */
   protected isFolded(group: NavGroup): boolean {
-    if (!group.heading || this.collapsed() || !this.folded().has(group.heading)) return false;
+    if (!group.heading || this.collapsed() || this.searching()) return false;
+    if (!this.folded().has(group.heading)) return false;
     return !group.items.some((i) => i.route === this.active());
   }
 
@@ -253,6 +286,45 @@ export class ArSidebar {
       ),
     })).filter((group) => group.items.length > 0);
   });
+
+  /** Filters the menu by item label, or by group heading to show a whole group. */
+  protected readonly menuQuery = signal('');
+  protected readonly searching = computed(() => this.menuQuery().trim().length > 0);
+  private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('menuSearch');
+
+  protected readonly shown = computed<readonly NavGroup[]>(() => {
+    const terms = this.menuQuery().trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return this.nav();
+    const hits = (text: string) => terms.every((t) => text.includes(t));
+    return this.nav()
+      .map((group) => {
+        const heading = (group.heading ?? '').toLowerCase();
+        if (heading && hits(heading)) return group;
+        return {
+          ...group,
+          items: group.items.filter((i) => hits(`${i.label} ${heading}`.toLowerCase())),
+        };
+      })
+      .filter((group) => group.items.length > 0);
+  });
+
+  /** From icons-only mode: open the bar and put the cursor in the search. */
+  protected openSearch(): void {
+    if (this.collapsed()) this.toggleCollapsed();
+    setTimeout(() => this.searchInput()?.nativeElement.focus());
+  }
+
+  protected openFirstMatch(): void {
+    if (!this.searching()) return;
+    const first = this.shown()[0]?.items[0];
+    if (!first) return;
+    this.clearSearch();
+    void this.router.navigateByUrl(first.route);
+  }
+
+  protected clearSearch(): void {
+    this.menuQuery.set('');
+  }
 
   private readonly router = inject(Router);
   private readonly url = toSignal(

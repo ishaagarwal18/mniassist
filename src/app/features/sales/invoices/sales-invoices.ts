@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ToastService } from '../../../core/ui/toast.service';
+import { errorMessage } from '../../activities/activity-logic';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -166,6 +168,12 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
     </ar-topbar>
 
     <div class="invoices-shell">
+      @if (loadError(); as e) {
+        <p class="load-error" role="alert">
+          {{ e }}
+          <button ar-button variant="ghost" (click)="loadInvoices()">Try again</button>
+        </p>
+      }
       <!-- Summary metrics cards -->
       <div class="metrics-row">
         <div class="metric-card">
@@ -512,6 +520,17 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
   `,
   styles: [
     `
+      .load-error {
+        margin: 0;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--ar-bad-200, #fecaca);
+        border-radius: 8px;
+        background: var(--ar-bad-50, #fef2f2);
+        color: var(--ar-bad-700, #b91c1c);
+      }
+      .load-error button {
+        margin-left: 0.5rem;
+      }
       .invoices-shell {
         padding: 1.5rem;
         display: flex;
@@ -745,12 +764,17 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
 export class ArSalesInvoices {
   private readonly invoiceService = inject(SalesInvoiceService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly SalesInvoiceStatus = SalesInvoiceStatus;
   readonly SalesInvoiceKind = SalesInvoiceKind;
   readonly SalesPaymentMode = SalesPaymentMode;
 
-  invoices = signal<SalesInvoiceDto[]>(MOCK_INVOICES);
+  private readonly toasts = inject(ToastService);
+
+  /** Demo rows only in mock mode; a real workspace sees its own invoices or none. */
+  invoices = signal<SalesInvoiceDto[]>(environment.useMockData ? MOCK_INVOICES : []);
+  loadError = signal<string | null>(null);
   searchQuery = signal<string>('');
   selectedStatus = signal<SalesInvoiceStatus | null>(null);
   selectedInvoice = signal<SalesInvoiceDto | null>(null);
@@ -787,17 +811,27 @@ export class ArSalesInvoices {
 
   constructor() {
     this.loadInvoices();
+    // ?open=<id> (from Customer 360 and other links) opens that record's panel.
+    const openId = this.route.snapshot.queryParamMap.get('open');
+    if (openId && !environment.useMockData) {
+      this.invoiceService.get(openId).subscribe({
+        next: (record) => {
+          if (record) this.selectedInvoice.set(record);
+        },
+      });
+    }
   }
 
   loadInvoices() {
     if (!environment.useMockData) {
       this.invoiceService.getList({ maxResultCount: 100 }).subscribe({
         next: (res) => {
-          if (res && res.items && res.items.length > 0) {
-            this.invoices.set(res.items);
-          }
+          this.invoices.set(res?.items ?? []);
+          this.loadError.set(null);
         },
-        error: () => {},
+        error: (e: unknown) => {
+          this.loadError.set(errorMessage(e, 'Invoices could not be loaded.'));
+        },
       });
     }
   }
@@ -807,10 +841,8 @@ export class ArSalesInvoices {
     if (!environment.useMockData) {
       this.invoiceService.issue(inv.id).subscribe({
         next: (updated) => this.updateInvoiceInList(updated),
-        error: () => {
-          const updated = { ...inv, status: SalesInvoiceStatus.Issued };
-          this.updateInvoiceInList(updated);
-        },
+        error: (e: unknown) =>
+          this.toasts.error(errorMessage(e, `${inv.invoiceNumber} could not be issued.`)),
       });
     } else {
       const updated = { ...inv, status: SalesInvoiceStatus.Issued };
@@ -842,7 +874,9 @@ export class ArSalesInvoices {
           this.updateInvoiceInList(updated);
           this.paymentDialogInvoice.set(null);
         },
-        error: () => this.mockPayment(inv, amountInPaise),
+        // A failed payment is never shown as recorded: the money would look received when it is not.
+        error: (e: unknown) =>
+          this.toasts.error(errorMessage(e, 'The payment could not be recorded.')),
       });
     } else {
       this.mockPayment(inv, amountInPaise);

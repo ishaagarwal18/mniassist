@@ -7,6 +7,7 @@ import {
   untracked,
 } from '@angular/core';
 import { PermissionService } from '@abp/ng.core';
+import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { grantedPolicy } from '../../core/auth/permission';
@@ -98,7 +99,10 @@ export class ArHelpdesk {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly limit = signal(50);
-  protected readonly opened = signal<string | null>(null);
+  /** The ticket whose detail is open; ?open=<id> (from Customer 360) opens one on arrival. */
+  protected readonly opened = signal<string | null>(
+    inject(ActivatedRoute).snapshot.queryParamMap.get('open'),
+  );
   protected readonly settingsOpen = signal(false);
 
   private readonly tick = signal(0);

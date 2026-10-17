@@ -21,6 +21,7 @@ import { ArButton, ArIcon } from '../../ui';
 import { ArThemeToggle } from '../../layout/theme-toggle';
 import { ArAuthShowcase } from './auth-showcase';
 import { ArBrand } from '../../layout/brand';
+import { workspaceSlug } from '../../core/util/workspace-slug';
 
 /**
  * The sign-in screen. Username + password (ABP's password grant in real mode; any
@@ -193,7 +194,7 @@ import { ArBrand } from '../../layout/brand';
                 name="tenant"
                 autocapitalize="none"
                 autocomplete="organization"
-                placeholder="e.g. Sun Energy-automation"
+                placeholder="e.g. Sun Energy Automation"
                 [value]="tenant()"
                 (input)="tenant.set($any($event.target).value)"
                 (blur)="previewWorkspaceBranding()"
@@ -537,13 +538,13 @@ export class ArLogin {
     beginExternalLogin(p, {
       mode: 'signin',
       rememberMe: this.rememberMe(),
-      workspace: this.tenant().trim(),
+      workspace: workspaceSlug(this.tenant()),
     });
   }
 
   protected async previewWorkspaceBranding(): Promise<void> {
     if (this.mock) return;
-    const name = this.tenant().trim();
+    const name = workspaceSlug(this.tenant());
     if (!name || name === this.lastPreviewedWorkspace) return;
     this.lastPreviewedWorkspace = name;
 
@@ -555,10 +556,10 @@ export class ArLogin {
 
     try {
       const found = await firstValueFrom(this.tenants.findTenantByName(name));
-      if (!found?.success || !found.tenantId || name !== this.tenant().trim()) return;
+      if (!found?.success || !found.tenantId || name !== workspaceSlug(this.tenant())) return;
 
       const branding = await firstValueFrom(this.branding.publicByTenantId(found.tenantId));
-      if (name !== this.tenant().trim()) return; // stale by the time this resolved
+      if (name !== workspaceSlug(this.tenant())) return; // stale by the time this resolved
       this.workspaceLogo.set(branding.logoDataUrl ?? null);
       this.workspacePrimaryColor.set(branding.primaryColor ?? null);
     } catch {
@@ -589,7 +590,7 @@ export class ArLogin {
         this.username().trim(),
         this.password(),
         this.rememberMe(),
-        this.tenant().trim(),
+        workspaceSlug(this.tenant()),
       );
     } catch (e: unknown) {
       if (e instanceof TwoFactorRequiredError) {
@@ -658,7 +659,7 @@ export class ArLogin {
     try {
       await firstValueFrom(
         this.recovery.sendEmailConfirmation({
-          workspace: this.tenant().trim() || null,
+          workspace: workspaceSlug(this.tenant()) || null,
           email: this.unconfirmedEmail() ?? this.username().trim(),
         }),
       );

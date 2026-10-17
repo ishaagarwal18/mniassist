@@ -123,6 +123,13 @@
 .roll__cn {
   color: var(--ar-ink-900);
 }
+.roll__cn--link {
+  color: var(--ar-blue-600);
+  text-decoration: none;
+}
+.roll__cn--link:hover {
+  text-decoration: underline;
+}
 .roll__cd {
   color: var(--ar-ink-400);
 }

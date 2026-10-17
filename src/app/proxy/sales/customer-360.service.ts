@@ -20,12 +20,13 @@ export class Customer360Service {
       { apiName: this.apiName, ...config },
     );
 
-  getByAccount = (accountId: string, config?: Partial<Rest.Config>) =>
+  getByAccount = (accountId: string, includeSubsidiaries = false, config?: Partial<Rest.Config>) =>
     this.restService.request<any, Customer360Dto>(
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/customer360/by-account/${accountId}`,
+        params: { includeSubsidiaries },
       },
       { apiName: this.apiName, ...config },
     );

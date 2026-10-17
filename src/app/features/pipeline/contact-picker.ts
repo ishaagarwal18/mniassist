@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 
 import { PickerOption, PipelineStore } from '../../core/services/pipeline.service';
 
@@ -95,6 +104,8 @@ export class ArContactPicker {
   private readonly store = inject(PipelineStore);
 
   readonly picked = output<PickerOption | null>();
+  /** A contact already chosen when the picker opens (e.g. the customer a page was opened for). */
+  readonly initial = input<PickerOption | null>(null);
 
   protected readonly term = signal('');
   protected readonly results = signal<PickerOption[]>([]);
@@ -102,6 +113,13 @@ export class ArContactPicker {
   protected readonly searching = signal(false);
 
   private timer: ReturnType<typeof setTimeout> | undefined;
+
+  constructor() {
+    effect(() => {
+      const first = this.initial();
+      if (first) untracked(() => this.chosen.set(first));
+    });
+  }
 
   protected onType(value: string): void {
     this.term.set(value);

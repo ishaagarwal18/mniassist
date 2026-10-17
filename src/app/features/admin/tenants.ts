@@ -6,6 +6,7 @@ import { PermissionDirective } from '@abp/ng.core';
 
 import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
+import { workspaceNameProblem, workspaceSlug } from '../../core/util/workspace-slug';
 import { TenantDto, TenantService } from '../../proxy/tenant-management';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArCard, ArDialog } from '../../ui';
@@ -15,7 +16,7 @@ import { ArTenantFeaturesDialog } from './tenant-features-dialog';
 import { ArWorkspaceManageDialog } from './workspace-manage-dialog';
 
 const SEED: TenantDto[] = [
-  { id: 't-1', name: 'Sun Energy-automation' },
+  { id: 't-1', name: 'sun-energy-automation' },
   { id: 't-2', name: 'meridian-foods' },
 ];
 
@@ -155,10 +156,17 @@ const SEED: TenantDto[] = [
             maxlength="64"
             class="ar-field__input"
             autocapitalize="none"
-            placeholder="e.g. Sun Energy-automation"
+            placeholder="e.g. Sun Energy Automation"
             [value]="fName()"
             (input)="fName.set($any($event.target).value)"
           />
+          @if (fName().trim() && nameProblem(); as e) {
+            <span class="fld__bad">{{ e }}</span>
+          } @else if (fSlug()) {
+            <span class="fld__hint"
+              >Signs in as <strong>{{ fSlug() }}</strong></span
+            >
+          }
         </label>
 
         @if (mode === 'create') {
@@ -232,6 +240,16 @@ const SEED: TenantDto[] = [
       font: 500 12px var(--ar-font-sans);
       color: var(--ar-ink-700);
     }
+    .fld__hint,
+    .fld__bad {
+      display: block;
+      margin-top: 4px;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .fld__bad {
+      color: var(--ar-red-600, #b91c1c);
+    }
   `,
 })
 export class ArAdminTenants {
@@ -274,8 +292,12 @@ export class ArAdminTenants {
   protected readonly fEmail = signal('');
   protected readonly fPassword = signal('');
 
+  /** The sign-in name the typed name becomes ("Sun Energy" → "sun-energy"). */
+  protected readonly fSlug = computed(() => workspaceSlug(this.fName()));
+  protected readonly nameProblem = computed(() => workspaceNameProblem(this.fName()));
+
   protected readonly canSave = computed(() => {
-    if (!this.fName().trim()) return false;
+    if (this.nameProblem()) return false;
     if (this.dialog() === 'create') {
       return this.fEmail().trim().length > 0 && this.fPassword().length >= 6;
     }
@@ -310,16 +332,14 @@ export class ArAdminTenants {
       if (this.dialog() === 'create') {
         await firstValueFrom(
           this.api.create({
-            name: this.fName().trim().toLowerCase(),
+            name: this.fSlug(),
             adminEmailAddress: this.fEmail().trim(),
             adminPassword: this.fPassword(),
           }),
         );
-        this.notice.set(`Workspace "${this.fName().trim().toLowerCase()}" created.`);
+        this.notice.set(`Workspace "${this.fSlug()}" created.`);
       } else {
-        await firstValueFrom(
-          this.api.update(this.editingId()!, { name: this.fName().trim().toLowerCase() }),
-        );
+        await firstValueFrom(this.api.update(this.editingId()!, { name: this.fSlug() }));
         this.notice.set('Workspace renamed.');
       }
       this.dialog.set(null);

@@ -35,6 +35,10 @@
   border-radius: var(--ar-radius-card);
   padding: 12px 16px;
 }
+.asset--focus {
+  border-color: var(--ar-blue-500);
+  box-shadow: 0 0 0 2px var(--ar-blue-500);
+}
 @media (max-width: 760px) {
   .asset {
     grid-template-columns: 1fr;

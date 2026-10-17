@@ -9,6 +9,7 @@ import type {
   NumberManagementDto,
   OnboardingSessionDto,
   RegenerateEmbedLinkInput,
+  ReleaseChannelInput,
   RequestDisplayNameChangeInput,
   SetTwoStepPinInput,
   SolutionPartnerOnboardingSessionDto,
@@ -206,6 +207,16 @@ export class ChannelService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/channel/${id}/request-display-name`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  release = (id: string, input: ReleaseChannelInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, void>(
+      {
+        method: 'POST',
+        url: `/api/auto-reach/channel/${id}/release`,
         body: input,
       },
       { apiName: this.apiName, ...config },

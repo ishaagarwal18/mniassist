@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ToastService } from '../../../core/ui/toast.service';
+import { errorMessage } from '../../activities/activity-logic';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -125,6 +127,12 @@ const MOCK_CHALLANS: DeliveryChallanDto[] = [
     </ar-topbar>
 
     <div class="challans-shell">
+      @if (loadError(); as e) {
+        <p class="load-error" role="alert">
+          {{ e }}
+          <button ar-button variant="ghost" (click)="loadChallans()">Try again</button>
+        </p>
+      }
       <!-- Filter Bar -->
       <div class="filters-bar">
         <div class="search-input-wrap">
@@ -419,6 +427,17 @@ const MOCK_CHALLANS: DeliveryChallanDto[] = [
   `,
   styles: [
     `
+      .load-error {
+        margin: 0;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--ar-bad-200, #fecaca);
+        border-radius: 8px;
+        background: var(--ar-bad-50, #fef2f2);
+        color: var(--ar-bad-700, #b91c1c);
+      }
+      .load-error button {
+        margin-left: 0.5rem;
+      }
       .challans-shell {
         padding: 1.5rem;
         display: flex;
@@ -622,10 +641,15 @@ export class ArDeliveryChallans {
   private readonly challanService = inject(DeliveryChallanService);
   private readonly invoiceService = inject(SalesInvoiceService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly DeliveryChallanStatus = DeliveryChallanStatus;
 
-  challans = signal<DeliveryChallanDto[]>(MOCK_CHALLANS);
+  private readonly toasts = inject(ToastService);
+
+  /** Demo rows only in mock mode; a real workspace sees its own challans or none. */
+  challans = signal<DeliveryChallanDto[]>(environment.useMockData ? MOCK_CHALLANS : []);
+  loadError = signal<string | null>(null);
   searchQuery = signal<string>('');
   selectedStatus = signal<DeliveryChallanStatus | null>(null);
   selectedChallan = signal<DeliveryChallanDto | null>(null);
@@ -659,17 +683,27 @@ export class ArDeliveryChallans {
 
   constructor() {
     this.loadChallans();
+    // ?open=<id> (from Customer 360 and other links) opens that record's panel.
+    const openId = this.route.snapshot.queryParamMap.get('open');
+    if (openId && !environment.useMockData) {
+      this.challanService.get(openId).subscribe({
+        next: (record) => {
+          if (record) this.selectedChallan.set(record);
+        },
+      });
+    }
   }
 
   loadChallans() {
     if (!environment.useMockData) {
       this.challanService.getList({ maxResultCount: 100 }).subscribe({
         next: (res) => {
-          if (res && res.items && res.items.length > 0) {
-            this.challans.set(res.items);
-          }
+          this.challans.set(res?.items ?? []);
+          this.loadError.set(null);
         },
-        error: () => {},
+        error: (e: unknown) => {
+          this.loadError.set(errorMessage(e, 'Delivery challans could not be loaded.'));
+        },
       });
     }
   }
@@ -692,9 +726,8 @@ export class ArDeliveryChallans {
           this.updateChallanInList(updated);
           this.dispatchDialogChallan.set(null);
         },
-        error: () => {
-          this.mockDispatch(dc);
-        },
+        error: (e: unknown) =>
+          this.toasts.error(errorMessage(e, `${dc.challanNumber} could not be dispatched.`)),
       });
     } else {
       this.mockDispatch(dc);
@@ -717,30 +750,37 @@ export class ArDeliveryChallans {
 
   markDelivered(dc: DeliveryChallanDto) {
     if (!dc.id) return;
+    if (environment.useMockData) {
+      this.updateChallanInList({
+        ...dc,
+        status: DeliveryChallanStatus.Delivered,
+        deliveredAtUtc: new Date().toISOString(),
+      });
+      return;
+    }
     this.challanService.markDelivered(dc.id).subscribe({
       next: (updated) => {
         this.updateChallanInList(updated);
       },
-      error: () => {
-        const updated = {
-          ...dc,
-          status: DeliveryChallanStatus.Delivered,
-          deliveredAtUtc: new Date().toISOString(),
-        };
-        this.updateChallanInList(updated);
-      },
+      error: (e: unknown) =>
+        this.toasts.error(errorMessage(e, `${dc.challanNumber} could not be marked delivered.`)),
     });
   }
 
   createInvoiceFromChallan(dc: DeliveryChallanDto) {
     if (!dc.id) return;
+    if (environment.useMockData) {
+      this.router.navigate(['/sales/invoices']);
+      return;
+    }
     this.invoiceService.createFromChallan(dc.id).subscribe({
-      next: () => {
-        this.router.navigate(['/sales/invoices']);
+      next: (invoice) => {
+        this.router.navigate(['/sales/invoices'], { queryParams: { open: invoice.id } });
       },
-      error: () => {
-        this.router.navigate(['/sales/invoices']);
-      },
+      error: (e: unknown) =>
+        this.toasts.error(
+          errorMessage(e, `An invoice could not be raised for ${dc.challanNumber}.`),
+        ),
     });
   }
 

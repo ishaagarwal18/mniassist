@@ -153,6 +153,12 @@ export const routes: Routes = [
           import('./features/contacts/customer-360').then((m) => m.ArCustomer360),
       },
       {
+        path: 'contacts/accounts/:accountId/360',
+        title: 'Customer 360 · MNI Assist',
+        loadComponent: () =>
+          import('./features/contacts/customer-360').then((m) => m.ArCustomer360),
+      },
+      {
         path: 'contacts/:id/360',
         title: 'Customer 360 · MNI Assist',
         loadComponent: () =>

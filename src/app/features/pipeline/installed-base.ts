@@ -1,5 +1,12 @@
 import { PermissionService } from '@abp/ng.core';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 
 import { grantedPolicy } from '../../core/auth/permission';
 import { Asset, PickerOption, PipelineStore } from '../../core/services/pipeline.service';
@@ -8,7 +15,7 @@ import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArDateInput } from '../../ui/date-input';
 import { ChipTone } from '../../ui/chip';
 import { ArContactPicker } from './contact-picker';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RenewalStatus } from '../../proxy/pipeline/amc-renewal.service';
 import { amcCommercials, renewalChip } from './renewal-logic';
 import type { AmcImportResultDto } from '../../proxy/pipeline/models';
@@ -45,6 +52,23 @@ export class ArInstalledBase {
   protected readonly loading = this.store.loading;
   protected readonly includeRetired = this.store.includeRetired;
   protected readonly busy = signal<string | null>(null);
+
+  /** ?open=<id> (from Customer 360): that machine is scrolled to and outlined. */
+  protected readonly focusId = inject(ActivatedRoute).snapshot.queryParamMap.get('open');
+  private focused = false;
+
+  constructor() {
+    effect(() => {
+      if (this.focused || !this.focusId || this.loading()) return;
+      if (!this.assets().some((a) => a.id === this.focusId)) return;
+      this.focused = true;
+      setTimeout(() =>
+        document
+          .getElementById('asset-' + this.focusId)
+          ?.scrollIntoView({ block: 'center', behavior: 'smooth' }),
+      );
+    });
+  }
 
   // ---- Register machine dialog ------------------------------------
   protected readonly dialogOpen = signal(false);

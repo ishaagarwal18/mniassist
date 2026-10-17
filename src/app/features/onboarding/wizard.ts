@@ -8,12 +8,16 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 import { ChecklistItem, OnboardingStore } from '../../core/services/onboarding.store';
 import { OnboardingChecklistStep } from '../../proxy/identity/onboarding-checklist-step.enum';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArMeter } from '../../ui';
 import { ToastService } from '../../core/ui/toast.service';
+import { AccountRecoveryService } from '../../proxy/identity/account-recovery.service';
+import { environment } from '../../../environments/environment';
+import { errorMessage } from '../activities/activity-logic';
 
 /**
  * Get started (M07-1). The nine things a new tenant does before the product is
@@ -94,6 +98,35 @@ import { ToastService } from '../../core/ui/toast.service';
           <p class="card__d">{{ step.description }}</p>
 
           @if (!step.done) {
+            @if (isEmailStep(step)) {
+              @if (emailSentTo(); as to) {
+                <p class="card__d">
+                  A confirmation link is on its way to <strong>{{ to }}</strong
+                  >. Open it, then come back and press “I’ve opened the link”.
+                </p>
+              }
+              <div class="row">
+                <button
+                  ar-button
+                  type="button"
+                  [variant]="emailSentTo() ? 'ghost' : 'primary'"
+                  [disabled]="busy()"
+                  (click)="sendEmailLink()"
+                >
+                  {{ emailSentTo() ? 'Send it again' : 'Send confirmation link' }}
+                </button>
+                <button
+                  ar-button
+                  type="button"
+                  [variant]="emailSentTo() ? 'primary' : 'ghost'"
+                  icon="check"
+                  [disabled]="busy()"
+                  (click)="recheckEmail()"
+                >
+                  I’ve opened the link
+                </button>
+              </div>
+            }
             @if (isMobileStep(step)) {
               <div class="row">
                 @if (otpSent()) {
@@ -137,21 +170,23 @@ import { ToastService } from '../../core/ui/toast.service';
               </div>
             }
             <div class="row">
-              @if (step.route && !isMobileStep(step)) {
+              @if (step.route && !isVerifyStep(step)) {
                 <a ar-button variant="primary" icon="link" [routerLink]="step.route"
                   >Go and do it</a
                 >
               }
-              <button
-                ar-button
-                type="button"
-                variant="ghost"
-                icon="check"
-                [disabled]="busy()"
-                (click)="markDone(step)"
-              >
-                I’ve done this
-              </button>
+              @if (!isVerifyStep(step)) {
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  icon="check"
+                  [disabled]="busy()"
+                  (click)="markDone(step)"
+                >
+                  I’ve done this
+                </button>
+              }
             </div>
           }
 
@@ -413,7 +448,11 @@ import { ToastService } from '../../core/ui/toast.service';
 })
 export class ArOnboardingWizard {
   private readonly toasts = inject(ToastService);
+  private readonly account = inject(AccountRecoveryService);
   protected readonly store = inject(OnboardingStore);
+
+  /** The address the confirmation link went to, once sent. */
+  protected readonly emailSentTo = signal<string | null>(null);
 
   protected readonly checklist = this.store.checklist;
   protected readonly progress = this.store.progress;
@@ -450,6 +489,74 @@ export class ArOnboardingWizard {
     return !item.done && item.step === this.nextStep();
   }
 
+  protected isEmailStep(item: ChecklistItem): boolean {
+    return item.step === OnboardingChecklistStep.VerifyEmail;
+  }
+
+  /** Steps proven by a flow (email link, mobile code), never ticked by hand. */
+  protected isVerifyStep(item: ChecklistItem): boolean {
+    return this.isEmailStep(item) || this.isMobileStep(item);
+  }
+
+  protected async sendEmailLink(): Promise<void> {
+    this.busy.set(true);
+    try {
+      if (environment.useMockData) {
+        this.emailSentTo.set('you@example.com');
+        return;
+      }
+      const status = await firstValueFrom(this.account.getMyEmailStatus());
+      if (status.emailConfirmed) {
+        // Already confirmed (e.g. in another tab): the checklist just hasn't caught up.
+        await this.recheckEmail();
+        return;
+      }
+      if (!status.email) {
+        this.toasts.warning(
+          'Your account has no email address. Add one on your profile first.',
+          'Verification',
+        );
+        return;
+      }
+      await firstValueFrom(this.account.sendMyEmailConfirmation());
+      this.emailSentTo.set(status.email);
+    } catch (e: unknown) {
+      const throttled = (e as { status?: number })?.status === 429;
+      this.toasts.error(
+        throttled
+          ? 'A link was sent a moment ago. Wait a few minutes before asking for another.'
+          : errorMessage(e, 'The confirmation link could not be sent.'),
+        'Verification',
+      );
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async recheckEmail(): Promise<void> {
+    this.busy.set(true);
+    try {
+      await this.store.refresh();
+      const email = this.checklist().items.find(
+        (i) => i.step === OnboardingChecklistStep.VerifyEmail,
+      );
+      if (email?.done) {
+        this.emailSentTo.set(null);
+        this.toasts.success('Your email address is confirmed.', 'Verification');
+        this.advance();
+      } else {
+        this.toasts.info(
+          'Not confirmed yet. Open the link in the email, then try again.',
+          'Verification',
+        );
+      }
+    } catch (e: unknown) {
+      this.toasts.error(errorMessage(e, 'The checklist could not be refreshed.'), 'Verification');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
   protected isMobileStep(item: ChecklistItem): boolean {
     return item.step === OnboardingChecklistStep.VerifyMobile;
   }
@@ -470,6 +577,8 @@ export class ArOnboardingWizard {
     try {
       await this.store.markStep(item.step);
       this.advance();
+    } catch (e: unknown) {
+      this.toasts.error(errorMessage(e, 'That step could not be marked done.'));
     } finally {
       this.busy.set(false);
     }

@@ -19,6 +19,7 @@ import { BusinessCardService } from '../../proxy/contacts';
 import { shrinkImage } from '../../core/util/image';
 import { persistedToggle } from '../../core/util/persisted-toggle';
 import { firstValueFrom } from 'rxjs';
+import { RouterLink } from '@angular/router';
 import { ToastService } from '../../core/ui/toast.service';
 import { ConfirmService } from '../../core/ui/confirm.service';
 
@@ -63,6 +64,8 @@ interface ContactForm {
   displayName: string;
   designation: string;
   companyName: string;
+  /** The company account; while one is chosen the company is its name. */
+  accountId: string;
   email: string;
   website: string;
   city: string;
@@ -75,6 +78,7 @@ const EMPTY_FORM: ContactForm = {
   displayName: '',
   designation: '',
   companyName: '',
+  accountId: '',
   email: '',
   website: '',
   city: '',
@@ -97,6 +101,7 @@ const EMPTY_FORM: ContactForm = {
     GridModule,
     ArIcon,
     ArContactImport,
+    RouterLink,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './contacts.html',
@@ -114,6 +119,8 @@ export class ArContacts {
   protected readonly canUpdate = grantedPolicy('AutoReach.Contacts.Update', this.permissions);
   protected readonly canDelete = grantedPolicy('AutoReach.Contacts.Delete', this.permissions);
   protected readonly canImport = grantedPolicy('AutoReach.Contacts.Import', this.permissions);
+  /** Customer 360: orders, challans, invoices, tickets and machines for one contact. */
+  protected readonly canView360 = grantedPolicy('AutoReach.Customer360', this.permissions);
   /** Spares re-order portal: send a customer their personal link from their row. */
   protected readonly canReorder = grantedPolicy(
     'AutoReach.ReorderPortal.SendLinks',
@@ -129,6 +136,16 @@ export class ArContacts {
 
   /** Accounts to filter by, in tree order, so a plant reads as belonging to its company. */
   protected readonly accountRows = this.accountStore.rows;
+  /** Every account, by name, for the contact dialog's picker (the Accounts screen's search doesn't narrow it). */
+  protected readonly accountChoices = computed(() =>
+    [...this.accountStore.all()].sort((a, b) => a.name.localeCompare(b.name)),
+  );
+  /** The account picked in the dialog, whose name stands in for the company. */
+  protected readonly formAccount = computed(
+    () => this.accountStore.all().find((a) => a.id === this.form().accountId) ?? null,
+  );
+  /** The stored fields of the contact being edited, sent back so an edit clears nothing. */
+  private editingStored: Contact['stored'];
   protected readonly accountId = this.store.accountId;
   protected readonly includeSubsidiaries = this.store.includeSubsidiaries;
   protected readonly chosenAccountHasChildren = computed(
@@ -312,6 +329,7 @@ export class ArContacts {
 
   protected openDialog(): void {
     this.editingContactId.set(null);
+    this.editingStored = undefined;
     this.form.set({ ...EMPTY_FORM });
     this.filledFrom.set(null);
     this.otherPhones.set([]);
@@ -322,16 +340,21 @@ export class ArContacts {
     const c = this.store.contacts().find((item) => item.id === row.id);
     if (!c) return;
     this.editingContactId.set(c.id);
+    this.editingStored = c.stored;
+    // From the stored fields: the list's "company · city" is a display string, and loading it
+    // here appended the city to the company on every save.
+    const s = c.stored;
     this.form.set({
       waId: c.phoneE164.replace(/[^\d]/g, ''),
       displayName: c.name || '',
-      designation: c.attributes?.decisionRole || '',
-      companyName: c.company || '',
+      designation: s?.designation ?? '',
+      companyName: s?.companyName ?? c.company ?? '',
+      accountId: s?.accountId ?? '',
       email: (c.attributes as any)?.['email'] || '',
       website: (c.attributes as any)?.['website'] || '',
-      city: (c.attributes as any)?.['city'] || '',
-      state: (c.attributes as any)?.['state'] || '',
-      role: (Number(c.attributes?.decisionRole) || DecisionRole.Maintenance) as DecisionRole,
+      city: s?.city ?? '',
+      state: s?.state ?? '',
+      role: (s?.role ?? DecisionRole.Maintenance) as DecisionRole,
     });
     this.filledFrom.set(null);
     this.otherPhones.set([]);
@@ -371,17 +394,24 @@ export class ArContacts {
       const attributes: Record<string, string> = {};
       if (f.email.trim()) attributes['email'] = f.email.trim();
       if (f.website.trim()) attributes['website'] = f.website.trim();
+      const editId = this.editingContactId();
+      // What the form doesn't show is sent back as stored; the API applies every field.
+      const kept = editId ? this.editingStored : undefined;
+      const account = this.formAccount();
       const payload = {
         waId,
         displayName: f.displayName.trim() || undefined,
-        companyName: f.companyName.trim() || undefined,
+        companyName: account ? account.name : f.companyName.trim() || undefined,
+        accountId: account?.id ?? null,
         designation: f.designation.trim() || undefined,
         city: f.city.trim() || undefined,
         state: f.state.trim() || undefined,
         role: f.role,
+        languageCode: kept?.languageCode || 'en',
+        ownerUserId: kept?.ownerUserId ?? null,
+        tags: [...(kept?.tags ?? [])],
         attributes,
       };
-      const editId = this.editingContactId();
       if (editId) {
         await this.store.update(editId, payload);
       } else {

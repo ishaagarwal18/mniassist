@@ -198,6 +198,16 @@ export class OnboardingStore {
     }
   }
 
+  /** Reads the checklist again, e.g. after the email link was opened in another tab. */
+  async refresh(): Promise<void> {
+    if (environment.useMockData) {
+      await this.markStep(OnboardingChecklistStep.VerifyEmail);
+      return;
+    }
+    const dto = await firstValueFrom(this.api.get());
+    this.local.set(this.normalise(dto));
+  }
+
   async confirmMobile(code: string): Promise<void> {
     if (environment.useMockData) {
       await this.markStep(OnboardingChecklistStep.VerifyMobile);

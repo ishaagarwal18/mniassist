@@ -18,7 +18,11 @@ import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
 import { HostWorkspaceService } from '../../proxy/administration/host-workspace.service';
-import type { WorkspaceDetailDto, WorkspaceFeatureDto } from '../../proxy/administration/models';
+import type {
+  WorkspaceDetailDto,
+  WorkspaceFeatureDto,
+  WorkspaceUserDto,
+} from '../../proxy/administration/models';
 import { WorkspaceFeatureMode } from '../../proxy/administration/workspace-feature-mode.enum';
 import { BillingCycle } from '../../proxy/billing/billing-cycle.enum';
 import { ArBanner, ArButton, ArChip, ArDialog, ArTabs } from '../../ui';
@@ -33,8 +37,8 @@ import {
   subscriptionSummary,
 } from './workspace-admin.logic';
 
-type Tab = 'Status' | 'Plan' | 'Features' | 'Database';
-const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Database'];
+type Tab = 'Status' | 'Plan' | 'Features' | 'Users' | 'Database';
+const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Database'];
 
 /**
  * The platform's controls for one workspace: suspend or reactivate it, put it on a plan,
@@ -297,6 +301,132 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Database'];
             </div>
           }
 
+          @case ('Users') {
+            <p class="wm__p">
+              Set a new password for anyone in this workspace — for an owner who is locked out, for
+              example. Their current password is not needed. They are signed out everywhere, and are
+              asked to choose their own at the next sign-in unless you untick that.
+            </p>
+            @if (users(); as list) {
+              <div class="wm__table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Status</th>
+                      <th>Password last changed</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (u of list; track u.id) {
+                      <tr>
+                        <td>
+                          <div class="wm__user">{{ u.name || u.userName }}</div>
+                          <div class="wm__sub">{{ u.email || u.userName }}</div>
+                        </td>
+                        <td>
+                          @if (!u.isActive) {
+                            <ar-chip tone="neutral">Inactive</ar-chip>
+                          } @else if (u.isLockedOut) {
+                            <ar-chip tone="bad">Locked out</ar-chip>
+                          } @else {
+                            <ar-chip tone="good">Active</ar-chip>
+                          }
+                          @if (u.mustChangePasswordOnNextSignIn) {
+                            <ar-chip tone="amber">Must change password</ar-chip>
+                          }
+                        </td>
+                        <td>
+                          {{
+                            u.lastPasswordChangeTime
+                              ? (u.lastPasswordChangeTime | date: 'dd MMM yyyy, HH:mm')
+                              : '—'
+                          }}
+                        </td>
+                        <td class="wm__act">
+                          <button
+                            ar-button
+                            type="button"
+                            variant="ghost"
+                            icon="shield"
+                            [disabled]="busy()"
+                            (click)="openPassword(u)"
+                          >
+                            Set password
+                          </button>
+                        </td>
+                      </tr>
+                      @if (pwFor()?.id === u.id) {
+                        <tr>
+                          <td colspan="4">
+                            <div class="wm__pw">
+                              <label class="fld">
+                                <span class="fld__k"
+                                  >New password for {{ u.name || u.userName }}</span
+                                >
+                                <input
+                                  class="ar-field__input"
+                                  type="password"
+                                  autocomplete="new-password"
+                                  [value]="pwNew()"
+                                  (input)="pwNew.set($any($event.target).value)"
+                                />
+                              </label>
+                              <label class="fld">
+                                <span class="fld__k">Type it again</span>
+                                <input
+                                  class="ar-field__input"
+                                  type="password"
+                                  autocomplete="new-password"
+                                  [value]="pwAgain()"
+                                  (input)="pwAgain.set($any($event.target).value)"
+                                />
+                              </label>
+                              <label class="wm__check">
+                                <input
+                                  type="checkbox"
+                                  [checked]="pwMustChange()"
+                                  (change)="pwMustChange.set($any($event.target).checked)"
+                                />
+                                Ask them to choose a new one at their next sign-in
+                              </label>
+                              <div class="wm__row">
+                                <button
+                                  ar-button
+                                  type="button"
+                                  variant="primary"
+                                  [disabled]="busy()"
+                                  (click)="setPassword(d, u)"
+                                >
+                                  {{ busy() ? 'Saving…' : 'Set password' }}
+                                </button>
+                                <button
+                                  ar-button
+                                  type="button"
+                                  variant="ghost"
+                                  (click)="pwFor.set(null)"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                    } @empty {
+                      <tr>
+                        <td colspan="4">No users in this workspace.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <p class="wm__p">Loading users…</p>
+            }
+          }
+
           @case ('Database') {
             @if (d.hasOwnDatabase) {
               <p class="wm__p">
@@ -419,6 +549,31 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Database'];
       margin-top: 12px;
       font: 400 13px var(--ar-font-sans);
     }
+    .wm__user {
+      font-weight: 500;
+      color: var(--ar-ink-900);
+    }
+    .wm__sub {
+      font-size: 12px;
+      color: var(--ar-ink-500);
+    }
+    .wm__act {
+      text-align: right;
+      white-space: nowrap;
+    }
+    .wm__pw {
+      display: grid;
+      gap: 10px;
+      padding: 6px 0;
+      max-width: 420px;
+    }
+    .wm__check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--ar-ink-700);
+    }
     .wm__table {
       overflow-x: auto;
       max-height: 52vh;
@@ -497,11 +652,79 @@ export class ArWorkspaceManageDialog {
 
   protected readonly summary = computed(() => subscriptionSummary(this.detail()?.subscription));
 
+  // ---- Users: set a password without the current one -------------------------------
+  protected readonly users = signal<WorkspaceUserDto[] | null>(null);
+  protected readonly pwFor = signal<WorkspaceUserDto | null>(null);
+  protected readonly pwNew = signal('');
+  protected readonly pwAgain = signal('');
+  protected readonly pwMustChange = signal(true);
+
   constructor() {
     effect(() => {
       const id = this.tenantId();
       untracked(() => void this.load(id));
     });
+    // The users list loads the first time its tab is opened.
+    effect(() => {
+      if (this.tab() !== 'Users' || this.users() !== null || environment.useMockData) return;
+      untracked(() => void this.loadUsers());
+    });
+  }
+
+  private async loadUsers(): Promise<void> {
+    try {
+      this.users.set(await firstValueFrom(this.api.getUsers(this.tenantId())));
+    } catch (e) {
+      this.users.set([]);
+      this.error.set(readApiError(e));
+    }
+  }
+
+  protected openPassword(u: WorkspaceUserDto): void {
+    this.pwNew.set('');
+    this.pwAgain.set('');
+    this.pwMustChange.set(true);
+    this.pwFor.set(u);
+  }
+
+  protected async setPassword(d: WorkspaceDetailDto, u: WorkspaceUserDto): Promise<void> {
+    const password = this.pwNew();
+    if (!password) {
+      this.error.set('Enter the new password.');
+      return;
+    }
+    if (password !== this.pwAgain()) {
+      this.error.set('The two passwords do not match.');
+      return;
+    }
+    const who = u.name || u.userName;
+    const ok = await this.dialogs.confirm({
+      title: `Set a new password for ${who}?`,
+      message: `${who} in ${d.name} is signed out everywhere and must use the new password.`,
+      confirmText: 'Set password',
+    });
+    if (!ok) return;
+
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      const updated = await firstValueFrom(
+        this.api.setUserPassword(d.id, {
+          userId: u.id,
+          newPassword: password,
+          mustChangeOnNextSignIn: this.pwMustChange(),
+        }),
+      );
+      this.users.update((list) => (list ?? []).map((x) => (x.id === updated.id ? updated : x)));
+      this.pwFor.set(null);
+      this.pwNew.set('');
+      this.pwAgain.set('');
+      this.toasts.success(`${who}'s password was changed. Give it to them by a safe route.`);
+    } catch (e) {
+      this.error.set(readApiError(e));
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   private async load(id: string): Promise<void> {

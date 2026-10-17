@@ -141,6 +141,17 @@ export function toContact(dto: ContactDto): Contact {
     amcExpiry: attributes['amc_expiry'],
     lastActivity: formatRelative(dto.lastInboundAtUtc ?? dto.lastOutboundAtUtc),
     score: dto.engagementScore ?? 0,
+    stored: {
+      companyName: dto.companyName ?? undefined,
+      accountId: dto.accountId ?? undefined,
+      city: dto.city ?? undefined,
+      state: dto.state ?? undefined,
+      designation: dto.designation ?? undefined,
+      role: dto.role,
+      languageCode: dto.languageCode,
+      ownerUserId: dto.ownerUserId ?? undefined,
+      tags: dto.tags ?? [],
+    },
   };
 }
 

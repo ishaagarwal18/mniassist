@@ -10,7 +10,8 @@ import { DisplayNameStatus } from '../../proxy/channels/display-name-status.enum
 import { MessagingTier } from '../../proxy/channels/messaging-tier.enum';
 import { QualityRating } from '../../proxy/channels/quality-rating.enum';
 import { ArTopbar } from '../../layout/topbar';
-import { ArBanner, ArButton, ArChip } from '../../ui';
+import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
+import { errorMessage } from '../activities/activity-logic';
 import { ArConnectNumberDialog } from './connect-number-dialog';
 import { ToastService } from '../../core/ui/toast.service';
 
@@ -105,7 +106,7 @@ import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'ar-numbers',
-  imports: [RouterLink, ArTopbar, ArBanner, ArButton, ArChip, ArConnectNumberDialog],
+  imports: [RouterLink, ArTopbar, ArBanner, ArButton, ArChip, ArConnectNumberDialog, ArDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './numbers.html',
   styleUrl: './numbers.scss',
@@ -221,6 +222,59 @@ export class ArNumbers {
       this.editingPin.set(null);
       this.draftPin.set('');
       this.draftCurrentPin.set('');
+    }
+  }
+
+  // ---- Release a number ------------------------------------------------------------
+  protected readonly releasing = signal<ManagedNumber | null>(null);
+  protected readonly releaseConfirm = signal('');
+  protected readonly releaseDeregister = signal(false);
+  protected readonly releaseError = signal<string | null>(null);
+
+  /** The typed number matches the card's, digits only, so spaces and "+" don't matter. */
+  protected readonly releaseMatches = computed(() => {
+    const n = this.releasing();
+    const digits = (s: string) => s.replace(/\D/g, '');
+    return (
+      !!n &&
+      digits(this.releaseConfirm()).length > 0 &&
+      digits(this.releaseConfirm()) === digits(n.displayPhoneNumber)
+    );
+  });
+
+  protected openRelease(n: ManagedNumber): void {
+    this.releaseConfirm.set('');
+    this.releaseDeregister.set(false);
+    this.releaseError.set(null);
+    this.releasing.set(n);
+  }
+
+  protected async release(): Promise<void> {
+    const n = this.releasing();
+    if (!n || !this.releaseMatches()) return;
+    this.busy.set(true);
+    this.releaseError.set(null);
+    try {
+      if (!environment.useMockData) {
+        await firstValueFrom(
+          this.api.release(n.channelId, {
+            confirmPhoneNumber: this.releaseConfirm().trim(),
+            deregisterAtMeta: this.releaseDeregister(),
+          }),
+        );
+      }
+      this.releasing.set(null);
+      this.toasts.success(
+        this.releaseDeregister()
+          ? `${n.displayPhoneNumber} was released and deregistered at Meta.`
+          : `${n.displayPhoneNumber} was released from this workspace.`,
+        'Number released',
+      );
+      this.reloadTick.update((t) => t + 1);
+    } catch (e: unknown) {
+      this.releaseError.set(errorMessage(e, 'The number could not be released.'));
+    } finally {
+      this.busy.set(false);
     }
   }
 

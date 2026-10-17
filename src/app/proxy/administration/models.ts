@@ -130,3 +130,22 @@ export interface WorkspaceDetailDto {
 export interface SetWalletGraceInput {
   graceOverdraftInPaise: number;
 }
+
+export interface WorkspaceUserDto {
+  id: string;
+  userName: string;
+  name?: string | null;
+  email?: string | null;
+  isActive: boolean;
+  isLockedOut: boolean;
+  mustChangePasswordOnNextSignIn: boolean;
+  lastPasswordChangeTime?: string | null;
+}
+
+/** A workspace user's new password, set by the platform administrator. */
+export interface SetWorkspaceUserPasswordInput {
+  userId: string;
+  newPassword: string;
+  /** Ask for a new password at the next sign-in, so the administrator never knows it for long. */
+  mustChangeOnNextSignIn: boolean;
+}

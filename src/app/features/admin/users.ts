@@ -20,7 +20,7 @@ const SEED: IdentityUserDto[] = [
     userName: 'admin',
     name: 'Rahul',
     surname: 'Kanade',
-    email: 'admin@Sun Energy-automation.test',
+    email: 'admin@sun-energy-automation.test',
     phoneNumber: '+91 98765 43210',
     isActive: true,
     lockoutEnabled: true,

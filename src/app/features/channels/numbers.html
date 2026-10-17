@@ -176,6 +176,72 @@
           }
         </section>
       </div>
+
+      @if (canOnboard()) {
+        <footer class="num__foot">
+          <button ar-button type="button" variant="danger" icon="trash" (click)="openRelease(n)">
+            Release number
+          </button>
+        </footer>
+      }
     </article>
   }
 </div>
+
+@if (releasing(); as n) {
+  <ar-dialog [title]="'Release ' + n.displayPhoneNumber + '?'" (dismiss)="releasing.set(null)">
+    <div class="rel">
+      <p class="rel__p">
+        This workspace stops sending and receiving on this number straight away. Its stored access
+        token and two-step PIN are deleted. Conversations and message history stay.
+      </p>
+      <p class="rel__p">
+        Campaigns that are scheduled, running or paused on it must be finished or cancelled first.
+      </p>
+
+      <label class="rel__check">
+        <input
+          type="checkbox"
+          [checked]="releaseDeregister()"
+          (change)="releaseDeregister.set($any($event.target).checked)"
+        />
+        <span>
+          <strong>Also deregister it at Meta.</strong> Needed to move the number to another provider
+          or back to the WhatsApp Business app. It then stops working on every app until it is
+          registered again. Leave this off to connect it to another workspace later.
+        </span>
+      </label>
+
+      <label class="ar-field">
+        <span class="ar-field__label">Type the number to confirm</span>
+        <input
+          class="ar-field__input ar-mono"
+          type="text"
+          autocomplete="off"
+          [placeholder]="n.displayPhoneNumber"
+          [value]="releaseConfirm()"
+          (input)="releaseConfirm.set($any($event.target).value)"
+        />
+      </label>
+
+      @if (releaseError(); as e) {
+        <p class="rel__err" role="alert">{{ e }}</p>
+      }
+
+      <div class="rel__actions">
+        <button ar-button type="button" variant="ghost" (click)="releasing.set(null)">
+          Cancel
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="danger"
+          [disabled]="busy() || !releaseMatches()"
+          (click)="release()"
+        >
+          {{ busy() ? 'Releasing…' : 'Release number' }}
+        </button>
+      </div>
+    </div>
+  </ar-dialog>
+}

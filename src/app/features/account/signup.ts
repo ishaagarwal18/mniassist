@@ -11,6 +11,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
+import { workspaceNameProblem, workspaceSlug } from '../../core/util/workspace-slug';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { TenantSignupService } from '../../proxy/registration';
 import { ArButton } from '../../ui';
@@ -51,7 +52,7 @@ import { ArCaptcha } from '../../ui/captcha';
           }
 
           @if (error(); as e) {
-            <p class="lg__error">{{ e }}</p>
+            <p class="lg__error" role="alert">{{ e }}</p>
           }
 
           <label class="lg__field">
@@ -59,20 +60,33 @@ import { ArCaptcha } from '../../ui/captcha';
             <input
               class="ar-field__input"
               name="workspace"
-              autocapitalize="none"
               autocomplete="organization"
-              placeholder="e.g. Sun Energy-automation"
+              placeholder="e.g. Sun Energy Automation"
+              maxlength="64"
+              [class.lg__input--bad]="show('workspace') && !!workspaceError()"
+              [attr.aria-invalid]="show('workspace') && !!workspaceError()"
               [value]="workspace()"
               (input)="workspace.set($any($event.target).value)"
+              (blur)="touch('workspace')"
             />
-            <em class="lg__note">Lowercase letters, digits and hyphens.</em>
+            @if (show('workspace') && workspaceError(); as e) {
+              <em class="lg__note lg__bad">{{ e }}</em>
+            } @else if (slug()) {
+              <em class="lg__note"
+                >You'll sign in with the workspace <strong class="lg__slug">{{ slug() }}</strong
+                >.</em
+              >
+            } @else {
+              <em class="lg__note">Your company's name. Spaces are fine.</em>
+            }
           </label>
           <label class="lg__field">
-            <span>Your name</span>
+            <span>Your name <span class="lg__opt">(optional)</span></span>
             <input
               class="ar-field__input"
               name="name"
               autocomplete="name"
+              maxlength="128"
               [value]="fullName()"
               (input)="fullName.set($any($event.target).value)"
             />
@@ -84,9 +98,16 @@ import { ArCaptcha } from '../../ui/captcha';
               type="email"
               name="email"
               autocomplete="email"
+              maxlength="256"
+              [class.lg__input--bad]="show('email') && !!emailError()"
+              [attr.aria-invalid]="show('email') && !!emailError()"
               [value]="email()"
               (input)="email.set($any($event.target).value)"
+              (blur)="touch('email')"
             />
+            @if (show('email') && emailError(); as e) {
+              <em class="lg__note lg__bad">{{ e }}</em>
+            }
           </label>
           <label class="lg__field">
             <span>Mobile number{{ mobileRequired() ? '' : ' (optional)' }}</span>
@@ -116,6 +137,8 @@ import { ArCaptcha } from '../../ui/captcha';
               <em class="lg__note lg__ok">Verified.</em>
             } @else if (sentTo(); as to) {
               <em class="lg__note">We sent a 6-digit code to {{ to }}.</em>
+            } @else if (submitted() && mobileError(); as e) {
+              <em class="lg__note lg__bad">{{ e }}</em>
             }
           </label>
           @if (mobileRequired() && verificationId() && !mobileVerified()) {
@@ -148,9 +171,25 @@ import { ArCaptcha } from '../../ui/captcha';
               type="password"
               name="password"
               autocomplete="new-password"
+              maxlength="128"
+              [class.lg__input--bad]="show('password') && !!passwordError()"
+              [attr.aria-invalid]="show('password') && !!passwordError()"
               [value]="password()"
               (input)="password.set($any($event.target).value)"
+              (blur)="touch('password')"
             />
+            @if (show('password') && passwordError(); as e) {
+              <em class="lg__note lg__bad">{{ e }}</em>
+            } @else {
+              <!-- The workspace's password rules; the server has the last word. -->
+              <span class="lg__rules">
+                @for (r of passwordRules(); track r.label) {
+                  <em class="lg__note" [class.lg__ok]="r.met"
+                    >{{ r.met ? '✓' : '·' }} {{ r.label }}</em
+                  >
+                }
+              </span>
+            }
           </label>
 
           <ar-captcha
@@ -158,8 +197,11 @@ import { ArCaptcha } from '../../ui/captcha';
             (required)="captchaRequired.set($event)"
             (token)="captchaToken.set($event)"
           />
+          @if (submitted() && captchaError(); as e) {
+            <em class="lg__note lg__bad">{{ e }}</em>
+          }
 
-          <button ar-button type="submit" variant="primary" [disabled]="busy() || !canSubmit()">
+          <button ar-button type="submit" variant="primary" [disabled]="busy()">
             {{ busy() ? 'Creating…' : 'Create workspace' }}
           </button>
 
@@ -208,6 +250,27 @@ import { ArCaptcha } from '../../ui/captcha';
       margin: 0 0 16px;
       font: 600 16px var(--ar-font-sans);
       color: var(--ar-ink-900);
+    }
+    .lg__note.lg__bad,
+    .lg__bad {
+      color: var(--ar-red-600, #b91c1c);
+    }
+    .lg__input--bad {
+      border-color: var(--ar-red-500, #ef4444) !important;
+    }
+    .lg__slug {
+      font-family: var(--ar-font-mono);
+      font-style: normal;
+      white-space: nowrap;
+    }
+    .lg__opt {
+      font-weight: 400;
+      color: var(--ar-ink-500);
+    }
+    .lg__rules {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px 12px;
     }
     .lg__error {
       margin: 0 0 12px;
@@ -375,13 +438,62 @@ export class ArSignup {
   protected readonly captchaToken = signal<string | null>(null);
   private readonly captcha = viewChild<ArCaptcha>('captcha');
 
+  // ---- Validation: shown per field once it has been left, and for every field on submit ----
+  /** The sign-in name the typed workspace name becomes ("Sun Energy" → "sun-energy"). */
+  protected readonly slug = computed(() => workspaceSlug(this.workspace()));
+  protected readonly submitted = signal(false);
+  private readonly touched = signal<ReadonlySet<string>>(new Set());
+
+  protected touch(field: string): void {
+    this.touched.update((s) => new Set([...s, field]));
+  }
+  protected show(field: string): boolean {
+    return this.submitted() || this.touched().has(field);
+  }
+
+  protected readonly workspaceError = computed(() => workspaceNameProblem(this.workspace()));
+  protected readonly emailError = computed(() => {
+    const email = this.email().trim();
+    if (!email) return 'Enter your email address.';
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      ? null
+      : 'Enter a valid email address, like name@company.com.';
+  });
+  /** ABP's default rules for a new workspace's first password. */
+  protected readonly passwordRules = computed(() => {
+    const p = this.password();
+    return [
+      { label: '6+ characters', met: p.length >= 6 },
+      { label: 'an uppercase letter', met: /[A-Z]/.test(p) },
+      { label: 'a lowercase letter', met: /[a-z]/.test(p) },
+      { label: 'a digit', met: /\d/.test(p) },
+      { label: 'a symbol', met: /[^A-Za-z0-9]/.test(p) },
+    ];
+  });
+  protected readonly passwordError = computed(() => {
+    const p = this.password();
+    if (!p) return 'Choose a password.';
+    const missing = this.passwordRules().filter((r) => !r.met);
+    return missing.length ? `The password needs ${missing.map((r) => r.label).join(', ')}.` : null;
+  });
+  protected readonly mobileError = computed(() =>
+    this.mobileRequired() && !this.mobileVerified()
+      ? this.mobile().trim()
+        ? 'Send the code and enter it to verify your mobile number.'
+        : 'Enter your mobile number and verify it with the code we send.'
+      : null,
+  );
+  protected readonly captchaError = computed(() =>
+    this.captchaRequired() && !this.captchaToken() ? 'Complete the check above.' : null,
+  );
+
   protected readonly canSubmit = computed(
     () =>
-      /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])$/.test(this.workspace().trim().toLowerCase()) &&
-      this.email().trim().length > 0 &&
-      this.password().length >= 6 &&
-      (!this.mobileRequired() || this.mobileVerified()) &&
-      (!this.captchaRequired() || !!this.captchaToken()),
+      !this.workspaceError() &&
+      !this.emailError() &&
+      !this.passwordError() &&
+      !this.mobileError() &&
+      !this.captchaError(),
   );
 
   constructor() {
@@ -397,10 +509,20 @@ export class ArSignup {
 
   protected async submit(event: Event): Promise<void> {
     event.preventDefault();
-    if (!this.canSubmit() || this.busy()) return;
+    if (this.busy()) return;
+    this.submitted.set(true);
+    if (!this.canSubmit()) {
+      this.error.set('Please fix the highlighted fields.');
+      // Put the cursor in the first field that needs attention.
+      // After the page re-renders with the errors marked.
+      setTimeout(() =>
+        (document.querySelector('.lg [aria-invalid="true"]') as HTMLElement | null)?.focus(),
+      );
+      return;
+    }
     this.busy.set(true);
     this.error.set(null);
-    const name = this.workspace().trim().toLowerCase();
+    const name = this.slug();
     try {
       await firstValueFrom(
         this.api.register({

@@ -7,6 +7,7 @@ import { AccountSwitcher } from '../../core/auth/account-switch';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
+import { workspaceSlug } from '../../core/util/workspace-slug';
 import { settled } from '../../core/util/resource';
 import { LinkedAccountService } from '../../proxy/identity/linked-account.service';
 import type { LinkedAccountDto } from '../../proxy/identity/models';
@@ -74,7 +75,7 @@ import { ArBanner, ArButton, ArCard } from '../../ui';
               class="ar-field__input"
               autocapitalize="none"
               maxlength="64"
-              placeholder="e.g. Sun Energy-automation — blank for the platform"
+              placeholder="e.g. Sun Energy Automation — blank for the platform"
               [value]="workspace()"
               (input)="workspace.set($any($event.target).value)"
             />
@@ -244,7 +245,7 @@ export class ArLinkedAccountsCard {
     try {
       const a = await firstValueFrom(
         this.api.link({
-          workspace: this.workspace().trim() || null,
+          workspace: workspaceSlug(this.workspace()) || null,
           userNameOrEmail: this.userName().trim(),
           password: this.password(),
           twoFactorCode: this.code().trim() || null,

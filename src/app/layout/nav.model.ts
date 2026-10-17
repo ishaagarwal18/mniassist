@@ -82,7 +82,7 @@ export const NAV: readonly NavGroup[] = [
         label: 'Customer 360',
         icon: 'contacts',
         route: '/contacts/360',
-        permission: 'AutoReach.Contacts',
+        permission: 'AutoReach.Customer360',
         tenantOnly: true,
       },
       {

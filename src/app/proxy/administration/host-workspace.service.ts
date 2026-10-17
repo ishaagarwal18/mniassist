@@ -1,10 +1,12 @@
 import type {
   AssignPlanInput,
   SetWalletGraceInput,
+  SetWorkspaceUserPasswordInput,
   SetWorkspaceDatabaseInput,
   SetWorkspaceFeatureInput,
   SuspendWorkspaceInput,
   WorkspaceDetailDto,
+  WorkspaceUserDto,
 } from './models';
 import { RestService, Rest } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
@@ -22,6 +24,31 @@ export class HostWorkspaceService {
         method: 'GET',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/host-workspace/${id}`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getUsers = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WorkspaceUserDto[]>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/host-workspace/${id}/users`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  setUserPassword = (
+    id: string,
+    input: SetWorkspaceUserPasswordInput,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, WorkspaceUserDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/host-workspace/${id}/set-user-password`,
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );

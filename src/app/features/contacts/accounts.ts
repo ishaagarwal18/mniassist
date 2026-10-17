@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import {
   AccountRow,
@@ -44,7 +45,7 @@ const BLANK: Draft = {
  */
 @Component({
   selector: 'ar-accounts',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox, ArErpLedger, ArSelect],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox, ArErpLedger, ArSelect, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './accounts.html',
   styleUrl: './accounts.scss',
@@ -57,6 +58,7 @@ export class ArAccounts {
   protected readonly canCreate = grantedPolicy('AutoReach.Contacts.Create', this.permissions);
   protected readonly canUpdate = grantedPolicy('AutoReach.Contacts.Update', this.permissions);
   protected readonly canDelete = grantedPolicy('AutoReach.Contacts.Delete', this.permissions);
+  protected readonly canView360 = grantedPolicy('AutoReach.Customer360', this.permissions);
 
   protected readonly rows = this.store.rows;
   protected readonly searching = computed(() => this.store.filter().trim().length > 0);

@@ -176,6 +176,13 @@
   font: 500 12.5px var(--ar-font-sans);
   color: var(--ar-ink-900);
 }
+.who__name--link {
+  color: var(--ar-blue-600);
+  text-decoration: none;
+}
+.who__name--link:hover {
+  text-decoration: underline;
+}
 .row-actions {
   text-align: right;
   white-space: nowrap;

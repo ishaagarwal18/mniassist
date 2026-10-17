@@ -42,6 +42,23 @@ export interface Contact {
   readonly lastActivity: string;
   /** 0–100 engagement score (M03-10). */
   readonly score?: number;
+  /**
+   * The contact's stored fields as the API has them. The edit form starts from these and
+   * sends back what it does not show (owner, tags, language), so saving never clears them.
+   */
+  readonly stored?: StoredContactFields;
+}
+
+export interface StoredContactFields {
+  readonly companyName?: string;
+  readonly accountId?: string;
+  readonly city?: string;
+  readonly state?: string;
+  readonly designation?: string;
+  readonly role?: number;
+  readonly languageCode?: string;
+  readonly ownerUserId?: string;
+  readonly tags: readonly string[];
 }
 
 export interface Segment {

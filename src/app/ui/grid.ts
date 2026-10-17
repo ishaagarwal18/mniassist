@@ -4,6 +4,7 @@ import {
   ColumnChooserService,
   ExcelExportService,
   FilterService,
+  FreezeService,
   GridComponent,
   PageService,
   ResizeService,
@@ -35,7 +36,8 @@ let nextId = 0;
  * the exported file. Columns that draw chips or buttons use an `#template` and
  * keep a plain `field` so sorting, filtering and export still see the value.
  * `[arGridPageSize]` changes the page length; `[arGridSearch]="false"` leaves
- * out the search box where the screen already has one; `[arGridTools]="false"`
+ * out the search box where the screen already has one; `freeze="Right"` on an actions
+ * column keeps its buttons on screen however wide the grid scrolls; `[arGridTools]="false"`
  * drops the toolbar and the pager for short summary lists.
  */
 @Directive({
@@ -49,6 +51,8 @@ let nextId = 0;
     ColumnChooserService,
     ExcelExportService,
     ResizeService,
+    // Lets a column be pinned with freeze="Left|Right", e.g. a row's action buttons.
+    FreezeService,
   ],
   host: { class: 'ar-grid' },
 })

@@ -16,6 +16,7 @@ type Mode = 'password' | 'workspace';
  * The success message is the same whether or not the address has an account. That is the
  * point: this screen must not become a way to find out who uses AutoReach.
  */
+import { workspaceSlug } from '../../core/util/workspace-slug';
 @Component({
   selector: 'ar-forgot-password',
   imports: [ArButton, RouterLink],
@@ -54,7 +55,7 @@ type Mode = 'password' | 'workspace';
                 class="ar-field__input"
                 name="tenant"
                 autocapitalize="none"
-                placeholder="e.g. Sun Energy-automation"
+                placeholder="e.g. Sun Energy Automation"
                 [value]="workspace()"
                 (input)="workspace.set($any($event.target).value)"
               />
@@ -124,7 +125,10 @@ export class ArForgotPassword {
         const email = this.email().trim();
         await firstValueFrom(
           this.mode() === 'password'
-            ? this.recovery.forgotPassword({ workspace: this.workspace().trim() || null, email })
+            ? this.recovery.forgotPassword({
+                workspace: workspaceSlug(this.workspace()) || null,
+                email,
+              })
             : this.recovery.forgotWorkspace({ email }),
         );
       }
