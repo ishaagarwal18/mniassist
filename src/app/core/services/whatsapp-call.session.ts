@@ -86,6 +86,9 @@ function problem(e: unknown, fallback: string): string {
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** The native IVR accepted this call and queued it for my team: answering means joining it on the relay. */
+export const isQueued = (call: Pick<WhatsAppCallDto, 'ivrStatus'>) => call.ivrStatus === 'Queued';
+
 /**
  * M3: the one WhatsApp call this browser tab is on, whichever way it started.
  *
@@ -187,7 +190,9 @@ export class WhatsAppCallSession {
     if (!this.onCall) {
       try {
         const calls = await firstValueFrom(this.api.getRinging());
-        this.ringing.set(calls.find((c) => c.offerSdp && !this.dismissed.has(c.id)) ?? null);
+        this.ringing.set(
+          calls.find((c) => (c.offerSdp || isQueued(c)) && !this.dismissed.has(c.id)) ?? null,
+        );
       } catch {
         // A missed poll is harmless: the next one is seconds away.
       }
@@ -207,11 +212,12 @@ export class WhatsAppCallSession {
   // ---- a customer calls ---------------------------------------------------------------------------------------------
 
   async answer(call: WhatsAppCallDto): Promise<void> {
-    if (!call.offerSdp) return;
+    if (!call.offerSdp && !isQueued(call)) return;
     this.busy.set(true);
     this.error.set(null);
     try {
-      if (await this.viaRelay()) {
+      // A call the IVR queued is already connected to the relay (Meta has no offer left to answer): joining it is the answer.
+      if ((await this.viaRelay()) || isQueued(call)) {
         const relay = await this.connectRelay();
         const answered = await firstValueFrom(
           this.api.answer(call.id, { sdpOffer: relay.localDescription?.sdp ?? '' }),
@@ -221,8 +227,10 @@ export class WhatsAppCallSession {
         await this.goLive(answered);
         return;
       }
+      const offer = call.offerSdp;
+      if (!offer) return; // unreachable: only a queued call has no offer, and it took the relay path
       const pc = await this.connectCustomer();
-      await pc.setRemoteDescription({ type: 'offer', sdp: call.offerSdp });
+      await pc.setRemoteDescription({ type: 'offer', sdp: offer });
       await pc.setLocalDescription(await pc.createAnswer());
       await iceGathered(pc);
       const answered = await firstValueFrom(

@@ -121,16 +121,21 @@ const POLL_MS = 4000;
       <div class="wc wc--ring" role="alert">
         <ar-icon name="phone" [size]="15" />
         <span class="wc__who">{{ c.contactName || '+' + c.contactWaId }}</span>
-        <span class="wc__state">is calling on WhatsApp</span>
-        <button
-          ar-button
-          type="button"
-          variant="ghost"
-          [disabled]="session.busy()"
-          (click)="session.reject(c)"
-        >
-          Decline
-        </button>
+        <span class="wc__state">
+          is calling on WhatsApp{{ c.queueLabel ? ' · chose ' + c.queueLabel : '' }}
+        </span>
+        <!-- A call the menu queued is already connected and waiting for the team: one agent can't decline it for all. -->
+        @if (c.ivrStatus !== 'Queued') {
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="session.busy()"
+            (click)="session.reject(c)"
+          >
+            Decline
+          </button>
+        }
         <button
           ar-button
           type="button"

@@ -9,6 +9,7 @@ import { ArTopbar } from '../../layout/topbar';
 import { WhatsAppCallDto, WhatsAppCallService } from '../../proxy/messaging/whats-app-call.service';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
+import { ArWhatsAppIvrDialog } from './whatsapp-ivr-dialog';
 
 const ago = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
 
@@ -61,7 +62,7 @@ const SEED: WhatsAppCallDto[] = [
  */
 @Component({
   selector: 'ar-whatsapp-calls',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArWhatsAppIvrDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -85,6 +86,11 @@ const SEED: WhatsAppCallDto[] = [
             Recording notice{{ hasNotice() ? ' · your clip' : ' · tone' }}
           </button>
         }
+      }
+      @if (canMenu()) {
+        <button ar-button type="button" variant="ghost" (click)="menuOpen.set(true)">
+          Call menu (IVR)
+        </button>
       }
       <label class="wa__toggle" for="wa-missed">
         <input
@@ -144,6 +150,10 @@ const SEED: WhatsAppCallDto[] = [
       </ar-dialog>
     }
 
+    @if (menuOpen()) {
+      <ar-whatsapp-ivr-dialog (closed)="menuOpen.set(false)" />
+    }
+
     <div class="wa ar-scroll">
       @if (error(); as e) {
         <p class="wa__err" role="alert">{{ e }}</p>
@@ -174,6 +184,9 @@ const SEED: WhatsAppCallDto[] = [
                   <td>{{ when(c.rangAtUtc) }}</td>
                   <td>
                     <ar-chip [tone]="tone(c)" [dot]="true">{{ label(c) }}</ar-chip>
+                    @if (c.queueLabel) {
+                      <span class="wa__muted">· {{ c.queueLabel }} queue</span>
+                    }
                     @if (c.transferCount) {
                       <span class="wa__muted">· transferred</span>
                     }
@@ -283,10 +296,14 @@ const SEED: WhatsAppCallDto[] = [
 })
 export class ArWhatsAppCalls {
   private readonly api = inject(WhatsAppCallService);
+  private readonly permissions = inject(PermissionService);
   protected readonly canRecordings = grantedPolicy(
     'AutoReach.Inbox.CallRecordings',
-    inject(PermissionService),
+    this.permissions,
   );
+  /** The call menu routes calls to teams, so it is configured by whoever manages teams. */
+  protected readonly canMenu = grantedPolicy('AutoReach.Teams.Manage', this.permissions);
+  protected readonly menuOpen = signal(false);
 
   protected readonly rows = signal<WhatsAppCallDto[]>([]);
   protected readonly total = signal(0);

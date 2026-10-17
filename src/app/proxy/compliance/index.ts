@@ -2,7 +2,6 @@ export * from './breach-severity.enum';
 export * from './breach-state.enum';
 export * from './compliance.service';
 export * from './consent-text.service';
-export * from './data-request-fulfilment.service';
 export * from './data-request-kind.enum';
 export * from './data-request-state.enum';
 export * from './models';

@@ -10,7 +10,10 @@ describe('accountSwitchParameters', () => {
 
   it('sends the workspace when the host enters one', () => {
     expect(
-      accountSwitchParameters({ kind: 'ManageWorkspace', tenant: { id: 't-1', name: 'Sun Energy' } }),
+      accountSwitchParameters({
+        kind: 'ManageWorkspace',
+        tenant: { id: 't-1', name: 'Sun Energy' },
+      }),
     ).toEqual({ kind: 'ManageWorkspace', tenant_id: 't-1' });
   });
 

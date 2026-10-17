@@ -1,4 +1,16 @@
-import { recordingType, transferLinkOutcome } from './whatsapp-call.session';
+import { isQueued, recordingType, transferLinkOutcome } from './whatsapp-call.session';
+
+describe('A call the IVR queued', () => {
+  it('is answerable without an offer: the relay already holds the customer', () => {
+    expect(isQueued({ ivrStatus: 'Queued' })).toBe(true);
+  });
+
+  it('is not one still in the menu, or an ordinary ringing call', () => {
+    expect(isQueued({ ivrStatus: 'Menu' })).toBe(false);
+    expect(isQueued({ ivrStatus: 'None' })).toBe(false);
+    expect(isQueued({})).toBe(false);
+  });
+});
 
 describe('A transferred call losing its relay', () => {
   it('is the normal end when the call itself has ended', () => {

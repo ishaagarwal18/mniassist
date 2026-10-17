@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "PowerShell($c = Get-CimInstance Win32_Processor; \"Cores=$\\($c.NumberOfCores\\) Logical=$\\($c.NumberOfLogicalProcessors\\) $\\($c.Name\\)\"; \"RAM GB=\" + [math]::Round\\(\\(Get-CimInstance Win32_ComputerSystem\\).TotalPhysicalMemory/1GB,1\\); dotnet tool list -g; Get-Content \"D:\\\\Projects\\\\Latest\\\\Industrial Automation\\\\.scratch\\\\readiness-host-build.log\" -TotalCount 5; Get-Content \"D:\\\\Projects\\\\Latest\\\\Industrial Automation\\\\.scratch\\\\readiness-host-build.log\" -Tail 5; Get-NetTCPConnection -State Listen -LocalPort 18443,18444,44320,44394 -ErrorAction SilentlyContinue | Select LocalPort,OwningProcess)",
+      "Bash(cd \"/d/Projects/Latest/Industrial Automation/autoreach-api/tools/LoadTest\" && cat run-inbox-agents.sh; grep -n \"Password\\\\|ADMIN\" -i ../../src/AutoReach.Domain/Data/*.cs 2>/dev/null | head -5)",
+      "Read(//d/Projects/Latest/src/AutoReach.Domain/**)",
+      "Bash(sqlcmd -?)",
+      "Bash(sqlcmd -S \"DESKTOP-3O2IQA6\\\\\\\\SQLEXPRESS01\" -E -C -d AutoReach_Readiness_20261017 -i qstats.sql -W -s \"|\")",
+      "Bash(sed -i \"s/WHERE st.dbid = DB_ID\\('AutoReach_Readiness_20261017'\\)/CROSS APPLY \\(SELECT CONVERT\\(int, value\\) AS dbid FROM sys.dm_exec_plan_attributes\\(qs.plan_handle\\) WHERE attribute = 'dbid'\\) pa WHERE pa.dbid = DB_ID\\('AutoReach_Readiness_20261017'\\)/\" qstats.sql)",
+      "Bash(python profile.py seq x list,counts,messages)",
+      "Bash(sqlcmd -S \"DESKTOP-3O2IQA6\\\\\\\\SQLEXPRESS01\" -E -C -Q \"SET NOCOUNT ON; SELECT TOP 20 qs.execution_count, CAST\\(qs.total_worker_time/1000.0/qs.execution_count AS decimal\\(10,2\\)\\) cpu_ms, CAST\\(qs.total_elapsed_time/1000.0/qs.execution_count AS decimal\\(10,2\\)\\) el_ms, CAST\\(qs.total_logical_reads*1.0/qs.execution_count AS decimal\\(12,1\\)\\) reads, LEFT\\(REPLACE\\(SUBSTRING\\(st.text,\\(qs.statement_start_offset/2\\)+1,4000\\),CHAR\\(10\\),' '\\),150\\) s FROM sys.dm_exec_query_stats qs CROSS APPLY sys.dm_exec_sql_text\\(qs.sql_handle\\) st WHERE qs.last_execution_time > DATEADD\\(minute,-3,GETDATE\\(\\)\\) ORDER BY qs.total_worker_time DESC\" -W -s \"|\")",
+      "Bash(python profile.py seq x counts)",
+      "Bash(sqlcmd -S \"DESKTOP-3O2IQA6\\\\\\\\SQLEXPRESS01\" -E -C -Q \"SET NOCOUNT ON; SELECT COUNT\\(*\\) n, MAX\\(last_execution_time\\) last, GETDATE\\(\\) now FROM sys.dm_exec_query_stats; SELECT name, value_in_use FROM sys.configurations WHERE name IN \\('optimize for ad hoc workloads','max server memory \\(MB\\)','max degree of parallelism'\\); SELECT @@VERSION v; SELECT cpu_count, scheduler_count, physical_memory_kb/1024 mem_mb, committed_target_kb/1024 target_mb FROM sys.dm_os_sys_info; SELECT COUNT\\(*\\) cached_plans, SUM\\(size_in_bytes\\)/1048576 mb FROM sys.dm_exec_cached_plans\" -W -s \"|\")",
+      "Bash(sqlcmd -S \"DESKTOP-3O2IQA6\\\\\\\\SQLEXPRESS01\" -E -C -Q \"SET NOCOUNT ON; SELECT name, is_auto_close_on, state_desc, is_read_committed_snapshot_on rcsi, snapshot_isolation_state_desc si FROM sys.databases ORDER BY name; EXEC sp_readerrorlog 0, 1, N'cachestore flush';\" -W -s \"|\")",
+      "Bash(python -)",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d['scripts']\\)\")",
+      "Bash(npx prettier *)",
+      "Bash(npx ng *)",
+      "Bash(grep -v \"^\\\\s*$\")",
+      "mcp__whatsapp_business_tools__whatsapp_biz_businesses",
+      "mcp__whatsapp_business_tools__whatsapp_biz_publish_app",
+      "mcp__whatsapp_business_tools__whatsapp_biz_onboarding_status"
+    ],
+    "additionalDirectories": [
+      "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\src\\AutoReach.Domain\\Messaging",
+      "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\src\\AutoReach.EntityFrameworkCore\\Repositories",
+      "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\src\\AutoReach.Application\\Messaging",
+      "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\test\\AutoReach.Application.Tests\\Messaging",
+      "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\callrelay",
+      "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\src\\AutoReach.Application\\Calling",
+      "d:\\Projects\\Latest\\Industrial Automation\\autoreach-api\\test\\AutoReach.Application.Tests"
+    ]
+  }
+}

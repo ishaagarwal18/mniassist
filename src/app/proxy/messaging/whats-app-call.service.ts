@@ -27,6 +27,43 @@ export interface WhatsAppCallDto {
   viaRelay?: boolean;
   /** With the call relay, in the reply to answering, calling or rejoining: the relay's answer for this browser. */
   agentAnswerSdp?: string | null;
+  /** Native IVR: None, Menu (the caller is choosing) or Queued. */
+  ivrStatus?: 'None' | 'Menu' | 'Queued';
+  /** The key the caller pressed; null when the menu fell back to its first option. */
+  ivrDigit?: string | null;
+  /** The menu option the caller chose (e.g. "Hindi") and the team it rings. */
+  queueLabel?: string | null;
+  queueTeamId?: string | null;
+}
+
+export interface WhatsAppIvrOptionDto {
+  digit: string;
+  label: string;
+  teamId: string;
+  /** Read-only. */
+  teamName?: string | null;
+  teamMembers?: number;
+}
+
+export interface WhatsAppIvrSettingsDto {
+  enabled: boolean;
+  options: WhatsAppIvrOptionDto[];
+  inputSeconds: number;
+  attempts: number;
+  hasPrompt: boolean;
+  promptSeconds?: number | null;
+  /** Read-only: callers get the menu now. */
+  active: boolean;
+  /** Read-only: what stops the menu answering calls. */
+  problems: string[];
+  queueMinutes: number;
+}
+
+export interface UpdateWhatsAppIvrInput {
+  enabled: boolean;
+  options: Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>[];
+  inputSeconds: number;
+  attempts: number;
 }
 
 export interface IceServerDto {
@@ -370,6 +407,61 @@ export class WhatsAppCallService {
         method: 'GET',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/whats-app-call/permission/${conversationId}`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Native WhatsApp IVR: the menu, its prompt, and whether it answers calls now (and if not, why). */
+  getIvr = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppIvrSettingsDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/ivr',
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  updateIvr = (input: UpdateWhatsAppIvrInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppIvrSettingsDto>(
+      {
+        method: 'PUT',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/ivr',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** FormData with File: a WAV or Ogg/Opus prompt under 30 seconds. */
+  uploadIvrPrompt = (form: FormData, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppIvrSettingsDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/upload-ivr-prompt',
+        body: form,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  deleteIvrPrompt = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppIvrSettingsDto>(
+      {
+        method: 'DELETE',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/ivr-prompt',
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** The prompt as callers hear it (Ogg/Opus). */
+  getIvrPrompt = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, Blob>(
+      {
+        method: 'GET',
+        responseType: 'blob',
+        url: '/api/auto-reach/whats-app-call/ivr-prompt',
       },
       { apiName: this.apiName, ...config },
     );
