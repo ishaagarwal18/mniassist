@@ -1,15 +1,19 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Location } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
+import { environment } from '../../../environments/environment';
 import { AccountRecoveryService } from '../../proxy/identity/account-recovery.service';
 import { ArButton } from '../../ui';
 
+type State = 'opening' | 'invalid' | 'ready' | 'done';
+
 /**
- * Where the emailed link lands: <c>/reset-password?user=…&token=…[&tenant=…]</c>. Reading
- * the link is all it does — the token is validated by the server when the new password is
- * submitted, so an expired or already-used link shows up as a message here, with a way to
- * ask for a fresh one.
+ * Where the emailed link lands: <c>/reset-password?link=…</c>. A link works once, within an hour
+ * of being sent: arriving here opens it on the server, which uses it up and hands back a
+ * 15-minute session for setting the password. The session lives in this page only, and the link
+ * is taken out of the address bar, so reloading, the back button or a second tab finds it used.
  */
 @Component({
   selector: 'ar-reset-password',
@@ -21,26 +25,37 @@ import { ArButton } from '../../ui';
       <form class="rc__card" (submit)="submit($event)">
         <h1 class="rc__title">Choose a new password</h1>
 
-        @if (!linkComplete) {
-          <p class="rc__error">
-            This link is incomplete. Open the link from your email again, or request a new one.
-          </p>
-          <div class="rc__links"><a routerLink="/forgot-password">Request a new link</a></div>
-        } @else if (done()) {
-          <p class="rc__ok">
-            Your password has been changed and every device was signed out. Sign in with the new
-            one.
-          </p>
-          <a ar-button variant="primary" routerLink="/login">Go to sign in</a>
-        } @else {
-          <p class="rc__lead">Pick something you don't use anywhere else.</p>
-
-          @if (error(); as e) {
-            <p class="rc__error">{{ e }}</p>
+        @switch (state()) {
+          @case ('opening') {
+            <p class="rc__lead">Checking your link…</p>
           }
-          @if (expired()) {
+          @case ('invalid') {
+            <p class="rc__error">{{ error() }}</p>
             <div class="rc__links"><a routerLink="/forgot-password">Request a new link</a></div>
-          } @else {
+          }
+          @case ('done') {
+            <p class="rc__ok">
+              Your password has been changed and every device was signed out. Sign in with the new
+              one.
+            </p>
+            <a ar-button variant="primary" routerLink="/login">Go to sign in</a>
+          }
+          @default {
+            <p class="rc__lead">
+              @if (userName(); as u) {
+                For <strong>{{ u }}</strong
+                >.
+              }
+              Pick something you don't use anywhere else.
+            </p>
+            <p class="rc__hint">
+              This link has now been used. Set the password on this page within
+              {{ minutes() }} minutes; if you close or reload it, request a new link.
+            </p>
+
+            @if (error(); as e) {
+              <p class="rc__error">{{ e }}</p>
+            }
             @for (m of messages(); track m) {
               <p class="rc__error">{{ m }}</p>
             }
@@ -81,47 +96,91 @@ import { ArButton } from '../../ui';
 })
 export class ArResetPassword {
   private readonly recovery = inject(AccountRecoveryService);
-  private readonly params = inject(ActivatedRoute).snapshot.queryParamMap;
+  private readonly location = inject(Location);
+  private readonly link = inject(ActivatedRoute).snapshot.queryParamMap.get('link') ?? '';
 
-  private readonly userId = this.params.get('user') ?? '';
-  private readonly token = this.params.get('token') ?? '';
-  private readonly tenantId = this.params.get('tenant');
-
-  protected readonly linkComplete = !!this.userId && !!this.token;
+  private session = '';
+  protected readonly state = signal<State>('opening');
+  protected readonly userName = signal<string | null>(null);
+  protected readonly minutes = signal(15);
 
   protected readonly password = signal('');
   protected readonly confirm = signal('');
   protected readonly busy = signal(false);
-  protected readonly done = signal(false);
-  protected readonly expired = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly messages = signal<string[]>([]);
 
   protected readonly matches = computed(() => this.password() === this.confirm());
   protected readonly canSubmit = computed(() => this.password().length > 0 && this.matches());
 
+  constructor() {
+    void this.open();
+  }
+
+  private async open(): Promise<void> {
+    // The link is spent the moment it is opened; keep it out of history so Back can't resend it.
+    this.location.replaceState('/reset-password');
+
+    if (!this.link) {
+      this.invalid(
+        'This link is incomplete. Open the link from your email again, or request a new one.',
+      );
+      return;
+    }
+    if (environment.useMockData) {
+      this.session = 'demo';
+      this.state.set('ready');
+      return;
+    }
+    try {
+      const opened = await firstValueFrom(this.recovery.openResetLink({ link: this.link }));
+      if (!opened.succeeded || !opened.session) {
+        this.invalid(
+          'This link has expired or has already been opened. Each link works once, within an hour of being sent.',
+        );
+        return;
+      }
+      this.session = opened.session;
+      this.userName.set(opened.userName ?? null);
+      this.minutes.set(opened.sessionMinutes || 15);
+      this.state.set('ready');
+    } catch (e: unknown) {
+      this.invalid(
+        (e as { status?: number })?.status === 429
+          ? 'Too many attempts from this network. Try again in an hour.'
+          : "We couldn't check the link just now. Request a new one and try again.",
+      );
+    }
+  }
+
+  private invalid(message: string): void {
+    this.error.set(message);
+    this.state.set('invalid');
+  }
+
   protected async submit(event: Event): Promise<void> {
     event.preventDefault();
-    if (!this.canSubmit() || this.busy()) return;
+    if (this.state() !== 'ready' || !this.canSubmit() || this.busy()) return;
     this.busy.set(true);
     this.error.set(null);
     this.messages.set([]);
     try {
+      if (environment.useMockData) {
+        this.state.set('done');
+        return;
+      }
       const result = await firstValueFrom(
-        this.recovery.resetPassword({
-          tenantId: this.tenantId,
-          userId: this.userId,
-          token: this.token,
-          newPassword: this.password(),
-        }),
+        this.recovery.resetPassword({ session: this.session, newPassword: this.password() }),
       );
       if (result.succeeded) {
-        this.done.set(true);
+        this.session = '';
+        this.state.set('done');
       } else if (result.error === 'password_rejected') {
         this.messages.set(result.messages);
       } else {
-        this.expired.set(true);
-        this.error.set('This link has expired or was already used.');
+        this.invalid(
+          'This page has expired. Request a new link and set the password within the time shown.',
+        );
       }
     } catch (e: unknown) {
       this.error.set(

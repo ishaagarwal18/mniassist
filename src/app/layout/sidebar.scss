@@ -309,6 +309,17 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   z-index: 10;
 }
+.sb__menu-lang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 9px 4px;
+  margin-top: 2px;
+  border-top: 1px solid color-mix(in srgb, var(--ar-nav-text) 18%, transparent);
+  color: var(--ar-nav-text);
+  font: 400 12.5px var(--ar-font-sans);
+}
 .sb__menu-item {
   display: flex;
   align-items: center;

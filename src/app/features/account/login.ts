@@ -19,6 +19,8 @@ import {
 import { beginExternalLogin } from '../../core/auth/external-login';
 import { ArButton, ArIcon } from '../../ui';
 import { ArThemeToggle } from '../../layout/theme-toggle';
+import { ArLanguageSwitch } from '../../layout/language-switch';
+import { LanguageService } from '../../core/i18n/language.service';
 import { ArAuthShowcase } from './auth-showcase';
 import { ArBrand } from '../../layout/brand';
 import { workspaceSlug } from '../../core/util/workspace-slug';
@@ -30,24 +32,27 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
  */
 @Component({
   selector: 'ar-login',
-  imports: [ArButton, ArIcon, RouterLink, ArThemeToggle, ArAuthShowcase, ArBrand],
+  imports: [ArButton, ArIcon, RouterLink, ArThemeToggle, ArLanguageSwitch, ArAuthShowcase, ArBrand],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-auth-showcase class="lg__show" />
     <div class="lg">
-      <div class="lg__top"><ar-theme-toggle /></div>
+      <div class="lg__top"><ar-language-switch /><ar-theme-toggle /></div>
       <form class="lg__card" (submit)="submit($event)">
         <div class="lg__brand">
           <ar-brand [logoSrc]="workspaceLogo()" />
         </div>
         @if (step() === 'code') {
-          <h1 class="lg__title">Two-step verification</h1>
+          <h1 class="lg__title">{{ i18n.t('Two-step verification') }}</h1>
           <p class="lg__sub">
             @if (useRecovery()) {
-              Enter one of the recovery codes you saved when you set up two-step verification. Each
-              code works once.
+              {{
+                i18n.t(
+                  'Enter one of the recovery codes you saved when you set up two-step verification. Each code works once.'
+                )
+              }}
             } @else {
-              Enter the 6-digit code from your authenticator app.
+              {{ i18n.t('Enter the 6-digit code from your authenticator app.') }}
             }
           </p>
 
@@ -57,7 +62,7 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
 
           @if (useRecovery()) {
             <label class="lg__field">
-              <span>Recovery code</span>
+              <span>{{ i18n.t('Recovery code') }}</span>
               <input
                 class="ar-field__input ar-mono"
                 name="recoveryCode"
@@ -71,7 +76,7 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
             </label>
           } @else {
             <label class="lg__field">
-              <span>Authentication code</span>
+              <span>{{ i18n.t('Authentication code') }}</span>
               <input
                 class="ar-field__input lg__code"
                 name="code"
@@ -86,24 +91,34 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
           }
 
           <button ar-button type="submit" variant="primary" [disabled]="busy() || !canVerify()">
-            {{ busy() ? 'Verifying…' : 'Verify' }}
+            {{ i18n.t(busy() ? 'Verifying…' : 'Verify') }}
           </button>
 
           <button type="button" class="lg__link lg__link--btn" (click)="toggleRecovery()">
             {{
-              useRecovery() ? 'Use your authenticator app' : 'Lost your phone? Use a recovery code'
+              i18n.t(
+                useRecovery()
+                  ? 'Use your authenticator app'
+                  : 'Lost your phone? Use a recovery code'
+              )
             }}
           </button>
           <button type="button" class="lg__link lg__link--btn" (click)="backToPassword()">
-            Back to sign in
+            {{ i18n.t('Back to sign in') }}
           </button>
         } @else if (step() === 'new-password') {
-          <h1 class="lg__title">Choose a new password</h1>
+          <h1 class="lg__title">{{ i18n.t('Choose a new password') }}</h1>
           <p class="lg__sub">
             @if (passwordChangeReason() === 'PeriodicallyChangePassword') {
-              Your password is older than your workspace allows. Choose a new one to continue.
+              {{
+                i18n.t(
+                  'Your password is older than your workspace allows. Choose a new one to continue.'
+                )
+              }}
             } @else {
-              Your administrator set a temporary password. Choose your own to continue.
+              {{
+                i18n.t('Your administrator set a temporary password. Choose your own to continue.')
+              }}
             }
           </p>
 
@@ -112,7 +127,7 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
           }
 
           <label class="lg__field">
-            <span>New password</span>
+            <span>{{ i18n.t('New password') }}</span>
             <input
               class="ar-field__input"
               type="password"
@@ -124,7 +139,7 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
             />
           </label>
           <label class="lg__field">
-            <span>Type it again</span>
+            <span>{{ i18n.t('Type it again') }}</span>
             <input
               class="ar-field__input"
               type="password"
@@ -141,10 +156,10 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
             variant="primary"
             [disabled]="busy() || !canSetNewPassword()"
           >
-            {{ busy() ? 'Saving…' : 'Save and sign in' }}
+            {{ i18n.t(busy() ? 'Saving…' : 'Save and sign in') }}
           </button>
           <button type="button" class="lg__link lg__link--btn" (click)="backToPassword()">
-            Back to sign in
+            {{ i18n.t('Back to sign in') }}
           </button>
         } @else if (step() === 'confirm-email') {
           <h1 class="lg__title">Confirm your email first</h1>
@@ -176,11 +191,13 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
             </button>
           }
           <button type="button" class="lg__link lg__link--btn" (click)="backToPassword()">
-            Back to sign in
+            {{ i18n.t('Back to sign in') }}
           </button>
         } @else {
-          <h1 class="lg__title">Welcome back</h1>
-          <p class="lg__sub">Sign in to your workspace to pick up where your team left off.</p>
+          <h1 class="lg__title">{{ i18n.t('Welcome back') }}</h1>
+          <p class="lg__sub">
+            {{ i18n.t('Sign in to your workspace to pick up where your team left off.') }}
+          </p>
 
           @if (error(); as e) {
             <p class="lg__error">{{ e }}</p>
@@ -188,7 +205,10 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
 
           @if (!mock) {
             <label class="lg__field">
-              <span>Workspace <em class="lg__opt">— leave blank for the host</em></span>
+              <span
+                >{{ i18n.t('Workspace') }}
+                <em class="lg__opt">{{ i18n.t('— leave blank for the host') }}</em></span
+              >
               <input
                 class="ar-field__input"
                 name="tenant"
@@ -203,7 +223,7 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
           }
 
           <label class="lg__field">
-            <span>Username, email or phone number</span>
+            <span>{{ i18n.t('Username, email or phone number') }}</span>
             <input
               class="ar-field__input"
               name="username"
@@ -214,7 +234,7 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
             />
           </label>
           <label class="lg__field">
-            <span>Password</span>
+            <span>{{ i18n.t('Password') }}</span>
             <input
               class="ar-field__input"
               type="password"
@@ -230,15 +250,17 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
               [checked]="rememberMe()"
               (change)="rememberMe.set($any($event.target).checked)"
             />
-            Keep me signed in
+            {{ i18n.t('Keep me signed in') }}
           </label>
 
           <button ar-button type="submit" variant="primary" [disabled]="busy() || !canSubmit()">
-            {{ busy() ? 'Signing in…' : 'Sign in' }}
+            {{ i18n.t(busy() ? 'Signing in…' : 'Sign in') }}
           </button>
 
           @if (externalProviders().length) {
-            <div class="lg__or"><span>or</span></div>
+            <div class="lg__or">
+              <span>{{ i18n.t('or') }}</span>
+            </div>
             <div class="lg__external">
               @for (p of externalProviders(); track p.name) {
                 <button
@@ -248,31 +270,36 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
                   [disabled]="busy()"
                   (click)="continueWith(p)"
                 >
-                  Sign in with {{ p.name }}
+                  {{ i18n.t('Sign in with {0}', p.name) }}
                 </button>
               }
             </div>
           }
 
           @if (mock) {
-            <p class="lg__hint">Demo build — any username and password will sign you in.</p>
+            <p class="lg__hint">
+              {{ i18n.t('Demo build — any username and password will sign you in.') }}
+            </p>
           } @else {
-            <a class="lg__link lg__link--forgot" routerLink="/forgot-password">Forgot password?</a>
+            <a class="lg__link lg__link--forgot" routerLink="/forgot-password">{{
+              i18n.t('Forgot password?')
+            }}</a>
             <p class="lg__new">
-              New to MNI Assist? <a class="lg__link" routerLink="/signup">Create a workspace</a>
+              {{ i18n.t('New to MNI Assist?') }}
+              <a class="lg__link" routerLink="/signup">{{ i18n.t('Create a workspace') }}</a>
             </p>
           }
         }
       </form>
       <ul class="lg__trust" aria-label="Security">
-        <li><ar-icon name="shield" [size]="14" /> Encrypted sign-in</li>
-        <li><ar-icon name="check" [size]="14" /> DPDP-ready consent records</li>
-        <li><ar-icon name="user" [size]="14" /> Role-based access</li>
+        <li><ar-icon name="shield" [size]="14" /> {{ i18n.t('Encrypted sign-in') }}</li>
+        <li><ar-icon name="check" [size]="14" /> {{ i18n.t('DPDP-ready consent records') }}</li>
+        <li><ar-icon name="user" [size]="14" /> {{ i18n.t('Role-based access') }}</li>
       </ul>
       <p class="lg__foot">
         MNI Assist — AI Business Engagement Platform for Industrial Companies ·
-        <a routerLink="/privacy" class="lg__foot-link">Privacy policy</a> ·
-        <a routerLink="/status" class="lg__foot-link">System status</a>
+        <a routerLink="/privacy" class="lg__foot-link">{{ i18n.t('Privacy policy') }}</a> ·
+        <a routerLink="/status" class="lg__foot-link">{{ i18n.t('System status') }}</a>
       </p>
     </div>
   `,
@@ -296,6 +323,10 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
       position: absolute;
       top: 20px;
       right: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
     }
     .lg__code {
       font: 600 20px var(--ar-font-mono);
@@ -464,6 +495,7 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
   `,
 })
 export class ArLogin {
+  protected readonly i18n = inject(LanguageService);
   private readonly account = inject(CurrentUserService);
   private readonly router = inject(Router);
   private readonly tenants = inject(AbpTenantService);

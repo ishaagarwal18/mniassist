@@ -20,6 +20,8 @@ import { canAccessNavItem } from '../core/auth/permission';
 import { NAV, NavItem } from './nav.model';
 import { ArThemeToggle } from './theme-toggle';
 import { NavDrawer } from './nav-drawer';
+import { ArLanguageSwitch } from './language-switch';
+import { LanguageService } from '../core/i18n/language.service';
 
 /**
  * Every screen's header, and — since `help` is set on essentially every call
@@ -35,13 +37,13 @@ import { NavDrawer } from './nav-drawer';
  */
 @Component({
   selector: 'ar-topbar',
-  imports: [ArIcon, ArThemeToggle, RouterLink, RouterLinkActive],
+  imports: [ArIcon, ArThemeToggle, ArLanguageSwitch, RouterLink, RouterLinkActive],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
       type="button"
       class="tb__menu"
-      aria-label="Open the menu"
+      [attr.aria-label]="i18n.t('Open the menu')"
       [attr.aria-expanded]="drawer.open()"
       (click)="drawer.toggle()"
     >
@@ -64,7 +66,7 @@ import { NavDrawer } from './nav-drawer';
           [class.tb__tool--on]="open()"
           [attr.aria-expanded]="open()"
           [attr.aria-label]="'Help: about ' + title()"
-          title="Help"
+          [title]="i18n.t('Help')"
           (click)="toggle($event)"
         >
           <ar-icon name="help" [size]="17" />
@@ -75,8 +77,10 @@ import { NavDrawer } from './nav-drawer';
           class="tb__tool"
           [routerLink]="item.route"
           routerLinkActive="tb__tool--on"
-          [attr.aria-label]="item.label + (badgeFor(item) ? ', ' + badgeFor(item) + ' new' : '')"
-          [title]="item.label"
+          [attr.aria-label]="
+            i18n.t(item.label) + (badgeFor(item) ? ', ' + badgeFor(item) + ' new' : '')
+          "
+          [title]="i18n.t(item.label)"
         >
           <ar-icon [name]="item.icon" [size]="17" />
           @if (badgeFor(item); as n) {
@@ -84,6 +88,7 @@ import { NavDrawer } from './nav-drawer';
           }
         </a>
       }
+      <ar-language-switch compact class="tb__theme" />
       <ar-theme-toggle compact class="tb__theme" />
     </div>
 
@@ -199,7 +204,7 @@ import { NavDrawer } from './nav-drawer';
         padding-left: 0;
         border-left: 0;
       }
-      /* The theme switch is also in the user menu; the header has no room for it here. */
+      /* The theme and language switches are also in the user menu; the header has no room here. */
       .tb__theme {
         display: none;
       }
@@ -378,6 +383,7 @@ import { NavDrawer } from './nav-drawer';
 })
 export class ArTopbar {
   protected readonly drawer = inject(NavDrawer);
+  protected readonly i18n = inject(LanguageService);
   readonly title = input.required<string>();
   readonly subtitle = input<string | null>(null);
 

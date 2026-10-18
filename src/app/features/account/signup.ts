@@ -16,6 +16,8 @@ import { CurrentUserService } from '../../core/services/current-user.service';
 import { TenantSignupService } from '../../proxy/registration';
 import { ArButton } from '../../ui';
 import { ArBrand } from '../../layout/brand';
+import { ArLanguageSwitch } from '../../layout/language-switch';
+import { LanguageService } from '../../core/i18n/language.service';
 import { planByKey, planKey, priceLabel } from '../landing/landing-plans';
 import { ArCaptcha } from '../../ui/captcha';
 
@@ -27,27 +29,28 @@ import { ArCaptcha } from '../../ui/captcha';
  */
 @Component({
   selector: 'ar-signup',
-  imports: [ArButton, RouterLink, ArBrand, ArCaptcha],
+  imports: [ArButton, RouterLink, ArBrand, ArCaptcha, ArLanguageSwitch],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="lg">
+      <div class="lg__top"><ar-language-switch /></div>
       <form class="lg__card" (submit)="submit($event)">
         <div class="lg__brand">
           <ar-brand />
         </div>
 
         @if (done()) {
-          <h1 class="lg__title">Workspace created</h1>
-          <p class="lg__hint">Signing you in to {{ workspace() }}…</p>
+          <h1 class="lg__title">{{ i18n.t('Workspace created') }}</h1>
+          <p class="lg__hint">{{ i18n.t('Signing you in to {0}…', workspace()) }}</p>
         } @else {
-          <h1 class="lg__title">Create your workspace</h1>
+          <h1 class="lg__title">{{ i18n.t('Create your workspace') }}</h1>
 
           @if (plan(); as p) {
             <div class="lg__plan">
               <span>
                 You're getting the <strong>{{ p.name }}</strong> plan · {{ price(p) }}/month + GST
               </span>
-              <a routerLink="/" fragment="plans" class="lg__plan-change">Change</a>
+              <a routerLink="/" fragment="plans" class="lg__plan-change">{{ i18n.t('Change') }}</a>
             </div>
           }
 
@@ -56,7 +59,7 @@ import { ArCaptcha } from '../../ui/captcha';
           }
 
           <label class="lg__field">
-            <span>Workspace name</span>
+            <span>{{ i18n.t('Workspace name') }}</span>
             <input
               class="ar-field__input"
               name="workspace"
@@ -77,11 +80,14 @@ import { ArCaptcha } from '../../ui/captcha';
                 >.</em
               >
             } @else {
-              <em class="lg__note">Your company's name. Spaces are fine.</em>
+              <em class="lg__note">{{ i18n.t('Your company's name. Spaces are fine.') }}</em>
             }
           </label>
           <label class="lg__field">
-            <span>Your name <span class="lg__opt">(optional)</span></span>
+            <span
+              >{{ i18n.t('Your name') }}
+              <span class="lg__opt">{{ i18n.t('(optional)') }}</span></span
+            >
             <input
               class="ar-field__input"
               name="name"
@@ -92,7 +98,7 @@ import { ArCaptcha } from '../../ui/captcha';
             />
           </label>
           <label class="lg__field">
-            <span>Email</span>
+            <span>{{ i18n.t('Email') }}</span>
             <input
               class="ar-field__input"
               type="email"
@@ -110,7 +116,10 @@ import { ArCaptcha } from '../../ui/captcha';
             }
           </label>
           <label class="lg__field">
-            <span>Mobile number{{ mobileRequired() ? '' : ' (optional)' }}</span>
+            <span
+              >{{ i18n.t('Mobile number')
+              }}{{ mobileRequired() ? '' : ' ' + i18n.t('(optional)') }}</span
+            >
             <span class="lg__row">
               <input
                 class="ar-field__input"
@@ -129,21 +138,21 @@ import { ArCaptcha } from '../../ui/captcha';
                   [disabled]="sending() || !mobile().trim()"
                   (click)="sendCode()"
                 >
-                  {{ sending() ? 'Sending…' : verificationId() ? 'Resend' : 'Send code' }}
+                  {{ i18n.t(sending() ? 'Sending…' : verificationId() ? 'Resend' : 'Send code') }}
                 </button>
               }
             </span>
             @if (mobileVerified()) {
-              <em class="lg__note lg__ok">Verified.</em>
+              <em class="lg__note lg__ok">{{ i18n.t('Verified.') }}</em>
             } @else if (sentTo(); as to) {
-              <em class="lg__note">We sent a 6-digit code to {{ to }}.</em>
+              <em class="lg__note">{{ i18n.t('We sent a 6-digit code to {0}.', to) }}</em>
             } @else if (submitted() && mobileError(); as e) {
               <em class="lg__note lg__bad">{{ e }}</em>
             }
           </label>
           @if (mobileRequired() && verificationId() && !mobileVerified()) {
             <label class="lg__field">
-              <span>Code from the SMS</span>
+              <span>{{ i18n.t('Code from the SMS') }}</span>
               <span class="lg__row">
                 <input
                   class="ar-field__input"
@@ -159,13 +168,13 @@ import { ArCaptcha } from '../../ui/captcha';
                   [disabled]="sending() || code().trim().length < 6"
                   (click)="verifyCode()"
                 >
-                  Verify
+                  {{ i18n.t('Verify') }}
                 </button>
               </span>
             </label>
           }
           <label class="lg__field">
-            <span>Password</span>
+            <span>{{ i18n.t('Password') }}</span>
             <input
               class="ar-field__input"
               type="password"
@@ -202,15 +211,15 @@ import { ArCaptcha } from '../../ui/captcha';
           }
 
           <button ar-button type="submit" variant="primary" [disabled]="busy()">
-            {{ busy() ? 'Creating…' : 'Create workspace' }}
+            {{ i18n.t(busy() ? 'Creating…' : 'Create workspace') }}
           </button>
 
-          <a class="lg__link" routerLink="/login">I already have a workspace</a>
+          <a class="lg__link" routerLink="/login">{{ i18n.t('I already have a workspace') }}</a>
         }
       </form>
       <p class="lg__foot">
         MNI Assist — AI Business Engagement Platform for Industrial Companies ·
-        <a routerLink="/privacy" class="lg__foot-link">Privacy policy</a>
+        <a routerLink="/privacy" class="lg__foot-link">{{ i18n.t('Privacy policy') }}</a>
       </p>
     </div>
   `,
@@ -221,6 +230,7 @@ import { ArCaptcha } from '../../ui/captcha';
       background: var(--ar-bg-100);
     }
     .lg {
+      position: relative;
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -228,6 +238,17 @@ import { ArCaptcha } from '../../ui/captcha';
       justify-content: center;
       gap: 18px;
       padding: 24px;
+    }
+    .lg__top {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+    }
+    @media (max-width: 640px) {
+      .lg__top {
+        position: static;
+        align-self: flex-end;
+      }
     }
     .lg__card {
       width: 360px;
@@ -368,6 +389,7 @@ import { ArCaptcha } from '../../ui/captcha';
   `,
 })
 export class ArSignup {
+  protected readonly i18n = inject(LanguageService);
   private readonly api = inject(TenantSignupService);
   private readonly account = inject(CurrentUserService);
   private readonly router = inject(Router);
@@ -536,8 +558,9 @@ export class ArSignup {
         }),
       );
       this.done.set(true);
-      // ABP seeds the first user as "admin"; sign in scoped to the new workspace.
-      await this.account.signIn('admin', this.password(), true, name);
+      // ABP seeds the first user as "admin"; sign in scoped to the new workspace, and start
+      // on Get started — a new workspace's dashboard has nothing on it yet.
+      await this.account.signIn('admin', this.password(), true, name, '/getting-started');
       // Straight to Billing to activate the plan they picked, if they picked one.
       const chosen = this.plan();
       if (chosen) {

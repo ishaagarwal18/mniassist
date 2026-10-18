@@ -11,10 +11,23 @@ export interface ForgotWorkspaceInput {
   email: string;
 }
 
+/** The one-time id from the emailed link. Opening the link uses it up. */
+export interface OpenResetLinkInput {
+  link: string;
+}
+
+export interface OpenResetLinkResultDto {
+  succeeded: boolean;
+  /** `invalid_token` when the link expired or was already opened; null on success. */
+  error?: string | null;
+  /** Sent back with the new password; kept in memory only. */
+  session?: string | null;
+  sessionMinutes: number;
+  userName?: string | null;
+}
+
 export interface ResetPasswordInput {
-  tenantId?: string | null;
-  userId: string;
-  token: string;
+  session: string;
   newPassword: string;
 }
 
@@ -62,6 +75,12 @@ export class AccountRecoveryService {
   forgotWorkspace = (input: ForgotWorkspaceInput, config?: Partial<Rest.Config>) =>
     this.restService.request<ForgotWorkspaceInput, void>(
       { method: 'POST', url: '/api/auto-reach/account-recovery/forgot-workspace', body: input },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  openResetLink = (input: OpenResetLinkInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<OpenResetLinkInput, OpenResetLinkResultDto>(
+      { method: 'POST', url: '/api/auto-reach/account-recovery/open-reset-link', body: input },
       { apiName: this.apiName, skipHandleError: true, ...config },
     );
 

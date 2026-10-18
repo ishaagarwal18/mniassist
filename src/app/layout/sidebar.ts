@@ -16,6 +16,8 @@ import { NAV, NavGroup } from './nav.model';
 import { ArAvatar, ArIcon } from '../ui';
 import { ArBrand } from './brand';
 import { NavDrawer } from './nav-drawer';
+import { ArLanguageSwitch } from './language-switch';
+import { LanguageService } from '../core/i18n/language.service';
 import { OpsService } from '../core/services/ops.service';
 import { InboxService } from '../core/services/inbox.service';
 import { CurrentUserService } from '../core/services/current-user.service';
@@ -46,7 +48,7 @@ function readCollapsed(): boolean {
 
 @Component({
   selector: 'ar-sidebar',
-  imports: [RouterLink, ArIcon, ArAvatar, ArBrand],
+  imports: [RouterLink, ArIcon, ArAvatar, ArBrand, ArLanguageSwitch],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.sb--collapsed]': 'collapsed()',
@@ -65,7 +67,7 @@ function readCollapsed(): boolean {
         <button
           class="sb__collapse"
           type="button"
-          [attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
+          [attr.aria-label]="i18n.t(collapsed() ? 'Expand navigation' : 'Collapse navigation')"
           [attr.aria-expanded]="!collapsed()"
           (click)="toggleCollapsed()"
         >
@@ -84,8 +86,8 @@ function readCollapsed(): boolean {
           <button
             class="sb__search-btn"
             type="button"
-            aria-label="Search menu"
-            title="Search menu"
+            [attr.aria-label]="i18n.t('Search menu')"
+            [title]="i18n.t('Search menu')"
             (click)="openSearch()"
           >
             <ar-icon name="search" [size]="15" />
@@ -96,8 +98,8 @@ function readCollapsed(): boolean {
             #menuSearch
             class="sb__search-input"
             type="search"
-            placeholder="Search menu"
-            aria-label="Search menu"
+            [placeholder]="i18n.t('Search menu')"
+            [attr.aria-label]="i18n.t('Search menu')"
             autocomplete="off"
             [value]="menuQuery()"
             (input)="menuQuery.set($any($event.target).value)"
@@ -117,10 +119,10 @@ function readCollapsed(): boolean {
             class="sb__heading"
             [class.sb__heading--folded]="isFolded(group)"
             [attr.aria-expanded]="!isFolded(group)"
-            [attr.title]="isFolded(group) ? 'Show ' + group.heading : 'Hide ' + group.heading"
+            [attr.title]="i18n.t(isFolded(group) ? 'Show {0}' : 'Hide {0}', i18n.t(group.heading))"
             (click)="toggleGroup(group)"
           >
-            <span>{{ group.heading }}</span>
+            <span>{{ i18n.t(group.heading) }}</span>
             <ar-icon class="sb__heading-chev" name="chevdown" [size]="12" />
           </button>
         }
@@ -134,19 +136,19 @@ function readCollapsed(): boolean {
             [class.sb__item--on]="item.route === active()"
             [attr.aria-current]="item.route === active() ? 'page' : null"
             [routerLink]="item.route"
-            [attr.title]="collapsed() ? item.label : null"
+            [attr.title]="collapsed() ? i18n.t(item.label) : null"
             (click)="clearSearch(); drawer.close()"
           >
             <span class="sb__bar" aria-hidden="true"></span>
             <ar-icon [name]="item.icon" [size]="16" />
-            <span class="sb__label">{{ item.label }}</span>
+            <span class="sb__label">{{ i18n.t(item.label) }}</span>
             @if (badgeFor(item.badge); as n) {
               <span class="sb__badge">{{ n }}</span>
             }
           </a>
         }
       } @empty {
-        <p class="sb__none">No menu items match “{{ menuQuery().trim() }}”.</p>
+        <p class="sb__none">{{ i18n.t('No menu items match “{0}”.', menuQuery().trim()) }}</p>
       }
     </nav>
 
@@ -154,7 +156,7 @@ function readCollapsed(): boolean {
       @if (menuOpen()) {
         <div class="sb__menu" role="menu">
           <a class="sb__menu-item" routerLink="/settings/profile" role="menuitem" (click)="close()">
-            <ar-icon name="user" [size]="15" /> Your profile
+            <ar-icon name="user" [size]="15" /> {{ i18n.t('Your profile') }}
           </a>
           <button
             class="sb__menu-item"
@@ -164,7 +166,7 @@ function readCollapsed(): boolean {
             (click)="toggleTheme($event)"
           >
             <ar-icon [name]="theme.theme() === 'dark' ? 'sun' : 'moon'" [size]="15" />
-            {{ theme.theme() === 'dark' ? 'Light theme' : 'Dark theme' }}
+            {{ i18n.t(theme.theme() === 'dark' ? 'Light theme' : 'Dark theme') }}
           </button>
           @if (pwa.canInstall()) {
             <button
@@ -173,12 +175,16 @@ function readCollapsed(): boolean {
               role="menuitem"
               (click)="installApp($event)"
             >
-              <ar-icon name="download" [size]="15" /> Install app
+              <ar-icon name="download" [size]="15" /> {{ i18n.t('Install app') }}
             </button>
           }
           <button class="sb__menu-item" type="button" role="menuitem" (click)="signOut()">
-            <ar-icon name="link" [size]="15" /> Sign out
+            <ar-icon name="link" [size]="15" /> {{ i18n.t('Sign out') }}
           </button>
+          <div class="sb__menu-lang" (click)="$event.stopPropagation()">
+            <span>{{ i18n.t('Language') }}</span>
+            <ar-language-switch />
+          </div>
         </div>
       }
       <button
@@ -201,6 +207,7 @@ function readCollapsed(): boolean {
 })
 export class ArSidebar {
   protected readonly drawer = inject(NavDrawer);
+  protected readonly i18n = inject(LanguageService);
   private readonly inbox = inject(InboxService);
   private readonly ops = inject(OpsService);
   private readonly permissions = inject(PermissionService);
@@ -304,11 +311,16 @@ export class ArSidebar {
     const hits = (text: string) => terms.every((t) => text.includes(t));
     return this.nav()
       .map((group) => {
-        const heading = (group.heading ?? '').toLowerCase();
+        // The English and the shown language both match, so either can be typed.
+        const heading = `${group.heading ?? ''} ${group.heading ? this.i18n.t(group.heading) : ''}`
+          .trim()
+          .toLowerCase();
         if (heading && hits(heading)) return group;
         return {
           ...group,
-          items: group.items.filter((i) => hits(`${i.label} ${heading}`.toLowerCase())),
+          items: group.items.filter((i) =>
+            hits(`${i.label} ${this.i18n.t(i.label)} ${heading}`.toLowerCase()),
+          ),
         };
       })
       .filter((group) => group.items.length > 0);

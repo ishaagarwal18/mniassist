@@ -27,6 +27,7 @@ import { passwordChangeParameters, signInChallenge } from '../auth/sign-in-chall
 import { EXTERNAL_LOGIN_GRANT } from '../auth/external-login';
 import { isHostAdministrator, isHostContext } from '../auth/host-access';
 import { ToastService } from '../ui/toast.service';
+import { LanguageService } from '../i18n/language.service';
 
 const MOCK = environment.useMockData;
 /** Mock mode has no auth server, so "signed in" is this local flag. Absent = signed out. */
@@ -81,6 +82,7 @@ function mockIdentityFrom(login: string): CurrentUser {
 export class CurrentUserService {
   private readonly auth = inject(AuthService);
   private readonly toasts = inject(ToastService);
+  private readonly i18n = inject(LanguageService);
   private readonly config = inject(ConfigStateService);
   private readonly api = inject(ProfileService);
   private readonly sessions = inject(SessionService);
@@ -228,6 +230,8 @@ export class CurrentUserService {
     password: string,
     rememberMe: boolean,
     tenant = '',
+    /** Where to land instead of the usual place, e.g. Get started after creating a workspace. */
+    landOn?: string,
   ): Promise<void> {
     if (MOCK) {
       this.mockUser.set(mockIdentityFrom(username));
@@ -237,13 +241,18 @@ export class CurrentUserService {
         /* ignore */
       }
       this.mockSignedIn.set(true);
-      await this.router.navigateByUrl('/home');
+      await this.router.navigateByUrl(landOn ?? '/home');
       return;
     }
     await this.selectTenant(tenant);
     try {
       await firstValueFrom(
-        this.auth.login({ username, password, rememberMe, redirectUrl: this.afterSignInUrl() }),
+        this.auth.login({
+          username,
+          password,
+          rememberMe,
+          redirectUrl: landOn ?? this.afterSignInUrl(),
+        }),
       );
     } catch (e) {
       if (isTwoFactorChallenge(e)) throw new TwoFactorRequiredError();
@@ -380,7 +389,10 @@ export class CurrentUserService {
     } catch {
       /* storage blocked: they land on home instead */
     }
-    this.toasts.warning('Your session has ended. Sign in again to continue.', 'Signed out');
+    this.toasts.warning(
+      this.i18n.t('Your session has ended. Sign in again to continue.'),
+      this.i18n.t('Signed out'),
+    );
     const toLogin = () => {
       this.endingSession = false;
       void this.router.navigateByUrl('/login');
@@ -480,8 +492,10 @@ export class CurrentUserService {
       this.endingSession = true;
     }
     this.toasts.success(
-      'Password changed. You have been signed out on all your devices — sign in again with your new password.',
-      'Signed out',
+      this.i18n.t(
+        'Password changed. You have been signed out on all your devices — sign in again with your new password.',
+      ),
+      this.i18n.t('Signed out'),
     );
     if (MOCK) {
       this.logout();

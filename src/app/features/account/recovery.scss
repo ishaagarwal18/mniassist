@@ -33,6 +33,15 @@
   font: 400 12.5px/1.5 var(--ar-font-sans);
   color: var(--ar-ink-500);
 }
+.rc__hint {
+  margin: 0 0 14px;
+  padding: 8px 10px;
+  border-radius: var(--ar-radius-inset);
+  background: var(--ar-amber-100, var(--ar-bg-100));
+  color: var(--ar-ink-700);
+  font: 400 12px/1.5 var(--ar-font-sans);
+  text-align: left;
+}
 .rc__error {
   margin: 0 0 12px;
   padding: 8px 10px;
