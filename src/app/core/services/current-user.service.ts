@@ -410,9 +410,14 @@ export class CurrentUserService {
       .subscribe(() => this.finishLogout());
   }
 
-  private finishLogout(): void {
+  private finishLogout(done?: () => void): void {
     this.auth.logout().subscribe({
+      error: () => {
+        done?.();
+        void this.router.navigateByUrl('/login');
+      },
       complete: () => {
+        done?.();
         this.session.setTenant(null);
         this.currentTenantName.set('');
         try {
@@ -461,10 +466,27 @@ export class CurrentUserService {
     await firstValueFrom(this.config.refreshAppState());
   }
 
+  /**
+   * Changes the password, then signs out here as well: the server has just ended every session of
+   * this user (all devices, this one included), so the person signs in again with the new password.
+   * A refused change throws before anything is signed out.
+   */
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    if (MOCK) return;
-    await firstValueFrom(
-      this.api.changePassword({ currentPassword: currentPassword || null, newPassword }),
+    if (!MOCK) {
+      await firstValueFrom(
+        this.api.changePassword({ currentPassword: currentPassword || null, newPassword }),
+      );
+      // Requests already in flight now come back 401; don't let them show "session ended" too.
+      this.endingSession = true;
+    }
+    this.toasts.success(
+      'Password changed. You have been signed out on all your devices — sign in again with your new password.',
+      'Signed out',
     );
+    if (MOCK) {
+      this.logout();
+      return;
+    }
+    this.finishLogout(() => (this.endingSession = false));
   }
 }

@@ -124,6 +124,10 @@
           @if (newPassword() && confirmPassword() && newPassword() !== confirmPassword()) {
             <p class="pf__mismatch">The new passwords do not match.</p>
           }
+          <p class="pf__note">
+            Changing your password signs you out on every device, this one included. Sign in again
+            with the new password to carry on.
+          </p>
 
           <div class="pf__actions">
             <button
