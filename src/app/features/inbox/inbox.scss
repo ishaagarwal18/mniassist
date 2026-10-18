@@ -201,7 +201,6 @@
 .bubble__body {
   margin: 0;
   padding: 10px 13px;
-  line-height: 1.5;
   font: 400 13px var(--ar-font-sans);
   color: var(--ar-ink-900);
   background: var(--ar-white);
@@ -369,9 +368,6 @@
   border: 1px solid var(--ar-line-300);
   font: 500 12px var(--ar-font-sans);
   color: var(--ar-ink-700);
-  background: var(--ar-white);
-}
-.bubble--out .bubble__btn {
   background: var(--ar-white);
 }
 

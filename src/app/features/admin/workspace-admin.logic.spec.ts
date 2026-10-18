@@ -1,10 +1,14 @@
 import { BillingCycle } from '../../proxy/billing/billing-cycle.enum';
 import { PlanFeature } from '../../proxy/billing/plan-feature.enum';
 import { SubscriptionPlan } from '../../proxy/billing/subscription-plan.enum';
+import { InvoiceState } from '../../proxy/billing/invoice-state.enum';
 import {
   assignPlanInput,
   endOfIndianDay,
   featureLabel,
+  generateInvoiceInput,
+  invoiceFormDefault,
+  invoiceStateChip,
   planFormFrom,
   subscriptionSummary,
 } from './workspace-admin.logic';
@@ -67,5 +71,47 @@ describe('workspace administration', () => {
     expect(
       assignPlanInput({ ...base, periodEnd: '2026-12-31', expires: '2026-11-30' }, TODAY),
     ).toContain('before the current period');
+  });
+});
+
+describe('platform invoices to a workspace', () => {
+  it('defaults to the current calendar month', () => {
+    expect(invoiceFormDefault(TODAY)).toEqual({
+      start: '2026-10-01',
+      end: '2026-10-31',
+      place: '',
+    });
+    expect(invoiceFormDefault(new Date(2028, 1, 15)).end).toBe('2028-02-29');
+  });
+
+  it('sends the period as whole Indian days', () => {
+    const input = generateInvoiceInput({ start: '2026-10-01', end: '2026-10-31', place: '' });
+    expect(input).toEqual({
+      periodStartUtc: '2026-09-30T18:30:00.000Z',
+      periodEndUtc: '2026-10-31T18:29:59.000Z',
+      placeOfSupplyStateCode: null,
+    });
+  });
+
+  it('keeps a chosen place of supply and refuses a malformed one', () => {
+    const ok = generateInvoiceInput({ start: '2026-10-01', end: '2026-10-31', place: ' 27 ' });
+    expect(typeof ok === 'string' ? ok : ok.placeOfSupplyStateCode).toBe('27');
+    expect(generateInvoiceInput({ start: '2026-10-01', end: '2026-10-31', place: 'MH' })).toContain(
+      'two-digit',
+    );
+  });
+
+  it('refuses a missing or backwards period', () => {
+    expect(generateInvoiceInput({ start: '', end: '2026-10-31', place: '' })).toContain('Choose');
+    expect(generateInvoiceInput({ start: '2026-10-31', end: '2026-10-01', place: '' })).toContain(
+      'on or after',
+    );
+  });
+
+  it('labels each invoice state', () => {
+    expect(invoiceStateChip(InvoiceState.Draft).label).toBe('Draft');
+    expect(invoiceStateChip(InvoiceState.Issued)).toEqual({ label: 'Issued', tone: 'amber' });
+    expect(invoiceStateChip(InvoiceState.Paid).tone).toBe('good');
+    expect(invoiceStateChip(InvoiceState.Cancelled).tone).toBe('bad');
   });
 });

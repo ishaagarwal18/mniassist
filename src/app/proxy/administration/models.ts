@@ -149,3 +149,14 @@ export interface SetWorkspaceUserPasswordInput {
   /** Ask for a new password at the next sign-in, so the administrator never knows it for long. */
   mustChangeOnNextSignIn: boolean;
 }
+
+export interface HostGenerateInvoiceInput {
+  periodStartUtc: string;
+  periodEndUtc: string;
+  /** Two-digit GST state code; leave empty to take it from the workspace's GSTIN or state. */
+  placeOfSupplyStateCode?: string | null;
+}
+
+export interface WorkspaceInvoiceInput {
+  invoiceId: string;
+}

@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
+import { CurrentUserService } from '../../core/services/current-user.service';
 import { readApiError } from '../../core/util/api-error';
 import { ToastService } from '../../core/ui/toast.service';
 import { ArTopbar } from '../../layout/topbar';
@@ -82,8 +83,16 @@ const EMPTY: UpdateWorkspaceProfileInput = {
   template: `
     <ar-topbar
       title="Business profile"
-      subtitle="Who your quotations and invoices are from"
-      help="Your legal name, GSTIN and registered address. They are printed at the top of every quotation and invoice you send, and the GSTIN's state decides whether a sale is charged CGST + SGST or IGST."
+      [subtitle]="
+        isHost()
+          ? 'Who the platform’s subscription invoices to workspaces are from'
+          : 'Who your quotations and invoices are from'
+      "
+      [help]="
+        isHost()
+          ? 'The platform’s legal name, GSTIN and registered address. They are printed as the supplier on every subscription invoice issued to a workspace, and the GSTIN’s state decides whether a workspace is charged CGST + SGST or IGST. Invoices are generated and issued from Workspaces → Manage → Invoices.'
+          : 'Your legal name, GSTIN and registered address. They are printed at the top of every quotation and invoice you send, and the GSTIN’s state decides whether a sale is charged CGST + SGST or IGST.'
+      "
     >
       @if (canEdit()) {
         <button ar-button variant="primary" [disabled]="busy() || loading()" (click)="save()">
@@ -99,6 +108,10 @@ const EMPTY: UpdateWorkspaceProfileInput = {
       @if (!canEdit()) {
         <ar-banner tone="teal"
           >Only someone who manages the workspace can change these details.</ar-banner
+        >
+      } @else if (isHost()) {
+        <ar-banner tone="teal"
+          >Subscription invoices need the GSTIN here before they can be generated.</ar-banner
         >
       }
 
@@ -403,7 +416,15 @@ export class ArBusinessProfile {
   private readonly toasts = inject(ToastService);
   private readonly permissions = inject(PermissionService);
 
-  protected readonly canEdit = grantedPolicy('AutoReach.Branding.Manage', this.permissions);
+  private readonly account = inject(CurrentUserService);
+
+  /** On the host this is the platform's own profile: who subscription invoices to workspaces are from. */
+  protected readonly isHost = computed(() => this.account.isHost());
+  // Branding is a workspace permission; the platform's profile is managed by whoever manages workspaces.
+  protected readonly canEdit = grantedPolicy(
+    'AutoReach.Branding.Manage || AutoReach.Administration.ManageTenants',
+    this.permissions,
+  );
   protected readonly states = GST_STATES;
 
   protected readonly f = signal<UpdateWorkspaceProfileInput>({ ...EMPTY });
@@ -553,7 +574,11 @@ export class ArBusinessProfile {
           }),
         );
       }
-      this.toasts.success('Business profile saved. New quotations print these details.');
+      this.toasts.success(
+        this.isHost()
+          ? 'Business profile saved. New subscription invoices print these details.'
+          : 'Business profile saved. New quotations print these details.',
+      );
     } catch (e: unknown) {
       this.error.set(readApiError(e, 'The business profile could not be saved.'));
     } finally {

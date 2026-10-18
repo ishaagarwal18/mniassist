@@ -2,7 +2,12 @@ import { PlanFeature } from '../../proxy/billing/plan-feature.enum';
 import { SubscriptionPlan } from '../../proxy/billing/subscription-plan.enum';
 import { BillingCycle } from '../../proxy/billing/billing-cycle.enum';
 import { WorkspaceFeatureMode } from '../../proxy/administration/workspace-feature-mode.enum';
-import type { AssignPlanInput, WorkspaceSubscriptionDto } from '../../proxy/administration/models';
+import { InvoiceState } from '../../proxy/billing/invoice-state.enum';
+import type {
+  AssignPlanInput,
+  HostGenerateInvoiceInput,
+  WorkspaceSubscriptionDto,
+} from '../../proxy/administration/models';
 
 /** What each plan feature is called on screen. */
 export const FEATURE_LABELS: Record<PlanFeature, string> = {
@@ -123,4 +128,55 @@ function isoDate(d: Date): string {
 /** Rupees from paise, Indian grouping. */
 export function rupees(paise: number): string {
   return '₹' + (paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+
+// ---- Invoices the platform issues to a workspace ---------------------------------------
+
+export interface InvoiceForm {
+  /** Inclusive dates, yyyy-MM-dd, as Indian calendar days. */
+  start: string;
+  end: string;
+  /** Two-digit GST state code, or blank to take it from the workspace's profile. */
+  place: string;
+}
+
+/** The current calendar month: what a monthly subscription invoice usually covers. */
+export function invoiceFormDefault(today = new Date()): InvoiceForm {
+  const first = new Date(today.getFullYear(), today.getMonth(), 1);
+  const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  return { start: isoDate(first), end: isoDate(last), place: '' };
+}
+
+/** The API input, or why the form can't be sent. */
+export function generateInvoiceInput(f: InvoiceForm): HostGenerateInvoiceInput | string {
+  if (!f.start || !f.end) return 'Choose the first and last day the invoice covers.';
+  if (f.end < f.start) return 'The period must end on or after the day it starts.';
+  const place = f.place.trim();
+  if (place && !/^[0-9]{2}$/.test(place)) {
+    return 'The place of supply is a two-digit GST state code, like 27 for Maharashtra.';
+  }
+  return {
+    periodStartUtc: new Date(`${f.start}T00:00:00+05:30`).toISOString(),
+    periodEndUtc: endOfIndianDay(f.end),
+    placeOfSupplyStateCode: place || null,
+  };
+}
+
+/** How an invoice's state shows as a chip. */
+export function invoiceStateChip(state: InvoiceState | undefined): {
+  label: string;
+  tone: 'neutral' | 'amber' | 'good' | 'bad';
+} {
+  switch (state) {
+    case InvoiceState.Issued:
+      return { label: 'Issued', tone: 'amber' };
+    case InvoiceState.Paid:
+      return { label: 'Paid', tone: 'good' };
+    case InvoiceState.Cancelled:
+      return { label: 'Cancelled', tone: 'bad' };
+    case InvoiceState.Credited:
+      return { label: 'Credited', tone: 'neutral' };
+    default:
+      return { label: 'Draft', tone: 'neutral' };
+  }
 }

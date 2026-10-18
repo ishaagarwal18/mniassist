@@ -10,6 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -25,20 +26,26 @@ import type {
 } from '../../proxy/administration/models';
 import { WorkspaceFeatureMode } from '../../proxy/administration/workspace-feature-mode.enum';
 import { BillingCycle } from '../../proxy/billing/billing-cycle.enum';
+import { InvoiceState } from '../../proxy/billing/invoice-state.enum';
+import type { InvoiceDto } from '../../proxy/billing/models';
 import { ArBanner, ArButton, ArChip, ArDialog, ArTabs } from '../../ui';
 import {
+  InvoiceForm,
   MODE_OPTIONS,
   PLAN_OPTIONS,
   PlanForm,
   assignPlanInput,
   featureLabel,
+  generateInvoiceInput,
+  invoiceFormDefault,
+  invoiceStateChip,
   planFormFrom,
   rupees,
   subscriptionSummary,
 } from './workspace-admin.logic';
 
-type Tab = 'Status' | 'Plan' | 'Features' | 'Users' | 'Database';
-const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Database'];
+type Tab = 'Status' | 'Plan' | 'Features' | 'Users' | 'Invoices' | 'Database';
+const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices', 'Database'];
 
 /**
  * The platform's controls for one workspace: suspend or reactivate it, put it on a plan,
@@ -47,7 +54,7 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Database']
  */
 @Component({
   selector: 'ar-workspace-manage-dialog',
-  imports: [ArDialog, ArButton, ArBanner, ArChip, ArTabs, DatePipe],
+  imports: [ArDialog, ArButton, ArBanner, ArChip, ArTabs, DatePipe, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog
@@ -427,6 +434,144 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Database']
             }
           }
 
+          @case ('Invoices') {
+            <p class="wm__p">
+              The platform’s subscription invoices to {{ d.name }}: from your Business profile, to
+              theirs. A new invoice starts as a draft you can check and download. Issuing it makes
+              it final and sends it to the workspace: they are told in the app and by email, and
+              find it on their Billing → Invoices.
+            </p>
+            <div class="wm__grid">
+              <label class="fld">
+                <span class="fld__k">From</span>
+                <input
+                  type="date"
+                  class="ar-field__input"
+                  [value]="invForm().start"
+                  (change)="patchInvoice({ start: $any($event.target).value })"
+                />
+              </label>
+              <label class="fld">
+                <span class="fld__k">To</span>
+                <input
+                  type="date"
+                  class="ar-field__input"
+                  [value]="invForm().end"
+                  (change)="patchInvoice({ end: $any($event.target).value })"
+                />
+              </label>
+              <label class="fld">
+                <span class="fld__k">Place of supply (optional)</span>
+                <input
+                  class="ar-field__input ar-mono"
+                  inputmode="numeric"
+                  maxlength="2"
+                  placeholder="e.g. 27"
+                  [value]="invForm().place"
+                  (input)="patchInvoice({ place: $any($event.target).value })"
+                />
+                <span class="fld__h">Blank: from the workspace’s GSTIN or state.</span>
+              </label>
+            </div>
+            <div class="wm__row">
+              <button
+                ar-button
+                type="button"
+                variant="primary"
+                [disabled]="busy()"
+                (click)="generateInvoice(d)"
+              >
+                Generate draft invoice
+              </button>
+              <a
+                class="wm__link"
+                routerLink="/settings/business-profile"
+                (click)="closed.emit(changed())"
+                >Your business profile</a
+              >
+            </div>
+
+            @if (invoices(); as list) {
+              <div class="wm__table wm__inv">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Invoice</th>
+                      <th>Period</th>
+                      <th>Total</th>
+                      <th>State</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (i of list; track i.id) {
+                      <tr>
+                        <td>
+                          <div class="wm__user ar-mono">{{ i.number || 'Draft' }}</div>
+                          @if (i.dueAtUtc && i.state === State.Issued) {
+                            <div class="wm__sub">Due {{ i.dueAtUtc | date: 'dd MMM yyyy' }}</div>
+                          } @else if (i.paidAtUtc) {
+                            <div class="wm__sub">Paid {{ i.paidAtUtc | date: 'dd MMM yyyy' }}</div>
+                          }
+                        </td>
+                        <td>
+                          {{ i.periodStartUtc | date: 'dd MMM' : '+0530' }} –
+                          {{ i.periodEndUtc | date: 'dd MMM yyyy' : '+0530' }}
+                        </td>
+                        <td>{{ rupees(i.totalInPaise ?? 0) }}</td>
+                        <td>
+                          <ar-chip [tone]="chip(i.state).tone">{{ chip(i.state).label }}</ar-chip>
+                        </td>
+                        <td class="wm__act">
+                          @if (i.state === State.Draft) {
+                            <button
+                              ar-button
+                              type="button"
+                              variant="primary"
+                              [disabled]="busy()"
+                              (click)="issueInvoice(d, i)"
+                            >
+                              Issue
+                            </button>
+                          } @else if (i.state === State.Issued) {
+                            <button
+                              ar-button
+                              type="button"
+                              variant="ghost"
+                              [disabled]="busy()"
+                              (click)="markInvoicePaid(d, i)"
+                            >
+                              Mark paid
+                            </button>
+                          }
+                          <button
+                            ar-button
+                            type="button"
+                            variant="ghost"
+                            icon="download"
+                            [disabled]="busy()"
+                            [attr.aria-label]="
+                              'Download ' + (i.number || 'draft invoice') + ' as PDF'
+                            "
+                            (click)="downloadInvoice(d, i)"
+                          >
+                            PDF
+                          </button>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="5">No invoices for this workspace yet.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <p class="wm__p">Loading invoices…</p>
+            }
+          }
+
           @case ('Database') {
             @if (d.hasOwnDatabase) {
               <p class="wm__p">
@@ -600,6 +745,13 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Database']
     .wm__mode {
       min-width: 150px;
     }
+    .wm__inv {
+      margin-top: 16px;
+    }
+    .wm__link {
+      font: 500 13px var(--ar-font-sans);
+      color: var(--ar-blue-600, var(--ar-ink-700));
+    }
     .wm__conn {
       min-height: 72px;
       font-family: var(--ar-font-mono);
@@ -669,6 +821,110 @@ export class ArWorkspaceManageDialog {
       if (this.tab() !== 'Users' || this.users() !== null || environment.useMockData) return;
       untracked(() => void this.loadUsers());
     });
+    // So do the invoices.
+    effect(() => {
+      if (this.tab() !== 'Invoices' || this.invoices() !== null || environment.useMockData) return;
+      untracked(() => void this.loadInvoices());
+    });
+  }
+
+  // ---- Invoices: the platform billing this workspace ---------------------------------
+  protected readonly State = InvoiceState;
+  protected readonly chip = invoiceStateChip;
+  protected readonly invoices = signal<InvoiceDto[] | null>(null);
+  protected readonly invForm = signal<InvoiceForm>(invoiceFormDefault());
+
+  protected patchInvoice(p: Partial<InvoiceForm>): void {
+    this.invForm.update((f) => ({ ...f, ...p }));
+  }
+
+  private async loadInvoices(): Promise<void> {
+    try {
+      this.invoices.set(await firstValueFrom(this.api.getInvoices(this.tenantId())));
+    } catch (e) {
+      this.invoices.set([]);
+      this.error.set(readApiError(e));
+    }
+  }
+
+  /** Runs one invoice change and puts the result in the list in place (or first, if new). */
+  private async invoiceAction(work: () => Promise<InvoiceDto>, done: string): Promise<void> {
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      const inv = await work();
+      const list = this.invoices() ?? [];
+      this.invoices.set(
+        list.some((x) => x.id === inv.id)
+          ? list.map((x) => (x.id === inv.id ? inv : x))
+          : [inv, ...list],
+      );
+      this.toasts.success(done);
+    } catch (e) {
+      this.error.set(readApiError(e));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async generateInvoice(d: WorkspaceDetailDto): Promise<void> {
+    const input = generateInvoiceInput(this.invForm());
+    if (typeof input === 'string') {
+      this.error.set(input);
+      return;
+    }
+    await this.invoiceAction(
+      () => firstValueFrom(this.api.generateInvoice(d.id, input)),
+      `Draft invoice for ${d.name} created. Check it, then issue it to share it with them.`,
+    );
+  }
+
+  protected async issueInvoice(d: WorkspaceDetailDto, i: InvoiceDto): Promise<void> {
+    if (
+      !(await this.dialogs.confirm({
+        title: `Issue this invoice to ${d.name}?`,
+        message: `${i.number}, ${rupees(i.totalInPaise ?? 0)}. Once issued it is final and payment falls due; ${d.name} is told in the app and by email, and finds it on Billing → Invoices.`,
+        confirmText: 'Issue invoice',
+      }))
+    )
+      return;
+    await this.invoiceAction(
+      () => firstValueFrom(this.api.issueInvoice(d.id, { invoiceId: i.id! })),
+      `Invoice issued to ${d.name}.`,
+    );
+  }
+
+  protected async markInvoicePaid(d: WorkspaceDetailDto, i: InvoiceDto): Promise<void> {
+    if (
+      !(await this.dialogs.confirm({
+        title: `Mark ${i.number} as paid?`,
+        message: `Record that ${d.name} has paid ${rupees(i.totalInPaise ?? 0)}.`,
+        confirmText: 'Mark paid',
+      }))
+    )
+      return;
+    await this.invoiceAction(
+      () => firstValueFrom(this.api.markInvoicePaid(d.id, { invoiceId: i.id! })),
+      `${i.number} is marked paid.`,
+    );
+  }
+
+  protected async downloadInvoice(d: WorkspaceDetailDto, i: InvoiceDto): Promise<void> {
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      const blob = await firstValueFrom(this.api.downloadInvoicePdf(d.id, i.id!));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(i.number || 'draft-invoice').replace(/\//g, '-')}.pdf`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      this.error.set(readApiError(e, 'The invoice PDF could not be downloaded.'));
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   private async loadUsers(): Promise<void> {

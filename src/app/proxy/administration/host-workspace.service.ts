@@ -1,5 +1,8 @@
+import type { InvoiceDto } from '../billing/models';
 import type {
   AssignPlanInput,
+  HostGenerateInvoiceInput,
+  WorkspaceInvoiceInput,
   SetWalletGraceInput,
   SetWorkspaceUserPasswordInput,
   SetWorkspaceDatabaseInput,
@@ -134,6 +137,61 @@ export class HostWorkspaceService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/host-workspace/${id}/migrate-database`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getInvoices = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, InvoiceDto[]>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/host-workspace/${id}/invoices`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  generateInvoice = (id: string, input: HostGenerateInvoiceInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, InvoiceDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/host-workspace/${id}/generate-invoice`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  issueInvoice = (id: string, input: WorkspaceInvoiceInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, InvoiceDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/host-workspace/${id}/issue-invoice`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  markInvoicePaid = (id: string, input: WorkspaceInvoiceInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, InvoiceDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/host-workspace/${id}/mark-invoice-paid`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  downloadInvoicePdf = (id: string, invoiceId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, Blob>(
+      {
+        method: 'POST',
+        responseType: 'blob',
+        headers: { Accept: 'application/octet-stream' },
+        url: `/api/auto-reach/host-workspace/${id}/download-invoice-pdf`,
+        params: { invoiceId },
       },
       { apiName: this.apiName, ...config },
     );

@@ -729,8 +729,8 @@ export const NAV: readonly NavGroup[] = [
         label: 'Business profile',
         icon: 'document',
         route: '/settings/business-profile',
-        permission: 'AutoReach.Branding',
-        tenantOnly: true,
+        // On the host it is the platform's profile, the supplier on subscription invoices.
+        permission: 'AutoReach.Branding || AutoReach.Administration.ManageTenants',
       },
       {
         label: 'Branding',
