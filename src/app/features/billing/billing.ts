@@ -1,6 +1,6 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, forkJoin, map } from 'rxjs';
 
@@ -131,13 +131,18 @@ export class ArBilling {
 
   constructor() {
     this.announceCheckoutReturn();
+    // Follow the link's plan while on the page too (e.g. another plan link opened from here).
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed())
+      .subscribe((q) => this.requestedKey.set(q.get('plan')));
   }
 
   /**
    * The plan a link asked for (`/billing?plan=growth`), from the landing page's
-   * plan buttons or straight after sign-up. Shown as a banner to activate it.
+   * plan buttons or straight after sign-up. Shown as a banner to activate it, and
+   * as the selected plan in the Plan card.
    */
-  private readonly requestedKey = signal(inject(ActivatedRoute).snapshot.queryParamMap.get('plan'));
+  private readonly requestedKey = signal<string | null>(null);
   protected readonly requested = computed(() => {
     const chosen = planByKey(this.requestedKey());
     if (!chosen) return null;

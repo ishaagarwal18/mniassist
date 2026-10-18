@@ -78,6 +78,10 @@
   border-color: var(--ar-teal-500, #2f9e8f);
   background: var(--ar-bg-100);
 }
+.plan--chosen {
+  border-color: var(--ar-blue-500);
+  box-shadow: 0 0 0 1px var(--ar-blue-500);
+}
 .plan:disabled {
   opacity: 0.6;
   cursor: default;

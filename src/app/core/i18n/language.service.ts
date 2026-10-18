@@ -16,8 +16,11 @@ export const APP_LANGUAGES: readonly { code: AppLanguage; label: string; short: 
   { code: 'mr', label: 'मराठी', short: 'म' },
 ];
 
-/** The user's saved choice, visible to the client in the application configuration. */
-export const LANGUAGE_SETTING = 'AutoReach.Ui.Language';
+/**
+ * The user's saved choice: ABP's own default-language setting, set at user level (falling back to the
+ * workspace's, then the global one). Visible to the client in the application configuration.
+ */
+export const LANGUAGE_SETTING = 'Abp.Localization.DefaultLanguage';
 
 /** Set when the language is picked while signed out, so signing in keeps it rather than the saved one. */
 const PICKED_SIGNED_OUT_KEY = 'ar.lang.pickedSignedOut';

@@ -77,12 +77,16 @@
         <button
           class="plan"
           [class.plan--current]="p === d().plan"
+          [class.plan--chosen]="p === requested()?.plan"
+          [attr.aria-pressed]="p === requested()?.plan"
           [disabled]="busy()"
           (click)="changePlan(p)"
         >
           <span class="plan__name">{{ planLabel(p) }}</span>
           @if (p === d().plan) {
             <ar-chip tone="good">current</ar-chip>
+          } @else if (p === requested()?.plan) {
+            <ar-chip tone="teal">selected</ar-chip>
           }
         </button>
       }
