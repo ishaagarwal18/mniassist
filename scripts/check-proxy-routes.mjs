@@ -28,7 +28,18 @@ const normalise = (url) =>
     .join('/');
 
 async function refresh(base) {
-  const res = await fetch(base.replace(/\/+$/, '') + '/api/abp/api-definition');
+  // A local API serves the self-signed ASP.NET dev certificate, which Node rejects; trust it for localhost only.
+  if (/^https:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(base)) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  }
+  let res;
+  try {
+    res = await fetch(base.replace(/\/+$/, '') + '/api/abp/api-definition');
+  } catch (e) {
+    throw new Error(
+      `Could not reach ${base}: ${e.cause?.message ?? e.message}. Is the API running there?`,
+    );
+  }
   if (!res.ok) throw new Error(`api-definition returned ${res.status}`);
   const def = await res.json();
   const routes = new Set();

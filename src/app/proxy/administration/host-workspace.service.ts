@@ -190,8 +190,7 @@ export class HostWorkspaceService {
         method: 'POST',
         responseType: 'blob',
         headers: { Accept: 'application/octet-stream' },
-        url: `/api/auto-reach/host-workspace/${id}/download-invoice-pdf`,
-        params: { invoiceId },
+        url: `/api/auto-reach/host-workspace/${id}/download-invoice-pdf/${invoiceId}`,
       },
       { apiName: this.apiName, ...config },
     );
