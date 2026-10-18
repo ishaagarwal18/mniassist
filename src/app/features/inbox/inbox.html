@@ -16,7 +16,74 @@
   @if (channel(); as ch) {
     <ar-channel-health-strip [channel]="ch" />
   }
-  <button ar-button variant="ghost" icon="filter">Filters</button>
+  <span class="inbox__filters">
+    <button
+      ar-button
+      variant="ghost"
+      icon="filter"
+      [attr.aria-expanded]="filtersOpen()"
+      (click)="filtersOpen.set(!filtersOpen())"
+    >
+      Filters{{ filterCount() ? ' · ' + filterCount() : '' }}
+    </button>
+    @if (filtersOpen()) {
+      <div class="fp" role="dialog" aria-label="Filter conversations">
+        <span class="fp__k">Status</span>
+        <div class="fp__seg">
+          <button type="button" [class.on]="state() === null" (click)="state.set(null)">All</button>
+          <button
+            type="button"
+            [class.on]="state() === Status.Open"
+            (click)="state.set(Status.Open)"
+          >
+            Open
+          </button>
+          <button
+            type="button"
+            [class.on]="state() === Status.Snoozed"
+            (click)="state.set(Status.Snoozed)"
+          >
+            Snoozed
+          </button>
+          <button
+            type="button"
+            [class.on]="state() === Status.Closed"
+            (click)="state.set(Status.Closed)"
+          >
+            Closed
+          </button>
+        </div>
+        <label class="fp__row">
+          <input
+            type="checkbox"
+            [checked]="mineOnly()"
+            (change)="setMine($any($event.target).checked)"
+          />
+          Assigned to me <span class="fp__n">{{ counts().mine }}</span>
+        </label>
+        <label class="fp__row">
+          <input
+            type="checkbox"
+            [checked]="unreadOnly()"
+            (change)="unreadOnly.set($any($event.target).checked)"
+          />
+          Unread only <span class="fp__n">{{ counts().unread }}</span>
+        </label>
+        <label class="fp__row">
+          <input
+            type="checkbox"
+            [checked]="closingSoon()"
+            (change)="closingSoon.set($any($event.target).checked)"
+          />
+          Reply window closing soon <span class="fp__n">{{ counts().windowClosingSoon }}</span>
+        </label>
+        <div class="fp__foot">
+          <button type="button" class="fp__link" (click)="clearFilters()">Clear filters</button>
+          <button type="button" class="fp__link" (click)="filtersOpen.set(false)">Done</button>
+        </div>
+      </div>
+    }
+  </span>
 </ar-topbar>
 
 <div class="inbox">
@@ -71,9 +138,28 @@
           </button>
         </li>
       } @empty {
-        @if (listQuery() && !listCollapsed()) {
-          <li class="ar-field__hint" style="display: block; padding: 18px 14px">
-            No conversations match “{{ listQuery() }}”.
+        @if (!listCollapsed() && listLoaded()) {
+          <li class="list__empty">
+            @if (listQuery() || filterCount()) {
+              <p>
+                No conversations match
+                {{ listQuery() ? '“' + listQuery() + '”' : 'these filters' }}.
+              </p>
+              <button type="button" class="fp__link" (click)="clearFilters()">
+                Clear search and filters
+              </button>
+            } @else {
+              <p><strong>No conversations yet.</strong></p>
+              <p>
+                A conversation starts when a customer messages one of your connected numbers or
+                channels, or when you send someone a template.
+              </p>
+              @if (!hasNumber()) {
+                <a routerLink="/channels">Connect a WhatsApp number</a>
+              } @else {
+                <a routerLink="/contacts">Message a contact from Contacts</a>
+              }
+            }
           </li>
         }
       }
@@ -738,7 +824,15 @@
       }
     } @else {
       <div class="thread__none">
-        <p>No conversation selected.</p>
+        @if (conversations().length) {
+          <p>Pick a conversation on the left to read and reply.</p>
+        } @else {
+          <p>
+            Every customer conversation lands here: WhatsApp, plus email, SMS, Instagram and
+            Messenger when they're connected. You reply, add notes, send templates, quotations and
+            documents, and hand a conversation to a colleague, all in one place.
+          </p>
+        }
       </div>
     }
   </section>

@@ -45,6 +45,8 @@ import { WhatsAppCallSession } from '../../core/services/whatsapp-call.session';
 import { ToastService } from '../../core/ui/toast.service';
 import { persistedToggle } from '../../core/util/persisted-toggle';
 
+import { ConversationState } from '../../proxy/messaging/conversation-state.enum';
+import { CurrentUserService } from '../../core/services/current-user.service';
 @Component({
   selector: 'ar-inbox',
   imports: [
@@ -90,6 +92,44 @@ export class ArInbox {
   });
   protected readonly selected = this.inbox.selected;
   protected readonly unassigned = this.inbox.unassignedCount;
+
+  // ---- Filters ---------------------------------------------------------------------------
+  protected readonly Status = ConversationState;
+  protected readonly counts = this.inbox.counts;
+  protected readonly listLoaded = this.inbox.listLoaded;
+  protected readonly state = this.inbox.state;
+  protected readonly unreadOnly = this.inbox.unreadOnly;
+  protected readonly closingSoon = this.inbox.windowClosingSoon;
+  protected readonly filtersOpen = signal(false);
+  private readonly me = inject(CurrentUserService);
+  protected readonly hasNumber = computed(() => this.channels.channels().length > 0);
+
+  /** Only conversations assigned to the signed-in person. */
+  protected readonly mineOnly = computed(() => {
+    const a = this.assignee();
+    return !!a && a.id === this.me.id();
+  });
+
+  protected readonly filterCount = computed(
+    () =>
+      (this.state() !== null ? 1 : 0) +
+      (this.unreadOnly() ? 1 : 0) +
+      (this.closingSoon() ? 1 : 0) +
+      (this.assignee() ? 1 : 0),
+  );
+
+  protected setMine(on: boolean): void {
+    const id = this.me.id();
+    this.assignee.set(on && id ? { id, name: 'you' } : null);
+  }
+
+  protected clearFilters(): void {
+    this.state.set(null);
+    this.unreadOnly.set(false);
+    this.closingSoon.set(false);
+    this.assignee.set(null);
+    this.listQuery.set('');
+  }
 
   /** The whole composer hinges on this: with the window open, replies are
    *  free-form and cost nothing; once it closes, only an approved template

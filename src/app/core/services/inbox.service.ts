@@ -19,6 +19,7 @@ const inHours = (h: number) => new Date(Date.now() + h * 3_600_000);
  * data nobody is looking at, and the thread has to refetch on its own when an
  * agent switches conversations.
  */
+import { ConversationState } from '../../proxy/messaging/conversation-state.enum';
 @Injectable({ providedIn: 'root' })
 export class InboxService {
   private readonly api = inject(InboxApi);
@@ -26,6 +27,8 @@ export class InboxService {
 
   readonly filter = signal('');
   readonly unreadOnly = signal(false);
+  /** Open, snoozed or closed; null shows every state. */
+  readonly state = signal<ConversationState | null>(null);
   readonly windowClosingSoon = signal(false);
   /** Only one agent's conversations (Analytics links here from its agent table); null for everyone's. */
   readonly assignee = signal<{ id: string; name: string } | null>(null);
@@ -139,6 +142,7 @@ export class InboxService {
         ? undefined
         : {
             filter: this.filter(),
+            state: this.state() ?? undefined,
             unreadOnly: this.unreadOnly(),
             windowClosingSoon: this.windowClosingSoon(),
             assignedUserId: this.assignee()?.id,
@@ -190,6 +194,25 @@ export class InboxService {
           messages: settled(this.messagesResource, [] as ReturnType<typeof toMessage>[]),
         };
   });
+
+  /** How many conversations each filter would show, for the filter panel. */
+  readonly counts = computed(() =>
+    environment.useMockData
+      ? { all: 4, unassigned: 12, mine: 2, unread: 3, windowClosingSoon: 1, snoozed: 0 }
+      : settled(this.countsResource, {
+          all: 0,
+          unassigned: 0,
+          mine: 0,
+          unread: 0,
+          windowClosingSoon: 0,
+          snoozed: 0,
+        }),
+  );
+
+  /** True once the list has answered, so "empty" means empty and not "still loading". */
+  readonly listLoaded = computed(
+    () => environment.useMockData || this.listResource.status() !== 'loading',
+  );
 
   readonly unassignedCount = computed(() =>
     environment.useMockData
