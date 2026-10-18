@@ -7,9 +7,11 @@ import {
   HttpRequest,
   HttpResponse,
 } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
+import { OAuthService } from 'angular-oauth2-oidc';
 import { Observable, tap } from 'rxjs';
 
+import { CurrentUserService } from '../services/current-user.service';
 import { ToastService } from '../ui/toast.service';
 import { errorFor, isQuietFailure, successFor } from './api-feedback';
 
@@ -26,6 +28,17 @@ export const QUIET_REQUEST = new HttpContextToken<boolean>(() => false);
 @Injectable()
 export class ApiFeedbackInterceptor implements HttpInterceptor {
   private readonly toasts = inject(ToastService);
+  // Looked up when needed: the user service sits on HttpClient, which sits on this interceptor.
+  private readonly injector = inject(Injector);
+
+  /** A sign-in token is stored, so this browser believes it is signed in. */
+  private holdsSignIn(): boolean {
+    try {
+      return !!this.injector.get(OAuthService).getAccessToken();
+    } catch {
+      return false;
+    }
+  }
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     if (req.context.get(QUIET_REQUEST) || !req.url.includes('/api/')) return next.handle(req);
@@ -38,6 +51,12 @@ export class ApiFeedbackInterceptor implements HttpInterceptor {
           }
         },
         error: (err: unknown) => {
+          // A sign-in this browser still holds was refused: it expired or was revoked. Showing
+          // "signed out" and leaving the page up only leads to more failures, so end it properly.
+          if (err instanceof HttpErrorResponse && err.status === 401 && this.holdsSignIn()) {
+            this.injector.get(CurrentUserService).sessionEnded();
+            return;
+          }
           if (err instanceof HttpErrorResponse && !isQuietFailure(req.method, err, req.url)) {
             const e = errorFor(err);
             this.toasts.error(e.content, e.title);

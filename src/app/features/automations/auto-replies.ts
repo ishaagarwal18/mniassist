@@ -17,7 +17,9 @@ import {
   WEEK,
   formFrom,
   inputFrom,
+  is24x7,
   nowLine,
+  week24x7,
 } from './auto-reply.logic';
 
 /**
@@ -116,7 +118,46 @@ import {
         </label>
       </ar-card>
 
+      <ar-card heading="Instant acknowledgement (24x7)">
+        <label class="chk">
+          <input
+            type="checkbox"
+            [disabled]="!canManage()"
+            [checked]="form().acknowledgementEnabled"
+            (change)="patch({ acknowledgementEnabled: $any($event.target).checked })"
+          />
+          Reply to every message at any hour, so customers know it arrived
+        </label>
+        <textarea
+          class="ar-field__input ar__text"
+          maxlength="1024"
+          [disabled]="!canManage()"
+          placeholder="Thanks for your message. Our team has received it and will reply shortly."
+          [value]="form().acknowledgementText"
+          (input)="patch({ acknowledgementText: $any($event.target).value })"
+        ></textarea>
+        <p class="ar__muted">
+          Sent only when no other reply answers the message: a first message gets the welcome, and
+          closed hours get the away message. At most once per customer per wait period above.
+        </p>
+      </ar-card>
+
       <ar-card heading="Business hours">
+        <label class="chk">
+          <input
+            type="checkbox"
+            [disabled]="!canManage()"
+            [checked]="open24x7()"
+            (change)="set24x7($any($event.target).checked)"
+          />
+          Open 24 hours, 7 days
+        </label>
+        @if (open24x7()) {
+          <p class="ar__muted">
+            Always open, so the away message only goes out on holidays and during an out-of-office
+            period.
+          </p>
+        }
         <label class="fld ar__narrow">
           <span class="fld__k">Time zone</span>
           <select
@@ -130,7 +171,7 @@ import {
             }
           </select>
         </label>
-        <div class="ar__week">
+        <div class="ar__week" [hidden]="open24x7()">
           @for (w of week; track w.day; let i = $index) {
             <div class="ar__day">
               <label class="chk ar__dayname">
@@ -168,10 +209,12 @@ import {
             </div>
           }
         </div>
-        <p class="ar__muted">
-          A closing time earlier than the opening time runs past midnight; the same time means open
-          all day.
-        </p>
+        @if (!open24x7()) {
+          <p class="ar__muted">
+            A closing time earlier than the opening time runs past midnight; the same time means
+            open all day.
+          </p>
+        }
       </ar-card>
 
       <ar-card heading="Holidays">
@@ -342,6 +385,9 @@ import {
       max-width: 340px;
       margin-top: 12px;
     }
+    .ar__week[hidden] {
+      display: none;
+    }
     .ar__week {
       display: flex;
       flex-direction: column;
@@ -483,6 +529,16 @@ export class ArAutoReplies {
 
   protected patch(p: Partial<AutoReplyForm>): void {
     this.form.update((f) => ({ ...f, ...p }));
+  }
+
+  /** Open every day, all day. */
+  protected readonly open24x7 = computed(() => is24x7(this.form().days));
+
+  protected set24x7(on: boolean): void {
+    this.form.update((f) => ({
+      ...f,
+      days: on ? week24x7() : EMPTY_FORM.days.map((d) => ({ ...d })),
+    }));
   }
 
   protected day(i: number, p: { isOpen?: boolean; opens?: string; closes?: string }): void {

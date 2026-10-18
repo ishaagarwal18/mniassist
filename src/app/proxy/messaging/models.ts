@@ -436,6 +436,9 @@ export interface UpdateAutoReplySettingsInput {
   awayEnabled: boolean;
   awayText?: string | null;
   awayCooldownHours: number;
+  /** The 24x7 "we've got your message" to any message nothing else answered. */
+  acknowledgementEnabled?: boolean;
+  acknowledgementText?: string | null;
   outOfOfficeEnabled: boolean;
   outOfOfficeText?: string | null;
   outOfOfficeFromUtc?: string | null;

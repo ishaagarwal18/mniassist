@@ -43,6 +43,8 @@ export const EMPTY_FORM: AutoReplyForm = {
   awayEnabled: false,
   awayText: '',
   awayCooldownHours: 12,
+  acknowledgementEnabled: false,
+  acknowledgementText: '',
   outOfOfficeEnabled: false,
   outOfOfficeText: '',
   oooFrom: '',
@@ -60,6 +62,8 @@ export function formFrom(dto: AutoReplySettingsDto): AutoReplyForm {
     awayEnabled: dto.awayEnabled,
     awayText: dto.awayText ?? '',
     awayCooldownHours: dto.awayCooldownHours,
+    acknowledgementEnabled: dto.acknowledgementEnabled ?? false,
+    acknowledgementText: dto.acknowledgementText ?? '',
     outOfOfficeEnabled: dto.outOfOfficeEnabled,
     outOfOfficeText: dto.outOfOfficeText ?? '',
     oooFrom: dto.outOfOfficeFromUtc ? localDate(dto.outOfOfficeFromUtc, dto.timeZoneId) : '',
@@ -78,11 +82,22 @@ export function formFrom(dto: AutoReplySettingsDto): AutoReplyForm {
   };
 }
 
+/** Open every day, all day: the schedule the API reads as 24x7 (the same opening and closing time). */
+export function is24x7(days: readonly BusinessDayDto[]): boolean {
+  return days.length === 7 && days.every((d) => d.isOpen && d.opens === d.closes);
+}
+
+export function week24x7(): BusinessDayDto[] {
+  return WEEK.map((w) => ({ day: w.day, isOpen: true, opens: '00:00', closes: '00:00' }));
+}
+
 /** The API input, or the first thing that needs fixing. */
 export function inputFrom(f: AutoReplyForm): UpdateAutoReplySettingsInput | string {
   if (f.welcomeEnabled && !f.welcomeText?.trim())
     return 'Write the welcome message, or switch it off.';
   if (f.awayEnabled && !f.awayText?.trim()) return 'Write the away message, or switch it off.';
+  if (f.acknowledgementEnabled && !f.acknowledgementText?.trim())
+    return 'Write the 24x7 acknowledgement, or switch it off.';
   if (!(f.awayCooldownHours >= 1 && f.awayCooldownHours <= 168)) {
     return 'Wait between away replies must be from 1 to 168 hours.';
   }
@@ -101,6 +116,8 @@ export function inputFrom(f: AutoReplyForm): UpdateAutoReplySettingsInput | stri
     awayEnabled: f.awayEnabled,
     awayText: f.awayText?.trim() || null,
     awayCooldownHours: Math.round(f.awayCooldownHours),
+    acknowledgementEnabled: !!f.acknowledgementEnabled,
+    acknowledgementText: f.acknowledgementText?.trim() || null,
     outOfOfficeEnabled: f.outOfOfficeEnabled,
     outOfOfficeText: f.outOfOfficeText?.trim() || null,
     outOfOfficeFromUtc: f.oooFrom ? zonedMidnightUtc(f.oooFrom, f.timeZoneId) : null,

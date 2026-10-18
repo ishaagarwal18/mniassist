@@ -26,10 +26,13 @@ import {
 import { passwordChangeParameters, signInChallenge } from '../auth/sign-in-challenge';
 import { EXTERNAL_LOGIN_GRANT } from '../auth/external-login';
 import { isHostAdministrator, isHostContext } from '../auth/host-access';
+import { ToastService } from '../ui/toast.service';
 
 const MOCK = environment.useMockData;
 /** Mock mode has no auth server, so "signed in" is this local flag. Absent = signed out. */
 const MOCK_SIGNED_IN_KEY = 'ar.mock.signedIn';
+/** The page a session ended on, to return to after signing in again. */
+const RETURN_URL_KEY = 'ar.returnUrl';
 
 /** The shape the whole app reads for "who is signed in". */
 export interface CurrentUser {
@@ -47,7 +50,7 @@ const SEED_USER: CurrentUser = {
   userName: 'rahul.kanade',
   name: 'Rahul',
   surname: 'Kanade',
-  email: 'rahul.kanade@Sun Energyautomation.in',
+  email: 'rahul.kanade@sunenergyautomation.in',
   phoneNumber: '+91 98200 11234',
   roles: ['admin'],
 };
@@ -77,6 +80,7 @@ function mockIdentityFrom(login: string): CurrentUser {
 @Injectable({ providedIn: 'root' })
 export class CurrentUserService {
   private readonly auth = inject(AuthService);
+  private readonly toasts = inject(ToastService);
   private readonly config = inject(ConfigStateService);
   private readonly api = inject(ProfileService);
   private readonly sessions = inject(SessionService);
@@ -239,7 +243,7 @@ export class CurrentUserService {
     await this.selectTenant(tenant);
     try {
       await firstValueFrom(
-        this.auth.login({ username, password, rememberMe, redirectUrl: '/home' }),
+        this.auth.login({ username, password, rememberMe, redirectUrl: this.afterSignInUrl() }),
       );
     } catch (e) {
       if (isTwoFactorChallenge(e)) throw new TwoFactorRequiredError();
@@ -302,7 +306,7 @@ export class CurrentUserService {
       .fetchTokenUsingGrant('password', { username, password, ...extra }, headers);
     const afterLogin = this.injector.get(PIPE_TO_LOGIN_FN_KEY);
     await firstValueFrom(
-      of(null).pipe(afterLogin({ rememberMe, redirectUrl: '/home' }, this.injector)),
+      of(null).pipe(afterLogin({ rememberMe, redirectUrl: this.afterSignInUrl() }, this.injector)),
     );
   }
 
@@ -340,8 +344,48 @@ export class CurrentUserService {
     }
     const afterLogin = this.injector.get(PIPE_TO_LOGIN_FN_KEY);
     await firstValueFrom(
-      of(null).pipe(afterLogin({ rememberMe, redirectUrl: '/home' }, this.injector)),
+      of(null).pipe(afterLogin({ rememberMe, redirectUrl: this.afterSignInUrl() }, this.injector)),
     );
+  }
+
+  /** Where to land after signing in: the page a session ended on, else home. Used once. */
+  private afterSignInUrl(): string {
+    let url: string | null = null;
+    try {
+      url = sessionStorage.getItem(RETURN_URL_KEY);
+      sessionStorage.removeItem(RETURN_URL_KEY);
+    } catch {
+      /* storage blocked: go home */
+    }
+    // Only a path inside this app, never another site or the sign-in page itself.
+    return url && url.startsWith('/') && !url.startsWith('//') && !url.startsWith('/login')
+      ? url
+      : '/home';
+  }
+
+  private endingSession = false;
+
+  /**
+   * The server no longer accepts this sign-in (it expired, or it was revoked from another
+   * device or by an administrator). Clears it here too and goes to the sign-in screen, which
+   * brings the person back to this page afterwards. Many requests can fail together; this
+   * runs once.
+   */
+  sessionEnded(): void {
+    if (MOCK || this.endingSession) return;
+    this.endingSession = true;
+    const here = this.router.url;
+    try {
+      if (here && !here.startsWith('/login')) sessionStorage.setItem(RETURN_URL_KEY, here);
+    } catch {
+      /* storage blocked: they land on home instead */
+    }
+    this.toasts.warning('Your session has ended. Sign in again to continue.', 'Signed out');
+    const toLogin = () => {
+      this.endingSession = false;
+      void this.router.navigateByUrl('/login');
+    };
+    this.auth.logout().subscribe({ complete: toLogin, error: toLogin });
   }
 
   logout(): void {
