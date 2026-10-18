@@ -81,7 +81,7 @@ import { ArBanner, ArButton, ArCard } from '../../ui';
             />
           </label>
           <label class="fld">
-            <span class="fld__k">Username or email</span>
+            <span class="fld__k">Username, email or phone number</span>
             <input
               required
               class="ar-field__input"

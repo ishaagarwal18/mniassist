@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { CurrentUserService } from '../../core/services/current-user.service';
+import { readApiError } from '../../core/util/api-error';
 import { ArTopbar } from '../../layout/topbar';
 import { ArThemeToggle } from '../../layout/theme-toggle';
 import { ArBanner, ArButton, ArCard } from '../../ui';
@@ -89,7 +90,8 @@ export class ArProfile {
       });
       this.detailsSaved.set(true);
     } catch (e: unknown) {
-      this.detailsError.set(e instanceof Error ? e.message : 'Your profile could not be saved.');
+      // The server's reason, e.g. a phone number another user of the workspace already has.
+      this.detailsError.set(readApiError(e, 'Your profile could not be saved.'));
     } finally {
       this.savingDetails.set(false);
     }
@@ -108,9 +110,7 @@ export class ArProfile {
       this.confirmPassword.set('');
     } catch (e: unknown) {
       this.passwordError.set(
-        e instanceof Error
-          ? e.message
-          : 'The password could not be changed — check the current one.',
+        readApiError(e, 'The password could not be changed — check the current one.'),
       );
     } finally {
       this.savingPassword.set(false);

@@ -233,9 +233,13 @@ interface Row extends IdentityUserDto {
             <input
               class="ar-field__input"
               type="tel"
+              placeholder="+91 98200 12345"
               [value]="fPhoneNumber()"
               (input)="fPhoneNumber.set($any($event.target).value)"
             />
+            <span class="ar-field__opt"
+              >They can sign in with it. Each user needs their own number.</span
+            >
           </label>
         </div>
         @if (mode === 'create') {

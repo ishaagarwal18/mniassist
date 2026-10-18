@@ -203,7 +203,7 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
           }
 
           <label class="lg__field">
-            <span>Username or email</span>
+            <span>Username, email or phone number</span>
             <input
               class="ar-field__input"
               name="username"
@@ -702,7 +702,7 @@ export class ArLogin {
       err?.error?.error_description ||
       err?.error?.error ||
       err?.message ||
-      'Wrong username or password.'
+      'Wrong sign-in details or password.'
     );
   }
 }

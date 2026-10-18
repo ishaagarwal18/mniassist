@@ -51,9 +51,12 @@
           />
         </label>
         <label class="pf__field">
-          <span>Phone <span class="pf__opt">optional</span></span>
+          <span>Phone <span class="pf__opt">optional — you can also sign in with it</span></span>
           <input
             class="ar-field__input ar-mono"
+            type="tel"
+            autocomplete="tel"
+            placeholder="+91 98200 12345"
             [value]="phoneNumber()"
             (input)="phoneNumber.set($any($event.target).value)"
           />
