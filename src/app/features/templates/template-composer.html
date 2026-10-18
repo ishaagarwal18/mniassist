@@ -298,9 +298,9 @@
             <p class="wa__body">
               @for (seg of previewBody(); track $index) {
                 @if (seg.variable) {
-                  <span class="wa__var">{{ seg.text }}</span>
+                  <span class="wa__var" translate="no">{{ seg.text }}</span>
                 } @else {
-                  <span>{{ seg.text }}</span>
+                  <span translate="no">{{ seg.text }}</span>
                 }
               }
             </p>

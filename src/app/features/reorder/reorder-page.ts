@@ -140,7 +140,7 @@ type Step = 'loading' | 'unavailable' | 'code' | 'portal' | 'done';
                           Deliver to {{ a.deliverySite }}.
                         }
                         @if (a.note) {
-                          “{{ a.note }}”
+                          <span translate="no">“{{ a.note }}”</span>
                         }
                       </p>
                     }

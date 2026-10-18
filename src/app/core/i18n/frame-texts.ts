@@ -3,8 +3,8 @@
  * sign-up screens. Keyed by the English text, so the English stays where it is written and a
  * missing entry simply shows English. `{0}`, `{1}` mark values filled in at run time.
  *
- * Each screen's own content is still English. These were written for the product, not by a
- * native-speaker translator: have them reviewed before calling the translation final.
+ * Each screen's own content is in SCREEN_TEXTS (screen-texts.ts). These were written for the
+ * product, not by a native-speaker translator: have them reviewed before calling the translation final.
  */
 export const FRAME_TEXTS: Readonly<Record<string, { hi: string; mr: string }>> = {
   // ---- menu groups and items ------------------------------------------------------------

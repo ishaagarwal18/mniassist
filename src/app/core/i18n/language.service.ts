@@ -7,6 +7,7 @@ import { distinctUntilChanged, filter } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { QUIET_REQUEST } from '../http/api-feedback.interceptor';
 import { FRAME_TEXTS } from './frame-texts';
+import { ScreenDictionary, ScreenTranslator } from './screen-translator';
 
 export type AppLanguage = 'en' | 'hi' | 'mr';
 
@@ -37,10 +38,11 @@ export function translate(lang: AppLanguage, text: string, ...args: (string | nu
 }
 
 /**
- * The app's language: English, Hindi or Marathi. Setting it does three things — ABP's session
+ * The app's language: English, Hindi or Marathi. Setting it does four things — ABP's session
  * language (sent to the API as Accept-Language, so server messages come back in it), the frame's
- * own text (menu, header, sign-in; see FRAME_TEXTS), and, when signed in, the user's saved choice,
- * so it follows them to their other devices.
+ * own text (menu, header, sign-in; see FRAME_TEXTS), each screen's text (SCREEN_TEXTS, applied by
+ * ScreenTranslator), and, when signed in, the user's saved choice, so it follows them to their
+ * other devices.
  */
 @Injectable({ providedIn: 'root' })
 export class LanguageService {
@@ -99,6 +101,41 @@ export class LanguageService {
   private apply(code: AppLanguage): void {
     this.lang.set(code);
     document.documentElement.lang = code;
+    void this.translateScreens(code);
+  }
+
+  private translator: ScreenTranslator | null = null;
+  private screenTexts: Promise<Readonly<Record<string, readonly [string, string]>>> | null = null;
+  private readonly dictionaries = new Map<AppLanguage, ScreenDictionary>();
+
+  /**
+   * Each screen's own text, translated as it renders (see ScreenTranslator). The dictionary is a
+   * separate chunk, fetched the first time Hindi or Marathi is chosen, so English never downloads it.
+   */
+  private async translateScreens(code: AppLanguage): Promise<void> {
+    if (code === 'en') {
+      this.translator?.stop();
+      return;
+    }
+    let dict = this.dictionaries.get(code);
+    if (!dict) {
+      try {
+        this.screenTexts ??= import('./screen-texts').then((m) => m.SCREEN_TEXTS);
+        const texts = await this.screenTexts;
+        const map = new Map<string, string>();
+        const i = code === 'hi' ? 0 : 1;
+        for (const [en, t] of Object.entries(texts)) if (t[i]) map.set(en, t[i]);
+        for (const [en, t] of Object.entries(FRAME_TEXTS)) map.set(en, t[code]);
+        dict = map;
+        this.dictionaries.set(code, dict);
+      } catch {
+        this.screenTexts = null; // offline or a stale deploy: the frame is translated, screens stay English
+        return;
+      }
+    }
+    if (this.lang() !== code) return; // switched again while loading
+    this.translator ??= new ScreenTranslator(document.body);
+    this.translator.use(dict);
   }
 
   private reconcile(saved: string | undefined): void {

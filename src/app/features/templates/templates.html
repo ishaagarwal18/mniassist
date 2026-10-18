@@ -128,14 +128,14 @@
       } @else if (t.headerKind !== 'none') {
         <p class="tp__part tp__part--h tp__part--media">{{ t.headerKind }} header</p>
       }
-      <p class="tp__part tp__body">{{ t.body }}</p>
+      <p class="tp__part tp__body" translate="no">{{ t.body }}</p>
       @if (t.footer) {
         <p class="tp__part tp__part--f">{{ t.footer }}</p>
       }
       @if (t.buttons.length > 0) {
         <div class="tp__btns">
           @for (b of t.buttons; track $index) {
-            <span class="tp__btn">{{ b.text }}</span>
+            <span class="tp__btn" translate="no">{{ b.text }}</span>
           }
         </div>
       }

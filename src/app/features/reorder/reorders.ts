@@ -211,7 +211,7 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
                       <span class="sub">{{ r.deliverySite }}</span>
                     }
                     @if (r.note) {
-                      <span class="sub">“{{ r.note }}”</span>
+                      <span class="sub" translate="no">“{{ r.note }}”</span>
                     }
                   </td>
                   <td>

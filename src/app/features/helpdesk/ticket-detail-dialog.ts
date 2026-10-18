@@ -167,7 +167,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
                 }}</strong>
                 <span class="td__c-when">{{ when(c.creationTime) }}</span>
               </div>
-              <p class="td__c-body">{{ c.body }}</p>
+              <p class="td__c-body" translate="no">{{ c.body }}</p>
             </div>
           } @empty {
             <p class="td__hint">Nothing said yet.</p>

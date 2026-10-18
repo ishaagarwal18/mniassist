@@ -130,7 +130,7 @@
                 }
                 {{ c.company }}
               </span>
-              <span class="conv__snippet">{{ c.snippet }}</span>
+              <span class="conv__snippet" translate="no">{{ c.snippet }}</span>
               @if (windowChipFor(c); as w) {
                 <ar-chip class="conv__chip" [tone]="w.tone" [dot]="true">{{ w.label }}</ar-chip>
               }
@@ -251,7 +251,7 @@
         @if (s.conversationId === thread.id) {
           <aside class="thread__summary" aria-label="Conversation summary">
             @if (s.text) {
-              <p>{{ s.text }}</p>
+              <p translate="no">{{ s.text }}</p>
               <span class="thread__summary-by"
                 ><ar-icon name="sparkle" [size]="12" /> AI summary · written by {{ s.by }} · check
                 before relying on it</span
@@ -280,7 +280,7 @@
       @if (callPermission(); as cp) {
         @if (cp.conversationId === thread.id) {
           <aside class="thread__summary" role="status">
-            <p>{{ cp.note }}</p>
+            <p translate="no">{{ cp.note }}</p>
             <button
               type="button"
               class="thread__summary-x"
@@ -372,10 +372,10 @@
               </a>
             }
             @if (m.body) {
-              <p class="bubble__body">{{ m.body }}</p>
+              <p class="bubble__body" translate="no">{{ m.body }}</p>
             }
             @if (m.buttons; as buttons) {
-              <div class="bubble__buttons">
+              <div class="bubble__buttons" translate="no">
                 @for (b of buttons; track b.id || b.title) {
                   <span class="bubble__btn">{{ b.title }}</span>
                 }

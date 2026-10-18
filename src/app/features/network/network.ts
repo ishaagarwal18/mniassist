@@ -233,7 +233,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
                         }
                       </span>
                       @if (l.note && l.state === 'Unrouted') {
-                        <span class="lead__note">{{ l.note }}</span>
+                        <span class="lead__note" translate="no">{{ l.note }}</span>
                       }
                     </span>
                     <span class="lead__side">
@@ -605,7 +605,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
               <small
                 >{{ m.fromCustomer ? 'Customer' : c.offer.oemName }} · {{ date(m.atUtc) }}</small
               >
-              <span>{{ m.text }}</span>
+              <span translate="no">{{ m.text }}</span>
             </li>
           } @empty {
             <li class="nw__hint">No messages were shared.</li>
