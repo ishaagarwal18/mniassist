@@ -21,6 +21,15 @@ const RELAY_POLL_MS = 3000;
 /** A transferred call whose link to the relaying tab stays interrupted this long has lost that tab. */
 const RELAY_LOST_MS = 6000;
 
+/**
+ * The agent's microphone, with the browser's echo cancellation, noise suppression and gain control asked for by name. Most browsers
+ * default to them, but a headset-less agent on laptop speakers is exactly where the customer hears themselves back without them.
+ */
+export const MIC: MediaStreamConstraints = {
+  audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+  video: false,
+};
+
 const DEFAULT_ICE: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
 
 /** The standard "this call is recorded" notice when the workspace has no clip of its own: two short 1400 Hz beeps. */
@@ -495,7 +504,7 @@ export class WhatsAppCallSession {
     this.busy.set(true);
     this.error.set(null);
     try {
-      this.mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      this.mic = await navigator.mediaDevices.getUserMedia(MIC);
       const pc = new RTCPeerConnection({ iceServers: await this.iceServers() });
       this.pc = pc;
       this.mic.getTracks().forEach((track) => pc.addTrack(track, this.mic!));
@@ -658,7 +667,7 @@ export class WhatsAppCallSession {
    * candidates) is ready to send. If the link drops while I'm on the call, the customer is still on the line: offer to rejoin.
    */
   private async connectRelay(): Promise<RTCPeerConnection> {
-    this.mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    this.mic = await navigator.mediaDevices.getUserMedia(MIC);
     const pc = new RTCPeerConnection({ iceServers: await this.iceServers() });
     this.pc = pc;
     this.mic.getTracks().forEach((t) => pc.addTrack(t, this.mic!));
@@ -696,7 +705,7 @@ export class WhatsAppCallSession {
   }
 
   private async connectCustomer(): Promise<RTCPeerConnection> {
-    this.mic = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    this.mic = await navigator.mediaDevices.getUserMedia(MIC);
     const pc = new RTCPeerConnection({ iceServers: await this.iceServers() });
     this.pc = pc;
     this.mic.getTracks().forEach((t) => pc.addTrack(t, this.mic!));
