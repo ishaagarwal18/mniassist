@@ -14,6 +14,7 @@ export const DEFAULT_PLAN_FEATURES: Record<SubscriptionPlan, readonly string[]> 
     'DocumentLibrary',
     'FullAnalytics',
     'ClickToWhatsAppAttribution',
+    'SalesAndPurchasing',
   ],
   [SubscriptionPlan.Pro]: [
     'AutomationBuilder',
@@ -32,6 +33,10 @@ export const DEFAULT_PLAN_FEATURES: Record<SubscriptionPlan, readonly string[]> 
     'Email',
     'RenewalDesk',
     'ErpSync',
+    'SalesAndPurchasing',
+    'Manufacturing',
+    'Finance',
+    'FieldService',
   ],
   [SubscriptionPlan.Enterprise]: [
     'AutomationBuilder',
@@ -52,6 +57,11 @@ export const DEFAULT_PLAN_FEATURES: Record<SubscriptionPlan, readonly string[]> 
     'ErpSync',
     'Sso',
     'OemNetwork',
+    'SalesAndPurchasing',
+    'Manufacturing',
+    'Finance',
+    'FieldService',
+    'Partners',
   ],
 };
 

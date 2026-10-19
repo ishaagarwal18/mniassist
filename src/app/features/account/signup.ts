@@ -14,6 +14,7 @@ import { readApiError } from '../../core/util/api-error';
 import { workspaceNameProblem, workspaceSlug } from '../../core/util/workspace-slug';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { TenantSignupService } from '../../proxy/registration';
+import { SubscriptionPlan } from '../../proxy/billing/subscription-plan.enum';
 import { ArButton } from '../../ui';
 import { ArBrand } from '../../layout/brand';
 import { ArLanguageSwitch } from '../../layout/language-switch';
@@ -401,6 +402,12 @@ export class ArSignup {
   protected readonly price = (p: NonNullable<ReturnType<typeof planByKey>>) =>
     priceLabel(p, 'monthly');
 
+  /** The chosen plan as the API's enum (Starter, Growth, Pro, Enterprise), or null for the default (Starter). */
+  private chosenPlan(): SubscriptionPlan | null {
+    const name = this.plan()?.name;
+    return name ? (SubscriptionPlan[name as keyof typeof SubscriptionPlan] ?? null) : null;
+  }
+
   protected readonly workspace = signal('');
   protected readonly fullName = signal('');
   protected readonly email = signal('');
@@ -555,6 +562,8 @@ export class ArSignup {
           captchaToken: this.captchaToken(),
           mobileNumber: this.mobile().trim() || null,
           mobileVerificationId: this.mobileVerified() ? this.verificationId() : null,
+          // The trial starts on the plan picked on the landing page: its modules, roles and menus only.
+          plan: this.chosenPlan(),
         }),
       );
       this.done.set(true);

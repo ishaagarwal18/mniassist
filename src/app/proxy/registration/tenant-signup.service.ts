@@ -1,5 +1,6 @@
 import { RestService, Rest } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
+import { SubscriptionPlan } from '../billing/subscription-plan.enum';
 
 export interface TenantSignupDto {
   workspaceName: string;
@@ -11,6 +12,8 @@ export interface TenantSignupDto {
   /** The owner's mobile (M01-1); verified first when the platform requires it. */
   mobileNumber?: string | null;
   mobileVerificationId?: string | null;
+  /** The plan chosen on the landing page; the trial starts on it. Starter when absent. */
+  plan?: SubscriptionPlan | null;
 }
 
 export interface SignupMobileCodeSentDto {

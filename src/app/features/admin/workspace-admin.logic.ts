@@ -30,6 +30,11 @@ export const FEATURE_LABELS: Record<PlanFeature, string> = {
   [PlanFeature.ErpSync]: 'Tally and SAP sync',
   [PlanFeature.OemNetwork]: 'OEM dealer network',
   [PlanFeature.ReorderPortal]: 'Spares re-order portal',
+  [PlanFeature.SalesAndPurchasing]: 'Sales and purchasing',
+  [PlanFeature.Manufacturing]: 'Manufacturing',
+  [PlanFeature.Finance]: 'Finance and GST',
+  [PlanFeature.FieldService]: 'Field service',
+  [PlanFeature.Partners]: 'Resellers and agency mode',
 };
 
 export const featureLabel = (f: PlanFeature): string => FEATURE_LABELS[f] ?? `Feature ${f}`;

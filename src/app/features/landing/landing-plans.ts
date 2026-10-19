@@ -51,6 +51,7 @@ export const LANDING_PLANS: readonly LandingPlan[] = [
       'Datasheet and drawing library',
       'Full analytics',
       'Click-to-WhatsApp ad attribution',
+      'Sales orders, challans and invoices; purchasing and vendor bills',
     ],
     featured: true,
   },
@@ -68,6 +69,8 @@ export const LANDING_PLANS: readonly LandingPlan[] = [
       'Helpdesk and AI assistant',
       'Payment links, SMS, email and voice',
       'Tally / SAP sync, CRM connectors and API',
+      'Manufacturing (BOM, work orders) and finance (accounts, GST)',
+      'Field service: AMC contracts and field tickets',
     ],
   },
   {
@@ -78,7 +81,12 @@ export const LANDING_PLANS: readonly LandingPlan[] = [
     channels: 20,
     contacts: null,
     blurb: 'For OEMs with a dealer network and company sign-in.',
-    adds: ['OEM dealer network and lead routing', 'Single sign-on (SSO)', 'Negotiated terms'],
+    adds: [
+      'OEM dealer network and lead routing',
+      'Reseller programme and agency mode',
+      'Single sign-on (SSO)',
+      'Negotiated terms',
+    ],
   },
 ];
 

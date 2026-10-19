@@ -16326,4 +16326,25 @@ export const SCREEN_TEXTS: Readonly<Record<string, readonly [hi: string, mr: str
     '🧠 आंतरिक AI रणनीति और मार्जिन मूल्यांकन:',
     '🧠 अंतर्गत AI धोरण आणि मार्जिन मूल्यांकन:',
   ],
+  'Sales and purchasing': ['बिक्री और खरीद', 'विक्री आणि खरेदी'],
+  Finance: ['वित्त', 'वित्त'],
+  'Finance and GST': ['वित्त और GST', 'वित्त आणि GST'],
+  'Field service': ['फ़ील्ड सर्विस', 'फील्ड सर्व्हिस'],
+  'Resellers and agency mode': ['रीसेलर और एजेंसी मोड', 'रिसेलर आणि एजन्सी मोड'],
+  'Reseller programme and agency mode': [
+    'रीसेलर प्रोग्राम और एजेंसी मोड',
+    'रिसेलर प्रोग्राम आणि एजन्सी मोड',
+  ],
+  'Field service: AMC contracts and field tickets': [
+    'फ़ील्ड सर्विस: AMC अनुबंध और फ़ील्ड टिकट',
+    'फील्ड सर्व्हिस: AMC करार आणि फील्ड तिकिटे',
+  ],
+  'Manufacturing (BOM, work orders) and finance (accounts, GST)': [
+    'विनिर्माण (BOM, वर्क ऑर्डर) और वित्त (खाते, GST)',
+    'उत्पादन (BOM, वर्क ऑर्डर) आणि वित्त (खाती, GST)',
+  ],
+  'Sales orders, challans and invoices; purchasing and vendor bills': [
+    'बिक्री ऑर्डर, चालान और इनवॉइस; खरीद और विक्रेता बिल',
+    'विक्री ऑर्डर, चलन आणि इनव्हॉइस; खरेदी आणि विक्रेता बिले',
+  ],
 };

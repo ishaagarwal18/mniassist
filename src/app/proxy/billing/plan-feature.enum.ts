@@ -20,6 +20,11 @@ export enum PlanFeature {
   ErpSync = 17,
   OemNetwork = 18,
   ReorderPortal = 19,
+  SalesAndPurchasing = 20,
+  Manufacturing = 21,
+  Finance = 22,
+  FieldService = 23,
+  Partners = 24,
 }
 
 export const planFeatureOptions = mapEnumToOptions(PlanFeature);
