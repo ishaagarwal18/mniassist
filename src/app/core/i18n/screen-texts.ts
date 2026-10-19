@@ -1768,6 +1768,17 @@ export const SCREEN_TEXTS: Readonly<Record<string, readonly [hi: string, mr: str
   'Button message body': ['बटन संदेश बॉडी', 'बटण संदेश बॉडी'],
   'Button message footer': ['बटन संदेश फ़ुटर', 'बटण संदेश फूटर'],
   'Button reply': ['बटन जवाब', 'बटण उत्तर'],
+  "Desktop alerts for WhatsApp calls are blocked for this site, so a call won't reach you while this window is minimised. Allow notifications in the browser's site settings (the icon left of the address).":
+    [
+      'इस साइट के लिए WhatsApp कॉल के डेस्कटॉप अलर्ट बंद हैं, इसलिए विंडो छोटी (minimise) होने पर कॉल की सूचना नहीं मिलेगी। ब्राउज़र की साइट सेटिंग्स (पते के बाईं ओर का आइकन) में नोटिफ़िकेशन की अनुमति दें।',
+      'या साइटसाठी WhatsApp कॉलचे डेस्कटॉप अलर्ट बंद आहेत, त्यामुळे विंडो लहान (minimise) असताना कॉलची सूचना मिळणार नाही. ब्राउझरच्या साइट सेटिंग्जमध्ये (पत्त्याच्या डावीकडील आयकॉन) नोटिफिकेशनना परवानगी द्या.',
+    ],
+  'Get a desktop alert for WhatsApp calls, even when this window is minimised.': [
+    'WhatsApp कॉल का डेस्कटॉप अलर्ट पाएँ, विंडो छोटी होने पर भी।',
+    'WhatsApp कॉलचा डेस्कटॉप अलर्ट मिळवा, विंडो लहान असतानाही.',
+  ],
+  'Turn on call alerts': ['कॉल अलर्ट चालू करें', 'कॉल अलर्ट सुरू करा'],
+  'Speak the prompt again': ['प्रॉम्प्ट फिर से बोलें', 'प्रॉम्प्ट पुन्हा बोला'],
   "Callers hear the menu and press a key; the call then rings only that option's team, for example “For English, press 1. हिंदी के लिए दो दबाइए।”":
     [
       'कॉल करने वाले मेन्यू सुनते हैं और एक बटन दबाते हैं; फिर कॉल सिर्फ़ उस विकल्प की टीम को जाती है, जैसे “For English, press 1. हिंदी के लिए दो दबाइए।”',

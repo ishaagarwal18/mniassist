@@ -1,9 +1,15 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 
 /** One ring cycle: two short bursts, then a pause (seconds). */
 export const RING_CYCLE_S = 3;
 /** How long one ring is scheduled for: past Meta's minute of ringing and a queued IVR caller's wait is re-armed by the next ring. */
 export const RING_FOR_S = 90;
+
+/** Whether this browser may show desktop notifications: what the call bar's "turn on call alerts" card is about. */
+export type AlertPermission = NotificationPermission | 'unsupported';
+
+export const currentAlertPermission = (): AlertPermission =>
+  typeof Notification === 'undefined' ? 'unsupported' : Notification.permission;
 
 /** The tab title while a call rings, alternating with the page's own title. */
 export const ringingTitle = (who: string) => `📞 ${who} is calling`;
@@ -25,6 +31,12 @@ export class CallAlert {
   private notification: Notification | null = null;
   private current: string | null = null;
 
+  /**
+   * Desktop notifications are the only alert that reaches an agent whose browser window is minimised, and they need the
+   * person's permission. Watched so the call bar can say when they are off, instead of failing silently.
+   */
+  readonly permission = signal<AlertPermission>(currentAlertPermission());
+
   unlock(): void {
     try {
       this.ctx ??= new AudioContext();
@@ -32,8 +44,23 @@ export class CallAlert {
     } catch {
       // No Web Audio: the title and the notification still alert.
     }
-    if ('Notification' in window && Notification.permission === 'default') {
-      void Notification.requestPermission();
+    if (this.permission() === 'default') {
+      void this.askPermission();
+    }
+  }
+
+  /** Asks to show desktop notifications (it must run inside a click). Also unlocks the ringtone. */
+  async enableNotifications(): Promise<void> {
+    this.unlock();
+    await this.askPermission();
+  }
+
+  private async askPermission(): Promise<void> {
+    if (typeof Notification === 'undefined') return;
+    try {
+      this.permission.set(await Notification.requestPermission());
+    } catch {
+      this.permission.set(currentAlertPermission());
     }
   }
 
@@ -102,8 +129,8 @@ export class CallAlert {
   }
 
   private showNotification(key: string, title: string, body: string): void {
-    if (!('Notification' in window) || Notification.permission !== 'granted' || !document.hidden)
-      return;
+    this.permission.set(currentAlertPermission()); // the person may have changed it in the browser's site settings
+    if (this.permission() !== 'granted' || !document.hidden) return;
     try {
       const n = new Notification(title, {
         body,

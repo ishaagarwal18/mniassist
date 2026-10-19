@@ -100,7 +100,7 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
           } @else {
             <p class="ivr__hint">No prompt yet.</p>
           }
-          @if (s.canSpeakPrompt && s.hasPrompt && !s.spokenPrompt) {
+          @if (s.canSpeakPrompt && s.hasPrompt) {
             <button
               ar-button
               type="button"
@@ -108,7 +108,7 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
               [disabled]="saving() || rows().length === 0"
               (click)="speakPrompt()"
             >
-              Use a spoken prompt instead
+              {{ s.spokenPrompt ? 'Speak the prompt again' : 'Use a spoken prompt instead' }}
             </button>
           }
           <label class="ar-field" for="ivr-file">

@@ -2,6 +2,7 @@ import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   effect,
   inject,
@@ -17,6 +18,16 @@ import { WhatsAppCallSession } from '../core/services/whatsapp-call.session';
 import { CallAgentDto } from '../proxy/messaging/whats-app-call.service';
 import { ArButton, ArIcon } from '../ui';
 import { ArSelect } from '../ui/select';
+
+const SETUP_DISMISSED_KEY = 'ar.callAlerts.setupDismissed';
+
+function readDismissed(): boolean {
+  try {
+    return localStorage.getItem(SETUP_DISMISSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 /** How often the app asks whether a customer's WhatsApp call is ringing. Meta rings for about a minute. */
 const POLL_MS = 4000;
@@ -213,6 +224,24 @@ const POLL_MS = 4000;
         </button>
       </div>
     }
+    @if (alertSetup(); as p) {
+      <div class="wc wc--setup" role="status">
+        <ar-icon name="phone" [size]="15" />
+        @if (p === 'denied') {
+          <span
+            >Desktop alerts for WhatsApp calls are blocked for this site, so a call won't reach you
+            while this window is minimised. Allow notifications in the browser's site settings (the
+            icon left of the address).</span
+          >
+        } @else {
+          <span>Get a desktop alert for WhatsApp calls, even when this window is minimised.</span>
+          <button ar-button type="button" variant="primary" (click)="alert.enableNotifications()">
+            Turn on call alerts
+          </button>
+        }
+        <button type="button" class="wc__x" aria-label="Dismiss" (click)="dismissSetup()">×</button>
+      </div>
+    }
     @if (session.error(); as e) {
       <div class="wc wc--err" role="alert">
         <span>{{ e }}</span>
@@ -278,6 +307,10 @@ const POLL_MS = 4000;
       flex: 1;
       min-width: 0;
     }
+    .wc--setup {
+      max-width: min(420px, calc(100vw - 32px));
+      border-color: var(--ar-line-200);
+    }
     .wc--err {
       color: var(--ar-bad-600, #b42318);
     }
@@ -329,7 +362,28 @@ export class ArWhatsAppCallBar {
   }
   private readonly canUse = grantedPolicy('AutoReach.Inbox', inject(PermissionService));
   private readonly realtime = inject(InboxRealtimeService);
-  private readonly alert = inject(CallAlert);
+  protected readonly alert = inject(CallAlert);
+  private readonly setupDismissed = signal(readDismissed());
+
+  /** Shown to an agent who takes calls until desktop notifications are on (or they dismiss it for this browser). */
+  protected readonly alertSetup = computed(() => {
+    const p = this.alert.permission();
+    return this.canUse() &&
+      !environment.useMockData &&
+      !this.setupDismissed() &&
+      (p === 'default' || p === 'denied')
+      ? p
+      : null;
+  });
+
+  protected dismissSetup(): void {
+    this.setupDismissed.set(true);
+    try {
+      localStorage.setItem(SETUP_DISMISSED_KEY, '1');
+    } catch {
+      // Storage unavailable: it just shows again next time.
+    }
+  }
 
   constructor() {
     const destroyRef = inject(DestroyRef);
