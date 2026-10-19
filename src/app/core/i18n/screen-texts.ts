@@ -1768,6 +1768,43 @@ export const SCREEN_TEXTS: Readonly<Record<string, readonly [hi: string, mr: str
   'Button message body': ['बटन संदेश बॉडी', 'बटण संदेश बॉडी'],
   'Button message footer': ['बटन संदेश फ़ुटर', 'बटण संदेश फूटर'],
   'Button reply': ['बटन जवाब', 'बटण उत्तर'],
+  '+ Add a button': ['+ बटन जोड़ें', '+ बटण जोडा'],
+  'Remove button': ['बटन हटाएँ', 'बटण काढा'],
+  'Reply buttons (optional, up to {0})': [
+    'जवाब बटन (वैकल्पिक, अधिकतम {0})',
+    'उत्तर बटणे (ऐच्छिक, जास्तीत जास्त {0})',
+  ],
+  'Save their reply as attribute (optional)': [
+    'उनका जवाब एट्रिब्यूट के रूप में सहेजें (वैकल्पिक)',
+    'त्यांचे उत्तर ॲट्रिब्यूट म्हणून जतन करा (ऐच्छिक)',
+  ],
+  'The button they tapped, or what they typed, is kept on the contact. Check it in an "If…" step with "Custom attribute…" and the same name.':
+    [
+      'उन्होंने जो बटन दबाया या जो लिखा, वह संपर्क पर सहेजा जाता है। इसे "If…" चरण में "Custom attribute…" और इसी नाम से जाँचें।',
+      'त्यांनी दाबलेले बटण किंवा लिहिलेले उत्तर संपर्कावर जतन होते. ते "If…" पायरीत "Custom attribute…" आणि याच नावाने तपासा.',
+    ],
+  'The customer taps one instead of typing. To branch on it, follow with "Wait for a reply" and save their reply as an attribute; an "If…" step can then check it (the attribute holds the button\'s text).':
+    [
+      'ग्राहक लिखने के बजाय एक बटन दबाता है। इस पर शाखा बनाने के लिए इसके बाद "Wait for a reply" रखें और जवाब को एट्रिब्यूट के रूप में सहेजें; फिर "If…" चरण उसे जाँच सकता है (एट्रिब्यूट में बटन का टेक्स्ट होता है)।',
+      'ग्राहक लिहिण्याऐवजी एक बटण दाबतो. त्यानुसार फाटा काढण्यासाठी पुढे "Wait for a reply" ठेवा आणि उत्तर ॲट्रिब्यूट म्हणून जतन करा; मग "If…" पायरी ते तपासू शकते (ॲट्रिब्यूटमध्ये बटणाचा मजकूर असतो).',
+    ],
+  'WhatsApp allows at most {0} buttons.': [
+    'WhatsApp अधिकतम {0} बटन की अनुमति देता है।',
+    'WhatsApp जास्तीत जास्त {0} बटणांना परवानगी देते.',
+  ],
+  'give each button a different title.': [
+    'हर बटन को अलग शीर्षक दें।',
+    'प्रत्येक बटणाला वेगळे शीर्षक द्या.',
+  ],
+  'give every button a title, or remove it.': [
+    'हर बटन को शीर्षक दें, या उसे हटा दें।',
+    'प्रत्येक बटणाला शीर्षक द्या, किंवा ते काढा.',
+  ],
+  'keep button titles to {0} characters.': [
+    'बटन शीर्षक {0} अक्षरों तक रखें।',
+    'बटणांची शीर्षके {0} अक्षरांपर्यंत ठेवा.',
+  ],
+  'Buttons: {0} · {1}': ['बटन: {0} · {1}', 'बटणे: {0} · {1}'],
   'Button text': ['बटन टेक्स्ट', 'बटण मजकूर'],
   Buttons: ['बटन', 'बटणे'],
   'Buttons (quick replies, a website, a phone number) turn a message into a one-tap action.': [

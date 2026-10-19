@@ -53,6 +53,13 @@ import { AutomationNodeKind, AutomationTriggerKind } from '../../proxy/messaging
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArIcon } from '../../ui';
 import { ArSelect } from '../../ui/select';
+import {
+  MAX_BUTTON_TITLE,
+  MAX_BUTTONS,
+  ReplyButton,
+  buttonId,
+  buttonProblems,
+} from './automation-buttons';
 import { IconName } from '../../ui/icon';
 
 const KIND_META: Record<
@@ -352,6 +359,44 @@ export class ArAutomationBuilder {
 
   protected setCfg(id: string, key: string, value: string): void {
     this.patch(id, (s) => ({ ...s, config: { ...s.config, [key]: value } }));
+  }
+
+  protected readonly maxButtons = MAX_BUTTONS;
+  protected readonly maxButtonTitle = MAX_BUTTON_TITLE;
+
+  protected buttons(step: Pick<BuilderStep, 'config'>): ReplyButton[] {
+    const v = step.config['buttons'];
+    return Array.isArray(v)
+      ? v.map((b) => ({ id: String(b?.id ?? ''), title: String(b?.title ?? '') }))
+      : [];
+  }
+
+  protected addButton(step: BuilderStep): void {
+    const list = this.buttons(step);
+    if (list.length >= MAX_BUTTONS) return;
+    this.setButtons(step.localId, [...list, { id: '', title: '' }]);
+  }
+
+  protected setButtonTitle(step: BuilderStep, index: number, title: string): void {
+    const list = this.buttons(step);
+    const others = list.filter((_, i) => i !== index).map((b) => b.id);
+    list[index] = { title, id: buttonId(title, others) };
+    this.setButtons(step.localId, list);
+  }
+
+  protected removeButton(step: BuilderStep, index: number): void {
+    this.setButtons(
+      step.localId,
+      this.buttons(step).filter((_, i) => i !== index),
+    );
+  }
+
+  /** The engine reads config.buttons as [{ id, title }]; an empty list is dropped so a plain message saves as before. */
+  private setButtons(id: string, list: ReplyButton[]): void {
+    this.patch(id, (s) => {
+      const { buttons: _old, ...rest } = s.config;
+      return { ...s, config: list.length ? { ...rest, buttons: list } : rest };
+    });
   }
 
   /** Numbers are stored as numbers — the engine reads them with GetValue<int>, which throws on a string. */
@@ -697,9 +742,12 @@ export class ArAutomationBuilder {
       case AutomationNodeKind.End:
         detail = 'The journey stops';
         break;
-      case AutomationNodeKind.SendSessionMessage:
+      case AutomationNodeKind.SendSessionMessage: {
+        const count = this.buttons(s).length;
         detail = this.cfg(s, 'text').trim() ? `“${this.cfg(s, 'text').trim()}”` : 'No message yet';
+        if (count) detail = `Buttons: ${count} · ${detail}`;
         break;
+      }
       case AutomationNodeKind.SendTemplate:
         detail =
           this.templateOptions().find((t) => t.id === this.cfg(s, 'templateId'))?.name ??
@@ -710,6 +758,7 @@ export class ArAutomationBuilder {
         break;
       case AutomationNodeKind.WaitForReply:
         detail = `Up to ${this.num(s, 'hours') ?? 48} hours`;
+        if (this.cfg(s, 'saveAs')) detail += ` · saves as ${this.cfg(s, 'saveAs')}`;
         break;
       case AutomationNodeKind.Condition: {
         const field =
@@ -753,6 +802,7 @@ export class ArAutomationBuilder {
     switch (s.kind) {
       case AutomationNodeKind.SendSessionMessage:
         if (!this.cfg(step, 'text').trim()) out.push('write the message.');
+        out.push(...buttonProblems(this.buttons(step)));
         break;
       case AutomationNodeKind.SendTemplate:
         if (!this.cfg(step, 'templateId')) out.push('choose a template.');

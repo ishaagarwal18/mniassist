@@ -44,6 +44,41 @@
         ></textarea>
       </label>
       <p class="node__blurb">Free-form, so it only goes out while the 24-hour window is open.</p>
+      <div class="ab__buttons">
+        <span class="ar-field__label">Reply buttons (optional, up to {{ maxButtons }})</span>
+        @for (b of buttons(step); track $index; let i = $index) {
+          <div class="ab__button-row">
+            <input
+              class="ar-field__input"
+              [attr.aria-label]="'Button ' + (i + 1)"
+              [attr.maxlength]="maxButtonTitle"
+              placeholder="e.g. Product enquiry"
+              [value]="b.title"
+              (input)="setButtonTitle(step, i, $any($event.target).value)"
+            />
+            <button
+              type="button"
+              class="ab__button-x"
+              [attr.aria-label]="'Remove button ' + (i + 1)"
+              (click)="removeButton(step, i)"
+            >
+              ×
+            </button>
+          </div>
+        }
+        @if (buttons(step).length < maxButtons) {
+          <button ar-button type="button" variant="ghost" (click)="addButton(step)">
+            + Add a button
+          </button>
+        }
+        @if (buttons(step).length) {
+          <p class="node__blurb">
+            The customer taps one instead of typing. To branch on it, follow with "Wait for a reply"
+            and save their reply as an attribute; an "If…" step can then check it (the attribute
+            holds the button's text).
+          </p>
+        }
+      </div>
     }
     @case (NK.SendTemplate) {
       <label class="ar-field">
@@ -97,6 +132,19 @@
           (input)="setNum(step.localId, 'hours', $any($event.target).value)"
         />
       </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Save their reply as attribute (optional)</span>
+        <input
+          class="ar-field__input"
+          placeholder="interest"
+          [value]="cfg(step, 'saveAs')"
+          (input)="setCfg(step.localId, 'saveAs', $any($event.target).value.trim())"
+        />
+      </label>
+      <p class="node__blurb">
+        The button they tapped, or what they typed, is kept on the contact. Check it in an "If…"
+        step with "Custom attribute…" and the same name.
+      </p>
     }
     @case (NK.Condition) {
       <div class="ar-field-row">

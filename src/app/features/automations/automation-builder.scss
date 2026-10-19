@@ -143,6 +143,36 @@
   max-width: 160px;
 }
 
+.ab__buttons {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  justify-items: start;
+}
+.ab__button-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  max-width: 320px;
+}
+.ab__button-row .ar-field__input {
+  flex: 1;
+  min-width: 0;
+}
+.ab__button-x {
+  border: 0;
+  background: none;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--ar-ink-500);
+  padding: 4px 6px;
+}
+.ab__button-x:hover {
+  color: var(--ar-bad-600);
+}
+
 .node {
   display: flex;
   gap: 12px;
