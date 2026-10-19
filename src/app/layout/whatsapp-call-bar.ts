@@ -1,8 +1,18 @@
 import { PermissionService } from '@abp/ng.core';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 
 import { environment } from '../../environments/environment';
 import { grantedPolicy } from '../core/auth/permission';
+import { InboxRealtimeService } from '../core/realtime/inbox-realtime.service';
+import { CallAlert } from '../core/services/call-alert';
 import { WhatsAppCallSession } from '../core/services/whatsapp-call.session';
 import { CallAgentDto } from '../proxy/messaging/whats-app-call.service';
 import { ArButton, ArIcon } from '../ui';
@@ -318,10 +328,50 @@ export class ArWhatsAppCallBar {
     void this.session.transfer(agent);
   }
   private readonly canUse = grantedPolicy('AutoReach.Inbox', inject(PermissionService));
+  private readonly realtime = inject(InboxRealtimeService);
+  private readonly alert = inject(CallAlert);
 
   constructor() {
+    const destroyRef = inject(DestroyRef);
+    destroyRef.onDestroy(() => this.alert.stop());
     if (!this.canUse() || environment.useMockData) return;
+
     const poll = setInterval(() => void this.session.poll(), POLL_MS);
-    inject(DestroyRef).onDestroy(() => clearInterval(poll));
+    destroyRef.onDestroy(() => clearInterval(poll));
+
+    // The server says the moment a call rings, on every page, not just the inbox; the timer is the fallback.
+    void this.realtime.connect();
+    effect(() => {
+      if (this.realtime.callRinging()) untracked(() => void this.session.poll());
+    });
+
+    // Sound and the notification prompt need a first click on the page.
+    const unlock = () => this.alert.unlock();
+    document.addEventListener('pointerdown', unlock, { once: true });
+    destroyRef.onDestroy(() => document.removeEventListener('pointerdown', unlock));
+
+    // Ring while a customer's call or a colleague's transfer is waiting for this agent; stop as soon as it isn't.
+    effect(() => {
+      const call = this.session.ringing();
+      const transfer = this.session.incoming();
+      untracked(() => {
+        if (call) {
+          const who = call.contactName || '+' + call.contactWaId;
+          this.alert.start(
+            `${call.id}:${call.ivrStatus ?? ''}`,
+            who,
+            call.queueLabel ? `WhatsApp call · chose ${call.queueLabel}` : 'WhatsApp call',
+          );
+        } else if (transfer) {
+          this.alert.start(
+            `transfer:${transfer.id}`,
+            transfer.fromName || 'A colleague',
+            `Transferring a WhatsApp call with ${transfer.contactName || '+' + transfer.contactWaId}`,
+          );
+        } else {
+          this.alert.stop();
+        }
+      });
+    });
   }
 }

@@ -34,6 +34,11 @@ export class InboxRealtimeService {
 
   /** The most recent event. A signal so a component `effect` can react to it. */
   readonly lastEvent = signal<InboxEvent | null>(null);
+  /**
+   * A WhatsApp call just started ringing in this workspace (the call's id). Kept apart from `lastEvent` so it doesn't reload the
+   * inbox: the call bar asks the API whether it rings for this agent.
+   */
+  readonly callRinging = signal<{ callId: string } | null>(null);
   readonly connected = signal(false);
 
   async connect(): Promise<void> {
@@ -56,6 +61,10 @@ export class InboxRealtimeService {
         this.lastEvent.set({ kind, ...payload }),
       );
     }
+    // A new object each time, so the same call ringing again (an IVR queue after the menu) still notifies.
+    this.connection.on('callRinging', (payload: { callId: string }) =>
+      this.callRinging.set({ callId: payload.callId }),
+    );
 
     this.connection.onreconnected(async () => {
       this.connected.set(true);

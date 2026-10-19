@@ -180,9 +180,23 @@ export class WhatsAppCallSession {
     );
   }
 
-  /** Checks for a customer's call ringing and a colleague's transfer. Called by the call bar on a timer. */
+  private polling = false;
+
+  /**
+   * Checks for a customer's call ringing and a colleague's transfer. Called by the call bar on a timer and the moment the server
+   * says a call is ringing. Runs in a background tab too: that is exactly when an agent needs to hear a call.
+   */
   async poll(): Promise<void> {
-    if (document.hidden) return;
+    if (this.polling) return;
+    this.polling = true;
+    try {
+      await this.check();
+    } finally {
+      this.polling = false;
+    }
+  }
+
+  private async check(): Promise<void> {
     if (!this.checkedForLiveCall) {
       this.checkedForLiveCall = true;
       await this.findCallToRejoin();

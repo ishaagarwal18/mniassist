@@ -3006,6 +3006,10 @@ export const SCREEN_TEXTS: Readonly<Record<string, readonly [hi: string, mr: str
   'Consumed Spare Parts': ['इस्तेमाल हुए स्पेयर पार्ट', 'वापरलेले स्पेअर पार्ट'],
   Contact: ['संपर्क', 'संपर्क'],
   'Contact created': ['संपर्क बनाया गया', 'संपर्क तयार केला'],
+  'New contact (first message from an unknown number)': [
+    'नया संपर्क (किसी अनजान नंबर का पहला संदेश)',
+    'नवीन संपर्क (अनोळखी नंबरचा पहिला संदेश)',
+  ],
   'Contact email': ['संपर्क ईमेल', 'संपर्क ईमेल'],
   'Contact enters a segment (drip)': [
     'संपर्क किसी सेगमेंट में आता है (ड्रिप)',

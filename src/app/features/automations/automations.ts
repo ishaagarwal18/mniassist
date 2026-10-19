@@ -56,7 +56,10 @@ export class ArAutomations {
   protected readonly triggers = [
     { value: AutomationTriggerKind.InboundKeyword, label: 'Inbound keyword' },
     { value: AutomationTriggerKind.ButtonReply, label: 'Button reply' },
-    { value: AutomationTriggerKind.ContactCreated, label: 'Contact created' },
+    {
+      value: AutomationTriggerKind.ContactCreated,
+      label: 'New contact (first message from an unknown number)',
+    },
     { value: AutomationTriggerKind.AttributeChanged, label: 'Attribute changed' },
     { value: AutomationTriggerKind.EnquiryStageChanged, label: 'Enquiry stage changed' },
     { value: AutomationTriggerKind.ScheduledDate, label: 'Scheduled date' },
