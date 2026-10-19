@@ -1,0 +1,306 @@
+[
+    {
+        "ParameterKey":  "WebhooksDomain",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DbMasterPassword",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DbDeletionProtection",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "ApiCpu",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "Msg91SignupFlowId",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "WebDomain",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "InstagramAppId",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DbMaxAllocatedStorage",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "BillingChargeFromUtc",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "MigratorImageTag",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "CallRelaySecret",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "WebhooksDesiredCount",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DbBackupRetentionDays",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "PayuMerchantKey",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "MessengerWebhookVerifyToken",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "GupshupPartnerSecret",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "LogRetentionDays",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "RunServices",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "RedisReplica",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "EnvironmentName",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "SmtpPassword",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "HostAdminPassword",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "SmtpUserName",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "WebhooksMemory",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DbAllocatedStorage",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "WebDesiredCount",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "Msg91SignupAuthKey",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "ApiDesiredCount",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DbStorageEncrypted",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "AlarmEmail",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "WhatsAppVerifyToken",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "WebhooksCpu",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DbMultiAz",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "RazorpayKeySecret",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DbInstanceClass",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "WhatsAppApiAppSecret",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "CallRelayImageTag",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "Msg91SignupSenderId",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "WhatsAppApiAppId",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "GupshupPartnerEmail",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "CertificateArn",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "ApiMaxCount",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "ImageTag",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DeploymentId",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "PayuBaseUrl",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "TokenCertificateSecretArn",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "EmailUnsubscribeSecret",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "GupshupWebhookSharedSecret",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "Msg91WebhookSharedSecret",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DeployCallRelay",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "MessengerAppSecret",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "InstagramWebhookVerifyToken",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "ContainerInsights",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "VpcCidr",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "SmtpFromAddress",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "CallRelayInstanceType",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "CallRelayAmi",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "RedisNodeType",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DbEngineVersion",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "SmtpPort",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "RazorpayKeyId",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "ApiMemory",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "WhatsAppEmbeddedSignupConfigId",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "HostedZoneId",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DbSnapshotIdentifier",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DbMasterUsername",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "PaymentsProvider",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "InstagramAppSecret",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "DbEngine",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "PayuMerchantSalt",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "ApiDomain",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "RazorpayWebhookSecret",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "HostAdminEmail",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "MessengerAppId",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "SmtpHost",
+        "UsePreviousValue":  true
+    },
+    {
+        "ParameterKey":  "WhatsAppAppSecret",
+        "UsePreviousValue":  true
+    }
+]
