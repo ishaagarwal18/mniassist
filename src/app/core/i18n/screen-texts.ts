@@ -1768,6 +1768,29 @@ export const SCREEN_TEXTS: Readonly<Record<string, readonly [hi: string, mr: str
   'Button message body': ['बटन संदेश बॉडी', 'बटण संदेश बॉडी'],
   'Button message footer': ['बटन संदेश फ़ुटर', 'बटण संदेश फूटर'],
   'Button reply': ['बटन जवाब', 'बटण उत्तर'],
+  "Callers hear the menu and press a key; the call then rings only that option's team, for example “For English, press 1. हिंदी के लिए दो दबाइए।”":
+    [
+      'कॉल करने वाले मेन्यू सुनते हैं और एक बटन दबाते हैं; फिर कॉल सिर्फ़ उस विकल्प की टीम को जाती है, जैसे “For English, press 1. हिंदी के लिए दो दबाइए।”',
+      'कॉल करणारे मेन्यू ऐकतात आणि एक बटण दाबतात; मग कॉल फक्त त्या पर्यायाच्या टीमला जातो, उदा. “For English, press 1. हिंदी के लिए दो दबाइए।”',
+    ],
+  "No recording needed: saving the options speaks them in each option's language (English, Hindi, Marathi; other labels in English).":
+    [
+      'रिकॉर्डिंग की ज़रूरत नहीं: विकल्प सहेजते ही वे हर विकल्प की भाषा में बोले जाते हैं (अंग्रेज़ी, हिंदी, मराठी; बाकी लेबल अंग्रेज़ी में)।',
+      'रेकॉर्डिंगची गरज नाही: पर्याय जतन करताच ते प्रत्येक पर्यायाच्या भाषेत बोलले जातात (इंग्रजी, हिंदी, मराठी; बाकी लेबल इंग्रजीत).',
+    ],
+  'Spoken automatically from the options ({0} s):': [
+    'विकल्पों से अपने-आप बोला गया ({0} s):',
+    'पर्यायांमधून आपोआप बोलले ({0} s):',
+  ],
+  'The prompt could not be spoken.': ['प्रॉम्प्ट बोला नहीं जा सका।', 'प्रॉम्प्ट बोलता आला नाही.'],
+  'Use a spoken prompt instead': [
+    'इसके बजाय बोला गया प्रॉम्प्ट इस्तेमाल करें',
+    'त्याऐवजी बोललेला प्रॉम्प्ट वापरा',
+  ],
+  'Your recording, {0} s, converted for WhatsApp calling.': [
+    'आपकी रिकॉर्डिंग, {0} s, WhatsApp कॉलिंग के लिए बदली गई।',
+    'तुमचे रेकॉर्डिंग, {0} s, WhatsApp कॉलिंगसाठी रूपांतरित.',
+  ],
   '+ Add a button': ['+ बटन जोड़ें', '+ बटण जोडा'],
   'Remove button': ['बटन हटाएँ', 'बटण काढा'],
   'Reply buttons (optional, up to {0})': [

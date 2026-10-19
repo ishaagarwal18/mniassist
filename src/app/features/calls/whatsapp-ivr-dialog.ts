@@ -29,6 +29,7 @@ const MOCK: WhatsAppIvrSettingsDto = {
   inputSeconds: 6,
   attempts: 3,
   hasPrompt: false,
+  canSpeakPrompt: false,
   active: false,
   problems: ['Upload the menu prompt.', 'Add the menu options.', 'The menu is switched off.'],
   queueMinutes: 3,
@@ -53,8 +54,8 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
       (dismiss)="closed.emit()"
     >
       <p class="ivr__hint">
-        Callers hear your prompt and press a key; the call then rings only that option's team. Say
-        every option in the prompt, for example “Press 1 for English; press 2 for Hindi.”
+        Callers hear the menu and press a key; the call then rings only that option's team, for
+        example “For English, press 1. हिंदी के लिए दो दबाइए।”
       </p>
 
       @if (settings(); as s) {
@@ -73,8 +74,17 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
 
         <section class="ivr__section" aria-labelledby="ivr-prompt-h">
           <h3 id="ivr-prompt-h" class="ivr__h">Prompt</h3>
+          @if (s.spokenPrompt) {
+            <p class="ivr__hint">
+              Spoken automatically from the options ({{ s.promptSeconds }} s):
+            </p>
+            <p class="ivr__script">{{ s.spokenPrompt }}</p>
+          } @else if (s.hasPrompt) {
+            <p class="ivr__hint">
+              Your recording, {{ s.promptSeconds }} s, converted for WhatsApp calling.
+            </p>
+          }
           @if (s.hasPrompt) {
-            <p class="ivr__hint">{{ s.promptSeconds }} s, converted for WhatsApp calling.</p>
             @if (promptUrl(); as url) {
               <audio controls preload="none" [src]="url" aria-label="Current menu prompt"></audio>
             } @else {
@@ -82,8 +92,24 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
                 Play the prompt
               </button>
             }
+          } @else if (s.canSpeakPrompt) {
+            <p class="ivr__hint">
+              No recording needed: saving the options speaks them in each option's language
+              (English, Hindi, Marathi; other labels in English).
+            </p>
           } @else {
             <p class="ivr__hint">No prompt yet.</p>
+          }
+          @if (s.canSpeakPrompt && s.hasPrompt && !s.spokenPrompt) {
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="saving() || rows().length === 0"
+              (click)="speakPrompt()"
+            >
+              Use a spoken prompt instead
+            </button>
           }
           <label class="ar-field" for="ivr-file">
             <span class="ar-field__label"
@@ -206,7 +232,7 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
             id="ivr-on"
             type="checkbox"
             [checked]="enabled()"
-            [disabled]="saving() || (!s.hasPrompt && !enabled())"
+            [disabled]="saving() || (!s.hasPrompt && !s.canSpeakPrompt && !enabled())"
             (change)="enabled.set($any($event.target).checked)"
           />
           Answer WhatsApp calls with this menu
@@ -245,6 +271,15 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
     </ar-dialog>
   `,
   styles: `
+    .ivr__script {
+      margin: 0 0 8px;
+      padding: 8px 10px;
+      white-space: pre-line;
+      font: 500 13px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+      background: var(--ar-bg-100);
+      border-radius: 6px;
+    }
     .ivr__hint {
       margin: 0 0 8px;
       font: 400 13px var(--ar-font-sans);
@@ -393,6 +428,7 @@ export class ArWhatsAppIvrDialog {
           }),
         ),
       );
+      this.clearPreview(); // the options may have been spoken again
     } catch (e) {
       this.error.set(this.message(e, 'The call menu could not be saved.'));
     } finally {
@@ -439,6 +475,20 @@ export class ArWhatsAppIvrDialog {
       this.clearPreview();
     } catch (e) {
       this.error.set(this.message(e, 'The prompt could not be removed.'));
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected async speakPrompt(): Promise<void> {
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      if (environment.useMockData) return;
+      this.apply(await firstValueFrom(this.api.speakIvrPrompt()));
+      this.clearPreview();
+    } catch (e) {
+      this.error.set(this.message(e, 'The prompt could not be spoken.'));
     } finally {
       this.saving.set(false);
     }

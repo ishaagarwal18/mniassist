@@ -52,6 +52,10 @@ export interface WhatsAppIvrSettingsDto {
   attempts: number;
   hasPrompt: boolean;
   promptSeconds?: number | null;
+  /** Read-only: the words the prompt was spoken from, one line per option; null for an uploaded recording. */
+  spokenPrompt?: string | null;
+  /** Read-only: this server can speak the menu from its options, so no recording is needed. */
+  canSpeakPrompt: boolean;
   /** Read-only: callers get the menu now. */
   active: boolean;
   /** Read-only: what stops the menu answering calls. */
@@ -441,6 +445,17 @@ export class WhatsAppCallService {
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/whats-app-call/upload-ivr-prompt',
         body: form,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Speaks the prompt from the menu options (text to speech), replacing any recording. */
+  speakIvrPrompt = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, WhatsAppIvrSettingsDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/speak-ivr-prompt',
       },
       { apiName: this.apiName, ...config },
     );
