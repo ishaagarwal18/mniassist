@@ -132,6 +132,19 @@ export class ArContacts {
 
   protected readonly segments = this.store.segments;
   protected readonly suppression = this.store.suppression;
+  protected readonly loading = this.store.loading;
+  protected readonly loadError = this.store.loadError;
+  protected readonly suppressionLoading = this.store.suppressionLoading;
+  protected readonly suppressionError = this.store.suppressionError;
+
+  protected retry(): void {
+    this.store.reload();
+  }
+
+  constructor() {
+    // Consent may have changed in Customer 360 while this singleton store remained alive.
+    this.store.reload();
+  }
   protected readonly activeSegment = signal('amc60');
   protected readonly query = signal('');
 

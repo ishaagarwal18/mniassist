@@ -16661,4 +16661,10 @@ export const SCREEN_TEXTS: Readonly<Record<string, readonly [hi: string, mr: str
   ],
   'or type the place': ['या जगह लिखें', 'किंवा ठिकाण लिहा'],
   '· sending…': ['· भेजा जा रहा है…', '· पाठवत आहे…'],
+  'Could not load contacts.': ['संपर्क लोड नहीं हो सके।', 'संपर्क लोड करता आले नाहीत.'],
+  'Could not load suppression counts.': [
+    'दमन की संख्या लोड नहीं हो सकी।',
+    'दडपलेल्या संपर्कांची संख्या लोड करता आली नाही.',
+  ],
+  'Stopped all WhatsApp messages': ['सभी WhatsApp संदेश बंद किए', 'सर्व WhatsApp संदेश बंद केले'],
 };

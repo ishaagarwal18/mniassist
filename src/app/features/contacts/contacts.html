@@ -208,11 +208,18 @@
 
       <hr class="segs__rule" />
       <p class="ar-label segs__head">Suppressed</p>
-      @for (s of suppression(); track s.id) {
-        <div class="seg seg--static">
-          <span class="seg__name">{{ s.name }}</span>
-          <span class="ar-mono seg__count">{{ count(s.count) }}</span>
-        </div>
+      @if (suppressionLoading()) {
+        <p role="status">Loading…</p>
+      } @else if (suppressionError()) {
+        <p role="alert">Could not load suppression counts.</p>
+        <button ar-button type="button" variant="ghost" (click)="retry()">Try again</button>
+      } @else {
+        @for (s of suppression(); track s.id) {
+          <div class="seg seg--static">
+            <span class="seg__name">{{ s.name }}</span>
+            <span class="ar-mono seg__count">{{ count(s.count) }}</span>
+          </div>
+        }
       }
     }
   </nav>
@@ -249,127 +256,138 @@
       <button ar-button variant="ghost" icon="filter">Filter</button>
     </div>
 
-    <div class="table-pane__body ar-scroll">
-      <ejs-grid
-        arGrid="contacts"
-        [arGridSearch]="false"
-        [dataSource]="rows()"
-        aria-label="Contacts in the selected segment"
-      >
-        <e-columns>
-          <e-column field="name" headerText="Contact" width="170">
-            <ng-template #template let-c>
-              <span class="who">
-                <ar-avatar [name]="c.name" [size]="26" />
+    <div class="table-pane__body ar-scroll" [attr.aria-busy]="loading()">
+      @if (loading()) {
+        <div class="contacts-loading" role="status">
+          <span class="contacts-loading__spinner" aria-hidden="true"></span>
+          Loading contacts…
+        </div>
+      } @else if (loadError()) {
+        <p role="alert">Could not load contacts.</p>
+        <button ar-button type="button" variant="ghost" (click)="retry()">Try again</button>
+      }
+      @if (!loading() && !loadError()) {
+        <ejs-grid
+          arGrid="contacts"
+          [arGridSearch]="false"
+          [dataSource]="rows()"
+          aria-label="Contacts in the selected segment"
+        >
+          <e-columns>
+            <e-column field="name" headerText="Contact" width="170">
+              <ng-template #template let-c>
+                <span class="who">
+                  <ar-avatar [name]="c.name" [size]="26" />
+                  @if (canView360()) {
+                    <a
+                      class="who__name who__name--link"
+                      [routerLink]="['/contacts', c.id, '360']"
+                      title="Open Customer 360 for {{ c.name }}"
+                      >{{ c.name }}</a
+                    >
+                  } @else {
+                    <span class="who__name">{{ c.name }}</span>
+                  }
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column field="company" headerText="Company / plant" />
+            <e-column field="role" headerText="Role" />
+            <e-column field="systems" headerText="Systems" />
+            <e-column field="amcExpiry" headerText="AMC expiry" width="120" />
+            <e-column field="consent" headerText="Consent" width="150">
+              <ng-template #template let-c>
+                <ar-chip [tone]="c.consentTone">{{ c.consent }}</ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column field="score" headerText="Score" type="number" textAlign="Right" width="90">
+              <ng-template #template let-c>
+                @if (c.score != null) {
+                  <span
+                    class="score"
+                    [class.score--warm]="c.score >= 60"
+                    [class.score--cold]="c.score < 25"
+                  >
+                    {{ c.score }}
+                  </span>
+                } @else {
+                  —
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="lastActivity" headerText="Last activity" />
+            <e-column
+              headerText="Actions"
+              width="360"
+              textAlign="Right"
+              [visible]="canView360() || canReorder() || canUpdate() || canDelete()"
+              [showInColumnChooser]="false"
+              [allowSorting]="false"
+              [allowFiltering]="false"
+            >
+              <ng-template #template let-c>
                 @if (canView360()) {
                   <a
-                    class="who__name who__name--link"
+                    ar-button
+                    variant="ghost"
+                    title="Customer 360 for {{ c.name }}"
                     [routerLink]="['/contacts', c.id, '360']"
-                    title="Open Customer 360 for {{ c.name }}"
-                    >{{ c.name }}</a
                   >
-                } @else {
-                  <span class="who__name">{{ c.name }}</span>
+                    360
+                  </a>
                 }
-              </span>
-            </ng-template>
-          </e-column>
-          <e-column field="company" headerText="Company / plant" />
-          <e-column field="role" headerText="Role" />
-          <e-column field="systems" headerText="Systems" />
-          <e-column field="amcExpiry" headerText="AMC expiry" width="120" />
-          <e-column field="consent" headerText="Consent" width="150">
-            <ng-template #template let-c>
-              <ar-chip [tone]="c.consentTone">{{ c.consent }}</ar-chip>
-            </ng-template>
-          </e-column>
-          <e-column field="score" headerText="Score" type="number" textAlign="Right" width="90">
-            <ng-template #template let-c>
-              @if (c.score != null) {
-                <span
-                  class="score"
-                  [class.score--warm]="c.score >= 60"
-                  [class.score--cold]="c.score < 25"
-                >
-                  {{ c.score }}
-                </span>
+                @if (canUpdate()) {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    title="Edit {{ c.name }}"
+                    (click)="openEdit(c)"
+                  >
+                    Edit
+                  </button>
+                }
+                @if (canDelete()) {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    title="Delete {{ c.name }}"
+                    (click)="deleteContact(c)"
+                  >
+                    Delete
+                  </button>
+                }
+                @if (canReorder()) {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    icon="send"
+                    title="Send {{ c.name }} their spares re-order link"
+                    (click)="reorderFor.set({ id: c.id, name: c.name })"
+                  >
+                    Re-order link
+                  </button>
+                }
+              </ng-template>
+            </e-column>
+          </e-columns>
+          <ng-template #emptyRecordTemplate>
+            <span class="empty">
+              @if (query()) {
+                No contacts match “{{ query() }}”.
               } @else {
-                —
+                No contacts in this segment yet.
               }
-            </ng-template>
-          </e-column>
-          <e-column field="lastActivity" headerText="Last activity" />
-          <e-column
-            headerText="Actions"
-            width="360"
-            textAlign="Right"
-            [visible]="canView360() || canReorder() || canUpdate() || canDelete()"
-            [showInColumnChooser]="false"
-            [allowSorting]="false"
-            [allowFiltering]="false"
-          >
-            <ng-template #template let-c>
-              @if (canView360()) {
-                <a
-                  ar-button
-                  variant="ghost"
-                  title="Customer 360 for {{ c.name }}"
-                  [routerLink]="['/contacts', c.id, '360']"
-                >
-                  360
-                </a>
-              }
-              @if (canUpdate()) {
-                <button
-                  ar-button
-                  type="button"
-                  variant="ghost"
-                  title="Edit {{ c.name }}"
-                  (click)="openEdit(c)"
-                >
-                  Edit
-                </button>
-              }
-              @if (canDelete()) {
-                <button
-                  ar-button
-                  type="button"
-                  variant="ghost"
-                  title="Delete {{ c.name }}"
-                  (click)="deleteContact(c)"
-                >
-                  Delete
-                </button>
-              }
-              @if (canReorder()) {
-                <button
-                  ar-button
-                  type="button"
-                  variant="ghost"
-                  icon="send"
-                  title="Send {{ c.name }} their spares re-order link"
-                  (click)="reorderFor.set({ id: c.id, name: c.name })"
-                >
-                  Re-order link
-                </button>
-              }
-            </ng-template>
-          </e-column>
-        </e-columns>
-        <ng-template #emptyRecordTemplate>
-          <span class="empty">
-            @if (query()) {
-              No contacts match “{{ query() }}”.
-            } @else {
-              No contacts in this segment yet.
-            }
-          </span>
-        </ng-template>
-      </ejs-grid>
+            </span>
+          </ng-template>
+        </ejs-grid>
 
-      <p class="table-pane__foot">
-        Showing {{ count(visible().length) }} of {{ count(segmentCount()) }} in this segment
-      </p>
+        <p class="table-pane__foot">
+          Showing {{ count(visible().length) }} of {{ count(segmentCount()) }} in this segment
+        </p>
+      }
     </div>
   </section>
 </div>

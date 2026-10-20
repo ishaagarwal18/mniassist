@@ -16,7 +16,7 @@ import { settled } from '../util/resource';
 /**
  * Contacts, saved segments and the suppression buckets.
  *
- * The suppression counts are fetched as three filtered counts rather than derived
+ * The suppression counts are fetched as four filtered counts rather than derived
  * from the loaded page — a page of 50 contacts cannot tell you how many of 12,000
  * opted out, and showing a page-derived number as a total would be wrong in a way
  * nobody would notice until they trusted it.
@@ -46,6 +46,7 @@ export class ContactService {
 
   private readonly seedSuppression: readonly Segment[] = [
     { id: 'optout', name: 'Opted out', count: 412 },
+    { id: 'stopall', name: 'Stopped all WhatsApp messages', count: 0 },
     { id: 'invalid', name: 'Invalid number', count: 118 },
     { id: 'blocked', name: 'Blocked by user', count: 54 },
   ];
@@ -272,6 +273,13 @@ export class ContactService {
   );
 
   readonly loading = computed(() => !environment.useMockData && this.contactsResource.isLoading());
+  readonly loadError = computed(() => !environment.useMockData && !!this.contactsResource.error());
+  readonly suppressionLoading = computed(
+    () => !environment.useMockData && this.suppressionResource.isLoading(),
+  );
+  readonly suppressionError = computed(
+    () => !environment.useMockData && !!this.suppressionResource.error(),
+  );
 
   search(term: string): void {
     this.filter.set(term);
@@ -314,7 +322,7 @@ export class ContactService {
       return;
     }
     await firstValueFrom(this.api.create(input));
-    this.contactsResource.reload();
+    this.reload();
   }
 
   async update(id: string, input: CreateUpdateContactDto): Promise<void> {
@@ -337,7 +345,7 @@ export class ContactService {
       return;
     }
     await firstValueFrom(this.api.update(id, input));
-    this.contactsResource.reload();
+    this.reload();
   }
 
   async delete(id: string): Promise<void> {
@@ -346,10 +354,10 @@ export class ContactService {
       return;
     }
     await firstValueFrom(this.api.delete(id));
-    this.contactsResource.reload();
+    this.reload();
   }
 
-  /** One count per bucket. maxResultCount 0 asks the server for the total only. */
+  /** The total is independent of the single returned row and the grid's page. */
   private countBy(suppression: SuppressionReason) {
     return this.api
       .getList({ suppression, skipCount: 0, maxResultCount: 1 })
