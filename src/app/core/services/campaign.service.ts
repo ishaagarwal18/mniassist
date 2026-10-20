@@ -248,6 +248,10 @@ export class CampaignStore {
     this.tick.update((n) => n + 1);
   }
 
+  refresh(): void {
+    this.reload();
+  }
+
   async preflight(id: string): Promise<Preflight> {
     return toPreflight(await firstValueFrom(this.api.preflight(id)));
   }
@@ -318,11 +322,12 @@ export class CampaignStore {
   }
 
   /** Creates a draft campaign. Template, segment and schedule are set later. */
-  async create(name: string, channelId: string, templateId: string): Promise<void> {
+  async create(name: string, channelId: string, templateId: string): Promise<string> {
     if (environment.useMockData) {
+      const id = 'c-' + Date.now();
       this.mockCampaigns.update((list) => [
         {
-          id: 'c-' + Date.now(),
+          id,
           name: name.trim(),
           state: 'draft',
           dispatched: 0,
@@ -333,9 +338,12 @@ export class CampaignStore {
         },
         ...list,
       ]);
-      return;
+      return id;
     }
-    await firstValueFrom(this.api.create({ name: name.trim(), channelId, templateId }));
+    const created = await firstValueFrom(
+      this.api.create({ name: name.trim(), channelId, templateId }),
+    );
     this.reload();
+    return created.id!;
   }
 }

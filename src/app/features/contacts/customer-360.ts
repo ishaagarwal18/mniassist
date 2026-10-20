@@ -24,6 +24,7 @@ import {
   SalesOrderStatus,
 } from '../../proxy/sales/sales-enums';
 import { ArButton, ArChip, ArSearchBox, ChipTone } from '../../ui';
+import { ArCustomerActions } from './customer-actions';
 
 const MOCK_CUSTOMER_360: Customer360Dto = {
   id: 'c1',
@@ -171,7 +172,16 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
 @Component({
   selector: 'ar-customer-360',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ArTopbar, ArButton, ArChip, ArSearchBox],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArSearchBox,
+    ArCustomerActions,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -180,9 +190,6 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
       help="Customer 360 unifies all CRM, Sales Order, GST Invoicing, Service Ticket and Machinery equipment data in a single enterprise cockpit."
     >
       <div actions class="actions-row">
-        <a ar-button variant="ghost" routerLink="/sales/orders" [queryParams]="newOrderParams()"
-          >+ New Order</a
-        >
         <a ar-button variant="ghost" routerLink="/contacts">All Contacts</a>
       </div>
     </ar-topbar>
@@ -245,6 +252,7 @@ type Tab = 'orders' | 'challans' | 'invoices' | 'tickets' | 'assets';
           </div>
         </div>
 
+        <ar-customer-actions [customer]="c" (changed)="refreshCustomer()" />
         <!-- Commercial Credit & KPI Ribbon -->
         <div class="credit-kpi-grid">
           <!-- Credit Limit Card -->
@@ -994,6 +1002,20 @@ export class ArCustomer360 {
         this.error.set(err?.error?.error?.message ?? 'Customer 360 could not be loaded.');
         this.searchContacts('');
       },
+    });
+  }
+
+  protected refreshCustomer(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    const accountId = this.route.snapshot.paramMap.get('accountId');
+    const request = id
+      ? this.c360Service.get(id)
+      : accountId
+        ? this.c360Service.getByAccount(accountId, this.data()?.includesSubsidiaries ?? false)
+        : null;
+    request?.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => this.data.set(data),
+      error: () => this.error.set('Customer 360 could not be loaded.'),
     });
   }
 

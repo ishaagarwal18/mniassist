@@ -13,8 +13,7 @@
 @if (dialogOpen()) {
   <ar-dialog title="New campaign" (dismiss)="dialogOpen.set(false)">
     <p class="cm__dialog-note">
-      Creates a draft that sends one approved template. The audience and schedule are set on the
-      campaign before it can pass pre-flight.
+      Choose an approved template, then choose your audience and fill the template variables.
     </p>
     @if (dialogError(); as e) {
       <p class="cm__err" role="alert">{{ e }}</p>
@@ -122,6 +121,13 @@
           }
 
           @if (c.state === 'draft' || c.state === 'scheduled') {
+            @if (canUpdate()) {
+              <ar-campaign-setup
+                [campaignId]="c.id"
+                (edited)="preflight.set(null)"
+                (saved)="refreshReadiness(c.id)"
+              />
+            }
             <label class="timing">
               <input
                 type="checkbox"

@@ -1,4 +1,5 @@
 /* eslint-disable */
+import { CUSTOMER_WORKFLOW_TEXTS } from './customer-workflow-texts';
 /**
  * Hindi and Marathi for each screen's own text, keyed by the English exactly as it renders (spaces
  * collapsed). `{0}`, `{1}` mark values; a translation may put them in its own order. Applied by
@@ -9,6 +10,7 @@
  * the translation final.
  */
 export const SCREEN_TEXTS: Readonly<Record<string, readonly [hi: string, mr: string]>> = {
+  ...CUSTOMER_WORKFLOW_TEXTS,
   '"{0}" is a choice, so it needs at least two options.': [
     '"{0}" एक विकल्प-प्रश्न है, इसलिए इसमें कम से कम दो विकल्प होने चाहिए।',
     '"{0}" हा पर्यायांचा प्रश्न आहे, म्हणून त्यात किमान दोन पर्याय हवेत.',

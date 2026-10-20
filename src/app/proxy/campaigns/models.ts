@@ -4,6 +4,7 @@ import type { MessageStatus } from '../messaging/message-status.enum';
 import type { RecurrenceKind } from './recurrence-kind.enum';
 import type { PreflightCheck } from './preflight-check.enum';
 import type { AbTestMetric } from './ab-test-metric.enum';
+import type { ChannelKind } from '../channels/channel-kind.enum';
 
 export interface CampaignCostLineDto {
   category?: string;
@@ -15,6 +16,11 @@ export interface CampaignCostLineDto {
 }
 
 export interface CampaignDto extends FullAuditedEntityDto<string> {
+  kind?: ChannelKind;
+  emailSubject?: string | null;
+  emailHtmlBody?: string | null;
+  emailTextBody?: string | null;
+  instagramMessageText?: string | null;
   name?: string;
   channelId?: string;
   templateId?: string;
@@ -170,6 +176,11 @@ export interface CampaignAbTestReportDto {
 }
 
 export interface CreateUpdateCampaignDto {
+  kind?: ChannelKind;
+  emailSubject?: string | null;
+  emailHtmlBody?: string | null;
+  emailTextBody?: string | null;
+  instagramMessageText?: string | null;
   name: string;
   channelId?: string;
   templateId?: string;

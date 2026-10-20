@@ -33,6 +33,7 @@ import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
+import { ArCampaignSetup } from './campaign-setup';
 
 const STATE_TONE: Record<CState, ChipTone> = {
   draft: 'neutral',
@@ -51,7 +52,7 @@ const STATE_TONE: Record<CState, ChipTone> = {
  */
 @Component({
   selector: 'ar-campaign-builder',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, RouterLink, ArCampaignSetup],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './campaign-builder.html',
   styleUrl: './campaign-builder.scss',
@@ -140,8 +141,11 @@ export class ArCampaignBuilder {
     this.dialogError.set(null);
     this.saving.set(true);
     try {
-      await this.store.create(this.newName(), this.newChannel(), this.newTemplate());
+      const id = await this.store.create(this.newName(), this.newChannel(), this.newTemplate());
       this.dialogOpen.set(false);
+      this.openId.set(id);
+      this.preflight.set(null);
+      this.report.set(null);
     } catch (e: unknown) {
       this.dialogError.set(readApiError(e, 'The campaign could not be created.'));
     } finally {
@@ -212,6 +216,19 @@ export class ArCampaignBuilder {
   }
 
   protected canSend = computed(() => this.preflight()?.canSend ?? false);
+  protected async refreshReadiness(id: string): Promise<void> {
+    this.preflight.set(null);
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      this.preflight.set(await this.store.preflight(id));
+      this.store.refresh();
+    } catch (e) {
+      this.error.set(readApiError(e, 'Could not load campaign detail.'));
+    } finally {
+      this.busy.set(false);
+    }
+  }
   protected readonly coverage = sendTimeCoverage;
 
   protected readonly savingTiming = signal(false);
