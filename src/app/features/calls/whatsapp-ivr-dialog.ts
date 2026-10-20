@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { PromptAudioError, toPromptWav } from './prompt-audio';
 import {
@@ -16,12 +17,22 @@ import { TeamService } from '../../proxy/identity/team.service';
 import type { TeamDto } from '../../proxy/identity/models';
 import {
   WhatsAppCallService,
-  WhatsAppIvrOptionDto,
+  WhatsAppIvrLookup,
+  WhatsAppIvrOptionKind,
   WhatsAppIvrSettingsDto,
 } from '../../proxy/messaging/whats-app-call.service';
 import { ArBanner, ArButton, ArDialog } from '../../ui';
-
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '*', '#'];
+import {
+  IVR_KEYS,
+  IvrRow,
+  MAX_IVR_LEVELS,
+  addIvrRow,
+  ivrMenuProblem,
+  removeIvrRow,
+  toIvrInput,
+  toIvrRows,
+  updateIvrRow,
+} from './ivr-menu';
 
 const MOCK: WhatsAppIvrSettingsDto = {
   enabled: false,
@@ -33,29 +44,45 @@ const MOCK: WhatsAppIvrSettingsDto = {
   active: false,
   problems: ['Upload the menu prompt.', 'Add the menu options.', 'The menu is switched off.'],
   queueMinutes: 3,
+  maxLevels: MAX_IVR_LEVELS,
+  stepPrompts: {},
 };
 
-type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
+const KINDS: { value: WhatsAppIvrOptionKind; label: string }[] = [
+  { value: 'RingTeam', label: 'Rings a team' },
+  { value: 'SubMenu', label: 'Opens a sub-menu' },
+  { value: 'Lookup', label: 'Reads out a lookup' },
+];
+
+const LOOKUPS: { value: WhatsAppIvrLookup; label: string }[] = [
+  { value: 'ServiceTicket', label: 'Service ticket status (caller keys in the number)' },
+  { value: 'SalesOrder', label: 'Sales order status (caller keys in the number)' },
+  { value: 'PurchaseOrder', label: 'Purchase order status, for suppliers (keys in the number)' },
+  { value: 'Product', label: 'Product price and stock (keys in the part number)' },
+  { value: 'MyAccount', label: "The caller's open tickets and latest order" },
+];
 
 /**
- * Native WhatsApp IVR: the call relay answers a customer's WhatsApp call, plays this prompt, reads the key they press and rings
- * only that option's team ("Press 1 for English; press 2 for Hindi" → the English desk or the Hindi desk). Until everything is in
- * place — the relay, a prompt, and every option's team staffed — calls ring every agent as before, and the dialog says what's
+ * Native WhatsApp IVR: the call relay answers a customer's WhatsApp call, plays the menu and reads the keys they press. An
+ * option rings a team, opens a sub-menu (Sales · Purchase · Service → Repairs · Spares · Ticket status), or reads out a lookup
+ * from the workspace's records (a ticket's status, an order's delivery) before ringing a team. Until everything is in place —
+ * the relay, the prompts, and every option's team staffed — calls ring every agent as before, and the dialog says what's
  * missing.
  */
 @Component({
   selector: 'ar-whatsapp-ivr-dialog',
-  imports: [ArDialog, ArButton, ArBanner, RouterLink],
+  imports: [ArDialog, ArButton, ArBanner, RouterLink, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog
       title="Call menu (IVR)"
-      width="min(560px, calc(100vw - 32px))"
+      width="min(760px, calc(100vw - 32px))"
       (dismiss)="closed.emit()"
     >
       <p class="ivr__hint">
-        Callers hear the menu and press a key; the call then rings only that option's team, for
-        example “For English, press 1. हिंदी के लिए दो दबाइए।”
+        Callers hear the menu and press a key. An option can ring a team, open a sub-menu (for
+        example Sales, Purchase and Service, with Repairs, Spares and Ticket status under Service),
+        or read out a ticket's or order's status the caller keys in, then ring a team.
       </p>
 
       @if (settings(); as s) {
@@ -73,7 +100,7 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
         }
 
         <section class="ivr__section" aria-labelledby="ivr-prompt-h">
-          <h3 id="ivr-prompt-h" class="ivr__h">Prompt</h3>
+          <h3 id="ivr-prompt-h" class="ivr__h">Main menu prompt</h3>
           @if (s.spokenPrompt) {
             <p class="ivr__hint">
               Spoken automatically from the options ({{ s.promptSeconds }} s):
@@ -130,72 +157,25 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
         <section class="ivr__section" aria-labelledby="ivr-opts-h">
           <h3 id="ivr-opts-h" class="ivr__h">Options</h3>
           <p class="ivr__hint">
-            The first option is where a caller who presses nothing goes. A caller waits up to
-            {{ s.queueMinutes }} minutes for an agent.
+            The first option at each level is where a caller who presses nothing goes. Up to
+            {{ maxLevels() }} levels. Sub-menus and lookups are spoken by the server's text to
+            speech. A caller waits up to {{ s.queueMinutes }} minutes for an agent.
           </p>
-          @for (row of rows(); track $index; let i = $index) {
-            <div class="ivr__row">
-              <label class="ar-field ivr__key" [for]="'ivr-key-' + i">
-                <span class="ar-field__label">Key</span>
-                <select
-                  class="ar-field__input"
-                  [id]="'ivr-key-' + i"
-                  [value]="row.digit"
-                  (change)="edit(i, { digit: $any($event.target).value })"
-                >
-                  @for (k of keys; track k) {
-                    <option [value]="k" [selected]="k === row.digit">{{ k }}</option>
-                  }
-                </select>
-              </label>
-              <label class="ar-field ivr__label" [for]="'ivr-label-' + i">
-                <span class="ar-field__label">Label</span>
-                <input
-                  class="ar-field__input"
-                  [id]="'ivr-label-' + i"
-                  maxlength="64"
-                  [value]="row.label"
-                  placeholder="Hindi"
-                  (input)="edit(i, { label: $any($event.target).value })"
-                />
-              </label>
-              <label class="ar-field ivr__team" [for]="'ivr-team-' + i">
-                <span class="ar-field__label">Rings team</span>
-                <select
-                  class="ar-field__input"
-                  [id]="'ivr-team-' + i"
-                  (change)="edit(i, { teamId: $any($event.target).value })"
-                >
-                  <option value="" [selected]="!row.teamId" disabled>Choose a team</option>
-                  @for (t of teams(); track t.id) {
-                    <option [value]="t.id" [selected]="t.id === row.teamId">
-                      {{ t.name }} · {{ t.members?.length ?? 0 }} agents{{
-                        t.isActive === false ? ' · inactive' : ''
-                      }}
-                    </option>
-                  }
-                </select>
-              </label>
-              <button
-                ar-button
-                type="button"
-                variant="ghost"
-                class="ivr__remove"
-                [attr.aria-label]="'Remove option ' + row.digit"
-                (click)="remove(i)"
-              >
-                Remove
-              </button>
-            </div>
-          }
-          @if (teams().length === 0) {
+          @if (!s.canSpeakPrompt) {
             <p class="ivr__hint">
-              Create the teams first (for example an English desk and a Hindi desk) under
-              <a routerLink="/settings/teams" (click)="closed.emit()">Settings → Teams</a>.
+              Text to speech isn't available on this server, so only options that ring a team will
+              work.
             </p>
           }
-          @if (rows().length < 9) {
-            <button ar-button type="button" variant="ghost" (click)="add()">Add an option</button>
+          <ng-container
+            [ngTemplateOutlet]="level"
+            [ngTemplateOutletContext]="{ $implicit: rows(), parent: [], depth: 1, prefix: '' }"
+          />
+          @if (teams().length === 0) {
+            <p class="ivr__hint">
+              Create the teams first (for example Sales, Purchase and Service desks) under
+              <a routerLink="/settings/teams" (click)="closed.emit()">Settings → Teams</a>.
+            </p>
           }
         </section>
 
@@ -241,6 +221,9 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
         <p class="ivr__hint">Loading…</p>
       }
 
+      @if (problem(); as p) {
+        <p class="ivr__hint ivr__warn">{{ p }}</p>
+      }
       @if (error(); as e) {
         <p class="ivr__err" role="alert">{{ e }}</p>
       }
@@ -262,13 +245,184 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
           ar-button
           type="button"
           variant="primary"
-          [disabled]="saving() || !valid()"
+          [disabled]="saving() || !!problem()"
           (click)="save()"
         >
-          Save
+          {{ saving() ? 'Saving…' : 'Save' }}
         </button>
       </div>
     </ar-dialog>
+
+    <!-- One level of the menu; a sub-menu renders its own options with this template, indented. -->
+    <ng-template #level let-rows let-parent="parent" let-depth="depth" let-prefix="prefix">
+      <ul class="ivr__level" [class.ivr__level--sub]="depth > 1">
+        @for (row of rows; track $index; let i = $index) {
+          @let path = parent.concat([i]);
+          @let id = idOf(path);
+          @let where = prefix + row.digit;
+          <li class="ivr__opt">
+            <div class="ivr__row">
+              <label class="ar-field ivr__key" [for]="'ivr-key-' + id">
+                <span class="ar-field__label">Key</span>
+                <select
+                  class="ar-field__input"
+                  [id]="'ivr-key-' + id"
+                  (change)="edit(path, { digit: $any($event.target).value })"
+                >
+                  @for (k of digitKeys; track k) {
+                    <option [value]="k" [selected]="k === row.digit">{{ k }}</option>
+                  }
+                </select>
+              </label>
+              <label class="ar-field" [for]="'ivr-label-' + id">
+                <span class="ar-field__label">Label</span>
+                <input
+                  class="ar-field__input"
+                  [id]="'ivr-label-' + id"
+                  maxlength="64"
+                  [value]="row.label"
+                  [placeholder]="depth === 1 ? 'Service' : 'Spares'"
+                  (input)="edit(path, { label: $any($event.target).value })"
+                />
+              </label>
+              <label class="ar-field" [for]="'ivr-kind-' + id">
+                <span class="ar-field__label">Pressing it</span>
+                <select
+                  class="ar-field__input"
+                  [id]="'ivr-kind-' + id"
+                  (change)="setKind(path, $any($event.target).value)"
+                >
+                  @for (k of kinds; track k.value) {
+                    <option
+                      [value]="k.value"
+                      [selected]="k.value === row.kind"
+                      [disabled]="k.value === 'SubMenu' && depth >= maxLevels()"
+                    >
+                      {{ k.label }}
+                    </option>
+                  }
+                </select>
+              </label>
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                class="ivr__remove"
+                [attr.aria-label]="'Remove option ' + where"
+                (click)="remove(path)"
+              >
+                Remove
+              </button>
+            </div>
+
+            @if (row.kind === 'Lookup') {
+              <div class="ivr__row ivr__row--more">
+                <label class="ar-field" [for]="'ivr-lookup-' + id">
+                  <span class="ar-field__label">Looks up</span>
+                  <select
+                    class="ar-field__input"
+                    [id]="'ivr-lookup-' + id"
+                    (change)="edit(path, { lookup: $any($event.target).value })"
+                  >
+                    <option value="" [selected]="!row.lookup" disabled>Choose…</option>
+                    @for (l of lookups; track l.value) {
+                      <option [value]="l.value" [selected]="l.value === row.lookup">
+                        {{ l.label }}
+                      </option>
+                    }
+                  </select>
+                </label>
+                <ng-container
+                  [ngTemplateOutlet]="team"
+                  [ngTemplateOutletContext]="{
+                    $implicit: row,
+                    path: path,
+                    id: id,
+                    label: 'Then rings',
+                  }"
+                />
+              </div>
+            } @else if (row.kind === 'RingTeam') {
+              <div class="ivr__row ivr__row--more">
+                <ng-container
+                  [ngTemplateOutlet]="team"
+                  [ngTemplateOutletContext]="{
+                    $implicit: row,
+                    path: path,
+                    id: id,
+                    label: 'Rings team',
+                  }"
+                />
+              </div>
+            }
+
+            @if (row.kind === 'SubMenu' || (row.kind === 'Lookup' && row.lookup !== 'MyAccount')) {
+              <label class="ar-field ivr__say" [for]="'ivr-say-' + id">
+                <span class="ar-field__label">{{
+                  row.kind === 'SubMenu'
+                    ? 'Opening words (optional; default: the label)'
+                    : 'Words asking for the number (optional)'
+                }}</span>
+                <input
+                  class="ar-field__input"
+                  [id]="'ivr-say-' + id"
+                  maxlength="300"
+                  [value]="row.say"
+                  [placeholder]="
+                    row.kind === 'SubMenu'
+                      ? 'Service desk.'
+                      : 'Please key in your ticket number, then press hash.'
+                  "
+                  (input)="edit(path, { say: $any($event.target).value })"
+                />
+              </label>
+              @if (spoken(where); as words) {
+                <p class="ivr__hint ivr__heard">
+                  Callers hear: <span class="ivr__words" translate="no">{{ words }}</span>
+                </p>
+              }
+            }
+
+            @if (row.kind === 'SubMenu') {
+              <ng-container
+                [ngTemplateOutlet]="level"
+                [ngTemplateOutletContext]="{
+                  $implicit: row.options,
+                  parent: path,
+                  depth: depth + 1,
+                  prefix: where,
+                }"
+              />
+            }
+          </li>
+        }
+      </ul>
+      @if (rows.length < 9) {
+        <button ar-button type="button" variant="ghost" class="ivr__add" (click)="add(parent)">
+          {{ depth === 1 ? 'Add an option' : 'Add an option to this sub-menu' }}
+        </button>
+      }
+    </ng-template>
+
+    <ng-template #team let-row let-path="path" let-id="id" let-label="label">
+      <label class="ar-field" [for]="'ivr-team-' + id">
+        <span class="ar-field__label">{{ label }}</span>
+        <select
+          class="ar-field__input"
+          [id]="'ivr-team-' + id"
+          (change)="edit(path, { teamId: $any($event.target).value })"
+        >
+          <option value="" [selected]="!row.teamId" disabled>Choose a team</option>
+          @for (t of teams(); track t.id) {
+            <option [value]="t.id" [selected]="t.id === row.teamId">
+              {{ t.name }} · {{ t.members?.length ?? 0 }} agents{{
+                t.isActive === false ? ' · inactive' : ''
+              }}
+            </option>
+          }
+        </select>
+      </label>
+    </ng-template>
   `,
   styles: `
     .ivr__script {
@@ -284,6 +438,18 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
       margin: 0 0 8px;
       font: 400 13px var(--ar-font-sans);
       color: var(--ar-ink-500);
+    }
+    .ivr__warn {
+      margin-top: 8px;
+      color: var(--ar-warn-700, #b54708);
+    }
+    .ivr__heard {
+      margin: 4px 0 0;
+      font-size: 12px;
+    }
+    .ivr__words {
+      white-space: pre-line;
+      color: var(--ar-ink-700);
     }
     .ivr__err {
       margin: 8px 0 0;
@@ -302,12 +468,39 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
       font: 600 13px var(--ar-font-sans);
       color: var(--ar-ink-900);
     }
+    .ivr__level {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .ivr__level--sub {
+      margin: 8px 0 0 12px;
+      padding-left: 12px;
+      border-left: 2px solid var(--ar-line-200);
+    }
+    .ivr__opt {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--ar-line-100, var(--ar-line-200));
+    }
+    .ivr__level--sub > .ivr__opt:last-child {
+      border-bottom: 0;
+    }
     .ivr__row {
       display: grid;
-      grid-template-columns: 72px 1fr 1.4fr auto;
+      grid-template-columns: 64px 1fr 1.2fr auto;
       gap: 8px;
       align-items: end;
-      margin-bottom: 8px;
+    }
+    .ivr__row--more {
+      grid-template-columns: 1fr 1fr;
+      margin-top: 6px;
+    }
+    .ivr__say {
+      display: block;
+      margin-top: 6px;
+    }
+    .ivr__add {
+      margin-top: 4px;
     }
     .ivr__timing {
       display: grid;
@@ -328,11 +521,12 @@ type Row = Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>;
       height: 32px;
       max-width: 100%;
     }
-    @media (max-width: 560px) {
-      .ivr__row {
+    @media (max-width: 600px) {
+      .ivr__row,
+      .ivr__row--more {
         grid-template-columns: 1fr 1fr;
       }
-      .ivr__team {
+      .ivr__key {
         grid-column: 1 / -1;
       }
     }
@@ -344,27 +538,26 @@ export class ArWhatsAppIvrDialog {
 
   readonly closed = output<void>();
 
-  protected readonly keys = KEYS;
+  protected readonly digitKeys = IVR_KEYS;
+  protected readonly kinds = KINDS;
+  protected readonly lookups = LOOKUPS;
   protected readonly settings = signal<WhatsAppIvrSettingsDto | null>(null);
   protected readonly teams = signal<TeamDto[]>([]);
-  protected readonly rows = signal<Row[]>([]);
+  protected readonly rows = signal<IvrRow[]>([]);
   protected readonly enabled = signal(false);
   protected readonly inputSeconds = signal(6);
   protected readonly attempts = signal(3);
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly promptUrl = signal<string | null>(null);
+  protected readonly maxLevels = computed(() => this.settings()?.maxLevels ?? MAX_IVR_LEVELS);
 
-  /** Every option complete, and no key used twice. */
-  protected readonly valid = computed(() => {
-    const rows = this.rows();
-    const keys = new Set(rows.map((r) => r.digit));
-    return (
-      keys.size === rows.length &&
-      rows.every((r) => r.digit && r.label.trim() && r.teamId) &&
-      (!this.enabled() || rows.length > 0)
-    );
-  });
+  /** What stops the options being saved, in words; null when they can be. */
+  protected readonly problem = computed(() =>
+    this.settings()
+      ? ivrMenuProblem(this.rows(), this.maxLevels(), this.enabled())
+      : 'The call menu is still loading.',
+  );
 
   constructor() {
     void this.load();
@@ -393,24 +586,43 @@ export class ArWhatsAppIvrDialog {
 
   private apply(s: WhatsAppIvrSettingsDto): void {
     this.settings.set(s);
-    this.rows.set(s.options.map((o) => ({ digit: o.digit, label: o.label, teamId: o.teamId })));
+    this.rows.set(toIvrRows(s.options));
     this.enabled.set(s.enabled);
     this.inputSeconds.set(s.inputSeconds);
     this.attempts.set(s.attempts);
   }
 
-  protected add(): void {
-    const used = new Set(this.rows().map((r) => r.digit));
-    const digit = KEYS.find((k) => !used.has(k)) ?? '1';
-    this.rows.update((rows) => [...rows, { digit, label: '', teamId: '' }]);
+  /** A stable id for a row's fields, from where it sits ("0-2"). */
+  protected idOf(path: number[]): string {
+    return path.join('-');
   }
 
-  protected remove(index: number): void {
-    this.rows.update((rows) => rows.filter((_, i) => i !== index));
+  /** The words callers hear for the sub-menu or lookup question at these keys, as last saved. */
+  protected spoken(keys: string): string | null {
+    return this.settings()?.stepPrompts?.[keys] ?? null;
   }
 
-  protected edit(index: number, change: Partial<Row>): void {
-    this.rows.update((rows) => rows.map((r, i) => (i === index ? { ...r, ...change } : r)));
+  protected add(parent: number[]): void {
+    this.rows.update((rows) => addIvrRow(rows, parent));
+  }
+
+  protected remove(path: number[]): void {
+    this.rows.update((rows) => removeIvrRow(rows, path));
+  }
+
+  protected edit(path: number[], change: Partial<IvrRow>): void {
+    this.rows.update((rows) => updateIvrRow(rows, path, (r) => ({ ...r, ...change })));
+  }
+
+  protected setKind(path: number[], kind: WhatsAppIvrOptionKind): void {
+    this.rows.update((rows) =>
+      updateIvrRow(rows, path, (r) => ({
+        ...r,
+        kind,
+        // A new sub-menu starts with one option to fill in, so it is never saved empty by accident.
+        options: kind === 'SubMenu' && r.options.length === 0 ? addIvrRow([], []) : r.options,
+      })),
+    );
   }
 
   protected async save(): Promise<void> {
@@ -422,7 +634,7 @@ export class ArWhatsAppIvrDialog {
         await firstValueFrom(
           this.api.updateIvr({
             enabled: this.enabled(),
-            options: this.rows().map((r) => ({ ...r, label: r.label.trim() })),
+            options: toIvrInput(this.rows()),
             inputSeconds: this.inputSeconds(),
             attempts: this.attempts(),
           }),

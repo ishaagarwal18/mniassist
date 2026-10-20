@@ -544,9 +544,12 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Customers can call your WhatsApp number from the app they already use.',
       'Your team can call customers who have allowed it.',
       'Recordings, when switched on, are saved with the call.',
+      'A call menu sends callers to Sales, Purchase or Service, and can read out a ticket or order status they key in.',
     ],
     steps: [
       'Answer incoming calls from the call bar that appears near the bottom of the screen.',
+      'Set up the menu and its sub-menus under Call menu (IVR), choosing the team each option rings.',
+      'During a call, use Look up to see the caller’s tickets and orders, search records or ask technical support.',
       'Review past calls here and use Play to listen to recordings.',
       'Set the Recording notice so customers are told calls are recorded.',
     ],

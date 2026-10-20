@@ -18,6 +18,7 @@ import { WhatsAppCallSession } from '../core/services/whatsapp-call.session';
 import { CallAgentDto } from '../proxy/messaging/whats-app-call.service';
 import { ArButton, ArIcon } from '../ui';
 import { ArSelect } from '../ui/select';
+import { ArCallAssist } from './call-assist-panel';
 
 const SETUP_DISMISSED_KEY = 'ar.callAlerts.setupDismissed';
 
@@ -40,7 +41,7 @@ const POLL_MS = 4000;
  */
 @Component({
   selector: 'ar-whatsapp-call-bar',
-  imports: [ArButton, ArIcon, ArSelect],
+  imports: [ArButton, ArIcon, ArSelect, ArCallAssist],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (session.live(); as c) {
@@ -68,11 +69,36 @@ const POLL_MS = 4000;
             </button>
           }
         }
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [attr.aria-expanded]="assisting()"
+          aria-controls="wc-assist"
+          (click)="assisting.set(!assisting())"
+        >
+          {{ assisting() ? 'Close look-up' : 'Look up' }}
+        </button>
         <button ar-button type="button" variant="primary" (click)="session.hangUp()">
           Hang up
         </button>
         @if (session.recording()) {
           <span class="wc__hint">Tell the customer the call is recorded.</span>
+        }
+        @if (c.queueLabel || c.ivrLookup) {
+          <span class="wc__hint">
+            @if (c.queueLabel) {
+              Chose {{ c.queueLabel }}.
+            }
+            @if (c.ivrLookup) {
+              <span translate="no">{{ c.ivrLookup }}</span>
+            }
+          </span>
+        }
+        @if (assisting()) {
+          <div id="wc-assist" class="wc__assist">
+            <ar-call-assist [contactId]="c.contactId" />
+          </div>
         }
         @if (picking()) {
           <div class="wc__pick">
@@ -145,6 +171,11 @@ const POLL_MS = 4000;
         <span class="wc__state">
           is calling on WhatsApp{{ c.queueLabel ? ' · chose ' + c.queueLabel : '' }}
         </span>
+        @if (c.ivrLookup) {
+          <span class="wc__hint">
+            Looked up in the menu: <span translate="no">{{ c.ivrLookup }}</span>
+          </span>
+        }
         <!-- A call the menu queued is already connected and waiting for the team: one agent can't decline it for all. -->
         @if (c.ivrStatus !== 'Queued') {
           <button
@@ -297,6 +328,10 @@ const POLL_MS = 4000;
       font: 400 12px var(--ar-font-sans);
       color: var(--ar-ink-500);
     }
+    .wc__assist {
+      flex-basis: 100%;
+      width: min(440px, calc(100vw - 56px));
+    }
     .wc__pick {
       flex-basis: 100%;
       display: flex;
@@ -342,6 +377,8 @@ const POLL_MS = 4000;
 export class ArWhatsAppCallBar {
   protected readonly session = inject(WhatsAppCallSession);
   protected readonly picking = signal(false);
+  /** The look-up panel is open on the live call. */
+  protected readonly assisting = signal(false);
   protected readonly agents = signal<CallAgentDto[]>([]);
 
   protected async openTransfer(): Promise<void> {
@@ -403,6 +440,16 @@ export class ArWhatsAppCallBar {
     const unlock = () => this.alert.unlock();
     document.addEventListener('pointerdown', unlock, { once: true });
     destroyRef.onDestroy(() => document.removeEventListener('pointerdown', unlock));
+
+    // A new call starts with the look-up panel closed (the same call refreshed by a poll keeps it open).
+    let liveId: string | undefined;
+    effect(() => {
+      const id = this.session.live()?.id;
+      untracked(() => {
+        if (id !== liveId) this.assisting.set(false);
+        liveId = id;
+      });
+    });
 
     // Ring while a customer's call or a colleague's transfer is waiting for this agent; stop as soon as it isn't.
     effect(() => {

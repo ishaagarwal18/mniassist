@@ -16422,4 +16422,142 @@ export const SCREEN_TEXTS: Readonly<Record<string, readonly [hi: string, mr: str
     'बिक्री ऑर्डर, चालान और इनवॉइस; खरीद और विक्रेता बिल',
     'विक्री ऑर्डर, चलन आणि इनव्हॉइस; खरेदी आणि विक्रेता बिले',
   ],
+  "Callers hear the menu and press a key. An option can ring a team, open a sub-menu (for example Sales, Purchase and Service, with Repairs, Spares and Ticket status under Service), or read out a ticket's or order's status the caller keys in, then ring a team.":
+    [
+      'कॉल करने वाले मेन्यू सुनकर एक बटन दबाते हैं। कोई विकल्प किसी टीम को कॉल कर सकता है, एक सब-मेन्यू खोल सकता है (जैसे Sales, Purchase और Service, जिसमें Service के नीचे Repairs, Spares और Ticket status), या कॉल करने वाले द्वारा डाले गए नंबर से टिकट या ऑर्डर की स्थिति पढ़कर सुना सकता है, फिर टीम को कॉल करता है।',
+      'कॉल करणारे मेनू ऐकून एक बटण दाबतात. एखादा पर्याय टीमला कॉल करू शकतो, सब-मेनू उघडू शकतो (उदा. Sales, Purchase आणि Service, ज्यात Service खाली Repairs, Spares आणि Ticket status), किंवा कॉल करणाऱ्याने टाकलेल्या क्रमांकावरून तिकीट किंवा ऑर्डरची स्थिती वाचून दाखवू शकतो, मग टीमला कॉल करतो.',
+    ],
+  'Main menu prompt': ['मुख्य मेन्यू प्रॉम्प्ट', 'मुख्य मेनू प्रॉम्प्ट'],
+  "The first option at each level is where a caller who presses nothing goes. Up to {0} levels. Sub-menus and lookups are spoken by the server's text to speech. A caller waits up to {1} minutes for an agent.":
+    [
+      'हर स्तर का पहला विकल्प वहाँ है जहाँ कुछ न दबाने वाला कॉलर जाता है। अधिकतम {0} स्तर। सब-मेन्यू और लुकअप सर्वर के टेक्स्ट-टू-स्पीच से बोले जाते हैं। कॉलर एजेंट के लिए अधिकतम {1} मिनट इंतज़ार करता है।',
+      'प्रत्येक स्तराचा पहिला पर्याय म्हणजे काहीही न दाबणारा कॉलर जिथे जातो. जास्तीत जास्त {0} स्तर. सब-मेनू आणि लुकअप सर्व्हरच्या टेक्स्ट-टू-स्पीचने बोलले जातात. कॉलर एजंटसाठी जास्तीत जास्त {1} मिनिटे थांबतो.',
+    ],
+  "Text to speech isn't available on this server, so only options that ring a team will work.": [
+    'इस सर्वर पर टेक्स्ट-टू-स्पीच उपलब्ध नहीं है, इसलिए केवल टीम को कॉल करने वाले विकल्प काम करेंगे।',
+    'या सर्व्हरवर टेक्स्ट-टू-स्पीच उपलब्ध नाही, त्यामुळे फक्त टीमला कॉल करणारे पर्याय चालतील.',
+  ],
+  'Create the teams first (for example Sales, Purchase and Service desks) under': [
+    'पहले टीमें बनाएँ (जैसे Sales, Purchase और Service डेस्क) यहाँ',
+    'आधी टीम तयार करा (उदा. Sales, Purchase आणि Service डेस्क) येथे',
+  ],
+  'Pressing it': ['दबाने पर', 'दाबल्यावर'],
+  'Rings a team': ['टीम को कॉल करता है', 'टीमला कॉल करतो'],
+  'Opens a sub-menu': ['सब-मेन्यू खोलता है', 'सब-मेनू उघडतो'],
+  'Reads out a lookup': ['जानकारी खोजकर सुनाता है', 'माहिती शोधून वाचून दाखवतो'],
+  'Looks up': ['क्या खोजता है', 'काय शोधतो'],
+  'Then rings': ['फिर कॉल करता है', 'मग कॉल करतो'],
+  'Service ticket status (caller keys in the number)': [
+    'सर्विस टिकट की स्थिति (कॉलर नंबर डालता है)',
+    'सर्व्हिस तिकिटाची स्थिती (कॉलर क्रमांक टाकतो)',
+  ],
+  'Sales order status (caller keys in the number)': [
+    'सेल्स ऑर्डर की स्थिति (कॉलर नंबर डालता है)',
+    'सेल्स ऑर्डरची स्थिती (कॉलर क्रमांक टाकतो)',
+  ],
+  'Purchase order status, for suppliers (keys in the number)': [
+    'परचेज़ ऑर्डर की स्थिति, सप्लायर के लिए (नंबर डालते हैं)',
+    'पर्चेस ऑर्डरची स्थिती, पुरवठादारांसाठी (क्रमांक टाकतात)',
+  ],
+  'Product price and stock (keys in the part number)': [
+    'प्रोडक्ट की कीमत और स्टॉक (पार्ट नंबर डालते हैं)',
+    'उत्पादनाची किंमत आणि स्टॉक (पार्ट क्रमांक टाकतात)',
+  ],
+  "The caller's open tickets and latest order": [
+    'कॉलर के खुले टिकट और नवीनतम ऑर्डर',
+    'कॉलरची उघडी तिकिटे आणि नवीनतम ऑर्डर',
+  ],
+  'Opening words (optional; default: the label)': [
+    'शुरुआती शब्द (वैकल्पिक; डिफ़ॉल्ट: लेबल)',
+    'सुरुवातीचे शब्द (ऐच्छिक; डीफॉल्ट: लेबल)',
+  ],
+  'Words asking for the number (optional)': [
+    'नंबर माँगने वाले शब्द (वैकल्पिक)',
+    'क्रमांक विचारणारे शब्द (ऐच्छिक)',
+  ],
+  'Service desk.': ['सर्विस डेस्क।', 'सर्व्हिस डेस्क.'],
+  'Please key in your ticket number, then press hash.': [
+    'कृपया अपना टिकट नंबर डालें, फिर हैश दबाएँ।',
+    'कृपया तुमचा तिकीट क्रमांक टाका, मग हॅश दाबा.',
+  ],
+  Spares: ['स्पेयर्स', 'स्पेअर्स'],
+  'Callers hear:': ['कॉलर सुनते हैं:', 'कॉलर ऐकतात:'],
+  'Add an option to this sub-menu': [
+    'इस सब-मेन्यू में विकल्प जोड़ें',
+    'या सब-मेनूमध्ये पर्याय जोडा',
+  ],
+  'The call menu is still loading.': [
+    'कॉल मेन्यू अभी लोड हो रहा है।',
+    'कॉल मेनू अजून लोड होत आहे.',
+  ],
+  'Add at least one option before switching the menu on.': [
+    'मेन्यू चालू करने से पहले कम से कम एक विकल्प जोड़ें।',
+    'मेनू सुरू करण्यापूर्वी किमान एक पर्याय जोडा.',
+  ],
+  'Saving…': ['सहेजा जा रहा है…', 'जतन होत आहे…'],
+  'Look up': ['खोजें', 'शोधा'],
+  'Close look-up': ['खोज बंद करें', 'शोध बंद करा'],
+  'Chose {0}.': ['{0} चुना।', '{0} निवडले.'],
+  'Looked up in the menu:': ['मेन्यू में खोजा गया:', 'मेनूमध्ये शोधले:'],
+  'Look up during the call': ['कॉल के दौरान खोजें', 'कॉल चालू असताना शोधा'],
+  'Customer 360': ['ग्राहक 360', 'ग्राहक 360'],
+  'No open tickets, orders or machines on record.': [
+    'कोई खुला टिकट, ऑर्डर या मशीन दर्ज नहीं है।',
+    'कोणतेही उघडे तिकीट, ऑर्डर किंवा मशीन नोंदलेले नाही.',
+  ],
+  'Search customers, parts, orders, tickets': [
+    'ग्राहक, पार्ट, ऑर्डर, टिकट खोजें',
+    'ग्राहक, पार्ट, ऑर्डर, तिकिटे शोधा',
+  ],
+  'Name, phone, part, order or ticket number': [
+    'नाम, फ़ोन, पार्ट, ऑर्डर या टिकट नंबर',
+    'नाव, फोन, पार्ट, ऑर्डर किंवा तिकीट क्रमांक',
+  ],
+  "Not shown, as your role can't open them: {0}.": [
+    'नहीं दिखाए गए, क्योंकि आपकी भूमिका इन्हें नहीं खोल सकती: {0}।',
+    'दाखवले नाहीत, कारण तुमची भूमिका हे उघडू शकत नाही: {0}.',
+  ],
+  'Ask technical support': ['तकनीकी सहायता से पूछें', 'तांत्रिक सहाय्याला विचारा'],
+  'E.g. ACS580 shows fault 2310 overcurrent at start. What should the customer check?': [
+    'जैसे ACS580 स्टार्ट पर फ़ॉल्ट 2310 ओवरकरंट दिखाता है। ग्राहक क्या जाँचे?',
+    'उदा. ACS580 सुरू करताना फॉल्ट 2310 ओव्हरकरंट दाखवतो. ग्राहकाने काय तपासावे?',
+  ],
+  'Enter to ask · Shift+Enter for a new line': [
+    'पूछने के लिए Enter · नई पंक्ति के लिए Shift+Enter',
+    'विचारण्यासाठी Enter · नवीन ओळीसाठी Shift+Enter',
+  ],
+  'From your knowledge base': ['आपके नॉलेज बेस से', 'तुमच्या नॉलेज बेसमधून'],
+  'General guidance, not from your documents: check before advising': [
+    'सामान्य मार्गदर्शन, आपके दस्तावेज़ों से नहीं: सलाह देने से पहले जाँचें',
+    'सामान्य मार्गदर्शन, तुमच्या दस्तऐवजांमधून नाही: सल्ला देण्यापूर्वी तपासा',
+  ],
+  'Sources: {0}': ['स्रोत: {0}', 'स्रोत: {0}'],
+  "Caller's": ['कॉलर का', 'कॉलरचे'],
+  "The caller's details could not be loaded.": [
+    'कॉलर का विवरण लोड नहीं हो सका।',
+    'कॉलरचा तपशील लोड होऊ शकला नाही.',
+  ],
+  'The search did not work. Try again.': [
+    'खोज काम नहीं की। फिर से कोशिश करें।',
+    'शोध चालला नाही. पुन्हा प्रयत्न करा.',
+  ],
+  'The assistant could not be reached. Try again in a moment.': [
+    'सहायक तक पहुँचा नहीं जा सका। थोड़ी देर में फिर कोशिश करें।',
+    'सहाय्यकापर्यंत पोहोचता आले नाही. थोड्या वेळाने पुन्हा प्रयत्न करा.',
+  ],
+  PO: ['PO', 'PO'],
+  'A call menu sends callers to Sales, Purchase or Service, and can read out a ticket or order status they key in.':
+    [
+      'कॉल मेन्यू कॉल करने वालों को Sales, Purchase या Service तक पहुँचाता है, और उनके डाले गए टिकट या ऑर्डर की स्थिति पढ़कर सुना सकता है।',
+      'कॉल मेनू कॉल करणाऱ्यांना Sales, Purchase किंवा Service कडे पाठवतो, आणि त्यांनी टाकलेल्या तिकीट किंवा ऑर्डरची स्थिती वाचून दाखवू शकतो.',
+    ],
+  'Set up the menu and its sub-menus under Call menu (IVR), choosing the team each option rings.': [
+    'Call menu (IVR) में मेन्यू और उसके सब-मेन्यू सेट करें, और हर विकल्प के लिए टीम चुनें।',
+    'Call menu (IVR) मध्ये मेनू आणि त्याचे सब-मेनू सेट करा, आणि प्रत्येक पर्यायासाठी टीम निवडा.',
+  ],
+  'During a call, use Look up to see the caller’s tickets and orders, search records or ask technical support.':
+    [
+      'कॉल के दौरान, Look up से कॉलर के टिकट और ऑर्डर देखें, रिकॉर्ड खोजें या तकनीकी सहायता से पूछें।',
+      'कॉल चालू असताना, Look up वापरून कॉलरची तिकिटे आणि ऑर्डर पहा, रेकॉर्ड शोधा किंवा तांत्रिक सहाय्याला विचारा.',
+    ],
 };

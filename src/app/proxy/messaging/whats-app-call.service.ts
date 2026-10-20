@@ -31,15 +31,31 @@ export interface WhatsAppCallDto {
   ivrStatus?: 'None' | 'Menu' | 'Queued';
   /** The key the caller pressed; null when the menu fell back to its first option. */
   ivrDigit?: string | null;
-  /** The menu option the caller chose (e.g. "Hindi") and the team it rings. */
+  /** The menu option the caller chose (e.g. "Hindi", or "Service › Spares" below the top menu) and the team it rings. */
   queueLabel?: string | null;
+  /** What the caller looked up in the menu and what was found, so the agent doesn't ask again. */
+  ivrLookup?: string | null;
   queueTeamId?: string | null;
 }
+
+export type WhatsAppIvrOptionKind = 'RingTeam' | 'SubMenu' | 'Lookup';
+
+/** What a lookup option reads out to the caller. All but MyAccount ask them to key in a number first. */
+export type WhatsAppIvrLookup =
+  'ServiceTicket' | 'SalesOrder' | 'PurchaseOrder' | 'Product' | 'MyAccount';
 
 export interface WhatsAppIvrOptionDto {
   digit: string;
   label: string;
+  /** The team it rings (after the answer, for a lookup). Unused for a sub-menu. */
   teamId: string;
+  /** RingTeam when absent. */
+  kind?: WhatsAppIvrOptionKind | null;
+  lookup?: WhatsAppIvrLookup | null;
+  /** Words spoken for a sub-menu's opening or a lookup's question, in place of the default. */
+  say?: string | null;
+  /** A sub-menu's own options. */
+  options?: WhatsAppIvrOptionDto[];
   /** Read-only. */
   teamName?: string | null;
   teamMembers?: number;
@@ -61,11 +77,20 @@ export interface WhatsAppIvrSettingsDto {
   /** Read-only: what stops the menu answering calls. */
   problems: string[];
   queueMinutes: number;
+  /** Read-only: how deep the menu may go (the top menu counts as one). */
+  maxLevels?: number;
+  /** Read-only: the words each sub-menu and lookup question is spoken from, by path ("3", "32"). */
+  stepPrompts?: Record<string, string>;
 }
+
+export type WhatsAppIvrOptionInput = Pick<
+  WhatsAppIvrOptionDto,
+  'digit' | 'label' | 'teamId' | 'kind' | 'lookup' | 'say'
+> & { options?: WhatsAppIvrOptionInput[] };
 
 export interface UpdateWhatsAppIvrInput {
   enabled: boolean;
-  options: Pick<WhatsAppIvrOptionDto, 'digit' | 'label' | 'teamId'>[];
+  options: WhatsAppIvrOptionInput[];
   inputSeconds: number;
   attempts: number;
 }
