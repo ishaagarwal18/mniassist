@@ -16560,4 +16560,34 @@ export const SCREEN_TEXTS: Readonly<Record<string, readonly [hi: string, mr: str
       'कॉल के दौरान, Look up से कॉलर के टिकट और ऑर्डर देखें, रिकॉर्ड खोजें या तकनीकी सहायता से पूछें।',
       'कॉल चालू असताना, Look up वापरून कॉलरची तिकिटे आणि ऑर्डर पहा, रेकॉर्ड शोधा किंवा तांत्रिक सहाय्याला विचारा.',
     ],
+  'Fault code from the machine, answered from the knowledge base': [
+    'मशीन का फ़ॉल्ट कोड, नॉलेज बेस से जवाब',
+    'मशीनचा फॉल्ट कोड, नॉलेज बेसमधून उत्तर',
+  ],
+  'Language (English, हिंदी, मराठी) → New purchase, Sales and billing, Support and repair → in Support and repair, a spare or part number or a fault code. Teams named Purchase, Sales or Billing, and Support or Service are chosen for you.':
+    [
+      'भाषा (English, हिंदी, मराठी) → नई खरीद, सेल्स और बिलिंग, सपोर्ट और रिपेयर → सपोर्ट और रिपेयर में स्पेयर या पार्ट नंबर, या फ़ॉल्ट कोड। Purchase, Sales या Billing, और Support या Service नाम वाली टीमें अपने-आप चुनी जाती हैं।',
+      'भाषा (English, हिंदी, मराठी) → नवीन खरेदी, विक्री आणि बिलिंग, सपोर्ट आणि दुरुस्ती → सपोर्ट आणि दुरुस्तीमध्ये स्पेअर किंवा पार्ट क्रमांक, किंवा फॉल्ट कोड. Purchase, Sales किंवा Billing, आणि Support किंवा Service नावाच्या टीम आपोआप निवडल्या जातात.',
+    ],
+  'Replace the menu?': ['मेन्यू बदलें?', 'मेनू बदलायचा?'],
+  'The options below are replaced with the recommended menu. Nothing is saved until you press Save.':
+    [
+      'नीचे के विकल्प सुझाए गए मेन्यू से बदल दिए जाएँगे। Save दबाने तक कुछ सहेजा नहीं जाता।',
+      'खालील पर्याय सुचवलेल्या मेनूने बदलले जातील. Save दाबेपर्यंत काहीही जतन होत नाही.',
+    ],
+  "Spare or hardware part number: the caller's machine and warranty, then price and stock": [
+    'स्पेयर या हार्डवेयर पार्ट नंबर: कॉलर की मशीन और वारंटी, फिर कीमत और स्टॉक',
+    'स्पेअर किंवा हार्डवेअर पार्ट क्रमांक: कॉलरची मशीन आणि वॉरंटी, मग किंमत आणि स्टॉक',
+  ],
+  'Spoken first, before the menu (optional)': [
+    'मेन्यू से पहले बोला जाता है (वैकल्पिक)',
+    'मेनूच्या आधी बोलले जाते (ऐच्छिक)',
+  ],
+  'Use the recommended menu': ['सुझाया गया मेन्यू इस्तेमाल करें', 'सुचवलेला मेनू वापरा'],
+  'Welcome greeting': ['स्वागत संदेश', 'स्वागत संदेश'],
+  'Your uploaded recording plays instead of the spoken menu, so record the welcome in it, or use a spoken prompt.':
+    [
+      'बोले गए मेन्यू की जगह आपकी अपलोड की गई रिकॉर्डिंग चलती है, इसलिए स्वागत उसी में रिकॉर्ड करें, या बोला गया प्रॉम्प्ट इस्तेमाल करें।',
+      'बोललेल्या मेनूऐवजी तुमचे अपलोड केलेले रेकॉर्डिंग वाजते, त्यामुळे स्वागत त्यातच रेकॉर्ड करा, किंवा बोललेला प्रॉम्प्ट वापरा.',
+    ],
 };

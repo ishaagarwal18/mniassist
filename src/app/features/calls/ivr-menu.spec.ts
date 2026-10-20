@@ -4,6 +4,7 @@ import {
   IvrRow,
   addIvrRow,
   ivrMenuProblem,
+  recommendedIvrMenu,
   removeIvrRow,
   toIvrInput,
   toIvrRows,
@@ -101,5 +102,32 @@ describe('the call menu tree', () => {
     expect(toIvrRows([{ digit: '1', label: 'English', teamId: team }])).toEqual([
       row('1', 'English'),
     ]);
+  });
+
+  it('builds the recommended journey: language, then department, then part number or fault code', () => {
+    const menu = recommendedIvrMenu([
+      { id: 'p', name: 'Purchase desk' },
+      { id: 's', name: 'Sales & Billing' },
+      { id: 't', name: 'Service team' },
+    ]);
+    expect(menu.map((l) => l.label)).toEqual(['English', 'हिंदी', 'मराठी']);
+    expect(menu.every((l) => l.kind === 'SubMenu')).toBe(true);
+    const hindi = menu[1].options;
+    expect(hindi.map((o) => [o.digit, o.label, o.teamId])).toEqual([
+      ['1', 'नई खरीद', 'p'],
+      ['2', 'सेल्स और बिलिंग', 's'],
+      ['3', 'सपोर्ट और रिपेयर', ''],
+    ]);
+    expect(hindi[2].options.map((o) => [o.lookup, o.teamId])).toEqual([
+      ['Product', 't'],
+      ['FaultCode', 't'],
+    ]);
+    expect(ivrMenuProblem(menu)).toBeNull();
+  });
+
+  it('leaves a team it cannot guess for the editor to choose', () => {
+    expect(ivrMenuProblem(recommendedIvrMenu([{ id: 'x', name: 'Front office' }]))).toContain(
+      'choose the team the call rings',
+    );
   });
 });

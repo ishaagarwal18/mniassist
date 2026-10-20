@@ -42,7 +42,7 @@ export type WhatsAppIvrOptionKind = 'RingTeam' | 'SubMenu' | 'Lookup';
 
 /** What a lookup option reads out to the caller. All but MyAccount ask them to key in a number first. */
 export type WhatsAppIvrLookup =
-  'ServiceTicket' | 'SalesOrder' | 'PurchaseOrder' | 'Product' | 'MyAccount';
+  'ServiceTicket' | 'SalesOrder' | 'PurchaseOrder' | 'Product' | 'MyAccount' | 'FaultCode';
 
 export interface WhatsAppIvrOptionDto {
   digit: string;
@@ -77,6 +77,8 @@ export interface WhatsAppIvrSettingsDto {
   /** Read-only: what stops the menu answering calls. */
   problems: string[];
   queueMinutes: number;
+  /** The greeting spoken before the top menu. */
+  welcome?: string | null;
   /** Read-only: how deep the menu may go (the top menu counts as one). */
   maxLevels?: number;
   /** Read-only: the words each sub-menu and lookup question is spoken from, by path ("3", "32"). */
@@ -90,6 +92,7 @@ export type WhatsAppIvrOptionInput = Pick<
 
 export interface UpdateWhatsAppIvrInput {
   enabled: boolean;
+  welcome?: string | null;
   options: WhatsAppIvrOptionInput[];
   inputSeconds: number;
   attempts: number;

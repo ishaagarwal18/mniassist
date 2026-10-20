@@ -21,12 +21,15 @@ import {
   WhatsAppIvrOptionKind,
   WhatsAppIvrSettingsDto,
 } from '../../proxy/messaging/whats-app-call.service';
+import { ConfirmService } from '../../core/ui/confirm.service';
 import { ArBanner, ArButton, ArDialog } from '../../ui';
 import {
   IVR_KEYS,
   IvrRow,
   MAX_IVR_LEVELS,
+  RECOMMENDED_WELCOME,
   addIvrRow,
+  recommendedIvrMenu,
   ivrMenuProblem,
   removeIvrRow,
   toIvrInput,
@@ -58,7 +61,11 @@ const LOOKUPS: { value: WhatsAppIvrLookup; label: string }[] = [
   { value: 'ServiceTicket', label: 'Service ticket status (caller keys in the number)' },
   { value: 'SalesOrder', label: 'Sales order status (caller keys in the number)' },
   { value: 'PurchaseOrder', label: 'Purchase order status, for suppliers (keys in the number)' },
-  { value: 'Product', label: 'Product price and stock (keys in the part number)' },
+  {
+    value: 'Product',
+    label: "Spare or hardware part number: the caller's machine and warranty, then price and stock",
+  },
+  { value: 'FaultCode', label: 'Fault code from the machine, answered from the knowledge base' },
   { value: 'MyAccount', label: "The caller's open tickets and latest order" },
 ];
 
@@ -98,6 +105,28 @@ const LOOKUPS: { value: WhatsAppIvrLookup; label: string }[] = [
             </ul>
           </ar-banner>
         }
+
+        <section class="ivr__section" aria-labelledby="ivr-welcome-h">
+          <h3 id="ivr-welcome-h" class="ivr__h">Welcome greeting</h3>
+          <label class="ar-field" for="ivr-welcome">
+            <span class="ar-field__label">Spoken first, before the menu (optional)</span>
+            <textarea
+              id="ivr-welcome"
+              class="ar-field__input"
+              rows="2"
+              maxlength="300"
+              placeholder="Welcome to Sun Energy Automation. नमस्ते। नमस्कार।"
+              [value]="welcome()"
+              (input)="welcome.set($any($event.target).value)"
+            ></textarea>
+          </label>
+          @if (s.hasPrompt && !s.spokenPrompt) {
+            <p class="ivr__hint">
+              Your uploaded recording plays instead of the spoken menu, so record the welcome in it,
+              or use a spoken prompt.
+            </p>
+          }
+        </section>
 
         <section class="ivr__section" aria-labelledby="ivr-prompt-h">
           <h3 id="ivr-prompt-h" class="ivr__h">Main menu prompt</h3>
@@ -167,6 +196,14 @@ const LOOKUPS: { value: WhatsAppIvrLookup; label: string }[] = [
               work.
             </p>
           }
+          <button ar-button type="button" variant="ghost" (click)="useRecommended()">
+            Use the recommended menu
+          </button>
+          <p class="ivr__hint">
+            Language (English, हिंदी, मराठी) → New purchase, Sales and billing, Support and repair →
+            in Support and repair, a spare or part number or a fault code. Teams named Purchase,
+            Sales or Billing, and Support or Service are chosen for you.
+          </p>
           <ng-container
             [ngTemplateOutlet]="level"
             [ngTemplateOutletContext]="{ $implicit: rows(), parent: [], depth: 1, prefix: '' }"
@@ -535,6 +572,7 @@ const LOOKUPS: { value: WhatsAppIvrLookup; label: string }[] = [
 export class ArWhatsAppIvrDialog {
   private readonly api = inject(WhatsAppCallService);
   private readonly teamApi = inject(TeamService);
+  private readonly confirm = inject(ConfirmService);
 
   readonly closed = output<void>();
 
@@ -545,6 +583,7 @@ export class ArWhatsAppIvrDialog {
   protected readonly teams = signal<TeamDto[]>([]);
   protected readonly rows = signal<IvrRow[]>([]);
   protected readonly enabled = signal(false);
+  protected readonly welcome = signal('');
   protected readonly inputSeconds = signal(6);
   protected readonly attempts = signal(3);
   protected readonly saving = signal(false);
@@ -588,6 +627,7 @@ export class ArWhatsAppIvrDialog {
     this.settings.set(s);
     this.rows.set(toIvrRows(s.options));
     this.enabled.set(s.enabled);
+    this.welcome.set(s.welcome ?? '');
     this.inputSeconds.set(s.inputSeconds);
     this.attempts.set(s.attempts);
   }
@@ -625,6 +665,25 @@ export class ArWhatsAppIvrDialog {
     );
   }
 
+  /** Fills in the recommended menu (and a welcome, if there is none); nothing is saved until Save. */
+  protected async useRecommended(): Promise<void> {
+    if (
+      this.rows().length > 0 &&
+      !(await this.confirm.confirm({
+        title: 'Replace the menu?',
+        message:
+          'The options below are replaced with the recommended menu. Nothing is saved until you press Save.',
+        confirmText: 'Replace',
+      }))
+    ) {
+      return;
+    }
+    this.rows.set(recommendedIvrMenu(this.teams()));
+    if (!this.welcome().trim()) {
+      this.welcome.set(RECOMMENDED_WELCOME.replace('{0}', 'our company'));
+    }
+  }
+
   protected async save(): Promise<void> {
     this.saving.set(true);
     this.error.set(null);
@@ -634,6 +693,7 @@ export class ArWhatsAppIvrDialog {
         await firstValueFrom(
           this.api.updateIvr({
             enabled: this.enabled(),
+            welcome: this.welcome().trim() || null,
             options: toIvrInput(this.rows()),
             inputSeconds: this.inputSeconds(),
             attempts: this.attempts(),

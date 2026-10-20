@@ -115,3 +115,74 @@ export function ivrMenuProblem(
   };
   return check(rows, 'The main menu', 1);
 }
+
+/** The welcome the recommended menu starts with; the workspace's name goes in place of {0}. */
+export const RECOMMENDED_WELCOME = 'Welcome to {0}. नमस्ते। नमस्कार।';
+
+const LANGUAGES = [
+  {
+    label: 'English',
+    purchase: 'New purchase',
+    sales: 'Sales and billing',
+    support: 'Support and repair',
+    part: 'Spare or part number',
+    fault: 'Fault code',
+  },
+  {
+    label: 'हिंदी',
+    purchase: 'नई खरीद',
+    sales: 'सेल्स और बिलिंग',
+    support: 'सपोर्ट और रिपेयर',
+    part: 'स्पेयर या पार्ट नंबर',
+    fault: 'फ़ॉल्ट कोड',
+  },
+  {
+    label: 'मराठी',
+    purchase: 'नवीन खरेदी',
+    sales: 'विक्री आणि बिलिंग',
+    support: 'सपोर्ट आणि दुरुस्ती',
+    part: 'स्पेअर किंवा पार्ट क्रमांक',
+    fault: 'फॉल्ट कोड',
+  },
+];
+
+/**
+ * The menu the business asked for: choose a language, then New purchase, Sales and billing, or Support and repair; Support and
+ * repair asks for a spare or hardware part number, or a fault code from the machine (# alone goes to an engineer). Labels are in
+ * each language so its prompts are spoken in it. Teams are guessed from their names (Purchase, Sales or Billing, Support, Service
+ * or Repair); any left empty are for the person editing to choose.
+ */
+export function recommendedIvrMenu(
+  teams: { id?: string | null; name?: string | null }[],
+): IvrRow[] {
+  const find = (pattern: RegExp) => teams.find((t) => pattern.test(t.name ?? ''))?.id ?? '';
+  const purchase = find(/purchas|procure|new/i);
+  const sales = find(/sales|billing|account/i);
+  const support = find(/support|service|repair|technical/i);
+  const ring = (digit: string, label: string, teamId: string): IvrRow => ({
+    digit,
+    label,
+    teamId,
+    kind: 'RingTeam',
+    lookup: '',
+    say: '',
+    options: [],
+  });
+  const lookup = (digit: string, label: string, kind: WhatsAppIvrLookup): IvrRow => ({
+    ...ring(digit, label, support),
+    kind: 'Lookup',
+    lookup: kind,
+  });
+  const sub = (digit: string, label: string, options: IvrRow[]): IvrRow => ({
+    ...ring(digit, label, ''),
+    kind: 'SubMenu',
+    options,
+  });
+  return LANGUAGES.map((l, i) =>
+    sub(String(i + 1), l.label, [
+      ring('1', l.purchase, purchase),
+      ring('2', l.sales, sales),
+      sub('3', l.support, [lookup('1', l.part, 'Product'), lookup('2', l.fault, 'FaultCode')]),
+    ]),
+  );
+}
