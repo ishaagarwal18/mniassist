@@ -1,9 +1,18 @@
 import { PermissionService } from '@abp/ng.core';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 import { formatDuration } from '../../core/services/softphone-logic';
 import { ArTopbar } from '../../layout/topbar';
 import { WhatsAppCallDto, WhatsAppCallService } from '../../proxy/messaging/whats-app-call.service';
@@ -161,20 +170,63 @@ const SEED: WhatsAppCallDto[] = [
       @if (rows().length === 0 && !loading()) {
         <p class="wa__hint">No WhatsApp calls yet.</p>
       } @else {
+        @if (canRecordings() && selected().size > 0) {
+          <div class="wa__bulk" role="region" aria-label="Selected calls">
+            <span>{{ selected().size }} selected</span>
+            <button
+              ar-button
+              type="button"
+              variant="danger"
+              [disabled]="deleting()"
+              (click)="deleteSelected()"
+            >
+              {{ deleting() ? 'Deleting…' : 'Delete selected' }}
+            </button>
+            <button ar-button type="button" variant="ghost" (click)="clearSelection()">
+              Clear selection
+            </button>
+          </div>
+        }
         <div class="tbl-wrap">
           <table class="tbl">
             <thead>
               <tr>
+                @if (canRecordings()) {
+                  <th scope="col" class="wa__pick">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all calls shown"
+                      [checked]="allSelected()"
+                      (change)="selectAll($any($event.target).checked)"
+                    />
+                  </th>
+                }
                 <th scope="col">Customer</th>
                 <th scope="col">When</th>
                 <th scope="col">Call</th>
                 <th scope="col" class="num">Length</th>
                 <th scope="col">Recording</th>
+                @if (canRecordings()) {
+                  <th scope="col" aria-label="Actions"></th>
+                }
               </tr>
             </thead>
             <tbody>
               @for (c of rows(); track c.id) {
                 <tr>
+                  @if (canRecordings()) {
+                    <td class="wa__pick">
+                      <input
+                        type="checkbox"
+                        [attr.aria-label]="
+                          'Select the call with ' + (c.contactName || '+' + c.contactWaId)
+                        "
+                        [checked]="selected().has(c.id)"
+                        [disabled]="inProgress(c)"
+                        (change)="toggle(c.id, $any($event.target).checked)"
+                      />
+                    </td>
+                  }
                   <td>
                     {{ c.contactName || '+' + c.contactWaId }}
                     @if (c.contactName && c.contactWaId) {
@@ -205,6 +257,24 @@ const SEED: WhatsAppCallDto[] = [
                       <span class="wa__muted">{{ c.hasRecording ? 'Kept' : '—' }}</span>
                     }
                   </td>
+                  @if (canRecordings()) {
+                    <td>
+                      @if (!inProgress(c)) {
+                        <button
+                          ar-button
+                          type="button"
+                          variant="ghost"
+                          [disabled]="deleting()"
+                          [attr.aria-label]="
+                            'Delete the call with ' + (c.contactName || '+' + c.contactWaId)
+                          "
+                          (click)="deleteOne(c)"
+                        >
+                          Delete
+                        </button>
+                      }
+                    </td>
+                  }
                 </tr>
               }
             </tbody>
@@ -228,6 +298,15 @@ const SEED: WhatsAppCallDto[] = [
       display: flex;
       flex-direction: column;
       gap: 12px;
+    }
+    .wa__bulk {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font: 500 13px var(--ar-font-sans);
+    }
+    .wa__pick {
+      width: 32px;
     }
     .wa__toggle {
       display: flex;
@@ -317,6 +396,111 @@ export class ArWhatsAppCalls {
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly audio = signal<Record<string, string>>({});
+  private readonly confirm = inject(ConfirmService);
+  private readonly toasts = inject(ToastService);
+  protected readonly selected = signal<Set<string>>(new Set());
+  protected readonly deleting = signal(false);
+  protected readonly allSelected = computed(() => {
+    const ids = this.rows()
+      .filter((c) => !this.inProgress(c))
+      .map((c) => c.id);
+    return ids.length > 0 && ids.every((id) => this.selected().has(id));
+  });
+
+  /** A call still ringing or being talked on can't be deleted; the server refuses it too. */
+  protected inProgress(c: WhatsAppCallDto): boolean {
+    if (c.endedAtUtc) return false;
+    if (c.status === 'Answered') return true;
+    return c.status === 'Ringing' && Date.now() - Date.parse(c.rangAtUtc) < 10 * 60_000;
+  }
+
+  protected clearSelection(): void {
+    this.selected.set(new Set());
+  }
+
+  protected toggle(id: string, on: boolean): void {
+    this.selected.update((s) => {
+      const next = new Set(s);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  protected selectAll(on: boolean): void {
+    this.selected.set(
+      on
+        ? new Set(
+            this.rows()
+              .filter((c) => !this.inProgress(c))
+              .map((c) => c.id),
+          )
+        : new Set(),
+    );
+  }
+
+  protected async deleteOne(c: WhatsAppCallDto): Promise<void> {
+    if (
+      !(await this.confirm.delete(
+        'this call',
+        null,
+        c.hasRecording
+          ? 'Its recording is deleted with it. This cannot be undone.'
+          : 'This cannot be undone.',
+      ))
+    ) {
+      return;
+    }
+    await this.remove([c.id]);
+  }
+
+  protected async deleteSelected(): Promise<void> {
+    const ids = [...this.selected()];
+    if (
+      ids.length === 0 ||
+      !(await this.confirm.delete(
+        ids.length === 1 ? 'this call' : `${ids.length} calls`,
+        null,
+        'Their recordings are deleted with them. This cannot be undone.',
+      ))
+    ) {
+      return;
+    }
+    await this.remove(ids);
+  }
+
+  /** Deletes the calls one by one, so a call that can't be deleted doesn't stop the rest. */
+  private async remove(ids: string[]): Promise<void> {
+    this.deleting.set(true);
+    const done = new Set<string>();
+    let refused = 0;
+    try {
+      for (const id of ids) {
+        try {
+          if (!environment.useMockData) await firstValueFrom(this.api.delete(id));
+          done.add(id);
+        } catch {
+          refused++;
+        }
+      }
+    } finally {
+      this.deleting.set(false);
+    }
+    this.rows.update((rows) => rows.filter((c) => !done.has(c.id)));
+    this.total.update((t) => Math.max(0, t - done.size));
+    this.selected.update((s) => new Set([...s].filter((id) => !done.has(id))));
+    if (done.size) {
+      this.toasts.success(done.size === 1 ? 'Call deleted.' : `${done.size} calls deleted.`);
+    }
+    if (refused) {
+      this.toasts.warning(
+        refused === 1
+          ? 'One call could not be deleted. It may still be in progress.'
+          : `${refused} calls could not be deleted. They may still be in progress.`,
+        'WhatsApp calls',
+      );
+    }
+  }
 
   constructor() {
     void this.load();

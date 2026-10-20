@@ -16590,4 +16590,73 @@ export const SCREEN_TEXTS: Readonly<Record<string, readonly [hi: string, mr: str
       'बोले गए मेन्यू की जगह आपकी अपलोड की गई रिकॉर्डिंग चलती है, इसलिए स्वागत उसी में रिकॉर्ड करें, या बोला गया प्रॉम्प्ट इस्तेमाल करें।',
       'बोललेल्या मेनूऐवजी तुमचे अपलोड केलेले रेकॉर्डिंग वाजते, त्यामुळे स्वागत त्यातच रेकॉर्ड करा, किंवा बोललेला प्रॉम्प्ट वापरा.',
     ],
+  'Call deleted.': ['कॉल हटा दी गई।', 'कॉल हटवला.'],
+  'Clear selection': ['चयन हटाएँ', 'निवड काढा'],
+  'Delete selected': ['चुनी हुई हटाएँ', 'निवडलेले हटवा'],
+  'Deleting…': ['हटाया जा रहा है…', 'हटवत आहे…'],
+  'Its recording is deleted with it. This cannot be undone.': [
+    'इसकी रिकॉर्डिंग भी हट जाएगी। इसे वापस नहीं किया जा सकता।',
+    'त्याचे रेकॉर्डिंगही हटवले जाईल. हे परत करता येणार नाही.',
+  ],
+  'Their recordings are deleted with them. This cannot be undone.': [
+    'इनकी रिकॉर्डिंग भी हट जाएँगी। इसे वापस नहीं किया जा सकता।',
+    'त्यांची रेकॉर्डिंगही हटवली जातील. हे परत करता येणार नाही.',
+  ],
+  'One call could not be deleted. It may still be in progress.': [
+    'एक कॉल हटाई नहीं जा सकी। हो सकता है वह अभी चल रही हो।',
+    'एक कॉल हटवता आला नाही. तो अजून चालू असू शकतो.',
+  ],
+  '{0} calls could not be deleted. They may still be in progress.': [
+    '{0} कॉल हटाई नहीं जा सकीं। हो सकता है वे अभी चल रही हों।',
+    '{0} कॉल हटवता आले नाहीत. ते अजून चालू असू शकतात.',
+  ],
+  '{0} calls deleted.': ['{0} कॉल हटा दी गईं।', '{0} कॉल हटवले.'],
+  '{0} selected': ['{0} चुने गए', '{0} निवडले'],
+  '{0} calls': ['{0} कॉल', '{0} कॉल'],
+  'this call': ['यह कॉल', 'हा कॉल'],
+  'Select all calls shown': ['दिखाई गई सभी कॉल चुनें', 'दाखवलेले सर्व कॉल निवडा'],
+  'Selected calls': ['चुनी हुई कॉल', 'निवडलेले कॉल'],
+  'Finding the location took too long. Try again, or type the place below.': [
+    'लोकेशन ढूँढने में बहुत समय लगा। फिर कोशिश करें, या नीचे जगह लिखें।',
+    'लोकेशन शोधायला खूप वेळ लागला. पुन्हा प्रयत्न करा, किंवा खाली ठिकाण लिहा.',
+  ],
+  'Finding your location…': ['आपकी लोकेशन ढूँढी जा रही है…', 'तुमचे लोकेशन शोधत आहे…'],
+  'Google Maps link or coordinates': [
+    'Google Maps लिंक या निर्देशांक',
+    'Google Maps लिंक किंवा निर्देशांक',
+  ],
+  'Location is blocked for this site. Allow it from the icon left of the address bar, or type the place below.':
+    [
+      'इस साइट के लिए लोकेशन बंद है। एड्रेस बार के बाईं ओर के आइकन से इसे चालू करें, या नीचे जगह लिखें।',
+      'या साइटसाठी लोकेशन बंद आहे. ॲड्रेस बारच्या डावीकडील आयकॉनमधून ते सुरू करा, किंवा खाली ठिकाण लिहा.',
+    ],
+  "No coordinates found in that. Paste the full link from the browser's address bar (a short maps.app.goo.gl link doesn't carry them), or the numbers from right-clicking the place in Google Maps.":
+    [
+      'इसमें निर्देशांक नहीं मिले। ब्राउज़र के एड्रेस बार से पूरा लिंक चिपकाएँ (छोटे maps.app.goo.gl लिंक में ये नहीं होते), या Google Maps में जगह पर राइट-क्लिक करके नंबर लें।',
+      'यात निर्देशांक सापडले नाहीत. ब्राउझरच्या ॲड्रेस बारमधून पूर्ण लिंक पेस्ट करा (लहान maps.app.goo.gl लिंकमध्ये ते नसतात), किंवा Google Maps मध्ये ठिकाणावर राइट-क्लिक करून क्रमांक घ्या.',
+    ],
+  'Not delivered:': ['डिलीवर नहीं हुआ:', 'पोहोचले नाही:'],
+  'Send location': ['लोकेशन भेजें', 'लोकेशन पाठवा'],
+  'The file could not be loaded.': ['फ़ाइल लोड नहीं हो सकी।', 'फाइल लोड होऊ शकली नाही.'],
+  'This file could not be loaded.': ['यह फ़ाइल लोड नहीं हो सकी।', 'ही फाइल लोड होऊ शकली नाही.'],
+  'The location could not be read. Type the place below instead.': [
+    'लोकेशन पढ़ी नहीं जा सकी। इसके बजाय नीचे जगह लिखें।',
+    'लोकेशन वाचता आले नाही. त्याऐवजी खाली ठिकाण लिहा.',
+  ],
+  "This computer couldn't find its location (on Windows, turn on Settings → Privacy → Location). Type the place below instead.":
+    [
+      'यह कंप्यूटर अपनी लोकेशन नहीं ढूँढ सका (Windows में Settings → Privacy → Location चालू करें)। इसके बजाय नीचे जगह लिखें।',
+      'हा संगणक त्याचे लोकेशन शोधू शकला नाही (Windows मध्ये Settings → Privacy → Location सुरू करा). त्याऐवजी खाली ठिकाण लिहा.',
+    ],
+  'This browser cannot read a location. Type the place below.': [
+    'यह ब्राउज़र लोकेशन नहीं पढ़ सकता। नीचे जगह लिखें।',
+    'हा ब्राउझर लोकेशन वाचू शकत नाही. खाली ठिकाण लिहा.',
+  ],
+  'Use my current location': ['मेरी मौजूदा लोकेशन इस्तेमाल करें', 'माझे सध्याचे लोकेशन वापरा'],
+  'WhatsApp did not accept it.': [
+    'WhatsApp ने इसे स्वीकार नहीं किया।',
+    'WhatsApp ने ते स्वीकारले नाही.',
+  ],
+  'or type the place': ['या जगह लिखें', 'किंवा ठिकाण लिहा'],
+  '· sending…': ['· भेजा जा रहा है…', '· पाठवत आहे…'],
 };

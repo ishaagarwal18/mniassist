@@ -42,6 +42,10 @@ export interface Message {
   readonly location?: MessageLocation;
   /** Present on a reply-button message. */
   readonly buttons?: readonly MessageButton[];
+  /** An outgoing message still waiting to go to WhatsApp. */
+  readonly pending?: boolean;
+  /** An outgoing message that was not delivered, and why (WhatsApp's reason, or ours). */
+  readonly failure?: string;
 }
 
 export interface Conversation {

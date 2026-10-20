@@ -204,6 +204,11 @@ export function toMessage(dto: MessageDto, conversationId?: string): Message {
     body: dto.body ?? '',
     at: formatClock(dto.sentAtUtc ?? dto.creationTime),
     status: dto.status != null ? toMessageStatus(dto.status) : undefined,
+    pending: dto.status === MessageStatus.Queued || undefined,
+    failure:
+      dto.status === MessageStatus.Failed
+        ? dto.errorTitle?.trim() || 'WhatsApp did not accept it.'
+        : undefined,
     opens: dto.openCount ? dto.openCount : undefined,
     lastOpenedAt: dto.lastOpenedAtUtc ? formatClock(dto.lastOpenedAtUtc) : undefined,
     media: toMessageMedia(dto, conversationId),

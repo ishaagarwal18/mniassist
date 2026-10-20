@@ -444,6 +444,16 @@ export class WhatsAppCallService {
     );
 
   /** Native WhatsApp IVR: the menu, its prompt, and whether it answers calls now (and if not, why). */
+  /** Deletes a call from the log, with its recording (not one still in progress). Needs Inbox.CallRecordings. */
+  delete = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, void>(
+      {
+        method: 'DELETE',
+        url: `/api/auto-reach/whats-app-call/${id}`,
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
   getIvr = (config?: Partial<Rest.Config>) =>
     this.restService.request<any, WhatsAppIvrSettingsDto>(
       {

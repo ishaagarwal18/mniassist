@@ -50,6 +50,17 @@ export class PhotoQuoteService {
   private restService = inject(RestService);
   apiName = 'AutoReach';
 
+  /** Whether photos can be read here (an AI model is configured). */
+  getAvailable = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, boolean>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/photo-quote/available',
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
   read = (input: ReadPhotoInput, config?: Partial<Rest.Config>) =>
     this.restService.request<any, PhotoReadingDto>(
       {

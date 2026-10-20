@@ -47,9 +47,14 @@ import { persistedToggle } from '../../core/util/persisted-toggle';
 
 import { ConversationState } from '../../proxy/messaging/conversation-state.enum';
 import { CurrentUserService } from '../../core/services/current-user.service';
+import { ArAuthHref, ArAuthSrc } from '../../core/media/protected-media';
+import { ArShareLocationDialog, SharedLocation } from './share-location-dialog';
 @Component({
   selector: 'ar-inbox',
   imports: [
+    ArAuthHref,
+    ArAuthSrc,
+    ArShareLocationDialog,
     ArSendReorderLink,
     ArTopbar,
     ArAvatar,
@@ -225,10 +230,13 @@ export class ArInbox {
   protected readonly photoMore = signal<string[]>([]);
   /** Files read into one draft besides the first: twelve in all (DraftQuoteFromPhotoInput.MaxMoreFiles). */
   protected readonly maxMoreFiles = 11;
-  protected readonly canQuote = grantedPolicy(
+  private readonly mayQuote = grantedPolicy(
     'AutoReach.Quotations.Create',
     inject(PermissionService),
   );
+  /** Photos can be read only with an AI model set up; until then "Quote from this photo" isn't offered (it could only fail). */
+  private readonly photosReadable = signal(false);
+  protected readonly canQuote = computed(() => this.mayQuote() && this.photosReadable());
 
   // ---- Spares re-order portal: send this customer their personal link -------------------------------------------------
   protected readonly canReorder = grantedPolicy(
@@ -428,6 +436,12 @@ export class ArInbox {
   protected readonly assignee = this.inbox.assignee;
 
   constructor() {
+    if (this.mayQuote() && !environment.useMockData) {
+      firstValueFrom(this.photos.getAvailable())
+        .then((available) => this.photosReadable.set(available === true))
+        .catch(() => this.photosReadable.set(false));
+    }
+
     // /inbox?assignee={userId}&name={userName}: one agent's queue, from Analytics' agent table.
     const query = inject(ActivatedRoute).snapshot.queryParamMap;
     const assigneeId = query.get('assignee');
@@ -558,34 +572,27 @@ export class ArInbox {
     }
   }
 
+  /** The share-location dialog: a typed place (usually the business's address) or this device's position. */
+  protected readonly locationOpen = signal(false);
+
   protected shareLocation(): void {
-    if (!navigator.geolocation) {
-      this.toasts.warning('This browser cannot read a location.', 'Location');
-      return;
-    }
+    this.locationOpen.set(true);
+  }
+
+  protected async sendLocation(location: SharedLocation): Promise<void> {
+    this.locationOpen.set(false);
     this.sending.set(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          await this.inbox.sendLocation(
-            pos.coords.latitude,
-            pos.coords.longitude,
-            this.draft().trim() || 'Shared location',
-          );
-          this.draft.set('');
-        } finally {
-          this.sending.set(false);
-        }
-      },
-      () => {
-        this.sending.set(false);
-        this.toasts.warning(
-          'Could not read your location — check the browser permission.',
-          'Location',
-        );
-      },
-      { enableHighAccuracy: true, timeout: 10_000 },
-    );
+    try {
+      await this.inbox.sendLocation(
+        location.latitude,
+        location.longitude,
+        location.name ?? (this.draft().trim() || 'Shared location'),
+        location.address,
+      );
+      if (!location.name) this.draft.set('');
+    } finally {
+      this.sending.set(false);
+    }
   }
 
   // Reply-button composer

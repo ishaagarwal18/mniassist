@@ -305,9 +305,9 @@
             @if (m.media; as media) {
               @switch (media.kind) {
                 @case ('image') {
-                  <a class="bubble__media" [href]="media.url" target="_blank" rel="noopener">
+                  <a class="bubble__media" [arAuthHref]="media.url" [fileName]="media.fileName">
                     <img
-                      [src]="media.thumbnailUrl ?? media.url"
+                      [arAuthSrc]="media.thumbnailUrl ?? media.url"
                       alt="Attached image"
                       loading="lazy"
                     />
@@ -325,16 +325,21 @@
                 @case ('video') {
                   <video
                     class="bubble__media"
-                    [src]="media.url"
+                    [arAuthSrc]="media.url"
                     controls
                     preload="metadata"
                   ></video>
                 }
                 @case ('audio') {
-                  <audio class="bubble__media" [src]="media.url" controls preload="none"></audio>
+                  <audio
+                    class="bubble__media"
+                    [arAuthSrc]="media.url"
+                    controls
+                    preload="none"
+                  ></audio>
                 }
                 @default {
-                  <a class="bubble__file" [href]="media.url" target="_blank" rel="noopener">
+                  <a class="bubble__file" [arAuthHref]="media.url" [fileName]="media.fileName">
                     <ar-icon name="document" [size]="16" />
                     <span>{{ media.fileName || 'Attachment' }}</span>
                   </a>
@@ -389,8 +394,15 @@
                 }}
               } @else if (m.status) {
                 · {{ m.status }}
+              } @else if (m.pending) {
+                · sending…
               }
             </span>
+            @if (m.failure; as reason) {
+              <p class="bubble__removed" role="note">
+                Not delivered: <span translate="no">{{ reason }}</span>
+              </p>
+            }
           </li>
         } @empty {
           <li class="thread__empty">No messages in this conversation yet.</li>
@@ -767,6 +779,12 @@
         <ar-document-picker (pick)="onPick($event)" (close)="pickerOpen.set(false)" />
       }
 
+      @if (locationOpen()) {
+        <ar-share-location-dialog
+          (send)="sendLocation($event)"
+          (closed)="locationOpen.set(false)"
+        />
+      }
       @if (buttonsOpen()) {
         <ar-dialog title="Reply buttons" (dismiss)="buttonsOpen.set(false)">
           <label class="ar-field">
