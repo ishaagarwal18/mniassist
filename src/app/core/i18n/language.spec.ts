@@ -3,9 +3,11 @@ import { FRAME_TEXTS } from './frame-texts';
 import { toAppLanguage, translate } from './language.service';
 
 describe('app language', () => {
-  it('reads ABP culture names as one of the three languages', () => {
+  it('reads ABP culture names as one of the supported languages', () => {
     expect(toAppLanguage('hi')).toBe('hi');
     expect(toAppLanguage('mr-IN')).toBe('mr');
+    expect(toAppLanguage('gu-IN')).toBe('gu');
+    expect(toAppLanguage('GU_in')).toBe('gu');
     expect(toAppLanguage('en-GB')).toBe('en');
     expect(toAppLanguage('fr')).toBe('en');
     expect(toAppLanguage(null)).toBe('en');
@@ -13,6 +15,8 @@ describe('app language', () => {
 
   it('translates frame text and fills in values', () => {
     expect(translate('hi', 'Contacts')).toBe('संपर्क');
+    expect(translate('gu', 'Contacts')).toBe('સંપર્કો');
+    expect(translate('gu', 'Sign in with {0}', 'Google')).toBe('Google વડે સાઇન ઇન કરો');
     expect(translate('mr', 'Sign in with {0}', 'Google')).toBe('Google ने साइन इन करा');
     expect(translate('en', 'Sign in with {0}', 'Google')).toBe('Sign in with Google');
   });

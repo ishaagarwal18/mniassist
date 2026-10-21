@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, booleanAttribute, inject, input } f
 import { APP_LANGUAGES, AppLanguage, LanguageService } from '../core/i18n/language.service';
 
 /**
- * The language switch: English, हिन्दी, मराठी. A segmented control like the theme switch, so the
+ * The language switch: English, हिन्दी, मराठी, ગુજરાતી. A segmented control like the theme switch, so the
  * current language is always visible and the others are one click away. Each option is written in
  * its own language, so someone who can't read the current one can still find theirs. `compact`
  * shows short names for the header.
@@ -13,7 +13,7 @@ import { APP_LANGUAGES, AppLanguage, LanguageService } from '../core/i18n/langua
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[class.ls--compact]': 'compact()' },
   template: `
-    <div class="ls" role="radiogroup" [attr.aria-label]="i18n.t('Language')">
+    <div class="ls" role="radiogroup" translate="no" [attr.aria-label]="i18n.t('Language')">
       @for (o of options; track o.code) {
         <button
           type="button"

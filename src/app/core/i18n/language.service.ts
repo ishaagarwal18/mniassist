@@ -7,14 +7,16 @@ import { distinctUntilChanged, filter } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { QUIET_REQUEST } from '../http/api-feedback.interceptor';
 import { FRAME_TEXTS } from './frame-texts';
+import { GU_FRAME_TEXTS } from './gu-frame-texts';
 import { ScreenDictionary, ScreenTranslator } from './screen-translator';
 
-export type AppLanguage = 'en' | 'hi' | 'mr';
+export type AppLanguage = 'en' | 'hi' | 'mr' | 'gu';
 
 export const APP_LANGUAGES: readonly { code: AppLanguage; label: string; short: string }[] = [
   { code: 'en', label: 'English', short: 'EN' },
   { code: 'hi', label: 'हिन्दी', short: 'हि' },
   { code: 'mr', label: 'मराठी', short: 'म' },
+  { code: 'gu', label: 'ગુજરાતી', short: 'ગુ' },
 ];
 
 /**
@@ -28,17 +30,22 @@ const PICKED_SIGNED_OUT_KEY = 'ar.lang.pickedSignedOut';
 
 export function toAppLanguage(value: string | null | undefined): AppLanguage {
   const code = (value ?? '').toLowerCase().split(/[-_;]/)[0];
-  return code === 'hi' || code === 'mr' ? code : 'en';
+  return code === 'hi' || code === 'mr' || code === 'gu' ? code : 'en';
 }
 
 /** Frame text in a language: the English itself when there is no entry. `{0}`… are filled from `args`. */
 export function translate(lang: AppLanguage, text: string, ...args: (string | number)[]): string {
-  const found = lang === 'en' ? text : (FRAME_TEXTS[text]?.[lang] ?? text);
+  const found =
+    lang === 'en'
+      ? text
+      : lang === 'gu'
+        ? (GU_FRAME_TEXTS[text] ?? text)
+        : (FRAME_TEXTS[text]?.[lang] ?? text);
   return args.length ? found.replace(/\{(\d+)\}/g, (m, i) => String(args[+i] ?? m)) : found;
 }
 
 /**
- * The app's language: English, Hindi or Marathi. Setting it does four things — ABP's session
+ * The app's language: English, Hindi, Marathi or Gujarati. Setting it does four things — ABP's session
  * language (sent to the API as Accept-Language, so server messages come back in it), the frame's
  * own text (menu, header, sign-in; see FRAME_TEXTS), each screen's text (SCREEN_TEXTS, applied by
  * ScreenTranslator), and, when signed in, the user's saved choice, so it follows them to their
@@ -106,11 +113,12 @@ export class LanguageService {
 
   private translator: ScreenTranslator | null = null;
   private screenTexts: Promise<Readonly<Record<string, readonly [string, string]>>> | null = null;
+  private gujaratiTexts: Promise<Readonly<Record<string, string>>> | null = null;
   private readonly dictionaries = new Map<AppLanguage, ScreenDictionary>();
 
   /**
    * Each screen's own text, translated as it renders (see ScreenTranslator). The dictionary is a
-   * separate chunk, fetched the first time Hindi or Marathi is chosen, so English never downloads it.
+   * separate chunk, fetched when its language is chosen, so English never downloads it.
    */
   private async translateScreens(code: AppLanguage): Promise<void> {
     if (code === 'en') {
@@ -120,16 +128,23 @@ export class LanguageService {
     let dict = this.dictionaries.get(code);
     if (!dict) {
       try {
-        this.screenTexts ??= import('./screen-texts').then((m) => m.SCREEN_TEXTS);
-        const texts = await this.screenTexts;
         const map = new Map<string, string>();
-        const i = code === 'hi' ? 0 : 1;
-        for (const [en, t] of Object.entries(texts)) if (t[i]) map.set(en, t[i]);
-        for (const [en, t] of Object.entries(FRAME_TEXTS)) map.set(en, t[code]);
+        if (code === 'gu') {
+          this.gujaratiTexts ??= import('./gu-screen-texts').then((m) => m.GU_SCREEN_TEXTS);
+          for (const [en, text] of Object.entries(await this.gujaratiTexts)) map.set(en, text);
+          for (const [en, text] of Object.entries(GU_FRAME_TEXTS)) map.set(en, text);
+        } else {
+          this.screenTexts ??= import('./screen-texts').then((m) => m.SCREEN_TEXTS);
+          const texts = await this.screenTexts;
+          const i = code === 'hi' ? 0 : 1;
+          for (const [en, t] of Object.entries(texts)) if (t[i]) map.set(en, t[i]);
+          for (const [en, t] of Object.entries(FRAME_TEXTS)) map.set(en, t[code]);
+        }
         dict = map;
         this.dictionaries.set(code, dict);
       } catch {
         this.screenTexts = null; // offline or a stale deploy: the frame is translated, screens stay English
+        this.gujaratiTexts = null;
         return;
       }
     }
