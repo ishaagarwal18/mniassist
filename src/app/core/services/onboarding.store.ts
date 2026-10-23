@@ -36,7 +36,7 @@ const STEP_META: Record<
   },
   [OnboardingChecklistStep.VerifyMobile]: {
     label: 'Verify your mobile',
-    description: 'A one-time code by SMS. Used for account recovery and critical alerts.',
+    description: 'A one-time code sent on WhatsApp from the platform number.',
   },
   [OnboardingChecklistStep.CompleteProfile]: {
     label: 'Complete your business profile',
@@ -104,6 +104,15 @@ const SEED: Checklist = {
   verifiedMobile: '+91 90210 44xxx',
 };
 
+const EMPTY: Checklist = {
+  items: [],
+  completedCount: 0,
+  totalCount: 0,
+  isComplete: false,
+  dismissed: false,
+  mobileVerified: false,
+};
+
 /**
  * The get-started wizard. A checklist rather than a forced linear flow: the steps
  * have a natural order but a tenant who already has a number connected should not be
@@ -120,13 +129,15 @@ export class OnboardingStore {
   private readonly resource = rxResource({
     params: () => (environment.useMockData ? undefined : { tick: this.reloadTick() }),
     stream: () => this.api.get().pipe(map((dto) => this.normalise(dto))),
-    defaultValue: SEED,
+    defaultValue: environment.useMockData ? SEED : EMPTY,
   });
 
   readonly checklist = computed<Checklist>(() => {
     if (this.local()) return this.local()!;
-    return environment.useMockData ? SEED : settled(this.resource, SEED);
+    return environment.useMockData ? SEED : settled(this.resource, EMPTY);
   });
+
+  readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
 
   readonly progress = computed(() => {
     const c = this.checklist();
@@ -194,7 +205,9 @@ export class OnboardingStore {
 
   async startMobileVerification(mobile: string): Promise<void> {
     if (!environment.useMockData) {
-      await firstValueFrom(this.api.startMobileVerification({ mobile: mobile.trim() }));
+      await firstValueFrom(
+        this.api.startMobileVerification({ mobile: mobile.trim().replace(/[+\s()-]/g, '') }),
+      );
     }
   }
 

@@ -13,7 +13,9 @@ import { firstValueFrom } from 'rxjs';
 import { ChecklistItem, OnboardingStore } from '../../core/services/onboarding.store';
 import { OnboardingChecklistStep } from '../../proxy/identity/onboarding-checklist-step.enum';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip, ArMeter } from '../../ui';
+import { ArButton } from '../../ui/button';
+import { ArChip } from '../../ui/chip';
+import { ArMeter } from '../../ui/meter';
 import { ToastService } from '../../core/ui/toast.service';
 import { AccountRecoveryService } from '../../proxy/identity/account-recovery.service';
 import { environment } from '../../../environments/environment';
@@ -79,7 +81,9 @@ import { errorMessage } from '../activities/activity-logic';
         </div>
       </nav>
 
-      @if (summary()) {
+      @if (store.loading()) {
+        <p role="status">Loading your setup checklist…</p>
+      } @else if (summary()) {
         <section class="done">
           <h2 class="done__t">You’re set up.</h2>
           <p class="done__p">Every step is complete. Pick any step above to look at it again.</p>
@@ -611,7 +615,7 @@ export class ArOnboardingWizard {
 
   protected async confirmOtp(): Promise<void> {
     if (!/^\d{4,6}$/.test(this.otpCode().trim())) {
-      this.toasts.warning('Enter the code from the SMS.', 'Verification');
+      this.toasts.warning('Enter the code from WhatsApp.', 'Verification');
       return;
     }
     this.busy.set(true);
