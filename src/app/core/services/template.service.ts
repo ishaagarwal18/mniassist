@@ -1,4 +1,4 @@
-import type { SubmitDraftsResultDto } from '../../proxy/messaging/models';
+import type { HostTemplateLibraryDto, SubmitDraftsResultDto } from '../../proxy/messaging/models';
 import { ChannelService as ChannelApi } from '../../proxy/channels/channel.service';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
@@ -650,6 +650,22 @@ export class TemplateService {
     const added = await firstValueFrom(this.channelApi.addLibraryTemplates(channelId));
     this.reload();
     return added;
+  }
+
+  async hostLibrary(
+    filter: string,
+    skipCount: number,
+  ): Promise<{ items: HostTemplateLibraryDto[]; totalCount: number }> {
+    if (environment.useMockData) return { items: [], totalCount: 0 };
+    const page = await firstValueFrom(
+      this.api.getHostLibrary({ filter, skipCount, maxResultCount: 12 }),
+    );
+    return { items: page.items ?? [], totalCount: page.totalCount ?? 0 };
+  }
+
+  async copyHostTemplate(id: string, channelId: string): Promise<void> {
+    await firstValueFrom(this.api.copyHost(id, channelId));
+    this.reload();
   }
 
   /** Sends every draft on the active number to Meta for review (one call; the server goes through them in turn). */

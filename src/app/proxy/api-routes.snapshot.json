@@ -1,6 +1,8 @@
 {
   "source": "/api/abp/api-definition",
   "routes": [
+    "GET /api/auto-reach/template/host-library",
+    "POST /api/auto-reach/template/host-library/{}/copy",
     "DELETE /api/auto-reach/automation/{}",
     "DELETE /api/auto-reach/bill-of-material/{}",
     "DELETE /api/auto-reach/branding/logo",

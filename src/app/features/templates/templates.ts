@@ -16,6 +16,8 @@ import {
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArSearchBox, ArStatTile } from '../../ui';
 import { ChipTone } from '../../ui/chip';
+import { HostTemplateLibraryDto } from '../../proxy/messaging/models';
+import { TemplateComponentKind } from '../../proxy/messaging/template-component-kind.enum';
 
 const STATUS_TONE: Record<TemplateStatus, ChipTone> = {
   draft: 'neutral',
@@ -115,6 +117,44 @@ export class ArTemplates {
   }
 
   protected readonly notice = signal<string | null>(null);
+  protected readonly hostLibraryOpen = signal(false);
+  protected readonly hostLibraryBusy = signal(false);
+  protected readonly hostTemplates = signal<HostTemplateLibraryDto[]>([]);
+  protected readonly hostTemplateTotal = signal(0);
+  protected readonly hostFilter = signal('');
+  protected readonly hostOffset = signal(0);
+
+  protected async openHostLibrary(offset = 0): Promise<void> {
+    if (this.hostLibraryBusy()) return;
+    this.hostLibraryOpen.set(true);
+    this.hostLibraryBusy.set(true);
+    try {
+      const page = await this.store.hostLibrary(this.hostFilter(), offset);
+      this.hostTemplates.set(page.items);
+      this.hostTemplateTotal.set(page.totalCount);
+      this.hostOffset.set(offset);
+    } finally {
+      this.hostLibraryBusy.set(false);
+    }
+  }
+
+  protected hostPreview(template: HostTemplateLibraryDto): string {
+    return template.components.find((c) => c.kind === TemplateComponentKind.Body)?.text ?? '';
+  }
+
+  protected async copyHostTemplate(template: HostTemplateLibraryDto): Promise<void> {
+    const channel = this.activeChannel();
+    if (!channel || this.busy()) return;
+    this.busy.set(true);
+    try {
+      await this.store.copyHostTemplate(template.id, channel.id);
+      this.toasts.success(
+        `${template.name} copied as a draft. Review it and submit it to Meta for this number.`,
+      );
+    } finally {
+      this.busy.set(false);
+    }
+  }
 
   protected async addLibrary(): Promise<void> {
     this.busy.set(true);

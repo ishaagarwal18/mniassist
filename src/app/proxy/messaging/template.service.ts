@@ -1,5 +1,6 @@
 import type {
   CreateUpdateTemplateDto,
+  HostTemplateLibraryDto,
   DraftTemplateInput,
   DraftedTemplateDto,
   GetTemplateListInput,
@@ -20,6 +21,30 @@ import { Injectable, inject } from '@angular/core';
 export class TemplateService {
   private restService = inject(RestService);
   apiName = 'AutoReach';
+
+  getHostLibrary = (input: GetTemplateListInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, PagedResultDto<HostTemplateLibraryDto>>(
+      {
+        method: 'GET',
+        url: '/api/auto-reach/template/host-library',
+        params: {
+          filter: input.filter,
+          skipCount: input.skipCount,
+          maxResultCount: input.maxResultCount,
+        },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  copyHost = (id: string, channelId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, TemplateDto>(
+      {
+        method: 'POST',
+        url: `/api/auto-reach/template/host-library/${id}/copy`,
+        body: { channelId },
+      },
+      { apiName: this.apiName, ...config },
+    );
 
   create = (input: CreateUpdateTemplateDto, config?: Partial<Rest.Config>) =>
     this.restService.request<any, TemplateDto>(

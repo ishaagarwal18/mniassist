@@ -4,6 +4,14 @@ import type {
   PagedAndSortedResultRequestDto,
   PagedResultRequestDto,
 } from '@abp/ng.core';
+
+export interface HostTemplateLibraryDto {
+  id: string;
+  name: string;
+  languageCode: string;
+  category: TemplateCategory;
+  components: CreateUpdateTemplateComponentDto[];
+}
 import type { DecisionRole } from '../contacts/decision-role.enum';
 import type { ConsentScope } from '../contacts/consent-scope.enum';
 import type { SuppressionReason } from '../contacts/suppression-reason.enum';

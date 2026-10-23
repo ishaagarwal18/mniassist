@@ -36,6 +36,9 @@
       Sync from Meta
     </button>
     @if (canCreate()) {
+      <button ar-button variant="ghost" [disabled]="hostLibraryBusy()" (click)="openHostLibrary()">
+        Browse host templates
+      </button>
       <button
         ar-button
         variant="ghost"
@@ -60,6 +63,72 @@
       </button>
     }
   </section>
+  @if (hostLibraryOpen()) {
+    <section class="tp" aria-label="Host-approved template library">
+      <header class="tp__head">
+        <h2>Host-approved templates</h2>
+        <button ar-button variant="ghost" (click)="hostLibraryOpen.set(false)">Close</button>
+      </header>
+      <p>
+        Copy a template to the selected WhatsApp number as a draft. Review its content and links,
+        then submit it to Meta for your own account's approval.
+      </p>
+      @if (!activeChannel()) {
+        <p>Connect a WhatsApp number to copy templates. You can browse the library first.</p>
+      }
+      <label class="ar-field">
+        <span class="ar-field__label">Search host templates</span>
+        <input
+          class="ar-field__input"
+          [value]="hostFilter()"
+          (input)="hostFilter.set($any($event.target).value)"
+          (keydown.enter)="openHostLibrary()"
+        />
+      </label>
+      <button ar-button variant="ghost" [disabled]="hostLibraryBusy()" (click)="openHostLibrary()">
+        Search
+      </button>
+      @if (hostLibraryBusy()) {
+        <p role="status">Loading host templates…</p>
+      } @else {
+        @for (template of hostTemplates(); track template.id) {
+          <article class="tp">
+            <h3>{{ template.name }} · {{ template.languageCode }}</h3>
+            <p>{{ hostPreview(template) }}</p>
+            <button
+              ar-button
+              variant="primary"
+              [disabled]="busy() || !activeChannel()"
+              (click)="copyHostTemplate(template)"
+            >
+              Copy as draft
+            </button>
+          </article>
+        } @empty {
+          <p>No host-approved templates match your search.</p>
+        }
+      }
+      <div class="tpl__numbar">
+        <button
+          ar-button
+          variant="ghost"
+          [disabled]="hostLibraryBusy() || hostOffset() === 0"
+          (click)="openHostLibrary(hostOffset() - 12)"
+        >
+          Previous
+        </button>
+        <span>{{ hostTemplateTotal() }} templates</span>
+        <button
+          ar-button
+          variant="ghost"
+          [disabled]="hostLibraryBusy() || hostOffset() + 12 >= hostTemplateTotal()"
+          (click)="openHostLibrary(hostOffset() + 12)"
+        >
+          Next
+        </button>
+      </div>
+    </section>
+  }
   @if (notice(); as n) {
     <p class="tpl__notice" role="status">{{ n }}</p>
   }
