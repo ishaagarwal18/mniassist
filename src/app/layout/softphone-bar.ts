@@ -1,9 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { PermissionService } from '@abp/ng.core';
 
 import { grantedPolicy } from '../core/auth/permission';
 import { formatDuration } from '../core/services/softphone-logic';
 import { SoftphoneService } from '../core/services/softphone.service';
+import { PlanService } from '../core/services/plan.service';
 import { toE164Digits } from '../features/calls/call-logic';
 import { ArButton, ArIcon } from '../ui';
 
@@ -208,7 +217,9 @@ export class ArSoftphoneBar {
   protected readonly softphone = inject(SoftphoneService);
   private readonly permissions = inject(PermissionService);
 
-  protected readonly canUse = grantedPolicy('AutoReach.Inbox.Reply', this.permissions);
+  private readonly canReply = grantedPolicy('AutoReach.Inbox.Reply', this.permissions);
+  private readonly plan = inject(PlanService);
+  protected readonly canUse = computed(() => this.canReply() && this.plan.hasFeature('Voice'));
 
   protected readonly callState = this.softphone.callState;
   protected readonly connection = this.softphone.connection;
@@ -221,9 +232,9 @@ export class ArSoftphoneBar {
   protected readonly canDtmf = computed(() => this.connection() === 'registered');
 
   constructor() {
-    if (this.canUse()) {
-      void this.softphone.ensureConnected();
-    }
+    effect(() => {
+      if (this.canUse()) untracked(() => void this.softphone.ensureConnected());
+    });
   }
 
   protected readonly keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'];

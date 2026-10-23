@@ -1,8 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
+import { PermissionService } from '@abp/ng.core';
 
 import { environment } from '../../../environments/environment';
+import { grantedPolicy } from '../auth/permission';
 import { NotificationService as NotificationApi } from '../../proxy/notifications';
 import {
   GenerateInvoiceDto,
@@ -55,6 +57,10 @@ export class OpsService {
   private readonly reconciliationApi = inject(ReconciliationApi);
   private readonly webhookApi = inject(WebhookApi);
   private readonly supportApi = inject(SupportApi);
+  private readonly canReadWebhooks = grantedPolicy(
+    'AutoReach.Integrations',
+    inject(PermissionService),
+  );
 
   // ---- seeds ---------------------------------------------------------------
 
@@ -493,7 +499,7 @@ export class OpsService {
   });
 
   private readonly webhooksResource = rxResource({
-    params: () => (environment.useMockData ? undefined : {}),
+    params: () => (environment.useMockData || !this.canReadWebhooks() ? undefined : {}),
     stream: () =>
       this.webhookApi
         .getList({ skipCount: 0, maxResultCount: 100 })

@@ -1,7 +1,9 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { PermissionService } from '@abp/ng.core';
 
 import { AgencyService, AgencySessionDto } from '../../proxy/agencies';
+import { checkPolicy } from '../auth/permission';
 
 const STORAGE_KEY = 'ar.agency.acting';
 
@@ -15,6 +17,7 @@ const STORAGE_KEY = 'ar.agency.acting';
 @Injectable({ providedIn: 'root' })
 export class AgencyActingStore {
   private readonly api = inject(AgencyService);
+  private readonly permissions = inject(PermissionService);
 
   private readonly _session = signal<AgencySessionDto | null>(this.load());
   readonly session = this._session.asReadonly();
@@ -44,6 +47,10 @@ export class AgencyActingStore {
 
   /** Confirms with the server what the open session is (called on app start). */
   async refresh(): Promise<void> {
+    if (!checkPolicy('AutoReach.Agency', this.permissions)) {
+      this.persist(null);
+      return;
+    }
     try {
       const server = await firstValueFrom(this.api.getMyActingSession());
       this.persist(server ?? null);

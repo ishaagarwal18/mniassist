@@ -1,5 +1,6 @@
 import { Injectable, DestroyRef, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { PermissionService } from '@abp/ng.core';
 import type { SimpleUser as SimpleUserType, SimpleUserDelegate } from 'sip.js/lib/platform/web';
 
 import { environment } from '../../../environments/environment';
@@ -11,6 +12,8 @@ import {
 } from '../../proxy/voice';
 import { readApiError } from '../util/api-error';
 import { sipTarget } from './softphone-logic';
+import { checkPolicy } from '../auth/permission';
+import { PlanService } from './plan.service';
 
 export type SoftphoneConnection = 'offline' | 'connecting' | 'registered' | 'failed';
 export type SoftphoneCallState = 'idle' | 'calling' | 'ringing-in' | 'connected' | 'ended';
@@ -38,6 +41,8 @@ const MOCK_DOMAIN = 'voice.mock.local';
 @Injectable({ providedIn: 'root' })
 export class SoftphoneService {
   private readonly api = inject(CallService);
+  private readonly permissions = inject(PermissionService);
+  private readonly plan = inject(PlanService);
 
   private simpleUser: SimpleUserType | null = null;
   private credentials: SoftphoneCredentialsDto | null = null;
@@ -68,6 +73,12 @@ export class SoftphoneService {
   /** Registers the softphone if it is not already registered or registering. Safe to call repeatedly — a component mounting
    *  does not need to know whether another one already connected it. */
   async ensureConnected(): Promise<boolean> {
+    if (
+      !environment.useMockData &&
+      (!checkPolicy('AutoReach.Inbox.Reply', this.permissions) || !this.plan.hasFeature('Voice'))
+    ) {
+      return false;
+    }
     if (this.connection() === 'registered') return true;
     if (this.connectPromise) return this.connectPromise;
 
