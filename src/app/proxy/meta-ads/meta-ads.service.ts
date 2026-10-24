@@ -56,9 +56,9 @@ export class MetaAdsService {
       { apiName: this.apiName, skipHandleError: true, ...config },
     );
 
-  completeLogin = (code: string, config?: Partial<Rest.Config>) =>
+  completeLogin = (code: string, state: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, MetaAdAccountChoiceDto>(
-      { method: 'POST', url: '/api/auto-reach/meta-ads/complete-login', body: { code } },
+      { method: 'POST', url: '/api/auto-reach/meta-ads/complete-login', body: { code, state } },
       { apiName: this.apiName, skipHandleError: true, ...config },
     );
 

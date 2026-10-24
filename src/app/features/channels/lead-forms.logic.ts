@@ -22,7 +22,7 @@ export function takeState(): string | null {
   }
 }
 
-export type CallbackResult = { ok: true; code: string } | { ok: false; reason: string };
+export type CallbackResult = { ok: true; code: string; state: string } | { ok: false; reason: string };
 
 /** What Facebook's redirect back carries, checked against the state this tab started with. */
 export function readCallback(
@@ -42,7 +42,7 @@ export function readCallback(
     return { ok: false, reason: 'This sign-in was not started here. Connect again.' };
   }
   if (!query['code']) return { ok: false, reason: 'Facebook did not send a sign-in code.' };
-  return { ok: true, code: query['code'] };
+  return { ok: true, code: query['code'], state: query['state'] };
 }
 
 export function statusLabel(s: LeadAdImportStatus): string {

@@ -358,7 +358,7 @@ export class ArLeadForms {
     }
     this.busy.set(true);
     try {
-      const choice = await firstValueFrom(this.api.completeLogin(result.code));
+      const choice = await firstValueFrom(this.api.completeLogin(result.code, result.state));
       this.picked.set(
         new Set(choice.pages.filter((p) => !p.alreadyConnected).map((p) => p.pageId)),
       );

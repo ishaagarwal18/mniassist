@@ -602,7 +602,7 @@ export class ArAdAttribution {
     }
     this.busy.set(true);
     try {
-      const choice = await firstValueFrom(this.ads.completeLogin(result.code));
+      const choice = await firstValueFrom(this.ads.completeLogin(result.code, result.state));
       this.picked.set(
         new Set(
           choice.accounts

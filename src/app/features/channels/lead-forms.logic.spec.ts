@@ -3,7 +3,7 @@ import { platformLabel, readCallback, statusLabel, statusTone } from './lead-for
 
 describe('lead forms logic', () => {
   it('accepts Facebook’s answer to the sign-in this tab started', () => {
-    expect(readCallback({ code: 'abc', state: 's1' }, 's1')).toEqual({ ok: true, code: 'abc' });
+    expect(readCallback({ code: 'abc', state: 's1' }, 's1')).toEqual({ ok: true, code: 'abc', state: 's1' });
   });
 
   it('refuses another tab’s sign-in, a cancelled one, or one with no code', () => {

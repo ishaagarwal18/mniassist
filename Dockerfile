@@ -13,5 +13,6 @@ FROM nginx:1.27-alpine AS web
 # on AWS the stack sets the API's public address (https://api.<domain>), reached through the load balancer.
 ENV API_UPSTREAM=http://api:8080
 COPY nginx.conf /etc/nginx/templates/default.conf.template
+COPY web-security-headers.conf /etc/nginx/snippets/web-security-headers.conf
 COPY --from=build /src/dist/autoreach-web/browser /usr/share/nginx/html
 EXPOSE 80
