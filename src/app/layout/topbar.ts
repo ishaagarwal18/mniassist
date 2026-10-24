@@ -18,9 +18,8 @@ import { PlanService } from '../core/services/plan.service';
 import { CurrentUserService } from '../core/services/current-user.service';
 import { canAccessNavItem } from '../core/auth/permission';
 import { NAV, NavItem } from './nav.model';
-import { ArThemeToggle } from './theme-toggle';
+import { ArAppearanceSettings } from './appearance-settings';
 import { NavDrawer } from './nav-drawer';
-import { ArLanguageSwitch } from './language-switch';
 import { LanguageService } from '../core/i18n/language.service';
 
 /**
@@ -37,7 +36,7 @@ import { LanguageService } from '../core/i18n/language.service';
  */
 @Component({
   selector: 'ar-topbar',
-  imports: [ArIcon, ArThemeToggle, ArLanguageSwitch, RouterLink, RouterLinkActive],
+  imports: [ArIcon, ArAppearanceSettings, RouterLink, RouterLinkActive],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
@@ -88,8 +87,10 @@ import { LanguageService } from '../core/i18n/language.service';
           }
         </a>
       }
-      <ar-language-switch compact class="tb__theme" />
-      <ar-theme-toggle compact class="tb__theme" />
+      <ar-appearance-settings compact />
+      <button class="tb__signout" type="button" (click)="signOut()">
+        {{ i18n.t('Sign out') }}
+      </button>
     </div>
 
     @if (open()) {
@@ -200,13 +201,13 @@ import { LanguageService } from '../core/i18n/language.service';
       .tb__actions:empty {
         display: none;
       }
-      .tb__tools {
+      :host .tb__tools {
+        order: 2;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        justify-content: flex-end;
         padding-left: 0;
         border-left: 0;
-      }
-      /* The theme and language switches are also in the user menu; the header has no room here. */
-      .tb__theme {
-        display: none;
       }
     }
     .tb__title-row {
@@ -234,6 +235,23 @@ import { LanguageService } from '../core/i18n/language.service';
       align-items: center;
       gap: 10px;
     }
+    .tb__signout {
+      flex: none;
+      min-height: 34px;
+      padding: 6px 10px;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
+      background: transparent;
+      color: var(--ar-ink-700);
+      font: 500 12px var(--ar-font-sans);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .tb__signout:hover,
+    .tb__signout:focus-visible {
+      background: var(--ar-bg-100);
+      color: var(--ar-ink-900);
+    }
     .tb__tools {
       display: flex;
       align-items: center;
@@ -245,9 +263,6 @@ import { LanguageService } from '../core/i18n/language.service';
     .tb__actions:empty + .tb__tools {
       padding-left: 0;
       border-left: 0;
-    }
-    .tb__theme {
-      margin-left: 6px;
     }
     .tb__tool {
       position: relative;
@@ -428,6 +443,12 @@ export class ArTopbar {
   protected toggle(event: Event): void {
     event.stopPropagation();
     this.open.update((v) => !v);
+  }
+
+  protected signOut(): void {
+    this.open.set(false);
+    this.drawer.close();
+    this.account.logout();
   }
 
   @HostListener('document:click')

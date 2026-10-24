@@ -1,7 +1,7 @@
 /**
  * Translates each screen's own text (headings, labels, buttons, help, empty states, toasts) as it is
  * rendered. Templates stay in English: this watches the page and replaces any text node or attribute
- * whose whole text is an entry in the dictionary (SCREEN_TEXTS), keeping the English so switching back
+ * whose whole text is an entry in ABP's AutoReach UI resource, keeping the English so switching back
  * or to another language works from it.
  *
  * Only exact entries are touched, so customer data (names, messages, notes) is left alone unless it

@@ -1,5 +1,4 @@
 import { ScreenTranslator } from './screen-translator';
-import { SCREEN_TEXTS } from './screen-texts';
 
 const HINDI = new Map<string, string>([
   ['Save changes', 'बदलाव सहेजें'],
@@ -76,23 +75,5 @@ describe('screen translator', () => {
     expect(input.title).toBe('बदलाव सहेजें');
     translator.stop();
     expect(input.placeholder).toBe('Search contacts');
-  });
-});
-
-describe('screen texts', () => {
-  // A translation that drops or invents a {0} would show a raw placeholder, or lose a value.
-  it('keeps every placeholder of the English in both translations', () => {
-    const marks = (s: string) => [...new Set(s.match(/\{\d+\}/g) ?? [])].sort().join();
-    const broken = Object.entries(SCREEN_TEXTS)
-      .filter(([en, [hi, mr]]) => marks(hi) !== marks(en) || marks(mr) !== marks(en))
-      .map(([en]) => en);
-    expect(broken).toEqual([]);
-  });
-
-  it('has both a Hindi and a Marathi text for every entry', () => {
-    const empty = Object.entries(SCREEN_TEXTS)
-      .filter(([, [hi, mr]]) => !hi.trim() || !mr.trim())
-      .map(([en]) => en);
-    expect(empty).toEqual([]);
   });
 });

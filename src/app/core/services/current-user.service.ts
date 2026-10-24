@@ -11,6 +11,7 @@ import {
   TENANT_KEY,
 } from '@abp/ng.core';
 import { OAuthService } from 'angular-oauth2-oidc';
+import { RememberMeService } from '@abp/ng.oauth';
 import { catchError, firstValueFrom, of } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -233,6 +234,7 @@ export class CurrentUserService {
     /** Where to land instead of the usual place, e.g. Get started after creating a workspace. */
     landOn?: string,
   ): Promise<void> {
+    this.endingSession = false;
     if (MOCK) {
       this.mockUser.set(mockIdentityFrom(username));
       try {
@@ -333,6 +335,7 @@ export class CurrentUserService {
     workspace: string,
     proof?: SecondFactor,
   ): Promise<void> {
+    this.endingSession = false;
     if (MOCK) throw new Error('Signing in with Google or Microsoft needs the API.');
     await this.selectTenant(workspace);
     const tenant = this.session.getTenant();
@@ -393,11 +396,31 @@ export class CurrentUserService {
       this.i18n.t('Your session has ended. Sign in again to continue.'),
       this.i18n.t('Signed out'),
     );
-    const toLogin = () => {
-      this.endingSession = false;
-      void this.router.navigateByUrl('/login');
-    };
-    this.auth.logout().subscribe({ complete: toLogin, error: toLogin });
+    // The session is already rejected. ABP's logout waits for token revocation
+    // and a configuration fetch before redirecting; either can hang or fail here.
+    // Clear local tokens without a remote logout redirect, and clear the cached
+    // identity so the login screen cannot immediately bounce back to /home.
+    this.injector.get(OAuthService).logOut(true);
+    this.injector.get(RememberMeService).remove();
+    this.session.setTenant(null);
+    this.currentTenantName.set('');
+    try {
+      localStorage.removeItem('ar.agency.acting');
+    } catch {
+      /* storage blocked */
+    }
+    this.config.setState({
+      ...this.config.getAll(),
+      currentUser: {
+        isAuthenticated: false,
+        emailVerified: false,
+        phoneNumberVerified: false,
+        roles: [],
+      },
+      currentTenant: { isAvailable: false },
+      auth: { grantedPolicies: {} },
+    });
+    void this.router.navigateByUrl('/login', { replaceUrl: true });
   }
 
   logout(): void {

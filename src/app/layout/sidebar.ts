@@ -16,13 +16,12 @@ import { NAV, NavGroup } from './nav.model';
 import { ArAvatar, ArIcon } from '../ui';
 import { ArBrand } from './brand';
 import { NavDrawer } from './nav-drawer';
-import { ArLanguageSwitch } from './language-switch';
+import { ArAppearanceSettings } from './appearance-settings';
 import { LanguageService } from '../core/i18n/language.service';
 import { OpsService } from '../core/services/ops.service';
 import { InboxService } from '../core/services/inbox.service';
 import { CurrentUserService } from '../core/services/current-user.service';
 import { BrandingStore } from '../core/services/branding.store';
-import { ThemeService } from '../core/services/theme.service';
 import { PwaService } from '../core/services/pwa.service';
 import { PlanService } from '../core/services/plan.service';
 import { canAccessNavItem } from '../core/auth/permission';
@@ -48,7 +47,7 @@ function readCollapsed(): boolean {
 
 @Component({
   selector: 'ar-sidebar',
-  imports: [RouterLink, ArIcon, ArAvatar, ArBrand, ArLanguageSwitch],
+  imports: [RouterLink, ArIcon, ArAvatar, ArBrand, ArAppearanceSettings],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class.sb--collapsed]': 'collapsed()',
@@ -158,16 +157,6 @@ function readCollapsed(): boolean {
           <a class="sb__menu-item" routerLink="/settings/profile" role="menuitem" (click)="close()">
             <ar-icon name="user" [size]="15" /> {{ i18n.t('Your profile') }}
           </a>
-          <button
-            class="sb__menu-item"
-            type="button"
-            role="menuitemcheckbox"
-            [attr.aria-checked]="theme.theme() === 'dark'"
-            (click)="toggleTheme($event)"
-          >
-            <ar-icon [name]="theme.theme() === 'dark' ? 'sun' : 'moon'" [size]="15" />
-            {{ i18n.t(theme.theme() === 'dark' ? 'Light theme' : 'Dark theme') }}
-          </button>
           @if (pwa.canInstall()) {
             <button
               class="sb__menu-item"
@@ -182,8 +171,7 @@ function readCollapsed(): boolean {
             <ar-icon name="link" [size]="15" /> {{ i18n.t('Sign out') }}
           </button>
           <div class="sb__menu-lang" (click)="$event.stopPropagation()">
-            <span>{{ i18n.t('Language') }}</span>
-            <ar-language-switch />
+            <ar-appearance-settings />
           </div>
         </div>
       }
@@ -213,7 +201,6 @@ export class ArSidebar {
   private readonly permissions = inject(PermissionService);
   protected readonly account = inject(CurrentUserService);
   protected readonly branding = inject(BrandingStore);
-  protected readonly theme = inject(ThemeService);
   protected readonly pwa = inject(PwaService);
   protected readonly plan = inject(PlanService);
 
@@ -253,12 +240,6 @@ export class ArSidebar {
     } catch {
       /* storage blocked: the choice just won't persist */
     }
-  }
-
-  /** Keeps the menu open, so the switch can be flipped back and forth to compare. */
-  protected toggleTheme(event: Event): void {
-    event.stopPropagation();
-    this.theme.toggle();
   }
 
   protected async installApp(event: Event): Promise<void> {

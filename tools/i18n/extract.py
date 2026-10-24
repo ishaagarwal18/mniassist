@@ -1,4 +1,4 @@
-"""Find the English the screens show, for the Hindi and Marathi dictionary (src/app/core/i18n/screen-texts.ts).
+"""Find English UI text missing from the backend ABP AutoReach localization resource.
 
     python tools/i18n/extract.py --missing        English with no entry yet, one per line
     python tools/i18n/extract.py src/app out.json  every string found, as a JSON list
@@ -200,10 +200,10 @@ def main():
         )
     out = sorted(x for x in out if x and len(x) <= 600 and not junk(x))
     if MISSING:
-        known = set()
-        for f in ('src/app/core/i18n/screen-texts.ts', 'src/app/core/i18n/frame-texts.ts'):
-            for a, b, c in re.findall(r"^\s*(?:'((?:[^'\\]|\\.)*)'|\"((?:[^\"\\]|\\.)*)\"|([A-Za-z]+))\s*:", open(f, encoding='utf-8').read(), re.M):
-                known.add((a or b or c).replace("\\'", "'").replace('\\"', '"'))
+        resource_path = os.path.join(os.path.dirname(__file__), '../../../autoreach-api/src/AutoReach.Domain.Shared/Localization/AutoReach/en.json')
+        with open(resource_path, encoding='utf-8') as resource_file:
+            texts = json.load(resource_file)['texts']
+        known = {value for key, value in texts.items() if key.startswith('Ui:')}
         sys.stdout.reconfigure(encoding='utf-8')
         for s in out:
             if s not in known:

@@ -75,7 +75,7 @@ export class PwaService {
     }
 
     win.navigator.serviceWorker
-      .register('/sw.js', { scope: '/' })
+      .register('/sw.js', { scope: '/', updateViaCache: 'none' })
       .then((reg) => {
         // If an updated worker is already waiting
         if (reg.waiting) {

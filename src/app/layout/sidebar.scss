@@ -310,11 +310,8 @@
   z-index: 10;
 }
 .sb__menu-lang {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 9px 4px;
+  display: block;
+  padding: 12px 9px 8px;
   margin-top: 2px;
   border-top: 1px solid color-mix(in srgb, var(--ar-nav-text) 18%, transparent);
   color: var(--ar-nav-text);

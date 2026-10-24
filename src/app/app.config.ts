@@ -32,7 +32,18 @@ export const appConfig: ApplicationConfig = {
     provideAbpCore(
       withOptions({
         environment,
-        registerLocaleFn: () => Promise.resolve(),
+        registerLocaleFn: (culture) => {
+          switch (culture.toLowerCase().split(/[-_]/)[0]) {
+            case 'hi':
+              return import('@angular/common/locales/hi');
+            case 'mr':
+              return import('@angular/common/locales/mr');
+            case 'gu':
+              return import('@angular/common/locales/gu');
+            default:
+              return import('@angular/common/locales/en');
+          }
+        },
 
         // While the UI runs on seeded data there is no API to ask for the
         // application configuration, and firing that request would leave the app

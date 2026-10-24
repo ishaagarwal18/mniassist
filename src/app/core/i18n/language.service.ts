@@ -1,14 +1,18 @@
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpContext } from '@angular/common/http';
-import { ConfigStateService, Rest, RestService, SessionStateService } from '@abp/ng.core';
+import {
+  ConfigStateService,
+  LocalizationService,
+  Rest,
+  RestService,
+  SessionStateService,
+} from '@abp/ng.core';
 import { distinctUntilChanged, filter } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { QUIET_REQUEST } from '../http/api-feedback.interceptor';
-import { FRAME_TEXTS } from './frame-texts';
-import { GU_FRAME_TEXTS } from './gu-frame-texts';
-import { ScreenDictionary, ScreenTranslator } from './screen-translator';
+import { ScreenTranslator } from './screen-translator';
 
 export type AppLanguage = 'en' | 'hi' | 'mr' | 'gu';
 
@@ -33,29 +37,23 @@ export function toAppLanguage(value: string | null | undefined): AppLanguage {
   return code === 'hi' || code === 'mr' || code === 'gu' ? code : 'en';
 }
 
-/** Frame text in a language: the English itself when there is no entry. `{0}`… are filled from `args`. */
-export function translate(lang: AppLanguage, text: string, ...args: (string | number)[]): string {
-  const found =
-    lang === 'en'
-      ? text
-      : lang === 'gu'
-        ? (GU_FRAME_TEXTS[text] ?? text)
-        : (FRAME_TEXTS[text]?.[lang] ?? text);
-  return args.length ? found.replace(/\{(\d+)\}/g, (m, i) => String(args[+i] ?? m)) : found;
+/** ABP separates resource and key with `::`; escape literal colons and percent signs in UI text. */
+export function uiResourceKey(text: string): string {
+  return `Ui:${text.replaceAll('%', '%25').replaceAll(':', '%3A')}`;
 }
 
 /**
- * The app's language: English, Hindi, Marathi or Gujarati. Setting it does four things — ABP's session
- * language (sent to the API as Accept-Language, so server messages come back in it), the frame's
- * own text (menu, header, sign-in; see FRAME_TEXTS), each screen's text (SCREEN_TEXTS, applied by
- * ScreenTranslator), and, when signed in, the user's saved choice, so it follows them to their
- * other devices.
+ * ABP owns the selected culture, localization resources and interpolation. This adapter keeps
+ * existing frame templates and screen text working with the same backend AutoReach resource.
+ * The user's ABP language setting is also saved so the choice follows them across devices.
  */
 @Injectable({ providedIn: 'root' })
 export class LanguageService {
   private readonly session = inject(SessionStateService);
   private readonly config = inject(ConfigStateService);
   private readonly rest = inject(RestService);
+  private readonly localization = inject(LocalizationService);
+  private readonly resourceVersion = signal(0);
 
   readonly lang = signal<AppLanguage>(toAppLanguage(this.session.getLanguage()));
 
@@ -68,6 +66,15 @@ export class LanguageService {
       .getLanguage$()
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((l) => this.apply(toAppLanguage(l)));
+
+    // Refresh labels only after ABP has loaded the selected culture. A language selection can
+    // arrive before its HTTP response; never render the previous culture as the new one.
+    this.localization
+      .getResource$('AutoReach')
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe((resource) => this.refreshResource(resource));
+
+    destroyRef.onDestroy(() => this.translator?.stop());
 
     // Signed in: the saved choice wins, unless one was just picked on the sign-in page.
     if (!environment.useMockData) {
@@ -84,7 +91,17 @@ export class LanguageService {
 
   /** Frame text in the current language. Reads the language signal, so templates follow a change. */
   t(text: string, ...args: (string | number)[]): string {
-    return translate(this.lang(), text, ...args);
+    this.lang();
+    this.resourceVersion();
+    const fallback = text.replace(/\{(\d+)\}/g, (match, index) => String(args[+index] ?? match));
+    if (
+      toAppLanguage(this.config.getDeep('localization.currentCulture.cultureName')) !== this.lang()
+    )
+      return fallback;
+    return this.localization.instant(
+      { key: `AutoReach::${uiResourceKey(text)}`, defaultValue: fallback },
+      ...args.map(String),
+    );
   }
 
   /** Switches the app's language, and saves it for the user when signed in. */
@@ -106,49 +123,41 @@ export class LanguageService {
   }
 
   private apply(code: AppLanguage): void {
+    if (code !== this.lang()) this.translator?.stop();
     this.lang.set(code);
     document.documentElement.lang = code;
-    void this.translateScreens(code);
+    if (code === 'en') this.translator?.stop();
+    this.refreshResource(this.localization.getResource('AutoReach'));
   }
 
   private translator: ScreenTranslator | null = null;
-  private screenTexts: Promise<Readonly<Record<string, readonly [string, string]>>> | null = null;
-  private gujaratiTexts: Promise<Readonly<Record<string, string>>> | null = null;
-  private readonly dictionaries = new Map<AppLanguage, ScreenDictionary>();
+
+  private refreshResource(resource: Record<string, string> | undefined): void {
+    if (
+      toAppLanguage(this.config.getDeep('localization.currentCulture.cultureName')) !== this.lang()
+    )
+      return;
+    this.resourceVersion.update((version) => version + 1);
+    this.translateScreens(resource);
+  }
 
   /**
-   * Each screen's own text, translated as it renders (see ScreenTranslator). The dictionary is a
-   * separate chunk, fetched when its language is chosen, so English never downloads it.
+   * Existing screens render English literals. Feed their rendering adapter exclusively from
+   * ABP's current resource, including updates received after configuration refreshes.
    */
-  private async translateScreens(code: AppLanguage): Promise<void> {
-    if (code === 'en') {
+  private translateScreens(resource: Record<string, string> | undefined): void {
+    if (this.lang() === 'en') {
       this.translator?.stop();
       return;
     }
-    let dict = this.dictionaries.get(code);
-    if (!dict) {
-      try {
-        const map = new Map<string, string>();
-        if (code === 'gu') {
-          this.gujaratiTexts ??= import('./gu-screen-texts').then((m) => m.GU_SCREEN_TEXTS);
-          for (const [en, text] of Object.entries(await this.gujaratiTexts)) map.set(en, text);
-          for (const [en, text] of Object.entries(GU_FRAME_TEXTS)) map.set(en, text);
-        } else {
-          this.screenTexts ??= import('./screen-texts').then((m) => m.SCREEN_TEXTS);
-          const texts = await this.screenTexts;
-          const i = code === 'hi' ? 0 : 1;
-          for (const [en, t] of Object.entries(texts)) if (t[i]) map.set(en, t[i]);
-          for (const [en, t] of Object.entries(FRAME_TEXTS)) map.set(en, t[code]);
-        }
-        dict = map;
-        this.dictionaries.set(code, dict);
-      } catch {
-        this.screenTexts = null; // offline or a stale deploy: the frame is translated, screens stay English
-        this.gujaratiTexts = null;
-        return;
+    if (!resource) return;
+    const dict = new Map<string, string>();
+    for (const [key, value] of Object.entries(resource)) {
+      if (key.startsWith('Ui:')) {
+        const english = key.slice(3).replaceAll('%3A', ':').replaceAll('%25', '%');
+        dict.set(english, value);
       }
     }
-    if (this.lang() !== code) return; // switched again while loading
     this.translator ??= new ScreenTranslator(document.body);
     this.translator.use(dict);
   }
