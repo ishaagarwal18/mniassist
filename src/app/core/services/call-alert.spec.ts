@@ -5,7 +5,30 @@ describe('ringing call alert', () => {
     vi.useFakeTimers();
     document.title = 'Inbox · MNI Assist';
   });
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('does not initialize audio for an unrelated click', () => {
+    const audio = vi.fn();
+    vi.stubGlobal('AudioContext', audio);
+    const alert = new CallAlert();
+    document.dispatchEvent(new Event('pointerdown'));
+    expect(audio).not.toHaveBeenCalled();
+    expect(alert.audioReady()).toBe(false);
+  });
+
+  it('initializes audio only when the agent enables call alerts', () => {
+    const audio = vi.fn(function () {
+      return { state: 'running' };
+    });
+    vi.stubGlobal('AudioContext', audio);
+    const alert = new CallAlert();
+    alert.unlock();
+    expect(audio).toHaveBeenCalledOnce();
+    expect(alert.audioReady()).toBe(true);
+  });
 
   it('flashes the tab title while ringing and puts it back when it stops', () => {
     const alert = new CallAlert();

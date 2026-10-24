@@ -12,7 +12,7 @@ import {
 } from '@abp/ng.core';
 import { OAuthService } from 'angular-oauth2-oidc';
 import { RememberMeService } from '@abp/ng.oauth';
-import { catchError, firstValueFrom, of } from 'rxjs';
+import { catchError, firstValueFrom, of, timeout } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { ProfileDto, ProfileService, UpdateProfileDto } from '../../proxy/account';
@@ -209,7 +209,7 @@ export class CurrentUserService {
       this.currentTenantName.set('');
       return;
     }
-    const result = await firstValueFrom(this.tenants.findTenantByName(wanted));
+    const result = await this.resolveTenant(wanted);
     if (!result?.success || !result.tenantId) {
       throw new Error(`Workspace "${wanted}" was not found.`);
     }
@@ -218,6 +218,36 @@ export class CurrentUserService {
     }
     this.session.setTenant({ id: result.tenantId, name: result.name ?? wanted, isAvailable: true });
     this.currentTenantName.set(result.name ?? wanted);
+  }
+
+  private tenantLookup?: {
+    name: string;
+    expires: number;
+    result: ReturnType<CurrentUserService['fetchTenant']>;
+  };
+
+  private fetchTenant(name: string) {
+    return firstValueFrom(this.tenants.findTenantByName(name));
+  }
+
+  /** Share branding's lookup with sign-in, including an in-flight lookup. */
+  resolveTenant(name: string) {
+    const wanted = name.trim();
+    if (this.tenantLookup?.name === wanted && this.tenantLookup.expires > Date.now())
+      return this.tenantLookup.result;
+    const result = this.fetchTenant(wanted)
+      .then((value) => {
+        // A workspace can be created immediately after a failed lookup. Never
+        // let an earlier branding preview hide that newly created workspace.
+        if (!value?.success && this.tenantLookup?.result === result) this.tenantLookup = undefined;
+        return value;
+      })
+      .catch((error) => {
+        if (this.tenantLookup?.result === result) this.tenantLookup = undefined;
+        throw error;
+      });
+    this.tenantLookup = { name: wanted, expires: Date.now() + 30_000, result };
+    return result;
   }
 
   /**
@@ -400,6 +430,11 @@ export class CurrentUserService {
     // and a configuration fetch before redirecting; either can hang or fail here.
     // Clear local tokens without a remote logout redirect, and clear the cached
     // identity so the login screen cannot immediately bounce back to /home.
+    this.clearLocalSession();
+  }
+
+  private clearLocalSession(): void {
+    this.tenantLookup = undefined;
     this.injector.get(OAuthService).logOut(true);
     this.injector.get(RememberMeService).remove();
     this.session.setTenant(null);
@@ -439,32 +474,21 @@ export class CurrentUserService {
     // End this device's session on the server first, so it leaves the device list and
     // its tokens stop working even if a copy of them survives. Best effort: a failure
     // here must never keep someone signed in.
+    if (this.endingSession) return;
+    this.endingSession = true;
     this.sessions
       .endCurrent({ skipHandleError: true })
-      .pipe(catchError(() => of(undefined)))
-      .subscribe(() => this.finishLogout());
+      .pipe(
+        timeout(3000),
+        catchError(() => of(undefined)),
+      )
+      .subscribe();
+    this.finishLogout();
   }
 
   private finishLogout(done?: () => void): void {
-    this.auth.logout().subscribe({
-      error: () => {
-        done?.();
-        void this.router.navigateByUrl('/login');
-      },
-      complete: () => {
-        done?.();
-        this.session.setTenant(null);
-        this.currentTenantName.set('');
-        try {
-          localStorage.removeItem('ar.agency.acting');
-        } catch {
-          /* ignore */
-        }
-        // ABP's password flow ends sign-out on `/`, which is now the public front
-        // page. Finish on the sign-in screen instead, the same as mock mode.
-        void this.router.navigateByUrl('/login');
-      },
-    });
+    this.clearLocalSession();
+    done?.();
   }
 
   // ---- profile ------------------------------------------------------

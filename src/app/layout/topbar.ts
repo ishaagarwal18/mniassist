@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink, RouterLinkActive } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
-import { ArIcon } from '../ui';
+import { ArIcon } from '../ui/icon';
 import { helpTopicFor } from '../core/help/help-topics';
 import { grantedPolicy } from '../core/auth/permission';
 import { InboxService } from '../core/services/inbox.service';

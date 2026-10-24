@@ -1,14 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
-import {
-  CategoryService,
-  ChartModule,
+import type {
   IAxisLabelRenderEventArgs,
   ISharedTooltipRenderEventArgs,
-  LegendService,
-  LineSeriesService,
-  TooltipService,
 } from '@syncfusion/ej2-angular-charts';
+import { ArChart } from '../../ui/chart';
+import { ArChartSeries } from '../../ui/chart-series';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 
 import { ForecastStore } from '../../core/services/forecast.store';
@@ -74,14 +71,14 @@ interface QuotaRow {
     ArChip,
     ArDialog,
     ArSelect,
-    ChartModule,
+    ArChart,
+    ArChartSeries,
     ArStatTile,
     ArBanner,
     ArCard,
     ArGrid,
     GridModule,
   ],
-  providers: [LineSeriesService, CategoryService, LegendService, TooltipService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './forecast.html',
   styleUrl: './forecast.scss',

@@ -280,23 +280,23 @@
     }
     @if (chart(); as ch) {
       <div class="fc__chart">
-        <ejs-chart
-          id="fc-history-chart"
-          height="220px"
-          background="transparent"
-          [theme]="colours().theme"
-          [primaryXAxis]="xAxis"
-          [primaryYAxis]="yAxis"
-          [chartArea]="{ border: { width: 0 } }"
-          [tooltip]="{ enable: true, shared: true }"
-          [legendSettings]="{ visible: true, position: 'Bottom' }"
-          [crosshair]="{ enable: false }"
-          (axisLabelRender)="moneyAxisLabel($event)"
-          (sharedTooltipRender)="moneyTooltip($event)"
-          aria-label="Expected and closed over the period"
-        >
-          <e-series-collection>
-            <e-series
+        @defer (on viewport) {
+          <ar-chart
+            id="fc-history-chart"
+            height="220px"
+            background="transparent"
+            [theme]="colours().theme"
+            [primaryXAxis]="xAxis"
+            [primaryYAxis]="yAxis"
+            [chartArea]="{ border: { width: 0 } }"
+            [tooltip]="{ enable: true, shared: true }"
+            [legendSettings]="{ visible: true, position: 'Bottom' }"
+            [crosshair]="{ enable: false }"
+            (axisLabelRender)="moneyAxisLabel($event)"
+            (sharedTooltipRender)="moneyTooltip($event)"
+            aria-label="Expected and closed over the period"
+          >
+            <ar-chart-series
               [dataSource]="ch.points"
               type="Line"
               xName="day"
@@ -306,7 +306,7 @@
               [fill]="colours().expected"
               [marker]="{ visible: true, width: 6, height: 6 }"
             />
-            <e-series
+            <ar-chart-series
               [dataSource]="ch.points"
               type="Line"
               xName="day"
@@ -316,7 +316,7 @@
               [fill]="colours().closed"
             />
             @if (ch.hasTarget) {
-              <e-series
+              <ar-chart-series
                 [dataSource]="ch.points"
                 type="Line"
                 xName="day"
@@ -327,8 +327,10 @@
                 [fill]="colours().target"
               />
             }
-          </e-series-collection>
-        </ejs-chart>
+          </ar-chart>
+        } @placeholder {
+          <div style="min-height: 220px" aria-busy="true"></div>
+        }
       </div>
     } @else {
       <p class="fc__empty">

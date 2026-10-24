@@ -19,7 +19,7 @@ export const ringingTitle = (who: string) => `📞 ${who} is calling`;
  * desktop notification while the tab is in the background.
  *
  * Browsers allow sound, and the notification permission prompt, only after the person has interacted with the page, so the call
- * bar calls {@link unlock} on the first click. The ringtone is scheduled on the audio clock in one go, so it keeps ringing in a
+ * bar calls {@link unlock} from the explicit alert setup action. The ringtone is scheduled on the audio clock in one go, so it keeps ringing in a
  * background tab, where timers are slowed down.
  */
 @Injectable({ providedIn: 'root' })
@@ -36,16 +36,25 @@ export class CallAlert {
    * person's permission. Watched so the call bar can say when they are off, instead of failing silently.
    */
   readonly permission = signal<AlertPermission>(currentAlertPermission());
+  readonly audioReady = signal(false);
 
   unlock(): void {
     try {
       this.ctx ??= new AudioContext();
-      if (this.ctx.state === 'suspended') void this.ctx.resume();
+      if (this.ctx.state === 'suspended') {
+        void this.ctx
+          .resume()
+          .then(() => {
+            this.audioReady.set(this.ctx?.state === 'running');
+            if (this.current && !this.ring) this.startRingtone();
+          })
+          .catch(() => this.audioReady.set(false));
+      } else {
+        this.audioReady.set(this.ctx.state === 'running');
+        if (this.current && !this.ring) this.startRingtone();
+      }
     } catch {
       // No Web Audio: the title and the notification still alert.
-    }
-    if (this.permission() === 'default') {
-      void this.askPermission();
     }
   }
 

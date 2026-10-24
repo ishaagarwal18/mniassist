@@ -1,4 +1,7 @@
 import { TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { ArAppearanceSettings } from '../../layout/appearance-settings';
+import { ThemeService } from '../services/theme.service';
 import {
   ConfigStateService,
   LocalizationService,
@@ -56,6 +59,7 @@ describe('ABP app localization', () => {
           },
         },
         { provide: RestService, useValue: { request } },
+        { provide: ThemeService, useValue: { theme: signal('light'), set: vi.fn() } },
       ],
     });
     container = document.createElement('div');
@@ -80,6 +84,20 @@ describe('ABP app localization', () => {
       'en',
     ]);
     expect(APP_LANGUAGES).toContainEqual({ code: 'gu', label: 'ગુજરાતી', short: 'ગુ' });
+  });
+
+  it('updates the combined appearance label when ABP resources arrive for another language', () => {
+    const fixture = TestBed.createComponent(ArAppearanceSettings);
+    fixture.detectChanges();
+    const summary = fixture.nativeElement.querySelector('summary') as HTMLElement;
+    expect(summary.textContent).toContain('Language');
+    culture = 'hi';
+    resource.next({ [uiResourceKey('Language')]: 'भाषा', [uiResourceKey('Theme')]: 'थीम' });
+    service.set('hi');
+    fixture.detectChanges();
+    expect(summary.textContent).toContain('भाषा');
+    expect(summary.textContent).toContain('थीम');
+    fixture.destroy();
   });
 
   it('uses ABP resource lookup and interpolation for frame labels', () => {

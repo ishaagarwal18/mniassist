@@ -8,14 +8,8 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  CategoryService,
-  ChartModule,
-  DateTimeService,
-  LegendService,
-  LineSeriesService,
-  TooltipService,
-} from '@syncfusion/ej2-angular-charts';
+import { ArChart } from '../../ui/chart';
+import { ArChartSeries } from '../../ui/chart-series';
 import { GridModule, RowSelectEventArgs } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
 
@@ -59,9 +53,9 @@ const STATUS: Record<Status, { label: string; tone: ChipTone }> = {
     ArSelect,
     ArGrid,
     GridModule,
-    ChartModule,
+    ArChart,
+    ArChartSeries,
   ],
-  providers: [LineSeriesService, DateTimeService, CategoryService, LegendService, TooltipService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -310,24 +304,28 @@ const STATUS: Record<Status, { label: string; tone: ChipTone }> = {
             <p class="sp__explain">
               {{ explain(s) }}
             </p>
-            <ejs-chart
-              id="stock-projection-chart"
-              height="260px"
-              background="transparent"
-              [theme]="colours().theme"
-              [primaryXAxis]="{
-                valueType: 'DateTime',
-                labelFormat: 'd MMM',
-                majorGridLines: { width: 0 },
-              }"
-              [primaryYAxis]="{ minimum: 0, lineStyle: { width: 0 }, majorTickLines: { width: 0 } }"
-              [chartArea]="{ border: { width: 0 } }"
-              [tooltip]="{ enable: true, shared: true }"
-              [legendSettings]="{ visible: true, position: 'Bottom' }"
-              aria-label="Projected stock balance against the reorder point"
-            >
-              <e-series-collection>
-                <e-series
+            @defer (on viewport) {
+              <ar-chart
+                id="stock-projection-chart"
+                height="260px"
+                background="transparent"
+                [theme]="colours().theme"
+                [primaryXAxis]="{
+                  valueType: 'DateTime',
+                  labelFormat: 'd MMM',
+                  majorGridLines: { width: 0 },
+                }"
+                [primaryYAxis]="{
+                  minimum: 0,
+                  lineStyle: { width: 0 },
+                  majorTickLines: { width: 0 },
+                }"
+                [chartArea]="{ border: { width: 0 } }"
+                [tooltip]="{ enable: true, shared: true }"
+                [legendSettings]="{ visible: true, position: 'Bottom' }"
+                aria-label="Projected stock balance against the reorder point"
+              >
+                <ar-chart-series
                   [dataSource]="projection()"
                   type="Line"
                   xName="on"
@@ -337,7 +335,7 @@ const STATUS: Record<Status, { label: string; tone: ChipTone }> = {
                   [fill]="colours().balance"
                   [marker]="{ visible: true, width: 6, height: 6 }"
                 />
-                <e-series
+                <ar-chart-series
                   [dataSource]="projection()"
                   type="Line"
                   xName="on"
@@ -347,7 +345,7 @@ const STATUS: Record<Status, { label: string; tone: ChipTone }> = {
                   [width]="1.5"
                   [fill]="colours().reorder"
                 />
-                <e-series
+                <ar-chart-series
                   [dataSource]="projection()"
                   type="Line"
                   xName="on"
@@ -357,8 +355,10 @@ const STATUS: Record<Status, { label: string; tone: ChipTone }> = {
                   [width]="1.5"
                   [fill]="colours().safety"
                 />
-              </e-series-collection>
-            </ejs-chart>
+              </ar-chart>
+            } @placeholder {
+              <div style="min-height:260px" aria-busy="true"></div>
+            }
           </ar-card>
         } @else if ((p.lines ?? []).length > 0) {
           <p class="sp__hint">Pick a part in the table to see its projected stock week by week.</p>

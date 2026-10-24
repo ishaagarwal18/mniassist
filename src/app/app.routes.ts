@@ -117,6 +117,7 @@ export const routes: Routes = [
     children: [
       {
         path: 'home',
+        data: { preload: true },
         title: 'Home · MNI Assist',
         loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.ArDashboard),
       },
@@ -128,11 +129,13 @@ export const routes: Routes = [
       },
       {
         path: 'inbox',
+        data: { preload: true },
         title: 'Inbox · MNI Assist',
         loadComponent: () => import('./features/inbox/inbox').then((m) => m.ArInbox),
       },
       {
         path: 'contacts',
+        data: { preload: true },
         title: 'Contacts · MNI Assist',
         loadComponent: () => import('./features/contacts/contacts').then((m) => m.ArContacts),
       },

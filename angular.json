@@ -52,9 +52,7 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "src/styles.scss"
-            ],
+            "styles": ["src/styles.scss"],
             "optimization": {
               "scripts": true,
               "styles": true,
@@ -131,10 +129,7 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "options": {
-            "allowedHosts": [
-              "localhost",
-              ".ngrok-free.dev"
-            ]
+            "allowedHosts": ["localhost", ".ngrok-free.dev"]
           },
           "configurations": {
             "production": {
@@ -142,7 +137,7 @@
             },
             "development": {
               "buildTarget": "autoreach-web:build:development",
-              "prebundle": false,
+              "prebundle": true,
               "hmr": false
             }
           },

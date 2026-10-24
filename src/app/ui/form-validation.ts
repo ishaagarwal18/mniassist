@@ -25,6 +25,7 @@ type Field = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 const FIELD_SELECTOR = 'input, select, textarea';
 const ERROR_CLASS = 'ar-field__error';
+const markedFields = new WeakMap<ParentNode, Set<Field>>();
 
 /** Digits, spaces, dashes, dots, brackets and a leading +; 8 to 15 digits. */
 function phoneProblem(value: string): string | null {
@@ -127,17 +128,26 @@ function showProblem(el: Field, message: string): void {
  * set by code (a form filled from a vCard, say) drops its stale message too.
  */
 export function recheckMarked(root: ParentNode): void {
-  for (const el of Array.from(root.querySelectorAll<Field>('[aria-invalid="true"]'))) {
-    if (el.matches(FIELD_SELECTOR) && !problemWith(el)) clearProblem(el);
+  const marked = markedFields.get(root);
+  if (!marked) return;
+  for (const el of marked) {
+    if (!root.contains(el) || !el.hasAttribute('aria-invalid')) marked.delete(el);
+    else if (!problemWith(el)) {
+      clearProblem(el);
+      marked.delete(el);
+    }
   }
 }
 
 /** Checks every field under root; marks the problems and focuses the first. True when all is well. */
 export function validateWithin(root: ParentNode): boolean {
   let first: HTMLElement | null = null;
+  const marked = markedFields.get(root) ?? new Set<Field>();
+  markedFields.set(root, marked);
   for (const el of Array.from(root.querySelectorAll<Field>(FIELD_SELECTOR))) {
     const problem = problemWith(el);
     if (problem) {
+      marked.add(el);
       showProblem(el, problem);
       first ??= visibleOf(el);
     } else if (el.getAttribute('aria-invalid') === 'true') {

@@ -258,12 +258,22 @@ const POLL_MS = 4000;
     @if (alertSetup(); as p) {
       <div class="wc wc--setup" role="status">
         <ar-icon name="phone" [size]="15" />
-        @if (p === 'denied') {
+        @if (p === 'audio') {
+          <span>Enable a ringtone for incoming WhatsApp calls.</span>
+          <button ar-button type="button" variant="primary" (click)="alert.unlock()">
+            Enable ringtone
+          </button>
+        } @else if (p === 'denied') {
           <span
             >Desktop alerts for WhatsApp calls are blocked for this site, so a call won't reach you
             while this window is minimised. Allow notifications in the browser's site settings (the
             icon left of the address).</span
           >
+          @if (!alert.audioReady()) {
+            <button ar-button type="button" variant="primary" (click)="alert.unlock()">
+              Enable ringtone
+            </button>
+          }
         } @else {
           <span>Get a desktop alert for WhatsApp calls, even when this window is minimised.</span>
           <button ar-button type="button" variant="primary" (click)="alert.enableNotifications()">
@@ -400,17 +410,18 @@ export class ArWhatsAppCallBar {
   private readonly canUse = grantedPolicy('AutoReach.Inbox', inject(PermissionService));
   private readonly realtime = inject(InboxRealtimeService);
   protected readonly alert = inject(CallAlert);
-  private readonly setupDismissed = signal(readDismissed());
+  private readonly desktopSetupDismissed = readDismissed();
+  private readonly setupDismissed = signal(false);
 
   /** Shown to an agent who takes calls until desktop notifications are on (or they dismiss it for this browser). */
   protected readonly alertSetup = computed(() => {
     const p = this.alert.permission();
-    return this.canUse() &&
-      !environment.useMockData &&
-      !this.setupDismissed() &&
-      (p === 'default' || p === 'denied')
-      ? p
-      : null;
+    if (!this.canUse() || environment.useMockData || this.setupDismissed()) return null;
+    // Audio needs enabling in each new tab. A previously dismissed desktop
+    // notification invitation must not hide that action or silently mute calls.
+    if (!this.alert.audioReady())
+      return this.desktopSetupDismissed || p === 'unsupported' ? 'audio' : p;
+    return !this.desktopSetupDismissed && (p === 'default' || p === 'denied') ? p : null;
   });
 
   protected dismissSetup(): void {
@@ -427,8 +438,26 @@ export class ArWhatsAppCallBar {
     destroyRef.onDestroy(() => this.alert.stop());
     if (!this.canUse() || environment.useMockData) return;
 
-    const poll = setInterval(() => void this.session.poll(), POLL_MS);
-    destroyRef.onDestroy(() => clearInterval(poll));
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      try {
+        if (this.canUse()) await this.session.poll();
+      } catch {
+        // A failed settings/rejoin request must not stop future call checks.
+      } finally {
+        if (!stopped)
+          timer = setTimeout(
+            poll,
+            this.realtime.connected() && !this.session.onCall ? 15_000 : POLL_MS,
+          );
+      }
+    };
+    void poll();
+    destroyRef.onDestroy(() => {
+      stopped = true;
+      clearTimeout(timer);
+    });
 
     // The server says the moment a call rings, on every page, not just the inbox; the timer is the fallback.
     void this.realtime.connect();
@@ -436,10 +465,8 @@ export class ArWhatsAppCallBar {
       if (this.realtime.callRinging()) untracked(() => void this.session.poll());
     });
 
-    // Sound and the notification prompt need a first click on the page.
-    const unlock = () => this.alert.unlock();
-    document.addEventListener('pointerdown', unlock, { once: true });
-    destroyRef.onDestroy(() => document.removeEventListener('pointerdown', unlock));
+    // Audio hardware and permission prompts are initialized by the explicit
+    // call-alert setup button, never by an unrelated navigation/form click.
 
     // A new call starts with the look-up panel closed (the same call refreshed by a poll keeps it open).
     let liveId: string | undefined;

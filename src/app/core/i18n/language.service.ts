@@ -131,12 +131,31 @@ export class LanguageService {
   }
 
   private translator: ScreenTranslator | null = null;
+  private readonly dictionaries = new WeakMap<
+    Record<string, string>,
+    ReadonlyMap<string, string>
+  >();
+  private lastResource: Record<string, string> | undefined;
+  private lastCulture: AppLanguage | undefined;
 
   private refreshResource(resource: Record<string, string> | undefined): void {
     if (
       toAppLanguage(this.config.getDeep('localization.currentCulture.cultureName')) !== this.lang()
     )
       return;
+    if (resource === this.lastResource && this.lang() === this.lastCulture) return;
+    if (resource && this.lastResource && this.lang() === this.lastCulture) {
+      const keys = Object.keys(resource);
+      if (
+        keys.length === Object.keys(this.lastResource).length &&
+        keys.every((key) => resource[key] === this.lastResource![key])
+      ) {
+        this.lastResource = resource;
+        return;
+      }
+    }
+    this.lastResource = resource;
+    this.lastCulture = this.lang();
     this.resourceVersion.update((version) => version + 1);
     this.translateScreens(resource);
   }
@@ -151,6 +170,12 @@ export class LanguageService {
       return;
     }
     if (!resource) return;
+    const cached = this.dictionaries.get(resource);
+    if (cached) {
+      this.translator ??= new ScreenTranslator(document.body);
+      this.translator.use(cached);
+      return;
+    }
     const dict = new Map<string, string>();
     for (const [key, value] of Object.entries(resource)) {
       if (key.startsWith('Ui:')) {
@@ -158,6 +183,7 @@ export class LanguageService {
         dict.set(english, value);
       }
     }
+    this.dictionaries.set(resource, dict);
     this.translator ??= new ScreenTranslator(document.body);
     this.translator.use(dict);
   }

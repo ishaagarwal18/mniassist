@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
+import { Observable, Subject } from 'rxjs';
 
 export type ToastTone = 'success' | 'error' | 'warning' | 'info';
 
@@ -22,7 +22,18 @@ const DEDUPE_MS = 4000;
 @Injectable({ providedIn: 'root' })
 export class ToastService {
   private readonly stream = new Subject<ToastMessage>();
-  readonly messages$ = this.stream.asObservable();
+  readonly hasMessages = signal(false);
+  private readonly pending: ToastMessage[] = [];
+  private listeners = 0;
+  readonly messages$ = new Observable<ToastMessage>((subscriber) => {
+    this.listeners++;
+    const subscription = this.stream.subscribe(subscriber);
+    this.pending.splice(0).forEach((message) => subscriber.next(message));
+    return () => {
+      this.listeners--;
+      subscription.unsubscribe();
+    };
+  });
   private readonly recent = new Map<string, number>();
 
   success(content: string, title = 'Done'): void {
@@ -45,6 +56,11 @@ export class ToastService {
     if (last !== undefined && now - last < DEDUPE_MS) return;
     this.recent.set(key, now);
     for (const [k, at] of this.recent) if (now - at > DEDUPE_MS) this.recent.delete(k);
-    this.stream.next(message);
+    if (this.listeners) this.stream.next(message);
+    else {
+      this.pending.push(message);
+      if (this.pending.length > 20) this.pending.shift();
+    }
+    this.hasMessages.set(true);
   }
 }

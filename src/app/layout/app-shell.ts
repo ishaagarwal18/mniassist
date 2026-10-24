@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  HostListener,
+  inject,
+  signal,
+} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ArSidebar } from './sidebar';
 import { NavDrawer } from './nav-drawer';
@@ -6,13 +13,14 @@ import { ArSoftphoneBar } from './softphone-bar';
 import { ArWhatsAppCallBar } from './whatsapp-call-bar';
 import { ArToastHost } from './toast-host';
 import { ArConfirmHost } from './confirm-host';
-import { ArIcon } from '../ui';
+import { ArIcon } from '../ui/icon';
 import { AgencyActingStore } from '../core/services/agency-acting.store';
 import { PwaService } from '../core/services/pwa.service';
 import { AccountSwitcher } from '../core/auth/account-switch';
 import { CurrentUserService } from '../core/services/current-user.service';
 import { readApiError } from '../core/util/api-error';
 import { ToastService } from '../core/ui/toast.service';
+import { ConfirmService } from '../core/ui/confirm.service';
 
 @Component({
   selector: 'ar-app-shell',
@@ -75,10 +83,16 @@ import { ToastService } from '../core/ui/toast.service';
       }
       <div class="shell__content"><router-outlet /></div>
     </main>
-    <ar-softphone-bar />
-    <ar-whatsapp-call-bar />
-    <ar-toast-host />
-    <ar-confirm-host />
+    @defer (on idle) {
+      <ar-softphone-bar />
+      <ar-whatsapp-call-bar />
+    }
+    @defer (when toasts.hasMessages()) {
+      <ar-toast-host />
+    }
+    @defer (when dialogs.current()) {
+      <ar-confirm-host />
+    }
   `,
   styles: `
     :host {
@@ -178,6 +192,7 @@ import { ToastService } from '../core/ui/toast.service';
   `,
 })
 export class ArAppShell {
+  protected readonly dialogs = inject(ConfirmService);
   protected readonly drawer = inject(NavDrawer);
 
   @HostListener('document:keydown.escape')
@@ -189,10 +204,16 @@ export class ArAppShell {
   protected readonly pwa = inject(PwaService);
   protected readonly switcher = inject(AccountSwitcher);
   protected readonly user = inject(CurrentUserService);
-  private readonly toasts = inject(ToastService);
+  protected readonly toasts = inject(ToastService);
   protected readonly returning = signal(false);
 
   constructor() {
+    // Reserve the host before its lazy component loads, so the first request
+    // queues here rather than falling back to a native browser dialog.
+    this.dialogs.hostAttached = true;
+    inject(DestroyRef).onDestroy(() => {
+      this.dialogs.hostAttached = false;
+    });
     void this.acting.refresh();
   }
 

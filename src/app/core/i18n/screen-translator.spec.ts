@@ -32,6 +32,18 @@ describe('screen translator', () => {
     expect(root.querySelector('p')!.textContent).toBe('Something new');
   });
 
+  it('keeps observing newly rendered content when the same dictionary is reused', async () => {
+    translator.use(HINDI);
+    translator.use(new Map(HINDI));
+    const button = document.createElement('button');
+    button.textContent = 'Save changes';
+    root.appendChild(button);
+    await settle();
+    expect(button.textContent).toBe('बदलाव सहेजें');
+    translator.stop();
+    expect(button.textContent).toBe('Save changes');
+  });
+
   it('fills values into a pattern, in the translation’s own order', () => {
     root.innerHTML = '<span>Showing 5 of 20</span>';
     translator.use(HINDI);

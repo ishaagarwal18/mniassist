@@ -8,13 +8,8 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  CategoryService,
-  ChartModule,
-  ColumnSeriesService,
-  LegendService,
-  TooltipService,
-} from '@syncfusion/ej2-angular-charts';
+import { ArChart } from '../../ui/chart';
+import { ArChartSeries } from '../../ui/chart-series';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
 
@@ -51,9 +46,9 @@ type Tab = (typeof TABS)[number];
     ArPeriodPicker,
     ArGrid,
     GridModule,
-    ChartModule,
+    ArChart,
+    ArChartSeries,
   ],
-  providers: [ColumnSeriesService, CategoryService, LegendService, TooltipService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -119,20 +114,20 @@ type Tab = (typeof TABS)[number];
 
           <div class="br__two">
             <ar-card heading="Stock in and out, by month (at cost)">
-              <ejs-chart
-                id="br-stock-months"
-                height="240px"
-                background="transparent"
-                [theme]="colours().theme"
-                [primaryXAxis]="xAxis"
-                [primaryYAxis]="yAxis"
-                [chartArea]="{ border: { width: 0 } }"
-                [tooltip]="{ enable: true, shared: true }"
-                [legendSettings]="{ visible: true, position: 'Bottom' }"
-                (axisLabelRender)="moneyAxis($event)"
-              >
-                <e-series-collection>
-                  <e-series
+              @defer (on viewport) {
+                <ar-chart
+                  id="br-stock-months"
+                  height="240px"
+                  background="transparent"
+                  [theme]="colours().theme"
+                  [primaryXAxis]="xAxis"
+                  [primaryYAxis]="yAxis"
+                  [chartArea]="{ border: { width: 0 } }"
+                  [tooltip]="{ enable: true, shared: true }"
+                  [legendSettings]="{ visible: true, position: 'Bottom' }"
+                  (axisLabelRender)="moneyAxis($event)"
+                >
+                  <ar-chart-series
                     [dataSource]="stockMonths()"
                     type="Column"
                     xName="month"
@@ -141,7 +136,7 @@ type Tab = (typeof TABS)[number];
                     [fill]="colours().inbound"
                     [columnWidth]="0.6"
                   />
-                  <e-series
+                  <ar-chart-series
                     [dataSource]="stockMonths()"
                     type="Column"
                     xName="month"
@@ -150,8 +145,10 @@ type Tab = (typeof TABS)[number];
                     [fill]="colours().outbound"
                     [columnWidth]="0.6"
                   />
-                </e-series-collection>
-              </ejs-chart>
+                </ar-chart>
+              } @placeholder {
+                <div style="min-height:240px" aria-busy="true"></div>
+              }
             </ar-card>
 
             <ar-card heading="Where the value sits (ABC by value issued)">
@@ -365,20 +362,20 @@ type Tab = (typeof TABS)[number];
           </section>
 
           <ar-card heading="Requested and collected, by month">
-            <ejs-chart
-              id="br-pay-months"
-              height="240px"
-              background="transparent"
-              [theme]="colours().theme"
-              [primaryXAxis]="xAxis"
-              [primaryYAxis]="yAxis"
-              [chartArea]="{ border: { width: 0 } }"
-              [tooltip]="{ enable: true, shared: true }"
-              [legendSettings]="{ visible: true, position: 'Bottom' }"
-              (axisLabelRender)="moneyAxis($event)"
-            >
-              <e-series-collection>
-                <e-series
+            @defer (on viewport) {
+              <ar-chart
+                id="br-pay-months"
+                height="240px"
+                background="transparent"
+                [theme]="colours().theme"
+                [primaryXAxis]="xAxis"
+                [primaryYAxis]="yAxis"
+                [chartArea]="{ border: { width: 0 } }"
+                [tooltip]="{ enable: true, shared: true }"
+                [legendSettings]="{ visible: true, position: 'Bottom' }"
+                (axisLabelRender)="moneyAxis($event)"
+              >
+                <ar-chart-series
                   [dataSource]="payMonths()"
                   type="Column"
                   xName="month"
@@ -387,7 +384,7 @@ type Tab = (typeof TABS)[number];
                   [fill]="colours().outbound"
                   [columnWidth]="0.6"
                 />
-                <e-series
+                <ar-chart-series
                   [dataSource]="payMonths()"
                   type="Column"
                   xName="month"
@@ -396,8 +393,10 @@ type Tab = (typeof TABS)[number];
                   [fill]="colours().collected"
                   [columnWidth]="0.6"
                 />
-              </e-series-collection>
-            </ejs-chart>
+              </ar-chart>
+            } @placeholder {
+              <div style="min-height:240px" aria-busy="true"></div>
+            }
           </ar-card>
 
           @if (p.hasReceivables) {

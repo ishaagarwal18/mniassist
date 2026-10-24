@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { NavigationEnd, Router } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
 import { BehaviorSubject, of } from 'rxjs';
 import { AgencyService } from '../../proxy/agencies';
@@ -28,6 +29,10 @@ describe('app shell optional feature access', () => {
     TestBed.configureTestingModule({
       providers: [
         {
+          provide: Router,
+          useValue: { url: '/settings/integrations', events: new BehaviorSubject(null) },
+        },
+        {
           provide: PermissionService,
           useValue: {
             getGrantedPolicy: () => granted.value,
@@ -56,6 +61,23 @@ describe('app shell optional feature access', () => {
     expect(getActingSession).not.toHaveBeenCalled();
     expect(getWebhooks).not.toHaveBeenCalled();
     expect(ops.webhooks()).toEqual([]);
+  });
+
+  it('does not load invoices from home, and loads them when the invoice page opens', async () => {
+    const router = TestBed.inject(Router);
+    (router as { url: string }).url = '/home';
+    const invoices = vi.spyOn(TestBed.inject(InvoiceService), 'getList');
+    const reconciliation = vi.spyOn(TestBed.inject(ReconciliationService), 'getList');
+    TestBed.inject(OpsService);
+    TestBed.tick();
+    expect(invoices).not.toHaveBeenCalled();
+    expect(reconciliation).not.toHaveBeenCalled();
+    (router.events as BehaviorSubject<unknown>).next(
+      new NavigationEnd(1, '/billing/invoices', '/billing/invoices'),
+    );
+    TestBed.tick();
+    await vi.waitFor(() => expect(invoices).toHaveBeenCalledTimes(1));
+    expect(reconciliation).toHaveBeenCalledTimes(1);
   });
 
   it('loads optional features when granted and reacts to permission changes', async () => {

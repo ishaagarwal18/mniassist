@@ -76,19 +76,33 @@ export class ScreenTranslator {
   private readonly texts = new WeakMap<Text, Kept>();
   private readonly attrs = new WeakMap<Element, Map<string, Kept>>();
   private observer: MutationObserver | null = null;
+  private readonly compiled = new WeakMap<ScreenDictionary, ReturnType<typeof compilePatterns>>();
 
   constructor(private readonly root: Element) {}
 
   /** Translates the page into `dict`'s language, and keeps translating what renders next. */
   use(dict: ScreenDictionary): void {
+    if (this.dict === dict && this.observer) return;
+    if (this.observer && this.dict?.size === dict.size) {
+      let unchanged = true;
+      for (const [key, value] of dict) {
+        if (this.dict.get(key) !== value) {
+          unchanged = false;
+          break;
+        }
+      }
+      if (unchanged) return;
+    }
     this.dict = dict;
-    this.patterns = compilePatterns(dict);
+    this.patterns = this.compiled.get(dict) ?? compilePatterns(dict);
+    this.compiled.set(dict, this.patterns);
     this.walk(this.root);
     this.observe();
   }
 
   /** Puts the English back everywhere and stops watching. */
   stop(): void {
+    if (!this.dict && !this.observer) return;
     this.observer?.disconnect();
     this.observer = null;
     this.dict = null;

@@ -1,6 +1,7 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
-import { provideRouter, withNavigationErrorHandler } from '@angular/router';
+import { provideRouter, withNavigationErrorHandler, withPreloading } from '@angular/router';
+import { IdlePreloading } from './core/util/idle-preloading';
 import { DISABLE_PROJECT_NAME, PermissionService, provideAbpCore, withOptions } from '@abp/ng.core';
 import { provideAbpOAuth } from '@abp/ng.oauth';
 
@@ -16,6 +17,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(
       routes,
+      withPreloading(IdlePreloading),
       // A tab from before a deploy asks for chunk files the server no longer has: reload once.
       withNavigationErrorHandler((e) => {
         if (isStaleChunkError(e.error)) reloadForStaleChunk();

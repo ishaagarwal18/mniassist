@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { AuthService } from '@abp/ng.core';
+import { Subject } from 'rxjs';
 import {
   HubConnection,
   HubConnectionBuilder,
@@ -27,6 +28,8 @@ export interface InboxEvent {
  */
 @Injectable({ providedIn: 'root' })
 export class InboxRealtimeService {
+  private readonly eventStream = new Subject<InboxEvent>();
+  readonly events$ = this.eventStream.asObservable();
   private readonly auth = inject(AuthService);
 
   private connection?: HubConnection;
@@ -57,15 +60,18 @@ export class InboxRealtimeService {
       .build();
 
     for (const kind of ['conversationChanged', 'messageAdded', 'messageStatusChanged'] as const) {
-      this.connection.on(kind, (payload: Omit<InboxEvent, 'kind'>) =>
-        this.lastEvent.set({ kind, ...payload }),
-      );
+      this.connection.on(kind, (payload: Omit<InboxEvent, 'kind'>) => {
+        const event = { kind, ...payload };
+        this.lastEvent.set(event);
+        this.eventStream.next(event);
+      });
     }
     // A new object each time, so the same call ringing again (an IVR queue after the menu) still notifies.
     this.connection.on('callRinging', (payload: { callId: string }) =>
       this.callRinging.set({ callId: payload.callId }),
     );
 
+    this.connection.onreconnecting(() => this.connected.set(false));
     this.connection.onreconnected(async () => {
       this.connected.set(true);
       if (this.subscribedConversationId) {

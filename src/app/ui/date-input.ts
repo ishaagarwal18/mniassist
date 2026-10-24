@@ -47,6 +47,7 @@ export class ArDateInput implements OnDestroy {
   private picker?: DatePicker;
   private wrapper?: HTMLElement;
   private withTime = false;
+  private signature = '';
 
   constructor() {
     registerSyncfusionLicense();
@@ -96,6 +97,15 @@ export class ArDateInput implements OnDestroy {
   private sync(): void {
     const picker = this.picker!;
     if (this.wrapper) keepBeside(this.native, this.wrapper);
+    const signature = [
+      this.native.value,
+      this.native.min,
+      this.native.max,
+      this.native.disabled,
+      this.native.placeholder,
+    ].join('|');
+    if (signature === this.signature) return;
+    this.signature = signature;
 
     let dirty = false;
     const value = parse(this.native.value);

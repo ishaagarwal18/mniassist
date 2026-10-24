@@ -96,7 +96,8 @@ export class ArDialog implements OnDestroy {
     registerSyncfusionLicense();
     ensureSyncfusionTheme();
     afterEveryRender(() => {
-      if (this.panel) recheckMarked(this.panel);
+      const body = this.panel?.querySelector('.dlg__body');
+      if (body) recheckMarked(body);
     });
   }
 

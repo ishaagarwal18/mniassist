@@ -7,30 +7,24 @@ import {
   inject,
   input,
 } from '@angular/core';
-import { LocalizationPipe } from '@abp/ng.core';
 import { APP_LANGUAGES, LanguageService } from '../core/i18n/language.service';
 import { ThemeService } from '../core/services/theme.service';
 
 @Component({
   selector: 'ar-appearance-settings',
-  imports: [LocalizationPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[class.preferences--compact]': 'compact()' },
   template: `
     <details>
       <summary>
-        {{ { key: 'AutoReach::Ui:Language', defaultValue: 'Language' } | abpLocalization }} &amp;
-        {{ { key: 'AutoReach::Ui:Theme', defaultValue: 'Theme' } | abpLocalization }}
+        {{ i18n.t('Language') }} &amp;
+        {{ i18n.t('Theme') }}
       </summary>
       <div class="preferences__panel">
         <label>
-          <span>{{
-            { key: 'AutoReach::Ui:Language', defaultValue: 'Language' } | abpLocalization
-          }}</span>
+          <span>{{ i18n.t('Language') }}</span>
           <select
-            [attr.aria-label]="
-              { key: 'AutoReach::Ui:Language', defaultValue: 'Language' } | abpLocalization
-            "
+            [attr.aria-label]="i18n.t('Language')"
             [value]="i18n.lang()"
             (change)="setLanguage($any($event.target).value)"
             translate="no"
@@ -47,23 +41,17 @@ import { ThemeService } from '../core/services/theme.service';
           </select>
         </label>
         <label>
-          <span>{{ { key: 'AutoReach::Ui:Theme', defaultValue: 'Theme' } | abpLocalization }}</span>
+          <span>{{ i18n.t('Theme') }}</span>
           <select
-            [attr.aria-label]="
-              { key: 'AutoReach::Ui:Theme', defaultValue: 'Theme' } | abpLocalization
-            "
+            [attr.aria-label]="i18n.t('Theme')"
             [value]="theme.theme()"
             (change)="setTheme($any($event.target).value)"
           >
             <option value="light">
-              {{
-                { key: 'AutoReach::Ui:Light theme', defaultValue: 'Light theme' } | abpLocalization
-              }}
+              {{ i18n.t('Light theme') }}
             </option>
             <option value="dark">
-              {{
-                { key: 'AutoReach::Ui:Dark theme', defaultValue: 'Dark theme' } | abpLocalization
-              }}
+              {{ i18n.t('Dark theme') }}
             </option>
           </select>
         </label>

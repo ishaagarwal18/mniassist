@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AbpTenantService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -498,7 +497,6 @@ export class ArLogin {
   protected readonly i18n = inject(LanguageService);
   private readonly account = inject(CurrentUserService);
   private readonly router = inject(Router);
-  private readonly tenants = inject(AbpTenantService);
   private readonly branding = inject(BrandingService);
 
   protected readonly mock = environment.useMockData;
@@ -587,7 +585,7 @@ export class ArLogin {
     }
 
     try {
-      const found = await firstValueFrom(this.tenants.findTenantByName(name));
+      const found = await this.account.resolveTenant(name);
       if (!found?.success || !found.tenantId || name !== workspaceSlug(this.tenant())) return;
 
       const branding = await firstValueFrom(this.branding.publicByTenantId(found.tenantId));

@@ -41,20 +41,36 @@ export class ArSelect implements OnDestroy {
   private list?: DropDownList;
   private wrapper?: HTMLElement;
   private signature = '';
+  private optionsDirty = true;
+  private cachedItems: Item[] = [];
+  private values = new Set<string>();
+  private readonly observer = new MutationObserver(() => {
+    this.optionsDirty = true;
+    if (this.list) this.sync();
+  });
 
   constructor() {
     registerSyncfusionLicense();
     ensureSyncfusionTheme();
+    this.observer.observe(this.select, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+    });
     afterEveryRender({ write: () => (this.list ? this.sync() : this.create()) });
   }
 
   ngOnDestroy(): void {
+    this.observer.disconnect();
     this.list?.destroy();
     this.wrapper?.remove();
   }
 
   private items(): Item[] {
-    return Array.from(this.select.options)
+    if (!this.optionsDirty) return this.cachedItems;
+    this.optionsDirty = false;
+    this.cachedItems = Array.from(this.select.options)
       .filter((o) => !o.hidden)
       .map((o) => ({
         value: toList(o.value),
@@ -62,12 +78,14 @@ export class ArSelect implements OnDestroy {
         disabled: o.disabled,
         group: o.parentElement instanceof HTMLOptGroupElement ? o.parentElement.label : undefined,
       }));
+    this.values = new Set(this.cachedItems.map((item) => item.value));
+    return this.cachedItems;
   }
 
   /** The list value for the native selection, or null when that option isn't listed. */
   private current(items: Item[]): string | null {
     const value = toList(this.select.value);
-    return this.select.selectedIndex >= 0 && items.some((i) => i.value === value) ? value : null;
+    return this.select.selectedIndex >= 0 && this.values.has(value) ? value : null;
   }
 
   /** A hidden selected option ("Choose…") acts as the placeholder. */
@@ -116,8 +134,9 @@ export class ArSelect implements OnDestroy {
     const list = this.list!;
     if (this.wrapper) keepBeside(this.select, this.wrapper);
 
+    const changedOptions = this.optionsDirty;
     const items = this.items();
-    const signature = JSON.stringify(items);
+    const signature = changedOptions ? JSON.stringify(items) : this.signature;
     let dirty = false;
     if (signature !== this.signature) {
       this.signature = signature;

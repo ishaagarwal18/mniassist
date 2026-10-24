@@ -8,13 +8,8 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  CategoryService,
-  ChartModule,
-  LegendService,
-  StackingColumnSeriesService,
-  TooltipService,
-} from '@syncfusion/ej2-angular-charts';
+import { ArChart } from '../../ui/chart';
+import { ArChartSeries } from '../../ui/chart-series';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
 
@@ -83,9 +78,9 @@ const OUTCOME_LABEL: Record<Outcome, string> = { won: 'Won', lost: 'Lost', open:
     ArPeriodPicker,
     ArGrid,
     GridModule,
-    ChartModule,
+    ArChart,
+    ArChartSeries,
   ],
-  providers: [StackingColumnSeriesService, CategoryService, LegendService, TooltipService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './analytics.html',
   styleUrl: './analytics.scss',

@@ -1,6 +1,7 @@
-import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
-import { firstValueFrom, map } from 'rxjs';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { rxResource, toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { firstValueFrom, map, bufferTime, filter } from 'rxjs';
+import { NavigationEnd, Router } from '@angular/router';
 
 import { environment } from '../../../environments/environment';
 import { InboxService as InboxApi } from '../../proxy/messaging';
@@ -22,6 +23,15 @@ const inHours = (h: number) => new Date(Date.now() + h * 3_600_000);
 import { ConversationState } from '../../proxy/messaging/conversation-state.enum';
 @Injectable({ providedIn: 'root' })
 export class InboxService {
+  private readonly router = inject(Router);
+  private readonly path = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects.split(/[?#]/)[0]),
+    ),
+    { initialValue: this.router.url },
+  );
+  private readonly viewingInbox = computed(() => this.path().split('?')[0] === '/inbox');
   private readonly api = inject(InboxApi);
   private readonly realtime = inject(InboxRealtimeService);
 
@@ -42,22 +52,30 @@ export class InboxService {
 
     // Keep the hub subscribed to whichever thread is open.
     effect(() => {
-      void this.realtime.watchConversation(this.selectedId());
+      void this.realtime.watchConversation(this.viewingInbox() ? this.selectedId() : null);
     });
 
-    // Every push is a "refetch this" signal.
-    effect(() => {
-      const event = this.realtime.lastEvent();
-      if (!event) return;
-
-      untracked(() => {
-        this.listResource.reload();
-        this.countsResource.reload();
-        if (event.conversationId === this.selectedId() && event.kind !== 'conversationChanged') {
-          this.messagesResource.reload();
+    // Preserve every event in a burst, but fetch each affected resource only once.
+    this.realtime.events$
+      .pipe(
+        bufferTime(100),
+        filter((events) => events.length > 0),
+        takeUntilDestroyed(),
+      )
+      .subscribe((events) => {
+        if (events.some((event) => event.kind !== 'messageStatusChanged')) {
+          this.countsResource.reload();
+          if (this.viewingInbox()) this.listResource.reload();
         }
+        if (
+          this.viewingInbox() &&
+          events.some(
+            (event) =>
+              event.conversationId === this.selectedId() && event.kind !== 'conversationChanged',
+          )
+        )
+          this.messagesResource.reload();
       });
-    });
   }
 
   private readonly seed: readonly Conversation[] = [
@@ -138,7 +156,7 @@ export class InboxService {
 
   private readonly listResource = rxResource({
     params: () =>
-      environment.useMockData
+      environment.useMockData || !this.viewingInbox()
         ? undefined
         : {
             filter: this.filter(),
@@ -165,7 +183,7 @@ export class InboxService {
   private readonly messagesResource = rxResource({
     params: () => {
       const id = this.selectedId();
-      return environment.useMockData || !id ? undefined : id;
+      return environment.useMockData || !this.viewingInbox() || !id ? undefined : id;
     },
     stream: ({ params: conversationId }) =>
       this.api.getMessages(conversationId as string, { skipCount: 0, maxResultCount: 100 }).pipe(

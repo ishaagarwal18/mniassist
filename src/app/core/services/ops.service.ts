@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
-import { firstValueFrom, map } from 'rxjs';
+import { rxResource, toSignal } from '@angular/core/rxjs-interop';
+import { firstValueFrom, map, filter } from 'rxjs';
+import { NavigationEnd, Router } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
 
 import { environment } from '../../../environments/environment';
@@ -52,6 +53,14 @@ function settled<T>(resource: { hasValue(): boolean; value(): T }, fallback = []
 
 @Injectable({ providedIn: 'root' })
 export class OpsService {
+  private readonly router = inject(Router);
+  private readonly path = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects.split(/[?#]/)[0]),
+    ),
+    { initialValue: this.router.url },
+  );
   private readonly notificationApi = inject(NotificationApi);
   private readonly invoiceApi = inject(InvoiceApi);
   private readonly reconciliationApi = inject(ReconciliationApi);
@@ -481,7 +490,8 @@ export class OpsService {
   });
 
   private readonly invoicesResource = rxResource({
-    params: () => (environment.useMockData ? undefined : {}),
+    params: () =>
+      environment.useMockData || !this.path().startsWith('/billing/invoices') ? undefined : {},
     stream: () =>
       this.invoiceApi
         .getList({ skipCount: 0, maxResultCount: 50 })
@@ -490,7 +500,8 @@ export class OpsService {
   });
 
   private readonly reconciliationResource = rxResource({
-    params: () => (environment.useMockData ? undefined : {}),
+    params: () =>
+      environment.useMockData || !this.path().startsWith('/billing/invoices') ? undefined : {},
     stream: () =>
       this.reconciliationApi
         .getList({ skipCount: 0, maxResultCount: 25 })
@@ -499,7 +510,12 @@ export class OpsService {
   });
 
   private readonly webhooksResource = rxResource({
-    params: () => (environment.useMockData || !this.canReadWebhooks() ? undefined : {}),
+    params: () =>
+      environment.useMockData ||
+      !this.canReadWebhooks() ||
+      !this.path().startsWith('/settings/integrations')
+        ? undefined
+        : {},
     stream: () =>
       this.webhookApi
         .getList({ skipCount: 0, maxResultCount: 100 })
@@ -508,14 +524,20 @@ export class OpsService {
   });
 
   private readonly grantsResource = rxResource({
-    params: () => (environment.useMockData ? undefined : {}),
+    params: () =>
+      environment.useMockData || !this.path().startsWith('/settings/support-access')
+        ? undefined
+        : {},
     stream: () =>
       this.supportApi.getMyGrants(false).pipe(map((r) => (r.items ?? []).map(toSupportGrant))),
     defaultValue: [] as SupportGrant[],
   });
 
   private readonly sessionsResource = rxResource({
-    params: () => (environment.useMockData ? undefined : {}),
+    params: () =>
+      environment.useMockData || !this.path().startsWith('/settings/support-access')
+        ? undefined
+        : {},
     stream: () =>
       this.supportApi
         .getSessionHistory({ skipCount: 0, maxResultCount: 50 })

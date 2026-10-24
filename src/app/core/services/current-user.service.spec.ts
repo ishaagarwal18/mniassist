@@ -60,9 +60,16 @@ describe('expired session redirect', () => {
           provide: SessionStateService,
           useValue: { getTenant: () => ({ id: 'workspace', name: 'Workspace' }), setTenant },
         },
-        { provide: AbpTenantService, useValue: {} },
+        {
+          provide: AbpTenantService,
+          useValue: {
+            findTenantByName: vi.fn(() =>
+              of({ success: true, tenantId: 'workspace', name: 'Workspace' }),
+            ),
+          },
+        },
         { provide: ProfileService, useValue: {} },
-        { provide: SessionService, useValue: {} },
+        { provide: SessionService, useValue: { endCurrent: () => NEVER } },
         { provide: ToastService, useValue: { warning } },
         { provide: LanguageService, useValue: { t: (text: string) => text } },
       ],
@@ -79,6 +86,40 @@ describe('expired session redirect', () => {
     expect(account.isAuthenticated()).toBe(false);
     expect(navigate).toHaveBeenCalledWith('/login', { replaceUrl: true });
     expect(sessionStorage.getItem('ar.returnUrl')).toBe('/inbox?channel=one');
+  });
+
+  it('signs out immediately even when ending the server session never completes', () => {
+    const account = TestBed.inject(CurrentUserService);
+    account.logout();
+    expect(account.isAuthenticated()).toBe(false);
+    expect(localLogout).toHaveBeenCalledWith(true);
+    expect(navigate).toHaveBeenCalledWith('/login', { replaceUrl: true });
+    expect(remoteLogout).not.toHaveBeenCalled();
+  });
+
+  it('shares branding and sign-in workspace resolution without repeating the request', async () => {
+    const account = TestBed.inject(CurrentUserService);
+    await Promise.all([account.resolveTenant('Workspace'), account.selectTenant('Workspace')]);
+    expect(TestBed.inject(AbpTenantService).findTenantByName).toHaveBeenCalledTimes(1);
+    expect(setTenant).toHaveBeenCalledWith({
+      id: 'workspace',
+      name: 'Workspace',
+      isAvailable: true,
+    });
+  });
+
+  it('retries a missing workspace so a new signup is not hidden by an earlier preview', async () => {
+    const lookup = vi.mocked(TestBed.inject(AbpTenantService).findTenantByName);
+    lookup.mockReturnValueOnce(of({ success: false, isActive: false }));
+    const account = TestBed.inject(CurrentUserService);
+    await account.resolveTenant('Workspace');
+    await account.selectTenant('Workspace');
+    expect(lookup).toHaveBeenCalledTimes(2);
+    expect(setTenant).toHaveBeenCalledWith({
+      id: 'workspace',
+      name: 'Workspace',
+      isAvailable: true,
+    });
   });
 
   it('clears workspace, permissions and agency context before showing login', () => {

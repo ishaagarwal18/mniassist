@@ -72,20 +72,20 @@
     @if (loading()) {
       <p class="card__empty">Loading…</p>
     } @else {
-      <ejs-chart
-        id="analytics-volume-chart"
-        height="240px"
-        background="transparent"
-        [theme]="colours().theme"
-        [primaryXAxis]="xAxis"
-        [primaryYAxis]="yAxis"
-        [chartArea]="{ border: { width: 0 } }"
-        [tooltip]="{ enable: true, shared: true }"
-        [legendSettings]="{ visible: true, position: 'Bottom' }"
-        aria-label="Daily message volume by category"
-      >
-        <e-series-collection>
-          <e-series
+      @defer (on viewport) {
+        <ar-chart
+          id="analytics-volume-chart"
+          height="240px"
+          background="transparent"
+          [theme]="colours().theme"
+          [primaryXAxis]="xAxis"
+          [primaryYAxis]="yAxis"
+          [chartArea]="{ border: { width: 0 } }"
+          [tooltip]="{ enable: true, shared: true }"
+          [legendSettings]="{ visible: true, position: 'Bottom' }"
+          aria-label="Daily message volume by category"
+        >
+          <ar-chart-series
             [dataSource]="bars()"
             type="StackingColumn"
             xName="label"
@@ -94,7 +94,7 @@
             [fill]="colours().marketing"
             [columnWidth]="0.7"
           />
-          <e-series
+          <ar-chart-series
             [dataSource]="bars()"
             type="StackingColumn"
             xName="label"
@@ -103,7 +103,7 @@
             [fill]="colours().utility"
             [columnWidth]="0.7"
           />
-          <e-series
+          <ar-chart-series
             [dataSource]="bars()"
             type="StackingColumn"
             xName="label"
@@ -113,8 +113,10 @@
             [columnWidth]="0.7"
             [cornerRadius]="{ topLeft: 3, topRight: 3 }"
           />
-        </e-series-collection>
-      </ejs-chart>
+        </ar-chart>
+      } @placeholder {
+        <div style="min-height: 240px" aria-busy="true"></div>
+      }
     }
   </section>
 
