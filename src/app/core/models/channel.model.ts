@@ -24,6 +24,7 @@ export const TIER_LABEL: Record<MessagingTier, string> = {
 };
 
 export interface Channel {
+  readonly supportsVoiceAi?: boolean;
   readonly id: string;
   readonly wabaId: string;
   readonly phoneNumberId: string;

@@ -180,6 +180,13 @@ textarea.ar-field__input {
 
 /* Syncfusion dialog (ui/dialog.ts). Global because Syncfusion moves the dialog
    to the end of <body>, outside the component's style scope. */
+// Syncfusion writes an inline max-height when opening. Keep this long dialog
+// within the current viewport after a resize, with its footer outside the scroll area.
+.e-dialog.ar-dialog.ar-voice-agent-dialog {
+  max-height: calc(100vh - 32px) !important;
+  max-height: calc(100dvh - 32px) !important;
+}
+
 .e-dialog.ar-dialog {
   max-height: calc(100vh - 64px);
   border: 1px solid var(--ar-line-200);

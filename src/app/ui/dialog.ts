@@ -39,7 +39,7 @@ import { isSubmitClick, recheckMarked, validateWithin } from './form-validation'
   template: `
     <ejs-dialog
       #dlg
-      cssClass="ar-dialog"
+      [cssClass]="cssClass()"
       [visible]="true"
       [isModal]="true"
       [showCloseIcon]="true"
@@ -78,6 +78,7 @@ import { isSubmitClick, recheckMarked, validateWithin } from './form-validation'
 })
 export class ArDialog implements OnDestroy {
   readonly title = input.required<string>();
+  readonly cssClass = input('ar-dialog');
   /** Wider dialogs (tables, two-column forms) pass e.g. "min(640px, calc(100vw - 32px))". */
   readonly width = input('min(460px, calc(100vw - 32px))');
   readonly dismiss = output<void>();

@@ -16,6 +16,9 @@
 @if (connectOpen()) {
   <ar-connect-number-dialog (close)="connectOpen.set(false)" />
 }
+@if (voiceAgentChannel(); as channelId) {
+  <ar-voice-agent-dialog [channelId]="channelId" (close)="voiceAgentChannel.set(null)" />
+}
 
 <div class="ch ar-scroll">
   @if (loading()) {
@@ -67,6 +70,9 @@
           </div>
         </dl>
       </div>
+      @if (canManageVoiceAgent() && c.supportsVoiceAi) {
+        <button ar-button type="button" variant="ghost" (click)="voiceAgentChannel.set(c.id)">{{ 'AutoReach::VoiceAgent.Title' | abpLocalization }}</button>
+      }
     </article>
   }
   @if (channels().length === 0 && !loading()) {

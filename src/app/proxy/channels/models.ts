@@ -7,6 +7,8 @@ import type { OnboardingStep } from './onboarding-step.enum';
 import type { GupshupOnboardingStep } from './gupshup-onboarding-step.enum';
 
 export interface ChannelDto extends AuditedEntityDto<string> {
+  /** MetaDirect = 0, Gupshup = 1. */
+  provider?: number;
   wabaId?: string;
   phoneNumberId?: string;
   businessPortfolioId?: string;

@@ -1,5 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { LocalizationPipe, PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../core/auth/permission';
+import { ArVoiceAgentDialog } from './voice-agent-dialog';
 
 import { ChannelService } from '../../core/services/channel.service';
 import { Channel, QualityRating, TIER_LABEL, TIER_LIMIT } from '../../core/models/channel.model';
@@ -25,6 +28,8 @@ import { ArSmsInboundCard } from './sms-inbound-card';
     RouterLink,
     ArConnectNumberDialog,
     ArSmsInboundCard,
+    ArVoiceAgentDialog,
+    LocalizationPipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './channels.html',
@@ -36,6 +41,8 @@ export class ArChannels {
   protected readonly channels = this.store.channels;
   protected readonly loading = this.store.loading;
   protected readonly connectOpen = signal(false);
+  protected readonly voiceAgentChannel = signal<string | null>(null);
+  protected readonly canManageVoiceAgent = grantedPolicy('AutoReach.Channels.Manage', inject(PermissionService));
 
   protected readonly restrictedCount = computed(
     () => this.channels().filter((c) => c.restricted).length,
