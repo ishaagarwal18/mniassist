@@ -1,0 +1,415 @@
+﻿id,screen,brief
+S001,Header/profile menus,"Combined Language & Theme menu, profile and Sign out."
+S002,Mobile navigation,"Menu button, drawer, search and selected page."
+P001,MNI Assist,MNI Assist page showing its principal sections and a suitable sample record; highlight “See plans & pricing” and the result of the main workflow.
+P002,Sign in,Sign in page showing its principal sections and a suitable sample record; highlight “Workspace” and the result of the main workflow.
+P003,System status,System status page showing its principal sections and a suitable sample record; highlight “System status” and the result of the main workflow.
+P004,Signing in,Signing in page showing its principal sections and a suitable sample record; highlight “Verify” and the result of the main workflow.
+P005,Create a workspace,Create a workspace page showing its principal sections and a suitable sample record; highlight “Create a workspace” and the result of the main workflow.
+P006,Reset your password,Reset your password page showing its principal sections and a suitable sample record; highlight “Forgot password” and the result of the main workflow.
+P007,Choose a new password,Choose a new password page showing its principal sections and a suitable sample record; highlight “New password” and the result of the main workflow.
+P008,Confirm your email,Confirm your email page showing its principal sections and a suitable sample record; highlight “Get started” and the result of the main workflow.
+P009,Privacy Policy,Privacy Policy page showing its principal sections and a suitable sample record; highlight “Privacy Policy” and the result of the main workflow.
+P010,Review and sign,Review and sign page showing its principal sections and a suitable sample record; highlight “Send me a code” and the result of the main workflow.
+P011,Enquiry form,Enquiry form page showing its principal sections and a suitable sample record; highlight “Enquiry form” and the result of the main workflow.
+P012,Pay securely,Pay securely page showing its principal sections and a suitable sample record; highlight “Pay” and the result of the main workflow.
+P013,Raise a ticket,Raise a ticket page showing its principal sections and a suitable sample record; highlight “Your name” and the result of the main workflow.
+P014,Re-order spares,Re-order spares page showing its principal sections and a suitable sample record; highlight “Send me the code” and the result of the main workflow.
+P015,Sign in,Sign in page showing its principal sections and a suitable sample record; highlight “WhatsApp number” and the result of the main workflow.
+P016,Spares catalogue,Spares catalogue page showing its principal sections and a suitable sample record; highlight “Show more” and the result of the main workflow.
+P017,Home,Home page showing its principal sections and a suitable sample record; highlight “Home” and the result of the main workflow.
+P018,Get started,Get started page showing its principal sections and a suitable sample record; highlight “Get started” and the result of the main workflow.
+P019,Inbox,Inbox page showing its principal sections and a suitable sample record; highlight “Inbox” and the result of the main workflow.
+P020,Contacts,Contacts page showing its principal sections and a suitable sample record; highlight “Contacts” and the result of the main workflow.
+P021,Audience builder,Audience builder page showing its principal sections and a suitable sample record; highlight “Audiences” and the result of the main workflow.
+P022,Accounts,Accounts page showing its principal sections and a suitable sample record; highlight “Accounts” and the result of the main workflow.
+P023,Customer 360,Customer 360 page showing its principal sections and a suitable sample record; highlight “Customer 360” and the result of the main workflow.
+P024,Duplicates,Duplicates page showing its principal sections and a suitable sample record; highlight “Duplicates” and the result of the main workflow.
+P025,Account health,Account health page showing its principal sections and a suitable sample record; highlight “Account health” and the result of the main workflow.
+P026,Notifications,Notifications page showing its principal sections and a suitable sample record; highlight “Notifications” and the result of the main workflow.
+P027,Campaigns,Campaigns page showing its principal sections and a suitable sample record; highlight “New campaign” and the result of the main workflow.
+P028,Templates,Templates page showing its principal sections and a suitable sample record; highlight “Templates” and the result of the main workflow.
+P029,New template,New template page showing its principal sections and a suitable sample record; highlight “Name” and the result of the main workflow.
+P030,Automations,Automations page showing its principal sections and a suitable sample record; highlight “New automation” and the result of the main workflow.
+P031,Auto-replies,Auto-replies page showing its principal sections and a suitable sample record; highlight “Auto-replies” and the result of the main workflow.
+P032,Automation builder,Automation builder page showing its principal sections and a suitable sample record; highlight “List” and the result of the main workflow.
+P033,Flows,Flows page showing its principal sections and a suitable sample record; highlight “New flow” and the result of the main workflow.
+P034,Flow designer,Flow designer page showing its principal sections and a suitable sample record; highlight “Design” and the result of the main workflow.
+P035,Web forms,Web forms page showing its principal sections and a suitable sample record; highlight “New form” and the result of the main workflow.
+P036,Enquiries,Enquiries page showing its principal sections and a suitable sample record; highlight “Enquiries” and the result of the main workflow.
+P037,Pipelines,Pipelines page showing its principal sections and a suitable sample record; highlight “Enquiries” and the result of the main workflow.
+P038,Forecast,Forecast page showing its principal sections and a suitable sample record; highlight “Forecast” and the result of the main workflow.
+P039,Quotations,Quotations page showing its principal sections and a suitable sample record; highlight “New quotation” and the result of the main workflow.
+P040,Autonomous AI Negotiator,Autonomous AI Negotiator page showing its principal sections and a suitable sample record; highlight “AI Negotiator” and the result of the main workflow.
+P041,Projection Plan,Projection Plan page showing its principal sections and a suitable sample record; highlight “Projection plan” and the result of the main workflow.
+P042,Sales orders,Sales orders page showing its principal sections and a suitable sample record; highlight “New Sales order” and the result of the main workflow.
+P043,Delivery challans,Delivery challans page showing its principal sections and a suitable sample record; highlight “Delivery challans” and the result of the main workflow.
+P044,Sales invoices,Sales invoices page showing its principal sections and a suitable sample record; highlight “Sales invoices” and the result of the main workflow.
+P045,AMC renewals,AMC renewals page showing its principal sections and a suitable sample record; highlight “AMC renewals” and the result of the main workflow.
+P046,Spares due,Spares due page showing its principal sections and a suitable sample record; highlight “Spares due” and the result of the main workflow.
+P047,Collections,Collections page showing its principal sections and a suitable sample record; highlight “Collections” and the result of the main workflow.
+P048,Re-orders,Re-orders page showing its principal sections and a suitable sample record; highlight “Re-orders” and the result of the main workflow.
+P049,Dealer network,Dealer network page showing its principal sections and a suitable sample record; highlight “Invite a dealer” and the result of the main workflow.
+P050,Leads for us,Leads for us page showing its principal sections and a suitable sample record; highlight “Leads for us” and the result of the main workflow.
+P051,Installed base,Installed base page showing its principal sections and a suitable sample record; highlight “Register machine” and the result of the main workflow.
+P052,Stock,Stock page showing its principal sections and a suitable sample record; highlight “Stock” and the result of the main workflow.
+P053,Stock planning,Stock planning page showing its principal sections and a suitable sample record; highlight “Stock planning” and the result of the main workflow.
+P054,Purchasing,Purchasing page showing its principal sections and a suitable sample record; highlight “New supplier” and the result of the main workflow.
+P055,Goods receipt (GRN),Goods receipt (GRN) page showing its principal sections and a suitable sample record; highlight “Inward Gate Entry (GRN)” and the result of the main workflow.
+P056,Vendor bills,Vendor bills page showing its principal sections and a suitable sample record; highlight “Record Vendor Bill” and the result of the main workflow.
+P057,Vendor debit notes,Vendor debit notes page showing its principal sections and a suitable sample record; highlight “Issue Debit Note” and the result of the main workflow.
+P058,Vendor 360,Vendor 360 page showing its principal sections and a suitable sample record; highlight “Vendor 360” and the result of the main workflow.
+P059,Bill of materials,Bill of materials page showing its principal sections and a suitable sample record; highlight “Create New BOM” and the result of the main workflow.
+P060,Work orders,Work orders page showing its principal sections and a suitable sample record; highlight “Create Work Order” and the result of the main workflow.
+P061,Field,Field page showing its principal sections and a suitable sample record; highlight “Field app” and the result of the main workflow.
+P062,AMC contracts,AMC contracts page showing its principal sections and a suitable sample record; highlight “Create AMC Contract” and the result of the main workflow.
+P063,Field tickets,Field tickets page showing its principal sections and a suitable sample record; highlight “Raise Service Ticket” and the result of the main workflow.
+P064,AI Remote Maintenance & Diagnostics,AI Remote Maintenance & Diagnostics page showing its principal sections and a suitable sample record; highlight “New Diagnostic Session” and the result of the main workflow.
+P065,Tasks,Tasks page showing its principal sections and a suitable sample record; highlight “Tasks” and the result of the main workflow.
+P066,Calls,Calls page showing its principal sections and a suitable sample record; highlight “Calls” and the result of the main workflow.
+P067,WhatsApp calls,WhatsApp calls page showing its principal sections and a suitable sample record; highlight “WhatsApp calls” and the result of the main workflow.
+P068,Helpdesk,Helpdesk page showing its principal sections and a suitable sample record; highlight “New ticket” and the result of the main workflow.
+P069,Meetings,Meetings page showing its principal sections and a suitable sample record; highlight “Meetings” and the result of the main workflow.
+P070,Chart of accounts,Chart of accounts page showing its principal sections and a suitable sample record; highlight “Chart of accounts” and the result of the main workflow.
+P071,Journal vouchers,Journal vouchers page showing its principal sections and a suitable sample record; highlight “New Journal Voucher” and the result of the main workflow.
+P072,Financial statements,Financial statements page showing its principal sections and a suitable sample record; highlight “Financial statements” and the result of the main workflow.
+P073,GST compliance,GST compliance page showing its principal sections and a suitable sample record; highlight “GST compliance” and the result of the main workflow.
+P074,Analytics,Analytics page showing its principal sections and a suitable sample record; highlight “Analytics” and the result of the main workflow.
+P075,Campaign results,Campaign results page showing its principal sections and a suitable sample record; highlight “Campaign results” and the result of the main workflow.
+P076,Ad attribution,Ad attribution page showing its principal sections and a suitable sample record; highlight “Ad attribution” and the result of the main workflow.
+P077,Custom dashboards,Custom dashboards page showing its principal sections and a suitable sample record; highlight “Custom dashboards” and the result of the main workflow.
+P078,Reports,Reports page showing its principal sections and a suitable sample record; highlight “All reports” and the result of the main workflow.
+P079,My exports,My exports page showing its principal sections and a suitable sample record; highlight “My exports” and the result of the main workflow.
+P080,Business reports,Business reports page showing its principal sections and a suitable sample record; highlight “Business reports” and the result of the main workflow.
+P081,Documents,Documents page showing its principal sections and a suitable sample record; highlight “Upload document” and the result of the main workflow.
+P082,Products,Products page showing its principal sections and a suitable sample record; highlight “Documents → Products” and the result of the main workflow.
+P083,Price lists,Price lists page showing its principal sections and a suitable sample record; highlight “New price list” and the result of the main workflow.
+P084,Billing,Billing page showing its principal sections and a suitable sample record; highlight “Billing” and the result of the main workflow.
+P085,Channels,Channels page showing its principal sections and a suitable sample record; highlight “Channels” and the result of the main workflow.
+P086,Numbers,Numbers page showing its principal sections and a suitable sample record; highlight “Numbers” and the result of the main workflow.
+P087,Telecom & Reseller Numbers,Telecom & Reseller Numbers page showing its principal sections and a suitable sample record; highlight “Telecom & numbers” and the result of the main workflow.
+P088,Reseller programme,Reseller programme page showing its principal sections and a suitable sample record; highlight “Reseller programme” and the result of the main workflow.
+P089,Lead forms,Lead forms page showing its principal sections and a suitable sample record; highlight “Connect a Facebook Page” and the result of the main workflow.
+P090,Chat links & QR,Chat links & QR page showing its principal sections and a suitable sample record; highlight “New link” and the result of the main workflow.
+P091,Migrate a number,Migrate a number page showing its principal sections and a suitable sample record; highlight “Country code” and the result of the main workflow.
+P092,Catalogue,Catalogue page showing its principal sections and a suitable sample record; highlight “Catalogue” and the result of the main workflow.
+P093,Voice / IVR,Voice / IVR page showing its principal sections and a suitable sample record; highlight “Voice / IVR” and the result of the main workflow.
+P094,Invoices,Invoices page showing its principal sections and a suitable sample record; highlight “Invoices” and the result of the main workflow.
+P095,DPDP readiness,DPDP readiness page showing its principal sections and a suitable sample record; highlight “DPDP readiness” and the result of the main workflow.
+P096,Compliance,Compliance page showing its principal sections and a suitable sample record; highlight “Log a request” and the result of the main workflow.
+P097,Settings,Settings page showing its principal sections and a suitable sample record; highlight “Settings” and the result of the main workflow.
+P098,Your profile,Your profile page showing its principal sections and a suitable sample record; highlight “Your profile” and the result of the main workflow.
+P099,Members & invites,Members & invites page showing its principal sections and a suitable sample record; highlight “Invite someone” and the result of the main workflow.
+P100,Teams,Teams page showing its principal sections and a suitable sample record; highlight “New team” and the result of the main workflow.
+P101,Business profile,Business profile page showing its principal sections and a suitable sample record; highlight “Business profile” and the result of the main workflow.
+P102,Branding,Branding page showing its principal sections and a suitable sample record; highlight “Upload logo” and the result of the main workflow.
+P103,Workspaces,Workspaces page showing its principal sections and a suitable sample record; highlight “Workspaces” and the result of the main workflow.
+P104,Users,Users page showing its principal sections and a suitable sample record; highlight “New user” and the result of the main workflow.
+P105,Roles & permissions,Roles & permissions page showing its principal sections and a suitable sample record; highlight “Roles & permissions” and the result of the main workflow.
+P106,Sign-in and password rules,Sign-in and password rules page showing its principal sections and a suitable sample record; highlight “Sign-in and password rules” and the result of the main workflow.
+P107,Email templates,Email templates page showing its principal sections and a suitable sample record; highlight “Subject” and the result of the main workflow.
+P108,Audit log,Audit log page showing its principal sections and a suitable sample record; highlight “Audit log” and the result of the main workflow.
+P109,Scheduled reports,Scheduled reports page showing its principal sections and a suitable sample record; highlight “New report” and the result of the main workflow.
+P110,Integrations,Integrations page showing its principal sections and a suitable sample record; highlight “Integrations” and the result of the main workflow.
+P111,AI assistant,AI assistant page showing its principal sections and a suitable sample record; highlight “Add article” and the result of the main workflow.
+P112,Payments,Payments page showing its principal sections and a suitable sample record; highlight “Payments” and the result of the main workflow.
+P113,Email sending,Email sending page showing its principal sections and a suitable sample record; highlight “From name” and the result of the main workflow.
+P114,Support access,Support access page showing its principal sections and a suitable sample record; highlight “Grant access” and the result of the main workflow.
+P115,Agency mode,Agency mode page showing its principal sections and a suitable sample record; highlight “Create invite code” and the result of the main workflow.
+P116,Platform,Platform page showing its principal sections and a suitable sample record; highlight “Console” and the result of the main workflow.
+P117,Feature flags,Feature flags page showing its principal sections and a suitable sample record; highlight “New rule” and the result of the main workflow.
+P118,Status page,Status page page showing its principal sections and a suitable sample record; highlight “New incident” and the result of the main workflow.
+D001,Schedule or edit a meeting,"“Schedule or edit a meeting” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D002,Create or edit a task,"“Create or edit a task” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D003,Request,"“Request” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D004,Entity change detail and full history,"“Entity change detail and full history” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D005,User permission overrides,"“User permission overrides” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D006,New role / Edit role,"“New role / Edit role” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D007,Workspace feature values,"“Workspace feature values” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D008,New workspace / Rename workspace,"“New workspace / Rename workspace” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D009,User security and sign-in controls,"“User security and sign-in controls” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D010,New user / Edit user,"“New user / Edit user” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D011,"Manage workspace: status, plan, wallet, invoices and database","“Manage workspace: status, plan, wallet, invoices and database” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D012,Choose the ad accounts to connect,"“Choose the ad accounts to connect” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D013,Analytics figure: underlying enquiries,"“Analytics figure: underlying enquiries” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D014,Edit dashboard / New dashboard,"“Edit dashboard / New dashboard” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D015,New automation,"“New automation” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D016,Dry-run,"“Dry-run” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D017,Check Meta's invoice,"“Check Meta's invoice” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D018,Generate a GST invoice,"“Generate a GST invoice” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D019,Call,"“Call” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D020,How did the call go?,"“How did the call go?” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D021,Log a call with,"“Log a call with” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D022,Recording notice,"“Recording notice” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D023,WhatsApp call menu (IVR),"“WhatsApp call menu (IVR)” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D024,New campaign,"“New campaign” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D025,Edit product / Add product,"“Edit product / Add product” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D026,Add from products,"“Add from products” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D027,Edit chat link / New chat link,"“Edit chat link / New chat link” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D028,Chat link,"“Chat link” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D029,Connect a WhatsApp number,"“Connect a WhatsApp number” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D030,Choose the Pages to connect,"“Choose the Pages to connect” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D031,Release / ?,"“Release / ?” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D032,"Voice agent: profile, templates and saved versions","“Voice agent: profile, templates and saved versions” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D033,Edit prompt / New prompt,"“Edit prompt / New prompt” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D034,Add branch,"“Add branch” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D035,Log a DPDP request,"“Log a DPDP request” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D036,Tune the health score,"“Tune the health score” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D037,Edit account / New account,"“Edit account / New account” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D038,Account / — rollup,"“Account / — rollup” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D039,Contacts at,"“Contacts at” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D040,"Import contacts: upload, mapping, consent and results","“Import contacts: upload, mapping, consent and results” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D041,Edit contact / New contact,"“Edit contact / New contact” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D042,Record payment / Create delivery challan / Create invoice,"“Record payment / Create delivery challan / Create invoice” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D043,Merge contacts,"“Merge contacts” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D044,Edit segment / Save segment,"“Edit segment / Save segment” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D045,Edit document / Upload a document,"“Edit document / Upload a document” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D046,Sent to,"“Sent to” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D047,Edit price list / New price list,"“Edit price list / New price list” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D048,Edit product / New product,"“Edit product / New product” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D049,Import products,"“Import products” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D050,Create Equipment AMC Contract,"“Create Equipment AMC Contract” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D051,Record Completed PM Visit,"“Record Completed PM Visit” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D052,Renew Equipment AMC Contract,"“Renew Equipment AMC Contract” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D053,Initiate AI Remote Diagnostic Session,"“Initiate AI Remote Diagnostic Session” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D054,Escalate to On-Site Field Visit,"“Escalate to On-Site Field Visit” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D055,Raise Field Service / Breakdown Ticket,"“Raise Field Service / Breakdown Ticket” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D056,Dispatch & Assign Field Service Engineer,"“Dispatch & Assign Field Service Engineer” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D057,Record Spare Part Replaced,"“Record Spare Part Replaced” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D058,Resolve Ticket & Customer Signoff,"“Resolve Ticket & Customer Signoff” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D059,Help · Field Service,"“Help · Field Service” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D060,Add General Ledger Account,"“Add General Ledger Account” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D061,Generate Automated GST E-Way Bill,"“Generate Automated GST E-Way Bill” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D062,Create Double-Entry Journal Voucher,"“Create Double-Entry Journal Voucher” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D063,New flow,"“New flow” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D064,— funnel,"“— funnel” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D065,New ticket,"“New ticket” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D066,Ticket,"“Ticket” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D067,Raise a ticket for,"“Raise a ticket for” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D068,"Helpdesk rules, public portal and sign-off template","“Helpdesk rules, public portal and sign-off template” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D069,Request a payment,"“Request a payment” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D070,Draft a quote from this file,"“Draft a quote from this file” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D071,Reply buttons,"“Reply buttons” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D072,Share a location,"“Share a location” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D073,Edit / New purchase order,"“Edit / New purchase order” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D074,Receive,"“Receive” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D075,Edit supplier / New supplier,"“Edit supplier / New supplier” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D076,"Receive, issue, adjust, count or set minimum stock","“Receive, issue, adjust, count or set minimum stock” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D077,Tracking,"“Tracking” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D078,Serial / Serials · / Batches,"“Serial / Serials · / Batches” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D079,Trace a batch or serial number,"“Trace a batch or serial number” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D080,History,"“History” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D081,Import stock,"“Import stock” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D082,Stock settings,"“Stock settings” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D083,BOM Structure: / ( / ),"“BOM Structure: / ( / )” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D084,Create Bill of Materials (BOM),"“Create Bill of Materials (BOM)” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D085,Create Production Work Order,"“Create Production Work Order” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D086,Issue Material to Work Order,"“Issue Material to Work Order” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D087,Complete Routing Step & QC Inspection,"“Complete Routing Step & QC Inspection” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D088,Complete Work Order & Inward FG,"“Complete Work Order & Inward FG” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D089,Territory · / Invite a dealer,"“Territory · / Invite a dealer” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D090,Conversation with,"“Conversation with” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D091,Network settings,"“Network settings” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D092,Routed lead detail,"“Routed lead detail” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D093,Route to a dealer,"“Route to a dealer” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D094,Collection reminders,"“Collection reminders” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D095,Manager Commercial Intervention,"“Manager Commercial Intervention” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D096,New enquiry,"“New enquiry” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D097,Edit enquiry,"“Edit enquiry” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D098,Quotas,"“Quotas” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D099,Forecast assumptions,"“Forecast assumptions” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D100,Import AMC values,"“Import AMC values” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D101,Edit machine / Register a machine,"“Edit machine / Register a machine” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D102,Pipeline and stage management window,"“Pipeline and stage management window” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D103,New quotation,"“New quotation” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D104,Issue,"“Issue” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D105,"Create, send or withdraw a quotation-signing link","“Create, send or withdraw a quotation-signing link” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D106,Mark lost,"“Mark lost” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D107,Renewal settings,"“Renewal settings” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D108,Remind customers on WhatsApp,"“Remind customers on WhatsApp” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D109,Spare part rules,"“Spare part rules” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D110,Schedule a rate,"“Schedule a rate” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D111,Feature flag rule,"“Feature flag rule” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D112,Update incident / New incident,"“Update incident / New incident” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D113,AI Strategic Projection Plan Generator,"“AI Strategic Projection Plan Generator” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D114,Create Projection Plan,"“Create Projection Plan” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D115,Vendor Bill: / ( / ),"“Vendor Bill: / ( / )” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D116,Disburse Vendor Payment,"“Disburse Vendor Payment” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D117,Record Vendor Bill (Purchase Invoice),"“Record Vendor Bill (Purchase Invoice)” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D118,Vendor Debit Note,"“Vendor Debit Note” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D119,Create Vendor Debit Note,"“Create Vendor Debit Note” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D120,GRN Dossier,"“GRN Dossier” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D121,Complete Material QC Inspection,"“Complete Material QC Inspection” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D122,Record Inward Gate Entry (GRN),"“Record Inward Gate Entry (GRN)” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D123,Customer company: buyers and credit,"“Customer company: buyers and credit” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D124,Dispatch,"“Dispatch” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D125,Send a re-order link,"“Send a re-order link” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D126,Re-order portal settings,"“Re-order portal settings” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D127,Re-order link for,"“Re-order link for” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D128,Delivery Challan: / ( / ),"“Delivery Challan: / ( / )” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D129,Dispatch Challan,"“Dispatch Challan” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D130,Tax Invoice: / ( / ),"“Tax Invoice: / ( / )” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D131,Record Payment for,"“Record Payment for” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D132,Sales Order: / ( / ),"“Sales Order: / ( / )” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D133,Create New Sales Order,"“Create New Sales Order” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D134,Edit article / Add a knowledge article,"“Edit article / Add a knowledge article” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D135,New email template,"“New email template” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D136,Tally/SAP: choose what to sync,"“Tally/SAP: choose what to sync” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D137,Add a webhook endpoint,"“Add a webhook endpoint” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D138,selected record — field mapping,"“selected record — field mapping” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D139,Devices,"“Devices” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D140,Edit report / New report,"“Edit report / New report” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D141,Scheduled report preview,"“Scheduled report preview” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D142,Grant support access,"“Grant support access” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D143,Edit team / New team,"“Edit team / New team” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D144,Set up your authenticator app,"“Set up your authenticator app” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D145,Save your recovery codes,"“Save your recovery codes” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D146,Generate new recovery codes,"“Generate new recovery codes” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D147,Turn off two-step verification,"“Turn off two-step verification” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+C000,Shared confirmation/question window,"A confirmation and a question-form example side by side; highlight the selected record, consequences, required fields, confirmation button and Cancel."
+C001,Choose payment gateway,"“Choose payment gateway” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C002,Delete this task?,"“Delete this task?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C003,"Delete role ""the selected record""?","“Delete role ""the selected record""?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C004,Reset features?,"“Reset features?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C005,Delete this workspace?,"“Delete this workspace?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C006,Lock the selected record?,"“Lock the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C007,Delete this user?,"“Delete this user?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C008,Issue this invoice to the selected record?,"“Issue this invoice to the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C009,Mark the selected record as paid?,"“Mark the selected record as paid?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C010,Set a new password for the selected record?,"“Set a new password for the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C011,Suspend the selected record?,"“Suspend the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C012,Reactivate the selected record?,"“Reactivate the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C013,Put the selected record on the selected recordthe selected record?,"“Put the selected record on the selected recordthe selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C014,Create its tables now?,"“Create its tables now?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C015,Move the selected record back to the shared database?,"“Move the selected record back to the shared database?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C016,Enter the selected record as its owner?,"“Enter the selected record as its owner?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C017,Disconnect the selected record?,"“Disconnect the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C018,Delete this dashboard?,"“Delete this dashboard?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C019,Delete automation?,"“Delete automation?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C020,Top up the wallet,"“Top up the wallet” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C021,Top up the wallet,"“Top up the wallet” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C022,Move to the the selected record plan?,"“Move to the the selected record plan?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C023,Mark this variance as checked?,"“Mark this variance as checked?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C024,Delete this call?,"“Delete this call?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C025,Delete selected call recordings?,"“Delete selected call recordings?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C026,Replace the menu?,"“Replace the menu?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C027,Cancel “the selected record”?,"“Cancel “the selected record”?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C028,Delete campaign?,"“Delete campaign?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C029,Remove from the catalogue?,"“Remove from the catalogue?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C030,Delete this chat link?,"“Delete this chat link?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C031,Disconnect the selected record?,"“Disconnect the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C032,Delete this menu?,"“Delete this menu?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C033,Remove this branch?,"“Remove this branch?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C034,No contact matches this request,"“No contact matches this request” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C035,Fulfil this the selected record request?,"“Fulfil this the selected record request?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C036,Reject this request?,"“Reject this request?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C037,Delete this account?,"“Delete this account?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C038,Delete this contact?,"“Delete this contact?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C039,Delete this segment?,"“Delete this segment?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C040,Delete document?,"“Delete document?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C041,Replace the file of “the selected record”?,"“Replace the file of “the selected record”?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C042,Delete this price list?,"“Delete this price list?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C043,Delete this product?,"“Delete this product?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C044,Deprecate “the selected record”?,"“Deprecate “the selected record”?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C045,Delete flow?,"“Delete flow?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C046,Delete this form?,"“Delete this form?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C047,Delete ticket?,"“Delete ticket?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C048,End the link with the selected record?,"“End the link with the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C049,Take the selected record back?,"“Take the selected record back?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C050,Close this lead without a dealer?,"“Close this lead without a dealer?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C051,Leave the selected record's network?,"“Leave the selected record's network?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C052,Decline this lead from the selected record?,"“Decline this lead from the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C053,Hand this lead back to the selected record?,"“Hand this lead back to the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C054,Delete enquiry?,"“Delete enquiry?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C055,Delete machine?,"“Delete machine?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C056,Retire this machine?,"“Retire this machine?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C057,Mark this quotation lost?,"“Mark this quotation lost?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C058,Delete quotation?,"“Delete quotation?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C059,Discard your changes?,"“Discard your changes?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C060,Withdraw this signature request?,"“Withdraw this signature request?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C061,Delete this rule?,"“Delete this rule?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C062,Resolve this alert?,"“Resolve this alert?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C063,Delete the selected feature rule?,"“Delete the selected feature rule?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C064,Resolve “the selected record”?,"“Resolve “the selected record”?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C065,Delete “the selected record”?,"“Delete “the selected record”?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C066,Add or register a reseller partner,"“Add or register a reseller partner” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C067,Edit contact details,"“Edit contact details” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C068,Approve the selected record,"“Approve the selected record” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C069,Suspend the selected record,"“Suspend the selected record” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C070,Reactivate the selected record?,"“Reactivate the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C071,Tier for the selected record,"“Tier for the selected record” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C072,Branding,"“Branding” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C073,Custom domain,"“Custom domain” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C074,Mark the custom domain as verified or failed?,"“Mark the custom domain as verified or failed?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C075,Add a client workspace,"“Add a client workspace” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C076,Plan for the selected record,"“Plan for the selected record” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C077,Deactivate the selected record?,"“Deactivate the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C078,Record commission for the selected record,"“Record commission for the selected record” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C079,Request a payout,"“Request a payout” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C080,Mark the selected record as paid,"“Mark the selected record as paid” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C081,Reject the selected record,"“Reject the selected record” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C082,Revoke the selected record's access?,"“Revoke the selected record's access?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C083,Stop managing the selected record?,"“Stop managing the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C084,Delete this article?,"“Delete this article?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C085,Delegate access,"“Delegate access” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C086,Stop the selected record acting for you?,"“Stop the selected record acting for you?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C087,Act for the selected record?,"“Act for the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C088,Disconnect this mailbox?,"“Disconnect this mailbox?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C089,"Delete ""the selected record""?","“Delete ""the selected record""?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C090,Discard your changes?,"“Discard your changes?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C091,Restore the default wording?,"“Restore the default wording?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C092,Unlink the selected record?,"“Unlink the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C093,Unlink the selected record?,"“Unlink the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C094,Revoke invitation?,"“Revoke invitation?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C095,Deactivate the selected record?,"“Deactivate the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C096,Reactivate the selected record?,"“Reactivate the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C097,Act as the selected record?,"“Act as the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C098,Turn off two-step verification for the selected record?,"“Turn off two-step verification for the selected record?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C099,Sign this device out?,"“Sign this device out?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C100,Sign the selected record out everywhere?,"“Sign the selected record out everywhere?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C101,Delete this scheduled report?,"“Delete this scheduled report?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C102,Require confirmed email addresses?,"“Require confirmed email addresses?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C103,Sign this device out?,"“Sign this device out?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C104,Sign out every other device?,"“Sign out every other device?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C105,Revoke support access?,"“Revoke support access?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C106,Delete team?,"“Delete team?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C107,Submit selected draft templates to Meta?,"“Submit selected draft templates to Meta?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+C108,Delete template?,"“Delete template?” confirmation or question window showing the selected record, consequences, required information and confirmation/Cancel buttons."
+W001,Conversation filters,"Conversation filters open with its heading, selected record, relevant fields and final action highlighted."
+W002,Attach a document,"Attach a document open with its heading, selected record, relevant fields and final action highlighted."
+W003,Enquiry detail drawer,"Enquiry detail drawer open with its heading, selected record, relevant fields and final action highlighted."
+W004,Quotation line editor,"Quotation line editor open with its heading, selected record, relevant fields and final action highlighted."
+W005,Meeting detail and completion/cancellation,"Meeting detail and completion/cancellation open with its heading, selected record, relevant fields and final action highlighted."
+W006,Add Number to Inventory Pool,"Add Number to Inventory Pool open with its heading, selected record, relevant fields and final action highlighted."
+W007,Allocate Number to Workspace,"Allocate Number to Workspace open with its heading, selected record, relevant fields and final action highlighted."
+W008,Release Number from Workspace,"Release Number from Workspace open with its heading, selected record, relevant fields and final action highlighted."
+W009,Edit Telecom Entity Registration,"Edit Telecom Entity Registration open with its heading, selected record, relevant fields and final action highlighted."
+W010,Telecom Compliance & SIM-Binding Audit Certificate,"Telecom Compliance & SIM-Binding Audit Certificate open with its heading, selected record, relevant fields and final action highlighted."
+V001,"Campaign audience, variables and readiness","Campaign audience, variables and readiness within its containing page; highlight its entry control and final action or selected option."
+V002,Recurring tasks and meetings,Recurring tasks and meetings within its containing page; highlight its entry control and final action or selected option.
+V003,Automation canvas controls and connections,Automation canvas controls and connections within its containing page; highlight its entry control and final action or selected option.
+V004,Select or quickly add a customer,Select or quickly add a customer within its containing page; highlight its entry control and final action or selected option.
+V005,Lead rotation and ownership distribution,Lead rotation and ownership distribution within its containing page; highlight its entry control and final action or selected option.
+V006,SMS replies: virtual-number mapping,SMS replies: virtual-number mapping within its containing page; highlight its entry control and final action or selected option.
+V007,Account ERP ledger view,Account ERP ledger view within its containing page; highlight its entry control and final action or selected option.
+V008,Enquiry tasks and meetings,Enquiry tasks and meetings within its containing page; highlight its entry control and final action or selected option.
+V009,Enquiry call history and manual call logging,Enquiry call history and manual call logging within its containing page; highlight its entry control and final action or selected option.
+V010,Service tickets linked to an enquiry,Service tickets linked to an enquiry within its containing page; highlight its entry control and final action or selected option.
+V011,Dealer routing inside an enquiry,Dealer routing inside an enquiry within its containing page; highlight its entry control and final action or selected option.
+V012,Browser desktop notifications,Browser desktop notifications within its containing page; highlight its entry control and final action or selected option.
+V013,Delegate access or act for a colleague,Delegate access or act for a colleague within its containing page; highlight its entry control and final action or selected option.
+V014,Link an external sign-in identity,Link an external sign-in identity within its containing page; highlight its entry control and final action or selected option.
+V015,Link and switch between your accounts,Link and switch between your accounts within its containing page; highlight its entry control and final action or selected option.
+V016,Your sign-in history,Your sign-in history within its containing page; highlight its entry control and final action or selected option.
+V017,Draw or clear a signature,Draw or clear a signature within its containing page; highlight its entry control and final action or selected option.
+V018,Compare monthly and annual plans,Compare monthly and annual plans within its containing page; highlight its entry control and final action or selected option.
+V019,Public AI demonstration,Public AI demonstration within its containing page; highlight its entry control and final action or selected option.
+V020,Website demonstration conversation,Website demonstration conversation within its containing page; highlight its entry control and final action or selected option.
+V021,Industry use-case overview,Industry use-case overview within its containing page; highlight its entry control and final action or selected option.
+V022,Website frequently asked questions,Website frequently asked questions within its containing page; highlight its entry control and final action or selected option.
+V023,Sign-in introduction panel,Sign-in introduction panel within its containing page; highlight its entry control and final action or selected option.
+V024,Email confirmation reminder,Email confirmation reminder within its containing page; highlight its entry control and final action or selected option.
+V025,"Browser phone: answer, mute, keypad and hang up","Browser phone: answer, mute, keypad and hang up within its containing page; highlight its entry control and final action or selected option."
+V026,"Live WhatsApp call bar, transfer and rejoin","Live WhatsApp call bar, transfer and rejoin within its containing page; highlight its entry control and final action or selected option."
+V027,Look up business context during a call,Look up business context during a call within its containing page; highlight its entry control and final action or selected option.
+E001,Experimental local voice lab,"Local-only recorded-turn test, playback and unverified cost result."

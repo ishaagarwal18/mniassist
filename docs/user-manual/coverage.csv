@@ -1,0 +1,419 @@
+﻿kind,identity,source,anchor
+page,/,features/landing/landing.ts,page-overview
+page,/login,features/account/login.ts,page-login
+page,/status,features/status/status-page.ts,page-status
+page,/login/external,features/account/external-login-callback.ts,page-login-external
+page,/signup,features/account/signup.ts,page-signup
+page,/forgot-password,features/account/forgot-password.ts,page-forgot-password
+page,/reset-password,features/account/reset-password.ts,page-reset-password
+page,/confirm-email,features/account/confirm-email.ts,page-confirm-email
+page,/privacy,features/legal/privacy-policy.ts,page-privacy
+page,/sign/:token,features/signing/quote-signing.ts,page-sign-token
+page,/f/:code,features/forms/public-form.ts,page-f-code
+page,/pay/:token,features/payments/pay-page.ts,page-pay-token
+page,/t/:code,features/helpdesk/ticket-portal.ts,page-t-code
+page,/r/:token,features/reorder/reorder-page.ts,page-r-token
+page,/reorder/:code,features/reorder/reorder-sign-in.ts,page-reorder-code
+page,/catalogue/:code,features/reorder/catalogue-page.ts,page-catalogue-code
+page,/home,features/dashboard/dashboard.ts,page-home
+page,/getting-started,features/onboarding/wizard.ts,page-getting-started
+page,/inbox,features/inbox/inbox.ts,page-inbox
+page,/contacts,features/contacts/contacts.ts,page-contacts
+page,/contacts/segments,features/contacts/segments.ts,page-contacts-segments
+page,/contacts/accounts,features/contacts/accounts.ts,page-contacts-accounts
+page,/contacts/360,features/contacts/customer-360.ts,page-contacts-360
+route alias,/contacts/accounts/:accountId/360,features/contacts/customer-360.ts,page-contacts-360
+route alias,/contacts/:id/360,features/contacts/customer-360.ts,page-contacts-360
+page,/contacts/duplicates,features/contacts/duplicates.ts,page-contacts-duplicates
+page,/account-health,features/contacts/account-health.ts,page-account-health
+page,/notifications,features/notifications/notifications.ts,page-notifications
+page,/campaigns,features/campaigns/campaign-builder.ts,page-campaigns
+page,/templates,features/templates/templates.ts,page-templates
+page,/templates/new,features/templates/template-composer.ts,page-templates-new
+route alias,/templates/:id/edit,features/templates/template-composer.ts,page-templates-new
+page,/automations,features/automations/automations.ts,page-automations
+page,/auto-replies,features/automations/auto-replies.ts,page-auto-replies
+page,/automations/:id,features/automations/automation-builder.ts,page-automations-id
+page,/flows,features/flows/flows.ts,page-flows
+page,/flows/:id,features/flows/flow-designer.ts,page-flows-id
+page,/forms,features/forms/forms.ts,page-forms
+page,/enquiries,features/pipeline/enquiries.ts,page-enquiries
+page,/enquiries/pipelines,features/pipeline/pipeline-stages.ts,page-enquiries-pipelines
+page,/forecast,features/pipeline/forecast.ts,page-forecast
+page,/quotations,features/pipeline/quotations.ts,page-quotations
+page,/pipeline/ai-negotiator,features/pipeline/ai-negotiator/ai-negotiator.ts,page-pipeline-ai-negotiator
+page,/pipeline/projection-plan,features/projections/projection-plan/projection-plan.ts,page-pipeline-projection-plan
+page,/sales/orders,features/sales/orders/orders.ts,page-sales-orders
+page,/sales/challans,features/sales/challans/delivery-challans.ts,page-sales-challans
+page,/sales/invoices,features/sales/invoices/sales-invoices.ts,page-sales-invoices
+page,/renewals,features/pipeline/renewals.ts,page-renewals
+page,/spares,features/pipeline/spares.ts,page-spares
+page,/collections,features/payments/collections.ts,page-collections
+page,/reorders,features/reorder/reorders.ts,page-reorders
+page,/network,features/network/network.ts,page-network
+page,/network/incoming,features/network/network.ts,page-network-incoming
+page,/installed-base,features/pipeline/installed-base.ts,page-installed-base
+page,/stock,features/inventory/stock.ts,page-stock
+page,/stock/planning,features/inventory/stock-planning.ts,page-stock-planning
+page,/purchasing,features/inventory/purchasing.ts,page-purchasing
+page,/purchasing/grn,features/purchasing/grn/goods-receipt-notes.ts,page-purchasing-grn
+page,/purchasing/bills,features/purchasing/bills/vendor-bills.ts,page-purchasing-bills
+page,/purchasing/debit-notes,features/purchasing/debit-notes/vendor-debit-notes.ts,page-purchasing-debit-notes
+page,/purchasing/vendor-360,features/purchasing/vendor-360/vendor-360.ts,page-purchasing-vendor-360
+route alias,/purchasing/vendor-360/:id,features/purchasing/vendor-360/vendor-360.ts,page-purchasing-vendor-360
+page,/manufacturing/bom,features/manufacturing/bom/bill-of-materials.ts,page-manufacturing-bom
+page,/manufacturing/work-orders,features/manufacturing/work-orders/work-orders.ts,page-manufacturing-work-orders
+page,/field,features/field/field.ts,page-field
+page,/field-service/amc,features/field-service/amc/amc-contracts.ts,page-field-service-amc
+page,/field-service/tickets,features/field-service/tickets/field-service-tickets.ts,page-field-service-tickets
+page,/field-service/remote-maintenance,features/field-service/remote-maintenance/remote-maintenance.ts,page-field-service-remote-maintenance
+page,/tasks,features/activities/tasks.ts,page-tasks
+page,/calls,features/calls/calls.ts,page-calls
+page,/calls/whatsapp,features/calls/whatsapp-calls.ts,page-calls-whatsapp
+page,/helpdesk,features/helpdesk/helpdesk.ts,page-helpdesk
+page,/meetings,features/activities/meetings.ts,page-meetings
+page,/finance/chart-of-accounts,features/finance/chart-of-accounts/chart-of-accounts.ts,page-finance-chart-of-accounts
+page,/finance/journal-entries,features/finance/journal-entries/journal-entries.ts,page-finance-journal-entries
+page,/finance/statements,features/finance/statements/financial-statements.ts,page-finance-statements
+page,/finance/gst-compliance,features/finance/gst-compliance/gst-compliance.ts,page-finance-gst-compliance
+page,/analytics,features/analytics/analytics.ts,page-analytics
+page,/analytics/campaigns,features/analytics/campaign-results.ts,page-analytics-campaigns
+page,/analytics/ads,features/analytics/ad-attribution.ts,page-analytics-ads
+route alias,/analytics/ads/callback,features/analytics/ad-attribution.ts,page-analytics-ads
+page,/analytics/dashboards,features/analytics/dashboards.ts,page-analytics-dashboards
+page,/reports,features/reports/reports-hub.ts,page-reports
+page,/reports/exports,features/reports/my-exports.ts,page-reports-exports
+page,/reports/business,features/reports/business-reports.ts,page-reports-business
+page,/documents,features/documents/documents.ts,page-documents
+page,/documents/products,features/documents/products.ts,page-documents-products
+page,/documents/price-lists,features/documents/price-lists.ts,page-documents-price-lists
+page,/billing,features/billing/billing.ts,page-billing
+page,/channels,features/channels/channels.ts,page-channels
+page,/channels/numbers,features/channels/numbers.ts,page-channels-numbers
+page,/channels/telecom,features/channels/telecom.ts,page-channels-telecom
+page,/resellers,features/resellers/resellers.ts,page-resellers
+page,/channels/lead-forms,features/channels/lead-forms.ts,page-channels-lead-forms
+route alias,/channels/lead-forms/callback,features/channels/lead-forms.ts,page-channels-lead-forms
+page,/channels/widget,features/channels/chat-widgets.ts,page-channels-widget
+page,/channels/migrate,features/channels/migrate-number.ts,page-channels-migrate
+page,/channels/catalogue,features/channels/catalogue.ts,page-channels-catalogue
+page,/channels/voice-ivr,features/channels/voice-ivr.ts,page-channels-voice-ivr
+page,/billing/invoices,features/billing/invoices.ts,page-billing-invoices
+page,/compliance/dpdp,features/compliance/dpdp.ts,page-compliance-dpdp
+page,/compliance,features/compliance/compliance.ts,page-compliance
+page,/settings,features/settings/settings.ts,page-settings
+page,/settings/profile,features/account/profile.ts,page-settings-profile
+page,/settings/members,features/settings/members.ts,page-settings-members
+page,/settings/teams,features/settings/teams.ts,page-settings-teams
+page,/settings/business-profile,features/settings/business-profile.ts,page-settings-business-profile
+page,/settings/branding,features/settings/branding.ts,page-settings-branding
+page,/admin/tenants,features/admin/tenants.ts,page-admin-tenants
+page,/admin/users,features/admin/users.ts,page-admin-users
+page,/admin/roles,features/admin/roles.ts,page-admin-roles
+page,/settings/security-policy,features/settings/security-policy.ts,page-settings-security-policy
+page,/settings/email-templates,features/settings/email-templates.ts,page-settings-email-templates
+page,/admin/audit-logs,features/admin/audit-logs.ts,page-admin-audit-logs
+page,/settings/reports,features/settings/reports.ts,page-settings-reports
+page,/settings/integrations,features/settings/integrations.ts,page-settings-integrations
+page,/settings/ai-assistant,features/settings/ai-assistant.ts,page-settings-ai-assistant
+page,/settings/payments,features/payments/payments-settings.ts,page-settings-payments
+page,/settings/email-sending,features/settings/email-sending.ts,page-settings-email-sending
+page,/settings/support-access,features/settings/support-access.ts,page-settings-support-access
+page,/settings/agency,features/settings/agency.ts,page-settings-agency
+page,/platform,features/platform/console.ts,page-platform
+page,/platform/feature-flags,features/platform/feature-flags.ts,page-platform-feature-flags
+page,/platform/status,features/platform/status-incidents.ts,page-platform-status
+dialog,ar-meeting-dialog:1,features/activities/meeting-dialog.ts,dialog-ar-meeting-dialog-1
+dialog,ar-task-dialog:1,features/activities/task-dialog.ts,dialog-ar-task-dialog-1
+dialog,ar-admin-audit-logs:1,features/admin/audit-logs.ts,dialog-ar-admin-audit-logs-1
+dialog,ar-admin-audit-logs:2,features/admin/audit-logs.ts,dialog-ar-admin-audit-logs-2
+dialog,ar-permission-dialog:1,features/admin/permission-dialog.ts,dialog-ar-permission-dialog-1
+dialog,ar-admin-roles:1,features/admin/roles.ts,dialog-ar-admin-roles-1
+dialog,ar-tenant-features-dialog:1,features/admin/tenant-features-dialog.ts,dialog-ar-tenant-features-dialog-1
+dialog,ar-admin-tenants:1,features/admin/tenants.ts,dialog-ar-admin-tenants-1
+dialog,ar-user-security-dialog:1,features/admin/user-security-dialog.ts,dialog-ar-user-security-dialog-1
+dialog,ar-admin-users:1,features/admin/users.ts,dialog-ar-admin-users-1
+dialog,ar-workspace-manage-dialog:1,features/admin/workspace-manage-dialog.ts,dialog-ar-workspace-manage-dialog-1
+dialog,ar-ad-attribution:1,features/analytics/ad-attribution.ts,dialog-ar-ad-attribution-1
+dialog,ar-analytics:1,features/analytics/analytics.ts,dialog-ar-analytics-1
+dialog,ar-custom-dashboards:1,features/analytics/dashboards.ts,dialog-ar-custom-dashboards-1
+dialog,ar-automations:1,features/automations/automations.ts,dialog-ar-automations-1
+dialog,ar-automations:2,features/automations/automations.ts,dialog-ar-automations-2
+dialog,ar-invoices:1,features/billing/invoices.ts,dialog-ar-invoices-1
+dialog,ar-invoices:2,features/billing/invoices.ts,dialog-ar-invoices-2
+dialog,ar-call-dialog:1,features/calls/call-dialog.ts,dialog-ar-call-dialog-1
+dialog,ar-call-outcome-dialog:1,features/calls/call-outcome-dialog.ts,dialog-ar-call-outcome-dialog-1
+dialog,ar-log-call-dialog:1,features/calls/log-call-dialog.ts,dialog-ar-log-call-dialog-1
+dialog,ar-whatsapp-calls:1,features/calls/whatsapp-calls.ts,dialog-ar-whatsapp-calls-1
+dialog,ar-whatsapp-ivr-dialog:1,features/calls/whatsapp-ivr-dialog.ts,dialog-ar-whatsapp-ivr-dialog-1
+dialog,ar-campaign-builder:1,features/campaigns/campaign-builder.ts,dialog-ar-campaign-builder-1
+dialog,ar-catalogue:1,features/channels/catalogue.ts,dialog-ar-catalogue-1
+dialog,ar-catalogue:2,features/channels/catalogue.ts,dialog-ar-catalogue-2
+dialog,ar-chat-widgets:1,features/channels/chat-widgets.ts,dialog-ar-chat-widgets-1
+dialog,ar-chat-widgets:2,features/channels/chat-widgets.ts,dialog-ar-chat-widgets-2
+dialog,ar-connect-number-dialog:1,features/channels/connect-number-dialog.ts,dialog-ar-connect-number-dialog-1
+dialog,ar-lead-forms:1,features/channels/lead-forms.ts,dialog-ar-lead-forms-1
+dialog,ar-numbers:1,features/channels/numbers.ts,dialog-ar-numbers-1
+dialog,ar-voice-agent-dialog:1,features/channels/voice-agent-dialog.ts,dialog-ar-voice-agent-dialog-1
+dialog,ar-voice-ivr:1,features/channels/voice-ivr.ts,dialog-ar-voice-ivr-1
+dialog,ar-voice-ivr:2,features/channels/voice-ivr.ts,dialog-ar-voice-ivr-2
+dialog,ar-compliance:1,features/compliance/compliance.ts,dialog-ar-compliance-1
+dialog,ar-account-health:1,features/contacts/account-health.ts,dialog-ar-account-health-1
+dialog,ar-accounts:1,features/contacts/accounts.ts,dialog-ar-accounts-1
+dialog,ar-accounts:2,features/contacts/accounts.ts,dialog-ar-accounts-2
+dialog,ar-accounts:3,features/contacts/accounts.ts,dialog-ar-accounts-3
+dialog,ar-contact-import:1,features/contacts/contact-import-dialog.ts,dialog-ar-contact-import-1
+dialog,ar-contacts:1,features/contacts/contacts.ts,dialog-ar-contacts-1
+dialog,ar-customer-actions:1,features/contacts/customer-actions.ts,dialog-ar-customer-actions-1
+dialog,ar-duplicates:1,features/contacts/duplicates.ts,dialog-ar-duplicates-1
+dialog,ar-segments:1,features/contacts/segments.ts,dialog-ar-segments-1
+dialog,ar-documents:1,features/documents/documents.ts,dialog-ar-documents-1
+dialog,ar-documents:2,features/documents/documents.ts,dialog-ar-documents-2
+dialog,ar-price-lists:1,features/documents/price-lists.ts,dialog-ar-price-lists-1
+dialog,ar-products:1,features/documents/products.ts,dialog-ar-products-1
+dialog,ar-products:2,features/documents/products.ts,dialog-ar-products-2
+dialog,app-amc-contracts:1,features/field-service/amc/amc-contracts.ts,dialog-app-amc-contracts-1
+dialog,app-amc-contracts:2,features/field-service/amc/amc-contracts.ts,dialog-app-amc-contracts-2
+dialog,app-amc-contracts:3,features/field-service/amc/amc-contracts.ts,dialog-app-amc-contracts-3
+dialog,ar-remote-maintenance:1,features/field-service/remote-maintenance/remote-maintenance.ts,dialog-ar-remote-maintenance-1
+dialog,ar-remote-maintenance:2,features/field-service/remote-maintenance/remote-maintenance.ts,dialog-ar-remote-maintenance-2
+dialog,app-field-service-tickets:1,features/field-service/tickets/field-service-tickets.ts,dialog-app-field-service-tickets-1
+dialog,app-field-service-tickets:2,features/field-service/tickets/field-service-tickets.ts,dialog-app-field-service-tickets-2
+dialog,app-field-service-tickets:3,features/field-service/tickets/field-service-tickets.ts,dialog-app-field-service-tickets-3
+dialog,app-field-service-tickets:4,features/field-service/tickets/field-service-tickets.ts,dialog-app-field-service-tickets-4
+dialog,ar-field:1,features/field/field.ts,dialog-ar-field-1
+dialog,app-chart-of-accounts:1,features/finance/chart-of-accounts/chart-of-accounts.ts,dialog-app-chart-of-accounts-1
+dialog,app-gst-compliance:1,features/finance/gst-compliance/gst-compliance.ts,dialog-app-gst-compliance-1
+dialog,app-journal-entries:1,features/finance/journal-entries/journal-entries.ts,dialog-app-journal-entries-1
+dialog,ar-flows:1,features/flows/flows.ts,dialog-ar-flows-1
+dialog,ar-flows:2,features/flows/flows.ts,dialog-ar-flows-2
+dialog,ar-helpdesk:1,features/helpdesk/helpdesk.ts,dialog-ar-helpdesk-1
+dialog,ar-ticket-detail-dialog:1,features/helpdesk/ticket-detail-dialog.ts,dialog-ar-ticket-detail-dialog-1
+dialog,ar-ticket-dialog:1,features/helpdesk/ticket-dialog.ts,dialog-ar-ticket-dialog-1
+dialog,ar-ticket-settings-dialog:1,features/helpdesk/ticket-settings-dialog.ts,dialog-ar-ticket-settings-dialog-1
+dialog,ar-inbox:1,features/inbox/inbox.ts,dialog-ar-inbox-1
+dialog,ar-inbox:2,features/inbox/inbox.ts,dialog-ar-inbox-2
+dialog,ar-inbox:3,features/inbox/inbox.ts,dialog-ar-inbox-3
+dialog,ar-share-location-dialog:1,features/inbox/share-location-dialog.ts,dialog-ar-share-location-dialog-1
+dialog,ar-purchasing:1,features/inventory/purchasing.ts,dialog-ar-purchasing-1
+dialog,ar-purchasing:2,features/inventory/purchasing.ts,dialog-ar-purchasing-2
+dialog,ar-purchasing:3,features/inventory/purchasing.ts,dialog-ar-purchasing-3
+dialog,ar-stock:1,features/inventory/stock.ts,dialog-ar-stock-1
+dialog,ar-stock:2,features/inventory/stock.ts,dialog-ar-stock-2
+dialog,ar-stock:3,features/inventory/stock.ts,dialog-ar-stock-3
+dialog,ar-stock:4,features/inventory/stock.ts,dialog-ar-stock-4
+dialog,ar-stock:5,features/inventory/stock.ts,dialog-ar-stock-5
+dialog,ar-stock:6,features/inventory/stock.ts,dialog-ar-stock-6
+dialog,ar-stock:7,features/inventory/stock.ts,dialog-ar-stock-7
+dialog,ar-bill-of-materials:1,features/manufacturing/bom/bill-of-materials.ts,dialog-ar-bill-of-materials-1
+dialog,ar-bill-of-materials:2,features/manufacturing/bom/bill-of-materials.ts,dialog-ar-bill-of-materials-2
+dialog,app-work-orders:1,features/manufacturing/work-orders/work-orders.ts,dialog-app-work-orders-1
+dialog,app-work-orders:2,features/manufacturing/work-orders/work-orders.ts,dialog-app-work-orders-2
+dialog,app-work-orders:3,features/manufacturing/work-orders/work-orders.ts,dialog-app-work-orders-3
+dialog,app-work-orders:4,features/manufacturing/work-orders/work-orders.ts,dialog-app-work-orders-4
+dialog,ar-network:1,features/network/network.ts,dialog-ar-network-1
+dialog,ar-network:2,features/network/network.ts,dialog-ar-network-2
+dialog,ar-network:3,features/network/network.ts,dialog-ar-network-3
+dialog,ar-network:4,features/network/network.ts,dialog-ar-network-4
+dialog,ar-route-lead-dialog:1,features/network/route-lead-dialog.ts,dialog-ar-route-lead-dialog-1
+dialog,ar-collections:1,features/payments/collections.ts,dialog-ar-collections-1
+dialog,ar-ai-negotiator:1,features/pipeline/ai-negotiator/ai-negotiator.ts,dialog-ar-ai-negotiator-1
+dialog,ar-enquiries:1,features/pipeline/enquiries.ts,dialog-ar-enquiries-1
+dialog,ar-enquiry-drawer:1,features/pipeline/enquiry-drawer.ts,dialog-ar-enquiry-drawer-1
+dialog,ar-forecast:1,features/pipeline/forecast.ts,dialog-ar-forecast-1
+dialog,ar-forecast:2,features/pipeline/forecast.ts,dialog-ar-forecast-2
+dialog,ar-installed-base:1,features/pipeline/installed-base.ts,dialog-ar-installed-base-1
+dialog,ar-installed-base:2,features/pipeline/installed-base.ts,dialog-ar-installed-base-2
+dialog,ar-pipeline-stages:1,features/pipeline/pipeline-stages.ts,dialog-ar-pipeline-stages-1
+dialog,ar-quotations:1,features/pipeline/quotations.ts,dialog-ar-quotations-1
+dialog,ar-quotations:2,features/pipeline/quotations.ts,dialog-ar-quotations-2
+dialog,ar-quote-signature-dialog:1,features/pipeline/quote-signature-dialog.ts,dialog-ar-quote-signature-dialog-1
+dialog,ar-renewals:1,features/pipeline/renewals.ts,dialog-ar-renewals-1
+dialog,ar-renewals:2,features/pipeline/renewals.ts,dialog-ar-renewals-2
+dialog,ar-spares:1,features/pipeline/spares.ts,dialog-ar-spares-1
+dialog,ar-spares:2,features/pipeline/spares.ts,dialog-ar-spares-2
+dialog,ar-platform-console:1,features/platform/console.ts,dialog-ar-platform-console-1
+dialog,ar-feature-flags:1,features/platform/feature-flags.ts,dialog-ar-feature-flags-1
+dialog,ar-status-incidents:1,features/platform/status-incidents.ts,dialog-ar-status-incidents-1
+dialog,ar-projection-plan:1,features/projections/projection-plan/projection-plan.ts,dialog-ar-projection-plan-1
+dialog,ar-projection-plan:2,features/projections/projection-plan/projection-plan.ts,dialog-ar-projection-plan-2
+dialog,ar-vendor-bills:1,features/purchasing/bills/vendor-bills.ts,dialog-ar-vendor-bills-1
+dialog,ar-vendor-bills:2,features/purchasing/bills/vendor-bills.ts,dialog-ar-vendor-bills-2
+dialog,ar-vendor-bills:3,features/purchasing/bills/vendor-bills.ts,dialog-ar-vendor-bills-3
+dialog,ar-vendor-debit-notes:1,features/purchasing/debit-notes/vendor-debit-notes.ts,dialog-ar-vendor-debit-notes-1
+dialog,ar-vendor-debit-notes:2,features/purchasing/debit-notes/vendor-debit-notes.ts,dialog-ar-vendor-debit-notes-2
+dialog,ar-goods-receipt-notes:1,features/purchasing/grn/goods-receipt-notes.ts,dialog-ar-goods-receipt-notes-1
+dialog,ar-goods-receipt-notes:2,features/purchasing/grn/goods-receipt-notes.ts,dialog-ar-goods-receipt-notes-2
+dialog,ar-goods-receipt-notes:3,features/purchasing/grn/goods-receipt-notes.ts,dialog-ar-goods-receipt-notes-3
+dialog,ar-reorder-buyers:1,features/reorder/reorder-buyers.ts,dialog-ar-reorder-buyers-1
+dialog,ar-reorder-dispatch:1,features/reorder/reorder-shipping.ts,dialog-ar-reorder-dispatch-1
+dialog,ar-reorders:1,features/reorder/reorders.ts,dialog-ar-reorders-1
+dialog,ar-reorders:2,features/reorder/reorders.ts,dialog-ar-reorders-2
+dialog,ar-send-reorder-link:1,features/reorder/send-reorder-link.ts,dialog-ar-send-reorder-link-1
+dialog,ar-delivery-challans:1,features/sales/challans/delivery-challans.ts,dialog-ar-delivery-challans-1
+dialog,ar-delivery-challans:2,features/sales/challans/delivery-challans.ts,dialog-ar-delivery-challans-2
+dialog,ar-sales-invoices:1,features/sales/invoices/sales-invoices.ts,dialog-ar-sales-invoices-1
+dialog,ar-sales-invoices:2,features/sales/invoices/sales-invoices.ts,dialog-ar-sales-invoices-2
+dialog,ar-sales-orders:1,features/sales/orders/orders.ts,dialog-ar-sales-orders-1
+dialog,ar-sales-orders:2,features/sales/orders/orders.ts,dialog-ar-sales-orders-2
+dialog,ar-ai-assistant:1,features/settings/ai-assistant.ts,dialog-ar-ai-assistant-1
+dialog,ar-email-templates:1,features/settings/email-templates.ts,dialog-ar-email-templates-1
+dialog,ar-erp-sync-section:1,features/settings/erp-sync-section.ts,dialog-ar-erp-sync-section-1
+dialog,ar-integrations:1,features/settings/integrations.ts,dialog-ar-integrations-1
+dialog,ar-integrations:2,features/settings/integrations.ts,dialog-ar-integrations-2
+dialog,ar-members:1,features/settings/members.ts,dialog-ar-members-1
+dialog,ar-scheduled-reports:1,features/settings/reports.ts,dialog-ar-scheduled-reports-1
+dialog,ar-scheduled-reports:2,features/settings/reports.ts,dialog-ar-scheduled-reports-2
+dialog,ar-support-access:1,features/settings/support-access.ts,dialog-ar-support-access-1
+dialog,ar-teams:1,features/settings/teams.ts,dialog-ar-teams-1
+dialog,ar-two-factor-card:1,features/settings/two-factor-card.ts,dialog-ar-two-factor-card-1
+dialog,ar-two-factor-card:2,features/settings/two-factor-card.ts,dialog-ar-two-factor-card-2
+dialog,ar-two-factor-card:3,features/settings/two-factor-card.ts,dialog-ar-two-factor-card-3
+dialog,ar-two-factor-card:4,features/settings/two-factor-card.ts,dialog-ar-two-factor-card-4
+dialog,ar-confirm-host:1,layout/confirm-host.ts,confirmations
+dialog,ar-confirm-host:2,layout/confirm-host.ts,confirmations
+confirmation/prompt,core/services/platform-checkout.ts:87:prompt,core/services/platform-checkout.ts,confirmation-001
+confirmation/prompt,features/activities/task-dialog.ts:318:delete,features/activities/task-dialog.ts,confirmation-002
+confirmation/prompt,features/admin/roles.ts:714:confirm,features/admin/roles.ts,confirmation-003
+confirmation/prompt,features/admin/tenant-features-dialog.ts:289:confirm,features/admin/tenant-features-dialog.ts,confirmation-004
+confirmation/prompt,features/admin/tenants.ts:356:delete,features/admin/tenants.ts,confirmation-005
+confirmation/prompt,features/admin/user-security-dialog.ts:208:confirm,features/admin/user-security-dialog.ts,confirmation-006
+confirmation/prompt,features/admin/users.ts:528:delete,features/admin/users.ts,confirmation-007
+confirmation/prompt,features/admin/workspace-manage-dialog.ts:884:confirm,features/admin/workspace-manage-dialog.ts,confirmation-008
+confirmation/prompt,features/admin/workspace-manage-dialog.ts:899:confirm,features/admin/workspace-manage-dialog.ts,confirmation-009
+confirmation/prompt,features/admin/workspace-manage-dialog.ts:957:confirm,features/admin/workspace-manage-dialog.ts,confirmation-010
+confirmation/prompt,features/admin/workspace-manage-dialog.ts:1028:prompt,features/admin/workspace-manage-dialog.ts,confirmation-011
+confirmation/prompt,features/admin/workspace-manage-dialog.ts:1052:confirm,features/admin/workspace-manage-dialog.ts,confirmation-012
+confirmation/prompt,features/admin/workspace-manage-dialog.ts:1070:confirm,features/admin/workspace-manage-dialog.ts,confirmation-013
+confirmation/prompt,features/admin/workspace-manage-dialog.ts:1121:confirm,features/admin/workspace-manage-dialog.ts,confirmation-014
+confirmation/prompt,features/admin/workspace-manage-dialog.ts:1140:confirm,features/admin/workspace-manage-dialog.ts,confirmation-015
+confirmation/prompt,features/admin/workspace-manage-dialog.ts:1157:confirm,features/admin/workspace-manage-dialog.ts,confirmation-016
+confirmation/prompt,features/analytics/ad-attribution.ts:670:confirm,features/analytics/ad-attribution.ts,confirmation-017
+confirmation/prompt,features/analytics/dashboards.ts:403:delete,features/analytics/dashboards.ts,confirmation-018
+confirmation/prompt,features/automations/automations.ts:183:delete,features/automations/automations.ts,confirmation-019
+confirmation/prompt,features/billing/billing.ts:275:prompt,features/billing/billing.ts,confirmation-020
+confirmation/prompt,features/billing/billing.ts:312:prompt,features/billing/billing.ts,confirmation-021
+confirmation/prompt,features/billing/billing.ts:400:confirm,features/billing/billing.ts,confirmation-022
+confirmation/prompt,features/billing/invoices.ts:207:ask,features/billing/invoices.ts,confirmation-023
+confirmation/prompt,features/calls/whatsapp-calls.ts:444:delete,features/calls/whatsapp-calls.ts,confirmation-024
+confirmation/prompt,features/calls/whatsapp-calls.ts:461:delete,features/calls/whatsapp-calls.ts,confirmation-025
+confirmation/prompt,features/calls/whatsapp-ivr-dialog.ts:672:confirm,features/calls/whatsapp-ivr-dialog.ts,confirmation-026
+confirmation/prompt,features/campaigns/campaign-builder.ts:281:confirm,features/campaigns/campaign-builder.ts,confirmation-027
+confirmation/prompt,features/campaigns/campaign-builder.ts:294:delete,features/campaigns/campaign-builder.ts,confirmation-028
+confirmation/prompt,features/channels/catalogue.ts:298:confirm,features/channels/catalogue.ts,confirmation-029
+confirmation/prompt,features/channels/chat-widgets.ts:139:delete,features/channels/chat-widgets.ts,confirmation-030
+confirmation/prompt,features/channels/lead-forms.ts:429:confirm,features/channels/lead-forms.ts,confirmation-031
+confirmation/prompt,features/channels/voice-ivr.ts:293:delete,features/channels/voice-ivr.ts,confirmation-032
+confirmation/prompt,features/channels/voice-ivr.ts:339:confirm,features/channels/voice-ivr.ts,confirmation-033
+confirmation/prompt,features/compliance/compliance.ts:115:confirm,features/compliance/compliance.ts,confirmation-034
+confirmation/prompt,features/compliance/compliance.ts:138:confirm,features/compliance/compliance.ts,confirmation-035
+confirmation/prompt,features/compliance/compliance.ts:158:ask,features/compliance/compliance.ts,confirmation-036
+confirmation/prompt,features/contacts/accounts.ts:220:delete,features/contacts/accounts.ts,confirmation-037
+confirmation/prompt,features/contacts/contacts.ts:380:delete,features/contacts/contacts.ts,confirmation-038
+confirmation/prompt,features/contacts/segments.ts:217:delete,features/contacts/segments.ts,confirmation-039
+confirmation/prompt,features/documents/documents.ts:262:delete,features/documents/documents.ts,confirmation-040
+confirmation/prompt,features/documents/documents.ts:308:confirm,features/documents/documents.ts,confirmation-041
+confirmation/prompt,features/documents/price-lists.ts:387:delete,features/documents/price-lists.ts,confirmation-042
+confirmation/prompt,features/documents/products.ts:176:delete,features/documents/products.ts,confirmation-043
+confirmation/prompt,features/flows/flows.ts:172:confirm,features/flows/flows.ts,confirmation-044
+confirmation/prompt,features/flows/flows.ts:190:delete,features/flows/flows.ts,confirmation-045
+confirmation/prompt,features/forms/forms.ts:314:delete,features/forms/forms.ts,confirmation-046
+confirmation/prompt,features/helpdesk/ticket-detail-dialog.ts:531:delete,features/helpdesk/ticket-detail-dialog.ts,confirmation-047
+confirmation/prompt,features/network/network.ts:1436:confirm,features/network/network.ts,confirmation-048
+confirmation/prompt,features/network/network.ts:1600:prompt,features/network/network.ts,confirmation-049
+confirmation/prompt,features/network/network.ts:1612:prompt,features/network/network.ts,confirmation-050
+confirmation/prompt,features/network/network.ts:1662:confirm,features/network/network.ts,confirmation-051
+confirmation/prompt,features/network/network.ts:1731:prompt,features/network/network.ts,confirmation-052
+confirmation/prompt,features/network/network.ts:1753:prompt,features/network/network.ts,confirmation-053
+confirmation/prompt,features/pipeline/enquiry-drawer.ts:863:delete,features/pipeline/enquiry-drawer.ts,confirmation-054
+confirmation/prompt,features/pipeline/installed-base.ts:229:delete,features/pipeline/installed-base.ts,confirmation-055
+confirmation/prompt,features/pipeline/installed-base.ts:290:confirm,features/pipeline/installed-base.ts,confirmation-056
+confirmation/prompt,features/pipeline/quotations.ts:265:ask,features/pipeline/quotations.ts,confirmation-057
+confirmation/prompt,features/pipeline/quotations.ts:292:delete,features/pipeline/quotations.ts,confirmation-058
+confirmation/prompt,features/pipeline/quote-editor.ts:363:confirm,features/pipeline/quote-editor.ts,confirmation-059
+confirmation/prompt,features/pipeline/quote-signature-dialog.ts:499:confirm,features/pipeline/quote-signature-dialog.ts,confirmation-060
+confirmation/prompt,features/pipeline/spares.ts:964:delete,features/pipeline/spares.ts,confirmation-061
+confirmation/prompt,features/platform/console.ts:360:ask,features/platform/console.ts,confirmation-062
+confirmation/prompt,features/platform/feature-flags.ts:104:delete,features/platform/feature-flags.ts,confirmation-063
+confirmation/prompt,features/platform/status-incidents.ts:355:prompt,features/platform/status-incidents.ts,confirmation-064
+confirmation/prompt,features/platform/status-incidents.ts:382:confirm,features/platform/status-incidents.ts,confirmation-065
+confirmation/prompt,features/resellers/resellers.ts:831:prompt,features/resellers/resellers.ts,confirmation-066
+confirmation/prompt,features/resellers/resellers.ts:885:prompt,features/resellers/resellers.ts,confirmation-067
+confirmation/prompt,features/resellers/resellers.ts:947:prompt,features/resellers/resellers.ts,confirmation-068
+confirmation/prompt,features/resellers/resellers.ts:961:prompt,features/resellers/resellers.ts,confirmation-069
+confirmation/prompt,features/resellers/resellers.ts:978:confirm,features/resellers/resellers.ts,confirmation-070
+confirmation/prompt,features/resellers/resellers.ts:1000:prompt,features/resellers/resellers.ts,confirmation-071
+confirmation/prompt,features/resellers/resellers.ts:1062:prompt,features/resellers/resellers.ts,confirmation-072
+confirmation/prompt,features/resellers/resellers.ts:1181:prompt,features/resellers/resellers.ts,confirmation-073
+confirmation/prompt,features/resellers/resellers.ts:1215:confirm,features/resellers/resellers.ts,confirmation-074
+confirmation/prompt,features/resellers/resellers.ts:1233:prompt,features/resellers/resellers.ts,confirmation-075
+confirmation/prompt,features/resellers/resellers.ts:1289:prompt,features/resellers/resellers.ts,confirmation-076
+confirmation/prompt,features/resellers/resellers.ts:1350:prompt,features/resellers/resellers.ts,confirmation-077
+confirmation/prompt,features/resellers/resellers.ts:1384:prompt,features/resellers/resellers.ts,confirmation-078
+confirmation/prompt,features/resellers/resellers.ts:1424:prompt,features/resellers/resellers.ts,confirmation-079
+confirmation/prompt,features/resellers/resellers.ts:1454:prompt,features/resellers/resellers.ts,confirmation-080
+confirmation/prompt,features/resellers/resellers.ts:1468:prompt,features/resellers/resellers.ts,confirmation-081
+confirmation/prompt,features/settings/agency.ts:82:confirm,features/settings/agency.ts,confirmation-082
+confirmation/prompt,features/settings/agency.ts:118:confirm,features/settings/agency.ts,confirmation-083
+confirmation/prompt,features/settings/ai-assistant.ts:377:delete,features/settings/ai-assistant.ts,confirmation-084
+confirmation/prompt,features/settings/delegations-card.ts:203:prompt,features/settings/delegations-card.ts,confirmation-085
+confirmation/prompt,features/settings/delegations-card.ts:236:confirm,features/settings/delegations-card.ts,confirmation-086
+confirmation/prompt,features/settings/delegations-card.ts:255:confirm,features/settings/delegations-card.ts,confirmation-087
+confirmation/prompt,features/settings/email-sending.ts:287:confirm,features/settings/email-sending.ts,confirmation-088
+confirmation/prompt,features/settings/email-templates.ts:533:confirm,features/settings/email-templates.ts,confirmation-089
+confirmation/prompt,features/settings/email-templates.ts:559:confirm,features/settings/email-templates.ts,confirmation-090
+confirmation/prompt,features/settings/email-templates.ts:635:confirm,features/settings/email-templates.ts,confirmation-091
+confirmation/prompt,features/settings/external-logins-card.ts:155:confirm,features/settings/external-logins-card.ts,confirmation-092
+confirmation/prompt,features/settings/linked-accounts-card.ts:269:confirm,features/settings/linked-accounts-card.ts,confirmation-093
+confirmation/prompt,features/settings/members.ts:154:confirm,features/settings/members.ts,confirmation-094
+confirmation/prompt,features/settings/members.ts:173:prompt,features/settings/members.ts,confirmation-095
+confirmation/prompt,features/settings/members.ts:205:confirm,features/settings/members.ts,confirmation-096
+confirmation/prompt,features/settings/members.ts:229:confirm,features/settings/members.ts,confirmation-097
+confirmation/prompt,features/settings/members.ts:246:confirm,features/settings/members.ts,confirmation-098
+confirmation/prompt,features/settings/members.ts:284:confirm,features/settings/members.ts,confirmation-099
+confirmation/prompt,features/settings/members.ts:315:prompt,features/settings/members.ts,confirmation-100
+confirmation/prompt,features/settings/reports.ts:217:delete,features/settings/reports.ts,confirmation-101
+confirmation/prompt,features/settings/security-policy.ts:314:confirm,features/settings/security-policy.ts,confirmation-102
+confirmation/prompt,features/settings/settings.ts:85:confirm,features/settings/settings.ts,confirmation-103
+confirmation/prompt,features/settings/settings.ts:97:confirm,features/settings/settings.ts,confirmation-104
+confirmation/prompt,features/settings/support-access.ts:81:confirm,features/settings/support-access.ts,confirmation-105
+confirmation/prompt,features/settings/teams.ts:501:delete,features/settings/teams.ts,confirmation-106
+confirmation/prompt,features/templates/templates.ts:180:confirm,features/templates/templates.ts,confirmation-107
+confirmation/prompt,features/templates/templates.ts:251:delete,features/templates/templates.ts,confirmation-108
+additional window,Conversation filters,features/inbox/inbox.ts,window-001
+additional window,Attach a document,features/inbox/inbox.ts,window-002
+additional window,Enquiry detail drawer,features/pipeline/enquiries.ts,window-003
+additional window,Quotation line editor,features/pipeline/quotations.ts,window-004
+additional window,Meeting detail and completion/cancellation,features/activities/meetings.ts,window-005
+additional window,Add Number to Inventory Pool,features/channels/telecom.ts,window-006
+additional window,Allocate Number to Workspace,features/channels/telecom.ts,window-007
+additional window,Release Number from Workspace,features/channels/telecom.ts,window-008
+additional window,Edit Telecom Entity Registration,features/channels/telecom.ts,window-009
+additional window,Telecom Compliance & SIM-Binding Audit Certificate,features/channels/telecom.ts,window-010
+embedded view,ar-campaign-setup,features/campaigns/campaign-setup.ts,panel-ar-campaign-setup
+embedded view,ar-recurrence-picker,features/activities/recurrence-picker.ts,panel-ar-recurrence-picker
+embedded view,ar-automation-canvas,features/automations/automation-canvas.ts,panel-ar-automation-canvas
+embedded view,ar-contact-picker,features/pipeline/contact-picker.ts,panel-ar-contact-picker
+embedded view,ar-lead-rotation-panel,features/pipeline/lead-rotation-panel.ts,panel-ar-lead-rotation-panel
+embedded view,ar-sms-inbound-card,features/channels/sms-inbound-card.ts,panel-ar-sms-inbound-card
+embedded view,ar-erp-ledger,features/contacts/erp-ledger.ts,panel-ar-erp-ledger
+embedded view,ar-enquiry-activities,features/activities/enquiry-activities.ts,panel-ar-enquiry-activities
+embedded view,ar-enquiry-calls,features/calls/enquiry-calls.ts,panel-ar-enquiry-calls
+embedded view,ar-enquiry-tickets,features/helpdesk/enquiry-tickets.ts,panel-ar-enquiry-tickets
+embedded view,ar-enquiry-network,features/network/enquiry-network.ts,panel-ar-enquiry-network
+embedded view,ar-browser-notifications-card,features/settings/browser-notifications-card.ts,panel-ar-browser-notifications-card
+embedded view,ar-delegations-card,features/settings/delegations-card.ts,panel-ar-delegations-card
+embedded view,ar-external-logins-card,features/settings/external-logins-card.ts,panel-ar-external-logins-card
+embedded view,ar-linked-accounts-card,features/settings/linked-accounts-card.ts,panel-ar-linked-accounts-card
+embedded view,ar-sign-in-history-card,features/settings/sign-in-history-card.ts,panel-ar-sign-in-history-card
+embedded view,ar-signature-pad,features/signing/signature-pad.ts,panel-ar-signature-pad
+embedded view,ar-landing-plans,features/landing/landing-plans-section.ts,panel-ar-landing-plans
+embedded view,ar-landing-ai,features/landing/landing-ai.ts,panel-ar-landing-ai
+embedded view,ar-landing-chat,features/landing/landing-chat.ts,panel-ar-landing-chat
+embedded view,ar-landing-industries,features/landing/landing-industries.ts,panel-ar-landing-industries
+embedded view,ar-landing-faq,features/landing/landing-faq.ts,panel-ar-landing-faq
+embedded view,ar-auth-showcase,features/account/auth-showcase.ts,panel-ar-auth-showcase
+embedded view,ar-email-confirmation-banner,features/account/email-confirmation-banner.ts,panel-ar-email-confirmation-banner
+embedded view,ar-softphone-bar,layout/softphone-bar.ts,panel-ar-softphone-bar
+embedded view,ar-whatsapp-call-bar,layout/whatsapp-call-bar.ts,panel-ar-whatsapp-call-bar
+embedded view,ar-call-assist,layout/call-assist-panel.ts,panel-ar-call-assist
