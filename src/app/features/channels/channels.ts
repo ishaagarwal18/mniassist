@@ -42,7 +42,10 @@ export class ArChannels {
   protected readonly loading = this.store.loading;
   protected readonly connectOpen = signal(false);
   protected readonly voiceAgentChannel = signal<string | null>(null);
-  protected readonly canManageVoiceAgent = grantedPolicy('AutoReach.Channels.Manage', inject(PermissionService));
+  protected readonly canManageVoiceAgent = grantedPolicy(
+    'AutoReach.Channels.Manage',
+    inject(PermissionService),
+  );
 
   protected readonly restrictedCount = computed(
     () => this.channels().filter((c) => c.restricted).length,

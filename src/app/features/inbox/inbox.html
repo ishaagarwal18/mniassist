@@ -231,6 +231,15 @@
           >
             Call on WhatsApp
           </button>
+          <button
+            ar-button
+            variant="ghost"
+            icon="sparkle"
+            title="The channel's published AI agent calls the customer (they must have allowed calls)"
+            (click)="aiCall.set({ conversationId: thread.id, purpose: '', note: '', busy: false })"
+          >
+            Call with AI agent
+          </button>
           @if (canReorder() && thread.contactId) {
             <button
               ar-button
@@ -271,6 +280,37 @@
               class="thread__summary-x"
               aria-label="Close summary"
               (click)="summary.set(null)"
+            >
+              ×
+            </button>
+          </aside>
+        }
+      }
+      @if (aiCall(); as ai) {
+        @if (ai.conversationId === thread.id) {
+          <aside class="thread__summary" aria-label="Call with AI agent">
+            <label class="ar-field"
+              ><span>Reason for the call (optional)</span>
+              <textarea
+                class="ar-field__input"
+                rows="2"
+                maxlength="500"
+                [disabled]="ai.busy"
+                [value]="ai.purpose"
+                (input)="ai.purpose = $any($event.target).value"
+              ></textarea>
+            </label>
+            <button ar-button type="button" [disabled]="ai.busy" (click)="placeAiCall()">
+              {{ ai.busy ? 'Placing…' : 'Place AI call' }}
+            </button>
+            @if (ai.note) {
+              <p role="status" translate="no">{{ ai.note }}</p>
+            }
+            <button
+              type="button"
+              class="thread__summary-x"
+              aria-label="Close"
+              (click)="aiCall.set(null)"
             >
               ×
             </button>

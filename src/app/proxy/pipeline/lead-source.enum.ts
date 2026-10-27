@@ -15,6 +15,7 @@ export enum LeadSource {
   ReorderPortal = 11,
   PublicCatalogue = 12,
   LeadAd = 13,
+  VoiceAgent = 14,
 }
 
 export const leadSourceOptions = mapEnumToOptions(LeadSource);

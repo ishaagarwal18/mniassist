@@ -1,4 +1,4 @@
-import { PermissionService } from '@abp/ng.core';
+import { LocalizationPipe, PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -19,6 +19,7 @@ import { WhatsAppCallDto, WhatsAppCallService } from '../../proxy/messaging/what
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
 import { ArWhatsAppIvrDialog } from './whatsapp-ivr-dialog';
+import { ArVoiceConversations } from './voice-conversations';
 
 const ago = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
 
@@ -71,7 +72,15 @@ const SEED: WhatsAppCallDto[] = [
  */
 @Component({
   selector: 'ar-whatsapp-calls',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArWhatsAppIvrDialog],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArWhatsAppIvrDialog,
+    ArVoiceConversations,
+    LocalizationPipe,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -80,6 +89,9 @@ const SEED: WhatsAppCallDto[] = [
       help="Calls customers made to your WhatsApp number and calls your team made to customers who allowed it. When recording is on, the browser on the call records both sides and saves it when the call ends; tell customers that calls are recorded."
     >
       @if (canRecordings()) {
+        <button ar-button type="button" variant="ghost" (click)="conversationsOpen.set(true)">
+          {{ 'AutoReach::VoiceConversation.Title' | abpLocalization }}
+        </button>
         <label class="wa__toggle" for="wa-rec">
           <input
             id="wa-rec"
@@ -159,6 +171,9 @@ const SEED: WhatsAppCallDto[] = [
       </ar-dialog>
     }
 
+    @if (conversationsOpen()) {
+      <ar-voice-conversations (closed)="conversationsOpen.set(false)" />
+    }
     @if (menuOpen()) {
       <ar-whatsapp-ivr-dialog (closed)="menuOpen.set(false)" />
     }
@@ -383,6 +398,7 @@ export class ArWhatsAppCalls {
   /** The call menu routes calls to teams, so it is configured by whoever manages teams. */
   protected readonly canMenu = grantedPolicy('AutoReach.Teams.Manage', this.permissions);
   protected readonly menuOpen = signal(false);
+  protected readonly conversationsOpen = signal(false);
 
   protected readonly rows = signal<WhatsAppCallDto[]>([]);
   protected readonly total = signal(0);

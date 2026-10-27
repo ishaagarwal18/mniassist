@@ -71,7 +71,9 @@
         </dl>
       </div>
       @if (canManageVoiceAgent() && c.supportsVoiceAi) {
-        <button ar-button type="button" variant="ghost" (click)="voiceAgentChannel.set(c.id)">{{ 'AutoReach::VoiceAgent.Title' | abpLocalization }}</button>
+        <button ar-button type="button" variant="ghost" (click)="voiceAgentChannel.set(c.id)">
+          {{ 'AutoReach::VoiceAgent.Title' | abpLocalization }}
+        </button>
       }
     </article>
   }

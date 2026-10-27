@@ -153,6 +153,52 @@ export interface GetWhatsAppCallLogInput {
   maxResultCount?: number;
 }
 
+/** A retained AI call transcript in a search result: preview text only. */
+export interface VoiceConversationListItemDto {
+  callId: string;
+  contactId: string;
+  contactName?: string | null;
+  callStartedAtUtc: string;
+  expiresAtUtc: string;
+  ended: boolean;
+  transcriptIncomplete: boolean;
+  preview: string;
+  sentiment?: string | null;
+  goalAchieved?: boolean | null;
+  summary?: string | null;
+}
+
+export interface VoiceConversationSnapshotDto {
+  callId: string;
+  persisted: boolean;
+  expiresAtUtc?: string | null;
+  ended: boolean;
+  transcriptIncomplete: boolean;
+  transcriptEnabled: boolean;
+  truncated: boolean;
+  inputTokens: number;
+  outputTokens: number;
+  completedResponses: number;
+  turns: { itemId: string; speaker: 'caller' | 'agent'; text: string; receivedAtUtc: string }[];
+  contactName?: string | null;
+  summary?: string | null;
+  sentiment?: string | null;
+  goalAchieved?: boolean | null;
+  goalReason?: string | null;
+  analyzedAtUtc?: string | null;
+  analysisError?: string | null;
+  fields?: { key: string; label: string; type: string; value?: string | null }[];
+  actions?: { name: string; status: string; say?: string | null; atUtc: string }[];
+  annotations?: {
+    itemId: string;
+    good?: boolean | null;
+    note?: string | null;
+    userId: string;
+    atUtc: string;
+  }[];
+  hasRecording?: boolean;
+}
+
 /** M3: WhatsApp Calling (Meta Cloud API). */
 @Injectable({ providedIn: 'root' })
 export class WhatsAppCallService {
@@ -183,6 +229,96 @@ export class WhatsAppCallService {
         },
       },
       { apiName: this.apiName, ...config },
+    );
+
+  /** Retained AI transcripts (180 days), searched by text; needs call-recording access. */
+  getConversations = (
+    input: { query?: string; skipCount?: number; maxResultCount?: number },
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, PagedResultDto<VoiceConversationListItemDto>>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/whats-app-call/conversations',
+        params: {
+          query: input.query,
+          skipCount: input.skipCount,
+          maxResultCount: input.maxResultCount,
+        },
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  updateConversationField = (
+    id: string,
+    input: { key: string; value?: string | null },
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, VoiceConversationSnapshotDto>(
+      {
+        method: 'PUT',
+        url: `/api/auto-reach/whats-app-call/${id}/conversation-field`,
+        body: input,
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  annotateConversation = (
+    id: string,
+    input: { itemId: string; good?: boolean | null; note?: string | null },
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, VoiceConversationSnapshotDto>(
+      {
+        method: 'POST',
+        url: `/api/auto-reach/whats-app-call/${id}/annotate-conversation`,
+        body: input,
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  suggestPromptChanges = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, { suggestion?: string | null }>(
+      { method: 'POST', url: `/api/auto-reach/whats-app-call/${id}/suggest-prompt-changes` },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  getConversationsCsv = (input: { query?: string }, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, Blob>(
+      {
+        method: 'GET',
+        url: '/api/auto-reach/whats-app-call/conversations-csv',
+        params: { query: input.query },
+        responseType: 'blob',
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  /** The channel's published AI agent calls this conversation's customer. */
+  startAi = (
+    conversationId: string,
+    input: { purpose?: string | null },
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, WhatsAppCallDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/whats-app-call/start-ai/${conversationId}`,
+        body: input,
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
+  getConversation = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, VoiceConversationSnapshotDto | null>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/whats-app-call/${id}/conversation`,
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
     );
 
   /** Without the call relay: the browser's answer to the customer. With it: the browser's offer to the relay. */

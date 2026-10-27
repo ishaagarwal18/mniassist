@@ -22,7 +22,8 @@ export function takeState(): string | null {
   }
 }
 
-export type CallbackResult = { ok: true; code: string; state: string } | { ok: false; reason: string };
+export type CallbackResult =
+  { ok: true; code: string; state: string } | { ok: false; reason: string };
 
 /** What Facebook's redirect back carries, checked against the state this tab started with. */
 export function readCallback(

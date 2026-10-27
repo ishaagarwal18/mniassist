@@ -14,7 +14,9 @@ describe('Meta OAuth completion', () => {
   ] as const) {
     it(`sends the callback state with the code to ${url}`, () => {
       const request = vi.fn(() => of({}));
-      TestBed.configureTestingModule({ providers: [{ provide: RestService, useValue: { request } }] });
+      TestBed.configureTestingModule({
+        providers: [{ provide: RestService, useValue: { request } }],
+      });
       const api = TestBed.inject(service as typeof LeadAdsService);
       api.completeLogin('synthetic-code', 'synthetic-state');
       expect(request).toHaveBeenCalledWith(

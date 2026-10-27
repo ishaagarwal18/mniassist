@@ -752,8 +752,8 @@ export class WhatsAppCallSession {
     return this.settings;
   }
 
-  /** STUN/TURN servers from the workspace's configuration; the public STUN server when none are set. */
-  private async iceServers(): Promise<RTCIceServer[]> {
+  /** STUN/TURN servers from the workspace's configuration; the public STUN server when none are set. Also used by agent test calls. */
+  async iceServers(): Promise<RTCIceServer[]> {
     const configured = (await this.loadSettings())?.iceServers ?? [];
     return configured.length
       ? configured.map((s) => ({

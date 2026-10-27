@@ -385,6 +385,32 @@ export class ArInbox {
     }
   }
 
+  /** The AI agent calling this conversation's customer: the reason is optional, the server checks permission and hours. */
+  protected readonly aiCall = signal<{
+    conversationId: string;
+    purpose: string;
+    note: string;
+    busy: boolean;
+  } | null>(null);
+
+  protected async placeAiCall(): Promise<void> {
+    const current = this.aiCall();
+    if (!current || current.busy) return;
+    this.aiCall.set({ ...current, busy: true, note: '' });
+    let note: string;
+    try {
+      await firstValueFrom(
+        this.callsApi.startAi(current.conversationId, { purpose: current.purpose.trim() || null }),
+      );
+      note =
+        'The AI agent is calling. Its transcript appears under AI conversations on the WhatsApp calls page.';
+    } catch (e: unknown) {
+      note = this.problem(e, 'The AI call could not be placed.');
+    }
+    if (this.aiCall()?.conversationId === current.conversationId)
+      this.aiCall.set({ ...current, busy: false, note });
+  }
+
   private problem(e: unknown, fallback: string): string {
     return (e as { error?: { error?: { message?: string } } })?.error?.error?.message ?? fallback;
   }

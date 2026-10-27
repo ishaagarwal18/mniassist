@@ -8,6 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "build:prod": "ng build --configuration production",
     "test": "ng test",
+    "test:browser": "node scripts/browser-acceptance.mjs",
     "check:routes": "node scripts/check-proxy-routes.mjs",
     "refresh:routes": "node scripts/check-proxy-routes.mjs --refresh https://mniassist.com"
   },

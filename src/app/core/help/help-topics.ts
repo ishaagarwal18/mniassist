@@ -554,6 +554,20 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Set the Recording notice so customers are told calls are recorded.',
     ],
   },
+  'calls/ai-batches': {
+    benefits: [
+      'Your published voice agent calls a list of people for you: renewals, reminders, feedback or follow-ups.',
+      'Each person’s own details from the file are used in the call.',
+      'People who don’t pick up are tried again later, up to the number of attempts you set.',
+    ],
+    steps: [
+      'Create a batch, choose the WhatsApp number and say why the agent is calling.',
+      'Upload a CSV with a phone column; other columns become details the agent can use.',
+      'Set the calling hours (09:00–21:00 at most), calls at once, attempts and the gap between them.',
+      'Start calling, and watch who was reached; pause or cancel at any time.',
+      'Only people who allowed WhatsApp calls and haven’t opted out are called.',
+    ],
+  },
   helpdesk: {
     benefits: [
       'Every service ticket in one place, however it was raised.',
