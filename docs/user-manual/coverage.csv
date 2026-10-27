@@ -70,6 +70,7 @@ page,/field-service/remote-maintenance,features/field-service/remote-maintenance
 page,/tasks,features/activities/tasks.ts,page-tasks
 page,/calls,features/calls/calls.ts,page-calls
 page,/calls/whatsapp,features/calls/whatsapp-calls.ts,page-calls-whatsapp
+page,/calls/ai-batches,features/calls/voice-call-batches.ts,page-calls-ai-batches
 page,/helpdesk,features/helpdesk/helpdesk.ts,page-helpdesk
 page,/meetings,features/activities/meetings.ts,page-meetings
 page,/finance/chart-of-accounts,features/finance/chart-of-accounts/chart-of-accounts.ts,page-finance-chart-of-accounts
@@ -390,6 +391,7 @@ additional window,Allocate Number to Workspace,features/channels/telecom.ts,wind
 additional window,Release Number from Workspace,features/channels/telecom.ts,window-008
 additional window,Edit Telecom Entity Registration,features/channels/telecom.ts,window-009
 additional window,Telecom Compliance & SIM-Binding Audit Certificate,features/channels/telecom.ts,window-010
+additional window,AI conversations,features/calls/voice-conversations.ts,window-011
 embedded view,ar-campaign-setup,features/campaigns/campaign-setup.ts,panel-ar-campaign-setup
 embedded view,ar-recurrence-picker,features/activities/recurrence-picker.ts,panel-ar-recurrence-picker
 embedded view,ar-automation-canvas,features/automations/automation-canvas.ts,panel-ar-automation-canvas
@@ -417,3 +419,5 @@ embedded view,ar-email-confirmation-banner,features/account/email-confirmation-b
 embedded view,ar-softphone-bar,layout/softphone-bar.ts,panel-ar-softphone-bar
 embedded view,ar-whatsapp-call-bar,layout/whatsapp-call-bar.ts,panel-ar-whatsapp-call-bar
 embedded view,ar-call-assist,layout/call-assist-panel.ts,panel-ar-call-assist
+embedded view,ar-inbox AI call panel,features/inbox/inbox.html,panel-ar-inbox-ai-call
+embedded view,ar-voice-agent-test,features/channels/voice-agent-test.ts,panel-ar-voice-agent-test

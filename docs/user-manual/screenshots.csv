@@ -119,6 +119,7 @@ P115,Agency mode,Agency mode page showing its principal sections and a suitable 
 P116,Platform,Platform page showing its principal sections and a suitable sample record; highlight “Console” and the result of the main workflow.
 P117,Feature flags,Feature flags page showing its principal sections and a suitable sample record; highlight “New rule” and the result of the main workflow.
 P118,Status page,Status page page showing its principal sections and a suitable sample record; highlight “New incident” and the result of the main workflow.
+P119,AI call batches,"AI call batches page with a running batch selected, its counts and the list of people with statuses visible; highlight “Start calling” and the progress line."
 D001,Schedule or edit a meeting,"“Schedule or edit a meeting” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
 D002,Create or edit a task,"“Create or edit a task” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
 D003,Request,"“Request” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
@@ -150,7 +151,7 @@ D028,Chat link,"“Chat link” window opened from its parent page, with the rec
 D029,Connect a WhatsApp number,"“Connect a WhatsApp number” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
 D030,Choose the Pages to connect,"“Choose the Pages to connect” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
 D031,Release / ?,"“Release / ?” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
-D032,"Voice agent: profile, templates and saved versions","“Voice agent: profile, templates and saved versions” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
+D032,"Voice agent: profile, actions, analysis, testing and versions","“Voice agent” window with the profile, the Actions during calls section (Act as and a few ticked actions) and After-call analysis fields visible; highlight Save draft and Publish saved draft."
 D033,Edit prompt / New prompt,"“Edit prompt / New prompt” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
 D034,Add branch,"“Add branch” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
 D035,Log a DPDP request,"“Log a DPDP request” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning."
@@ -385,6 +386,7 @@ W007,Allocate Number to Workspace,"Allocate Number to Workspace open with its he
 W008,Release Number from Workspace,"Release Number from Workspace open with its heading, selected record, relevant fields and final action highlighted."
 W009,Edit Telecom Entity Registration,"Edit Telecom Entity Registration open with its heading, selected record, relevant fields and final action highlighted."
 W010,Telecom Compliance & SIM-Binding Audit Certificate,"Telecom Compliance & SIM-Binding Audit Certificate open with its heading, selected record, relevant fields and final action highlighted."
+W011,AI conversations,"AI conversations window with one call open showing the summary, an extracted field, the actions list and a rated agent answer; highlight Export CSV."
 V001,"Campaign audience, variables and readiness","Campaign audience, variables and readiness within its containing page; highlight its entry control and final action or selected option."
 V002,Recurring tasks and meetings,Recurring tasks and meetings within its containing page; highlight its entry control and final action or selected option.
 V003,Automation canvas controls and connections,Automation canvas controls and connections within its containing page; highlight its entry control and final action or selected option.
@@ -412,4 +414,6 @@ V024,Email confirmation reminder,Email confirmation reminder within its containi
 V025,"Browser phone: answer, mute, keypad and hang up","Browser phone: answer, mute, keypad and hang up within its containing page; highlight its entry control and final action or selected option."
 V026,"Live WhatsApp call bar, transfer and rejoin","Live WhatsApp call bar, transfer and rejoin within its containing page; highlight its entry control and final action or selected option."
 V027,Look up business context during a call,Look up business context during a call within its containing page; highlight its entry control and final action or selected option.
+V028,Call with AI agent,"Inbox conversation with the Call with AI agent panel open, a reason entered and the result message visible."
+V029,Test call from this browser,"Voice agent window with the test call running and a live transcript, plus a passed test under Recent tests."
 E001,Experimental local voice lab,"Local-only recorded-turn test, playback and unverified cost result."

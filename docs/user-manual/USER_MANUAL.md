@@ -1,6 +1,8 @@
 # MNI Assist — Complete User Manual
 
-**Edition:** 1.0 · **Reviewed:** 26 October 2026 · **Format:** end-user guide
+**Edition:** 1.1 · **Reviewed:** 27 October 2026 · **Format:** end-user guide
+
+**New in 1.1:** AI voice agents can take actions during calls, search your knowledge base and catalogue, remember returning callers, place outbound WhatsApp calls and call whole lists ([AI call batches](#page-calls-ai-batches)); calls are analysed afterwards and can be reviewed, corrected and exported ([AI conversations](#window-011)); agents can be tested from the browser ([test call](#panel-ar-voice-agent-test)). See the [voice agent window](#dialog-ar-voice-agent-dialog-1).
 
 This manual explains the pages and workflows present in this application’s current codebase. Use it with your organisation’s approved business processes. Features, buttons and pages depend on your role, workspace subscription, provider connections and administrator settings. A page being documented does not mean it is enabled for every workspace.
 
@@ -606,9 +608,10 @@ The routes below identify the screen if you need help finding it. Entries contai
 4. Type **Message** and send it, or choose an attachment or an approved template when needed.
 5. Use **Assign** to route work, **Summarise** to review an AI summary, and **Resolve** when the issue is finished.
 6. For a customer call choose the available calling action; request permission first if required.
-7. Use the payment, re-order link, location or quote-from-file actions only after reviewing the corresponding window.
+7. To have the AI voice agent call the customer instead, click **Call with AI agent**, optionally enter the reason for the call, and click **Place AI call** ([Call with AI agent](#panel-ar-inbox-ai-call)).
+8. Use the payment, re-order link, location or quote-from-file actions only after reviewing the corresponding window.
 
-**Related windows:** [Call](#dialog-ar-call-dialog-1); [Request a payment](#dialog-ar-inbox-1); [Draft a quote from this file](#dialog-ar-inbox-2); [Reply buttons](#dialog-ar-inbox-3); [Share a location](#dialog-ar-share-location-dialog-1); [Re-order link for](#dialog-ar-send-reorder-link-1).
+**Related windows:** [Call](#dialog-ar-call-dialog-1); [Call with AI agent](#panel-ar-inbox-ai-call); [Request a payment](#dialog-ar-inbox-1); [Draft a quote from this file](#dialog-ar-inbox-2); [Reply buttons](#dialog-ar-inbox-3); [Share a location](#dialog-ar-share-location-dialog-1); [Re-order link for](#dialog-ar-send-reorder-link-1).
 
 [Screenshot P019: Inbox page showing its principal sections and a suitable sample record; highlight “Inbox” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
@@ -1751,6 +1754,7 @@ The routes below identify the screen if you need help finding it. Entries contai
 | [Tasks](#page-tasks) | `/tasks` |
 | [Calls](#page-calls) | `/calls` |
 | [WhatsApp calls](#page-calls-whatsapp) | `/calls/whatsapp` |
+| [AI call batches](#page-calls-ai-batches) | `/calls/ai-batches` |
 | [Helpdesk](#page-helpdesk) | `/helpdesk` |
 | [Meetings](#page-meetings) | `/meetings` |
 
@@ -1928,12 +1932,41 @@ The routes below identify the screen if you need help finding it. Entries contai
 4. Review **Record calls** and the **Recording notice** settings before enabling recording.
 5. In the notice window play the current clip, upload a replacement or **Use the tone instead**, then finish.
 6. Use **Play** for an available recording and delete only the intended recording(s) after reviewing the confirmation.
+7. To review calls the AI voice agent handled, click **AI conversations** (shown to users who may open call recordings): search transcripts, open a call, correct extracted values, rate the agent’s answers and export the list.
 
-**Related windows:** [Recording notice](#dialog-ar-whatsapp-calls-1); [WhatsApp call menu (IVR)](#dialog-ar-whatsapp-ivr-dialog-1).
+**Related windows:** [Recording notice](#dialog-ar-whatsapp-calls-1); [WhatsApp call menu (IVR)](#dialog-ar-whatsapp-ivr-dialog-1); [AI conversations](#window-011).
 
 [Screenshot P067: WhatsApp calls page showing its principal sections and a suitable sample record; highlight “WhatsApp calls” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
-**Tips and common errors:** Recording requires your organisation’s notice/consent process. Browser microphone permissions and a configured relay are necessary for live browser audio; a log entry alone does not prove audio quality.
+**Tips and common errors:** Recording requires your organisation’s notice/consent process. Browser microphone permissions and a configured relay are necessary for live browser audio; a log entry alone does not prove audio quality. AI call transcripts are kept for 180 days from the start of the call and are then deleted automatically.
+
+<a id="page-calls-ai-batches"></a>
+
+### AI call batches
+
+**Open:** `/calls/ai-batches`. **Who can use it:** Signed-in users with campaign access. Creating a batch and adding people needs campaign create permission; pausing, cancelling and changing it needs campaign update permission; **Start calling** needs campaign send permission. The workspace must include the voice feature.
+
+**Purpose:** Have your published AI voice agent call a list of people for you — renewals, payment or service reminders, feedback, follow-ups — a few at a time, within calling hours, retrying people who don’t pick up.
+
+**Prerequisites:** A WhatsApp number with a **published** voice agent that the administrator has allowed to make AI calls (see the [voice agent window](#dialog-ar-voice-agent-dialog-1)). Only people who have allowed WhatsApp calls from your number and have not opted out of messages or calls are called. A CSV file of the people to call, with a phone column.
+
+**Views and sections:** Batch list with status and how many people were reached; the selected batch’s settings, counts by result, actions, CSV upload and the list of people with their status, attempts, next try and last outcome; the **New batch** window.
+
+**Step-by-step**
+
+1. Click **New batch**. Enter a **Batch name** and choose the **WhatsApp number**.
+2. Enter the **Reason for the calls**. The agent says this after its greeting. You can use variables such as `{{name}}`, or any column of your file such as `{{plan}}`.
+3. Optionally set **Start at**; otherwise calling begins as soon as you start the batch.
+4. Set **Call from** and **Call until** (never earlier than 09:00 or later than 21:00 India time), **Calls at once**, **Attempts per person** and **Minutes between attempts**, then click **Create batch**.
+5. Select the batch and use **Add people from a CSV file**. The file needs a `phone` column (10-digit Indian numbers are accepted); a `name` column fills the contact’s name, and every other column becomes a variable for that person. Read the result: how many were added and any lines that were skipped, with the reason.
+6. Review the list of people, then click **Start calling**.
+7. Use **Refresh** to follow progress. Each person moves from **Waiting** to **On a call**, then to **Reached**, **Not reached** (no answer after every attempt), **Skipped** (opted out or no WhatsApp call permission), **Failed** or **Cancelled**.
+8. Use **Pause** to stop placing new calls, and **Start calling** again to resume. **Cancel batch** stops all calls not yet placed; calls already in progress finish normally.
+9. Review what the agent did on each call under **AI conversations** on the [WhatsApp calls](#page-calls-whatsapp) page.
+
+[Screenshot P119: AI call batches page with a running batch selected, its counts and the list of people with statuses visible; highlight “Start calling” and the progress line. Use approved sample data; obscure personal details, account secrets and private links.]
+
+**Tips and common errors:** Only people who granted WhatsApp call permission are called; everyone else is listed as **Skipped** with the reason and is never retried. Outside the calling window the batch simply waits, without using up anyone’s attempts. If the agent is unpublished or AI calling is switched off for the number, the batch pauses itself — fix the agent, then start it again. A batch holds at most 5,000 people. Put in the CSV only information the agent may say aloud to that person.
 
 <a id="page-helpdesk"></a>
 
@@ -2425,7 +2458,7 @@ The routes below identify the screen if you need help finding it. Entries contai
 4. For a permitted WhatsApp number click **Voice agent** to review its instructions and settings.
 5. Review **Numbers**, **Catalogue** or **Voice / IVR** for their specialised setup.
 
-**Related windows:** [Connect a WhatsApp number](#dialog-ar-connect-number-dialog-1); [Voice agent: profile, templates and saved versions](#dialog-ar-voice-agent-dialog-1).
+**Related windows:** [Connect a WhatsApp number](#dialog-ar-connect-number-dialog-1); [Voice agent: profile, actions, analysis, testing and versions](#dialog-ar-voice-agent-dialog-1).
 
 [Screenshot P085: Channels page showing its principal sections and a suitable sample record; highlight “Channels” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
@@ -4248,39 +4281,50 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 <a id="dialog-ar-voice-agent-dialog-1"></a>
 
-### D032. Voice agent: profile, templates and saved versions
+### D032. Voice agent: profile, actions, analysis, testing and versions
 
 **Location:** [Channels](#page-channels).
 
-**Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
+**Purpose and access:** Set up the AI voice agent that answers (and, if allowed, places) calls on one WhatsApp number: what it says, what it may do during calls, what is worked out after each call, and which saved version is live. You need permission to manage channels.
 
-**Prerequisites:** Open the correct customer, workspace, channel or business record first. Related products, members, templates or provider connections must already exist where the window asks you to select them.
+**Prerequisites:** A WhatsApp number connected directly through Meta. AI calling must also be allowed for that number by the platform administrator; until then you can prepare and save a draft but no call is answered by it. For actions during calls, the staff member the agent will act as must already be an active user of the workspace; for follow-up messages outside the 24-hour window, an approved WhatsApp template with one body variable.
 
 | Field or control | What to do |
 | --- | --- |
-| Starting template | Choose the intended available option. Confirm it belongs to the record, workspace and action you are handling. |
-| Agent name | Enter a clear, recognisable name or heading for this record. Follow any naming rules shown. |
-| Agent instructions | Complete this control for the selected record as described by its on-screen label and hint. Leave it blank only if the screen marks it optional. |
-| Opening greeting | Complete this control for the selected record as described by its on-screen label and hint. Leave it blank only if the screen marks it optional. |
-| Voice | Complete this control for the selected record as described by its on-screen label and hint. Leave it blank only if the screen marks it optional. |
-| Preferred language | Complete this control for the selected record as described by its on-screen label and hint. Leave it blank only if the screen marks it optional. |
-| Maximum call length (seconds) | Enter the approved limit or interval in the displayed unit and stay within any limits shown by the control. |
+| Starting template | Optionally choose a starter and click **Apply to draft**. It replaces the name, instructions and greeting in the draft only. |
+| Agent name | A recognisable name for the agent and its saved versions. |
+| Agent instructions | What the agent is for, what it may and may not say, and how it should speak. You may use variables such as `{{name}}`, `{{first_name}}`, `{{company}}`, `{{city}}` or `{{name\|there}}` (a value with a default). |
+| Opening greeting | The first sentence. It must say the caller is speaking to an AI assistant. Variables work here too. |
+| Voice / Preferred language | The speaking voice, and the language to speak (or **Follow caller**). Hindi–English mixing is followed when the caller uses it. |
+| Maximum call length (seconds) | 30–600. The agent ends politely at the limit. |
+| Silence reminder / End after silence (seconds) | Optional. The agent checks whether the caller is still there after the reminder time (5–120 s) and ends the call after the end time (10–300 s, at least 5 s after the reminder). 0 switches either off. |
+| Actions during calls → Act as | The staff member every action runs as. Their permissions decide what succeeds, and bookings go into their calendar. **No one** keeps all actions off. |
+| Book meetings in the app calendar | Lets the agent find free times and book a call meeting. Set the meeting length (10–240 minutes) and the bookable hours. |
+| Save caller details and open sales enquiries | Lets the agent save the caller’s name, email, company and city, and open an enquiry for a stated requirement (source: AI voice agent). |
+| Raise support tickets | Lets the agent raise a ticket for a problem the caller reports. |
+| Send WhatsApp follow-up messages | Lets the agent send a short WhatsApp message to the caller. Choose a **Follow-up template** so it also reaches callers outside the 24-hour window. |
+| Answer from the knowledge base | Lets the agent search your enabled knowledge articles for the caller’s question. |
+| Look up products and list prices | Lets the agent search the whole product list and catalogue by name, model or part number. |
+| Remember returning callers | Starts each call knowing the caller’s name, open tickets, upcoming meetings, open enquiries and summaries of their last calls. |
+| After-call analysis | **Write a summary**, **Record the caller’s sentiment**, a **Goal of the call** (judged after each call) and up to 20 fields to pull out of each call. For each field give a **Field name**, a **Key** (lowercase letters, digits and `_`, used in exports), a **Type** (text, one of a list, yes/no, number, date) and, for a list, the **Choices** separated by a vertical bar (for example `hot\|warm\|cold`). |
 
-**Open it:** On **Channels**, click **Voice agent** for the intended WhatsApp channel.
+**Open it:** On **Channels**, click **Voice agent** for the intended WhatsApp number.
 
 **Step-by-step**
 
-1. Read whether this channel is allowed by the server. Saving a profile cannot override a server-disabled notice.
-2. Optionally choose **Starting template** and click **Apply to draft**; review the replacement wording before saving.
-3. Enter **Agent name**, **Agent instructions** and **Opening greeting**. Include the intended language, tone and truthful AI identification.
-4. Choose **Voice**, **Preferred language** and **Maximum call length (seconds)** within the displayed 30–600 range.
-5. Click **Save settings**. Check the success message before closing.
-6. To inspect a previous profile open saved-version history and expand a version. Choose **Restore this version**, review the proposed restoration, then **Confirm restore** or **Cancel restore**.
-7. Test using the administrator-approved test number before relying on the profile for customers.
+1. Read the notice at the top: whether AI calling is allowed for this number, and whether a version is published.
+2. Optionally choose **Starting template** and click **Apply to draft**; review the replacement wording.
+3. Complete name, instructions, greeting, voice, language, length and silence settings.
+4. Under **Actions during calls**, choose who the agent acts as and tick only the actions you want. Reads (knowledge, products, memory) need no one to act as.
+5. Under **After-call analysis**, choose what to record after each call and add your fields.
+6. Click **Save draft**. Saving never changes live calls.
+7. Test the draft with **Test call from this browser** ([test call](#panel-ar-voice-agent-test)) and mark the result as passed or failed.
+8. Click **Publish saved draft**, read the confirmation and click **Confirm publish**. New calls use the published version; calls already in progress keep the version they started with.
+9. To go back to an earlier version open **Version history**, choose **Restore this version**, then **Confirm restore**. Restoring changes only the draft; publish it to make it live.
 
-[Screenshot D032: “Voice agent: profile, templates and saved versions” window opened from its parent page, with the record identity, applicable fields/preview and final action button visible; highlight the final action and any important warning. Use approved sample data; obscure personal details, account secrets and private links.]
+[Screenshot D032: “Voice agent” window with the profile, the Actions during calls section (Act as and a few ticked actions) and After-call analysis fields visible; highlight Save draft and Publish saved draft. Use approved sample data; obscure personal details, account secrets and private links.]
 
-**Tips and common errors:** Voice AI also requires calling, public audio connectivity, provider funding and a server allowance. A profile does not enable unsupported business actions. For price answers maintain eligible active Products or successfully published channel catalogue entries; customer-specific discounts and final quotations still need review.
+**Tips and common errors:** Before any change the agent reads the details back and waits for the caller to agree; it never books, saves, raises or sends on its own say-so, and every action it takes is listed on the call in [AI conversations](#window-011). An action fails if the acting user lacks permission for it — the agent then apologises and offers a person. Put in the instructions only what the agent may say to callers. Answers come only from your knowledge base, product list and catalogue; customer-specific discounts and final quotations still need your team. AI calling also needs the platform administrator’s allowance, a funded provider and a working call relay.
 
 <a id="dialog-ar-voice-ivr-1"></a>
 
@@ -10195,6 +10239,33 @@ These windows appear only after you choose the corresponding action. For a quest
 
 **Tips and common errors:** The displayed audit is an application check, not a substitute for carrier or regulator confirmation.
 
+<a id="window-011"></a>
+
+### W011. AI conversations
+
+**Page:** [/calls/whatsapp](#page-calls-whatsapp). **Access:** Users who may open call recordings, and only calls they are allowed to see. **Suggest instruction changes** also needs permission to manage channels.
+
+**Purpose:** Find and review calls the AI voice agent handled: transcript, summary, outcome, extracted values and every action the agent took; correct values, give feedback on the agent’s answers and export the list.
+
+**Prerequisites:** Transcript capture switched on for the AI calls (a platform setting) and at least one finished AI call. Transcripts are kept for 180 days from the start of the call.
+
+**Open it:** On **WhatsApp calls**, click **AI conversations**.
+
+**Step-by-step**
+
+1. Type words the caller or agent said under **Search transcripts** and click **Search**; use **Previous** and **Next** to page through.
+2. Click a call to open it. Check **Deleted on** and the notices: a transcript may be marked as possibly incomplete or cut short.
+3. Under **After the call** read the summary, caller sentiment and whether the call’s goal was met.
+4. Correct any extracted value by editing its box; the change is saved when you leave the box. Clear a box to remove a wrong value.
+5. Under **What the agent did** check each action the agent read back or completed (for example a booking or a ticket) and its result.
+6. Read the transcript. Under an agent answer click **Good answer**, or **Needs work** to type what the agent should have done, then **Save note**.
+7. After rating answers, click **Suggest instruction changes** to get proposed edits for the agent’s instructions. Nothing is changed automatically; edit the voice agent yourself if you agree.
+8. Click **Export CSV** to download the listed calls (up to 5,000) with outcome, summary and one column per extracted value.
+
+[Screenshot W011: AI conversations window with one call open showing the summary, an extracted field, the actions list and a rated agent answer; highlight Export CSV. Use approved sample data; obscure personal details, account secrets and private links.]
+
+**Tips and common errors:** Transcripts come from automatic speech recognition and may contain mistakes; an agent line is what the AI produced, which may differ slightly from what the caller heard. If a call says it couldn’t be analysed, the analysis model is not set up or gave no usable answer — ask your administrator. Treat the CSV as personal data: share it only with people allowed to see these calls.
+
 <a id="shared-views"></a>
 
 ## Shared panels, menus and embedded views
@@ -10711,6 +10782,45 @@ These views are part of a page or call session rather than separate URLs. They i
 
 **Tips and common errors:** An assistant answer can be incomplete; do not invent a price or confirm an action the system has not completed.
 
+<a id="panel-ar-inbox-ai-call"></a>
+
+### V028. Call with AI agent
+
+**Purpose:** Have the WhatsApp number’s published AI voice agent call the customer of the open conversation. **Who can use it:** Users who may reply in the Inbox, in a workspace with the voice feature.
+
+**Prerequisites:** The conversation’s WhatsApp number has a published voice agent allowed to make AI calls; the customer has allowed WhatsApp calls (use **Ask to call** first) and has not opted out; the time is between 09:00 and 21:00 India time.
+
+**Step-by-step**
+
+1. In the conversation header click **Call with AI agent**.
+2. Optionally enter **Reason for the call**, for example “Their AMC renewal is due on 5 November.” The agent says why it is calling right after its greeting.
+3. Click **Place AI call** and read the result. If the call can’t be placed, the message says why (no call permission, opted out, outside calling hours, or no published agent).
+4. Review the call later under **AI conversations** on the WhatsApp calls page.
+
+[Screenshot V028: Inbox conversation with the Call with AI agent panel open, a reason entered and the result message visible. Use approved sample data; obscure personal details, account secrets and private links.]
+
+**Tips and common errors:** The agent introduces itself as an AI assistant and ends politely if the customer asks not to be called. To call many customers use [AI call batches](#page-calls-ai-batches).
+
+<a id="panel-ar-voice-agent-test"></a>
+
+### V029. Test call from this browser
+
+**Purpose:** Talk to the voice agent’s latest saved draft through your microphone, as a caller would, before publishing it. **Who can use it:** Users who may manage channels, inside the [voice agent window](#dialog-ar-voice-agent-dialog-1).
+
+**Prerequisites:** A saved draft; AI calling allowed for the number; microphone permission in the browser; headphones are recommended.
+
+**Step-by-step**
+
+1. In the voice agent window expand **Test call from this browser** and click **Start test call**. Allow the microphone if asked.
+2. Speak to begin. The agent greets you and the transcript appears as you talk.
+3. Try the questions and requests your callers make. Searches use real data; bookings, saved details, tickets and messages stop at the read-back and the agent says what would have happened.
+4. Click **End test call**.
+5. Under **Recent tests**, open the test, read the transcript and click **Mark as passed** or **Mark as failed**.
+
+[Screenshot V029: Voice agent window with the test call running and a live transcript, plus a passed test under Recent tests. Use approved sample data; obscure personal details, account secrets and private links.]
+
+**Tips and common errors:** Tests use AI minutes and the same capacity as live calls; if all AI lines are busy, try again in a minute. Test transcripts are kept for 180 days. To test on a phone, publish the agent and use [Call with AI agent](#panel-ar-inbox-ai-call) on a conversation with your own WhatsApp number (it must have allowed calls).
+
 <a id="troubleshooting"></a>
 
 ## Common troubleshooting
@@ -10740,6 +10850,11 @@ These views are part of a page or call session rather than separate URLs. They i
 | Cannot hear or speak on a browser call | Check browser microphone permission, headset/system audio, network and provider/relay connection. Confirm audio in both directions using an authorised test. |
 | AI voice cannot answer a product price | Check eligible active Products and successfully published catalogue entries for the correct workspace/channel. Give a clear part number. The pilot does not authorise guessed prices or customer discounts. |
 | AI answering is disabled or silent | Ask the administrator to verify channel allowance, provider funding, calling/relay configuration and public audio connectivity. Saving the profile alone does not activate all dependencies. |
+| AI agent didn’t book, raise or send what the caller asked | Open the call in AI conversations and check **What the agent did**. A refused action shows why: the action isn’t switched on, the acting user lacks permission, the caller didn’t confirm after the read-back, or (for messages) there is no WhatsApp conversation or approved follow-up template. |
+| Call with AI agent or a batch says the call can’t be placed | Check that the customer allowed WhatsApp calls, hasn’t opted out, the time is 09:00–21:00 India time and the number has a published agent allowed to make AI calls. |
+| An AI call batch shows everyone as Skipped | Those people have not allowed WhatsApp calls from your number (or have opted out). Ask them for call permission from the Inbox first; skipped people are not retried. |
+| AI conversation shows no summary or values | After-call analysis must be switched on in the voice agent, and the platform’s analysis model must be set up. A call with no transcript can’t be analysed. |
+| Test call doesn’t start | Allow the microphone, save the draft first, and check that AI calling is allowed for the number. If all AI lines are busy, try again in a minute. |
 | AI answer is wrong or repetitive | Do not repeat an uncertain answer as fact. Verify the source, use human handoff and report the exact test question and approximate time through the approved support route. |
 | Browser notifications do not appear | Check the page’s notification choice, browser site permission and operating-system notification/focus settings. |
 | Export is not downloadable | Open My exports, refresh and wait for Ready. Recreate an expired/failed export from its report when appropriate. |
@@ -10810,6 +10925,13 @@ These views are part of a page or call session rather than separate URLs. They i
 | UTR / transaction reference | A payment identifier used to verify and reconcile a transaction |
 | Export | A file prepared from a report or data list |
 | Tenant | Another term for a workspace, sometimes used in administrator screens |
+| Voice agent / published version | The AI that answers or places calls on a WhatsApp number / the saved version new calls use |
+| Acting user | The staff member an AI voice agent acts as; their permissions decide what it may do |
+| Read-back | The agent repeating the details of an action and waiting for the caller to agree before doing it |
+| Variable | A `{{name}}`-style placeholder filled per call from the contact or a batch file |
+| Calling window | The hours AI calls may be placed: within 09:00–21:00 India time |
+| AI call batch | A list of people the voice agent calls on a schedule, with retries |
+| After-call analysis | The summary, sentiment, goal result and values worked out from a call’s transcript |
 
 ## Screenshot production checklist
 
@@ -10817,6 +10939,6 @@ Use the screenshot register accompanying this manual. Capture the correct role, 
 
 ## Document scope and maintenance
 
-This edition was prepared from the application’s routes, page templates, navigation/access rules, shared UI components, localised English labels and confirmation workflows. It documents source-visible behavior; subscriptions, provider permissions, service configuration and future releases can change which actions are available. It does not certify that every external payment, message, voice call, ERP sync or statutory submission has been accepted in production.
+This edition was prepared from the application’s routes, page templates, navigation/access rules, shared UI components, localised English labels and confirmation workflows. It documents source-visible behavior; subscriptions, provider permissions, service configuration and future releases can change which actions are available. It does not certify that every external payment, message, voice call, ERP sync or statutory submission has been accepted in production. Edition 1.1 adds the AI voice agent features built on 27 October 2026 (actions during calls, knowledge and memory, outbound calls and batches, after-call analysis, AI conversations and test calls); these were checked by automated tests, not yet on live calls.
 
 When the application changes, review the relevant procedure, screenshot brief and coverage register together. Keep the manual free of live credentials and customer data.
