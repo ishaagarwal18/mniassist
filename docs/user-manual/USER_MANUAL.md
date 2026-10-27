@@ -2,7 +2,7 @@
 
 **Edition:** 1.1 · **Reviewed:** 27 October 2026 · **Format:** end-user guide
 
-**New in 1.1:** AI voice agents can take actions during calls, search your knowledge base and catalogue, remember returning callers, place outbound WhatsApp calls and call whole lists ([AI call batches](#page-calls-ai-batches)); calls are analysed afterwards and can be reviewed, corrected and exported ([AI conversations](#window-011)); agents can be tested from the browser ([test call](#panel-ar-voice-agent-test)). Agents can also hand a call to a person in a chosen team, with the reason and a summary. See the [voice agent window](#dialog-ar-voice-agent-dialog-1).
+**New in 1.1:** AI voice agents can take actions during calls, search your knowledge base and catalogue, remember returning callers, place outbound WhatsApp calls and call whole lists ([AI call batches](#page-calls-ai-batches)); calls are analysed afterwards and can be reviewed, corrected and exported ([AI conversations](#window-011)); agents can be tested from the browser ([test call](#panel-ar-voice-agent-test)). Agents can also hand a call to a person in a chosen team, with the reason and a summary; can follow a conversation flow of stages; can be drafted from a description, saved as workspace templates in folders, exported and imported as files, reviewed before publishing and compared version by version. See the [voice agent window](#dialog-ar-voice-agent-dialog-1).
 
 This manual explains the pages and workflows present in this application’s current codebase. Use it with your organisation’s approved business processes. Features, buttons and pages depend on your role, workspace subscription, provider connections and administrator settings. A page being documented does not mean it is enabled for every workspace.
 
@@ -4297,6 +4297,7 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 | --- | --- |
 | Starting template | Optionally choose a starter and click **Apply to draft**. It replaces the name, instructions and greeting in the draft only. |
 | Agent name | A recognisable name for the agent and its saved versions. |
+| Agent type | **Single prompt** follows its instructions freely. **Conversation flow (stages)** also works through stages in order: each stage has a goal, and up to 4 conditions (“When the caller only wants a price list → Close the call”) that send the call to another stage; otherwise it moves to the next stage. Up to 12 stages. Both types talk speech to speech in real time; stages guide the AI rather than fix a script. For a keypad menu, use the WhatsApp IVR. |
 | Agent instructions | What the agent is for, what it may and may not say, and how it should speak. You may use variables such as `{{name}}`, `{{first_name}}`, `{{company}}`, `{{city}}` or `{{name\|there}}` (a value with a default). |
 | Opening greeting | The first sentence. It must say the caller is speaking to an AI assistant. Variables work here too. |
 | Voice / Preferred language | The speaking voice, and the language to speak (or **Follow caller**). Hindi–English mixing is followed when the caller uses it. |
@@ -4318,14 +4319,17 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 **Step-by-step**
 
 1. Read the notice at the top: whether AI calling is allowed for this number, and whether a version is published.
-2. Optionally choose **Starting template** and click **Apply to draft**; review the replacement wording.
+2. Optionally choose **Starting template** and click **Apply to draft**; review the replacement wording. Or open **Build and reuse** (above Version history):
+   - **Draft with AI:** describe your business, who calls and what the agent must and must not do, pick the agent type and click **Draft agent**. It fills the name, instructions, greeting, stages and after-call analysis, keeps your actions as they are, and saves nothing. It needs an AI model set up for the workspace.
+   - **Your templates:** apply one of the workspace’s own templates (grouped by folder), or save the draft with **Save draft as template** under a name and optional folder; the same folder and name replaces the old one. Templates leave out the person it acts as, the follow-up template and transfer teams.
+   - **File:** **Export draft as JSON** downloads the agent to share with another workspace; **Import a JSON file** fills the draft from one.
 3. Complete name, instructions, greeting, voice, language, length and silence settings.
 4. Under **Actions during calls**, choose who the agent acts as and tick only the actions you want. Reads (knowledge, products, memory) and handing over to a person need no one to act as.
 5. Under **After-call analysis**, choose what to record after each call and add your fields.
 6. Click **Save draft**. Saving never changes live calls.
 7. Test the draft with **Test call from this browser** ([test call](#panel-ar-voice-agent-test)) and mark the result as passed or failed.
-8. Click **Publish saved draft**, read the confirmation and click **Confirm publish**. New calls use the published version; calls already in progress keep the version they started with.
-9. To go back to an earlier version open **Version history**, choose **Restore this version**, then **Confirm restore**. Restoring changes only the draft; publish it to make it live.
+8. Click **Publish saved draft**, read the confirmation, optionally click **Review before publishing** (fixed checks such as a greeting that doesn’t say it’s an AI, or instructions that mention booking when booking is off, plus the AI model’s advice when one is set up), and click **Confirm publish**. New calls use the published version; calls already in progress keep the version they started with.
+9. To see what changed, open **Version history** and tick **Compare** on two versions: every setting is shown side by side with changes marked, and the instructions line by line. To go back to an earlier version open **Version history**, choose **Restore this version**, then **Confirm restore**. Restoring changes only the draft; publish it to make it live.
 
 [Screenshot D032: “Voice agent” window with the profile, the Actions during calls section (Act as and a few ticked actions) and After-call analysis fields visible; highlight Save draft and Publish saved draft. Use approved sample data; obscure personal details, account secrets and private links.]
 

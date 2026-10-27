@@ -1,4 +1,4 @@
-import { LocalizationPipe } from '@abp/ng.core';
+import { LocalizationPipe, LocalizationService } from '@abp/ng.core';
 import { Component, Pipe, input, output } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
@@ -60,10 +60,16 @@ describe('voice agent settings', () => {
     versions: vi.fn(),
     restore: vi.fn(),
     publish: vi.fn(),
+    templates: vi.fn(),
+    review: vi.fn(),
+    draft: vi.fn(),
+    saveTemplate: vi.fn(),
+    deleteTemplate: vi.fn(),
   };
   beforeEach(() => {
     vi.resetAllMocks();
     api.get.mockReturnValue(of({ ...initial }));
+    api.templates.mockReturnValue(of([]));
     api.update.mockReturnValue(
       of({ ...initial, hasConfiguration: true, concurrencyStamp: 'revision-2' }),
     );
@@ -85,6 +91,8 @@ describe('voice agent settings', () => {
       imports: [ArVoiceAgentDialog],
       providers: [
         { provide: VoiceAgentService, useValue: api },
+        // The builder, flow and compare components use ABP's own pipe, which reads this.
+        { provide: LocalizationService, useValue: { instant: (key: string) => key } },
         {
           provide: ActivityDirectoryService,
           useValue: { getUsers: () => of([{ userId: 'user-1', name: 'Priya Sales' }]) },
@@ -297,7 +305,10 @@ describe('voice agent settings', () => {
     await fixture.whenStable();
   });
   async function openHistory(fixture: Awaited<ReturnType<typeof create>>) {
-    const details: HTMLDetailsElement = fixture.nativeElement.querySelector('details');
+    const details = [...fixture.nativeElement.querySelectorAll('details')].find(
+      (d: HTMLDetailsElement) =>
+        d.querySelector('summary')?.textContent?.trim() === 'AutoReach::VoiceAgent.History',
+    ) as HTMLDetailsElement;
     details.open = true;
     details.dispatchEvent(new Event('toggle'));
     await fixture.whenStable();
@@ -429,5 +440,109 @@ describe('voice agent settings', () => {
     const tools = api.update.mock.calls[0][1].tools;
     expect(tools.transferToPeople).toBe(true);
     expect(tools.transferTeamIds).toEqual(['team-2', 'team-1']);
+  });
+
+  it('saves a conversation flow only once every stage has a name and a goal', async () => {
+    const fixture = await create();
+    const root: HTMLElement = fixture.nativeElement;
+    const type = [...root.querySelectorAll('select')].find((s) =>
+      s.textContent?.includes('VoiceAgent.Type.flow'),
+    )!;
+    type.value = 'flow';
+    type.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    button(root, 'VoiceAgent.Save').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(api.update).not.toHaveBeenCalled();
+    expect(root.textContent).toContain('VoiceAgent.Flow.incomplete');
+
+    const stage = root.querySelector('ar-voice-agent-flow .stage')!;
+    const name = stage.querySelector('input') as HTMLInputElement;
+    name.value = 'Ask for budget';
+    name.dispatchEvent(new Event('input'));
+    const goal = stage.querySelector('textarea') as HTMLTextAreaElement;
+    goal.value = 'Find the budget range.';
+    goal.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    button(root, 'VoiceAgent.Save').click();
+    await fixture.whenStable();
+    const saved = api.update.mock.calls[0][1];
+    expect(saved.type).toBe('flow');
+    expect(saved.flow.stages).toEqual([
+      { key: 'ask_for_budget', name: 'Ask for budget', goal: 'Find the budget range.', next: [] },
+    ]);
+  });
+
+  it('reviews the saved draft before publishing, showing fixed checks in the user language', async () => {
+    api.get.mockReturnValue(of({ ...initial, draftVersionId: 'saved-draft' }));
+    api.review.mockReturnValue(
+      of({
+        modelReviewed: true,
+        findings: [
+          { severity: 'warning', source: 'check', code: 'transfer_off', text: 'English text' },
+          { severity: 'suggestion', source: 'model', text: 'Ask one thing at a time.' },
+        ],
+      }),
+    );
+    const fixture = await create();
+    const root: HTMLElement = fixture.nativeElement;
+    button(root, 'VoiceAgent.Publication.publish').click();
+    fixture.detectChanges();
+    button(root, 'VoiceAgent.Review').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(api.review).toHaveBeenCalledWith(expect.objectContaining({ name: 'Enquiry agent' }));
+    expect(api.publish).not.toHaveBeenCalled();
+    const findings = root.querySelector('.findings')!.textContent!;
+    expect(findings).toContain('VoiceAgent.Review.transfer_off');
+    expect(findings).not.toContain('English text');
+    expect(findings).toContain('Ask one thing at a time.');
+    expect(root.textContent).toContain('VoiceAgent.Review.byModel');
+  });
+
+  it('compares two picked versions, older on the left', async () => {
+    api.versions.mockReturnValue(
+      of([
+        {
+          id: 'v2',
+          savedAtUtc: '2026-10-26T10:00:00Z',
+          savedBy: null,
+          restoredFrom: null,
+          profile: { ...initial, greeting: 'Namaste, I am an AI assistant.' },
+        },
+        {
+          id: 'v1',
+          savedAtUtc: '2026-10-25T10:00:00Z',
+          savedBy: null,
+          restoredFrom: null,
+          profile: { ...initial },
+        },
+      ]),
+    );
+    const fixture = await create();
+    await openHistory(fixture);
+    const root: HTMLElement = fixture.nativeElement;
+    const picks = [...root.querySelectorAll('label.check')]
+      .filter((l) => l.textContent?.includes('VoiceAgent.Compare.pick'))
+      .map((l) => l.querySelector('input') as HTMLInputElement);
+    expect(picks.length).toBe(2);
+    picks[0].click();
+    picks[1].click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const changed = [...root.querySelectorAll('ar-voice-agent-compare tr.changed')];
+    expect(changed.length).toBe(1);
+    expect(changed[0].textContent).toContain('VoiceAgent.Greeting');
+    const cells = changed[0].querySelectorAll('td');
+    expect(cells[0].textContent).toContain('I am an AI assistant.');
+    expect(cells[1].textContent).toContain('Namaste');
+    expect(root.querySelector('ar-voice-agent-compare')!.textContent).toContain(
+      'VoiceAgent.Compare.sameInstructions',
+    );
   });
 });

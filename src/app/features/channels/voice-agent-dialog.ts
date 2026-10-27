@@ -4,6 +4,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   input,
   output,
@@ -24,6 +25,8 @@ import {
   VoiceAgentSettings,
   VoiceAgentTools,
   VoiceAgentVersion,
+  VoiceAgentReview,
+  VoiceAgentType,
   VoiceAgentAnalysis,
   VoiceAnalysisField,
   noVoiceAgentAnalysis,
@@ -31,10 +34,24 @@ import {
 } from './voice-agent.service';
 import { voiceAgentTemplates } from './voice-agent-templates';
 import { ArVoiceAgentTest } from './voice-agent-test';
+import { ArVoiceAgentBuilder, VoiceAgentApply } from './voice-agent-builder';
+import { ArVoiceAgentCompare } from './voice-agent-compare';
+import { flowProblems } from './voice-agent-files';
+import { ArVoiceAgentFlowEditor } from './voice-agent-flow';
 
 @Component({
   selector: 'ar-voice-agent-dialog',
-  imports: [FormsModule, LocalizationPipe, DatePipe, ArButton, ArDialog, ArVoiceAgentTest],
+  imports: [
+    FormsModule,
+    LocalizationPipe,
+    DatePipe,
+    ArButton,
+    ArDialog,
+    ArVoiceAgentTest,
+    ArVoiceAgentBuilder,
+    ArVoiceAgentCompare,
+    ArVoiceAgentFlowEditor,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog
@@ -105,6 +122,21 @@ import { ArVoiceAgentTest } from './voice-agent-test';
             maxlength="100"
             [disabled]="saving()"
         /></label>
+        <label class="ar-field"
+          ><span>{{ 'AutoReach::VoiceAgent.Type' | abpLocalization }}</span>
+          <select
+            class="ar-field__input"
+            [ngModel]="model.type ?? 'prompt'"
+            (ngModelChange)="setType($event)"
+            [disabled]="saving()"
+          >
+            <option value="prompt">
+              {{ 'AutoReach::VoiceAgent.Type.prompt' | abpLocalization }}
+            </option>
+            <option value="flow">{{ 'AutoReach::VoiceAgent.Type.flow' | abpLocalization }}</option>
+          </select></label
+        >
+        <p>{{ 'AutoReach::VoiceAgent.Type.help' | abpLocalization }}</p>
         <label class="ar-field"
           ><span>{{ 'AutoReach::VoiceAgent.Instructions' | abpLocalization }}</span>
           <textarea
@@ -198,6 +230,16 @@ import { ArVoiceAgentTest } from './voice-agent-test';
           /></label>
         </div>
         <p>{{ 'AutoReach::VoiceAgent.Silence.help' | abpLocalization }}</p>
+        @if (model.type === 'flow' && model.flow) {
+          <fieldset class="tools">
+            <legend>{{ 'AutoReach::VoiceAgent.Flow' | abpLocalization }}</legend>
+            <ar-voice-agent-flow
+              [flow]="model.flow"
+              [disabled]="saving()"
+              (changed)="saved.set(false)"
+            />
+          </fieldset>
+        }
         <fieldset class="tools">
           <legend>{{ 'AutoReach::VoiceAgent.Tools' | abpLocalization }}</legend>
           <p>{{ 'AutoReach::VoiceAgent.Tools.notice' | abpLocalization }}</p>
@@ -480,6 +522,16 @@ import { ArVoiceAgentTest } from './voice-agent-test';
         @if (saved()) {
           <p role="status">{{ 'AutoReach::VoiceAgent.Saved' | abpLocalization }}</p>
         }
+        <details class="build" (toggle)="buildOpen.set($any($event.target).open)">
+          <summary>{{ 'AutoReach::VoiceAgent.Builder' | abpLocalization }}</summary>
+          @if (buildOpen()) {
+            <ar-voice-agent-builder
+              [current]="model"
+              [disabled]="saving()"
+              (apply)="applyDefinition($event)"
+            />
+          }
+        </details>
         <details (toggle)="historyToggled($event)">
           <summary>{{ 'AutoReach::VoiceAgent.History' | abpLocalization }}</summary>
           <p>{{ 'AutoReach::VoiceAgent.History.notice' | abpLocalization }}</p>
@@ -502,7 +554,22 @@ import { ArVoiceAgentTest } from './voice-agent-test';
             @if (!history.length) {
               <p>{{ 'AutoReach::VoiceAgent.History.empty' | abpLocalization }}</p>
             }
+            @if (history.length > 1) {
+              <p>{{ 'AutoReach::VoiceAgent.Compare.help' | abpLocalization }}</p>
+            }
             @for (version of history; track version.id) {
+              @if (history.length > 1) {
+                <label class="check"
+                  ><input
+                    type="checkbox"
+                    [checked]="comparing().includes(version.id)"
+                    [disabled]="!comparing().includes(version.id) && comparing().length >= 2"
+                    (change)="toggleCompare(version.id, $any($event.target).checked)"
+                  />
+                  {{ 'AutoReach::VoiceAgent.Compare.pick' | abpLocalization }}
+                  {{ version.profile.name }}</label
+                >
+              }
               <details class="version">
                 <summary>
                   {{ version.profile.name }} ·
@@ -541,6 +608,9 @@ import { ArVoiceAgentTest } from './voice-agent-test';
                 </button>
               </details>
             }
+          }
+          @if (comparison(); as pair) {
+            <ar-voice-agent-compare [left]="pair[0]" [right]="pair[1]" />
           }
           @if (restoreCandidate(); as candidate) {
             <p>
@@ -600,6 +670,54 @@ import { ArVoiceAgentTest } from './voice-agent-test';
           <p class="publication-confirmation">
             {{ 'AutoReach::VoiceAgent.Publication.confirm' | abpLocalization }}
           </p>
+          <div class="review">
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              data-novalidate
+              [disabled]="saving() || reviewing()"
+              (click)="review()"
+            >
+              {{
+                (reviewing()
+                  ? 'AutoReach::VoiceAgent.Review.running'
+                  : 'AutoReach::VoiceAgent.Review'
+                ) | abpLocalization
+              }}
+            </button>
+            @if (findings(); as result) {
+              @if (result.findings.length === 0) {
+                <p role="status">{{ 'AutoReach::VoiceAgent.Review.clean' | abpLocalization }}</p>
+              } @else {
+                <ul class="findings">
+                  @for (finding of result.findings; track $index) {
+                    <li [class.warning]="finding.severity === 'warning'">
+                      <strong>{{
+                        'AutoReach::VoiceAgent.Review.' + finding.severity | abpLocalization
+                      }}</strong>
+                      @if (finding.code) {
+                        {{ 'AutoReach::VoiceAgent.Review.' + finding.code | abpLocalization }}
+                      } @else {
+                        <span translate="no">{{ finding.text }}</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+              <p>
+                {{
+                  (result.modelReviewed
+                    ? 'AutoReach::VoiceAgent.Review.byModel'
+                    : 'AutoReach::VoiceAgent.Review.checksOnly'
+                  ) | abpLocalization
+                }}
+              </p>
+            }
+            @if (reviewFailed()) {
+              <p role="alert">{{ 'AutoReach::VoiceAgent.Review.failed' | abpLocalization }}</p>
+            }
+          </div>
           <button ar-button type="button" data-novalidate [disabled]="saving()" (click)="publish()">
             {{ 'AutoReach::VoiceAgent.Publication.confirmButton' | abpLocalization }}
           </button>
@@ -628,6 +746,25 @@ import { ArVoiceAgentTest } from './voice-agent-test';
       gap: 8px;
       align-items: center;
       margin: 8px 0;
+    }
+    .build {
+      margin: 8px 0 12px;
+    }
+    .build > summary {
+      cursor: pointer;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .review {
+      flex-basis: 100%;
+    }
+    .findings {
+      margin: 8px 0;
+      padding-inline-start: 20px;
+      overflow-wrap: anywhere;
+    }
+    .findings li.warning strong {
+      color: var(--ar-ink-900);
     }
     .transfer-teams {
       margin-inline-start: 24px;
@@ -710,7 +847,77 @@ export class ArVoiceAgentDialog implements OnInit {
   protected readonly historyError = signal(false);
   protected readonly restoreCandidate = signal<VoiceAgentVersion | null>(null);
   protected readonly publishCandidate = signal(false);
+  protected readonly comparing = signal<string[]>([]);
+  protected readonly buildOpen = signal(false);
+  protected readonly reviewing = signal(false);
+  protected readonly reviewFailed = signal(false);
+  protected readonly findings = signal<VoiceAgentReview | null>(null);
   private historyOpen = false;
+
+  /** The two versions picked, older first (the history lists newest first). */
+  protected readonly comparison = computed<[VoiceAgentVersion, VoiceAgentVersion] | null>(() => {
+    const history = this.versions() ?? [];
+    const picked = history.filter((v) => this.comparing().includes(v.id));
+    return picked.length === 2 ? [picked[1], picked[0]] : null;
+  });
+
+  protected toggleCompare(id: string, on: boolean): void {
+    const rest = this.comparing().filter((v) => v !== id);
+    this.comparing.set(on ? [...rest, id] : rest);
+  }
+
+  protected setType(type: VoiceAgentType): void {
+    const model = this.settings();
+    if (!model) return;
+    model.type = type;
+    if (type === 'flow' && !model.flow?.stages.length) {
+      model.flow = { stages: [{ key: 'stage_1', name: '', goal: '', next: [] }] };
+    }
+    this.settings.set({ ...model });
+    this.saved.set(false);
+  }
+
+  /** Puts a drafted, templated or imported agent into the draft. This workspace's people, template and teams stay as chosen. */
+  protected applyDefinition({ agent, keepTools }: VoiceAgentApply): void {
+    const model = this.settings();
+    if (!model || this.saving()) return;
+    const current = this.tools;
+    this.settings.set({
+      ...model,
+      ...agent,
+      concurrencyStamp: model.concurrencyStamp,
+      tools: keepTools
+        ? current
+        : {
+            ...noVoiceAgentTools(),
+            ...agent.tools,
+            actingUserId: current.actingUserId,
+            followUpTemplateId: current.followUpTemplateId,
+            transferTeamIds: current.transferTeamIds,
+          },
+      analysis: { ...noVoiceAgentAnalysis(), ...agent.analysis },
+      type: agent.type ?? 'prompt',
+      flow: agent.type === 'flow' ? (agent.flow ?? { stages: [] }) : null,
+    });
+    this.publishCandidate.set(false);
+    this.saved.set(false);
+    this.error.set('');
+  }
+
+  protected async review(): Promise<void> {
+    const model = this.settings();
+    if (!model || this.reviewing()) return;
+    this.reviewing.set(true);
+    this.reviewFailed.set(false);
+    this.findings.set(null);
+    try {
+      this.findings.set(await firstValueFrom(this.api.review(model)));
+    } catch {
+      this.reviewFailed.set(true);
+    } finally {
+      this.reviewing.set(false);
+    }
+  }
 
   protected historyToggled(event: Event): void {
     this.historyOpen = (event.target as HTMLDetailsElement).open;
@@ -882,6 +1089,7 @@ export class ArVoiceAgentDialog implements OnInit {
         ),
       );
       this.publishCandidate.set(false);
+      this.findings.set(null);
       this.saved.set(false);
     } catch {
       this.error.set('AutoReach::VoiceAgent.SaveFailed');
@@ -923,6 +1131,13 @@ export class ArVoiceAgentDialog implements OnInit {
     ) {
       this.error.set('AutoReach::VoiceAgent.Tools.invalid');
       return;
+    }
+    if (model.type === 'flow') {
+      const problems = flowProblems(model.flow);
+      if (problems.length) {
+        this.error.set(problems[0]);
+        return;
+      }
     }
     const analysis = model.analysis ?? noVoiceAgentAnalysis();
     const keys = analysis.fields.map((f) => f.key.trim());
