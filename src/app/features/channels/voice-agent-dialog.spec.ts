@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActivityDirectoryService } from '../../proxy/activities/activity.service';
+import { TeamService } from '../../proxy/identity/team.service';
 import { TemplateService } from '../../proxy/messaging/template.service';
 import { ArDialog } from '../../ui/dialog';
 import { isSubmitClick } from '../../ui/form-validation';
@@ -95,6 +96,20 @@ describe('voice agent settings', () => {
               of({
                 items: [{ id: 'tpl-1', name: 'call_follow_up', languageCode: 'en' }],
                 totalCount: 1,
+              }),
+          },
+        },
+        {
+          provide: TeamService,
+          useValue: {
+            getList: () =>
+              of({
+                items: [
+                  { id: 'team-1', name: 'Sales', isActive: true },
+                  { id: 'team-2', name: 'Service desk', isActive: true },
+                  { id: 'team-3', name: 'Old desk', isActive: false },
+                ],
+                totalCount: 3,
               }),
           },
         },
@@ -385,5 +400,34 @@ describe('voice agent settings', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(fixture.nativeElement.textContent).toContain('call_follow_up (en)');
+  });
+
+  it('hands calls to people only with a team, keeping the order the teams were ticked', async () => {
+    const fixture = await create();
+    const root: HTMLElement = fixture.nativeElement;
+    const check = (text: string) =>
+      [...root.querySelectorAll('label.check')]
+        .find((l) => l.textContent?.includes(text))!
+        .querySelector('input') as HTMLInputElement;
+    check('VoiceAgent.Tools.transfer').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(root.textContent).not.toContain('Old desk');
+    button(root, 'VoiceAgent.Save').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(api.update).not.toHaveBeenCalled();
+    expect(root.textContent).toContain('VoiceAgent.Tools.invalid');
+
+    check('Service desk').click();
+    check('Sales').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(check('Service desk').parentElement!.textContent).toContain('transferDefault');
+    button(root, 'VoiceAgent.Save').click();
+    await fixture.whenStable();
+    const tools = api.update.mock.calls[0][1].tools;
+    expect(tools.transferToPeople).toBe(true);
+    expect(tools.transferTeamIds).toEqual(['team-2', 'team-1']);
   });
 });

@@ -3,6 +3,7 @@ import { isQueued, recordingType, transferLinkOutcome } from './whatsapp-call.se
 describe('A call the IVR queued', () => {
   it('is answerable without an offer: the relay already holds the customer', () => {
     expect(isQueued({ ivrStatus: 'Queued' })).toBe(true);
+    expect(isQueued({ ivrStatus: 'AiHandoff' })).toBe(true);
   });
 
   it('is not one still in the menu, or an ordinary ringing call', () => {

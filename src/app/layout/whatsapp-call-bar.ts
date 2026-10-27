@@ -85,7 +85,11 @@ const POLL_MS = 4000;
         @if (session.recording()) {
           <span class="wc__hint">Tell the customer the call is recorded.</span>
         }
-        @if (c.queueLabel || c.ivrLookup) {
+        @if (c.ivrStatus === 'AiHandoff' && c.handoffSummary) {
+          <span class="wc__hint">
+            From the AI agent: <span translate="no">{{ c.handoffSummary }}</span>
+          </span>
+        } @else if (c.queueLabel || c.ivrLookup) {
           <span class="wc__hint">
             @if (c.queueLabel) {
               Chose {{ c.queueLabel }}.
@@ -168,16 +172,28 @@ const POLL_MS = 4000;
       <div class="wc wc--ring" role="alert">
         <ar-icon name="phone" [size]="15" />
         <span class="wc__who">{{ c.contactName || '+' + c.contactWaId }}</span>
-        <span class="wc__state">
-          is calling on WhatsApp{{ c.queueLabel ? ' · chose ' + c.queueLabel : '' }}
-        </span>
+        @if (c.ivrStatus === 'AiHandoff') {
+          <span class="wc__state">
+            The AI agent is asking for a person{{ c.queueLabel ? ' · ' + c.queueLabel : '' }}
+          </span>
+          @if (c.handoffReason) {
+            <span class="wc__hint"
+              ><span translate="no">{{ c.handoffReason }}</span></span
+            >
+          }
+        } @else {
+          <span class="wc__state">
+            is calling on WhatsApp{{ c.queueLabel ? ' · chose ' + c.queueLabel : '' }}
+          </span>
+        }
         @if (c.ivrLookup) {
           <span class="wc__hint">
             Looked up in the menu: <span translate="no">{{ c.ivrLookup }}</span>
           </span>
         }
-        <!-- A call the menu queued is already connected and waiting for the team: one agent can't decline it for all. -->
-        @if (c.ivrStatus !== 'Queued') {
+        <!-- A call the menu queued or the AI handed over is already connected and waiting for the team: one agent can't
+             decline it for all. -->
+        @if (c.ivrStatus !== 'Queued' && c.ivrStatus !== 'AiHandoff') {
           <button
             ar-button
             type="button"
@@ -195,7 +211,9 @@ const POLL_MS = 4000;
           [disabled]="session.busy()"
           (click)="session.answer(c)"
         >
-          {{ session.busy() ? 'Connecting…' : 'Answer' }}
+          {{
+            session.busy() ? 'Connecting…' : c.ivrStatus === 'AiHandoff' ? 'Take over' : 'Answer'
+          }}
         </button>
       </div>
     }

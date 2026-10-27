@@ -172,6 +172,7 @@ const CONDITION_FIELDS: { value: string; label: string }[] = [
   { value: 'call.summary', label: 'AI call: summary' },
   { value: 'call.endreason', label: 'AI call: end reason' },
   { value: 'call.duration', label: 'AI call: length in seconds' },
+  { value: 'call.handoff', label: 'AI call: asked for a person (none / taken / missed)' },
 ];
 const CUSTOM_ATTRIBUTE = 'attr.';
 /** An after-call analysis field of the journey's AI call, by its key. */

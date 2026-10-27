@@ -53,6 +53,9 @@ export interface VoiceAgentTools {
   searchKnowledge: boolean;
   searchCatalogue: boolean;
   rememberCallers: boolean;
+  /** Let the agent hand the call to a person, ringing one of these teams (the first is the default). */
+  transferToPeople: boolean;
+  transferTeamIds: string[];
 }
 
 export const noVoiceAgentTools = (): VoiceAgentTools => ({
@@ -68,6 +71,8 @@ export const noVoiceAgentTools = (): VoiceAgentTools => ({
   searchKnowledge: false,
   searchCatalogue: false,
   rememberCallers: false,
+  transferToPeople: false,
+  transferTeamIds: [],
 });
 
 export interface VoiceAgentSettings extends VoiceAgentInput {

@@ -17,6 +17,7 @@ import { ActivityUserDto } from '../../proxy/activities/activity.models';
 import { ActivityDirectoryService } from '../../proxy/activities/activity.service';
 import { TemplateDto } from '../../proxy/messaging/models';
 import { TemplateService } from '../../proxy/messaging/template.service';
+import { TeamService } from '../../proxy/identity/team.service';
 import { TemplateStatus } from '../../proxy/messaging/template-status.enum';
 import {
   VoiceAgentService,
@@ -336,6 +337,43 @@ import { ArVoiceAgentTest } from './voice-agent-test';
             {{ 'AutoReach::VoiceAgent.Tools.memory' | abpLocalization }}</label
           >
           <p>{{ 'AutoReach::VoiceAgent.Tools.readsHelp' | abpLocalization }}</p>
+          <label class="check"
+            ><input
+              type="checkbox"
+              [(ngModel)]="tools.transferToPeople"
+              (ngModelChange)="saved.set(false)"
+              [disabled]="saving()"
+            />
+            {{ 'AutoReach::VoiceAgent.Tools.transfer' | abpLocalization }}</label
+          >
+          @if (tools.transferToPeople) {
+            <div class="transfer-teams" role="group" aria-labelledby="va-transfer-teams">
+              <span id="va-transfer-teams">{{
+                'AutoReach::VoiceAgent.Tools.transferTeams' | abpLocalization
+              }}</span>
+              @for (team of teams(); track team.id) {
+                <label class="check"
+                  ><input
+                    type="checkbox"
+                    [checked]="tools.transferTeamIds.includes(team.id)"
+                    (change)="toggleTransferTeam(team.id, $any($event.target).checked)"
+                    [disabled]="
+                      saving() ||
+                      (!tools.transferTeamIds.includes(team.id) &&
+                        tools.transferTeamIds.length >= 5)
+                    "
+                  />
+                  {{ team.name }}
+                  @if (tools.transferTeamIds[0] === team.id) {
+                    ({{ 'AutoReach::VoiceAgent.Tools.transferDefault' | abpLocalization }})
+                  }
+                </label>
+              } @empty {
+                <p>{{ 'AutoReach::VoiceAgent.Tools.noTeams' | abpLocalization }}</p>
+              }
+            </div>
+            <p>{{ 'AutoReach::VoiceAgent.Tools.transferHelp' | abpLocalization }}</p>
+          }
         </fieldset>
         <fieldset class="tools">
           <legend>{{ 'AutoReach::VoiceAgent.Analysis' | abpLocalization }}</legend>
@@ -591,6 +629,9 @@ import { ArVoiceAgentTest } from './voice-agent-test';
       align-items: center;
       margin: 8px 0;
     }
+    .transfer-teams {
+      margin-inline-start: 24px;
+    }
     .options {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -638,7 +679,9 @@ export class ArVoiceAgentDialog implements OnInit {
   private readonly api = inject(VoiceAgentService);
   private readonly directory = inject(ActivityDirectoryService);
   private readonly templatesApi = inject(TemplateService);
+  private readonly teamApi = inject(TeamService);
   protected readonly users = signal<ActivityUserDto[]>([]);
+  protected readonly teams = signal<{ id: string; name: string }[]>([]);
   protected readonly followUpTemplates = signal<TemplateDto[]>([]);
   protected readonly settings = signal<VoiceAgentSettings | null>(null);
   protected readonly loading = signal(true);
@@ -789,13 +832,33 @@ export class ArVoiceAgentDialog implements OnInit {
     } catch {
       this.followUpTemplates.set([]);
     }
+    try {
+      const page = await firstValueFrom(this.teamApi.getList({ maxResultCount: 100 }));
+      this.teams.set(
+        (page.items ?? [])
+          .filter((t) => t.id && t.isActive !== false)
+          .map((t) => ({ id: t.id!, name: t.name ?? '' })),
+      );
+    } catch {
+      this.teams.set([]);
+    }
+  }
+
+  /** Ticked in order: the first team ticked is the one the agent rings unless another fits better. */
+  protected toggleTransferTeam(teamId: string, on: boolean): void {
+    const ids = this.tools.transferTeamIds.filter((id) => id !== teamId);
+    this.tools.transferTeamIds = on ? [...ids, teamId] : ids;
+    this.saved.set(false);
   }
 
   async ngOnInit(): Promise<void> {
     void this.loadChoices();
     try {
       const loaded = await firstValueFrom(this.api.get(this.channelId()));
-      this.settings.set({ ...loaded, tools: loaded.tools ?? noVoiceAgentTools() });
+      this.settings.set({
+        ...loaded,
+        tools: { ...noVoiceAgentTools(), ...loaded.tools },
+      });
     } catch {
       this.error.set('AutoReach::VoiceAgent.LoadFailed');
     } finally {
@@ -852,6 +915,7 @@ export class ArVoiceAgentDialog implements OnInit {
     const acts = tools.bookMeetings || tools.updateCrm || tools.raiseTickets || tools.sendFollowUps;
     if (
       (acts && !tools.actingUserId) ||
+      (tools.transferToPeople && (tools.transferTeamIds ?? []).length === 0) ||
       !Number.isInteger(tools.meetingMinutes) ||
       tools.meetingMinutes < 10 ||
       tools.meetingMinutes > 240 ||

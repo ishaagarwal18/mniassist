@@ -2,7 +2,7 @@
 
 **Edition:** 1.1 · **Reviewed:** 27 October 2026 · **Format:** end-user guide
 
-**New in 1.1:** AI voice agents can take actions during calls, search your knowledge base and catalogue, remember returning callers, place outbound WhatsApp calls and call whole lists ([AI call batches](#page-calls-ai-batches)); calls are analysed afterwards and can be reviewed, corrected and exported ([AI conversations](#window-011)); agents can be tested from the browser ([test call](#panel-ar-voice-agent-test)). See the [voice agent window](#dialog-ar-voice-agent-dialog-1).
+**New in 1.1:** AI voice agents can take actions during calls, search your knowledge base and catalogue, remember returning callers, place outbound WhatsApp calls and call whole lists ([AI call batches](#page-calls-ai-batches)); calls are analysed afterwards and can be reviewed, corrected and exported ([AI conversations](#window-011)); agents can be tested from the browser ([test call](#panel-ar-voice-agent-test)). Agents can also hand a call to a person in a chosen team, with the reason and a summary. See the [voice agent window](#dialog-ar-voice-agent-dialog-1).
 
 This manual explains the pages and workflows present in this application’s current codebase. Use it with your organisation’s approved business processes. Features, buttons and pages depend on your role, workspace subscription, provider connections and administrator settings. A page being documented does not mean it is enabled for every workspace.
 
@@ -4310,6 +4310,7 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 | Answer from the knowledge base | Lets the agent search your enabled knowledge articles for the caller’s question. |
 | Look up products and list prices | Lets the agent search the whole product list and catalogue by name, model or part number. |
 | Remember returning callers | Starts each call knowing the caller’s name, open tickets, upcoming meetings, open enquiries and summaries of their last calls. |
+| Hand the call to a person when needed | When the caller asks for a person, is upset, or needs something the agent can’t do, the agent rings a team with its reason and a summary of the call. Tick up to 5 **Teams it may ring**; the first ticked is the **default**. Needs no one to act as. |
 | After-call analysis | **Write a summary**, **Record the caller’s sentiment**, a **Goal of the call** (judged after each call) and up to 20 fields to pull out of each call. For each field give a **Field name**, a **Key** (lowercase letters, digits and `_`, used in exports), a **Type** (text, one of a list, yes/no, number, date) and, for a list, the **Choices** separated by a vertical bar (for example `hot\|warm\|cold`). |
 
 **Open it:** On **Channels**, click **Voice agent** for the intended WhatsApp number.
@@ -4319,7 +4320,7 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 1. Read the notice at the top: whether AI calling is allowed for this number, and whether a version is published.
 2. Optionally choose **Starting template** and click **Apply to draft**; review the replacement wording.
 3. Complete name, instructions, greeting, voice, language, length and silence settings.
-4. Under **Actions during calls**, choose who the agent acts as and tick only the actions you want. Reads (knowledge, products, memory) need no one to act as.
+4. Under **Actions during calls**, choose who the agent acts as and tick only the actions you want. Reads (knowledge, products, memory) and handing over to a person need no one to act as.
 5. Under **After-call analysis**, choose what to record after each call and add your fields.
 6. Click **Save draft**. Saving never changes live calls.
 7. Test the draft with **Test call from this browser** ([test call](#panel-ar-voice-agent-test)) and mark the result as passed or failed.
@@ -4328,7 +4329,7 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 [Screenshot D032: “Voice agent” window with the profile, the Actions during calls section (Act as and a few ticked actions) and After-call analysis fields visible; highlight Save draft and Publish saved draft. Use approved sample data; obscure personal details, account secrets and private links.]
 
-**Tips and common errors:** Before any change the agent reads the details back and waits for the caller to agree; it never books, saves, raises or sends on its own say-so, and every action it takes is listed on the call in [AI conversations](#window-011). An action fails if the acting user lacks permission for it — the agent then apologises and offers a person. Put in the instructions only what the agent may say to callers. Answers come only from your knowledge base, product list and catalogue; customer-specific discounts and final quotations still need your team. AI calling also needs the platform administrator’s allowance, a funded provider and a working call relay.
+**Tips and common errors:** Before any change the agent reads the details back and waits for the caller to agree; it never books, saves, raises or sends on its own say-so, and every action it takes is listed on the call in [AI conversations](#window-011). An action fails if the acting user lacks permission for it — the agent then apologises and offers a person. Put in the instructions only what the agent may say to callers. Answers come only from your knowledge base, product list and catalogue; customer-specific discounts and final quotations still need your team. AI calling also needs the platform administrator’s allowance, a funded provider and a working call relay. When the agent hands a call over, the team’s members see it ringing in the call bar with the reason; the first to click **Take over** joins the call and the AI leaves it. The caller stays with the AI while it rings. Ringing stops after 3 minutes; the agent is told to offer a call back if the caller is kept waiting. In automations, an **If…** step can check **AI call: asked for a person** (`none`, `taken` or `missed`), for example to create a call-back task when it was missed.
 
 <a id="dialog-ar-voice-ivr-1"></a>
 
@@ -10757,7 +10758,7 @@ These views are part of a page or call session rather than separate URLs. They i
 **Step-by-step**
 
 1. Enable ringtone/call alerts if desired and allow any browser permission requested.
-2. For an incoming call choose **Answer**, **Take call** or **Decline** as offered.
+2. For an incoming call choose **Answer**, **Take call** or **Decline** as offered. When an AI voice agent asks for a person, the bar says **The AI agent is asking for a person** with the team and the reason; click **Take over** to join the call (the AI leaves when you start speaking). It can’t be declined, because it rings your whole team. Once connected, the bar shows the AI’s summary of the call so far.
 3. During a call use **Mute / Unmute** and **Look up** when needed.
 4. To transfer, choose **Transfer to**, check the intended recipient and click **Transfer**; use **Keep call** if abandoning the transfer.
 5. If the interface offers **Rejoin** after a recoverable disconnect, use it and confirm audio has resumed.

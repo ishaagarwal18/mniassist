@@ -96,7 +96,9 @@ function problem(e: unknown, fallback: string): string {
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** The native IVR accepted this call and queued it for my team: answering means joining it on the relay. */
-export const isQueued = (call: Pick<WhatsAppCallDto, 'ivrStatus'>) => call.ivrStatus === 'Queued';
+/** Already connected to the relay and waiting for a person: queued by the menu, or handed over by the AI agent. */
+export const isQueued = (call: Pick<WhatsAppCallDto, 'ivrStatus'>) =>
+  call.ivrStatus === 'Queued' || call.ivrStatus === 'AiHandoff';
 
 /**
  * M3: the one WhatsApp call this browser tab is on, whichever way it started.

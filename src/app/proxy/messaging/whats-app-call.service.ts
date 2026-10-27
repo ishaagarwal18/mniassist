@@ -27,8 +27,8 @@ export interface WhatsAppCallDto {
   viaRelay?: boolean;
   /** With the call relay, in the reply to answering, calling or rejoining: the relay's answer for this browser. */
   agentAnswerSdp?: string | null;
-  /** Native IVR: None, Menu (the caller is choosing) or Queued. */
-  ivrStatus?: 'None' | 'Menu' | 'Queued';
+  /** Native IVR: None, Menu (the caller is choosing) or Queued; AiHandoff when the AI agent asked for a person. */
+  ivrStatus?: 'None' | 'Menu' | 'Queued' | 'AiHandoff';
   /** The key the caller pressed; null when the menu fell back to its first option. */
   ivrDigit?: string | null;
   /** The menu option the caller chose (e.g. "Hindi", or "Service › Spares" below the top menu) and the team it rings. */
@@ -36,6 +36,11 @@ export interface WhatsAppCallDto {
   /** What the caller looked up in the menu and what was found, so the agent doesn't ask again. */
   ivrLookup?: string | null;
   queueTeamId?: string | null;
+  /** Why the AI agent asked for a person, and its summary of the call so far. */
+  handoffReason?: string | null;
+  handoffSummary?: string | null;
+  /** When a person took the call from the AI. */
+  handoffTakenAtUtc?: string | null;
 }
 
 export type WhatsAppIvrOptionKind = 'RingTeam' | 'SubMenu' | 'Lookup';
