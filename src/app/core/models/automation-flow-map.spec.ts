@@ -1,5 +1,5 @@
 import { AutomationNodeKind } from '../../proxy/messaging';
-import { layoutFlowMap } from './automation-flow-map';
+import { branchLabel, layoutFlowMap } from './automation-flow-map';
 import { BuilderStep, stepsToGraph } from './automation-graph';
 
 const K = AutomationNodeKind;
@@ -36,5 +36,12 @@ describe('automation flow map', () => {
     const sides = graph.filter((x) => x.kind === K.SendSessionMessage);
     expect(y(assign.id!)).toBeGreaterThan(Math.max(...sides.map((x) => y(x.id!))));
     expect(map.edges.length).toBe(map.nodes.length); // a chain of N nodes has N-1 edges; the branch adds one
+  });
+
+  it("names an AI call step's arms by the call's result", () => {
+    expect(branchLabel(AutomationNodeKind.AiCall, true)).toBe('goal met');
+    expect(branchLabel(AutomationNodeKind.AiCall, false)).toBe('not met');
+    expect(branchLabel(AutomationNodeKind.WaitForReply, false)).toBe('no reply');
+    expect(branchLabel(AutomationNodeKind.Condition, true)).toBe('yes');
   });
 });

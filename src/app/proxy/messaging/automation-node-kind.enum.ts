@@ -13,6 +13,7 @@ export enum AutomationNodeKind {
   End = 9,
   StartFlow = 10,
   WaitForReply = 11,
+  AiCall = 12,
 }
 
 export const automationNodeKindOptions = mapEnumToOptions(AutomationNodeKind);

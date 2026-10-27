@@ -84,6 +84,35 @@
         </label>
       }
     }
+    @if (isAiCallTrigger(newTrigger())) {
+      <label class="ar-field">
+        <span class="ar-field__label">Which calls</span>
+        <select class="ar-field__input" (change)="newCallDirection.set($any($event.target).value)">
+          @for (d of callDirections; track d.value) {
+            <option [value]="d.value" [selected]="d.value === newCallDirection()">
+              {{ d.label }}
+            </option>
+          }
+        </select>
+      </label>
+      @if (newTrigger() === TK.AiCallCompleted) {
+        <label class="ar-field">
+          <span class="ar-field__label">With this result</span>
+          <select class="ar-field__input" (change)="newCallOutcome.set($any($event.target).value)">
+            @for (o of callOutcomes; track o.value) {
+              <option [value]="o.value" [selected]="o.value === newCallOutcome()">
+                {{ o.label }}
+              </option>
+            }
+          </select>
+        </label>
+      }
+      <p class="ar-field__hint">
+        Runs after a call handled by the AI voice agent ends (after its analysis, if it has one).
+        Calls placed by an automation's own AI voice call step don't start these triggers, so
+        automations can't call someone in a loop.
+      </p>
+    }
     @if (error(); as e) {
       <p class="au__dialog-err">{{ e }}</p>
     }

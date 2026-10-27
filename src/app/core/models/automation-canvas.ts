@@ -29,7 +29,9 @@ const GAP_X = 48;
 const GAP_Y = 64;
 
 export const isBranchingKind = (kind: AutomationNodeKind): boolean =>
-  kind === AutomationNodeKind.Condition || kind === AutomationNodeKind.WaitForReply;
+  kind === AutomationNodeKind.Condition ||
+  kind === AutomationNodeKind.WaitForReply ||
+  kind === AutomationNodeKind.AiCall;
 
 /** The ways out of a node: none from End, yes/no from a branching step, one "next" from anything else. */
 export function portsOf(kind: AutomationNodeKind): Port[] {

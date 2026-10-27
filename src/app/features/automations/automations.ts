@@ -1,6 +1,12 @@
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import {
+  AI_CALL_DIRECTIONS,
+  AI_CALL_OUTCOMES,
+  aiCallTriggerConfig,
+  isAiCallTrigger,
+} from './ai-call-trigger';
 
 import { grantedPolicy } from '../../core/auth/permission';
 import { Automation, WState, WorkflowStore } from '../../core/services/workflow.service';
@@ -66,7 +72,14 @@ export class ArAutomations {
     { value: AutomationTriggerKind.FlowCompleted, label: 'Flow completed' },
     { value: AutomationTriggerKind.CampaignReply, label: 'Campaign reply' },
     { value: AutomationTriggerKind.SegmentEntered, label: 'Contact enters a segment (drip)' },
+    { value: AutomationTriggerKind.AiCallCompleted, label: 'AI voice call completed' },
+    { value: AutomationTriggerKind.AiCallNotConnected, label: 'AI voice call not answered' },
   ];
+  protected readonly isAiCallTrigger = isAiCallTrigger;
+  protected readonly callDirections = AI_CALL_DIRECTIONS;
+  protected readonly callOutcomes = AI_CALL_OUTCOMES;
+  protected readonly newCallDirection = signal('');
+  protected readonly newCallOutcome = signal('');
   protected readonly dialogOpen = signal(false);
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -92,6 +105,8 @@ export class ArAutomations {
     this.newKeyword.set('');
     this.newPipelineId.set('');
     this.newStageId.set('');
+    this.newCallDirection.set('');
+    this.newCallOutcome.set('');
     this.error.set(null);
     this.dialogOpen.set(true);
   }
@@ -118,7 +133,9 @@ export class ArAutomations {
               pipelineId: this.newPipelineId() || undefined,
               stageId: this.newStageId() || undefined,
             }
-          : undefined,
+          : isAiCallTrigger(this.newTrigger())
+            ? aiCallTriggerConfig(this.newTrigger(), this.newCallDirection(), this.newCallOutcome())
+            : undefined,
       );
       this.dialogOpen.set(false);
     } catch (e: unknown) {

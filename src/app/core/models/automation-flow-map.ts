@@ -1,5 +1,6 @@
 import { CreateUpdateAutomationNodeDto } from '../../proxy/automation';
 import { AutomationNodeKind } from '../../proxy/messaging';
+import { isBranching } from './automation-graph';
 
 /**
  * A read-only picture of an automation as the graph the engine actually runs: layered
@@ -110,8 +111,7 @@ export function layoutFlowMap(
       label: labelOf(n),
       x: p.x,
       y: p.y,
-      branching:
-        n.kind === AutomationNodeKind.Condition || n.kind === AutomationNodeKind.WaitForReply,
+      branching: isBranching(n.kind!),
       terminal: n.kind === AutomationNodeKind.End,
     };
   });
@@ -128,17 +128,7 @@ export function layoutFlowMap(
       const x2 = to.x + NODE_W / 2;
       const y2 = to.y;
       const mid = (y1 + y2) / 2;
-      const reply = n.kind === AutomationNodeKind.WaitForReply;
-      const label =
-        l.kind === 'true'
-          ? reply
-            ? 'replied'
-            : 'yes'
-          : l.kind === 'false'
-            ? reply
-              ? 'no reply'
-              : 'no'
-            : undefined;
+      const label = l.kind === 'next' ? undefined : branchLabel(n.kind!, l.kind === 'true');
       edges.push({
         d: `M${x1} ${y1} C${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`,
         otherwise: l.otherwise,
@@ -150,4 +140,11 @@ export function layoutFlowMap(
   }
 
   return { nodes: flowNodes, edges, width, height, nodeW: NODE_W, nodeH: NODE_H };
+}
+
+/** How a branching step's two arms read on the map: a reply wait and an AI call name their outcomes. */
+export function branchLabel(kind: AutomationNodeKind, yes: boolean): string {
+  if (kind === AutomationNodeKind.WaitForReply) return yes ? 'replied' : 'no reply';
+  if (kind === AutomationNodeKind.AiCall) return yes ? 'goal met' : 'not met';
+  return yes ? 'yes' : 'no';
 }

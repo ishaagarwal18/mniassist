@@ -10,6 +10,8 @@ export enum AutomationTriggerKind {
   FlowCompleted = 6,
   CampaignReply = 7,
   SegmentEntered = 8,
+  AiCallCompleted = 9,
+  AiCallNotConnected = 10,
 }
 
 export const automationTriggerKindOptions = mapEnumToOptions(AutomationTriggerKind);

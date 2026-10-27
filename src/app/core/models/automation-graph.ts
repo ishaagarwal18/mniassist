@@ -47,7 +47,9 @@ export interface GraphAnchors {
 }
 
 export const isBranching = (kind: AutomationNodeKind): boolean =>
-  kind === AutomationNodeKind.Condition || kind === AutomationNodeKind.WaitForReply;
+  kind === AutomationNodeKind.Condition ||
+  kind === AutomationNodeKind.WaitForReply ||
+  kind === AutomationNodeKind.AiCall;
 
 export interface ParsedGraph {
   steps: BuilderStep[];

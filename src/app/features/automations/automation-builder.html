@@ -162,8 +162,22 @@
             <option value="attr." [selected]="fieldChoice(step) === 'attr.'">
               Custom attribute…
             </option>
+            <option value="call.field." [selected]="fieldChoice(step) === 'call.field.'">
+              AI call: extracted field…
+            </option>
           </select>
         </label>
+        @if (fieldChoice(step) === 'call.field.') {
+          <label class="ar-field">
+            <span class="ar-field__label">Field key</span>
+            <input
+              class="ar-field__input"
+              placeholder="renewal_month"
+              [value]="attributeKey(step)"
+              (input)="setAttributeKey(step.localId, $any($event.target).value, 'call.field.')"
+            />
+          </label>
+        }
         @if (fieldChoice(step) === 'attr.') {
           <label class="ar-field">
             <span class="ar-field__label">Attribute key</span>
@@ -280,6 +294,64 @@
         Endpoints are added under Integrations. This sends them an “automation step” event.
       </p>
     }
+    @case (NK.AiCall) {
+      <label class="ar-field">
+        <span class="ar-field__label"
+          >Reason for the call <span class="ar-field__opt">(optional)</span></span
+        >
+        <textarea
+          class="ar-field__input"
+          rows="2"
+          maxlength="500"
+          placeholder="Their AMC ends this month; offer the renewal."
+          [value]="cfg(step, 'purpose')"
+          (input)="setCfg(step.localId, 'purpose', $any($event.target).value)"
+        ></textarea>
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label"
+          >Variables <span class="ar-field__opt">(optional, one name=value per line)</span></span
+        >
+        <textarea
+          class="ar-field__input"
+          rows="2"
+          placeholder="plan=attr.amc_plan"
+          [value]="variablesText(step)"
+          (change)="setVariables(step.localId, $any($event.target).value)"
+        ></textarea>
+      </label>
+      <div class="ar-field-row">
+        <label class="ar-field ab__narrow">
+          <span class="ar-field__label">Wait for the result (hours)</span>
+          <input
+            class="ar-field__input"
+            type="number"
+            min="1"
+            max="168"
+            [value]="cfg(step, 'waitHours')"
+            (input)="setNum(step.localId, 'waitHours', $any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label"
+            >Save extracted fields with prefix <span class="ar-field__opt">(optional)</span></span
+          >
+          <input
+            class="ar-field__input"
+            placeholder="call_"
+            [value]="cfg(step, 'saveFieldsAs')"
+            (input)="setCfg(step.localId, 'saveFieldsAs', $any($event.target).value.trim())"
+          />
+        </label>
+      </div>
+      <p class="node__blurb">
+        The voice agent published on this automation's number makes the call, within 09:00–21:00
+        India time and only to contacts who gave call permission and haven't opted out. Outside
+        those hours it waits for the window. A value in Variables may name a contact field, such as
+        contact.name or attr.plan. Check the call's answer, goal, sentiment or extracted fields in a
+        later "If…" step.
+      </p>
+    }
     @case (NK.StartFlow) {
       <p class="node__blurb node__blurb--warn">
         The engine doesn't run this step yet — it passes straight through. Delete it, or start the
@@ -331,6 +403,10 @@
           <p class="node__blurb">If they reply, the steps below this one run.</p>
         } @else if (step.kind === NK.Condition) {
           <p class="node__blurb">If it holds, the steps below this one run.</p>
+        } @else if (step.kind === NK.AiCall) {
+          <p class="node__blurb">
+            If the call is answered and meets its goal, the steps below this one run.
+          </p>
         }
 
         @if (isBranching(step.kind)) {
@@ -475,6 +551,40 @@
                 </select>
               </label>
             }
+          } @else if (isAiCallTrigger(trigger())) {
+            <label class="ar-field">
+              <span class="ar-field__label">Which calls</span>
+              <select
+                class="ar-field__input"
+                (change)="callDirection.set($any($event.target).value)"
+              >
+                @for (d of callDirections; track d.value) {
+                  <option [value]="d.value" [selected]="d.value === callDirection()">
+                    {{ d.label }}
+                  </option>
+                }
+              </select>
+            </label>
+            @if (trigger() === TK.AiCallCompleted) {
+              <label class="ar-field">
+                <span class="ar-field__label">With this result</span>
+                <select
+                  class="ar-field__input"
+                  (change)="callOutcome.set($any($event.target).value)"
+                >
+                  @for (o of callOutcomes; track o.value) {
+                    <option [value]="o.value" [selected]="o.value === callOutcome()">
+                      {{ o.label }}
+                    </option>
+                  }
+                </select>
+              </label>
+            }
+            <p class="node__blurb">
+              Runs after a call handled by the AI voice agent ends (after its analysis, if it has
+              one). Calls placed by an automation's own AI voice call step don't start these
+              triggers, so automations can't call someone in a loop.
+            </p>
           } @else {
             <p class="node__blurb">Trigger: {{ trigger() }} — configured on the automation list.</p>
           }

@@ -68,6 +68,8 @@ const TRIGGER: Record<AutomationTriggerKind, string> = {
   [AutomationTriggerKind.FlowCompleted]: 'Flow completed',
   [AutomationTriggerKind.CampaignReply]: 'Campaign reply',
   [AutomationTriggerKind.SegmentEntered]: 'Segment entered',
+  [AutomationTriggerKind.AiCallCompleted]: 'AI call completed',
+  [AutomationTriggerKind.AiCallNotConnected]: 'AI call not connected',
 };
 const WSTATE: Record<AutomationState, WState> = {
   [AutomationState.Draft]: 'draft',

@@ -8,6 +8,13 @@ import {
   viewChild,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import {
+  AI_CALL_DIRECTIONS,
+  AI_CALL_OUTCOMES,
+  AiCallTriggerConfig,
+  aiCallTriggerConfig,
+  isAiCallTrigger,
+} from './ai-call-trigger';
 
 import {
   BuilderStep,
@@ -134,6 +141,12 @@ const KIND_META: Record<
     blurb: 'Branch on whether they respond',
     addable: true,
   },
+  [AutomationNodeKind.AiCall]: {
+    label: 'AI voice call',
+    icon: 'phone',
+    blurb: 'The AI agent calls, then branch on the result',
+    addable: true,
+  },
   [AutomationNodeKind.End]: {
     label: 'End',
     icon: 'check',
@@ -152,8 +165,20 @@ const CONDITION_FIELDS: { value: string; label: string }[] = [
   { value: 'contact.language', label: 'Language' },
   { value: 'contact.consentScope', label: 'Consent' },
   { value: 'contact.suppression', label: 'Suppression' },
+  // The journey's AI call (the one that started it, or its AI voice call step). AutomationEngine.ResolveCallFieldAsync.
+  { value: 'call.answered', label: 'AI call: answered (true/false)' },
+  { value: 'call.goal', label: 'AI call: goal met (true/false)' },
+  { value: 'call.sentiment', label: 'AI call: sentiment' },
+  { value: 'call.summary', label: 'AI call: summary' },
+  { value: 'call.endreason', label: 'AI call: end reason' },
+  { value: 'call.duration', label: 'AI call: length in seconds' },
 ];
 const CUSTOM_ATTRIBUTE = 'attr.';
+/** An after-call analysis field of the journey's AI call, by its key. */
+const CALL_FIELD = 'call.field.';
+const KEYED_PREFIXES = [CUSTOM_ATTRIBUTE, CALL_FIELD];
+const keyedPrefix = (field: string): string | undefined =>
+  KEYED_PREFIXES.find((p) => field.toLowerCase().startsWith(p));
 
 /** The operators AutomationEngine.Compare evaluates. */
 const OPERATORS: { value: string; label: string; needsValue: boolean }[] = [
@@ -237,6 +262,11 @@ export class ArAutomationBuilder {
   private rawTriggerConfig = '{}';
   protected readonly stagePipelineId = signal('');
   protected readonly stageId = signal('');
+  protected readonly isAiCallTrigger = isAiCallTrigger;
+  protected readonly callDirections = AI_CALL_DIRECTIONS;
+  protected readonly callOutcomes = AI_CALL_OUTCOMES;
+  protected readonly callDirection = signal('');
+  protected readonly callOutcome = signal('');
 
   protected stagesOfPipeline() {
     return this.pipelines().find((p) => p.id === this.stagePipelineId())?.stages ?? [];
@@ -304,10 +334,12 @@ export class ArAutomationBuilder {
           keywords?: string[];
           pipelineId?: string;
           stageId?: string;
-        };
+        } & AiCallTriggerConfig;
         this.keywords.set((tc.keywords ?? []).join(', '));
         this.stagePipelineId.set(tc.pipelineId ?? '');
         this.stageId.set(tc.stageId ?? '');
+        this.callDirection.set(tc.direction ?? '');
+        this.callOutcome.set(tc.outcome ?? '');
       } catch {
         this.keywords.set('');
       }
@@ -438,20 +470,41 @@ export class ArAutomationBuilder {
   // Condition fields are either one of the contact fields or "attr.<key>" for a custom attribute.
   protected fieldChoice(step: BuilderStep): string {
     const f = this.cfg(step, 'field');
-    return f.toLowerCase().startsWith(CUSTOM_ATTRIBUTE) ? CUSTOM_ATTRIBUTE : f;
+    return keyedPrefix(f) ?? f;
   }
 
   protected attributeKey(step: BuilderStep): string {
     const f = this.cfg(step, 'field');
-    return f.toLowerCase().startsWith(CUSTOM_ATTRIBUTE) ? f.slice(CUSTOM_ATTRIBUTE.length) : '';
+    const prefix = keyedPrefix(f);
+    return prefix ? f.slice(prefix.length) : '';
   }
 
   protected setFieldChoice(id: string, choice: string): void {
     this.setCfg(id, 'field', choice);
   }
 
-  protected setAttributeKey(id: string, key: string): void {
-    this.setCfg(id, 'field', CUSTOM_ATTRIBUTE + key.trim());
+  protected setAttributeKey(id: string, key: string, prefix: string = CUSTOM_ATTRIBUTE): void {
+    this.setCfg(id, 'field', prefix + key.trim());
+  }
+
+  /** The AI voice call step's variables, one `name=value` per line; a value may name a contact field such as attr.plan. */
+  protected variablesText(step: BuilderStep): string {
+    const v = step.config['variables'];
+    return v && typeof v === 'object'
+      ? Object.entries(v as Record<string, unknown>)
+          .map(([k, x]) => `${k}=${String(x ?? '')}`)
+          .join('\n')
+      : '';
+  }
+
+  protected setVariables(id: string, text: string): void {
+    const out: Record<string, string> = {};
+    for (const line of text.split('\n')) {
+      const at = line.indexOf('=');
+      const key = (at < 0 ? '' : line.slice(0, at)).trim();
+      if (key) out[key] = line.slice(at + 1).trim();
+    }
+    this.patch(id, (st) => ({ ...st, config: { ...st.config, variables: out } }));
   }
 
   protected needsValue(step: BuilderStep): boolean {
@@ -501,6 +554,7 @@ export class ArAutomationBuilder {
 
   /** What the "true" branch of a rejoining step is called. */
   protected thenLabel(step: BuilderStep): string {
+    if (step.kind === AutomationNodeKind.AiCall) return 'If the call meets its goal';
     return step.kind === AutomationNodeKind.WaitForReply ? 'If they reply' : 'If it matches';
   }
 
@@ -524,6 +578,8 @@ export class ArAutomationBuilder {
         return { minutes: 30 };
       case AutomationNodeKind.WaitForReply:
         return { hours: 48 };
+      case AutomationNodeKind.AiCall:
+        return { purpose: '', waitHours: 24 };
       case AutomationNodeKind.Condition:
         return { field: 'contact.city', operator: 'equals', value: '' };
       case AutomationNodeKind.UpdateAttribute:
@@ -551,6 +607,8 @@ export class ArAutomationBuilder {
 
   /** What the "otherwise" branch of this step is called. */
   protected otherwiseLabel(step: BuilderStep): string {
+    if (step.kind === AutomationNodeKind.AiCall)
+      return `Otherwise — not answered, goal not met, or no result within ${this.num(step, 'waitHours') ?? 24} hours`;
     return step.kind === AutomationNodeKind.WaitForReply
       ? `If they don't reply within ${this.num(step, 'hours') ?? 48} hours`
       : "Otherwise — when it doesn't match";
@@ -686,6 +744,8 @@ export class ArAutomationBuilder {
 
   protected portName(kind: AutomationNodeKind, port: Port): string {
     if (port === 'next') return 'Then goes to';
+    if (kind === AutomationNodeKind.AiCall)
+      return port === 'yes' ? 'If the goal is met, goes to' : 'Otherwise, goes to';
     const reply = kind === AutomationNodeKind.WaitForReply;
     if (port === 'yes') return reply ? 'If they reply, goes to' : 'If it matches, goes to';
     return reply ? "If they don't reply, goes to" : "If it doesn't match, goes to";
@@ -764,7 +824,9 @@ export class ArAutomationBuilder {
         const field =
           this.fieldChoice(s) === CUSTOM_ATTRIBUTE
             ? this.attributeKey(s) || 'attribute'
-            : (CONDITION_FIELDS.find((f) => f.value === this.cfg(s, 'field'))?.label ?? 'field');
+            : this.fieldChoice(s) === CALL_FIELD
+              ? `AI call: ${this.attributeKey(s) || 'field'}`
+              : (CONDITION_FIELDS.find((f) => f.value === this.cfg(s, 'field'))?.label ?? 'field');
         const op = OPERATORS.find((o) => o.value === this.cfg(s, 'operator'));
         detail = `${field} ${op?.label ?? '?'}${op?.needsValue ? ' ' + (this.cfg(s, 'value') || '…') : ''}`;
         break;
@@ -788,6 +850,11 @@ export class ArAutomationBuilder {
         break;
       case AutomationNodeKind.StartFlow:
         detail = "Doesn't run yet";
+        break;
+      case AutomationNodeKind.AiCall:
+        detail = this.cfg(s, 'purpose').trim()
+          ? `“${this.cfg(s, 'purpose').trim()}”`
+          : `Waits up to ${this.num(s, 'waitHours') ?? 24} hours`;
         break;
     }
     return { title, detail: clip(detail), icon };
@@ -817,12 +884,18 @@ export class ArAutomationBuilder {
       case AutomationNodeKind.Webhook:
         if (!this.cfg(step, 'subscriptionId')) out.push('choose one of your webhook endpoints.');
         break;
+      case AutomationNodeKind.AiCall: {
+        const hours = this.num(step, 'waitHours') ?? 24;
+        if (hours < 1 || hours > 168) out.push('wait between 1 and 168 hours for the result.');
+        if (this.cfg(step, 'purpose').length > 500)
+          out.push('keep the reason for the call under 500 characters.');
+        break;
+      }
       case AutomationNodeKind.Condition: {
         const field = this.cfg(step, 'field');
         const known = CONDITION_FIELDS.some((f) => f.value === field);
-        const attribute =
-          field.toLowerCase().startsWith(CUSTOM_ATTRIBUTE) &&
-          field.length > CUSTOM_ATTRIBUTE.length;
+        const prefix = keyedPrefix(field);
+        const attribute = !!prefix && field.length > prefix.length;
         if (!known && !attribute)
           out.push("pick what to check — this field isn't one the engine can read.");
         if (!OPERATORS.some((o) => o.value === this.cfg(step, 'operator')))
@@ -921,6 +994,11 @@ export class ArAutomationBuilder {
         pipelineId: this.stagePipelineId() || undefined,
         stageId: this.stageId() || undefined,
       });
+    }
+    if (isAiCallTrigger(this.trigger())) {
+      return JSON.stringify(
+        aiCallTriggerConfig(this.trigger(), this.callDirection(), this.callOutcome()),
+      );
     }
     // Every other trigger (a segment drip's segment, for one) is configured elsewhere: save it back untouched.
     return this.rawTriggerConfig;

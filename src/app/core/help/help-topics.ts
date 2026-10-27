@@ -68,6 +68,7 @@ const AUTOMATION_BUILDER: HelpTopic = {
     'Use Add step (List) or drag from the palette (Canvas) to add what should happen first.',
     'Join steps in order. On the canvas, drag from the dot on a step’s bottom edge to the next step.',
     'For If… and Wait for a reply, connect both ways out, or leave one empty to end the journey there.',
+    'Add AI voice call to have the voice agent ring the contact; its two ways out are goal met and otherwise. An If… step after it can check the call’s answer, sentiment or extracted fields.',
     'Go back to Automations and use Dry-run to check it before turning it on.',
   ],
 };

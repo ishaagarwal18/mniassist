@@ -56,6 +56,7 @@ describe('the automation canvas model', () => {
     expect(portsOf(K.End)).toEqual([]);
     expect(portsOf(K.Condition)).toEqual(['yes', 'no']);
     expect(portsOf(K.WaitForReply)).toEqual(['yes', 'no']);
+    expect(portsOf(K.AiCall)).toEqual(['yes', 'no']);
     expect(portsOf(K.Trigger)).toEqual(['next']);
     expect(portsOf(K.Wait)).toEqual(['next']);
   });

@@ -905,7 +905,7 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Step-by-step**
 
-1. Click **New automation**, enter **Name**, choose **Channel** and **Trigger**, then complete keyword or pipeline/stage options if shown.
+1. Click **New automation**, enter **Name**, choose **Channel** and **Trigger**, then complete keyword or pipeline/stage options if shown. For **AI voice call completed** choose **Which calls** and **With this result**; for **AI voice call not answered** choose **Which calls**.
 2. Click **Create draft** and open the builder.
 3. Add and review the journey steps, then **Save**.
 4. Return to the list, select **Dry-run**, choose a test contact and click **Run dry-run**.
@@ -916,7 +916,9 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 [Screenshot P030: Automations page showing its principal sections and a suitable sample record; highlight “New automation” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
-**Tips and common errors:** Saving a draft does not activate it. Review trigger scope and sending permissions before activation; a dry-run is not evidence of a delivered customer message.
+**Tips and common errors:** Saving a draft does not activate it. Review trigger scope and sending permissions before activation; a dry-run is not evidence of a delivered customer message. The two AI voice call triggers run after a call the voice agent handled ends, after its analysis if the agent has one. Calls placed by an automation's own **AI voice call** step never start them, so automations cannot call a customer in a loop.
+
+**New in 1.1:** AI voice call triggers and the **AI voice call** step (27 Oct 2026).
 
 <a id="page-auto-replies"></a>
 
@@ -953,16 +955,18 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Prerequisites:** An existing automation draft and permission to edit it.
 
-**Views and sections:** List; Canvas; step editor; message/template; waits and timeouts; reply capture/buttons; condition branches; assignment; contact attributes; enquiry creation; configured endpoint notification.
+**Views and sections:** List; Canvas; step editor; message/template; waits and timeouts; reply capture/buttons; condition branches; assignment; contact attributes; enquiry creation; configured endpoint notification; AI voice call.
 
 **Step-by-step**
 
 1. Open the automation and choose **List** or **Canvas**.
-2. Click **Add step** and choose the required message, template, wait, question, condition, assignment, attribute, enquiry or endpoint action.
+2. Click **Add step** and choose the required message, template, wait, question, condition, assignment, attribute, enquiry, endpoint or **AI voice call** action.
 3. Complete the fields displayed for that step, including reply choices, timeouts or destination where relevant.
 4. Arrange steps with the available move controls and connect the intended condition branches in the canvas.
 5. Decide whether both branches rejoin when that option is shown.
 6. Click **Save**, return to the list and run a dry-run before activating.
+
+**AI voice call step:** enter an optional **Reason for the call**, optional **Variables** (one `name=value` per line; a value may name a contact field such as `attr.plan`), **Wait for the result (hours)** (1–168) and an optional prefix under **Save extracted fields with prefix**. The voice agent published on the automation's number calls only contacts who gave call permission and have not opted out, between 09:00 and 21:00 India time; outside those hours the step waits for the window. The steps directly below run when the call is answered and meets its goal. **Otherwise** runs when the call is not answered, the goal is not met, the call cannot be placed, or no result arrives in time. In a later **If…** step, pick the **AI call:** fields (answered, goal met, sentiment, summary, end reason, length) or **AI call: extracted field…** with the field key. A dry-run never places a call and follows the goal-met path.
 
 [Screenshot P032: Automation builder page showing its principal sections and a suitable sample record; highlight “List” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
