@@ -516,6 +516,11 @@ export const routes: Routes = [
           import('./features/calls/whatsapp-calls').then((m) => m.ArWhatsAppCalls),
       },
       {
+        path: 'calls/ai-agents',
+        title: 'AI voice agents · MNI Assist',
+        loadComponent: () => import('./features/calls/voice-agents').then((m) => m.ArVoiceAgents),
+      },
+      {
         path: 'calls/ai-batches',
         title: 'AI call batches · MNI Assist',
         loadComponent: () =>

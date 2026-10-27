@@ -84,6 +84,24 @@ import { ArVoiceAgentFlowEditor } from './voice-agent-flow';
         @if (model.hasUnpublishedChanges) {
           <p>{{ 'AutoReach::VoiceAgent.Publication.pending' | abpLocalization }}</p>
         }
+        @if (model.isShared) {
+          <p class="shared">
+            {{ 'AutoReach::SharedAgents.AnswersOn' | abpLocalization }}
+            @for (number of model.numbers ?? []; track number.channelId; let last = $last) {
+              <span translate="no">{{ number.name }} ({{ number.phoneNumber }})</span
+              >{{ last ? '' : ', ' }}
+            } @empty {
+              {{ 'AutoReach::SharedAgents.NoNumbers' | abpLocalization }}
+            }
+          </p>
+        } @else if (model.sharedAgentName) {
+          <p class="shared" role="status">
+            {{ 'AutoReach::SharedAgents.NumberUses' | abpLocalization }}
+            <strong translate="no">{{ model.sharedAgentName }}</strong
+            >.
+            {{ 'AutoReach::SharedAgents.NumberUsesHelp' | abpLocalization }}
+          </p>
+        }
         <label class="ar-field"
           ><span>{{ 'AutoReach::VoiceAgent.Template' | abpLocalization }}</span>
           <select
@@ -746,6 +764,11 @@ import { ArVoiceAgentFlowEditor } from './voice-agent-flow';
       gap: 8px;
       align-items: center;
       margin: 8px 0;
+    }
+    .shared {
+      border-inline-start: 3px solid var(--ar-line-300);
+      padding-inline-start: 8px;
+      overflow-wrap: anywhere;
     }
     .build {
       margin: 8px 0 12px;

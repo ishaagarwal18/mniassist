@@ -2,7 +2,7 @@
 
 **Edition:** 1.1 · **Reviewed:** 27 October 2026 · **Format:** end-user guide
 
-**New in 1.1:** AI voice agents can take actions during calls, search your knowledge base and catalogue, remember returning callers, place outbound WhatsApp calls and call whole lists ([AI call batches](#page-calls-ai-batches)); calls are analysed afterwards and can be reviewed, corrected and exported ([AI conversations](#window-011)); agents can be tested from the browser ([test call](#panel-ar-voice-agent-test)). Agents can also hand a call to a person in a chosen team, with the reason and a summary; can follow a conversation flow of stages; can be drafted from a description, saved as workspace templates in folders, exported and imported as files, reviewed before publishing and compared version by version. See the [voice agent window](#dialog-ar-voice-agent-dialog-1).
+**New in 1.1:** AI voice agents can take actions during calls, search your knowledge base and catalogue, remember returning callers, place outbound WhatsApp calls and call whole lists ([AI call batches](#page-calls-ai-batches)); calls are analysed afterwards and can be reviewed, corrected and exported ([AI conversations](#window-011)); agents can be tested from the browser ([test call](#panel-ar-voice-agent-test)). Agents can also hand a call to a person in a chosen team, with the reason and a summary; can follow a conversation flow of stages; can be drafted from a description, saved as workspace templates in folders, exported and imported as files, reviewed before publishing and compared version by version. One agent can serve several numbers ([AI voice agents](#page-calls-ai-agents)). See the [voice agent window](#dialog-ar-voice-agent-dialog-1).
 
 This manual explains the pages and workflows present in this application’s current codebase. Use it with your organisation’s approved business processes. Features, buttons and pages depend on your role, workspace subscription, provider connections and administrator settings. A page being documented does not mean it is enabled for every workspace.
 
@@ -1758,6 +1758,7 @@ The routes below identify the screen if you need help finding it. Entries contai
 | [Tasks](#page-tasks) | `/tasks` |
 | [Calls](#page-calls) | `/calls` |
 | [WhatsApp calls](#page-calls-whatsapp) | `/calls/whatsapp` |
+| [AI voice agents](#page-calls-ai-agents) | `/calls/ai-agents` |
 | [AI call batches](#page-calls-ai-batches) | `/calls/ai-batches` |
 | [Helpdesk](#page-helpdesk) | `/helpdesk` |
 | [Meetings](#page-meetings) | `/meetings` |
@@ -1943,6 +1944,31 @@ The routes below identify the screen if you need help finding it. Entries contai
 [Screenshot P067: WhatsApp calls page showing its principal sections and a suitable sample record; highlight “WhatsApp calls” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
 **Tips and common errors:** Recording requires your organisation’s notice/consent process. Browser microphone permissions and a configured relay are necessary for live browser audio; a log entry alone does not prove audio quality. AI call transcripts are kept for 180 days from the start of the call and are then deleted automatically.
+
+<a id="page-calls-ai-agents"></a>
+
+### AI voice agents
+
+**Open:** `/calls/ai-agents` (menu **AI voice agents**). **Who can use it:** Signed-in users who can manage channels. The workspace must include the voice feature.
+
+**Purpose:** Build a voice agent once and let it answer and place AI calls on several WhatsApp numbers. Change it in one place: every number assigned to it uses its newly published version on the next call.
+
+**Prerequisites:** WhatsApp numbers connected directly to Meta. To take live AI calls, a number must also be allowed AI calling by the administrator.
+
+**Views and sections:** The **New agent’s name** and **Start from** fields with **Create agent**; one card per agent with its type, whether it is published, the numbers using it, **Edit agent**, **Assign to a number…**, **Assignment history** and **Delete agent**.
+
+**Step-by-step**
+
+1. Enter a name. In **Start from** keep **A blank agent**, or choose a number to copy its current agent as the first draft. Click **Create agent**; the agent opens for editing.
+2. In the [voice agent window](#dialog-ar-voice-agent-dialog-1) write, test and **publish** the agent, exactly as for a number’s own agent. Templates, AI drafting, review and version comparison all work the same way. Testing needs at least one assigned number, because the test uses that number’s catalogue, prices and AI allowance.
+3. Use **Assign to a number…** to choose a number. A number already on another shared agent moves to this one (the list shows which agent it is on now).
+4. Click **Unassign** next to a number to give it back its own agent.
+5. Click **Assignment history** to see every number the agent has had, when it was assigned and unassigned, and by whom.
+6. Click **Delete agent** and confirm to delete it; its numbers go back to their own agents.
+
+[Screenshot P118a: AI voice agents page with one published agent assigned to two numbers and its assignment history open; highlight “Assign to a number…”. Use approved sample data; obscure personal details, account secrets and private links.]
+
+**Tips and common errors:** A number assigned to an agent that isn’t published is **not** answered by AI — the card warns about this. A number’s own agent is kept unchanged while it is assigned; opening that number’s voice agent window says which shared agent answers its calls. AI call batches and automation **AI voice call** steps on an assigned number use the shared agent. Each AI call records the agent version (and shared agent) that handled it. A workspace can have up to 50 shared agents.
 
 <a id="page-calls-ai-batches"></a>
 

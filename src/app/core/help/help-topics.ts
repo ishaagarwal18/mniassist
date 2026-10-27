@@ -555,6 +555,20 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Set the Recording notice so customers are told calls are recorded.',
     ],
   },
+  'calls/ai-agents': {
+    benefits: [
+      'Build a voice agent once and let it answer on several WhatsApp numbers.',
+      'Change it in one place: every number assigned to it uses the new published version on its next call.',
+      'See which number used which agent, and when, in each agent’s assignment history.',
+    ],
+    steps: [
+      'Create an agent, blank or starting from a number’s current agent.',
+      'Click Edit agent to write, test and publish it, as for a number’s own agent.',
+      'Choose Assign to a number; a number on another shared agent moves to this one.',
+      'Click Unassign to give a number back its own agent; deleting an agent does this for all its numbers.',
+      'A number assigned to an agent that isn’t published isn’t answered by AI.',
+    ],
+  },
   'calls/ai-batches': {
     benefits: [
       'Your published voice agent calls a list of people for you: renewals, reminders, feedback or follow-ups.',

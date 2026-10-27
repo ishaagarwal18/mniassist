@@ -128,9 +128,23 @@ export interface VoiceAgentSettings extends VoiceAgentInput {
   draftVersionId?: string | null;
   hasUnpublishedChanges?: boolean;
   usesLegacyConfiguration?: boolean;
+  /** The number's id, or the shared agent's when isShared. */
   channelId: string;
   hasConfiguration: boolean;
   serverAllowed: boolean;
+  /** These are a shared agent's settings; numbers answer with it. */
+  isShared?: boolean;
+  numbers?: VoiceAgentNumber[];
+  /** For a number: the shared agent answering its calls instead, when it is assigned to one. */
+  sharedAgentId?: string | null;
+  sharedAgentName?: string | null;
+}
+
+export interface VoiceAgentNumber {
+  channelId: string;
+  name: string;
+  phoneNumber: string;
+  assignedAtUtc?: string | null;
 }
 
 export interface VoiceAgentVersion {

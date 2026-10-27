@@ -545,4 +545,26 @@ describe('voice agent settings', () => {
       'VoiceAgent.Compare.sameInstructions',
     );
   });
+
+  it('shows which numbers a shared agent answers on', async () => {
+    api.get.mockReturnValue(
+      of({
+        ...initial,
+        isShared: true,
+        numbers: [{ channelId: 'ch1', name: 'Meridian Sales', phoneNumber: '+91 98000 00001' }],
+      }),
+    );
+    const fixture = await create();
+    const notice = fixture.nativeElement.querySelector('.shared').textContent;
+    expect(notice).toContain('SharedAgents.AnswersOn');
+    expect(notice).toContain('Meridian Sales (+91 98000 00001)');
+  });
+
+  it('tells a number that a shared agent answers its calls instead', async () => {
+    api.get.mockReturnValue(of({ ...initial, sharedAgentId: 'a1', sharedAgentName: 'Front desk' }));
+    const fixture = await create();
+    const notice = fixture.nativeElement.querySelector('.shared').textContent;
+    expect(notice).toContain('SharedAgents.NumberUses');
+    expect(notice).toContain('Front desk');
+  });
 });
