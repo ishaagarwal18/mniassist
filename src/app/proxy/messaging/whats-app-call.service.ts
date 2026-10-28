@@ -185,6 +185,8 @@ export interface VoiceConversationSnapshotDto {
   engine?: string | null;
   /** The agent's own engine failed and the fallback engine carried on the call. */
   engineFailedOver?: boolean;
+  /** How quickly the agent answered, in milliseconds; null when not measured. */
+  latency?: VoiceLatencyDto | null;
   transcriptEnabled: boolean;
   truncated: boolean;
   inputTokens: number;
@@ -681,4 +683,13 @@ export class WhatsAppCallService {
       },
       { apiName: this.apiName, ...config },
     );
+}
+
+/** A call's reply times: each from the end of the caller's turn to the agent's first audio, and the greeting's start. */
+export interface VoiceLatencyDto {
+  replies: number;
+  medianMs: number;
+  p90Ms: number;
+  maxMs: number;
+  greetingMs: number;
 }

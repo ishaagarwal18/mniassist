@@ -128,6 +128,24 @@ import { ArDialog } from '../../ui/dialog';
               {{ 'AutoReach::VoiceConversation.EngineFailedOver' | abpLocalization }}
             </p>
           }
+          @if (conversation.latency; as l) {
+            @if (l.replies > 0) {
+              <p translate="no">
+                {{
+                  'AutoReach::VoiceConversation.Latency'
+                    | abpLocalization: seconds(l.medianMs) : seconds(l.p90Ms) : '' + l.replies
+                }}
+              </p>
+            }
+            @if (l.greetingMs > 0) {
+              <p translate="no">
+                {{
+                  'AutoReach::VoiceConversation.GreetingLatency'
+                    | abpLocalization: seconds(l.greetingMs)
+                }}
+              </p>
+            }
+          }
           @if (conversation.truncated) {
             <p role="status">{{ 'AutoReach::VoiceConversation.Truncated' | abpLocalization }}</p>
           }
@@ -331,6 +349,11 @@ export class ArVoiceConversations implements OnInit {
   private appliedQuery = '';
   protected readonly rows = signal<VoiceConversationListItemDto[]>([]);
   protected readonly detail = signal<VoiceConversationSnapshotDto | null>(null);
+
+  /** 820 → "0.8 s". */
+  protected seconds(ms: number): string {
+    return (ms / 1000).toFixed(1) + ' s';
+  }
   protected readonly loading = signal(false);
   protected readonly detailLoading = signal(false);
   protected readonly error = signal(false);

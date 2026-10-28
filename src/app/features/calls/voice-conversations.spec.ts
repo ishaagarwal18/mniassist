@@ -123,6 +123,24 @@ describe('AI conversations', () => {
     expect(text).toContain('VoiceConversation.TranscriptIncomplete');
   });
 
+  it('shows how quickly the agent answered', async () => {
+    request.mockImplementation((req: { url: string }) =>
+      req.url.endsWith('/conversations')
+        ? of({ items: [row('a', 'Asha Pumps')], totalCount: 1 })
+        : of({
+            ...detail('a'),
+            latency: { replies: 4, medianMs: 820, p90Ms: 1340, maxMs: 1500, greetingMs: 1100 },
+          }),
+    );
+    const fixture = await create();
+    buttons(fixture.nativeElement, 'Asha Pumps')[0].click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const text = fixture.nativeElement.textContent;
+    expect(text).toContain('VoiceConversation.Latency 0.8 s 1.3 s 4');
+    expect(text).toContain('VoiceConversation.GreetingLatency 1.1 s');
+  });
+
   it('drops a transcript that arrives after a new search started', async () => {
     const late = new Subject<VoiceConversationSnapshotDto>();
     request.mockImplementation((req: { url: string }) =>

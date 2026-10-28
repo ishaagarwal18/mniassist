@@ -93,6 +93,12 @@
                   @if (t.transcriptIncomplete) {
                     <p class="cl__line">Some words at the end may be missing.</p>
                   }
+                  @if (t.latency?.replies) {
+                    <p class="cl__line">
+                      Typical reply time:
+                      <span translate="no">{{ (t.latency!.medianMs / 1000).toFixed(1) }} s</span>
+                    </p>
+                  }
                 } @else {
                   <p class="cl__line" role="status">{{ transcriptNote() }}</p>
                 }
