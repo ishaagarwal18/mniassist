@@ -3363,6 +3363,16 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 <a id="page-platform-ai-providers"></a>
 
+### Phone numbers
+
+**Open:** `/platform/phone-numbers` (menu **Phone numbers**). **Who can use it:** Platform-host users with tenant-management permission only.
+
+**Purpose:** Find and rent Exotel numbers (ExoPhones) for a workspace. The number is rented on the **workspace's own Exotel account**, which Exotel charges the monthly rental; the workspace needs its Exotel line set up first.
+
+1. Choose the **Workspace** and **Type** (Landline, Mobile or Toll-free), optionally a **Circle** (such as KA or MH) and digits the number should contain, and click **Search**. Each number shows Exotel's monthly rental.
+2. Click **Rent…** beside a number. Read the rental, **type the number again**, optionally name it, choose where its incoming calls go (**The line's menu flow**, **The line's AI call flow** or **Nowhere yet**) and click **Rent this number**. Exotel is asked once; nothing is retried, so a lost answer can't rent the number twice.
+3. The number joins the workspace's phone line under **More numbers**, where the workspace chooses its agent.
+
 ### AI providers
 
 **Open:** `/platform/ai-providers` (menu **AI providers**). **Who can use it:** Platform-host users with tenant-management permission.

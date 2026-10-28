@@ -736,6 +736,12 @@ export const routes: Routes = [
           import('./features/platform/feature-flags').then((m) => m.ArFeatureFlags),
       },
       {
+        path: 'platform/phone-numbers',
+        title: 'Phone numbers · MNI Assist',
+        loadComponent: () =>
+          import('./features/platform/phone-numbers').then((m) => m.ArPhoneNumbers),
+      },
+      {
         path: 'platform/ai-providers',
         title: 'AI providers · MNI Assist',
         loadComponent: () =>

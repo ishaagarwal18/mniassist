@@ -541,6 +541,13 @@ export const NAV: readonly NavGroup[] = [
         hostOnly: true,
       },
       {
+        label: 'Phone numbers',
+        icon: 'phone',
+        route: '/platform/phone-numbers',
+        permission: 'AutoReach.Administration.ManageTenants',
+        hostOnly: true,
+      },
+      {
         label: 'Status page',
         icon: 'shield',
         route: '/platform/status',

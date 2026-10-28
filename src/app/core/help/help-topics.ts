@@ -1115,6 +1115,23 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Export data when you need it elsewhere.',
     ],
   },
+  'platform/phone-numbers': {
+    summary:
+      "Find and rent Exotel numbers for a workspace, on the workspace's own Exotel account. Renting charges that account Exotel's monthly rental.",
+    benefits: [
+      'Give a workspace another number without leaving the platform.',
+      "The new number joins the workspace's phone line, ready for its menu or AI call flow.",
+    ],
+    steps: [
+      'Choose the workspace and the type of number, optionally a circle (KA, MH…) and digits it should contain, and click Search.',
+      'Click Rent… beside a number, read its monthly rental, type the number again, choose where its incoming calls go and click Rent this number.',
+      "Choose the number's agent on the workspace's phone line page.",
+    ],
+    tips: [
+      'Only platform administrators can rent numbers.',
+      "The workspace's Exotel line must be set up first; its account needs enough balance for the rental.",
+    ],
+  },
   'platform/ai-providers': {
     summary:
       'Which AI model the platform uses for analysis, and which AI provider keys the server has. Keys live in secret storage and are never shown here.',
