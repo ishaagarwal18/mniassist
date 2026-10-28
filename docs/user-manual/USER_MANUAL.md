@@ -3368,7 +3368,7 @@ The routes below identify the screen if you need help finding it. Entries contai
 **Step-by-step**
 
 1. Under **Analysis model**, choose **Automatic (OpenAI when it has a key)**, **OpenAI** or **Anthropic** and click **Save**. This model writes after-call analysis, drafts voice agents with AI and reviews them before publishing. **In use now** shows the model actually used; if the chosen provider has no key, the other one is used.
-2. Under **Provider keys**, check that each provider you rely on shows **Set**. A provider marked **(not used yet)** is kept for voice agents with separate speech-to-text and text-to-speech, which come in a later update.
+2. Under **Provider keys**, check that each provider you rely on shows **Set**. Deepgram and ElevenLabs run the **speech pipeline** engine. Their keys are stored for the call relay (`RELAY_DEEPGRAM_API_KEY`, `RELAY_ELEVENLABS_API_KEY`, with the voice in `RELAY_ELEVENLABS_VOICE`), not for the API, so they show **Set** only when the relay reports it has both. A provider marked **(not used yet)**, such as Sarvam AI or Bhashini, comes in a later update.
 
 [Screenshot P117a: AI providers page with the analysis model saved and the provider key table; highlight “In use now”. Use approved sample data; obscure personal details, account secrets and private links.]
 
@@ -4347,6 +4347,7 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 | Agent instructions | What the agent is for, what it may and may not say, and how it should speak. You may use variables such as `{{name}}`, `{{first_name}}`, `{{company}}`, `{{city}}` or `{{name\|there}}` (a value with a default). |
 | Opening greeting | The first sentence. It must say the caller is speaking to an AI assistant. Variables work here too. |
 | Voice / Preferred language | The speaking voice — Marin and Cedar are recommended, eight more are offered — and the language to speak (or **Follow caller**). Hindi–English mixing is followed when the caller uses it. Click **Hear the greeting in this voice** for a short sample; a test call gives the exact sound. |
+| Speech engine | **Speech to speech (OpenAI realtime)** or **Speech pipeline (Deepgram + ElevenLabs)**. The pipeline hears the caller with Deepgram, writes each reply with a chat model and speaks it with ElevenLabs. Replies come a little slower, the voice is the platform’s ElevenLabs voice, and **Voice** and **Model tier** are hidden because they apply only to speech to speech. Hindi and English are recognised best. The option can be chosen only when the call relay has the pipeline’s keys; an agent left on it after they are removed sends its calls to your team. |
 | Model tier | **Platform default**, **Best quality** or **Lower cost**. Lower cost uses a cheaper realtime model per minute; test it before publishing, especially for Indian languages and prices. Which model each tier uses is set on the server. |
 | Maximum call length (seconds) | 30–600. The agent ends politely at the limit. |
 | Silence reminder / End after silence (seconds) | Optional. The agent checks whether the caller is still there after the reminder time (5–120 s) and ends the call after the end time (10–300 s, at least 5 s after the reminder). 0 switches either off. |

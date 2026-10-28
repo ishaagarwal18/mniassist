@@ -141,9 +141,9 @@ export class AiProviderSettingsService {
             </table>
           </div>
           <p>
-            Sarvam AI, ElevenLabs, Deepgram and Bhashini are for voice agents that use separate
-            speech-to-text and text-to-speech; they are connected in a coming update. Live calls
-            today use OpenAI's realtime model, chosen per agent in its voice agent window.
+            Deepgram and ElevenLabs run the speech pipeline, which an agent can choose as its speech
+            engine. Their keys belong to the call relay, not this server, so they show as set once
+            the relay reports it has both. Sarvam AI and Bhashini come in a later update.
           </p>
         </section>
       } @else if (!error()) {

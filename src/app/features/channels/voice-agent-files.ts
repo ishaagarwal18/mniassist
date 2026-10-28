@@ -4,6 +4,7 @@ import {
   VoiceAgentTools,
   VoiceAnalysisField,
   VOICE_AGENT_TIERS,
+  VOICE_AGENT_ENGINES,
   VOICE_AGENT_VOICES,
   noVoiceAgentAnalysis,
   noVoiceAgentTools,
@@ -86,6 +87,9 @@ export function readAgentFile(raw: string): VoiceAgentDefinition {
       : 'marin',
     tier: (VOICE_AGENT_TIERS as readonly string[]).includes(agent['tier'] as string)
       ? (agent['tier'] as string)
+      : '',
+    engine: (VOICE_AGENT_ENGINES as readonly string[]).includes(agent['engine'] as string)
+      ? (agent['engine'] as string)
       : '',
     language: text(agent['language'], 10) || 'auto',
     maxSeconds: Number.isInteger(agent['maxSeconds']) ? (agent['maxSeconds'] as number) : 120,
@@ -282,6 +286,7 @@ export function compareRows(
     row('Greeting', (a) => a.greeting),
     row('Voice', (a) => a.voice),
     row('Model', (a) => a.tier || 'default'),
+    row('Engine', (a) => a.engine || 'speech to speech'),
     row('Language', (a) => a.language),
     row('Duration', (a) => `${a.maxSeconds}s`),
     row(

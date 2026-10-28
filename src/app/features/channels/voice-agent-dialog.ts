@@ -28,6 +28,7 @@ import {
   VoiceAgentReview,
   VoiceAgentType,
   VOICE_AGENT_TIERS,
+  VOICE_AGENT_ENGINES,
   VOICE_AGENT_VOICES,
   VoiceAgentAnalysis,
   VoiceAnalysisField,
@@ -183,38 +184,60 @@ import { ArVoiceAgentFlowEditor } from './voice-agent-flow';
         </label>
         <div class="options">
           <label class="ar-field"
-            ><span>{{ 'AutoReach::VoiceAgent.Voice' | abpLocalization }}</span>
+            ><span>{{ 'AutoReach::VoiceAgent.Engine' | abpLocalization }}</span>
             <select
               class="ar-field__input"
-              [(ngModel)]="model.voice"
-              (ngModelChange)="saved.set(false); previewFailed.set(false)"
+              [ngModel]="model.engine ?? ''"
+              (ngModelChange)="model.engine = $event; saved.set(false)"
               [disabled]="saving()"
             >
-              @for (voice of voices; track voice) {
-                <option [value]="voice">
-                  {{ voice[0].toUpperCase() + voice.slice(1) }}
-                  @if (voice === 'marin' || voice === 'cedar') {
-                    ({{ 'AutoReach::VoiceAgent.Voice.recommended' | abpLocalization }})
-                  }
+              @for (option of engines; track option) {
+                <option
+                  [value]="option"
+                  [disabled]="
+                    option === 'pipeline' && !pipelineReady() && model.engine !== 'pipeline'
+                  "
+                >
+                  {{ 'AutoReach::VoiceAgent.Engine.' + (option || 'default') | abpLocalization }}
                 </option>
               }
             </select></label
           >
-          <label class="ar-field"
-            ><span>{{ 'AutoReach::VoiceAgent.Model' | abpLocalization }}</span>
-            <select
-              class="ar-field__input"
-              [ngModel]="model.tier ?? ''"
-              (ngModelChange)="model.tier = $event; saved.set(false)"
-              [disabled]="saving()"
+          @if (model.engine !== 'pipeline') {
+            <label class="ar-field"
+              ><span>{{ 'AutoReach::VoiceAgent.Voice' | abpLocalization }}</span>
+              <select
+                class="ar-field__input"
+                [(ngModel)]="model.voice"
+                (ngModelChange)="saved.set(false); previewFailed.set(false)"
+                [disabled]="saving()"
+              >
+                @for (voice of voices; track voice) {
+                  <option [value]="voice">
+                    {{ voice[0].toUpperCase() + voice.slice(1) }}
+                    @if (voice === 'marin' || voice === 'cedar') {
+                      ({{ 'AutoReach::VoiceAgent.Voice.recommended' | abpLocalization }})
+                    }
+                  </option>
+                }
+              </select></label
             >
-              @for (option of models; track option) {
-                <option [value]="option">
-                  {{ 'AutoReach::VoiceAgent.Model.' + (option || 'default') | abpLocalization }}
-                </option>
-              }
-            </select></label
-          >
+            <label class="ar-field"
+              ><span>{{ 'AutoReach::VoiceAgent.Model' | abpLocalization }}</span>
+              <select
+                class="ar-field__input"
+                [ngModel]="model.tier ?? ''"
+                (ngModelChange)="model.tier = $event; saved.set(false)"
+                [disabled]="saving()"
+              >
+                @for (option of models; track option) {
+                  <option [value]="option">
+                    {{ 'AutoReach::VoiceAgent.Model.' + (option || 'default') | abpLocalization }}
+                  </option>
+                }
+              </select></label
+            >
+          }
           <label class="ar-field"
             ><span>{{ 'AutoReach::VoiceAgent.Language' | abpLocalization }}</span>
             <select
@@ -270,30 +293,39 @@ import { ArVoiceAgentFlowEditor } from './voice-agent-flow';
               [disabled]="saving()"
           /></label>
         </div>
-        <div class="preview">
-          <button
-            ar-button
-            type="button"
-            variant="ghost"
-            data-novalidate
-            [disabled]="previewing() || !model.greeting.trim()"
-            (click)="previewVoice()"
-          >
-            {{
-              (previewing()
-                ? 'AutoReach::VoiceAgent.Voice.previewing'
-                : 'AutoReach::VoiceAgent.Voice.preview'
-              ) | abpLocalization
-            }}
-          </button>
-          <span>{{ 'AutoReach::VoiceAgent.Voice.previewHelp' | abpLocalization }}</span>
-          @if (previewFailed()) {
-            <span role="alert">{{
-              'AutoReach::VoiceAgent.Voice.previewFailed' | abpLocalization
-            }}</span>
+        @if (model.engine === 'pipeline') {
+          <p class="engine">{{ 'AutoReach::VoiceAgent.Engine.help' | abpLocalization }}</p>
+          @if (!pipelineReady()) {
+            <p class="engine" role="alert">
+              {{ 'AutoReach::VoiceAgent.Engine.unavailable' | abpLocalization }}
+            </p>
           }
-        </div>
-        <p>{{ 'AutoReach::VoiceAgent.Model.help' | abpLocalization }}</p>
+        } @else {
+          <div class="preview">
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              data-novalidate
+              [disabled]="previewing() || !model.greeting.trim()"
+              (click)="previewVoice()"
+            >
+              {{
+                (previewing()
+                  ? 'AutoReach::VoiceAgent.Voice.previewing'
+                  : 'AutoReach::VoiceAgent.Voice.preview'
+                ) | abpLocalization
+              }}
+            </button>
+            <span>{{ 'AutoReach::VoiceAgent.Voice.previewHelp' | abpLocalization }}</span>
+            @if (previewFailed()) {
+              <span role="alert">{{
+                'AutoReach::VoiceAgent.Voice.previewFailed' | abpLocalization
+              }}</span>
+            }
+          </div>
+          <p>{{ 'AutoReach::VoiceAgent.Model.help' | abpLocalization }}</p>
+        }
         <p>{{ 'AutoReach::VoiceAgent.Silence.help' | abpLocalization }}</p>
         @if (model.type === 'flow' && model.flow) {
           <fieldset class="tools">
@@ -920,6 +952,11 @@ export class ArVoiceAgentDialog implements OnInit {
   protected readonly templates = voiceAgentTemplates;
   protected readonly voices = VOICE_AGENT_VOICES;
   protected readonly models = VOICE_AGENT_TIERS;
+  protected readonly engines = VOICE_AGENT_ENGINES;
+  /** The call relay has the speech pipeline's keys. */
+  protected readonly pipelineReady = computed(
+    () => this.settings()?.engines?.includes('pipeline') ?? false,
+  );
   protected readonly previewing = signal(false);
   protected readonly previewFailed = signal(false);
   private previewAudio: HTMLAudioElement | null = null;

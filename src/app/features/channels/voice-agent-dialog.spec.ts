@@ -607,6 +607,33 @@ describe('voice agent settings', () => {
     play.mockRestore();
   });
 
+  it('offers the speech pipeline only when the call relay can run it, and saves it', async () => {
+    const fixture = await create();
+    const root: HTMLElement = fixture.nativeElement;
+    const pipeline = () => root.querySelector<HTMLOptionElement>('option[value="pipeline"]')!;
+    expect(pipeline().disabled).toBe(true);
+
+    api.get.mockReturnValue(of({ ...initial, engines: ['realtime', 'pipeline'] }));
+    const ready = await create();
+    const page: HTMLElement = ready.nativeElement;
+    const engine = page.querySelector<HTMLOptionElement>('option[value="pipeline"]')!
+      .parentElement as HTMLSelectElement;
+    expect((engine.querySelector('option[value="pipeline"]') as HTMLOptionElement).disabled).toBe(
+      false,
+    );
+    engine.value = 'pipeline';
+    engine.dispatchEvent(new Event('change'));
+    ready.detectChanges();
+    await ready.whenStable();
+    expect(page.querySelector('option[value="coral"]')).toBeNull(); // realtime voices don't apply
+    expect(page.textContent).toContain('VoiceAgent.Engine.help');
+    expect(page.textContent).not.toContain('VoiceAgent.Engine.unavailable');
+
+    button(page, 'VoiceAgent.Save').click();
+    await ready.whenStable();
+    expect(api.update.mock.calls.at(-1)![1].engine).toBe('pipeline');
+  });
+
   it('says when a voice preview is unavailable', async () => {
     api.previewVoice.mockReturnValue(throwError(() => new Error('no key')));
     const fixture = await create();

@@ -18,7 +18,12 @@ export interface VoiceAgentDefinition {
   flow?: VoiceAgentFlow | null;
   /** '' for the platform's realtime model, or a tier from VOICE_AGENT_TIERS (the server picks the model). */
   tier?: string | null;
+  /** '' for speech to speech (OpenAI realtime), or 'pipeline': speech to text, a chat model and text to speech. */
+  engine?: string | null;
 }
+
+/** Speech engines: '' is speech to speech; 'pipeline' runs on the call relay's speech providers (Deepgram, ElevenLabs). */
+export const VOICE_AGENT_ENGINES = ['', 'pipeline'] as const;
 
 /** OpenAI realtime voices an agent may use (the server and relay check the same list). Marin and Cedar are recommended. */
 export const VOICE_AGENT_VOICES = [
@@ -157,6 +162,8 @@ export interface VoiceAgentSettings extends VoiceAgentInput {
   /** For a number: the shared agent answering its calls instead, when it is assigned to one. */
   sharedAgentId?: string | null;
   sharedAgentName?: string | null;
+  /** The speech engines the call relay can run now ('realtime', 'pipeline'). */
+  engines?: string[];
 }
 
 export interface VoiceAgentNumber {
@@ -215,6 +222,7 @@ export class VoiceAgentService {
       type,
       flow,
       tier,
+      engine,
     } = model;
     return this.rest.request<VoiceAgentInput, VoiceAgentSettings>(
       {
@@ -235,6 +243,7 @@ export class VoiceAgentService {
           type: type ?? 'prompt',
           flow: type === 'flow' ? flow : null,
           tier: tier ?? '',
+          engine: engine ?? '',
         },
       },
       { apiName: 'AutoReach' },
