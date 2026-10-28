@@ -3,6 +3,8 @@ import {
   VoiceAgentFlow,
   VoiceAgentTools,
   VoiceAnalysisField,
+  VOICE_AGENT_TIERS,
+  VOICE_AGENT_VOICES,
   noVoiceAgentAnalysis,
   noVoiceAgentTools,
 } from './voice-agent.service';
@@ -79,7 +81,12 @@ export function readAgentFile(raw: string): VoiceAgentDefinition {
     name: text(agent['name'], 100),
     instructions: text(agent['instructions'], 12000),
     greeting: text(agent['greeting'], 1000),
-    voice: agent['voice'] === 'cedar' ? 'cedar' : 'marin',
+    voice: (VOICE_AGENT_VOICES as readonly string[]).includes(agent['voice'] as string)
+      ? (agent['voice'] as string)
+      : 'marin',
+    tier: (VOICE_AGENT_TIERS as readonly string[]).includes(agent['tier'] as string)
+      ? (agent['tier'] as string)
+      : '',
     language: text(agent['language'], 10) || 'auto',
     maxSeconds: Number.isInteger(agent['maxSeconds']) ? (agent['maxSeconds'] as number) : 120,
     silenceReminderSeconds: Number.isInteger(agent['silenceReminderSeconds'])
@@ -274,6 +281,7 @@ export function compareRows(
     row('Type', (a) => (a.type === 'flow' ? 'flow' : 'prompt')),
     row('Greeting', (a) => a.greeting),
     row('Voice', (a) => a.voice),
+    row('Model', (a) => a.tier || 'default'),
     row('Language', (a) => a.language),
     row('Duration', (a) => `${a.maxSeconds}s`),
     row(

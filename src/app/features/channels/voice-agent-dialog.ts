@@ -27,6 +27,8 @@ import {
   VoiceAgentVersion,
   VoiceAgentReview,
   VoiceAgentType,
+  VOICE_AGENT_TIERS,
+  VOICE_AGENT_VOICES,
   VoiceAgentAnalysis,
   VoiceAnalysisField,
   noVoiceAgentAnalysis,
@@ -185,11 +187,32 @@ import { ArVoiceAgentFlowEditor } from './voice-agent-flow';
             <select
               class="ar-field__input"
               [(ngModel)]="model.voice"
-              (ngModelChange)="saved.set(false)"
+              (ngModelChange)="saved.set(false); previewFailed.set(false)"
               [disabled]="saving()"
             >
-              <option value="marin">Marin</option>
-              <option value="cedar">Cedar</option>
+              @for (voice of voices; track voice) {
+                <option [value]="voice">
+                  {{ voice[0].toUpperCase() + voice.slice(1) }}
+                  @if (voice === 'marin' || voice === 'cedar') {
+                    ({{ 'AutoReach::VoiceAgent.Voice.recommended' | abpLocalization }})
+                  }
+                </option>
+              }
+            </select></label
+          >
+          <label class="ar-field"
+            ><span>{{ 'AutoReach::VoiceAgent.Model' | abpLocalization }}</span>
+            <select
+              class="ar-field__input"
+              [ngModel]="model.tier ?? ''"
+              (ngModelChange)="model.tier = $event; saved.set(false)"
+              [disabled]="saving()"
+            >
+              @for (option of models; track option) {
+                <option [value]="option">
+                  {{ 'AutoReach::VoiceAgent.Model.' + (option || 'default') | abpLocalization }}
+                </option>
+              }
             </select></label
           >
           <label class="ar-field"
@@ -247,6 +270,30 @@ import { ArVoiceAgentFlowEditor } from './voice-agent-flow';
               [disabled]="saving()"
           /></label>
         </div>
+        <div class="preview">
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            data-novalidate
+            [disabled]="previewing() || !model.greeting.trim()"
+            (click)="previewVoice()"
+          >
+            {{
+              (previewing()
+                ? 'AutoReach::VoiceAgent.Voice.previewing'
+                : 'AutoReach::VoiceAgent.Voice.preview'
+              ) | abpLocalization
+            }}
+          </button>
+          <span>{{ 'AutoReach::VoiceAgent.Voice.previewHelp' | abpLocalization }}</span>
+          @if (previewFailed()) {
+            <span role="alert">{{
+              'AutoReach::VoiceAgent.Voice.previewFailed' | abpLocalization
+            }}</span>
+          }
+        </div>
+        <p>{{ 'AutoReach::VoiceAgent.Model.help' | abpLocalization }}</p>
         <p>{{ 'AutoReach::VoiceAgent.Silence.help' | abpLocalization }}</p>
         @if (model.type === 'flow' && model.flow) {
           <fieldset class="tools">
@@ -770,6 +817,13 @@ import { ArVoiceAgentFlowEditor } from './voice-agent-flow';
       padding-inline-start: 8px;
       overflow-wrap: anywhere;
     }
+    .preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 8px 0;
+    }
     .build {
       margin: 8px 0 12px;
     }
@@ -864,6 +918,33 @@ export class ArVoiceAgentDialog implements OnInit {
     'ur',
   ];
   protected readonly templates = voiceAgentTemplates;
+  protected readonly voices = VOICE_AGENT_VOICES;
+  protected readonly models = VOICE_AGENT_TIERS;
+  protected readonly previewing = signal(false);
+  protected readonly previewFailed = signal(false);
+  private previewAudio: HTMLAudioElement | null = null;
+
+  /** Plays the greeting in the chosen voice (the server's OpenAI speech model, close to how calls sound). */
+  protected async previewVoice(): Promise<void> {
+    const model = this.settings();
+    if (!model || this.previewing()) return;
+    this.previewing.set(true);
+    this.previewFailed.set(false);
+    try {
+      const audio = await firstValueFrom(
+        this.api.previewVoice(model.voice, model.greeting.trim().slice(0, 300)),
+      );
+      this.previewAudio?.pause();
+      const url = URL.createObjectURL(audio);
+      this.previewAudio = new Audio(url);
+      this.previewAudio.onended = () => URL.revokeObjectURL(url);
+      await this.previewAudio.play();
+    } catch {
+      this.previewFailed.set(true);
+    } finally {
+      this.previewing.set(false);
+    }
+  }
   protected readonly templateId = signal('');
   protected readonly versions = signal<VoiceAgentVersion[] | null>(null);
   protected readonly historyLoading = signal(false);

@@ -65,6 +65,7 @@ describe('voice agent settings', () => {
     draft: vi.fn(),
     saveTemplate: vi.fn(),
     deleteTemplate: vi.fn(),
+    previewVoice: vi.fn(),
   };
   beforeEach(() => {
     vi.resetAllMocks();
@@ -566,5 +567,52 @@ describe('voice agent settings', () => {
     const notice = fixture.nativeElement.querySelector('.shared').textContent;
     expect(notice).toContain('SharedAgents.NumberUses');
     expect(notice).toContain('Front desk');
+  });
+
+  it('saves the chosen model tier and voice, and previews the greeting in that voice', async () => {
+    const play = vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+    // The test DOM has no object URLs; the dialog only needs one to hand to an Audio element.
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: () => 'blob:preview',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: () => undefined });
+    api.previewVoice.mockReturnValue(of(new Blob(['mp3'], { type: 'audio/mpeg' })));
+    const fixture = await create();
+    const root: HTMLElement = fixture.nativeElement;
+    const select = (option: string) =>
+      [...root.querySelectorAll('select')].find((s) =>
+        s.querySelector(`option[value="${option}"]`),
+      )!;
+    const voice = select('coral');
+    voice.value = 'coral';
+    voice.dispatchEvent(new Event('change'));
+    const model = select('economy');
+    model.value = 'economy';
+    model.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    button(root, 'VoiceAgent.Voice.preview').click();
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(api.previewVoice).toHaveBeenCalledWith('coral', 'I am an AI assistant.');
+    expect(play).toHaveBeenCalled();
+
+    button(root, 'VoiceAgent.Save').click();
+    await fixture.whenStable();
+    const saved = api.update.mock.calls[0][1];
+    expect(saved.voice).toBe('coral');
+    expect(saved.tier).toBe('economy');
+    play.mockRestore();
+  });
+
+  it('says when a voice preview is unavailable', async () => {
+    api.previewVoice.mockReturnValue(throwError(() => new Error('no key')));
+    const fixture = await create();
+    button(fixture.nativeElement, 'VoiceAgent.Voice.preview').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('VoiceAgent.Voice.previewFailed');
   });
 });

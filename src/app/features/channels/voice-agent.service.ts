@@ -16,7 +16,26 @@ export interface VoiceAgentDefinition {
   /** 'prompt' (single prompt) or 'flow' (conversation flow). Both run speech to speech. */
   type?: VoiceAgentType;
   flow?: VoiceAgentFlow | null;
+  /** '' for the platform's realtime model, or a tier from VOICE_AGENT_TIERS (the server picks the model). */
+  tier?: string | null;
 }
+
+/** OpenAI realtime voices an agent may use (the server and relay check the same list). Marin and Cedar are recommended. */
+export const VOICE_AGENT_VOICES = [
+  'marin',
+  'cedar',
+  'alloy',
+  'ash',
+  'ballad',
+  'coral',
+  'echo',
+  'sage',
+  'shimmer',
+  'verse',
+] as const;
+
+/** Model tiers: '' is the platform default; economy costs less per minute. Agents never name a model. */
+export const VOICE_AGENT_TIERS = ['', 'quality', 'economy'] as const;
 
 export interface VoiceAgentInput extends VoiceAgentDefinition {
   concurrencyStamp: string;
@@ -195,6 +214,7 @@ export class VoiceAgentService {
       analysis,
       type,
       flow,
+      tier,
     } = model;
     return this.rest.request<VoiceAgentInput, VoiceAgentSettings>(
       {
@@ -214,6 +234,7 @@ export class VoiceAgentService {
           analysis: analysis ?? noVoiceAgentAnalysis(),
           type: type ?? 'prompt',
           flow: type === 'flow' ? flow : null,
+          tier: tier ?? '',
         },
       },
       { apiName: 'AutoReach' },
@@ -267,6 +288,19 @@ export class VoiceAgentService {
   deleteTemplate(id: string) {
     return this.rest.request<never, void>(
       { method: 'DELETE', url: `/api/auto-reach/voice-agent-template/${id}` },
+      { apiName: 'AutoReach' },
+    );
+  }
+  /** An MP3 of the voice saying the text, from the server's OpenAI key. */
+  previewVoice(voice: string, text: string) {
+    return this.rest.request<unknown, Blob>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/voice-agent/preview-voice',
+        responseType: 'blob',
+        headers: { Accept: 'audio/mpeg' },
+        body: { voice, text },
+      },
       { apiName: 'AutoReach' },
     );
   }

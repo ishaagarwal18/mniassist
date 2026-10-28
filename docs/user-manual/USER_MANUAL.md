@@ -3302,6 +3302,7 @@ The routes below identify the screen if you need help finding it. Entries contai
 | --- | --- |
 | [Platform](#page-platform) | `/platform` |
 | [Feature flags](#page-platform-feature-flags) | `/platform/feature-flags` |
+| [AI providers](#page-platform-ai-providers) | `/platform/ai-providers` |
 | [Status page](#page-platform-status) | `/platform/status` |
 
 <a id="page-platform"></a>
@@ -3353,6 +3354,25 @@ The routes below identify the screen if you need help finding it. Entries contai
 [Screenshot P117: Feature flags page showing its principal sections and a suitable sample record; highlight “New rule” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
 **Tips and common errors:** Blank tenant scope can affect every workspace. A rollout rule does not substitute for an account permission or subscription entitlement.
+
+<a id="page-platform-ai-providers"></a>
+
+### AI providers
+
+**Open:** `/platform/ai-providers` (menu **AI providers**). **Who can use it:** Platform-host users with tenant-management permission.
+
+**Purpose:** Choose which AI model the platform uses for analysis work, and check which AI provider keys the server has.
+
+**Prerequisites:** The provider keys stored in the server’s secret storage (AWS Secrets Manager in production) under the setting names shown on the page. Keys are never entered or shown on this page.
+
+**Step-by-step**
+
+1. Under **Analysis model**, choose **Automatic (OpenAI when it has a key)**, **OpenAI** or **Anthropic** and click **Save**. This model writes after-call analysis, drafts voice agents with AI and reviews them before publishing. **In use now** shows the model actually used; if the chosen provider has no key, the other one is used.
+2. Under **Provider keys**, check that each provider you rely on shows **Set**. A provider marked **(not used yet)** is kept for voice agents with separate speech-to-text and text-to-speech, which come in a later update.
+
+[Screenshot P117a: AI providers page with the analysis model saved and the provider key table; highlight “In use now”. Use approved sample data; obscure personal details, account secrets and private links.]
+
+**Tips and common errors:** Until a choice is saved here, the server configuration decides (the page says so). Live AI calls use OpenAI’s realtime model, chosen per agent in the [voice agent window](#dialog-ar-voice-agent-dialog-1), not this setting.
 
 <a id="page-platform-status"></a>
 
@@ -4326,7 +4346,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 | Agent type | **Single prompt** follows its instructions freely. **Conversation flow (stages)** also works through stages in order: each stage has a goal, and up to 4 conditions (“When the caller only wants a price list → Close the call”) that send the call to another stage; otherwise it moves to the next stage. Up to 12 stages. Both types talk speech to speech in real time; stages guide the AI rather than fix a script. For a keypad menu, use the WhatsApp IVR. |
 | Agent instructions | What the agent is for, what it may and may not say, and how it should speak. You may use variables such as `{{name}}`, `{{first_name}}`, `{{company}}`, `{{city}}` or `{{name\|there}}` (a value with a default). |
 | Opening greeting | The first sentence. It must say the caller is speaking to an AI assistant. Variables work here too. |
-| Voice / Preferred language | The speaking voice, and the language to speak (or **Follow caller**). Hindi–English mixing is followed when the caller uses it. |
+| Voice / Preferred language | The speaking voice — Marin and Cedar are recommended, eight more are offered — and the language to speak (or **Follow caller**). Hindi–English mixing is followed when the caller uses it. Click **Hear the greeting in this voice** for a short sample; a test call gives the exact sound. |
+| Model tier | **Platform default**, **Best quality** or **Lower cost**. Lower cost uses a cheaper realtime model per minute; test it before publishing, especially for Indian languages and prices. Which model each tier uses is set on the server. |
 | Maximum call length (seconds) | 30–600. The agent ends politely at the limit. |
 | Silence reminder / End after silence (seconds) | Optional. The agent checks whether the caller is still there after the reminder time (5–120 s) and ends the call after the end time (10–300 s, at least 5 s after the reminder). 0 switches either off. |
 | Actions during calls → Act as | The staff member every action runs as. Their permissions decide what succeeds, and bookings go into their calendar. **No one** keeps all actions off. |

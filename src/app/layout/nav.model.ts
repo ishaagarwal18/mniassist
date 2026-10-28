@@ -534,6 +534,13 @@ export const NAV: readonly NavGroup[] = [
         hostOnly: true,
       },
       {
+        label: 'AI providers',
+        icon: 'settings',
+        route: '/platform/ai-providers',
+        permission: 'AutoReach.Administration.ManageTenants',
+        hostOnly: true,
+      },
+      {
         label: 'Status page',
         icon: 'shield',
         route: '/platform/status',

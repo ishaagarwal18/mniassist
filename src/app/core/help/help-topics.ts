@@ -1115,6 +1115,22 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Export data when you need it elsewhere.',
     ],
   },
+  'platform/ai-providers': {
+    summary:
+      'Which AI model the platform uses for analysis, and which AI provider keys the server has. Keys live in secret storage and are never shown here.',
+    benefits: [
+      'Choose OpenAI or Anthropic for after-call analysis, AI drafting and agent review.',
+      'See at a glance which provider keys are set before relying on them.',
+    ],
+    steps: [
+      'Choose the analysis provider and click Save; In use now shows the model actually used.',
+      'Check that every provider you rely on shows Set; store a missing key under the setting name shown.',
+    ],
+    tips: [
+      'If the chosen provider has no key, the other one is used.',
+      'Live AI calls use the realtime model chosen per agent in its voice agent window.',
+    ],
+  },
   'platform/status': {
     summary:
       'What customers read at /status: open incidents, planned maintenance and the last 14 days. The database check is automatic; everything else is what you post here.',
