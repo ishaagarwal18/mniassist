@@ -14,6 +14,8 @@ export interface VoiceAgentDefinition {
   tools?: VoiceAgentTools;
   analysis?: VoiceAgentAnalysis;
   speech?: VoiceAgentSpeech;
+  /** Said when a phone call the agent placed reaches voicemail; blank lets the agent compose a short message. */
+  voicemailMessage?: string | null;
   /** 'prompt' (single prompt) or 'flow' (conversation flow). Both run speech to speech. */
   type?: VoiceAgentType;
   flow?: VoiceAgentFlow | null;
@@ -268,6 +270,7 @@ export class VoiceAgentService {
       tier,
       engine,
       speech,
+      voicemailMessage,
     } = model;
     return this.rest.request<VoiceAgentInput, VoiceAgentSettings>(
       {
@@ -290,6 +293,7 @@ export class VoiceAgentService {
           tier: tier ?? '',
           engine: engine ?? '',
           speech: cleanSpeech(speech),
+          voicemailMessage: voicemailMessage?.trim() || null,
         },
       },
       { apiName: 'AutoReach' },

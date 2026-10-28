@@ -122,6 +122,7 @@ export function readAgentFile(raw: string): VoiceAgentDefinition {
         description: text(f?.['description'], 300) || null,
       })),
     },
+    voicemailMessage: text(agent['voicemailMessage'], 500) || null,
     speech: cleanSpeech({
       patience: (VOICE_SPEECH_PATIENCE as readonly string[]).includes(speech['patience'] as string)
         ? (speech['patience'] as VoiceAgentSpeech['patience'])
@@ -331,6 +332,7 @@ export function compareRows(
       const s = cleanSpeech(a.speech);
       return `${s.patience}, ${s.interruptible ? 'interruptible' : 'not interruptible'}, ${s.speedPercent}%${s.noiseReduction ? ', ' + s.noiseReduction : ''}`;
     }),
+    row('Voicemail', (a) => a.voicemailMessage || '—'),
     row('Speech.vocabulary', (a) => cleanSpeech(a.speech).vocabulary.join(', ') || '—'),
     row(
       'Speech.pronunciations',

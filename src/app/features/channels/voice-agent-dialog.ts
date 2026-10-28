@@ -186,6 +186,18 @@ import { ArVoiceAgentFlowEditor } from './voice-agent-flow';
             [disabled]="saving()"
           ></textarea>
         </label>
+        <label class="ar-field"
+          ><span>{{ 'AutoReach::VoiceAgent.Voicemail' | abpLocalization }}</span>
+          <textarea
+            class="ar-field__input"
+            [(ngModel)]="model.voicemailMessage"
+            (ngModelChange)="saved.set(false)"
+            maxlength="500"
+            rows="2"
+            [disabled]="saving()"
+          ></textarea>
+        </label>
+        <p>{{ 'AutoReach::VoiceAgent.Voicemail.help' | abpLocalization }}</p>
         <div class="options">
           <label class="ar-field"
             ><span>{{ 'AutoReach::VoiceAgent.Engine' | abpLocalization }}</span>

@@ -673,6 +673,23 @@ describe('voice agent settings', () => {
     });
   });
 
+  it('saves the message the agent leaves on voicemail', async () => {
+    const fixture = await create();
+    const root: HTMLElement = fixture.nativeElement;
+    const field = [...root.querySelectorAll<HTMLLabelElement>('label.ar-field')]
+      .find((l) => l.textContent?.includes('VoiceAgent.Voicemail'))!
+      .querySelector('textarea') as HTMLTextAreaElement;
+    field.value = 'Hello, this is Meridian calling about your renewal.';
+    field.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    button(root, 'VoiceAgent.Save').click();
+    await fixture.whenStable();
+    expect(api.update.mock.calls.at(-1)![1].voicemailMessage).toBe(
+      'Hello, this is Meridian calling about your renewal.',
+    );
+  });
+
   it('says when a voice preview is unavailable', async () => {
     api.previewVoice.mockReturnValue(throwError(() => new Error('no key')));
     const fixture = await create();
