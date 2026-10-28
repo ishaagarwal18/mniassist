@@ -392,7 +392,7 @@ export class ArInbox {
     note: string;
     busy: boolean;
     /** whatsapp, or phone: the workspace's phone line (Exotel). */
-    line?: 'whatsapp' | 'phone';
+    line?: 'whatsapp' | 'phone' | 'sip';
   } | null>(null);
 
   protected async placeAiCall(): Promise<void> {
@@ -402,8 +402,13 @@ export class ArInbox {
     let note: string;
     try {
       const input = { purpose: current.purpose.trim() || null };
-      if (current.line === 'phone') {
-        await firstValueFrom(this.callsApi.startPhoneAi(current.conversationId, input));
+      if (current.line === 'phone' || current.line === 'sip') {
+        await firstValueFrom(
+          this.callsApi.startPhoneAi(current.conversationId, {
+            ...input,
+            line: current.line === 'sip' ? 'sip' : 'exotel',
+          }),
+        );
         note =
           'The AI agent is calling on the phone line. Its transcript appears on the call in the call log.';
       } else {

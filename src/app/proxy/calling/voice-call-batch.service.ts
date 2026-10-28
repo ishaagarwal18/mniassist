@@ -6,7 +6,7 @@ export interface SaveVoiceCallBatchInput {
   channelId: string;
   purpose?: string | null;
   /** whatsapp (needs each contact's call permission) or phone (the workspace's Exotel line). */
-  line?: 'whatsapp' | 'phone' | null;
+  line?: 'whatsapp' | 'phone' | 'sip' | null;
   startsAtUtc?: string | null;
   windowStartMinute: number;
   windowEndMinute: number;

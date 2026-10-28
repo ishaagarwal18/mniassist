@@ -854,7 +854,11 @@ export class ArAutomationBuilder {
         break;
       case AutomationNodeKind.AiCall:
         detail =
-          (this.cfg(s, 'line') === 'phone' ? 'Phone line · ' : '') +
+          (this.cfg(s, 'line') === 'phone'
+            ? 'Phone line · '
+            : this.cfg(s, 'line') === 'sip'
+              ? 'SIP trunk · '
+              : '') +
           (this.cfg(s, 'purpose').trim()
             ? `“${this.cfg(s, 'purpose').trim()}”`
             : `Waits up to ${this.num(s, 'waitHours') ?? 24} hours`);

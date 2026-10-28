@@ -325,7 +325,7 @@ export class WhatsAppCallService {
   /** The same agent calls the customer on the workspace's phone line (Exotel); the call shows in the call log. */
   startPhoneAi = (
     conversationId: string,
-    input: { purpose?: string | null },
+    input: { purpose?: string | null; line?: 'exotel' | 'sip' },
     config?: Partial<Rest.Config>,
   ) =>
     this.restService.request<any, { callId: string }>(

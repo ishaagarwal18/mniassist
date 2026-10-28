@@ -10,10 +10,16 @@ import {
 } from '@angular/core';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 import { grantedPolicy } from '../../core/auth/permission';
 import { VoiceService } from '../../core/services/voice.service';
 import { ChannelService } from '../../proxy/channels/channel.service';
+import {
+  SaveSipTrunkInput,
+  SipTrunkDto,
+  SipTrunkService,
+} from '../../proxy/voice/sip-trunk.service';
 import { VoiceChannelService, VoiceLineNumberDto } from '../../proxy/voice/voice-channel.service';
 import { ChannelState } from '../../proxy/channels/channel-state.enum';
 import {
@@ -76,7 +82,17 @@ const STATE_TONE: Record<ChannelState, ChipTone> = {
  */
 @Component({
   selector: 'ar-voice-ivr',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ArGrid, GridModule, RouterLink],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArSelect,
+    ArGrid,
+    GridModule,
+    RouterLink,
+    FormsModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './voice-ivr.html',
   styleUrl: './voice-ivr.scss',
@@ -111,6 +127,7 @@ export class ArVoiceIvr {
     inject(DestroyRef).onDestroy(() => this.credentialDraft.set(''));
     void this.loadAgentNumbers();
     void this.loadLineNumbers();
+    void this.loadTrunks();
   }
 
   protected editAccount(): void {
@@ -432,6 +449,108 @@ export class ArVoiceIvr {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  // ---- SIP trunks --------------------------------------------------------------------------------------------------
+
+  private readonly sipApi = inject(SipTrunkService);
+  protected readonly trunks = signal<SipTrunkDto[]>([]);
+  /** The trunk form: null when closed; id null for a new trunk. */
+  protected readonly trunkForm = signal<
+    (SaveSipTrunkInput & { id: string | null; addresses: string }) | null
+  >(null);
+  protected readonly trunkNote = signal('');
+
+  protected async loadTrunks(): Promise<void> {
+    try {
+      this.trunks.set(await firstValueFrom(this.sipApi.getList()));
+    } catch {
+      this.trunks.set([]);
+    }
+  }
+
+  protected newTrunk(): void {
+    this.trunkNote.set('');
+    this.trunkForm.set({
+      id: null,
+      name: '',
+      host: '',
+      port: 5060,
+      username: '',
+      password: '',
+      allowedAddresses: [],
+      addresses: '',
+      callerId: '',
+      agentChannelId: null,
+      enabled: true,
+    });
+  }
+
+  protected editTrunk(t: SipTrunkDto): void {
+    this.trunkNote.set('');
+    this.trunkForm.set({
+      id: t.id,
+      name: t.name,
+      host: t.host,
+      port: t.port,
+      username: t.username ?? '',
+      password: '',
+      allowedAddresses: t.allowedAddresses,
+      addresses: t.allowedAddresses.join(', '),
+      callerId: t.callerId ?? '',
+      agentChannelId: t.agentChannelId ?? null,
+      enabled: t.enabled,
+    });
+  }
+
+  protected async saveTrunk(): Promise<void> {
+    const form = this.trunkForm();
+    if (!form || this.busy()) return;
+    const input: SaveSipTrunkInput = {
+      name: form.name.trim(),
+      host: form.host.trim(),
+      port: Number(form.port) || 5060,
+      username: form.username?.trim() || null,
+      password: form.password || null,
+      allowedAddresses: form.addresses
+        .split(/[\s,]+/)
+        .map((a) => a.trim())
+        .filter((a) => a),
+      callerId: form.callerId?.trim() || null,
+      agentChannelId: form.agentChannelId || null,
+      enabled: form.enabled,
+    };
+    this.busy.set(true);
+    try {
+      await firstValueFrom(
+        form.id ? this.sipApi.update(form.id, input) : this.sipApi.create(input),
+      );
+      this.trunkForm.set(null);
+      await this.loadTrunks();
+    } catch (e: unknown) {
+      this.trunkNote.set(
+        (e as { error?: { error?: { message?: string } } })?.error?.error?.message ??
+          'The trunk could not be saved.',
+      );
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async removeTrunk(t: SipTrunkDto): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    try {
+      await firstValueFrom(this.sipApi.delete(t.id));
+      await this.loadTrunks();
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected agentName(id: string | null | undefined): string {
+    const n = this.agentNumbers().find((a) => a.id === id);
+    return n ? n.verifiedName || n.displayPhoneNumber || '' : '';
   }
 
   protected async loadAgentNumbers(): Promise<void> {

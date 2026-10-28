@@ -322,6 +322,106 @@
         </section>
       }
 
+      <section class="vi__panel" aria-labelledby="vi-sip">
+        <h2 class="vi__panel-title" id="vi-sip">SIP trunks</h2>
+        <p class="vi__hint">
+          Your own carrier or PBX, over standard SIP with G.711 audio, as a phone line for an AI
+          agent: it answers the calls the trunk sends and calls out over it. Point the trunk at the
+          call relay's SIP address (ask your MNI contact), and allow the addresses it sends from.
+        </p>
+        @if (trunks().length) {
+          <ul class="vi__urls">
+            @for (t of trunks(); track t.id) {
+              <li>
+                <span class="vi__url-label" translate="no">{{ t.name }}</span>
+                <code class="ar-mono" translate="no">{{ t.host }}:{{ t.port }}</code>
+                <span translate="no">{{ agentName(t.agentChannelId) }}</span>
+                @if (!t.enabled) {
+                  <span>Off</span>
+                }
+                <button ar-button variant="quiet" [disabled]="busy()" (click)="editTrunk(t)">
+                  Edit
+                </button>
+                <button ar-button variant="quiet" [disabled]="busy()" (click)="removeTrunk(t)">
+                  Remove
+                </button>
+              </li>
+            }
+          </ul>
+        }
+        @if (trunkForm(); as f) {
+          <div class="vi__trunk">
+            <label class="ar-field"
+              ><span>Name</span><input class="ar-field__input" maxlength="64" [(ngModel)]="f.name"
+            /></label>
+            <label class="ar-field"
+              ><span>SIP host</span
+              ><input
+                class="ar-field__input"
+                autocapitalize="none"
+                placeholder="sip.carrier.in"
+                [(ngModel)]="f.host"
+            /></label>
+            <label class="ar-field"
+              ><span>Port</span
+              ><input
+                class="ar-field__input"
+                type="number"
+                min="1"
+                max="65535"
+                [(ngModel)]="f.port"
+            /></label>
+            <label class="ar-field"
+              ><span>Username</span
+              ><input class="ar-field__input" autocapitalize="none" [(ngModel)]="f.username"
+            /></label>
+            <label class="ar-field"
+              ><span>Password</span
+              ><input
+                class="ar-field__input"
+                type="password"
+                autocomplete="new-password"
+                [placeholder]="f.id ? 'Leave blank to keep' : ''"
+                [(ngModel)]="f.password"
+            /></label>
+            <label class="ar-field"
+              ><span>Addresses it sends calls from</span
+              ><input
+                class="ar-field__input"
+                placeholder="203.0.113.10, 203.0.113.11"
+                [(ngModel)]="f.addresses"
+            /></label>
+            <label class="ar-field"
+              ><span>Caller ID for the agent's calls</span
+              ><input class="ar-field__input" inputmode="tel" [(ngModel)]="f.callerId"
+            /></label>
+            <label class="ar-field"
+              ><span>Agent</span>
+              <select class="ar-field__input" [(ngModel)]="f.agentChannelId">
+                <option [ngValue]="null">No agent</option>
+                @for (a of agentNumbers(); track a.id) {
+                  <option [ngValue]="a.id" translate="no">
+                    {{ a.verifiedName || a.displayPhoneNumber }}
+                  </option>
+                }
+              </select></label
+            >
+            <label class="vi__check"><input type="checkbox" [(ngModel)]="f.enabled" /> On</label>
+            <div class="vi__flow">
+              <button ar-button variant="primary" [disabled]="busy()" (click)="saveTrunk()">
+                Save
+              </button>
+              <button ar-button variant="quiet" (click)="trunkForm.set(null)">Cancel</button>
+            </div>
+          </div>
+        } @else {
+          <button ar-button variant="quiet" (click)="newTrunk()">Add a SIP trunk</button>
+        }
+        @if (trunkNote()) {
+          <p class="vi__hint" role="alert">{{ trunkNote() }}</p>
+        }
+      </section>
+
       <section class="vi__panel">
         <h2 class="vi__panel-title">In-browser phone</h2>
         <p class="vi__hint">

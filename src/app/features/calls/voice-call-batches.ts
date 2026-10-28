@@ -24,7 +24,7 @@ import { ArDialog } from '../../ui/dialog';
 interface BatchForm {
   name: string;
   channelId: string;
-  line: 'whatsapp' | 'phone';
+  line: 'whatsapp' | 'phone' | 'sip';
   purpose: string;
   startsAt: string;
   windowStart: string;
@@ -103,8 +103,8 @@ const toMinute = (clock: string) => {
                   : '' + batch.retryAfterMinutes
             }}
           </p>
-          @if (batch.line === 'phone') {
-            <p>{{ 'AutoReach::VoiceBatch.Line.phone' | abpLocalization }}</p>
+          @if (batch.line === 'phone' || batch.line === 'sip') {
+            <p>{{ 'AutoReach::VoiceBatch.Line.' + batch.line | abpLocalization }}</p>
           }
           @if (batch.purpose) {
             <p>{{ batch.purpose }}</p>
@@ -226,6 +226,9 @@ const toMinute = (clock: string) => {
             </option>
             <option value="phone">
               {{ 'AutoReach::VoiceBatch.Line.phone' | abpLocalization }}
+            </option>
+            <option value="sip">
+              {{ 'AutoReach::VoiceBatch.Line.sip' | abpLocalization }}
             </option>
           </select></label
         >
