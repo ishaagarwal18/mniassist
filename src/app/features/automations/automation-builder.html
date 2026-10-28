@@ -296,6 +296,17 @@
     }
     @case (NK.AiCall) {
       <label class="ar-field">
+        <span class="ar-field__label">Call on</span>
+        <select
+          class="ar-field__input"
+          [value]="cfg(step, 'line') || 'whatsapp'"
+          (change)="setCfg(step.localId, 'line', $any($event.target).value)"
+        >
+          <option value="whatsapp">WhatsApp (contacts who allowed calls)</option>
+          <option value="phone">Phone line (Exotel)</option>
+        </select>
+      </label>
+      <label class="ar-field">
         <span class="ar-field__label"
           >Reason for the call <span class="ar-field__opt">(optional)</span></span
         >

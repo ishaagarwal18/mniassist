@@ -75,6 +75,9 @@ import { ArDialog } from '../../ui/dialog';
             · {{ row.callStartedAtUtc | date: 'medium' }} ·
             {{ 'AutoReach::VoiceConversation.Open' | abpLocalization }}
           </button>
+          @if (row.phoneLine) {
+            <p>{{ 'AutoReach::VoiceConversation.PhoneLine' | abpLocalization }}</p>
+          }
           @if (row.transcriptIncomplete) {
             <p>{{ 'AutoReach::VoiceConversation.TranscriptIncomplete' | abpLocalization }}</p>
           }

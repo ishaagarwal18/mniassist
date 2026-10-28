@@ -853,9 +853,11 @@ export class ArAutomationBuilder {
         detail = "Doesn't run yet";
         break;
       case AutomationNodeKind.AiCall:
-        detail = this.cfg(s, 'purpose').trim()
-          ? `“${this.cfg(s, 'purpose').trim()}”`
-          : `Waits up to ${this.num(s, 'waitHours') ?? 24} hours`;
+        detail =
+          (this.cfg(s, 'line') === 'phone' ? 'Phone line · ' : '') +
+          (this.cfg(s, 'purpose').trim()
+            ? `“${this.cfg(s, 'purpose').trim()}”`
+            : `Waits up to ${this.num(s, 'waitHours') ?? 24} hours`);
         break;
     }
     return { title, detail: clip(detail), icon };
