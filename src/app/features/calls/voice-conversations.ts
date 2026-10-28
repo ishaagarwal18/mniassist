@@ -120,6 +120,11 @@ import { ArDialog } from '../../ui/dialog';
               {{ 'AutoReach::VoiceConversation.TranscriptIncomplete' | abpLocalization }}
             </p>
           }
+          @if (conversation.engineFailedOver) {
+            <p role="status">
+              {{ 'AutoReach::VoiceConversation.EngineFailedOver' | abpLocalization }}
+            </p>
+          }
           @if (conversation.truncated) {
             <p role="status">{{ 'AutoReach::VoiceConversation.Truncated' | abpLocalization }}</p>
           }

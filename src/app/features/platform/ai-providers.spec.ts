@@ -25,6 +25,8 @@ const fromConfig: AiProviderSettings = {
       inUse: false,
     },
   ],
+  voiceEngineFallback: true,
+  voiceEngines: ['realtime'],
 };
 
 describe('AI providers', () => {
@@ -79,8 +81,24 @@ describe('AI providers', () => {
     [...root.querySelectorAll('button')].find((b) => b.textContent?.includes('Save'))!.click();
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(api.update).toHaveBeenCalledWith('anthropic');
+    expect(api.update).toHaveBeenCalledWith('anthropic', true);
     expect(root.textContent).toContain('In use now: claude');
     expect(root.textContent).toContain('Saved.');
+  });
+
+  it('turns engine fallback off, and says when the relay has no second engine', async () => {
+    const { fixture, root } = await create();
+    expect(root.textContent).toContain('no engine to switch to');
+    const box = root.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(box.checked).toBe(true);
+    box.click();
+    fixture.detectChanges();
+    const saves = [...root.querySelectorAll('button')].filter((b) =>
+      b.textContent?.includes('Save'),
+    );
+    expect(saves[1].disabled).toBe(false);
+    saves[1].click();
+    await fixture.whenStable();
+    expect(api.update).toHaveBeenCalledWith('openai', false);
   });
 });

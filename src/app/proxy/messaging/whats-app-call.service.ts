@@ -179,6 +179,10 @@ export interface VoiceConversationSnapshotDto {
   expiresAtUtc?: string | null;
   ended: boolean;
   transcriptIncomplete: boolean;
+  /** The speech engine that answered ('realtime' or 'pipeline'), when known. */
+  engine?: string | null;
+  /** The agent's own engine failed and the fallback engine carried on the call. */
+  engineFailedOver?: boolean;
   transcriptEnabled: boolean;
   truncated: boolean;
   inputTokens: number;

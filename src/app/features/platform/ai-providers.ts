@@ -25,6 +25,10 @@ export interface AiProviderSettings {
   analysisSource: 'setting' | 'config' | 'default';
   effectiveModel?: string | null;
   providers: AiProviderStatus[];
+  /** A voice agent whose speech engine can't start, or fails during a call, switches to the other engine. */
+  voiceEngineFallback: boolean;
+  /** The engines the call relay can run now ('realtime', 'pipeline'). */
+  voiceEngines: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -36,9 +40,13 @@ export class AiProviderSettingsService {
       { apiName: 'AutoReach' },
     );
   }
-  update(analysisProvider: string) {
+  update(analysisProvider: string, voiceEngineFallback: boolean) {
     return this.rest.request<unknown, AiProviderSettings>(
-      { method: 'PUT', url: '/api/auto-reach/ai-provider-settings', body: { analysisProvider } },
+      {
+        method: 'PUT',
+        url: '/api/auto-reach/ai-provider-settings',
+        body: { analysisProvider, voiceEngineFallback },
+      },
       { apiName: 'AutoReach' },
     );
   }
@@ -109,6 +117,46 @@ export class AiProviderSettingsService {
           }
         </section>
 
+        <section class="card" aria-labelledby="ai-fallback">
+          <h2 id="ai-fallback">Voice engine fallback</h2>
+          <p>
+            Each voice agent speaks with one engine: speech to speech (OpenAI realtime) or the
+            speech pipeline (Deepgram and ElevenLabs). With fallback on, an agent whose engine can't
+            start uses the other one instead of sending the call to people, and an engine that fails
+            during a call hands the conversation over to the other once. The caller hears a short
+            apology.
+          </p>
+          <div class="row">
+            <label class="check"
+              ><input
+                type="checkbox"
+                [ngModel]="fallback()"
+                (ngModelChange)="fallback.set($event)"
+                [disabled]="busy()"
+              />
+              Switch to the other engine when an agent's engine fails</label
+            >
+            <button
+              ar-button
+              type="button"
+              [disabled]="busy() || fallback() === s.voiceEngineFallback"
+              (click)="save()"
+            >
+              {{ busy() ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+          <p role="status">
+            @if (s.voiceEngines.length === 0) {
+              The call relay runs no voice engine now, so there is no engine to switch to.
+            } @else if (s.voiceEngines.length < 2) {
+              The call relay can run only speech to speech now, so there is no engine to switch to
+              until it has the speech pipeline's keys.
+            } @else {
+              The call relay can run both engines.
+            }
+          </p>
+        </section>
+
         <section class="card" aria-labelledby="ai-keys">
           <h2 id="ai-keys">Provider keys</h2>
           <p>
@@ -174,6 +222,12 @@ export class AiProviderSettingsService {
       gap: 8px;
       align-items: flex-end;
     }
+    .check {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
     .row .ar-field {
       flex: 0 1 320px;
       min-width: 0;
@@ -205,6 +259,7 @@ export class ArAiProviders implements OnInit {
   private readonly api = inject(AiProviderSettingsService);
   protected readonly settings = signal<AiProviderSettings | null>(null);
   protected readonly choice = signal<string>('auto');
+  protected readonly fallback = signal(true);
   protected readonly busy = signal(false);
   protected readonly saved = signal(false);
   protected readonly error = signal('');
@@ -228,6 +283,7 @@ export class ArAiProviders implements OnInit {
   private show(settings: AiProviderSettings): void {
     this.settings.set(settings);
     this.choice.set(settings.analysisProvider);
+    this.fallback.set(settings.voiceEngineFallback);
   }
 
   protected async save(): Promise<void> {
@@ -236,7 +292,7 @@ export class ArAiProviders implements OnInit {
     this.saved.set(false);
     this.error.set('');
     try {
-      this.show(await firstValueFrom(this.api.update(this.choice())));
+      this.show(await firstValueFrom(this.api.update(this.choice(), this.fallback())));
       this.saved.set(true);
     } catch {
       this.error.set('The choice could not be saved.');
