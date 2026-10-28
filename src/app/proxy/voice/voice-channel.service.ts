@@ -169,6 +169,40 @@ export class VoiceChannelService {
       { apiName: this.apiName, ...config },
     );
 
+  getNumbers = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, VoiceLineNumberDto[]>(
+      { method: 'GET', url: '/api/auto-reach/voice-channel/numbers' },
+      { apiName: this.apiName, ...config },
+    );
+
+  addNumber = (input: { number: string; name?: string | null }, config?: Partial<Rest.Config>) =>
+    this.restService.request<unknown, VoiceLineNumberDto>(
+      { method: 'POST', url: '/api/auto-reach/voice-channel/number', body: input },
+      { apiName: this.apiName, ...config },
+    );
+
+  updateNumber = (
+    id: string,
+    input: { name?: string | null; agentChannelId?: string | null },
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<unknown, VoiceLineNumberDto>(
+      { method: 'PUT', url: `/api/auto-reach/voice-channel/${id}/number`, body: input },
+      { apiName: this.apiName, ...config },
+    );
+
+  deleteNumber = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, void>(
+      { method: 'DELETE', url: `/api/auto-reach/voice-channel/${id}/number` },
+      { apiName: this.apiName, ...config },
+    );
+
+  syncNumbers = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, VoiceLineNumberSyncDto>(
+      { method: 'POST', url: '/api/auto-reach/voice-channel/sync-numbers' },
+      { apiName: this.apiName, ...config },
+    );
+
   getIvrIssues = (config?: Partial<Rest.Config>) =>
     this.restService.request<any, IvrIssueDto[]>(
       {
@@ -187,4 +221,20 @@ export class VoiceChannelService {
       },
       { apiName: this.apiName, ...config },
     );
+}
+
+/** One of the line's other numbers (beside its main one). */
+export interface VoiceLineNumberDto {
+  id: string;
+  number: string;
+  name?: string | null;
+  /** The WhatsApp number whose agent answers incoming calls on it and calls out from it. */
+  agentChannelId?: string | null;
+  fromExotel: boolean;
+}
+
+export interface VoiceLineNumberSyncDto {
+  added: number;
+  notInExotel: string[];
+  numbers: VoiceLineNumberDto[];
 }

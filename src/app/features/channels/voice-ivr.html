@@ -250,7 +250,7 @@
             }
           </p>
           <label class="ar-field"
-            ><span>Agent for incoming calls</span>
+            ><span>Agent for incoming calls on the main number</span>
             <select
               class="ar-field__input"
               [disabled]="busy()"
@@ -265,6 +265,55 @@
               }
             </select></label
           >
+          <h3 class="vi__panel-title">More numbers</h3>
+          <p class="vi__hint">
+            Other ExoPhones on this Exotel account. Calls to them reach the same menu and AI call
+            flow; a number's agent answers its incoming calls, and that agent's phone calls show it.
+          </p>
+          @if (lineNumbers().length) {
+            <ul class="vi__urls">
+              @for (n of lineNumbers(); track n.id) {
+                <li>
+                  <span class="vi__url-label" translate="no">{{ n.name || n.number }}</span>
+                  <code class="ar-mono" translate="no">{{ n.number }}</code>
+                  <select
+                    class="ar-field__input"
+                    aria-label="Agent for this number"
+                    [disabled]="busy()"
+                    [value]="n.agentChannelId ?? ''"
+                    (change)="setNumberAgent(n, $any($event.target).value)"
+                  >
+                    <option value="">No agent</option>
+                    @for (a of agentNumbers(); track a.id) {
+                      <option [value]="a.id" translate="no">
+                        {{ a.verifiedName || a.displayPhoneNumber }}
+                      </option>
+                    }
+                  </select>
+                  <button ar-button variant="quiet" [disabled]="busy()" (click)="removeNumber(n)">
+                    Remove
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+          <div class="vi__flow">
+            <input
+              class="ar-field__input"
+              aria-label="Another number"
+              placeholder="08069990001"
+              inputmode="tel"
+              [value]="numberDraft()"
+              (input)="numberDraft.set($any($event.target).value)"
+            />
+            <button ar-button variant="quiet" [disabled]="busy()" (click)="addNumber()">Add</button>
+            <button ar-button variant="quiet" [disabled]="busy()" (click)="syncNumbers()">
+              Get numbers from Exotel
+            </button>
+          </div>
+          @if (numberNote()) {
+            <p class="vi__hint" role="status" translate="no">{{ numberNote() }}</p>
+          }
           <p class="vi__hint">
             The chosen WhatsApp number's agent answers calls that come in through the AI call flow.
             To have it answer your number's incoming calls, point the number's incoming calls at the

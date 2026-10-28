@@ -14,6 +14,7 @@ import { RouterLink } from '@angular/router';
 import { grantedPolicy } from '../../core/auth/permission';
 import { VoiceService } from '../../core/services/voice.service';
 import { ChannelService } from '../../proxy/channels/channel.service';
+import { VoiceChannelService, VoiceLineNumberDto } from '../../proxy/voice/voice-channel.service';
 import { ChannelState } from '../../proxy/channels/channel-state.enum';
 import {
   IvrBranchAction,
@@ -109,6 +110,7 @@ export class ArVoiceIvr {
   constructor() {
     inject(DestroyRef).onDestroy(() => this.credentialDraft.set(''));
     void this.loadAgentNumbers();
+    void this.loadLineNumbers();
   }
 
   protected editAccount(): void {
@@ -363,6 +365,74 @@ export class ArVoiceIvr {
   }
 
   // ---- Connect to Exotel ----------------------------------------------------
+
+  private readonly voiceApi = inject(VoiceChannelService);
+  /** The line's other numbers, each with the agent that answers and calls from it. */
+  protected readonly lineNumbers = signal<VoiceLineNumberDto[]>([]);
+  protected readonly numberDraft = signal('');
+  protected readonly numberNote = signal('');
+
+  protected async loadLineNumbers(): Promise<void> {
+    try {
+      this.lineNumbers.set(await firstValueFrom(this.voiceApi.getNumbers()));
+    } catch {
+      this.lineNumbers.set([]);
+    }
+  }
+
+  protected async syncNumbers(): Promise<void> {
+    await this.numberAction(async () => {
+      const sync = await firstValueFrom(this.voiceApi.syncNumbers());
+      this.lineNumbers.set(sync.numbers);
+      this.numberNote.set(
+        sync.notInExotel.length
+          ? `Added ${sync.added}. Exotel no longer lists: ${sync.notInExotel.join(', ')}.`
+          : `Added ${sync.added}.`,
+      );
+    });
+  }
+
+  protected async addNumber(): Promise<void> {
+    const number = this.numberDraft().trim();
+    if (!number) return;
+    await this.numberAction(async () => {
+      await firstValueFrom(this.voiceApi.addNumber({ number }));
+      this.numberDraft.set('');
+      await this.loadLineNumbers();
+    });
+  }
+
+  protected async setNumberAgent(n: VoiceLineNumberDto, agentChannelId: string): Promise<void> {
+    await this.numberAction(async () => {
+      await firstValueFrom(
+        this.voiceApi.updateNumber(n.id, { name: n.name, agentChannelId: agentChannelId || null }),
+      );
+      await this.loadLineNumbers();
+    });
+  }
+
+  protected async removeNumber(n: VoiceLineNumberDto): Promise<void> {
+    await this.numberAction(async () => {
+      await firstValueFrom(this.voiceApi.deleteNumber(n.id));
+      await this.loadLineNumbers();
+    });
+  }
+
+  private async numberAction(work: () => Promise<void>): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    this.numberNote.set('');
+    try {
+      await work();
+    } catch (e: unknown) {
+      this.numberNote.set(
+        (e as { error?: { error?: { message?: string } } })?.error?.error?.message ??
+          'The number could not be saved.',
+      );
+    } finally {
+      this.busy.set(false);
+    }
+  }
 
   protected async loadAgentNumbers(): Promise<void> {
     try {

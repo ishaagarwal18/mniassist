@@ -1949,6 +1949,8 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Incoming calls answered by the AI:** under **Agent for incoming calls**, choose the WhatsApp number whose agent should answer (its own agent, or the shared agent it is assigned to), then in Exotel point your number's incoming calls at the AI call flow instead of the menu flow. A new caller becomes a contact; the call, its transcript, actions, analysis and automations work as for the agent's outbound phone calls, without listening for voicemail. Choose **Nobody** to stop the AI answering.
 
+**More numbers:** if your Exotel account rents more than one ExoPhone, click **Get numbers from Exotel** (or type one and click **Add**) under **More numbers**. Calls to every number reach the same menu and AI call flow. For each number choose its agent: that WhatsApp number's agent answers incoming calls on it, and its AI phone calls show that number as the caller ID (otherwise the main number is used). **Remove** takes a number off this list; it doesn't release it at Exotel. A sync never adds a number another workspace already has, and lists the numbers here that Exotel no longer shows.
+
 <a id="page-calls-ai-agents"></a>
 
 ### AI voice agents
