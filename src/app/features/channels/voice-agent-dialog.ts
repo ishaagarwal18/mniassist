@@ -29,6 +29,10 @@ import {
   VoiceAgentType,
   VOICE_AGENT_TIERS,
   VOICE_AGENT_ENGINES,
+  VOICE_SPEECH_NOISE,
+  VOICE_SPEECH_PATIENCE,
+  VoiceAgentSpeech,
+  defaultVoiceAgentSpeech,
   VOICE_AGENT_VOICES,
   VoiceAgentAnalysis,
   VoiceAnalysisField,
@@ -513,6 +517,120 @@ import { ArVoiceAgentFlowEditor } from './voice-agent-flow';
             </div>
             <p>{{ 'AutoReach::VoiceAgent.Tools.transferHelp' | abpLocalization }}</p>
           }
+        </fieldset>
+        <fieldset class="tools speech">
+          <legend>{{ 'AutoReach::VoiceAgent.Speech' | abpLocalization }}</legend>
+          <div class="options">
+            <label class="ar-field"
+              ><span>{{ 'AutoReach::VoiceAgent.Speech.patience' | abpLocalization }}</span>
+              <select
+                class="ar-field__input"
+                [(ngModel)]="speech.patience"
+                (ngModelChange)="saved.set(false)"
+                [disabled]="saving()"
+              >
+                @for (option of patience; track option) {
+                  <option [value]="option">
+                    {{ 'AutoReach::VoiceAgent.Speech.patience.' + option | abpLocalization }}
+                  </option>
+                }
+              </select></label
+            >
+            <label class="ar-field"
+              ><span>{{ 'AutoReach::VoiceAgent.Speech.speed' | abpLocalization }}</span>
+              <input
+                class="ar-field__input"
+                type="number"
+                min="80"
+                max="120"
+                step="5"
+                [(ngModel)]="speech.speedPercent"
+                (ngModelChange)="saved.set(false)"
+                [disabled]="saving()"
+            /></label>
+            @if (model.engine !== 'pipeline') {
+              <label class="ar-field"
+                ><span>{{ 'AutoReach::VoiceAgent.Speech.noise' | abpLocalization }}</span>
+                <select
+                  class="ar-field__input"
+                  [(ngModel)]="speech.noiseReduction"
+                  (ngModelChange)="saved.set(false)"
+                  [disabled]="saving()"
+                >
+                  @for (option of noise; track option) {
+                    <option [value]="option">
+                      {{
+                        'AutoReach::VoiceAgent.Speech.noise.' + (option || 'off') | abpLocalization
+                      }}
+                    </option>
+                  }
+                </select></label
+              >
+            }
+          </div>
+          <label class="check"
+            ><input
+              type="checkbox"
+              [(ngModel)]="speech.interruptible"
+              (ngModelChange)="saved.set(false)"
+              [disabled]="saving()"
+            />
+            {{ 'AutoReach::VoiceAgent.Speech.interruptible' | abpLocalization }}</label
+          >
+          <label class="ar-field"
+            ><span>{{ 'AutoReach::VoiceAgent.Speech.vocabulary' | abpLocalization }}</span>
+            <textarea
+              class="ar-field__input"
+              rows="3"
+              [ngModel]="vocabularyText()"
+              (ngModelChange)="setVocabulary($event)"
+              [disabled]="saving()"
+            ></textarea>
+          </label>
+          <p>{{ 'AutoReach::VoiceAgent.Speech.vocabularyHelp' | abpLocalization }}</p>
+          @for (row of speech.pronunciations; track $index) {
+            <div class="options field-row">
+              <label class="ar-field"
+                ><span>{{ 'AutoReach::VoiceAgent.Speech.word' | abpLocalization }}</span>
+                <input
+                  class="ar-field__input"
+                  maxlength="50"
+                  [(ngModel)]="row.word"
+                  (ngModelChange)="saved.set(false)"
+                  [disabled]="saving()"
+              /></label>
+              <label class="ar-field"
+                ><span>{{ 'AutoReach::VoiceAgent.Speech.say' | abpLocalization }}</span>
+                <input
+                  class="ar-field__input"
+                  maxlength="100"
+                  [(ngModel)]="row.say"
+                  (ngModelChange)="saved.set(false)"
+                  [disabled]="saving()"
+              /></label>
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                [disabled]="saving()"
+                (click)="removePronunciation($index)"
+              >
+                {{ 'AutoReach::VoiceAgent.Analysis.remove' | abpLocalization }}
+              </button>
+            </div>
+          }
+          @if (speech.pronunciations.length < 30) {
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="saving()"
+              (click)="addPronunciation()"
+            >
+              {{ 'AutoReach::VoiceAgent.Speech.addPronunciation' | abpLocalization }}
+            </button>
+          }
+          <p>{{ 'AutoReach::VoiceAgent.Speech.help' | abpLocalization }}</p>
         </fieldset>
         <fieldset class="tools">
           <legend>{{ 'AutoReach::VoiceAgent.Analysis' | abpLocalization }}</legend>
@@ -1137,6 +1255,34 @@ export class ArVoiceAgentDialog implements OnInit {
     'number',
     'date',
   ];
+
+  protected readonly patience = VOICE_SPEECH_PATIENCE;
+  protected readonly noise = VOICE_SPEECH_NOISE;
+
+  protected get speech(): VoiceAgentSpeech {
+    const model = this.settings()!;
+    return (model.speech ??= defaultVoiceAgentSpeech());
+  }
+
+  /** One term per line. Blank lines stay while typing and are dropped when saved. */
+  protected vocabularyText(): string {
+    return this.speech.vocabulary.join('\n');
+  }
+
+  protected setVocabulary(text: string): void {
+    this.speech.vocabulary = text.split(/\r?\n/);
+    this.saved.set(false);
+  }
+
+  protected addPronunciation(): void {
+    this.speech.pronunciations = [...this.speech.pronunciations, { word: '', say: '' }];
+    this.saved.set(false);
+  }
+
+  protected removePronunciation(index: number): void {
+    this.speech.pronunciations = this.speech.pronunciations.filter((_, i) => i !== index);
+    this.saved.set(false);
+  }
 
   protected get analysis(): VoiceAgentAnalysis {
     const model = this.settings()!;

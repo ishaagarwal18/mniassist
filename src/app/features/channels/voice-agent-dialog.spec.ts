@@ -634,6 +634,45 @@ describe('voice agent settings', () => {
     expect(api.update.mock.calls.at(-1)![1].engine).toBe('pipeline');
   });
 
+  it('saves speech tuning: patience, interruptions, words to recognise and pronunciations', async () => {
+    const fixture = await create();
+    const root: HTMLElement = fixture.nativeElement;
+    const patience = root.querySelector('option[value="patient"]')!
+      .parentElement as HTMLSelectElement;
+    patience.value = 'patient';
+    patience.dispatchEvent(new Event('change'));
+    const interruptible = [...root.querySelectorAll<HTMLLabelElement>('label.check')]
+      .find((l) => l.textContent?.includes('VoiceAgent.Speech.interruptible'))!
+      .querySelector('input') as HTMLInputElement;
+    expect(interruptible.checked).toBe(true);
+    interruptible.click();
+    const vocabulary = [...root.querySelectorAll<HTMLLabelElement>('label.ar-field')]
+      .find((l) => l.textContent?.includes('VoiceAgent.Speech.vocabulary'))!
+      .querySelector('textarea') as HTMLTextAreaElement;
+    vocabulary.value = 'Kirloskar\nSKU-42';
+    vocabulary.dispatchEvent(new Event('input'));
+    button(root, 'VoiceAgent.Speech.addPronunciation').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const [word, say] = [...root.querySelectorAll<HTMLInputElement>('.speech .field-row input')];
+    word.value = 'Sikarwar';
+    word.dispatchEvent(new Event('input'));
+    say.value = 'Sik-ar-vaar';
+    say.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    button(root, 'VoiceAgent.Save').click();
+    await fixture.whenStable();
+    const saved = api.update.mock.calls.at(-1)![1];
+    expect(saved.speech).toMatchObject({
+      patience: 'patient',
+      interruptible: false,
+      vocabulary: ['Kirloskar', 'SKU-42'],
+      pronunciations: [{ word: 'Sikarwar', say: 'Sik-ar-vaar' }],
+    });
+  });
+
   it('says when a voice preview is unavailable', async () => {
     api.previewVoice.mockReturnValue(throwError(() => new Error('no key')));
     const fixture = await create();

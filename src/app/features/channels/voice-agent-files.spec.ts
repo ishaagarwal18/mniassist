@@ -9,7 +9,7 @@ import {
   readAgentFile,
   stageKey,
 } from './voice-agent-files';
-import { VoiceAgentDefinition } from './voice-agent.service';
+import { VoiceAgentDefinition, cleanSpeech } from './voice-agent.service';
 
 const agent = (): VoiceAgentDefinition => ({
   ...emptyDefinition(),
@@ -43,6 +43,45 @@ describe('voice agent files', () => {
     expect(read.tools?.actingUserId).toBeNull();
     expect(read.flow?.stages.map((s) => s.key)).toEqual(['ask', 'close']);
     expect(agentFileName(read)).toBe('pump-sales.voice-agent.json');
+  });
+
+  it('carries speech tuning through a file, cleaned, and falls back to defaults for bad values', () => {
+    const tuned: VoiceAgentDefinition = {
+      ...agent(),
+      speech: {
+        patience: 'patient',
+        interruptible: false,
+        speedPercent: 110,
+        noiseReduction: 'far_field',
+        vocabulary: [' Kirloskar ', '', 'SKU-42'],
+        pronunciations: [
+          { word: 'Sikarwar', say: 'Sik-ar-vaar' },
+          { word: ' ', say: '' },
+        ],
+      },
+    };
+    const read = readAgentFile(agentFileText(tuned));
+    expect(read.speech).toEqual({
+      patience: 'patient',
+      interruptible: false,
+      speedPercent: 110,
+      noiseReduction: 'far_field',
+      vocabulary: ['Kirloskar', 'SKU-42'],
+      pronunciations: [{ word: 'Sikarwar', say: 'Sik-ar-vaar' }],
+    });
+    const odd = readAgentFile(
+      JSON.stringify({
+        format: 'mni-voice-agent',
+        version: 1,
+        agent: {
+          name: 'x',
+          instructions: 'y',
+          greeting: 'z',
+          speech: { patience: 'slow', speedPercent: 300, noiseReduction: 'studio' },
+        },
+      }),
+    );
+    expect(odd.speech).toEqual(cleanSpeech(undefined));
   });
 
   it('refuses files that are not agents', () => {

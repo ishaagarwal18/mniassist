@@ -13,6 +13,7 @@ export interface VoiceAgentDefinition {
   endSilenceSeconds?: number;
   tools?: VoiceAgentTools;
   analysis?: VoiceAgentAnalysis;
+  speech?: VoiceAgentSpeech;
   /** 'prompt' (single prompt) or 'flow' (conversation flow). Both run speech to speech. */
   type?: VoiceAgentType;
   flow?: VoiceAgentFlow | null;
@@ -102,6 +103,49 @@ export interface VoiceAgentAnalysis {
   sentiment: boolean;
   goal?: string | null;
   fields: VoiceAnalysisField[];
+}
+
+/** How the agent listens and speaks. Noise reduction applies to speech to speech only. */
+export interface VoiceAgentSpeech {
+  /** How long a pause ends the caller's turn. */
+  patience: 'quick' | 'normal' | 'patient';
+  /** The caller can talk over the agent, which stops and listens. */
+  interruptible: boolean;
+  /** Speaking speed, 80 to 120. */
+  speedPercent: number;
+  noiseReduction: '' | 'near_field' | 'far_field';
+  /** Names and terms callers say, one per entry, so they are recognised. */
+  vocabulary: string[];
+  pronunciations: VoicePronunciation[];
+}
+
+export interface VoicePronunciation {
+  word: string;
+  say: string;
+}
+
+export const VOICE_SPEECH_PATIENCE = ['quick', 'normal', 'patient'] as const;
+export const VOICE_SPEECH_NOISE = ['', 'near_field', 'far_field'] as const;
+
+export const defaultVoiceAgentSpeech = (): VoiceAgentSpeech => ({
+  patience: 'normal',
+  interruptible: true,
+  speedPercent: 100,
+  noiseReduction: '',
+  vocabulary: [],
+  pronunciations: [],
+});
+
+/** What is saved: trimmed text, blank lines and empty rows dropped. */
+export function cleanSpeech(speech: VoiceAgentSpeech | undefined): VoiceAgentSpeech {
+  const s = { ...defaultVoiceAgentSpeech(), ...speech };
+  return {
+    ...s,
+    vocabulary: s.vocabulary.map((t) => t.trim()).filter((t) => t),
+    pronunciations: s.pronunciations
+      .map((p) => ({ word: p.word.trim(), say: p.say.trim() }))
+      .filter((p) => p.word || p.say),
+  };
 }
 
 export const noVoiceAgentAnalysis = (): VoiceAgentAnalysis => ({
@@ -223,6 +267,7 @@ export class VoiceAgentService {
       flow,
       tier,
       engine,
+      speech,
     } = model;
     return this.rest.request<VoiceAgentInput, VoiceAgentSettings>(
       {
@@ -244,6 +289,7 @@ export class VoiceAgentService {
           flow: type === 'flow' ? flow : null,
           tier: tier ?? '',
           engine: engine ?? '',
+          speech: cleanSpeech(speech),
         },
       },
       { apiName: 'AutoReach' },

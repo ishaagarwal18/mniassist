@@ -5,6 +5,11 @@ import {
   VoiceAnalysisField,
   VOICE_AGENT_TIERS,
   VOICE_AGENT_ENGINES,
+  VOICE_SPEECH_NOISE,
+  VOICE_SPEECH_PATIENCE,
+  VoiceAgentSpeech,
+  cleanSpeech,
+  defaultVoiceAgentSpeech,
   VOICE_AGENT_VOICES,
   noVoiceAgentAnalysis,
   noVoiceAgentTools,
@@ -28,6 +33,7 @@ export function portableAgent(agent: VoiceAgentDefinition): VoiceAgentDefinition
     transferTeamIds: [],
   };
   copy.analysis = { ...noVoiceAgentAnalysis(), ...copy.analysis };
+  copy.speech = cleanSpeech(copy.speech);
   copy.type = copy.type === 'flow' ? 'flow' : 'prompt';
   if (copy.type !== 'flow') copy.flow = null;
   delete (copy as Partial<{ concurrencyStamp: string }>).concurrencyStamp;
@@ -78,6 +84,8 @@ export function readAgentFile(raw: string): VoiceAgentDefinition {
   const analysis = (agent['analysis'] ?? {}) as Record<string, unknown>;
   const fields = Array.isArray(analysis['fields']) ? analysis['fields'] : [];
   const flow = agent['flow'] as { stages?: unknown } | null | undefined;
+  const speech = (agent['speech'] ?? {}) as Record<string, unknown>;
+  const speed = speech['speedPercent'];
   const definition: VoiceAgentDefinition = {
     name: text(agent['name'], 100),
     instructions: text(agent['instructions'], 12000),
@@ -114,6 +122,30 @@ export function readAgentFile(raw: string): VoiceAgentDefinition {
         description: text(f?.['description'], 300) || null,
       })),
     },
+    speech: cleanSpeech({
+      patience: (VOICE_SPEECH_PATIENCE as readonly string[]).includes(speech['patience'] as string)
+        ? (speech['patience'] as VoiceAgentSpeech['patience'])
+        : 'normal',
+      interruptible: speech['interruptible'] !== false,
+      speedPercent:
+        Number.isInteger(speed) && (speed as number) >= 80 && (speed as number) <= 120
+          ? (speed as number)
+          : 100,
+      noiseReduction: (VOICE_SPEECH_NOISE as readonly string[]).includes(
+        speech['noiseReduction'] as string,
+      )
+        ? (speech['noiseReduction'] as VoiceAgentSpeech['noiseReduction'])
+        : '',
+      vocabulary: (Array.isArray(speech['vocabulary']) ? speech['vocabulary'] : [])
+        .slice(0, 50)
+        .map((t: unknown) => text(t, 50)),
+      pronunciations: (Array.isArray(speech['pronunciations']) ? speech['pronunciations'] : [])
+        .slice(0, 30)
+        .map((p: Record<string, unknown>) => ({
+          word: text(p?.['word'], 50),
+          say: text(p?.['say'], 100),
+        })),
+    }),
     type: agent['type'] === 'flow' ? 'flow' : 'prompt',
     flow: agent['type'] === 'flow' ? readFlow(flow?.stages) : null,
   };
@@ -161,6 +193,7 @@ export function emptyDefinition(): VoiceAgentDefinition {
     endSilenceSeconds: 0,
     tools: noVoiceAgentTools(),
     analysis: noVoiceAgentAnalysis(),
+    speech: defaultVoiceAgentSpeech(),
     type: 'prompt',
     flow: null,
   };
@@ -294,6 +327,18 @@ export function compareRows(
       (a) => `${a.silenceReminderSeconds ?? 0}s / ${a.endSilenceSeconds ?? 0}s`,
     ),
     row('Tools', actions),
+    row('Speech', (a) => {
+      const s = cleanSpeech(a.speech);
+      return `${s.patience}, ${s.interruptible ? 'interruptible' : 'not interruptible'}, ${s.speedPercent}%${s.noiseReduction ? ', ' + s.noiseReduction : ''}`;
+    }),
+    row('Speech.vocabulary', (a) => cleanSpeech(a.speech).vocabulary.join(', ') || '—'),
+    row(
+      'Speech.pronunciations',
+      (a) =>
+        cleanSpeech(a.speech)
+          .pronunciations.map((p) => `${p.word} → ${p.say}`)
+          .join(', ') || '—',
+    ),
     row('Analysis.goal', (a) => a.analysis?.goal || '—'),
     row('Analysis.fields', fields),
     row('Flow', stages),
