@@ -187,6 +187,7 @@ export interface VoiceConversationSnapshotDto {
   engineFailedOver?: boolean;
   /** How quickly the agent answered, in milliseconds; null when not measured. */
   latency?: VoiceLatencyDto | null;
+  cost?: VoiceCallCostDto | null;
   transcriptEnabled: boolean;
   truncated: boolean;
   inputTokens: number;
@@ -686,6 +687,14 @@ export class WhatsAppCallService {
 }
 
 /** A call's reply times: each from the end of the caller's turn to the agent's first audio, and the greeting's start. */
+/** A call's estimated cost in paise. */
+export interface VoiceCallCostDto {
+  modelPaise: number;
+  speechPaise: number;
+  linePaise: number;
+  totalPaise: number;
+}
+
 export interface VoiceLatencyDto {
   replies: number;
   medianMs: number;

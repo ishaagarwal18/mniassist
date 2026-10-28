@@ -29,7 +29,63 @@ export interface AiProviderSettings {
   voiceEngineFallback: boolean;
   /** The engines the call relay can run now ('realtime', 'pipeline'). */
   voiceEngines: string[];
+  /** What AI calls cost the platform, for each call's estimated cost. */
+  voiceCostRates: VoiceCostRates;
 }
+
+/** AI call rates in paise: per million tokens, per minute, or per 1,000 characters spoken. */
+export interface VoiceCostRates {
+  realtimeInputPerMillion: number;
+  realtimeOutputPerMillion: number;
+  economyInputPerMillion: number;
+  economyOutputPerMillion: number;
+  chatInputPerMillion: number;
+  chatOutputPerMillion: number;
+  speechToTextPerMinute: number;
+  textToSpeechPerThousandCharacters: number;
+  whatsAppPerMinute: number;
+  exotelPerMinute: number;
+  sipPerMinute: number;
+}
+
+/** The rate fields in the order the page shows them. */
+const RATE_FIELDS: { key: keyof VoiceCostRates; label: string; unit: string }[] = [
+  {
+    key: 'realtimeInputPerMillion',
+    label: 'Speech to speech, best quality: input',
+    unit: 'per 1M tokens',
+  },
+  {
+    key: 'realtimeOutputPerMillion',
+    label: 'Speech to speech, best quality: output',
+    unit: 'per 1M tokens',
+  },
+  {
+    key: 'economyInputPerMillion',
+    label: 'Speech to speech, lower cost: input',
+    unit: 'per 1M tokens',
+  },
+  {
+    key: 'economyOutputPerMillion',
+    label: 'Speech to speech, lower cost: output',
+    unit: 'per 1M tokens',
+  },
+  { key: 'chatInputPerMillion', label: 'Speech pipeline chat model: input', unit: 'per 1M tokens' },
+  {
+    key: 'chatOutputPerMillion',
+    label: 'Speech pipeline chat model: output',
+    unit: 'per 1M tokens',
+  },
+  { key: 'speechToTextPerMinute', label: 'Speech to text', unit: 'per minute' },
+  {
+    key: 'textToSpeechPerThousandCharacters',
+    label: 'Text to speech',
+    unit: 'per 1,000 characters',
+  },
+  { key: 'whatsAppPerMinute', label: 'WhatsApp calls you place', unit: 'per minute' },
+  { key: 'exotelPerMinute', label: 'Exotel phone line', unit: 'per minute' },
+  { key: 'sipPerMinute', label: 'SIP trunk', unit: 'per minute' },
+];
 
 @Injectable({ providedIn: 'root' })
 export class AiProviderSettingsService {
@@ -40,12 +96,17 @@ export class AiProviderSettingsService {
       { apiName: 'AutoReach' },
     );
   }
-  update(analysisProvider: string, voiceEngineFallback: boolean) {
+  /** A null provider keeps the current analysis choice. */
+  update(
+    analysisProvider: string | null,
+    voiceEngineFallback: boolean,
+    voiceCostRates?: VoiceCostRates,
+  ) {
     return this.rest.request<unknown, AiProviderSettings>(
       {
         method: 'PUT',
         url: '/api/auto-reach/ai-provider-settings',
-        body: { analysisProvider, voiceEngineFallback },
+        body: { analysisProvider, voiceEngineFallback, voiceCostRates },
       },
       { apiName: 'AutoReach' },
     );
@@ -157,6 +218,44 @@ export class AiProviderSettingsService {
           </p>
         </section>
 
+        <section class="card" aria-labelledby="ai-rates">
+          <h2 id="ai-rates">Call cost rates</h2>
+          <p>
+            Each AI call shows an estimated cost worked out from these rates when it ends. They
+            start as estimates from the providers' list prices; enter the rates on your bills. A
+            changed rate applies to calls that end after you save it.
+          </p>
+          <div class="rates">
+            @for (f of rateFields; track f.key) {
+              <label class="ar-field"
+                ><span
+                  >{{ f.label }} <small>(₹ {{ f.unit }})</small></span
+                >
+                <input
+                  class="ar-field__input"
+                  type="number"
+                  min="0"
+                  max="1000000"
+                  step="0.01"
+                  [ngModel]="rates()[f.key]"
+                  (ngModelChange)="setRate(f.key, $event)"
+                  [disabled]="busy()"
+              /></label>
+            }
+          </div>
+          <div class="row">
+            <button ar-button type="button" [disabled]="busy()" (click)="saveRates()">
+              {{ busy() ? 'Saving…' : 'Save rates' }}
+            </button>
+          </div>
+          @if (ratesError()) {
+            <p role="alert">{{ ratesError() }}</p>
+          }
+          @if (ratesSaved()) {
+            <p role="status">Rates saved.</p>
+          }
+        </section>
+
         <section class="card" aria-labelledby="ai-keys">
           <h2 id="ai-keys">Provider keys</h2>
           <p>
@@ -228,6 +327,15 @@ export class AiProviderSettingsService {
       align-items: center;
       min-width: 0;
     }
+    .rates {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+      gap: 8px 16px;
+      margin-bottom: 8px;
+    }
+    .rates .ar-field {
+      min-width: 0;
+    }
     .row .ar-field {
       flex: 0 1 320px;
       min-width: 0;
@@ -263,6 +371,11 @@ export class ArAiProviders implements OnInit {
   protected readonly busy = signal(false);
   protected readonly saved = signal(false);
   protected readonly error = signal('');
+  protected readonly rateFields = RATE_FIELDS;
+  /** The rates as entered, in rupees. */
+  protected readonly rates = signal<Record<string, number | null>>({});
+  protected readonly ratesSaved = signal(false);
+  protected readonly ratesError = signal('');
   protected readonly usage: Record<string, string> = {
     openai: 'Voice calls, analysis, voice previews',
     anthropic: 'Analysis, assistant',
@@ -284,6 +397,40 @@ export class ArAiProviders implements OnInit {
     this.settings.set(settings);
     this.choice.set(settings.analysisProvider);
     this.fallback.set(settings.voiceEngineFallback);
+    const rupees: Record<string, number> = {};
+    for (const f of RATE_FIELDS) rupees[f.key] = (settings.voiceCostRates?.[f.key] ?? 0) / 100;
+    this.rates.set(rupees);
+  }
+
+  protected setRate(key: string, value: number | string | null): void {
+    const rate = value === '' || value == null ? null : Number(value);
+    this.rates.update((r) => ({ ...r, [key]: rate }));
+    this.ratesSaved.set(false);
+  }
+
+  protected async saveRates(): Promise<void> {
+    const s = this.settings();
+    if (this.busy() || !s) return;
+    const paise = {} as VoiceCostRates;
+    for (const f of RATE_FIELDS) {
+      const rate = this.rates()[f.key];
+      if (rate == null || !Number.isFinite(rate) || rate < 0 || rate > 1_000_000) {
+        this.ratesError.set(`Enter a rate between ₹0 and ₹10,00,000 for ${f.label.toLowerCase()}.`);
+        return;
+      }
+      paise[f.key] = Math.round(rate * 100);
+    }
+    this.busy.set(true);
+    this.ratesSaved.set(false);
+    this.ratesError.set('');
+    try {
+      this.show(await firstValueFrom(this.api.update(null, s.voiceEngineFallback, paise)));
+      this.ratesSaved.set(true);
+    } catch {
+      this.ratesError.set('The rates could not be saved.');
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   protected async save(): Promise<void> {

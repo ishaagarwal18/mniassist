@@ -141,6 +141,24 @@ describe('AI conversations', () => {
     expect(text).toContain('VoiceConversation.GreetingLatency 1.1 s');
   });
 
+  it('shows the estimated cost and what it is made of', async () => {
+    request.mockImplementation((req: { url: string }) =>
+      req.url.endsWith('/conversations')
+        ? of({ items: [row('a', 'Asha Pumps')], totalCount: 1 })
+        : of({
+            ...detail('a'),
+            cost: { modelPaise: 56, speechPaise: 0, linePaise: 60, totalPaise: 116 },
+          }),
+    );
+    const fixture = await create();
+    buttons(fixture.nativeElement, 'Asha Pumps')[0].click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain(
+      'VoiceConversation.Cost ₹1.16 ₹0.56 ₹0.00 ₹0.60',
+    );
+  });
+
   it('drops a transcript that arrives after a new search started', async () => {
     const late = new Subject<VoiceConversationSnapshotDto>();
     request.mockImplementation((req: { url: string }) =>

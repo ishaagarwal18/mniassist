@@ -146,6 +146,18 @@ import { ArDialog } from '../../ui/dialog';
               </p>
             }
           }
+          @if (conversation.cost; as c) {
+            <p translate="no">
+              {{
+                'AutoReach::VoiceConversation.Cost'
+                  | abpLocalization
+                    : rupees(c.totalPaise)
+                    : rupees(c.modelPaise)
+                    : rupees(c.speechPaise)
+                    : rupees(c.linePaise)
+              }}
+            </p>
+          }
           @if (conversation.truncated) {
             <p role="status">{{ 'AutoReach::VoiceConversation.Truncated' | abpLocalization }}</p>
           }
@@ -353,6 +365,11 @@ export class ArVoiceConversations implements OnInit {
   /** 820 → "0.8 s". */
   protected seconds(ms: number): string {
     return (ms / 1000).toFixed(1) + ' s';
+  }
+
+  /** 1234 paise → "₹12.34". */
+  protected rupees(paise: number): string {
+    return '₹' + (paise / 100).toFixed(2);
   }
   protected readonly loading = signal(false);
   protected readonly detailLoading = signal(false);

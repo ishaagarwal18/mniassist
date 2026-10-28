@@ -27,6 +27,19 @@ const fromConfig: AiProviderSettings = {
   ],
   voiceEngineFallback: true,
   voiceEngines: ['realtime'],
+  voiceCostRates: {
+    realtimeInputPerMillion: 281600,
+    realtimeOutputPerMillion: 563200,
+    economyInputPerMillion: 88000,
+    economyOutputPerMillion: 176000,
+    chatInputPerMillion: 3520,
+    chatOutputPerMillion: 14080,
+    speechToTextPerMinute: 68,
+    textToSpeechPerThousandCharacters: 500,
+    whatsAppPerMinute: 0,
+    exotelPerMinute: 60,
+    sipPerMinute: 38,
+  },
 };
 
 describe('AI providers', () => {
@@ -100,5 +113,41 @@ describe('AI providers', () => {
     saves[1].click();
     await fixture.whenStable();
     expect(api.update).toHaveBeenCalledWith('openai', false);
+  });
+
+  it('shows the call rates in rupees and saves them in paise without touching the analysis choice', async () => {
+    const { fixture, root } = await create();
+    const inputs = [...root.querySelectorAll<HTMLInputElement>('.rates input')];
+    expect(inputs).toHaveLength(11);
+    await fixture.whenStable();
+    expect(Number(inputs[0].value)).toBe(2816);
+    expect(Number(inputs[10].value)).toBe(0.38);
+    inputs[9].value = '0.75';
+    inputs[9].dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    [...root.querySelectorAll('button')]
+      .find((b) => b.textContent?.includes('Save rates'))!
+      .click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(api.update).toHaveBeenCalledWith(null, true, {
+      ...fromConfig.voiceCostRates,
+      exotelPerMinute: 75,
+    });
+    expect(root.textContent).toContain('Rates saved.');
+  });
+
+  it('refuses a negative rate before sending anything', async () => {
+    const { fixture, root } = await create();
+    const input = root.querySelectorAll<HTMLInputElement>('.rates input')[6];
+    input.value = '-1';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    [...root.querySelectorAll('button')]
+      .find((b) => b.textContent?.includes('Save rates'))!
+      .click();
+    fixture.detectChanges();
+    expect(api.update).not.toHaveBeenCalled();
+    expect(root.querySelector('[role="alert"]')?.textContent).toContain('speech to text');
   });
 });
