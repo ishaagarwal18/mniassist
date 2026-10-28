@@ -149,6 +149,16 @@ export class VoiceChannelService {
       { apiName: this.apiName, ...config },
     );
 
+  setAiFlowUrl = (input: SetVoiceFlowUrlInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<SetVoiceFlowUrlInput, VoiceChannelDto>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/voice-channel/set-ai-flow-url',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
   getIvrIssues = (config?: Partial<Rest.Config>) =>
     this.restService.request<any, IvrIssueDto[]>(
       {

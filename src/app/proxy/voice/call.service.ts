@@ -1,3 +1,4 @@
+import type { VoiceConversationSnapshotDto } from '../messaging/whats-app-call.service';
 import type { PagedResultDto } from '@abp/ng.core';
 import { RestService, Rest } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
@@ -103,6 +104,13 @@ export class CallService {
   get = (id: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, CallLogDto>(
       { method: 'GET', url: `/api/auto-reach/call/${id}` },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** An AI phone call's transcript, kept 180 days; null when there is none. */
+  getAiConversation = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, VoiceConversationSnapshotDto | null>(
+      { method: 'GET', url: `/api/auto-reach/call/${id}/ai-conversation` },
       { apiName: this.apiName, ...config },
     );
 }

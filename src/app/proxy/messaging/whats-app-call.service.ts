@@ -320,6 +320,22 @@ export class WhatsAppCallService {
       { apiName: this.apiName, skipHandleError: true, ...config },
     );
 
+  /** The same agent calls the customer on the workspace's phone line (Exotel); the call shows in the call log. */
+  startPhoneAi = (
+    conversationId: string,
+    input: { purpose?: string | null },
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, { callId: string }>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/whats-app-call/start-phone-ai/${conversationId}`,
+        body: input,
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
   getConversation = (id: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, VoiceConversationSnapshotDto | null>(
       {

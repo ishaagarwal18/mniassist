@@ -24,6 +24,7 @@ import { ArChip } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { errorMessage } from '../activities/activity-logic';
 import { ArCallOutcomeDialog } from './call-outcome-dialog';
+import { VoiceConversationSnapshotDto } from '../../proxy/messaging/whats-app-call.service';
 import { CallGateway } from './call-mock';
 import {
   OUTCOME_LABEL,
@@ -146,6 +147,30 @@ export class ArCalls {
       hour: '2-digit',
       minute: '2-digit',
     });
+  }
+
+  /** The AI phone call whose transcript is open, and that transcript once loaded. */
+  protected readonly transcriptOf = signal<string | null>(null);
+  protected readonly transcript = signal<VoiceConversationSnapshotDto | null>(null);
+  protected readonly transcriptNote = signal('');
+
+  protected async toggleTranscript(c: CallLogDto): Promise<void> {
+    if (this.transcriptOf() === c.id) {
+      this.transcriptOf.set(null);
+      return;
+    }
+    this.transcriptOf.set(c.id);
+    this.transcript.set(null);
+    this.transcriptNote.set('Loading the transcript…');
+    try {
+      const found = await firstValueFrom(this.api.getAiConversation(c.id));
+      if (this.transcriptOf() !== c.id) return;
+      this.transcript.set(found);
+      if (!found) this.transcriptNote.set('No transcript was kept for this call.');
+    } catch (e: unknown) {
+      if (this.transcriptOf() === c.id)
+        this.transcriptNote.set(errorMessage(e, 'The transcript could not be loaded.'));
+    }
   }
 
   protected outcomeSaved(): void {

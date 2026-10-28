@@ -48,6 +48,7 @@ export class VoiceService {
       gatherUrls: [1, 2, 3].map((l) => `https://api.mniassist.com/api/voice/ivr/****/gather/${l}`),
       routeUrls: [1, 2].map((l) => `https://api.mniassist.com/api/voice/ivr/****/route/${l}`),
       connectUrl: 'https://api.mniassist.com/api/voice/ivr/****/connect',
+      voicebotUrl: 'https://api.mniassist.com/api/voice/ivr/****/voicebot',
       statusCallbackUrl: 'https://api.mniassist.com/api/voice/webhook/****/status',
     },
     softphoneEnabled: true,
@@ -177,6 +178,24 @@ export class VoiceService {
       return true;
     } catch (e) {
       this._error.set(readApiError(e, 'Could not save the flow URL.'));
+      return false;
+    }
+  }
+
+  /** Records the AI call flow's URL (Voicebot applet, then Hangup). Blank clears it, which stops AI calls on the line. */
+  async setAiFlowUrl(flowUrl: string): Promise<boolean> {
+    this._error.set(null);
+    if (environment.useMockData) {
+      this.mockChannel.update((c) => ({ ...c, aiFlowUrl: flowUrl.trim() || null }));
+      return true;
+    }
+
+    try {
+      await firstValueFrom(this.api.setAiFlowUrl({ flowUrl: flowUrl.trim() || null }));
+      this.channelResource.reload();
+      return true;
+    } catch (e) {
+      this._error.set(readApiError(e, 'Could not save the AI call flow URL.'));
       return false;
     }
   }

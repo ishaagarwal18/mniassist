@@ -608,7 +608,7 @@ The routes below identify the screen if you need help finding it. Entries contai
 4. Type **Message** and send it, or choose an attachment or an approved template when needed.
 5. Use **Assign** to route work, **Summarise** to review an AI summary, and **Resolve** when the issue is finished.
 6. For a customer call choose the available calling action; request permission first if required.
-7. To have the AI voice agent call the customer instead, click **Call with AI agent**, optionally enter the reason for the call, and click **Place AI call** ([Call with AI agent](#panel-ar-inbox-ai-call)).
+7. To have the AI voice agent call the customer instead, click **Call with AI agent**, choose **Call on**: **WhatsApp** or **Phone line (Exotel)**, optionally enter the reason for the call, and click **Place AI call** ([Call with AI agent](#panel-ar-inbox-ai-call)). A phone-line call rings the customer's number from your Exotel number into the voice line's **AI call flow** (set up under **Channels › Voice › AI call flow**); it follows the line's consent rules and the 09:00–21:00 India-time window, the agent speaks with speech to speech, has no in-call actions or hand-over to a person yet, and its transcript appears on the call in the **Calls** log (**Show the transcript**).
 8. Use the payment, re-order link, location or quote-from-file actions only after reviewing the corresponding window.
 
 **Related windows:** [Call](#dialog-ar-call-dialog-1); [Call with AI agent](#panel-ar-inbox-ai-call); [Request a payment](#dialog-ar-inbox-1); [Draft a quote from this file](#dialog-ar-inbox-2); [Reply buttons](#dialog-ar-inbox-3); [Share a location](#dialog-ar-share-location-dialog-1); [Re-order link for](#dialog-ar-send-reorder-link-1).
@@ -1943,7 +1943,9 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 [Screenshot P067: WhatsApp calls page showing its principal sections and a suitable sample record; highlight “WhatsApp calls” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
-**Tips and common errors:** Recording requires your organisation’s notice/consent process. Browser microphone permissions and a configured relay are necessary for live browser audio; a log entry alone does not prove audio quality. AI call transcripts are kept for 180 days from the start of the call and are then deleted automatically.
+**Tips and common errors:** Recording requires your organisation’s notice/consent process. Browser microphone permissions and a configured relay are necessary for live browser audio; a log entry alone does not prove audio quality. AI call transcripts are kept for 180 days from the start of the call and are then deleted automatically; deleting a call deletes its transcript.
+
+**AI call flow (phone line):** AI calls on your Exotel number need a second Exotel flow. Exotel enables its Voicebot applet on request, so ask them first if your flow builder doesn't show it. Under **Channels › Voice**, the **AI call flow** panel shows the **Voicebot** URL: in Exotel, create a new flow with one **Voicebot** applet using that URL, then a **Hangup** applet, and paste the flow's URL into **AI call flow URL** and click **Save**. Don't point your number's incoming calls at this flow. Clearing the URL stops AI calls on the line.
 
 <a id="page-calls-ai-agents"></a>
 

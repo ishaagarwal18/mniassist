@@ -202,6 +202,55 @@
     }
 
     @if (channel(); as ch) {
+      @if (ch.ivrSetup?.ready && ch.ivrSetup?.voicebotUrl) {
+        <section class="vi__panel" aria-labelledby="vi-ai-flow">
+          <h2 class="vi__panel-title" id="vi-ai-flow">AI call flow</h2>
+          <p class="vi__hint">
+            Lets an AI voice agent call customers on this phone line. Exotel enables its Voicebot
+            applet on request; ask them first if it isn't in your flow builder.
+          </p>
+          <ol class="vi__steps">
+            <li>
+              In Exotel, create a new flow with one <strong>Voicebot</strong> applet whose URL is:
+              <ul class="vi__urls">
+                <li>
+                  <span class="vi__url-label">Voicebot</span>
+                  <code class="ar-mono">{{ ch.ivrSetup!.voicebotUrl }}</code>
+                  <button ar-button variant="quiet" (click)="copy(ch.ivrSetup!.voicebotUrl!)">
+                    {{ copied() === ch.ivrSetup!.voicebotUrl ? 'Copied' : 'Copy' }}
+                  </button>
+                </li>
+              </ul>
+              then a <strong>Hangup</strong> applet. Don't point your number's incoming calls at it.
+            </li>
+            <li>
+              Paste that flow's URL here:
+              <div class="vi__flow">
+                <input
+                  class="ar-field__input"
+                  aria-label="AI call flow URL"
+                  placeholder="http://my.exotel.in/exoml/start/67890"
+                  autocapitalize="none"
+                  [value]="aiFlowUrlDraft() || ch.aiFlowUrl || ''"
+                  (focus)="startAiFlowUrlEdit()"
+                  (input)="aiFlowUrlDraft.set($any($event.target).value)"
+                />
+                <button ar-button variant="primary" [disabled]="busy()" (click)="saveAiFlowUrl()">
+                  Save
+                </button>
+              </div>
+            </li>
+          </ol>
+          <p class="vi__hint">
+            @if (ch.aiFlowUrl) {
+              AI calls on this line are set up. Place one from a conversation's call menu.
+            } @else {
+              Until the flow's URL is saved, AI agents can call only over WhatsApp.
+            }
+          </p>
+        </section>
+      }
+
       <section class="vi__panel">
         <h2 class="vi__panel-title">In-browser phone</h2>
         <p class="vi__hint">

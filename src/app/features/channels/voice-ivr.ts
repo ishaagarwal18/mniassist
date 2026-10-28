@@ -149,6 +149,7 @@ export class ArVoiceIvr {
 
   // --- Connect to Exotel
   protected readonly flowUrlDraft = signal('');
+  protected readonly aiFlowUrlDraft = signal('');
   protected readonly copied = signal<string | null>(null);
 
   // --- In-browser phone (softphone)
@@ -354,6 +355,20 @@ export class ArVoiceIvr {
   }
 
   // ---- Connect to Exotel ----------------------------------------------------
+
+  protected startAiFlowUrlEdit(): void {
+    this.aiFlowUrlDraft.set(this.channel()?.aiFlowUrl ?? '');
+  }
+
+  protected async saveAiFlowUrl(): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    try {
+      if (await this.store.setAiFlowUrl(this.aiFlowUrlDraft())) this.aiFlowUrlDraft.set('');
+    } finally {
+      this.busy.set(false);
+    }
+  }
 
   protected startFlowUrlEdit(): void {
     this.flowUrlDraft.set(this.channel()?.flowUrl ?? '');

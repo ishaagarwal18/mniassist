@@ -9,6 +9,8 @@ export enum VoiceCallMode {
   Manual = 2,
   /** Made or answered on the in-browser phone — no separate handset rings. */
   Softphone = 3,
+  /** A published AI voice agent called on the phone line; no one is on the line. */
+  VoiceAi = 4,
 }
 
 export const voiceCallModeOptions = mapEnumToOptions(VoiceCallMode);

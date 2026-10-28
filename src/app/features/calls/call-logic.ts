@@ -73,12 +73,18 @@ export function displayNumber(digits: string | null | undefined): string {
 export function callHeadline(c: CallLogDto): string {
   const dir = c.direction === VoiceCallDirection.Inbound ? 'Inbound' : 'Outbound';
   const how = c.mode === VoiceCallMode.Manual ? 'written up' : STATUS_LABEL[c.status].toLowerCase();
-  return `${dir} call · ${how}${c.durationSeconds > 0 ? ' · ' + durationLabel(c.durationSeconds) : ''}`;
+  const who = c.mode === VoiceCallMode.VoiceAi ? ' by the AI agent' : '';
+  return `${dir} call${who} · ${how}${c.durationSeconds > 0 ? ' · ' + durationLabel(c.durationSeconds) : ''}`;
 }
 
 /** An ended call the rep has not said anything about yet. */
 export function needsOutcome(c: CallLogDto): boolean {
-  return c.isOver && c.outcome === CallOutcome.None && c.mode !== VoiceCallMode.Ivr;
+  return (
+    c.isOver &&
+    c.outcome === CallOutcome.None &&
+    c.mode !== VoiceCallMode.Ivr &&
+    c.mode !== VoiceCallMode.VoiceAi
+  );
 }
 
 /** The outcome to start the form on: what the rep said, else what the telephony suggests, else that they spoke. */

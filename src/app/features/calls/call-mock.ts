@@ -178,6 +178,9 @@ export class MockCallApi {
     const call = this.s.calls.find((c) => c.id === id);
     return call ? of({ ...call }) : refuse('NotFound', 'That call no longer exists.');
   };
+
+  /** Sample data has no AI phone calls. */
+  getAiConversation = (_id: string): Observable<null> => of(null);
 }
 
 export type CallApi = Pick<CallService, keyof MockCallApi & keyof CallService>;

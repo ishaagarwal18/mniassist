@@ -290,6 +290,18 @@
         @if (ai.conversationId === thread.id) {
           <aside class="thread__summary" aria-label="Call with AI agent">
             <label class="ar-field"
+              ><span>Call on</span>
+              <select
+                class="ar-field__input"
+                [disabled]="ai.busy"
+                [value]="ai.line ?? 'whatsapp'"
+                (change)="ai.line = $any($event.target).value"
+              >
+                <option value="whatsapp">WhatsApp</option>
+                <option value="phone">Phone line (Exotel)</option>
+              </select>
+            </label>
+            <label class="ar-field"
               ><span>Reason for the call (optional)</span>
               <textarea
                 class="ar-field__input"

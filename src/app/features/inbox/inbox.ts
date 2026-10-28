@@ -391,6 +391,8 @@ export class ArInbox {
     purpose: string;
     note: string;
     busy: boolean;
+    /** whatsapp, or phone: the workspace's phone line (Exotel). */
+    line?: 'whatsapp' | 'phone';
   } | null>(null);
 
   protected async placeAiCall(): Promise<void> {
@@ -399,11 +401,16 @@ export class ArInbox {
     this.aiCall.set({ ...current, busy: true, note: '' });
     let note: string;
     try {
-      await firstValueFrom(
-        this.callsApi.startAi(current.conversationId, { purpose: current.purpose.trim() || null }),
-      );
-      note =
-        'The AI agent is calling. Its transcript appears under AI conversations on the WhatsApp calls page.';
+      const input = { purpose: current.purpose.trim() || null };
+      if (current.line === 'phone') {
+        await firstValueFrom(this.callsApi.startPhoneAi(current.conversationId, input));
+        note =
+          'The AI agent is calling on the phone line. Its transcript appears on the call in the call log.';
+      } else {
+        await firstValueFrom(this.callsApi.startAi(current.conversationId, input));
+        note =
+          'The AI agent is calling. Its transcript appears under AI conversations on the WhatsApp calls page.';
+      }
     } catch (e: unknown) {
       note = this.problem(e, 'The AI call could not be placed.');
     }

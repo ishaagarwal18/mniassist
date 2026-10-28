@@ -95,6 +95,9 @@ describe('needsOutcome', () => {
     expect(needsOutcome(call({ isOver: false }))).toBe(false);
     expect(needsOutcome(call({ outcome: CallOutcome.Connected }))).toBe(false);
     expect(needsOutcome(call({ mode: VoiceCallMode.Ivr }))).toBe(false);
+    // No one was on an AI agent's call to say how it went: its transcript says.
+    expect(needsOutcome(call({ mode: VoiceCallMode.VoiceAi }))).toBe(false);
+    expect(callHeadline(call({ mode: VoiceCallMode.VoiceAi }))).toContain('by the AI agent');
   });
 });
 

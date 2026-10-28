@@ -74,6 +74,30 @@
                 >Listen to the recording</a
               >
             }
+            @if (c.mode === Mode.VoiceAi && c.isOver) {
+              <button type="button" class="cl__btn" (click)="toggleTranscript(c)">
+                {{ transcriptOf() === c.id ? 'Hide the transcript' : 'Show the transcript' }}
+              </button>
+              @if (transcriptOf() === c.id) {
+                @if (transcript(); as t) {
+                  <ol class="cl__transcript" aria-label="AI call transcript">
+                    @for (turn of t.turns; track turn.itemId + turn.speaker) {
+                      <li>
+                        <strong>{{ turn.speaker === 'agent' ? 'AI agent' : 'Customer' }}:</strong>
+                        <span translate="no">{{ turn.text }}</span>
+                      </li>
+                    } @empty {
+                      <li>Nothing was said.</li>
+                    }
+                  </ol>
+                  @if (t.transcriptIncomplete) {
+                    <p class="cl__line">Some words at the end may be missing.</p>
+                  }
+                } @else {
+                  <p class="cl__line" role="status">{{ transcriptNote() }}</p>
+                }
+              }
+            }
           </div>
           <div class="cl__act">
             @if (needs(c)) {

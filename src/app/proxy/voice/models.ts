@@ -15,6 +15,8 @@ export interface VoiceChannelDto extends AuditedEntityDto<string> {
   passthruWebhookUrl?: string | null;
   /** The Exotel call-flow URL of the one-time skeleton flow; null until pasted in. */
   flowUrl?: string | null;
+  /** The Exotel flow AI calls go into (Voicebot applet, then Hangup). */
+  aiFlowUrl?: string | null;
   ivrSetup?: VoiceIvrSetupDto;
 
   softphoneEnabled?: boolean;
@@ -42,6 +44,8 @@ export interface VoiceIvrSetupDto {
   /** The Passthru URL after Gather 1 and Gather 2. */
   routeUrls: string[];
   connectUrl?: string | null;
+  /** The Voicebot applet's URL in the AI call flow. */
+  voicebotUrl?: string | null;
   statusCallbackUrl?: string | null;
 }
 
