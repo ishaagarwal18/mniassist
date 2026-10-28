@@ -608,7 +608,7 @@ The routes below identify the screen if you need help finding it. Entries contai
 4. Type **Message** and send it, or choose an attachment or an approved template when needed.
 5. Use **Assign** to route work, **Summarise** to review an AI summary, and **Resolve** when the issue is finished.
 6. For a customer call choose the available calling action; request permission first if required.
-7. To have the AI voice agent call the customer instead, click **Call with AI agent**, choose **Call on**: **WhatsApp** or **Phone line (Exotel)**, optionally enter the reason for the call, and click **Place AI call** ([Call with AI agent](#panel-ar-inbox-ai-call)). A phone-line call rings the customer's number from your Exotel number into the voice line's **AI call flow** (set up under **Channels › Voice › AI call flow**); it follows the line's consent rules and the 09:00–21:00 India-time window, the agent speaks with speech to speech, has no in-call actions or hand-over to a person yet, and its transcript appears on the call in the **Calls** log (**Show the transcript**).
+7. To have the AI voice agent call the customer instead, click **Call with AI agent**, choose **Call on**: **WhatsApp** or **Phone line (Exotel)**, optionally enter the reason for the call, and click **Place AI call** ([Call with AI agent](#panel-ar-inbox-ai-call)). A phone-line call rings the customer's number from your Exotel number into the voice line's **AI call flow** (set up under **Channels › Voice › AI call flow**); it follows the line's consent rules and the 09:00–21:00 India-time window, the agent speaks with speech to speech and can take its in-call actions (booking, tickets, CRM updates, follow-ups, lookups) but not hand the call to a person, and its transcript (with the agent's after-call analysis) appears on the call in the **Calls** log (**Show the transcript**).
 8. Use the payment, re-order link, location or quote-from-file actions only after reviewing the corresponding window.
 
 **Related windows:** [Call](#dialog-ar-call-dialog-1); [Call with AI agent](#panel-ar-inbox-ai-call); [Request a payment](#dialog-ar-inbox-1); [Draft a quote from this file](#dialog-ar-inbox-2); [Reply buttons](#dialog-ar-inbox-3); [Share a location](#dialog-ar-share-location-dialog-1); [Re-order link for](#dialog-ar-send-reorder-link-1).
@@ -1986,7 +1986,7 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Step-by-step**
 
-1. Click **New batch**. Enter a **Batch name** and choose the **WhatsApp number**.
+1. Click **New batch**. Enter a **Batch name**, choose the **WhatsApp number** whose agent calls, and choose **Call on**: **WhatsApp** (only people who allowed WhatsApp calls) or **Phone line (Exotel)** (their number is rung from your Exotel number into its AI call flow, following the line's consent rules). On the phone line, voicemail and operator announcements count as not reached and are tried again within the batch's attempts.
 2. Enter the **Reason for the calls**. The agent says this after its greeting. You can use variables such as `{{name}}`, or any column of your file such as `{{plan}}`.
 3. Optionally set **Start at**; otherwise calling begins as soon as you start the batch.
 4. Set **Call from** and **Call until** (never earlier than 09:00 or later than 21:00 India time), **Calls at once**, **Attempts per person** and **Minutes between attempts**, then click **Create batch**.

@@ -24,6 +24,7 @@ import { ArDialog } from '../../ui/dialog';
 interface BatchForm {
   name: string;
   channelId: string;
+  line: 'whatsapp' | 'phone';
   purpose: string;
   startsAt: string;
   windowStart: string;
@@ -102,6 +103,9 @@ const toMinute = (clock: string) => {
                   : '' + batch.retryAfterMinutes
             }}
           </p>
+          @if (batch.line === 'phone') {
+            <p>{{ 'AutoReach::VoiceBatch.Line.phone' | abpLocalization }}</p>
+          }
           @if (batch.purpose) {
             <p>{{ batch.purpose }}</p>
           }
@@ -214,6 +218,18 @@ const toMinute = (clock: string) => {
             }
           </select></label
         >
+        <label class="ar-field"
+          ><span>{{ 'AutoReach::VoiceBatch.Line' | abpLocalization }}</span>
+          <select class="ar-field__input" [(ngModel)]="model.line">
+            <option value="whatsapp">
+              {{ 'AutoReach::VoiceBatch.Line.whatsapp' | abpLocalization }}
+            </option>
+            <option value="phone">
+              {{ 'AutoReach::VoiceBatch.Line.phone' | abpLocalization }}
+            </option>
+          </select></label
+        >
+        <p>{{ 'AutoReach::VoiceBatch.LineHelp' | abpLocalization }}</p>
         <label class="ar-field"
           ><span>{{ 'AutoReach::VoiceBatch.Purpose' | abpLocalization }}</span>
           <textarea
@@ -443,6 +459,7 @@ export class ArVoiceCallBatches implements OnInit {
     this.form.set({
       name: '',
       channelId: this.channels()[0]?.id ?? '',
+      line: 'whatsapp',
       purpose: '',
       startsAt: '',
       windowStart: '09:00',
@@ -475,6 +492,7 @@ export class ArVoiceCallBatches implements OnInit {
         this.api.create({
           name: model.name.trim(),
           channelId: model.channelId,
+          line: model.line,
           purpose: model.purpose.trim() || null,
           startsAtUtc: model.startsAt ? new Date(model.startsAt).toISOString() : null,
           windowStartMinute,

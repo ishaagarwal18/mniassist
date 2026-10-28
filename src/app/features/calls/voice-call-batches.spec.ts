@@ -178,4 +178,24 @@ describe('AI call batches', () => {
     expect(api.create).not.toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('AutoReach:VoiceCallBatchInvalid');
   });
+
+  it('creates a batch that calls on the phone line', async () => {
+    const fixture = await create();
+    button(fixture.nativeElement, 'VoiceBatch.New').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const name: HTMLInputElement = fixture.nativeElement.querySelector('ar-dialog input');
+    name.value = 'Renewals by phone';
+    name.dispatchEvent(new Event('input'));
+    const line = fixture.nativeElement.querySelector('option[value="phone"]')
+      .parentElement as HTMLSelectElement;
+    line.value = 'phone';
+    line.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    button(fixture.nativeElement, 'VoiceBatch.Create').click();
+    await fixture.whenStable();
+    expect(api.create).toHaveBeenCalled();
+    expect(api.create.mock.calls[0][0].line).toBe('phone');
+  });
 });
