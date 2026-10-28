@@ -1,3 +1,4 @@
+import { firstValueFrom } from 'rxjs';
 import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
@@ -12,6 +13,7 @@ import { RouterLink } from '@angular/router';
 
 import { grantedPolicy } from '../../core/auth/permission';
 import { VoiceService } from '../../core/services/voice.service';
+import { ChannelService } from '../../proxy/channels/channel.service';
 import { ChannelState } from '../../proxy/channels/channel-state.enum';
 import {
   IvrBranchAction,
@@ -82,6 +84,11 @@ export class ArVoiceIvr {
   private readonly permissions = inject(PermissionService);
   private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(VoiceService);
+  private readonly channelsApi = inject(ChannelService);
+  /** WhatsApp numbers on Meta's direct API: where voice agents live. */
+  protected readonly agentNumbers = signal<
+    { id: string; verifiedName?: string; displayPhoneNumber?: string }[]
+  >([]);
 
   protected readonly canManage = grantedPolicy('AutoReach.Channels.Manage', this.permissions);
   protected readonly canCall = grantedPolicy('AutoReach.Inbox', this.permissions);
@@ -101,6 +108,7 @@ export class ArVoiceIvr {
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.credentialDraft.set(''));
+    void this.loadAgentNumbers();
   }
 
   protected editAccount(): void {
@@ -355,6 +363,33 @@ export class ArVoiceIvr {
   }
 
   // ---- Connect to Exotel ----------------------------------------------------
+
+  protected async loadAgentNumbers(): Promise<void> {
+    try {
+      const page = await firstValueFrom(this.channelsApi.getList({ maxResultCount: 100 } as never));
+      this.agentNumbers.set(
+        (page.items ?? [])
+          .filter((c) => c.provider === 0 && c.id)
+          .map((c) => ({
+            id: c.id!,
+            verifiedName: c.verifiedName,
+            displayPhoneNumber: c.displayPhoneNumber,
+          })),
+      );
+    } catch {
+      this.agentNumbers.set([]);
+    }
+  }
+
+  protected async saveInboundAgent(agentChannelId: string): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
+    try {
+      await this.store.setInboundAiAgent(agentChannelId || null);
+    } finally {
+      this.busy.set(false);
+    }
+  }
 
   protected startAiFlowUrlEdit(): void {
     this.aiFlowUrlDraft.set(this.channel()?.aiFlowUrl ?? '');

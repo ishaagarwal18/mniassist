@@ -200,6 +200,24 @@ export class VoiceService {
     }
   }
 
+  /** Chooses the agent (a WhatsApp number's) that answers incoming calls reaching the AI call flow; null for nobody. */
+  async setInboundAiAgent(agentChannelId: string | null): Promise<boolean> {
+    this._error.set(null);
+    if (environment.useMockData) {
+      this.mockChannel.update((c) => ({ ...c, inboundAiAgentChannelId: agentChannelId }));
+      return true;
+    }
+
+    try {
+      await firstValueFrom(this.api.setInboundAiAgent({ agentChannelId }));
+      this.channelResource.reload();
+      return true;
+    } catch (e) {
+      this._error.set(readApiError(e, 'Could not save the agent for incoming calls.'));
+      return false;
+    }
+  }
+
   /** Turns the in-browser phone on or off and records the SIP identity reps' browsers register with. */
   async setSoftphone(input: SetSoftphoneInput): Promise<boolean> {
     this._error.set(null);

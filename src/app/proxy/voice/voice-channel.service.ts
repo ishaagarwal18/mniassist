@@ -159,6 +159,16 @@ export class VoiceChannelService {
       { apiName: this.apiName, ...config },
     );
 
+  setInboundAiAgent = (input: { agentChannelId: string | null }, config?: Partial<Rest.Config>) =>
+    this.restService.request<unknown, VoiceChannelDto>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/voice-channel/set-inbound-ai-agent',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
   getIvrIssues = (config?: Partial<Rest.Config>) =>
     this.restService.request<any, IvrIssueDto[]>(
       {

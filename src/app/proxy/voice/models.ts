@@ -17,6 +17,8 @@ export interface VoiceChannelDto extends AuditedEntityDto<string> {
   flowUrl?: string | null;
   /** The Exotel flow AI calls go into (Voicebot applet, then Hangup). */
   aiFlowUrl?: string | null;
+  /** The WhatsApp number whose agent answers incoming calls reaching the AI call flow. */
+  inboundAiAgentChannelId?: string | null;
   ivrSetup?: VoiceIvrSetupDto;
 
   softphoneEnabled?: boolean;

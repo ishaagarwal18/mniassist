@@ -221,7 +221,8 @@
                   </button>
                 </li>
               </ul>
-              then a <strong>Hangup</strong> applet. Don't point your number's incoming calls at it.
+              then a <strong>Hangup</strong> applet, and set the flow's call-status callback to the
+              Status URL above.
             </li>
             <li>
               Paste that flow's URL here:
@@ -247,6 +248,27 @@
             } @else {
               Until the flow's URL is saved, AI agents can call only over WhatsApp.
             }
+          </p>
+          <label class="ar-field"
+            ><span>Agent for incoming calls</span>
+            <select
+              class="ar-field__input"
+              [disabled]="busy()"
+              [value]="ch.inboundAiAgentChannelId ?? ''"
+              (change)="saveInboundAgent($any($event.target).value)"
+            >
+              <option value="">Nobody: the AI doesn't answer incoming calls</option>
+              @for (n of agentNumbers(); track n.id) {
+                <option [value]="n.id" translate="no">
+                  {{ n.verifiedName || n.displayPhoneNumber }}
+                </option>
+              }
+            </select></label
+          >
+          <p class="vi__hint">
+            The chosen WhatsApp number's agent answers calls that come in through the AI call flow.
+            To have it answer your number's incoming calls, point the number's incoming calls at the
+            AI call flow instead of the menu flow in Exotel.
           </p>
         </section>
       }

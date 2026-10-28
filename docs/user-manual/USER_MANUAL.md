@@ -1945,7 +1945,9 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Tips and common errors:** Recording requires your organisation’s notice/consent process. Browser microphone permissions and a configured relay are necessary for live browser audio; a log entry alone does not prove audio quality. AI call transcripts are kept for 180 days from the start of the call and are then deleted automatically; deleting a call deletes its transcript.
 
-**AI call flow (phone line):** AI calls on your Exotel number need a second Exotel flow. Exotel enables its Voicebot applet on request, so ask them first if your flow builder doesn't show it. Under **Channels › Voice**, the **AI call flow** panel shows the **Voicebot** URL: in Exotel, create a new flow with one **Voicebot** applet using that URL, then a **Hangup** applet, and paste the flow's URL into **AI call flow URL** and click **Save**. Don't point your number's incoming calls at this flow. Clearing the URL stops AI calls on the line.
+**AI call flow (phone line):** AI calls on your Exotel number need a second Exotel flow. Exotel enables its Voicebot applet on request, so ask them first if your flow builder doesn't show it. Under **Channels › Voice**, the **AI call flow** panel shows the **Voicebot** URL: in Exotel, create a new flow with one **Voicebot** applet using that URL, then a **Hangup** applet, and paste the flow's URL into **AI call flow URL** and click **Save**. Set the flow's call-status callback to the **Status** URL shown above it. Clearing the URL stops AI calls on the line.
+
+**Incoming calls answered by the AI:** under **Agent for incoming calls**, choose the WhatsApp number whose agent should answer (its own agent, or the shared agent it is assigned to), then in Exotel point your number's incoming calls at the AI call flow instead of the menu flow. A new caller becomes a contact; the call, its transcript, actions, analysis and automations work as for the agent's outbound phone calls, without listening for voicemail. Choose **Nobody** to stop the AI answering.
 
 <a id="page-calls-ai-agents"></a>
 
