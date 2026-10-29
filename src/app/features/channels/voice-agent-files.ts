@@ -292,6 +292,10 @@ const ACTIONS: [keyof NonNullable<VoiceAgentDefinition['tools']>, string][] = [
   ['searchCatalogue', 'catalogue'],
   ['rememberCallers', 'memory'],
   ['transferToPeople', 'transfer'],
+  ['lookUpBalance', 'balance'],
+  ['lookUpOrders', 'orders'],
+  ['lookUpContracts', 'contracts'],
+  ['sendPaymentLinks', 'paymentLinks'],
 ];
 
 /** The settings of two versions side by side, one row each; instructions are compared line by line separately. */

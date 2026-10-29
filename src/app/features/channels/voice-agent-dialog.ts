@@ -468,6 +468,43 @@ import { VoiceFunction, VoiceFunctionService } from '../calls/voice-functions';
           <label class="check"
             ><input
               type="checkbox"
+              [(ngModel)]="tools.lookUpBalance"
+              (ngModelChange)="saved.set(false)"
+              [disabled]="saving()"
+            />
+            {{ 'AutoReach::VoiceAgent.Tools.balance' | abpLocalization }}</label
+          >
+          <label class="check"
+            ><input
+              type="checkbox"
+              [(ngModel)]="tools.lookUpOrders"
+              (ngModelChange)="saved.set(false)"
+              [disabled]="saving()"
+            />
+            {{ 'AutoReach::VoiceAgent.Tools.orders' | abpLocalization }}</label
+          >
+          <label class="check"
+            ><input
+              type="checkbox"
+              [(ngModel)]="tools.lookUpContracts"
+              (ngModelChange)="saved.set(false)"
+              [disabled]="saving()"
+            />
+            {{ 'AutoReach::VoiceAgent.Tools.contracts' | abpLocalization }}</label
+          >
+          <label class="check"
+            ><input
+              type="checkbox"
+              [(ngModel)]="tools.sendPaymentLinks"
+              (ngModelChange)="saved.set(false)"
+              [disabled]="saving()"
+            />
+            {{ 'AutoReach::VoiceAgent.Tools.paymentLinks' | abpLocalization }}</label
+          >
+          <p>{{ 'AutoReach::VoiceAgent.Tools.accountHelp' | abpLocalization }}</p>
+          <label class="check"
+            ><input
+              type="checkbox"
               [(ngModel)]="tools.searchKnowledge"
               (ngModelChange)="saved.set(false)"
               [disabled]="saving()"
@@ -1457,7 +1494,12 @@ export class ArVoiceAgentDialog implements OnInit {
       return;
     }
     const tools = model.tools ?? noVoiceAgentTools();
-    const acts = tools.bookMeetings || tools.updateCrm || tools.raiseTickets || tools.sendFollowUps;
+    const acts =
+      tools.bookMeetings ||
+      tools.updateCrm ||
+      tools.raiseTickets ||
+      tools.sendFollowUps ||
+      tools.sendPaymentLinks;
     if (
       (acts && !tools.actingUserId) ||
       (tools.transferToPeople && (tools.transferTeamIds ?? []).length === 0) ||

@@ -176,6 +176,12 @@ export interface VoiceAgentTools {
   transferTeamIds: string[];
   /** The workspace's custom functions the agent may call (up to 10). */
   functionIds: string[];
+  /** The caller's own account: outstanding invoices and balance, orders and shipments, service contracts. */
+  lookUpBalance: boolean;
+  lookUpOrders: boolean;
+  lookUpContracts: boolean;
+  /** Send a WhatsApp payment reminder with its pay link, after the caller confirms (a write: needs the acting user). */
+  sendPaymentLinks: boolean;
 }
 
 export const noVoiceAgentTools = (): VoiceAgentTools => ({
@@ -194,6 +200,10 @@ export const noVoiceAgentTools = (): VoiceAgentTools => ({
   transferToPeople: false,
   transferTeamIds: [],
   functionIds: [],
+  lookUpBalance: false,
+  lookUpOrders: false,
+  lookUpContracts: false,
+  sendPaymentLinks: false,
 });
 
 export interface VoiceAgentSettings extends VoiceAgentInput {

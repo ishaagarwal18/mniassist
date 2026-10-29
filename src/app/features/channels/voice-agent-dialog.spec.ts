@@ -405,6 +405,41 @@ describe('voice agent settings', () => {
     expect(tools.bookMeetings).toBe(false);
   });
 
+  it('looks up the caller’s account without an acting user, but sends payment links only with one', async () => {
+    const fixture = await create();
+    const tick = (key: string) =>
+      (
+        [...fixture.nativeElement.querySelectorAll('.tools label.check')].find((l: Element) =>
+          l.textContent?.includes(`VoiceAgent.Tools.${key}`),
+        ) as HTMLElement
+      )
+        .querySelector('input')!
+        .click();
+    tick('balance');
+    tick('orders');
+    tick('contracts');
+    tick('paymentLinks');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    button(fixture.nativeElement, 'VoiceAgent.Save').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(api.update).not.toHaveBeenCalled(); // a payment reminder is a write
+
+    tick('paymentLinks');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    button(fixture.nativeElement, 'VoiceAgent.Save').click();
+    await fixture.whenStable();
+    const tools = api.update.mock.calls[0][1].tools;
+    expect(tools).toMatchObject({
+      lookUpBalance: true,
+      lookUpOrders: true,
+      lookUpContracts: true,
+      sendPaymentLinks: false,
+    });
+  });
+
   it('offers only approved templates for follow-ups once follow-ups are enabled', async () => {
     const fixture = await create();
     expect(fixture.nativeElement.textContent).not.toContain('call_follow_up');
