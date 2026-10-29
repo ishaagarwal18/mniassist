@@ -12,6 +12,7 @@ import {
   VoiceAgentChannel,
 } from '../channels/shared-voice-agent.service';
 import { ArVoiceAgentDialog } from '../channels/voice-agent-dialog';
+import { ArVoiceFunctions } from './voice-functions';
 
 /**
  * Voice agents of the workspace rather than of one number. Each is edited, tested, published and versioned in the same window as a
@@ -20,7 +21,15 @@ import { ArVoiceAgentDialog } from '../channels/voice-agent-dialog';
  */
 @Component({
   selector: 'ar-voice-agents',
-  imports: [FormsModule, DatePipe, LocalizationPipe, ArTopbar, ArButton, ArVoiceAgentDialog],
+  imports: [
+    FormsModule,
+    DatePipe,
+    LocalizationPipe,
+    ArTopbar,
+    ArButton,
+    ArVoiceAgentDialog,
+    ArVoiceFunctions,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -217,6 +226,7 @@ import { ArVoiceAgentDialog } from '../channels/voice-agent-dialog';
           </li>
         }
       </ul>
+      <ar-voice-functions />
     </main>
     @if (editing(); as id) {
       <ar-voice-agent-dialog [channelId]="id" (close)="closeEditor()" />

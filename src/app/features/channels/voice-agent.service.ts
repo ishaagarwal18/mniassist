@@ -174,6 +174,8 @@ export interface VoiceAgentTools {
   /** Let the agent hand the call to a person, ringing one of these teams (the first is the default). */
   transferToPeople: boolean;
   transferTeamIds: string[];
+  /** The workspace's custom functions the agent may call (up to 10). */
+  functionIds: string[];
 }
 
 export const noVoiceAgentTools = (): VoiceAgentTools => ({
@@ -191,6 +193,7 @@ export const noVoiceAgentTools = (): VoiceAgentTools => ({
   rememberCallers: false,
   transferToPeople: false,
   transferTeamIds: [],
+  functionIds: [],
 });
 
 export interface VoiceAgentSettings extends VoiceAgentInput {

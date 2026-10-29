@@ -11,6 +11,7 @@ import { isSubmitClick } from '../../ui/form-validation';
 import { ArVoiceAgentDialog } from './voice-agent-dialog';
 import { ArVoiceAgentTest } from './voice-agent-test';
 import { VoiceAgentService, VoiceAgentSettings } from './voice-agent.service';
+import { VoiceFunctionService } from '../calls/voice-functions';
 
 vi.mock('@syncfusion/ej2-angular-popups', () => ({ DialogComponent: class {} }));
 vi.mock('@syncfusion/ej2-angular-navigations', () => ({
@@ -92,6 +93,7 @@ describe('voice agent settings', () => {
       imports: [ArVoiceAgentDialog],
       providers: [
         { provide: VoiceAgentService, useValue: api },
+        { provide: VoiceFunctionService, useValue: { getList: () => of([]) } },
         // The builder, flow and compare components use ABP's own pipe, which reads this.
         { provide: LocalizationService, useValue: { instant: (key: string) => key } },
         {

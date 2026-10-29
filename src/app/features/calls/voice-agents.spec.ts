@@ -7,6 +7,10 @@ import { ArTopbar } from '../../layout/topbar';
 import { SharedVoiceAgentService } from '../channels/shared-voice-agent.service';
 import { ArVoiceAgentDialog } from '../channels/voice-agent-dialog';
 import { ArVoiceAgents } from './voice-agents';
+import { ArVoiceFunctions } from './voice-functions';
+
+@Component({ selector: 'ar-voice-functions', template: '' })
+class TestFunctions {}
 
 vi.mock('@syncfusion/ej2-angular-popups', () => ({ DialogComponent: class {} }));
 vi.mock('@syncfusion/ej2-angular-navigations', () => ({
@@ -97,8 +101,8 @@ describe('AI voice agents', () => {
       imports: [ArVoiceAgents],
       providers: [{ provide: SharedVoiceAgentService, useValue: api }],
     }).overrideComponent(ArVoiceAgents, {
-      remove: { imports: [ArTopbar, LocalizationPipe, ArVoiceAgentDialog] },
-      add: { imports: [TestTopbar, TestLocalization, TestAgentDialog] },
+      remove: { imports: [ArTopbar, LocalizationPipe, ArVoiceAgentDialog, ArVoiceFunctions] },
+      add: { imports: [TestTopbar, TestLocalization, TestAgentDialog, TestFunctions] },
     });
   });
   afterEach(() => TestBed.resetTestingModule());

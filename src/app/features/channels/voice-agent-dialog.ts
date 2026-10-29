@@ -45,6 +45,7 @@ import { ArVoiceAgentBuilder, VoiceAgentApply } from './voice-agent-builder';
 import { ArVoiceAgentCompare } from './voice-agent-compare';
 import { flowProblems } from './voice-agent-files';
 import { ArVoiceAgentFlowEditor } from './voice-agent-flow';
+import { VoiceFunction, VoiceFunctionService } from '../calls/voice-functions';
 
 @Component({
   selector: 'ar-voice-agent-dialog',
@@ -528,6 +529,29 @@ import { ArVoiceAgentFlowEditor } from './voice-agent-flow';
               }
             </div>
             <p>{{ 'AutoReach::VoiceAgent.Tools.transferHelp' | abpLocalization }}</p>
+          }
+          @if (functions().length > 0) {
+            <div class="transfer-teams" role="group" aria-labelledby="va-functions">
+              <span id="va-functions">Custom functions the agent may call</span>
+              @for (fn of functions(); track fn.id) {
+                <label class="check"
+                  ><input
+                    type="checkbox"
+                    [checked]="(tools.functionIds ?? []).includes(fn.id)"
+                    (change)="toggleFunction(fn.id, $any($event.target).checked)"
+                    [disabled]="
+                      saving() ||
+                      (!(tools.functionIds ?? []).includes(fn.id) &&
+                        (tools.functionIds ?? []).length >= 10)
+                    "
+                  />
+                  <code translate="no">{{ fn.name }}</code>
+                  · {{ fn.isWrite ? 'changes something' : 'looks up'
+                  }}{{ fn.enabled ? '' : ' (off)' }}
+                </label>
+              }
+            </div>
+            <p>Set up functions under AI voice agents, Custom functions.</p>
           }
         </fieldset>
         <fieldset class="tools speech">
@@ -1058,6 +1082,8 @@ export class ArVoiceAgentDialog implements OnInit {
   private readonly teamApi = inject(TeamService);
   protected readonly users = signal<ActivityUserDto[]>([]);
   protected readonly teams = signal<{ id: string; name: string }[]>([]);
+  protected readonly functions = signal<VoiceFunction[]>([]);
+  private readonly functionsApi = inject(VoiceFunctionService);
   protected readonly followUpTemplates = signal<TemplateDto[]>([]);
   protected readonly settings = signal<VoiceAgentSettings | null>(null);
   protected readonly loading = signal(true);
@@ -1165,6 +1191,7 @@ export class ArVoiceAgentDialog implements OnInit {
             actingUserId: current.actingUserId,
             followUpTemplateId: current.followUpTemplateId,
             transferTeamIds: current.transferTeamIds,
+            functionIds: current.functionIds ?? [],
           },
       analysis: { ...noVoiceAgentAnalysis(), ...agent.analysis },
       type: agent.type ?? 'prompt',
@@ -1348,6 +1375,17 @@ export class ArVoiceAgentDialog implements OnInit {
     } catch {
       this.teams.set([]);
     }
+    try {
+      this.functions.set(await firstValueFrom(this.functionsApi.getList()));
+    } catch {
+      this.functions.set([]);
+    }
+  }
+
+  protected toggleFunction(functionId: string, on: boolean): void {
+    const ids = (this.tools.functionIds ?? []).filter((id) => id !== functionId);
+    this.tools.functionIds = on ? [...ids, functionId] : ids;
+    this.saved.set(false);
   }
 
   /** Ticked in order: the first team ticked is the one the agent rings unless another fits better. */

@@ -31,6 +31,7 @@ export function portableAgent(agent: VoiceAgentDefinition): VoiceAgentDefinition
     actingUserId: null,
     followUpTemplateId: null,
     transferTeamIds: [],
+    functionIds: [],
   };
   copy.analysis = { ...noVoiceAgentAnalysis(), ...copy.analysis };
   copy.speech = cleanSpeech(copy.speech);
