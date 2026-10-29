@@ -6,6 +6,7 @@ import { DataRequestKind } from '../../proxy/compliance';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArStatTile } from '../../ui';
 import { ArSelect } from '../../ui/select';
+import { ArAiCallCompliance } from './ai-calls';
 import { ChipTone } from '../../ui/chip';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
@@ -25,7 +26,16 @@ const KIND_LABEL: Record<ReqKind, string> = {
  */
 @Component({
   selector: 'ar-compliance',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArStatTile, DecimalPipe, ArSelect],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArStatTile,
+    DecimalPipe,
+    ArSelect,
+    ArAiCallCompliance,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './compliance.html',
   styleUrl: './compliance.scss',
