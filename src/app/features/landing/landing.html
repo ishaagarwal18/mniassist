@@ -190,6 +190,13 @@
       <a routerLink="/login">Log in</a>
       <a routerLink="/forgot-password">Reset password</a>
     </nav>
+    <nav class="foot__col" aria-label="Industries">
+      <strong>Industries</strong>
+      @for (i of industryLinks; track i.slug) {
+        <a [routerLink]="['/industries', i.slug]">{{ i.label }}</a>
+      }
+      <a routerLink="/roi">ROI calculator</a>
+    </nav>
     <nav class="foot__col" aria-label="Legal">
       <strong>Legal</strong>
       <a routerLink="/privacy">Privacy policy</a>

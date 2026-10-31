@@ -9,6 +9,7 @@ import { ArLandingChat } from './landing-chat';
 import { ArLandingFaq } from './landing-faq';
 import { ArLandingIndustries } from './landing-industries';
 import { ArLandingPlans } from './landing-plans-section';
+import { INDUSTRY_LINKS } from './public-frame';
 
 interface Pillar {
   readonly icon: IconName;
@@ -46,6 +47,7 @@ export class ArLanding {
   protected readonly activeSection = signal<string>('industries');
   protected readonly tagline = BRAND_TAGLINE;
   protected readonly year = new Date().getFullYear();
+  protected readonly industryLinks = INDUSTRY_LINKS;
 
   /** In-page sections, for the header and footer links. */
   protected readonly sections = [

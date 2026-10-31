@@ -569,6 +569,16 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'A number assigned to an agent that isn’t published isn’t answered by AI.',
     ],
   },
+  'whats-new': {
+    benefits: [
+      'See what has shipped lately, newest first.',
+      'Each change says what you can now do, with a link to the screen.',
+    ],
+    steps: [
+      'Read the latest release at the top.',
+      'Select Open beside a change to go straight to the feature.',
+    ],
+  },
   'calls/ai-impact': {
     benefits: [
       'See what your AI voice agents did: calls, goals met, meetings, leads, tickets and payment links.',

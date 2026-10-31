@@ -96,6 +96,21 @@ export const routes: Routes = [
     loadComponent: () => import('./features/reorder/catalogue-page').then((m) => m.ArCataloguePage),
   },
   {
+    path: 'roi',
+    title: 'ROI calculator · MNI Assist',
+    loadComponent: () => import('./features/landing/roi-calculator').then((m) => m.ArRoiCalculator),
+  },
+  {
+    path: 'industries',
+    title: 'Industries · MNI Assist',
+    loadComponent: () => import('./features/landing/industry-page').then((m) => m.ArIndustryPage),
+  },
+  {
+    path: 'industries/:segment',
+    title: 'Industries · MNI Assist',
+    loadComponent: () => import('./features/landing/industry-page').then((m) => m.ArIndustryPage),
+  },
+  {
     path: 'privacy',
     title: 'Privacy Policy · MNI Assist',
     loadComponent: () => import('./features/legal/privacy-policy').then((m) => m.ArPrivacyPolicy),
@@ -519,6 +534,11 @@ export const routes: Routes = [
         path: 'calls/ai-agents',
         title: 'AI voice agents · MNI Assist',
         loadComponent: () => import('./features/calls/voice-agents').then((m) => m.ArVoiceAgents),
+      },
+      {
+        path: 'whats-new',
+        title: "What's new · MNI Assist",
+        loadComponent: () => import('./features/help/whats-new').then((m) => m.ArWhatsNew),
       },
       {
         path: 'calls/ai-impact',

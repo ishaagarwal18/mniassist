@@ -40,6 +40,7 @@ export const NAV: readonly NavGroup[] = [
     items: [
       { label: 'Home', icon: 'home', route: '/home' },
       { label: 'Get started', icon: 'check', route: '/getting-started', tenantOnly: true },
+      { label: "What's new", icon: 'sparkle', route: '/whats-new' },
       { label: 'Notifications', icon: 'bell', route: '/notifications', badge: 'alerts', top: true },
       {
         label: 'Inbox',
