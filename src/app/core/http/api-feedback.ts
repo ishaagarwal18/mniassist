@@ -59,6 +59,8 @@ const QUIET_ACTIONS = new Set([
   'recompute-score',
   'scan',
   'test',
+  'test-razorpay',
+  'test-pay-u',
   // downloads
   'download',
   'download-pdf',

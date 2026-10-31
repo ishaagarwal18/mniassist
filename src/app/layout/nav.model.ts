@@ -558,6 +558,13 @@ export const NAV: readonly NavGroup[] = [
         hostOnly: true,
       },
       {
+        label: 'Payment gateways',
+        icon: 'billing',
+        route: '/platform/payment-gateways',
+        permission: 'AutoReach.Administration.ManageTenants',
+        hostOnly: true,
+      },
+      {
         label: 'Phone numbers',
         icon: 'phone',
         route: '/platform/phone-numbers',

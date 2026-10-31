@@ -1183,6 +1183,25 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Live AI calls use the realtime model chosen per agent in its voice agent window.',
     ],
   },
+  'platform/payment-gateways': {
+    summary:
+      'The Razorpay and PayU accounts workspaces pay the platform through when they top up their wallet or pay an invoice. Key secrets and salts go to secret storage and are never shown again.',
+    benefits: [
+      'Change or rotate gateway keys without a server redeploy.',
+      'Switch a gateway off at checkout without losing its keys.',
+      'Check the keys work before a customer tries to pay.',
+    ],
+    steps: [
+      'Enter the key id and key secret (Razorpay) or the merchant key and salt (PayU), then click Save.',
+      'Click Test saved keys to ask the gateway whether it accepts them.',
+      "For Razorpay, add the webhook URL shown on Razorpay's dashboard with the events payment.captured and order.paid and the same webhook secret.",
+    ],
+    tips: [
+      'Leave a secret empty to keep the one already saved.',
+      'A field left empty uses the server configuration (Payments settings), if it has a value.',
+      'Use rzp_test_ keys or the PayU test environment to try checkout without real money.',
+    ],
+  },
   'platform/status': {
     summary:
       'What customers read at /status: open incidents, planned maintenance and the last 14 days. The database check is automatic; everything else is what you post here.',
