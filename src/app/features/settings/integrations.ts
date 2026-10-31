@@ -17,6 +17,7 @@ import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { ChipTone } from '../../ui/chip';
 import { ArErpSyncSection } from './erp-sync-section';
+import { ArHelpdeskShopSection } from './helpdesk-shop-section';
 import { ToastService } from '../../core/ui/toast.service';
 
 /** The CRM kinds with real deal/contact sync — matches ICrmDealSync/ICrmContactSync's
@@ -136,7 +137,17 @@ const DELIVERY_TONE: Record<string, ChipTone> = {
  */
 @Component({
   selector: 'ar-integrations',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArDialog, ArErpSyncSection, ArGrid, GridModule],
+  imports: [
+    ArTopbar,
+    ArBanner,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArErpSyncSection,
+    ArHelpdeskShopSection,
+    ArGrid,
+    GridModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './integrations.html',
   styleUrl: './integrations.scss',

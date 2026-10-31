@@ -21,7 +21,7 @@ export class IntegrationService {
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
-        url: '/api/auto-reach',
+        url: '/api/auto-reach/integration',
         body: input,
       },
       { apiName: this.apiName, ...config },
@@ -72,7 +72,7 @@ export class IntegrationService {
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        url: '/api/auto-reach',
+        url: '/api/auto-reach/integration',
         params: {
           sorting: input.sorting,
           skipCount: input.skipCount,

@@ -182,6 +182,10 @@ export interface VoiceAgentTools {
   lookUpContracts: boolean;
   /** Send a WhatsApp payment reminder with its pay link, after the caller confirms (a write: needs the acting user). */
   sendPaymentLinks: boolean;
+  /** A Freshdesk or Zendesk connection: look up and raise the caller's tickets there. */
+  helpdeskConnectionId?: string | null;
+  /** A Shopify connection: look up the caller's orders there. */
+  shopConnectionId?: string | null;
 }
 
 export const noVoiceAgentTools = (): VoiceAgentTools => ({
@@ -204,6 +208,8 @@ export const noVoiceAgentTools = (): VoiceAgentTools => ({
   lookUpOrders: false,
   lookUpContracts: false,
   sendPaymentLinks: false,
+  helpdeskConnectionId: null,
+  shopConnectionId: null,
 });
 
 export interface VoiceAgentSettings extends VoiceAgentInput {

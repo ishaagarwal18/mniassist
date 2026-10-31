@@ -46,6 +46,8 @@ import { ArVoiceAgentCompare } from './voice-agent-compare';
 import { flowProblems } from './voice-agent-files';
 import { ArVoiceAgentFlowEditor } from './voice-agent-flow';
 import { VoiceFunction, VoiceFunctionService } from '../calls/voice-functions';
+import { IntegrationKind } from '../../proxy/integrations/integration-kind.enum';
+import { IntegrationService } from '../../proxy/integrations/integration.service';
 
 @Component({
   selector: 'ar-voice-agent-dialog',
@@ -502,6 +504,46 @@ import { VoiceFunction, VoiceFunctionService } from '../calls/voice-functions';
             {{ 'AutoReach::VoiceAgent.Tools.paymentLinks' | abpLocalization }}</label
           >
           <p>{{ 'AutoReach::VoiceAgent.Tools.accountHelp' | abpLocalization }}</p>
+          @if (helpdesks().length > 0 || shops().length > 0) {
+            <div class="options">
+              @if (helpdesks().length > 0) {
+                <label class="ar-field"
+                  ><span>Helpdesk for the caller's tickets</span>
+                  <select
+                    class="ar-field__input"
+                    [(ngModel)]="tools.helpdeskConnectionId"
+                    (ngModelChange)="saved.set(false)"
+                    [disabled]="saving()"
+                  >
+                    <option [ngValue]="null">None</option>
+                    @for (c of helpdesks(); track c.id) {
+                      <option [ngValue]="c.id">{{ c.name }}</option>
+                    }
+                  </select></label
+                >
+              }
+              @if (shops().length > 0) {
+                <label class="ar-field"
+                  ><span>Online store for the caller's orders</span>
+                  <select
+                    class="ar-field__input"
+                    [(ngModel)]="tools.shopConnectionId"
+                    (ngModelChange)="saved.set(false)"
+                    [disabled]="saving()"
+                  >
+                    <option [ngValue]="null">None</option>
+                    @for (c of shops(); track c.id) {
+                      <option [ngValue]="c.id">{{ c.name }}</option>
+                    }
+                  </select></label
+                >
+              }
+            </div>
+            <p>
+              Tickets are found and raised, and orders found, by the number the caller rings from. A
+              new ticket is read back and raised only after the caller agrees.
+            </p>
+          }
           <label class="check"
             ><input
               type="checkbox"
@@ -1121,6 +1163,9 @@ export class ArVoiceAgentDialog implements OnInit {
   protected readonly teams = signal<{ id: string; name: string }[]>([]);
   protected readonly functions = signal<VoiceFunction[]>([]);
   private readonly functionsApi = inject(VoiceFunctionService);
+  private readonly integrationsApi = inject(IntegrationService);
+  protected readonly helpdesks = signal<{ id: string; name: string }[]>([]);
+  protected readonly shops = signal<{ id: string; name: string }[]>([]);
   protected readonly followUpTemplates = signal<TemplateDto[]>([]);
   protected readonly settings = signal<VoiceAgentSettings | null>(null);
   protected readonly loading = signal(true);
@@ -1229,6 +1274,8 @@ export class ArVoiceAgentDialog implements OnInit {
             followUpTemplateId: current.followUpTemplateId,
             transferTeamIds: current.transferTeamIds,
             functionIds: current.functionIds ?? [],
+            helpdeskConnectionId: current.helpdeskConnectionId ?? null,
+            shopConnectionId: current.shopConnectionId ?? null,
           },
       analysis: { ...noVoiceAgentAnalysis(), ...agent.analysis },
       type: agent.type ?? 'prompt',
@@ -1416,6 +1463,18 @@ export class ArVoiceAgentDialog implements OnInit {
       this.functions.set(await firstValueFrom(this.functionsApi.getList()));
     } catch {
       this.functions.set([]);
+    }
+    try {
+      const page = await firstValueFrom(this.integrationsApi.getList({ maxResultCount: 100 }));
+      const of = (...kinds: IntegrationKind[]) =>
+        (page.items ?? [])
+          .filter((c) => c.id && kinds.includes(c.kind as IntegrationKind))
+          .map((c) => ({ id: c.id!, name: c.name ?? '' }));
+      this.helpdesks.set(of(IntegrationKind.Freshdesk, IntegrationKind.Zendesk));
+      this.shops.set(of(IntegrationKind.Shopify));
+    } catch {
+      this.helpdesks.set([]);
+      this.shops.set([]);
     }
   }
 
