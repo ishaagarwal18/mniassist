@@ -569,6 +569,19 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'A number assigned to an agent that isn’t published isn’t answered by AI.',
     ],
   },
+  'calls/web-widget': {
+    benefits: [
+      'Visitors to your website talk to your AI voice agent from the browser, with one click.',
+      'Each call is kept like any AI call: transcript, analysis, actions and follow-ups.',
+      'The visitor becomes a contact, with their name and mobile number.',
+    ],
+    steps: [
+      'Add a call button, choose the number whose published agent answers, and list your websites.',
+      'Copy the embed code and paste it before </body> on your website’s pages.',
+      'Set a daily limit: AI minutes cost money, and calls stop for the day at the limit.',
+      'Make a new embed code if the code was copied somewhere it shouldn’t be; the old one stops at once.',
+    ],
+  },
   'calls/ai-batches': {
     benefits: [
       'Your published voice agent calls a list of people for you: renewals, reminders, feedback or follow-ups.',

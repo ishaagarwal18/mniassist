@@ -170,6 +170,8 @@ export interface VoiceConversationListItemDto {
   preview: string;
   /** A phone AI call (Exotel), not a WhatsApp call. */
   phoneLine?: boolean;
+  /** A call from the business's website call button. */
+  website?: boolean;
   sentiment?: string | null;
   goalAchieved?: boolean | null;
   summary?: string | null;

@@ -78,6 +78,9 @@ import { ArDialog } from '../../ui/dialog';
           @if (row.phoneLine) {
             <p>{{ 'AutoReach::VoiceConversation.PhoneLine' | abpLocalization }}</p>
           }
+          @if (row.website) {
+            <p>{{ 'AutoReach::VoiceConversation.Website' | abpLocalization }}</p>
+          }
           @if (row.transcriptIncomplete) {
             <p>{{ 'AutoReach::VoiceConversation.TranscriptIncomplete' | abpLocalization }}</p>
           }

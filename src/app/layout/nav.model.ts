@@ -184,6 +184,14 @@ export const NAV: readonly NavGroup[] = [
         tenantOnly: true,
       },
       {
+        label: 'Website call button',
+        icon: 'phone',
+        route: '/calls/web-widget',
+        permission: 'AutoReach.Channels.Manage',
+        feature: 'Voice',
+        tenantOnly: true,
+      },
+      {
         label: 'AI call batches',
         icon: 'phone',
         route: '/calls/ai-batches',
