@@ -413,7 +413,7 @@ export class CurrentUserService {
    * brings the person back to this page afterwards. Many requests can fail together; this
    * runs once.
    */
-  sessionEnded(): void {
+  sessionEnded(why: 'ended' | 'role-changed' = 'ended'): void {
     if (MOCK || this.endingSession) return;
     this.endingSession = true;
     const here = this.router.url;
@@ -422,10 +422,17 @@ export class CurrentUserService {
     } catch {
       /* storage blocked: they land on home instead */
     }
-    this.toasts.warning(
-      this.i18n.t('Your session has ended. Sign in again to continue.'),
-      this.i18n.t('Signed out'),
-    );
+    if (why === 'role-changed') {
+      this.toasts.warning(
+        this.i18n.t('Your role has been changed. Please sign in again.'),
+        this.i18n.t('Signed out'),
+      );
+    } else {
+      this.toasts.warning(
+        this.i18n.t('Your session has ended. Sign in again to continue.'),
+        this.i18n.t('Signed out'),
+      );
+    }
     // The session is already rejected. ABP's logout waits for token revocation
     // and a configuration fetch before redirecting; either can hang or fail here.
     // Clear local tokens without a remote logout redirect, and clear the cached

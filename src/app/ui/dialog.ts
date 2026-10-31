@@ -14,6 +14,13 @@ import { ensureSyncfusionTheme } from '../core/ui/syncfusion-theme';
 import { isSubmitClick, recheckMarked, validateWithin } from './form-validation';
 
 /**
+ * Dialogs stack from here, each one opened above the last (a confirmation over the dialog that asked for it). Left at its
+ * default, a Syncfusion dialog places itself above the highest z-index on the page, which put it over the toasts.
+ */
+const DIALOG_Z_BASE = 1200;
+let openDialogs = 0;
+
+/**
  * A modal Syncfusion dialog (`ejs-dialog`): overlay, centred panel, titled header
  * with a close control, a content slot and a footer slot for the actions.
  * Deliberately unopinionated about what goes inside — every "New…" flow in the
@@ -47,6 +54,7 @@ import { isSubmitClick, recheckMarked, validateWithin } from './form-validation'
       [header]="title()"
       [allowDragging]="true"
       [width]="width()"
+      [zIndex]="zIndex"
       (open)="onOpen()"
       [animationSettings]="{ effect: 'Fade', duration: 150 }"
       (beforeClose)="onBeforeClose($event)"
@@ -84,6 +92,8 @@ export class ArDialog implements OnDestroy {
   readonly dismiss = output<void>();
 
   private readonly dialog = viewChild<DialogComponent>('dlg');
+  /** Under the toasts (styles.scss, #ar-toasts), so a message is never hidden behind a dialog. */
+  protected readonly zIndex = DIALOG_Z_BASE + ++openDialogs;
   private panel: HTMLElement | null = null;
   private readonly onClick = (e: Event) => {
     const body = this.panel?.querySelector('.dlg__body');
@@ -103,6 +113,7 @@ export class ArDialog implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    openDialogs--;
     this.panel?.removeEventListener('click', this.onClick, true);
   }
 

@@ -17,6 +17,9 @@ export interface IdentityUserDto {
   isActive: boolean;
   lockoutEnabled?: boolean;
   roleNames?: string[];
+  concurrencyStamp?: string;
+  /** `RoleNames` is added by AutoReach's user service (RoleAwareIdentityUserAppService); stock ABP sends no roles. */
+  extraProperties?: { RoleNames?: string[] } & Record<string, unknown>;
 }
 
 export interface IdentityRoleDto {

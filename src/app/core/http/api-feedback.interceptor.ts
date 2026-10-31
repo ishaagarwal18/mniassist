@@ -15,6 +15,9 @@ import { CurrentUserService } from '../services/current-user.service';
 import { ToastService } from '../ui/toast.service';
 import { errorFor, isQuietFailure, successFor } from './api-feedback';
 
+/** What the API's refusal says when an administrator changed the person's roles (SessionRevocationMiddleware). */
+export const ROLE_CHANGED_CODE = 'AutoReach:RoleChanged';
+
 /** Set on a request to keep it out of the toasts entirely (success and failure). */
 export const QUIET_REQUEST = new HttpContextToken<boolean>(() => false);
 
@@ -54,7 +57,10 @@ export class ApiFeedbackInterceptor implements HttpInterceptor {
           // A sign-in this browser still holds was refused: it expired or was revoked. Showing
           // "signed out" and leaving the page up only leads to more failures, so end it properly.
           if (err instanceof HttpErrorResponse && err.status === 401 && this.holdsSignIn()) {
-            this.injector.get(CurrentUserService).sessionEnded();
+            const code = (err.error as { error?: { code?: string } } | null)?.error?.code;
+            this.injector
+              .get(CurrentUserService)
+              .sessionEnded(code === ROLE_CHANGED_CODE ? 'role-changed' : 'ended');
             return;
           }
           if (err instanceof HttpErrorResponse && !isQuietFailure(req.method, err, req.url)) {

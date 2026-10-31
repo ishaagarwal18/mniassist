@@ -276,6 +276,9 @@ interface Row extends IdentityUserDto {
 
         <div class="fld">
           <span class="fld__k">Roles</span>
+          @if (rolesLoading()) {
+            <span class="fld__hint">Loading this user's roles…</span>
+          }
           <div class="roles">
             @for (r of assignableRoles(); track r.id) {
               <label class="chk">
@@ -292,7 +295,13 @@ interface Row extends IdentityUserDto {
 
         <div dialogActions>
           <button ar-button type="button" variant="ghost" (click)="dialog.set(null)">Cancel</button>
-          <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="busy() || rolesLoading()"
+            (click)="save()"
+          >
             {{ busy() ? 'Saving…' : 'Save' }}
           </button>
         </div>
@@ -357,6 +366,12 @@ interface Row extends IdentityUserDto {
       font: 500 12px var(--ar-font-sans);
       color: var(--ar-ink-700);
     }
+    .fld__hint {
+      display: block;
+      margin-bottom: 4px;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
     .chk {
       display: flex;
       align-items: center;
@@ -399,7 +414,7 @@ export class ArAdminUsers {
   protected readonly users = computed<readonly Row[]>(() =>
     (this.mock ? SEED : this.resource.value().items).map((u) => ({
       ...u,
-      roleNames: u.roleNames ?? [],
+      roleNames: u.roleNames ?? u.extraProperties?.RoleNames ?? [],
     })),
   );
 
@@ -450,7 +465,11 @@ export class ArAdminUsers {
   protected readonly fLockoutEnabled = signal(true);
   protected readonly fRoles = signal<string[]>([]);
 
+  /** The edited user's roles are being read; saving before they arrive would replace them with none. */
+  protected readonly rolesLoading = signal(false);
+
   protected readonly canSave = computed(() => {
+    if (this.rolesLoading()) return false;
     if (!this.fUserName().trim() || !this.fEmail().trim()) return false;
     if (this.dialog() === 'create' && this.fPassword().length < 6) return false;
     return true;
@@ -462,6 +481,7 @@ export class ArAdminUsers {
 
   protected openCreate(): void {
     this.editingId.set(null);
+    this.rolesLoading.set(false);
     this.fUserName.set('');
     this.fName.set('');
     this.fSurname.set('');
@@ -485,8 +505,29 @@ export class ArAdminUsers {
     this.fActive.set(u.isActive);
     this.fLockoutEnabled.set(u.lockoutEnabled ?? true);
     this.fRoles.set([...u.roleNames]);
+    this.savedRoles = [...u.roleNames];
     this.error.set(null);
     this.dialog.set('edit');
+    if (!this.mock) void this.loadRoles(u.id);
+  }
+
+  /** The roles the edited user held when the dialog opened: changing them signs the user out (said in the notice). */
+  private savedRoles: string[] = [];
+
+  /** Ticks the roles the user holds now, read on their own so the dialog never starts from a list without them. */
+  private async loadRoles(id: string): Promise<void> {
+    this.rolesLoading.set(true);
+    try {
+      const { items } = await firstValueFrom(this.api.getRoles(id));
+      if (this.editingId() === id) {
+        this.fRoles.set(items.map((r) => r.name));
+        this.savedRoles = items.map((r) => r.name);
+      }
+    } catch (e) {
+      if (this.editingId() === id) this.error.set(readApiError(e));
+    } finally {
+      if (this.editingId() === id) this.rolesLoading.set(false);
+    }
   }
 
   protected openPermissions(u: Row): void {
@@ -513,7 +554,14 @@ export class ArAdminUsers {
         this.notice.set(`User "${base.userName}" created.`);
       } else {
         await firstValueFrom(this.api.update(this.editingId()!, base));
-        this.notice.set('User updated.');
+        const before = new Set(this.savedRoles);
+        const rolesChanged =
+          before.size !== base.roleNames.length || base.roleNames.some((r) => !before.has(r));
+        this.notice.set(
+          rolesChanged
+            ? 'User updated. Their role changed, so they are signed out and asked to sign in again.'
+            : 'User updated.',
+        );
       }
       this.dialog.set(null);
       this.reload();

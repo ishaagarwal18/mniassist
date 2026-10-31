@@ -278,7 +278,7 @@ const POLL_MS = 4000;
         <ar-icon name="phone" [size]="15" />
         @if (p === 'audio') {
           <span>Enable a ringtone for incoming WhatsApp calls.</span>
-          <button ar-button type="button" variant="primary" (click)="alert.unlock()">
+          <button ar-button type="button" variant="primary" (click)="enableRingtone()">
             Enable ringtone
           </button>
         } @else if (p === 'denied') {
@@ -287,14 +287,12 @@ const POLL_MS = 4000;
             while this window is minimised. Allow notifications in the browser's site settings (the
             icon left of the address).</span
           >
-          @if (!alert.audioReady()) {
-            <button ar-button type="button" variant="primary" (click)="alert.unlock()">
-              Enable ringtone
-            </button>
-          }
+          <button ar-button type="button" variant="primary" (click)="enableRingtone()">
+            Enable ringtone
+          </button>
         } @else {
           <span>Get a desktop alert for WhatsApp calls, even when this window is minimised.</span>
-          <button ar-button type="button" variant="primary" (click)="alert.enableNotifications()">
+          <button ar-button type="button" variant="primary" (click)="turnOnAlerts()">
             Turn on call alerts
           </button>
         }
@@ -428,22 +426,31 @@ export class ArWhatsAppCallBar {
   private readonly canUse = grantedPolicy('AutoReach.Inbox', inject(PermissionService));
   private readonly realtime = inject(InboxRealtimeService);
   protected readonly alert = inject(CallAlert);
-  private readonly desktopSetupDismissed = readDismissed();
-  private readonly setupDismissed = signal(false);
+  /** The agent has answered the setup card in this browser (turned alerts on or dismissed it), or alerts were already allowed. */
+  private readonly setupAnswered = signal(readDismissed() || this.alert.permission() === 'granted');
 
-  /** Shown to an agent who takes calls until desktop notifications are on (or they dismiss it for this browser). */
+  /**
+   * Shown once to an agent who takes calls, until they answer it. It never comes back after that: the ringtone, which each
+   * new tab must unlock again, is then unlocked by the agent's first click or key press in the app (see the constructor).
+   */
   protected readonly alertSetup = computed(() => {
+    if (!this.canUse() || environment.useMockData || this.setupAnswered()) return null;
     const p = this.alert.permission();
-    if (!this.canUse() || environment.useMockData || this.setupDismissed()) return null;
-    // Audio needs enabling in each new tab. A previously dismissed desktop
-    // notification invitation must not hide that action or silently mute calls.
-    if (!this.alert.audioReady())
-      return this.desktopSetupDismissed || p === 'unsupported' ? 'audio' : p;
-    return !this.desktopSetupDismissed && (p === 'default' || p === 'denied') ? p : null;
+    return p === 'unsupported' ? 'audio' : p === 'granted' ? null : p;
   });
 
+  protected async turnOnAlerts(): Promise<void> {
+    this.dismissSetup();
+    await this.alert.enableNotifications();
+  }
+
+  protected enableRingtone(): void {
+    this.dismissSetup();
+    this.alert.unlock();
+  }
+
   protected dismissSetup(): void {
-    this.setupDismissed.set(true);
+    this.setupAnswered.set(true);
     try {
       localStorage.setItem(SETUP_DISMISSED_KEY, '1');
     } catch {
@@ -483,8 +490,21 @@ export class ArWhatsAppCallBar {
       if (this.realtime.callRinging()) untracked(() => void this.session.poll());
     });
 
-    // Audio hardware and permission prompts are initialized by the explicit
-    // call-alert setup button, never by an unrelated navigation/form click.
+    // Audio hardware and permission prompts are first initialized by the explicit call-alert setup card. Once the agent has
+    // answered it, each new tab unlocks the ringtone on their first click or key press, instead of asking again.
+    const unlockOnGesture = () => {
+      if (this.setupAnswered()) this.alert.unlock();
+    };
+    document.addEventListener('pointerdown', unlockOnGesture, true);
+    document.addEventListener('keydown', unlockOnGesture, true);
+    const removeGesture = () => {
+      document.removeEventListener('pointerdown', unlockOnGesture, true);
+      document.removeEventListener('keydown', unlockOnGesture, true);
+    };
+    destroyRef.onDestroy(removeGesture);
+    effect(() => {
+      if (this.alert.audioReady()) untracked(removeGesture);
+    });
 
     // A new call starts with the look-up panel closed (the same call refreshed by a poll keeps it open).
     let liveId: string | undefined;
