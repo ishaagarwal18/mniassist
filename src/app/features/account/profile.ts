@@ -6,6 +6,7 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArThemeToggle } from '../../layout/theme-toggle';
 import { ArBanner, ArButton, ArCard } from '../../ui';
 import { ArEmailConfirmationBanner } from './email-confirmation-banner';
+import { ArGoogleCalendarCard } from './google-calendar-card';
 
 /**
  * The signed-in user's own profile — name, contact details and password. Backed by
@@ -13,7 +14,15 @@ import { ArEmailConfirmationBanner } from './email-confirmation-banner';
  */
 @Component({
   selector: 'ar-profile',
-  imports: [ArTopbar, ArBanner, ArButton, ArCard, ArThemeToggle, ArEmailConfirmationBanner],
+  imports: [
+    ArTopbar,
+    ArBanner,
+    ArButton,
+    ArCard,
+    ArThemeToggle,
+    ArEmailConfirmationBanner,
+    ArGoogleCalendarCard,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './profile.html',
   styleUrl: './profile.scss',

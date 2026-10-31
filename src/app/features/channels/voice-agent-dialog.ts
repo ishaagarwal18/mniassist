@@ -417,6 +417,10 @@ import { IntegrationService } from '../../proxy/integrations/integration.service
                   [disabled]="saving()"
               /></label>
             </div>
+            <p>
+              If the acting user connects Google Calendar on their profile, times they are busy
+              there are not offered either.
+            </p>
           }
           <label class="check"
             ><input
