@@ -19,6 +19,7 @@ import {
   VoiceAgentTemplateRecord,
   VoiceAgentType,
 } from './voice-agent.service';
+import { ArVoicePlaybooks } from './voice-playbooks';
 
 export interface VoiceAgentApply {
   agent: VoiceAgentDefinition;
@@ -32,9 +33,14 @@ export interface VoiceAgentApply {
  */
 @Component({
   selector: 'ar-voice-agent-builder',
-  imports: [FormsModule, LocalizationPipe, ArButton],
+  imports: [FormsModule, LocalizationPipe, ArButton, ArVoicePlaybooks],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <section class="part" aria-labelledby="vab-playbooks">
+      <h3 id="vab-playbooks">Playbooks</h3>
+      <p>Tested agents for common jobs, with their actions, goal and what to try.</p>
+      <ar-voice-playbooks [disabled]="disabled()" (apply)="apply.emit($event)" />
+    </section>
     <section class="part" aria-labelledby="vab-ai">
       <h3 id="vab-ai">{{ 'AutoReach::VoiceAgent.Builder.ai' | abpLocalization }}</h3>
       <label class="ar-field"

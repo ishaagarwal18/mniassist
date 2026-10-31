@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ArVoiceAgentBuilder, VoiceAgentApply } from './voice-agent-builder';
 import { agentFileText, emptyDefinition } from './voice-agent-files';
 import { VoiceAgentService } from './voice-agent.service';
+import { VoicePlaybookService } from './voice-playbooks';
 
 describe('voice agent builder', () => {
   const api = {
@@ -39,6 +40,7 @@ describe('voice agent builder', () => {
       imports: [ArVoiceAgentBuilder],
       providers: [
         { provide: VoiceAgentService, useValue: api },
+        { provide: VoicePlaybookService, useValue: { getList: () => of([]) } },
         { provide: LocalizationService, useValue: { instant: (key: string) => key } },
       ],
     });
