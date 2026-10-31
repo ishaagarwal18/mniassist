@@ -569,6 +569,18 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'A number assigned to an agent that isn’t published isn’t answered by AI.',
     ],
   },
+  'calls/ai-impact': {
+    benefits: [
+      'See what your AI voice agents did: calls, goals met, meetings, leads, tickets and payment links.',
+      'Compare what the calls cost with the staff time they would have taken.',
+      'Download it as a PDF for a pilot review, or as CSV.',
+    ],
+    steps: [
+      'Choose the period, and a number if you want just one.',
+      'Enter how long a person takes per call and what an hour of their time costs.',
+      'Select Show, then PDF or CSV to download.',
+    ],
+  },
   'calls/web-widget': {
     benefits: [
       'Visitors to your website talk to your AI voice agent from the browser, with one click.',

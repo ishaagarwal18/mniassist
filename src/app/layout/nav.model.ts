@@ -184,6 +184,14 @@ export const NAV: readonly NavGroup[] = [
         tenantOnly: true,
       },
       {
+        label: 'AI impact report',
+        icon: 'analytics',
+        route: '/calls/ai-impact',
+        permission: 'AutoReach.Analytics',
+        feature: 'Voice',
+        tenantOnly: true,
+      },
+      {
         label: 'Website call button',
         icon: 'phone',
         route: '/calls/web-widget',

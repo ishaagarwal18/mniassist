@@ -521,6 +521,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/calls/voice-agents').then((m) => m.ArVoiceAgents),
       },
       {
+        path: 'calls/ai-impact',
+        title: 'AI impact report · MNI Assist',
+        loadComponent: () => import('./features/calls/voice-impact').then((m) => m.ArVoiceImpact),
+      },
+      {
         path: 'calls/web-widget',
         title: 'Website call button · MNI Assist',
         loadComponent: () =>
