@@ -1,0 +1,178 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.acc-form-page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.acc-form-container {
+  max-width: 820px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Visual Hierarchy Placement Card                                            */
+/* -------------------------------------------------------------------------- */
+.acc-hierarchy-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--ar-teal-50, #f0fdfa);
+  border: 1px solid var(--ar-teal-200, #99f6e4);
+  border-radius: var(--ar-radius-card, 10px);
+  color: var(--ar-teal-900, #134e4a);
+
+  &--sub {
+    background: var(--ar-blue-50, #eff6ff);
+    border-color: var(--ar-blue-200, #bfdbfe);
+    color: var(--ar-blue-900, #1e3a8a);
+    .acc-hierarchy-card__icon {
+      background: var(--ar-blue-100, #dbeafe);
+      color: var(--ar-blue-700, #1d4ed8);
+    }
+  }
+}
+
+.acc-hierarchy-card__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--ar-teal-100, #ccfbf1);
+  color: var(--ar-teal-700, #0f766e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.acc-hierarchy-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.acc-hierarchy-card__title {
+  font: 600 13.5px var(--ar-font-sans);
+}
+
+.acc-hierarchy-card__desc {
+  margin: 0;
+  font: 400 12px var(--ar-font-sans);
+  opacity: 0.85;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Form Card & Layout Sections                                                */
+/* -------------------------------------------------------------------------- */
+.acc-form-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 8px 0;
+}
+
+.acc-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--ar-line-200);
+
+  &:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+}
+
+.acc-form-group__heading {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 13px var(--ar-font-sans);
+  color: var(--ar-ink-800);
+}
+
+.acc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 18px;
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.ar-field__req {
+  color: var(--ar-red-600, #dc2626);
+  font-weight: 700;
+}
+
+.acc-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ar-line-200);
+  margin-top: 8px;
+}
+
+.acc-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.acc-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: 500 11.5px var(--ar-font-sans);
+  color: var(--ar-teal-700, #0f766e);
+  cursor: pointer;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--ar-teal-900, #134e4a);
+    text-decoration: underline;
+  }
+}
+
+.acc-custom-entry-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: var(--ar-bg-subtle, #f8fafc);
+  border: 1px dashed var(--ar-teal-400, #2dd4bf);
+  border-radius: var(--ar-radius-md, 6px);
+}
+
+.acc-custom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .acc-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

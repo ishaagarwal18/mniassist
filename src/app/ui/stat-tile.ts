@@ -69,7 +69,7 @@ export type StatTone = 'neutral' | 'good' | 'warn' | 'bad' | 'teal' | 'amber';
 })
 export class ArStatTile {
   readonly label = input.required<string>();
-  readonly value = input.required<string>();
+  readonly value = input.required<string | number>();
   readonly note = input<string | null>(null);
   readonly tone = input<StatTone>('neutral');
 

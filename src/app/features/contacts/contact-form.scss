@@ -1,0 +1,257 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.contact-form-page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.contact-form-container {
+  max-width: 840px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Smart Auto-Fill Assistant Card                                             */
+/* -------------------------------------------------------------------------- */
+.smart-fill-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--ar-teal-50, #f0fdfa);
+  border: 1px dashed var(--ar-teal-300, #5eead4);
+  border-radius: var(--ar-radius-card, 10px);
+}
+
+.smart-fill-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.smart-fill-icon {
+  color: var(--ar-teal-700, #0f766e);
+  margin-top: 2px;
+  flex: none;
+}
+
+.smart-fill-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.smart-fill-card__title {
+  font: 600 13.5px var(--ar-font-sans);
+  color: var(--ar-teal-900, #134e4a);
+}
+
+.smart-fill-card__desc {
+  margin: 0;
+  font: 400 12.5px/1.4 var(--ar-font-sans);
+  color: var(--ar-teal-800, #115e59);
+}
+
+.smart-fill-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.smart-fill-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--ar-white, #ffffff);
+  border: 1px solid var(--ar-teal-300, #5eead4);
+  border-radius: var(--ar-radius-control, 6px);
+  font: 500 13px var(--ar-font-sans);
+  color: var(--ar-teal-900, #134e4a);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 118, 110, 0.06);
+  transition: all 0.15s ease-in-out;
+
+  &:hover {
+    background: var(--ar-teal-100, #ccfbf1);
+    border-color: var(--ar-teal-500, #14b8a6);
+    color: var(--ar-teal-950, #042f2e);
+  }
+
+  &--busy {
+    opacity: 0.7;
+    cursor: wait;
+  }
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.smart-fill-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--ar-white, #ffffff);
+  border: 1px solid var(--ar-good-border, #bbf7d0);
+  border-radius: var(--ar-radius-control, 6px);
+  color: var(--ar-good-ink, #166534);
+  font: 500 12.5px/1.4 var(--ar-font-sans);
+
+  ar-icon {
+    flex: none;
+    margin-top: 2px;
+    color: var(--ar-good, #16a34a);
+  }
+}
+
+.smart-fill-notice__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.smart-fill-notice__phones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-600);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Contact Form Sections & Inputs                                             */
+/* -------------------------------------------------------------------------- */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-section-body {
+  padding: 8px 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+
+  @media (min-width: 680px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  &--col2 {
+    @media (min-width: 680px) {
+      grid-column: span 2;
+    }
+  }
+}
+
+/* Fields & Labels */
+.ar-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ar-field__label {
+  font: 600 12.5px/1.3 var(--ar-font-sans);
+  color: var(--ar-ink-900);
+}
+
+.ar-field__req {
+  color: var(--ar-bad, #dc2626);
+  font-weight: 700;
+}
+
+.ar-field__opt {
+  font: 400 11.5px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+  margin-left: 4px;
+}
+
+.ar-field__hint {
+  font: 400 11.5px/1.35 var(--ar-font-sans);
+  color: var(--ar-ink-500);
+  margin-bottom: 2px;
+
+  code {
+    font-family: var(--ar-font-mono, monospace);
+    background: var(--ar-bg-100, #f3f4f6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--ar-ink-800);
+  }
+}
+
+.ar-field__input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--ar-line-300, #d1d5db);
+  border-radius: var(--ar-radius-control, 6px);
+  background: var(--ar-white, #ffffff);
+  font: 400 13.5px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--ar-primary, #0f766e);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+  }
+
+  &--readonly,
+  &[readonly] {
+    background: var(--ar-bg-100, #f3f4f6);
+    color: var(--ar-ink-600);
+    cursor: not-allowed;
+  }
+
+  /* modern-web-guidance: validate-input-after-interaction */
+  &:user-invalid {
+    border-color: var(--ar-bad, #dc2626);
+    background-color: var(--ar-bad-bg, #fef2f2);
+  }
+
+  &:user-valid:not(:placeholder-shown) {
+    border-color: var(--ar-good, #16a34a);
+  }
+}
+
+select.ar-field__input {
+  cursor: pointer;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Footer Action Strip                                                        */
+/* -------------------------------------------------------------------------- */
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0 32px;
+}

@@ -1,5 +1,6 @@
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -13,7 +14,7 @@ import {
   HealthWeightsDto,
   RenewalForecastDto,
 } from '../../proxy/contacts/account-health.service';
-import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
 
 /** The original fixed rules: what a workspace that never tunes anything scores with. */
@@ -173,7 +174,7 @@ const BAND_LABEL: Record<HealthBand, string> = {
  */
 @Component({
   selector: 'ar-account-health',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [RouterLink, ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -252,17 +253,32 @@ const BAND_LABEL: Record<HealthBand, string> = {
     <div class="ah ar-scroll">
       @if (forecast(); as f) {
         <section class="fc" aria-label="AMC renewal forecast">
-          <header class="fc__h">
-            <h2>AMC renewals, next {{ f.months }} months</h2>
-            <p>
-              <b>{{ money(f.expectedValueInPaise) }}</b> likely of
-              {{ money(f.openValueInPaise) }} open. A forecast from each renewal's stage and the
-              customer's health, not a promise.
-              @if (f.withoutValue) {
-                {{ f.withoutValue }} renewal(s) have no AMC value on the machine and count as ₹0.
-              }
-            </p>
-          </header>
+          <div class="fc__h">
+            <div>
+              <h2>AMC Renewals Forecast (Next {{ f.months }} Months)</h2>
+              <p>
+                A data-driven forecast calculated from each renewal's stage, service satisfaction, and customer health score.
+                @if (f.withoutValue) {
+                  <span>· {{ f.withoutValue }} renewal(s) count as ₹0 pending contract value.</span>
+                }
+              </p>
+            </div>
+            <div class="fc__kpis">
+              <div class="fc__kpi">
+                <span class="fc__kpi-lbl">Likely Renewal</span>
+                <span class="fc__kpi-val text-good">{{ money(f.expectedValueInPaise) }}</span>
+              </div>
+              <div class="fc__kpi">
+                <span class="fc__kpi-lbl">Open Exposure</span>
+                <span class="fc__kpi-val">{{ money(f.openValueInPaise) }}</span>
+              </div>
+              <div class="fc__kpi">
+                <span class="fc__kpi-lbl">Projected Realization</span>
+                <span class="fc__kpi-val text-accent">{{ forecastPct() }}%</span>
+              </div>
+            </div>
+          </div>
+
           <div class="fc__bars" role="list">
             @for (m of f.byMonth; track m.month) {
               <div
@@ -277,71 +293,93 @@ const BAND_LABEL: Record<HealthBand, string> = {
                 "
               >
                 <div class="fc__track">
-                  <div class="fc__open" [style.height.%]="pct(m.openValueInPaise)"></div>
-                  <div class="fc__exp" [style.height.%]="pct(m.expectedValueInPaise)"></div>
+                  <div class="fc__open" [style.height.%]="pct(m.openValueInPaise)" title="Open value"></div>
+                  <div class="fc__exp" [style.height.%]="pct(m.expectedValueInPaise)" title="Likely renewal value"></div>
                 </div>
                 <span class="fc__v">{{ money(m.expectedValueInPaise) }}</span>
-                <span class="fc__m">{{ monthLabel(m.month) }} · {{ m.count }}</span>
+                <span class="fc__m">{{ monthLabel(m.month) }} · {{ m.count }} AMC{{ m.count === 1 ? '' : 's' }}</span>
               </div>
             } @empty {
-              <p class="ah__hint">No AMC ends in this period.</p>
+              <p class="ah__hint">No AMC agreements expire in this planning period.</p>
             }
           </div>
-          <p class="fc__legend">
-            <span class="sw sw--exp"></span> likely <span class="sw sw--open"></span> open value
-          </p>
+          <div class="fc__legend">
+            <span class="sw sw--exp"></span> Expected Likely
+            <span class="sw sw--open"></span> Total Open Exposure
+          </div>
         </section>
       }
 
-      <div class="seg" role="group" aria-label="Show">
-        @for (b of bands; track b.value) {
-          <button
-            type="button"
-            [attr.aria-pressed]="band() === b.value"
-            (click)="band.set(b.value)"
-          >
-            {{ b.label }} <span class="seg__n">{{ count(b.value) }}</span>
-          </button>
-        }
+      <!-- Search & Health Band Toolbar -->
+      <div class="ah__toolbar">
+        <div class="seg" role="group" aria-label="Filter by health band">
+          @for (b of bands; track b.value) {
+            <button
+              type="button"
+              [attr.aria-pressed]="band() === b.value"
+              (click)="band.set(b.value)"
+            >
+              {{ b.label }} <span class="seg__n">({{ count(b.value) }})</span>
+            </button>
+          }
+        </div>
+        <div class="ah__search">
+          <ar-search-box placeholder="Search customer by name..." [query]="search()" (queryChange)="search.set($event)" />
+        </div>
       </div>
 
       @if (error(); as e) {
         <p class="ah__err" role="alert">{{ e }}</p>
       }
       @if (loading()) {
-        <p class="ah__hint">Loading…</p>
+        <div class="state-box">
+          <p>Calculating customer health scores…</p>
+        </div>
       } @else if (visible().length === 0) {
-        <p class="ah__hint">
-          No customers scored{{ band() ? ' in this band' : '' }} yet. Scores appear for accounts and
-          for customers with machines, tickets, quotes, renewals or invoices, after the nightly run
-          or "Rescore now".
-        </p>
+        <div class="state-box">
+          <p>
+            @if (search().trim()) {
+              No customers match “{{ search() }}”.
+            } @else {
+              No customers scored{{ band() ? ' in this band' : '' }} yet.
+            }
+          </p>
+        </div>
       } @else {
         <ul class="list">
           @for (h of visible(); track h.customerId) {
             <li class="acc">
-              <div class="acc__score" [class]="'acc__score acc__score--' + h.band">
-                {{ h.score }}
+              <div class="acc__score" [class]="'acc__score acc__score--' + h.band" title="Health Score: {{ h.score }}/100">
+                <span class="acc__score-num">{{ h.score }}</span>
+                <span class="acc__score-max">/100</span>
               </div>
+
               <div class="acc__main">
                 <div class="acc__top">
-                  <b>{{ h.name }}</b>
+                  <a class="acc__name" [routerLink]="customerUrl(h)" title="Open Customer 360">
+                    {{ h.name }}
+                  </a>
                   <ar-chip [tone]="tone(h.band)" [dot]="true">{{ label(h.band) }}</ar-chip>
                   <span class="acc__meta">
-                    {{ h.machines }} machine{{ h.machines === 1 ? '' : 's' }}
+                    🏭 {{ h.machines }} machine{{ h.machines === 1 ? '' : 's' }}
                     @if (h.openRenewalValueInPaise) {
-                      · {{ money(h.openRenewalValueInPaise) }} AMC up for renewal
+                      · 📋 {{ money(h.openRenewalValueInPaise) }} AMC renewal exposure
                     }
                   </span>
+                  <div class="acc__action-spacer"></div>
+                  <a ar-button variant="ghost" [routerLink]="customerUrl(h)">
+                    Customer 360 →
+                  </a>
                 </div>
-                <ul class="reasons">
+
+                <div class="reasons">
                   @for (r of h.reasons; track r.text) {
-                    <li [class.neg]="r.points < 0">
-                      <span class="ar-mono">{{ r.points > 0 ? '+' + r.points : r.points }}</span>
+                    <span class="reason-pill" [class.reason-pill--neg]="r.points < 0">
+                      <strong class="ar-mono">{{ r.points > 0 ? '+' + r.points : r.points }}</strong>
                       {{ r.text }}
-                    </li>
+                    </span>
                   }
-                </ul>
+                </div>
               </div>
             </li>
           }
@@ -357,53 +395,92 @@ const BAND_LABEL: Record<HealthBand, string> = {
       height: 100%;
     }
     .ah {
-      padding: 16px 20px 32px;
+      padding: 18px 24px 36px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
     }
     .fc {
       background: var(--ar-white);
       border: 1px solid var(--ar-line-200);
       border-radius: var(--ar-radius-card);
-      padding: 14px 16px;
+      box-shadow: var(--ar-shadow-card);
+      padding: 16px 20px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 14px;
+    }
+    .fc__h {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
     }
     .fc__h h2 {
       margin: 0;
-      font: 600 14px var(--ar-font-sans);
+      font: 600 15px var(--ar-font-sans);
       color: var(--ar-ink-900);
     }
     .fc__h p {
       margin: 4px 0 0;
       font: 400 12.5px/1.5 var(--ar-font-sans);
       color: var(--ar-ink-500);
-      max-width: 80ch;
+      max-width: 65ch;
     }
-    .fc__h b {
+    .fc__kpis {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .fc__kpi {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 6px 12px;
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-200);
+      border-radius: 6px;
+    }
+    .fc__kpi-lbl {
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--ar-ink-500);
+    }
+    .fc__kpi-val {
+      font: 700 14px var(--ar-font-mono, monospace);
       color: var(--ar-ink-900);
-      font-variant-numeric: tabular-nums;
+    }
+    .text-good {
+      color: var(--ar-green-600) !important;
+    }
+    .text-accent {
+      color: var(--ar-primary) !important;
     }
     .fc__bars {
       display: flex;
-      gap: 18px;
+      gap: 24px;
       align-items: flex-end;
-      min-height: 150px;
+      min-height: 140px;
       overflow-x: auto;
+      padding-bottom: 4px;
     }
     .fc__col {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
-      min-width: 88px;
+      gap: 6px;
+      min-width: 96px;
     }
     .fc__track {
       position: relative;
-      width: 44px;
-      height: 110px;
+      width: 48px;
+      height: 100px;
       display: flex;
       align-items: flex-end;
     }
@@ -414,19 +491,19 @@ const BAND_LABEL: Record<HealthBand, string> = {
       left: 0;
       right: 0;
       border-radius: 4px 4px 0 0;
+      transition: height 0.3s ease;
     }
     .fc__open {
       background: var(--ar-line-200);
     }
     .fc__exp {
-      background: var(--ar-teal-600, #0d9488);
+      background: linear-gradient(180deg, var(--ar-primary), var(--ar-blue-700));
       left: 8px;
       right: 8px;
     }
     .fc__v {
-      font: 600 12px var(--ar-font-sans);
+      font: 600 12px var(--ar-font-mono, monospace);
       color: var(--ar-ink-900);
-      font-variant-numeric: tabular-nums;
     }
     .fc__m {
       font: 400 11.5px var(--ar-font-sans);
@@ -437,7 +514,7 @@ const BAND_LABEL: Record<HealthBand, string> = {
       font: 400 11.5px var(--ar-font-sans);
       color: var(--ar-ink-500);
       display: flex;
-      gap: 6px;
+      gap: 8px;
       align-items: center;
     }
     .sw {
@@ -447,28 +524,37 @@ const BAND_LABEL: Record<HealthBand, string> = {
       border-radius: 2px;
     }
     .sw--exp {
-      background: var(--ar-teal-600, #0d9488);
+      background: var(--ar-primary);
     }
     .sw--open {
       background: var(--ar-line-200);
-      margin-left: 8px;
+      margin-left: 12px;
+    }
+    .ah__toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .ah__search {
+      min-width: 280px;
     }
     .seg {
       display: inline-flex;
-      align-self: flex-start;
-      border: 1px solid var(--ar-line-200);
-      border-radius: 6px;
+      border: 1px solid var(--ar-line-300);
+      border-radius: var(--ar-radius-control);
       overflow: hidden;
-      flex-wrap: wrap;
     }
     .seg button {
       font: 500 12.5px var(--ar-font-sans);
       border: 0;
       border-right: 1px solid var(--ar-line-200);
       background: var(--ar-white);
-      color: var(--ar-ink-900);
-      padding: 6px 12px;
+      color: var(--ar-ink-700);
+      padding: 6px 14px;
       cursor: pointer;
+      transition: all 0.15s ease;
     }
     .seg button:last-child {
       border-right: 0;
@@ -478,8 +564,8 @@ const BAND_LABEL: Record<HealthBand, string> = {
       color: var(--ar-inverse-fg);
     }
     .seg__n {
-      opacity: 0.7;
-      font-variant-numeric: tabular-nums;
+      opacity: 0.75;
+      font-size: 11px;
     }
     .list {
       list-style: none;
@@ -487,90 +573,133 @@ const BAND_LABEL: Record<HealthBand, string> = {
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
     .acc {
       display: flex;
-      gap: 14px;
+      gap: 16px;
       background: var(--ar-white);
       border: 1px solid var(--ar-line-200);
       border-radius: var(--ar-radius-card);
-      padding: 12px 14px;
+      box-shadow: var(--ar-shadow-card);
+      padding: 14px 18px;
+      align-items: flex-start;
+      transition: border-color var(--ar-ease, 0.15s ease);
+    }
+    .acc:hover {
+      border-color: var(--ar-line-300);
     }
     .acc__score {
       flex: none;
-      width: 44px;
-      height: 44px;
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
-      display: grid;
-      place-items: center;
-      font: 700 15px var(--ar-font-sans);
-      font-variant-numeric: tabular-nums;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       border: 3px solid var(--ar-line-200);
+      background: var(--ar-bg-50);
+      line-height: 1;
+    }
+    .acc__score-num {
+      font: 700 16px var(--ar-font-mono, monospace);
       color: var(--ar-ink-900);
     }
+    .acc__score-max {
+      font: 500 9px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+      margin-top: 1px;
+    }
     .acc__score--Healthy {
-      border-color: var(--ar-good-600, #067647);
+      border-color: var(--ar-green-500);
+      background: var(--ar-green-100);
     }
     .acc__score--Watch {
-      border-color: var(--ar-amber-500, #f59e0b);
+      border-color: var(--ar-amber-500);
+      background: var(--ar-amber-100);
     }
     .acc__score--AtRisk {
-      border-color: var(--ar-bad-600, #b42318);
+      border-color: var(--ar-red-500);
+      background: var(--ar-red-100);
     }
     .acc__main {
       flex: 1;
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
     .acc__top {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       align-items: center;
       flex-wrap: wrap;
-      font: 500 13.5px var(--ar-font-sans);
+    }
+    .acc__name {
+      font: 600 14.5px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+      text-decoration: none;
+    }
+    .acc__name:hover {
+      color: var(--ar-blue-600);
+      text-decoration: underline;
     }
     .acc__meta {
       color: var(--ar-ink-500);
       font-size: 12px;
     }
+    .acc__action-spacer {
+      margin-left: auto;
+    }
     .reasons {
-      list-style: none;
-      margin: 0;
-      padding: 0;
       display: flex;
       flex-wrap: wrap;
-      gap: 4px 14px;
-      font: 400 12.5px var(--ar-font-sans);
-      color: var(--ar-good-600, #067647);
+      gap: 6px;
     }
-    .reasons li.neg {
-      color: var(--ar-bad-600, #b42318);
+    .reason-pill {
+      font-size: 11.5px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--ar-green-100);
+      color: var(--ar-green-600);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
-    .reasons .ar-mono {
-      font-weight: 600;
+    .reason-pill--neg {
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
+    }
+    .state-box {
+      padding: 2.5rem;
+      text-align: center;
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card);
+      color: var(--ar-ink-500);
     }
     .ah__hint {
       margin: 0;
       font: 400 13px/1.5 var(--ar-font-sans);
       color: var(--ar-ink-500);
-      max-width: 75ch;
     }
     .ah__err {
       margin: 0;
+      padding: 8px 12px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-red-100);
+      color: var(--ar-red-600);
       font: 500 12.5px var(--ar-font-sans);
-      color: var(--ar-bad-600, #b42318);
     }
     .tune {
       border: 1px solid var(--ar-line-200);
       border-radius: 8px;
       margin: 0 0 10px;
-      padding: 8px 12px;
+      padding: 10px 14px;
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 6px 16px;
+      gap: 8px 16px;
     }
     .tune legend {
       font: 600 12px var(--ar-font-sans);
@@ -592,15 +721,10 @@ const BAND_LABEL: Record<HealthBand, string> = {
     .tune__sign {
       margin-left: 4px;
       font-weight: 600;
-      color: var(--ar-good-600, #067647);
+      color: var(--ar-green-600);
     }
     .tune__sign.neg {
-      color: var(--ar-bad-600, #b42318);
-    }
-    @media (max-width: 560px) {
-      .ah {
-        padding-inline: 12px;
-      }
+      color: var(--ar-red-600);
     }
   `,
 })
@@ -621,14 +745,31 @@ export class ArAccountHealth {
   protected readonly rows = signal<AccountHealthDto[]>([]);
   protected readonly forecast = signal<RenewalForecastDto | null>(null);
   protected readonly band = signal<HealthBand | null>(null);
+  protected readonly search = signal('');
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
   protected readonly visible = computed(() => {
     const b = this.band();
-    return b ? this.rows().filter((r) => r.band === b) : this.rows();
+    const q = this.search().trim().toLowerCase();
+    let list = this.rows();
+    if (b) list = list.filter((r) => r.band === b);
+    if (q) list = list.filter((r) => r.name?.toLowerCase().includes(q));
+    return list;
   });
+
+  protected readonly forecastPct = computed(() => {
+    const f = this.forecast();
+    if (!f || !f.openValueInPaise) return 0;
+    return Math.round((f.expectedValueInPaise / f.openValueInPaise) * 100);
+  });
+
+  protected customerUrl(h: AccountHealthDto): (string | undefined)[] {
+    return h.isAccount
+      ? ['/contacts/accounts', h.customerId, '360']
+      : ['/contacts', h.customerId, '360'];
+  }
 
   protected readonly subtitle = computed(() => {
     const risk = this.rows().filter((r) => r.band === 'AtRisk').length;

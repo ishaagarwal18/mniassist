@@ -20,7 +20,7 @@ import {
   VoiceCallMode,
   VoiceCallStatus,
 } from '../../proxy/voice';
-import { ArChip } from '../../ui';
+import { ArButton, ArChip, ArIcon, ArSearchBox } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { errorMessage } from '../activities/activity-logic';
 import { ArCallOutcomeDialog } from './call-outcome-dialog';
@@ -49,7 +49,7 @@ const STATUS_TONE: Record<VoiceCallStatus, ChipTone> = {
 /** The call log: who was called, how it ended, and what the rep said came of it. Calls waiting for an outcome can be listed on their own. */
 @Component({
   selector: 'ar-calls',
-  imports: [ArTopbar, ArChip, ArCallOutcomeDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSearchBox, ArCallOutcomeDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './calls.html',
   styleUrl: './calls.scss',
@@ -64,6 +64,7 @@ export class ArCalls {
   protected readonly canSeeAll = grantedPolicy('AutoReach.Inbox.ViewAll', this.permissions);
   protected readonly scope = signal<'mine' | 'everyone'>('mine');
   protected readonly waiting = signal(false);
+  protected readonly search = signal('');
 
   protected readonly calls = signal<CallLogDto[]>([]);
   protected readonly total = signal(0);
@@ -75,6 +76,29 @@ export class ArCalls {
   private readonly tick = signal(0);
   protected readonly anyLive = computed(() => this.calls().some(isLive));
   protected readonly waitingCount = computed(() => this.calls().filter(needsOutcome).length);
+
+  protected readonly stats = computed(() => {
+    const list = this.calls();
+    const total = list.length;
+    const inbound = list.filter((c) => c.direction === VoiceCallDirection.Inbound).length;
+    const outbound = list.filter((c) => c.direction === VoiceCallDirection.Outbound).length;
+    const live = list.filter(isLive).length;
+    const waiting = list.filter(needsOutcome).length;
+    const completed = list.filter((c) => c.status === VoiceCallStatus.Completed).length;
+    return { total, inbound, outbound, live, waiting, completed };
+  });
+
+  protected readonly filteredCalls = computed(() => {
+    const q = this.search().trim().toLowerCase();
+    const list = this.calls();
+    if (!q) return list;
+    return list.filter((c) =>
+      (c.contactName?.toLowerCase().includes(q) ?? false) ||
+      (c.contactNumber?.toLowerCase().includes(q) ?? false) ||
+      (c.enquiryReference?.toLowerCase().includes(q) ?? false) ||
+      (c.repName?.toLowerCase().includes(q) ?? false)
+    );
+  });
 
   constructor() {
     effect(() => {

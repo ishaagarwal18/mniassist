@@ -182,12 +182,37 @@ const SEED: WhatsAppCallDto[] = [
       @if (error(); as e) {
         <p class="wa__err" role="alert">{{ e }}</p>
       }
+
+      <!-- KPI Summary Ribbon -->
+      <section class="wa__kpi-grid" role="group" aria-label="WhatsApp calls overview">
+        <div class="wa__kpi-card">
+          <span class="wa__kpi-val tabular-nums">{{ stats().total }}</span>
+          <span class="wa__kpi-lbl">Total WhatsApp Calls</span>
+          <span class="wa__kpi-sub">{{ total() }} registered in log</span>
+        </div>
+        <div class="wa__kpi-card">
+          <span class="wa__kpi-val text-good tabular-nums">{{ stats().answered }}</span>
+          <span class="wa__kpi-lbl">Answered & Completed</span>
+          <span class="wa__kpi-sub">Total talk: {{ length(stats().totalDuration) }}</span>
+        </div>
+        <div class="wa__kpi-card" [class.wa__kpi-card--bad]="stats().missed > 0">
+          <span class="wa__kpi-val" [class.text-bad]="stats().missed > 0" class="tabular-nums">{{ stats().missed }}</span>
+          <span class="wa__kpi-lbl">Missed Calls</span>
+          <span class="wa__kpi-sub">Requires callback</span>
+        </div>
+        <div class="wa__kpi-card">
+          <span class="wa__kpi-val text-primary tabular-nums">{{ stats().recorded }}</span>
+          <span class="wa__kpi-lbl">Recordings Kept</span>
+          <span class="wa__kpi-sub">Auditable audio clips</span>
+        </div>
+      </section>
+
       @if (rows().length === 0 && !loading()) {
         <p class="wa__hint">No WhatsApp calls yet.</p>
       } @else {
         @if (canRecordings() && selected().size > 0) {
           <div class="wa__bulk" role="region" aria-label="Selected calls">
-            <span>{{ selected().size }} selected</span>
+            <span class="wa__bulk-count">{{ selected().size }} selected</span>
             <button
               ar-button
               type="button"
@@ -202,7 +227,7 @@ const SEED: WhatsAppCallDto[] = [
             </button>
           </div>
         }
-        <div class="tbl-wrap">
+        <div class="tbl-wrap" tabindex="0" role="region" aria-label="WhatsApp Calls Log">
           <table class="tbl">
             <thead>
               <tr>
@@ -243,7 +268,7 @@ const SEED: WhatsAppCallDto[] = [
                     </td>
                   }
                   <td>
-                    {{ c.contactName || '+' + c.contactWaId }}
+                    <strong>{{ c.contactName || '+' + c.contactWaId }}</strong>
                     @if (c.contactName && c.contactWaId) {
                       <span class="wa__muted ar-mono">+{{ c.contactWaId }}</span>
                     }
@@ -258,11 +283,11 @@ const SEED: WhatsAppCallDto[] = [
                       <span class="wa__muted">· transferred</span>
                     }
                   </td>
-                  <td class="num">{{ c.durationSeconds ? length(c.durationSeconds) : '—' }}</td>
+                  <td class="num tabular-nums">{{ c.durationSeconds ? length(c.durationSeconds) : '—' }}</td>
                   <td>
                     @if (c.hasRecording && canRecordings()) {
                       @if (audio()[c.id]; as src) {
-                        <audio [src]="src" controls preload="none"></audio>
+                        <audio [src]="src" controls loading="lazy" preload="metadata"></audio>
                       } @else {
                         <button ar-button type="button" variant="ghost" (click)="play(c)">
                           Play
@@ -309,36 +334,128 @@ const SEED: WhatsAppCallDto[] = [
       height: 100%;
     }
     .wa {
-      padding: 16px 20px 32px;
+      padding: 16px 24px 32px;
       display: flex;
       flex-direction: column;
+      gap: 16px;
+      max-width: 1360px;
+      margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* KPI Grid */
+    .wa__kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 12px;
     }
+    .wa__kpi-card {
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card);
+      box-shadow: var(--ar-shadow-card);
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      position: relative;
+      overflow: hidden;
+      transition: transform var(--ar-ease), box-shadow var(--ar-ease);
+    }
+    .wa__kpi-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
+    }
+    .wa__kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--ar-blue-500);
+    }
+    .wa__kpi-card--bad::before {
+      background: var(--ar-red-500);
+    }
+    .wa__kpi-val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--ar-ink-900);
+    }
+    .wa__kpi-lbl {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--ar-ink-400);
+    }
+    .wa__kpi-sub {
+      font-size: 0.72rem;
+      color: var(--ar-ink-500);
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    .text-good {
+      color: var(--ar-green-600);
+    }
+    .text-bad {
+      color: var(--ar-red-600);
+    }
+    .text-primary {
+      color: var(--ar-blue-600);
+    }
+
     .wa__bulk {
       display: flex;
       gap: 10px;
       align-items: center;
+      padding: 8px 14px;
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
       font: 500 13px var(--ar-font-sans);
     }
+    .wa__bulk-count {
+      font-weight: 600;
+      color: var(--ar-ink-900);
+    }
     .wa__pick {
-      width: 32px;
+      width: 36px;
+      text-align: center;
     }
     .wa__toggle {
       display: flex;
       gap: 6px;
       align-items: center;
       font: 500 13px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+      cursor: pointer;
     }
     .tbl-wrap {
-      overflow-x: auto;
+      overflow: auto;
+      max-inline-size: 100%;
+      max-block-size: min(560px, 80vh);
+      container-type: inline-size;
       background: var(--ar-white);
       border: 1px solid var(--ar-line-200);
       border-radius: var(--ar-radius-card);
+      box-shadow: var(--ar-shadow-card);
     }
     .tbl {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       font: 400 13px var(--ar-font-sans);
+    }
+    .tbl thead {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 1;
     }
     .tbl th {
       text-align: left;
@@ -346,16 +463,21 @@ const SEED: WhatsAppCallDto[] = [
       color: var(--ar-ink-500);
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--ar-line-200);
+      padding: 10px 14px;
+      background: var(--ar-bg-50);
+      border-bottom: 2px solid var(--ar-line-200);
+      white-space: nowrap;
     }
     .tbl td {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--ar-line-100, #eef0f2);
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--ar-line-200);
       color: var(--ar-ink-900);
       vertical-align: middle;
     }
-    .tbl tr:last-child td {
+    .tbl tbody tr:hover {
+      background: var(--ar-bg-50);
+    }
+    .tbl tbody tr:last-child td {
       border-bottom: 0;
     }
     .num {
@@ -373,13 +495,20 @@ const SEED: WhatsAppCallDto[] = [
     }
     .wa__hint {
       margin: 0;
+      padding: 2.5rem;
+      text-align: center;
       font: 400 13px var(--ar-font-sans);
-      color: var(--ar-ink-500);
+      color: var(--ar-ink-400);
+      font-style: italic;
     }
     .wa__err {
       margin: 0;
+      padding: 8px 12px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-red-100);
+      border: 1px solid var(--ar-red-200);
       font: 500 12.5px var(--ar-font-sans);
-      color: var(--ar-bad-600, #b42318);
+      color: var(--ar-red-600);
     }
     @media (max-width: 560px) {
       .wa {
@@ -416,6 +545,17 @@ export class ArWhatsAppCalls {
   private readonly toasts = inject(ToastService);
   protected readonly selected = signal<Set<string>>(new Set());
   protected readonly deleting = signal(false);
+
+  protected readonly stats = computed(() => {
+    const list = this.rows();
+    const total = list.length;
+    const missed = list.filter((c) => c.status === 'Missed').length;
+    const answered = list.filter((c) => c.status === 'Ended' || c.status === 'Answered').length;
+    const recorded = list.filter((c) => c.hasRecording).length;
+    const totalDuration = list.reduce((acc, c) => acc + (c.durationSeconds || 0), 0);
+    return { total, missed, answered, recorded, totalDuration };
+  });
+
   protected readonly allSelected = computed(() => {
     const ids = this.rows()
       .filter((c) => !this.inProgress(c))

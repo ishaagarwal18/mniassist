@@ -4,7 +4,7 @@
   help="Group contacts by the company or plant they belong to. Put a plant under its company, and a company under its group, up to five levels — a parent's rollup includes aggregated pipeline value and contacts across its entire hierarchy."
 >
   @if (canCreate()) {
-    <button ar-button variant="primary" icon="plus" (click)="openNew()">New account</button>
+    <a ar-button variant="primary" icon="plus" [routerLink]="['/contacts/accounts/new']">New account</a>
   }
 </ar-topbar>
 
@@ -152,13 +152,18 @@
         </ng-template>
       </e-column>
 
-      <e-column field="location" headerText="Location" width="160">
+      <e-column field="location" headerText="Location &amp; Address" width="220">
         <ng-template #template let-r>
-          @if (r.location && r.location !== '—') {
-            <span class="ac-location-tag" [title]="r.location">{{ r.location }}</span>
-          } @else {
-            <span class="ac-cell-muted">—</span>
-          }
+          <div class="ac-cell-loc">
+            @if (r.address) {
+              <span class="ac-address-text" [title]="r.address">{{ r.address }}</span>
+            }
+            @if (r.location && r.location !== '—') {
+              <span class="ac-location-tag" [title]="r.location">{{ r.location }}</span>
+            } @else if (!r.address) {
+              <span class="ac-cell-muted">—</span>
+            }
+          </div>
         </ng-template>
       </e-column>
 
@@ -222,27 +227,28 @@
               </a>
             }
             @if (canCreate() && r.depth < maxDepth) {
-              <button
+              <a
                 ar-button
                 variant="ghost"
                 size="sm"
                 title="Add plant or subsidiary under {{ r.name }}"
-                (click)="openNew(r.id)"
+                [routerLink]="['/contacts/accounts/new']"
+                [queryParams]="{ parentId: r.id }"
               >
                 <ar-icon name="plus" [size]="13" />
                 Sub
-              </button>
+              </a>
             }
             @if (canUpdate()) {
-              <button
+              <a
                 ar-button
                 variant="ghost"
                 size="sm"
                 title="Edit account details"
-                (click)="openEdit(r.account)"
+                [routerLink]="['/contacts/accounts', r.id, 'edit']"
               >
                 <ar-icon name="edit" [size]="13" />
-              </button>
+              </a>
             }
             @if (canDelete()) {
               <button
@@ -276,119 +282,16 @@
           }}
         </p>
         @if (!loading() && canCreate()) {
-          <button ar-button variant="primary" size="sm" icon="plus" (click)="openNew()">
+          <a ar-button variant="primary" size="sm" icon="plus" [routerLink]="['/contacts/accounts/new']">
             New account
-          </button>
+          </a>
         }
       </div>
     </ng-template>
   </ejs-treegrid>
 </div>
 
-<!-- Modal Dialog: Create / Edit Account -->
-@if (editorOpen()) {
-  <ar-dialog
-    [title]="editingId() ? 'Edit account' : 'New account'"
-    (dismiss)="editorOpen.set(false)"
-  >
-    <!-- Organizational Hierarchy Placement Indicator -->
-    <div class="acc-hierarchy-hint">
-      @if (draft().parentId) {
-        <ar-icon name="flow" [size]="15" />
-        <span>Sits under parent: <strong>{{ parentAccountName(draft().parentId) }}</strong></span>
-      } @else {
-        <ar-icon name="shield" [size]="15" />
-        <span>Top-level placement: <strong>Corporate Group / Holding Entity</strong></span>
-      }
-    </div>
 
-    <label class="ar-field">
-      <span class="ar-field__label">Account name</span>
-      <input
-        required
-        maxlength="256"
-        class="ar-field__input"
-        placeholder="e.g. Bharat Heavy Forge Ltd."
-        [value]="draft().name"
-        (input)="patch('name', $any($event.target).value)"
-      />
-    </label>
-
-    <div class="ar-field-row">
-      <label class="ar-field">
-        <span class="ar-field__label">Industry <span class="ar-field__opt">optional</span></span>
-        <input
-          class="ar-field__input"
-          placeholder="e.g. Precision Engineering"
-          [value]="draft().industry"
-          (input)="patch('industry', $any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">Website <span class="ar-field__opt">optional</span></span>
-        <input
-          class="ar-field__input"
-          placeholder="e.g. bharatforge.com"
-          [value]="draft().website"
-          (input)="patch('website', $any($event.target).value)"
-        />
-      </label>
-    </div>
-
-    <div class="ar-field-row">
-      <label class="ar-field">
-        <span class="ar-field__label">City <span class="ar-field__opt">optional</span></span>
-        <input
-          class="ar-field__input"
-          placeholder="e.g. Pune"
-          [value]="draft().city"
-          (input)="patch('city', $any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">State <span class="ar-field__opt">optional</span></span>
-        <input
-          class="ar-field__input"
-          placeholder="e.g. Maharashtra"
-          [value]="draft().state"
-          (input)="patch('state', $any($event.target).value)"
-        />
-      </label>
-    </div>
-
-    <label class="ar-field">
-      <span class="ar-field__label">Parent account <span class="ar-field__opt">optional</span></span>
-      <select class="ar-field__input" (change)="patch('parentId', $any($event.target).value)">
-        <option value="" [selected]="!draft().parentId">None — top level corporate group</option>
-        @for (o of parentOptions(); track o.id) {
-          <option [value]="o.id" [selected]="o.id === draft().parentId">{{ o.name }}</option>
-        }
-      </select>
-    </label>
-
-    <label class="ar-field">
-      <span class="ar-field__label">Internal notes <span class="ar-field__opt">optional</span></span>
-      <textarea
-        class="ar-field__input"
-        rows="3"
-        placeholder="Plant location details, operational tags, ERP customer codes…"
-        [value]="draft().notes"
-        (input)="patch('notes', $any($event.target).value)"
-      ></textarea>
-    </label>
-
-    @if (error(); as msg) {
-      <p class="acc__err">{{ msg }}</p>
-    }
-
-    <div dialogActions>
-      <button ar-button variant="ghost" (click)="editorOpen.set(false)">Cancel</button>
-      <button ar-button variant="primary" [disabled]="busy()" (click)="save()">
-        {{ busy() ? 'Saving…' : editingId() ? 'Save account' : 'Create account' }}
-      </button>
-    </div>
-  </ar-dialog>
-}
 
 <!-- Modal Dialog: Account Rollup Intelligence & Pipeline -->
 @if (rollupOpen()) {
@@ -524,80 +427,191 @@
   <ar-dialog
     [title]="'Contacts at ' + acc.name"
     width="min(660px, calc(100vw - 32px))"
-    (dismiss)="peopleFor.set(null)"
+    (dismiss)="closePeople()"
   >
-    @if (hasSubsidiaryPeople()) {
-      <div class="pp-banner">
-        <label class="pp__subs">
-          <input
-            type="checkbox"
-            [checked]="peopleSubs()"
-            (change)="togglePeopleSubs($any($event.target).checked)"
-          />
-          <span>Include contacts at subsidiaries and affiliated plants</span>
-        </label>
-      </div>
-    }
+    @if (contactModalMode() === 'assign') {
+      <div class="pp-subview">
+        <div class="pp-subview__header">
+          <button ar-button variant="ghost" size="sm" (click)="cancelAssign()">
+            ← Back
+          </button>
+          <strong class="pp-subview__title">Assign Existing Contact to {{ acc.name }}</strong>
+        </div>
 
-    @if (peopleLoading()) {
-      <p class="pp__note">Loading contacts…</p>
-    } @else if (peopleError(); as e) {
-      <p class="pp__note pp__note--bad" role="alert">{{ e }}</p>
-    } @else if (people().length === 0) {
-      <div class="pp-empty">
-        <ar-icon name="contacts" [size]="32" />
-        <p class="pp-empty__text">Nobody is assigned to this account yet.</p>
-        <p class="pp-empty__sub">Open a contact under Contacts, choose this account, and save.</p>
+        <div class="pp-assign-search">
+          <input
+            class="ar-field__input"
+            type="search"
+            placeholder="Search contacts by name, company, designation or phone…"
+            [value]="assignSearchTerm()"
+            (input)="onAssignSearch($any($event.target).value)"
+          />
+        </div>
+
+        @if (assignSearching()) {
+          <p class="pp__note">Searching contacts…</p>
+        } @else if (allAssignableCandidates().length === 0) {
+          <div class="pp-candidates-empty">
+            <p>No contacts found matching “{{ assignSearchTerm() }}”.</p>
+            <button ar-button variant="ghost" size="sm" (click)="openCreateContact()">
+              <ar-icon name="plus" [size]="13" /> Create new contact instead
+            </button>
+          </div>
+        } @else {
+          <ul class="pp-candidates-list">
+            @for (c of allAssignableCandidates(); track c.id) {
+              <li class="pp-candidate-row">
+                <ar-avatar [name]="c.displayName || c.waId || 'Contact'" [size]="34" tone="neutral" />
+                <div class="pp-candidate-info">
+                  <span class="pp-candidate-name">{{ c.displayName || c.waId }}</span>
+                  <div class="pp-candidate-meta">
+                    @if (c.companyName) {
+                      <span class="pp-candidate-comp">{{ c.companyName }}</span>
+                    } @else {
+                      <span class="pp-candidate-unassigned">Unassigned</span>
+                    }
+                    @if (c.designation) {
+                      <span>· {{ c.designation }}</span>
+                    }
+                    @if (c.waId) {
+                      <span class="ar-mono">+{{ c.waId }}</span>
+                    }
+                  </div>
+                </div>
+                <button
+                  ar-button
+                  variant="primary"
+                  size="sm"
+                  title="Assign to {{ acc.name }}"
+                  (click)="assignContact(c)"
+                >
+                  Assign
+                </button>
+              </li>
+            }
+          </ul>
+        }
       </div>
     } @else {
-      <ul class="pp">
-        @for (p of people(); track p.id) {
-          <li class="pp__row">
-            <ar-avatar [name]="p.displayName || p.waId || 'Contact'" [size]="36" tone="neutral" />
-            <div class="pp__who">
-              <span class="pp__name">{{ p.displayName || p.waId }}</span>
-              <span class="pp__sub">{{ personLine(p) }}</span>
-            </div>
-            <div class="pp__reach">
-              @if (p.waId) {
-                <a class="pp-reach-link pp-reach-link--wa ar-mono" [href]="'https://wa.me/' + p.waId" target="_blank">
-                  <ar-icon name="phone" [size]="12" />
-                  +{{ p.waId }}
-                </a>
-              }
-              @if (p.emailAddress || p.attributes?.['email']; as mail) {
-                <a class="pp-reach-link" [href]="'mailto:' + mail">
-                  <ar-icon name="mail" [size]="12" />
-                  {{ mail }}
-                </a>
-              }
-              @if (p.city) {
-                <span class="pp-city">{{ p.city }}</span>
-              }
-            </div>
-            <div class="pp__actions">
-              @if (canView360()) {
-                <a
-                  ar-button
-                  variant="ghost"
-                  size="sm"
-                  title="View contact Customer 360 profile"
-                  [routerLink]="['/contacts', p.id, '360']"
-                  (click)="peopleFor.set(null)"
-                >
-                  360
-                </a>
-              }
-            </div>
-          </li>
+      <!-- Default Mode: List of Contacts -->
+      <div class="pp-toolbar">
+        <div class="pp-toolbar__meta">
+          <span class="pp-toolbar__count">
+            {{ peopleTotal() }} contact{{ peopleTotal() === 1 ? '' : 's' }} assigned
+          </span>
+        </div>
+        <div class="pp-toolbar__actions">
+          <button ar-button variant="ghost" size="sm" (click)="openAssignContact()">
+            <ar-icon name="plus" [size]="13" /> Assign existing
+          </button>
+          <button ar-button variant="primary" size="sm" (click)="openCreateContact()">
+            <ar-icon name="plus" [size]="13" /> Add new contact
+          </button>
+        </div>
+      </div>
+
+      @if (hasSubsidiaryPeople()) {
+        <div class="pp-banner">
+          <label class="pp__subs">
+            <input
+              type="checkbox"
+              [checked]="peopleSubs()"
+              (change)="togglePeopleSubs($any($event.target).checked)"
+            />
+            <span>Include contacts at subsidiaries and affiliated plants</span>
+          </label>
+        </div>
+      }
+
+      @if (peopleLoading()) {
+        <p class="pp__note">Loading contacts…</p>
+      } @else if (peopleError(); as e) {
+        <p class="pp__note pp__note--bad" role="alert">{{ e }}</p>
+      } @else if (people().length === 0) {
+        <div class="pp-empty">
+          <ar-icon name="contacts" [size]="36" />
+          <p class="pp-empty__text">Nobody is assigned to this account yet.</p>
+          <p class="pp-empty__sub">
+            Assign an existing contact from your directory or create a new contact for this account.
+          </p>
+          <div class="pp-empty__actions">
+            <button ar-button variant="primary" size="sm" (click)="openAssignContact()">
+              <ar-icon name="plus" [size]="13" /> Assign existing contact
+            </button>
+            <button ar-button variant="ghost" size="sm" (click)="openCreateContact()">
+              <ar-icon name="plus" [size]="13" /> Add new contact
+            </button>
+          </div>
+        </div>
+      } @else {
+        <ul class="pp">
+          @for (p of people(); track p.id) {
+            <li class="pp__row">
+              <ar-avatar [name]="p.displayName || p.waId || 'Contact'" [size]="36" tone="neutral" />
+              <div class="pp__who">
+                <span class="pp__name">{{ p.displayName || p.waId }}</span>
+                <span class="pp__sub">{{ personLine(p) }}</span>
+              </div>
+              <div class="pp__reach">
+                @if (p.waId) {
+                  <a class="pp-reach-link pp-reach-link--wa ar-mono" [href]="'https://wa.me/' + p.waId" target="_blank">
+                    <ar-icon name="phone" [size]="12" />
+                    +{{ p.waId }}
+                  </a>
+                }
+                @if (p.emailAddress || p.attributes?.['email']; as mail) {
+                  <a class="pp-reach-link" [href]="'mailto:' + mail">
+                    <ar-icon name="mail" [size]="12" />
+                    {{ mail }}
+                  </a>
+                }
+                @if (p.city) {
+                  <span class="pp-city">{{ p.city }}</span>
+                }
+              </div>
+              <div class="pp__actions">
+                @if (canView360()) {
+                  <a
+                    ar-button
+                    variant="ghost"
+                    size="sm"
+                    title="View contact Customer 360 profile"
+                    [routerLink]="['/contacts', p.id, '360']"
+                    (click)="closePeople()"
+                  >
+                    360
+                  </a>
+                }
+                @if (canUpdate()) {
+                  <button
+                    ar-button
+                    variant="ghost"
+                    size="sm"
+                    class="pp__unlink-btn"
+                    title="Unlink contact from this account"
+                    (click)="unlinkContact(p)"
+                  >
+                    Unlink
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+        @if (peopleTotal() > people().length) {
+          <p class="pp__note">
+            Showing {{ people().length }} of {{ peopleTotal() }}.
+            <a [routerLink]="['/contacts']" (click)="openAllOnContacts(acc)">See all on Contacts</a>
+          </p>
         }
-      </ul>
-      @if (peopleTotal() > people().length) {
-        <p class="pp__note">
-          Showing {{ people().length }} of {{ peopleTotal() }}.
-          <a [routerLink]="['/contacts']" (click)="openAllOnContacts(acc)">See all on Contacts</a>
-        </p>
       }
     }
   </ar-dialog>
+
+  <!-- Reusable Contact Add/Edit Dialog utilising existing Contact functionality -->
+  <ar-contact-dialog
+    [(open)]="contactDialogOpen"
+    [preselectedAccountId]="acc.id"
+    (saved)="onContactCreated()"
+  />
 }

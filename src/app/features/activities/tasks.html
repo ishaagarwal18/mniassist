@@ -26,51 +26,73 @@
 }
 
 <div class="tk ar-scroll">
+  <!-- Interactive Tasks Summary Ribbon -->
   @if (summary(); as s) {
-    <div class="tk__sum" role="group" aria-label="Your tasks at a glance">
-      <span class="tk__pill" [class.tk__pill--bad]="s.overdue"
-        ><strong>{{ s.overdue }}</strong> overdue</span
-      >
-      <span class="tk__pill" [class.tk__pill--amber]="s.dueToday"
-        ><strong>{{ s.dueToday }}</strong> due today</span
-      >
-      <span class="tk__pill"
-        ><strong>{{ s.dueThisWeek }}</strong> this week</span
-      >
-      <span class="tk__pill"
-        ><strong>{{ s.noDate }}</strong> no date</span
-      >
-      <span class="tk__pill tk__pill--soft"
-        ><strong>{{ s.doneLast7Days }}</strong> done in the last 7 days</span
-      >
+    <div class="tk__kpi-grid" role="group" aria-label="Tasks at a glance">
+      <div class="tk__kpi-card" [class.tk__kpi-card--bad]="(s.overdue ?? 0) > 0">
+        <span class="tk__kpi-num">{{ s.overdue ?? 0 }}</span>
+        <span class="tk__kpi-lbl">Overdue</span>
+      </div>
+      <div class="tk__kpi-card" [class.tk__kpi-card--amber]="(s.dueToday ?? 0) > 0">
+        <span class="tk__kpi-num">{{ s.dueToday ?? 0 }}</span>
+        <span class="tk__kpi-lbl">Due Today</span>
+      </div>
+      <div class="tk__kpi-card">
+        <span class="tk__kpi-num">{{ s.dueThisWeek ?? 0 }}</span>
+        <span class="tk__kpi-lbl">This Week</span>
+      </div>
+      <div class="tk__kpi-card">
+        <span class="tk__kpi-num">{{ s.noDate ?? 0 }}</span>
+        <span class="tk__kpi-lbl">No Due Date</span>
+      </div>
+      <div class="tk__kpi-card tk__kpi-card--good">
+        <span class="tk__kpi-num text-good">{{ s.doneLast7Days ?? 0 }}</span>
+        <span class="tk__kpi-lbl">Done (7d)</span>
+      </div>
     </div>
   }
 
+  <!-- Quick Add Bar -->
   @if (directory.canCreate) {
-    <form class="tk__quick" (submit)="$event.preventDefault(); quickAdd()">
-      <input
-        id="task-quick"
-        class="ar-field__input"
-        placeholder="Add a task for yourself and press Enter"
-        aria-label="Add a task"
-        [value]="quickTitle()"
-        (input)="quickTitle.set($any($event.target).value)"
-      />
+    <form class="tk__quick-box" (submit)="$event.preventDefault(); quickAdd()">
+      <div class="tk__quick-input-wrap">
+        <ar-icon name="plus" [size]="16" class="tk__quick-icon" />
+        <input
+          id="task-quick"
+          class="tk__quick-input"
+          placeholder="Add a new task and press Enter to save..."
+          aria-label="Add a task"
+          [value]="quickTitle()"
+          (input)="quickTitle.set($any($event.target).value)"
+        />
+        <button
+          ar-button
+          type="submit"
+          variant="primary"
+          [disabled]="!quickTitle().trim()"
+          class="tk__quick-btn"
+        >
+          Add Task
+        </button>
+      </div>
     </form>
   }
 
+  <!-- Search & Scope Filter Toolbar -->
   <div class="tk__bar">
     @if (directory.canSeeAll) {
       <div class="tk__seg" role="group" aria-label="Whose tasks">
         <button type="button" [class.on]="scope() === 'mine'" (click)="scope.set('mine')">
-          Mine
+          👤 My Tasks
         </button>
         <button type="button" [class.on]="scope() === 'everyone'" (click)="scope.set('everyone')">
-          Everyone
+          👥 Team Tasks
         </button>
       </div>
     }
-    <ar-search-box placeholder="Search tasks" [(query)]="filter" />
+    <div class="tk__search">
+      <ar-search-box placeholder="Search tasks by title, contact, or deal..." [(query)]="filter" />
+    </div>
     <label class="tk__chk">
       <input
         id="task-show-done"
@@ -78,7 +100,7 @@
         [checked]="showDone()"
         (change)="showDone.set($any($event.target).checked)"
       />
-      <span>Show finished</span>
+      <span>Show finished tasks</span>
     </label>
   </div>
 
@@ -87,22 +109,27 @@
   }
 
   @if (loading() && !tasks().length) {
-    <p class="tk__empty">Loading…</p>
+    <div class="tk__state">
+      <p>Loading your tasks…</p>
+    </div>
   } @else if (!total()) {
-    <p class="tk__empty">
-      @if (filter()) {
-        No tasks match.
-      } @else {
-        Nothing to do. Add a task above.
-      }
-    </p>
+    <div class="tk__state">
+      <p>
+        @if (filter()) {
+          No tasks matched "{{ filter() }}".
+        } @else {
+          All clear! Nothing pending. Add a task above to schedule action items.
+        }
+      </p>
+    </div>
   }
 
+  <!-- Grouped Tasks by Due Date -->
   @for (g of groups(); track g.bucket) {
     <section class="tk__group" [attr.aria-label]="g.label">
       <h2 class="tk__h">
         <ar-chip [tone]="bucketTone(g.bucket)">{{ g.label }}</ar-chip>
-        <span class="tk__count">{{ g.tasks.length }}</span>
+        <span class="tk__count-badge">{{ g.tasks.length }} task{{ g.tasks.length === 1 ? '' : 's' }}</span>
       </h2>
 
       <ul class="tk__list">
@@ -111,6 +138,7 @@
             class="tk__row"
             [class.tk__row--done]="t.status !== Status.Open"
             [class.tk__row--busy]="busy() === t.id"
+            [class.tk__row--overdue]="isOverdue(t) && t.status === Status.Open"
           >
             <input
               class="tk__tick"
@@ -121,31 +149,44 @@
               (change)="toggle(t)"
             />
             <button type="button" class="tk__main" (click)="editing.set(t)">
-              <span class="tk__title">
-                {{ t.title }}
+              <div class="tk__title-line">
+                <span class="tk__title">{{ t.title }}</span>
                 @if (t.priority === High && t.status === Status.Open) {
-                  <ar-chip tone="bad">High</ar-chip>
+                  <ar-chip tone="bad">High Priority</ar-chip>
                 }
-              </span>
-              <span class="tk__meta">
-                <span [class.tk__late]="isOverdue(t)">{{ dueText(t) }}</span>
+              </div>
+              <div class="tk__meta">
+                <span class="tk__due-tag" [class.tk__late]="isOverdue(t) && t.status === Status.Open">
+                  ⏱️ {{ dueText(t) }}
+                </span>
                 @if (!isMine(t)) {
-                  <span>· {{ t.assigneeName || 'Someone' }}</span>
+                  <span class="tk__meta-pill">👤 {{ t.assigneeName || 'Assigned' }}</span>
                 }
                 @if (t.contactName) {
-                  <span>· {{ t.contactName }}</span>
+                  <span class="tk__meta-pill">🏢 {{ t.contactName }}</span>
                 }
                 @if (t.enquiryReference) {
-                  <span class="ar-mono">· {{ t.enquiryReference }}</span>
+                  <span class="tk__meta-pill ar-mono">📋 {{ t.enquiryReference }}</span>
                 }
                 @if (t.recurrence) {
-                  <span>· ↻ {{ repeatText(t) }}</span>
+                  <span class="tk__meta-pill">↻ {{ repeatText(t) }}</span>
                 }
-              </span>
+              </div>
               @if (t.notes) {
                 <span class="tk__notes">{{ t.notes }}</span>
               }
             </button>
+            <div class="tk__actions">
+              <button
+                type="button"
+                class="tk__edit-btn"
+                (click)="editing.set(t)"
+                title="Edit task"
+                aria-label="Edit task"
+              >
+                Edit
+              </button>
+            </div>
           </li>
         }
       </ul>

@@ -15,7 +15,10 @@ import {
   WorkOrderService,
   WorkOrderStatus,
 } from '../../../proxy/manufacturing';
-import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArButton } from '../../../ui/button';
+import { ArChip, ChipTone } from '../../../ui/chip';
+import { ArDialog } from '../../../ui/dialog';
+import { ArStatTile } from '../../../ui/stat-tile';
 
 const MOCK_WORK_ORDERS: WorkOrderDto[] = [
   {
@@ -257,45 +260,51 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
 @Component({
   selector: 'app-work-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArStatTile],
   template: `
-    <ar-topbar title="Work Orders (Shop Floor ERP)">
+    <ar-topbar
+      title="Work Orders (Shop Floor ERP)"
+      subtitle="Shop floor routing, material allocation, QC clearance and inventory inwards"
+    >
       <div actions class="topbar-actions">
-        <button ar-button="primary" (click)="openCreate()">+ Create Work Order</button>
+        <button ar-button variant="primary" (click)="openCreate()">+ Create Work Order</button>
       </div>
     </ar-topbar>
 
     <div class="page-content">
-      <!-- KPI Row -->
-      <section class="kpi-grid">
-        <div class="kpi-card">
-          <span class="label">Total Work Orders</span>
-          <strong class="value">{{ stats().totalCount }}</strong>
-          <span class="sub">Manufacturing batches</span>
-        </div>
-        <div class="kpi-card amber">
-          <span class="label">In Production</span>
-          <strong class="value">{{ stats().inProgress }}</strong>
-          <span class="sub">Active on shop floor</span>
-        </div>
-        <div class="kpi-card teal">
-          <span class="label">Completed Orders</span>
-          <strong class="value">{{ stats().completed }}</strong>
-          <span class="sub">{{ stats().totalProduced }} Units inwarded</span>
-        </div>
-        <div class="kpi-card">
-          <span class="label">Shop Scrap Rate</span>
-          <strong class="value">{{ stats().scrapRate }}%</strong>
-          <span class="sub">Material loss tolerance</span>
-        </div>
+      <!-- Executive KPI Strip -->
+      <section class="kpi-grid" aria-label="Work Orders Overview">
+        <ar-stat-tile
+          label="Total Work Orders"
+          [value]="stats().totalCount"
+          note="Active manufacturing batches"
+        />
+        <ar-stat-tile
+          label="In Production"
+          [value]="stats().inProgress"
+          tone="amber"
+          note="Operating on shop floor"
+        />
+        <ar-stat-tile
+          label="Completed Orders"
+          [value]="stats().completed"
+          tone="good"
+          [note]="stats().totalProduced + ' units inwarded'"
+        />
+        <ar-stat-tile
+          label="Shop Scrap Rate"
+          [value]="stats().scrapRate + '%'"
+          [tone]="+stats().scrapRate > 3 ? 'bad' : 'neutral'"
+          note="Material rejection tolerance"
+        />
       </section>
 
-      <!-- Filter bar -->
-      <section class="filter-bar">
+      <!-- Filter Bar -->
+      <section class="filter-card">
         <div class="search-box">
           <input
             type="search"
-            class="input-search"
+            class="ar-field__input"
             placeholder="Search Work Order #, Part #, Batch #, or Customer..."
             [ngModel]="searchQuery()"
             (ngModelChange)="searchQuery.set($event)"
@@ -303,6 +312,7 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
         </div>
         <div class="filter-chips">
           <button
+            type="button"
             class="chip-filter"
             [class.active]="statusFilter() === 'ALL'"
             (click)="statusFilter.set('ALL')"
@@ -310,13 +320,15 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
             All ({{ workOrders().length }})
           </button>
           <button
+            type="button"
             class="chip-filter"
             [class.active]="statusFilter() === WorkOrderStatus.InProgress.toString()"
             (click)="statusFilter.set(WorkOrderStatus.InProgress.toString())"
           >
-            In Progress
+            In Production
           </button>
           <button
+            type="button"
             class="chip-filter"
             [class.active]="statusFilter() === WorkOrderStatus.Scheduled.toString()"
             (click)="statusFilter.set(WorkOrderStatus.Scheduled.toString())"
@@ -324,6 +336,7 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
             Scheduled
           </button>
           <button
+            type="button"
             class="chip-filter"
             [class.active]="statusFilter() === WorkOrderStatus.Completed.toString()"
             (click)="statusFilter.set(WorkOrderStatus.Completed.toString())"
@@ -335,86 +348,92 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
 
       <!-- Main Layout: Table on Left, Detail Cockpit on Right -->
       <div class="work-order-layout">
-        <!-- Work Orders Table -->
+        <!-- Work Orders Table adhering to modern-web-guidance responsive-table -->
         <section class="table-card" [class.condensed]="selectedWo() !== null">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Order #</th>
-                <th>Part & Batch</th>
-                <th>Planned / Produced</th>
-                <th>Stage</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                *ngFor="let wo of filteredWorkOrders()"
-                [class.selected-row]="selectedWo()?.id === wo.id"
-                (click)="selectWorkOrder(wo)"
-                class="clickable-row"
-              >
-                <td>
-                  <div class="wo-ref">
-                    <span class="fw-bold">{{ wo.workOrderNumber }}</span>
-                    <span class="text-sub" *ngIf="wo.salesOrderNumber">{{
-                      wo.salesOrderNumber
-                    }}</span>
-                  </div>
-                </td>
-                <td>
-                  <div class="part-info">
-                    <span class="part-code">{{ wo.partNumber }}</span>
-                    <span class="part-name">{{ wo.description }}</span>
-                    <span class="batch-badge">Batch: {{ wo.batchNumber }}</span>
-                  </div>
-                </td>
-                <td>
-                  <div class="qty-progress">
-                    <span class="qty-numbers"
-                      >{{ wo.producedQuantity }} / {{ wo.plannedQuantity }}</span
-                    >
-                    <div class="progress-bar-bg">
-                      <div
-                        class="progress-bar-fill"
-                        [style.width.%]="
-                          wo.plannedQuantity > 0
-                            ? (wo.producedQuantity / wo.plannedQuantity) * 100
-                            : 0
-                        "
-                      ></div>
+          <div
+            class="ar-table-responsive"
+            tabindex="0"
+            role="region"
+            aria-label="Work Orders Master Table"
+          >
+            <table class="ar-table">
+              <caption class="sr-only">Work Orders Master Table</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Order #</th>
+                  <th scope="col">Part & Batch</th>
+                  <th scope="col" class="text-right">Planned / Produced</th>
+                  <th scope="col">Stage</th>
+                  <th scope="col">Status</th>
+                  <th scope="col" class="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let wo of filteredWorkOrders()"
+                  [class.selected-row]="selectedWo()?.id === wo.id"
+                  (click)="selectWorkOrder(wo)"
+                  class="clickable-row"
+                >
+                  <td>
+                    <div class="wo-ref">
+                      <span class="font-mono font-medium">{{ wo.workOrderNumber }}</span>
+                      <span class="text-sub" *ngIf="wo.salesOrderNumber">{{ wo.salesOrderNumber }}</span>
                     </div>
-                  </div>
-                </td>
-                <td>
-                  <span class="stage-tag">{{ getStageLabel(wo.currentStage) }}</span>
-                </td>
-                <td>
-                  <ar-chip [tone]="getStatusTone(wo.status)">
-                    {{ getStatusLabel(wo.status) }}
-                  </ar-chip>
-                </td>
-                <td>
-                  <button ar-button="ghost" (click)="selectWorkOrder(wo); $event.stopPropagation()">
-                    View
-                  </button>
-                </td>
-              </tr>
-              <tr *ngIf="filteredWorkOrders().length === 0">
-                <td colspan="6" class="empty-cell">No work orders match your search criteria.</td>
-              </tr>
-            </tbody>
-          </table>
+                  </td>
+                  <td>
+                    <div class="part-info">
+                      <span class="part-code">{{ wo.partNumber }}</span>
+                      <span class="part-name">{{ wo.description }}</span>
+                      <span class="batch-badge">Batch: {{ wo.batchNumber }}</span>
+                    </div>
+                  </td>
+                  <td class="text-right">
+                    <div class="qty-progress">
+                      <span class="qty-numbers">{{ wo.producedQuantity }} / {{ wo.plannedQuantity }}</span>
+                      <div class="progress-bar-bg">
+                        <div
+                          class="progress-bar-fill"
+                          [style.width.%]="
+                            wo.plannedQuantity > 0
+                              ? (wo.producedQuantity / wo.plannedQuantity) * 100
+                              : 0
+                          "
+                        ></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="stage-tag">{{ getStageLabel(wo.currentStage) }}</span>
+                  </td>
+                  <td>
+                    <ar-chip [tone]="getStatusTone(wo.status)" [dot]="wo.status === WorkOrderStatus.InProgress">
+                      {{ getStatusLabel(wo.status) }}
+                    </ar-chip>
+                  </td>
+                  <td class="text-right">
+                    <button ar-button variant="ghost" (click)="selectWorkOrder(wo); $event.stopPropagation()">
+                      View
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="filteredWorkOrders().length === 0">
+                  <td colspan="6" class="empty-cell">No work orders match your search criteria.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <!-- Right Cockpit: Work Order Details & Routing / Material Management -->
         <section class="detail-cockpit" *ngIf="selectedWo() as wo">
-          <div class="cockpit-header">
+          <header class="cockpit-header">
             <div>
               <div class="cockpit-title-row">
                 <h3>{{ wo.workOrderNumber }}</h3>
-                <ar-chip [tone]="getStatusTone(wo.status)">{{ getStatusLabel(wo.status) }}</ar-chip>
+                <ar-chip [tone]="getStatusTone(wo.status)" [dot]="wo.status === WorkOrderStatus.InProgress">
+                  {{ getStatusLabel(wo.status) }}
+                </ar-chip>
               </div>
               <p class="cockpit-sub">
                 Part: <strong>{{ wo.partNumber }}</strong> &bull; Batch:
@@ -426,23 +445,23 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
             </div>
             <div class="cockpit-actions">
               <button
-                *ngIf="
-                  wo.status === WorkOrderStatus.Draft || wo.status === WorkOrderStatus.Scheduled
-                "
-                ar-button="primary"
+                *ngIf="wo.status === WorkOrderStatus.Draft || wo.status === WorkOrderStatus.Scheduled"
+                ar-button
+                variant="primary"
                 (click)="releaseToShopFloor()"
               >
                 Release to Floor
               </button>
               <button
                 *ngIf="wo.status === WorkOrderStatus.InProgress"
-                ar-button="primary"
+                ar-button
+                variant="primary"
                 (click)="openCompleteWo()"
               >
                 Inward Finished Goods
               </button>
             </div>
-          </div>
+          </header>
 
           <!-- Quantity & Stage Metrics -->
           <div class="cockpit-metrics">
@@ -471,6 +490,7 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
           <!-- Tabs: Shop Floor Routing Steps vs Material Issues -->
           <div class="cockpit-tabs">
             <button
+              type="button"
               class="cockpit-tab-btn"
               [class.active]="activeTab() === 'routing'"
               (click)="activeTab.set('routing')"
@@ -478,6 +498,7 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
               Shop Floor Routing Steps ({{ wo.routingSteps.length }})
             </button>
             <button
+              type="button"
               class="cockpit-tab-btn"
               [class.active]="activeTab() === 'materials'"
               (click)="activeTab.set('materials')"
@@ -486,23 +507,29 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
             </button>
           </div>
 
-          <!-- Tab 1: Routing Steps -->
+          <!-- Tab 1: Routing Steps adhering to modern-web-guidance responsive-table -->
           <div class="cockpit-tab-content" *ngIf="activeTab() === 'routing'">
-            <div class="table-responsive">
-              <table class="sub-table">
+            <div
+              class="ar-table-responsive"
+              tabindex="0"
+              role="region"
+              aria-label="Shop Floor Routing Steps"
+            >
+              <table class="ar-table">
+                <caption class="sr-only">Shop Floor Routing Steps</caption>
                 <thead>
                   <tr>
-                    <th>Seq</th>
-                    <th>Stage</th>
-                    <th>Work Center</th>
-                    <th>Est / Act Hrs</th>
-                    <th>QC Inspection</th>
-                    <th>Action</th>
+                    <th scope="col">Seq</th>
+                    <th scope="col">Stage</th>
+                    <th scope="col">Work Center</th>
+                    <th scope="col">Est / Act Hrs</th>
+                    <th scope="col">QC Inspection</th>
+                    <th scope="col" class="text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr *ngFor="let step of wo.routingSteps">
-                    <td>#{{ step.stepSequence }}</td>
+                    <td class="font-mono text-muted">#{{ step.stepSequence }}</td>
                     <td>
                       <span class="routing-stage-pill">{{ getStageLabel(step.stage) }}</span>
                     </td>
@@ -512,7 +539,7 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                         By: {{ step.inspectedBy }}
                       </div>
                     </td>
-                    <td>
+                    <td class="font-mono">
                       <span>{{ step.actualHours || 0 }} / {{ step.estimatedHours }}h</span>
                     </td>
                     <td>
@@ -528,11 +555,11 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                         }}
                       </ar-chip>
                     </td>
-                    <td>
+                    <td class="text-right">
                       <button
                         *ngIf="!step.isCompleted && wo.status === WorkOrderStatus.InProgress"
-                        ar-button="ghost"
-                        class="btn-xs"
+                        ar-button
+                        variant="ghost"
                         (click)="openCompleteStep(step)"
                       >
                         Complete Step
@@ -550,7 +577,7 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
             </div>
           </div>
 
-          <!-- Tab 2: Material Issues -->
+          <!-- Tab 2: Material Issues adhering to modern-web-guidance responsive-table -->
           <div class="cockpit-tab-content" *ngIf="activeTab() === 'materials'">
             <div class="materials-header">
               <span class="section-hint">Required BOM components allocated to this batch.</span>
@@ -559,34 +586,41 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                   wo.status === WorkOrderStatus.InProgress ||
                   wo.status === WorkOrderStatus.Scheduled
                 "
-                ar-button="ghost"
+                ar-button
+                variant="ghost"
                 (click)="openIssueMaterial()"
               >
                 + Issue Material
               </button>
             </div>
 
-            <div class="table-responsive">
-              <table class="sub-table">
+            <div
+              class="ar-table-responsive"
+              tabindex="0"
+              role="region"
+              aria-label="Allocated Material Issues"
+            >
+              <table class="ar-table">
+                <caption class="sr-only">Allocated Material Issues</caption>
                 <thead>
                   <tr>
-                    <th>Part #</th>
-                    <th>Description</th>
-                    <th>Req Qty</th>
-                    <th>Issued Qty</th>
-                    <th>Scrap</th>
-                    <th>Warehouse</th>
+                    <th scope="col">Part #</th>
+                    <th scope="col">Description</th>
+                    <th scope="col" class="text-right">Req Qty</th>
+                    <th scope="col" class="text-right">Issued Qty</th>
+                    <th scope="col" class="text-right">Scrap</th>
+                    <th scope="col">Warehouse</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr *ngFor="let m of wo.materialIssues">
-                    <td class="fw-bold">{{ m.componentPartNumber }}</td>
+                    <td class="font-mono font-medium">{{ m.componentPartNumber }}</td>
                     <td>{{ m.componentDescription }}</td>
-                    <td>{{ m.requiredQuantity }} {{ m.unitOfMeasure }}</td>
-                    <td [class.text-success]="m.issuedQuantity >= m.requiredQuantity">
+                    <td class="text-right font-mono">{{ m.requiredQuantity }} {{ m.unitOfMeasure }}</td>
+                    <td class="text-right font-mono" [class.text-success]="m.issuedQuantity >= m.requiredQuantity">
                       {{ m.issuedQuantity }} {{ m.unitOfMeasure }}
                     </td>
-                    <td class="text-danger">{{ m.wastedQuantity }}</td>
+                    <td class="text-right font-mono text-danger">{{ m.wastedQuantity }}</td>
                     <td>
                       <span class="wh-tag">{{ m.issuedFromWarehouse || 'Main Store' }}</span>
                     </td>
@@ -608,77 +642,78 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
     <ar-dialog
       *ngIf="isCreateOpen()"
       title="Create Production Work Order"
+      width="min(760px, calc(100vw - 32px))"
       (dismiss)="isCreateOpen.set(false)"
     >
-      <div class="modal-body-container">
+      <div class="dialog-form-body">
         <div class="form-grid">
-          <div class="form-group">
-            <label>Work Order Number</label>
-            <input type="text" class="form-control" [(ngModel)]="newWo.workOrderNumber" />
-          </div>
-          <div class="form-group">
-            <label>Batch Number</label>
+          <label class="ar-field">
+            <span class="ar-field__label">Work Order Number</span>
+            <input type="text" class="ar-field__input" [(ngModel)]="newWo.workOrderNumber" />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Batch Number</span>
             <input
               type="text"
-              class="form-control"
+              class="ar-field__input"
               [(ngModel)]="newWo.batchNumber"
               placeholder="BAT-2026-..."
             />
-          </div>
-          <div class="form-group">
-            <label>Finished Good Part #</label>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Finished Good Part #</span>
             <input
               type="text"
-              class="form-control"
+              class="ar-field__input"
               [(ngModel)]="newWo.partNumber"
               placeholder="HV-400-P"
             />
-          </div>
-          <div class="form-group">
-            <label>Part Description</label>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Part Description</span>
             <input
               type="text"
-              class="form-control"
+              class="ar-field__input"
               [(ngModel)]="newWo.description"
               placeholder="Proportional Directional Hydraulic..."
             />
-          </div>
-          <div class="form-group">
-            <label>Planned Production Quantity</label>
-            <input type="number" class="form-control" [(ngModel)]="newWo.plannedQuantity" />
-          </div>
-          <div class="form-group">
-            <label>Assigned Supervisor</label>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Planned Production Quantity</span>
+            <input type="number" class="ar-field__input" [(ngModel)]="newWo.plannedQuantity" />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Assigned Supervisor</span>
             <input
               type="text"
-              class="form-control"
+              class="ar-field__input"
               [(ngModel)]="newWo.assignedSupervisor"
               placeholder="Shop Lead Name"
             />
-          </div>
-          <div class="form-group">
-            <label>Planned Start Date</label>
-            <input type="date" class="form-control" [(ngModel)]="newWo.plannedStartDateUtc" />
-          </div>
-          <div class="form-group">
-            <label>Planned End Date</label>
-            <input type="date" class="form-control" [(ngModel)]="newWo.plannedEndDateUtc" />
-          </div>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Planned Start Date</span>
+            <input type="date" class="ar-field__input" [(ngModel)]="newWo.plannedStartDateUtc" />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Planned End Date</span>
+            <input type="date" class="ar-field__input" [(ngModel)]="newWo.plannedEndDateUtc" />
+          </label>
         </div>
 
-        <div class="form-group full-width mt-3">
-          <label>Production Notes & Instructions</label>
+        <label class="ar-field full-width">
+          <span class="ar-field__label">Production Notes & Instructions</span>
           <textarea
-            class="form-control"
+            class="ar-field__input"
             rows="2"
             [(ngModel)]="newWo.remarks"
             placeholder="Special heat treatment or tolerances..."
           ></textarea>
-        </div>
+        </label>
 
-        <div class="dialog-actions mt-4">
-          <button ar-button="primary" (click)="createWorkOrder()">Generate Work Order</button>
-          <button ar-button="ghost" (click)="isCreateOpen.set(false)">Cancel</button>
+        <div class="dialog-actions">
+          <button ar-button variant="primary" (click)="createWorkOrder()">Generate Work Order</button>
+          <button ar-button variant="ghost" (click)="isCreateOpen.set(false)">Cancel</button>
         </div>
       </div>
     </ar-dialog>
@@ -687,54 +722,55 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
     <ar-dialog
       *ngIf="isIssueMaterialOpen()"
       title="Issue Material to Work Order"
+      width="min(680px, calc(100vw - 32px))"
       (dismiss)="isIssueMaterialOpen.set(false)"
     >
-      <div class="modal-body-container">
+      <div class="dialog-form-body">
         <div class="form-grid">
-          <div class="form-group">
-            <label>Component Part #</label>
+          <label class="ar-field">
+            <span class="ar-field__label">Component Part #</span>
             <input
               type="text"
-              class="form-control"
+              class="ar-field__input"
               [(ngModel)]="newMaterial.componentPartNumber"
               placeholder="VB-BODY-400"
             />
-          </div>
-          <div class="form-group">
-            <label>Component Description</label>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Component Description</span>
             <input
               type="text"
-              class="form-control"
+              class="ar-field__input"
               [(ngModel)]="newMaterial.componentDescription"
               placeholder="Ductile Iron Casting..."
             />
-          </div>
-          <div class="form-group">
-            <label>Required Qty</label>
-            <input type="number" class="form-control" [(ngModel)]="newMaterial.requiredQuantity" />
-          </div>
-          <div class="form-group">
-            <label>Issued Qty</label>
-            <input type="number" class="form-control" [(ngModel)]="newMaterial.issuedQuantity" />
-          </div>
-          <div class="form-group">
-            <label>Wasted / Scrap Qty</label>
-            <input type="number" class="form-control" [(ngModel)]="newMaterial.wastedQuantity" />
-          </div>
-          <div class="form-group">
-            <label>Issuing Warehouse</label>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Required Qty</span>
+            <input type="number" class="ar-field__input" [(ngModel)]="newMaterial.requiredQuantity" />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Issued Qty</span>
+            <input type="number" class="ar-field__input" [(ngModel)]="newMaterial.issuedQuantity" />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Wasted / Scrap Qty</span>
+            <input type="number" class="ar-field__input" [(ngModel)]="newMaterial.wastedQuantity" />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Issuing Warehouse</span>
             <input
               type="text"
-              class="form-control"
+              class="ar-field__input"
               [(ngModel)]="newMaterial.issuedFromWarehouse"
               placeholder="WH-MAIN-RAW"
             />
-          </div>
+          </label>
         </div>
 
-        <div class="dialog-actions mt-4">
-          <button ar-button="primary" (click)="issueMaterial()">Issue to Shop Floor</button>
-          <button ar-button="ghost" (click)="isIssueMaterialOpen.set(false)">Cancel</button>
+        <div class="dialog-actions">
+          <button ar-button variant="primary" (click)="issueMaterial()">Issue to Shop Floor</button>
+          <button ar-button variant="ghost" (click)="isIssueMaterialOpen.set(false)">Cancel</button>
         </div>
       </div>
     </ar-dialog>
@@ -743,37 +779,37 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
     <ar-dialog
       *ngIf="isCompleteStepOpen()"
       title="Complete Routing Step & QC Inspection"
+      width="min(600px, calc(100vw - 32px))"
       (dismiss)="isCompleteStepOpen.set(false)"
     >
-      <div class="modal-body-container" *ngIf="targetStep() as step">
-        <p class="mb-3">
+      <div class="dialog-form-body" *ngIf="targetStep() as step">
+        <p class="dialog-intro">
           Completing step
           <strong>#{{ step.stepSequence }} - {{ getStageLabel(step.stage) }}</strong> at
-          <em>{{ step.workCenterName }}</em
-          >.
+          <em>{{ step.workCenterName }}</em>.
         </p>
 
         <div class="form-grid">
-          <div class="form-group">
-            <label>Actual Machine / Labor Hours</label>
-            <input type="number" class="form-control" [(ngModel)]="stepCompletion.actualHours" />
-          </div>
-          <div class="form-group">
-            <label>Quality Inspector Name</label>
-            <input type="text" class="form-control" [(ngModel)]="stepCompletion.inspectedBy" />
-          </div>
+          <label class="ar-field">
+            <span class="ar-field__label">Actual Machine / Labor Hours</span>
+            <input type="number" class="ar-field__input" [(ngModel)]="stepCompletion.actualHours" />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Quality Inspector Name</span>
+            <input type="text" class="ar-field__input" [(ngModel)]="stepCompletion.inspectedBy" />
+          </label>
         </div>
 
-        <div class="form-check mt-3">
+        <div class="form-check-row">
           <label class="checkbox-label">
             <input type="checkbox" [(ngModel)]="stepCompletion.qcPassed" />
             <span>Step passed QC tolerance and met drawing specifications</span>
           </label>
         </div>
 
-        <div class="dialog-actions mt-4">
-          <button ar-button="primary" (click)="completeStep()">Confirm Step Completion</button>
-          <button ar-button="ghost" (click)="isCompleteStepOpen.set(false)">Cancel</button>
+        <div class="dialog-actions">
+          <button ar-button variant="primary" (click)="completeStep()">Confirm Step Completion</button>
+          <button ar-button variant="ghost" (click)="isCompleteStepOpen.set(false)">Cancel</button>
         </div>
       </div>
     </ar-dialog>
@@ -782,43 +818,43 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
     <ar-dialog
       *ngIf="isCompleteWoOpen()"
       title="Complete Work Order & Inward FG"
+      width="min(640px, calc(100vw - 32px))"
       (dismiss)="isCompleteWoOpen.set(false)"
     >
-      <div class="modal-body-container" *ngIf="selectedWo() as wo">
-        <p class="mb-3">
-          Batch <strong>{{ wo.batchNumber }}</strong> for part <strong>{{ wo.partNumber }}</strong
-          >. Planned: {{ wo.plannedQuantity }} units.
+      <div class="dialog-form-body" *ngIf="selectedWo() as wo">
+        <p class="dialog-intro">
+          Batch <strong>{{ wo.batchNumber }}</strong> for part <strong>{{ wo.partNumber }}</strong>. Planned: {{ wo.plannedQuantity }} units.
         </p>
 
         <div class="form-grid">
-          <div class="form-group">
-            <label>Final Produced Good Quantity</label>
-            <input type="number" class="form-control" [(ngModel)]="woCompletion.producedQuantity" />
-          </div>
-          <div class="form-group">
-            <label>Total Scrapped / Rejected Quantity</label>
-            <input type="number" class="form-control" [(ngModel)]="woCompletion.scrappedQuantity" />
-          </div>
-          <div class="form-group full-width">
-            <label>Finished Goods Storage Warehouse & Rack</label>
+          <label class="ar-field">
+            <span class="ar-field__label">Final Produced Good Quantity</span>
+            <input type="number" class="ar-field__input" [(ngModel)]="woCompletion.producedQuantity" />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Total Scrapped / Rejected Quantity</span>
+            <input type="number" class="ar-field__input" [(ngModel)]="woCompletion.scrappedQuantity" />
+          </label>
+          <label class="ar-field full-width">
+            <span class="ar-field__label">Finished Goods Storage Warehouse & Rack</span>
             <input
               type="text"
-              class="form-control"
+              class="ar-field__input"
               [(ngModel)]="woCompletion.destinationLocation"
               placeholder="WH-FG-MAIN-BAY4"
             />
-          </div>
-          <div class="form-group full-width">
-            <label>Completion Remarks</label>
-            <textarea class="form-control" rows="2" [(ngModel)]="woCompletion.remarks"></textarea>
-          </div>
+          </label>
+          <label class="ar-field full-width">
+            <span class="ar-field__label">Completion Remarks</span>
+            <textarea class="ar-field__input" rows="2" [(ngModel)]="woCompletion.remarks"></textarea>
+          </label>
         </div>
 
-        <div class="dialog-actions mt-4">
-          <button ar-button="primary" (click)="completeWorkOrder()">
+        <div class="dialog-actions">
+          <button ar-button variant="primary" (click)="completeWorkOrder()">
             Complete Order & Update Inventory
           </button>
-          <button ar-button="ghost" (click)="isCompleteWoOpen.set(false)">Cancel</button>
+          <button ar-button variant="ghost" (click)="isCompleteWoOpen.set(false)">Cancel</button>
         </div>
       </div>
     </ar-dialog>
@@ -831,226 +867,208 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
       }
 
       .page-content {
-        padding: 1.5rem 2rem;
+        padding: 24px 32px;
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 20px;
+        max-width: 1440px;
+        margin: 0 auto;
+        width: 100%;
+        box-sizing: border-box;
       }
 
       .topbar-actions {
         display: flex;
-        gap: 0.75rem;
+        gap: 12px;
       }
 
       .kpi-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
       }
 
-      .kpi-card {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-border, #e2e8f0);
-        border-radius: 8px;
-        padding: 1rem 1.25rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-
-        &.amber {
-          border-left: 4px solid #f59e0b;
-        }
-        &.teal {
-          border-left: 4px solid #0d9488;
-        }
-
-        .label {
-          font-size: 0.78rem;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          color: var(--ar-text-muted, #64748b);
-          font-weight: 600;
-        }
-
-        .value {
-          font-size: 1.6rem;
-          font-weight: 700;
-          color: var(--ar-text-primary, #0f172a);
-        }
-
-        .sub {
-          font-size: 0.75rem;
-          color: var(--ar-text-secondary, #94a3b8);
-        }
-      }
-
-      .filter-bar {
+      .filter-card {
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card, 10px);
+        padding: 16px 20px;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        gap: 1rem;
+        gap: 16px;
+        box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
       }
 
       .search-box {
         flex: 1;
-        min-width: 280px;
-
-        .input-search {
-          width: 100%;
-          padding: 0.5rem 0.85rem;
-          border: 1px solid var(--ar-border, #cbd5e1);
-          border-radius: 6px;
-          font-size: 0.875rem;
-          background: var(--ar-surface, #ffffff);
-        }
+        min-width: 260px;
       }
 
       .filter-chips {
         display: flex;
-        gap: 0.5rem;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
 
-        .chip-filter {
-          padding: 0.35rem 0.85rem;
-          font-size: 0.8rem;
-          border-radius: 20px;
-          border: 1px solid var(--ar-border, #cbd5e1);
-          background: var(--ar-surface, #ffffff);
-          cursor: pointer;
-          font-weight: 500;
-          transition: all 0.15s ease;
+      .chip-filter {
+        padding: 6px 14px;
+        font-size: 0.8rem;
+        border-radius: 999px;
+        border: 1px solid var(--ar-line-200);
+        background: var(--ar-bg-50);
+        color: var(--ar-ink-700);
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.15s ease;
+      }
 
-          &.active {
-            background: var(--ar-primary, #1e293b);
-            color: #ffffff;
-            border-color: var(--ar-primary, #1e293b);
-          }
-        }
+      .chip-filter:hover {
+        background: #ffffff;
+        border-color: var(--ar-blue-500);
+      }
+
+      .chip-filter.active {
+        background: var(--ar-ink-900);
+        color: #ffffff;
+        border-color: var(--ar-ink-900);
       }
 
       .work-order-layout {
         display: grid;
-        grid-template-columns: 1fr 1.1fr;
-        gap: 1.5rem;
+        grid-template-columns: 1fr 1.15fr;
+        gap: 20px;
         align-items: start;
+      }
 
-        @media (max-width: 1200px) {
+      @media (max-width: 1100px) {
+        .work-order-layout {
           grid-template-columns: 1fr;
         }
       }
 
       .table-card {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-border, #e2e8f0);
-        border-radius: 8px;
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card, 10px);
         overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
       }
 
-      .data-table {
+      .ar-table-responsive {
+        overflow-x: auto;
+      }
+
+      .ar-table {
         width: 100%;
         border-collapse: collapse;
         font-size: 0.85rem;
 
-        th {
-          background: var(--ar-bg-subtle, #f8fafc);
-          padding: 0.75rem 1rem;
-          text-align: left;
+        thead th {
+          position: sticky;
+          top: 0;
+          background: var(--ar-bg-50);
+          color: var(--ar-ink-700);
           font-weight: 600;
-          color: var(--ar-text-secondary, #475569);
-          border-bottom: 1px solid var(--ar-border, #e2e8f0);
+          padding: 10px 14px;
+          border-bottom: 1px solid var(--ar-line-200);
+          white-space: nowrap;
+          z-index: 1;
         }
 
-        td {
-          padding: 0.75rem 1rem;
-          border-bottom: 1px solid var(--ar-border, #f1f5f9);
+        tbody td {
+          padding: 10px 14px;
+          border-bottom: 1px solid var(--ar-line-200);
+          color: var(--ar-ink-900);
           vertical-align: middle;
         }
 
         .clickable-row {
           cursor: pointer;
           transition: background 0.15s ease;
+        }
 
-          &:hover {
-            background: #f8fafc;
-          }
+        .clickable-row:hover {
+          background: var(--ar-bg-50);
+        }
 
-          &.selected-row {
-            background: #f0fdf4;
-            border-left: 3px solid #10b981;
-          }
+        .clickable-row.selected-row {
+          background: #eff8ff;
+          border-left: 3px solid var(--ar-blue-500);
         }
       }
 
       .wo-ref {
         display: flex;
         flex-direction: column;
+      }
 
-        .text-sub {
-          font-size: 0.75rem;
-          color: #64748b;
-        }
+      .text-sub {
+        font-size: 0.75rem;
+        color: var(--ar-ink-500);
       }
 
       .part-info {
         display: flex;
         flex-direction: column;
-        gap: 0.15rem;
+        gap: 2px;
+      }
 
-        .part-code {
-          font-weight: 600;
-          color: #1e293b;
-        }
+      .part-code {
+        font-weight: 600;
+        color: var(--ar-ink-900);
+      }
 
-        .part-name {
-          font-size: 0.78rem;
-          color: #64748b;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 180px;
-        }
+      .part-name {
+        font-size: 0.78rem;
+        color: var(--ar-ink-500);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+      }
 
-        .batch-badge {
-          font-size: 0.72rem;
-          color: #0369a1;
-          background: #e0f2fe;
-          padding: 1px 5px;
-          border-radius: 3px;
-          width: fit-content;
-        }
+      .batch-badge {
+        font-size: 0.72rem;
+        color: #0369a1;
+        background: #e0f2fe;
+        padding: 1px 6px;
+        border-radius: 3px;
+        width: fit-content;
       }
 
       .qty-progress {
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
+        align-items: flex-end;
+        gap: 4px;
+      }
 
-        .qty-numbers {
-          font-size: 0.8rem;
-          font-weight: 600;
-        }
+      .qty-numbers {
+        font-size: 0.8rem;
+        font-weight: 600;
+        font-family: var(--ar-font-mono, monospace);
+      }
 
-        .progress-bar-bg {
-          width: 80px;
-          height: 6px;
-          background: #e2e8f0;
-          border-radius: 3px;
-          overflow: hidden;
-        }
+      .progress-bar-bg {
+        width: 80px;
+        height: 6px;
+        background: var(--ar-line-200);
+        border-radius: 3px;
+        overflow: hidden;
+      }
 
-        .progress-bar-fill {
-          height: 100%;
-          background: #10b981;
-          border-radius: 3px;
-        }
+      .progress-bar-fill {
+        height: 100%;
+        background: #10b981;
+        border-radius: 3px;
       }
 
       .stage-tag {
         font-size: 0.75rem;
-        background: #f1f5f9;
-        color: #334155;
+        background: var(--ar-bg-100);
+        color: var(--ar-ink-700);
         padding: 2px 6px;
         border-radius: 4px;
         font-weight: 500;
@@ -1058,153 +1076,141 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
 
       .empty-cell {
         text-align: center;
-        padding: 2.5rem 1rem;
-        color: #94a3b8;
+        padding: 40px;
+        color: var(--ar-ink-400);
       }
 
+      /* Detail Cockpit */
       .detail-cockpit {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-border, #e2e8f0);
-        border-radius: 8px;
-        padding: 1.5rem;
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card, 10px);
+        padding: 24px;
         display: flex;
         flex-direction: column;
-        gap: 1.25rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        gap: 20px;
+        box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
       }
 
       .cockpit-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        border-bottom: 1px solid #f1f5f9;
-        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--ar-line-200);
+        padding-bottom: 16px;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
 
-        .cockpit-title-row {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
+      .cockpit-title-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
 
-          h3 {
-            margin: 0;
-            font-size: 1.25rem;
-            color: #0f172a;
-          }
-        }
+      .cockpit-title-row h3 {
+        margin: 0;
+        font: 600 1.25rem var(--ar-font-sans);
+        color: var(--ar-ink-900);
+      }
 
-        .cockpit-sub {
-          margin: 0.35rem 0 0 0;
-          font-size: 0.85rem;
-          color: #475569;
-        }
+      .cockpit-sub {
+        margin: 4px 0 0;
+        font-size: 0.85rem;
+        color: var(--ar-ink-700);
+      }
 
-        .cockpit-client {
-          margin: 0.25rem 0 0 0;
-          font-size: 0.8rem;
-          color: #64748b;
+      .cockpit-client {
+        margin: 4px 0 0;
+        font-size: 0.8rem;
+        color: var(--ar-ink-500);
+      }
 
-          span {
-            font-weight: 600;
-            color: #0f172a;
-          }
-        }
+      .cockpit-client span {
+        font-weight: 600;
+        color: var(--ar-ink-900);
+      }
 
-        .cockpit-actions {
-          display: flex;
-          gap: 0.5rem;
-        }
+      .cockpit-actions {
+        display: flex;
+        gap: 8px;
       }
 
       .cockpit-metrics {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        gap: 0.75rem;
-        background: #f8fafc;
-        padding: 0.85rem;
-        border-radius: 6px;
+        gap: 12px;
+        background: var(--ar-bg-50);
+        padding: 14px;
+        border: 1px solid var(--ar-line-200);
+        border-radius: 8px;
+      }
 
-        .metric-item {
-          display: flex;
-          flex-direction: column;
-          gap: 0.15rem;
+      .metric-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
 
-          .lbl {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            color: #64748b;
-            font-weight: 600;
-          }
+      .metric-item .lbl {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: var(--ar-ink-500);
+        font-weight: 600;
+        letter-spacing: 0.03em;
+      }
 
-          .val {
-            font-size: 1.1rem;
-            font-weight: 700;
+      .metric-item .val {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--ar-ink-900);
+      }
 
-            &.val-success {
-              color: #16a34a;
-            }
-            &.val-danger {
-              color: #dc2626;
-            }
-            &.val-stage {
-              color: #0284c7;
-              font-size: 0.95rem;
-            }
-          }
+      .val-success {
+        color: #16a34a !important;
+      }
 
-          .val-text {
-            font-size: 0.85rem;
-            color: #1e293b;
-            font-weight: 500;
-          }
-        }
+      .val-danger {
+        color: #dc2626 !important;
+      }
+
+      .val-stage {
+        color: #0284c7 !important;
+        font-size: 0.95rem !important;
+      }
+
+      .val-text {
+        font-size: 0.85rem;
+        color: var(--ar-ink-900);
+        font-weight: 500;
       }
 
       .cockpit-tabs {
         display: flex;
-        gap: 0.5rem;
-        border-bottom: 1px solid #e2e8f0;
-
-        .cockpit-tab-btn {
-          padding: 0.5rem 1rem;
-          font-size: 0.85rem;
-          font-weight: 600;
-          border: none;
-          background: transparent;
-          cursor: pointer;
-          color: #64748b;
-          border-bottom: 2px solid transparent;
-
-          &.active {
-            color: #0f172a;
-            border-bottom-color: #0284c7;
-          }
-        }
+        gap: 8px;
+        border-bottom: 1px solid var(--ar-line-200);
       }
 
-      .sub-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.8rem;
+      .cockpit-tab-btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: var(--ar-ink-500);
+        border-bottom: 2px solid transparent;
+        transition: all 0.15s ease;
+      }
 
-        th {
-          background: #f8fafc;
-          padding: 0.5rem 0.75rem;
-          text-align: left;
-          color: #475569;
-          font-weight: 600;
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        td {
-          padding: 0.6rem 0.75rem;
-          border-bottom: 1px solid #f1f5f9;
-          vertical-align: middle;
-        }
+      .cockpit-tab-btn.active {
+        color: var(--ar-ink-900);
+        border-bottom-color: var(--ar-blue-500);
       }
 
       .routing-stage-pill {
-        background: #f1f5f9;
-        color: #1e293b;
+        background: var(--ar-bg-100);
+        color: var(--ar-ink-900);
         padding: 2px 6px;
         border-radius: 4px;
         font-size: 0.75rem;
@@ -1213,113 +1219,120 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
 
       .wc-name {
         font-weight: 600;
+        font-size: 0.82rem;
       }
 
       .wc-inspector {
-        font-size: 0.7rem;
-        color: #64748b;
+        font-size: 0.72rem;
+        color: var(--ar-ink-500);
       }
 
       .materials-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.75rem;
+        margin-bottom: 12px;
+      }
 
-        .section-hint {
-          font-size: 0.8rem;
-          color: #64748b;
-        }
+      .section-hint {
+        font-size: 0.82rem;
+        color: var(--ar-ink-500);
       }
 
       .wh-tag {
         font-size: 0.72rem;
-        background: #f8fafc;
-        border: 1px solid #cbd5e1;
-        padding: 1px 4px;
-        border-radius: 3px;
+        background: var(--ar-bg-50);
+        border: 1px solid var(--ar-line-200);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: var(--ar-font-mono, monospace);
       }
 
       .text-muted-check {
         color: #16a34a;
         font-weight: 600;
+        font-size: 0.85rem;
       }
 
-      .modal-body-container {
-        padding: 1.25rem;
+      /* Dialogs */
+      .dialog-form-body {
+        padding: 8px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .dialog-intro {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--ar-ink-700);
       }
 
       .form-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 1rem;
+        gap: 12px;
       }
 
-      .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
+      .full-width {
+        grid-column: 1 / -1;
+      }
 
-        &.full-width {
-          grid-column: 1 / -1;
-        }
-
-        label {
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: #334155;
-        }
-
-        .form-control {
-          padding: 0.45rem 0.75rem;
-          border: 1px solid #cbd5e1;
-          border-radius: 5px;
-          font-size: 0.875rem;
-
-          &:focus {
-            outline: none;
-            border-color: #0284c7;
-          }
-        }
+      .form-check-row {
+        padding: 4px 0;
       }
 
       .checkbox-label {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        font-size: 0.85rem;
+        gap: 8px;
+        font-size: 0.875rem;
         cursor: pointer;
+        color: var(--ar-ink-700);
       }
 
       .dialog-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 0.75rem;
+        gap: 8px;
+        margin-top: 8px;
       }
 
-      .fw-bold {
-        font-weight: 600;
+      .font-mono {
+        font-family: var(--ar-font-mono, monospace);
       }
+
+      .font-medium {
+        font-weight: 500;
+      }
+
       .text-success {
         color: #16a34a;
       }
+
       .text-danger {
         color: #dc2626;
       }
+
       .text-muted {
-        color: #94a3b8;
+        color: var(--ar-ink-400);
       }
+
+      .text-right {
+        text-align: right !important;
+      }
+
       .text-center {
         text-align: center;
       }
-      .mt-3 {
-        margin-top: 0.75rem;
-      }
-      .mt-4 {
-        margin-top: 1rem;
-      }
-      .mb-3 {
-        margin-bottom: 0.75rem;
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
       }
     `,
   ],

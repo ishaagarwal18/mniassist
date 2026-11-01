@@ -11,7 +11,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { ArTopbar } from '../../layout/topbar';
 import { CrmTaskDto, CrmTaskStatus, CrmTaskSummaryDto, TaskPriority } from '../../proxy/activities';
-import { ArButton, ArChip, ArSearchBox } from '../../ui';
+import { ArButton, ArChip, ArIcon, ArSearchBox } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { ActivityDirectory } from './activity-directory';
 import { ActivityGateway } from './activity-mock';
@@ -32,7 +32,7 @@ import { recurrenceLabel } from './recurrence';
  */
 @Component({
   selector: 'ar-tasks',
-  imports: [ArTopbar, ArButton, ArChip, ArSearchBox, ArTaskDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSearchBox, ArTaskDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './tasks.html',
   styleUrl: './tasks.scss',

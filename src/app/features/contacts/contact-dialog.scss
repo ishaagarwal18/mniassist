@@ -1,0 +1,55 @@
+.fill {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px dashed var(--ar-line-300);
+  border-radius: var(--ar-radius-card, 8px);
+  background: var(--ar-bg-50, #f9fafb);
+  margin-bottom: 12px;
+}
+
+.fill__label {
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+  margin-right: 2px;
+}
+
+.fill__btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--ar-line-300);
+  border-radius: var(--ar-radius-control, 6px);
+  background: var(--ar-white, #ffffff);
+  font: 500 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    border-color: var(--ar-primary, #0f766e);
+    color: var(--ar-primary, #0f766e);
+  }
+
+  &--busy {
+    opacity: 0.7;
+    cursor: progress;
+  }
+
+  input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+.fill__note {
+  margin: 0 0 12px;
+  font: 400 12px/1.5 var(--ar-font-sans);
+  color: var(--ar-teal-600, #0d9488);
+}

@@ -9,6 +9,31 @@
 }
 
 <div class="cl ar-scroll">
+  <!-- Executive KPI Strip -->
+  <section class="cl__kpi-grid" role="group" aria-label="Calls summary">
+    <div class="cl__kpi-card">
+      <span class="cl__kpi-val tabular-nums">{{ stats().total }}</span>
+      <span class="cl__kpi-lbl">Total Logged</span>
+      <span class="cl__kpi-sub">Lifetime activity</span>
+    </div>
+    <div class="cl__kpi-card">
+      <span class="cl__kpi-val text-primary tabular-nums">{{ stats().inbound }} / {{ stats().outbound }}</span>
+      <span class="cl__kpi-lbl">Inbound / Outbound</span>
+      <span class="cl__kpi-sub">Direction ratio</span>
+    </div>
+    <div class="cl__kpi-card" [class.cl__kpi-card--amber]="stats().waiting > 0">
+      <span class="cl__kpi-val" [class.text-amber]="stats().waiting > 0" class="tabular-nums">{{ stats().waiting }}</span>
+      <span class="cl__kpi-lbl">Needs Outcome</span>
+      <span class="cl__kpi-sub">Pending rep log</span>
+    </div>
+    <div class="cl__kpi-card" [class.cl__kpi-card--teal]="stats().live > 0">
+      <span class="cl__kpi-val" [class.text-accent]="stats().live > 0" class="tabular-nums">{{ stats().live }}</span>
+      <span class="cl__kpi-lbl">Live In-Progress</span>
+      <span class="cl__kpi-sub">Ringing / Talking</span>
+    </div>
+  </section>
+
+  <!-- Controls & Search Toolbar -->
   <div class="cl__bar">
     @if (canSeeAll()) {
       <div class="cl__seg" role="group" aria-label="Whose calls">
@@ -29,6 +54,13 @@
       />
       <span>Only calls waiting for an outcome</span>
     </label>
+    <div class="cl__search-wrap">
+      <ar-search-box
+        placeholder="Filter by contact, phone, or deal ref..."
+        [query]="search()"
+        (queryChange)="search.set($event)"
+      />
+    </div>
   </div>
 
   @if (error(); as msg) {
@@ -36,90 +68,131 @@
   }
 
   @if (loading()) {
-    <p class="cl__empty">Loading…</p>
+    <p class="cl__empty">Loading calls…</p>
   } @else {
     <ul class="cl__list">
-      @for (c of calls(); track c.id) {
-        <li class="cl__row">
-          <span class="cl__dir" aria-hidden="true">{{ arrow(c) }}</span>
+      @for (c of filteredCalls(); track c.id) {
+        <li class="cl__row" [class.cl__row--waiting]="needs(c)">
+          <div
+            class="cl__dir-badge"
+            [class.cl__dir--in]="c.direction === 0"
+            [class.cl__dir--out]="c.direction === 1"
+            [title]="c.direction === 0 ? 'Inbound Call' : 'Outbound Call'"
+          >
+            {{ arrow(c) }}
+          </div>
+
           <div class="cl__main">
             <div class="cl__head">
               <strong class="cl__name">{{ c.contactName || number(c) }}</strong>
               @if (c.contactName) {
-                <span class="cl__num ar-mono">{{ number(c) }}</span>
+                <span class="cl__num ar-mono tabular-nums">{{ number(c) }}</span>
               }
               <ar-chip [tone]="tone(c)">{{ statusLabel(c) }}</ar-chip>
               @if (c.enquiryReference) {
                 <span class="cl__deal ar-mono">{{ c.enquiryReference }}</span>
               }
             </div>
+
             <p class="cl__line">
-              {{ headline(c) }} · {{ when(c) }}
+              {{ headline(c) }} &bull; {{ when(c) }}
               @if (c.repName) {
-                · {{ c.repName }}
+                &bull; Logged by <strong>{{ c.repName }}</strong>
               }
             </p>
+
             @if (hasOutcome(c)) {
-              <p class="cl__outcome">
-                <strong>{{ outcomeLabel[c.outcome] }}</strong>
+              <div class="cl__outcome-card">
+                <span class="cl__outcome-title">{{ outcomeLabel[c.outcome] }}</span>
                 @if (c.notes) {
-                  — {{ c.notes }}
+                  <span class="cl__outcome-notes">&mdash; {{ c.notes }}</span>
                 }
-              </p>
+              </div>
             } @else if (c.errorMessage) {
               <p class="cl__bad">{{ c.errorMessage }}</p>
             }
+
             @if (c.recordingUrl) {
-              <a class="cl__rec" [href]="c.recordingUrl" target="_blank" rel="noopener noreferrer"
-                >Listen to the recording</a
-              >
+              <div class="cl__audio-wrap">
+                <span class="cl__audio-label">Call Recording:</span>
+                <audio
+                  controls
+                  loading="lazy"
+                  preload="metadata"
+                  [src]="c.recordingUrl"
+                  class="cl__audio-player"
+                  aria-label="Call recording audio"
+                ></audio>
+              </div>
             }
+
             @if (c.mode === Mode.VoiceAi && c.isOver) {
-              <button type="button" class="cl__btn" (click)="toggleTranscript(c)">
-                {{ transcriptOf() === c.id ? 'Hide the transcript' : 'Show the transcript' }}
-              </button>
-              @if (transcriptOf() === c.id) {
-                @if (transcript(); as t) {
-                  <ol class="cl__transcript" aria-label="AI call transcript">
-                    @for (turn of t.turns; track turn.itemId + turn.speaker) {
-                      <li>
-                        <strong>{{ turn.speaker === 'agent' ? 'AI agent' : 'Customer' }}:</strong>
-                        <span translate="no">{{ turn.text }}</span>
-                      </li>
-                    } @empty {
-                      <li>Nothing was said.</li>
-                    }
-                  </ol>
-                  @if (t.transcriptIncomplete) {
-                    <p class="cl__line">Some words at the end may be missing.</p>
+              <div class="cl__transcript-section">
+                <button
+                  type="button"
+                  ar-button
+                  variant="ghost"
+                  (click)="toggleTranscript(c)"
+                  class="cl__transcript-toggle"
+                >
+                  <ar-icon [name]="transcriptOf() === c.id ? 'chevdown' : 'document'" [size]="14" />
+                  {{ transcriptOf() === c.id ? 'Hide AI Call Transcript' : 'View AI Call Transcript' }}
+                </button>
+                @if (transcriptOf() === c.id) {
+                  @if (transcript(); as t) {
+                    <div class="cl__transcript-box">
+                      <ol class="cl__transcript-thread" aria-label="AI call transcript">
+                        @for (turn of t.turns; track turn.itemId + turn.speaker) {
+                          <li
+                            class="cl__turn-bubble"
+                            [class.cl__turn--agent]="turn.speaker === 'agent'"
+                            [class.cl__turn--customer]="turn.speaker !== 'agent'"
+                          >
+                            <span class="cl__turn-sender">
+                              {{ turn.speaker === 'agent' ? '🤖 AI Voice Agent' : '👤 Customer' }}
+                            </span>
+                            <span class="cl__turn-text" translate="no">{{ turn.text }}</span>
+                          </li>
+                        } @empty {
+                          <li class="cl__turn-empty">Nothing was said during this call.</li>
+                        }
+                      </ol>
+                      <div class="cl__transcript-meta">
+                        @if (t.transcriptIncomplete) {
+                          <span class="cl__meta-pill cl__meta-pill--warn">Some words at the end may be missing</span>
+                        }
+                        @if (t.latency?.replies) {
+                          <span class="cl__meta-pill">
+                            Avg Latency: {{ (t.latency!.medianMs / 1000).toFixed(1) }}s
+                          </span>
+                        }
+                        @if (t.cost; as cost) {
+                          <span class="cl__meta-pill cl__meta-pill--cost">
+                            Cost: ₹{{ (cost.totalPaise / 100).toFixed(2) }}
+                          </span>
+                        }
+                      </div>
+                    </div>
+                  } @else {
+                    <p class="cl__line" role="status">{{ transcriptNote() }}</p>
                   }
-                  @if (t.latency?.replies) {
-                    <p class="cl__line">
-                      Typical reply time:
-                      <span translate="no">{{ (t.latency!.medianMs / 1000).toFixed(1) }} s</span>
-                    </p>
-                  }
-                  @if (t.cost; as cost) {
-                    <p class="cl__line">
-                      Estimated cost:
-                      <span translate="no">₹{{ (cost.totalPaise / 100).toFixed(2) }}</span>
-                    </p>
-                  }
-                } @else {
-                  <p class="cl__line" role="status">{{ transcriptNote() }}</p>
                 }
-              }
+              </div>
             }
           </div>
+
           <div class="cl__act">
             @if (needs(c)) {
-              <button type="button" class="cl__btn cl__btn--go" (click)="editing.set(c)">
+              <button ar-button variant="primary" (click)="editing.set(c)">
                 Say how it went
               </button>
             } @else if (c.isOver && c.mode !== Mode.Ivr) {
-              <button type="button" class="cl__btn" (click)="editing.set(c)">Edit</button>
+              <button ar-button variant="ghost" (click)="editing.set(c)">Edit</button>
             } @else if (!c.isOver) {
-              <span class="cl__live">{{ c.status === 2 ? 'Talking' : 'Ringing…' }}</span>
+              <span class="cl__live-pill">
+                <span class="cl__live-dot"></span>
+                {{ c.status === 2 ? 'Talking' : 'Ringing…' }}
+              </span>
             }
           </div>
         </li>
@@ -128,16 +201,18 @@
           {{
             waiting()
               ? 'Nothing is waiting for an outcome.'
-              : 'No calls yet. Start one from a contact or a deal.'
+              : 'No calls match the selected filter.'
           }}
         </li>
       }
     </ul>
 
     @if (calls().length < total()) {
-      <button type="button" class="cl__more" (click)="more()">
-        Show more ({{ total() - calls().length }} left)
-      </button>
+      <div class="cl__more-wrap">
+        <button ar-button variant="ghost" (click)="more()">
+          Show more ({{ total() - calls().length }} left)
+        </button>
+      </div>
     }
   }
 </div>

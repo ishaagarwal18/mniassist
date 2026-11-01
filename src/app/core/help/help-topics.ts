@@ -103,6 +103,38 @@ const NETWORK: HelpTopic = {
   ],
 };
 
+const ACCOUNT_FORM: HelpTopic = {
+  benefits: [
+    'Create or update customer accounts with standardized company details.',
+    'Select industry and location from verified master data catalogs.',
+    'Place accounts into a parent-subsidiary hierarchy for accurate corporate rollups.',
+  ],
+  steps: [
+    'Enter the account or subsidiary name and choose its industry from the master catalog.',
+    'Specify the street address, state, and city (cities filter automatically by selected state).',
+    'Select a parent account if organizing under an existing corporate group or company.',
+    'Click Save account to store the changes.',
+  ],
+};
+
+const CONTACT_FORM: HelpTopic = {
+  benefits: [
+    'Create or update contacts with verified WhatsApp communication capabilities.',
+    'Link contacts directly to parent corporate accounts and industrial clusters.',
+    'Fast-track data entry using AI visiting card scanning and vCard imports.',
+  ],
+  steps: [
+    'Enter the primary WhatsApp phone number in international format (e.g. 919821012345).',
+    'Add full name, designation, and company account link.',
+    'Set commercial decision authority role (Purchase, Maintenance, Plant Head...).',
+    'Choose operating state and industrial cluster from verified catalogs.',
+  ],
+  tips: [
+    'Scan a visiting card photo to automatically extract names, designations, and numbers.',
+    'Linking a contact to an account automatically aggregates their pipeline and activity.',
+  ],
+};
+
 export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   home: {
     benefits: [
@@ -188,6 +220,10 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Click Rollup to see totals that include everything beneath an account.',
     ],
   },
+  'contacts/accounts/new': ACCOUNT_FORM,
+  'contacts/accounts/:accountId/edit': ACCOUNT_FORM,
+  'contacts/new': CONTACT_FORM,
+  'contacts/:id/edit': CONTACT_FORM,
   'contacts/duplicates': {
     benefits: [
       'One record per person, so customers are not messaged twice.',

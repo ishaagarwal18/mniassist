@@ -1,0 +1,272 @@
+<ar-topbar
+  [title]="isEdit() ? 'Edit Account' : 'New Account'"
+  [subtitle]="isEdit() ? 'Update company details, location, and corporate hierarchy' : 'Create a corporate group, plant, or subsidiary'"
+  help="Accounts group contacts and their deals. Subsidiaries roll up their pipeline, activity, and contacts to parent corporate entities."
+>
+  <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
+  <button
+    ar-button
+    type="button"
+    variant="primary"
+    icon="check"
+    [disabled]="busy()"
+    (click)="save()"
+  >
+    {{ busy() ? 'Saving…' : isEdit() ? 'Save Changes' : 'Create Account' }}
+  </button>
+</ar-topbar>
+
+<div class="acc-form-page ar-scroll">
+  <div class="acc-form-container">
+    @if (error(); as err) {
+      <ar-banner tone="bad">{{ err }}</ar-banner>
+    }
+
+    <!-- Visual Hierarchy Placement Card -->
+    <div class="acc-hierarchy-card" [class.acc-hierarchy-card--sub]="!hierarchyInfo().isTopLevel">
+      <div class="acc-hierarchy-card__icon">
+        <ar-icon [name]="hierarchyInfo().isTopLevel ? 'shield' : 'flow'" [size]="22" />
+      </div>
+      <div class="acc-hierarchy-card__content">
+        <strong class="acc-hierarchy-card__title">{{ hierarchyInfo().label }}</strong>
+        <p class="acc-hierarchy-card__desc">{{ hierarchyInfo().description }}</p>
+      </div>
+    </div>
+
+    <!-- Main Account Form Card -->
+    <ar-card heading="Account Information">
+      <div class="acc-form-sections">
+        <!-- Section: Company Identity & Hierarchy -->
+        <div class="acc-form-group">
+          <h3 class="acc-form-group__heading">
+            <ar-icon name="contacts" [size]="16" />
+            <span>Company Identity &amp; Structure</span>
+          </h3>
+
+          <div class="acc-form-grid">
+            <label class="ar-field acc-form-grid--full">
+              <span class="ar-field__label">Account Name <span class="ar-field__req">*</span></span>
+              <input
+                required
+                maxlength="256"
+                class="ar-field__input"
+                placeholder="e.g. Bharat Heavy Forge Ltd."
+                [value]="draft().name"
+                (input)="patch('name', $any($event.target).value)"
+              />
+            </label>
+
+            <label class="ar-field">
+              <span class="ar-field__label">
+                Parent Account <span class="ar-field__opt">optional</span>
+              </span>
+              <select
+                class="ar-field__input"
+                (change)="patch('parentId', $any($event.target).value)"
+              >
+                <option value="" [selected]="!draft().parentId">None — Top-level Corporate Group</option>
+                @for (o of parentOptions(); track o.id) {
+                  <option [value]="o.id" [selected]="o.id === draft().parentId">
+                    {{ o.name }}
+                  </option>
+                }
+              </select>
+              <span class="ar-field__hint">
+                Select an existing group or company if this is a subsidiary or manufacturing plant.
+              </span>
+            </label>
+
+            <!-- Industry Dropdown bound to Master Data -->
+            <div class="ar-field">
+              <div class="acc-field-head">
+                <span class="ar-field__label">
+                  Industry Sector <span class="ar-field__opt">optional</span>
+                </span>
+                @if (!addingIndustry()) {
+                  <button type="button" class="acc-link-btn" (click)="startAddIndustry()">
+                    <ar-icon name="plus" [size]="12" /> Add custom
+                  </button>
+                }
+              </div>
+
+              @if (addingIndustry()) {
+                <div class="acc-custom-entry-box">
+                  <input
+                    class="ar-field__input"
+                    placeholder="Enter custom industry sector name..."
+                    maxlength="128"
+                    [value]="customIndustryInput()"
+                    (input)="customIndustryInput.set($any($event.target).value)"
+                    (keydown.enter)="confirmAddIndustry()"
+                  />
+                  <div class="acc-custom-actions">
+                    <button ar-button size="sm" variant="primary" type="button" (click)="confirmAddIndustry()">
+                      Add &amp; Select
+                    </button>
+                    <button ar-button size="sm" variant="ghost" type="button" (click)="cancelAddIndustry()">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <select
+                  class="ar-field__input"
+                  (change)="onIndustrySelectChange($any($event.target).value)"
+                >
+                  <option value="" [selected]="!draft().industry">Select Industry...</option>
+                  @for (ind of industries(); track ind) {
+                    <option [value]="ind" [selected]="ind === draft().industry">
+                      {{ ind }}
+                    </option>
+                  }
+                  <option value="__ADD_NEW__">+ Add new industry sector...</option>
+                </select>
+              }
+              <span class="ar-field__hint">Industry classification for audience segmentation.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Location & Plant Address -->
+        <div class="acc-form-group">
+          <h3 class="acc-form-group__heading">
+            <ar-icon name="machine" [size]="16" />
+            <span>Plant Address &amp; Geography</span>
+          </h3>
+
+          <div class="acc-form-grid">
+            <!-- Street Address Field -->
+            <label class="ar-field acc-form-grid--full">
+              <span class="ar-field__label">
+                Street Address / Plant Location <span class="ar-field__opt">optional</span>
+              </span>
+              <input
+                class="ar-field__input"
+                maxlength="256"
+                placeholder="e.g. Plot 42, MIDC Bhosari Industrial Area, Sector 7"
+                [value]="draft().address"
+                (input)="patch('address', $any($event.target).value)"
+              />
+            </label>
+
+            <!-- State Dropdown bound to Master Data -->
+            <label class="ar-field">
+              <span class="ar-field__label">
+                State / Territory <span class="ar-field__opt">optional</span>
+              </span>
+              <select
+                class="ar-field__input"
+                (change)="onStateSelect($any($event.target).value)"
+              >
+                <option value="" [selected]="!draft().state">Select State...</option>
+                @for (st of states(); track st) {
+                  <option [value]="st" [selected]="st === draft().state">
+                    {{ st }}
+                  </option>
+                }
+              </select>
+            </label>
+
+            <!-- City Dropdown bound to Master Data (filtered dynamically by State) -->
+            <div class="ar-field">
+              <div class="acc-field-head">
+                <span class="ar-field__label">
+                  City / Industrial Hub <span class="ar-field__opt">optional</span>
+                </span>
+                @if (!addingCity()) {
+                  <button type="button" class="acc-link-btn" (click)="startAddCity()">
+                    <ar-icon name="plus" [size]="12" /> Add custom
+                  </button>
+                }
+              </div>
+
+              @if (addingCity()) {
+                <div class="acc-custom-entry-box">
+                  <input
+                    class="ar-field__input"
+                    placeholder="Enter city or industrial cluster name..."
+                    maxlength="128"
+                    [value]="customCityInput()"
+                    (input)="customCityInput.set($any($event.target).value)"
+                    (keydown.enter)="confirmAddCity()"
+                  />
+                  <div class="acc-custom-actions">
+                    <button ar-button size="sm" variant="primary" type="button" (click)="confirmAddCity()">
+                      Add &amp; Select
+                    </button>
+                    <button ar-button size="sm" variant="ghost" type="button" (click)="cancelAddCity()">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <select
+                  class="ar-field__input"
+                  (change)="onCitySelectChange($any($event.target).value)"
+                >
+                  <option value="" [selected]="!draft().city">Select City...</option>
+                  @for (ct of availableCities(); track ct) {
+                    <option [value]="ct" [selected]="ct === draft().city">
+                      {{ ct }}
+                    </option>
+                  }
+                  <option value="__ADD_NEW__">+ Add new city...</option>
+                </select>
+              }
+            </div>
+
+            <!-- Website -->
+            <label class="ar-field acc-form-grid--full">
+              <span class="ar-field__label">
+                Website <span class="ar-field__opt">optional</span>
+              </span>
+              <input
+                type="url"
+                maxlength="512"
+                class="ar-field__input"
+                placeholder="e.g. https://www.bharatforge.com"
+                [value]="draft().website"
+                (input)="patch('website', $any($event.target).value)"
+              />
+            </label>
+          </div>
+        </div>
+
+        <!-- Section: Operational Notes -->
+        <div class="acc-form-group">
+          <h3 class="acc-form-group__heading">
+            <ar-icon name="document" [size]="16" />
+            <span>Internal &amp; Operational Notes</span>
+          </h3>
+
+          <label class="ar-field">
+            <span class="ar-field__label">
+              Notes <span class="ar-field__opt">optional</span>
+            </span>
+            <textarea
+              class="ar-field__input"
+              rows="4"
+              placeholder="Plant capacity, ERP customer ID, machinery platform, key account manager notes…"
+              [value]="draft().notes"
+              (input)="patch('notes', $any($event.target).value)"
+            ></textarea>
+          </label>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="acc-form-actions">
+        <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="busy()"
+          (click)="save()"
+        >
+          {{ busy() ? 'Saving…' : isEdit() ? 'Save Changes' : 'Create Account' }}
+        </button>
+      </div>
+    </ar-card>
+  </div>
+</div>

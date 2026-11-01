@@ -155,6 +155,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/contacts/contacts').then((m) => m.ArContacts),
       },
       {
+        path: 'contacts/new',
+        title: 'New Contact · MNI Assist',
+        loadComponent: () =>
+          import('./features/contacts/contact-form').then((m) => m.ArContactForm),
+      },
+      {
+        path: 'contacts/:id/edit',
+        title: 'Edit Contact · MNI Assist',
+        loadComponent: () =>
+          import('./features/contacts/contact-form').then((m) => m.ArContactForm),
+      },
+      {
         path: 'contacts/segments',
         title: 'Audience builder · MNI Assist',
         loadComponent: () => import('./features/contacts/segments').then((m) => m.ArSegments),
@@ -163,6 +175,18 @@ export const routes: Routes = [
         path: 'contacts/accounts',
         title: 'Accounts · MNI Assist',
         loadComponent: () => import('./features/contacts/accounts').then((m) => m.ArAccounts),
+      },
+      {
+        path: 'contacts/accounts/new',
+        title: 'New Account · MNI Assist',
+        loadComponent: () =>
+          import('./features/contacts/account-form').then((m) => m.ArAccountForm),
+      },
+      {
+        path: 'contacts/accounts/:accountId/edit',
+        title: 'Edit Account · MNI Assist',
+        loadComponent: () =>
+          import('./features/contacts/account-form').then((m) => m.ArAccountForm),
       },
       {
         path: 'contacts/360',

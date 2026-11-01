@@ -13,7 +13,10 @@ import {
   CreateBillOfMaterialDto,
   RoutingStage,
 } from '../../../proxy/manufacturing';
-import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArButton } from '../../../ui/button';
+import { ArChip, ChipTone } from '../../../ui/chip';
+import { ArDialog } from '../../../ui/dialog';
+import { ArStatTile } from '../../../ui/stat-tile';
 
 const MOCK_BOMS: BillOfMaterialDto[] = [
   {
@@ -160,46 +163,49 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
   standalone: true,
   selector: 'ar-bill-of-materials',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArStatTile],
   template: `
     <ar-topbar
       title="Bill of Materials (BOM)"
       subtitle="Multi-level product structures, component routing, scrap allowances & costing"
     >
-      <button ar-button="primary" (click)="openCreateModal()">+ Create New BOM</button>
+      <button ar-button variant="primary" (click)="openCreateModal()">+ Create New BOM</button>
     </ar-topbar>
 
     <div class="page-content">
-      <!-- KPI Row -->
-      <section class="kpi-grid">
-        <div class="kpi-card">
-          <span class="label">Total BOM Structures</span>
-          <strong class="value">{{ allBoms().length }}</strong>
-          <span class="sub">Assemblies & Kits configured</span>
-        </div>
-        <div class="kpi-card teal">
-          <span class="label">Active Production BOMs</span>
-          <strong class="value">{{ activeCount() }}</strong>
-          <span class="sub">Ready for shop floor work orders</span>
-        </div>
-        <div class="kpi-card amber">
-          <span class="label">Draft / Engineering</span>
-          <strong class="value">{{ draftCount() }}</strong>
-          <span class="sub">Pending prototype qualification</span>
-        </div>
-        <div class="kpi-card">
-          <span class="label">Avg Production Unit Cost</span>
-          <strong class="value">₹{{ avgUnitCost() / 100 | number: '1.2-2' }}</strong>
-          <span class="sub">Including scrap allowance</span>
-        </div>
+      <!-- Executive KPI Strip -->
+      <section class="kpi-grid" aria-label="BOM Executive Overview">
+        <ar-stat-tile
+          label="Total BOM Structures"
+          [value]="allBoms().length"
+          note="Configured assemblies and parts"
+        />
+        <ar-stat-tile
+          label="Active Production BOMs"
+          [value]="activeCount()"
+          tone="good"
+          note="Released for shop floor manufacturing"
+        />
+        <ar-stat-tile
+          label="Draft / Engineering"
+          [value]="draftCount()"
+          tone="amber"
+          note="Prototype qualification phase"
+        />
+        <ar-stat-tile
+          label="Avg Unit Cost"
+          [value]="'₹' + (avgUnitCost() / 100 | number: '1.2-2')"
+          tone="teal"
+          note="Weighted component scrap factored"
+        />
       </section>
 
-      <!-- Filter bar -->
-      <section class="filter-bar">
+      <!-- Filter Bar Card -->
+      <section class="filter-card">
         <div class="search-box">
           <input
             type="search"
-            class="input-search"
+            class="ar-field__input"
             placeholder="Search BOM #, Part #, Finished Good Description..."
             [ngModel]="filterQuery()"
             (ngModelChange)="filterQuery.set($event)"
@@ -207,6 +213,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
         </div>
         <div class="filter-chips">
           <button
+            type="button"
             class="chip-filter"
             [class.active]="selectedStatus() === null"
             (click)="selectedStatus.set(null)"
@@ -214,6 +221,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
             All BOMs ({{ allBoms().length }})
           </button>
           <button
+            type="button"
             class="chip-filter"
             [class.active]="selectedStatus() === BomStatus.Active"
             (click)="selectedStatus.set(BomStatus.Active)"
@@ -221,6 +229,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
             Active
           </button>
           <button
+            type="button"
             class="chip-filter"
             [class.active]="selectedStatus() === BomStatus.Draft"
             (click)="selectedStatus.set(BomStatus.Draft)"
@@ -228,6 +237,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
             Draft
           </button>
           <button
+            type="button"
             class="chip-filter"
             [class.active]="selectedStatus() === BomStatus.Obsolete"
             (click)="selectedStatus.set(BomStatus.Obsolete)"
@@ -237,101 +247,109 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
         </div>
       </section>
 
-      <!-- BOM Table -->
+      <!-- BOM Table adhering to modern-web-guidance responsive-table -->
       <section class="table-card">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>BOM Number</th>
-              <th>Finished Good & Description</th>
-              <th>Revision</th>
-              <th>Type</th>
-              <th>Components</th>
-              <th class="text-right">Est. Cost / Unit</th>
-              <th>Status</th>
-              <th class="actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let b of filteredBoms()" [class.selected]="selectedBom()?.id === b.id">
-              <td>
-                <div class="cell-main">
-                  <a class="code-link" (click)="viewBom(b)">{{ b.bomNumber }}</a>
-                  <span class="sub-text">{{ b.creationTime | date: 'mediumDate' }}</span>
-                </div>
-              </td>
-              <td>
-                <div class="cell-main">
-                  <strong>{{ b.finishedGoodPartNumber }}</strong>
-                  <span class="sub-text">{{ b.finishedGoodDescription }}</span>
-                </div>
-              </td>
-              <td>
-                <span class="badge-rev">{{ b.revisionCode }}</span>
-              </td>
-              <td>
-                <ar-chip [tone]="b.bomType === BomType.Manufacturing ? 'teal' : 'neutral'">
-                  {{ b.bomType === BomType.Manufacturing ? 'Manufacturing' : 'Engineering' }}
-                </ar-chip>
-              </td>
-              <td>
-                <span class="font-mono">{{ b.items.length }} items</span>
-              </td>
-              <td class="text-right font-mono">
-                <strong>₹{{ b.totalEstimatedCostInPaise / 100 | number: '1.2-2' }}</strong>
-                <span class="sub-text block">/ {{ b.finishedGoodUom }}</span>
-              </td>
-              <td>
-                <ar-chip [tone]="bomTone(b.status)">
-                  {{ bomLabel(b.status) }}
-                </ar-chip>
-              </td>
-              <td class="actions-col">
-                <div class="action-buttons">
-                  <button
-                    ar-button="primary"
-                    *ngIf="b.status === BomStatus.Active"
-                    (click)="createWorkOrderFromBom(b)"
-                  >
-                    Create WO
-                  </button>
-                  <button
-                    ar-button="ghost"
-                    *ngIf="b.status === BomStatus.Draft"
-                    (click)="activateBom(b)"
-                  >
-                    Activate
-                  </button>
-                  <button ar-button="quiet" (click)="viewBom(b)">View</button>
-                </div>
-              </td>
-            </tr>
-            <tr *ngIf="filteredBoms().length === 0">
-              <td colspan="8" class="empty-state">
-                <p>No Bill of Materials structures match your filter criteria.</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div
+          class="ar-table-responsive"
+          tabindex="0"
+          role="region"
+          aria-label="Bill of Materials Catalog"
+        >
+          <table class="ar-table">
+            <caption class="sr-only">Bill of Materials Catalog</caption>
+            <thead>
+              <tr>
+                <th scope="col">BOM Number</th>
+                <th scope="col">Finished Good & Description</th>
+                <th scope="col">Revision</th>
+                <th scope="col">Type</th>
+                <th scope="col" class="text-right">Components</th>
+                <th scope="col" class="text-right">Est. Cost / Unit</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let b of filteredBoms()" [class.selected]="selectedBom()?.id === b.id">
+                <td>
+                  <div class="cell-main">
+                    <a class="code-link" (click)="viewBom(b)">{{ b.bomNumber }}</a>
+                    <span class="sub-text">{{ b.creationTime | date: 'mediumDate' }}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="cell-main">
+                    <strong class="font-medium">{{ b.finishedGoodPartNumber }}</strong>
+                    <span class="sub-text">{{ b.finishedGoodDescription }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge-rev">{{ b.revisionCode }}</span>
+                </td>
+                <td>
+                  <ar-chip [tone]="b.bomType === BomType.Manufacturing ? 'teal' : 'neutral'">
+                    {{ b.bomType === BomType.Manufacturing ? 'Manufacturing' : 'Engineering' }}
+                  </ar-chip>
+                </td>
+                <td class="text-right font-mono">
+                  <span>{{ b.items.length }} parts</span>
+                </td>
+                <td class="text-right font-mono">
+                  <strong>₹{{ b.totalEstimatedCostInPaise / 100 | number: '1.2-2' }}</strong>
+                  <span class="sub-text block">/ {{ b.finishedGoodUom }}</span>
+                </td>
+                <td>
+                  <ar-chip [tone]="bomTone(b.status)" [dot]="b.status === BomStatus.Active">
+                    {{ bomLabel(b.status) }}
+                  </ar-chip>
+                </td>
+                <td class="text-right">
+                  <div class="action-buttons">
+                    <button
+                      ar-button
+                      variant="primary"
+                      *ngIf="b.status === BomStatus.Active"
+                      (click)="createWorkOrderFromBom(b)"
+                    >
+                      Create WO
+                    </button>
+                    <button
+                      ar-button
+                      variant="ghost"
+                      *ngIf="b.status === BomStatus.Draft"
+                      (click)="activateBom(b)"
+                    >
+                      Activate
+                    </button>
+                    <button ar-button variant="ghost" (click)="viewBom(b)">View</button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="filteredBoms().length === 0">
+                <td colspan="8" class="empty-state">
+                  <p>No Bill of Materials structures match your search or filter criteria.</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
 
     <!-- BOM Tree & Details Dialog -->
     <ar-dialog
       *ngIf="selectedBom()"
-      [title]="
-        'BOM Structure: ' + selectedBom()!.bomNumber + ' (' + selectedBom()!.revisionCode + ')'
-      "
+      [title]="'BOM Structure: ' + selectedBom()!.bomNumber + ' (' + selectedBom()!.revisionCode + ')'"
+      width="min(860px, calc(100vw - 32px))"
       (dismiss)="selectedBom.set(null)"
     >
       <div class="dialog-body" *ngIf="selectedBom() as b">
         <div class="meta-row">
           <div>
             <span class="meta-label">Assembly Part</span>
-            <h4>{{ b.finishedGoodPartNumber }} — {{ b.finishedGoodDescription }}</h4>
+            <h4 class="assembly-name">{{ b.finishedGoodPartNumber }} — {{ b.finishedGoodDescription }}</h4>
             <p class="sub-text">
-              Base Quantity: {{ b.baseQuantity }} {{ b.finishedGoodUom }} | Revision:
-              {{ b.revisionCode }}
+              Base Quantity: {{ b.baseQuantity }} {{ b.finishedGoodUom }} | Revision: {{ b.revisionCode }}
             </p>
           </div>
           <div class="meta-status">
@@ -341,29 +359,35 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
 
         <div class="cost-summary-box">
           <div>
-            <span class="box-label">Total Unit Cost</span>
-            <h3>₹{{ b.totalEstimatedCostInPaise / 100 | number: '1.2-2' }}</h3>
+            <span class="box-label">Total Computed Unit Cost</span>
+            <h3 class="cost-val">₹{{ b.totalEstimatedCostInPaise / 100 | number: '1.2-2' }}</h3>
           </div>
           <div>
-            <span class="box-label">Components</span>
-            <h4>{{ b.items.length }} parts</h4>
+            <span class="box-label">Assembly Scale</span>
+            <h4 class="parts-val">{{ b.items.length }} configured parts</h4>
           </div>
         </div>
 
-        <h5 class="mt-4 mb-2">Multi-Level Component Explosion</h5>
-        <div class="lines-table-wrapper">
-          <table class="dialog-table">
+        <h4 class="section-heading">Multi-Level Component Explosion</h4>
+        <div
+          class="ar-table-responsive"
+          tabindex="0"
+          role="region"
+          aria-label="Component Explosion Table"
+        >
+          <table class="ar-table">
+            <caption class="sr-only">Component Explosion Table</caption>
             <thead>
               <tr>
-                <th>Seq</th>
-                <th>Part Number</th>
-                <th>Description</th>
-                <th class="text-right">Qty/Unit</th>
-                <th>UOM</th>
-                <th class="text-right">Scrap %</th>
-                <th>Routing Stage</th>
-                <th class="text-right">Unit Rate</th>
-                <th class="text-right">Line Cost</th>
+                <th scope="col">Seq</th>
+                <th scope="col">Part Number</th>
+                <th scope="col">Description</th>
+                <th scope="col" class="text-right">Qty/Unit</th>
+                <th scope="col">UOM</th>
+                <th scope="col" class="text-right">Scrap %</th>
+                <th scope="col">Routing Stage</th>
+                <th scope="col" class="text-right">Unit Rate</th>
+                <th scope="col" class="text-right">Line Cost</th>
               </tr>
             </thead>
             <tbody>
@@ -383,15 +407,13 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
                 <td class="text-right font-mono">
                   ₹{{ item.unitCostInPaise / 100 | number: '1.2-2' }}
                 </td>
-                <td class="text-right font-mono">
-                  <strong
-                    >₹{{
-                      (item.quantityPerUnit *
-                        (1 + item.scrapPercentage / 100) *
-                        item.unitCostInPaise) /
-                        100 | number: '1.2-2'
-                    }}</strong
-                  >
+                <td class="text-right font-mono font-medium">
+                  ₹{{
+                    (item.quantityPerUnit *
+                      (1 + item.scrapPercentage / 100) *
+                      item.unitCostInPaise) /
+                      100 | number: '1.2-2'
+                  }}
                 </td>
               </tr>
               <tr *ngIf="b.items.length === 0">
@@ -403,18 +425,24 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
           </table>
         </div>
 
-        <div class="dialog-actions mt-4">
+        <div class="dialog-actions">
           <button
-            ar-button="primary"
+            ar-button
+            variant="primary"
             *ngIf="b.status === BomStatus.Active"
             (click)="createWorkOrderFromBom(b)"
           >
-            Generate Production Work Order
+            Generate Work Order
           </button>
-          <button ar-button="ghost" *ngIf="b.status === BomStatus.Draft" (click)="activateBom(b)">
+          <button
+            ar-button
+            variant="ghost"
+            *ngIf="b.status === BomStatus.Draft"
+            (click)="activateBom(b)"
+          >
             Release to Production
           </button>
-          <button ar-button="quiet" (click)="selectedBom.set(null)">Close</button>
+          <button ar-button variant="ghost" (click)="selectedBom.set(null)">Close</button>
         </div>
       </div>
     </ar-dialog>
@@ -423,141 +451,153 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
     <ar-dialog
       *ngIf="showCreateModal()"
       title="Create Bill of Materials (BOM)"
+      width="min(860px, calc(100vw - 32px))"
       (dismiss)="showCreateModal.set(false)"
     >
       <div class="dialog-body">
-        <div class="form-grid mb-3">
-          <div class="form-group">
-            <label>Finished Good Part # *</label>
+        <div class="form-grid">
+          <label class="ar-field">
+            <span class="ar-field__label">Finished Good Part # *</span>
             <input
               type="text"
-              class="form-control"
+              class="ar-field__input"
               [(ngModel)]="newBom.finishedGoodPartNumber"
               placeholder="e.g. HV-400-P"
             />
-          </div>
-          <div class="form-group">
-            <label>Revision Code *</label>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Revision Code *</span>
             <input
               type="text"
-              class="form-control"
+              class="ar-field__input"
               [(ngModel)]="newBom.revisionCode"
               placeholder="Rev A"
             />
-          </div>
-          <div class="form-group full-width">
-            <label>Product Description *</label>
+          </label>
+          <label class="ar-field full-width">
+            <span class="ar-field__label">Product Description *</span>
             <input
               type="text"
-              class="form-control"
+              class="ar-field__input"
               [(ngModel)]="newBom.finishedGoodDescription"
               placeholder="e.g. Proportional Directional Hydraulic Valve 350 Bar"
             />
-          </div>
-          <div class="form-group">
-            <label>BOM Type</label>
-            <select class="form-control" [(ngModel)]="newBom.bomType">
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">BOM Type</span>
+            <select class="ar-field__input" [(ngModel)]="newBom.bomType">
               <option [ngValue]="BomType.Manufacturing">Manufacturing BOM (Production)</option>
               <option [ngValue]="BomType.Engineering">Engineering BOM (Prototype)</option>
               <option [ngValue]="BomType.Kit">Sales / Spare Kit</option>
             </select>
-          </div>
-          <div class="form-group">
-            <label>Base Quantity & UOM</label>
-            <div class="uom-group">
-              <input type="number" class="form-control" [(ngModel)]="newBom.baseQuantity" />
+          </label>
+          <div class="uom-field-group">
+            <label class="ar-field">
+              <span class="ar-field__label">Base Quantity</span>
+              <input type="number" class="ar-field__input" [(ngModel)]="newBom.baseQuantity" />
+            </label>
+            <label class="ar-field">
+              <span class="ar-field__label">UOM</span>
               <input
                 type="text"
-                class="form-control uom-input"
+                class="ar-field__input uom-input"
                 [(ngModel)]="newBom.finishedGoodUom"
                 placeholder="NOS"
               />
-            </div>
+            </label>
           </div>
         </div>
 
-        <h5 class="mb-2">Bill of Materials Components</h5>
-        <table class="dialog-table mb-3">
-          <thead>
-            <tr>
-              <th>Part No</th>
-              <th>Description</th>
-              <th>Qty</th>
-              <th>UOM</th>
-              <th>Scrap %</th>
-              <th>Routing Stage</th>
-              <th>Cost (₹)</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of newBom.items; let i = index">
-              <td>
-                <input
-                  type="text"
-                  class="form-control"
-                  [(ngModel)]="item.componentPartNumber"
-                  placeholder="Part #"
-                />
-              </td>
-              <td>
-                <input
-                  type="text"
-                  class="form-control"
-                  [(ngModel)]="item.componentDescription"
-                  placeholder="Description"
-                />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  class="form-control text-right"
-                  [(ngModel)]="item.quantityPerUnit"
-                />
-              </td>
-              <td>
-                <input
-                  type="text"
-                  class="form-control input-xs"
-                  [(ngModel)]="item.unitOfMeasure"
-                  placeholder="NOS"
-                />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  class="form-control text-right input-xs"
-                  [(ngModel)]="item.scrapPercentage"
-                />
-              </td>
-              <td>
-                <select class="form-control input-sm" [(ngModel)]="item.routingStage">
-                  <option [ngValue]="RoutingStage.MaterialKitting">Kitting</option>
-                  <option [ngValue]="RoutingStage.Machining">Machining</option>
-                  <option [ngValue]="RoutingStage.Fabrication">Fabrication</option>
-                  <option [ngValue]="RoutingStage.HeatTreatment">Heat Treat</option>
-                  <option [ngValue]="RoutingStage.Assembly">Assembly</option>
-                  <option [ngValue]="RoutingStage.FinalTesting">Testing</option>
-                </select>
-              </td>
-              <td>
-                <input
-                  type="number"
-                  class="form-control text-right"
-                  [(ngModel)]="item.unitCostRupees"
-                />
-              </td>
-              <td>
-                <button ar-button="ghost" (click)="removeItem(i)">x</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <button ar-button="ghost" class="mb-3" (click)="addItem()">+ Add Component</button>
+        <h4 class="section-heading">Bill of Materials Components</h4>
+        <div
+          class="ar-table-responsive"
+          tabindex="0"
+          role="region"
+          aria-label="Component Input Table"
+        >
+          <table class="ar-table">
+            <caption class="sr-only">Component Input Table</caption>
+            <thead>
+              <tr>
+                <th scope="col">Part No</th>
+                <th scope="col">Description</th>
+                <th scope="col" class="text-right">Qty</th>
+                <th scope="col">UOM</th>
+                <th scope="col" class="text-right">Scrap %</th>
+                <th scope="col">Routing Stage</th>
+                <th scope="col" class="text-right">Cost (₹)</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of newBom.items; let i = index">
+                <td>
+                  <input
+                    type="text"
+                    class="ar-field__input table-input"
+                    [(ngModel)]="item.componentPartNumber"
+                    placeholder="Part #"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    class="ar-field__input table-input"
+                    [(ngModel)]="item.componentDescription"
+                    placeholder="Description"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    class="ar-field__input table-input text-right"
+                    [(ngModel)]="item.quantityPerUnit"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    class="ar-field__input table-input input-xs"
+                    [(ngModel)]="item.unitOfMeasure"
+                    placeholder="NOS"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    class="ar-field__input table-input text-right input-xs"
+                    [(ngModel)]="item.scrapPercentage"
+                  />
+                </td>
+                <td>
+                  <select class="ar-field__input table-input input-sm" [(ngModel)]="item.routingStage">
+                    <option [ngValue]="RoutingStage.MaterialKitting">Kitting</option>
+                    <option [ngValue]="RoutingStage.Machining">Machining</option>
+                    <option [ngValue]="RoutingStage.Fabrication">Fabrication</option>
+                    <option [ngValue]="RoutingStage.HeatTreatment">Heat Treat</option>
+                    <option [ngValue]="RoutingStage.Assembly">Assembly</option>
+                    <option [ngValue]="RoutingStage.FinalTesting">Testing</option>
+                  </select>
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    class="ar-field__input table-input text-right"
+                    [(ngModel)]="item.unitCostRupees"
+                  />
+                </td>
+                <td>
+                  <button ar-button variant="ghost" (click)="removeItem(i)" title="Remove item">✕</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <button ar-button variant="ghost" (click)="addItem()">+ Add Component</button>
 
         <div class="dialog-actions">
-          <button ar-button="primary" (click)="saveNewBom()">Save & Compute Costing</button>
-          <button ar-button="ghost" (click)="showCreateModal.set(false)">Cancel</button>
+          <button ar-button variant="primary" (click)="saveNewBom()">Save & Compute Costing</button>
+          <button ar-button variant="ghost" (click)="showCreateModal.set(false)">Cancel</button>
         </div>
       </div>
     </ar-dialog>
@@ -570,211 +610,194 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
       }
 
       .page-content {
-        padding: 1.5rem 2rem;
+        padding: 24px 32px;
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 20px;
+        max-width: 1440px;
+        margin: 0 auto;
+        width: 100%;
+        box-sizing: border-box;
       }
 
       .kpi-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
       }
 
-      .kpi-card {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-border, #e2e8f0);
-        border-radius: 8px;
-        padding: 1rem 1.25rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-
-        &.amber {
-          border-left: 4px solid #f59e0b;
-        }
-        &.teal {
-          border-left: 4px solid #0d9488;
-        }
-
-        .label {
-          font-size: 0.78rem;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          color: var(--ar-text-muted, #64748b);
-          font-weight: 600;
-        }
-
-        .value {
-          font-size: 1.6rem;
-          font-weight: 700;
-          color: var(--ar-text-primary, #0f172a);
-        }
-
-        .sub {
-          font-size: 0.75rem;
-          color: var(--ar-text-secondary, #94a3b8);
-        }
-      }
-
-      .filter-bar {
+      .filter-card {
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card, 10px);
+        padding: 16px 20px;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         justify-content: space-between;
-        gap: 1rem;
+        gap: 16px;
+        box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
       }
 
       .search-box {
         flex: 1;
-        min-width: 280px;
-
-        .input-search {
-          width: 100%;
-          padding: 0.5rem 0.85rem;
-          border: 1px solid var(--ar-border, #cbd5e1);
-          border-radius: 6px;
-          font-size: 0.875rem;
-          background: var(--ar-surface, #ffffff);
-        }
+        min-width: 260px;
       }
 
       .filter-chips {
         display: flex;
-        gap: 0.5rem;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
 
-        .chip-filter {
-          padding: 0.35rem 0.85rem;
-          font-size: 0.8rem;
-          border-radius: 20px;
-          border: 1px solid var(--ar-border, #cbd5e1);
-          background: var(--ar-surface, #ffffff);
-          cursor: pointer;
-          font-weight: 500;
-          transition: all 0.15s ease;
+      .chip-filter {
+        padding: 6px 14px;
+        font-size: 0.8rem;
+        border-radius: 999px;
+        border: 1px solid var(--ar-line-200);
+        background: var(--ar-bg-50);
+        color: var(--ar-ink-700);
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.15s ease;
+      }
 
-          &.active {
-            background: var(--ar-primary, #1e293b);
-            color: #ffffff;
-            border-color: var(--ar-primary, #1e293b);
-          }
-        }
+      .chip-filter:hover {
+        background: #ffffff;
+        border-color: var(--ar-blue-500);
+      }
+
+      .chip-filter.active {
+        background: var(--ar-ink-900);
+        color: #ffffff;
+        border-color: var(--ar-ink-900);
       }
 
       .table-card {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-border, #e2e8f0);
-        border-radius: 8px;
-        overflow-x: auto;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card, 10px);
+        box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
+        overflow: hidden;
       }
 
-      .data-table {
+      .ar-table-responsive {
+        overflow-x: auto;
+      }
+
+      .ar-table {
         width: 100%;
         border-collapse: collapse;
         text-align: left;
-        font-size: 0.85rem;
+        font-size: 0.875rem;
 
-        th {
-          padding: 0.75rem 1rem;
-          background: #f8fafc;
-          border-bottom: 1px solid #e2e8f0;
+        thead th {
+          position: sticky;
+          top: 0;
+          background: var(--ar-bg-50);
+          color: var(--ar-ink-700);
           font-weight: 600;
-          color: #475569;
-          text-transform: uppercase;
-          font-size: 0.72rem;
-          letter-spacing: 0.05em;
+          padding: 12px 16px;
+          border-bottom: 1px solid var(--ar-line-200);
+          white-space: nowrap;
+          z-index: 1;
         }
 
-        td {
-          padding: 0.75rem 1rem;
-          border-bottom: 1px solid #f1f5f9;
+        tbody td {
+          padding: 12px 16px;
+          border-bottom: 1px solid var(--ar-line-200);
+          color: var(--ar-ink-900);
           vertical-align: middle;
         }
 
+        tbody tr:last-child td {
+          border-bottom: none;
+        }
+
         tbody tr:hover {
-          background: #f8fafc;
+          background: var(--ar-bg-50);
         }
 
         tbody tr.selected {
-          background: #f1f5f9;
+          background: #eff8ff;
         }
       }
 
       .cell-main {
         display: flex;
         flex-direction: column;
-        gap: 0.15rem;
+        gap: 2px;
+      }
 
-        .code-link {
-          font-family: ui-monospace, monospace;
-          font-weight: 600;
-          color: #2563eb;
-          cursor: pointer;
-          text-decoration: underline;
-        }
+      .code-link {
+        font-family: var(--ar-font-mono, monospace);
+        font-weight: 600;
+        color: var(--ar-blue-600);
+        cursor: pointer;
+        text-decoration: none;
+      }
 
-        .sub-text {
-          font-size: 0.74rem;
-          color: #64748b;
-        }
+      .code-link:hover {
+        text-decoration: underline;
+      }
+
+      .sub-text {
+        font-size: 0.75rem;
+        color: var(--ar-ink-500);
       }
 
       .badge-rev {
         font-size: 0.75rem;
-        background: #f1f5f9;
-        padding: 0.15rem 0.4rem;
+        background: var(--ar-bg-100);
+        padding: 2px 6px;
         border-radius: 4px;
         font-weight: 600;
+        color: var(--ar-ink-700);
       }
 
       .badge-sub {
         font-size: 0.7rem;
         background: #e0e7ff;
         color: #3730a3;
-        padding: 0.1rem 0.35rem;
+        padding: 1px 6px;
         border-radius: 4px;
-        margin-left: 0.35rem;
+        margin-left: 6px;
       }
 
       .badge-stage {
         font-size: 0.75rem;
-        background: #e2e8f0;
-        padding: 0.1rem 0.4rem;
+        background: var(--ar-bg-100);
+        padding: 2px 8px;
         border-radius: 4px;
         font-weight: 500;
-      }
-
-      .actions-col {
-        text-align: right;
+        color: var(--ar-ink-700);
       }
 
       .action-buttons {
         display: flex;
-        gap: 0.35rem;
+        gap: 6px;
         justify-content: flex-end;
       }
 
       .dialog-body {
-        padding: 1rem 0;
+        padding: 8px 0;
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 16px;
       }
 
       .meta-row {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--ar-line-200);
       }
 
-      .meta-status {
-        display: flex;
-        gap: 0.5rem;
+      .assembly-name {
+        margin: 4px 0 2px;
+        font: 600 1.15rem var(--ar-font-sans);
+        color: var(--ar-ink-900);
       }
 
       .cost-summary-box {
@@ -782,113 +805,104 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
         justify-content: space-between;
         background: #f0fdf4;
         border: 1px solid #bbf7d0;
-        padding: 0.85rem 1.25rem;
-        border-radius: 6px;
-
-        .box-label {
-          font-size: 0.75rem;
-          color: #166534;
-          text-transform: uppercase;
-        }
-
-        h3,
-        h4 {
-          margin: 0.2rem 0 0 0;
-          color: #14532d;
-        }
+        padding: 14px 20px;
+        border-radius: 8px;
       }
 
-      .lines-table-wrapper {
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        overflow-x: auto;
+      .box-label {
+        font-size: 0.75rem;
+        color: #166534;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.03em;
       }
 
-      .dialog-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.8rem;
-
-        th {
-          background: #f8fafc;
-          padding: 0.5rem 0.75rem;
-          border-bottom: 1px solid #e2e8f0;
-          text-align: left;
-        }
-
-        td {
-          padding: 0.5rem 0.75rem;
-          border-bottom: 1px solid #f1f5f9;
-        }
+      .cost-val,
+      .parts-val {
+        margin: 4px 0 0;
+        color: #14532d;
+        font-weight: 700;
       }
 
-      .text-right {
-        text-align: right;
-      }
-      .text-muted {
-        color: #64748b;
-      }
-      .font-mono {
-        font-family: ui-monospace, monospace;
+      .section-heading {
+        margin: 0;
+        font: 600 1rem var(--ar-font-sans);
+        color: var(--ar-ink-900);
       }
 
       .form-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 0.75rem;
-
-        .full-width {
-          grid-column: span 2;
-        }
+        gap: 12px;
       }
 
-      .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-
-        label {
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: #475569;
-        }
-
-        .form-control {
-          padding: 0.45rem 0.65rem;
-          border: 1px solid #cbd5e1;
-          border-radius: 6px;
-          font-size: 0.82rem;
-        }
+      .full-width {
+        grid-column: span 2;
       }
 
-      .uom-group {
+      .uom-field-group {
         display: flex;
-        gap: 0.5rem;
+        gap: 8px;
+      }
 
-        .uom-input {
-          max-width: 80px;
-        }
+      .uom-input {
+        max-width: 90px;
+      }
+
+      .table-input {
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        height: 30px;
       }
 
       .input-sm {
-        padding: 0.25rem 0.4rem;
-        font-size: 0.78rem;
+        padding: 2px 6px;
       }
 
       .input-xs {
-        max-width: 65px;
+        max-width: 70px;
       }
 
       .dialog-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 0.5rem;
+        gap: 8px;
+        margin-top: 8px;
       }
 
       .empty-state {
         text-align: center;
-        padding: 2.5rem;
-        color: #94a3b8;
+        padding: 40px;
+        color: var(--ar-ink-400);
+      }
+
+      .font-mono {
+        font-family: var(--ar-font-mono, monospace);
+      }
+
+      .font-medium {
+        font-weight: 500;
+      }
+
+      .text-muted {
+        color: var(--ar-ink-400);
+      }
+
+      .text-right {
+        text-align: right !important;
+      }
+
+      .block {
+        display: block;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
       }
     `,
   ],

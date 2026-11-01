@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { inr } from '../../../core/util/format';
 import { ToastService } from '../../../core/ui/toast.service';
@@ -308,7 +309,7 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
 @Component({
   selector: 'ar-ai-negotiator',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [CommonModule, FormsModule, RouterLink, ArTopbar, ArButton, ArChip, ArDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -346,22 +347,22 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label">Active Negotiations</div>
-          <div class="kpi-value">{{ activeSessionsCount() }}</div>
+          <div class="kpi-value tabular-nums">{{ activeSessionsCount() }}</div>
           <div class="kpi-sub">{{ totalSessionsCount() }} total sessions registered</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Win / Agreed Rate</div>
-          <div class="kpi-value text-good">{{ winRatePercent() }}%</div>
+          <div class="kpi-value text-good tabular-nums">{{ winRatePercent() }}%</div>
           <div class="kpi-sub">{{ agreedSessionsCount() }} deals closed autonomously</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Avg Margin Preserved</div>
-          <div class="kpi-value text-primary">{{ avgMarginPreserved() }}%</div>
+          <div class="kpi-value text-primary tabular-nums">{{ avgMarginPreserved() }}%</div>
           <div class="kpi-sub">Floor limit: {{ policy().floorMarginPercent }}%</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Escalated to Human</div>
-          <div class="kpi-value text-amber">{{ escalatedSessionsCount() }}</div>
+          <div class="kpi-value text-amber tabular-nums">{{ escalatedSessionsCount() }}</div>
           <div class="kpi-sub">Requires sales manager sign-off</div>
         </div>
       </div>
@@ -422,7 +423,7 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                   (click)="selectSession(ses)"
                 >
                   <div class="item-head">
-                    <span class="session-code">{{ ses.sessionCode }}</span>
+                    <span class="session-code tabular-nums">{{ ses.sessionCode }}</span>
                     <ar-chip [tone]="statusTone(ses.status)">
                       {{ statusLabel(ses.status) }}
                     </ar-chip>
@@ -430,11 +431,11 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                   <div class="item-customer">{{ ses.contactName }}</div>
                   <div class="item-quote">Quote: {{ ses.quotationReference }}</div>
                   <div class="item-metrics">
-                    <span class="metric-val">{{ formatInr(ses.currentAmountInPaise) }}</span>
-                    <span class="metric-margin"
+                    <span class="metric-val tabular-nums">{{ formatInr(ses.currentAmountInPaise) }}</span>
+                    <span class="metric-margin tabular-nums"
                       >Margin: {{ ses.currentMarginPercent | number: '1.1-1' }}%</span
                     >
-                    <span class="metric-discount"
+                    <span class="metric-discount tabular-nums"
                       >{{ ses.currentDiscountPercent | number: '1.1-1' }}% disc</span
                     >
                   </div>
@@ -453,7 +454,18 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                 <div class="header-main">
                   <h2>{{ ses.sessionCode }} · {{ ses.quotationReference }}</h2>
                   <div class="customer-info">
-                    <strong>{{ ses.contactName }}</strong> · {{ ses.contactPhone }}
+                    <span class="customer-name font-semibold">{{ ses.contactName }}</span>
+                    <span class="phone-chip font-mono">{{ ses.contactPhone }}</span>
+                    @if (ses.contactId) {
+                      <a
+                        ar-button
+                        variant="ghost"
+                        [routerLink]="['/contacts', ses.contactId, '360']"
+                        class="c360-btn"
+                      >
+                        Customer 360 &rarr;
+                      </a>
+                    }
                   </div>
                 </div>
                 <div class="header-status">
@@ -470,17 +482,17 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
               <div class="financial-meter-strip">
                 <div class="meter-stat">
                   <div class="meter-stat-label">Original Quote</div>
-                  <div class="meter-stat-value">{{ formatInr(ses.originalAmountInPaise) }}</div>
+                  <div class="meter-stat-value tabular-nums">{{ formatInr(ses.originalAmountInPaise) }}</div>
                   <div class="meter-stat-sub">Target Margin: {{ ses.originalMarginPercent }}%</div>
                 </div>
                 <div class="meter-stat">
                   <div class="meter-stat-label">Estimated Cost Basis</div>
-                  <div class="meter-stat-value">{{ formatInr(ses.estimatedCostInPaise) }}</div>
+                  <div class="meter-stat-value tabular-nums">{{ formatInr(ses.estimatedCostInPaise) }}</div>
                   <div class="meter-stat-sub">Direct factory BOM</div>
                 </div>
                 <div class="meter-stat">
                   <div class="meter-stat-label">Current Offer</div>
-                  <div class="meter-stat-value text-primary">
+                  <div class="meter-stat-value text-primary tabular-nums">
                     {{ formatInr(ses.currentAmountInPaise) }}
                   </div>
                   <div class="meter-stat-sub">
@@ -490,7 +502,7 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                 <div class="meter-stat">
                   <div class="meter-stat-label">Effective Margin</div>
                   <div
-                    class="meter-stat-value"
+                    class="meter-stat-value tabular-nums"
                     [class.text-good]="ses.currentMarginPercent >= policy().targetMarginPercent"
                     [class.text-amber]="
                       ses.currentMarginPercent < policy().targetMarginPercent &&
@@ -565,7 +577,7 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                             👔 Sales Manager Intervention
                           }
                         </span>
-                        <span class="turn-meta">
+                        <span class="turn-meta tabular-nums">
                           Offered: {{ formatInr(turn.offeredAmountInPaise) }} (Margin:
                           {{ turn.marginPercent | number: '1.1-1' }}%)
                         </span>
@@ -634,13 +646,13 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
 
             <div class="form-grid">
               <div class="form-group">
-                <label>Policy Name</label>
-                <input type="text" class="form-control" [(ngModel)]="policyForm.name" />
+                <label for="polName">Policy Name</label>
+                <input id="polName" type="text" class="form-control" [(ngModel)]="policyForm.name" />
               </div>
 
               <div class="form-group">
-                <label>Negotiation Strategy Algorithm</label>
-                <select class="form-control" [(ngModel)]="policyForm.strategy">
+                <label for="polStrat">Negotiation Strategy Algorithm</label>
+                <select id="polStrat" class="form-control" [(ngModel)]="policyForm.strategy">
                   @for (opt of strategyOptions; track opt.value) {
                     <option [value]="opt.value">{{ opt.label }}</option>
                   }
@@ -648,8 +660,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
               </div>
 
               <div class="form-group">
-                <label>Target Margin (%)</label>
+                <label for="polTarget">Target Margin (%)</label>
                 <input
+                  id="polTarget"
                   type="number"
                   step="0.5"
                   class="form-control"
@@ -659,8 +672,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
               </div>
 
               <div class="form-group">
-                <label>Floor Margin (%) [Walk-Away Limit]</label>
+                <label for="polFloor">Floor Margin (%) [Walk-Away Limit]</label>
                 <input
+                  id="polFloor"
                   type="number"
                   step="0.5"
                   class="form-control"
@@ -670,8 +684,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
               </div>
 
               <div class="form-group">
-                <label>Max Concession Discount (%)</label>
+                <label for="polMaxDisc">Max Concession Discount (%)</label>
                 <input
+                  id="polMaxDisc"
                   type="number"
                   step="0.5"
                   class="form-control"
@@ -681,14 +696,15 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
               </div>
 
               <div class="form-group">
-                <label>Max Back-and-Forth Rounds</label>
-                <input type="number" class="form-control" [(ngModel)]="policyForm.maxRounds" />
+                <label for="polRounds">Max Back-and-Forth Rounds</label>
+                <input id="polRounds" type="number" class="form-control" [(ngModel)]="policyForm.maxRounds" />
                 <span class="field-hint">Number of counter-offers before Best & Final Offer</span>
               </div>
 
               <div class="form-group">
-                <label>Concession Step Size (%)</label>
+                <label for="polStep">Concession Step Size (%)</label>
                 <input
+                  id="polStep"
                   type="number"
                   step="0.5"
                   class="form-control"
@@ -698,8 +714,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
               </div>
 
               <div class="form-group">
-                <label>Auto-Approval Threshold (₹)</label>
+                <label for="polLimit">Auto-Approval Threshold (₹)</label>
                 <input
+                  id="polLimit"
                   type="number"
                   class="form-control"
                   [ngModel]="policyForm.autoApprovalLimitInPaise / 100"
@@ -728,8 +745,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
             </div>
 
             <div class="form-group full-width">
-              <label>System Prompt & Tone Guidance</label>
+              <label for="polPrompt">System Prompt & Tone Guidance</label>
               <textarea
+                id="polPrompt"
                 class="form-control"
                 rows="4"
                 [(ngModel)]="policyForm.systemPromptGuidance"
@@ -756,8 +774,8 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
 
             <div class="sim-config-grid">
               <div class="form-group">
-                <label>Buyer Persona</label>
-                <select class="form-control" [(ngModel)]="simPersona">
+                <label for="simPersona">Buyer Persona</label>
+                <select id="simPersona" class="form-control" [(ngModel)]="simPersona">
                   <option [value]="CustomerPersona.AggressiveProcurement">
                     Aggressive Procurement Officer (Claims competitor is 15% cheaper)
                   </option>
@@ -774,18 +792,19 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
               </div>
 
               <div class="form-group">
-                <label>Initial Quotation Amount (₹)</label>
-                <input type="number" class="form-control" [(ngModel)]="simQuoteRupees" />
+                <label for="simQuote">Initial Quotation Amount (₹)</label>
+                <input id="simQuote" type="number" class="form-control" [(ngModel)]="simQuoteRupees" />
               </div>
 
               <div class="form-group">
-                <label>Estimated Factory Cost Basis (₹)</label>
-                <input type="number" class="form-control" [(ngModel)]="simCostRupees" />
+                <label for="simCost">Estimated Factory Cost Basis (₹)</label>
+                <input id="simCost" type="number" class="form-control" [(ngModel)]="simCostRupees" />
               </div>
 
               <div class="form-group">
-                <label>Buyer Demand Discount (%)</label>
+                <label for="simDemand">Buyer Demand Discount (%)</label>
                 <input
+                  id="simDemand"
                   type="number"
                   step="1"
                   class="form-control"
@@ -809,19 +828,19 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                 <div class="sim-metrics-strip">
                   <div class="meter-stat">
                     <div class="meter-stat-label">Final Agreed Price</div>
-                    <div class="meter-stat-value text-primary">
+                    <div class="meter-stat-value text-primary tabular-nums">
                       {{ formatInr(res.finalAmountInPaise) }}
                     </div>
                   </div>
                   <div class="meter-stat">
                     <div class="meter-stat-label">Final Margin</div>
-                    <div class="meter-stat-value text-good">
+                    <div class="meter-stat-value text-good tabular-nums">
                       {{ res.finalMarginPercent | number: '1.1-1' }}%
                     </div>
                   </div>
                   <div class="meter-stat">
                     <div class="meter-stat-label">Total Discount Conceded</div>
-                    <div class="meter-stat-value text-amber">
+                    <div class="meter-stat-value text-amber tabular-nums">
                       {{ res.finalDiscountPercent | number: '1.1-1' }}%
                     </div>
                   </div>
@@ -847,7 +866,7 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                           {{ turn.sender === OfferSender.Customer ? '👤 Buyer' : '🤖 AI Agent' }}
                           (Round {{ turn.roundNumber }})
                         </span>
-                        <span class="turn-meta">
+                        <span class="turn-meta tabular-nums">
                           Amount: {{ formatInr(turn.offeredAmountInPaise) }} · Margin:
                           {{ turn.marginPercent | number: '1.1-1' }}%
                         </span>
@@ -880,8 +899,8 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
           </p>
 
           <div class="form-group">
-            <label>Intervention Action</label>
-            <select class="form-control" [(ngModel)]="interventionForm.action">
+            <label for="intAction">Intervention Action</label>
+            <select id="intAction" class="form-control" [(ngModel)]="interventionForm.action">
               <option [value]="NegotiationAction.CounterOffer">
                 Counter-Offer with Special Approved Rate
               </option>
@@ -895,13 +914,14 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
           </div>
 
           <div class="form-group">
-            <label>Approved Amount (₹)</label>
-            <input type="number" class="form-control" [(ngModel)]="interventionFormRupees" />
+            <label for="intAmt">Approved Amount (₹)</label>
+            <input id="intAmt" type="number" class="form-control" [(ngModel)]="interventionFormRupees" />
           </div>
 
           <div class="form-group">
-            <label>Approved Payment Terms</label>
+            <label for="intTerms">Approved Payment Terms</label>
             <input
+              id="intTerms"
               type="text"
               class="form-control"
               [(ngModel)]="interventionForm.overridePaymentTerms"
@@ -909,8 +929,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
           </div>
 
           <div class="form-group">
-            <label>Executive Notes / Rationale</label>
+            <label for="intNotes">Executive Notes / Rationale</label>
             <textarea
+              id="intNotes"
               class="form-control"
               rows="3"
               [(ngModel)]="interventionForm.managerNotes"
@@ -930,15 +951,18 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
   `,
   styles: [
     `
-      .header-actions {
-        display: flex;
-        gap: 0.5rem;
-      }
       .negotiator-container {
         padding: 1.5rem;
+        max-width: 1400px;
+        margin: 0 auto;
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
+      }
+      .header-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
       }
       .kpi-grid {
         display: grid;
@@ -946,101 +970,141 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         gap: 1rem;
       }
       .kpi-card {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-border, #e2e8f0);
-        border-radius: 8px;
-        padding: 1.25rem;
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card);
+        box-shadow: var(--ar-shadow-card);
+        padding: 1.125rem 1.25rem;
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
+        position: relative;
+        overflow: hidden;
+        transition: transform var(--ar-ease), box-shadow var(--ar-ease);
+      }
+      .kpi-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
+      }
+      .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--ar-blue-500);
       }
       .kpi-label {
-        font-size: 0.85rem;
-        color: var(--ar-muted, #64748b);
-        font-weight: 500;
+        font-size: 0.75rem;
+        color: var(--ar-ink-400);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
       .kpi-value {
-        font-size: 1.85rem;
+        font-size: 1.75rem;
         font-weight: 700;
-        color: var(--ar-text, #0f172a);
+        color: var(--ar-ink-900);
+        line-height: 1.15;
       }
       .kpi-sub {
-        font-size: 0.8rem;
-        color: var(--ar-muted, #64748b);
+        font-size: 0.75rem;
+        color: var(--ar-ink-500);
+        margin-top: 0.25rem;
+      }
+      .tabular-nums {
+        font-variant-numeric: tabular-nums;
       }
       .text-good {
-        color: #10b981;
+        color: var(--ar-green-600);
       }
       .text-bad {
-        color: #ef4444;
+        color: var(--ar-red-600);
       }
       .text-amber {
-        color: #f59e0b;
+        color: var(--ar-amber-600);
       }
       .text-primary {
-        color: #2563eb;
+        color: var(--ar-blue-600);
       }
       .text-accent {
-        color: #0d9488;
+        color: var(--ar-ai-700);
       }
 
       /* Cockpit Split */
       .cockpit-split {
         display: grid;
-        grid-template-columns: 340px 1fr;
+        grid-template-columns: 360px 1fr;
         gap: 1.25rem;
-        min-height: 650px;
+        align-items: start;
+        min-height: 680px;
+      }
+      @media (max-width: 960px) {
+        .cockpit-split {
+          grid-template-columns: 1fr;
+        }
       }
       .sessions-sidebar {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-border, #e2e8f0);
-        border-radius: 8px;
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card);
+        box-shadow: var(--ar-shadow-card);
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        max-height: calc(100vh - 230px);
       }
       .sidebar-search {
-        padding: 0.75rem;
-        border-bottom: 1px solid var(--ar-border, #e2e8f0);
+        padding: 0.875rem;
+        border-bottom: 1px solid var(--ar-line-200);
+        background: var(--ar-bg-50);
       }
       .filter-chips {
         display: flex;
-        gap: 0.25rem;
-        padding: 0.5rem 0.75rem;
-        border-bottom: 1px solid var(--ar-border, #e2e8f0);
-        background: var(--ar-surface-subtle, #f8fafc);
+        gap: 0.375rem;
+        padding: 0.625rem 0.875rem;
+        border-bottom: 1px solid var(--ar-line-200);
+        background: var(--ar-bg-50);
         overflow-x: auto;
       }
       .filter-chip {
         font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        border: 1px solid var(--ar-border, #cbd5e1);
-        background: #ffffff;
+        font-weight: 500;
+        padding: 0.25rem 0.625rem;
+        border-radius: var(--ar-radius-chip);
+        border: 1px solid var(--ar-line-300);
+        background: var(--ar-white);
+        color: var(--ar-ink-700);
         cursor: pointer;
+        transition: all var(--ar-ease);
         white-space: nowrap;
       }
+      .filter-chip:hover {
+        background: var(--ar-bg-100);
+      }
       .filter-chip.active {
-        background: #0f172a;
-        color: #ffffff;
-        border-color: #0f172a;
+        background: var(--ar-blue-100);
+        color: var(--ar-blue-700);
+        border-color: var(--ar-blue-200);
+        font-weight: 600;
       }
       .session-list {
         flex: 1;
         overflow-y: auto;
       }
       .session-item {
-        padding: 0.85rem;
-        border-bottom: 1px solid var(--ar-border, #e2e8f0);
+        padding: 0.875rem 1rem;
+        border-bottom: 1px solid var(--ar-line-200);
         cursor: pointer;
-        transition: background 0.15s ease;
+        transition: background var(--ar-ease), border-color var(--ar-ease);
       }
       .session-item:hover {
-        background: var(--ar-surface-hover, #f1f5f9);
+        background: var(--ar-bg-50);
       }
       .session-item.selected {
-        background: #eff6ff;
-        border-left: 4px solid #2563eb;
+        background: var(--ar-blue-100);
+        border-left: 3px solid var(--ar-blue-500);
       }
       .item-head {
         display: flex;
@@ -1051,40 +1115,43 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
       .session-code {
         font-size: 0.85rem;
         font-weight: 700;
-        color: var(--ar-text, #0f172a);
+        color: var(--ar-ink-900);
       }
       .item-customer {
-        font-size: 0.85rem;
+        font-size: 0.875rem;
         font-weight: 600;
-        color: #334155;
+        color: var(--ar-ink-700);
       }
       .item-quote {
-        font-size: 0.78rem;
-        color: var(--ar-muted, #64748b);
+        font-size: 0.75rem;
+        color: var(--ar-ink-400);
       }
       .item-metrics {
         display: flex;
-        gap: 0.5rem;
+        gap: 0.625rem;
         font-size: 0.8rem;
-        margin-top: 0.4rem;
+        margin-top: 0.375rem;
         align-items: center;
       }
       .metric-val {
         font-weight: 700;
-        color: #2563eb;
+        color: var(--ar-blue-600);
       }
       .metric-margin {
-        color: #10b981;
+        color: var(--ar-green-600);
+        font-weight: 500;
       }
       .metric-discount {
-        color: #f59e0b;
+        color: var(--ar-amber-600);
+        font-weight: 500;
       }
 
       /* Session Detail */
       .session-detail-panel {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-border, #e2e8f0);
-        border-radius: 8px;
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card);
+        box-shadow: var(--ar-shadow-card);
         padding: 1.5rem;
         display: flex;
         flex-direction: column;
@@ -1095,17 +1162,40 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         justify-content: space-between;
         align-items: flex-start;
         padding-bottom: 1rem;
-        border-bottom: 1px solid var(--ar-border, #e2e8f0);
+        border-bottom: 1px solid var(--ar-line-200);
+        flex-wrap: wrap;
+        gap: 0.75rem;
       }
       .header-main h2 {
         margin: 0;
-        font-size: 1.25rem;
+        font-size: 1.15rem;
         font-weight: 700;
+        color: var(--ar-ink-900);
       }
       .customer-info {
-        font-size: 0.9rem;
-        color: var(--ar-muted, #64748b);
-        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        font-size: 0.85rem;
+        color: var(--ar-ink-500);
+        margin-top: 0.375rem;
+        flex-wrap: wrap;
+      }
+      .customer-name {
+        color: var(--ar-ink-900);
+      }
+      .phone-chip {
+        font-size: 0.75rem;
+        background: var(--ar-bg-100);
+        color: var(--ar-ink-500);
+        padding: 0.125rem 0.375rem;
+        border-radius: var(--ar-radius-chip);
+        border: 1px solid var(--ar-line-200);
+      }
+      .c360-btn {
+        margin-left: 0.25rem;
+        font-size: 0.8rem;
+        text-decoration: none;
       }
       .header-status {
         display: flex;
@@ -1113,121 +1203,128 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         align-items: center;
       }
       .rounds-badge {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         font-weight: 600;
-        background: #f1f5f9;
-        padding: 0.2rem 0.5rem;
-        border-radius: 4px;
-        color: #475569;
+        background: var(--ar-bg-100);
+        border: 1px solid var(--ar-line-200);
+        padding: 0.25rem 0.5rem;
+        border-radius: var(--ar-radius-chip);
+        color: var(--ar-ink-700);
       }
 
       /* Financial Strip */
       .financial-meter-strip {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 0.85rem 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        background: var(--ar-bg-50);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-inset);
+        padding: 0.875rem 1rem;
         gap: 0.75rem;
       }
       .meter-stat-label {
-        font-size: 0.75rem;
-        color: #64748b;
+        font-size: 0.72rem;
+        color: var(--ar-ink-400);
         font-weight: 600;
         text-transform: uppercase;
+        letter-spacing: 0.04em;
       }
       .meter-stat-value {
         font-size: 1.15rem;
         font-weight: 700;
-        color: #0f172a;
+        color: var(--ar-ink-900);
         margin-top: 0.2rem;
       }
       .meter-stat-sub {
         font-size: 0.75rem;
-        color: #64748b;
+        color: var(--ar-ink-500);
       }
 
       /* Margin Drift */
       .margin-drift-box {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 0.75rem 1rem;
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-inset);
+        padding: 0.875rem 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
       }
       .margin-drift-header {
         display: flex;
         justify-content: space-between;
         font-size: 0.8rem;
         font-weight: 600;
-        color: #475569;
-        margin-bottom: 0.4rem;
+        color: var(--ar-ink-700);
       }
       .drift-bar-container {
         height: 10px;
-        background: #e2e8f0;
-        border-radius: 5px;
+        background: var(--ar-line-200);
+        border-radius: 9999px;
         position: relative;
         overflow: hidden;
       }
       .drift-bar-fill {
         height: 100%;
-        border-radius: 5px;
+        border-radius: 9999px;
         transition: width 0.3s ease;
       }
       .bar-good {
-        background: #10b981;
+        background: var(--ar-green-500);
       }
       .bar-amber {
-        background: #f59e0b;
+        background: var(--ar-amber-500);
       }
       .bar-bad {
-        background: #ef4444;
+        background: var(--ar-red-500);
       }
       .floor-line {
         position: absolute;
         top: 0;
         bottom: 0;
         width: 2px;
-        background: #dc2626;
+        background: var(--ar-red-600);
         z-index: 2;
       }
 
       /* Chat Thread */
       .transcript-section h3 {
-        font-size: 1rem;
-        font-weight: 700;
+        font-size: 0.95rem;
+        font-weight: 600;
         margin: 0 0 0.75rem 0;
+        color: var(--ar-ink-900);
       }
       .chat-thread {
         display: flex;
         flex-direction: column;
         gap: 1rem;
-        max-height: 380px;
+        max-height: 400px;
         overflow-y: auto;
-        padding: 0.5rem 0;
+        padding: 0.5rem 0.25rem;
       }
       .chat-bubble-wrap {
-        border-radius: 8px;
-        padding: 0.85rem 1rem;
+        border-radius: var(--ar-radius-card);
+        padding: 0.875rem 1.125rem;
         display: flex;
         flex-direction: column;
         gap: 0.4rem;
         max-width: 85%;
+        border: 1px solid var(--ar-line-200);
+        box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
       }
       .turn-customer {
-        background: #f1f5f9;
-        border-left: 4px solid #64748b;
+        background: var(--ar-bg-100);
+        border-left: 4px solid var(--ar-ink-400);
         align-self: flex-start;
       }
       .turn-ai {
-        background: #f0fdf4;
-        border-left: 4px solid #10b981;
+        background: var(--ar-ai-100);
+        border-left: 4px solid var(--ar-ai-500);
         align-self: flex-end;
       }
       .turn-human {
-        background: #eff6ff;
-        border-left: 4px solid #2563eb;
+        background: var(--ar-blue-100);
+        border-left: 4px solid var(--ar-blue-500);
         align-self: flex-end;
       }
       .bubble-header {
@@ -1235,42 +1332,44 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         justify-content: space-between;
         font-size: 0.78rem;
         font-weight: 600;
-        color: #475569;
+        color: var(--ar-ink-500);
       }
       .bubble-body {
-        font-size: 0.9rem;
-        color: #1e293b;
-        line-height: 1.4;
+        font-size: 0.875rem;
+        color: var(--ar-ink-900);
+        line-height: 1.45;
       }
       .ai-rationale-box {
         margin-top: 0.4rem;
-        background: rgba(255, 255, 255, 0.85);
-        border: 1px dashed #cbd5e1;
-        border-radius: 4px;
-        padding: 0.5rem;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px dashed var(--ar-ai-500);
+        border-radius: var(--ar-radius-chip);
+        padding: 0.625rem 0.75rem;
       }
       .rationale-head {
         font-size: 0.75rem;
         font-weight: 700;
-        color: #0d9488;
+        color: var(--ar-ai-700);
         margin-bottom: 0.2rem;
       }
       .rationale-text {
         font-size: 0.8rem;
-        color: #334155;
+        color: var(--ar-ink-700);
+        line-height: 1.4;
       }
 
       /* Quick Turn Box */
       .quick-turn-box {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 0.85rem 1rem;
+        background: var(--ar-bg-50);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-inset);
+        padding: 0.875rem 1rem;
       }
       .quick-turn-box h4 {
         margin: 0 0 0.5rem 0;
         font-size: 0.85rem;
-        color: #475569;
+        color: var(--ar-ink-700);
+        font-weight: 600;
       }
       .turn-input-row {
         display: flex;
@@ -1282,15 +1381,16 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         display: flex;
         justify-content: flex-end;
         gap: 0.75rem;
-        border-top: 1px solid #e2e8f0;
+        border-top: 1px solid var(--ar-line-200);
         padding-top: 1rem;
       }
 
       /* Policy & Panels */
       .panel-card {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-border, #e2e8f0);
-        border-radius: 8px;
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card);
+        box-shadow: var(--ar-shadow-card);
         padding: 1.75rem;
         display: flex;
         flex-direction: column;
@@ -1298,12 +1398,14 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
       }
       .panel-card h2 {
         margin: 0;
-        font-size: 1.25rem;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--ar-ink-900);
       }
       .panel-subtitle {
         margin: -0.5rem 0 0 0;
         font-size: 0.85rem;
-        color: var(--ar-muted, #64748b);
+        color: var(--ar-ink-500);
       }
       .form-grid {
         display: grid;
@@ -1319,20 +1421,29 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         grid-column: 1 / -1;
       }
       .form-group label {
-        font-size: 0.85rem;
+        font-size: 0.8125rem;
         font-weight: 600;
-        color: #334155;
+        color: var(--ar-ink-700);
       }
       .field-hint {
         font-size: 0.75rem;
-        color: #64748b;
+        color: var(--ar-ink-400);
       }
       .form-control {
         width: 100%;
         padding: 0.5rem 0.75rem;
-        border: 1px solid #cbd5e1;
-        border-radius: 4px;
+        border: 1px solid var(--ar-line-300);
+        border-radius: var(--ar-radius-control);
         font-size: 0.85rem;
+        background: var(--ar-white);
+        color: var(--ar-ink-900);
+        font-family: inherit;
+        box-sizing: border-box;
+      }
+      .form-control:focus {
+        outline: none;
+        border-color: var(--ar-blue-500);
+        box-shadow: var(--ar-focus-ring);
       }
       .toggles-grid {
         display: flex;
@@ -1344,13 +1455,13 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         align-items: center;
         gap: 0.5rem;
         font-size: 0.85rem;
-        color: #334155;
+        color: var(--ar-ink-700);
         cursor: pointer;
       }
       .panel-footer {
         display: flex;
         justify-content: flex-end;
-        border-top: 1px solid #e2e8f0;
+        border-top: 1px solid var(--ar-line-200);
         padding-top: 1rem;
       }
 
@@ -1368,34 +1479,34 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         display: flex;
         flex-direction: column;
         gap: 1rem;
-        border-top: 1px solid #e2e8f0;
+        border-top: 1px solid var(--ar-line-200);
         padding-top: 1.25rem;
       }
       .sim-metrics-strip {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 0.85rem 1rem;
+        background: var(--ar-bg-50);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-inset);
+        padding: 0.875rem 1rem;
         gap: 0.75rem;
       }
 
       /* Alerts */
       .alert-box {
         padding: 0.75rem 1rem;
-        border-radius: 6px;
+        border-radius: var(--ar-radius-inset);
         font-size: 0.85rem;
       }
       .alert-bad {
-        background: #fef2f2;
-        color: #991b1b;
-        border: 1px solid #fecaca;
+        background: var(--ar-red-100);
+        color: var(--ar-red-600);
+        border: 1px solid var(--ar-red-200);
       }
       .alert-info {
-        background: #f0fdf4;
-        color: #166534;
-        border: 1px solid #bbf7d0;
+        background: var(--ar-green-100);
+        color: var(--ar-green-600);
+        border: 1px solid var(--ar-green-200);
       }
 
       /* Dialog */
@@ -1410,13 +1521,16 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         justify-content: flex-end;
         gap: 0.5rem;
         margin-top: 1rem;
+        border-top: 1px solid var(--ar-line-200);
+        padding-top: 1rem;
       }
       .empty-state,
       .select-prompt {
-        padding: 2rem;
+        padding: 2.5rem;
         text-align: center;
-        color: #94a3b8;
-        font-size: 0.9rem;
+        color: var(--ar-ink-400);
+        font-size: 0.875rem;
+        font-style: italic;
       }
     `,
   ],

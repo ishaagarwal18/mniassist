@@ -18,6 +18,7 @@ import { ArGrid } from '../../ui/grid';
 import { ArSelect } from '../../ui/select';
 import { ArSendReorderLink } from '../reorder/send-reorder-link';
 import { ArContactImport } from './contact-import-dialog';
+import { ArContactDialog } from './contact-dialog';
 import { parseVCards } from './vcard';
 import { compactCount, segmentIcon, suppressionIcon } from './contacts-segments.logic';
 import { BusinessCardService } from '../../proxy/contacts';
@@ -100,13 +101,13 @@ const EMPTY_FORM: ContactForm = {
     ArChip,
     ArAvatar,
     ArButton,
-    ArDialog,
     ArSendReorderLink,
     ArSelect,
     ArGrid,
     GridModule,
     ArIcon,
     ArContactImport,
+    ArContactDialog,
     RouterLink,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -143,6 +144,10 @@ export class ArContacts {
   protected readonly suppressionError = this.store.suppressionError;
 
   protected retry(): void {
+    this.store.reload();
+  }
+
+  protected afterContactSaved(): void {
     this.store.reload();
   }
 
@@ -355,35 +360,11 @@ export class ArContacts {
 
   protected openDialog(): void {
     this.editingContactId.set(null);
-    this.editingStored = undefined;
-    this.form.set({ ...EMPTY_FORM });
-    this.filledFrom.set(null);
-    this.otherPhones.set([]);
     this.dialogOpen.set(true);
   }
 
   protected openEdit(row: { id: string }): void {
-    const c = this.store.contacts().find((item) => item.id === row.id);
-    if (!c) return;
-    this.editingContactId.set(c.id);
-    this.editingStored = c.stored;
-    // From the stored fields: the list's "company · city" is a display string, and loading it
-    // here appended the city to the company on every save.
-    const s = c.stored;
-    this.form.set({
-      waId: c.phoneE164.replace(/[^\d]/g, ''),
-      displayName: c.name || '',
-      designation: s?.designation ?? '',
-      companyName: s?.companyName ?? c.company ?? '',
-      accountId: s?.accountId ?? '',
-      email: s?.emailAddress ?? '',
-      website: s?.website ?? '',
-      city: s?.city ?? '',
-      state: s?.state ?? '',
-      role: (s?.role ?? DecisionRole.Maintenance) as DecisionRole,
-    });
-    this.filledFrom.set(null);
-    this.otherPhones.set([]);
+    this.editingContactId.set(row.id);
     this.dialogOpen.set(true);
   }
 

@@ -1,0 +1,351 @@
+<ar-topbar
+  [title]="isEdit() ? 'Edit Contact' : 'New Contact'"
+  [subtitle]="
+    isEdit()
+      ? 'Update contact profile, corporate account link, and decision role'
+      : 'Add a verified business contact with WhatsApp communication capabilities'
+  "
+  help="Contacts receive automated marketing campaigns, transactional quote notifications, and support messages. Link them to accounts to roll up activity to parent companies."
+>
+  <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
+  <button
+    ar-button
+    type="button"
+    variant="primary"
+    icon="check"
+    [disabled]="busy()"
+    (click)="save()"
+  >
+    {{ busy() ? 'Saving…' : isEdit() ? 'Save Changes' : 'Create Contact' }}
+  </button>
+</ar-topbar>
+
+<div class="contact-form-page ar-scroll">
+  <div class="contact-form-container">
+    @if (error(); as err) {
+      <ar-banner tone="bad">{{ err }}</ar-banner>
+    }
+
+    <!-- Smart Auto-Fill Bar: Visiting Card AI Photo & vCard (.vcf) -->
+    <div class="smart-fill-card">
+      <div class="smart-fill-card__header">
+        <ar-icon name="sparkle" [size]="18" class="smart-fill-icon" />
+        <div class="smart-fill-card__text">
+          <strong class="smart-fill-card__title">Quick Import Assistant</strong>
+          <p class="smart-fill-card__desc">
+            Instantly populate form fields by uploading a visiting card photo (AI OCR) or importing a phone vCard (.vcf).
+          </p>
+        </div>
+      </div>
+
+      <div class="smart-fill-card__actions">
+        <label class="smart-fill-btn" [class.smart-fill-btn--busy]="reading() === 'card'">
+          <ar-icon name="camera" [size]="16" />
+          <span>{{ reading() === 'card' ? 'Scanning Card via AI…' : 'Scan Visiting Card' }}</span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/*"
+            capture="environment"
+            [disabled]="!!reading() || busy()"
+            (change)="readCard($event)"
+          />
+        </label>
+
+        <label class="smart-fill-btn" [class.smart-fill-btn--busy]="reading() === 'vcard'">
+          <ar-icon name="card" [size]="16" />
+          <span>{{ reading() === 'vcard' ? 'Reading vCard…' : 'Import vCard (.vcf)' }}</span>
+          <input
+            type="file"
+            accept=".vcf,.vcard,text/vcard,text/x-vcard"
+            [disabled]="!!reading() || busy()"
+            (change)="readVcard($event)"
+          />
+        </label>
+      </div>
+
+      @if (filledFrom(); as source) {
+        <div class="smart-fill-notice" role="status">
+          <ar-icon name="check" [size]="15" />
+          <div class="smart-fill-notice__body">
+            <span>Populated from <strong>{{ source }}</strong>. Please verify details before saving.</span>
+            @if (otherPhones().length) {
+              <div class="smart-fill-notice__phones">
+                <span>Other phone numbers detected:</span>
+                @for (phone of otherPhones(); track phone) {
+                  <ar-chip tone="neutral">{{ phone }}</ar-chip>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Main Contact Form Grid -->
+    <form class="contact-form" (submit)="$event.preventDefault(); save()">
+      <!-- Section 1: Contact Identity & Communication -->
+      <ar-card heading="Contact Identity &amp; Communication">
+        <div class="form-section-body">
+          <div class="form-grid">
+            <!-- WhatsApp Number (Required) -->
+            <div class="ar-field form-grid--col2">
+              <label for="contact-waId" class="ar-field__label">
+                WhatsApp Phone Number <span class="ar-field__req">*</span>
+              </label>
+              <span class="ar-field__hint">
+                Format: Country code + number without spaces or plus sign (e.g. <code>919821012345</code> for India).
+              </span>
+              <input
+                id="contact-waId"
+                name="waId"
+                type="tel"
+                required
+                autocomplete="tel"
+                class="ar-field__input"
+                placeholder="919821012345"
+                [value]="draft().waId"
+                (input)="patch('waId', $any($event.target).value)"
+              />
+            </div>
+
+            <!-- Full Name -->
+            <div class="ar-field">
+              <label for="contact-displayName" class="ar-field__label">
+                Full Name
+              </label>
+              <span class="ar-field__hint">First and last name as displayed in conversations</span>
+              <input
+                id="contact-displayName"
+                name="displayName"
+                type="text"
+                maxlength="128"
+                autocomplete="name"
+                class="ar-field__input"
+                placeholder="e.g. Rajesh Patil"
+                [value]="draft().displayName"
+                (input)="patch('displayName', $any($event.target).value)"
+              />
+            </div>
+
+            <!-- Designation / Title -->
+            <div class="ar-field">
+              <label for="contact-designation" class="ar-field__label">
+                Designation / Job Title <span class="ar-field__opt">optional</span>
+              </label>
+              <span class="ar-field__hint">Role in their organization (e.g. VP Operations)</span>
+              <input
+                id="contact-designation"
+                name="designation"
+                type="text"
+                maxlength="128"
+                autocomplete="organization-title"
+                class="ar-field__input"
+                placeholder="e.g. Senior Plant Manager"
+                [value]="draft().designation"
+                (input)="patch('designation', $any($event.target).value)"
+              />
+            </div>
+
+            <!-- Email Address -->
+            <div class="ar-field form-grid--col2">
+              <label for="contact-email" class="ar-field__label">
+                Email Address <span class="ar-field__opt">optional</span>
+              </label>
+              <span class="ar-field__hint">Used for official quotations, signing links, and ticket alerts</span>
+              <input
+                id="contact-email"
+                name="email"
+                type="email"
+                maxlength="256"
+                autocomplete="email"
+                class="ar-field__input"
+                placeholder="rajesh.patil@meridian.com"
+                [value]="draft().email"
+                (input)="patch('email', $any($event.target).value)"
+              />
+            </div>
+          </div>
+        </div>
+      </ar-card>
+
+      <!-- Section 2: Corporate Account & Commercial Role -->
+      <ar-card heading="Corporate Account &amp; Role">
+        <div class="form-section-body">
+          <div class="form-grid">
+            <!-- Associated Account -->
+            <div class="ar-field form-grid--col2">
+              <label for="contact-account" class="ar-field__label">
+                Company Account <span class="ar-field__opt">optional</span>
+              </label>
+              <span class="ar-field__hint">
+                Link this contact to an existing company or plant to sync activity with corporate CRM.
+              </span>
+              <select
+                id="contact-account"
+                name="accountId"
+                class="ar-field__input"
+                [value]="draft().accountId"
+                (change)="patch('accountId', $any($event.target).value)"
+              >
+                <option value="">None — Standalone / Unlinked Contact</option>
+                @for (acc of availableAccounts(); track acc.id) {
+                  <option [value]="acc.id" [selected]="acc.id === draft().accountId">
+                    {{ acc.name }} {{ acc.city ? '· ' + acc.city : '' }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <!-- Company Name (Auto-synced or custom) -->
+            <div class="ar-field">
+              <label for="contact-companyName" class="ar-field__label">
+                Company Name
+              </label>
+              <span class="ar-field__hint">
+                {{ selectedAccount() ? 'Synced from linked Account above' : 'Custom business or organization name' }}
+              </span>
+              <input
+                id="contact-companyName"
+                name="companyName"
+                type="text"
+                maxlength="256"
+                autocomplete="organization"
+                class="ar-field__input"
+                [class.ar-field__input--readonly]="!!selectedAccount()"
+                [readOnly]="!!selectedAccount()"
+                [value]="selectedAccount()?.name ?? draft().companyName"
+                (input)="patch('companyName', $any($event.target).value)"
+                placeholder="e.g. Meridian Food Industries Pvt. Ltd."
+              />
+            </div>
+
+            <!-- Decision Role -->
+            <div class="ar-field">
+              <label for="contact-role" class="ar-field__label">
+                Decision Role <span class="ar-field__req">*</span>
+              </label>
+              <span class="ar-field__hint">Their authority category in purchase or operational decisions</span>
+              <select
+                id="contact-role"
+                name="role"
+                class="ar-field__input"
+                required
+                [value]="draft().role"
+                (change)="patchRole($any($event.target).value)"
+              >
+                @for (r of roles; track r.value) {
+                  <option [value]="r.value" [selected]="r.value === draft().role">
+                    {{ r.label }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <!-- Website -->
+            <div class="ar-field form-grid--col2">
+              <label for="contact-website" class="ar-field__label">
+                Website URL <span class="ar-field__opt">optional</span>
+              </label>
+              <span class="ar-field__hint">Official company or corporate homepage</span>
+              <input
+                id="contact-website"
+                name="website"
+                type="url"
+                maxlength="256"
+                autocomplete="url"
+                class="ar-field__input"
+                placeholder="https://www.meridianfoods.in"
+                [value]="draft().website"
+                (input)="patch('website', $any($event.target).value)"
+              />
+            </div>
+          </div>
+        </div>
+      </ar-card>
+
+      <!-- Section 3: Physical Location & Industrial Cluster -->
+      <ar-card heading="Location &amp; Manufacturing Cluster">
+        <div class="form-section-body">
+          <div class="form-grid">
+            <!-- State Dropdown bound to Master Data -->
+            <div class="ar-field">
+              <label for="contact-state" class="ar-field__label">
+                State / UT <span class="ar-field__opt">optional</span>
+              </label>
+              <span class="ar-field__hint">Primary operating state or regional jurisdiction</span>
+              <select
+                id="contact-state"
+                name="state"
+                class="ar-field__input"
+                [value]="draft().state"
+                (change)="patch('state', $any($event.target).value)"
+              >
+                <option value="">Select state or union territory...</option>
+                @for (st of states(); track st) {
+                  <option [value]="st" [selected]="st === draft().state">
+                    {{ st }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <!-- City / Cluster Dropdown bound to Master Cities -->
+            <div class="ar-field">
+              <label for="contact-city" class="ar-field__label">
+                City / Industrial Cluster <span class="ar-field__opt">optional</span>
+              </label>
+              <span class="ar-field__hint">
+                {{ draft().state ? 'Select city in ' + draft().state : 'City or manufacturing zone' }}
+              </span>
+              @if (availableCities().length) {
+                <select
+                  id="contact-city"
+                  name="city"
+                  class="ar-field__input"
+                  [value]="draft().city"
+                  (change)="patch('city', $any($event.target).value)"
+                >
+                  <option value="">Select city...</option>
+                  @for (ct of availableCities(); track ct) {
+                    <option [value]="ct" [selected]="ct === draft().city">
+                      {{ ct }}
+                    </option>
+                  }
+                </select>
+              } @else {
+                <input
+                  id="contact-city"
+                  name="city"
+                  type="text"
+                  maxlength="64"
+                  autocomplete="address-level2"
+                  class="ar-field__input"
+                  placeholder="e.g. Pune, Bhosari MIDC, Ahmedabad"
+                  [value]="draft().city"
+                  (input)="patch('city', $any($event.target).value)"
+                />
+              }
+            </div>
+          </div>
+        </div>
+      </ar-card>
+
+      <!-- Bottom Action Footer -->
+      <div class="form-footer">
+        <button ar-button type="button" variant="ghost" (click)="cancel()">
+          Cancel
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          icon="check"
+          [disabled]="busy()"
+          (click)="save()"
+        >
+          {{ busy() ? 'Saving…' : isEdit() ? 'Save Changes' : 'Create Contact' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

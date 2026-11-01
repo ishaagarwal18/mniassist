@@ -20,6 +20,7 @@ import type { CustomFieldType } from './custom-field-type.enum';
 export interface CustomerAccountDto extends FullAuditedEntityDto<string> {
   name?: string;
   industry?: string | null;
+  address?: string | null;
   city?: string | null;
   state?: string | null;
   website?: string | null;
@@ -37,6 +38,7 @@ export interface CreateUpdateCustomerAccountDto {
   /** Refused by the server if it would create a loop or nest deeper than five levels. */
   parentAccountId?: string | null;
   industry?: string | null;
+  address?: string | null;
   city?: string | null;
   state?: string | null;
   website?: string | null;

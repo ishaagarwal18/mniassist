@@ -1,0 +1,919 @@
+<ar-topbar
+  title="Customer 360 cockpit"
+  [subtitle]="subtitle()"
+  help="Customer 360 unifies all CRM, Sales Order, GST Invoicing, Service Ticket and Machinery equipment data in a single enterprise cockpit."
+>
+  <div actions class="c360-actions-bar">
+    @if (data()) {
+      <button ar-button variant="ghost" (click)="clearCustomer()">Select another customer</button>
+    }
+    <a ar-button variant="ghost" routerLink="/contacts">All Contacts</a>
+    <a ar-button variant="ghost" routerLink="/contacts/accounts">Accounts</a>
+  </div>
+</ar-topbar>
+
+<div class="c360-shell">
+  @if (data(); as c) {
+    <!-- Executive Customer Identity Header -->
+    <header class="c360-header" aria-label="Customer identity and actions">
+      <div class="c360-header__main">
+        <div class="c360-header__identity">
+          <div
+            class="c360-avatar"
+            [class.c360-avatar--account]="c.isAccountView"
+            aria-hidden="true"
+          >
+            {{ c.isAccountView ? '🏢' : c.customerName.charAt(0) }}
+          </div>
+          <div class="c360-info">
+            <div class="c360-title-row">
+              <h1 class="c360-name">{{ c.customerName }}</h1>
+              @if (c.isAccountView) {
+                <span class="c360-view-pill c360-view-pill--account">🏢 Whole Account View</span>
+                @if (c.contactId) {
+                  <a
+                    class="c360-switch-link"
+                    [routerLink]="['/contacts', c.contactId, '360']"
+                    title="View single contact dossier"
+                  >
+                    View key contact ({{ c.contactName }}) →
+                  </a>
+                }
+              } @else {
+                <span class="c360-view-pill">👤 Contact View</span>
+                @if (c.accountId) {
+                  <a
+                    class="c360-switch-link"
+                    [routerLink]="['/contacts/accounts', c.accountId, '360']"
+                    title="View corporate account dossier"
+                  >
+                    View corporate account view →
+                  </a>
+                }
+              }
+            </div>
+
+            <div class="c360-meta-strip">
+              @if (c.accountName) {
+                <span class="c360-meta-chip">🏢 {{ c.accountName }}</span>
+              }
+              @if (c.industry) {
+                <span class="c360-meta-chip">🏭 {{ c.industry }}</span>
+              }
+              @if (c.city) {
+                <span class="c360-meta-chip">📍 {{ c.city }}, {{ c.state }}</span>
+              }
+              @if (c.gstin) {
+                <span class="c360-meta-chip c360-meta-chip--gst">
+                  GST: {{ c.gstin }}
+                  <button
+                    type="button"
+                    class="btn-inline-copy"
+                    (click)="copyToClipboard(c.gstin, 'GSTIN')"
+                    title="Copy GSTIN"
+                    aria-label="Copy GSTIN"
+                  >
+                    <ar-icon name="copy" [size]="13" />
+                  </button>
+                </span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Communications & Shortcuts -->
+        <div class="c360-actions-bar" aria-label="Customer direct communication">
+          @if (c.phone) {
+            <a
+              class="c360-comm-link c360-comm-link--whatsapp"
+              [href]="whatsAppUrl(c.phone)"
+              target="_blank"
+              rel="noopener"
+              title="Open WhatsApp chat"
+            >
+              <ar-icon name="send" [size]="14" /> WhatsApp
+            </a>
+            <a
+              class="c360-comm-link"
+              [href]="'tel:' + cleanPhone(c.phone)"
+              title="Call phone number"
+            >
+              <ar-icon name="phone" [size]="14" /> {{ c.phone }}
+            </a>
+          }
+          @if (c.email) {
+            <a
+              class="c360-comm-link"
+              [href]="'mailto:' + c.email"
+              title="Send email"
+            >
+              <ar-icon name="mail" [size]="14" /> Email
+            </a>
+          }
+        </div>
+      </div>
+
+      <!-- Subsidiary Toggle (for accounts) -->
+      @if (c.isAccountView && c.hasSubsidiaries) {
+        <div class="c360-subsidiary-bar">
+          <label class="subsidiary-toggle">
+            <input
+              type="checkbox"
+              [checked]="c.includesSubsidiaries"
+              (change)="setSubsidiaries($any($event.target).checked)"
+            />
+            <span>Include subsidiary corporate accounts and branch manufacturing plants</span>
+          </label>
+          <span class="text-muted text-xs">Aggregates enterprise-wide figures</span>
+        </div>
+      }
+    </header>
+
+    <!-- Operational Actions Ribbon -->
+    <ar-customer-actions [customer]="c" (changed)="refreshCustomer()" />
+
+    <!-- Commercial Credit & Financial Health Ribbon -->
+    <section class="credit-kpi-grid" aria-label="Commercial credit and KPI health">
+      <!-- Credit Limit & Utilization Card -->
+      <div class="kpi-card kpi-card--credit" [class.on-hold]="c.credit.onHold">
+        <div class="kpi-head">
+          <span class="kpi-lbl">Commercial Credit</span>
+          <ar-chip [tone]="creditTone()">
+            {{ c.credit.onHold ? 'ON HOLD' : creditUtilizationPct() >= 90 ? 'NEAR LIMIT' : 'NORMAL' }}
+          </ar-chip>
+        </div>
+        <div class="kpi-val">
+          @if (c.credit.creditLimitInPaise != null) {
+            ₹{{ c.credit.creditLimitInPaise / 100 | number: '1.0-0' }}
+          } @else {
+            No limit
+          }
+        </div>
+        @if (c.credit.creditLimitInPaise) {
+          <div class="kpi-utilization">
+            <div class="kpi-meter-bar">
+              <div
+                class="kpi-meter-fill"
+                [class.kpi-meter-fill--good]="creditUtilizationPct() < 70"
+                [class.kpi-meter-fill--warn]="creditUtilizationPct() >= 70 && creditUtilizationPct() < 90"
+                [class.kpi-meter-fill--bad]="creditUtilizationPct() >= 90"
+                [style.width.%]="creditUtilizationPct()"
+              ></div>
+            </div>
+          </div>
+        }
+        <div class="kpi-foot">
+          <span>
+            Terms:
+            {{
+              c.credit.paymentTermsDays === 0
+                ? 'Advance payment'
+                : (c.credit.paymentTermsDays != null ? c.credit.paymentTermsDays + ' days net' : 'Not specified')
+            }}
+          </span>
+          @if (c.credit.creditLimitInPaise) {
+            <span>
+              Available:
+              ₹{{ (availableCreditInPaise() ?? 0) / 100 | number: '1.0-0' }}
+              ({{ 100 - creditUtilizationPct() }}% free)
+            </span>
+          }
+          @if (c.credit.onHold && c.credit.holdReason) {
+            <span class="kpi-alert-text">Hold reason: {{ c.credit.holdReason }}</span>
+          }
+        </div>
+      </div>
+
+      <!-- Outstanding Receivables Card -->
+      <div class="kpi-card kpi-card--owed">
+        <div class="kpi-head">
+          <span class="kpi-lbl">Outstanding Owed</span>
+          @if (c.credit.totalOverdueInPaise > 0) {
+            <ar-chip tone="bad">OVERDUE</ar-chip>
+          } @else {
+            <ar-chip tone="good">CURRENT</ar-chip>
+          }
+        </div>
+        <div class="kpi-val" [class.text-danger]="c.credit.totalOwedInPaise > 0">
+          ₹{{ c.credit.totalOwedInPaise / 100 | number: '1.2-2' }}
+        </div>
+        <div class="kpi-foot">
+          <span [class.text-danger]="c.credit.totalOverdueInPaise > 0">
+            Overdue: ₹{{ c.credit.totalOverdueInPaise / 100 | number: '1.2-2' }}
+            @if (c.credit.totalOverdueInPaise > 0) {
+              ({{ overdueRatioPct() }}% of balance)
+            }
+          </span>
+        </div>
+      </div>
+
+      <!-- Active on Order Card -->
+      <div class="kpi-card kpi-card--order">
+        <div class="kpi-head">
+          <span class="kpi-lbl">Active on Order</span>
+          <ar-chip tone="teal">{{ c.activeOrdersCount }} Active</ar-chip>
+        </div>
+        <div class="kpi-val text-primary">
+          ₹{{ c.credit.totalOnOrderInPaise / 100 | number: '1.2-2' }}
+        </div>
+        <div class="kpi-foot">
+          <span>{{ c.activeOrdersCount }} order{{ c.activeOrdersCount === 1 ? '' : 's' }} in production or dispatch</span>
+        </div>
+      </div>
+
+      <!-- Lifetime Revenue (LTV) Card -->
+      <div class="kpi-card kpi-card--ltv">
+        <div class="kpi-head">
+          <span class="kpi-lbl">Lifetime Revenue</span>
+          <ar-chip tone="good">LTV</ar-chip>
+        </div>
+        <div class="kpi-val text-success">
+          ₹{{ c.lifetimeRevenueInPaise / 100 | number: '1.0-0' }}
+        </div>
+        <div class="kpi-foot">
+          <span>{{ c.totalInvoicesCount }} commercial invoice{{ c.totalInvoicesCount === 1 ? '' : 's' }} billed</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dossier Navigation Tabs -->
+    <nav class="c360-nav-tabs" aria-label="Customer 360 dossier sections">
+      <button
+        type="button"
+        class="nav-tab"
+        [class.active]="activeTab() === 'overview'"
+        (click)="activeTab.set('overview')"
+      >
+        <span>Overview & Activity</span>
+      </button>
+      <button
+        type="button"
+        class="nav-tab"
+        [class.active]="activeTab() === 'orders'"
+        (click)="activeTab.set('orders')"
+      >
+        <span>Sales Orders</span>
+        <span class="tab-badge">{{ c.totalOrdersCount }}</span>
+      </button>
+      <button
+        type="button"
+        class="nav-tab"
+        [class.active]="activeTab() === 'challans'"
+        (click)="activeTab.set('challans')"
+      >
+        <span>Delivery Challans</span>
+        <span class="tab-badge">{{ c.totalChallansCount }}</span>
+      </button>
+      <button
+        type="button"
+        class="nav-tab"
+        [class.active]="activeTab() === 'invoices'"
+        (click)="activeTab.set('invoices')"
+      >
+        <span>Invoices & Aging</span>
+        <span class="tab-badge">{{ c.totalInvoicesCount }}</span>
+      </button>
+      <button
+        type="button"
+        class="nav-tab"
+        [class.active]="activeTab() === 'assets'"
+        (click)="activeTab.set('assets')"
+      >
+        <span>Installed Machinery</span>
+        <span class="tab-badge">{{ c.installedAssetsCount }}</span>
+      </button>
+      <button
+        type="button"
+        class="nav-tab"
+        [class.active]="activeTab() === 'tickets'"
+        (click)="activeTab.set('tickets')"
+      >
+        <span>Service Tickets</span>
+        <span class="tab-badge">{{ c.openTicketsCount }}</span>
+      </button>
+    </nav>
+
+    <!-- TAB 1: OVERVIEW & ACTIVITY -->
+    @if (activeTab() === 'overview') {
+      <div class="overview-grid">
+        <!-- Left Column: Commercial & Operations Snapshot -->
+        <div class="overview-card">
+          <div class="overview-card__head">
+            <h2 class="overview-card__title">
+              <span>⚡ Commercial & Operational Snapshot</span>
+            </h2>
+            <span class="text-xs text-muted">Latest records</span>
+          </div>
+
+          <div class="highlights-list">
+            <!-- Latest Order -->
+            @if (c.recentOrders.length > 0) {
+              @let o = c.recentOrders[0];
+              <a
+                class="highlight-row"
+                routerLink="/sales/orders"
+                [queryParams]="{ open: o.id }"
+                title="View order details"
+              >
+                <div class="highlight-label">
+                  <span class="highlight-type">Latest Order</span>
+                  <span class="highlight-ref">{{ o.orderNumber }} · {{ o.orderDateUtc | date: 'dd MMM yyyy' }}</span>
+                </div>
+                <div class="highlight-meta">
+                  <span class="highlight-val">₹{{ o.grandTotalInPaise / 100 | number: '1.2-2' }}</span>
+                  <ar-chip [tone]="getOrderStatusTone(o.status)">{{ getOrderStatusLabel(o.status) }}</ar-chip>
+                </div>
+              </a>
+            }
+
+            <!-- Latest Challan -->
+            @if (c.recentChallans.length > 0) {
+              @let dc = c.recentChallans[0];
+              <a
+                class="highlight-row"
+                routerLink="/sales/challans"
+                [queryParams]="{ open: dc.id }"
+                title="View challan details"
+              >
+                <div class="highlight-label">
+                  <span class="highlight-type">Latest Delivery Challan</span>
+                  <span class="highlight-ref">{{ dc.challanNumber }} · {{ dc.transporterName || 'Direct' }}</span>
+                </div>
+                <div class="highlight-meta">
+                  <ar-chip [tone]="getChallanStatusTone(dc.status)">{{ getChallanStatusLabel(dc.status) }}</ar-chip>
+                </div>
+              </a>
+            }
+
+            <!-- Latest Invoice -->
+            @if (c.recentInvoices.length > 0) {
+              @let inv = c.recentInvoices[0];
+              <a
+                class="highlight-row"
+                routerLink="/sales/invoices"
+                [queryParams]="{ open: inv.id }"
+                title="View invoice details"
+              >
+                <div class="highlight-label">
+                  <span class="highlight-type">Latest GST Invoice</span>
+                  <span class="highlight-ref">{{ inv.invoiceNumber }} · Due {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}</span>
+                </div>
+                <div class="highlight-meta">
+                  <span class="highlight-val" [class.text-danger]="inv.balanceDueInPaise > 0">
+                    Bal: ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
+                  </span>
+                  <ar-chip [tone]="getInvoiceStatusTone(inv.status)">{{ getInvoiceStatusLabel(inv.status) }}</ar-chip>
+                </div>
+              </a>
+            }
+          </div>
+
+          <!-- Machinery & Service status summary -->
+          <div class="c360-subsidiary-bar">
+            <span>🏭 <strong>{{ c.installedAssetsCount }}</strong> Installed Machines at facility</span>
+            <span [class.text-danger]="c.openTicketsCount > 0">
+              🎫 <strong>{{ c.openTicketsCount }}</strong> Open Service Ticket{{ c.openTicketsCount === 1 ? '' : 's' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Right Column: Customer Interaction & Communications Timeline -->
+        <div class="overview-card">
+          <div class="overview-card__head">
+            <h2 class="overview-card__title">
+              <span>💬 Communications & Timeline Feed</span>
+            </h2>
+            <span class="text-xs text-muted">{{ c.timeline.length }} interaction{{ c.timeline.length === 1 ? '' : 's' }}</span>
+          </div>
+
+          <div class="timeline-feed">
+            @for (item of c.timeline; track item.id) {
+              <div class="timeline-item">
+                <div
+                  class="timeline-icon-box"
+                  [class.timeline-icon-box--whatsapp]="item.channel.toLowerCase() === 'whatsapp'"
+                  [class.timeline-icon-box--phone]="item.channel.toLowerCase() === 'phone'"
+                  [class.timeline-icon-box--email]="item.channel.toLowerCase() === 'email'"
+                >
+                  @if (item.channel.toLowerCase() === 'whatsapp') {
+                    <ar-icon name="send" [size]="14" />
+                  } @else if (item.channel.toLowerCase() === 'phone') {
+                    <ar-icon name="phone" [size]="14" />
+                  } @else if (item.channel.toLowerCase() === 'email') {
+                    <ar-icon name="mail" [size]="14" />
+                  } @else {
+                    <ar-icon name="document" [size]="14" />
+                  }
+                </div>
+                <div class="timeline-content">
+                  <div class="timeline-header">
+                    <div class="timeline-channel">
+                      {{ item.channel }}
+                      <ar-chip [tone]="item.direction === 'Inbound' ? 'teal' : 'amber'">
+                        {{ item.direction }}
+                      </ar-chip>
+                    </div>
+                    <time class="timeline-time">{{ item.occurredAtUtc | date: 'dd MMM yyyy, hh:mm a' }}</time>
+                  </div>
+                  <p class="timeline-summary">{{ item.summary }}</p>
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-state">
+                <div class="empty-state__icon">💬</div>
+                <h3 class="empty-state__title">No communications logged yet</h3>
+                <p class="empty-state__hint">
+                  Use "Message customer" in the action ribbon above to reach out via WhatsApp, Email or SMS.
+                </p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 2: SALES ORDERS -->
+    @if (activeTab() === 'orders') {
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="table-search">
+            <ar-search-box
+              placeholder="Search by order # or PO #..."
+              [query]="orderSearchQuery()"
+              (queryChange)="orderSearchQuery.set($event)"
+            />
+          </div>
+          <div class="table-stats">
+            Showing {{ filteredOrders().length }} of {{ c.recentOrders.length }} orders
+            @if (moreThanShown(c)) {
+              · (Latest 10 loaded)
+            }
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="ar-table">
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Customer PO</th>
+                <th>Order Date</th>
+                <th class="num-col">Grand Total</th>
+                <th>Status</th>
+                <th class="actions-col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (o of filteredOrders(); track o.id) {
+                <tr>
+                  <td class="font-mono font-bold text-primary">{{ o.orderNumber }}</td>
+                  <td>
+                    <span class="c360-meta-chip font-mono">{{ o.customerPoNumber || '—' }}</span>
+                  </td>
+                  <td>{{ o.orderDateUtc | date: 'dd MMM yyyy' }}</td>
+                  <td class="num-col font-bold">
+                    ₹{{ o.grandTotalInPaise / 100 | number: '1.2-2' }}
+                  </td>
+                  <td>
+                    <ar-chip [tone]="getOrderStatusTone(o.status)">
+                      {{ getOrderStatusLabel(o.status) }}
+                    </ar-chip>
+                  </td>
+                  <td class="actions-col">
+                    <a
+                      ar-button
+                      variant="ghost"
+                      routerLink="/sales/orders"
+                      [queryParams]="{ open: o.id }"
+                    >
+                      Open
+                    </a>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6">
+                    <div class="empty-state">
+                      <div class="empty-state__icon">📋</div>
+                      <h3 class="empty-state__title">No sales orders found</h3>
+                      <p class="empty-state__hint">
+                        @if (orderSearchQuery()) {
+                          No orders matched "{{ orderSearchQuery() }}".
+                        } @else {
+                          No sales orders have been generated for this customer yet.
+                        }
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 3: DELIVERY CHALLANS -->
+    @if (activeTab() === 'challans') {
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="table-search">
+            <ar-search-box
+              placeholder="Search challan #, transporter, or LR #..."
+              [query]="challanSearchQuery()"
+              (queryChange)="challanSearchQuery.set($event)"
+            />
+          </div>
+          <div class="table-stats">
+            Showing {{ filteredChallans().length }} of {{ c.recentChallans.length }} delivery challans
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="ar-table">
+            <thead>
+              <tr>
+                <th>Challan #</th>
+                <th>Order Ref</th>
+                <th>Transporter</th>
+                <th>Vehicle #</th>
+                <th>LR #</th>
+                <th>Status</th>
+                <th class="actions-col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (dc of filteredChallans(); track dc.id) {
+                <tr>
+                  <td class="font-mono font-bold text-primary">{{ dc.challanNumber }}</td>
+                  <td class="font-mono text-xs">{{ dc.salesOrderNumber || 'Direct' }}</td>
+                  <td>{{ dc.transporterName || '—' }}</td>
+                  <td class="font-mono text-xs">{{ dc.vehicleNumber || '—' }}</td>
+                  <td class="font-mono text-xs">{{ dc.lrNumber || '—' }}</td>
+                  <td>
+                    <ar-chip [tone]="getChallanStatusTone(dc.status)">
+                      {{ getChallanStatusLabel(dc.status) }}
+                    </ar-chip>
+                  </td>
+                  <td class="actions-col">
+                    <a
+                      ar-button
+                      variant="ghost"
+                      routerLink="/sales/challans"
+                      [queryParams]="{ open: dc.id }"
+                    >
+                      View
+                    </a>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7">
+                    <div class="empty-state">
+                      <div class="empty-state__icon">🚚</div>
+                      <h3 class="empty-state__title">No delivery challans recorded</h3>
+                      <p class="empty-state__hint">
+                        Delivery challans track physical dispatches, logistics transporters, and vehicle LR numbers.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 4: INVOICES & AGING -->
+    @if (activeTab() === 'invoices') {
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="table-search">
+            <ar-search-box
+              placeholder="Search invoice # or order ref..."
+              [query]="invoiceSearchQuery()"
+              (queryChange)="invoiceSearchQuery.set($event)"
+            />
+          </div>
+          <div class="table-stats">
+            Showing {{ filteredInvoices().length }} of {{ c.recentInvoices.length }} invoices
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="ar-table">
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Order Ref</th>
+                <th>Issue Date</th>
+                <th>Due Date</th>
+                <th class="num-col">Invoice Total</th>
+                <th class="num-col">Balance Due</th>
+                <th>Status</th>
+                <th class="actions-col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (inv of filteredInvoices(); track inv.id) {
+                <tr>
+                  <td class="font-mono font-bold text-primary">{{ inv.invoiceNumber }}</td>
+                  <td class="font-mono text-xs">{{ inv.salesOrderNumber || '—' }}</td>
+                  <td>{{ inv.issueDateUtc | date: 'dd MMM yyyy' }}</td>
+                  <td>
+                    {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}
+                    @if (isOverdue(inv.balanceDueInPaise, inv.dueDateUtc)) {
+                      <span class="c360-view-pill text-danger">OVERDUE</span>
+                    }
+                  </td>
+                  <td class="num-col font-bold">
+                    ₹{{ inv.grandTotalInPaise / 100 | number: '1.2-2' }}
+                  </td>
+                  <td class="num-col font-bold" [class.text-danger]="inv.balanceDueInPaise > 0">
+                    ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
+                  </td>
+                  <td>
+                    <ar-chip [tone]="getInvoiceStatusTone(inv.status)">
+                      {{ getInvoiceStatusLabel(inv.status) }}
+                    </ar-chip>
+                  </td>
+                  <td class="actions-col">
+                    <a
+                      ar-button
+                      variant="ghost"
+                      routerLink="/sales/invoices"
+                      [queryParams]="{ open: inv.id }"
+                    >
+                      View
+                    </a>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8">
+                    <div class="empty-state">
+                      <div class="empty-state__icon">🧾</div>
+                      <h3 class="empty-state__title">No commercial invoices found</h3>
+                      <p class="empty-state__hint">
+                        Invoices generated with GST tax calculations and payment terms will appear here.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 5: INSTALLED MACHINERY & SPARES -->
+    @if (activeTab() === 'assets') {
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="table-search">
+            <ar-search-box
+              placeholder="Search serial # or equipment model..."
+              [query]="assetSearchQuery()"
+              (queryChange)="assetSearchQuery.set($event)"
+            />
+          </div>
+          <div class="table-stats">
+            Showing {{ filteredAssets().length }} of {{ c.installedAssets.length }} equipment items
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="ar-table">
+            <thead>
+              <tr>
+                <th>Serial #</th>
+                <th>Machine / Equipment Model</th>
+                <th>Commissioned</th>
+                <th>Operational Status</th>
+                <th>AMC Contract</th>
+                <th class="actions-col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ast of filteredAssets(); track ast.id) {
+                <tr>
+                  <td class="font-mono font-bold text-primary">{{ ast.serialNumber }}</td>
+                  <td class="font-semibold">{{ ast.modelName }}</td>
+                  <td>{{ (ast.commissionedDate | date: 'dd MMM yyyy') || '—' }}</td>
+                  <td>
+                    <ar-chip tone="good">{{ ast.status || 'Operational' }}</ar-chip>
+                  </td>
+                  <td>
+                    <ar-chip [tone]="getAmcStatusTone(ast.amcStatus)">
+                      {{ ast.amcStatus || 'None' }}
+                    </ar-chip>
+                  </td>
+                  <td class="actions-col">
+                    <a
+                      ar-button
+                      variant="ghost"
+                      routerLink="/installed-base"
+                      [queryParams]="{ open: ast.id }"
+                    >
+                      Details
+                    </a>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6">
+                    <div class="empty-state">
+                      <div class="empty-state__icon">⚙️</div>
+                      <h3 class="empty-state__title">No machines registered in installed base</h3>
+                      <p class="empty-state__hint">
+                        Track machines, commissioning dates, warranty, and AMC service coverage.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- TAB 6: SERVICE TICKETS -->
+    @if (activeTab() === 'tickets') {
+      <div class="table-card">
+        <div class="table-toolbar">
+          <div class="table-stats">
+            {{ c.openTickets.length }} ticket{{ c.openTickets.length === 1 ? '' : 's' }} recorded
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="ar-table">
+            <thead>
+              <tr>
+                <th>Ticket #</th>
+                <th>Subject</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th class="actions-col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of c.openTickets; track t.id) {
+                <tr>
+                  <td class="font-mono font-bold">{{ t.ticketNumber }}</td>
+                  <td class="font-semibold">{{ t.subject }}</td>
+                  <td>
+                    <ar-chip [tone]="getTicketPriorityTone(t.priority)">{{ t.priority }}</ar-chip>
+                  </td>
+                  <td>
+                    <ar-chip [tone]="t.status === 'Pending' ? 'warn' : 'teal'">{{ t.status }}</ar-chip>
+                  </td>
+                  <td>{{ t.creationTime | date: 'dd MMM yyyy' }}</td>
+                  <td class="actions-col">
+                    <a
+                      ar-button
+                      variant="ghost"
+                      routerLink="/helpdesk"
+                      [queryParams]="{ open: t.id }"
+                    >
+                      Desk
+                    </a>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6">
+                    <div class="empty-state">
+                      <div class="empty-state__icon">🎟️</div>
+                      <h3 class="empty-state__title">No open service tickets</h3>
+                      <p class="empty-state__hint">
+                        All service calls, breakdowns, and calibration requests are resolved.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  } @else if (loading()) {
+    <div class="state-box" role="status">
+      <p>Loading enterprise customer dossier…</p>
+    </div>
+  } @else {
+    <!-- Empty / Directory Picker View -->
+    <div class="picker-container">
+      @if (error(); as e) {
+        <div class="state-box state-box--bad" role="alert">
+          <p>{{ e }}</p>
+        </div>
+      }
+
+      <section class="picker-hero" aria-label="Customer directory lookup">
+        <div class="picker-hero__icon" aria-hidden="true">🎯</div>
+        <h2 class="picker-hero__title">Open Customer 360 Cockpit</h2>
+        <p class="picker-hero__subtitle">
+          Search by company name, plant location, decision maker, WhatsApp number, or GSTIN
+          to inspect a unified 360° commercial dossier.
+        </p>
+
+        <div class="picker-search-bar">
+          <ar-search-box
+            placeholder="Search contacts and accounts (e.g. Kalyani Forge, Suresh, Pune, MH)..."
+            [query]="pickerQuery()"
+            (queryChange)="searchContacts($event)"
+          />
+        </div>
+        @if (pickerBusy()) {
+          <p class="text-xs text-muted">Searching master records…</p>
+        }
+      </section>
+
+      <!-- Picker Results Grid -->
+      <div class="picker-results-grid">
+        <!-- Accounts Column -->
+        <div class="picker-column">
+          <h3 class="picker-column__title">
+            <span>🏢 Corporate Accounts</span>
+            @if (pickerAccounts().length > 0) {
+              <span class="tab-badge">{{ pickerAccounts().length }}</span>
+            }
+          </h3>
+
+          <div class="picker-card-list">
+            @for (a of pickerAccounts(); track a.id) {
+              <a class="picker-card" [routerLink]="['/contacts/accounts', a.id, '360']">
+                <div class="picker-card__info">
+                  <span class="picker-card__name">{{ a.name }}</span>
+                  <div class="picker-card__meta">
+                    @if (a.city) {
+                      <span>📍 {{ a.city }}</span>
+                    }
+                    @if (a.industry) {
+                      <span>🏭 {{ a.industry }}</span>
+                    }
+                    <span>👥 {{ a.contactCount }} contact{{ a.contactCount === 1 ? '' : 's' }}</span>
+                  </div>
+                </div>
+                <span class="picker-card__action">Open 360 →</span>
+              </a>
+            } @empty {
+              <div class="empty-state">
+                <p class="empty-state__hint">
+                  @if (pickerQuery().trim()) {
+                    No corporate accounts matched "{{ pickerQuery() }}".
+                  } @else {
+                    Type in the search box to find company and plant accounts.
+                  }
+                </p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Contacts Column -->
+        <div class="picker-column">
+          <h3 class="picker-column__title">
+            <span>👤 Key Decision Contacts</span>
+            @if (pickerResults().length > 0) {
+              <span class="tab-badge">{{ pickerResults().length }}</span>
+            }
+          </h3>
+
+          <div class="picker-card-list">
+            @for (p of pickerResults(); track p.id) {
+              <a class="picker-card" [routerLink]="['/contacts', p.id, '360']">
+                <div class="picker-card__info">
+                  <span class="picker-card__name">{{ p.displayName || p.waId }}</span>
+                  <div class="picker-card__meta">
+                    @if (p.companyName) {
+                      <span>🏢 {{ p.companyName }}</span>
+                    }
+                    <span>📞 {{ p.waId }}</span>
+                  </div>
+                </div>
+                <span class="picker-card__action">Open 360 →</span>
+              </a>
+            } @empty {
+              <div class="empty-state">
+                <p class="empty-state__hint">
+                  @if (pickerQuery().trim()) {
+                    No contacts matched "{{ pickerQuery() }}".
+                  } @else {
+                    Recent key contacts will appear here.
+                  }
+                </p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

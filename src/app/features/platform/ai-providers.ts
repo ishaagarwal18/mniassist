@@ -278,7 +278,7 @@ export class AiProviderSettingsService {
                   <tr>
                     <th scope="row" translate="no">{{ p.name }}</th>
                     <td [class.missing]="!p.configured">{{ p.configured ? 'Set' : 'Not set' }}</td>
-                    <td>{{ usage[p.key] ?? '' }}{{ p.inUse ? '' : ' (not used yet)' }}</td>
+                    <td>{{ usage[p.key] }}{{ p.inUse ? '' : ' (not used yet)' }}</td>
                     <td>
                       <code translate="no">{{ p.configKey }}</code>
                     </td>

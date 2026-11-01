@@ -1,0 +1,159 @@
+@if (open()) {
+  <ar-dialog
+    [title]="contactId() ? 'Edit contact' : 'New contact'"
+    width="min(560px, calc(100vw - 32px))"
+    (dismiss)="close()"
+  >
+    <div class="fill" data-novalidate>
+      <span class="fill__label">Fill in from</span>
+      <label class="fill__btn" [class.fill__btn--busy]="reading()">
+        <ar-icon name="camera" [size]="15" />
+        {{ reading() === 'card' ? 'Reading the card…' : 'A visiting card photo' }}
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          [disabled]="!!reading()"
+          (change)="readCard($event)"
+        />
+      </label>
+      <label class="fill__btn">
+        <ar-icon name="card" [size]="15" />
+        A vCard (.vcf)
+        <input
+          type="file"
+          accept=".vcf,.vcard,text/vcard,text/x-vcard"
+          [disabled]="!!reading()"
+          (change)="readVcard($event)"
+        />
+      </label>
+    </div>
+
+    @if (filledFrom(); as from) {
+      <p class="fill__note" role="status">
+        Filled in from {{ from }}. Check each field before adding.
+        @if (otherPhones().length) {
+          Other numbers on it: {{ otherPhones().join(', ') }}.
+        }
+      </p>
+    }
+
+    <label class="ar-field">
+      <span class="ar-field__label">WhatsApp number</span>
+      <input
+        class="ar-field__input"
+        type="tel"
+        required
+        placeholder="919821012345"
+        [value]="form().waId"
+        (input)="patchText('waId', $any($event.target).value)"
+      />
+      <span class="ar-field__hint">With country code, e.g. 91 for India.</span>
+    </label>
+
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Name</span>
+        <input
+          class="ar-field__input"
+          required
+          maxlength="128"
+          [value]="form().displayName"
+          (input)="patchText('displayName', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Designation <span class="ar-field__opt">optional</span></span>
+        <input
+          class="ar-field__input"
+          maxlength="128"
+          [value]="form().designation"
+          (input)="patchText('designation', $any($event.target).value)"
+        />
+      </label>
+    </div>
+
+    <label class="ar-field">
+      <span class="ar-field__label">Account <span class="ar-field__opt">optional</span></span>
+      <select
+        class="ar-field__input"
+        [value]="form().accountId"
+        (change)="patchText('accountId', $any($event.target).value)"
+      >
+        <option value="" [selected]="!form().accountId">No account</option>
+        @for (a of accountChoices(); track a.id) {
+          <option [value]="a.id" [selected]="a.id === form().accountId">{{ a.name }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="ar-field">
+      <span class="ar-field__label">Company <span class="ar-field__opt">optional</span></span>
+      <input
+        class="ar-field__input"
+        [readOnly]="!!formAccount()"
+        [title]="formAccount() ? 'Taken from the account. Change the account to change it.' : ''"
+        maxlength="256"
+        [value]="formAccount()?.name ?? form().companyName"
+        (input)="patchText('companyName', $any($event.target).value)"
+      />
+    </label>
+
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">Email <span class="ar-field__opt">optional</span></span>
+        <input
+          class="ar-field__input"
+          type="email"
+          maxlength="256"
+          [value]="form().email"
+          (input)="patchText('email', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Decision role</span>
+        <select class="ar-field__input" required (change)="patchRole($any($event.target).value)">
+          @for (r of roles; track r.value) {
+            <option [value]="r.value" [selected]="r.value === form().role">{{ r.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <div class="ar-field-row">
+      <label class="ar-field">
+        <span class="ar-field__label">City <span class="ar-field__opt">optional</span></span>
+        <input
+          class="ar-field__input"
+          maxlength="64"
+          [value]="form().city"
+          (input)="patchText('city', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">State <span class="ar-field__opt">optional</span></span>
+        <input
+          class="ar-field__input"
+          maxlength="64"
+          [value]="form().state"
+          (input)="patchText('state', $any($event.target).value)"
+        />
+      </label>
+    </div>
+
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="close()">
+        Cancel
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="saving()"
+        (click)="saveContact()"
+      >
+        {{ saving() ? 'Saving…' : contactId() ? 'Save changes' : 'Add contact' }}
+      </button>
+    </div>
+  </ar-dialog>
+}

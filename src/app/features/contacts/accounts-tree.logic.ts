@@ -12,6 +12,7 @@ export interface AccountTreeRecord {
   parentId: string | null;
   name: string;
   industry: string;
+  address: string;
   location: string;
   city: string;
   state: string;
@@ -71,6 +72,7 @@ export function buildAccountTreeRows(
       parentId,
       name: a.name,
       industry: a.industry || '—',
+      address: a.address || '',
       location: formatAccountLocation(a.city, a.state),
       city: a.city || '',
       state: a.state || '',

@@ -6,7 +6,7 @@ import {
   signal,
   ViewChild,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PermissionService } from '@abp/ng.core';
 import {
@@ -26,22 +26,30 @@ import {
   AccountRow,
   AccountStore,
   CustomerAccount,
+  descendantIds,
   MAX_ACCOUNT_DEPTH,
   moveProblem,
 } from '../../core/services/account.store';
 import { CustomerAccountRollupDto, DecisionRole } from '../../proxy/contacts';
 import type { ContactDto } from '../../proxy/contacts/models';
 import { ContactService as ContactApi } from '../../proxy/contacts/contact.service';
+import { CustomerAccountService } from '../../proxy/contacts/customer-account.service';
 import { ContactService } from '../../core/services/contact.service';
+import { ArContactDialog } from './contact-dialog';
 import { readApiError } from '../../core/util/api-error';
 import { ArTopbar } from '../../layout/topbar';
 import { ArAvatar, ArButton, ArChip, ArDialog, ArIcon, ArStatTile } from '../../ui';
-import { ArSelect } from '../../ui/select';
 import { ArErpLedger } from './erp-ledger';
 import { ConfirmService } from '../../core/ui/confirm.service';
+import { ToastService } from '../../core/ui/toast.service';
 import { grantedPolicy } from '../../core/auth/permission';
 import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
 import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
+import { environment } from '../../../environments/environment';
+import {
+  filterAssignableContacts,
+  INITIAL_MOCK_PEOPLE,
+} from './account-contacts.logic';
 import {
   buildAccountTreeRows,
   computeAccountStats,
@@ -95,7 +103,7 @@ const BLANK: Draft = {
     ArStatTile,
     ArAvatar,
     ArErpLedger,
-    ArSelect,
+    ArContactDialog,
     RouterLink,
     TreeGridModule,
   ],
@@ -115,6 +123,7 @@ const BLANK: Draft = {
 export class ArAccounts {
   @ViewChild('treegrid') treegrid?: TreeGridComponent;
 
+  private readonly router = inject(Router);
   private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
   private readonly store = inject(AccountStore);
@@ -127,6 +136,10 @@ export class ArAccounts {
   // ---- An account's people, from its contact count ------------------------------------
   private readonly contactApi = inject(ContactApi);
   private readonly contactStore = inject(ContactService);
+  private readonly customerAccountApi = inject(CustomerAccountService);
+  private readonly toast = inject(ToastService);
+  private static mockPeopleList: ContactDto[] = [...INITIAL_MOCK_PEOPLE];
+
   protected readonly peopleFor = signal<CustomerAccount | null>(null);
   protected readonly people = signal<ContactDto[]>([]);
   protected readonly peopleTotal = signal(0);
@@ -134,6 +147,13 @@ export class ArAccounts {
   protected readonly peopleError = signal<string | null>(null);
   protected readonly peopleSubs = signal(false);
   protected readonly hasSubsidiaryPeople = signal(false);
+
+  // Contact assignment and creation state
+  protected readonly contactModalMode = signal<'list' | 'assign'>('list');
+  protected readonly assignSearchTerm = signal('');
+  protected readonly assignSearching = signal(false);
+  protected readonly allAssignableCandidates = signal<ContactDto[]>([]);
+  protected readonly contactDialogOpen = signal(false);
 
   // ---- TreeGrid settings, presets & state ---------------------------------------------
   protected readonly activePreset = signal<AccountFilterPreset>('all');
@@ -197,9 +217,15 @@ export class ArAccounts {
   protected openPeople(account: CustomerAccount, hasSubsidiaryPeople: boolean): void {
     this.peopleFor.set(account);
     this.hasSubsidiaryPeople.set(hasSubsidiaryPeople);
+    this.contactModalMode.set('list');
     // Nobody here but people below: start with them showing.
     this.peopleSubs.set(hasSubsidiaryPeople && account.contactCount === 0);
     void this.loadPeople();
+  }
+
+  protected closePeople(): void {
+    this.peopleFor.set(null);
+    this.contactModalMode.set('list');
   }
 
   protected togglePeopleSubs(on: boolean): void {
@@ -207,12 +233,23 @@ export class ArAccounts {
     void this.loadPeople();
   }
 
-  private async loadPeople(): Promise<void> {
+  protected async loadPeople(): Promise<void> {
     const account = this.peopleFor();
     if (!account) return;
     this.peopleLoading.set(true);
     this.peopleError.set(null);
     try {
+      if (environment.useMockData) {
+        const belowIds = descendantIds(account.id, this.store.all());
+        const allowedAccountIds = this.peopleSubs() ? [account.id, ...belowIds] : [account.id];
+        const filtered = ArAccounts.mockPeopleList.filter((c) =>
+          c.accountId ? allowedAccountIds.includes(c.accountId) : false,
+        );
+        this.people.set([...filtered]);
+        this.peopleTotal.set(filtered.length);
+        return;
+      }
+
       const page = await firstValueFrom(
         this.contactApi.getList({
           accountId: account.id,
@@ -228,6 +265,105 @@ export class ArAccounts {
       this.peopleError.set(readApiError(e, 'The contacts could not be loaded.'));
     } finally {
       this.peopleLoading.set(false);
+    }
+  }
+
+  protected openAssignContact(): void {
+    this.contactModalMode.set('assign');
+    this.assignSearchTerm.set('');
+    void this.refreshAssignableCandidates('');
+  }
+
+  protected cancelAssign(): void {
+    this.contactModalMode.set('list');
+  }
+
+  protected async onAssignSearch(query: string): Promise<void> {
+    this.assignSearchTerm.set(query);
+    await this.refreshAssignableCandidates(query);
+  }
+
+  private async refreshAssignableCandidates(query: string): Promise<void> {
+    const account = this.peopleFor();
+    if (!account) return;
+    this.assignSearching.set(true);
+    try {
+      if (environment.useMockData) {
+        const matches = filterAssignableContacts(ArAccounts.mockPeopleList, account.id, query);
+        this.allAssignableCandidates.set(matches);
+        return;
+      }
+      const page = await firstValueFrom(
+        this.contactApi.getList({
+          filter: query.trim() || undefined,
+          maxResultCount: 50,
+          skipCount: 0,
+        }),
+      );
+      const matches = filterAssignableContacts(page.items ?? [], account.id, query);
+      this.allAssignableCandidates.set(matches);
+    } catch (e: unknown) {
+      this.toast.error(readApiError(e, 'Could not search contacts.'));
+    } finally {
+      this.assignSearching.set(false);
+    }
+  }
+
+  protected async assignContact(contact: ContactDto): Promise<void> {
+    const account = this.peopleFor();
+    if (!account || !contact.id) return;
+    try {
+      if (environment.useMockData) {
+        ArAccounts.mockPeopleList = ArAccounts.mockPeopleList.map((c) =>
+          c.id === contact.id ? { ...c, accountId: account.id, companyName: account.name } : c,
+        );
+        this.store.adjustContactCount(account.id, 1);
+      } else {
+        await firstValueFrom(this.customerAccountApi.setContactAccount([contact.id], account.id));
+        this.store.reload();
+      }
+      this.toast.success(`Assigned ${contact.displayName || contact.waId} to ${account.name}.`);
+      await this.loadPeople();
+      this.contactModalMode.set('list');
+    } catch (e) {
+      this.toast.error(readApiError(e, 'Could not assign contact to account.'));
+    }
+  }
+
+  protected openCreateContact(): void {
+    // Utilises the existing contact add-new functionality
+    this.contactDialogOpen.set(true);
+  }
+
+  protected async onContactCreated(): Promise<void> {
+    const account = this.peopleFor();
+    if (account) {
+      if (environment.useMockData) {
+        this.store.adjustContactCount(account.id, 1);
+      } else {
+        this.store.reload();
+      }
+      await this.loadPeople();
+    }
+  }
+
+  protected async unlinkContact(contact: ContactDto): Promise<void> {
+    const account = this.peopleFor();
+    if (!account || !contact.id) return;
+    try {
+      if (environment.useMockData) {
+        ArAccounts.mockPeopleList = ArAccounts.mockPeopleList.map((c) =>
+          c.id === contact.id ? { ...c, accountId: null, companyName: null } : c,
+        );
+        this.store.adjustContactCount(account.id, -1);
+      } else {
+        await firstValueFrom(this.customerAccountApi.setContactAccount([contact.id], ''));
+        this.store.reload();
+      }
+      this.toast.info(`Unlinked ${contact.displayName || contact.waId} from ${account.name}.`);
+      await this.loadPeople();
+    } catch (e) {
+      this.toast.error(readApiError(e, 'Could not unlink contact.'));
     }
   }
 
@@ -282,25 +418,13 @@ export class ArAccounts {
   }
 
   protected openNew(parentId = ''): void {
-    this.editingId.set(null);
-    this.draft.set({ ...BLANK, parentId });
-    this.error.set(null);
-    this.editorOpen.set(true);
+    void this.router.navigate(['/contacts/accounts/new'], {
+      queryParams: parentId ? { parentId } : {},
+    });
   }
 
   protected openEdit(a: CustomerAccount): void {
-    this.editingId.set(a.id);
-    this.draft.set({
-      name: a.name,
-      industry: a.industry ?? '',
-      city: a.city ?? '',
-      state: a.state ?? '',
-      website: a.website ?? '',
-      notes: a.notes ?? '',
-      parentId: a.parentId ?? '',
-    });
-    this.error.set(null);
-    this.editorOpen.set(true);
+    void this.router.navigate(['/contacts/accounts', a.id, 'edit']);
   }
 
   protected async save(): Promise<void> {

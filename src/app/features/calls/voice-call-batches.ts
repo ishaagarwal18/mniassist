@@ -19,7 +19,10 @@ import {
 import { ChannelDto } from '../../proxy/channels/models';
 import { ChannelService } from '../../proxy/channels/channel.service';
 import { ArButton } from '../../ui/button';
+import { ArChip } from '../../ui/chip';
 import { ArDialog } from '../../ui/dialog';
+import { ArIcon } from '../../ui/icon';
+import { ArStatTile } from '../../ui/stat-tile';
 
 interface BatchForm {
   name: string;
@@ -48,7 +51,17 @@ const toMinute = (clock: string) => {
  */
 @Component({
   selector: 'ar-voice-call-batches',
-  imports: [FormsModule, DatePipe, LocalizationPipe, ArTopbar, ArButton, ArDialog],
+  imports: [
+    FormsModule,
+    DatePipe,
+    LocalizationPipe,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArIcon,
+    ArStatTile,
+    ArDialog,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -56,250 +69,397 @@ const toMinute = (clock: string) => {
       [help]="'AutoReach::VoiceBatch.Help' | abpLocalization"
     >
       @if (canCreate()) {
-        <button ar-button type="button" (click)="openNew()">
-          {{ 'AutoReach::VoiceBatch.New' | abpLocalization }}
+        <button ar-button type="button" variant="primary" (click)="openNew()">
+          + {{ 'AutoReach::VoiceBatch.New' | abpLocalization }}
         </button>
       }
     </ar-topbar>
-    <main class="batches">
-      @if (error()) {
-        <p role="alert">{{ error() | abpLocalization }}</p>
-      }
-      @if (loading()) {
-        <p role="status">{{ 'AutoReach::VoiceBatch.Loading' | abpLocalization }}</p>
-      } @else if (!batches().length) {
-        <p>{{ 'AutoReach::VoiceBatch.Empty' | abpLocalization }}</p>
-      }
-      <ul class="list">
-        @for (batch of batches(); track batch.id) {
-          <li [class.selected]="selected()?.id === batch.id">
-            <button type="button" class="row" (click)="select(batch)">
-              <strong>{{ batch.name }}</strong>
-              <span>{{ 'AutoReach::VoiceBatch.Status.' + batch.status | abpLocalization }}</span>
-              <span>{{
-                'AutoReach::VoiceBatch.Progress'
-                  | abpLocalization: '' + batch.reached : '' + batch.total
-              }}</span>
-            </button>
-          </li>
-        }
-      </ul>
 
-      @if (selected(); as batch) {
-        <section class="detail" aria-live="polite">
-          <h2>{{ batch.name }}</h2>
-          <p>
-            {{ 'AutoReach::VoiceBatch.Status.' + batch.status | abpLocalization }} ·
-            {{
-              'AutoReach::VoiceBatch.Window'
-                | abpLocalization: clock(batch.windowStartMinute) : clock(batch.windowEndMinute)
-            }}
-            ·
-            {{
-              'AutoReach::VoiceBatch.Limits'
-                | abpLocalization
-                  : '' + batch.maxConcurrent
-                  : '' + batch.maxAttempts
-                  : '' + batch.retryAfterMinutes
-            }}
-          </p>
-          @if (batch.line === 'phone' || batch.line === 'sip') {
-            <p>{{ 'AutoReach::VoiceBatch.Line.' + batch.line | abpLocalization }}</p>
-          }
-          @if (batch.purpose) {
-            <p>{{ batch.purpose }}</p>
-          }
-          <dl class="counts">
-            @for (count of counts(); track count.key) {
-              <div>
-                <dt>{{ 'AutoReach::VoiceBatch.Recipient.' + count.key | abpLocalization }}</dt>
-                <dd>{{ count.value }}</dd>
-              </div>
-            }
-          </dl>
-          <div class="actions">
-            @if (canSend() && (batch.status === 'Draft' || batch.status === 'Paused')) {
-              <button ar-button type="button" [disabled]="busy()" (click)="act('start')">
-                {{ 'AutoReach::VoiceBatch.Start' | abpLocalization }}
-              </button>
-            }
-            @if (canUpdate() && batch.status === 'Running') {
-              <button
-                ar-button
-                type="button"
-                variant="ghost"
-                [disabled]="busy()"
-                (click)="act('pause')"
-              >
-                {{ 'AutoReach::VoiceBatch.Pause' | abpLocalization }}
-              </button>
-            }
-            @if (canUpdate() && batch.status !== 'Completed' && batch.status !== 'Cancelled') {
-              <button
-                ar-button
-                type="button"
-                variant="ghost"
-                [disabled]="busy()"
-                (click)="act('cancel')"
-              >
-                {{ 'AutoReach::VoiceBatch.Cancel' | abpLocalization }}
-              </button>
-            }
-            <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="refresh()">
-              {{ 'AutoReach::VoiceBatch.Refresh' | abpLocalization }}
+    <main class="batches">
+      <!-- Executive KPI Cards -->
+      <section class="batches__kpis" aria-label="AI Call Batches Overview">
+        <ar-stat-tile
+          label="Total Call Batches"
+          [value]="stats().total"
+          note="Configured outbound campaigns"
+        />
+        <ar-stat-tile
+          label="Active Running"
+          [value]="stats().running"
+          tone="teal"
+          note="Currently dialing recipients"
+        />
+        <ar-stat-tile
+          label="Total Contacts Target"
+          [value]="stats().totalRecipients"
+          note="Across all queued batches"
+        />
+        <ar-stat-tile
+          label="Successfully Reached"
+          [value]="stats().reachedRecipients"
+          tone="good"
+          [note]="reachRate() + ' overall contact reach rate'"
+        />
+      </section>
+
+      @if (error()) {
+        <div class="batches__alert" role="alert">
+          <ar-icon name="alert" />
+          <span>{{ error() | abpLocalization }}</span>
+        </div>
+      }
+
+      @if (loading()) {
+        <div class="batches__state" role="status">
+          <span>{{ 'AutoReach::VoiceBatch.Loading' | abpLocalization }}</span>
+        </div>
+      } @else if (!batches().length) {
+        <div class="batches__empty-state">
+          <ar-icon name="phone" class="empty-icon" />
+          <h3>No AI Call Batches Yet</h3>
+          <p>{{ 'AutoReach::VoiceBatch.Empty' | abpLocalization }}</p>
+          @if (canCreate()) {
+            <button ar-button type="button" variant="primary" (click)="openNew()">
+              + {{ 'AutoReach::VoiceBatch.New' | abpLocalization }}
             </button>
-          </div>
-          @if (canCreate() && batch.status !== 'Completed' && batch.status !== 'Cancelled') {
-            <label class="ar-field"
-              ><span>{{ 'AutoReach::VoiceBatch.Upload' | abpLocalization }}</span>
-              <input
-                class="ar-field__input"
-                type="file"
-                accept=".csv,text/csv"
-                [disabled]="busy()"
-                (change)="upload($event)"
-            /></label>
-            <p>{{ 'AutoReach::VoiceBatch.UploadHelp' | abpLocalization }}</p>
           }
-          @if (importNotes().length) {
-            <ul class="notes">
-              @for (note of importNotes(); track $index) {
-                <li>{{ note }}</li>
+        </div>
+      } @else {
+        <!-- Cockpit Layout: Left Batches List + Right Detail View -->
+        <div class="cockpit-layout">
+          <!-- Left: Batches List -->
+          <section class="batches-sidebar" aria-label="Batches List">
+            <div class="sidebar-head">
+              <h2 class="sidebar-title">Batches ({{ batches().length }})</h2>
+            </div>
+            <ul class="batches-list">
+              @for (batch of batches(); track batch.id) {
+                <li [class.batch-item--selected]="selected()?.id === batch.id">
+                  <button
+                    type="button"
+                    class="batch-item"
+                    [class.batch-item--selected]="selected()?.id === batch.id"
+                    (click)="select(batch)"
+                  >
+                    <div class="batch-item__head">
+                      <strong class="batch-item__name">{{ batch.name }}</strong>
+                      <ar-chip [tone]="statusTone(batch.status)">
+                        {{ 'AutoReach::VoiceBatch.Status.' + batch.status | abpLocalization }}
+                      </ar-chip>
+                    </div>
+
+                    <div class="batch-item__meta">
+                      <span class="batch-item__line">{{ 'AutoReach::VoiceBatch.Line.' + batch.line | abpLocalization }}</span>
+                      <span class="batch-item__counts">
+                        {{ batch.reached }} / {{ batch.total }} reached
+                      </span>
+                    </div>
+
+                    <!-- Mini progress bar -->
+                    <div class="batch-item__bar">
+                      <div
+                        class="batch-item__fill"
+                        [style.width.%]="progressPercent(batch.reached, batch.total)"
+                      ></div>
+                    </div>
+                  </button>
+                </li>
               }
             </ul>
-          }
-          <table class="recipients">
-            <thead>
-              <tr>
-                <th>{{ 'AutoReach::VoiceBatch.Col.person' | abpLocalization }}</th>
-                <th>{{ 'AutoReach::VoiceBatch.Col.status' | abpLocalization }}</th>
-                <th>{{ 'AutoReach::VoiceBatch.Col.attempts' | abpLocalization }}</th>
-                <th>{{ 'AutoReach::VoiceBatch.Col.next' | abpLocalization }}</th>
-                <th>{{ 'AutoReach::VoiceBatch.Col.outcome' | abpLocalization }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (person of recipients(); track person.id) {
-                <tr>
-                  <td translate="no">{{ person.contactName || person.phone }}</td>
-                  <td>
-                    {{ 'AutoReach::VoiceBatch.Recipient.' + person.status | abpLocalization }}
-                  </td>
-                  <td>{{ person.attempts }}</td>
-                  <td>
-                    {{ person.nextAttemptAtUtc ? (person.nextAttemptAtUtc | date: 'short') : '' }}
-                  </td>
-                  <td>{{ person.lastOutcome ? (person.lastOutcome | abpLocalization) : '' }}</td>
-                </tr>
+          </section>
+
+          <!-- Right: Batch Details & Recipient Roster -->
+          @if (selected(); as batch) {
+            <section class="batch-detail" aria-live="polite">
+              <header class="detail-header">
+                <div class="detail-title-row">
+                  <div>
+                    <div class="detail-badges">
+                      <ar-chip [tone]="statusTone(batch.status)" [dot]="batch.status === 'Running'">
+                        {{ 'AutoReach::VoiceBatch.Status.' + batch.status | abpLocalization }}
+                      </ar-chip>
+                      <span class="line-tag">{{ 'AutoReach::VoiceBatch.Line.' + batch.line | abpLocalization }}</span>
+                    </div>
+                    <h2 class="detail-title">{{ batch.name }}</h2>
+                  </div>
+
+                  <div class="detail-actions">
+                    @if (canSend() && (batch.status === 'Draft' || batch.status === 'Paused')) {
+                      <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="act('start')">
+                        {{ 'AutoReach::VoiceBatch.Start' | abpLocalization }}
+                      </button>
+                    }
+                    @if (canUpdate() && batch.status === 'Running') {
+                      <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="act('pause')">
+                        {{ 'AutoReach::VoiceBatch.Pause' | abpLocalization }}
+                      </button>
+                    }
+                    @if (canUpdate() && batch.status !== 'Completed' && batch.status !== 'Cancelled') {
+                      <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="act('cancel')">
+                        {{ 'AutoReach::VoiceBatch.Cancel' | abpLocalization }}
+                      </button>
+                    }
+                    <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="refresh()">
+                      {{ 'AutoReach::VoiceBatch.Refresh' | abpLocalization }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="detail-meta-row">
+                  <span class="meta-item">
+                    <strong>Calling Window:</strong>
+                    {{ clock(batch.windowStartMinute) }} – {{ clock(batch.windowEndMinute) }} IST
+                  </span>
+                  <span class="meta-separator">·</span>
+                  <span class="meta-item">
+                    <strong>Concurrency:</strong>
+                    {{ batch.maxConcurrent }} simultaneous calls
+                  </span>
+                  <span class="meta-separator">·</span>
+                  <span class="meta-item">
+                    <strong>Max Attempts:</strong>
+                    {{ batch.maxAttempts }} attempts (retry after {{ batch.retryAfterMinutes }}m)
+                  </span>
+                </div>
+
+                @if (batch.purpose) {
+                  <p class="detail-purpose">{{ batch.purpose }}</p>
+                }
+              </header>
+
+              <!-- Progress & Status Counts Breakdown Strip -->
+              <div class="detail-counts-strip">
+                @for (count of counts(); track count.key) {
+                  <div class="count-box">
+                    <span class="count-box__label">
+                      {{ 'AutoReach::VoiceBatch.Recipient.' + count.key | abpLocalization }}
+                    </span>
+                    <strong class="count-box__value" [class.count-good]="count.key === 'Reached'">
+                      {{ count.value }}
+                    </strong>
+                  </div>
+                }
+              </div>
+
+              <!-- Upload CSV Recipients Section -->
+              @if (canCreate() && batch.status !== 'Completed' && batch.status !== 'Cancelled') {
+                <div class="upload-box">
+                  <div class="upload-box__info">
+                    <ar-icon name="plus" class="upload-icon" />
+                    <div>
+                      <strong class="upload-title">{{ 'AutoReach::VoiceBatch.Upload' | abpLocalization }}</strong>
+                      <p class="upload-desc">{{ 'AutoReach::VoiceBatch.UploadHelp' | abpLocalization }}</p>
+                    </div>
+                  </div>
+                  <label class="upload-btn-label">
+                    <span>Choose CSV File</span>
+                    <input
+                      type="file"
+                      class="upload-file-input"
+                      accept=".csv,text/csv"
+                      [disabled]="busy()"
+                      (change)="upload($event)"
+                    />
+                  </label>
+                </div>
               }
-            </tbody>
-          </table>
-        </section>
+
+              @if (importNotes().length) {
+                <div class="import-notes">
+                  @for (note of importNotes(); track $index) {
+                    <div class="import-note-item">{{ note }}</div>
+                  }
+                </div>
+              }
+
+              <!-- Recipients Roster Table adhering to modern-web-guidance responsive-table -->
+              <div class="recipients-section">
+                <h3 class="recipients-title">Recipients Log ({{ recipients().length }})</h3>
+                <div
+                  class="ar-table-responsive"
+                  tabindex="0"
+                  role="region"
+                  aria-label="Batch Call Recipients"
+                >
+                  <table class="ar-table">
+                    <caption class="sr-only">Batch Call Recipients</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">{{ 'AutoReach::VoiceBatch.Col.person' | abpLocalization }}</th>
+                        <th scope="col">{{ 'AutoReach::VoiceBatch.Col.status' | abpLocalization }}</th>
+                        <th scope="col" class="text-right">{{ 'AutoReach::VoiceBatch.Col.attempts' | abpLocalization }}</th>
+                        <th scope="col">{{ 'AutoReach::VoiceBatch.Col.next' | abpLocalization }}</th>
+                        <th scope="col">{{ 'AutoReach::VoiceBatch.Col.outcome' | abpLocalization }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (person of recipients(); track person.id) {
+                        <tr>
+                          <td class="font-medium" translate="no">
+                            {{ person.contactName || person.phone }}
+                            @if (person.contactName) {
+                              <span class="text-muted block font-mono">{{ person.phone }}</span>
+                            }
+                          </td>
+                          <td>
+                            <ar-chip [tone]="recipientTone(person.status)">
+                              {{ 'AutoReach::VoiceBatch.Recipient.' + person.status | abpLocalization }}
+                            </ar-chip>
+                          </td>
+                          <td class="text-right font-mono">{{ person.attempts }}</td>
+                          <td class="text-muted font-mono">
+                            {{ person.nextAttemptAtUtc ? (person.nextAttemptAtUtc | date: 'short') : '—' }}
+                          </td>
+                          <td>
+                            {{ person.lastOutcome ? (person.lastOutcome | abpLocalization) : '—' }}
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="5" class="text-center text-muted">
+                            No recipients loaded. Upload a CSV file above to populate this batch.
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          }
+        </div>
       }
     </main>
 
+    <!-- Create Batch Modal Dialog -->
     @if (form(); as model) {
       <ar-dialog
         [title]="'AutoReach::VoiceBatch.New' | abpLocalization"
-        width="min(640px, calc(100vw - 32px))"
+        width="min(680px, calc(100vw - 32px))"
         (dismiss)="form.set(null)"
       >
-        <label class="ar-field"
-          ><span>{{ 'AutoReach::VoiceBatch.Name' | abpLocalization }}</span>
-          <input class="ar-field__input" [(ngModel)]="model.name" maxlength="128"
-        /></label>
-        <label class="ar-field"
-          ><span>{{ 'AutoReach::VoiceBatch.Channel' | abpLocalization }}</span>
-          <select class="ar-field__input" [(ngModel)]="model.channelId">
-            @for (channel of channels(); track channel.id) {
-              <option [ngValue]="channel.id" translate="no">
-                {{ channel.verifiedName || channel.displayPhoneNumber }}
-              </option>
-            }
-          </select></label
-        >
-        <label class="ar-field"
-          ><span>{{ 'AutoReach::VoiceBatch.Line' | abpLocalization }}</span>
-          <select class="ar-field__input" [(ngModel)]="model.line">
-            <option value="whatsapp">
-              {{ 'AutoReach::VoiceBatch.Line.whatsapp' | abpLocalization }}
-            </option>
-            <option value="phone">
-              {{ 'AutoReach::VoiceBatch.Line.phone' | abpLocalization }}
-            </option>
-            <option value="sip">
-              {{ 'AutoReach::VoiceBatch.Line.sip' | abpLocalization }}
-            </option>
-          </select></label
-        >
-        <p>{{ 'AutoReach::VoiceBatch.LineHelp' | abpLocalization }}</p>
-        <label class="ar-field"
-          ><span>{{ 'AutoReach::VoiceBatch.Purpose' | abpLocalization }}</span>
-          <textarea
-            class="ar-field__input"
-            rows="3"
-            [(ngModel)]="model.purpose"
-            maxlength="500"
-          ></textarea>
-        </label>
-        <p>{{ 'AutoReach::VoiceBatch.PurposeHelp' | abpLocalization }}</p>
-        <div class="grid">
-          <label class="ar-field"
-            ><span>{{ 'AutoReach::VoiceBatch.StartsAt' | abpLocalization }}</span>
-            <input class="ar-field__input" type="datetime-local" [(ngModel)]="model.startsAt"
-          /></label>
-          <label class="ar-field"
-            ><span>{{ 'AutoReach::VoiceBatch.From' | abpLocalization }}</span>
+        <div class="dialog-body">
+          <label class="ar-field">
+            <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.Name' | abpLocalization }}</span>
             <input
               class="ar-field__input"
-              type="time"
-              min="09:00"
-              max="21:00"
-              [(ngModel)]="model.windowStart"
-          /></label>
-          <label class="ar-field"
-            ><span>{{ 'AutoReach::VoiceBatch.To' | abpLocalization }}</span>
-            <input
+              [(ngModel)]="model.name"
+              maxlength="128"
+              placeholder="e.g. Q4 Machinery Maintenance Followup"
+            />
+          </label>
+
+          <div class="dialog-grid">
+            <label class="ar-field">
+              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.Channel' | abpLocalization }}</span>
+              <select class="ar-field__input" [(ngModel)]="model.channelId">
+                @for (channel of channels(); track channel.id) {
+                  <option [ngValue]="channel.id" translate="no">
+                    {{ channel.verifiedName || channel.displayPhoneNumber }}
+                  </option>
+                }
+              </select>
+            </label>
+
+            <label class="ar-field">
+              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.Line' | abpLocalization }}</span>
+              <select class="ar-field__input" [(ngModel)]="model.line">
+                <option value="whatsapp">
+                  {{ 'AutoReach::VoiceBatch.Line.whatsapp' | abpLocalization }}
+                </option>
+                <option value="phone">
+                  {{ 'AutoReach::VoiceBatch.Line.phone' | abpLocalization }}
+                </option>
+                <option value="sip">
+                  {{ 'AutoReach::VoiceBatch.Line.sip' | abpLocalization }}
+                </option>
+              </select>
+            </label>
+          </div>
+
+          <label class="ar-field">
+            <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.Purpose' | abpLocalization }}</span>
+            <textarea
               class="ar-field__input"
-              type="time"
-              min="09:00"
-              max="21:00"
-              [(ngModel)]="model.windowEnd"
-          /></label>
-          <label class="ar-field"
-            ><span>{{ 'AutoReach::VoiceBatch.Concurrent' | abpLocalization }}</span>
-            <input
-              class="ar-field__input"
-              type="number"
-              min="1"
-              max="20"
-              [(ngModel)]="model.maxConcurrent"
-          /></label>
-          <label class="ar-field"
-            ><span>{{ 'AutoReach::VoiceBatch.Attempts' | abpLocalization }}</span>
-            <input
-              class="ar-field__input"
-              type="number"
-              min="1"
-              max="5"
-              [(ngModel)]="model.maxAttempts"
-          /></label>
-          <label class="ar-field"
-            ><span>{{ 'AutoReach::VoiceBatch.RetryAfter' | abpLocalization }}</span>
-            <input
-              class="ar-field__input"
-              type="number"
-              min="15"
-              max="1440"
-              [(ngModel)]="model.retryAfterMinutes"
-          /></label>
+              rows="2"
+              [(ngModel)]="model.purpose"
+              maxlength="500"
+              placeholder="Context or objective provided to the agent for this specific campaign..."
+            ></textarea>
+          </label>
+
+          <div class="dialog-grid-3">
+            <label class="ar-field">
+              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.StartsAt' | abpLocalization }}</span>
+              <input class="ar-field__input" type="datetime-local" [(ngModel)]="model.startsAt" />
+            </label>
+
+            <label class="ar-field">
+              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.From' | abpLocalization }}</span>
+              <input
+                class="ar-field__input"
+                type="time"
+                min="09:00"
+                max="21:00"
+                [(ngModel)]="model.windowStart"
+              />
+            </label>
+
+            <label class="ar-field">
+              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.To' | abpLocalization }}</span>
+              <input
+                class="ar-field__input"
+                type="time"
+                min="09:00"
+                max="21:00"
+                [(ngModel)]="model.windowEnd"
+              />
+            </label>
+          </div>
+
+          <div class="dialog-grid-3">
+            <label class="ar-field">
+              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.Concurrent' | abpLocalization }}</span>
+              <input
+                class="ar-field__input"
+                type="number"
+                min="1"
+                max="20"
+                [(ngModel)]="model.maxConcurrent"
+              />
+            </label>
+
+            <label class="ar-field">
+              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.Attempts' | abpLocalization }}</span>
+              <input
+                class="ar-field__input"
+                type="number"
+                min="1"
+                max="5"
+                [(ngModel)]="model.maxAttempts"
+              />
+            </label>
+
+            <label class="ar-field">
+              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.RetryAfter' | abpLocalization }}</span>
+              <input
+                class="ar-field__input"
+                type="number"
+                min="15"
+                max="1440"
+                [(ngModel)]="model.retryAfterMinutes"
+              />
+            </label>
+          </div>
+
+          <p class="dialog-rules-note">{{ 'AutoReach::VoiceBatch.Rules' | abpLocalization }}</p>
         </div>
-        <p>{{ 'AutoReach::VoiceBatch.Rules' | abpLocalization }}</p>
-        <div dialogActions>
+
+        <div dialogActions class="dialog-actions">
           <button ar-button type="button" variant="ghost" (click)="form.set(null)">
             {{ 'AutoReach::VoiceBatch.Close' | abpLocalization }}
           </button>
-          <button ar-button type="button" [disabled]="busy()" (click)="create()">
+          <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="create()">
             {{ 'AutoReach::VoiceBatch.Create' | abpLocalization }}
           </button>
         </div>
@@ -308,69 +468,478 @@ const toMinute = (clock: string) => {
   `,
   styles: `
     .batches {
-      padding: 16px;
+      padding: 24px 32px;
       display: grid;
+      gap: 24px;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .batches__kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 16px;
     }
-    .list {
+
+    .batches__alert {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: #fef3f2;
+      border: 1px solid #fecdca;
+      border-radius: 6px;
+      color: #b42318;
+      font-size: 0.875rem;
+    }
+
+    .batches__state {
+      padding: 32px;
+      text-align: center;
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card, 10px);
+      color: var(--ar-ink-500);
+    }
+
+    .batches__empty-state {
+      padding: 48px 24px;
+      text-align: center;
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card, 10px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .empty-icon {
+      font-size: 2.2rem;
+      color: var(--ar-ink-400);
+    }
+
+    /* Cockpit 2-column layout */
+    .cockpit-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+      align-items: flex-start;
+    }
+
+    @media (max-width: 1024px) {
+      .cockpit-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .batches-sidebar {
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card, 10px);
+      padding: 16px;
+      box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
+    }
+
+    .sidebar-head {
+      margin-bottom: 12px;
+    }
+
+    .sidebar-title {
+      font: 600 1rem var(--ar-font-sans);
+      color: var(--ar-ink-900);
+      margin: 0;
+    }
+
+    .batches-list {
       list-style: none;
       padding: 0;
       margin: 0;
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 8px;
     }
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
+
+    .batch-item {
       width: 100%;
       text-align: start;
-      background: var(--ar-surface-100);
+      font: inherit;
+      padding: 12px;
       border: 1px solid var(--ar-line-200);
       border-radius: 8px;
-      padding: 12px;
+      background: var(--ar-bg-50);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .batch-item:hover {
+      background: #ffffff;
+      border-color: var(--ar-blue-500);
+    }
+
+    .batch-item--selected {
+      background: #ffffff;
+      border-color: var(--ar-blue-500);
+      box-shadow: 0 0 0 1px var(--ar-blue-500);
+    }
+
+    .batch-item__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .batch-item__name {
+      font-size: 0.88rem;
+      color: var(--ar-ink-900);
+      overflow-wrap: anywhere;
+    }
+
+    .batch-item__meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--ar-ink-500);
+    }
+
+    .batch-item__line {
+      text-transform: capitalize;
+    }
+
+    .batch-item__bar {
+      height: 4px;
+      background: var(--ar-line-200);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .batch-item__fill {
+      height: 100%;
+      background: var(--ar-blue-500);
+      border-radius: 2px;
+    }
+
+    /* Right Batch Detail Cockpit */
+    .batch-detail {
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card, 10px);
+      padding: 24px;
+      box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .detail-header {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--ar-line-200);
+    }
+
+    .detail-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .detail-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .line-tag {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--ar-ink-700);
+      background: var(--ar-bg-100);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .detail-title {
+      font: 600 1.3rem var(--ar-font-sans);
+      color: var(--ar-ink-900);
+      margin: 0;
+    }
+
+    .detail-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .detail-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--ar-ink-700);
+    }
+
+    .meta-separator {
+      color: var(--ar-ink-400);
+    }
+
+    .detail-purpose {
+      margin: 0;
+      font-size: 0.875rem;
+      color: var(--ar-ink-700);
+      background: var(--ar-bg-50);
+      padding: 10px 14px;
+      border-radius: 6px;
+      border-left: 3px solid var(--ar-blue-500);
+    }
+
+    /* Status Counts Strip */
+    .detail-counts-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 10px;
+    }
+
+    .count-box {
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-200);
+      border-radius: 6px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-align: center;
+    }
+
+    .count-box__label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--ar-ink-500);
+    }
+
+    .count-box__value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--ar-ink-900);
+    }
+
+    .count-good {
+      color: #027a48 !important;
+    }
+
+    /* CSV Upload Box */
+    .upload-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      border: 1px dashed var(--ar-blue-300, #b2ccff);
+      border-radius: 8px;
+      background: var(--ar-blue-50, #f8faff);
+    }
+
+    .upload-box__info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .upload-icon {
+      font-size: 1.4rem;
+      color: var(--ar-blue-600);
+    }
+
+    .upload-title {
+      font-size: 0.9rem;
+      color: var(--ar-ink-900);
+    }
+
+    .upload-desc {
+      margin: 2px 0 0;
+      font-size: 0.8rem;
+      color: var(--ar-ink-500);
+    }
+
+    .upload-btn-label {
+      background: #ffffff;
+      border: 1px solid var(--ar-line-300);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--ar-ink-900);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .upload-btn-label:hover {
+      background: var(--ar-bg-50);
+    }
+
+    .upload-file-input {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
       cursor: pointer;
     }
-    .selected .row {
-      border-color: var(--ar-primary-500);
-    }
-    .detail {
-      border: 1px solid var(--ar-line-200);
-      border-radius: 8px;
-      padding: 16px;
-      overflow-x: auto;
-    }
-    .counts {
+
+    .import-notes {
+      padding: 10px 14px;
+      background: #eff8ff;
+      border: 1px solid #b2ddff;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      color: #175cd3;
       display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin: 12px 0;
+      flex-direction: column;
+      gap: 4px;
     }
-    .counts dd {
-      margin: 0;
-      font-weight: 600;
-    }
-    .actions {
+
+    /* Table styling adhering to modern-web-guidance responsive-table */
+    .recipients-section {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 12px 0;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      flex-direction: column;
       gap: 12px;
     }
-    .recipients {
+
+    .recipients-title {
+      font: 600 1.05rem var(--ar-font-sans);
+      color: var(--ar-ink-900);
+      margin: 0;
+    }
+
+    .ar-table-responsive {
+      overflow-x: auto;
+      border: 1px solid var(--ar-line-200);
+      border-radius: 6px;
+      max-height: 420px;
+    }
+
+    .ar-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 12px;
+      font-size: 0.875rem;
+
+      thead th {
+        position: sticky;
+        top: 0;
+        background: var(--ar-bg-50);
+        color: var(--ar-ink-700);
+        font-weight: 600;
+        text-align: start;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--ar-line-200);
+        white-space: nowrap;
+        z-index: 1;
+      }
+
+      tbody td {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--ar-line-200);
+        color: var(--ar-ink-900);
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      tbody tr:hover {
+        background: var(--ar-bg-50);
+      }
     }
-    .recipients th,
-    .recipients td {
-      text-align: start;
-      padding: 6px 8px;
-      border-bottom: 1px solid var(--ar-line-200);
+
+    /* Dialog styling */
+    .dialog-body {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 8px 0;
+    }
+
+    .dialog-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .dialog-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .dialog-grid,
+      .dialog-grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .dialog-rules-note {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--ar-ink-400);
+    }
+
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .font-mono {
+      font-family: var(--ar-font-mono, monospace);
+    }
+
+    .font-medium {
+      font-weight: 500;
+    }
+
+    .text-muted {
+      color: var(--ar-ink-400);
+    }
+
+    .text-right {
+      text-align: right !important;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .block {
+      display: block;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
     }
   `,
 })
@@ -397,6 +966,22 @@ export class ArVoiceCallBatches implements OnInit {
     this.permissions.getGrantedPolicy('AutoReach.Campaigns.Send'),
   );
   protected readonly clock = toClock;
+
+  protected readonly stats = computed(() => {
+    const list = this.batches();
+    const total = list.length;
+    const running = list.filter((b) => b.status === 'Running').length;
+    const totalRecipients = list.reduce((s, b) => s + (b.total || 0), 0);
+    const reachedRecipients = list.reduce((s, b) => s + (b.reached || 0), 0);
+    return { total, running, totalRecipients, reachedRecipients };
+  });
+
+  protected readonly reachRate = computed(() => {
+    const s = this.stats();
+    if (!s.totalRecipients) return '–';
+    return `${Math.round((s.reachedRecipients / s.totalRecipients) * 100)}%`;
+  });
+
   protected readonly counts = computed(() => {
     const batch = this.selected();
     if (!batch) return [];
@@ -429,42 +1014,89 @@ export class ArVoiceCallBatches implements OnInit {
   protected async select(batch: VoiceCallBatchDto): Promise<void> {
     this.selected.set(batch);
     this.importNotes.set([]);
-    await this.loadRecipients();
+    await this.loadRecipients(batch.id);
   }
 
-  private async loadRecipients(): Promise<void> {
-    const batch = this.selected();
-    if (!batch) return;
+  private async loadRecipients(batchId: string): Promise<void> {
     try {
-      const page = await firstValueFrom(this.api.getRecipients(batch.id, { maxResultCount: 200 }));
-      if (this.selected()?.id === batch.id) this.recipients.set(page.items ?? []);
+      const page = await firstValueFrom(this.api.getRecipients(batchId, { maxResultCount: 200 }));
+      this.recipients.set(page.items ?? []);
     } catch {
-      this.error.set('AutoReach::VoiceBatch.LoadFailed');
+      this.recipients.set([]);
     }
   }
 
   protected async refresh(): Promise<void> {
-    await this.load();
-    await this.loadRecipients();
+    const sel = this.selected();
+    if (!sel) return;
+    try {
+      const refreshed = await firstValueFrom(this.api.get(sel.id));
+      this.selected.set(refreshed);
+      this.batches.update((list) => list.map((b) => (b.id === refreshed.id ? refreshed : b)));
+      await this.loadRecipients(sel.id);
+    } catch {
+      this.error.set('AutoReach::VoiceBatch.RefreshFailed');
+    }
+  }
+
+  protected async act(action: 'start' | 'pause' | 'cancel'): Promise<void> {
+    const sel = this.selected();
+    if (!sel || this.busy()) return;
+    this.busy.set(true);
+    this.error.set('');
+    try {
+      const fn =
+        action === 'start'
+          ? this.api.start(sel.id)
+          : action === 'pause'
+            ? this.api.pause(sel.id)
+            : this.api.cancel(sel.id);
+      const updated = await firstValueFrom(fn);
+      this.selected.set(updated);
+      this.batches.update((list) => list.map((b) => (b.id === updated.id ? updated : b)));
+    } catch {
+      this.error.set('AutoReach::VoiceBatch.ActionFailed');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async upload(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const sel = this.selected();
+    if (!file || !sel || this.busy()) return;
+    this.busy.set(true);
+    this.error.set('');
+    this.importNotes.set([]);
+    try {
+      const csv = await file.text();
+      const result = await firstValueFrom(this.api.importRecipients(sel.id, csv));
+      this.importNotes.set([`+${result.added}, =${result.alreadyIn}`, ...result.problems]);
+      await this.refresh();
+    } catch {
+      this.error.set('AutoReach::VoiceBatch.UploadFailed');
+    } finally {
+      this.busy.set(false);
+      input.value = '';
+    }
   }
 
   protected async openNew(): Promise<void> {
-    if (!this.channels().length) {
-      try {
-        const page = await firstValueFrom(
-          this.channelsApi.getList({ maxResultCount: 100 } as never),
-        );
-        this.channels.set((page.items ?? []).filter((c) => c.provider === 0));
-      } catch {
-        this.channels.set([]);
-      }
+    try {
+      const page = await firstValueFrom(this.channelsApi.getList({ maxResultCount: 50 }));
+      this.channels.set((page.items ?? []).filter((c) => c.provider === 0));
+    } catch {
+      this.channels.set([]);
     }
+    const now = new Date();
+    const startsAt = new Date(now.getTime() + 10 * 60_000).toISOString().slice(0, 16);
     this.form.set({
       name: '',
       channelId: this.channels()[0]?.id ?? '',
       line: 'whatsapp',
       purpose: '',
-      startsAt: '',
+      startsAt,
       windowStart: '09:00',
       windowEnd: '21:00',
       maxConcurrent: 2,
@@ -474,13 +1106,13 @@ export class ArVoiceCallBatches implements OnInit {
   }
 
   protected async create(): Promise<void> {
-    const model = this.form();
-    if (!model || this.busy()) return;
-    const windowStartMinute = toMinute(model.windowStart);
-    const windowEndMinute = toMinute(model.windowEnd);
+    const f = this.form();
+    if (!f || this.busy()) return;
+    const windowStartMinute = toMinute(f.windowStart);
+    const windowEndMinute = toMinute(f.windowEnd);
     if (
-      !model.name.trim() ||
-      !model.channelId ||
+      !f.name.trim() ||
+      !f.channelId ||
       windowStartMinute < 540 ||
       windowEndMinute > 1260 ||
       windowEndMinute - windowStartMinute < 30
@@ -491,68 +1123,65 @@ export class ArVoiceCallBatches implements OnInit {
     this.busy.set(true);
     this.error.set('');
     try {
-      const batch = await firstValueFrom(
+      const created = await firstValueFrom(
         this.api.create({
-          name: model.name.trim(),
-          channelId: model.channelId,
-          line: model.line,
-          purpose: model.purpose.trim() || null,
-          startsAtUtc: model.startsAt ? new Date(model.startsAt).toISOString() : null,
+          name: f.name.trim(),
+          channelId: f.channelId,
+          line: f.line,
+          purpose: f.purpose.trim() || undefined,
+          startsAtUtc: f.startsAt ? new Date(f.startsAt).toISOString() : null,
           windowStartMinute,
           windowEndMinute,
-          maxConcurrent: model.maxConcurrent,
-          maxAttempts: model.maxAttempts,
-          retryAfterMinutes: model.retryAfterMinutes,
+          maxConcurrent: Number(f.maxConcurrent) || 1,
+          maxAttempts: Number(f.maxAttempts) || 1,
+          retryAfterMinutes: Number(f.retryAfterMinutes) || 60,
         }),
       );
       this.form.set(null);
-      await this.load();
-      await this.select(this.batches().find((b) => b.id === batch.id) ?? batch);
-    } catch (e) {
-      this.error.set(this.codeOf(e) ?? 'AutoReach::VoiceBatch.SaveFailed');
+      this.batches.update((list) => [created, ...list]);
+      this.selected.set(created);
+      await this.loadRecipients(created.id);
+    } catch {
+      this.error.set('AutoReach::VoiceBatch.CreateFailed');
     } finally {
       this.busy.set(false);
     }
   }
 
-  protected async upload(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    const batch = this.selected();
-    if (!file || !batch || this.busy()) return;
-    this.busy.set(true);
-    this.error.set('');
-    try {
-      const result = await firstValueFrom(this.api.importRecipients(batch.id, await file.text()));
-      this.importNotes.set([`+${result.added}, =${result.alreadyIn}`, ...result.problems]);
-      await this.refresh();
-    } catch (e) {
-      this.error.set(this.codeOf(e) ?? 'AutoReach::VoiceBatch.SaveFailed');
-    } finally {
-      input.value = '';
-      this.busy.set(false);
+  protected statusTone(status: string): 'good' | 'amber' | 'teal' | 'neutral' | 'bad' {
+    switch (status) {
+      case 'Running':
+        return 'teal';
+      case 'Completed':
+        return 'good';
+      case 'Paused':
+        return 'amber';
+      case 'Cancelled':
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 
-  protected async act(action: 'start' | 'pause' | 'cancel'): Promise<void> {
-    const batch = this.selected();
-    if (!batch || this.busy()) return;
-    this.busy.set(true);
-    this.error.set('');
-    try {
-      const updated = await firstValueFrom(this.api[action](batch.id));
-      this.selected.set(updated);
-      await this.refresh();
-    } catch (e) {
-      this.error.set(this.codeOf(e) ?? 'AutoReach::VoiceBatch.SaveFailed');
-    } finally {
-      this.busy.set(false);
+  protected recipientTone(status: string): 'good' | 'amber' | 'teal' | 'neutral' | 'bad' {
+    switch (status) {
+      case 'Reached':
+        return 'good';
+      case 'Calling':
+        return 'teal';
+      case 'Unreached':
+      case 'Skipped':
+        return 'amber';
+      case 'Failed':
+      case 'Cancelled':
+        return 'bad';
+      default:
+        return 'neutral';
     }
   }
 
-  /** An ABP error code ("AutoReach:…") the server returned, shown through its own translation. */
-  private codeOf(error: unknown): string | null {
-    const code = (error as { error?: { error?: { code?: string } } })?.error?.error?.code;
-    return code?.startsWith('AutoReach:') ? code : null;
+  protected progressPercent(reached: number, total: number): number {
+    if (!total || total <= 0) return 0;
+    return Math.min(100, Math.round((reached / total) * 100));
   }
 }

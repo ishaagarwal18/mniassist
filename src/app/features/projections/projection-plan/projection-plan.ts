@@ -834,7 +834,7 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
           </div>
           <div class="kpi-subtext">
             <span
-              >Run-rate Landing:
+              >Landing:
               {{ formatPaiseCompact(dashboard()?.forecastedYearEndLandingInPaise ?? 0) }}</span
             >
             <span class="pill-badge" [class.positive]="ytdPacing() >= 70">
@@ -960,13 +960,13 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
                     <div class="traj-metrics">
                       <div class="metric-row">
                         <span class="label">Target:</span>
-                        <span class="val font-semibold">{{
+                        <span class="val font-semibold tabular-nums">{{
                           formatPaise(q.targetRevenueInPaise)
                         }}</span>
                       </div>
                       <div class="metric-row">
                         <span class="label">Actual Realized:</span>
-                        <span class="val text-good font-semibold">
+                        <span class="val text-good font-semibold tabular-nums">
                           {{
                             q.actualRevenueInPaise > 0
                               ? formatPaise(q.actualRevenueInPaise)
@@ -976,7 +976,7 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
                       </div>
                       <div class="metric-row">
                         <span class="label">Range (Cons - Opt):</span>
-                        <span class="val text-neutral">
+                        <span class="val text-muted tabular-nums">
                           {{ formatPaiseCompact(q.conservativeInPaise) }} –
                           {{ formatPaiseCompact(q.optimisticInPaise) }}
                         </span>
@@ -1014,19 +1014,19 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
                     <div class="bl-stats">
                       <div class="stat-col">
                         <span class="meta-lbl">Target</span>
-                        <span class="meta-val">{{
+                        <span class="meta-val tabular-nums">{{
                           formatPaiseCompact(bl.projectedRevenueInPaise)
                         }}</span>
                       </div>
                       <div class="stat-col">
                         <span class="meta-lbl">Realized</span>
-                        <span class="meta-val text-good">{{
+                        <span class="meta-val text-good tabular-nums">{{
                           formatPaiseCompact(bl.actualRevenueInPaise)
                         }}</span>
                       </div>
                       <div class="stat-col">
                         <span class="meta-lbl">Realization</span>
-                        <span class="meta-val font-semibold"
+                        <span class="meta-val font-semibold tabular-nums"
                           >{{ bl.realizationPercent.toFixed(1) }}%</span
                         >
                       </div>
@@ -1067,8 +1067,8 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         <ar-card class="matrix-card">
           <div class="matrix-toolbar">
             <div class="filter-group">
-              <label>Quarter:</label>
-              <select [(ngModel)]="periodFilter" (change)="onFilterChanged()">
+              <label for="quarterFilter">Quarter:</label>
+              <select id="quarterFilter" [(ngModel)]="periodFilter" (change)="onFilterChanged()">
                 <option value="All">All Quarters</option>
                 <option value="Q1">Q1 (Apr - Jun)</option>
                 <option value="Q2">Q2 (Jul - Sep)</option>
@@ -1077,8 +1077,8 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
               </select>
             </div>
             <div class="filter-group">
-              <label>Business Line:</label>
-              <select [(ngModel)]="businessLineFilter" (change)="onFilterChanged()">
+              <label for="blFilter">Business Line:</label>
+              <select id="blFilter" [(ngModel)]="businessLineFilter" (change)="onFilterChanged()">
                 <option [ngValue]="null">All Business Lines</option>
                 @for (opt of businessLineOptions; track opt.value) {
                   <option [ngValue]="opt.value">{{ opt.label }}</option>
@@ -1090,20 +1090,20 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
             </div>
           </div>
 
-          <div class="table-responsive">
+          <div class="table-responsive" tabindex="0" role="region" aria-label="Strategic Projection Matrix">
             <table class="projection-table">
               <thead>
                 <tr>
-                  <th>Period</th>
-                  <th>Business Line</th>
-                  <th class="text-right">Projected Revenue</th>
-                  <th class="text-right">Projected COGS</th>
-                  <th class="text-center">Margin %</th>
-                  <th class="text-right">Conservative</th>
-                  <th class="text-right">Optimistic</th>
-                  <th class="text-right">ERP Actual</th>
-                  <th class="text-center">Capacity (Hrs)</th>
-                  <th class="text-center">Status</th>
+                  <th scope="col">Period</th>
+                  <th scope="col">Business Line</th>
+                  <th scope="col" class="text-right">Projected Revenue</th>
+                  <th scope="col" class="text-right">Projected COGS</th>
+                  <th scope="col" class="text-center">Margin %</th>
+                  <th scope="col" class="text-right">Conservative</th>
+                  <th scope="col" class="text-right">Optimistic</th>
+                  <th scope="col" class="text-right">ERP Actual</th>
+                  <th scope="col" class="text-center">Capacity (Hrs)</th>
+                  <th scope="col" class="text-center">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -1113,30 +1113,30 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
                     <td>
                       <span class="bl-tag">{{ getBusinessLineName(item.businessLine) }}</span>
                     </td>
-                    <td class="text-right font-semibold">
+                    <td class="text-right font-semibold tabular-nums">
                       {{ formatPaise(item.projectedRevenueInPaise) }}
                     </td>
-                    <td class="text-right text-muted">
+                    <td class="text-right text-muted tabular-nums">
                       {{ formatPaise(item.projectedCogsInPaise) }}
                     </td>
-                    <td class="text-center font-medium">
+                    <td class="text-center font-medium tabular-nums">
                       {{ item.projectedMarginPercent.toFixed(1) }}%
                     </td>
-                    <td class="text-right text-muted">
+                    <td class="text-right text-muted tabular-nums">
                       {{ formatPaiseCompact(item.conservativeRevenueInPaise) }}
                     </td>
-                    <td class="text-right text-muted">
+                    <td class="text-right text-muted tabular-nums">
                       {{ formatPaiseCompact(item.optimisticRevenueInPaise) }}
                     </td>
                     <td
-                      class="text-right font-semibold"
+                      class="text-right font-semibold tabular-nums"
                       [class.text-good]="item.actualRevenueInPaise > 0"
                     >
                       {{
                         item.actualRevenueInPaise > 0 ? formatPaise(item.actualRevenueInPaise) : '—'
                       }}
                     </td>
-                    <td class="text-center">{{ item.capacityHoursRequired }} hrs</td>
+                    <td class="text-center tabular-nums">{{ item.capacityHoursRequired }} hrs</td>
                     <td class="text-center">
                       <ar-chip [tone]="getItemStatusTone(item.status)">
                         {{ getItemStatusLabel(item.status) }}
@@ -1169,20 +1169,20 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
             <!-- Conservative -->
             <ar-card class="scenario-card conservative-border">
               <div class="scenario-badge conservative-badge">Conservative (-15%)</div>
-              <div class="scenario-rev">
+              <div class="scenario-rev tabular-nums">
                 {{ formatPaiseCompact(scenarioResult()?.conservative?.totalRevenueInPaise ?? 0) }}
               </div>
               <div class="scenario-lbl">Revenue Floor</div>
               <div class="scenario-details">
                 <div class="s-row">
                   <span>COGS:</span>
-                  <span class="font-semibold">{{
+                  <span class="font-semibold tabular-nums">{{
                     formatPaiseCompact(scenarioResult()?.conservative?.totalCogsInPaise ?? 0)
                   }}</span>
                 </div>
                 <div class="s-row">
                   <span>Gross Margin:</span>
-                  <span class="font-semibold"
+                  <span class="font-semibold tabular-nums"
                     >{{
                       (scenarioResult()?.conservative?.grossMarginPercent ?? 0).toFixed(1)
                     }}%</span
@@ -1190,13 +1190,13 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
                 </div>
                 <div class="s-row">
                   <span>Projected EBITDA:</span>
-                  <span class="font-semibold text-good">{{
+                  <span class="font-semibold text-good tabular-nums">{{
                     formatPaiseCompact(scenarioResult()?.conservative?.projectedEbitdaInPaise ?? 0)
                   }}</span>
                 </div>
                 <div class="s-row">
                   <span>Working Capital:</span>
-                  <span class="font-semibold text-warn">{{
+                  <span class="font-semibold text-warn tabular-nums">{{
                     formatPaiseCompact(
                       scenarioResult()?.conservative?.workingCapitalRequirementInPaise ?? 0
                     )
@@ -1211,32 +1211,32 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
             <!-- Realistic (Base) -->
             <ar-card class="scenario-card realistic-border active-plan-highlight">
               <div class="scenario-badge realistic-badge">Realistic (Base Plan)</div>
-              <div class="scenario-rev text-accent">
+              <div class="scenario-rev text-accent tabular-nums">
                 {{ formatPaiseCompact(scenarioResult()?.realistic?.totalRevenueInPaise ?? 0) }}
               </div>
               <div class="scenario-lbl">Target Operating Plan</div>
               <div class="scenario-details">
                 <div class="s-row">
                   <span>COGS:</span>
-                  <span class="font-semibold">{{
+                  <span class="font-semibold tabular-nums">{{
                     formatPaiseCompact(scenarioResult()?.realistic?.totalCogsInPaise ?? 0)
                   }}</span>
                 </div>
                 <div class="s-row">
                   <span>Gross Margin:</span>
-                  <span class="font-semibold"
+                  <span class="font-semibold tabular-nums"
                     >{{ (scenarioResult()?.realistic?.grossMarginPercent ?? 0).toFixed(1) }}%</span
                   >
                 </div>
                 <div class="s-row">
                   <span>Projected EBITDA:</span>
-                  <span class="font-semibold text-good">{{
+                  <span class="font-semibold text-good tabular-nums">{{
                     formatPaiseCompact(scenarioResult()?.realistic?.projectedEbitdaInPaise ?? 0)
                   }}</span>
                 </div>
                 <div class="s-row">
                   <span>Working Capital:</span>
-                  <span class="font-semibold text-warn">{{
+                  <span class="font-semibold text-warn tabular-nums">{{
                     formatPaiseCompact(
                       scenarioResult()?.realistic?.workingCapitalRequirementInPaise ?? 0
                     )
@@ -1251,32 +1251,32 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
             <!-- Optimistic -->
             <ar-card class="scenario-card optimistic-border">
               <div class="scenario-badge optimistic-badge">Optimistic (+15%)</div>
-              <div class="scenario-rev text-good">
+              <div class="scenario-rev text-good tabular-nums">
                 {{ formatPaiseCompact(scenarioResult()?.optimistic?.totalRevenueInPaise ?? 0) }}
               </div>
               <div class="scenario-lbl">Upside Potential</div>
               <div class="scenario-details">
                 <div class="s-row">
                   <span>COGS:</span>
-                  <span class="font-semibold">{{
+                  <span class="font-semibold tabular-nums">{{
                     formatPaiseCompact(scenarioResult()?.optimistic?.totalCogsInPaise ?? 0)
                   }}</span>
                 </div>
                 <div class="s-row">
                   <span>Gross Margin:</span>
-                  <span class="font-semibold"
+                  <span class="font-semibold tabular-nums"
                     >{{ (scenarioResult()?.optimistic?.grossMarginPercent ?? 0).toFixed(1) }}%</span
                   >
                 </div>
                 <div class="s-row">
                   <span>Projected EBITDA:</span>
-                  <span class="font-semibold text-good">{{
+                  <span class="font-semibold text-good tabular-nums">{{
                     formatPaiseCompact(scenarioResult()?.optimistic?.projectedEbitdaInPaise ?? 0)
                   }}</span>
                 </div>
                 <div class="s-row">
                   <span>Working Capital:</span>
-                  <span class="font-semibold text-warn">{{
+                  <span class="font-semibold text-warn tabular-nums">{{
                     formatPaiseCompact(
                       scenarioResult()?.optimistic?.workingCapitalRequirementInPaise ?? 0
                     )
@@ -1309,13 +1309,13 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
                 <div class="plan-meta-stats">
                   <span
                     >Target Revenue:
-                    <strong>{{ formatPaise(p.targetRevenueInPaise) }}</strong></span
+                    <strong class="tabular-nums">{{ formatPaise(p.targetRevenueInPaise) }}</strong></span
                   >
                   <span
-                    >Margin: <strong>{{ p.targetGrossMarginPercent.toFixed(1) }}%</strong></span
+                    >Margin: <strong class="tabular-nums">{{ p.targetGrossMarginPercent.toFixed(1) }}%</strong></span
                   >
                   <span
-                    >EBITDA: <strong>{{ formatPaiseCompact(p.targetEbitdaInPaise) }}</strong></span
+                    >EBITDA: <strong class="tabular-nums">{{ formatPaiseCompact(p.targetEbitdaInPaise) }}</strong></span
                   >
                 </div>
               </div>
@@ -1351,8 +1351,9 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
               targets across all 5 industrial business lines.
             </p>
             <div class="form-row">
-              <label>Fiscal Year</label>
+              <label for="genFY">Fiscal Year</label>
               <input
+                id="genFY"
                 type="text"
                 [(ngModel)]="genFiscalYear"
                 class="form-input"
@@ -1360,16 +1361,16 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
               />
             </div>
             <div class="form-row">
-              <label>Annual Growth Rate Target (%)</label>
-              <input type="number" [(ngModel)]="genGrowthRate" step="0.5" class="form-input" />
+              <label for="genGrowth">Annual Growth Rate Target (%)</label>
+              <input id="genGrowth" type="number" [(ngModel)]="genGrowthRate" step="0.5" class="form-input" />
             </div>
             <div class="form-row">
-              <label>Target Gross Margin (%)</label>
-              <input type="number" [(ngModel)]="genGrossMargin" step="0.5" class="form-input" />
+              <label for="genMargin">Target Gross Margin (%)</label>
+              <input id="genMargin" type="number" [(ngModel)]="genGrossMargin" step="0.5" class="form-input" />
             </div>
             <div class="form-row">
-              <label>Planning Horizon</label>
-              <select [(ngModel)]="genHorizon" class="form-input">
+              <label for="genHoriz">Planning Horizon</label>
+              <select id="genHoriz" [(ngModel)]="genHorizon" class="form-input">
                 @for (opt of projectionHorizonOptions; track opt.value) {
                   <option [ngValue]="opt.value">{{ opt.label }}</option>
                 }
@@ -1405,8 +1406,9 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         <ar-dialog title="Create Projection Plan" (dismiss)="showCreateModal.set(false)">
           <div class="dialog-form">
             <div class="form-row">
-              <label>Plan Title *</label>
+              <label for="newPlanTitle">Plan Title *</label>
               <input
+                id="newPlanTitle"
                 type="text"
                 [(ngModel)]="newPlanTitle"
                 class="form-input"
@@ -1414,8 +1416,9 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
               />
             </div>
             <div class="form-row">
-              <label>Fiscal Year *</label>
+              <label for="newPlanFY">Fiscal Year *</label>
               <input
+                id="newPlanFY"
                 type="text"
                 [(ngModel)]="newPlanFiscalYear"
                 class="form-input"
@@ -1423,16 +1426,17 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
               />
             </div>
             <div class="form-row">
-              <label>Planning Horizon</label>
-              <select [(ngModel)]="newPlanHorizon" class="form-input">
+              <label for="newPlanHoriz">Planning Horizon</label>
+              <select id="newPlanHoriz" [(ngModel)]="newPlanHorizon" class="form-input">
                 @for (opt of projectionHorizonOptions; track opt.value) {
                   <option [ngValue]="opt.value">{{ opt.label }}</option>
                 }
               </select>
             </div>
             <div class="form-row">
-              <label>Notes & Strategic Context</label>
+              <label for="newPlanNotes">Notes & Strategic Context</label>
               <textarea
+                id="newPlanNotes"
                 [(ngModel)]="newPlanNotes"
                 rows="3"
                 class="form-input"
@@ -1465,14 +1469,15 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         flex-direction: column;
         gap: 1.25rem;
         padding: 1.5rem;
-        max-width: 1440px;
+        max-width: 1400px;
         margin: 0 auto;
       }
 
       .topbar-actions {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.5rem;
+        flex-wrap: wrap;
       }
 
       /* KPI Grid */
@@ -1483,25 +1488,47 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
       }
 
       .kpi-card {
-        padding: 1.25rem;
+        padding: 1.125rem 1.25rem;
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.375rem;
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card);
+        box-shadow: var(--ar-shadow-card);
+        position: relative;
+        overflow: hidden;
+        transition: transform var(--ar-ease), box-shadow var(--ar-ease);
+      }
+
+      .kpi-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
+      }
+
+      .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--ar-blue-500);
       }
 
       .kpi-label {
-        font-size: 0.8125rem;
-        font-weight: 500;
-        color: var(--color-text-muted, #64748b);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--ar-ink-400);
         text-transform: uppercase;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.05em;
       }
 
       .kpi-value {
-        font-size: 1.875rem;
+        font-size: 1.75rem;
         font-weight: 700;
-        line-height: 1.1;
-        color: var(--color-text-primary, #0f172a);
+        line-height: 1.15;
+        color: var(--ar-ink-900);
       }
 
       .kpi-subtext {
@@ -1509,44 +1536,50 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         align-items: center;
         justify-content: space-between;
         font-size: 0.75rem;
-        color: var(--color-text-muted, #64748b);
+        color: var(--ar-ink-500);
         margin-top: 0.25rem;
       }
 
       .pill-badge {
-        padding: 0.125rem 0.375rem;
-        border-radius: 4px;
-        background: var(--color-bg-secondary, #f1f5f9);
+        padding: 0.125rem 0.4rem;
+        border-radius: var(--ar-radius-chip);
+        background: var(--ar-bg-100);
+        color: var(--ar-ink-700);
         font-weight: 600;
       }
 
       .pill-badge.positive {
-        color: #059669;
-        background: #ecfdf5;
+        color: var(--ar-green-600);
+        background: var(--ar-green-100);
       }
 
       .margin-delta {
         font-weight: 600;
+        font-size: 0.75rem;
       }
 
       .margin-delta.above {
-        color: #059669;
+        color: var(--ar-green-600);
       }
 
       .text-accent {
-        color: #3b82f6;
+        color: var(--ar-blue-600);
       }
 
       .text-good {
-        color: #10b981;
+        color: var(--ar-green-600);
       }
 
       .text-warn {
-        color: #f59e0b;
+        color: var(--ar-amber-600);
       }
 
       .text-muted {
-        color: #94a3b8;
+        color: var(--ar-ink-400);
+      }
+
+      .tabular-nums {
+        font-variant-numeric: tabular-nums;
       }
 
       /* Tabs */
@@ -1554,33 +1587,36 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        border-bottom: 1px solid var(--color-border, #e2e8f0);
-        padding-bottom: 0.25rem;
+        border-bottom: 1px solid var(--ar-line-200);
+        padding-bottom: 0.5rem;
+        overflow-x: auto;
       }
 
       .tab-btn {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.625rem 1rem;
-        font-size: 0.875rem;
+        padding: 0.5rem 0.875rem;
+        font-size: 0.85rem;
         font-weight: 500;
-        border: none;
+        border: 1px solid transparent;
         background: none;
-        color: var(--color-text-muted, #64748b);
+        color: var(--ar-ink-500);
         cursor: pointer;
-        border-radius: 6px;
-        transition: all 0.15s ease-in-out;
+        border-radius: var(--ar-radius-control);
+        transition: all var(--ar-ease);
+        white-space: nowrap;
       }
 
       .tab-btn:hover {
-        color: var(--color-text-primary, #0f172a);
-        background: var(--color-bg-hover, #f8fafc);
+        color: var(--ar-ink-900);
+        background: var(--ar-bg-50);
       }
 
       .tab-btn.active {
-        color: #2563eb;
-        background: #eff6ff;
+        color: var(--ar-blue-700);
+        background: var(--ar-blue-100);
+        border-color: var(--ar-blue-200);
         font-weight: 600;
       }
 
@@ -1602,36 +1638,47 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         display: flex;
         flex-direction: column;
         gap: 1rem;
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card);
+        box-shadow: var(--ar-shadow-card);
       }
 
       .card-head h3 {
         margin: 0;
-        font-size: 1.0625rem;
+        font-size: 1rem;
         font-weight: 600;
-        color: var(--color-text-primary, #0f172a);
+        color: var(--ar-ink-900);
       }
 
       .card-head .subhead {
         font-size: 0.75rem;
-        color: var(--color-text-muted, #64748b);
+        color: var(--ar-ink-400);
       }
 
       .trajectories-list,
       .bl-list {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 0.75rem;
       }
 
       .trajectory-item,
       .bl-item {
-        padding: 0.875rem;
-        background: var(--color-bg-secondary, #f8fafc);
-        border-radius: 8px;
+        padding: 0.875rem 1rem;
+        background: var(--ar-bg-50);
+        border-radius: var(--ar-radius-inset);
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
-        border: 1px solid var(--color-border-subtle, #edf2f7);
+        border: 1px solid var(--ar-line-200);
+        transition: border-color var(--ar-ease), background var(--ar-ease);
+      }
+
+      .trajectory-item:hover,
+      .bl-item:hover {
+        background: var(--ar-white);
+        border-color: var(--ar-blue-200);
       }
 
       .traj-header,
@@ -1643,7 +1690,8 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
 
       .bl-title {
         font-weight: 600;
-        font-size: 0.9375rem;
+        font-size: 0.9rem;
+        color: var(--ar-ink-900);
       }
 
       .bl-share-tag {
@@ -1651,8 +1699,8 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         font-weight: 600;
         padding: 0.125rem 0.5rem;
         border-radius: 9999px;
-        background: #e0f2fe;
-        color: #0369a1;
+        background: var(--ar-blue-100);
+        color: var(--ar-blue-700);
       }
 
       .traj-metrics,
@@ -1670,7 +1718,7 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
 
       .metric-row .label,
       .stat-col .meta-lbl {
-        color: var(--color-text-muted, #64748b);
+        color: var(--ar-ink-400);
       }
 
       .stat-col {
@@ -1682,50 +1730,50 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
       .progress-bar-bg {
         height: 6px;
         width: 100%;
-        background: #e2e8f0;
+        background: var(--ar-line-200);
         border-radius: 9999px;
         overflow: hidden;
       }
 
       .progress-bar-fill {
         height: 100%;
-        background: #10b981;
+        background: var(--ar-green-500);
         border-radius: 9999px;
         transition: width 0.3s ease;
       }
 
       .progress-bar-fill.bg-brand {
-        background: #3b82f6;
+        background: var(--ar-blue-500);
       }
 
       .insights-banner {
         display: flex;
         gap: 1rem;
         align-items: flex-start;
-        background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
-        border: 1px solid #bfdbfe;
-        border-radius: 8px;
+        background: linear-gradient(135deg, var(--ar-ai-100) 0%, var(--ar-blue-100) 100%);
+        border: 1px solid var(--ar-ai-200);
+        border-radius: var(--ar-radius-card);
         padding: 1.25rem;
       }
 
       .insight-icon {
         font-size: 1.5rem;
-        color: #2563eb;
+        color: var(--ar-ai-700);
         margin-top: 0.125rem;
       }
 
       .insight-content h4 {
         margin: 0 0 0.375rem;
-        font-size: 0.9375rem;
+        font-size: 0.95rem;
         font-weight: 600;
-        color: #1e3a8a;
+        color: var(--ar-ai-800);
       }
 
       .insight-content p {
         margin: 0;
-        font-size: 0.875rem;
+        font-size: 0.85rem;
         line-height: 1.5;
-        color: #1e293b;
+        color: var(--ar-ink-700);
       }
 
       /* Matrix Table */
@@ -1734,6 +1782,10 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         display: flex;
         flex-direction: column;
         gap: 1rem;
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card);
+        box-shadow: var(--ar-shadow-card);
       }
 
       .matrix-toolbar {
@@ -1747,57 +1799,92 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        font-size: 0.875rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--ar-ink-700);
       }
 
       .filter-group select {
-        padding: 0.375rem 0.75rem;
-        border-radius: 6px;
-        border: 1px solid var(--color-border, #cbd5e1);
-        background: #ffffff;
-        font-size: 0.875rem;
+        height: var(--ar-control-h);
+        padding: 0 0.75rem;
+        border-radius: var(--ar-radius-control);
+        border: 1px solid var(--ar-line-300);
+        background: var(--ar-white);
+        color: var(--ar-ink-900);
+        font-size: 0.85rem;
+        font-family: inherit;
+      }
+
+      .filter-group select:focus {
+        outline: none;
+        border-color: var(--ar-blue-500);
+        box-shadow: var(--ar-focus-ring);
       }
 
       .record-counter {
         margin-left: auto;
         font-size: 0.8125rem;
-        color: var(--color-text-muted, #64748b);
+        color: var(--ar-ink-400);
       }
 
       .table-responsive {
-        overflow-x: auto;
+        overflow: auto;
+        max-inline-size: 100%;
+        max-block-size: min(560px, 80vh);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-inset);
+        container-type: inline-size;
       }
 
       .projection-table {
         width: 100%;
-        border-collapse: collapse;
-        font-size: 0.875rem;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.85rem;
+      }
+
+      .projection-table thead {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: 1;
       }
 
       .projection-table th {
         padding: 0.75rem 0.875rem;
-        background: var(--color-bg-secondary, #f8fafc);
-        border-bottom: 2px solid var(--color-border, #e2e8f0);
-        color: var(--color-text-muted, #475569);
+        background: var(--ar-bg-50);
+        border-bottom: 2px solid var(--ar-line-200);
+        color: var(--ar-ink-500);
         font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
         white-space: nowrap;
       }
 
       .projection-table td {
         padding: 0.75rem 0.875rem;
-        border-bottom: 1px solid var(--color-border-subtle, #f1f5f9);
+        border-bottom: 1px solid var(--ar-line-200);
         vertical-align: middle;
+        color: var(--ar-ink-900);
+      }
+
+      .projection-table tbody tr:hover {
+        background: var(--ar-bg-50);
+      }
+
+      .projection-table tbody tr:last-child td {
+        border-bottom: none;
       }
 
       .bl-tag {
         font-weight: 500;
-        color: #1e293b;
+        color: var(--ar-ink-900);
       }
 
       .empty-state {
         text-align: center;
         padding: 2.5rem !important;
-        color: var(--color-text-muted, #94a3b8);
+        color: var(--ar-ink-400);
         font-style: italic;
       }
 
@@ -1809,23 +1896,24 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
       }
 
       .scenario-summary-banner {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
+        background: var(--ar-bg-50);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card);
         padding: 1.25rem;
       }
 
       .scenario-summary-banner h3 {
         margin: 0 0 0.5rem;
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 600;
+        color: var(--ar-ink-900);
       }
 
       .scenario-summary-banner p {
         margin: 0;
-        font-size: 0.875rem;
+        font-size: 0.85rem;
         line-height: 1.5;
-        color: #334155;
+        color: var(--ar-ink-700);
       }
 
       .scenario-cards-grid {
@@ -1839,30 +1927,35 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         display: flex;
         flex-direction: column;
         gap: 1rem;
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card);
+        box-shadow: var(--ar-shadow-card);
         border-top-width: 4px;
       }
 
       .conservative-border {
-        border-top-color: #64748b;
+        border-top-color: var(--ar-ink-400);
       }
 
       .realistic-border {
-        border-top-color: #3b82f6;
+        border-top-color: var(--ar-blue-500);
       }
 
       .optimistic-border {
-        border-top-color: #10b981;
+        border-top-color: var(--ar-green-500);
       }
 
       .active-plan-highlight {
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+        box-shadow: 0 4px 16px rgba(23, 105, 255, 0.12);
+        border-color: var(--ar-blue-200);
       }
 
       .scenario-badge {
         display: inline-block;
         align-self: flex-start;
         padding: 0.25rem 0.625rem;
-        border-radius: 4px;
+        border-radius: var(--ar-radius-chip);
         font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
@@ -1870,29 +1963,30 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
       }
 
       .conservative-badge {
-        background: #f1f5f9;
-        color: #475569;
+        background: var(--ar-bg-100);
+        color: var(--ar-ink-700);
       }
 
       .realistic-badge {
-        background: #eff6ff;
-        color: #1d4ed8;
+        background: var(--ar-blue-100);
+        color: var(--ar-blue-700);
       }
 
       .optimistic-badge {
-        background: #ecfdf5;
-        color: #047857;
+        background: var(--ar-green-100);
+        color: var(--ar-green-600);
       }
 
       .scenario-rev {
         font-size: 2rem;
         font-weight: 700;
         line-height: 1.1;
+        color: var(--ar-ink-900);
       }
 
       .scenario-lbl {
         font-size: 0.8125rem;
-        color: var(--color-text-muted, #64748b);
+        color: var(--ar-ink-400);
         margin-top: -0.5rem;
       }
 
@@ -1901,19 +1995,20 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         flex-direction: column;
         gap: 0.5rem;
         padding: 0.75rem 0;
-        border-top: 1px solid var(--color-border-subtle, #f1f5f9);
-        border-bottom: 1px solid var(--color-border-subtle, #f1f5f9);
+        border-top: 1px solid var(--ar-line-200);
+        border-bottom: 1px solid var(--ar-line-200);
       }
 
       .s-row {
         display: flex;
         justify-content: space-between;
-        font-size: 0.875rem;
+        font-size: 0.85rem;
+        color: var(--ar-ink-700);
       }
 
       .scenario-note {
         font-size: 0.75rem;
-        color: var(--color-text-muted, #64748b);
+        color: var(--ar-ink-400);
         line-height: 1.4;
         font-style: italic;
       }
@@ -1926,15 +2021,19 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
       }
 
       .plan-card {
-        padding: 1.25rem;
+        padding: 1.25rem 1.5rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 1.5rem;
+        background: var(--ar-white);
+        border: 1px solid var(--ar-line-200);
+        border-radius: var(--ar-radius-card);
+        box-shadow: var(--ar-shadow-card);
       }
 
       .plan-card.is-active {
-        border-left: 4px solid #3b82f6;
+        border-left: 4px solid var(--ar-blue-500);
       }
 
       .plan-card-left {
@@ -1952,25 +2051,26 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
       .plan-code {
         font-weight: 700;
         font-size: 0.875rem;
-        color: #1e293b;
+        color: var(--ar-ink-900);
       }
 
       .fy-tag {
         font-size: 0.75rem;
         font-weight: 600;
-        color: #64748b;
+        color: var(--ar-ink-400);
       }
 
       .plan-title {
         margin: 0;
-        font-size: 1.0625rem;
+        font-size: 1rem;
         font-weight: 600;
+        color: var(--ar-ink-900);
       }
 
       .plan-notes {
         margin: 0;
         font-size: 0.8125rem;
-        color: #64748b;
+        color: var(--ar-ink-500);
       }
 
       .plan-meta-stats {
@@ -1978,7 +2078,7 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         gap: 1.5rem;
         font-size: 0.8125rem;
         margin-top: 0.25rem;
-        color: #475569;
+        color: var(--ar-ink-700);
       }
 
       .plan-card-right {
@@ -1997,11 +2097,12 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
 
       .dialog-explainer {
         font-size: 0.8125rem;
-        color: #64748b;
+        color: var(--ar-ink-500);
         line-height: 1.4;
-        background: #f8fafc;
+        background: var(--ar-bg-50);
+        border: 1px solid var(--ar-line-200);
         padding: 0.75rem;
-        border-radius: 6px;
+        border-radius: var(--ar-radius-inset);
         margin: 0;
       }
 
@@ -2014,16 +2115,25 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
       .form-row label {
         font-size: 0.8125rem;
         font-weight: 600;
-        color: #334155;
+        color: var(--ar-ink-700);
       }
 
       .form-input {
         padding: 0.5rem 0.75rem;
-        border-radius: 6px;
-        border: 1px solid #cbd5e1;
+        border-radius: var(--ar-radius-control);
+        border: 1px solid var(--ar-line-300);
         font-size: 0.875rem;
         width: 100%;
         box-sizing: border-box;
+        background: var(--ar-white);
+        color: var(--ar-ink-900);
+        font-family: inherit;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: var(--ar-blue-500);
+        box-shadow: var(--ar-focus-ring);
       }
 
       .checkbox-row {
@@ -2031,7 +2141,7 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         align-items: center;
         gap: 0.5rem;
         font-size: 0.8125rem;
-        color: #334155;
+        color: var(--ar-ink-700);
         margin-top: 0.25rem;
       }
 
@@ -2041,7 +2151,7 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         gap: 0.75rem;
         margin-top: 1.25rem;
         padding-top: 1rem;
-        border-top: 1px solid #e2e8f0;
+        border-top: 1px solid var(--ar-line-200);
       }
 
       .text-right {

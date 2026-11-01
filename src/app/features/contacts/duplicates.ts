@@ -14,7 +14,7 @@ import {
   SuppressionReason,
 } from '../../proxy/contacts';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 
 const REASONS: Record<DuplicateReason, string> = {
   [DuplicateReason.SamePhone]: 'Same phone number',
@@ -57,7 +57,7 @@ const CHANNELS: Record<number, string> = {
  */
 @Component({
   selector: 'ar-duplicates',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './duplicates.html',
   styleUrl: './duplicates.scss',
@@ -70,11 +70,28 @@ export class ArDuplicates {
   protected readonly canDelete = grantedPolicy('AutoReach.Contacts.Delete', this.permissions);
 
   protected readonly pairs = this.store.pairs;
+  protected readonly search = signal('');
   protected readonly loading = this.store.loading;
   protected readonly failed = this.store.failed;
   protected readonly moreThanShown = this.store.moreThanShown;
   protected readonly highOnly = this.store.highOnly;
   protected readonly High = DuplicateConfidence.High;
+
+  protected readonly filteredPairs = computed(() => {
+    const q = this.search().trim().toLowerCase();
+    if (!q) return this.pairs();
+    return this.pairs().filter(
+      (p) =>
+        this.display(p.first).toLowerCase().includes(q) ||
+        this.display(p.second).toLowerCase().includes(q) ||
+        p.first?.companyName?.toLowerCase().includes(q) ||
+        p.second?.companyName?.toLowerCase().includes(q) ||
+        p.first?.waId?.includes(q) ||
+        p.second?.waId?.includes(q) ||
+        p.first?.emailAddress?.toLowerCase().includes(q) ||
+        p.second?.emailAddress?.toLowerCase().includes(q),
+    );
+  });
 
   protected readonly pair = signal<ContactDuplicatePairDto | null>(null);
   protected readonly survivorId = signal<string>('');

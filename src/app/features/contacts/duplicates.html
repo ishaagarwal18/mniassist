@@ -6,15 +6,20 @@
 
 <div class="dup ar-scroll">
   <div class="dup__bar">
-    <label class="dup__toggle">
-      <input
-        type="checkbox"
-        [checked]="highOnly()"
-        (change)="toggleHighOnly($any($event.target).checked)"
-      />
-      Near-certain matches only
-    </label>
-    <span class="dup__count">{{ pairs().length }} pair{{ pairs().length === 1 ? '' : 's' }}</span>
+    <div class="dup__controls">
+      <label class="dup__toggle">
+        <input
+          type="checkbox"
+          [checked]="highOnly()"
+          (change)="toggleHighOnly($any($event.target).checked)"
+        />
+        <span>Near-certain matches only</span>
+      </label>
+      <span class="dup__count-badge">{{ filteredPairs().length }} pair{{ filteredPairs().length === 1 ? '' : 's' }}</span>
+    </div>
+    <div class="dup__search">
+      <ar-search-box placeholder="Search duplicates by name, company, or phone..." [query]="search()" (queryChange)="search.set($event)" />
+    </div>
   </div>
 
   @if (error() && !pair()) {
@@ -22,70 +27,82 @@
   }
 
   @if (loading()) {
-    <p class="dup__empty">Looking for duplicates…</p>
+    <div class="dup__state">
+      <p>Analyzing contacts and calculating duplicate confidence…</p>
+    </div>
   } @else if (failed()) {
     <p class="dup__err">Could not load duplicates. Check your connection and reload the page.</p>
-  } @else if (pairs().length === 0) {
-    <p class="dup__empty">
-      {{
-        highOnly()
-          ? 'No near-certain duplicates.'
-          : 'No likely duplicates found. Pairs you mark as not duplicates stay hidden.'
-      }}
-    </p>
+  } @else if (filteredPairs().length === 0) {
+    <div class="dup__state">
+      <p>
+        @if (search().trim()) {
+          No duplicates matched "{{ search() }}".
+        } @else if (highOnly()) {
+          No near-certain duplicate records found.
+        } @else {
+          No likely duplicates found. Pairs marked as "Not duplicates" remain excluded.
+        }
+      </p>
+    </div>
   }
 
-  @for (p of pairs(); track p.first?.id + '|' + p.second?.id) {
-    <article class="pr">
-      <header class="pr__head">
-        <ar-chip [tone]="p.confidence === High ? 'bad' : 'amber'">{{
-          p.confidence === High ? 'Near certain' : 'Possible'
-        }}</ar-chip>
-        <span class="pr__why">
-          @for (r of p.reasons; track r; let last = $last) {
-            {{ reasonText(r) }}{{ last ? '' : ' · ' }}
+  <div class="dup__list">
+    @for (p of filteredPairs(); track p.first?.id + '|' + p.second?.id) {
+      <article class="pr">
+        <header class="pr__head">
+          <ar-chip [tone]="p.confidence === High ? 'bad' : 'amber'">
+            {{ p.confidence === High ? 'Near certain match' : 'Possible duplicate' }}
+          </ar-chip>
+          <span class="pr__why">
+            @for (r of p.reasons; track r; let last = $last) {
+              <span class="pr__reason-pill">{{ reasonText(r) }}</span>{{ last ? '' : ' ' }}
+            }
+          </span>
+        </header>
+
+        <div class="pr__sides">
+          @for (c of [p.first, p.second]; track c?.id; let idx = $index) {
+            <div class="who">
+              <div class="who__header">
+                <div class="who__avatar">{{ display(c).charAt(0) }}</div>
+                <div class="who__id">
+                  <span class="who__tag-side">Record {{ idx + 1 }}</span>
+                  <h3 class="who__name">{{ display(c) }}</h3>
+                </div>
+              </div>
+              @if (c?.companyName) {
+                <p class="who__line">🏢 {{ c?.companyName }}</p>
+              }
+              @if (c?.waId) {
+                <p class="who__line who__line--mono">📞 +{{ c?.waId }}</p>
+              }
+              @if (c?.emailAddress) {
+                <p class="who__line">✉️ {{ c?.emailAddress }}</p>
+              }
+              <p class="who__tags">
+                @if (c?.hasInstagram) {
+                  <span class="who__tag">Instagram</span>
+                }
+                @if (c?.hasMessenger) {
+                  <span class="who__tag">Messenger</span>
+                }
+                <span class="who__tag who__tag--quiet">Last active {{ when(c?.lastActivityUtc) }}</span>
+              </p>
+            </div>
           }
-        </span>
-      </header>
+        </div>
 
-      <div class="pr__sides">
-        @for (c of [p.first, p.second]; track c?.id) {
-          <div class="who">
-            <h3 class="who__name">{{ display(c) }}</h3>
-            @if (c?.companyName) {
-              <p class="who__line">{{ c?.companyName }}</p>
-            }
-            @if (c?.waId) {
-              <p class="who__line who__line--mono">+{{ c?.waId }}</p>
-            }
-            @if (c?.emailAddress) {
-              <p class="who__line">{{ c?.emailAddress }}</p>
-            }
-            <p class="who__tags">
-              @if (c?.hasInstagram) {
-                <span class="who__tag">Instagram</span>
-              }
-              @if (c?.hasMessenger) {
-                <span class="who__tag">Messenger</span>
-              }
-              <span class="who__tag who__tag--quiet"
-                >Last active {{ when(c?.lastActivityUtc) }}</span
-              >
-            </p>
-          </div>
-        }
-      </div>
-
-      <footer class="pr__actions">
-        @if (canUpdate()) {
-          <button ar-button variant="ghost" (click)="dismiss(p)">Not duplicates</button>
-        }
-        @if (canUpdate() && canDelete()) {
-          <button ar-button variant="primary" (click)="open(p)">Review &amp; merge</button>
-        }
-      </footer>
-    </article>
-  }
+        <footer class="pr__actions">
+          @if (canUpdate()) {
+            <button ar-button variant="ghost" (click)="dismiss(p)">Not duplicates</button>
+          }
+          @if (canUpdate() && canDelete()) {
+            <button ar-button variant="primary" (click)="open(p)">Review &amp; merge</button>
+          }
+        </footer>
+      </article>
+    }
+  </div>
 
   @if (moreThanShown() > 0) {
     <p class="dup__empty">
@@ -99,9 +116,9 @@
   <ar-dialog title="Merge contacts" (dismiss)="close()">
     <div class="mg">
       <section class="mg__sec">
-        <h3 class="mg__h">Keep which record?</h3>
+        <h3 class="mg__h">1. Choose which record to keep (Surviving Record)</h3>
         <div class="mg__keep">
-          @for (c of [pair()?.first, pair()?.second]; track c?.id) {
+          @for (c of [pair()?.first, pair()?.second]; track c?.id; let idx = $index) {
             <label class="mg__opt" [class.mg__opt--on]="c?.id === survivorId()">
               <input
                 type="radio"
@@ -110,7 +127,7 @@
                 (change)="keep(c?.id ?? '')"
               />
               <span>
-                <b>{{ display(c) }}</b>
+                <b>Record {{ idx + 1 }}: {{ display(c) }}</b>
                 <small>{{
                   c?.waId ? '+' + c?.waId : c?.emailAddress || 'No phone or email'
                 }}</small>
@@ -119,8 +136,7 @@
           }
         </div>
         <p class="mg__note">
-          The other record is removed from the contact list once merged. Its messages,
-          conversations, campaigns, enquiries and quotations move to the one you keep.
+          The other record is merged and removed. Its communications, messages, deals, quotations and service history will automatically move to the surviving contact.
         </p>
       </section>
 
@@ -131,7 +147,7 @@
       @if (preview(); as pv) {
         @if (choices().length > 0) {
           <section class="mg__sec">
-            <h3 class="mg__h">Where they disagree</h3>
+            <h3 class="mg__h">2. Resolve field conflicts</h3>
             @for (f of choices(); track f.field) {
               <div class="fc">
                 <span class="fc__label">{{ fieldLabel(f.field) }}</span>
@@ -155,54 +171,17 @@
                 </label>
               </div>
             }
-            <p class="mg__note">
-              The first value belongs to the record you keep. A phone number or address you do not
-              choose is not carried over.
-            </p>
           </section>
         }
 
         @if (fills().length > 0) {
           <section class="mg__sec">
-            <h3 class="mg__h">What the merged contact gains</h3>
-            <ul class="mg__list">
+            <h3 class="mg__h">Fields that will be filled from the merged contact</h3>
+            <ul class="mg__fills">
               @for (f of fills(); track f.field) {
                 <li>
-                  {{ fieldLabel(f.field) }}: <b>{{ f.loserValue }}</b>
-                </li>
-              }
-            </ul>
-          </section>
-        }
-
-        <section class="mg__sec">
-          <h3 class="mg__h">What moves</h3>
-          <p class="mg__moves">
-            {{ pv.conversationsToMove }} conversation{{ pv.conversationsToMove === 1 ? '' : 's' }} ·
-            {{ pv.messagesToMove }} message{{ pv.messagesToMove === 1 ? '' : 's' }} ·
-            {{ pv.enquiriesToMove }} enquir{{ pv.enquiriesToMove === 1 ? 'y' : 'ies' }} ·
-            {{ pv.quotationsToMove }} quotation{{ pv.quotationsToMove === 1 ? '' : 's' }} ·
-            {{ pv.assetsToMove }} asset{{ pv.assetsToMove === 1 ? '' : 's' }}
-          </p>
-        </section>
-
-        @if ((pv.crmRecordsHandedOver ?? 0) > 0 || (pv.crmDuplicatesLeft ?? 0) > 0) {
-          <section class="mg__sec">
-            <h3 class="mg__h">CRM</h3>
-            <ul class="mg__list">
-              @if ((pv.crmRecordsHandedOver ?? 0) > 0) {
-                <li>
-                  In {{ pv.crmRecordsHandedOver }} connected CRM{{
-                    pv.crmRecordsHandedOver === 1 ? '' : 's'
-                  }}, the record for the merged-away contact carries on as the merged contact.
-                </li>
-              }
-              @if ((pv.crmDuplicatesLeft ?? 0) > 0) {
-                <li class="mg__li--warn">
-                  In {{ pv.crmDuplicatesLeft }} connected CRM{{
-                    pv.crmDuplicatesLeft === 1 ? '' : 's'
-                  }}, both contacts already have a record. The kept contact's record stays linked;
-                  the other is left in the CRM, so merge those two there.
+                  <span class="mg__fill-lbl">{{ fieldLabel(f.field) }}:</span>
+                  <span class="mg__fill-val">{{ value(f.loserValue) }}</span>
                 </li>
               }
             </ul>
@@ -211,20 +190,12 @@
 
         @if (consentLines().length > 0) {
           <section class="mg__sec">
-            <h3 class="mg__h">Consent after the merge</h3>
-            @if (anyNarrowed()) {
-              <p class="mg__warn">
-                One of these records had marketing switched off, so the merged contact keeps it off.
-                A merge never turns marketing back on.
-              </p>
+            <h3 class="mg__h">Channel Consent & Address Permissions</h3>
+            @for (line of consentLines(); track line.channel) {
+              <div class="mg__consent" [class.mg__consent--warn]="line.warn">
+                <strong>{{ line.channel }}:</strong> {{ line.text }}
+              </div>
             }
-            <ul class="mg__list">
-              @for (l of consentLines(); track l.channel) {
-                <li [class.mg__li--warn]="l.warn">
-                  <b>{{ l.channel }}</b> — {{ l.text }}
-                </li>
-              }
-            </ul>
           </section>
         }
       }
@@ -235,14 +206,14 @@
     </div>
 
     <div dialogActions>
-      <button ar-button variant="ghost" (click)="close()">Cancel</button>
+      <button ar-button variant="ghost" [disabled]="busy()" (click)="close()">Cancel</button>
       <button
         ar-button
         variant="primary"
         [disabled]="busy() || previewing() || !preview()"
         (click)="confirm()"
       >
-        {{ busy() ? 'Merging…' : 'Merge contacts' }}
+        {{ busy() ? 'Merging records…' : 'Confirm & merge contacts' }}
       </button>
     </div>
   </ar-dialog>

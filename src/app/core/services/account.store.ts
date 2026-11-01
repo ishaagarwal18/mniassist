@@ -20,6 +20,7 @@ export interface CustomerAccount {
   readonly id: string;
   readonly name: string;
   readonly industry?: string;
+  readonly address?: string;
   readonly city?: string;
   readonly state?: string;
   readonly website?: string;
@@ -44,6 +45,7 @@ function toAccount(dto: CustomerAccountDto): CustomerAccount {
     id: dto.id!,
     name: dto.name ?? '',
     industry: dto.industry ?? undefined,
+    address: dto.address ?? undefined,
     city: dto.city ?? undefined,
     state: dto.state ?? undefined,
     website: dto.website ?? undefined,
@@ -125,18 +127,20 @@ const SEED: CustomerAccount[] = [
   {
     id: 'acc-1',
     name: 'Deccan Valves',
-    industry: 'Valves & actuators',
+    industry: 'Valves & Actuators',
+    address: 'Plot 42, MIDC Bhosari Industrial Area',
     city: 'Pune',
-    state: 'MH',
+    state: 'Maharashtra',
     contactCount: 1,
     childCount: 2,
   },
   {
     id: 'acc-4',
     name: 'Deccan Valves — Pune plant',
-    industry: 'Valves & actuators',
+    industry: 'Valves & Actuators',
+    address: 'Gate 2, Chakan Industrial Phase II',
     city: 'Pune',
-    state: 'MH',
+    state: 'Maharashtra',
     contactCount: 4,
     parentId: 'acc-1',
     childCount: 0,
@@ -144,9 +148,10 @@ const SEED: CustomerAccount[] = [
   {
     id: 'acc-5',
     name: 'Deccan Valves — Nashik plant',
-    industry: 'Valves & actuators',
+    industry: 'Valves & Actuators',
+    address: 'Plot 18, Ambad MIDC',
     city: 'Nashik',
-    state: 'MH',
+    state: 'Maharashtra',
     contactCount: 2,
     parentId: 'acc-1',
     childCount: 0,
@@ -154,18 +159,20 @@ const SEED: CustomerAccount[] = [
   {
     id: 'acc-2',
     name: 'Kohinoor Instruments',
-    industry: 'Process instrumentation',
+    industry: 'Process Instrumentation & Automation',
+    address: 'Sector 5, Satpur Industrial Estate',
     city: 'Nashik',
-    state: 'MH',
+    state: 'Maharashtra',
     contactCount: 2,
     childCount: 0,
   },
   {
     id: 'acc-3',
     name: 'Sanand Press Works',
-    industry: 'Sheet metal',
+    industry: 'Sheet Metal & Heavy Forging',
+    address: 'GIDC Industrial Estate, Phase 2',
     city: 'Ahmedabad',
-    state: 'GJ',
+    state: 'Gujarat',
     contactCount: 3,
     childCount: 0,
   },
@@ -252,6 +259,16 @@ export class AccountStore {
     this.reloadTick.update((n) => n + 1);
   }
 
+  /** Adjusts an account's contact count (used when assigning/unlinking contacts in mock/demo mode). */
+  adjustContactCount(accountId: string, delta: number): void {
+    if (environment.useMockData) {
+      this.seed = this.seed.map((a) =>
+        a.id === accountId ? { ...a, contactCount: Math.max(0, a.contactCount + delta) } : a,
+      );
+      this.reloadTick.update((n) => n + 1);
+    }
+  }
+
   async save(id: string | null, input: CreateUpdateCustomerAccountDto): Promise<void> {
     if (environment.useMockData) {
       const problem = moveProblem(id, input.parentAccountId, this.recount(this.seed));
@@ -262,6 +279,7 @@ export class AccountStore {
         id: id ?? `acc-${crypto.randomUUID().slice(0, 6)}`,
         name: input.name,
         industry: input.industry ?? undefined,
+        address: input.address ?? undefined,
         city: input.city ?? undefined,
         state: input.state ?? undefined,
         website: input.website ?? undefined,

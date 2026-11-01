@@ -3,23 +3,28 @@
   [subtitle]="openCount() + ' open · ' + value(pipelineValue()) + ' in play'"
   help="A board over your real sales pipeline — moving a card's stage here updates the actual record, it isn't a separate local view."
 >
-  <select
-    class="ar-field__input board__pipe"
-    aria-label="Pipeline"
-    (change)="choosePipeline($any($event.target).value)"
-  >
-    @for (p of pipelines(); track p.id) {
-      <option [value]="p.id" [selected]="p.id === currentPipeline()?.id">{{ p.name }}</option>
+  <div class="board__top-actions">
+    <div class="board__pipe-wrap">
+      <span class="board__pipe-label">Pipeline:</span>
+      <select
+        class="ar-field__input board__pipe"
+        aria-label="Select pipeline"
+        (change)="choosePipeline($any($event.target).value)"
+      >
+        @for (p of pipelines(); track p.id) {
+          <option [value]="p.id" [selected]="p.id === currentPipeline()?.id">{{ p.name }}</option>
+        }
+      </select>
+    </div>
+    @if (canManage()) {
+      <button ar-button type="button" variant="ghost" (click)="managePipelines()">Pipelines</button>
     }
-  </select>
-  @if (canManage()) {
-    <button ar-button type="button" variant="ghost" (click)="managePipelines()">Pipelines</button>
-  }
-  @if (canCreate()) {
-    <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
-      New enquiry
-    </button>
-  }
+    @if (canCreate()) {
+      <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+        New enquiry
+      </button>
+    }
+  </div>
 </ar-topbar>
 
 @if (dialogOpen()) {
@@ -89,6 +94,30 @@
   </ar-dialog>
 }
 
+<!-- Executive Pipeline Health Ribbon -->
+<div class="board-kpi-strip">
+  <div class="kpi-mini-card">
+    <span class="kpi-mini-lbl">Total In Play</span>
+    <strong class="kpi-mini-val text-primary">{{ value(pipelineValue()) }}</strong>
+    <span class="kpi-mini-sub">{{ openCount() }} active opportunities</span>
+  </div>
+  <div class="kpi-mini-card">
+    <span class="kpi-mini-lbl">Hot Leads</span>
+    <strong class="kpi-mini-val text-good">{{ hotLeadsCount() }}</strong>
+    <span class="kpi-mini-sub">High close probability</span>
+  </div>
+  <div class="kpi-mini-card">
+    <span class="kpi-mini-lbl">Average Deal Size</span>
+    <strong class="kpi-mini-val">{{ value(avgDealValue()) }}</strong>
+    <span class="kpi-mini-sub">Per qualified enquiry</span>
+  </div>
+  <div class="kpi-mini-card">
+    <span class="kpi-mini-lbl">Current Pipeline</span>
+    <strong class="kpi-mini-val font-sans">{{ currentPipeline()?.name || 'Default Pipeline' }}</strong>
+    <span class="kpi-mini-sub">{{ columns().length }} active stages</span>
+  </div>
+</div>
+
 <div class="board">
   @if (loading()) {
     <p class="board__empty">Loading the pipeline…</p>
@@ -110,17 +139,24 @@
   >
   </ejs-kanban>
   <ng-template #headerTemplate let-col>
-    <span class="col__head">
+    <div class="col__head">
       <span class="col__t">{{ col.headerText }}</span>
-      <span class="col__meta">{{ columnMeta(col.keyField) }}</span>
-    </span>
+      <span class="col__meta font-mono">{{ columnMeta(col.keyField) }}</span>
+    </div>
   </ng-template>
   <ng-template #cardTemplate let-c>
     <article class="card" tabindex="0" (keydown.enter)="selectedId.set(c.id)">
-      <div class="card__ref ar-mono">{{ c.reference }}</div>
+      <div class="card__top">
+        <span class="card__ref ar-mono">{{ c.reference }}</span>
+        @if (c.score != null) {
+          <ar-chip [tone]="c.band === 'hot' ? 'good' : c.band === 'warm' ? 'amber' : 'neutral'">
+            {{ c.band === 'hot' ? '🔥 Hot' : c.band === 'warm' ? '⚡ Warm' : '❄️ Cold' }} {{ c.score }}
+          </ar-chip>
+        }
+      </div>
       <h3 class="card__title">{{ c.title }}</h3>
       <p class="card__contact">
-        {{ c.contact }}<span class="card__co">{{ c.company ? ' · ' + c.company : '' }}</span>
+        👤 {{ c.contact }}<span class="card__co">{{ c.company ? ' · 🏢 ' + c.company : '' }}</span>
       </p>
       <div class="card__foot">
         <span class="card__val">{{ value(c.valueInPaise) }}</span>
@@ -128,17 +164,13 @@
           @if (c.owner) {
             <ar-chip tone="neutral" [mono]="true">{{ c.owner }}</ar-chip>
           }
-          @if (c.score != null) {
-            <ar-chip [tone]="c.band === 'hot' ? 'good' : c.band === 'warm' ? 'amber' : 'neutral'"
-              >{{ c.band === 'hot' ? 'Hot' : c.band === 'warm' ? 'Warm' : 'Cold' }}
-              {{ c.score }}</ar-chip
-            >
-          }
-          <ar-chip [tone]="c.daysInStage > 10 ? 'amber' : 'neutral'">{{ c.daysInStage }}d</ar-chip>
+          <ar-chip [tone]="c.daysInStage > 10 ? 'warn' : 'neutral'">
+            ⏱️ {{ c.daysInStage }}d
+          </ar-chip>
         </div>
       </div>
       @if (next(c.card); as n) {
-        <button ar-button type="button" variant="ghost" (click)="advance(c.card, $event)">
+        <button ar-button type="button" variant="ghost" class="card__advance-btn" (click)="advance(c.card, $event)">
           Advance → {{ n.label }}
         </button>
       }

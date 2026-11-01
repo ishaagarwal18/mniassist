@@ -70,6 +70,14 @@ export class ArEnquiries {
   protected readonly openCount = this.store.openEnquiryCount;
   protected readonly pipelineValue = this.store.pipelineValueInPaise;
 
+  protected readonly hotLeadsCount = computed(
+    () => this.cards().filter((c) => c.card?.band === 'hot').length,
+  );
+  protected readonly avgDealValue = computed(() => {
+    const count = this.openCount();
+    return count > 0 ? Math.round(this.pipelineValue() / count) : 0;
+  });
+
   private readonly headerTemplate = viewChild<TemplateRef<unknown>>('headerTemplate');
 
   /** Kanban columns and cards, flattened from the store's board. */
