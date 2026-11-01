@@ -130,45 +130,134 @@
   flex: 1;
   min-height: 0;
   overflow: hidden auto;
-  padding: 4px 10px 10px;
+  padding: 4px 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   scrollbar-width: thin;
   scrollbar-color: var(--ar-nav-line) transparent;
 }
-.sb__heading,
-.sb__item {
-  /* The nav scrolls; its rows must not shrink to fit the column instead. */
-  flex: none;
+.sb__group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 2px;
+  border-radius: var(--ar-radius-control);
+  transition: background var(--ar-ease);
+}
+.sb__group--active {
+  background: rgba(255, 255, 255, 0.02);
 }
 .sb__heading {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 16px 10px 6px;
+  min-height: 32px;
+  padding: 6px 8px 6px 8px;
+  margin: 3px 0 1px;
   border: 0;
-  background: none;
-  font: 600 10px var(--ar-font-sans);
-  letter-spacing: 0.1em;
+  border-radius: var(--ar-radius-control);
+  background: transparent;
+  font: 600 11px var(--ar-font-sans);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: left;
   color: var(--ar-nav-dim);
   white-space: nowrap;
   cursor: pointer;
+  transition:
+    background var(--ar-ease),
+    color var(--ar-ease);
 }
-.sb__heading:hover,
+.sb__heading:hover {
+  background: var(--ar-nav-hi);
+  color: var(--sb-strong);
+}
 .sb__heading:focus-visible {
-  color: var(--ar-nav-text);
-  outline: none;
+  outline: 2px solid var(--ar-blue-500);
+  outline-offset: -1px;
+}
+.sb__heading-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sb__heading-bar {
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: transparent;
+  transition: background var(--ar-ease);
+  flex: none;
+}
+.sb__heading-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sb__heading-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
 }
 .sb__heading-chev {
-  opacity: 0.7;
-  transition: transform var(--ar-ease);
+  opacity: 0.6;
+  transition: transform var(--ar-ease), opacity var(--ar-ease), color var(--ar-ease);
+}
+.sb__heading:hover .sb__heading-chev {
+  opacity: 0.9;
 }
 .sb__heading--folded .sb__heading-chev {
   transform: rotate(-90deg);
+}
+
+/* Parent group selected state when a child item is active */
+.sb__heading--active {
+  background: rgba(56, 189, 248, 0.08);
+  color: var(--ar-tenant-accent, var(--ar-blue-400, #38bdf8));
+}
+.sb__heading--active .sb__heading-bar {
+  background: var(--ar-tenant-accent, var(--ar-blue-500));
+}
+.sb__heading--active .sb__heading-text {
+  font-weight: 700;
+  color: var(--ar-tenant-accent, var(--ar-blue-400, #38bdf8));
+}
+.sb__heading--active .sb__heading-chev {
+  color: var(--ar-tenant-accent, var(--ar-blue-400, #38bdf8));
+  opacity: 1;
+}
+.sb__heading-active-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ar-tenant-accent, var(--ar-blue-500));
+  flex: none;
+  opacity: 0.85;
+}
+.sb__heading-active-dot--glow {
+  box-shadow: 0 0 6px var(--ar-tenant-accent, var(--ar-blue-500));
+  opacity: 1;
+}
+
+/* Child items container with hierarchy tree line */
+.sb__group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 2px;
+  margin-left: 6px;
+  margin-bottom: 2px;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  transition: border-color var(--ar-ease);
+}
+.sb__group--active .sb__group-items {
+  border-left-color: rgba(56, 189, 248, 0.25);
 }
 .sb__item {
   position: relative;
@@ -360,14 +449,28 @@
 :host(.sb--collapsed) .sb__user-chev {
   display: none;
 }
+:host(.sb--collapsed) .sb__group {
+  margin-bottom: 0;
+  background: transparent;
+}
+:host(.sb--collapsed) .sb__group-items {
+  margin-left: 0;
+  padding-left: 0;
+  border-left: none;
+}
 :host(.sb--collapsed) .sb__heading {
   pointer-events: none;
   height: 1px;
-  margin: 10px 8px;
+  min-height: 0;
+  margin: 8px 8px;
   padding: 0;
   overflow: hidden;
   color: transparent;
   background: var(--ar-nav-line);
+}
+:host(.sb--collapsed) .sb__heading--active {
+  background: var(--ar-tenant-accent, var(--ar-blue-500));
+  opacity: 0.6;
 }
 :host(.sb--collapsed) .sb__item {
   justify-content: center;

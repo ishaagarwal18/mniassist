@@ -8,7 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { PermissionService } from '@abp/ng.core';
@@ -28,14 +28,23 @@ import { PlanService } from '../core/services/plan.service';
 import { canAccessNavItem } from '../core/auth/permission';
 
 const COLLAPSED_KEY = 'ar.sidebar.collapsed';
-const FOLDED_KEY = 'ar.sidebar.foldedGroups';
+const FOLDED_KEY = 'ar.sidebar.foldedGroups.v2';
+
+function allGroupHeadings(): Set<string> {
+  return new Set(NAV.map((g) => g.heading).filter((h): h is string => Boolean(h)));
+}
 
 function readFolded(): ReadonlySet<string> {
   try {
-    return new Set(JSON.parse(localStorage.getItem(FOLDED_KEY) ?? '[]') as string[]);
+    const raw = localStorage.getItem(FOLDED_KEY);
+    if (raw !== null) {
+      return new Set(JSON.parse(raw) as string[]);
+    }
   } catch {
-    return new Set();
+    /* storage blocked */
   }
+  // Default when application loads: all menu groups are collapsed
+  return allGroupHeadings();
 }
 
 function readCollapsed(): boolean {
@@ -112,41 +121,65 @@ function readCollapsed(): boolean {
 
     <nav class="sb__nav" aria-label="Main">
       @for (group of shown(); track group.heading) {
-        @if (group.heading) {
-          <!-- A heading folds its group away; the group holding this page stays open. -->
-          <button
-            type="button"
-            class="sb__heading"
-            [class.sb__heading--folded]="isFolded(group)"
-            [attr.aria-expanded]="!isFolded(group)"
-            [attr.title]="i18n.t(isFolded(group) ? 'Show {0}' : 'Hide {0}', i18n.t(group.heading))"
-            (click)="toggleGroup(group)"
-          >
-            <span>{{ i18n.t(group.heading) }}</span>
-            <ar-icon class="sb__heading-chev" name="chevdown" [size]="12" />
-          </button>
-        }
-        @for (item of isFolded(group) ? [] : group.items; track item.route) {
-          <!-- One item is lit: the one whose route is the longest match for the page,
-               so /settings/support-access lights Support access, not Settings too,
-               and a sub-page (/enquiries/pipelines, /inbox?c=…) keeps its parent lit. -->
-          <a
-            class="sb__item"
-            [class.sb__item--ai]="item.ai"
-            [class.sb__item--on]="item.route === active()"
-            [attr.aria-current]="item.route === active() ? 'page' : null"
-            [routerLink]="item.route"
-            [attr.title]="collapsed() ? i18n.t(item.label) : null"
-            (click)="clearSearch(); drawer.close()"
-          >
-            <span class="sb__bar" aria-hidden="true"></span>
-            <ar-icon [name]="item.icon" [size]="16" />
-            <span class="sb__label">{{ i18n.t(item.label) }}</span>
-            @if (badgeFor(item.badge); as n) {
-              <span class="sb__badge">{{ n }}</span>
-            }
-          </a>
-        }
+        <div
+          class="sb__group"
+          [class.sb__group--active]="hasActiveItem(group)"
+          [class.sb__group--folded]="isFolded(group)"
+        >
+          @if (group.heading) {
+            <!-- A heading folds its group away; the group holding this page is highlighted as selected. -->
+            <button
+              type="button"
+              class="sb__heading"
+              [class.sb__heading--folded]="isFolded(group)"
+              [class.sb__heading--active]="hasActiveItem(group)"
+              [attr.aria-expanded]="!isFolded(group)"
+              [attr.title]="i18n.t(isFolded(group) ? 'Show {0}' : 'Hide {0}', i18n.t(group.heading))"
+              (click)="toggleGroup(group)"
+            >
+              <span class="sb__heading-title">
+                <span class="sb__heading-bar" aria-hidden="true"></span>
+                <span class="sb__heading-text">{{ i18n.t(group.heading) }}</span>
+              </span>
+              <span class="sb__heading-meta">
+                @if (hasActiveItem(group)) {
+                  <span
+                    class="sb__heading-active-dot"
+                    [class.sb__heading-active-dot--glow]="isFolded(group)"
+                    [attr.title]="i18n.t('Active section')"
+                    aria-hidden="true"
+                  ></span>
+                }
+                <ar-icon class="sb__heading-chev" name="chevdown" [size]="12" />
+              </span>
+            </button>
+          }
+          @if (!isFolded(group)) {
+            <div class="sb__group-items">
+              @for (item of group.items; track item.route) {
+                <!-- One item is lit: the one whose route is the longest match for the page,
+                     so /settings/support-access lights Support access, not Settings too,
+                     and a sub-page (/enquiries/pipelines, /inbox?c=…) keeps its parent lit. -->
+                <a
+                  class="sb__item"
+                  [class.sb__item--ai]="item.ai"
+                  [class.sb__item--on]="item.route === active()"
+                  [attr.aria-current]="item.route === active() ? 'page' : null"
+                  [routerLink]="item.route"
+                  [attr.title]="collapsed() ? i18n.t(item.label) : null"
+                  (click)="clearSearch(); drawer.close()"
+                >
+                  <span class="sb__bar" aria-hidden="true"></span>
+                  <ar-icon [name]="item.icon" [size]="16" />
+                  <span class="sb__label">{{ i18n.t(item.label) }}</span>
+                  @if (badgeFor(item.badge); as n) {
+                    <span class="sb__badge">{{ n }}</span>
+                  }
+                </a>
+              }
+            </div>
+          }
+        </div>
       } @empty {
         <p class="sb__none">{{ i18n.t('No menu items match “{0}”.', menuQuery().trim()) }}</p>
       }
@@ -204,17 +237,47 @@ export class ArSidebar {
   protected readonly branding = inject(BrandingStore);
   protected readonly pwa = inject(PwaService);
   protected readonly plan = inject(PlanService);
+  private readonly router = inject(Router);
 
   protected readonly menuOpen = signal(false);
 
   /** Menu groups folded away by their heading, remembered per browser. */
   private readonly folded = signal<ReadonlySet<string>>(readFolded());
 
-  /** Folded, unless it holds the page on screen (or the bar shows icons only, or a search is on). */
+  /** Whether this group contains the currently active route item. */
+  protected hasActiveItem(group: NavGroup): boolean {
+    const current = this.active();
+    return Boolean(current && group.items.some((i) => i.route === current));
+  }
+
+  constructor() {
+    // When navigating to a page, ensure its parent group is unfolded so the selection is in view.
+    this.router.events
+      .pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => {
+        const route = this.active();
+        if (!route) return;
+        const group = this.nav().find((g) => g.items.some((i) => i.route === route));
+        if (group?.heading && this.folded().has(group.heading)) {
+          const next = new Set(this.folded());
+          next.delete(group.heading);
+          this.folded.set(next);
+          try {
+            localStorage.setItem(FOLDED_KEY, JSON.stringify([...next]));
+          } catch {
+            /* storage blocked */
+          }
+        }
+      });
+  }
+
+  /** Folded, unless the bar shows icons only, or a search is on. */
   protected isFolded(group: NavGroup): boolean {
     if (!group.heading || this.collapsed() || this.searching()) return false;
-    if (!this.folded().has(group.heading)) return false;
-    return !group.items.some((i) => i.route === this.active());
+    return this.folded().has(group.heading);
   }
 
   protected toggleGroup(group: NavGroup): void {
@@ -326,7 +389,6 @@ export class ArSidebar {
     this.menuQuery.set('');
   }
 
-  private readonly router = inject(Router);
   private readonly url = toSignal(
     this.router.events.pipe(
       filter((e): e is NavigationEnd => e instanceof NavigationEnd),

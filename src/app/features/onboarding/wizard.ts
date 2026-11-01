@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   effect,
   inject,
@@ -132,8 +133,11 @@ import { errorMessage } from '../activities/activity-logic';
               </div>
             }
             @if (isMobileStep(step)) {
-              <div class="row">
-                @if (otpSent()) {
+              @if (otpSent()) {
+                <p class="card__d">
+                  A 6-digit verification code was sent to <strong>{{ mobile() }}</strong>. Enter the code below.
+                </p>
+                <div class="row">
                   <input
                     class="ar-field__input otp ar-mono"
                     inputmode="numeric"
@@ -142,17 +146,38 @@ import { errorMessage } from '../activities/activity-logic';
                     aria-label="6-digit verification code"
                     [value]="otpCode()"
                     (input)="otpCode.set($any($event.target).value)"
+                    (keydown.enter)="confirmOtp()"
                   />
                   <button
                     ar-button
                     type="button"
                     variant="primary"
-                    [disabled]="busy()"
+                    [disabled]="busy() || !otpCode().trim()"
                     (click)="confirmOtp()"
                   >
                     Confirm
                   </button>
-                } @else {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="busy() || resendCountdown() > 0"
+                    (click)="resendOtp()"
+                  >
+                    {{ resendCountdown() > 0 ? 'Resend code (' + resendCountdown() + 's)' : 'Resend code' }}
+                  </button>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="busy()"
+                    (click)="changeMobile()"
+                  >
+                    Change number
+                  </button>
+                </div>
+              } @else {
+                <div class="row">
                   <input
                     class="ar-field__input otp"
                     type="tel"
@@ -160,6 +185,7 @@ import { errorMessage } from '../activities/activity-logic';
                     aria-label="Mobile number"
                     [value]="mobile()"
                     (input)="mobile.set($any($event.target).value)"
+                    (keydown.enter)="sendOtp()"
                   />
                   <button
                     ar-button
@@ -170,8 +196,8 @@ import { errorMessage } from '../activities/activity-logic';
                   >
                     Send code
                   </button>
-                }
-              </div>
+                </div>
+              }
             }
             <div class="row">
               @if (step.route && !isVerifyStep(step)) {
@@ -454,6 +480,7 @@ export class ArOnboardingWizard {
   private readonly toasts = inject(ToastService);
   private readonly account = inject(AccountRecoveryService);
   protected readonly store = inject(OnboardingStore);
+  private readonly destroyRef = inject(DestroyRef);
 
   /** The address the confirmation link went to, once sent. */
   protected readonly emailSentTo = signal<string | null>(null);
@@ -465,6 +492,8 @@ export class ArOnboardingWizard {
   protected readonly otpSent = signal(false);
   protected readonly otpCode = signal('');
   protected readonly busy = signal(false);
+  protected readonly resendCountdown = signal(0);
+  private resendTimer: ReturnType<typeof setInterval> | null = null;
 
   protected readonly nextStep = computed(() => this.checklist().nextStep);
 
@@ -476,6 +505,13 @@ export class ArOnboardingWizard {
   private placed = false;
 
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      if (this.resendTimer) {
+        clearInterval(this.resendTimer);
+        this.resendTimer = null;
+      }
+    });
+
     // Open on the first step not yet done, once the checklist has loaded.
     effect(() => {
       const items = this.checklist().items;
@@ -599,7 +635,7 @@ export class ArOnboardingWizard {
     else this.summary.set(true);
   }
 
-  protected async sendOtp(): Promise<void> {
+  protected async sendOtp(isResend = false): Promise<void> {
     if (!this.mobile().trim()) {
       this.toasts.warning('Enter your mobile number with country code.', 'Verification');
       return;
@@ -608,9 +644,51 @@ export class ArOnboardingWizard {
     try {
       await this.store.startMobileVerification(this.mobile());
       this.otpSent.set(true);
+      this.startResendTimer(30);
+      if (isResend) {
+        this.toasts.success('Verification code resent.', 'Verification');
+      } else {
+        this.toasts.info('Verification code sent to ' + this.mobile().trim() + '.', 'Verification');
+      }
+    } catch (e: unknown) {
+      this.toasts.error(errorMessage(e, 'Could not send verification code.'), 'Verification');
     } finally {
       this.busy.set(false);
     }
+  }
+
+  protected async resendOtp(): Promise<void> {
+    if (this.resendCountdown() > 0 || this.busy()) return;
+    await this.sendOtp(true);
+  }
+
+  protected changeMobile(): void {
+    if (this.resendTimer) {
+      clearInterval(this.resendTimer);
+      this.resendTimer = null;
+    }
+    this.resendCountdown.set(0);
+    this.otpSent.set(false);
+    this.otpCode.set('');
+  }
+
+  private startResendTimer(seconds = 30): void {
+    if (this.resendTimer) {
+      clearInterval(this.resendTimer);
+    }
+    this.resendCountdown.set(seconds);
+    this.resendTimer = setInterval(() => {
+      const next = this.resendCountdown() - 1;
+      if (next <= 0) {
+        this.resendCountdown.set(0);
+        if (this.resendTimer) {
+          clearInterval(this.resendTimer);
+          this.resendTimer = null;
+        }
+      } else {
+        this.resendCountdown.set(next);
+      }
+    }, 1000);
   }
 
   protected async confirmOtp(): Promise<void> {
@@ -621,8 +699,14 @@ export class ArOnboardingWizard {
     this.busy.set(true);
     try {
       await this.store.confirmMobile(this.otpCode());
+      if (this.resendTimer) {
+        clearInterval(this.resendTimer);
+        this.resendTimer = null;
+      }
+      this.resendCountdown.set(0);
       this.otpSent.set(false);
       this.otpCode.set('');
+      this.toasts.success('Mobile number verified successfully.', 'Verification');
       this.advance();
     } catch {
       this.toasts.warning(
