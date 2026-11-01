@@ -46,9 +46,9 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-.segs {
   transition: width var(--ar-ease);
+  position: relative;
+  z-index: 10;
 }
 .segs__top {
   display: flex;
@@ -61,12 +61,212 @@
   margin: 0;
 }
 .segs--collapsed {
-  width: 52px;
-  padding: 16px 0;
+  width: 58px;
+  padding: 14px 0 16px;
   align-items: center;
+  overflow: visible;
+}
+.segs--collapsed .segs__top {
+  width: 100%;
+  padding: 0 8px;
+  justify-content: center;
+  gap: 4px;
+}
+.segs__collapsed-tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--ar-ink-400);
 }
 .segs--collapsed .segs__toggle ar-icon {
   transform: none;
+}
+
+.segs__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+.seg__icon {
+  flex: none;
+  color: var(--ar-ink-400);
+  transition: color var(--ar-ease);
+}
+.seg--on .seg__icon {
+  color: var(--ar-primary);
+}
+.seg__icon--muted {
+  color: var(--ar-ink-400);
+  opacity: 0.8;
+}
+
+/* Collapsed Interactive Segments */
+.segs__collapsed-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.seg-mini-wrap {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.seg-mini {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--ar-radius-control, 8px);
+  background: transparent;
+  color: var(--ar-ink-500);
+  cursor: pointer;
+  transition:
+    background var(--ar-ease),
+    color var(--ar-ease),
+    border-color var(--ar-ease);
+}
+
+.seg-mini:hover,
+.seg-mini:focus-visible {
+  background: var(--ar-bg-100);
+  color: var(--ar-ink-900);
+  outline: none;
+}
+
+.seg-mini--on {
+  background: var(--ar-blue-100);
+  color: var(--ar-primary);
+  border-color: color-mix(in srgb, var(--ar-primary) 25%, transparent);
+}
+
+.seg-mini__bar {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: transparent;
+}
+
+.seg-mini--on .seg-mini__bar {
+  background: var(--ar-primary);
+}
+
+.seg-mini__count {
+  font: 600 9.5px/1 var(--ar-font-mono, monospace);
+  color: var(--ar-ink-400);
+  letter-spacing: -0.02em;
+}
+
+.seg-mini--on .seg-mini__count {
+  color: var(--ar-blue-600);
+  font-weight: 700;
+}
+
+.seg-mini--suppressed {
+  color: var(--ar-ink-400);
+  cursor: help;
+}
+
+.seg-mini--suppressed:hover {
+  background: var(--ar-amber-100, #fef3c7);
+  color: var(--ar-warn-700, #b54708);
+}
+
+.segs__rule--mini {
+  width: 28px;
+  margin: 6px 0;
+}
+
+/* Floating interactive flyout card */
+.seg-mini__flyout {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  z-index: 1050;
+  min-width: 170px;
+  max-width: 240px;
+  padding: 8px 12px;
+  border-radius: var(--ar-radius-control, 8px);
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-200);
+  box-shadow: var(--ar-shadow-pop, 0 8px 24px rgba(0, 0, 0, 0.12));
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease,
+    visibility 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+}
+
+.seg-mini-wrap:hover .seg-mini__flyout,
+.seg-mini:focus-visible + .seg-mini__flyout {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+
+.seg-mini__flyout-name {
+  font: 600 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seg-mini__flyout-meta {
+  font: 400 11.5px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+
+.seg-mini__flyout-status {
+  font: 500 11px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+}
+
+.seg-mini__flyout-status--active {
+  color: var(--ar-primary);
+  font-weight: 600;
+}
+
+.seg-mini__flyout-breakdown {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ar-line-200);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.seg-mini__flyout-sub {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font: 400 11px var(--ar-font-sans);
+  color: var(--ar-ink-600);
 }
 
 /* "Fill in from" a visiting card photo or a vCard, in the New contact dialog. */

@@ -294,16 +294,11 @@ export class ArSidebar {
     }
   }
 
-  /** Icons-only mode, remembered per browser. */
-  protected readonly collapsed = signal(readCollapsed());
+  /** Icons-only mode, remembered per browser and shared with topbar breadcrumbs. */
+  protected readonly collapsed = this.drawer.collapsed;
 
   protected toggleCollapsed(): void {
-    this.collapsed.update((v) => !v);
-    try {
-      localStorage.setItem(COLLAPSED_KEY, this.collapsed() ? '1' : '0');
-    } catch {
-      /* storage blocked: the choice just won't persist */
-    }
+    this.drawer.toggleCollapsed();
   }
 
   protected async installApp(event: Event): Promise<void> {

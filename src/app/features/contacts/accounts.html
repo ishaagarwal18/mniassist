@@ -1,119 +1,325 @@
 <ar-topbar
   title="Accounts"
-  subtitle="Groups, companies & plants your contacts roll up to"
-  help="Group contacts by the company or plant they belong to. Put a plant under its company, and a company under its group, up to five levels — a parent's rollup can include everything beneath it."
+  subtitle="Corporate groups, companies &amp; manufacturing plants your contacts roll up to"
+  help="Group contacts by the company or plant they belong to. Put a plant under its company, and a company under its group, up to five levels — a parent's rollup includes aggregated pipeline value and contacts across its entire hierarchy."
 >
   @if (canCreate()) {
     <button ar-button variant="primary" icon="plus" (click)="openNew()">New account</button>
   }
 </ar-topbar>
 
-<div class="acc ar-scroll">
-  <div class="acc__bar">
-    <ar-search-box placeholder="Search accounts" (queryChange)="search($event)" />
-  </div>
+<div class="acc-page ar-scroll">
+  <!-- Executive KPI Overview Strip -->
+  <section class="acc-stats" aria-label="Account Overview Metrics">
+    <ar-stat-tile
+      label="Total Accounts"
+      [value]="stats().total.toLocaleString()"
+      [note]="stats().groups + ' corporate groups · ' + stats().subsidiaries + ' subsidiaries'"
+      tone="neutral"
+    />
+    <ar-stat-tile
+      label="Corporate Groups"
+      [value]="stats().groups.toLocaleString()"
+      note="Top-level parent entities"
+      tone="teal"
+    />
+    <ar-stat-tile
+      label="Plants &amp; Subsidiaries"
+      [value]="stats().subsidiaries.toLocaleString()"
+      note="Operating plants and facilities"
+      tone="amber"
+    />
+    <ar-stat-tile
+      label="Linked Contacts"
+      [value]="stats().totalContacts.toLocaleString()"
+      note="Across all accounts and plants"
+      tone="good"
+    />
+  </section>
 
-  @if (loading()) {
-    <p class="acc__empty">Loading…</p>
-  } @else if (rows().length === 0) {
-    <p class="acc__empty">
-      {{
-        searching()
-          ? 'No account matches that search.'
-          : 'No accounts yet. Group a few contacts under a plant or company.'
-      }}
-    </p>
-  }
-
-  @for (row of rows(); track row.account.id) {
-    <article
-      class="ac"
-      [class.ac--child]="!searching() && row.depth > 1"
-      [style.margin-left.px]="searching() ? 0 : (row.depth - 1) * 24"
-    >
-      <div class="ac__main">
-        <h2 class="ac__name">{{ row.account.name }}</h2>
-        <p class="ac__meta">
-          @if (row.account.industry) {
-            {{ row.account.industry }} ·
-          }
-          @if (row.account.city) {
-            {{ row.account.city }}
-            @if (row.account.state) {
-              , {{ row.account.state }}
-            }
-          }
-        </p>
-      </div>
-      @if (row.account.childCount > 0) {
-        <ar-chip tone="teal"
-          >{{ row.account.childCount }} subsidiar{{
-            row.account.childCount === 1 ? 'y' : 'ies'
-          }}</ar-chip
-        >
-      }
-      <!-- The count opens the account's people. -->
+  <!-- Filter Presets Bar -->
+  <div class="acc-controls">
+    <div class="acc-presets" role="tablist" aria-label="Account Filters">
       <button
         type="button"
-        class="ac__people"
-        [title]="'Show the contacts at ' + row.account.name"
-        (click)="openPeople(row.account, row.subtreeContacts !== row.account.contactCount)"
+        class="acc-preset-btn"
+        [class.acc-preset-btn--active]="activePreset() === 'all'"
+        (click)="setPreset('all')"
       >
-        <ar-chip tone="neutral"
-          >{{ row.account.contactCount }} contact{{ row.account.contactCount === 1 ? '' : 's' }}
-          @if (row.account.childCount > 0 && row.subtreeContacts !== row.account.contactCount) {
-            · {{ row.subtreeContacts }} in all
-          }
-        </ar-chip>
+        <span>All Accounts</span>
+        <span class="acc-preset-badge">{{ presetCounts().all }}</span>
       </button>
-      <div class="ac__actions">
-        <button ar-button variant="primary" (click)="openRollup(row.account)">Rollup</button>
-        @if (canView360()) {
-          <a
-            ar-button
-            variant="ghost"
-            title="Customer 360 for {{ row.account.name }}"
-            [routerLink]="['/contacts/accounts', row.account.id, '360']"
+      <button
+        type="button"
+        class="acc-preset-btn"
+        [class.acc-preset-btn--active]="activePreset() === 'groups'"
+        (click)="setPreset('groups')"
+      >
+        <span>Corporate Groups</span>
+        <span class="acc-preset-badge">{{ presetCounts().groups }}</span>
+      </button>
+      <button
+        type="button"
+        class="acc-preset-btn"
+        [class.acc-preset-btn--active]="activePreset() === 'subsidiaries'"
+        (click)="setPreset('subsidiaries')"
+      >
+        <span>Plants &amp; Subsidiaries</span>
+        <span class="acc-preset-badge">{{ presetCounts().subsidiaries }}</span>
+      </button>
+      <button
+        type="button"
+        class="acc-preset-btn"
+        [class.acc-preset-btn--active]="activePreset() === 'with-contacts'"
+        (click)="setPreset('with-contacts')"
+      >
+        <span>With Contacts</span>
+        <span class="acc-preset-badge">{{ presetCounts().withContacts }}</span>
+      </button>
+      <button
+        type="button"
+        class="acc-preset-btn"
+        [class.acc-preset-btn--active]="activePreset() === 'needs-contacts'"
+        (click)="setPreset('needs-contacts')"
+      >
+        <span>Needs Contacts</span>
+        <span class="acc-preset-badge acc-preset-badge--warn">{{ presetCounts().needsContacts }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Syncfusion Hierarchical TreeGrid -->
+  <ejs-treegrid
+    #treegrid
+    id="accounts-treegrid"
+    class="ar-grid acc-treegrid"
+    [dataSource]="treeData()"
+    idMapping="id"
+    parentIdMapping="parentId"
+    [treeColumnIndex]="0"
+    [allowPaging]="true"
+    [pageSettings]="pageSettings"
+    [allowSorting]="true"
+    [allowFiltering]="true"
+    [filterSettings]="filterSettings"
+    [toolbar]="toolbarOptions"
+    [allowExcelExport]="true"
+    (toolbarClick)="onToolbarClick($event)"
+    gridLines="Horizontal"
+    [enableHover]="true"
+    [allowSelection]="false"
+  >
+    <e-columns>
+      <e-column field="name" headerText="Account" minWidth="290">
+        <ng-template #template let-r>
+          <div class="ac-cell-name">
+            <div class="ac-cell-name__header">
+              <span class="ac-cell-name__title">{{ r.name }}</span>
+              @if (r.parentId === null) {
+                <span class="ac-type-pill ac-type-pill--group" title="Top-level Corporate Group">
+                  Group
+                </span>
+              } @else {
+                <span class="ac-type-pill ac-type-pill--sub" title="Subsidiary or plant under parent">
+                  Plant
+                </span>
+              }
+            </div>
+            @if (r.website) {
+              <a
+                class="ac-cell-name__web"
+                [href]="sanitizeUrl(r.website)"
+                target="_blank"
+                rel="noopener noreferrer"
+                (click)="$event.stopPropagation()"
+                [title]="r.website"
+              >
+                <ar-icon name="globe" [size]="12" />
+                <span>{{ r.website }}</span>
+              </a>
+            }
+          </div>
+        </ng-template>
+      </e-column>
+
+      <e-column field="industry" headerText="Industry" width="160">
+        <ng-template #template let-r>
+          @if (r.industry && r.industry !== '—') {
+            <span class="ac-industry-tag">{{ r.industry }}</span>
+          } @else {
+            <span class="ac-cell-muted">—</span>
+          }
+        </ng-template>
+      </e-column>
+
+      <e-column field="location" headerText="Location" width="160">
+        <ng-template #template let-r>
+          @if (r.location && r.location !== '—') {
+            <span class="ac-location-tag" [title]="r.location">{{ r.location }}</span>
+          } @else {
+            <span class="ac-cell-muted">—</span>
+          }
+        </ng-template>
+      </e-column>
+
+      <e-column field="childCount" headerText="Hierarchy" width="160">
+        <ng-template #template let-r>
+          @if (r.childCount > 0) {
+            <ar-chip tone="teal">
+              <ar-icon name="flow" [size]="12" />
+              {{ r.childCount }} subsidiar{{ r.childCount === 1 ? 'y' : 'ies' }}
+            </ar-chip>
+          } @else if (r.depth > 1) {
+            <span class="ac-level-badge">Level {{ r.depth }}</span>
+          } @else {
+            <span class="ac-cell-muted">Independent</span>
+          }
+        </ng-template>
+      </e-column>
+
+      <e-column field="contactCount" headerText="Contacts" width="180">
+        <ng-template #template let-r>
+          <button
+            type="button"
+            class="ac-contacts-btn"
+            [title]="'View all contacts at ' + r.name"
+            (click)="openPeople(r.account, r.subtreeContacts !== r.account.contactCount); $event.stopPropagation()"
           >
-            Customer 360
-          </a>
-        }
-        @if (canCreate() && row.depth < maxDepth) {
-          <button ar-button variant="ghost" (click)="openNew(row.account.id)">
-            Add subsidiary
+            <ar-chip [tone]="r.contactCount > 0 ? 'good' : 'neutral'">
+              <ar-icon name="contacts" [size]="13" />
+              {{ r.contactCount }} contact{{ r.contactCount === 1 ? '' : 's' }}
+              @if (r.childCount > 0 && r.subtreeContacts !== r.account.contactCount) {
+                <span class="ac-contacts-subcount">· {{ r.subtreeContacts }} total</span>
+              }
+            </ar-chip>
+          </button>
+        </ng-template>
+      </e-column>
+
+      <e-column headerText="Actions" width="340" textAlign="Right">
+        <ng-template #template let-r>
+          <div class="ac-row-actions" (click)="$event.stopPropagation()">
+            <button
+              ar-button
+              variant="primary"
+              size="sm"
+              title="Rollup financial &amp; pipeline metrics"
+              (click)="openRollup(r.account)"
+            >
+              <ar-icon name="analytics" [size]="13" />
+              Rollup
+            </button>
+            @if (canView360()) {
+              <a
+                ar-button
+                variant="ghost"
+                size="sm"
+                title="Customer 360 overview for {{ r.name }}"
+                [routerLink]="['/contacts/accounts', r.id, '360']"
+              >
+                <ar-icon name="contacts" [size]="13" />
+                360
+              </a>
+            }
+            @if (canCreate() && r.depth < maxDepth) {
+              <button
+                ar-button
+                variant="ghost"
+                size="sm"
+                title="Add plant or subsidiary under {{ r.name }}"
+                (click)="openNew(r.id)"
+              >
+                <ar-icon name="plus" [size]="13" />
+                Sub
+              </button>
+            }
+            @if (canUpdate()) {
+              <button
+                ar-button
+                variant="ghost"
+                size="sm"
+                title="Edit account details"
+                (click)="openEdit(r.account)"
+              >
+                <ar-icon name="edit" [size]="13" />
+              </button>
+            }
+            @if (canDelete()) {
+              <button
+                ar-button
+                variant="ghost"
+                size="sm"
+                class="btn--danger"
+                title="Delete account"
+                (click)="remove(r.account)"
+              >
+                <ar-icon name="trash" [size]="13" />
+              </button>
+            }
+          </div>
+        </ng-template>
+      </e-column>
+    </e-columns>
+    <ng-template #emptyRecordTemplate>
+      <div class="acc-empty">
+        <div class="acc-empty__icon">
+          <ar-icon name="flow" [size]="36" />
+        </div>
+        <p class="acc-empty__title">
+          {{ loading() ? 'Loading accounts…' : 'No accounts match the active filter.' }}
+        </p>
+        <p class="acc-empty__desc">
+          {{
+            loading()
+              ? 'Fetching account tree and corporate hierarchy…'
+              : 'Group companies, plants, and manufacturing facilities under your corporate accounts.'
+          }}
+        </p>
+        @if (!loading() && canCreate()) {
+          <button ar-button variant="primary" size="sm" icon="plus" (click)="openNew()">
+            New account
           </button>
         }
-        @if (canUpdate()) {
-          <button ar-button variant="ghost" (click)="openEdit(row.account)">Edit</button>
-        }
-        @if (canDelete()) {
-          <button ar-button variant="ghost" (click)="remove(row.account)">Delete</button>
-        }
       </div>
-    </article>
-  }
+    </ng-template>
+  </ejs-treegrid>
 </div>
 
+<!-- Modal Dialog: Create / Edit Account -->
 @if (editorOpen()) {
   <ar-dialog
     [title]="editingId() ? 'Edit account' : 'New account'"
     (dismiss)="editorOpen.set(false)"
   >
+    <!-- Organizational Hierarchy Placement Indicator -->
+    <div class="acc-hierarchy-hint">
+      @if (draft().parentId) {
+        <ar-icon name="flow" [size]="15" />
+        <span>Sits under parent: <strong>{{ parentAccountName(draft().parentId) }}</strong></span>
+      } @else {
+        <ar-icon name="shield" [size]="15" />
+        <span>Top-level placement: <strong>Corporate Group / Holding Entity</strong></span>
+      }
+    </div>
+
     <label class="ar-field">
-      <span class="ar-field__label">Name</span>
+      <span class="ar-field__label">Account name</span>
       <input
         required
         maxlength="256"
         class="ar-field__input"
+        placeholder="e.g. Bharat Heavy Forge Ltd."
         [value]="draft().name"
         (input)="patch('name', $any($event.target).value)"
       />
     </label>
+
     <div class="ar-field-row">
       <label class="ar-field">
         <span class="ar-field__label">Industry <span class="ar-field__opt">optional</span></span>
         <input
           class="ar-field__input"
+          placeholder="e.g. Precision Engineering"
           [value]="draft().industry"
           (input)="patch('industry', $any($event.target).value)"
         />
@@ -122,16 +328,19 @@
         <span class="ar-field__label">Website <span class="ar-field__opt">optional</span></span>
         <input
           class="ar-field__input"
+          placeholder="e.g. bharatforge.com"
           [value]="draft().website"
           (input)="patch('website', $any($event.target).value)"
         />
       </label>
     </div>
+
     <div class="ar-field-row">
       <label class="ar-field">
         <span class="ar-field__label">City <span class="ar-field__opt">optional</span></span>
         <input
           class="ar-field__input"
+          placeholder="e.g. Pune"
           [value]="draft().city"
           (input)="patch('city', $any($event.target).value)"
         />
@@ -140,27 +349,29 @@
         <span class="ar-field__label">State <span class="ar-field__opt">optional</span></span>
         <input
           class="ar-field__input"
+          placeholder="e.g. Maharashtra"
           [value]="draft().state"
           (input)="patch('state', $any($event.target).value)"
         />
       </label>
     </div>
+
     <label class="ar-field">
-      <span class="ar-field__label"
-        >Parent account <span class="ar-field__opt">optional</span></span
-      >
+      <span class="ar-field__label">Parent account <span class="ar-field__opt">optional</span></span>
       <select class="ar-field__input" (change)="patch('parentId', $any($event.target).value)">
-        <option value="" [selected]="!draft().parentId">None — top level</option>
+        <option value="" [selected]="!draft().parentId">None — top level corporate group</option>
         @for (o of parentOptions(); track o.id) {
           <option [value]="o.id" [selected]="o.id === draft().parentId">{{ o.name }}</option>
         }
       </select>
     </label>
+
     <label class="ar-field">
-      <span class="ar-field__label">Notes <span class="ar-field__opt">optional</span></span>
+      <span class="ar-field__label">Internal notes <span class="ar-field__opt">optional</span></span>
       <textarea
         class="ar-field__input"
         rows="3"
+        placeholder="Plant location details, operational tags, ERP customer codes…"
         [value]="draft().notes"
         (input)="patch('notes', $any($event.target).value)"
       ></textarea>
@@ -173,88 +384,133 @@
     <div dialogActions>
       <button ar-button variant="ghost" (click)="editorOpen.set(false)">Cancel</button>
       <button ar-button variant="primary" [disabled]="busy()" (click)="save()">
-        {{ busy() ? 'Saving…' : editingId() ? 'Save' : 'Create' }}
+        {{ busy() ? 'Saving…' : editingId() ? 'Save account' : 'Create account' }}
       </button>
     </div>
   </ar-dialog>
 }
 
+<!-- Modal Dialog: Account Rollup Intelligence & Pipeline -->
 @if (rollupOpen()) {
   <ar-dialog
-    [title]="(rollupFor()?.name || 'Account') + ' — rollup'"
+    [title]="(rollupFor()?.name || 'Account') + ' — Rollup Intelligence'"
+    width="min(720px, calc(100vw - 32px))"
     (dismiss)="rollupOpen.set(false)"
   >
     @if (rollup(); as r) {
       <div class="roll">
         @if ((r.subsidiaryCount ?? 0) > 0) {
-          <label class="roll__toggle">
-            <input
-              type="checkbox"
-              [checked]="includeSubsidiaries()"
-              (change)="toggleSubsidiaries($any($event.target).checked)"
-            />
-            Include {{ r.subsidiaryCount }} subsidiar{{ r.subsidiaryCount === 1 ? 'y' : 'ies' }}
-          </label>
+          <div class="roll-banner">
+            <label class="roll-toggle">
+              <input
+                type="checkbox"
+                class="roll-toggle__input"
+                [checked]="includeSubsidiaries()"
+                (change)="toggleSubsidiaries($any($event.target).checked)"
+              />
+              <div class="roll-toggle__label">
+                <strong>Include subsidiaries in rollup</strong>
+                <span>Aggregating metrics across {{ r.subsidiaryCount }} subsidiar{{ r.subsidiaryCount === 1 ? 'y' : 'ies' }}</span>
+              </div>
+            </label>
+          </div>
         }
+
         <div class="roll__grid">
           <div class="roll__stat">
-            <b>{{ r.contactCount }}</b
-            ><span>Contacts</span>
+            <span class="roll__stat-label">
+              <ar-icon name="contacts" [size]="14" />
+              Contacts
+            </span>
+            <b>{{ r.contactCount }}</b>
           </div>
           <div class="roll__stat">
-            <b>{{ r.openEnquiryCount }}</b
-            ><span>Open enquiries</span>
+            <span class="roll__stat-label">
+              <ar-icon name="enquiry" [size]="14" />
+              Open Enquiries
+            </span>
+            <b>{{ r.openEnquiryCount }}</b>
           </div>
           <div class="roll__stat">
-            <b>{{ r.wonEnquiryCount }}</b
-            ><span>Won</span>
+            <span class="roll__stat-label">
+              <ar-icon name="check" [size]="14" />
+              Won Deals
+            </span>
+            <b>{{ r.wonEnquiryCount }}</b>
           </div>
-          <div class="roll__stat">
-            <b>{{ inr(r.pipelineValueInPaise) }}</b
-            ><span>Pipeline value</span>
+          <div class="roll__stat roll__stat--highlight">
+            <span class="roll__stat-label">
+              <ar-icon name="billing" [size]="14" />
+              Pipeline Value
+            </span>
+            <b>{{ inr(r.pipelineValueInPaise) }}</b>
           </div>
         </div>
-        <p class="roll__act">Last activity: {{ when(r.lastActivityUtc) }}</p>
+
+        <div class="roll-act-badge">
+          <ar-icon name="clock" [size]="13" />
+          <span>Last activity: <strong>{{ when(r.lastActivityUtc) }}</strong></span>
+        </div>
 
         @if (breakdownRows(r).length > 0) {
-          <div class="roll__bd">
-            @for (row of breakdownRows(r); track row.stage) {
-              <span class="roll__chip">{{ row.stage }} · {{ row.count }}</span>
-            }
+          <div class="roll-section">
+            <span class="roll-section-title">Deal Stages Breakdown</span>
+            <div class="roll__bd">
+              @for (row of breakdownRows(r); track row.stage) {
+                <span class="roll__chip">
+                  <strong>{{ row.stage }}</strong> · {{ row.count }}
+                </span>
+              }
+            </div>
           </div>
         }
 
         @if (r.contacts && r.contacts.length > 0) {
-          <ul class="roll__contacts">
-            @for (c of r.contacts; track c.id) {
-              <li>
-                @if (canView360()) {
-                  <a
-                    class="roll__cn roll__cn--link"
-                    [routerLink]="['/contacts', c.id, '360']"
-                    (click)="rollupOpen.set(false)"
-                    >{{ c.displayName || c.waId }}</a
-                  >
-                } @else {
-                  <span class="roll__cn">{{ c.displayName || c.waId }}</span>
-                }
-                @if (r.includesSubsidiaries && c.accountName) {
-                  <span class="roll__cd">{{ c.accountName }}</span>
-                }
-                @if (c.designation) {
-                  <span class="roll__cd">{{ c.designation }}</span>
-                }
-              </li>
-            }
-          </ul>
+          <div class="roll-section">
+            <div class="roll-section-head">
+              <span class="roll-section-title">Key Contacts</span>
+              <span class="roll-section-count">({{ r.contacts.length }})</span>
+            </div>
+            <ul class="roll-contact-list">
+              @for (c of r.contacts; track c.id) {
+                <li class="roll-contact-item">
+                  <ar-avatar [name]="c.displayName || c.waId || 'Contact'" [size]="32" tone="teal" />
+                  <div class="roll-contact-info">
+                    @if (canView360()) {
+                      <a
+                        class="roll-contact-name roll-contact-name--link"
+                        [routerLink]="['/contacts', c.id, '360']"
+                        (click)="rollupOpen.set(false)"
+                      >
+                        {{ c.displayName || c.waId }}
+                      </a>
+                    } @else {
+                      <span class="roll-contact-name">{{ c.displayName || c.waId }}</span>
+                    }
+                    <div class="roll-contact-meta">
+                      @if (r.includesSubsidiaries && c.accountName) {
+                        <span class="roll-contact-tag">{{ c.accountName }}</span>
+                      }
+                      @if (c.designation) {
+                        <span>{{ c.designation }}</span>
+                      }
+                    </div>
+                  </div>
+                </li>
+              }
+            </ul>
+          </div>
         }
 
         @if (rollupFor(); as acc) {
-          <ar-erp-ledger [customerId]="acc.id" />
+          <div class="roll-section">
+            <span class="roll-section-title">ERP Ledger &amp; Transactions</span>
+            <ar-erp-ledger [customerId]="acc.id" />
+          </div>
         }
       </div>
     } @else {
-      <p class="acc__empty">Loading…</p>
+      <p class="acc__empty">Loading rollup intelligence…</p>
     }
 
     <div dialogActions>
@@ -263,52 +519,60 @@
   </ar-dialog>
 }
 
+<!-- Modal Dialog: Contacts at Account -->
 @if (peopleFor(); as acc) {
   <ar-dialog
     [title]="'Contacts at ' + acc.name"
-    width="min(640px, calc(100vw - 32px))"
+    width="min(660px, calc(100vw - 32px))"
     (dismiss)="peopleFor.set(null)"
   >
     @if (hasSubsidiaryPeople()) {
-      <label class="pp__subs">
-        <input
-          type="checkbox"
-          [checked]="peopleSubs()"
-          (change)="togglePeopleSubs($any($event.target).checked)"
-        />
-        Include contacts at its subsidiaries
-      </label>
+      <div class="pp-banner">
+        <label class="pp__subs">
+          <input
+            type="checkbox"
+            [checked]="peopleSubs()"
+            (change)="togglePeopleSubs($any($event.target).checked)"
+          />
+          <span>Include contacts at subsidiaries and affiliated plants</span>
+        </label>
+      </div>
     }
+
     @if (peopleLoading()) {
       <p class="pp__note">Loading contacts…</p>
     } @else if (peopleError(); as e) {
       <p class="pp__note pp__note--bad" role="alert">{{ e }}</p>
     } @else if (people().length === 0) {
-      <p class="pp__note">
-        Nobody is on this account yet. Open a contact on Contacts, choose this account in its
-        Account box, and save.
-      </p>
+      <div class="pp-empty">
+        <ar-icon name="contacts" [size]="32" />
+        <p class="pp-empty__text">Nobody is assigned to this account yet.</p>
+        <p class="pp-empty__sub">Open a contact under Contacts, choose this account, and save.</p>
+      </div>
     } @else {
       <ul class="pp">
         @for (p of people(); track p.id) {
           <li class="pp__row">
+            <ar-avatar [name]="p.displayName || p.waId || 'Contact'" [size]="36" tone="neutral" />
             <div class="pp__who">
               <span class="pp__name">{{ p.displayName || p.waId }}</span>
-              <span class="pp__sub">
-                {{ personLine(p) }}
-              </span>
+              <span class="pp__sub">{{ personLine(p) }}</span>
             </div>
             <div class="pp__reach">
               @if (p.waId) {
-                <a class="pp__link ar-mono" [href]="'https://wa.me/' + p.waId" target="_blank"
-                  >+{{ p.waId }}</a
-                >
+                <a class="pp-reach-link pp-reach-link--wa ar-mono" [href]="'https://wa.me/' + p.waId" target="_blank">
+                  <ar-icon name="phone" [size]="12" />
+                  +{{ p.waId }}
+                </a>
               }
               @if (p.emailAddress || p.attributes?.['email']; as mail) {
-                <a class="pp__link" [href]="'mailto:' + mail">{{ mail }}</a>
+                <a class="pp-reach-link" [href]="'mailto:' + mail">
+                  <ar-icon name="mail" [size]="12" />
+                  {{ mail }}
+                </a>
               }
               @if (p.city) {
-                <span class="pp__sub">{{ p.city }}</span>
+                <span class="pp-city">{{ p.city }}</span>
               }
             </div>
             <div class="pp__actions">
@@ -316,10 +580,13 @@
                 <a
                   ar-button
                   variant="ghost"
+                  size="sm"
+                  title="View contact Customer 360 profile"
                   [routerLink]="['/contacts', p.id, '360']"
                   (click)="peopleFor.set(null)"
-                  >360</a
                 >
+                  360
+                </a>
               }
             </div>
           </li>

@@ -180,10 +180,19 @@
     <div class="segs__top">
       @if (!segsCollapsed()) {
         <p class="ar-label segs__head">Segments</p>
+      } @else {
+        <span
+          class="segs__collapsed-tag"
+          [attr.aria-label]="'Segments: ' + activeSegmentName() + ' selected'"
+          [title]="'Filter by segment · Active: ' + activeSegmentName() + ' (' + count(segmentCount()) + ')'"
+        >
+          <ar-icon name="filter" [size]="14" />
+        </span>
       }
       <button
         type="button"
         class="ar-pane-toggle segs__toggle"
+        [class.segs__toggle--collapsed]="segsCollapsed()"
         [attr.aria-expanded]="!segsCollapsed()"
         [attr.aria-label]="segsCollapsed() ? 'Show segments' : 'Collapse segments'"
         [title]="segsCollapsed() ? 'Show segments' : 'Collapse segments'"
@@ -193,18 +202,21 @@
       </button>
     </div>
     @if (!segsCollapsed()) {
-      @for (s of segments(); track s.id) {
-        <button
-          class="seg"
-          type="button"
-          [class.seg--on]="s.id === activeSegment()"
-          [attr.aria-pressed]="s.id === activeSegment()"
-          (click)="activeSegment.set(s.id)"
-        >
-          <span class="seg__name">{{ s.name }}</span>
-          <span class="ar-mono seg__count">{{ count(s.count) }}</span>
-        </button>
-      }
+      <div class="segs__list">
+        @for (s of segments(); track s.id) {
+          <button
+            class="seg"
+            type="button"
+            [class.seg--on]="s.id === activeSegment()"
+            [attr.aria-pressed]="s.id === activeSegment()"
+            (click)="activeSegment.set(s.id)"
+          >
+            <ar-icon class="seg__icon" [name]="segmentIcon(s)" [size]="15" />
+            <span class="seg__name">{{ s.name }}</span>
+            <span class="ar-mono seg__count">{{ count(s.count) }}</span>
+          </button>
+        }
+      </div>
 
       <hr class="segs__rule" />
       <p class="ar-label segs__head">Suppressed</p>
@@ -214,13 +226,77 @@
         <p role="alert">Could not load suppression counts.</p>
         <button ar-button type="button" variant="ghost" (click)="retry()">Try again</button>
       } @else {
-        @for (s of suppression(); track s.id) {
-          <div class="seg seg--static">
-            <span class="seg__name">{{ s.name }}</span>
-            <span class="ar-mono seg__count">{{ count(s.count) }}</span>
+        <div class="segs__list">
+          @for (s of suppression(); track s.id) {
+            <div class="seg seg--static" [title]="s.name + ': ' + count(s.count)">
+              <ar-icon class="seg__icon seg__icon--muted" [name]="suppressionIcon(s)" [size]="14" />
+              <span class="seg__name">{{ s.name }}</span>
+              <span class="ar-mono seg__count">{{ count(s.count) }}</span>
+            </div>
+          }
+        </div>
+      }
+    } @else {
+      <!-- Collapsed Interactive Mode -->
+      <div class="segs__collapsed-list" role="toolbar" aria-label="Filter contacts by segment">
+        @for (s of segments(); track s.id) {
+          <div class="seg-mini-wrap">
+            <button
+              class="seg-mini"
+              type="button"
+              [class.seg-mini--on]="s.id === activeSegment()"
+              [attr.aria-pressed]="s.id === activeSegment()"
+              [attr.aria-label]="s.name + ': ' + count(s.count) + ' contacts'"
+              [title]="s.name + ': ' + count(s.count) + ' contacts' + (s.id === activeSegment() ? ' (Selected)' : '')"
+              (click)="activeSegment.set(s.id)"
+            >
+              <span class="seg-mini__bar" aria-hidden="true"></span>
+              <ar-icon [name]="segmentIcon(s)" [size]="16" />
+              <span class="seg-mini__count">{{ compactCount(s.count) }}</span>
+            </button>
+            <div class="seg-mini__flyout" role="tooltip">
+              <span class="seg-mini__flyout-name">{{ s.name }}</span>
+              <span class="seg-mini__flyout-meta">
+                {{ count(s.count) }} contacts
+              </span>
+              <span
+                class="seg-mini__flyout-status"
+                [class.seg-mini__flyout-status--active]="s.id === activeSegment()"
+              >
+                {{ s.id === activeSegment() ? '● Selected filter' : 'Click to filter' }}
+              </span>
+            </div>
           </div>
         }
-      }
+
+        <hr class="segs__rule segs__rule--mini" />
+
+        <!-- Collapsed Suppression indicator with breakdown flyout -->
+        <div class="seg-mini-wrap">
+          <div
+            class="seg-mini seg-mini--suppressed"
+            tabindex="0"
+            role="status"
+            [attr.aria-label]="'Suppressed: ' + count(suppressedTotal()) + ' contacts'"
+            [title]="'Suppressed: ' + count(suppressedTotal()) + ' contacts (opted out, invalid, blocked)'"
+          >
+            <ar-icon name="shield" [size]="16" />
+            <span class="seg-mini__count">{{ compactCount(suppressedTotal()) }}</span>
+          </div>
+          <div class="seg-mini__flyout" role="tooltip">
+            <span class="seg-mini__flyout-name">Suppressed Contacts</span>
+            <span class="seg-mini__flyout-meta">{{ count(suppressedTotal()) }} total</span>
+            <div class="seg-mini__flyout-breakdown">
+              @for (sub of suppression(); track sub.id) {
+                <div class="seg-mini__flyout-sub">
+                  <span>{{ sub.name }}</span>
+                  <span class="ar-mono">{{ count(sub.count) }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
     }
   </nav>
 
@@ -385,7 +461,7 @@
         </ejs-grid>
 
         <p class="table-pane__foot">
-          Showing {{ count(visible().length) }} of {{ count(segmentCount()) }} in this segment
+          Showing {{ count(visible().length) }} of {{ count(segmentCount()) }} in “{{ activeSegmentName() }}”
         </p>
       }
     </div>

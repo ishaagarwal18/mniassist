@@ -1,5 +1,26 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  ViewChild,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { PermissionService } from '@abp/ng.core';
+import {
+  ExcelExportService,
+  FilterService,
+  PageService,
+  PdfExportService,
+  ResizeService,
+  SortService,
+  ToolbarService,
+  TreeGridComponent,
+  TreeGridModule,
+} from '@syncfusion/ej2-angular-treegrid';
+import type { ClickEventArgs } from '@syncfusion/ej2-navigations';
 
 import {
   AccountRow,
@@ -13,14 +34,28 @@ import type { ContactDto } from '../../proxy/contacts/models';
 import { ContactService as ContactApi } from '../../proxy/contacts/contact.service';
 import { ContactService } from '../../core/services/contact.service';
 import { readApiError } from '../../core/util/api-error';
-import { firstValueFrom } from 'rxjs';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
+import { ArAvatar, ArButton, ArChip, ArDialog, ArIcon, ArStatTile } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ArErpLedger } from './erp-ledger';
 import { ConfirmService } from '../../core/ui/confirm.service';
-import { PermissionService } from '@abp/ng.core';
 import { grantedPolicy } from '../../core/auth/permission';
+import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
+import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
+import {
+  buildAccountTreeRows,
+  computeAccountStats,
+  computePresetCounts,
+  filterAccountTree,
+  sanitizeWebsiteUrl,
+  type AccountFilterPreset,
+  type AccountStats,
+  type AccountTreeRecord,
+  type PresetCounts,
+} from './accounts-tree.logic';
+
+// Register Syncfusion licence before any component constructs
+registerSyncfusionLicense();
 
 interface Draft {
   name: string;
@@ -44,18 +79,42 @@ const BLANK: Draft = {
 };
 
 /**
- * Company / plant grouping (M03-11), as a tree: a group owns companies, a company owns plants, up to five
- * levels. Several contacts on one deal roll up to their account, and a parent's rollup can include every
- * subsidiary beneath it — "how is the whole group doing" without adding the plants up by hand.
+ * Company / plant grouping (M03-11), displayed in a Syncfusion TreeGrid:
+ * a group owns companies, a company owns plants, up to five levels. Several contacts on
+ * one deal roll up to their account, and a parent's rollup can include every subsidiary
+ * beneath it — "how is the whole group doing" without adding the plants up by hand.
  */
 @Component({
   selector: 'ar-accounts',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox, ArErpLedger, ArSelect, RouterLink],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArIcon,
+    ArStatTile,
+    ArAvatar,
+    ArErpLedger,
+    ArSelect,
+    RouterLink,
+    TreeGridModule,
+  ],
+  providers: [
+    PageService,
+    SortService,
+    FilterService,
+    ToolbarService,
+    ExcelExportService,
+    PdfExportService,
+    ResizeService,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './accounts.html',
   styleUrl: './accounts.scss',
 })
 export class ArAccounts {
+  @ViewChild('treegrid') treegrid?: TreeGridComponent;
+
   private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
   private readonly store = inject(AccountStore);
@@ -75,6 +134,65 @@ export class ArAccounts {
   protected readonly peopleError = signal<string | null>(null);
   protected readonly peopleSubs = signal(false);
   protected readonly hasSubsidiaryPeople = signal(false);
+
+  // ---- TreeGrid settings, presets & state ---------------------------------------------
+  protected readonly activePreset = signal<AccountFilterPreset>('all');
+  protected readonly pageSettings = { pageSize: 20, pageSizes: [10, 20, 50, 100] };
+  protected readonly toolbarOptions = [
+    'Search',
+    'ExpandAll',
+    'CollapseAll',
+    'ExcelExport',
+    'CsvExport',
+  ];
+  protected readonly filterSettings = { type: 'Menu' as const };
+
+  constructor() {
+    ensureSyncfusionTheme('grid');
+  }
+
+  /** Full unfiltered hierarchical dataset */
+  protected readonly allTreeData = computed<AccountTreeRecord[]>(() =>
+    buildAccountTreeRows(this.store.all(), this.store.rows()),
+  );
+
+  /** Executive KPI metrics for top stats bar */
+  protected readonly stats = computed<AccountStats>(() =>
+    computeAccountStats(this.store.all()),
+  );
+
+  /** Counts for quick filter preset pills */
+  protected readonly presetCounts = computed<PresetCounts>(() =>
+    computePresetCounts(this.allTreeData()),
+  );
+
+  /** Active data bound to Syncfusion TreeGrid */
+  protected readonly treeData = computed<AccountTreeRecord[]>(() =>
+    filterAccountTree(this.allTreeData(), this.activePreset()),
+  );
+
+  protected setPreset(preset: AccountFilterPreset): void {
+    this.activePreset.set(preset);
+  }
+
+  protected onToolbarClick(args: ClickEventArgs): void {
+    const id = (args.item?.id ?? '').toLowerCase();
+    if (id.includes('excelexport')) {
+      void this.treegrid?.excelExport({ fileName: 'accounts.xlsx' });
+    } else if (id.includes('csvexport')) {
+      void this.treegrid?.csvExport({ fileName: 'accounts.csv' });
+    }
+  }
+
+  protected sanitizeUrl(url?: string): string {
+    return sanitizeWebsiteUrl(url);
+  }
+
+  protected parentAccountName(parentId: string): string {
+    if (!parentId) return 'None (Top-level)';
+    const match = this.store.all().find((a) => a.id === parentId);
+    return match?.name || parentId;
+  }
 
   protected openPeople(account: CustomerAccount, hasSubsidiaryPeople: boolean): void {
     this.peopleFor.set(account);
@@ -156,7 +274,7 @@ export class ArAccounts {
   });
 
   protected search(term: string): void {
-    this.store.filter.set(term);
+    this.treegrid?.search(term);
   }
 
   protected patch<K extends keyof Draft>(key: K, value: Draft[K]): void {

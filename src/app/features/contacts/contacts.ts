@@ -4,17 +4,22 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { grantedPolicy } from '../../core/auth/permission';
 import { AccountStore } from '../../core/services/account.store';
 import { ContactService } from '../../core/services/contact.service';
-import { ConsentSource, Contact } from '../../core/models/contact.model';
+import { ConsentSource, Contact, Segment } from '../../core/models/contact.model';
 import { DecisionRole } from '../../proxy/contacts';
 import { count } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
-import { ArAvatar, ArButton, ArChip, ArDialog, ArIcon, ArSearchBox } from '../../ui';
+import { ArAvatar } from '../../ui/avatar';
+import { ArButton } from '../../ui/button';
+import { ArChip, ChipTone } from '../../ui/chip';
+import { ArDialog } from '../../ui/dialog';
+import { ArIcon } from '../../ui/icon';
+import { ArSearchBox } from '../../ui/search-box';
 import { ArGrid } from '../../ui/grid';
 import { ArSelect } from '../../ui/select';
-import { ChipTone } from '../../ui/chip';
 import { ArSendReorderLink } from '../reorder/send-reorder-link';
 import { ArContactImport } from './contact-import-dialog';
 import { parseVCards } from './vcard';
+import { compactCount, segmentIcon, suppressionIcon } from './contacts-segments.logic';
 import { BusinessCardService } from '../../proxy/contacts';
 import { shrinkImage } from '../../core/util/image';
 import { persistedToggle } from '../../core/util/persisted-toggle';
@@ -225,6 +230,13 @@ export class ArContacts {
   }
 
   protected readonly count = count;
+  protected readonly compactCount = compactCount;
+  protected readonly segmentIcon = segmentIcon;
+  protected readonly suppressionIcon = suppressionIcon;
+
+  protected readonly activeSegmentName = computed(
+    () => this.segments().find((s) => s.id === this.activeSegment())?.name ?? 'Segment',
+  );
 
   // ---- New contact dialog ------------------------------------------------
 
