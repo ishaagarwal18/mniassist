@@ -8,7 +8,9 @@ import {
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ArSidebar } from './sidebar';
+import { ArRightSidebar } from './right-sidebar';
 import { NavDrawer } from './nav-drawer';
+import { PageContextService } from './page-context.service';
 import { ArSoftphoneBar } from './softphone-bar';
 import { ArWhatsAppCallBar } from './whatsapp-call-bar';
 import { ArToastHost } from './toast-host';
@@ -27,6 +29,7 @@ import { ConfirmService } from '../core/ui/confirm.service';
   imports: [
     RouterOutlet,
     ArSidebar,
+    ArRightSidebar,
     ArSoftphoneBar,
     ArWhatsAppCallBar,
     ArToastHost,
@@ -83,6 +86,15 @@ import { ConfirmService } from '../core/ui/confirm.service';
       }
       <div class="shell__content"><router-outlet /></div>
     </main>
+    <ar-right-sidebar />
+    @if (pageContext.drawerOpen()) {
+      <button
+        type="button"
+        class="shell__scrim"
+        aria-label="Close utilities menu"
+        (click)="pageContext.closeDrawer()"
+      ></button>
+    }
     @defer (on idle) {
       <ar-softphone-bar />
       <ar-whatsapp-call-bar />
@@ -194,10 +206,12 @@ import { ConfirmService } from '../core/ui/confirm.service';
 export class ArAppShell {
   protected readonly dialogs = inject(ConfirmService);
   protected readonly drawer = inject(NavDrawer);
+  protected readonly pageContext = inject(PageContextService);
 
   @HostListener('document:keydown.escape')
   protected closeDrawer(): void {
     this.drawer.close();
+    this.pageContext.closeDrawer();
   }
 
   protected readonly acting = inject(AgencyActingStore);

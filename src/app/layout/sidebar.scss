@@ -256,6 +256,12 @@
   border-left: 1px solid rgba(255, 255, 255, 0.06);
   transition: border-color var(--ar-ease);
 }
+.sb__group:not(:has(.sb__heading)) .sb__group-items {
+  margin-left: 0;
+  padding-left: 0;
+  border-left: none;
+  margin-bottom: 6px;
+}
 .sb__group--active .sb__group-items {
   border-left-color: rgba(56, 189, 248, 0.25);
 }

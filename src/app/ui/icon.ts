@@ -157,6 +157,11 @@ const ICONS = {
   close: [p('M5 5l10 10M15 5 5 15')],
   menu: [p('M3 5.5h14M3 10h14M3 14.5h14')],
   share: [c(14.5, 5, 2), c(5.5, 10, 2), c(14.5, 15, 2), p('M7.3 9.1l5.4-3.1M7.3 10.9l5.4 3.1')],
+  logout: [
+    p('M9 3H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4'),
+    p('M13 14l4-4-4-4'),
+    p('M17 10H8'),
+  ],
 } as const satisfies Record<string, readonly Shape[]>;
 
 export type IconName = keyof typeof ICONS;
