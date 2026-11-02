@@ -1,0 +1,176 @@
+<ar-topbar
+  title="New Enquiry"
+  subtitle="Log a new sales enquiry, attach customer requirements, and initiate pipeline tracking"
+  help="A board over your real sales pipeline — creating an enquiry enters it directly into the initial qualification stage of your sales pipeline."
+>
+  <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
+  <button
+    ar-button
+    type="button"
+    variant="primary"
+    icon="check"
+    [disabled]="busy()"
+    (click)="save()"
+  >
+    {{ busy() ? 'Creating…' : 'Create Enquiry' }}
+  </button>
+</ar-topbar>
+
+<div class="enquiry-form-page ar-scroll">
+  <div class="enquiry-form-container">
+    @if (error(); as err) {
+      <ar-banner tone="bad">{{ err }}</ar-banner>
+    }
+
+    <!-- Main Enquiry Setup Form -->
+    <form class="enquiry-form" (submit)="$event.preventDefault(); save()">
+      <!-- Card 1: Contact & Pipeline Selection -->
+      <ar-card heading="Customer Contact &amp; Sales Pipeline">
+        <div class="form-section-body">
+          <div class="form-grid">
+            <!-- Contact Picker -->
+            <div class="ar-field form-grid--col2">
+              <span class="ar-field__label">
+                Customer Contact <span class="ar-field__req">*</span>
+              </span>
+              <span class="ar-field__hint">
+                Search your directory by customer name or company. If they are not in your directory yet, you can add them directly below.
+              </span>
+              <div class="contact-picker-wrapper">
+                <ar-contact-picker (picked)="onContactPicked($event)" />
+              </div>
+            </div>
+
+            <!-- Pipeline Selection -->
+            <div class="ar-field form-grid--col2">
+              <label for="enquiry-pipeline" class="ar-field__label">
+                Target Sales Pipeline <span class="ar-field__req">*</span>
+              </label>
+              <span class="ar-field__hint">
+                The qualification workflow, stages, and probability tracking this enquiry will follow.
+              </span>
+              <select
+                id="enquiry-pipeline"
+                name="pipelineId"
+                required
+                class="ar-field__input"
+                [value]="draft().pipelineId"
+                (change)="patch('pipelineId', $any($event.target).value)"
+              >
+                @for (p of pipelines(); track p.id) {
+                  <option [value]="p.id" [selected]="p.id === draft().pipelineId">
+                    {{ p.name }}
+                  </option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+      </ar-card>
+
+      <!-- Card 2: Requirement & Commercial Scope -->
+      <ar-card heading="Requirement &amp; Commercial Scope">
+        <div class="form-section-body">
+          <div class="form-grid">
+            <!-- Enquiry Title -->
+            <div class="ar-field form-grid--col2">
+              <label for="enquiry-title" class="ar-field__label">
+                Enquiry Title <span class="ar-field__req">*</span>
+              </label>
+              <span class="ar-field__hint">
+                Brief reference describing the deal (e.g. <code>VFD retrofit — packing line 2</code> or <code>5-Axis CNC Spares Kit</code>).
+              </span>
+              <input
+                id="enquiry-title"
+                name="title"
+                type="text"
+                required
+                maxlength="256"
+                class="ar-field__input"
+                placeholder="e.g. VFD retrofit — packing line 2"
+                [value]="draft().title"
+                (input)="patch('title', $any($event.target).value)"
+              />
+            </div>
+
+            <!-- Detailed Requirement -->
+            <div class="ar-field form-grid--col2">
+              <label for="enquiry-requirement" class="ar-field__label">
+                Customer Requirement &amp; Specifications <span class="ar-field__opt">optional</span>
+              </label>
+              <span class="ar-field__hint">
+                Technical scope, application details, motor ratings, target delivery schedule, or customer pain points.
+              </span>
+              <textarea
+                id="enquiry-requirement"
+                name="requirement"
+                rows="4"
+                class="ar-field__input ar-field__textarea"
+                placeholder="e.g. Customer requires 50 HP ABB/Siemens drive panel retrofit with IP55 enclosure, bypass switchgear, and installation by month-end."
+                [value]="draft().requirement"
+                (input)="patch('requirement', $any($event.target).value)"
+              ></textarea>
+            </div>
+
+            <!-- Estimated Commercial Value -->
+            <div class="ar-field">
+              <label for="enquiry-value" class="ar-field__label">
+                Estimated Value (₹) <span class="ar-field__opt">optional</span>
+              </label>
+              <span class="ar-field__hint">Expected contract or order value in Rupees</span>
+              <input
+                id="enquiry-value"
+                name="valueRupees"
+                type="text"
+                inputmode="numeric"
+                class="ar-field__input"
+                placeholder="e.g. 2,50,000"
+                [value]="draft().valueRupees"
+                (input)="patch('valueRupees', $any($event.target).value)"
+              />
+            </div>
+
+            <!-- Lead Source -->
+            <div class="ar-field">
+              <label for="enquiry-source" class="ar-field__label">
+                Lead Source <span class="ar-field__req">*</span>
+              </label>
+              <span class="ar-field__hint">Where this commercial inquiry originated</span>
+              <select
+                id="enquiry-source"
+                name="source"
+                required
+                class="ar-field__input"
+                [value]="draft().source"
+                (change)="patchSource($any($event.target).value)"
+              >
+                @for (s of sources; track s.value) {
+                  <option [value]="s.value" [selected]="s.value === draft().source">
+                    {{ s.label }}
+                  </option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+      </ar-card>
+
+      <!-- Footer Actions -->
+      <div class="form-footer">
+        <button ar-button type="button" variant="ghost" (click)="cancel()">
+          Cancel
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          icon="check"
+          [disabled]="busy()"
+          (click)="save()"
+        >
+          {{ busy() ? 'Creating…' : 'Create Enquiry' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -218,6 +218,12 @@ export const routes: Routes = [
           import('./features/campaigns/campaign-builder').then((m) => m.ArCampaignBuilder),
       },
       {
+        path: 'campaigns/new',
+        title: 'New Campaign · MNI Assist',
+        loadComponent: () =>
+          import('./features/campaigns/campaign-form').then((m) => m.ArCampaignForm),
+      },
+      {
         path: 'templates',
         title: 'Templates · MNI Assist',
         loadComponent: () => import('./features/templates/templates').then((m) => m.ArTemplates),
@@ -268,6 +274,12 @@ export const routes: Routes = [
         path: 'enquiries',
         title: 'Enquiries · MNI Assist',
         loadComponent: () => import('./features/pipeline/enquiries').then((m) => m.ArEnquiries),
+      },
+      {
+        path: 'enquiries/new',
+        title: 'New Enquiry · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/enquiry-form').then((m) => m.ArEnquiryForm),
       },
       {
         path: 'enquiries/pipelines',

@@ -263,6 +263,19 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Use Pause or Resume while it runs. Results appear in Analytics.',
     ],
   },
+  'campaigns/new': {
+    benefits: [
+      'Create and name a new WhatsApp broadcast campaign draft.',
+      'Select verified sending numbers and compliant approved message templates.',
+      'Prepare template variables and audience targeting for pre-flight verification.',
+    ],
+    steps: [
+      'Give the campaign a descriptive internal name.',
+      'Select the WhatsApp business number to dispatch from.',
+      'Choose an approved message template registered for that number.',
+      'Click Create Draft to proceed to audience selection and variable mapping.',
+    ],
+  },
   templates: {
     benefits: [
       'Message customers outside the 24-hour reply window.',
@@ -344,6 +357,20 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Open a card to see its contact, calls, tasks, quotations and tickets.',
       'Click Advance → to move it to the next stage.',
       'Use Pipelines to switch to, or set up, a different sales process.',
+    ],
+  },
+  'enquiries/new': {
+    benefits: [
+      'Enter new sales opportunities directly into your active sales pipeline.',
+      'Link technical requirements and scope of supply directly to the customer contact.',
+      'Estimate commercial value in Rupees to automatically update funnel analytics.',
+    ],
+    steps: [
+      'Pick an existing customer contact or create a new contact inline.',
+      'Select the destination sales pipeline for deal qualification.',
+      'Enter a clear title describing the equipment or project scope.',
+      'Provide technical requirements, estimated value, and acquisition lead source.',
+      'Click Create Enquiry to place the deal into the opening pipeline stage.',
     ],
   },
   'enquiries/pipelines': {

@@ -4,9 +4,9 @@
   help="A campaign ties one channel, one approved template, one audience and a schedule together. Every send runs through pre-flight checks before anything actually goes out."
 >
   @if (canCreate()) {
-    <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+    <a ar-button variant="primary" icon="plus" [routerLink]="['/campaigns/new']">
       New campaign
-    </button>
+    </a>
   }
 </ar-topbar>
 

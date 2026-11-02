@@ -8,7 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DragEventArgs, KanbanModule } from '@syncfusion/ej2-angular-kanban';
 
 import { grantedPolicy } from '../../core/auth/permission';
@@ -48,6 +48,7 @@ const columnKey = (stageId: string | undefined, stage: string) => stageId ?? sta
     ArContactPicker,
     ArSelect,
     KanbanModule,
+    RouterLink,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './enquiries.html',
