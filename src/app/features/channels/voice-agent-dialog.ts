@@ -620,12 +620,11 @@ import { IntegrationService } from '../../proxy/integrations/integration.service
                 <label class="check"
                   ><input
                     type="checkbox"
-                    [checked]="(tools.functionIds ?? []).includes(fn.id)"
+                    [checked]="tools.functionIds.includes(fn.id)"
                     (change)="toggleFunction(fn.id, $any($event.target).checked)"
                     [disabled]="
                       saving() ||
-                      (!(tools.functionIds ?? []).includes(fn.id) &&
-                        (tools.functionIds ?? []).length >= 10)
+                      (!tools.functionIds.includes(fn.id) && tools.functionIds.length >= 10)
                     "
                   />
                   <code translate="no">{{ fn.name }}</code>
