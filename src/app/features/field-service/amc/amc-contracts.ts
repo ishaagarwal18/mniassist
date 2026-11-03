@@ -14,6 +14,7 @@ import {
   RenewAmcContractDto,
 } from '../../../proxy/field-service';
 import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { initialSearch } from '../../../core/util/customer-scope';
 
 const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
   {
@@ -1099,7 +1100,8 @@ export class AmcContractsComponent {
   readonly isLoading = signal<boolean>(false);
 
   // Filters
-  readonly searchQuery = signal<string>('');
+  /** Starts from `?q=` (Customer 360 links here for one customer). */
+  readonly searchQuery = signal<string>(initialSearch());
   readonly statusFilter = signal<string>('ALL');
 
   // Dialogs

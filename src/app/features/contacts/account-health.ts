@@ -16,6 +16,7 @@ import {
 } from '../../proxy/contacts/account-health.service';
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
+import { initialSearch } from '../../core/util/customer-scope';
 
 /** The original fixed rules: what a workspace that never tunes anything scores with. */
 const DEFAULT_WEIGHTS: HealthWeightsDto = {
@@ -257,7 +258,8 @@ const BAND_LABEL: Record<HealthBand, string> = {
             <div>
               <h2>AMC Renewals Forecast (Next {{ f.months }} Months)</h2>
               <p>
-                A data-driven forecast calculated from each renewal's stage, service satisfaction, and customer health score.
+                A data-driven forecast calculated from each renewal's stage, service satisfaction,
+                and customer health score.
                 @if (f.withoutValue) {
                   <span>· {{ f.withoutValue }} renewal(s) count as ₹0 pending contract value.</span>
                 }
@@ -293,19 +295,29 @@ const BAND_LABEL: Record<HealthBand, string> = {
                 "
               >
                 <div class="fc__track">
-                  <div class="fc__open" [style.height.%]="pct(m.openValueInPaise)" title="Open value"></div>
-                  <div class="fc__exp" [style.height.%]="pct(m.expectedValueInPaise)" title="Likely renewal value"></div>
+                  <div
+                    class="fc__open"
+                    [style.height.%]="pct(m.openValueInPaise)"
+                    title="Open value"
+                  ></div>
+                  <div
+                    class="fc__exp"
+                    [style.height.%]="pct(m.expectedValueInPaise)"
+                    title="Likely renewal value"
+                  ></div>
                 </div>
                 <span class="fc__v">{{ money(m.expectedValueInPaise) }}</span>
-                <span class="fc__m">{{ monthLabel(m.month) }} · {{ m.count }} AMC{{ m.count === 1 ? '' : 's' }}</span>
+                <span class="fc__m"
+                  >{{ monthLabel(m.month) }} · {{ m.count }} AMC{{ m.count === 1 ? '' : 's' }}</span
+                >
               </div>
             } @empty {
               <p class="ah__hint">No AMC agreements expire in this planning period.</p>
             }
           </div>
           <div class="fc__legend">
-            <span class="sw sw--exp"></span> Expected Likely
-            <span class="sw sw--open"></span> Total Open Exposure
+            <span class="sw sw--exp"></span> Expected Likely <span class="sw sw--open"></span> Total
+            Open Exposure
           </div>
         </section>
       }
@@ -324,7 +336,11 @@ const BAND_LABEL: Record<HealthBand, string> = {
           }
         </div>
         <div class="ah__search">
-          <ar-search-box placeholder="Search customer by name..." [query]="search()" (queryChange)="search.set($event)" />
+          <ar-search-box
+            placeholder="Search customer by name..."
+            [query]="search()"
+            (queryChange)="search.set($event)"
+          />
         </div>
       </div>
 
@@ -349,7 +365,11 @@ const BAND_LABEL: Record<HealthBand, string> = {
         <ul class="list">
           @for (h of visible(); track h.customerId) {
             <li class="acc">
-              <div class="acc__score" [class]="'acc__score acc__score--' + h.band" title="Health Score: {{ h.score }}/100">
+              <div
+                class="acc__score"
+                [class]="'acc__score acc__score--' + h.band"
+                title="Health Score: {{ h.score }}/100"
+              >
                 <span class="acc__score-num">{{ h.score }}</span>
                 <span class="acc__score-max">/100</span>
               </div>
@@ -367,15 +387,15 @@ const BAND_LABEL: Record<HealthBand, string> = {
                     }
                   </span>
                   <div class="acc__action-spacer"></div>
-                  <a ar-button variant="ghost" [routerLink]="customerUrl(h)">
-                    Customer 360 →
-                  </a>
+                  <a ar-button variant="ghost" [routerLink]="customerUrl(h)"> Customer 360 → </a>
                 </div>
 
                 <div class="reasons">
                   @for (r of h.reasons; track r.text) {
                     <span class="reason-pill" [class.reason-pill--neg]="r.points < 0">
-                      <strong class="ar-mono">{{ r.points > 0 ? '+' + r.points : r.points }}</strong>
+                      <strong class="ar-mono">{{
+                        r.points > 0 ? '+' + r.points : r.points
+                      }}</strong>
                       {{ r.text }}
                     </span>
                   }
@@ -745,7 +765,8 @@ export class ArAccountHealth {
   protected readonly rows = signal<AccountHealthDto[]>([]);
   protected readonly forecast = signal<RenewalForecastDto | null>(null);
   protected readonly band = signal<HealthBand | null>(null);
-  protected readonly search = signal('');
+  /** Starts from `?q=` (Customer 360 links here for one customer). */
+  protected readonly search = signal(initialSearch());
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);

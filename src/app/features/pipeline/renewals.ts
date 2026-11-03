@@ -24,6 +24,7 @@ import {
   upliftBasisPoints,
   upliftPercent,
 } from './renewal-logic';
+import { initialSearch } from '../../core/util/customer-scope';
 
 const day = 86_400_000;
 const iso = (days: number) => new Date(Date.now() + days * day).toISOString();
@@ -595,7 +596,8 @@ export class ArRenewals {
   protected readonly summary = signal<RenewalSummaryDto | null>(null);
   protected readonly loading = signal(true);
   protected readonly window = signal(90);
-  protected readonly query = signal('');
+  /** Starts from `?q=` (Customer 360 links here for one customer). */
+  protected readonly query = signal(initialSearch());
   protected readonly busy = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);

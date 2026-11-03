@@ -21,6 +21,8 @@ import { PermissionService } from '@abp/ng.core';
 import { PlanService } from '../core/services/plan.service';
 import { CurrentUserService } from '../core/services/current-user.service';
 import { canAccessNavItem } from '../core/auth/permission';
+import { CockpitOriginService } from './cockpit-origin.service';
+import { pathOf } from './cockpit-origin.logic';
 
 /**
  * Every screen's header: displays responsive breadcrumbs (e.g. "Customers -> Contacts").
@@ -44,7 +46,32 @@ import { canAccessNavItem } from '../core/auth/permission';
     <div class="tb__titles">
       <div class="tb__title-row">
         <nav class="tb__breadcrumb" aria-label="Breadcrumb">
-          @if (groupHeading(); as g) {
+          @if (cockpitCrumb(); as cc) {
+            <!-- Opened from Customer 360: the way back to that customer -->
+            <a
+              class="tb__crumb-link"
+              routerLink="/contacts"
+              [title]="i18n.t('Go to {0}', i18n.t('Contacts'))"
+            >
+              {{ i18n.t('Customers') }}
+            </a>
+            <span class="tb__crumb-sep" aria-hidden="true">
+              <ar-icon name="chevron" [size]="12" />
+            </span>
+            <a
+              class="tb__crumb-link tb__crumb-link--cockpit"
+              [routerLink]="cc.link"
+              [title]="i18n.t('Back to Customer 360')"
+            >
+              {{ i18n.t('Customer 360') }}
+              @if (cc.name) {
+                <span class="tb__crumb-name" translate="no">· {{ cc.name }}</span>
+              }
+            </a>
+            <span class="tb__crumb-sep" aria-hidden="true">
+              <ar-icon name="chevron" [size]="12" />
+            </span>
+          } @else if (groupHeading(); as g) {
             @if (g.toLowerCase() !== title().toLowerCase()) {
               <div class="tb__crumb-group-wrap">
                 @if (sidebarCollapsed()) {
@@ -222,6 +249,10 @@ import { canAccessNavItem } from '../core/auth/permission';
       display: flex;
       align-items: center;
       min-width: 0;
+    }
+    .tb__crumb-name {
+      font-weight: 600;
+      color: var(--ar-ink-800);
     }
     .tb__breadcrumb {
       display: inline-flex;
@@ -418,6 +449,7 @@ export class ArTopbar {
   private readonly permissions = inject(PermissionService, { optional: true });
   private readonly plan = inject(PlanService, { optional: true });
   private readonly account = inject(CurrentUserService, { optional: true });
+  private readonly cockpitOrigin = inject(CockpitOriginService);
 
   readonly title = input.required<string>();
   readonly subtitle = input<string | null>(null);
@@ -446,6 +478,14 @@ export class ArTopbar {
   protected readonly trail = computed(() =>
     resolveNavTrail(this.currentUrl() ?? '', this.title(), this.group(), NAV),
   );
+
+  /** Set when this screen was opened from the Customer 360 cockpit: the crumb that leads back to it. */
+  protected readonly cockpitCrumb = computed(() => {
+    const origin = this.cockpitOrigin.origin();
+    if (!origin || !this.router || pathOf(this.currentUrl() ?? '') !== origin.targetPath)
+      return null;
+    return { link: this.router.parseUrl(origin.cockpitUrl), name: origin.name };
+  });
 
   protected readonly groupHeading = computed(() => this.trail().groupHeading);
   protected readonly groupPrimaryRoute = computed(() => this.trail().groupPrimaryRoute);

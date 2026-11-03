@@ -25,6 +25,7 @@ import {
 } from './activity-logic';
 import { ArTaskDialog } from './task-dialog';
 import { recurrenceLabel } from './recurrence';
+import { initialSearch } from '../../core/util/customer-scope';
 
 /**
  * Tasks: what has to be done, grouped by when. Your own by default; those allowed can look across the team. Ticking a task
@@ -46,7 +47,8 @@ export class ArTasks {
 
   protected readonly scope = signal<'mine' | 'everyone'>('mine');
   protected readonly showDone = signal(false);
-  protected readonly filter = signal('');
+  /** Starts from `?q=` (Customer 360 links here for one customer). */
+  protected readonly filter = signal(initialSearch());
 
   protected readonly tasks = signal<CrmTaskDto[]>([]);
   protected readonly summary = signal<CrmTaskSummaryDto | null>(null);

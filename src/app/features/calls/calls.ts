@@ -34,6 +34,7 @@ import {
   isLive,
   needsOutcome,
 } from './call-logic';
+import { initialSearch } from '../../core/util/customer-scope';
 
 const STATUS_TONE: Record<VoiceCallStatus, ChipTone> = {
   [VoiceCallStatus.Queued]: 'amber',
@@ -64,7 +65,8 @@ export class ArCalls {
   protected readonly canSeeAll = grantedPolicy('AutoReach.Inbox.ViewAll', this.permissions);
   protected readonly scope = signal<'mine' | 'everyone'>('mine');
   protected readonly waiting = signal(false);
-  protected readonly search = signal('');
+  /** Starts from `?q=` (Customer 360 links here for one customer). */
+  protected readonly search = signal(initialSearch());
 
   protected readonly calls = signal<CallLogDto[]>([]);
   protected readonly total = signal(0);
@@ -92,11 +94,12 @@ export class ArCalls {
     const q = this.search().trim().toLowerCase();
     const list = this.calls();
     if (!q) return list;
-    return list.filter((c) =>
-      (c.contactName?.toLowerCase().includes(q) ?? false) ||
-      (c.contactNumber?.toLowerCase().includes(q) ?? false) ||
-      (c.enquiryReference?.toLowerCase().includes(q) ?? false) ||
-      (c.repName?.toLowerCase().includes(q) ?? false)
+    return list.filter(
+      (c) =>
+        (c.contactName?.toLowerCase().includes(q) ?? false) ||
+        (c.contactNumber?.toLowerCase().includes(q) ?? false) ||
+        (c.enquiryReference?.toLowerCase().includes(q) ?? false) ||
+        (c.repName?.toLowerCase().includes(q) ?? false),
     );
   });
 

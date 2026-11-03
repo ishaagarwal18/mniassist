@@ -18,6 +18,7 @@ import { ArSelect } from '../../ui/select';
 import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
 import type { DocumentDeliveryDto } from '../../proxy/library/models';
+import { initialSearch } from '../../core/util/customer-scope';
 
 interface Doc {
   id: string;
@@ -109,7 +110,8 @@ export class ArDocuments {
   protected readonly canUpdate = grantedPolicy('AutoReach.Library.Update', this.permissions);
   protected readonly canDelete = grantedPolicy('AutoReach.Library.Delete', this.permissions);
 
-  protected readonly query = signal('');
+  /** Starts from `?q=` (Customer 360 links here for one customer). */
+  protected readonly query = signal(initialSearch());
   private readonly mockDocs = signal<Doc[]>([...SEED]);
 
   // ---- Upload / Edit dialog ---------------------------------------------

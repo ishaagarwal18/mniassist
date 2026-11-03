@@ -28,6 +28,7 @@ import { ArTicketSettingsDialog } from './ticket-settings-dialog';
 import { ServiceTicketGateway } from './ticket-mock';
 import { ArContactPicker } from '../pipeline/contact-picker';
 import { PickerOption } from '../../core/services/pipeline.service';
+import { initialSearch } from '../../core/util/customer-scope';
 
 const STATUS_TONE: Record<TicketStatus, ChipTone> = {
   [TicketStatus.Open]: 'amber',
@@ -91,7 +92,8 @@ export class ArHelpdesk {
   protected readonly scope = signal<'mine' | 'everyone'>('mine');
   protected readonly status = signal<TicketStatus | null>(null);
   protected readonly overdueOnly = signal(false);
-  protected readonly filter = signal('');
+  /** Starts from `?q=` (Customer 360 links here for one customer). */
+  protected readonly filter = signal(initialSearch());
 
   protected readonly tickets = signal<ServiceTicketDto[]>([]);
   protected readonly summary = signal<ServiceTicketSummaryDto | null>(null);

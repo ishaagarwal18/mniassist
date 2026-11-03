@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -25,6 +26,9 @@ import {
 } from '../../proxy/sales/sales-enums';
 import { ArButton, ArChip, ArIcon, ArSearchBox, ArTabs, ChipTone } from '../../ui';
 import { ArCustomerActions } from './customer-actions';
+import { ArCustomer360Links } from './customer-360-links';
+import { CockpitOriginService } from '../../layout/cockpit-origin.service';
+import { scopeParams } from '../../core/util/customer-scope';
 import { ToastService } from '../../core/ui/toast.service';
 import {
   calculateAvailableCredit,
@@ -233,6 +237,7 @@ export type Customer360Tab = 'overview' | 'orders' | 'challans' | 'invoices' | '
     ArTabs,
     ArIcon,
     ArCustomerActions,
+    ArCustomer360Links,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './customer-360.html',
@@ -246,6 +251,7 @@ export class ArCustomer360 {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly cockpitOrigin = inject(CockpitOriginService);
 
   readonly data = signal<Customer360Dto | null>(environment.useMockData ? MOCK_CUSTOMER_360 : null);
   readonly activeTab = signal<Customer360Tab>('overview');
@@ -365,6 +371,23 @@ export class ArCustomer360 {
     );
   });
 
+  /** Opens a sales list on just this contact, or this whole account. */
+  protected readonly scopeParams = computed(() => {
+    const c = this.data();
+    if (!c) return {};
+    return c.isAccountView
+      ? scopeParams({
+          customerId: null,
+          accountId: c.accountId ?? null,
+          name: c.accountName ?? c.customerName,
+        })
+      : scopeParams({
+          customerId: c.contactId ?? c.id ?? null,
+          accountId: null,
+          name: c.customerName,
+        });
+  });
+
   readonly subtitle = computed(() => {
     const c = this.data();
     if (!c) return 'Directory & Customer Search';
@@ -373,6 +396,13 @@ export class ArCustomer360 {
   });
 
   constructor() {
+    // Screens opened from here show "Customer 360 · <name>" in their breadcrumb, leading back.
+    effect(() => {
+      const c = this.data();
+      this.cockpitOrigin.setCockpitName(
+        c ? (c.isAccountView ? c.accountName || c.customerName : c.customerName) : null,
+      );
+    });
     this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       const contactId = params.get('id');
       const accountId = params.get('accountId');

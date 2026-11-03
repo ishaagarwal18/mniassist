@@ -247,6 +247,9 @@
     </section>
 
     <!-- Dossier Navigation Tabs -->
+    <!-- Every related screen, opened on this customer -->
+    <ar-customer-360-links [customer]="c" />
+
     <nav class="c360-nav-tabs" aria-label="Customer 360 dossier sections">
       <button
         type="button"
@@ -481,6 +484,9 @@
             @if (moreThanShown(c)) {
               · (Latest 10 loaded)
             }
+            <a class="table-stats__all" routerLink="/sales/orders" [queryParams]="scopeParams()"
+              >View all in Sales orders →</a
+            >
           </div>
         </div>
 
@@ -560,6 +566,9 @@
           <div class="table-stats">
             Showing {{ filteredChallans().length }} of {{ c.recentChallans.length }} delivery
             challans
+            <a class="table-stats__all" routerLink="/sales/challans" [queryParams]="scopeParams()"
+              >View all in Delivery challans →</a
+            >
           </div>
         </div>
 
@@ -633,6 +642,9 @@
           </div>
           <div class="table-stats">
             Showing {{ filteredInvoices().length }} of {{ c.recentInvoices.length }} invoices
+            <a class="table-stats__all" routerLink="/sales/invoices" [queryParams]="scopeParams()"
+              >View all in Invoices →</a
+            >
           </div>
         </div>
 
@@ -717,6 +729,7 @@
           </div>
           <div class="table-stats">
             Showing {{ filteredAssets().length }} of {{ c.installedAssets.length }} equipment items
+            <a class="table-stats__all" routerLink="/installed-base">View installed base →</a>
           </div>
         </div>
 
@@ -782,6 +795,9 @@
         <div class="table-toolbar">
           <div class="table-stats">
             {{ c.openTickets.length }} ticket{{ c.openTickets.length === 1 ? '' : 's' }} recorded
+            <a class="table-stats__all" routerLink="/helpdesk" [queryParams]="{ q: c.customerName }"
+              >View in Helpdesk →</a
+            >
           </div>
         </div>
 

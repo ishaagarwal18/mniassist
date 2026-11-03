@@ -15,6 +15,7 @@ import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.se
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
 import { ToastService } from '../../../core/ui/toast.service';
+import { CustomerScope, readCustomerScope } from '../../../core/util/customer-scope';
 import { PickerOption } from '../../../core/services/pipeline.service';
 import { errorMessage } from '../../activities/activity-logic';
 import { ArContactPicker } from '../../pipeline/contact-picker';
@@ -173,6 +174,14 @@ const MOCK_ORDERS: SalesOrderDto[] = [
     </ar-topbar>
 
     <div class="orders-shell">
+      @if (scope(); as sc) {
+        <p class="scope-bar" role="status">
+          Showing only {{ sc.name || 'this customer' }}'s orders.
+          <button type="button" class="scope-bar__all" (click)="clearScope()">
+            Show all orders
+          </button>
+        </p>
+      }
       @if (loadError(); as e) {
         <p class="load-error" role="alert">
           {{ e }}
@@ -551,6 +560,23 @@ const MOCK_ORDERS: SalesOrderDto[] = [
   `,
   styles: [
     `
+      .scope-bar {
+        margin: 0;
+        padding: 0.6rem 0.9rem;
+        border: 1px solid var(--ar-line-200);
+        border-radius: 8px;
+        background: var(--ar-blue-100, #eff6ff);
+        font-size: 0.8125rem;
+      }
+      .scope-bar__all {
+        margin-left: 0.5rem;
+        background: none;
+        border: 0;
+        padding: 0;
+        color: var(--ar-primary, #0284c7);
+        font-weight: 600;
+        cursor: pointer;
+      }
       .load-error {
         margin: 0;
         padding: 0.75rem 1rem;
@@ -831,6 +857,8 @@ export class ArSalesOrders {
   private readonly invoiceService = inject(SalesInvoiceService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  /** Opened from Customer 360 for one customer or account: only their orders. */
+  protected readonly scope = signal<CustomerScope | null>(readCustomerScope());
 
   readonly SalesOrderStatus = SalesOrderStatus;
 
@@ -896,17 +924,29 @@ export class ArSalesOrders {
     }
   }
 
+  protected clearScope(): void {
+    this.scope.set(null);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    this.loadOrders();
+  }
+
   loadOrders() {
     if (!environment.useMockData) {
-      this.orderService.getList({ maxResultCount: 100 }).subscribe({
-        next: (res) => {
-          this.orders.set(res?.items ?? []);
-          this.loadError.set(null);
-        },
-        error: (e: unknown) => {
-          this.loadError.set(errorMessage(e, 'Sales orders could not be loaded.'));
-        },
-      });
+      this.orderService
+        .getList({
+          maxResultCount: 100,
+          customerId: this.scope()?.customerId ?? undefined,
+          customerAccountId: this.scope()?.accountId ?? undefined,
+        })
+        .subscribe({
+          next: (res) => {
+            this.orders.set(res?.items ?? []);
+            this.loadError.set(null);
+          },
+          error: (e: unknown) => {
+            this.loadError.set(errorMessage(e, 'Sales orders could not be loaded.'));
+          },
+        });
     }
   }
 

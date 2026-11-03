@@ -81,4 +81,6 @@ export interface GetDeliveryChallansInput extends PagedAndSortedResultRequestDto
   type?: DeliveryChallanType;
   salesOrderId?: string;
   customerId?: string;
+  /** Every challan for the account's contacts. */
+  customerAccountId?: string;
 }

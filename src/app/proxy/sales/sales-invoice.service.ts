@@ -25,6 +25,7 @@ export class SalesInvoiceService {
           status: input.status,
           kind: input.kind,
           customerId: input.customerId,
+          customerAccountId: input.customerAccountId,
           salesOrderId: input.salesOrderId,
           sorting: input.sorting,
           skipCount: input.skipCount,

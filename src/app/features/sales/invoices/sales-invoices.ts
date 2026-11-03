@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastService } from '../../../core/ui/toast.service';
+import { CustomerScope, readCustomerScope } from '../../../core/util/customer-scope';
 import { errorMessage } from '../../activities/activity-logic';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
@@ -180,6 +181,14 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
     }
 
     <div class="invoices-shell">
+      @if (scope(); as sc) {
+        <p class="scope-bar" role="status">
+          Showing only {{ sc.name || 'this customer' }}'s invoices.
+          <button type="button" class="scope-bar__all" (click)="clearScope()">
+            Show all invoices
+          </button>
+        </p>
+      }
       @if (loadError(); as e) {
         <p class="load-error" role="alert">
           {{ e }}
@@ -532,6 +541,23 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
   `,
   styles: [
     `
+      .scope-bar {
+        margin: 0;
+        padding: 0.6rem 0.9rem;
+        border: 1px solid var(--ar-line-200);
+        border-radius: 8px;
+        background: var(--ar-blue-100, #eff6ff);
+        font-size: 0.8125rem;
+      }
+      .scope-bar__all {
+        margin-left: 0.5rem;
+        background: none;
+        border: 0;
+        padding: 0;
+        color: var(--ar-primary, #0284c7);
+        font-weight: 600;
+        cursor: pointer;
+      }
       .load-error {
         margin: 0;
         padding: 0.75rem 1rem;
@@ -777,6 +803,8 @@ export class ArSalesInvoices {
   private readonly invoiceService = inject(SalesInvoiceService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  /** Opened from Customer 360 for one customer or account: only their invoices. */
+  protected readonly scope = signal<CustomerScope | null>(readCustomerScope());
 
   readonly SalesInvoiceStatus = SalesInvoiceStatus;
   readonly SalesInvoiceKind = SalesInvoiceKind;
@@ -849,17 +877,29 @@ export class ArSalesInvoices {
     );
   }
 
+  protected clearScope(): void {
+    this.scope.set(null);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    this.loadInvoices();
+  }
+
   loadInvoices() {
     if (!environment.useMockData) {
-      this.invoiceService.getList({ maxResultCount: 100 }).subscribe({
-        next: (res) => {
-          this.invoices.set(res?.items ?? []);
-          this.loadError.set(null);
-        },
-        error: (e: unknown) => {
-          this.loadError.set(errorMessage(e, 'Invoices could not be loaded.'));
-        },
-      });
+      this.invoiceService
+        .getList({
+          maxResultCount: 100,
+          customerId: this.scope()?.customerId ?? undefined,
+          customerAccountId: this.scope()?.accountId ?? undefined,
+        })
+        .subscribe({
+          next: (res) => {
+            this.invoices.set(res?.items ?? []);
+            this.loadError.set(null);
+          },
+          error: (e: unknown) => {
+            this.loadError.set(errorMessage(e, 'Invoices could not be loaded.'));
+          },
+        });
     }
   }
 

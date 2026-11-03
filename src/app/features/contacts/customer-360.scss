@@ -842,3 +842,14 @@
   color: var(--ar-red-600);
   background: var(--ar-red-100);
 }
+
+.table-stats__all {
+  margin-left: 0.5rem;
+  color: var(--ar-blue-600);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

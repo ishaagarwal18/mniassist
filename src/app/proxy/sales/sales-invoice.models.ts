@@ -119,4 +119,6 @@ export interface GetSalesInvoicesInput extends PagedAndSortedResultRequestDto {
   kind?: SalesInvoiceKind;
   customerId?: string;
   salesOrderId?: string;
+  /** Every invoice for the account's contacts. */
+  customerAccountId?: string;
 }

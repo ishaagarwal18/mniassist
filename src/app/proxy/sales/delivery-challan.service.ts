@@ -26,6 +26,7 @@ export class DeliveryChallanService {
           type: input.type,
           salesOrderId: input.salesOrderId,
           customerId: input.customerId,
+          customerAccountId: input.customerAccountId,
           sorting: input.sorting,
           skipCount: input.skipCount,
           maxResultCount: input.maxResultCount,
