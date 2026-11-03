@@ -8,7 +8,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
@@ -27,12 +27,14 @@ import {
 } from '../../core/services/campaign.service';
 import { ChannelService } from '../../core/services/channel.service';
 import { count, inr } from '../../core/util/format';
+import { CockpitOriginService } from '../../layout/cockpit-origin.service';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
+import { ArCampaignLinks } from './campaign-links';
 import { ArCampaignSetup } from './campaign-setup';
 
 const STATE_TONE: Record<CState, ChipTone> = {
@@ -52,7 +54,16 @@ const STATE_TONE: Record<CState, ChipTone> = {
  */
 @Component({
   selector: 'ar-campaign-builder',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, RouterLink, ArCampaignSetup],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArSelect,
+    RouterLink,
+    ArCampaignSetup,
+    ArCampaignLinks,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './campaign-builder.html',
   styleUrl: './campaign-builder.scss',
@@ -62,6 +73,8 @@ export class ArCampaignBuilder {
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(CampaignStore);
+  private readonly router = inject(Router);
+  private readonly cockpitOrigin = inject(CockpitOriginService);
   protected readonly channels = inject(ChannelService).channels;
 
   protected readonly canCreate = grantedPolicy('AutoReach.Campaigns.Create', this.permissions);
@@ -143,7 +156,7 @@ export class ArCampaignBuilder {
     try {
       const id = await this.store.create(this.newName(), this.newChannel(), this.newTemplate());
       this.dialogOpen.set(false);
-      this.openId.set(id);
+      this.setOpen(id);
       this.preflight.set(null);
       this.report.set(null);
     } catch (e: unknown) {
@@ -154,6 +167,24 @@ export class ArCampaignBuilder {
   }
 
   protected readonly openId = signal<string | null>(null);
+
+  /**
+   * Opens (or closes) one campaign and keeps it in the URL (`?open=<id>`), so a screen opened from its links shows
+   * "Campaign · <name>" in the breadcrumb and leads back to it open.
+   */
+  private setOpen(id: string | null): void {
+    this.openId.set(id);
+    const name = id ? (this.campaigns().find((c) => c.id === id)?.name ?? null) : null;
+    void this.router
+      .navigate([], { queryParams: { open: id }, queryParamsHandling: 'merge', replaceUrl: true })
+      .then(() => this.cockpitOrigin.setCockpitName(name));
+  }
+
+  /** "Sales · +91 98200 00000": the number a campaign sends from, when it is in the list of numbers. */
+  protected channelName(c: Campaign): string | null {
+    const ch = this.channels().find((x) => x.id === c.channelId);
+    return ch ? `${ch.displayName} · ${ch.displayPhone}` : null;
+  }
 
   /** A link can open one campaign straight away: /campaigns?open={id} (Campaign results uses it). */
   private pendingOpen: string | null = inject(ActivatedRoute).snapshot.queryParamMap.get('open');
@@ -194,10 +225,10 @@ export class ArCampaignBuilder {
 
   protected async toggle(c: Campaign): Promise<void> {
     if (this.openId() === c.id) {
-      this.openId.set(null);
+      this.setOpen(null);
       return;
     }
-    this.openId.set(c.id);
+    this.setOpen(c.id);
     this.preflight.set(null);
     this.report.set(null);
     this.error.set(null);
@@ -259,7 +290,7 @@ export class ArCampaignBuilder {
     this.error.set(null);
     try {
       await fn();
-      this.openId.set(null);
+      this.setOpen(null);
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'The action failed.');
     } finally {
@@ -302,7 +333,7 @@ export class ArCampaignBuilder {
       await this.store.delete(c.id);
       this.toasts.success(`Campaign "${c.name}" deleted`);
       if (this.openId() === c.id) {
-        this.openId.set(null);
+        this.setOpen(null);
       }
     } catch (e: unknown) {
       this.toasts.error(e instanceof Error ? e.message : 'Could not delete campaign');

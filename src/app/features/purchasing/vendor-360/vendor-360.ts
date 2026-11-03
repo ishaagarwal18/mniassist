@@ -1,9 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
+import { CockpitOriginService } from '../../../layout/cockpit-origin.service';
 import {
   Gstr2bMatchStatus,
   MsmeClassification,
@@ -16,6 +26,8 @@ import {
   GrnStatus,
 } from '../../../proxy/purchasing';
 import { ArButton, ArChip, ChipTone } from '../../../ui';
+import { ArVendor360Links } from './vendor-360-links';
+import { vendorParams } from './vendor-360-links.logic';
 
 const MOCK_VENDORS_360: Vendor360Dto[] = [
   {
@@ -40,6 +52,10 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
     msmeOverdueInPaise: 0,
     leadDays: 14,
     qualityAcceptancePercent: 98.6,
+    totalPurchaseOrdersCount: 2,
+    totalGoodsReceiptNotesCount: 1,
+    totalVendorBillsCount: 1,
+    totalDebitNotesCount: 1,
     recentPurchaseOrders: [
       {
         id: 'po-101',
@@ -168,6 +184,10 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
     msmeOverdueInPaise: 420_000_00, // Overdue > 45 days
     leadDays: 7,
     qualityAcceptancePercent: 92.5,
+    totalPurchaseOrdersCount: 1,
+    totalGoodsReceiptNotesCount: 1,
+    totalVendorBillsCount: 1,
+    totalDebitNotesCount: 1,
     recentPurchaseOrders: [
       {
         id: 'po-099',
@@ -254,7 +274,7 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
   standalone: true,
   selector: 'ar-vendor-360',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip],
+  imports: [CommonModule, FormsModule, RouterLink, ArTopbar, ArButton, ArChip, ArVendor360Links],
   template: `
     <ar-topbar
       title="Vendor 360 Cockpit"
@@ -263,18 +283,33 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
       <div class="topbar-actions">
         <select
           class="supplier-selector"
+          aria-label="Supplier"
           [ngModel]="currentVendorId()"
           (ngModelChange)="onVendorChange($event)"
         >
-          <option *ngFor="let v of allVendors()" [value]="v.id">
-            {{ v.name }} ({{ v.city }}, {{ v.state }})
+          <option *ngFor="let s of suppliers()" [value]="s.id" translate="no">
+            {{ s.name }}{{ s.detail ? ' (' + s.detail + ')' : '' }}
           </option>
         </select>
-        <button ar-button="primary" (click)="goToInwardGate()">+ Inward GRN</button>
+        <button ar-button="primary" [disabled]="!vendor()" (click)="goToInwardGate()">
+          + Inward GRN
+        </button>
       </div>
     </ar-topbar>
 
+    <div class="page-content" *ngIf="!vendor()">
+      <p class="load-error" role="alert" *ngIf="loadError() as e">{{ e }}</p>
+      <p class="empty-state" *ngIf="!loadError() && loaded() && suppliers().length === 0">
+        No suppliers yet. Add one on the
+        <a routerLink="/purchasing" [queryParams]="{ tab: 'suppliers' }">Purchasing</a> page.
+      </p>
+      <p class="empty-state" *ngIf="!loadError() && (!loaded() || suppliers().length > 0)">
+        Loading supplier…
+      </p>
+    </div>
+
     <div class="page-content" *ngIf="vendor() as v">
+      <p class="load-error" role="alert" *ngIf="loadError() as e">{{ e }}</p>
       <!-- Supplier Profile Header -->
       <section class="vendor-profile-card">
         <div class="vendor-identity">
@@ -300,7 +335,7 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
               >
             </div>
             <div class="contact-line">
-              <span>📍 {{ v.address }}, {{ v.city }}, {{ v.state }} - {{ v.pincode }}</span>
+              <span>📍 {{ addressLine(v) || 'No address' }}</span>
               <span>📞 {{ v.phone || 'No phone' }}</span>
               <span>✉️ {{ v.email || 'No email' }}</span>
             </div>
@@ -309,11 +344,21 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
 
         <div class="banking-box">
           <span class="box-label">Disbursement Bank Account</span>
-          <strong>{{ v.bankName || 'HDFC Bank Ltd' }}</strong>
-          <span class="font-mono">A/C: {{ v.bankAccountNumber || '50200081729381' }}</span>
-          <span class="font-mono">IFSC: {{ v.bankIfscCode || 'HDFC0001092' }}</span>
+          <ng-container *ngIf="v.bankName || v.bankAccountNumber; else noBank">
+            <strong>{{ v.bankName }}</strong>
+            <span class="font-mono">A/C: {{ v.bankAccountNumber || '—' }}</span>
+            <span class="font-mono">IFSC: {{ v.bankIfscCode || '—' }}</span>
+          </ng-container>
+          <ng-template #noBank><span class="sub-text">Not recorded</span></ng-template>
           <span class="lead-time"
-            >Avg Lead Time: <strong>{{ v.leadDays }} days</strong></span
+            >Avg Lead Time:
+            <strong>{{ v.leadDays != null ? v.leadDays + ' days' : 'Not set' }}</strong></span
+          >
+          <a
+            class="table-stats__all"
+            routerLink="/purchasing"
+            [queryParams]="{ tab: 'suppliers', edit: v.id }"
+            >Edit supplier →</a
           >
         </div>
       </section>
@@ -321,7 +366,15 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
       <!-- MSME Statutory Warning Banner if Overdue -->
       <section class="msme-alert-banner" *ngIf="v.msmeOverdueInPaise > 0">
         <div class="alert-icon">⚠️</div>
-        <div class="alert-text">
+        <div class="alert-text" *ngIf="v.msmeCategory === MsmeClassification.NotRegistered">
+          <strong>Bills unpaid for over 45 days:</strong>
+          <span>
+            <strong>₹{{ v.msmeOverdueInPaise / 100 | number: '1.2-2' }}</strong> is still due on
+            bills older than 45 days. If this supplier is an MSME, Section 15 of the MSMED Act
+            applies.
+          </span>
+        </div>
+        <div class="alert-text" *ngIf="v.msmeCategory !== MsmeClassification.NotRegistered">
           <strong>MSME Section 15 Statutory Overdue Alert:</strong>
           <span>
             Bills totaling <strong>₹{{ v.msmeOverdueInPaise / 100 | number: '1.2-2' }}</strong> have
@@ -329,7 +382,9 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
             repo rate is applicable under Section 16 of the MSMED Act.
           </span>
         </div>
-        <button ar-button="danger" (click)="goToBills()">Clear Overdue Bills</button>
+        <a ar-button="danger" routerLink="/purchasing/bills" [queryParams]="scope()"
+          >Clear Overdue Bills</a
+        >
       </section>
 
       <!-- KPI Row -->
@@ -359,6 +414,9 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
           <span class="sub">Accepted vs Rejected across GRNs</span>
         </div>
       </section>
+
+      <!-- Every related screen, opened on this supplier -->
+      <ar-vendor-360-links [vendor]="v" />
 
       <!-- Tabs Row -->
       <section class="tabs-nav">
@@ -439,7 +497,12 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
                 <ar-chip [tone]="billTone(b.status)">{{ billLabel(b.status) }}</ar-chip>
               </td>
               <td class="actions-col">
-                <button ar-button="ghost" (click)="goToBills()">View in Bills</button>
+                <a
+                  ar-button="ghost"
+                  routerLink="/purchasing/bills"
+                  [queryParams]="recordParams(b.id)"
+                  >Open bill</a
+                >
               </td>
             </tr>
             <tr *ngIf="v.recentVendorBills.length === 0">
@@ -447,6 +510,12 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
             </tr>
           </tbody>
         </table>
+        <div class="table-stats">
+          Showing {{ v.recentVendorBills.length }} of {{ v.totalVendorBillsCount }}
+          <a class="table-stats__all" routerLink="/purchasing/bills" [queryParams]="scope()"
+            >View all in Vendor bills →</a
+          >
+        </div>
       </section>
 
       <!-- Tab Content 2: GRNs -->
@@ -461,6 +530,7 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
               <th>Vehicle / Logistics</th>
               <th>QC Status</th>
               <th>Status</th>
+              <th class="actions-col">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -485,14 +555,25 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
               <td>
                 <ar-chip [tone]="grnTone(g.status)">{{ grnLabel(g.status) }}</ar-chip>
               </td>
+              <td class="actions-col">
+                <a ar-button="ghost" routerLink="/purchasing/grn" [queryParams]="recordParams(g.id)"
+                  >Open GRN</a
+                >
+              </td>
             </tr>
             <tr *ngIf="v.recentGoodsReceiptNotes.length === 0">
-              <td colspan="7" class="empty-state">
+              <td colspan="8" class="empty-state">
                 No goods receipt notes recorded for this supplier.
               </td>
             </tr>
           </tbody>
         </table>
+        <div class="table-stats">
+          Showing {{ v.recentGoodsReceiptNotes.length }} of {{ v.totalGoodsReceiptNotesCount }}
+          <a class="table-stats__all" routerLink="/purchasing/grn" [queryParams]="scope()"
+            >View all in Goods receipts →</a
+          >
+        </div>
       </section>
 
       <!-- Tab Content 3: POs -->
@@ -528,6 +609,12 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
             </tr>
           </tbody>
         </table>
+        <div class="table-stats">
+          Showing {{ v.recentPurchaseOrders.length }} of {{ v.totalPurchaseOrdersCount }}
+          <a class="table-stats__all" routerLink="/purchasing" [queryParams]="scope()"
+            >View all in Purchase orders →</a
+          >
+        </div>
       </section>
 
       <!-- Tab Content 4: Debit Notes -->
@@ -559,7 +646,12 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
                 </ar-chip>
               </td>
               <td class="actions-col">
-                <button ar-button="ghost" (click)="goToDebitNotes()">Manage</button>
+                <a
+                  ar-button="ghost"
+                  routerLink="/purchasing/debit-notes"
+                  [queryParams]="recordParams(dn.id)"
+                  >Manage</a
+                >
               </td>
             </tr>
             <tr *ngIf="v.recentDebitNotes.length === 0">
@@ -567,6 +659,12 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
             </tr>
           </tbody>
         </table>
+        <div class="table-stats">
+          Showing {{ v.recentDebitNotes.length }} of {{ v.totalDebitNotesCount }}
+          <a class="table-stats__all" routerLink="/purchasing/debit-notes" [queryParams]="scope()"
+            >View all in Debit notes →</a
+          >
+        </div>
       </section>
     </div>
   `,
@@ -849,6 +947,40 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
         text-align: right;
       }
 
+      .table-stats {
+        padding: 0.6rem 1rem;
+        font-size: 0.78rem;
+        color: #64748b;
+        border-top: 1px solid #f1f5f9;
+      }
+
+      .table-stats__all {
+        margin-left: 0.5rem;
+        color: var(--ar-blue-600, #2563eb);
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-decoration: none;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      .load-error {
+        margin: 0;
+        padding: 0.75rem 1rem;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        background: #fef2f2;
+        color: #991b1b;
+        font-size: 0.85rem;
+      }
+
+      .sub-text {
+        font-size: 0.8rem;
+        color: #64748b;
+      }
+
       .empty-state {
         text-align: center;
         padding: 2.5rem;
@@ -861,61 +993,125 @@ export class Vendor360Component {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly vendor360Service = inject(Vendor360Service);
+  private readonly cockpitOrigin = inject(CockpitOriginService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly MsmeClassification = MsmeClassification;
   readonly VendorDebitNoteStatus = VendorDebitNoteStatus;
 
-  readonly allVendors = signal<Vendor360Dto[]>(MOCK_VENDORS_360);
-  readonly currentVendorId = signal<string>('sup-1');
+  /** The picker: every supplier (live), or the sample ones. */
+  readonly suppliers = signal<{ id: string; name: string; detail: string | null }[]>(
+    environment.useMockData
+      ? MOCK_VENDORS_360.map((v) => ({
+          id: v.id ?? '',
+          name: v.name,
+          detail: [v.city, v.state].filter(Boolean).join(', ') || null,
+        }))
+      : [],
+  );
+  readonly currentVendorId = signal<string>('');
   readonly activeTab = signal<'bills' | 'grn' | 'po' | 'debit'>('bills');
+  readonly loaded = signal(environment.useMockData);
+  readonly loadError = signal<string | null>(null);
 
-  readonly vendor = computed(
-    () => this.allVendors().find((v) => v.id === this.currentVendorId()) || this.allVendors()[0],
+  private readonly live = signal<Vendor360Dto | null>(null);
+  readonly vendor = computed(() =>
+    environment.useMockData
+      ? (MOCK_VENDORS_360.find((v) => v.id === this.currentVendorId()) ?? MOCK_VENDORS_360[0])
+      : this.live(),
   );
 
+  /** Opens a purchasing list on just this supplier. */
+  readonly scope = computed<Params>(() => {
+    const v = this.vendor();
+    return v ? vendorParams(v) : {};
+  });
+
   constructor() {
-    this.route.params.subscribe((params) => {
-      if (params['id']) {
-        this.currentVendorId.set(params['id']);
-        this.loadVendor(params['id']);
+    // Screens opened from here show "Vendor 360 · <supplier>" in their breadcrumb, leading back.
+    effect(() => this.cockpitOrigin.setCockpitName(this.vendor()?.name ?? null));
+
+    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const id = params.get('id');
+      if (id) {
+        this.currentVendorId.set(id);
+        this.loadVendor(id);
+      } else {
+        this.openFirstSupplier();
       }
     });
+    if (!environment.useMockData) this.loadSuppliers();
   }
 
+  /** Picking a supplier opens their own cockpit URL, so the way back from other screens returns to them. */
   onVendorChange(id: string) {
-    this.currentVendorId.set(id);
-    this.loadVendor(id);
-  }
-
-  private loadVendor(id: string) {
-    if (!environment.useMockData) {
-      this.vendor360Service.get(id).subscribe({
-        next: (dto) => {
-          this.allVendors.update((list) => {
-            const idx = list.findIndex((x) => x.id === dto.id);
-            if (idx >= 0) {
-              const copy = [...list];
-              copy[idx] = dto;
-              return copy;
-            }
-            return [dto, ...list];
-          });
-        },
-        error: (err) => console.warn('Could not load live vendor 360, staying with fallback:', err),
-      });
+    if (id && id !== this.currentVendorId()) {
+      void this.router.navigate(['/purchasing/vendor-360', id]);
     }
   }
 
+  private loadSuppliers() {
+    this.vendor360Service
+      .getSuppliers()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (list) => {
+          this.suppliers.set(
+            list.map((s) => ({
+              id: s.id ?? '',
+              name: s.name,
+              detail: s.isActive ? (s.gstin ?? null) : 'inactive',
+            })),
+          );
+          this.loaded.set(true);
+          if (!this.currentVendorId()) this.openFirstSupplier();
+        },
+        error: () => {
+          this.loaded.set(true);
+          this.loadError.set('Suppliers could not be loaded.');
+        },
+      });
+  }
+
+  /** The bare /purchasing/vendor-360 opens the first supplier's cockpit. */
+  private openFirstSupplier() {
+    const first = this.suppliers()[0];
+    if (first) {
+      void this.router.navigate(['/purchasing/vendor-360', first.id], { replaceUrl: true });
+    }
+  }
+
+  private loadVendor(id: string) {
+    if (environment.useMockData) return;
+    this.live.set(null);
+    this.loadError.set(null);
+    this.vendor360Service
+      .get(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (dto) => {
+          if (this.currentVendorId() === dto.id) this.live.set(dto);
+        },
+        error: () => this.loadError.set('This supplier could not be loaded.'),
+      });
+  }
+
+  /** Opens one record on its own screen. */
+  recordParams(id?: string): Params {
+    const v = this.vendor();
+    return v ? vendorParams(v, id ? { open: id } : undefined) : {};
+  }
+
+  addressLine(v: Vendor360Dto): string {
+    const place = [v.city, v.state].filter(Boolean).join(', ');
+    return [v.address, place, v.pincode].filter(Boolean).join(', ');
+  }
+
   goToInwardGate() {
-    this.router.navigate(['/purchasing/grn']);
-  }
-
-  goToBills() {
-    this.router.navigate(['/purchasing/bills']);
-  }
-
-  goToDebitNotes() {
-    this.router.navigate(['/purchasing/debit-notes']);
+    const v = this.vendor();
+    if (v) {
+      void this.router.navigate(['/purchasing/grn'], { queryParams: vendorParams(v, { new: 1 }) });
+    }
   }
 
   msmeTone(cat: MsmeClassification): ChipTone {

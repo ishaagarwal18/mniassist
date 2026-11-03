@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
+import { SupplierScope, readSupplierScope } from '../../../core/util/supplier-scope';
+import { ArSupplierScopeBar } from '../supplier-scope-bar';
 import {
   CompleteQcInspectionDto,
   CreateGoodsReceiptNoteDto,
@@ -150,7 +152,7 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
   standalone: true,
   selector: 'ar-goods-receipt-notes',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArSupplierScopeBar],
   template: `
     <ar-topbar
       title="Goods Receipt Notes (GRN)"
@@ -160,6 +162,12 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
     </ar-topbar>
 
     <div class="page-content">
+      @if (scope(); as sc) {
+        <ar-supplier-scope-bar [name]="sc.name" what="goods receipts" (showAll)="clearScope()" />
+      }
+      @if (loadError(); as e) {
+        <p class="load-error" role="alert">{{ e }}</p>
+      }
       <!-- KPI Row -->
       <section class="kpi-grid">
         <div class="kpi-card">
@@ -647,6 +655,16 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
         padding-bottom: 3rem;
       }
 
+      .load-error {
+        margin: 0;
+        padding: 0.75rem 1rem;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        background: #fef2f2;
+        color: #991b1b;
+        font-size: 0.85rem;
+      }
+
       .page-content {
         padding: 1.5rem 2rem;
         display: flex;
@@ -979,6 +997,7 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
 })
 export class GoodsReceiptNotesComponent {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly grnService = inject(GoodsReceiptNoteService);
   private readonly billService = inject(VendorBillService);
   private readonly debitNoteService = inject(VendorDebitNoteService);
@@ -986,7 +1005,10 @@ export class GoodsReceiptNotesComponent {
   readonly GrnStatus = GrnStatus;
   readonly QcInspectionStatus = QcInspectionStatus;
 
-  readonly allGrns = signal<GoodsReceiptNoteDto[]>(MOCK_GRNS);
+  /** Opened from Vendor 360 for one supplier: only theirs, and new records are for them. */
+  protected readonly scope = signal<SupplierScope | null>(readSupplierScope());
+  protected readonly loadError = signal<string | null>(null);
+  readonly allGrns = signal<GoodsReceiptNoteDto[]>(environment.useMockData ? MOCK_GRNS : []);
   readonly filterQuery = signal<string>('');
   readonly selectedStatus = signal<GrnStatus | null>(null);
 
@@ -1011,6 +1033,8 @@ export class GoodsReceiptNotesComponent {
 
   // New GRN form
   newGrn: {
+    /** The real supplier, when the form was opened for one (from Vendor 360). */
+    supplierId: string;
     supplierName: string;
     purchaseOrderReference: string;
     challanNumber: string;
@@ -1025,6 +1049,7 @@ export class GoodsReceiptNotesComponent {
       unitPriceInPaise: number;
     }>;
   } = {
+    supplierId: '',
     supplierName: '',
     purchaseOrderReference: '',
     challanNumber: '',
@@ -1081,18 +1106,37 @@ export class GoodsReceiptNotesComponent {
 
   constructor() {
     this.loadData();
+    // From Vendor 360: a new goods receipt for the supplier in scope.
+    if (this.route.snapshot.queryParamMap.get('new')) this.openCreateModal();
+  }
+
+  protected clearScope(): void {
+    this.scope.set(null);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    this.loadData();
+  }
+
+  /** `?open=<id>` (from Vendor 360) opens that record once the list is in. */
+  private openRequest = this.route.snapshot.queryParamMap.get('open');
+  private openRequested(): void {
+    const id = this.openRequest;
+    this.openRequest = null;
+    const found = id ? this.allGrns().find((x) => x.id === id) : undefined;
+    if (found) this.viewGrn(found);
   }
 
   loadData() {
     if (!environment.useMockData) {
-      this.grnService.getList({ maxResultCount: 50 }).subscribe({
-        next: (res) => {
-          if (res && res.items && res.items.length > 0) {
-            this.allGrns.set(res.items);
-          }
-        },
-        error: (err) => console.warn('Loading live GRNs failed, keeping fallback:', err),
-      });
+      this.grnService
+        .getList({ maxResultCount: 50, supplierId: this.scope()?.supplierId ?? undefined })
+        .subscribe({
+          next: (res) => {
+            this.allGrns.set(res?.items ?? []);
+            this.loadError.set(null);
+            this.openRequested();
+          },
+          error: () => this.loadError.set('Goods receipts could not be loaded.'),
+        });
     }
   }
 
@@ -1201,7 +1245,8 @@ export class GoodsReceiptNotesComponent {
 
   openCreateModal() {
     this.newGrn = {
-      supplierName: '',
+      supplierId: this.scope()?.supplierId ?? '',
+      supplierName: this.scope()?.name ?? '',
       purchaseOrderReference: '',
       challanNumber: '',
       gateEntryNumber: `GE-2026-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -1247,7 +1292,7 @@ export class GoodsReceiptNotesComponent {
       grnNumber: `GRN-2026-${Math.floor(1000 + Math.random() * 9000)}`,
       purchaseOrderId: 'po-adhoc',
       purchaseOrderReference: this.newGrn.purchaseOrderReference || 'PO-2026-ADHOC',
-      supplierId: `sup-${Date.now()}`,
+      supplierId: this.newGrn.supplierId || `sup-${Date.now()}`,
       supplierName: this.newGrn.supplierName,
       challanNumber: this.newGrn.challanNumber,
       challanDateUtc: new Date().toISOString(),

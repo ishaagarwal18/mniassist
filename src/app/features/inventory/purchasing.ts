@@ -1,11 +1,13 @@
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
+import { SupplierScope, readSupplierScope } from '../../core/util/supplier-scope';
+import { ArSupplierScopeBar } from '../purchasing/supplier-scope-bar';
 import { InventoryService, StockLocationDto } from '../../proxy/inventory/inventory.service';
 import {
   PurchaseOrderDto,
@@ -91,7 +93,16 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
  */
 @Component({
   selector: 'ar-purchasing',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, RouterLink, ArSelect, ArDateInput],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    RouterLink,
+    ArSelect,
+    ArDateInput,
+    ArSupplierScopeBar,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -110,6 +121,9 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
     </ar-topbar>
 
     <div class="pu ar-scroll">
+      @if (scope(); as sc) {
+        <ar-supplier-scope-bar [name]="sc.name" what="purchase orders" (showAll)="clearScope()" />
+      }
       @if (error(); as e) {
         <p class="pu__err" role="alert">{{ e }}</p>
       }
@@ -137,7 +151,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
 
       @switch (tab()) {
         @case ('orders') {
-          @if (orders().length === 0) {
+          @if (shownOrders().length === 0) {
             <p class="pu__hint">
               No purchase orders yet. Start one with New order, or from the Reorder suggestions tab.
             </p>
@@ -156,7 +170,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
                   </tr>
                 </thead>
                 <tbody>
-                  @for (o of orders(); track o.id) {
+                  @for (o of shownOrders(); track o.id) {
                     <tr>
                       <td>
                         <b class="ar-mono">{{ o.reference }}</b>
@@ -815,6 +829,11 @@ export class ArPurchasing {
   private readonly stockApi = inject(InventoryService);
   private readonly productsApi = inject(ProductService);
   private readonly permissions = inject(PermissionService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  /** Opened from Vendor 360 for one supplier: only their orders, and New order is for them. */
+  protected readonly scope = signal<SupplierScope | null>(readSupplierScope());
 
   protected readonly canManage = grantedPolicy('AutoReach.Inventory.Manage', this.permissions);
   protected readonly tabs: { id: Tab; label: string }[] = [
@@ -833,6 +852,10 @@ export class ArPurchasing {
   protected readonly dialogError = signal<string | null>(null);
 
   protected readonly activeSuppliers = computed(() => this.suppliers().filter((s) => s.isActive));
+  protected readonly shownOrders = computed(() => {
+    const id = this.scope()?.supplierId;
+    return id ? this.orders().filter((o) => o.supplierId === id) : this.orders();
+  });
   protected readonly subtitle = computed(() => {
     const open = this.orders().filter((o) => o.state === 'Sent' || o.state === 'PartlyReceived');
     const value = open.reduce(
@@ -869,7 +892,27 @@ export class ArPurchasing {
   protected readonly supplier = signal<{ id: string | null; form: SaveSupplierInput } | null>(null);
 
   constructor() {
-    void this.load();
+    void this.load().then(() => this.openRequested());
+  }
+
+  protected clearScope(): void {
+    this.scope.set(null);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+  }
+
+  /** Vendor 360 links here with `tab=`, `new=1` (an order for the supplier in scope) or `edit=<supplier id>`. */
+  private openRequested(): void {
+    const q = this.route.snapshot.queryParamMap;
+    const tab = q.get('tab');
+    if (tab === 'orders' || tab === 'suggestions' || tab === 'suppliers') this.tab.set(tab);
+    const edit = q.get('edit');
+    const supplier = edit ? this.suppliers().find((s) => s.id === edit) : undefined;
+    if (supplier && this.canManage()) {
+      this.tab.set('suppliers');
+      this.openSupplier(supplier);
+    } else if (q.get('new') && this.canManage()) {
+      this.openOrder(null);
+    }
   }
 
   private async load(): Promise<void> {
@@ -942,7 +985,10 @@ export class ArPurchasing {
         : {
             id: null,
             reference: '',
-            supplierId: this.activeSuppliers()[0]?.id ?? '',
+            supplierId:
+              this.activeSuppliers().find((s) => s.id === this.scope()?.supplierId)?.id ??
+              this.activeSuppliers()[0]?.id ??
+              '',
             locationId: this.locations()[0]?.id ?? '',
             expectedOn: '',
             note: '',

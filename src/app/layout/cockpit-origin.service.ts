@@ -13,8 +13,8 @@ import {
 const STORAGE_KEY = 'ar.cockpitOrigin';
 
 /**
- * Tracks screens opened from the Customer 360 cockpit, whichever link opened them (the related-screens panel, a table row, an
- * action, "View all"), so the topbar can show "Customer 360 · <customer> › <screen>" and lead back. Kept in session storage so a
+ * Tracks screens opened from a 360 cockpit (Customer 360, Vendor 360), whichever link opened them (the related-screens panel, a table row, an
+ * action, "View all"), so the topbar can show "Customer 360 · <customer> › <screen>" (or "Vendor 360 · <supplier>") and lead back. Kept in session storage so a
  * reload of the opened screen keeps the way back.
  */
 @Injectable({ providedIn: 'root' })
@@ -53,9 +53,9 @@ export class CockpitOriginService {
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY);
       const saved = raw ? (JSON.parse(raw) as CockpitOrigin) : null;
-      // Only valid for the screen it was made for.
+      // Only valid for the screen it was made for. Saved before Vendor 360 joined: a customer one.
       return saved && saved.targetPath === pathOf(this.router?.url ?? location.pathname)
-        ? saved
+        ? { ...saved, kind: saved.kind ?? 'customer' }
         : null;
     } catch {
       return null;

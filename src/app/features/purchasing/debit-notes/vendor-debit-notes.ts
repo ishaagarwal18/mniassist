@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
+import { SupplierScope, readSupplierScope } from '../../../core/util/supplier-scope';
+import { ArSupplierScopeBar } from '../supplier-scope-bar';
 import {
   CreateVendorDebitNoteDto,
   CreateVendorDebitNoteLineDto,
@@ -96,7 +98,7 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
   standalone: true,
   selector: 'ar-vendor-debit-notes',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArSupplierScopeBar],
   template: `
     <ar-topbar
       title="Vendor Debit Notes"
@@ -106,6 +108,12 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
     </ar-topbar>
 
     <div class="page-content">
+      @if (scope(); as sc) {
+        <ar-supplier-scope-bar [name]="sc.name" what="debit notes" (showAll)="clearScope()" />
+      }
+      @if (loadError(); as e) {
+        <p class="load-error" role="alert">{{ e }}</p>
+      }
       <!-- Financial Summary Cards -->
       <section class="kpi-grid">
         <div class="kpi-card">
@@ -467,6 +475,16 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
         padding-bottom: 3rem;
       }
 
+      .load-error {
+        margin: 0;
+        padding: 0.75rem 1rem;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        background: #fef2f2;
+        color: #991b1b;
+        font-size: 0.85rem;
+      }
+
       .page-content {
         padding: 1.5rem 2rem;
         display: flex;
@@ -781,7 +799,12 @@ export class VendorDebitNotesComponent {
 
   readonly VendorDebitNoteStatus = VendorDebitNoteStatus;
 
-  readonly allDebitNotes = signal<VendorDebitNoteDto[]>(MOCK_DEBIT_NOTES);
+  /** Opened from Vendor 360 for one supplier: only theirs, and new records are for them. */
+  protected readonly scope = signal<SupplierScope | null>(readSupplierScope());
+  protected readonly loadError = signal<string | null>(null);
+  readonly allDebitNotes = signal<VendorDebitNoteDto[]>(
+    environment.useMockData ? MOCK_DEBIT_NOTES : [],
+  );
   readonly filterQuery = signal<string>('');
   readonly selectedStatus = signal<VendorDebitNoteStatus | null>(null);
 
@@ -790,6 +813,8 @@ export class VendorDebitNotesComponent {
 
   // New Debit Note model
   newDebitNote: {
+    /** The real supplier, when the form was opened for one (from Vendor 360). */
+    supplierId: string;
     supplierName: string;
     vendorBillNumber: string;
     goodsReceiptNoteNumber: string;
@@ -803,6 +828,7 @@ export class VendorDebitNotesComponent {
       taxRateBasisPoints: number;
     }>;
   } = {
+    supplierId: '',
     supplierName: '',
     vendorBillNumber: '',
     goodsReceiptNoteNumber: '',
@@ -863,21 +889,40 @@ export class VendorDebitNotesComponent {
     this.checkQueryParams();
   }
 
+  protected clearScope(): void {
+    this.scope.set(null);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    this.loadData();
+  }
+
+  /** `?open=<id>` (from Vendor 360) opens that record once the list is in. */
+  private openRequest = this.route.snapshot.queryParamMap.get('open');
+  private openRequested(): void {
+    const id = this.openRequest;
+    this.openRequest = null;
+    const found = id ? this.allDebitNotes().find((x) => x.id === id) : undefined;
+    if (found) this.viewDebitNote(found);
+  }
+
   loadData() {
     if (!environment.useMockData) {
-      this.debitNoteService.getList({ maxResultCount: 50 }).subscribe({
-        next: (res) => {
-          if (res && res.items && res.items.length > 0) {
-            this.allDebitNotes.set(res.items);
-          }
-        },
-        error: (err) => console.warn('Loading live Debit Notes failed, keeping fallback:', err),
-      });
+      this.debitNoteService
+        .getList({ maxResultCount: 50, supplierId: this.scope()?.supplierId ?? undefined })
+        .subscribe({
+          next: (res) => {
+            this.allDebitNotes.set(res?.items ?? []);
+            this.loadError.set(null);
+            this.openRequested();
+          },
+          error: () => this.loadError.set('Debit notes could not be loaded.'),
+        });
     }
   }
 
   private checkQueryParams() {
     this.route.queryParams.subscribe((params) => {
+      // From Vendor 360: a new record for the supplier in scope.
+      if (params['new'] && !params['grnId']) this.openCreateModal();
       if (params['grnId']) {
         this.openCreateModal();
         if (params['supplierName']) {
@@ -912,7 +957,8 @@ export class VendorDebitNotesComponent {
 
   openCreateModal() {
     this.newDebitNote = {
-      supplierName: '',
+      supplierId: this.scope()?.supplierId ?? '',
+      supplierName: this.scope()?.name ?? '',
       vendorBillNumber: '',
       goodsReceiptNoteNumber: '',
       reason: '',
@@ -982,7 +1028,7 @@ export class VendorDebitNotesComponent {
     const created: VendorDebitNoteDto = {
       id: `vdn-${Date.now()}`,
       debitNoteNumber: `DN-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      supplierId: `sup-${Date.now()}`,
+      supplierId: this.newDebitNote.supplierId || `sup-${Date.now()}`,
       supplierName: this.newDebitNote.supplierName,
       vendorBillNumber: this.newDebitNote.vendorBillNumber,
       goodsReceiptNoteNumber: this.newDebitNote.goodsReceiptNoteNumber,

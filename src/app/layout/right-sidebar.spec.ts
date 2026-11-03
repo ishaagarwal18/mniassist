@@ -54,14 +54,26 @@ describe('ArRightSidebar', () => {
         { provide: InboxService, useValue: inboxService },
         { provide: OpsService, useValue: opsService },
         { provide: PermissionService, useValue: { getGrantedPolicy: () => true } },
-        { provide: PlanService, useValue: { plan: signal(null), features: signal([]), hasPlan: () => true, hasFeature: () => true } },
+        {
+          provide: PlanService,
+          useValue: {
+            plan: signal(null),
+            features: signal([]),
+            hasPlan: () => true,
+            hasFeature: () => true,
+          },
+        },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ArRightSidebar);
     component = fixture.componentInstance;
     pageContext = TestBed.inject(PageContextService);
-    pageContext.setContext('Contacts', 'Manage all relationships', 'View and edit contacts in your workspace.');
+    pageContext.setContext(
+      'Contacts',
+      'Manage all relationships',
+      'View and edit contacts in your workspace.',
+    );
     fixture.detectChanges();
   });
 

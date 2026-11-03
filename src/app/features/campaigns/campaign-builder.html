@@ -4,9 +4,7 @@
   help="A campaign ties one channel, one approved template, one audience and a schedule together. Every send runs through pre-flight checks before anything actually goes out."
 >
   @if (canCreate()) {
-    <a ar-button variant="primary" icon="plus" [routerLink]="['/campaigns/new']">
-      New campaign
-    </a>
+    <a ar-button variant="primary" icon="plus" [routerLink]="['/campaigns/new']"> New campaign </a>
   }
 </ar-topbar>
 
@@ -279,6 +277,8 @@
               </div>
             </div>
           }
+
+          <ar-campaign-links [campaign]="c" [channelName]="channelName(c)" />
         </div>
       }
     </article>

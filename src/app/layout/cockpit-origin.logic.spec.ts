@@ -16,6 +16,7 @@ describe('cockpit origin', () => {
   it('starts when a screen is opened from a customer cockpit', () => {
     const o = nextOrigin(null, visit, '/contacts/c1/360', '/sales/orders?customer=c1&name=Suresh');
     expect(o).toEqual({
+      kind: 'customer',
       cockpitUrl: '/contacts/c1/360',
       name: 'Suresh Patil',
       targetPath: '/sales/orders',
@@ -42,5 +43,42 @@ describe('cockpit origin', () => {
   it('has none on the cockpit or from the bare picker', () => {
     expect(nextOrigin(null, visit, '/sales/orders', '/contacts/c1/360')).toBeNull();
     expect(nextOrigin(null, null, '/contacts/360', '/contacts')).toBeNull();
+  });
+
+  it('recognises Vendor 360 and starts a vendor origin from it', () => {
+    expect(isCockpitPath('/purchasing/vendor-360')).toBe(true);
+    expect(isCockpitPath('/purchasing/vendor-360/s1')).toBe(true);
+    expect(isCockpitPath('/purchasing/bills')).toBe(false);
+    const o = nextOrigin(
+      null,
+      { url: '/purchasing/vendor-360/s1', name: 'Bharat Gears' },
+      '/purchasing/vendor-360/s1',
+      '/purchasing/bills?supplier=s1&name=Bharat%20Gears',
+    );
+    expect(o).toEqual({
+      kind: 'vendor',
+      cockpitUrl: '/purchasing/vendor-360/s1',
+      name: 'Bharat Gears',
+      targetPath: '/purchasing/bills',
+    });
+    expect(nextOrigin(o, null, '/purchasing/bills?supplier=s1', '/purchasing/bills')).toBe(o);
+  });
+
+  it('starts a campaign origin only from a campaign open on the list', () => {
+    expect(isCockpitPath('/campaigns')).toBe(true);
+    expect(isCockpitPath('/campaigns/new')).toBe(false);
+    const o = nextOrigin(
+      null,
+      { url: '/campaigns?open=c1', name: 'September AMC renewal' },
+      '/campaigns?open=c1',
+      '/templates/t1/edit',
+    );
+    expect(o).toEqual({
+      kind: 'campaign',
+      cockpitUrl: '/campaigns?open=c1',
+      name: 'September AMC renewal',
+      targetPath: '/templates/t1/edit',
+    });
+    expect(nextOrigin(null, null, '/campaigns', '/templates')).toBeNull();
   });
 });

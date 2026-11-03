@@ -14,6 +14,12 @@ export interface Vendor360PoSummaryDto {
   lineCount: number;
 }
 
+export interface Vendor360SupplierDto extends EntityDto<string> {
+  name: string;
+  gstin?: string;
+  isActive: boolean;
+}
+
 export interface Vendor360Dto extends EntityDto<string> {
   name: string;
   gstin?: string;
@@ -33,8 +39,12 @@ export interface Vendor360Dto extends EntityDto<string> {
   totalPaidInPaise: number;
   outstandingPayableInPaise: number;
   msmeOverdueInPaise: number;
-  leadDays: number;
+  leadDays?: number;
   qualityAcceptancePercent: number;
+  totalPurchaseOrdersCount: number;
+  totalGoodsReceiptNotesCount: number;
+  totalVendorBillsCount: number;
+  totalDebitNotesCount: number;
   recentPurchaseOrders: Vendor360PoSummaryDto[];
   recentGoodsReceiptNotes: GoodsReceiptNoteDto[];
   recentVendorBills: VendorBillDto[];

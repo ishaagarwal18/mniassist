@@ -1,6 +1,15 @@
 import { PermissionService } from '@abp/ng.core';
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import { grantedPolicy } from '../../core/auth/permission';
 import { SegmentStore } from '../../core/services/segment.store';
@@ -77,6 +86,15 @@ export class ArSegments {
 
   protected readonly openSegmentId = signal<string | null>('s1');
   protected readonly editingSegmentId = signal<string | null>(null);
+
+  /** A link can open one saved audience straight away: /contacts/segments?open={id} (a campaign uses it). */
+  private pendingOpen: string | null = inject(ActivatedRoute).snapshot.queryParamMap.get('open');
+  private readonly openFromLink = effect(() => {
+    const id = this.pendingOpen;
+    if (!id || !this.saved().some((s) => s.id === id)) return;
+    this.pendingOpen = null;
+    untracked(() => this.loadSaved(id));
+  });
 
   /** Field options grouped for the picker's optgroups. */
   protected readonly fieldGroups = computed(() => {

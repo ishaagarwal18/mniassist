@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
+import { SupplierScope, readSupplierScope } from '../../../core/util/supplier-scope';
+import { ArSupplierScopeBar } from '../supplier-scope-bar';
 import {
   CreateVendorBillDto,
   CreateVendorBillLineDto,
@@ -158,7 +160,7 @@ const MOCK_BILLS: VendorBillDto[] = [
   standalone: true,
   selector: 'ar-vendor-bills',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArSupplierScopeBar],
   template: `
     <ar-topbar
       title="Vendor Bills & 3-Way Matching"
@@ -168,6 +170,12 @@ const MOCK_BILLS: VendorBillDto[] = [
     </ar-topbar>
 
     <div class="page-content">
+      @if (scope(); as sc) {
+        <ar-supplier-scope-bar [name]="sc.name" what="vendor bills" (showAll)="clearScope()" />
+      }
+      @if (loadError(); as e) {
+        <p class="load-error" role="alert">{{ e }}</p>
+      }
       <!-- Financial KPI Row -->
       <section class="kpi-grid">
         <div class="kpi-card">
@@ -725,6 +733,16 @@ const MOCK_BILLS: VendorBillDto[] = [
         padding-bottom: 3rem;
       }
 
+      .load-error {
+        margin: 0;
+        padding: 0.75rem 1rem;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        background: #fef2f2;
+        color: #991b1b;
+        font-size: 0.85rem;
+      }
+
       .page-content {
         padding: 1.5rem 2rem;
         display: flex;
@@ -1063,7 +1081,10 @@ export class VendorBillsComponent {
   readonly Gstr2bMatchStatus = Gstr2bMatchStatus;
   readonly VendorPaymentMode = VendorPaymentMode;
 
-  readonly allBills = signal<VendorBillDto[]>(MOCK_BILLS);
+  /** Opened from Vendor 360 for one supplier: only theirs, and new records are for them. */
+  protected readonly scope = signal<SupplierScope | null>(readSupplierScope());
+  protected readonly loadError = signal<string | null>(null);
+  readonly allBills = signal<VendorBillDto[]>(environment.useMockData ? MOCK_BILLS : []);
   readonly filterQuery = signal<string>('');
   readonly selectedStatus = signal<VendorBillStatus | null>(null);
 
@@ -1088,6 +1109,8 @@ export class VendorBillsComponent {
 
   // Create bill form
   newBill: {
+    /** The real supplier, when the form was opened for one (from Vendor 360). */
+    supplierId: string;
     supplierName: string;
     supplierGstin: string;
     vendorInvoiceNumber: string;
@@ -1103,6 +1126,7 @@ export class VendorBillsComponent {
       taxRateBasisPoints: number;
     }>;
   } = {
+    supplierId: '',
     supplierName: '',
     supplierGstin: '',
     vendorInvoiceNumber: '',
@@ -1170,21 +1194,40 @@ export class VendorBillsComponent {
     this.checkQueryParams();
   }
 
+  protected clearScope(): void {
+    this.scope.set(null);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    this.loadData();
+  }
+
+  /** `?open=<id>` (from Vendor 360) opens that record once the list is in. */
+  private openRequest = this.route.snapshot.queryParamMap.get('open');
+  private openRequested(): void {
+    const id = this.openRequest;
+    this.openRequest = null;
+    const found = id ? this.allBills().find((x) => x.id === id) : undefined;
+    if (found) this.viewBill(found);
+  }
+
   loadData() {
     if (!environment.useMockData) {
-      this.billService.getList({ maxResultCount: 50 }).subscribe({
-        next: (res) => {
-          if (res && res.items && res.items.length > 0) {
-            this.allBills.set(res.items);
-          }
-        },
-        error: (err) => console.warn('Loading live Vendor Bills failed, keeping fallback:', err),
-      });
+      this.billService
+        .getList({ maxResultCount: 50, supplierId: this.scope()?.supplierId ?? undefined })
+        .subscribe({
+          next: (res) => {
+            this.allBills.set(res?.items ?? []);
+            this.loadError.set(null);
+            this.openRequested();
+          },
+          error: () => this.loadError.set('Vendor bills could not be loaded.'),
+        });
     }
   }
 
   private checkQueryParams() {
     this.route.queryParams.subscribe((params) => {
+      // From Vendor 360: a new record for the supplier in scope.
+      if (params['new'] && !params['grnId']) this.openCreateModal();
       if (params['grnId']) {
         this.openCreateModal();
         if (params['supplierName']) {
@@ -1292,7 +1335,8 @@ export class VendorBillsComponent {
 
   openCreateModal() {
     this.newBill = {
-      supplierName: '',
+      supplierId: this.scope()?.supplierId ?? '',
+      supplierName: this.scope()?.name ?? '',
       supplierGstin: '',
       vendorInvoiceNumber: '',
       purchaseOrderReference: '',
@@ -1373,7 +1417,7 @@ export class VendorBillsComponent {
       billNumber: `VB-2026-${Math.floor(1000 + Math.random() * 9000)}`,
       vendorInvoiceNumber: this.newBill.vendorInvoiceNumber,
       vendorInvoiceDateUtc: new Date().toISOString(),
-      supplierId: `sup-${Date.now()}`,
+      supplierId: this.newBill.supplierId || `sup-${Date.now()}`,
       supplierName: this.newBill.supplierName,
       supplierGstin: this.newBill.supplierGstin || '27AAACG0912K1Z9',
       purchaseOrderReference: this.newBill.purchaseOrderReference,

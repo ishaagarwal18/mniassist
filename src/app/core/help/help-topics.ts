@@ -36,7 +36,9 @@ const VENDOR_360: HelpTopic = {
   ],
   steps: [
     'Choose a vendor to see their history.',
-    'Use + Inward GRN to receive goods, or View in Bills to work their bills.',
+    'Everything about this supplier opens each related screen on just this vendor: orders, receipts, bills, debit notes, stock and finance.',
+    'Use + Inward GRN to receive goods, or Open bill / Open GRN to work one record.',
+    'On the screen you opened, the breadcrumb Vendor 360 · <vendor> brings you back here.',
   ],
 };
 
@@ -261,6 +263,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Fill in any variables and set the schedule.',
       'Review the pre-flight checks and fix anything that fails, then launch.',
       'Use Pause or Resume while it runs. Results appear in Analytics.',
+      'Open a campaign to reach everything about it: its template, its audience, results, wallet and follow-up automations. The breadcrumb on those screens leads back to the campaign.',
     ],
   },
   'campaigns/new': {

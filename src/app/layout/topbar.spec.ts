@@ -88,7 +88,7 @@ describe('ArTopbar responsive breadcrumbs with sidebar collapsed state', () => {
       const groupLink = el.querySelector('.tb__crumb-link');
       expect(groupLink).not.toBeNull();
       expect(groupLink?.textContent?.trim()).toBe('Customers');
-      expect(groupLink?.getAttribute('href')).toBe('/contacts');
+      expect(groupLink?.getAttribute('href')).toBe('/contacts/360');
 
       // Dropdown button is NOT displayed when sidebar is expanded
       expect(el.querySelector('.tb__crumb-dropdown-btn')).toBeNull();

@@ -207,7 +207,10 @@
 }
 .sb__heading-chev {
   opacity: 0.6;
-  transition: transform var(--ar-ease), opacity var(--ar-ease), color var(--ar-ease);
+  transition:
+    transform var(--ar-ease),
+    opacity var(--ar-ease),
+    color var(--ar-ease);
 }
 .sb__heading:hover .sb__heading-chev {
   opacity: 0.9;

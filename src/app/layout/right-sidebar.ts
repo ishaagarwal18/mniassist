@@ -147,7 +147,11 @@ import { PageContextService } from './page-context.service';
           <p class="rsb__help-body">{{ summary() }}</p>
         } @else {
           <p class="rsb__help-body">
-            {{ i18n.t('MNI Assist helps you manage customer outreach, automation, and conversations seamlessly.') }}
+            {{
+              i18n.t(
+                'MNI Assist helps you manage customer outreach, automation, and conversations seamlessly.'
+              )
+            }}
           </p>
         }
       </div>

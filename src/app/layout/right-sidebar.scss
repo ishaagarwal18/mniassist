@@ -139,7 +139,9 @@
   font: 500 12.5px var(--ar-font-sans);
   cursor: pointer;
   text-align: left;
-  transition: background var(--ar-ease), color var(--ar-ease);
+  transition:
+    background var(--ar-ease),
+    color var(--ar-ease);
 }
 
 .rsb__pop-item:hover,

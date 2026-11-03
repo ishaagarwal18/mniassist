@@ -47,13 +47,13 @@ import { pathOf } from './cockpit-origin.logic';
       <div class="tb__title-row">
         <nav class="tb__breadcrumb" aria-label="Breadcrumb">
           @if (cockpitCrumb(); as cc) {
-            <!-- Opened from Customer 360: the way back to that customer -->
+            <!-- Opened from Customer 360 / Vendor 360 / a campaign: the way back to that customer, supplier or campaign -->
             <a
               class="tb__crumb-link"
-              routerLink="/contacts"
-              [title]="i18n.t('Go to {0}', i18n.t('Contacts'))"
+              [routerLink]="cc.groupRoute"
+              [title]="i18n.t('Go to {0}', i18n.t(cc.groupPage))"
             >
-              {{ i18n.t('Customers') }}
+              {{ i18n.t(cc.group) }}
             </a>
             <span class="tb__crumb-sep" aria-hidden="true">
               <ar-icon name="chevron" [size]="12" />
@@ -61,9 +61,9 @@ import { pathOf } from './cockpit-origin.logic';
             <a
               class="tb__crumb-link tb__crumb-link--cockpit"
               [routerLink]="cc.link"
-              [title]="i18n.t('Back to Customer 360')"
+              [title]="i18n.t(cc.backTitle)"
             >
-              {{ i18n.t('Customer 360') }}
+              {{ i18n.t(cc.cockpit) }}
               @if (cc.name) {
                 <span class="tb__crumb-name" translate="no">· {{ cc.name }}</span>
               }
@@ -479,12 +479,41 @@ export class ArTopbar {
     resolveNavTrail(this.currentUrl() ?? '', this.title(), this.group(), NAV),
   );
 
-  /** Set when this screen was opened from the Customer 360 cockpit: the crumb that leads back to it. */
+  /** Set when this screen was opened from Customer 360, Vendor 360 or an open campaign: the crumbs that lead back to it. */
   protected readonly cockpitCrumb = computed(() => {
     const origin = this.cockpitOrigin.origin();
     if (!origin || !this.router || pathOf(this.currentUrl() ?? '') !== origin.targetPath)
       return null;
-    return { link: this.router.parseUrl(origin.cockpitUrl), name: origin.name };
+    const link = this.router.parseUrl(origin.cockpitUrl);
+    if (origin.kind === 'campaign')
+      return {
+        link,
+        name: origin.name,
+        group: 'Marketing',
+        groupRoute: '/campaigns',
+        groupPage: 'Campaigns',
+        cockpit: 'Campaign',
+        backTitle: 'Back to the campaign',
+      };
+    return origin.kind === 'vendor'
+      ? {
+          link,
+          name: origin.name,
+          group: 'Purchasing & stock',
+          groupRoute: '/purchasing',
+          groupPage: 'Purchasing',
+          cockpit: 'Vendor 360',
+          backTitle: 'Back to Vendor 360',
+        }
+      : {
+          link,
+          name: origin.name,
+          group: 'Customers',
+          groupRoute: '/contacts',
+          groupPage: 'Contacts',
+          cockpit: 'Customer 360',
+          backTitle: 'Back to Customer 360',
+        };
   });
 
   protected readonly groupHeading = computed(() => this.trail().groupHeading);

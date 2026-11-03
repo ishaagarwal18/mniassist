@@ -5,7 +5,7 @@ describe('resolveNavTrail breadcrumb logic', () => {
   it('resolves Customers -> Contacts for /contacts', () => {
     const trail = resolveNavTrail('/contacts', 'Contacts');
     expect(trail.groupHeading).toBe('Customers');
-    expect(trail.groupPrimaryRoute).toBe('/contacts');
+    expect(trail.groupPrimaryRoute).toBe('/contacts/360');
     expect(trail.parentItem).toBeNull();
     expect(trail.activeItem?.label).toBe('Contacts');
     expect(trail.siblingItems.map((i) => i.label)).toContain('Contacts');
@@ -16,7 +16,7 @@ describe('resolveNavTrail breadcrumb logic', () => {
   it('resolves Marketing -> Audiences for /contacts/segments (audiences are for campaigns)', () => {
     const trail = resolveNavTrail('/contacts/segments', 'Audience builder');
     expect(trail.groupHeading).toBe('Marketing');
-    expect(trail.groupPrimaryRoute).toBe('/campaigns');
+    expect(trail.groupPrimaryRoute).toBe('/contacts/segments');
     expect(trail.parentItem).toBeNull();
     expect(trail.activeItem?.label).toBe('Audiences');
   });
@@ -29,7 +29,7 @@ describe('resolveNavTrail breadcrumb logic', () => {
   it('resolves Marketing -> Campaigns for /campaigns', () => {
     const trail = resolveNavTrail('/campaigns', 'Campaigns');
     expect(trail.groupHeading).toBe('Marketing');
-    expect(trail.groupPrimaryRoute).toBe('/campaigns');
+    expect(trail.groupPrimaryRoute).toBe('/contacts/segments');
     expect(trail.activeItem?.label).toBe('Campaigns');
   });
 

@@ -423,6 +423,7 @@
     "GET /api/auto-reach/vendor-debit-note",
     "GET /api/auto-reach/vendor-debit-note/{}",
     "GET /api/auto-reach/vendor360",
+    "GET /api/auto-reach/vendor360/suppliers",
     "GET /api/auto-reach/voice-agent-template",
     "GET /api/auto-reach/voice-agent-test",
     "GET /api/auto-reach/voice-agent-test/{}",

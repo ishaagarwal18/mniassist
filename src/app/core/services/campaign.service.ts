@@ -11,6 +11,7 @@ import {
   CampaignState,
   PreflightCheck,
 } from '../../proxy/campaigns';
+import { ChannelKind } from '../../proxy/channels/channel-kind.enum';
 import { settled } from '../util/resource';
 
 export type CState =
@@ -30,6 +31,11 @@ export interface Campaign {
   suspendReason?: string;
   /** Hold each recipient until the hour they usually message us (M05-12). */
   optimiseSendTime: boolean;
+  /** What it sends through and to: for the links out to the number, template and audience. */
+  channelId?: string;
+  channelKind?: ChannelKind;
+  templateId?: string;
+  segmentId?: string;
 }
 
 export interface PreflightOutcome {
@@ -117,6 +123,10 @@ function toCampaign(c: CampaignDto): Campaign {
     optOutRate: c.optOutRate ?? 0,
     suspendReason: c.suspendReason ?? undefined,
     optimiseSendTime: c.optimiseSendTime ?? false,
+    channelId: c.channelId || undefined,
+    channelKind: c.kind,
+    templateId: c.templateId || undefined,
+    segmentId: c.segmentId ?? undefined,
   };
 }
 function toPreflight(p: CampaignPreflightDto): Preflight {
