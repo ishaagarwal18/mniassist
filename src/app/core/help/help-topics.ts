@@ -1060,6 +1060,18 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'A request shows as paid once BillDesk confirms the exact amount.',
     ],
   },
+  'settings/shipping': {
+    benefits: [
+      'Customers hear on WhatsApp the moment their order is dispatched.',
+      'Shiprocket gives courier rates by PIN code and tracks shipments by itself.',
+      'Transporters you book directly work without any set-up.',
+    ],
+    steps: [
+      'Choose whether to tell customers on dispatch, and the template to use outside the 24-hour window.',
+      'Optionally enter your Shiprocket API user and pickup PIN code.',
+      'Dispatch won orders from Re-orders or Sales; delivery status follows on its own.',
+    ],
+  },
   'settings/email-sending': {
     benefits: [
       'Marketing email goes out under your own sender name.',

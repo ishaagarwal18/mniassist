@@ -23,7 +23,7 @@ import { CurrentUserService } from '../core/services/current-user.service';
 import { canAccessNavItem } from '../core/auth/permission';
 
 /**
- * Every screen's header: displays responsive breadcrumbs (e.g. "Audience & Contacts -> Contacts").
+ * Every screen's header: displays responsive breadcrumbs (e.g. "Customers -> Contacts").
  * Shows basic, clean breadcrumbs when the sidebar is expanded;
  * transforms into an interactive dropdown switcher when the sidebar is collapsed.
  */
@@ -66,13 +66,17 @@ import { canAccessNavItem } from '../core/auth/permission';
                     <div class="tb__group-dropdown" role="menu" (click)="$event.stopPropagation()">
                       <div class="tb__group-dropdown-head">
                         <span class="tb__group-dropdown-title">{{ i18n.t(g) }}</span>
-                        <span class="tb__group-dropdown-count">{{ siblingItems().length }} pages</span>
+                        <span class="tb__group-dropdown-count"
+                          >{{ siblingItems().length }} pages</span
+                        >
                       </div>
                       <div class="tb__group-dropdown-list">
                         @for (item of siblingItems(); track item.route) {
                           <a
                             class="tb__group-dropdown-item"
-                            [class.tb__group-dropdown-item--active]="item.route === activeItemRoute()"
+                            [class.tb__group-dropdown-item--active]="
+                              item.route === activeItemRoute()
+                            "
                             [routerLink]="item.route"
                             role="menuitem"
                             (click)="closeGroupMenu()"
@@ -80,7 +84,9 @@ import { canAccessNavItem } from '../core/auth/permission';
                             <ar-icon [name]="item.icon" [size]="15" />
                             <span class="tb__group-dropdown-label">{{ i18n.t(item.label) }}</span>
                             @if (item.route === activeItemRoute()) {
-                              <span class="tb__group-dropdown-current" aria-label="Current page">Current</span>
+                              <span class="tb__group-dropdown-current" aria-label="Current page"
+                                >Current</span
+                              >
                             }
                           </a>
                         }
@@ -286,7 +292,9 @@ import { canAccessNavItem } from '../core/auth/permission';
     }
     .tb__crumb-chev {
       color: var(--ar-ink-400);
-      transition: transform var(--ar-ease), color var(--ar-ease);
+      transition:
+        transform var(--ar-ease),
+        color var(--ar-ease);
     }
     .tb__crumb-dropdown-btn--open .tb__crumb-chev {
       transform: rotate(180deg);
@@ -436,12 +444,7 @@ export class ArTopbar {
   );
 
   protected readonly trail = computed(() =>
-    resolveNavTrail(
-      this.currentUrl() ?? '',
-      this.title(),
-      this.group(),
-      NAV,
-    ),
+    resolveNavTrail(this.currentUrl() ?? '', this.title(), this.group(), NAV),
   );
 
   protected readonly groupHeading = computed(() => this.trail().groupHeading);

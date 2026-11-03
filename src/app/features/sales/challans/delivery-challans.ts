@@ -14,6 +14,9 @@ import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.se
 import { DeliveryChallanStatus, DeliveryChallanType } from '../../../proxy/sales/sales-enums';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../../core/auth/permission';
+import { ArNewDeliveryChallan } from './new-delivery-challan';
 
 const MOCK_CHALLANS: DeliveryChallanDto[] = [
   {
@@ -116,7 +119,7 @@ const MOCK_CHALLANS: DeliveryChallanDto[] = [
 @Component({
   selector: 'ar-delivery-challans',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArNewDeliveryChallan],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -124,7 +127,16 @@ const MOCK_CHALLANS: DeliveryChallanDto[] = [
       subtitle="Statutory delivery documents under GST Rule 55 for dispatch against sales orders, job work, and goods transit."
       help="In India, goods cannot move without an invoice or a Delivery Challan. Challans track vehicle numbers, Lorry Receipts (LR/AWB), and statutory 12-digit e-Way Bills before invoice generation."
     >
+      @if (canCreate()) {
+        <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">
+          New challan
+        </button>
+      }
     </ar-topbar>
+
+    @if (creating()) {
+      <ar-new-delivery-challan (closed)="created($event)" />
+    }
 
     <div class="challans-shell">
       @if (loadError(); as e) {
@@ -646,6 +658,14 @@ export class ArDeliveryChallans {
   readonly DeliveryChallanStatus = DeliveryChallanStatus;
 
   private readonly toasts = inject(ToastService);
+  private readonly permissions = inject(PermissionService);
+
+  protected readonly canCreate = grantedPolicy(
+    'AutoReach.DeliveryChallans.Create',
+    this.permissions,
+  );
+  /** The new-challan form is open. */
+  protected readonly creating = signal(false);
 
   /** Demo rows only in mock mode; a real workspace sees its own challans or none. */
   challans = signal<DeliveryChallanDto[]>(environment.useMockData ? MOCK_CHALLANS : []);
@@ -692,6 +712,14 @@ export class ArDeliveryChallans {
         },
       });
     }
+  }
+
+  protected created(challan: DeliveryChallanDto | null): void {
+    this.creating.set(false);
+    if (!challan) return;
+    this.challans.update((list) => [challan, ...list]);
+    this.selectedChallan.set(challan);
+    this.toasts.success(`Challan ${challan.challanNumber} saved as a draft.`);
   }
 
   loadChallans() {

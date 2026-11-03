@@ -1,5 +1,7 @@
 import type {
+  AccountMasterDataDto,
   AccountTreeNodeDto,
+  AddAccountMasterValueInput,
   CreateUpdateCustomerAccountDto,
   CustomerAccountDto,
   CustomerAccountRollupDto,
@@ -115,6 +117,26 @@ export class CustomerAccountService {
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/customer-account/${id}/set-parent`,
         body: { parentAccountId: parentAccountId ?? null },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getMasterData = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, AccountMasterDataDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/customer-account/master-data',
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  addMasterValue = (input: AddAccountMasterValueInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, void>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/customer-account/master-value',
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );

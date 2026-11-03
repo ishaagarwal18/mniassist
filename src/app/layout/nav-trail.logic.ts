@@ -1,7 +1,7 @@
 import { NAV, NavGroup, NavItem } from './nav.model';
 
 export interface NavTrail {
-  /** The group heading (e.g. 'Audience & Contacts', 'Marketing & Campaigns', 'Sales & CRM'). */
+  /** The group heading (e.g. 'Customers', 'Marketing', 'Sales'). */
   readonly groupHeading: string | null;
 
   /** Primary route of the group (e.g. '/contacts', '/campaigns', '/enquiries'). */
@@ -19,7 +19,7 @@ export interface NavTrail {
 
 /**
  * Resolves the navigation trail (parent group, intermediate parents, and current item)
- * for any given page route and title, enabling "Audience & Contacts -> Contacts" breadcrumb navigation.
+ * for any given page route and title, enabling "Customers -> Contacts" breadcrumb navigation.
  */
 export function resolveNavTrail(
   currentUrl: string,
@@ -31,9 +31,7 @@ export function resolveNavTrail(
 
   // 1. If customGroup is explicitly supplied
   if (customGroup) {
-    const group = navGroups.find(
-      (g) => g.heading?.toLowerCase() === customGroup.toLowerCase(),
-    );
+    const group = navGroups.find((g) => g.heading?.toLowerCase() === customGroup.toLowerCase());
     if (group) {
       const items = group.items.filter((i) => !i.top);
       return {
@@ -105,7 +103,7 @@ export function resolveNavTrail(
         heading = null;
         primaryRoute = '/home';
       } else if (path === '/inbox') {
-        heading = 'Audience & Contacts';
+        heading = 'Customers';
         primaryRoute = '/contacts';
       }
     }

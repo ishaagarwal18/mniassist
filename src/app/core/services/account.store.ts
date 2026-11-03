@@ -4,6 +4,7 @@ import { firstValueFrom, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
+  AccountShippingAddressDto,
   AccountTreeNodeDto,
   CreateUpdateCustomerAccountDto,
   CustomerAccountDto,
@@ -20,7 +21,10 @@ export interface CustomerAccount {
   readonly id: string;
   readonly name: string;
   readonly industry?: string;
+  readonly gstin?: string;
+  /** Street lines of the billing address. */
   readonly address?: string;
+  readonly billingPincode?: string;
   readonly city?: string;
   readonly state?: string;
   readonly website?: string;
@@ -45,7 +49,9 @@ function toAccount(dto: CustomerAccountDto): CustomerAccount {
     id: dto.id!,
     name: dto.name ?? '',
     industry: dto.industry ?? undefined,
-    address: dto.address ?? undefined,
+    gstin: dto.gstin ?? undefined,
+    address: dto.billingAddress ?? undefined,
+    billingPincode: dto.billingPincode ?? undefined,
     city: dto.city ?? undefined,
     state: dto.state ?? undefined,
     website: dto.website ?? undefined,
@@ -185,6 +191,8 @@ export class AccountStore {
   readonly filter = signal('');
   private readonly reloadTick = signal(0);
   private seed = [...SEED];
+  /** Demo build only: shipping addresses per account id. */
+  private readonly mockShipping = new Map<string, AccountShippingAddressDto[]>();
 
   private readonly resource = rxResource({
     params: () => (environment.useMockData ? undefined : { tick: this.reloadTick() }),
@@ -279,7 +287,9 @@ export class AccountStore {
         id: id ?? `acc-${crypto.randomUUID().slice(0, 6)}`,
         name: input.name,
         industry: input.industry ?? undefined,
-        address: input.address ?? undefined,
+        gstin: input.gstin ?? undefined,
+        address: input.billingAddress ?? undefined,
+        billingPincode: input.billingPincode ?? undefined,
         city: input.city ?? undefined,
         state: input.state ?? undefined,
         website: input.website ?? undefined,
@@ -289,6 +299,7 @@ export class AccountStore {
         childCount: 0,
       };
       this.seed = id ? this.seed.map((a) => (a.id === id ? patch : a)) : [patch, ...this.seed];
+      if (input.shippingAddresses) this.mockShipping.set(patch.id, input.shippingAddresses);
       this.reloadTick.update((n) => n + 1);
       return;
     }
@@ -303,6 +314,30 @@ export class AccountStore {
       throw new Error(readApiError(e, 'Could not save the account.'));
     }
     this.reload();
+  }
+
+  /** One account in full, with its shipping addresses (the list leaves those out). */
+  async details(id: string): Promise<CustomerAccountDto | null> {
+    if (environment.useMockData) {
+      const a = this.seed.find((x) => x.id === id);
+      return a
+        ? {
+            id: a.id,
+            name: a.name,
+            industry: a.industry,
+            gstin: a.gstin,
+            billingAddress: a.address,
+            billingPincode: a.billingPincode,
+            city: a.city,
+            state: a.state,
+            website: a.website,
+            notes: a.notes,
+            parentAccountId: a.parentId,
+            shippingAddresses: this.mockShipping.get(id) ?? [],
+          }
+        : null;
+    }
+    return firstValueFrom(this.api.get(id));
   }
 
   async remove(id: string): Promise<void> {

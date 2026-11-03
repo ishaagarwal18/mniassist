@@ -1,6 +1,10 @@
 <ar-topbar
   [title]="isEdit() ? 'Edit Account' : 'New Account'"
-  [subtitle]="isEdit() ? 'Update company details, location, and corporate hierarchy' : 'Create a corporate group, plant, or subsidiary'"
+  [subtitle]="
+    isEdit()
+      ? 'Update company details, location, and corporate hierarchy'
+      : 'Create a corporate group, plant, or subsidiary'
+  "
   help="Accounts group contacts and their deals. Subsidiaries roll up their pipeline, activity, and contacts to parent corporate entities."
 >
   <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
@@ -64,7 +68,9 @@
                 class="ar-field__input"
                 (change)="patch('parentId', $any($event.target).value)"
               >
-                <option value="" [selected]="!draft().parentId">None — Top-level Corporate Group</option>
+                <option value="" [selected]="!draft().parentId">
+                  None — Top-level Corporate Group
+                </option>
                 @for (o of parentOptions(); track o.id) {
                   <option [value]="o.id" [selected]="o.id === draft().parentId">
                     {{ o.name }}
@@ -100,10 +106,22 @@
                     (keydown.enter)="confirmAddIndustry()"
                   />
                   <div class="acc-custom-actions">
-                    <button ar-button size="sm" variant="primary" type="button" (click)="confirmAddIndustry()">
+                    <button
+                      ar-button
+                      size="sm"
+                      variant="primary"
+                      type="button"
+                      (click)="confirmAddIndustry()"
+                    >
                       Add &amp; Select
                     </button>
-                    <button ar-button size="sm" variant="ghost" type="button" (click)="cancelAddIndustry()">
+                    <button
+                      ar-button
+                      size="sm"
+                      variant="ghost"
+                      type="button"
+                      (click)="cancelAddIndustry()"
+                    >
                       Cancel
                     </button>
                   </div>
@@ -124,29 +142,49 @@
               }
               <span class="ar-field__hint">Industry classification for audience segmentation.</span>
             </div>
+
+            <label class="ar-field">
+              <span class="ar-field__label">
+                GST No. (GSTIN) <span class="ar-field__opt">optional</span>
+              </span>
+              <input
+                class="ar-field__input ar-mono"
+                maxlength="15"
+                autocomplete="off"
+                placeholder="e.g. 27ABCDE1234F1Z5"
+                [value]="draft().gstin"
+                (input)="onGstinInput($any($event.target).value)"
+              />
+              <span class="ar-field__hint">
+                15 characters. The billing state is filled from its first two digits.
+              </span>
+            </label>
           </div>
         </div>
 
-        <!-- Section: Location & Plant Address -->
+        <!-- Section: Billing Address -->
         <div class="acc-form-group">
           <h3 class="acc-form-group__heading">
-            <ar-icon name="machine" [size]="16" />
-            <span>Plant Address &amp; Geography</span>
+            <ar-icon name="document" [size]="16" />
+            <span>Billing Address</span>
           </h3>
 
           <div class="acc-form-grid">
-            <!-- Street Address Field -->
             <label class="ar-field acc-form-grid--full">
               <span class="ar-field__label">
-                Street Address / Plant Location <span class="ar-field__opt">optional</span>
+                Billing Address <span class="ar-field__opt">optional</span>
               </span>
-              <input
+              <textarea
                 class="ar-field__input"
-                maxlength="256"
+                rows="2"
+                maxlength="500"
                 placeholder="e.g. Plot 42, MIDC Bhosari Industrial Area, Sector 7"
                 [value]="draft().address"
                 (input)="patch('address', $any($event.target).value)"
-              />
+              ></textarea>
+              <span class="ar-field__hint"
+                >Where invoices are addressed. State and city below.</span
+              >
             </label>
 
             <!-- State Dropdown bound to Master Data -->
@@ -154,10 +192,7 @@
               <span class="ar-field__label">
                 State / Territory <span class="ar-field__opt">optional</span>
               </span>
-              <select
-                class="ar-field__input"
-                (change)="onStateSelect($any($event.target).value)"
-              >
+              <select class="ar-field__input" (change)="onStateSelect($any($event.target).value)">
                 <option value="" [selected]="!draft().state">Select State...</option>
                 @for (st of states(); track st) {
                   <option [value]="st" [selected]="st === draft().state">
@@ -191,10 +226,22 @@
                     (keydown.enter)="confirmAddCity()"
                   />
                   <div class="acc-custom-actions">
-                    <button ar-button size="sm" variant="primary" type="button" (click)="confirmAddCity()">
+                    <button
+                      ar-button
+                      size="sm"
+                      variant="primary"
+                      type="button"
+                      (click)="confirmAddCity()"
+                    >
                       Add &amp; Select
                     </button>
-                    <button ar-button size="sm" variant="ghost" type="button" (click)="cancelAddCity()">
+                    <button
+                      ar-button
+                      size="sm"
+                      variant="ghost"
+                      type="button"
+                      (click)="cancelAddCity()"
+                    >
                       Cancel
                     </button>
                   </div>
@@ -215,8 +262,22 @@
               }
             </div>
 
+            <label class="ar-field">
+              <span class="ar-field__label">
+                PIN Code <span class="ar-field__opt">optional</span>
+              </span>
+              <input
+                class="ar-field__input ar-mono"
+                inputmode="numeric"
+                maxlength="6"
+                placeholder="e.g. 411026"
+                [value]="draft().billingPincode"
+                (input)="patch('billingPincode', $any($event.target).value)"
+              />
+            </label>
+
             <!-- Website -->
-            <label class="ar-field acc-form-grid--full">
+            <label class="ar-field">
               <span class="ar-field__label">
                 Website <span class="ar-field__opt">optional</span>
               </span>
@@ -232,6 +293,125 @@
           </div>
         </div>
 
+        <!-- Section: Shipping Addresses -->
+        <div class="acc-form-group">
+          <div class="acc-field-head">
+            <h3 class="acc-form-group__heading">
+              <ar-icon name="send" [size]="16" />
+              <span>Shipping Addresses</span>
+            </h3>
+            <span class="acc-ship-actions">
+              <button type="button" class="acc-link-btn" (click)="addShippingFromBilling()">
+                <ar-icon name="plus" [size]="12" /> Same as billing
+              </button>
+              <button type="button" class="acc-link-btn" (click)="addShipping()">
+                <ar-icon name="plus" [size]="12" /> Add address
+              </button>
+            </span>
+          </div>
+
+          @for (s of draft().shipping; track $index; let i = $index) {
+            <div class="acc-ship-card" [class.acc-ship-card--default]="s.isDefault">
+              <div class="acc-ship-card__head">
+                <label class="acc-ship-default">
+                  <input
+                    type="radio"
+                    name="acc-ship-default"
+                    [checked]="s.isDefault"
+                    (change)="setDefaultShipping(i)"
+                  />
+                  Default
+                </label>
+                <button
+                  type="button"
+                  class="acc-link-btn acc-link-btn--danger"
+                  (click)="removeShipping(i)"
+                >
+                  Remove
+                </button>
+              </div>
+              <div class="acc-form-grid">
+                <label class="ar-field">
+                  <span class="ar-field__label">Label</span>
+                  <input
+                    class="ar-field__input"
+                    maxlength="64"
+                    placeholder="e.g. Plant 2, Chakan warehouse"
+                    [value]="s.label"
+                    (input)="patchShipping(i, 'label', $any($event.target).value)"
+                  />
+                </label>
+                <label class="ar-field">
+                  <span class="ar-field__label">
+                    Site GSTIN <span class="ar-field__opt">if registered separately</span>
+                  </span>
+                  <input
+                    class="ar-field__input ar-mono"
+                    maxlength="15"
+                    autocomplete="off"
+                    placeholder="e.g. 29ABCDE1234F1Z5"
+                    [value]="s.gstin"
+                    (input)="patchShipping(i, 'gstin', $any($event.target).value.toUpperCase())"
+                  />
+                </label>
+                <label class="ar-field acc-form-grid--full">
+                  <span class="ar-field__label">Address <span class="ar-field__req">*</span></span>
+                  <textarea
+                    class="ar-field__input"
+                    rows="2"
+                    maxlength="500"
+                    placeholder="Gate, plot, road, industrial area"
+                    [value]="s.address"
+                    (input)="patchShipping(i, 'address', $any($event.target).value)"
+                  ></textarea>
+                </label>
+                <label class="ar-field">
+                  <span class="ar-field__label">State</span>
+                  <select
+                    class="ar-field__input"
+                    (change)="patchShipping(i, 'state', $any($event.target).value)"
+                  >
+                    <option value="" [selected]="!s.state">Select State...</option>
+                    @for (st of states(); track st) {
+                      <option [value]="st" [selected]="st === s.state">{{ st }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="ar-field">
+                  <span class="ar-field__label">City</span>
+                  <select
+                    class="ar-field__input"
+                    (change)="patchShipping(i, 'city', $any($event.target).value)"
+                  >
+                    <option value="" [selected]="!s.city">Select City...</option>
+                    @if (s.city && !shippingCities(s.state).includes(s.city)) {
+                      <option [value]="s.city" selected>{{ s.city }}</option>
+                    }
+                    @for (ct of shippingCities(s.state); track ct) {
+                      <option [value]="ct" [selected]="ct === s.city">{{ ct }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="ar-field">
+                  <span class="ar-field__label">PIN Code</span>
+                  <input
+                    class="ar-field__input ar-mono"
+                    inputmode="numeric"
+                    maxlength="6"
+                    [value]="s.pincode"
+                    (input)="patchShipping(i, 'pincode', $any($event.target).value)"
+                  />
+                </label>
+              </div>
+            </div>
+          } @empty {
+            <p class="ar-field__hint">
+              No shipping addresses yet. Add each plant or warehouse goods go to; the default is
+              used on new orders and challans.
+            </p>
+          }
+        </div>
+
         <!-- Section: Operational Notes -->
         <div class="acc-form-group">
           <h3 class="acc-form-group__heading">
@@ -240,9 +420,7 @@
           </h3>
 
           <label class="ar-field">
-            <span class="ar-field__label">
-              Notes <span class="ar-field__opt">optional</span>
-            </span>
+            <span class="ar-field__label"> Notes <span class="ar-field__opt">optional</span> </span>
             <textarea
               class="ar-field__input"
               rows="4"
@@ -257,13 +435,7 @@
       <!-- Footer Buttons -->
       <div class="acc-form-actions">
         <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
-        <button
-          ar-button
-          type="button"
-          variant="primary"
-          [disabled]="busy()"
-          (click)="save()"
-        >
+        <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
           {{ busy() ? 'Saving…' : isEdit() ? 'Save Changes' : 'Create Account' }}
         </button>
       </div>

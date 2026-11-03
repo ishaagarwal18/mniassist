@@ -21,8 +21,9 @@ const MORE_LINKS: readonly { route: string; label: string }[] = [
   { route: '/settings/members', label: 'Members & invites' },
   { route: '/settings/integrations', label: 'Integrations & API keys' },
   { route: '/settings/support-access', label: 'Support access' },
+  { route: '/settings/shipping', label: 'Shipping & Shiprocket' },
   { route: '/channels', label: 'WhatsApp channels' },
-  { route: '/channels/numbers', label: 'Number management' },
+  { route: '/channels/numbers', label: 'Display name & PIN' },
   { route: '/compliance', label: 'Compliance & retention' },
   { route: '/billing', label: 'Billing & wallet' },
 ];

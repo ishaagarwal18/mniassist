@@ -17,6 +17,9 @@ import {
   SalesPaymentMode,
 } from '../../../proxy/sales/sales-enums';
 import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../../core/auth/permission';
+import { ArNewSalesInvoice } from './new-sales-invoice';
 
 const MOCK_INVOICES: SalesInvoiceDto[] = [
   {
@@ -157,7 +160,7 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
 @Component({
   selector: 'ar-sales-invoices',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArNewSalesInvoice],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -165,7 +168,16 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
       subtitle="Statutory GST commercial tax invoices, credit notes and debit notes with itemized tax breakdowns and payment receipts."
       help="Issue GST invoices against orders or delivery challans. Compute statutory CGST+SGST or IGST automatically, track outstanding customer balances, and record payments received."
     >
+      @if (canCreate()) {
+        <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">
+          New sales invoice
+        </button>
+      }
     </ar-topbar>
+
+    @if (creating()) {
+      <ar-new-sales-invoice (closed)="created($event)" />
+    }
 
     <div class="invoices-shell">
       @if (loadError(); as e) {
@@ -771,6 +783,11 @@ export class ArSalesInvoices {
   readonly SalesPaymentMode = SalesPaymentMode;
 
   private readonly toasts = inject(ToastService);
+  private readonly permissions = inject(PermissionService);
+
+  protected readonly canCreate = grantedPolicy('AutoReach.SalesInvoices.Create', this.permissions);
+  /** The new-invoice form is open. */
+  protected readonly creating = signal(false);
 
   /** Demo rows only in mock mode; a real workspace sees its own invoices or none. */
   invoices = signal<SalesInvoiceDto[]>(environment.useMockData ? MOCK_INVOICES : []);
@@ -820,6 +837,16 @@ export class ArSalesInvoices {
         },
       });
     }
+  }
+
+  protected created(invoice: SalesInvoiceDto | null): void {
+    this.creating.set(false);
+    if (!invoice) return;
+    this.invoices.update((list) => [invoice, ...list]);
+    this.selectedInvoice.set(invoice);
+    this.toasts.success(
+      `Invoice ${invoice.invoiceNumber} saved as a draft. Issue it when it is checked.`,
+    );
   }
 
   loadInvoices() {

@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -60,7 +68,7 @@ const MOCK_BUYERS: ReorderBuyerDto[] = [
         >
           <option value="">Choose a company…</option>
           @for (row of accounts.rows(); track row.account.id) {
-            <option [value]="row.account.id">
+            <option [value]="row.account.id" [selected]="row.account.id === accountId()">
               {{ ' '.repeat(row.depth - 1) }}{{ row.account.name }}
             </option>
           }
@@ -295,13 +303,20 @@ const MOCK_BUYERS: ReorderBuyerDto[] = [
     }
   `,
 })
-export class ArReorderBuyers {
+export class ArReorderBuyers implements OnInit {
   private readonly api = inject(ReorderPortalService);
   protected readonly accounts = inject(AccountStore);
 
   readonly closed = output<void>();
+  /** Opens on this company when given (from its row on the Accounts screen). */
+  readonly initialAccountId = input<string | null>(null);
 
   protected readonly accountId = signal('');
+
+  ngOnInit(): void {
+    const id = this.initialAccountId();
+    if (id) void this.choose(id);
+  }
   protected readonly buyers = signal<ReorderBuyerDto[]>([]);
   protected readonly loading = signal(false);
   protected readonly saving = signal<string | null>(null);

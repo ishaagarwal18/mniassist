@@ -36,6 +36,7 @@ import { ContactService as ContactApi } from '../../proxy/contacts/contact.servi
 import { CustomerAccountService } from '../../proxy/contacts/customer-account.service';
 import { ContactService } from '../../core/services/contact.service';
 import { ArContactDialog } from './contact-dialog';
+import { ArReorderBuyers } from '../reorder/reorder-buyers';
 import { readApiError } from '../../core/util/api-error';
 import { ArTopbar } from '../../layout/topbar';
 import { ArAvatar, ArButton, ArChip, ArDialog, ArIcon, ArStatTile } from '../../ui';
@@ -46,10 +47,7 @@ import { grantedPolicy } from '../../core/auth/permission';
 import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
 import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
 import { environment } from '../../../environments/environment';
-import {
-  filterAssignableContacts,
-  INITIAL_MOCK_PEOPLE,
-} from './account-contacts.logic';
+import { filterAssignableContacts, INITIAL_MOCK_PEOPLE } from './account-contacts.logic';
 import {
   buildAccountTreeRows,
   computeAccountStats,
@@ -104,6 +102,7 @@ const BLANK: Draft = {
     ArAvatar,
     ArErpLedger,
     ArContactDialog,
+    ArReorderBuyers,
     RouterLink,
     TreeGridModule,
   ],
@@ -132,6 +131,13 @@ export class ArAccounts {
   protected readonly canUpdate = grantedPolicy('AutoReach.Contacts.Update', this.permissions);
   protected readonly canDelete = grantedPolicy('AutoReach.Contacts.Delete', this.permissions);
   protected readonly canView360 = grantedPolicy('AutoReach.Customer360', this.permissions);
+  /** Buyers' re-order roles and the company's credit terms. */
+  protected readonly canBuyers = grantedPolicy(
+    'AutoReach.ReorderPortal.Settings',
+    this.permissions,
+  );
+  /** The company the buyers and credit dialog is open on: '' opens it with none chosen, null closes it. */
+  protected readonly buyersFor = signal<string | null>(null);
 
   // ---- An account's people, from its contact count ------------------------------------
   private readonly contactApi = inject(ContactApi);
@@ -177,9 +183,7 @@ export class ArAccounts {
   );
 
   /** Executive KPI metrics for top stats bar */
-  protected readonly stats = computed<AccountStats>(() =>
-    computeAccountStats(this.store.all()),
-  );
+  protected readonly stats = computed<AccountStats>(() => computeAccountStats(this.store.all()));
 
   /** Counts for quick filter preset pills */
   protected readonly presetCounts = computed<PresetCounts>(() =>

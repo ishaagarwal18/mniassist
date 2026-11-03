@@ -102,11 +102,7 @@
             </a>
           }
           @if (c.email) {
-            <a
-              class="c360-comm-link"
-              [href]="'mailto:' + c.email"
-              title="Send email"
-            >
+            <a class="c360-comm-link" [href]="'mailto:' + c.email" title="Send email">
               <ar-icon name="mail" [size]="14" /> Email
             </a>
           }
@@ -139,7 +135,9 @@
         <div class="kpi-head">
           <span class="kpi-lbl">Commercial Credit</span>
           <ar-chip [tone]="creditTone()">
-            {{ c.credit.onHold ? 'ON HOLD' : creditUtilizationPct() >= 90 ? 'NEAR LIMIT' : 'NORMAL' }}
+            {{
+              c.credit.onHold ? 'ON HOLD' : creditUtilizationPct() >= 90 ? 'NEAR LIMIT' : 'NORMAL'
+            }}
           </ar-chip>
         </div>
         <div class="kpi-val">
@@ -155,7 +153,9 @@
               <div
                 class="kpi-meter-fill"
                 [class.kpi-meter-fill--good]="creditUtilizationPct() < 70"
-                [class.kpi-meter-fill--warn]="creditUtilizationPct() >= 70 && creditUtilizationPct() < 90"
+                [class.kpi-meter-fill--warn]="
+                  creditUtilizationPct() >= 70 && creditUtilizationPct() < 90
+                "
                 [class.kpi-meter-fill--bad]="creditUtilizationPct() >= 90"
                 [style.width.%]="creditUtilizationPct()"
               ></div>
@@ -168,14 +168,16 @@
             {{
               c.credit.paymentTermsDays === 0
                 ? 'Advance payment'
-                : (c.credit.paymentTermsDays != null ? c.credit.paymentTermsDays + ' days net' : 'Not specified')
+                : c.credit.paymentTermsDays != null
+                  ? c.credit.paymentTermsDays + ' days net'
+                  : 'Not specified'
             }}
           </span>
           @if (c.credit.creditLimitInPaise) {
             <span>
-              Available:
-              ₹{{ (availableCreditInPaise() ?? 0) / 100 | number: '1.0-0' }}
-              ({{ 100 - creditUtilizationPct() }}% free)
+              Available: ₹{{ (availableCreditInPaise() ?? 0) / 100 | number: '1.0-0' }} ({{
+                100 - creditUtilizationPct()
+              }}% free)
             </span>
           }
           @if (c.credit.onHold && c.credit.holdReason) {
@@ -217,7 +219,10 @@
           ₹{{ c.credit.totalOnOrderInPaise / 100 | number: '1.2-2' }}
         </div>
         <div class="kpi-foot">
-          <span>{{ c.activeOrdersCount }} order{{ c.activeOrdersCount === 1 ? '' : 's' }} in production or dispatch</span>
+          <span
+            >{{ c.activeOrdersCount }} order{{ c.activeOrdersCount === 1 ? '' : 's' }} in production
+            or dispatch</span
+          >
         </div>
       </div>
 
@@ -231,7 +236,12 @@
           ₹{{ c.lifetimeRevenueInPaise / 100 | number: '1.0-0' }}
         </div>
         <div class="kpi-foot">
-          <span>{{ c.totalInvoicesCount }} commercial invoice{{ c.totalInvoicesCount === 1 ? '' : 's' }} billed</span>
+          <span
+            >{{ c.totalInvoicesCount }} commercial invoice{{
+              c.totalInvoicesCount === 1 ? '' : 's'
+            }}
+            billed</span
+          >
         </div>
       </div>
     </section>
@@ -317,11 +327,17 @@
               >
                 <div class="highlight-label">
                   <span class="highlight-type">Latest Order</span>
-                  <span class="highlight-ref">{{ o.orderNumber }} · {{ o.orderDateUtc | date: 'dd MMM yyyy' }}</span>
+                  <span class="highlight-ref"
+                    >{{ o.orderNumber }} · {{ o.orderDateUtc | date: 'dd MMM yyyy' }}</span
+                  >
                 </div>
                 <div class="highlight-meta">
-                  <span class="highlight-val">₹{{ o.grandTotalInPaise / 100 | number: '1.2-2' }}</span>
-                  <ar-chip [tone]="getOrderStatusTone(o.status)">{{ getOrderStatusLabel(o.status) }}</ar-chip>
+                  <span class="highlight-val"
+                    >₹{{ o.grandTotalInPaise / 100 | number: '1.2-2' }}</span
+                  >
+                  <ar-chip [tone]="getOrderStatusTone(o.status)">{{
+                    getOrderStatusLabel(o.status)
+                  }}</ar-chip>
                 </div>
               </a>
             }
@@ -337,10 +353,14 @@
               >
                 <div class="highlight-label">
                   <span class="highlight-type">Latest Delivery Challan</span>
-                  <span class="highlight-ref">{{ dc.challanNumber }} · {{ dc.transporterName || 'Direct' }}</span>
+                  <span class="highlight-ref"
+                    >{{ dc.challanNumber }} · {{ dc.transporterName || 'Direct' }}</span
+                  >
                 </div>
                 <div class="highlight-meta">
-                  <ar-chip [tone]="getChallanStatusTone(dc.status)">{{ getChallanStatusLabel(dc.status) }}</ar-chip>
+                  <ar-chip [tone]="getChallanStatusTone(dc.status)">{{
+                    getChallanStatusLabel(dc.status)
+                  }}</ar-chip>
                 </div>
               </a>
             }
@@ -356,13 +376,17 @@
               >
                 <div class="highlight-label">
                   <span class="highlight-type">Latest GST Invoice</span>
-                  <span class="highlight-ref">{{ inv.invoiceNumber }} · Due {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}</span>
+                  <span class="highlight-ref"
+                    >{{ inv.invoiceNumber }} · Due {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}</span
+                  >
                 </div>
                 <div class="highlight-meta">
                   <span class="highlight-val" [class.text-danger]="inv.balanceDueInPaise > 0">
                     Bal: ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
                   </span>
-                  <ar-chip [tone]="getInvoiceStatusTone(inv.status)">{{ getInvoiceStatusLabel(inv.status) }}</ar-chip>
+                  <ar-chip [tone]="getInvoiceStatusTone(inv.status)">{{
+                    getInvoiceStatusLabel(inv.status)
+                  }}</ar-chip>
                 </div>
               </a>
             }
@@ -370,9 +394,13 @@
 
           <!-- Machinery & Service status summary -->
           <div class="c360-subsidiary-bar">
-            <span>🏭 <strong>{{ c.installedAssetsCount }}</strong> Installed Machines at facility</span>
+            <span
+              >🏭 <strong>{{ c.installedAssetsCount }}</strong> Installed Machines at facility</span
+            >
             <span [class.text-danger]="c.openTicketsCount > 0">
-              🎫 <strong>{{ c.openTicketsCount }}</strong> Open Service Ticket{{ c.openTicketsCount === 1 ? '' : 's' }}
+              🎫 <strong>{{ c.openTicketsCount }}</strong> Open Service Ticket{{
+                c.openTicketsCount === 1 ? '' : 's'
+              }}
             </span>
           </div>
         </div>
@@ -383,7 +411,9 @@
             <h2 class="overview-card__title">
               <span>💬 Communications & Timeline Feed</span>
             </h2>
-            <span class="text-xs text-muted">{{ c.timeline.length }} interaction{{ c.timeline.length === 1 ? '' : 's' }}</span>
+            <span class="text-xs text-muted"
+              >{{ c.timeline.length }} interaction{{ c.timeline.length === 1 ? '' : 's' }}</span
+            >
           </div>
 
           <div class="timeline-feed">
@@ -413,7 +443,9 @@
                         {{ item.direction }}
                       </ar-chip>
                     </div>
-                    <time class="timeline-time">{{ item.occurredAtUtc | date: 'dd MMM yyyy, hh:mm a' }}</time>
+                    <time class="timeline-time">{{
+                      item.occurredAtUtc | date: 'dd MMM yyyy, hh:mm a'
+                    }}</time>
                   </div>
                   <p class="timeline-summary">{{ item.summary }}</p>
                 </div>
@@ -423,7 +455,8 @@
                 <div class="empty-state__icon">💬</div>
                 <h3 class="empty-state__title">No communications logged yet</h3>
                 <p class="empty-state__hint">
-                  Use "Message customer" in the action ribbon above to reach out via WhatsApp, Email or SMS.
+                  Use "Message customer" in the action ribbon above to reach out via WhatsApp, Email
+                  or SMS.
                 </p>
               </div>
             }
@@ -525,7 +558,8 @@
             />
           </div>
           <div class="table-stats">
-            Showing {{ filteredChallans().length }} of {{ c.recentChallans.length }} delivery challans
+            Showing {{ filteredChallans().length }} of {{ c.recentChallans.length }} delivery
+            challans
           </div>
         </div>
 
@@ -573,7 +607,8 @@
                       <div class="empty-state__icon">🚚</div>
                       <h3 class="empty-state__title">No delivery challans recorded</h3>
                       <p class="empty-state__hint">
-                        Delivery challans track physical dispatches, logistics transporters, and vehicle LR numbers.
+                        Delivery challans track physical dispatches, logistics transporters, and
+                        vehicle LR numbers.
                       </p>
                     </div>
                   </td>
@@ -656,7 +691,8 @@
                       <div class="empty-state__icon">🧾</div>
                       <h3 class="empty-state__title">No commercial invoices found</h3>
                       <p class="empty-state__hint">
-                        Invoices generated with GST tax calculations and payment terms will appear here.
+                        Invoices generated with GST tax calculations and payment terms will appear
+                        here.
                       </p>
                     </div>
                   </td>
@@ -770,7 +806,9 @@
                     <ar-chip [tone]="getTicketPriorityTone(t.priority)">{{ t.priority }}</ar-chip>
                   </td>
                   <td>
-                    <ar-chip [tone]="t.status === 'Pending' ? 'warn' : 'teal'">{{ t.status }}</ar-chip>
+                    <ar-chip [tone]="t.status === 'Pending' ? 'warn' : 'teal'">{{
+                      t.status
+                    }}</ar-chip>
                   </td>
                   <td>{{ t.creationTime | date: 'dd MMM yyyy' }}</td>
                   <td class="actions-col">
@@ -815,38 +853,28 @@
         </div>
       }
 
-      <section class="picker-hero" aria-label="Customer directory lookup">
-        <div class="picker-hero__icon" aria-hidden="true">🎯</div>
-        <h2 class="picker-hero__title">Open Customer 360 Cockpit</h2>
-        <p class="picker-hero__subtitle">
-          Search by company name, plant location, decision maker, WhatsApp number, or GSTIN
-          to inspect a unified 360° commercial dossier.
-        </p>
+      <!-- Directory: accounts and contacts, one list at a time, each searched and paged -->
+      <section class="picker-column" aria-label="Customer directory">
+        <ar-tabs [tabs]="pickerTabs" [active]="pickerTab()" (activeChange)="setPickerTab($event)" />
 
         <div class="picker-search-bar">
           <ar-search-box
-            placeholder="Search contacts and accounts (e.g. Kalyani Forge, Suresh, Pune, MH)..."
+            [placeholder]="
+              pickerTab() === 'Accounts'
+                ? 'Search accounts by name, city, industry or GSTIN…'
+                : 'Search contacts by name, company or phone…'
+            "
             [query]="pickerQuery()"
-            (queryChange)="searchContacts($event)"
+            (queryChange)="searchPicker($event)"
           />
         </div>
+
         @if (pickerBusy()) {
-          <p class="text-xs text-muted">Searching master records…</p>
+          <p class="text-xs text-muted" role="status">Loading…</p>
         }
-      </section>
 
-      <!-- Picker Results Grid -->
-      <div class="picker-results-grid">
-        <!-- Accounts Column -->
-        <div class="picker-column">
-          <h3 class="picker-column__title">
-            <span>🏢 Corporate Accounts</span>
-            @if (pickerAccounts().length > 0) {
-              <span class="tab-badge">{{ pickerAccounts().length }}</span>
-            }
-          </h3>
-
-          <div class="picker-card-list">
+        <div class="picker-card-list">
+          @if (pickerTab() === 'Accounts') {
             @for (a of pickerAccounts(); track a.id) {
               <a class="picker-card" [routerLink]="['/contacts/accounts', a.id, '360']">
                 <div class="picker-card__info">
@@ -858,35 +886,27 @@
                     @if (a.industry) {
                       <span>🏭 {{ a.industry }}</span>
                     }
-                    <span>👥 {{ a.contactCount }} contact{{ a.contactCount === 1 ? '' : 's' }}</span>
+                    <span
+                      >👥 {{ a.contactCount }} contact{{ a.contactCount === 1 ? '' : 's' }}</span
+                    >
                   </div>
                 </div>
                 <span class="picker-card__action">Open 360 →</span>
               </a>
             } @empty {
-              <div class="empty-state">
-                <p class="empty-state__hint">
-                  @if (pickerQuery().trim()) {
-                    No corporate accounts matched "{{ pickerQuery() }}".
-                  } @else {
-                    Type in the search box to find company and plant accounts.
-                  }
-                </p>
-              </div>
+              @if (!pickerBusy()) {
+                <div class="empty-state">
+                  <p class="empty-state__hint">
+                    @if (pickerQuery().trim()) {
+                      No accounts matched "{{ pickerQuery() }}".
+                    } @else {
+                      No accounts yet.
+                    }
+                  </p>
+                </div>
+              }
             }
-          </div>
-        </div>
-
-        <!-- Contacts Column -->
-        <div class="picker-column">
-          <h3 class="picker-column__title">
-            <span>👤 Key Decision Contacts</span>
-            @if (pickerResults().length > 0) {
-              <span class="tab-badge">{{ pickerResults().length }}</span>
-            }
-          </h3>
-
-          <div class="picker-card-list">
+          } @else {
             @for (p of pickerResults(); track p.id) {
               <a class="picker-card" [routerLink]="['/contacts', p.id, '360']">
                 <div class="picker-card__info">
@@ -901,19 +921,45 @@
                 <span class="picker-card__action">Open 360 →</span>
               </a>
             } @empty {
-              <div class="empty-state">
-                <p class="empty-state__hint">
-                  @if (pickerQuery().trim()) {
-                    No contacts matched "{{ pickerQuery() }}".
-                  } @else {
-                    Recent key contacts will appear here.
-                  }
-                </p>
-              </div>
+              @if (!pickerBusy()) {
+                <div class="empty-state">
+                  <p class="empty-state__hint">
+                    @if (pickerQuery().trim()) {
+                      No contacts matched "{{ pickerQuery() }}".
+                    } @else {
+                      No contacts yet.
+                    }
+                  </p>
+                </div>
+              }
             }
-          </div>
+          }
         </div>
-      </div>
+
+        <div class="picker-pager">
+          <span>{{ pickerPageLabel() }}</span>
+          <span class="picker-pager__buttons">
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="pickerPage() === 0 || pickerBusy()"
+              (click)="goPickerPage(pickerPage() - 1)"
+            >
+              ‹ Previous
+            </button>
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="!pickerHasNext() || pickerBusy()"
+              (click)="goPickerPage(pickerPage() + 1)"
+            >
+              Next ›
+            </button>
+          </span>
+        </div>
+      </section>
     </div>
   }
 </div>

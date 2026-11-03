@@ -38,10 +38,7 @@ export function calculateAvailableCredit(
 /**
  * Calculates the overdue percentage of total owed receivables (0 - 100).
  */
-export function calculateOverdueRatio(
-  totalOwedInPaise = 0,
-  totalOverdueInPaise = 0,
-): number {
+export function calculateOverdueRatio(totalOwedInPaise = 0, totalOverdueInPaise = 0): number {
   if (!totalOwedInPaise || totalOwedInPaise <= 0) return 0;
   const pct = Math.round((Math.max(0, totalOverdueInPaise) / totalOwedInPaise) * 100);
   return Math.min(100, Math.max(0, pct));

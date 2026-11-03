@@ -20,7 +20,11 @@ import type { CustomFieldType } from './custom-field-type.enum';
 export interface CustomerAccountDto extends FullAuditedEntityDto<string> {
   name?: string;
   industry?: string | null;
-  address?: string | null;
+  /** 15 characters, like 27ABCDE1234F1Z5. */
+  gstin?: string | null;
+  /** Street lines of the billing address; city and state complete it. */
+  billingAddress?: string | null;
+  billingPincode?: string | null;
   city?: string | null;
   state?: string | null;
   website?: string | null;
@@ -31,6 +35,40 @@ export interface CustomerAccountDto extends FullAuditedEntityDto<string> {
   /** Accounts directly under this one. */
   childCount?: number;
   contactCount?: number;
+  /** Filled on get, not on the list. The default first. */
+  shippingAddresses?: AccountShippingAddressDto[];
+}
+
+/** A place an account ships to; a site in another state may have its own GSTIN. */
+export interface AccountShippingAddressDto {
+  id?: string | null;
+  label: string;
+  address: string;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  gstin?: string | null;
+  isDefault: boolean;
+}
+
+/** Which pick-list an added value belongs to. */
+export enum AccountMasterKind {
+  Industry = 0,
+  State = 1,
+  City = 2,
+}
+
+/** The account form's pick-lists: the shared catalogue plus this workspace's own additions. */
+export interface AccountMasterDataDto {
+  industries: string[];
+  states: { name: string; code?: string | null }[];
+  cities: { name: string; state?: string | null }[];
+}
+
+export interface AddAccountMasterValueInput {
+  kind: AccountMasterKind;
+  name: string;
+  stateName?: string | null;
 }
 
 export interface CreateUpdateCustomerAccountDto {
@@ -38,12 +76,18 @@ export interface CreateUpdateCustomerAccountDto {
   /** Refused by the server if it would create a loop or nest deeper than five levels. */
   parentAccountId?: string | null;
   industry?: string | null;
-  address?: string | null;
+  /** 15 characters, like 27ABCDE1234F1Z5. */
+  gstin?: string | null;
+  /** Street lines of the billing address; city and state complete it. */
+  billingAddress?: string | null;
+  billingPincode?: string | null;
   city?: string | null;
   state?: string | null;
   website?: string | null;
   ownerUserId?: string | null;
   notes?: string | null;
+  /** The full list; addresses left out are removed. Omit to leave the saved list alone. */
+  shippingAddresses?: AccountShippingAddressDto[] | null;
 }
 
 export interface GetCustomerAccountListInput extends PagedAndSortedResultRequestDto {

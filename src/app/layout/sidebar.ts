@@ -28,7 +28,8 @@ import { PlanService } from '../core/services/plan.service';
 import { canAccessNavItem } from '../core/auth/permission';
 
 const COLLAPSED_KEY = 'ar.sidebar.collapsed';
-const FOLDED_KEY = 'ar.sidebar.foldedGroups.v2';
+// v3: the groups were renamed (Nov 2026); folds saved under the old names would leave every group open.
+const FOLDED_KEY = 'ar.sidebar.foldedGroups.v3';
 
 function allGroupHeadings(): Set<string> {
   return new Set(NAV.map((g) => g.heading).filter((h): h is string => Boolean(h)));
@@ -134,7 +135,9 @@ function readCollapsed(): boolean {
               [class.sb__heading--folded]="isFolded(group)"
               [class.sb__heading--active]="hasActiveItem(group)"
               [attr.aria-expanded]="!isFolded(group)"
-              [attr.title]="i18n.t(isFolded(group) ? 'Show {0}' : 'Hide {0}', i18n.t(group.heading))"
+              [attr.title]="
+                i18n.t(isFolded(group) ? 'Show {0}' : 'Hide {0}', i18n.t(group.heading))
+              "
               (click)="toggleGroup(group)"
             >
               <span class="sb__heading-title">

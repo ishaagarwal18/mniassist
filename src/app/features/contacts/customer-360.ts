@@ -23,7 +23,7 @@ import {
   SalesInvoiceStatus,
   SalesOrderStatus,
 } from '../../proxy/sales/sales-enums';
-import { ArButton, ArChip, ArIcon, ArSearchBox, ChipTone } from '../../ui';
+import { ArButton, ArChip, ArIcon, ArSearchBox, ArTabs, ChipTone } from '../../ui';
 import { ArCustomerActions } from './customer-actions';
 import { ToastService } from '../../core/ui/toast.service';
 import {
@@ -184,14 +184,16 @@ const MOCK_CUSTOMER_360: Customer360Dto = {
     {
       id: 'tl-1',
       channel: 'WhatsApp',
-      summary: 'Order dispatch schedule & delivery challan DC-2026-0019 sent to Suresh Patil via WhatsApp.',
+      summary:
+        'Order dispatch schedule & delivery challan DC-2026-0019 sent to Suresh Patil via WhatsApp.',
       occurredAtUtc: new Date(Date.now() - 2 * 86_400_000).toISOString(),
       direction: 'Outbound',
     },
     {
       id: 'tl-2',
       channel: 'Phone',
-      summary: 'Maintenance query: Hydraulic press calibration support confirmed with plant engineer.',
+      summary:
+        'Maintenance query: Hydraulic press calibration support confirmed with plant engineer.',
       occurredAtUtc: new Date(Date.now() - 5 * 86_400_000).toISOString(),
       direction: 'Inbound',
     },
@@ -212,6 +214,9 @@ const MOCK_CUSTOMER_360: Customer360Dto = {
   ],
 };
 
+const PICKER_PAGE_SIZE = 10;
+type PickerTab = 'Accounts' | 'Contacts';
+
 export type Customer360Tab = 'overview' | 'orders' | 'challans' | 'invoices' | 'assets' | 'tickets';
 
 @Component({
@@ -225,6 +230,7 @@ export type Customer360Tab = 'overview' | 'orders' | 'challans' | 'invoices' | '
     ArButton,
     ArChip,
     ArSearchBox,
+    ArTabs,
     ArIcon,
     ArCustomerActions,
   ],
@@ -252,12 +258,30 @@ export class ArCustomer360 {
   readonly invoiceSearchQuery = signal('');
   readonly assetSearchQuery = signal('');
 
-  // Picker signals
+  // Picker signals: one list (accounts or contacts) at a time, searched and paged on the server
+  protected readonly pickerTabs = ['Accounts', 'Contacts'] as const;
+  protected readonly pickerTab = signal<PickerTab>('Accounts');
   protected readonly pickerQuery = signal('');
+  protected readonly pickerPage = signal(0);
+  protected readonly pickerTotal = signal(0);
   protected readonly pickerResults = signal<ContactDto[]>([]);
   protected readonly pickerAccounts = signal<CustomerAccountDto[]>([]);
   protected readonly pickerBusy = signal(false);
   private pickerSeq = 0;
+  private pickerDebounce?: ReturnType<typeof setTimeout>;
+
+  protected readonly pickerPageLabel = computed(() => {
+    const shown =
+      this.pickerTab() === 'Accounts' ? this.pickerAccounts().length : this.pickerResults().length;
+    const total = this.pickerTotal();
+    if (!total || !shown) return `0 of ${total}`;
+    const from = this.pickerPage() * PICKER_PAGE_SIZE + 1;
+    return `${from}–${from + shown - 1} of ${total}`;
+  });
+
+  protected readonly pickerHasNext = computed(
+    () => (this.pickerPage() + 1) * PICKER_PAGE_SIZE < this.pickerTotal(),
+  );
 
   // Filtered lists computed
   readonly filteredOrders = computed(() => {
@@ -266,8 +290,7 @@ export class ArCustomer360 {
     if (!q) return list;
     return list.filter(
       (o) =>
-        o.orderNumber?.toLowerCase().includes(q) ||
-        o.customerPoNumber?.toLowerCase().includes(q),
+        o.orderNumber?.toLowerCase().includes(q) || o.customerPoNumber?.toLowerCase().includes(q),
     );
   });
 
@@ -301,8 +324,7 @@ export class ArCustomer360 {
     if (!q) return list;
     return list.filter(
       (ast) =>
-        ast.serialNumber?.toLowerCase().includes(q) ||
-        ast.modelName?.toLowerCase().includes(q),
+        ast.serialNumber?.toLowerCase().includes(q) || ast.modelName?.toLowerCase().includes(q),
     );
   });
 
@@ -330,10 +352,7 @@ export class ArCustomer360 {
   readonly overdueRatioPct = computed(() => {
     const c = this.data();
     if (!c?.credit) return 0;
-    return calculateOverdueRatio(
-      c.credit.totalOwedInPaise,
-      c.credit.totalOverdueInPaise,
-    );
+    return calculateOverdueRatio(c.credit.totalOwedInPaise, c.credit.totalOverdueInPaise);
   });
 
   readonly creditTone = computed<ChipTone>(() => {
@@ -366,7 +385,7 @@ export class ArCustomer360 {
         );
       } else if (!environment.useMockData) {
         this.data.set(null);
-        this.searchContacts('');
+        this.loadPicker();
       }
     });
   }
@@ -385,7 +404,7 @@ export class ArCustomer360 {
       error: (err: { error?: { error?: { message?: string } } }) => {
         this.loading.set(false);
         this.error.set(err?.error?.error?.message ?? 'Customer 360 could not be loaded.');
-        this.searchContacts('');
+        this.loadPicker();
       },
     });
   }
@@ -449,48 +468,72 @@ export class ArCustomer360 {
     this.load(this.c360Service.getByAccount(accountId, on, { skipHandleError: true }));
   }
 
-  protected searchContacts(term: string): void {
-    this.pickerQuery.set(term);
-    const seq = ++this.pickerSeq;
-    this.pickerBusy.set(true);
+  protected setPickerTab(tab: string): void {
+    this.pickerTab.set(tab === 'Contacts' ? 'Contacts' : 'Accounts');
+    this.pickerQuery.set('');
+    this.pickerPage.set(0);
+    this.loadPicker();
+  }
 
-    if (term.trim()) {
+  /** Typing restarts at page one; the request waits for a pause in typing. */
+  protected searchPicker(term: string): void {
+    this.pickerQuery.set(term);
+    this.pickerPage.set(0);
+    clearTimeout(this.pickerDebounce);
+    this.pickerDebounce = setTimeout(() => this.loadPicker(), 250);
+  }
+
+  protected goPickerPage(page: number): void {
+    this.pickerPage.set(Math.max(0, page));
+    this.loadPicker();
+  }
+
+  private loadPicker(): void {
+    const seq = ++this.pickerSeq;
+    const input = {
+      filter: this.pickerQuery().trim() || undefined,
+      maxResultCount: PICKER_PAGE_SIZE,
+      skipCount: this.pickerPage() * PICKER_PAGE_SIZE,
+    };
+    this.pickerBusy.set(true);
+    const done = (total: number) => {
+      this.pickerBusy.set(false);
+      this.pickerTotal.set(total);
+    };
+
+    if (this.pickerTab() === 'Accounts') {
       this.accounts
-        .getList(
-          { filter: term.trim(), maxResultCount: 8, skipCount: 0 },
-          { skipHandleError: true },
-        )
+        .getList(input, { skipHandleError: true })
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (res) => {
-            if (seq === this.pickerSeq) this.pickerAccounts.set(res.items ?? []);
+            if (seq !== this.pickerSeq) return;
+            this.pickerAccounts.set(res.items ?? []);
+            done(res.totalCount ?? 0);
           },
           error: () => {
-            if (seq === this.pickerSeq) this.pickerAccounts.set([]);
+            if (seq !== this.pickerSeq) return;
+            this.pickerAccounts.set([]);
+            done(0);
           },
         });
     } else {
-      this.pickerAccounts.set([]);
+      this.contacts
+        .getList(input, { skipHandleError: true })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (res) => {
+            if (seq !== this.pickerSeq) return;
+            this.pickerResults.set(res.items ?? []);
+            done(res.totalCount ?? 0);
+          },
+          error: () => {
+            if (seq !== this.pickerSeq) return;
+            this.pickerResults.set([]);
+            done(0);
+          },
+        });
     }
-
-    this.contacts
-      .getList(
-        { filter: term.trim() || undefined, maxResultCount: 20, skipCount: 0 },
-        { skipHandleError: true },
-      )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          if (seq !== this.pickerSeq) return;
-          this.pickerBusy.set(false);
-          this.pickerResults.set(res.items ?? []);
-        },
-        error: () => {
-          if (seq !== this.pickerSeq) return;
-          this.pickerBusy.set(false);
-          this.pickerResults.set([]);
-        },
-      });
   }
 
   // Delegated logic helpers

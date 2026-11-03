@@ -3,10 +3,21 @@
   subtitle="Corporate groups, companies &amp; manufacturing plants your contacts roll up to"
   help="Group contacts by the company or plant they belong to. Put a plant under its company, and a company under its group, up to five levels — a parent's rollup includes aggregated pipeline value and contacts across its entire hierarchy."
 >
+  @if (canBuyers()) {
+    <button ar-button type="button" variant="ghost" icon="contacts" (click)="buyersFor.set('')">
+      Buyers &amp; credit
+    </button>
+  }
   @if (canCreate()) {
-    <a ar-button variant="primary" icon="plus" [routerLink]="['/contacts/accounts/new']">New account</a>
+    <a ar-button variant="primary" icon="plus" [routerLink]="['/contacts/accounts/new']"
+      >New account</a
+    >
   }
 </ar-topbar>
+
+@if (buyersFor() !== null) {
+  <ar-reorder-buyers [initialAccountId]="buyersFor() || null" (closed)="buyersFor.set(null)" />
+}
 
 <div class="acc-page ar-scroll">
   <!-- Executive KPI Overview Strip -->
@@ -83,7 +94,9 @@
         (click)="setPreset('needs-contacts')"
       >
         <span>Needs Contacts</span>
-        <span class="acc-preset-badge acc-preset-badge--warn">{{ presetCounts().needsContacts }}</span>
+        <span class="acc-preset-badge acc-preset-badge--warn">{{
+          presetCounts().needsContacts
+        }}</span>
       </button>
     </div>
   </div>
@@ -120,7 +133,10 @@
                   Group
                 </span>
               } @else {
-                <span class="ac-type-pill ac-type-pill--sub" title="Subsidiary or plant under parent">
+                <span
+                  class="ac-type-pill ac-type-pill--sub"
+                  title="Subsidiary or plant under parent"
+                >
                   Plant
                 </span>
               }
@@ -188,7 +204,10 @@
             type="button"
             class="ac-contacts-btn"
             [title]="'View all contacts at ' + r.name"
-            (click)="openPeople(r.account, r.subtreeContacts !== r.account.contactCount); $event.stopPropagation()"
+            (click)="
+              openPeople(r.account, r.subtreeContacts !== r.account.contactCount);
+              $event.stopPropagation()
+            "
           >
             <ar-chip [tone]="r.contactCount > 0 ? 'good' : 'neutral'">
               <ar-icon name="contacts" [size]="13" />
@@ -225,6 +244,18 @@
                 <ar-icon name="contacts" [size]="13" />
                 360
               </a>
+            }
+            @if (canBuyers()) {
+              <button
+                ar-button
+                variant="ghost"
+                size="sm"
+                title="Buyers and credit at {{ r.name }}"
+                (click)="buyersFor.set(r.id)"
+              >
+                <ar-icon name="billing" [size]="13" />
+                Credit
+              </button>
             }
             @if (canCreate() && r.depth < maxDepth) {
               <a
@@ -282,7 +313,13 @@
           }}
         </p>
         @if (!loading() && canCreate()) {
-          <a ar-button variant="primary" size="sm" icon="plus" [routerLink]="['/contacts/accounts/new']">
+          <a
+            ar-button
+            variant="primary"
+            size="sm"
+            icon="plus"
+            [routerLink]="['/contacts/accounts/new']"
+          >
             New account
           </a>
         }
@@ -290,8 +327,6 @@
     </ng-template>
   </ejs-treegrid>
 </div>
-
-
 
 <!-- Modal Dialog: Account Rollup Intelligence & Pipeline -->
 @if (rollupOpen()) {
@@ -313,7 +348,11 @@
               />
               <div class="roll-toggle__label">
                 <strong>Include subsidiaries in rollup</strong>
-                <span>Aggregating metrics across {{ r.subsidiaryCount }} subsidiar{{ r.subsidiaryCount === 1 ? 'y' : 'ies' }}</span>
+                <span
+                  >Aggregating metrics across {{ r.subsidiaryCount }} subsidiar{{
+                    r.subsidiaryCount === 1 ? 'y' : 'ies'
+                  }}</span
+                >
               </div>
             </label>
           </div>
@@ -352,7 +391,9 @@
 
         <div class="roll-act-badge">
           <ar-icon name="clock" [size]="13" />
-          <span>Last activity: <strong>{{ when(r.lastActivityUtc) }}</strong></span>
+          <span
+            >Last activity: <strong>{{ when(r.lastActivityUtc) }}</strong></span
+          >
         </div>
 
         @if (breakdownRows(r).length > 0) {
@@ -377,7 +418,11 @@
             <ul class="roll-contact-list">
               @for (c of r.contacts; track c.id) {
                 <li class="roll-contact-item">
-                  <ar-avatar [name]="c.displayName || c.waId || 'Contact'" [size]="32" tone="teal" />
+                  <ar-avatar
+                    [name]="c.displayName || c.waId || 'Contact'"
+                    [size]="32"
+                    tone="teal"
+                  />
                   <div class="roll-contact-info">
                     @if (canView360()) {
                       <a
@@ -432,9 +477,7 @@
     @if (contactModalMode() === 'assign') {
       <div class="pp-subview">
         <div class="pp-subview__header">
-          <button ar-button variant="ghost" size="sm" (click)="cancelAssign()">
-            ← Back
-          </button>
+          <button ar-button variant="ghost" size="sm" (click)="cancelAssign()">← Back</button>
           <strong class="pp-subview__title">Assign Existing Contact to {{ acc.name }}</strong>
         </div>
 
@@ -461,7 +504,11 @@
           <ul class="pp-candidates-list">
             @for (c of allAssignableCandidates(); track c.id) {
               <li class="pp-candidate-row">
-                <ar-avatar [name]="c.displayName || c.waId || 'Contact'" [size]="34" tone="neutral" />
+                <ar-avatar
+                  [name]="c.displayName || c.waId || 'Contact'"
+                  [size]="34"
+                  tone="neutral"
+                />
                 <div class="pp-candidate-info">
                   <span class="pp-candidate-name">{{ c.displayName || c.waId }}</span>
                   <div class="pp-candidate-meta">
@@ -554,7 +601,11 @@
               </div>
               <div class="pp__reach">
                 @if (p.waId) {
-                  <a class="pp-reach-link pp-reach-link--wa ar-mono" [href]="'https://wa.me/' + p.waId" target="_blank">
+                  <a
+                    class="pp-reach-link pp-reach-link--wa ar-mono"
+                    [href]="'https://wa.me/' + p.waId"
+                    target="_blank"
+                  >
                     <ar-icon name="phone" [size]="12" />
                     +{{ p.waId }}
                   </a>

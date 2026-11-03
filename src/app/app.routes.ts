@@ -630,7 +630,7 @@ export const routes: Routes = [
       },
       {
         path: 'channels/numbers',
-        title: 'Numbers · MNI Assist',
+        title: 'Display name & PIN · MNI Assist',
         loadComponent: () => import('./features/channels/numbers').then((m) => m.ArNumbers),
       },
       {
@@ -767,6 +767,12 @@ export const routes: Routes = [
         title: 'AI assistant · MNI Assist',
         loadComponent: () =>
           import('./features/settings/ai-assistant').then((m) => m.ArAiAssistant),
+      },
+      {
+        path: 'settings/shipping',
+        title: 'Shipping · MNI Assist',
+        loadComponent: () =>
+          import('./features/settings/shipping-settings').then((m) => m.ArShippingSettings),
       },
       {
         path: 'settings/payments',

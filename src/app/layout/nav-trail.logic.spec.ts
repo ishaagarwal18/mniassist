@@ -2,63 +2,64 @@ import { describe, expect, it } from 'vitest';
 import { resolveNavTrail } from './nav-trail.logic';
 
 describe('resolveNavTrail breadcrumb logic', () => {
-  it('resolves Audience & Contacts -> Contacts for /contacts', () => {
+  it('resolves Customers -> Contacts for /contacts', () => {
     const trail = resolveNavTrail('/contacts', 'Contacts');
-    expect(trail.groupHeading).toBe('Audience & Contacts');
+    expect(trail.groupHeading).toBe('Customers');
     expect(trail.groupPrimaryRoute).toBe('/contacts');
     expect(trail.parentItem).toBeNull();
     expect(trail.activeItem?.label).toBe('Contacts');
     expect(trail.siblingItems.map((i) => i.label)).toContain('Contacts');
-    expect(trail.siblingItems.map((i) => i.label)).toContain('Audiences');
     expect(trail.siblingItems.map((i) => i.label)).toContain('Accounts');
+    expect(trail.siblingItems.map((i) => i.label)).toContain('Customer 360');
   });
 
-  it('resolves Audience & Contacts -> Audience builder for /contacts/segments', () => {
+  it('resolves Marketing -> Audiences for /contacts/segments (audiences are for campaigns)', () => {
     const trail = resolveNavTrail('/contacts/segments', 'Audience builder');
-    expect(trail.groupHeading).toBe('Audience & Contacts');
-    expect(trail.groupPrimaryRoute).toBe('/contacts');
+    expect(trail.groupHeading).toBe('Marketing');
+    expect(trail.groupPrimaryRoute).toBe('/campaigns');
     expect(trail.parentItem).toBeNull();
     expect(trail.activeItem?.label).toBe('Audiences');
   });
 
-  it('resolves Audience & Contacts for /contacts/accounts and /contacts/360', () => {
-    const accountsTrail = resolveNavTrail('/contacts/accounts', 'Accounts');
-    expect(accountsTrail.groupHeading).toBe('Audience & Contacts');
-
-    const c360Trail = resolveNavTrail('/contacts/360', 'Customer 360');
-    expect(c360Trail.groupHeading).toBe('Audience & Contacts');
+  it('resolves Customers for /contacts/accounts and /contacts/360', () => {
+    expect(resolveNavTrail('/contacts/accounts', 'Accounts').groupHeading).toBe('Customers');
+    expect(resolveNavTrail('/contacts/360', 'Customer 360').groupHeading).toBe('Customers');
   });
 
-  it('resolves Marketing & Campaigns -> Campaigns for /campaigns', () => {
+  it('resolves Marketing -> Campaigns for /campaigns', () => {
     const trail = resolveNavTrail('/campaigns', 'Campaigns');
-    expect(trail.groupHeading).toBe('Marketing & Campaigns');
+    expect(trail.groupHeading).toBe('Marketing');
     expect(trail.groupPrimaryRoute).toBe('/campaigns');
     expect(trail.activeItem?.label).toBe('Campaigns');
   });
 
   it('resolves nested sub-page parent item for /templates/new', () => {
     const trail = resolveNavTrail('/templates/new', 'New template');
-    expect(trail.groupHeading).toBe('Marketing & Campaigns');
+    expect(trail.groupHeading).toBe('Marketing');
     expect(trail.parentItem?.label).toBe('Templates');
     expect(trail.parentItem?.route).toBe('/templates');
   });
 
-  it('resolves Sales & CRM for /quotations and /enquiries', () => {
-    const quoteTrail = resolveNavTrail('/quotations', 'Quotations');
-    expect(quoteTrail.groupHeading).toBe('Sales & CRM');
-
-    const enqTrail = resolveNavTrail('/enquiries', 'Enquiries');
-    expect(enqTrail.groupHeading).toBe('Sales & CRM');
+  it('resolves Sales for /quotations and /enquiries', () => {
+    expect(resolveNavTrail('/quotations', 'Quotations').groupHeading).toBe('Sales');
+    expect(resolveNavTrail('/enquiries', 'Enquiries').groupHeading).toBe('Sales');
   });
 
-  it('resolves Voice & Calling for /calls', () => {
-    const trail = resolveNavTrail('/calls', 'Calls');
-    expect(trail.groupHeading).toBe('Voice & Calling');
+  it('resolves Calls for /calls and for the IVR set-up', () => {
+    expect(resolveNavTrail('/calls', 'Calls').groupHeading).toBe('Calls');
+    expect(resolveNavTrail('/channels/voice-ivr', 'Voice / IVR').groupHeading).toBe('Calls');
   });
 
-  it('resolves Supply Chain & Inventory for /sales/orders', () => {
-    const trail = resolveNavTrail('/sales/orders', 'Sales orders');
-    expect(trail.groupHeading).toBe('Supply Chain & Inventory');
+  it('resolves Orders & invoices for sales orders, invoices, re-orders and collections', () => {
+    for (const path of ['/sales/orders', '/sales/invoices', '/reorders', '/collections']) {
+      expect(resolveNavTrail(path, '').groupHeading).toBe('Orders & invoices');
+    }
+  });
+
+  it('resolves Purchasing & stock for purchasing and stock pages', () => {
+    for (const path of ['/purchasing', '/purchasing/grn', '/stock', '/stock/planning']) {
+      expect(resolveNavTrail(path, '').groupHeading).toBe('Purchasing & stock');
+    }
   });
 
   it('resolves Manufacturing for /manufacturing/bom', () => {
@@ -66,9 +67,16 @@ describe('resolveNavTrail breadcrumb logic', () => {
     expect(trail.groupHeading).toBe('Manufacturing');
   });
 
-  it('resolves Field Service & AMC for /helpdesk', () => {
-    const trail = resolveNavTrail('/helpdesk', 'Helpdesk');
-    expect(trail.groupHeading).toBe('Field Service & AMC');
+  it('resolves Service for /helpdesk', () => {
+    expect(resolveNavTrail('/helpdesk', 'Helpdesk').groupHeading).toBe('Service');
+  });
+
+  it('keeps setup pages out of the daily-work groups', () => {
+    expect(resolveNavTrail('/settings/email-sending', '').groupHeading).toBe('Channels');
+    expect(resolveNavTrail('/settings/agency', '').groupHeading).toBe('Partners');
+    expect(resolveNavTrail('/documents/price-lists', '').groupHeading).toBe('Products & documents');
+    expect(resolveNavTrail('/settings/teams', '').groupHeading).toBe('Administration');
+    expect(resolveNavTrail('/billing/invoices', '').groupHeading).toBe('Billing');
   });
 
   it('resolves Home for /getting-started and null group for /home root', () => {
@@ -81,14 +89,14 @@ describe('resolveNavTrail breadcrumb logic', () => {
   });
 
   it('respects explicit custom group when provided', () => {
-    const trail = resolveNavTrail('/contacts', 'Custom Contacts', 'Audience & Contacts');
-    expect(trail.groupHeading).toBe('Audience & Contacts');
+    const trail = resolveNavTrail('/contacts', 'Custom Contacts', 'Customers');
+    expect(trail.groupHeading).toBe('Customers');
     expect(trail.siblingItems.length).toBeGreaterThan(0);
   });
 
   it('ignores query parameters and fragments in URL matching', () => {
     const trail = resolveNavTrail('/contacts?tab=all#filters', 'Contacts');
-    expect(trail.groupHeading).toBe('Audience & Contacts');
+    expect(trail.groupHeading).toBe('Customers');
     expect(trail.activeItem?.label).toBe('Contacts');
   });
 });

@@ -176,3 +176,40 @@
     grid-template-columns: 1fr;
   }
 }
+
+.acc-ship-actions {
+  display: inline-flex;
+  gap: 14px;
+}
+
+.acc-link-btn--danger {
+  color: var(--ar-bad-600, #b42318);
+}
+
+.acc-ship-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--ar-line-200);
+  border-radius: 8px;
+  background: var(--ar-bg-50);
+}
+
+.acc-ship-card--default {
+  border-color: var(--ar-teal-500, #14b8a6);
+}
+
+.acc-ship-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.acc-ship-default {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}

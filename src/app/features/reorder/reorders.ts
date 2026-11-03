@@ -21,8 +21,7 @@ import { ArSelect } from '../../ui/select';
 import type { ChipTone } from '../../ui/chip';
 import { ArContactPicker } from '../pipeline/contact-picker';
 import { rupees } from './reorder-logic';
-import { ArReorderBuyers } from './reorder-buyers';
-import { ArReorderDispatch, ArReorderShippingSettings } from './reorder-shipping';
+import { ArReorderDispatch } from './reorder-shipping';
 import { SHIPMENT_STATE } from './shipping-logic';
 import {
   ShipmentDto,
@@ -84,9 +83,7 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
     ArDialog,
     ArContactPicker,
     ArSendReorderLink,
-    ArReorderBuyers,
     ArReorderDispatch,
-    ArReorderShippingSettings,
     RouterLink,
     ArSelect,
   ],
@@ -98,18 +95,6 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
       help="Customers open a personal link from WhatsApp, confirm with a code sent to their number, and see their machines with the spares due, at their own prices. What they send arrives here as a draft quotation for you to check and issue."
     >
       @if (canSettings()) {
-        <button
-          ar-button
-          type="button"
-          variant="ghost"
-          icon="contacts"
-          (click)="buyersOpen.set(true)"
-        >
-          Companies
-        </button>
-        <button ar-button type="button" variant="ghost" (click)="shippingOpen.set(true)">
-          Shipping
-        </button>
         <button ar-button type="button" variant="ghost" icon="settings" (click)="openSettings()">
           Portal settings
         </button>
@@ -314,14 +299,6 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
         [shiprocket]="shiprocketReady()"
         (closed)="dispatched($event)"
       />
-    }
-
-    @if (shippingOpen()) {
-      <ar-reorder-shipping-settings (closed)="shippingOpen.set(false); loadShipping()" />
-    }
-
-    @if (buyersOpen()) {
-      <ar-reorder-buyers (closed)="buyersOpen.set(false)" />
     }
 
     @if (sendTo(); as c) {
@@ -724,8 +701,6 @@ export class ArReorders {
   protected readonly sendTo = signal<PickerOption | null>(null);
 
   protected readonly settingsOpen = signal(false);
-  protected readonly buyersOpen = signal(false);
-  protected readonly shippingOpen = signal(false);
   protected readonly dispatchFor = signal<{ id: string; reference: string } | null>(null);
   protected readonly shipments = signal<ShipmentDto[]>([]);
   protected readonly shiprocketReady = signal(false);

@@ -87,7 +87,7 @@ describe('ArTopbar responsive breadcrumbs with sidebar collapsed state', () => {
       // Group link is a simple breadcrumb link
       const groupLink = el.querySelector('.tb__crumb-link');
       expect(groupLink).not.toBeNull();
-      expect(groupLink?.textContent?.trim()).toBe('Audience & Contacts');
+      expect(groupLink?.textContent?.trim()).toBe('Customers');
       expect(groupLink?.getAttribute('href')).toBe('/contacts');
 
       // Dropdown button is NOT displayed when sidebar is expanded
@@ -102,7 +102,7 @@ describe('ArTopbar responsive breadcrumbs with sidebar collapsed state', () => {
       expect(title?.textContent?.trim()).toBe('Contacts');
     });
 
-    it('renders Marketing & Campaigns -> Campaigns as basic breadcrumbs on /campaigns', async () => {
+    it('renders Marketing -> Campaigns as basic breadcrumbs on /campaigns', async () => {
       mockDrawer.collapsed.set(false);
       await router.navigateByUrl('/campaigns');
       fixture.componentRef.setInput('title', 'Campaigns');
@@ -110,7 +110,7 @@ describe('ArTopbar responsive breadcrumbs with sidebar collapsed state', () => {
 
       const el = fixture.nativeElement as HTMLElement;
       const groupLink = el.querySelector('.tb__crumb-link');
-      expect(groupLink?.textContent?.trim()).toBe('Marketing & Campaigns');
+      expect(groupLink?.textContent?.trim()).toBe('Marketing');
       expect(el.querySelector('.tb__crumb-dropdown-btn')).toBeNull();
     });
   });
@@ -127,7 +127,7 @@ describe('ArTopbar responsive breadcrumbs with sidebar collapsed state', () => {
       // Dropdown button IS displayed
       const dropdownBtn = el.querySelector<HTMLButtonElement>('.tb__crumb-dropdown-btn');
       expect(dropdownBtn).not.toBeNull();
-      expect(dropdownBtn?.textContent).toContain('Audience & Contacts');
+      expect(dropdownBtn?.textContent).toContain('Customers');
 
       // Basic group text link is NOT rendered
       const basicGroupLink = el.querySelector('.tb__crumb-link');
@@ -155,7 +155,7 @@ describe('ArTopbar responsive breadcrumbs with sidebar collapsed state', () => {
 
       // Header shows title and page count
       expect(dropdown?.querySelector('.tb__group-dropdown-title')?.textContent?.trim()).toBe(
-        'Audience & Contacts',
+        'Customers',
       );
 
       // Lists sibling items
@@ -166,7 +166,7 @@ describe('ArTopbar responsive breadcrumbs with sidebar collapsed state', () => {
         i.querySelector('.tb__group-dropdown-label')?.textContent?.trim(),
       );
       expect(itemLabels).toContain('Contacts');
-      expect(itemLabels).toContain('Audiences');
+      expect(itemLabels).toContain('Customer 360');
       expect(itemLabels).toContain('Accounts');
 
       // Active item has current badge
@@ -190,7 +190,7 @@ describe('ArTopbar responsive breadcrumbs with sidebar collapsed state', () => {
     const el = fixture.nativeElement as HTMLElement;
     const links = el.querySelectorAll('.tb__crumb-link');
     expect(links.length).toBe(2);
-    expect(links[0].textContent?.trim()).toBe('Marketing & Campaigns');
+    expect(links[0].textContent?.trim()).toBe('Marketing');
     expect(links[1].textContent?.trim()).toBe('Templates');
     expect(links[1].getAttribute('href')).toBe('/templates');
 

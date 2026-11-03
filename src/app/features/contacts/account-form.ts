@@ -9,16 +9,15 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
 
-import {
-  AccountStore,
-  CustomerAccount,
-  moveProblem,
-} from '../../core/services/account.store';
+import { AccountStore, CustomerAccount, moveProblem } from '../../core/services/account.store';
 import { AccountMasterDataService } from '../../core/services/account-master-data.service';
 import {
   AccountDraft,
   BLANK_ACCOUNT_DRAFT,
+  BLANK_SHIPPING_DRAFT,
+  ShippingDraft,
   getHierarchyPlacementInfo,
+  gstinStateCode,
   handleCityChange,
   handleStateChange,
   validateAccountDraft,
@@ -31,14 +30,7 @@ import { grantedPolicy } from '../../core/auth/permission';
 
 @Component({
   selector: 'ar-account-form',
-  imports: [
-    ArTopbar,
-    ArButton,
-    ArCard,
-    ArBanner,
-    ArIcon,
-    ArSelect,
-  ],
+  imports: [ArTopbar, ArButton, ArCard, ArBanner, ArIcon, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './account-form.html',
   styleUrl: './account-form.scss',
@@ -162,24 +154,119 @@ export class ArAccountForm {
       }
     });
 
-    // 3. Reactively populate draft when in edit mode once accounts data is available
+    // 3. In edit mode, load the account in full: the list leaves out its shipping addresses.
     effect(() => {
       const id = this.editingId();
-      if (!id) return;
-      const account = this.store.all().find((a) => a.id === id);
-      if (account) {
-        this.draft.set({
-          name: account.name,
-          industry: account.industry ?? '',
-          address: account.address ?? '',
-          city: account.city ?? '',
-          state: account.state ?? '',
-          website: account.website ?? '',
-          notes: account.notes ?? '',
-          parentId: account.parentId ?? '',
-        });
-      }
+      if (id) void this.loadAccount(id);
     });
+  }
+
+  private async loadAccount(id: string): Promise<void> {
+    try {
+      const a = await this.store.details(id);
+      if (!a || this.editingId() !== id) return;
+      this.draft.set({
+        name: a.name ?? '',
+        industry: a.industry ?? '',
+        gstin: a.gstin ?? '',
+        address: a.billingAddress ?? '',
+        billingPincode: a.billingPincode ?? '',
+        shipping: (a.shippingAddresses ?? []).map((s) => ({
+          label: s.label ?? '',
+          address: s.address ?? '',
+          city: s.city ?? '',
+          state: s.state ?? '',
+          pincode: s.pincode ?? '',
+          gstin: s.gstin ?? '',
+          isDefault: !!s.isDefault,
+        })),
+        city: a.city ?? '',
+        state: a.state ?? '',
+        website: a.website ?? '',
+        notes: a.notes ?? '',
+        parentId: a.parentAccountId ?? '',
+      });
+    } catch {
+      this.error.set('The account could not be loaded.');
+    }
+  }
+
+  /** Upper-cases the GSTIN as typed, and fills the billing state from its first two digits when none is chosen. */
+  protected onGstinInput(value: string): void {
+    const gstin = value.toUpperCase().replace(/\s/g, '');
+    this.patch('gstin', gstin);
+    if (!this.draft().state) {
+      const state = this.masterData.stateForCode(gstinStateCode(gstin));
+      if (state) this.onStateSelect(state);
+    }
+  }
+
+  // ---- shipping addresses ----
+
+  protected addShipping(): void {
+    this.draft.update((d) => ({
+      ...d,
+      shipping: [
+        ...d.shipping,
+        {
+          ...BLANK_SHIPPING_DRAFT,
+          label: d.shipping.length ? `Site ${d.shipping.length + 1}` : 'Main plant',
+          isDefault: d.shipping.length === 0,
+        },
+      ],
+    }));
+  }
+
+  /** A new shipping address filled from the billing address — the usual case for a single-site customer. */
+  protected addShippingFromBilling(): void {
+    const d = this.draft();
+    this.draft.set({
+      ...d,
+      shipping: [
+        ...d.shipping,
+        {
+          label: d.shipping.length ? `Site ${d.shipping.length + 1}` : 'Main plant',
+          address: d.address,
+          city: d.city,
+          state: d.state,
+          pincode: d.billingPincode,
+          gstin: d.gstin,
+          isDefault: d.shipping.length === 0,
+        },
+      ],
+    });
+  }
+
+  protected removeShipping(index: number): void {
+    this.draft.update((d) => {
+      const shipping = d.shipping.filter((_, i) => i !== index);
+      if (shipping.length && !shipping.some((s) => s.isDefault)) {
+        shipping[0] = { ...shipping[0], isDefault: true };
+      }
+      return { ...d, shipping };
+    });
+  }
+
+  protected patchShipping<K extends keyof ShippingDraft>(
+    index: number,
+    key: K,
+    value: ShippingDraft[K],
+  ): void {
+    this.draft.update((d) => ({
+      ...d,
+      shipping: d.shipping.map((s, i) => (i === index ? { ...s, [key]: value } : s)),
+    }));
+  }
+
+  protected setDefaultShipping(index: number): void {
+    this.draft.update((d) => ({
+      ...d,
+      shipping: d.shipping.map((s, i) => ({ ...s, isDefault: i === index })),
+    }));
+  }
+
+  protected shippingCities(state: string): readonly string[] {
+    return this.masterData.getCitiesForState(state);
   }
 
   protected patch<K extends keyof AccountDraft>(key: K, value: AccountDraft[K]): void {
@@ -225,7 +312,18 @@ export class ArAccountForm {
       await this.store.save(id, {
         name: d.name.trim(),
         industry: d.industry.trim() || null,
-        address: d.address.trim() || null,
+        gstin: d.gstin.trim().toUpperCase() || null,
+        billingAddress: d.address.trim() || null,
+        billingPincode: d.billingPincode.trim() || null,
+        shippingAddresses: d.shipping.map((s) => ({
+          label: s.label.trim(),
+          address: s.address.trim(),
+          city: s.city.trim() || null,
+          state: s.state.trim() || null,
+          pincode: s.pincode.trim() || null,
+          gstin: s.gstin.trim().toUpperCase() || null,
+          isDefault: s.isDefault,
+        })),
         city: d.city.trim() || null,
         state: d.state.trim() || null,
         website: d.website.trim() || null,
@@ -234,7 +332,9 @@ export class ArAccountForm {
       });
 
       this.toast.success(
-        id ? `Account "${d.name.trim()}" updated.` : `Account "${d.name.trim()}" created successfully.`,
+        id
+          ? `Account "${d.name.trim()}" updated.`
+          : `Account "${d.name.trim()}" created successfully.`,
       );
       void this.router.navigate(['/contacts/accounts']);
     } catch (e: unknown) {
