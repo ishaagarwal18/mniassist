@@ -434,6 +434,11 @@
   gap: 1.25rem;
 }
 
+/* A person's overview: just their conversations and timeline */
+.overview-grid--single {
+  grid-template-columns: 1fr;
+}
+
 @media (max-width: 900px) {
   .overview-grid {
     grid-template-columns: 1fr;

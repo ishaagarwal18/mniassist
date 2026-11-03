@@ -1,3 +1,4 @@
+import { PermissionService } from '@abp/ng.core';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -13,6 +14,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { grantedPolicy } from '../../core/auth/permission';
+import { InboxService } from '../../proxy/messaging/inbox.service';
 import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { Customer360Dto } from '../../proxy/sales/customer-360.models';
@@ -224,8 +227,14 @@ type PickerTab = 'Accounts' | 'Contacts';
 
 export type Customer360Tab = 'overview' | 'orders' | 'challans' | 'invoices' | 'assets' | 'tickets';
 
-/** The tabs about selling to the account: only on an account's view. */
-const SALES_TABS: readonly Customer360Tab[] = ['orders', 'challans', 'invoices'];
+/** The tabs about the company (selling, machines, service): only on an account's view. */
+const ACCOUNT_TABS: readonly Customer360Tab[] = [
+  'orders',
+  'challans',
+  'invoices',
+  'assets',
+  'tickets',
+];
 
 @Component({
   selector: 'ar-customer-360',
@@ -256,18 +265,65 @@ export class ArCustomer360 {
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly cockpitOrigin = inject(CockpitOriginService);
+  private readonly inbox = inject(InboxService);
+  private readonly permissions = inject(PermissionService);
 
   readonly data = signal<Customer360Dto | null>(environment.useMockData ? MOCK_CUSTOMER_360 : null);
   readonly activeTab = signal<Customer360Tab>('overview');
 
   /**
-   * One person's view, not a whole account's. Orders, challans, invoices, payments and credit belong to the account (GST,
-   * billing and terms live there), so a person's page shows their conversations, enquiries and service, and leads to the
-   * account for the rest.
+   * One person's view, not a whole account's. Orders, challans, invoices, payments, credit, machines and service belong to the
+   * account (GST, billing and terms live there), so a person's page shows their conversations, timeline and enquiries, and
+   * leads to the account for the rest.
    */
   protected readonly isPersonView = computed(() => {
     const c = this.data();
     return !!c && !c.isAccountView;
+  });
+
+  protected readonly canCreateOrder = grantedPolicy(
+    'AutoReach.SalesOrders.Create',
+    this.permissions,
+  );
+  protected readonly canCreateChallan = grantedPolicy(
+    'AutoReach.DeliveryChallans.Create',
+    this.permissions,
+  );
+  protected readonly canCreateInvoice = grantedPolicy(
+    'AutoReach.SalesInvoices.Create',
+    this.permissions,
+  );
+  protected readonly canCreateMachine = grantedPolicy(
+    'AutoReach.InstalledBase.Create',
+    this.permissions,
+  );
+
+  /**
+   * Opens a New order / challan / invoice / machine page for this account: its newest contact as the customer (the buyer, which
+   * the form lets you change; the account follows from them). With no contact on the account yet, the form starts empty.
+   */
+  protected readonly newRecordParams = computed(() => {
+    const c = this.data();
+    return c?.contactId
+      ? { customer: c.contactId, customerName: c.contactName ?? c.customerName }
+      : {};
+  });
+
+  /** The Commercial Credit chip's tooltip, for the state it shows. */
+  protected readonly creditChipTitle = computed(() => {
+    const c = this.data();
+    if (!c) return '';
+    if (c.credit.onHold)
+      return (
+        'Credit is on hold' +
+        (c.credit.holdReason ? `: ${c.credit.holdReason}` : '') +
+        '. New orders need approval.'
+      );
+    if (this.creditUtilizationPct() >= 90)
+      return '90% or more of the credit limit is in use. New orders may take it over the limit.';
+    return c.credit.creditLimitInPaise
+      ? 'Credit is in good standing: under 90% of the limit is in use and it is not on hold.'
+      : 'No credit limit is set and it is not on hold.';
   });
 
   /** Where this person's company's sales live: its account's Customer 360, when they belong to one. */
@@ -276,9 +332,9 @@ export class ArCustomer360 {
     return c?.accountId ? ['/contacts/accounts', c.accountId, '360'] : null;
   });
 
-  /** A sales tab left open from an account, after switching to one person, goes back to the overview. */
-  private readonly leaveSalesTab = effect(() => {
-    if (this.isPersonView() && SALES_TABS.includes(untracked(this.activeTab))) {
+  /** An account's tab left open, after switching to one person, goes back to the overview. */
+  private readonly leaveAccountTab = effect(() => {
+    if (this.isPersonView() && ACCOUNT_TABS.includes(untracked(this.activeTab))) {
       this.activeTab.set('overview');
     }
   });
@@ -498,11 +554,34 @@ export class ArCustomer360 {
     return phone ? phone.replace(/[^\d+]/g, '') : '';
   }
 
-  whatsAppUrl(phone?: string): string {
-    if (!phone) return '';
-    const digits = phone.replace(/[^\d]/g, '');
-    return `https://wa.me/${digits}`;
+  /**
+   * The customer's WhatsApp conversation in the inbox, found by their number: the header's Open in inbox and the links panel
+   * open it directly. (The header used to open wa.me, which sends from whatever phone is signed in, outside the platform: no
+   * inbox record, no consent check, not the business number. Messages go out with Message customer instead.)
+   */
+  protected readonly conversationId = signal<string | null>(null);
+
+  private findConversation(c: Customer360Dto | null): void {
+    this.conversationId.set(null);
+    const contactId = c ? (c.contactId ?? (c.isAccountView ? undefined : c.id)) : undefined;
+    const phone = (c?.phone ?? '').replace(/\D/g, '');
+    if (environment.useMockData || !contactId || !phone) return;
+    this.inbox
+      .getConversations({ filter: phone.slice(-10), maxResultCount: 20 }, { skipHandleError: true })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (page) => {
+          const match = (page.items ?? []).find((x) => x.contactId === contactId);
+          this.conversationId.set(match?.id ?? null);
+        },
+        error: () => this.conversationId.set(null),
+      });
   }
+
+  private readonly conversationLookup = effect(() => {
+    const c = this.data();
+    untracked(() => this.findConversation(c));
+  });
 
   protected moreThanShown(c: Customer360Dto): boolean {
     return (

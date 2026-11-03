@@ -2,9 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
+  input,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -75,7 +78,7 @@ export function lineTaxablePaise(l: InvoiceLine): number {
         <div class="ni__grid">
           <div class="ar-field ni__wide">
             <span class="ar-field__label">Customer <span class="ar-field__req">*</span></span>
-            <ar-contact-picker (picked)="pickCustomer($event)" />
+            <ar-contact-picker [initial]="initialCustomer()" (picked)="pickCustomer($event)" />
             @if (party().accountName; as a) {
               <span class="ar-field__hint">Account: {{ a }}</span>
             } @else if (customer()) {
@@ -423,6 +426,12 @@ export class ArNewSalesInvoice {
 
   /** The invoice saved, or null when cancelled. */
   readonly closed = output<SalesInvoiceDto | null>();
+  /** The customer to start with, e.g. from an account's Customer 360 (?customer=…&customerName=…). */
+  readonly initialCustomer = input<PickerOption | null>(null);
+  private readonly applyInitialCustomer = effect(() => {
+    const c = this.initialCustomer();
+    if (c) untracked(() => void this.pickCustomer(c));
+  });
 
   protected readonly Kind = SalesInvoiceKind;
   protected readonly gstRates = GST_RATES;

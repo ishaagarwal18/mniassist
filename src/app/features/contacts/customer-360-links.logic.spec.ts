@@ -30,7 +30,7 @@ const find = (groups: ReturnType<typeof customerLinkGroups>, label: string) =>
   groups.flatMap((g) => g.links).find((l) => l.label === label);
 
 describe('customerLinkGroups', () => {
-  it("leads a person's view to their account for orders and invoices", () => {
+  it("keeps a person's view to their own things and leads to the account for the company's", () => {
     const groups = customerLinkGroups(base, null);
     for (const label of [
       'Sales orders',
@@ -38,11 +38,21 @@ describe('customerLinkGroups', () => {
       'Delivery challans',
       'Invoices',
       'Collections',
+      'Documents',
+      'Installed base',
+      'Helpdesk tickets',
+      'Re-orders',
+      'Renewals',
     ]) {
       expect(find(groups, label)).toBeUndefined();
     }
-    expect(find(groups, 'Orders & invoices')).toEqual({
-      label: 'Orders & invoices',
+    expect(groups.map((g) => g.title)).toEqual([
+      'Customer record',
+      'Conversations & activity',
+      'Sales',
+    ]);
+    expect(find(groups, 'Orders, invoices & service')).toEqual({
+      label: 'Orders, invoices & service',
       route: '/contacts/accounts/acc1/360',
       hint: 'On Kalyani Forge',
     });
@@ -51,16 +61,19 @@ describe('customerLinkGroups', () => {
 
   it('asks a person with no account to be linked to one first', () => {
     const groups = customerLinkGroups({ ...base, accountId: undefined }, null);
-    expect(find(groups, 'Orders & invoices')).toMatchObject({
+    expect(find(groups, 'Orders, invoices & service')).toMatchObject({
       route: '/contacts/c1/edit',
       hint: 'Link to an account first',
     });
   });
 
-  it('opens the sales lists on the whole account in the account view', () => {
+  it('opens the sales, finance and service lists on the whole account in the account view', () => {
     const groups = customerLinkGroups({ ...base, isAccountView: true }, null);
     expect(find(groups, 'Invoices')?.count).toBe(5);
-    expect(find(groups, 'New sales order')?.params).toMatchObject({ new: 1, customer: 'c1' });
+    expect(find(groups, 'New sales order')).toMatchObject({
+      route: '/sales/orders/new',
+      params: { customer: 'c1' },
+    });
     expect(find(groups, 'Collections')).toBeDefined();
     expect(find(groups, 'Delivery challans')?.params).toEqual({
       account: 'acc1',

@@ -1,43 +1,30 @@
 import { PermissionService } from '@abp/ng.core';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  computed,
-  effect,
-  inject,
-  input,
-  signal,
-  untracked,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { environment } from '../../../environments/environment';
 import { canOpenUrl } from '../../core/auth/nav-access.guard';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { PlanService } from '../../core/services/plan.service';
-import { InboxService } from '../../proxy/messaging/inbox.service';
 import { Customer360Dto } from '../../proxy/sales/customer-360.models';
 import { ArIcon } from '../../ui';
 import { customerLinkGroups } from './customer-360-links.logic';
-import { ArReorderBuyers } from '../reorder/reorder-buyers';
-
-/** Digits only, for matching a phone number however it was typed. */
-const digits = (s?: string | null) => (s ?? '').replace(/\D/g, '');
 
 @Component({
   selector: 'ar-customer-360-links',
-  imports: [RouterLink, ArIcon, ArReorderBuyers],
+  imports: [RouterLink, ArIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="cl" aria-label="Everything about this customer">
       <div class="cl__head">
         <h2 class="cl__title">Everything about this customer</h2>
         @if (customer().accountId && canBuyers()) {
-          <button type="button" class="cl__btn" (click)="buyersOpen.set(true)">
+          <a
+            class="cl__btn"
+            routerLink="/contacts/accounts/credit"
+            [queryParams]="{ account: customer().accountId }"
+          >
             <ar-icon name="billing" [size]="13" /> Buyers &amp; credit
-          </button>
+          </a>
         }
       </div>
       <div class="cl__grid">
@@ -64,13 +51,6 @@ const digits = (s?: string | null) => (s ?? '').replace(/\D/g, '');
         }
       </div>
     </section>
-
-    @if (buyersOpen()) {
-      <ar-reorder-buyers
-        [initialAccountId]="customer().accountId ?? null"
-        (closed)="buyersOpen.set(false)"
-      />
-    }
   `,
   styles: `
     .cl {
@@ -173,17 +153,14 @@ export class ArCustomer360Links {
   private readonly permissions = inject(PermissionService);
   private readonly plans = inject(PlanService);
   private readonly account = inject(CurrentUserService);
-  private readonly inbox = inject(InboxService);
-  private readonly destroyRef = inject(DestroyRef);
 
   readonly customer = input.required<Customer360Dto>();
 
-  protected readonly buyersOpen = signal(false);
   protected readonly canBuyers = computed(() =>
     this.permissions.getGrantedPolicy('AutoReach.ReorderPortal.Settings'),
   );
-  /** The customer's inbox conversation, once found. */
-  private readonly conversationId = signal<string | null>(null);
+  /** The customer's inbox conversation, once the page has found it. */
+  readonly conversationId = input<string | null>(null);
 
   protected readonly groups = computed(() => {
     this.account.isHost();
@@ -196,29 +173,4 @@ export class ArCustomer360Links {
       }))
       .filter((g) => g.links.length > 0);
   });
-
-  constructor() {
-    effect(() => {
-      const c = this.customer();
-      untracked(() => this.findConversation(c));
-    });
-  }
-
-  /** Finds the contact's conversation by their number, so the inbox link opens it directly. */
-  private findConversation(c: Customer360Dto): void {
-    this.conversationId.set(null);
-    const contactId = c.contactId ?? (c.isAccountView ? undefined : c.id);
-    const phone = digits(c.phone);
-    if (environment.useMockData || !contactId || !phone) return;
-    this.inbox
-      .getConversations({ filter: phone.slice(-10), maxResultCount: 20 }, { skipHandleError: true })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (page) => {
-          const match = (page.items ?? []).find((x) => x.contactId === contactId);
-          this.conversationId.set(match?.id ?? null);
-        },
-        error: () => this.conversationId.set(null),
-      });
-  }
 }

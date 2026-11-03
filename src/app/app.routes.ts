@@ -186,6 +186,18 @@ export const routes: Routes = [
           import('./features/contacts/account-form').then((m) => m.ArAccountForm),
       },
       {
+        path: 'contacts/accounts/credit',
+        title: 'Buyers & credit · MNI Assist',
+        loadComponent: () =>
+          import('./features/contacts/account-credit').then((m) => m.ArAccountCredit),
+      },
+      {
+        path: 'contacts/accounts/:accountId/rollup',
+        title: 'Account roll-up · MNI Assist',
+        loadComponent: () =>
+          import('./features/contacts/account-rollup').then((m) => m.ArAccountRollup),
+      },
+      {
         path: 'contacts/accounts/:accountId/edit',
         title: 'Edit Account · MNI Assist',
         loadComponent: () =>
@@ -202,6 +214,12 @@ export const routes: Routes = [
         title: 'Customer 360 · MNI Assist',
         loadComponent: () =>
           import('./features/contacts/customer-360').then((m) => m.ArCustomer360),
+      },
+      {
+        path: 'contacts/:id/message',
+        title: 'Message customer · MNI Assist',
+        loadComponent: () =>
+          import('./features/contacts/customer-message').then((m) => m.ArCustomerMessage),
       },
       {
         path: 'contacts/:id/360',
@@ -320,16 +338,34 @@ export const routes: Routes = [
         loadComponent: () => import('./features/sales/orders/orders').then((m) => m.ArSalesOrders),
       },
       {
+        path: 'sales/orders/new',
+        title: 'New sales order · MNI Assist',
+        loadComponent: () =>
+          import('./features/sales/new-sales-record-pages').then((m) => m.ArNewSalesOrderPage),
+      },
+      {
         path: 'sales/challans',
         title: 'Delivery challans · MNI Assist',
         loadComponent: () =>
           import('./features/sales/challans/delivery-challans').then((m) => m.ArDeliveryChallans),
       },
       {
+        path: 'sales/challans/new',
+        title: 'New delivery challan · MNI Assist',
+        loadComponent: () =>
+          import('./features/sales/new-sales-record-pages').then((m) => m.ArNewDeliveryChallanPage),
+      },
+      {
         path: 'sales/invoices',
         title: 'Sales invoices · MNI Assist',
         loadComponent: () =>
           import('./features/sales/invoices/sales-invoices').then((m) => m.ArSalesInvoices),
+      },
+      {
+        path: 'sales/invoices/new',
+        title: 'New invoice · MNI Assist',
+        loadComponent: () =>
+          import('./features/sales/new-sales-record-pages').then((m) => m.ArNewSalesInvoicePage),
       },
       {
         path: 'renewals',
@@ -514,6 +550,12 @@ export const routes: Routes = [
         title: 'Installed base · MNI Assist',
         loadComponent: () =>
           import('./features/pipeline/installed-base').then((m) => m.ArInstalledBase),
+      },
+      {
+        path: 'installed-base/new',
+        title: 'Register a machine · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/register-machine').then((m) => m.ArRegisterMachine),
       },
       {
         path: 'compliance',

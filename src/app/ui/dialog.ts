@@ -1,8 +1,13 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  InjectionToken,
   OnDestroy,
   afterEveryRender,
+  afterNextRender,
+  inject,
   input,
   output,
   viewChild,
@@ -19,6 +24,13 @@ import { isSubmitClick, recheckMarked, validateWithin } from './form-validation'
  */
 const DIALOG_Z_BASE = 1200;
 let openDialogs = 0;
+
+/**
+ * Provided (as `true`) by a page that shows a form normally used in a dialog, e.g. `/sales/orders/new`. Every `ar-dialog` under
+ * it renders in the page instead: a card with the title, the fields and the actions, the same checks before the main button,
+ * no overlay. The form component itself does not change.
+ */
+export const AR_DIALOG_INLINE = new InjectionToken<boolean>('AR_DIALOG_INLINE');
 
 /**
  * A modal Syncfusion dialog (`ejs-dialog`): overlay, centred panel, titled header
@@ -41,32 +53,42 @@ let openDialogs = 0;
  */
 @Component({
   selector: 'ar-dialog',
-  imports: [DialogComponent],
+  imports: [DialogComponent, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ejs-dialog
-      #dlg
-      [cssClass]="cssClass()"
-      [visible]="true"
-      [isModal]="true"
-      [showCloseIcon]="true"
-      [closeOnEscape]="true"
-      [header]="title()"
-      [allowDragging]="true"
-      [width]="width()"
-      [zIndex]="zIndex"
-      (open)="onOpen()"
-      [animationSettings]="{ effect: 'Fade', duration: 150 }"
-      (beforeClose)="onBeforeClose($event)"
-      (overlayClick)="dismiss.emit()"
-    >
-      <ng-template #content>
-        <div class="dlg__body"><ng-content /></div>
-      </ng-template>
-      <ng-template #footerTemplate>
-        <div class="dlg__foot"><ng-content select="[dialogActions]" /></div>
-      </ng-template>
-    </ejs-dialog>
+    <ng-template #bodyTpl><ng-content /></ng-template>
+    <ng-template #footTpl><ng-content select="[dialogActions]" /></ng-template>
+    @if (inline) {
+      <section class="dlg-page" [attr.aria-label]="title()">
+        <h2 class="dlg-page__title">{{ title() }}</h2>
+        <div class="dlg__body"><ng-container [ngTemplateOutlet]="bodyTpl" /></div>
+        <div class="dlg__foot"><ng-container [ngTemplateOutlet]="footTpl" /></div>
+      </section>
+    } @else {
+      <ejs-dialog
+        #dlg
+        [cssClass]="cssClass()"
+        [visible]="true"
+        [isModal]="true"
+        [showCloseIcon]="true"
+        [closeOnEscape]="true"
+        [header]="title()"
+        [allowDragging]="true"
+        [width]="width()"
+        [zIndex]="zIndex"
+        (open)="onOpen()"
+        [animationSettings]="{ effect: 'Fade', duration: 150 }"
+        (beforeClose)="onBeforeClose($event)"
+        (overlayClick)="dismiss.emit()"
+      >
+        <ng-template #content>
+          <div class="dlg__body"><ng-container [ngTemplateOutlet]="bodyTpl" /></div>
+        </ng-template>
+        <ng-template #footerTemplate>
+          <div class="dlg__foot"><ng-container [ngTemplateOutlet]="footTpl" /></div>
+        </ng-template>
+      </ejs-dialog>
+    }
   `,
   styles: `
     :host {
@@ -82,6 +104,26 @@ let openDialogs = 0;
       justify-content: flex-end;
       gap: 8px;
     }
+    .dlg-page {
+      max-width: 880px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 1.25rem 1.5rem;
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card);
+      box-shadow: var(--ar-shadow-card);
+    }
+    .dlg-page__title {
+      margin: 0;
+      font: 600 1.05rem var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .dlg-page .dlg__foot {
+      padding-top: 12px;
+      border-top: 1px solid var(--ar-line-200);
+    }
   `,
 })
 export class ArDialog implements OnDestroy {
@@ -91,9 +133,13 @@ export class ArDialog implements OnDestroy {
   readonly width = input('min(460px, calc(100vw - 32px))');
   readonly dismiss = output<void>();
 
+  /** Shown in the page rather than over it: see {@link AR_DIALOG_INLINE}. */
+  protected readonly inline = inject(AR_DIALOG_INLINE, { optional: true }) ?? false;
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+
   private readonly dialog = viewChild<DialogComponent>('dlg');
   /** Under the toasts (styles.scss, #ar-toasts), so a message is never hidden behind a dialog. */
-  protected readonly zIndex = DIALOG_Z_BASE + ++openDialogs;
+  protected readonly zIndex = this.inline ? 0 : DIALOG_Z_BASE + ++openDialogs;
   private panel: HTMLElement | null = null;
   private readonly onClick = (e: Event) => {
     const body = this.panel?.querySelector('.dlg__body');
@@ -110,10 +156,18 @@ export class ArDialog implements OnDestroy {
       const body = this.panel?.querySelector('.dlg__body');
       if (body) recheckMarked(body);
     });
+    if (this.inline) {
+      // In a page: the same checks before the main button, and focus on the first field.
+      afterNextRender(() => {
+        this.panel = this.host.querySelector<HTMLElement>('.dlg-page');
+        this.panel?.addEventListener('click', this.onClick, true);
+        this.focusFirst();
+      });
+    }
   }
 
   ngOnDestroy(): void {
-    openDialogs--;
+    if (!this.inline) openDialogs--;
     this.panel?.removeEventListener('click', this.onClick, true);
   }
 
@@ -122,9 +176,13 @@ export class ArDialog implements OnDestroy {
     this.panel = (this.dialog()?.element as HTMLElement | undefined) ?? null;
     if (!this.panel) return;
     this.panel.addEventListener('click', this.onClick, true);
+    this.focusFirst();
+  }
+
+  private focusFirst(): void {
     const target =
-      this.panel.querySelector<HTMLElement>('[data-autofocus]') ??
-      this.panel.querySelector<HTMLElement>(
+      this.panel?.querySelector<HTMLElement>('[data-autofocus]') ??
+      this.panel?.querySelector<HTMLElement>(
         '.dlg__body input:not([type=hidden]):not([disabled]), .dlg__body textarea:not([disabled])',
       );
     setTimeout(() => target?.focus(), 0);

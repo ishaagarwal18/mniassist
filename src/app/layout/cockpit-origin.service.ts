@@ -34,6 +34,16 @@ export class CockpitOriginService {
       .subscribe((e) => this.navigated(e.urlAfterRedirects));
   }
 
+  /**
+   * Where a screen opened from a cockpit goes back to once done (saved or cancelled): that cockpit, while the origin is for this
+   * screen; otherwise `fallback`.
+   */
+  returnUrl(fallback: string): string {
+    const origin = this.originSignal();
+    const here = pathOf(this.router?.url ?? '');
+    return origin && origin.targetPath === here ? origin.cockpitUrl : fallback;
+  }
+
   /** The cockpit says whose it is once loaded, so the way back can be named. */
   setCockpitName(name: string | null): void {
     const url = this.router?.url ?? '';

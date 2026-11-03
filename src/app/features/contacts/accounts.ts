@@ -30,17 +30,15 @@ import {
   MAX_ACCOUNT_DEPTH,
   moveProblem,
 } from '../../core/services/account.store';
-import { CustomerAccountRollupDto, DecisionRole } from '../../proxy/contacts';
+import { DecisionRole } from '../../proxy/contacts';
 import type { ContactDto } from '../../proxy/contacts/models';
 import { ContactService as ContactApi } from '../../proxy/contacts/contact.service';
 import { CustomerAccountService } from '../../proxy/contacts/customer-account.service';
 import { ContactService } from '../../core/services/contact.service';
 import { ArContactDialog } from './contact-dialog';
-import { ArReorderBuyers } from '../reorder/reorder-buyers';
 import { readApiError } from '../../core/util/api-error';
 import { ArTopbar } from '../../layout/topbar';
 import { ArAvatar, ArButton, ArChip, ArDialog, ArIcon, ArStatTile } from '../../ui';
-import { ArErpLedger } from './erp-ledger';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { grantedPolicy } from '../../core/auth/permission';
@@ -100,9 +98,7 @@ const BLANK: Draft = {
     ArIcon,
     ArStatTile,
     ArAvatar,
-    ArErpLedger,
     ArContactDialog,
-    ArReorderBuyers,
     RouterLink,
     TreeGridModule,
   ],
@@ -136,8 +132,6 @@ export class ArAccounts {
     'AutoReach.ReorderPortal.Settings',
     this.permissions,
   );
-  /** The company the buyers and credit dialog is open on: '' opens it with none chosen, null closes it. */
-  protected readonly buyersFor = signal<string | null>(null);
 
   // ---- An account's people, from its contact count ------------------------------------
   private readonly contactApi = inject(ContactApi);
@@ -397,11 +391,6 @@ export class ArAccounts {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  protected readonly rollupOpen = signal(false);
-  protected readonly rollupFor = signal<CustomerAccount | null>(null);
-  protected readonly rollup = signal<CustomerAccountRollupDto | null>(null);
-  protected readonly includeSubsidiaries = signal(false);
-
   /**
    * Accounts the one being edited may sit under: anything that would not create a loop or push the tree past
    * its depth limit. The server checks again — this only keeps the picker from offering a refusal.
@@ -475,41 +464,5 @@ export class ArAccounts {
 
   protected isTopLevel(row: AccountRow): boolean {
     return row.depth === 1;
-  }
-
-  protected async openRollup(a: CustomerAccount): Promise<void> {
-    this.rollupFor.set(a);
-    this.includeSubsidiaries.set(false);
-    this.rollupOpen.set(true);
-    await this.loadRollup();
-  }
-
-  protected async toggleSubsidiaries(on: boolean): Promise<void> {
-    this.includeSubsidiaries.set(on);
-    await this.loadRollup();
-  }
-
-  private async loadRollup(): Promise<void> {
-    const a = this.rollupFor();
-    if (!a) return;
-    this.rollup.set(null);
-    this.rollup.set(await this.store.rollup(a.id, this.includeSubsidiaries()));
-  }
-
-  protected inr(paise?: number): string {
-    return '₹' + Math.round((paise ?? 0) / 100).toLocaleString('en-IN');
-  }
-
-  protected breakdownRows(r: CustomerAccountRollupDto): { stage: string; count: number }[] {
-    return Object.entries(r.lifecycleBreakdown ?? {}).map(([stage, count]) => ({ stage, count }));
-  }
-
-  protected when(iso?: string | null): string {
-    if (!iso) return 'no activity';
-    return new Date(iso).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
   }
 }

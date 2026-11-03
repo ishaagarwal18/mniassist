@@ -84,15 +84,17 @@
         <!-- Quick Communications & Shortcuts -->
         <div class="c360-actions-bar" aria-label="Customer direct communication">
           @if (c.phone) {
-            <a
-              class="c360-comm-link c360-comm-link--whatsapp"
-              [href]="whatsAppUrl(c.phone)"
-              target="_blank"
-              rel="noopener"
-              title="Open WhatsApp chat"
-            >
-              <ar-icon name="send" [size]="14" /> WhatsApp
-            </a>
+            @if (conversationId(); as conversation) {
+              <!-- The WhatsApp conversation on the platform (to send, use Message customer) -->
+              <a
+                class="c360-comm-link c360-comm-link--whatsapp"
+                routerLink="/inbox"
+                [queryParams]="{ conversation }"
+                title="Open this customer's WhatsApp conversation in the inbox"
+              >
+                <ar-icon name="send" [size]="14" /> Open in inbox
+              </a>
+            }
             <a
               class="c360-comm-link"
               [href]="'tel:' + cleanPhone(c.phone)"
@@ -130,19 +132,23 @@
 
     @if (isPersonView()) {
       <!-- A person: selling happens on their account -->
-      <section class="c360-account-note" aria-label="Orders and invoices">
+      <section class="c360-account-note" aria-label="Orders, invoices and service">
         @if (accountSalesRoute(); as route) {
           <p>
-            Orders, delivery challans, invoices and payments are kept on the account
-            <strong translate="no">{{ c.accountName }}</strong
+            Orders, delivery challans, invoices, payments, installed machines and service tickets
+            are kept on the account <strong translate="no">{{ c.accountName }}</strong
             >, with its GST, billing address and credit terms.
           </p>
           <a ar-button variant="primary" [routerLink]="route">Open account 360</a>
         } @else {
           <p>
             <strong translate="no">{{ c.customerName }}</strong> isn't linked to a company account
-            yet. Orders, delivery challans, invoices and payments are raised on an account, where
-            its GST, billing address and credit terms are kept.
+            yet. Orders, delivery challans, invoices, payments, installed machines and service
+            tickets are kept on an account, with its GST, billing address and credit terms.
+            @if (c.installedAssetsCount || c.openTicketsCount) {
+              {{ c.installedAssetsCount }} machine(s) and {{ c.openTicketsCount }} open ticket(s)
+              recorded for this person appear there once they're linked.
+            }
           </p>
           <a ar-button variant="primary" [routerLink]="['/contacts', c.contactId ?? c.id, 'edit']"
             >Link to an account</a
@@ -157,7 +163,7 @@
         <div class="kpi-card kpi-card--credit" [class.on-hold]="c.credit.onHold">
           <div class="kpi-head">
             <span class="kpi-lbl">Commercial Credit</span>
-            <ar-chip [tone]="creditTone()">
+            <ar-chip [tone]="creditTone()" [title]="creditChipTitle()">
               {{
                 c.credit.onHold ? 'ON HOLD' : creditUtilizationPct() >= 90 ? 'NEAR LIMIT' : 'NORMAL'
               }}
@@ -214,9 +220,13 @@
           <div class="kpi-head">
             <span class="kpi-lbl">Outstanding Owed</span>
             @if (c.credit.totalOverdueInPaise > 0) {
-              <ar-chip tone="bad">OVERDUE</ar-chip>
+              <ar-chip
+                tone="bad"
+                title="Some of what is owed is past its due date. See Invoices & Aging."
+                >OVERDUE</ar-chip
+              >
             } @else {
-              <ar-chip tone="good">CURRENT</ar-chip>
+              <ar-chip tone="good" title="Nothing owed is past its due date.">CURRENT</ar-chip>
             }
           </div>
           <div class="kpi-val" [class.text-danger]="c.credit.totalOwedInPaise > 0">
@@ -236,7 +246,11 @@
         <div class="kpi-card kpi-card--order">
           <div class="kpi-head">
             <span class="kpi-lbl">Active on Order</span>
-            <ar-chip tone="teal">{{ c.activeOrdersCount }} Active</ar-chip>
+            <ar-chip
+              tone="teal"
+              title="Sales orders confirmed, in production or part-dispatched; the amount is what is still to be invoiced on them."
+              >{{ c.activeOrdersCount }} Active</ar-chip
+            >
           </div>
           <div class="kpi-val text-primary">
             ₹{{ c.credit.totalOnOrderInPaise / 100 | number: '1.2-2' }}
@@ -253,7 +267,11 @@
         <div class="kpi-card kpi-card--ltv">
           <div class="kpi-head">
             <span class="kpi-lbl">Lifetime Revenue</span>
-            <ar-chip tone="good">LTV</ar-chip>
+            <ar-chip
+              tone="good"
+              title="Lifetime value: the total of every invoice billed to this customer."
+              >LTV</ar-chip
+            >
           </div>
           <div class="kpi-val text-success">
             ₹{{ c.lifetimeRevenueInPaise / 100 | number: '1.0-0' }}
@@ -272,81 +290,81 @@
 
     <!-- Dossier Navigation Tabs -->
     <!-- Every related screen, opened on this customer -->
-    <ar-customer-360-links [customer]="c" />
+    <ar-customer-360-links [customer]="c" [conversationId]="conversationId()" />
 
-    <nav class="c360-nav-tabs" aria-label="Customer 360 dossier sections">
-      <button
-        type="button"
-        class="nav-tab"
-        [class.active]="activeTab() === 'overview'"
-        (click)="activeTab.set('overview')"
-      >
-        <span>Overview & Activity</span>
-      </button>
-      @if (!isPersonView()) {
+    @if (!isPersonView()) {
+      <nav class="c360-nav-tabs" aria-label="Customer 360 dossier sections">
         <button
           type="button"
           class="nav-tab"
-          [class.active]="activeTab() === 'orders'"
-          (click)="activeTab.set('orders')"
+          [class.active]="activeTab() === 'overview'"
+          (click)="activeTab.set('overview')"
         >
-          <span>Sales Orders</span>
-          <span class="tab-badge">{{ c.totalOrdersCount }}</span>
+          <span>Overview & Activity</span>
+        </button>
+        @if (!isPersonView()) {
+          <button
+            type="button"
+            class="nav-tab"
+            [class.active]="activeTab() === 'orders'"
+            (click)="activeTab.set('orders')"
+          >
+            <span>Sales Orders</span>
+            <span class="tab-badge">{{ c.totalOrdersCount }}</span>
+          </button>
+          <button
+            type="button"
+            class="nav-tab"
+            [class.active]="activeTab() === 'challans'"
+            (click)="activeTab.set('challans')"
+          >
+            <span>Delivery Challans</span>
+            <span class="tab-badge">{{ c.totalChallansCount }}</span>
+          </button>
+          <button
+            type="button"
+            class="nav-tab"
+            [class.active]="activeTab() === 'invoices'"
+            (click)="activeTab.set('invoices')"
+          >
+            <span>Invoices & Aging</span>
+            <span class="tab-badge">{{ c.totalInvoicesCount }}</span>
+          </button>
+        }
+        <button
+          type="button"
+          class="nav-tab"
+          [class.active]="activeTab() === 'assets'"
+          (click)="activeTab.set('assets')"
+        >
+          <span>Installed Machinery</span>
+          <span class="tab-badge">{{ c.installedAssetsCount }}</span>
         </button>
         <button
           type="button"
           class="nav-tab"
-          [class.active]="activeTab() === 'challans'"
-          (click)="activeTab.set('challans')"
+          [class.active]="activeTab() === 'tickets'"
+          (click)="activeTab.set('tickets')"
         >
-          <span>Delivery Challans</span>
-          <span class="tab-badge">{{ c.totalChallansCount }}</span>
+          <span>Service Tickets</span>
+          <span class="tab-badge">{{ c.openTicketsCount }}</span>
         </button>
-        <button
-          type="button"
-          class="nav-tab"
-          [class.active]="activeTab() === 'invoices'"
-          (click)="activeTab.set('invoices')"
-        >
-          <span>Invoices & Aging</span>
-          <span class="tab-badge">{{ c.totalInvoicesCount }}</span>
-        </button>
-      }
-      <button
-        type="button"
-        class="nav-tab"
-        [class.active]="activeTab() === 'assets'"
-        (click)="activeTab.set('assets')"
-      >
-        <span>Installed Machinery</span>
-        <span class="tab-badge">{{ c.installedAssetsCount }}</span>
-      </button>
-      <button
-        type="button"
-        class="nav-tab"
-        [class.active]="activeTab() === 'tickets'"
-        (click)="activeTab.set('tickets')"
-      >
-        <span>Service Tickets</span>
-        <span class="tab-badge">{{ c.openTicketsCount }}</span>
-      </button>
-    </nav>
+      </nav>
+    }
 
     <!-- TAB 1: OVERVIEW & ACTIVITY -->
     @if (activeTab() === 'overview') {
-      <div class="overview-grid">
-        <!-- Left Column: Commercial & Operations Snapshot -->
-        <div class="overview-card">
-          <div class="overview-card__head">
-            <h2 class="overview-card__title">
-              <span>{{
-                isPersonView() ? '🏭 Service Snapshot' : '⚡ Commercial & Operational Snapshot'
-              }}</span>
-            </h2>
-            <span class="text-xs text-muted">Latest records</span>
-          </div>
+      <div class="overview-grid" [class.overview-grid--single]="isPersonView()">
+        @if (!isPersonView()) {
+          <!-- Left Column: Commercial & Operations Snapshot -->
+          <div class="overview-card">
+            <div class="overview-card__head">
+              <h2 class="overview-card__title">
+                <span>⚡ Commercial & Operational Snapshot</span>
+              </h2>
+              <span class="text-xs text-muted">Latest records</span>
+            </div>
 
-          @if (!isPersonView()) {
             <div class="highlights-list">
               <!-- Latest Order -->
               @if (c.recentOrders.length > 0) {
@@ -424,20 +442,21 @@
                 </a>
               }
             </div>
-          }
 
-          <!-- Machinery & Service status summary -->
-          <div class="c360-subsidiary-bar">
-            <span
-              >🏭 <strong>{{ c.installedAssetsCount }}</strong> Installed Machines at facility</span
-            >
-            <span [class.text-danger]="c.openTicketsCount > 0">
-              🎫 <strong>{{ c.openTicketsCount }}</strong> Open Service Ticket{{
-                c.openTicketsCount === 1 ? '' : 's'
-              }}
-            </span>
+            <!-- Machinery & Service status summary -->
+            <div class="c360-subsidiary-bar">
+              <span
+                >🏭 <strong>{{ c.installedAssetsCount }}</strong> Installed Machines at
+                facility</span
+              >
+              <span [class.text-danger]="c.openTicketsCount > 0">
+                🎫 <strong>{{ c.openTicketsCount }}</strong> Open Service Ticket{{
+                  c.openTicketsCount === 1 ? '' : 's'
+                }}
+              </span>
+            </div>
           </div>
-        </div>
+        }
 
         <!-- Right Column: Customer Interaction & Communications Timeline -->
         <div class="overview-card">
@@ -489,8 +508,7 @@
                 <div class="empty-state__icon">💬</div>
                 <h3 class="empty-state__title">No communications logged yet</h3>
                 <p class="empty-state__hint">
-                  Use "Message customer" in the action ribbon above to reach out via WhatsApp, Email
-                  or SMS.
+                  Use "Message customer" above to reach out via WhatsApp, Email or SMS.
                 </p>
               </div>
             }
@@ -519,6 +537,16 @@
               >View all in Sales orders →</a
             >
           </div>
+          @if (canCreateOrder()) {
+            <a
+              ar-button
+              variant="primary"
+              icon="plus"
+              routerLink="/sales/orders/new"
+              [queryParams]="newRecordParams()"
+              >New sales order</a
+            >
+          }
         </div>
 
         <div class="table-responsive">
@@ -557,6 +585,15 @@
                       [queryParams]="{ open: o.id }"
                     >
                       Open
+                    </a>
+                    <a
+                      ar-button
+                      variant="ghost"
+                      [routerLink]="['/contacts', o.customerId, 'message']"
+                      [queryParams]="{ document: 'o:' + o.id }"
+                      title="Send this order to its buyer on WhatsApp or email"
+                    >
+                      Send
                     </a>
                   </td>
                 </tr>
@@ -601,6 +638,16 @@
               >View all in Delivery challans →</a
             >
           </div>
+          @if (canCreateChallan()) {
+            <a
+              ar-button
+              variant="primary"
+              icon="plus"
+              routerLink="/sales/challans/new"
+              [queryParams]="newRecordParams()"
+              >New delivery challan</a
+            >
+          }
         </div>
 
         <div class="table-responsive">
@@ -637,6 +684,15 @@
                       [queryParams]="{ open: dc.id }"
                     >
                       View
+                    </a>
+                    <a
+                      ar-button
+                      variant="ghost"
+                      [routerLink]="['/contacts', dc.customerId, 'message']"
+                      [queryParams]="{ document: 'c:' + dc.id }"
+                      title="Send this challan to its buyer on WhatsApp or email"
+                    >
+                      Send
                     </a>
                   </td>
                 </tr>
@@ -677,6 +733,16 @@
               >View all in Invoices →</a
             >
           </div>
+          @if (canCreateInvoice()) {
+            <a
+              ar-button
+              variant="primary"
+              icon="plus"
+              routerLink="/sales/invoices/new"
+              [queryParams]="newRecordParams()"
+              >New invoice</a
+            >
+          }
         </div>
 
         <div class="table-responsive">
@@ -725,6 +791,15 @@
                     >
                       View
                     </a>
+                    <a
+                      ar-button
+                      variant="ghost"
+                      [routerLink]="['/contacts', inv.customerId, 'message']"
+                      [queryParams]="{ document: 'i:' + inv.id }"
+                      title="Send this invoice to its buyer on WhatsApp or email"
+                    >
+                      Send
+                    </a>
                   </td>
                 </tr>
               } @empty {
@@ -762,6 +837,16 @@
             Showing {{ filteredAssets().length }} of {{ c.installedAssets.length }} equipment items
             <a class="table-stats__all" routerLink="/installed-base">View installed base →</a>
           </div>
+          @if (canCreateMachine()) {
+            <a
+              ar-button
+              variant="primary"
+              icon="plus"
+              routerLink="/installed-base/new"
+              [queryParams]="newRecordParams()"
+              >Register a machine</a
+            >
+          }
         </div>
 
         <div class="table-responsive">

@@ -4,9 +4,9 @@
   help="Group contacts by the company or plant they belong to. Put a plant under its company, and a company under its group, up to five levels — a parent's rollup includes aggregated pipeline value and contacts across its entire hierarchy."
 >
   @if (canBuyers()) {
-    <button ar-button type="button" variant="ghost" icon="contacts" (click)="buyersFor.set('')">
-      Buyers &amp; credit
-    </button>
+    <a ar-button variant="ghost" icon="contacts" routerLink="/contacts/accounts/credit"
+      >Buyers &amp; credit</a
+    >
   }
   @if (canCreate()) {
     <a ar-button variant="primary" icon="plus" [routerLink]="['/contacts/accounts/new']"
@@ -14,10 +14,6 @@
     >
   }
 </ar-topbar>
-
-@if (buyersFor() !== null) {
-  <ar-reorder-buyers [initialAccountId]="buyersFor() || null" (closed)="buyersFor.set(null)" />
-}
 
 <div class="acc-page ar-scroll">
   <!-- Executive KPI Overview Strip -->
@@ -223,16 +219,16 @@
       <e-column headerText="Actions" width="340" textAlign="Right">
         <ng-template #template let-r>
           <div class="ac-row-actions" (click)="$event.stopPropagation()">
-            <button
+            <a
               ar-button
               variant="primary"
               size="sm"
               title="Rollup financial &amp; pipeline metrics"
-              (click)="openRollup(r.account)"
+              [routerLink]="['/contacts/accounts', r.id, 'rollup']"
             >
               <ar-icon name="analytics" [size]="13" />
               Rollup
-            </button>
+            </a>
             @if (canView360()) {
               <a
                 ar-button
@@ -246,16 +242,17 @@
               </a>
             }
             @if (canBuyers()) {
-              <button
+              <a
                 ar-button
                 variant="ghost"
                 size="sm"
                 title="Buyers and credit at {{ r.name }}"
-                (click)="buyersFor.set(r.id)"
+                routerLink="/contacts/accounts/credit"
+                [queryParams]="{ account: r.id }"
               >
                 <ar-icon name="billing" [size]="13" />
                 Credit
-              </button>
+              </a>
             }
             @if (canCreate() && r.depth < maxDepth) {
               <a
@@ -327,145 +324,6 @@
     </ng-template>
   </ejs-treegrid>
 </div>
-
-<!-- Modal Dialog: Account Rollup Intelligence & Pipeline -->
-@if (rollupOpen()) {
-  <ar-dialog
-    [title]="(rollupFor()?.name || 'Account') + ' — Rollup Intelligence'"
-    width="min(720px, calc(100vw - 32px))"
-    (dismiss)="rollupOpen.set(false)"
-  >
-    @if (rollup(); as r) {
-      <div class="roll">
-        @if ((r.subsidiaryCount ?? 0) > 0) {
-          <div class="roll-banner">
-            <label class="roll-toggle">
-              <input
-                type="checkbox"
-                class="roll-toggle__input"
-                [checked]="includeSubsidiaries()"
-                (change)="toggleSubsidiaries($any($event.target).checked)"
-              />
-              <div class="roll-toggle__label">
-                <strong>Include subsidiaries in rollup</strong>
-                <span
-                  >Aggregating metrics across {{ r.subsidiaryCount }} subsidiar{{
-                    r.subsidiaryCount === 1 ? 'y' : 'ies'
-                  }}</span
-                >
-              </div>
-            </label>
-          </div>
-        }
-
-        <div class="roll__grid">
-          <div class="roll__stat">
-            <span class="roll__stat-label">
-              <ar-icon name="contacts" [size]="14" />
-              Contacts
-            </span>
-            <b>{{ r.contactCount }}</b>
-          </div>
-          <div class="roll__stat">
-            <span class="roll__stat-label">
-              <ar-icon name="enquiry" [size]="14" />
-              Open Enquiries
-            </span>
-            <b>{{ r.openEnquiryCount }}</b>
-          </div>
-          <div class="roll__stat">
-            <span class="roll__stat-label">
-              <ar-icon name="check" [size]="14" />
-              Won Deals
-            </span>
-            <b>{{ r.wonEnquiryCount }}</b>
-          </div>
-          <div class="roll__stat roll__stat--highlight">
-            <span class="roll__stat-label">
-              <ar-icon name="billing" [size]="14" />
-              Pipeline Value
-            </span>
-            <b>{{ inr(r.pipelineValueInPaise) }}</b>
-          </div>
-        </div>
-
-        <div class="roll-act-badge">
-          <ar-icon name="clock" [size]="13" />
-          <span
-            >Last activity: <strong>{{ when(r.lastActivityUtc) }}</strong></span
-          >
-        </div>
-
-        @if (breakdownRows(r).length > 0) {
-          <div class="roll-section">
-            <span class="roll-section-title">Deal Stages Breakdown</span>
-            <div class="roll__bd">
-              @for (row of breakdownRows(r); track row.stage) {
-                <span class="roll__chip">
-                  <strong>{{ row.stage }}</strong> · {{ row.count }}
-                </span>
-              }
-            </div>
-          </div>
-        }
-
-        @if (r.contacts && r.contacts.length > 0) {
-          <div class="roll-section">
-            <div class="roll-section-head">
-              <span class="roll-section-title">Key Contacts</span>
-              <span class="roll-section-count">({{ r.contacts.length }})</span>
-            </div>
-            <ul class="roll-contact-list">
-              @for (c of r.contacts; track c.id) {
-                <li class="roll-contact-item">
-                  <ar-avatar
-                    [name]="c.displayName || c.waId || 'Contact'"
-                    [size]="32"
-                    tone="teal"
-                  />
-                  <div class="roll-contact-info">
-                    @if (canView360()) {
-                      <a
-                        class="roll-contact-name roll-contact-name--link"
-                        [routerLink]="['/contacts', c.id, '360']"
-                        (click)="rollupOpen.set(false)"
-                      >
-                        {{ c.displayName || c.waId }}
-                      </a>
-                    } @else {
-                      <span class="roll-contact-name">{{ c.displayName || c.waId }}</span>
-                    }
-                    <div class="roll-contact-meta">
-                      @if (r.includesSubsidiaries && c.accountName) {
-                        <span class="roll-contact-tag">{{ c.accountName }}</span>
-                      }
-                      @if (c.designation) {
-                        <span>{{ c.designation }}</span>
-                      }
-                    </div>
-                  </div>
-                </li>
-              }
-            </ul>
-          </div>
-        }
-
-        @if (rollupFor(); as acc) {
-          <div class="roll-section">
-            <span class="roll-section-title">ERP Ledger &amp; Transactions</span>
-            <ar-erp-ledger [customerId]="acc.id" />
-          </div>
-        }
-      </div>
-    } @else {
-      <p class="acc__empty">Loading rollup intelligence…</p>
-    }
-
-    <div dialogActions>
-      <button ar-button variant="primary" (click)="rollupOpen.set(false)">Done</button>
-    </div>
-  </ar-dialog>
-}
 
 <!-- Modal Dialog: Contacts at Account -->
 @if (peopleFor(); as acc) {

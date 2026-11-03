@@ -25,8 +25,9 @@ const CUSTOMER_360: HelpTopic = {
   ],
   steps: [
     'Open a contact or account and choose Customer 360.',
-    'A contact (one person) shows their conversations, enquiries and service. Orders, delivery challans, invoices, payments and credit are on their account: use Open account 360, or link the contact to an account first.',
-    'On an account, use + New Order, Create delivery challan, Create invoice or Record payment, and open any order, invoice or ticket for the detail.',
+    'A contact (one person) shows their conversations and timeline, enquiries and quotations. Orders, challans, invoices, payments, credit, machines and service are on their account: use Open account 360, or link the contact to an account first.',
+    'Message customer sends from your workspace (WhatsApp, email or SMS) and is logged; Open in inbox shows the WhatsApp conversation.',
+    'On an account, use + New Order, Create delivery challan, Create invoice or Record payment; Send on any order, challan or invoice messages it to its buyer.',
   ],
 };
 
@@ -1333,6 +1334,79 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   },
   'contacts/360': CUSTOMER_360,
   'contacts/:id/360': CUSTOMER_360,
+  'contacts/accounts/credit': {
+    benefits: [
+      'Set who at a customer company may order on the re-order portal, and who approves.',
+      'Keep its credit limit, payment terms and any hold in one place.',
+    ],
+    steps: [
+      'Choose the customer company.',
+      'Add buyers and approvers, and set the credit limit, terms or a hold.',
+      'Choose Done to go back to where you came from.',
+    ],
+  },
+  'contacts/accounts/:accountId/rollup': {
+    benefits: [
+      "See an account's contacts, open and won enquiries and pipeline value together.",
+      'Include every company and plant beneath it with one tick.',
+    ],
+    steps: [
+      'Open Rollup on an account in Accounts.',
+      'Tick Include subsidiaries to add the accounts beneath it.',
+      'Open a key contact, the account 360 or its ERP ledger for the detail.',
+    ],
+  },
+  'sales/orders/new': {
+    benefits: [
+      'Raise a sales order for a customer, with their PO, terms and items.',
+      'From an account, the customer is filled in and you return to its Customer 360.',
+    ],
+    steps: [
+      'Check the customer (from an account it is the newest contact; change it if another person placed the order).',
+      'Enter the PO number, terms, site address and the items, then Create Sales Order.',
+    ],
+  },
+  'sales/challans/new': {
+    benefits: [
+      'Record goods sent to a customer, with the vehicle and ship-to address.',
+      'From an account, the customer is filled in and you return to its Customer 360.',
+    ],
+    steps: [
+      'Check the customer, the challan type and the ship-to address.',
+      'Add the items sent, then save the challan as a draft and dispatch it from Delivery challans.',
+    ],
+  },
+  'sales/invoices/new': {
+    benefits: [
+      "Raise a GST invoice with the customer's GSTIN, terms and items.",
+      'From an account, the customer is filled in and you return to its Customer 360.',
+    ],
+    steps: [
+      'Check the customer and their GSTIN, the dates and the items.',
+      'Save it as a draft, then issue it from Sales invoices once it is checked.',
+    ],
+  },
+  'installed-base/new': {
+    benefits: [
+      'Add a machine to the installed base so its AMC, service and spares follow it.',
+      'From an account, the owner is filled in and the machine counts on that account.',
+    ],
+    steps: [
+      'Choose the owner contact (from an account it is already set), and describe the machine.',
+      'Add its serial number, AMC end date and value, make, model and site, then Register.',
+    ],
+  },
+  'contacts/:id/message': {
+    benefits: [
+      'Message one customer on WhatsApp, email or SMS from your workspace, logged in the inbox and on their timeline.',
+      'Attach one of their orders, challans, invoices or receipts as a secure link.',
+    ],
+    steps: [
+      'Choose how to send it, and for WhatsApp which of your numbers.',
+      'Pick an approved template and fill its variables, or write free text inside an open WhatsApp conversation.',
+      'Optionally attach an order, challan, invoice or payment receipt of the company (not on SMS): search by number, preview it, then Send message. You return to Customer 360.',
+    ],
+  },
   'contacts/accounts/:accountId/360': CUSTOMER_360,
   'pipeline/ai-negotiator': {
     benefits: [
