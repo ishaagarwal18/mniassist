@@ -27,6 +27,14 @@ export interface NavItem {
 
   /** Shown as an icon in every screen's header (beside the theme switch), not in the sidebar. */
   readonly top?: boolean;
+
+  /** Only until the setup checklist is complete (Get started): see {@link visibleForSetup}. */
+  readonly untilSetupComplete?: boolean;
+}
+
+/** False for an item that is only shown during setup, once every step of the checklist is done. */
+export function visibleForSetup(item: NavItem, setupComplete: boolean): boolean {
+  return !(item.untilSetupComplete && setupComplete);
 }
 
 export interface NavGroup {
@@ -39,7 +47,13 @@ export const NAV: readonly NavGroup[] = [
     heading: null,
     items: [
       { label: 'Home', icon: 'home', route: '/home' },
-      { label: 'Get started', icon: 'check', route: '/getting-started', tenantOnly: true },
+      {
+        label: 'Get started',
+        icon: 'check',
+        route: '/getting-started',
+        tenantOnly: true,
+        untilSetupComplete: true,
+      },
       { label: 'Notifications', icon: 'bell', route: '/notifications', badge: 'alerts', top: true },
       {
         label: 'Inbox',

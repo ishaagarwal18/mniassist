@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { appAuthGuard } from './core/auth/auth.guard';
 import { navAccessGuard } from './core/auth/nav-access.guard';
+import { setupIncompleteGuard } from './features/onboarding/setup-incomplete.guard';
 
 /** Every feature is lazily loaded — the shell and the design system are the
  *  only things in the initial bundle. */
@@ -139,6 +140,8 @@ export const routes: Routes = [
       {
         path: 'getting-started',
         title: 'Get started · MNI Assist',
+        // Gone once every step is done: the menu hides it and the address opens Home.
+        canActivate: [setupIncompleteGuard],
         loadComponent: () =>
           import('./features/onboarding/wizard').then((m) => m.ArOnboardingWizard),
       },

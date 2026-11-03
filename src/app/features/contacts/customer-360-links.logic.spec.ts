@@ -30,15 +30,38 @@ const find = (groups: ReturnType<typeof customerLinkGroups>, label: string) =>
   groups.flatMap((g) => g.links).find((l) => l.label === label);
 
 describe('customerLinkGroups', () => {
-  it('opens the sales lists on the contact in the contact view', () => {
+  it("leads a person's view to their account for orders and invoices", () => {
     const groups = customerLinkGroups(base, null);
-    expect(find(groups, 'Sales orders')?.params).toEqual({ customer: 'c1', name: 'Suresh Patil' });
-    expect(find(groups, 'Invoices')?.count).toBe(5);
-    expect(find(groups, 'New sales order')?.params).toMatchObject({ new: 1, customer: 'c1' });
+    for (const label of [
+      'Sales orders',
+      'New sales order',
+      'Delivery challans',
+      'Invoices',
+      'Collections',
+    ]) {
+      expect(find(groups, label)).toBeUndefined();
+    }
+    expect(find(groups, 'Orders & invoices')).toEqual({
+      label: 'Orders & invoices',
+      route: '/contacts/accounts/acc1/360',
+      hint: 'On Kalyani Forge',
+    });
+    expect(find(groups, 'Enquiries')).toBeDefined();
   });
 
-  it('opens them on the whole account in the account view', () => {
+  it('asks a person with no account to be linked to one first', () => {
+    const groups = customerLinkGroups({ ...base, accountId: undefined }, null);
+    expect(find(groups, 'Orders & invoices')).toMatchObject({
+      route: '/contacts/c1/edit',
+      hint: 'Link to an account first',
+    });
+  });
+
+  it('opens the sales lists on the whole account in the account view', () => {
     const groups = customerLinkGroups({ ...base, isAccountView: true }, null);
+    expect(find(groups, 'Invoices')?.count).toBe(5);
+    expect(find(groups, 'New sales order')?.params).toMatchObject({ new: 1, customer: 'c1' });
+    expect(find(groups, 'Collections')).toBeDefined();
     expect(find(groups, 'Delivery challans')?.params).toEqual({
       account: 'acc1',
       name: 'Kalyani Forge',

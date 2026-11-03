@@ -128,123 +128,147 @@
     <!-- Operational Actions Ribbon -->
     <ar-customer-actions [customer]="c" (changed)="refreshCustomer()" />
 
-    <!-- Commercial Credit & Financial Health Ribbon -->
-    <section class="credit-kpi-grid" aria-label="Commercial credit and KPI health">
-      <!-- Credit Limit & Utilization Card -->
-      <div class="kpi-card kpi-card--credit" [class.on-hold]="c.credit.onHold">
-        <div class="kpi-head">
-          <span class="kpi-lbl">Commercial Credit</span>
-          <ar-chip [tone]="creditTone()">
-            {{
-              c.credit.onHold ? 'ON HOLD' : creditUtilizationPct() >= 90 ? 'NEAR LIMIT' : 'NORMAL'
-            }}
-          </ar-chip>
-        </div>
-        <div class="kpi-val">
-          @if (c.credit.creditLimitInPaise != null) {
-            ₹{{ c.credit.creditLimitInPaise / 100 | number: '1.0-0' }}
-          } @else {
-            No limit
-          }
-        </div>
-        @if (c.credit.creditLimitInPaise) {
-          <div class="kpi-utilization">
-            <div class="kpi-meter-bar">
-              <div
-                class="kpi-meter-fill"
-                [class.kpi-meter-fill--good]="creditUtilizationPct() < 70"
-                [class.kpi-meter-fill--warn]="
-                  creditUtilizationPct() >= 70 && creditUtilizationPct() < 90
-                "
-                [class.kpi-meter-fill--bad]="creditUtilizationPct() >= 90"
-                [style.width.%]="creditUtilizationPct()"
-              ></div>
-            </div>
-          </div>
+    @if (isPersonView()) {
+      <!-- A person: selling happens on their account -->
+      <section class="c360-account-note" aria-label="Orders and invoices">
+        @if (accountSalesRoute(); as route) {
+          <p>
+            Orders, delivery challans, invoices and payments are kept on the account
+            <strong translate="no">{{ c.accountName }}</strong
+            >, with its GST, billing address and credit terms.
+          </p>
+          <a ar-button variant="primary" [routerLink]="route">Open account 360</a>
+        } @else {
+          <p>
+            <strong translate="no">{{ c.customerName }}</strong> isn't linked to a company account
+            yet. Orders, delivery challans, invoices and payments are raised on an account, where
+            its GST, billing address and credit terms are kept.
+          </p>
+          <a ar-button variant="primary" [routerLink]="['/contacts', c.contactId ?? c.id, 'edit']"
+            >Link to an account</a
+          >
+          <a ar-button variant="ghost" routerLink="/contacts/accounts/new">Create an account</a>
         }
-        <div class="kpi-foot">
-          <span>
-            Terms:
-            {{
-              c.credit.paymentTermsDays === 0
-                ? 'Advance payment'
-                : c.credit.paymentTermsDays != null
-                  ? c.credit.paymentTermsDays + ' days net'
-                  : 'Not specified'
-            }}
-          </span>
-          @if (c.credit.creditLimitInPaise) {
-            <span>
-              Available: ₹{{ (availableCreditInPaise() ?? 0) / 100 | number: '1.0-0' }} ({{
-                100 - creditUtilizationPct()
-              }}% free)
-            </span>
-          }
-          @if (c.credit.onHold && c.credit.holdReason) {
-            <span class="kpi-alert-text">Hold reason: {{ c.credit.holdReason }}</span>
-          }
-        </div>
-      </div>
-
-      <!-- Outstanding Receivables Card -->
-      <div class="kpi-card kpi-card--owed">
-        <div class="kpi-head">
-          <span class="kpi-lbl">Outstanding Owed</span>
-          @if (c.credit.totalOverdueInPaise > 0) {
-            <ar-chip tone="bad">OVERDUE</ar-chip>
-          } @else {
-            <ar-chip tone="good">CURRENT</ar-chip>
-          }
-        </div>
-        <div class="kpi-val" [class.text-danger]="c.credit.totalOwedInPaise > 0">
-          ₹{{ c.credit.totalOwedInPaise / 100 | number: '1.2-2' }}
-        </div>
-        <div class="kpi-foot">
-          <span [class.text-danger]="c.credit.totalOverdueInPaise > 0">
-            Overdue: ₹{{ c.credit.totalOverdueInPaise / 100 | number: '1.2-2' }}
-            @if (c.credit.totalOverdueInPaise > 0) {
-              ({{ overdueRatioPct() }}% of balance)
+      </section>
+    } @else {
+      <!-- Commercial Credit & Financial Health Ribbon -->
+      <section class="credit-kpi-grid" aria-label="Commercial credit and KPI health">
+        <!-- Credit Limit & Utilization Card -->
+        <div class="kpi-card kpi-card--credit" [class.on-hold]="c.credit.onHold">
+          <div class="kpi-head">
+            <span class="kpi-lbl">Commercial Credit</span>
+            <ar-chip [tone]="creditTone()">
+              {{
+                c.credit.onHold ? 'ON HOLD' : creditUtilizationPct() >= 90 ? 'NEAR LIMIT' : 'NORMAL'
+              }}
+            </ar-chip>
+          </div>
+          <div class="kpi-val">
+            @if (c.credit.creditLimitInPaise != null) {
+              ₹{{ c.credit.creditLimitInPaise / 100 | number: '1.0-0' }}
+            } @else {
+              No limit
             }
-          </span>
+          </div>
+          @if (c.credit.creditLimitInPaise) {
+            <div class="kpi-utilization">
+              <div class="kpi-meter-bar">
+                <div
+                  class="kpi-meter-fill"
+                  [class.kpi-meter-fill--good]="creditUtilizationPct() < 70"
+                  [class.kpi-meter-fill--warn]="
+                    creditUtilizationPct() >= 70 && creditUtilizationPct() < 90
+                  "
+                  [class.kpi-meter-fill--bad]="creditUtilizationPct() >= 90"
+                  [style.width.%]="creditUtilizationPct()"
+                ></div>
+              </div>
+            </div>
+          }
+          <div class="kpi-foot">
+            <span>
+              Terms:
+              {{
+                c.credit.paymentTermsDays === 0
+                  ? 'Advance payment'
+                  : c.credit.paymentTermsDays != null
+                    ? c.credit.paymentTermsDays + ' days net'
+                    : 'Not specified'
+              }}
+            </span>
+            @if (c.credit.creditLimitInPaise) {
+              <span>
+                Available: ₹{{ (availableCreditInPaise() ?? 0) / 100 | number: '1.0-0' }} ({{
+                  100 - creditUtilizationPct()
+                }}% free)
+              </span>
+            }
+            @if (c.credit.onHold && c.credit.holdReason) {
+              <span class="kpi-alert-text">Hold reason: {{ c.credit.holdReason }}</span>
+            }
+          </div>
         </div>
-      </div>
 
-      <!-- Active on Order Card -->
-      <div class="kpi-card kpi-card--order">
-        <div class="kpi-head">
-          <span class="kpi-lbl">Active on Order</span>
-          <ar-chip tone="teal">{{ c.activeOrdersCount }} Active</ar-chip>
+        <!-- Outstanding Receivables Card -->
+        <div class="kpi-card kpi-card--owed">
+          <div class="kpi-head">
+            <span class="kpi-lbl">Outstanding Owed</span>
+            @if (c.credit.totalOverdueInPaise > 0) {
+              <ar-chip tone="bad">OVERDUE</ar-chip>
+            } @else {
+              <ar-chip tone="good">CURRENT</ar-chip>
+            }
+          </div>
+          <div class="kpi-val" [class.text-danger]="c.credit.totalOwedInPaise > 0">
+            ₹{{ c.credit.totalOwedInPaise / 100 | number: '1.2-2' }}
+          </div>
+          <div class="kpi-foot">
+            <span [class.text-danger]="c.credit.totalOverdueInPaise > 0">
+              Overdue: ₹{{ c.credit.totalOverdueInPaise / 100 | number: '1.2-2' }}
+              @if (c.credit.totalOverdueInPaise > 0) {
+                ({{ overdueRatioPct() }}% of balance)
+              }
+            </span>
+          </div>
         </div>
-        <div class="kpi-val text-primary">
-          ₹{{ c.credit.totalOnOrderInPaise / 100 | number: '1.2-2' }}
-        </div>
-        <div class="kpi-foot">
-          <span
-            >{{ c.activeOrdersCount }} order{{ c.activeOrdersCount === 1 ? '' : 's' }} in production
-            or dispatch</span
-          >
-        </div>
-      </div>
 
-      <!-- Lifetime Revenue (LTV) Card -->
-      <div class="kpi-card kpi-card--ltv">
-        <div class="kpi-head">
-          <span class="kpi-lbl">Lifetime Revenue</span>
-          <ar-chip tone="good">LTV</ar-chip>
+        <!-- Active on Order Card -->
+        <div class="kpi-card kpi-card--order">
+          <div class="kpi-head">
+            <span class="kpi-lbl">Active on Order</span>
+            <ar-chip tone="teal">{{ c.activeOrdersCount }} Active</ar-chip>
+          </div>
+          <div class="kpi-val text-primary">
+            ₹{{ c.credit.totalOnOrderInPaise / 100 | number: '1.2-2' }}
+          </div>
+          <div class="kpi-foot">
+            <span
+              >{{ c.activeOrdersCount }} order{{ c.activeOrdersCount === 1 ? '' : 's' }} in
+              production or dispatch</span
+            >
+          </div>
         </div>
-        <div class="kpi-val text-success">
-          ₹{{ c.lifetimeRevenueInPaise / 100 | number: '1.0-0' }}
+
+        <!-- Lifetime Revenue (LTV) Card -->
+        <div class="kpi-card kpi-card--ltv">
+          <div class="kpi-head">
+            <span class="kpi-lbl">Lifetime Revenue</span>
+            <ar-chip tone="good">LTV</ar-chip>
+          </div>
+          <div class="kpi-val text-success">
+            ₹{{ c.lifetimeRevenueInPaise / 100 | number: '1.0-0' }}
+          </div>
+          <div class="kpi-foot">
+            <span
+              >{{ c.totalInvoicesCount }} commercial invoice{{
+                c.totalInvoicesCount === 1 ? '' : 's'
+              }}
+              billed</span
+            >
+          </div>
         </div>
-        <div class="kpi-foot">
-          <span
-            >{{ c.totalInvoicesCount }} commercial invoice{{
-              c.totalInvoicesCount === 1 ? '' : 's'
-            }}
-            billed</span
-          >
-        </div>
-      </div>
-    </section>
+      </section>
+    }
 
     <!-- Dossier Navigation Tabs -->
     <!-- Every related screen, opened on this customer -->
@@ -259,33 +283,35 @@
       >
         <span>Overview & Activity</span>
       </button>
-      <button
-        type="button"
-        class="nav-tab"
-        [class.active]="activeTab() === 'orders'"
-        (click)="activeTab.set('orders')"
-      >
-        <span>Sales Orders</span>
-        <span class="tab-badge">{{ c.totalOrdersCount }}</span>
-      </button>
-      <button
-        type="button"
-        class="nav-tab"
-        [class.active]="activeTab() === 'challans'"
-        (click)="activeTab.set('challans')"
-      >
-        <span>Delivery Challans</span>
-        <span class="tab-badge">{{ c.totalChallansCount }}</span>
-      </button>
-      <button
-        type="button"
-        class="nav-tab"
-        [class.active]="activeTab() === 'invoices'"
-        (click)="activeTab.set('invoices')"
-      >
-        <span>Invoices & Aging</span>
-        <span class="tab-badge">{{ c.totalInvoicesCount }}</span>
-      </button>
+      @if (!isPersonView()) {
+        <button
+          type="button"
+          class="nav-tab"
+          [class.active]="activeTab() === 'orders'"
+          (click)="activeTab.set('orders')"
+        >
+          <span>Sales Orders</span>
+          <span class="tab-badge">{{ c.totalOrdersCount }}</span>
+        </button>
+        <button
+          type="button"
+          class="nav-tab"
+          [class.active]="activeTab() === 'challans'"
+          (click)="activeTab.set('challans')"
+        >
+          <span>Delivery Challans</span>
+          <span class="tab-badge">{{ c.totalChallansCount }}</span>
+        </button>
+        <button
+          type="button"
+          class="nav-tab"
+          [class.active]="activeTab() === 'invoices'"
+          (click)="activeTab.set('invoices')"
+        >
+          <span>Invoices & Aging</span>
+          <span class="tab-badge">{{ c.totalInvoicesCount }}</span>
+        </button>
+      }
       <button
         type="button"
         class="nav-tab"
@@ -313,87 +339,92 @@
         <div class="overview-card">
           <div class="overview-card__head">
             <h2 class="overview-card__title">
-              <span>⚡ Commercial & Operational Snapshot</span>
+              <span>{{
+                isPersonView() ? '🏭 Service Snapshot' : '⚡ Commercial & Operational Snapshot'
+              }}</span>
             </h2>
             <span class="text-xs text-muted">Latest records</span>
           </div>
 
-          <div class="highlights-list">
-            <!-- Latest Order -->
-            @if (c.recentOrders.length > 0) {
-              @let o = c.recentOrders[0];
-              <a
-                class="highlight-row"
-                routerLink="/sales/orders"
-                [queryParams]="{ open: o.id }"
-                title="View order details"
-              >
-                <div class="highlight-label">
-                  <span class="highlight-type">Latest Order</span>
-                  <span class="highlight-ref"
-                    >{{ o.orderNumber }} · {{ o.orderDateUtc | date: 'dd MMM yyyy' }}</span
-                  >
-                </div>
-                <div class="highlight-meta">
-                  <span class="highlight-val"
-                    >₹{{ o.grandTotalInPaise / 100 | number: '1.2-2' }}</span
-                  >
-                  <ar-chip [tone]="getOrderStatusTone(o.status)">{{
-                    getOrderStatusLabel(o.status)
-                  }}</ar-chip>
-                </div>
-              </a>
-            }
+          @if (!isPersonView()) {
+            <div class="highlights-list">
+              <!-- Latest Order -->
+              @if (c.recentOrders.length > 0) {
+                @let o = c.recentOrders[0];
+                <a
+                  class="highlight-row"
+                  routerLink="/sales/orders"
+                  [queryParams]="{ open: o.id }"
+                  title="View order details"
+                >
+                  <div class="highlight-label">
+                    <span class="highlight-type">Latest Order</span>
+                    <span class="highlight-ref"
+                      >{{ o.orderNumber }} · {{ o.orderDateUtc | date: 'dd MMM yyyy' }}</span
+                    >
+                  </div>
+                  <div class="highlight-meta">
+                    <span class="highlight-val"
+                      >₹{{ o.grandTotalInPaise / 100 | number: '1.2-2' }}</span
+                    >
+                    <ar-chip [tone]="getOrderStatusTone(o.status)">{{
+                      getOrderStatusLabel(o.status)
+                    }}</ar-chip>
+                  </div>
+                </a>
+              }
 
-            <!-- Latest Challan -->
-            @if (c.recentChallans.length > 0) {
-              @let dc = c.recentChallans[0];
-              <a
-                class="highlight-row"
-                routerLink="/sales/challans"
-                [queryParams]="{ open: dc.id }"
-                title="View challan details"
-              >
-                <div class="highlight-label">
-                  <span class="highlight-type">Latest Delivery Challan</span>
-                  <span class="highlight-ref"
-                    >{{ dc.challanNumber }} · {{ dc.transporterName || 'Direct' }}</span
-                  >
-                </div>
-                <div class="highlight-meta">
-                  <ar-chip [tone]="getChallanStatusTone(dc.status)">{{
-                    getChallanStatusLabel(dc.status)
-                  }}</ar-chip>
-                </div>
-              </a>
-            }
+              <!-- Latest Challan -->
+              @if (c.recentChallans.length > 0) {
+                @let dc = c.recentChallans[0];
+                <a
+                  class="highlight-row"
+                  routerLink="/sales/challans"
+                  [queryParams]="{ open: dc.id }"
+                  title="View challan details"
+                >
+                  <div class="highlight-label">
+                    <span class="highlight-type">Latest Delivery Challan</span>
+                    <span class="highlight-ref"
+                      >{{ dc.challanNumber }} · {{ dc.transporterName || 'Direct' }}</span
+                    >
+                  </div>
+                  <div class="highlight-meta">
+                    <ar-chip [tone]="getChallanStatusTone(dc.status)">{{
+                      getChallanStatusLabel(dc.status)
+                    }}</ar-chip>
+                  </div>
+                </a>
+              }
 
-            <!-- Latest Invoice -->
-            @if (c.recentInvoices.length > 0) {
-              @let inv = c.recentInvoices[0];
-              <a
-                class="highlight-row"
-                routerLink="/sales/invoices"
-                [queryParams]="{ open: inv.id }"
-                title="View invoice details"
-              >
-                <div class="highlight-label">
-                  <span class="highlight-type">Latest GST Invoice</span>
-                  <span class="highlight-ref"
-                    >{{ inv.invoiceNumber }} · Due {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}</span
-                  >
-                </div>
-                <div class="highlight-meta">
-                  <span class="highlight-val" [class.text-danger]="inv.balanceDueInPaise > 0">
-                    Bal: ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
-                  </span>
-                  <ar-chip [tone]="getInvoiceStatusTone(inv.status)">{{
-                    getInvoiceStatusLabel(inv.status)
-                  }}</ar-chip>
-                </div>
-              </a>
-            }
-          </div>
+              <!-- Latest Invoice -->
+              @if (c.recentInvoices.length > 0) {
+                @let inv = c.recentInvoices[0];
+                <a
+                  class="highlight-row"
+                  routerLink="/sales/invoices"
+                  [queryParams]="{ open: inv.id }"
+                  title="View invoice details"
+                >
+                  <div class="highlight-label">
+                    <span class="highlight-type">Latest GST Invoice</span>
+                    <span class="highlight-ref"
+                      >{{ inv.invoiceNumber }} · Due
+                      {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}</span
+                    >
+                  </div>
+                  <div class="highlight-meta">
+                    <span class="highlight-val" [class.text-danger]="inv.balanceDueInPaise > 0">
+                      Bal: ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
+                    </span>
+                    <ar-chip [tone]="getInvoiceStatusTone(inv.status)">{{
+                      getInvoiceStatusLabel(inv.status)
+                    }}</ar-chip>
+                  </div>
+                </a>
+              }
+            </div>
+          }
 
           <!-- Machinery & Service status summary -->
           <div class="c360-subsidiary-bar">

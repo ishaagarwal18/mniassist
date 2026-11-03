@@ -25,7 +25,8 @@ const CUSTOMER_360: HelpTopic = {
   ],
   steps: [
     'Open a contact or account and choose Customer 360.',
-    'Review the sections, and open any order, invoice or ticket for the detail.',
+    'A contact (one person) shows their conversations, enquiries and service. Orders, delivery challans, invoices, payments and credit are on their account: use Open account 360, or link the contact to an account first.',
+    'On an account, use + New Order, Create delivery challan, Create invoice or Record payment, and open any order, invoice or ticket for the detail.',
   ],
 };
 

@@ -21,6 +21,9 @@ import { SalesOrderService } from '../../proxy/sales/sales-order.service';
 import { DeliveryChallanService } from '../../proxy/sales/delivery-challan.service';
 import { SalesInvoiceService } from '../../proxy/sales/sales-invoice.service';
 import { SalesPaymentMode } from '../../proxy/sales/sales-enums';
+import { SalesOrderDto } from '../../proxy/sales/sales-order.models';
+import { DeliveryChallanDto } from '../../proxy/sales/delivery-challan.models';
+import { SalesInvoiceDto } from '../../proxy/sales/sales-invoice.models';
 import { TemplateService } from '../../proxy/messaging/template.service';
 import { TemplateStatus } from '../../proxy/messaging/template-status.enum';
 import { SmsChannelService, SmsTemplateStatus } from '../../proxy/sms/sms-channel.service';
@@ -43,7 +46,7 @@ type MessageTemplate = { id: string; name: string; text: string; variables: stri
         @if (canReply()) {
           <button ar-button variant="primary" (click)="openMessage()">Message customer</button>
         }
-        @if (canOrder()) {
+        @if (onAccount() && canOrder()) {
           <a
             ar-button
             variant="ghost"
@@ -56,15 +59,15 @@ type MessageTemplate = { id: string; name: string; text: string; variables: stri
             >+ New Order</a
           >
         }
-        @if (canChallan()) {
+        @if (onAccount() && canChallan()) {
           <button ar-button variant="ghost" (click)="openAction('challan')">
             Create delivery challan
           </button>
         }
-        @if (canInvoice()) {
+        @if (onAccount() && canInvoice()) {
           <button ar-button variant="ghost" (click)="openAction('invoice')">Create invoice</button>
         }
-        @if (canPayment()) {
+        @if (onAccount() && canPayment()) {
           <button ar-button variant="ghost" (click)="openAction('payment')">Record payment</button>
         }
       }
@@ -333,6 +336,11 @@ export class ArCustomerActions {
   private readonly canReadOrders = grantedPolicy('AutoReach.SalesOrders', this.permissions);
   private readonly canReadChallans = grantedPolicy('AutoReach.DeliveryChallans', this.permissions);
   private readonly canReadInvoices = grantedPolicy('AutoReach.SalesInvoices', this.permissions);
+  /**
+   * Orders, challans, invoices and payments are raised on the account: offered on an account's view only. A new order picks the
+   * account's newest contact as the buyer, which the order form lets you change; the account follows from the buyer.
+   */
+  readonly onAccount = computed(() => !!this.customer().isAccountView);
   readonly contactId = computed(() =>
     this.customer().isAccountView
       ? this.customer().contactId
@@ -500,34 +508,42 @@ export class ArCustomerActions {
     this.orders.set([]);
     this.invoices.set([]);
     try {
+      // On an account, everything the account bought (any of its contacts); on a person, theirs.
+      const accountId = this.onAccount() ? this.customer().accountId : undefined;
+      const filter = accountId
+        ? { customerAccountId: accountId, maxResultCount: 1000 }
+        : { customerId: contactId, maxResultCount: 1000 };
       const [orders, challans, invoices] = await Promise.all([
         this.canReadOrders()
-          ? firstValueFrom(this.orderApi.getList({ customerId: contactId, maxResultCount: 1000 }))
-          : { items: [] },
+          ? firstValueFrom(this.orderApi.getList(filter))
+          : { items: [] as SalesOrderDto[] },
         this.canReadChallans()
-          ? firstValueFrom(this.challanApi.getList({ customerId: contactId, maxResultCount: 1000 }))
-          : { items: [] },
+          ? firstValueFrom(this.challanApi.getList(filter))
+          : { items: [] as DeliveryChallanDto[] },
         this.canReadInvoices()
-          ? firstValueFrom(this.invoiceApi.getList({ customerId: contactId, maxResultCount: 1000 }))
-          : { items: [] },
+          ? firstValueFrom(this.invoiceApi.getList(filter))
+          : { items: [] as SalesInvoiceDto[] },
       ]);
       if (sequence !== this.documentSequence) return;
       this.orders.set(orders.items ?? []);
       this.invoices.set(invoices.items ?? []);
+      // A document sent in a message is the recipient's own.
+      const own = <T extends { customerId: string }>(items: T[] | undefined) =>
+        (items ?? []).filter((d) => d.customerId === contactId);
       this.documents.set([
-        ...(orders.items ?? []).map((o) => ({
+        ...own(orders.items).map((o) => ({
           kind: 0,
           recordId: o.id!,
           key: 'o:' + o.id,
           label: o.orderNumber,
         })),
-        ...(challans.items ?? []).map((c) => ({
+        ...own(challans.items).map((c) => ({
           kind: 1,
           recordId: c.id!,
           key: 'c:' + c.id,
           label: c.challanNumber,
         })),
-        ...(invoices.items ?? []).flatMap((i) => [
+        ...own(invoices.items).flatMap((i) => [
           { kind: 2, recordId: i.id!, key: 'i:' + i.id, label: i.invoiceNumber },
           ...i.payments.map((p) => ({
             kind: 3,

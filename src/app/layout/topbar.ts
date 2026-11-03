@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  Injector,
   computed,
   effect,
   inject,
@@ -16,7 +17,8 @@ import { NavDrawer } from './nav-drawer';
 import { LanguageService } from '../core/i18n/language.service';
 import { PageContextService } from './page-context.service';
 import { resolveNavTrail } from './nav-trail.logic';
-import { NAV } from './nav.model';
+import { NAV, visibleForSetup } from './nav.model';
+import { OnboardingStore } from '../core/services/onboarding.store';
 import { PermissionService } from '@abp/ng.core';
 import { PlanService } from '../core/services/plan.service';
 import { CurrentUserService } from '../core/services/current-user.service';
@@ -449,6 +451,7 @@ export class ArTopbar {
   private readonly permissions = inject(PermissionService, { optional: true });
   private readonly plan = inject(PlanService, { optional: true });
   private readonly account = inject(CurrentUserService, { optional: true });
+  private readonly injector = inject(Injector);
   private readonly cockpitOrigin = inject(CockpitOriginService);
 
   readonly title = input.required<string>();
@@ -519,12 +522,22 @@ export class ArTopbar {
   protected readonly groupHeading = computed(() => this.trail().groupHeading);
   protected readonly groupPrimaryRoute = computed(() => this.trail().groupPrimaryRoute);
   protected readonly siblingItems = computed(() => {
-    const raw = this.trail().siblingItems;
+    const setupComplete = this.setupComplete();
+    const raw = this.trail().siblingItems.filter((item) => visibleForSetup(item, setupComplete));
     if (!this.permissions || !this.plan || !this.account) return raw;
     return raw.filter((item) =>
       canAccessNavItem(item, this.permissions!, this.plan!, this.account!),
     );
   });
+  /** Hides Get started among the siblings once setup is done. Looked up lazily: off the signed-in shell there is no checklist. */
+  private setupComplete(): boolean {
+    try {
+      return this.injector.get(OnboardingStore).isComplete();
+    } catch {
+      return false;
+    }
+  }
+
   protected readonly parentItem = computed(() => this.trail().parentItem);
   protected readonly activeItemRoute = computed(() => this.trail().activeItem?.route ?? null);
 

@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
@@ -223,6 +224,9 @@ type PickerTab = 'Accounts' | 'Contacts';
 
 export type Customer360Tab = 'overview' | 'orders' | 'challans' | 'invoices' | 'assets' | 'tickets';
 
+/** The tabs about selling to the account: only on an account's view. */
+const SALES_TABS: readonly Customer360Tab[] = ['orders', 'challans', 'invoices'];
+
 @Component({
   selector: 'ar-customer-360',
   standalone: true,
@@ -255,6 +259,29 @@ export class ArCustomer360 {
 
   readonly data = signal<Customer360Dto | null>(environment.useMockData ? MOCK_CUSTOMER_360 : null);
   readonly activeTab = signal<Customer360Tab>('overview');
+
+  /**
+   * One person's view, not a whole account's. Orders, challans, invoices, payments and credit belong to the account (GST,
+   * billing and terms live there), so a person's page shows their conversations, enquiries and service, and leads to the
+   * account for the rest.
+   */
+  protected readonly isPersonView = computed(() => {
+    const c = this.data();
+    return !!c && !c.isAccountView;
+  });
+
+  /** Where this person's company's sales live: its account's Customer 360, when they belong to one. */
+  protected readonly accountSalesRoute = computed(() => {
+    const c = this.data();
+    return c?.accountId ? ['/contacts/accounts', c.accountId, '360'] : null;
+  });
+
+  /** A sales tab left open from an account, after switching to one person, goes back to the overview. */
+  private readonly leaveSalesTab = effect(() => {
+    if (this.isPersonView() && SALES_TABS.includes(untracked(this.activeTab))) {
+      this.activeTab.set('overview');
+    }
+  });
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
 

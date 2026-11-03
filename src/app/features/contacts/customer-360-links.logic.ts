@@ -24,7 +24,8 @@ export interface CustomerLinkGroup {
 /**
  * Every screen with something about this customer, grouped by area, each opened on this customer: their own records where the
  * screen can filter by customer, their name in its search box where it can only search. Screens the user may not open are left
- * out. Built from the cockpit's data, so it follows the contact / whole-account switch.
+ * out. Built from the cockpit's data, so it follows the contact / whole-account switch: orders, challans, invoices and
+ * collections are the account's, so a person's view leads to their account for those instead.
  */
 export function customerLinkGroups(
   c: Customer360Dto,
@@ -64,6 +65,45 @@ export function customerLinkGroups(
     hint: 'Groups, companies, plants',
   });
 
+  const person = !c.isAccountView;
+  const toAccount: CustomerLink = c.accountId
+    ? {
+        label: 'Orders & invoices',
+        route: `/contacts/accounts/${c.accountId}/360`,
+        hint: c.accountName ? `On ${c.accountName}` : 'On the account',
+      }
+    : {
+        label: 'Orders & invoices',
+        route: contactId ? `/contacts/${contactId}/edit` : '/contacts/accounts/new',
+        hint: 'Link to an account first',
+      };
+
+  const selling: CustomerLink[] = person
+    ? [toAccount]
+    : [
+        { label: 'Sales orders', route: '/sales/orders', params: scope, count: c.totalOrdersCount },
+        ...(contactId
+          ? [
+              {
+                label: 'New sales order',
+                route: '/sales/orders',
+                params: {
+                  new: 1,
+                  customer: contactId,
+                  customerName: c.contactName ?? c.customerName,
+                },
+              },
+            ]
+          : []),
+        {
+          label: 'Delivery challans',
+          route: '/sales/challans',
+          params: scope,
+          count: c.totalChallansCount,
+        },
+        { label: 'Invoices', route: '/sales/invoices', params: scope, count: c.totalInvoicesCount },
+      ];
+
   return [
     { title: 'Customer record', icon: 'contacts', links: record },
     {
@@ -88,27 +128,7 @@ export function customerLinkGroups(
       links: [
         { label: 'Enquiries', route: '/enquiries' },
         { label: 'Quotations', route: '/quotations' },
-        { label: 'Sales orders', route: '/sales/orders', params: scope, count: c.totalOrdersCount },
-        ...(contactId
-          ? [
-              {
-                label: 'New sales order',
-                route: '/sales/orders',
-                params: {
-                  new: 1,
-                  customer: contactId,
-                  customerName: c.contactName ?? c.customerName,
-                },
-              },
-            ]
-          : []),
-        {
-          label: 'Delivery challans',
-          route: '/sales/challans',
-          params: scope,
-          count: c.totalChallansCount,
-        },
-        { label: 'Invoices', route: '/sales/invoices', params: scope, count: c.totalInvoicesCount },
+        ...selling,
         { label: 'Re-orders', route: '/reorders' },
         { label: 'Spares due', route: '/spares' },
         { label: 'Renewals', route: '/renewals', params: q },
@@ -118,7 +138,9 @@ export function customerLinkGroups(
       title: 'Finance & documents',
       icon: 'billing',
       links: [
-        { label: 'Collections', route: '/collections', hint: 'Overdue reminders' },
+        ...(person
+          ? []
+          : [{ label: 'Collections', route: '/collections', hint: 'Overdue reminders' }]),
         { label: 'Documents', route: '/documents', params: q },
       ],
     },

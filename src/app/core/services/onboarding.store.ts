@@ -139,6 +139,21 @@ export class OnboardingStore {
 
   readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
 
+  /**
+   * Every step is done, as far as is known: false until the checklist has loaded, so Get started stays in the menu
+   * rather than flickering away for someone who still has steps left.
+   */
+  readonly isComplete = computed(() => this.checklist().isComplete);
+
+  /** The checklist as it stands, reading it first if it hasn't loaded yet (the Get started route's guard). */
+  async current(): Promise<Checklist> {
+    if (environment.useMockData) return this.checklist();
+    if (this.local() || this.resource.status() === 'resolved') return this.checklist();
+    const fresh = this.normalise(await firstValueFrom(this.api.get()));
+    this.local.set(fresh);
+    return fresh;
+  }
+
   readonly progress = computed(() => {
     const c = this.checklist();
     return c.totalCount ? Math.round((c.completedCount / c.totalCount) * 100) : 0;

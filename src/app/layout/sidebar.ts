@@ -12,7 +12,8 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { PermissionService } from '@abp/ng.core';
-import { NAV, NavGroup } from './nav.model';
+import { NAV, NavGroup, visibleForSetup } from './nav.model';
+import { OnboardingStore } from '../core/services/onboarding.store';
 import { ArAvatar } from '../ui/avatar';
 import { ArIcon } from '../ui/icon';
 import { ArBrand } from './brand';
@@ -240,6 +241,7 @@ export class ArSidebar {
   protected readonly branding = inject(BrandingStore);
   protected readonly pwa = inject(PwaService);
   protected readonly plan = inject(PlanService);
+  private readonly onboarding = inject(OnboardingStore);
   private readonly router = inject(Router);
 
   protected readonly menuOpen = signal(false);
@@ -335,10 +337,15 @@ export class ArSidebar {
     this.plan.features();
     this.account.isHost();
 
+    const setupComplete = this.onboarding.isComplete();
+
     return NAV.map((group) => ({
       ...group,
       items: group.items.filter(
-        (item) => !item.top && canAccessNavItem(item, this.permissions, this.plan, this.account),
+        (item) =>
+          !item.top &&
+          visibleForSetup(item, setupComplete) &&
+          canAccessNavItem(item, this.permissions, this.plan, this.account),
       ),
     })).filter((group) => group.items.length > 0);
   });
