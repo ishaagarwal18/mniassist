@@ -172,7 +172,9 @@ describe('ArContactForm (New Contact & Edit Contact Page)', () => {
   it('creates contact successfully and navigates to /contacts', async () => {
     const fixture = await createFixture();
     const waInput = fixture.nativeElement.querySelector('input[name="waId"]') as HTMLInputElement;
-    const nameInput = fixture.nativeElement.querySelector('input[name="displayName"]') as HTMLInputElement;
+    const nameInput = fixture.nativeElement.querySelector(
+      'input[name="displayName"]',
+    ) as HTMLInputElement;
 
     waInput.value = '919821012345';
     waInput.dispatchEvent(new Event('input'));

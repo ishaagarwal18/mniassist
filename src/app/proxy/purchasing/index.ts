@@ -7,3 +7,5 @@ export * from './vendor-debit-note.models';
 export * from './vendor-debit-note.service';
 export * from './vendor-360.models';
 export * from './vendor-360.service';
+export * from './vendor-bill-reader.models';
+export * from './vendor-bill-reader.service';

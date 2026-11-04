@@ -1,3 +1,4 @@
+import { PermissionService } from '@abp/ng.core';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -9,9 +10,13 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
+import { canOpenUrl } from '../../../core/auth/nav-access.guard';
+import { checkPolicy } from '../../../core/auth/permission';
+import { CurrentUserService } from '../../../core/services/current-user.service';
+import { PlanService } from '../../../core/services/plan.service';
+import { inr } from '../../../core/util/format';
 import { ArTopbar } from '../../../layout/topbar';
 import { CockpitOriginService } from '../../../layout/cockpit-origin.service';
 import {
@@ -25,7 +30,8 @@ import {
   Vendor360Service,
   GrnStatus,
 } from '../../../proxy/purchasing';
-import { ArButton, ArChip, ChipTone } from '../../../ui';
+import { ArButton, ArChip, ArIcon, ChipTone, IconName } from '../../../ui';
+import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
 import { ArVendor360Links } from './vendor-360-links';
 import { vendorParams } from './vendor-360-links.logic';
 
@@ -270,734 +276,1109 @@ const MOCK_VENDORS_360: Vendor360Dto[] = [
   },
 ];
 
+type VendorTab = 'bills' | 'grn' | 'po' | 'debit';
+const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
+
 @Component({
   standalone: true,
   selector: 'ar-vendor-360',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, RouterLink, ArTopbar, ArButton, ArChip, ArVendor360Links],
+  imports: [CommonModule, RouterLink, ArTopbar, ArButton, ArChip, ArIcon, ArVendor360Links],
   template: `
     <ar-topbar
-      title="Vendor 360 Cockpit"
-      subtitle="Procure-to-Pay supplier dossier, MSME Section 15 compliance, QC scores & ledgers"
+      title="Vendor 360"
+      subtitle="One supplier: orders, receipts, bills, quality and MSME payment dues"
     >
-      <div class="topbar-actions">
-        <select
-          class="supplier-selector"
-          aria-label="Supplier"
-          [ngModel]="currentVendorId()"
-          (ngModelChange)="onVendorChange($event)"
-        >
-          <option *ngFor="let s of suppliers()" [value]="s.id" translate="no">
-            {{ s.name }}{{ s.detail ? ' (' + s.detail + ')' : '' }}
-          </option>
-        </select>
-        <button ar-button="primary" [disabled]="!vendor()" (click)="goToInwardGate()">
-          + Inward GRN
-        </button>
+      <div class="v3-top">
+        <label class="v3-top__pick">
+          <span class="ar-visually-hidden">Supplier</span>
+          <select
+            class="ar-field__input"
+            aria-label="Supplier"
+            [disabled]="!suppliers().length"
+            (change)="onVendorChange($any($event.target).value)"
+          >
+            @if (!suppliers().length) {
+              <option value="">{{ loaded() ? 'No suppliers' : 'Loading suppliers…' }}</option>
+            }
+            @for (s of suppliers(); track s.id) {
+              <option [value]="s.id" [selected]="s.id === currentVendorId()" translate="no">
+                {{ s.name }}{{ s.detail ? ' · ' + s.detail : '' }}
+              </option>
+            }
+          </select>
+        </label>
       </div>
     </ar-topbar>
 
-    <div class="page-content" *ngIf="!vendor()">
-      <p class="load-error" role="alert" *ngIf="loadError() as e">{{ e }}</p>
-      <p class="empty-state" *ngIf="!loadError() && loaded() && suppliers().length === 0">
-        No suppliers yet. Add one on the
-        <a routerLink="/purchasing" [queryParams]="{ tab: 'suppliers' }">Purchasing</a> page.
-      </p>
-      <p class="empty-state" *ngIf="!loadError() && (!loaded() || suppliers().length > 0)">
-        Loading supplier…
-      </p>
-    </div>
+    @if (vendor(); as v) {
+      <div class="v3 ar-scroll ar-scroll--bare">
+        @if (loadError(); as e) {
+          <p class="v3-alert" role="alert">{{ e }}</p>
+        }
 
-    <div class="page-content" *ngIf="vendor() as v">
-      <p class="load-error" role="alert" *ngIf="loadError() as e">{{ e }}</p>
-      <!-- Supplier Profile Header -->
-      <section class="vendor-profile-card">
-        <div class="vendor-identity">
-          <div class="avatar-box">
-            {{ v.name.substring(0, 2).toUpperCase() }}
-          </div>
-          <div class="identity-details">
-            <div class="name-row">
-              <h2>{{ v.name }}</h2>
-              <ar-chip [tone]="msmeTone(v.msmeCategory)">
-                {{ msmeLabel(v.msmeCategory) }}
-              </ar-chip>
-            </div>
-            <div class="statutory-badges">
-              <span class="badge-tag"
-                >GSTIN: <strong class="font-mono">{{ v.gstin || 'Unregistered' }}</strong></span
-              >
-              <span class="badge-tag"
-                >PAN: <strong class="font-mono">{{ v.pan || 'N/A' }}</strong></span
-              >
-              <span class="badge-tag" *ngIf="v.udyamRegistrationNumber"
-                >Udyam: <strong class="font-mono">{{ v.udyamRegistrationNumber }}</strong></span
-              >
-            </div>
-            <div class="contact-line">
-              <span>📍 {{ addressLine(v) || 'No address' }}</span>
-              <span>📞 {{ v.phone || 'No phone' }}</span>
-              <span>✉️ {{ v.email || 'No email' }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="banking-box">
-          <span class="box-label">Disbursement Bank Account</span>
-          <ng-container *ngIf="v.bankName || v.bankAccountNumber; else noBank">
-            <strong>{{ v.bankName }}</strong>
-            <span class="font-mono">A/C: {{ v.bankAccountNumber || '—' }}</span>
-            <span class="font-mono">IFSC: {{ v.bankIfscCode || '—' }}</span>
-          </ng-container>
-          <ng-template #noBank><span class="sub-text">Not recorded</span></ng-template>
-          <span class="lead-time"
-            >Avg Lead Time:
-            <strong>{{ v.leadDays != null ? v.leadDays + ' days' : 'Not set' }}</strong></span
-          >
-          <a
-            class="table-stats__all"
-            routerLink="/purchasing"
-            [queryParams]="{ tab: 'suppliers', edit: v.id }"
-            >Edit supplier →</a
-          >
-        </div>
-      </section>
-
-      <!-- MSME Statutory Warning Banner if Overdue -->
-      <section class="msme-alert-banner" *ngIf="v.msmeOverdueInPaise > 0">
-        <div class="alert-icon">⚠️</div>
-        <div class="alert-text" *ngIf="v.msmeCategory === MsmeClassification.NotRegistered">
-          <strong>Bills unpaid for over 45 days:</strong>
-          <span>
-            <strong>₹{{ v.msmeOverdueInPaise / 100 | number: '1.2-2' }}</strong> is still due on
-            bills older than 45 days. If this supplier is an MSME, Section 15 of the MSMED Act
-            applies.
-          </span>
-        </div>
-        <div class="alert-text" *ngIf="v.msmeCategory !== MsmeClassification.NotRegistered">
-          <strong>MSME Section 15 Statutory Overdue Alert:</strong>
-          <span>
-            Bills totaling <strong>₹{{ v.msmeOverdueInPaise / 100 | number: '1.2-2' }}</strong> have
-            exceeded the mandatory 45-day statutory payment window. Compounded interest at 3x RBI
-            repo rate is applicable under Section 16 of the MSMED Act.
-          </span>
-        </div>
-        <a ar-button="danger" routerLink="/purchasing/bills" [queryParams]="scope()"
-          >Clear Overdue Bills</a
-        >
-      </section>
-
-      <!-- KPI Row -->
-      <section class="kpi-grid">
-        <div class="kpi-card">
-          <span class="label">Lifetime Purchases</span>
-          <strong class="value">₹{{ v.totalPurchasesInPaise / 100 | number: '1.2-2' }}</strong>
-          <span class="sub">Total gross order value</span>
-        </div>
-        <div class="kpi-card teal">
-          <span class="label">Total Disbursed</span>
-          <strong class="value">₹{{ v.totalPaidInPaise / 100 | number: '1.2-2' }}</strong>
-          <span class="sub">Paid via Bank NEFT / RTGS</span>
-        </div>
-        <div class="kpi-card amber">
-          <span class="label">Outstanding Payable</span>
-          <strong class="value">₹{{ v.outstandingPayableInPaise / 100 | number: '1.2-2' }}</strong>
-          <span class="sub">Net of TDS deductions</span>
-        </div>
-        <div
-          class="kpi-card"
-          [class.good]="v.qualityAcceptancePercent >= 95"
-          [class.amber]="v.qualityAcceptancePercent < 95"
-        >
-          <span class="label">Quality Acceptance Rate</span>
-          <strong class="value">{{ v.qualityAcceptancePercent }}%</strong>
-          <span class="sub">Accepted vs Rejected across GRNs</span>
-        </div>
-      </section>
-
-      <!-- Every related screen, opened on this supplier -->
-      <ar-vendor-360-links [vendor]="v" />
-
-      <!-- Tabs Row -->
-      <section class="tabs-nav">
-        <button
-          class="tab-btn"
-          [class.active]="activeTab() === 'bills'"
-          (click)="activeTab.set('bills')"
-        >
-          Vendor Bills ({{ v.recentVendorBills.length }})
-        </button>
-        <button
-          class="tab-btn"
-          [class.active]="activeTab() === 'grn'"
-          (click)="activeTab.set('grn')"
-        >
-          Inward GRNs ({{ v.recentGoodsReceiptNotes.length }})
-        </button>
-        <button class="tab-btn" [class.active]="activeTab() === 'po'" (click)="activeTab.set('po')">
-          Purchase Orders ({{ v.recentPurchaseOrders.length }})
-        </button>
-        <button
-          class="tab-btn"
-          [class.active]="activeTab() === 'debit'"
-          (click)="activeTab.set('debit')"
-        >
-          Debit Notes ({{ v.recentDebitNotes.length }})
-        </button>
-      </section>
-
-      <!-- Tab Content 1: Bills -->
-      <section class="table-card" *ngIf="activeTab() === 'bills'">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Bill #</th>
-              <th>Invoice # & Date</th>
-              <th>3-Way Match</th>
-              <th>GSTR-2B ITC</th>
-              <th class="text-right">Grand Total</th>
-              <th class="text-right">Balance Due</th>
-              <th>Status</th>
-              <th class="actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let b of v.recentVendorBills">
-              <td class="font-mono">
-                <strong>{{ b.billNumber }}</strong>
-              </td>
-              <td>
-                <div class="cell-main">
-                  <span>{{ b.vendorInvoiceNumber }}</span>
-                  <span class="sub-text">{{ b.vendorInvoiceDateUtc | date: 'mediumDate' }}</span>
+        <!-- Who the supplier is -->
+        <section class="v3-card v3-profile" aria-label="Supplier profile">
+          <div class="v3-profile__id">
+            <div class="v3-avatar" aria-hidden="true">{{ initials(v.name) }}</div>
+            <div class="v3-profile__text">
+              <div class="v3-profile__name">
+                <h2 translate="no">{{ v.name }}</h2>
+                @if (v.isBlacklisted) {
+                  <ar-chip tone="bad">Blacklisted</ar-chip>
+                }
+                <ar-chip [tone]="msmeTone(v.msmeCategory)">{{ msmeLabel(v.msmeCategory) }}</ar-chip>
+              </div>
+              <dl class="v3-ids">
+                <div>
+                  <dt>GSTIN</dt>
+                  <dd class="ar-mono">{{ v.gstin || 'Unregistered' }}</dd>
                 </div>
-              </td>
-              <td>
-                <ar-chip [tone]="matchTone(b.threeWayMatchStatus)">
-                  {{ matchLabel(b.threeWayMatchStatus) }}
-                </ar-chip>
-              </td>
-              <td>
-                <ar-chip [tone]="itcTone(b.gstr2bMatchStatus)">
-                  {{ itcLabel(b.gstr2bMatchStatus) }}
-                </ar-chip>
-              </td>
-              <td class="text-right font-mono">
-                ₹{{ b.grandTotalInPaise / 100 | number: '1.2-2' }}
-              </td>
-              <td class="text-right font-mono">
+                <div>
+                  <dt>PAN</dt>
+                  <dd class="ar-mono">{{ v.pan || '—' }}</dd>
+                </div>
+                @if (v.udyamRegistrationNumber) {
+                  <div>
+                    <dt>Udyam</dt>
+                    <dd class="ar-mono">{{ v.udyamRegistrationNumber }}</dd>
+                  </div>
+                }
+              </dl>
+              <div class="v3-contact">
+                @if (v.contactName) {
+                  <span
+                    ><ar-icon name="user" [size]="13" />{{ v.contactName
+                    }}{{ v.contactDesignation ? ', ' + v.contactDesignation : '' }}</span
+                  >
+                }
+                @if (v.phone) {
+                  <a [href]="'tel:' + v.phone"><ar-icon name="phone" [size]="13" />{{ v.phone }}</a>
+                }
+                @if (v.email) {
+                  <a [href]="'mailto:' + v.email"
+                    ><ar-icon name="mail" [size]="13" />{{ v.email }}</a
+                  >
+                }
+                @if (addressLine(v); as a) {
+                  <span><ar-icon name="globe" [size]="13" />{{ a }}</span>
+                }
+                @if (!v.phone && !v.email && !addressLine(v)) {
+                  <span class="v3-muted">No contact details recorded.</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="v3-terms">
+            <span class="v3-terms__label">Payment & delivery</span>
+            <div class="v3-terms__row">
+              <span>Bank</span>
+              @if (v.bankName || v.bankAccountNumber) {
+                <strong
+                  >{{ v.bankName || 'Account' }}
+                  <span class="ar-mono">{{ maskAccount(v.bankAccountNumber) }}</span></strong
+                >
+              } @else {
+                <strong class="v3-muted">Not recorded</strong>
+              }
+            </div>
+            @if (v.bankIfscCode) {
+              <div class="v3-terms__row">
+                <span>IFSC</span><strong class="ar-mono">{{ v.bankIfscCode }}</strong>
+              </div>
+            }
+            <div class="v3-terms__row">
+              <span>Lead time</span>
+              <strong>{{ v.leadDays != null ? v.leadDays + ' days' : 'Not set' }}</strong>
+            </div>
+            @if (can().editSupplier) {
+              <a
+                ar-button
+                variant="quiet"
+                icon="edit"
+                class="v3-terms__edit"
+                [routerLink]="['/purchasing/suppliers', v.id, 'edit']"
+                >Edit supplier</a
+              >
+            }
+          </div>
+        </section>
+
+        @if (v.isBlacklisted) {
+          <section class="v3-black" role="alert">
+            <ar-icon name="shield" [size]="20" />
+            <div>
+              <strong>This supplier is blacklisted.</strong>
+              <span>{{
+                v.blacklistReason || 'No new purchase orders can be raised for them.'
+              }}</span>
+            </div>
+          </section>
+        }
+
+        <!-- MSME / 45-day payment warning -->
+        @if (v.msmeOverdueInPaise > 0) {
+          <section class="v3-warn" role="alert">
+            <ar-icon name="alert" [size]="20" />
+            <div class="v3-warn__text">
+              @if (v.msmeCategory === MsmeClassification.NotRegistered) {
+                <strong>{{ inr(v.msmeOverdueInPaise) }} unpaid for more than 45 days</strong>
                 <span
-                  [class.text-danger]="b.balanceDueInPaise > 0"
-                  [class.text-good]="b.balanceDueInPaise === 0"
+                  >If this supplier is an MSME, Section 15 of the MSMED Act applies. Record their
+                  Udyam number to track it.</span
                 >
-                  ₹{{ b.balanceDueInPaise / 100 | number: '1.2-2' }}
-                </span>
-              </td>
-              <td>
-                <ar-chip [tone]="billTone(b.status)">{{ billLabel(b.status) }}</ar-chip>
-              </td>
-              <td class="actions-col">
+              } @else {
+                <strong>{{ inr(v.msmeOverdueInPaise) }} past the MSME 45-day limit</strong>
+                <span
+                  >Section 16 of the MSMED Act adds compound interest at three times the RBI rate on
+                  late payments to MSMEs.</span
+                >
+              }
+            </div>
+            @if (can().bills) {
+              <a ar-button variant="danger" routerLink="/purchasing/bills" [queryParams]="scope()"
+                >Review overdue bills</a
+              >
+            }
+          </section>
+        }
+
+        <!-- Money and quality at a glance -->
+        <section class="v3-kpis" aria-label="Key figures">
+          <div class="v3-kpi">
+            <span class="v3-kpi__label">Purchased</span>
+            <strong class="v3-kpi__value">{{ inr(v.totalPurchasesInPaise) }}</strong>
+            <span class="v3-kpi__sub">{{ v.totalPurchaseOrdersCount }} purchase order(s)</span>
+          </div>
+          <div class="v3-kpi">
+            <span class="v3-kpi__label">Paid</span>
+            <strong class="v3-kpi__value">{{ inr(v.totalPaidInPaise) }}</strong>
+            <span class="v3-kpi__sub">{{ paidShare(v) }} of billed</span>
+          </div>
+          <div class="v3-kpi" [class.v3-kpi--amber]="v.outstandingPayableInPaise > 0">
+            <span class="v3-kpi__label">Outstanding</span>
+            <strong class="v3-kpi__value">{{ inr(v.outstandingPayableInPaise) }}</strong>
+            <span class="v3-kpi__sub">
+              {{
+                v.msmeOverdueInPaise > 0
+                  ? inr(v.msmeOverdueInPaise) + ' over 45 days'
+                  : 'After TDS; nothing over 45 days'
+              }}
+            </span>
+          </div>
+          <div
+            class="v3-kpi"
+            [class.v3-kpi--good]="hasQuality(v) && v.qualityAcceptancePercent >= 95"
+            [class.v3-kpi--amber]="hasQuality(v) && v.qualityAcceptancePercent < 95"
+          >
+            <span class="v3-kpi__label">Quality accepted</span>
+            <strong class="v3-kpi__value">{{
+              hasQuality(v) ? (v.qualityAcceptancePercent | number: '1.0-1') + '%' : '—'
+            }}</strong>
+            <span class="v3-kpi__sub">{{
+              hasQuality(v)
+                ? 'Across ' + v.totalGoodsReceiptNotesCount + ' goods receipt(s)'
+                : 'No goods received yet'
+            }}</span>
+          </div>
+        </section>
+
+        <!-- Every related screen, opened on this supplier -->
+        <ar-vendor-360-links [vendor]="v" />
+
+        <!-- Create for this supplier: each opens its own page, filled in for them -->
+        @if (createActions().length) {
+          <section class="v3-card v3-create" aria-label="Create for this supplier">
+            <span class="v3-create__label"
+              >Create for <strong translate="no">{{ v.name }}</strong></span
+            >
+            <div class="v3-create__actions">
+              @for (a of createActions(); track a.route) {
                 <a
-                  ar-button="ghost"
-                  routerLink="/purchasing/bills"
-                  [queryParams]="recordParams(b.id)"
-                  >Open bill</a
+                  ar-button
+                  [variant]="a.primary ? 'primary' : 'ghost'"
+                  [icon]="a.icon"
+                  [routerLink]="a.route"
+                  [queryParams]="scope()"
+                  >{{ a.label }}</a
                 >
-              </td>
-            </tr>
-            <tr *ngIf="v.recentVendorBills.length === 0">
-              <td colspan="8" class="empty-state">No vendor bills recorded for this supplier.</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="table-stats">
-          Showing {{ v.recentVendorBills.length }} of {{ v.totalVendorBillsCount }}
-          <a class="table-stats__all" routerLink="/purchasing/bills" [queryParams]="scope()"
-            >View all in Vendor bills →</a
-          >
-        </div>
-      </section>
+              }
+            </div>
+          </section>
+        }
 
-      <!-- Tab Content 2: GRNs -->
-      <section class="table-card" *ngIf="activeTab() === 'grn'">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>GRN #</th>
-              <th>Gate Entry</th>
-              <th>PO Reference</th>
-              <th>Challan #</th>
-              <th>Vehicle / Logistics</th>
-              <th>QC Status</th>
-              <th>Status</th>
-              <th class="actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let g of v.recentGoodsReceiptNotes">
-              <td class="font-mono">
-                <strong>{{ g.grnNumber }}</strong>
-              </td>
-              <td>
-                <div class="cell-main">
-                  <span>{{ g.gateEntryNumber || 'N/A' }}</span>
-                  <span class="sub-text">{{ g.gateInTimeUtc | date: 'mediumDate' }}</span>
-                </div>
-              </td>
-              <td>{{ g.purchaseOrderReference || 'Direct' }}</td>
-              <td>{{ g.challanNumber }}</td>
-              <td>
-                <span class="font-mono">{{ g.vehicleNumber || 'Self Delivery' }}</span>
-              </td>
-              <td>
-                <ar-chip [tone]="qcTone(g.qcStatus)">{{ qcLabel(g.qcStatus) }}</ar-chip>
-              </td>
-              <td>
-                <ar-chip [tone]="grnTone(g.status)">{{ grnLabel(g.status) }}</ar-chip>
-              </td>
-              <td class="actions-col">
-                <a ar-button="ghost" routerLink="/purchasing/grn" [queryParams]="recordParams(g.id)"
-                  >Open GRN</a
-                >
-              </td>
-            </tr>
-            <tr *ngIf="v.recentGoodsReceiptNotes.length === 0">
-              <td colspan="8" class="empty-state">
-                No goods receipt notes recorded for this supplier.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="table-stats">
-          Showing {{ v.recentGoodsReceiptNotes.length }} of {{ v.totalGoodsReceiptNotesCount }}
-          <a class="table-stats__all" routerLink="/purchasing/grn" [queryParams]="scope()"
-            >View all in Goods receipts →</a
-          >
-        </div>
-      </section>
+        <!-- Recent records -->
+        <section class="v3-card v3-records" aria-label="Recent records">
+          <div class="v3-tabs" role="tablist" aria-label="Recent records">
+            @for (t of tabs; track t) {
+              <button
+                type="button"
+                role="tab"
+                class="v3-tab"
+                [id]="'v3-tab-' + t"
+                [attr.aria-selected]="activeTab() === t"
+                [attr.aria-controls]="'v3-panel'"
+                [attr.tabindex]="activeTab() === t ? 0 : -1"
+                (click)="selectTab(t)"
+                (keydown)="tabKey($event, t)"
+              >
+                {{ tabLabel(t) }}
+                <span class="v3-tab__count">{{ tabCount(v, t) }}</span>
+              </button>
+            }
+          </div>
 
-      <!-- Tab Content 3: POs -->
-      <section class="table-card" *ngIf="activeTab() === 'po'">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>PO Reference #</th>
-              <th>Order Date</th>
-              <th>Expected Delivery</th>
-              <th>Items</th>
-              <th class="text-right">Order Amount</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let p of v.recentPurchaseOrders">
-              <td class="font-mono">
-                <strong>{{ p.reference }}</strong>
-              </td>
-              <td>{{ p.creationTime | date: 'mediumDate' }}</td>
-              <td>{{ p.expectedOn ? (p.expectedOn | date: 'mediumDate') : 'Immediate' }}</td>
-              <td>{{ p.lineCount }} line items</td>
-              <td class="text-right font-mono">
-                <strong>₹{{ p.subtotalInPaise / 100 | number: '1.2-2' }}</strong>
-              </td>
-              <td>
-                <ar-chip tone="neutral">{{ p.state }}</ar-chip>
-              </td>
-            </tr>
-            <tr *ngIf="v.recentPurchaseOrders.length === 0">
-              <td colspan="6" class="empty-state">No purchase orders found for this supplier.</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="table-stats">
-          Showing {{ v.recentPurchaseOrders.length }} of {{ v.totalPurchaseOrdersCount }}
-          <a class="table-stats__all" routerLink="/purchasing" [queryParams]="scope()"
-            >View all in Purchase orders →</a
+          <div
+            class="v3-panel"
+            id="v3-panel"
+            role="tabpanel"
+            [attr.aria-labelledby]="'v3-tab-' + activeTab()"
           >
-        </div>
-      </section>
+            @switch (activeTab()) {
+              @case ('bills') {
+                <table class="v3-table">
+                  <thead>
+                    <tr>
+                      <th>Bill</th>
+                      <th>Supplier invoice</th>
+                      <th>3-way match</th>
+                      <th>GSTR-2B</th>
+                      <th class="num">Total</th>
+                      <th class="num">Balance due</th>
+                      <th>Status</th>
+                      @if (can().bills) {
+                        <th><span class="ar-visually-hidden">Open</span></th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (b of v.recentVendorBills; track b.id) {
+                      <tr>
+                        <td class="ar-mono">
+                          <strong>{{ b.billNumber }}</strong>
+                        </td>
+                        <td>
+                          <div class="v3-cell">
+                            <span>{{ b.vendorInvoiceNumber }}</span>
+                            <span class="v3-muted">{{
+                              b.vendorInvoiceDateUtc | date: 'mediumDate'
+                            }}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <ar-chip [tone]="matchTone(b.threeWayMatchStatus)">{{
+                            matchLabel(b.threeWayMatchStatus)
+                          }}</ar-chip>
+                        </td>
+                        <td>
+                          <ar-chip [tone]="itcTone(b.gstr2bMatchStatus)">{{
+                            itcLabel(b.gstr2bMatchStatus)
+                          }}</ar-chip>
+                        </td>
+                        <td class="num ar-mono">{{ inr(b.grandTotalInPaise) }}</td>
+                        <td class="num ar-mono">
+                          <span
+                            [class.v3-bad]="b.balanceDueInPaise > 0"
+                            [class.v3-good]="b.balanceDueInPaise === 0"
+                            >{{ inr(b.balanceDueInPaise) }}</span
+                          >
+                          @if (b.dueDateUtc && b.balanceDueInPaise > 0) {
+                            <span class="v3-muted v3-block"
+                              >due {{ b.dueDateUtc | date: 'd MMM' }}</span
+                            >
+                          }
+                        </td>
+                        <td>
+                          <ar-chip [tone]="billTone(b.status)">{{ billLabel(b.status) }}</ar-chip>
+                        </td>
+                        @if (can().bills) {
+                          <td class="act">
+                            <a
+                              ar-button
+                              variant="quiet"
+                              [routerLink]="['/purchasing/bills', b.id]"
+                              [queryParams]="scope()"
+                              >Open</a
+                            >
+                          </td>
+                        }
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="8" class="v3-empty">
+                          No bills from this supplier yet.
+                          @if (can().newBill) {
+                            <a
+                              routerLink="/purchasing/bills/new"
+                              [queryParams]="scope()"
+                              class="v3-empty__cta"
+                              >Record a bill</a
+                            >
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                <ng-container
+                  *ngTemplateOutlet="
+                    stats;
+                    context: {
+                      shown: v.recentVendorBills.length,
+                      total: v.totalVendorBillsCount,
+                      route: can().bills ? '/purchasing/bills' : null,
+                      what: 'bills',
+                    }
+                  "
+                />
+              }
+              @case ('grn') {
+                <table class="v3-table">
+                  <thead>
+                    <tr>
+                      <th>GRN</th>
+                      <th>Gate entry</th>
+                      <th>Purchase order</th>
+                      <th>Challan</th>
+                      <th>Vehicle</th>
+                      <th>QC</th>
+                      <th>Status</th>
+                      @if (can().grn) {
+                        <th><span class="ar-visually-hidden">Open</span></th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (g of v.recentGoodsReceiptNotes; track g.id) {
+                      <tr>
+                        <td class="ar-mono">
+                          <strong>{{ g.grnNumber }}</strong>
+                        </td>
+                        <td>
+                          <div class="v3-cell">
+                            <span>{{ g.gateEntryNumber || '—' }}</span>
+                            <span class="v3-muted">{{
+                              g.gateInTimeUtc || g.creationTime | date: 'mediumDate'
+                            }}</span>
+                          </div>
+                        </td>
+                        <td>{{ g.purchaseOrderReference || 'Direct' }}</td>
+                        <td class="ar-mono">{{ g.challanNumber }}</td>
+                        <td class="ar-mono">{{ g.vehicleNumber || '—' }}</td>
+                        <td>
+                          <ar-chip [tone]="qcTone(g.qcStatus)">{{ qcLabel(g.qcStatus) }}</ar-chip>
+                        </td>
+                        <td>
+                          <ar-chip [tone]="grnTone(g.status)">{{ grnLabel(g.status) }}</ar-chip>
+                        </td>
+                        @if (can().grn) {
+                          <td class="act">
+                            <a
+                              ar-button
+                              variant="quiet"
+                              [routerLink]="['/purchasing/grn', g.id]"
+                              [queryParams]="scope()"
+                              >Open</a
+                            >
+                          </td>
+                        }
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="8" class="v3-empty">
+                          Nothing received from this supplier yet.
+                          @if (can().newGrn) {
+                            <button type="button" class="v3-empty__cta" (click)="goToInwardGate()">
+                              Record an inward GRN
+                            </button>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                <ng-container
+                  *ngTemplateOutlet="
+                    stats;
+                    context: {
+                      shown: v.recentGoodsReceiptNotes.length,
+                      total: v.totalGoodsReceiptNotesCount,
+                      route: can().grn ? '/purchasing/grn' : null,
+                      what: 'goods receipts',
+                    }
+                  "
+                />
+              }
+              @case ('po') {
+                <table class="v3-table">
+                  <thead>
+                    <tr>
+                      <th>Purchase order</th>
+                      <th>Ordered</th>
+                      <th>Expected</th>
+                      <th class="num">Items</th>
+                      <th class="num">Value</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (p of v.recentPurchaseOrders; track p.id) {
+                      <tr>
+                        <td class="ar-mono">
+                          <strong>{{ p.reference }}</strong>
+                        </td>
+                        <td>{{ p.creationTime | date: 'mediumDate' }}</td>
+                        <td>{{ p.expectedOn ? (p.expectedOn | date: 'mediumDate') : '—' }}</td>
+                        <td class="num">{{ p.lineCount }}</td>
+                        <td class="num ar-mono">
+                          <strong>{{ inr(p.subtotalInPaise) }}</strong>
+                        </td>
+                        <td>
+                          <ar-chip [tone]="poTone(p.state)">{{ poLabel(p.state) }}</ar-chip>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="6" class="v3-empty">
+                          No purchase orders to this supplier yet.
+                          @if (can().newOrder) {
+                            <a
+                              routerLink="/purchasing/orders/new"
+                              [queryParams]="scope()"
+                              class="v3-empty__cta"
+                              >Raise a purchase order</a
+                            >
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                <ng-container
+                  *ngTemplateOutlet="
+                    stats;
+                    context: {
+                      shown: v.recentPurchaseOrders.length,
+                      total: v.totalPurchaseOrdersCount,
+                      route: can().orders ? '/purchasing' : null,
+                      what: 'purchase orders',
+                    }
+                  "
+                />
+              }
+              @case ('debit') {
+                <table class="v3-table">
+                  <thead>
+                    <tr>
+                      <th>Debit note</th>
+                      <th>Issued</th>
+                      <th>Reason</th>
+                      <th class="num">Amount</th>
+                      <th>Status</th>
+                      @if (can().debitNotes) {
+                        <th><span class="ar-visually-hidden">Open</span></th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (dn of v.recentDebitNotes; track dn.id) {
+                      <tr>
+                        <td class="ar-mono">
+                          <strong>{{ dn.debitNoteNumber }}</strong>
+                        </td>
+                        <td>{{ dn.issueDateUtc | date: 'mediumDate' }}</td>
+                        <td class="v3-reason">{{ dn.reason }}</td>
+                        <td class="num ar-mono">
+                          <strong>{{ inr(dn.grandTotalInPaise) }}</strong>
+                        </td>
+                        <td>
+                          <ar-chip [tone]="debitTone(dn.status)">{{
+                            debitLabel(dn.status)
+                          }}</ar-chip>
+                        </td>
+                        @if (can().debitNotes) {
+                          <td class="act">
+                            <a
+                              ar-button
+                              variant="quiet"
+                              [routerLink]="['/purchasing/debit-notes', dn.id]"
+                              [queryParams]="scope()"
+                              >Open</a
+                            >
+                          </td>
+                        }
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="6" class="v3-empty">
+                          No debit notes for this supplier.
+                          @if (can().newDebitNote) {
+                            <a
+                              routerLink="/purchasing/debit-notes/new"
+                              [queryParams]="scope()"
+                              class="v3-empty__cta"
+                              >Issue a debit note</a
+                            >
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                <ng-container
+                  *ngTemplateOutlet="
+                    stats;
+                    context: {
+                      shown: v.recentDebitNotes.length,
+                      total: v.totalDebitNotesCount,
+                      route: can().debitNotes ? '/purchasing/debit-notes' : null,
+                      what: 'debit notes',
+                    }
+                  "
+                />
+              }
+            }
+          </div>
+        </section>
+      </div>
+    } @else {
+      <div class="v3 ar-scroll ar-scroll--bare">
+        @if (loadError(); as e) {
+          <p class="v3-alert" role="alert">{{ e }}</p>
+        } @else if (loaded() && suppliers().length === 0) {
+          <section class="v3-card v3-blank">
+            <ar-icon name="contacts" [size]="28" />
+            <strong>No suppliers yet</strong>
+            @if (can().editSupplier) {
+              <span>Add your first supplier to see everything about them here.</span>
+              <a ar-button variant="primary" icon="plus" routerLink="/purchasing/suppliers/new"
+                >Add a supplier</a
+              >
+            } @else {
+              <span>Suppliers added on the Purchasing page show here.</span>
+            }
+          </section>
+        } @else {
+          <section class="v3-card v3-skeleton" aria-busy="true" aria-label="Loading supplier">
+            <span class="v3-skeleton__bar v3-skeleton__bar--title"></span>
+            <span class="v3-skeleton__bar"></span>
+            <span class="v3-skeleton__bar v3-skeleton__bar--short"></span>
+          </section>
+        }
+      </div>
+    }
 
-      <!-- Tab Content 4: Debit Notes -->
-      <section class="table-card" *ngIf="activeTab() === 'debit'">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Debit Note #</th>
-              <th>Issue Date</th>
-              <th>Reason</th>
-              <th class="text-right">Adjusted Amount</th>
-              <th>Status</th>
-              <th class="actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let dn of v.recentDebitNotes">
-              <td class="font-mono">
-                <strong>{{ dn.debitNoteNumber }}</strong>
-              </td>
-              <td>{{ dn.issueDateUtc | date: 'mediumDate' }}</td>
-              <td>{{ dn.reason }}</td>
-              <td class="text-right font-mono text-good">
-                <strong>₹{{ dn.grandTotalInPaise / 100 | number: '1.2-2' }}</strong>
-              </td>
-              <td>
-                <ar-chip [tone]="dn.status === VendorDebitNoteStatus.Settled ? 'good' : 'amber'">
-                  {{ dn.status === VendorDebitNoteStatus.Settled ? 'Settled' : 'Issued' }}
-                </ar-chip>
-              </td>
-              <td class="actions-col">
-                <a
-                  ar-button="ghost"
-                  routerLink="/purchasing/debit-notes"
-                  [queryParams]="recordParams(dn.id)"
-                  >Manage</a
-                >
-              </td>
-            </tr>
-            <tr *ngIf="v.recentDebitNotes.length === 0">
-              <td colspan="6" class="empty-state">No debit notes recorded for this supplier.</td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="table-stats">
-          Showing {{ v.recentDebitNotes.length }} of {{ v.totalDebitNotesCount }}
-          <a class="table-stats__all" routerLink="/purchasing/debit-notes" [queryParams]="scope()"
-            >View all in Debit notes →</a
+    <ng-template #stats let-shown="shown" let-total="total" let-route="route" let-what="what">
+      <div class="v3-stats">
+        <span>Latest {{ shown }} of {{ total }}</span>
+        @if (route) {
+          <a [routerLink]="route" [queryParams]="scope()"
+            >All {{ what }} from this supplier <span aria-hidden="true">→</span></a
           >
-        </div>
-      </section>
-    </div>
+        }
+      </div>
+    </ng-template>
   `,
-  styles: [
-    `
-      :host {
-        display: block;
-        padding-bottom: 3rem;
-      }
+  styles: `
+    :host {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    }
+    .v3 {
+      flex: 1;
+      min-height: 0;
+      padding: 1.25rem 1.5rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    /* In the fixed-height scroll area, cards keep their own height instead of being squeezed. */
+    .v3 > * {
+      flex-shrink: 0;
+    }
+    .v3-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .v3-top__pick select {
+      min-width: 260px;
+      max-width: 380px;
+      font-weight: 500;
+    }
+    .v3-card {
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card);
+      box-shadow: var(--ar-shadow-card);
+    }
+    .v3-alert {
+      margin: 0;
+      padding: 0.7rem 1rem;
+      border: 1px solid var(--ar-red-200);
+      border-radius: var(--ar-radius-card);
+      background: var(--ar-red-100);
+      color: var(--ar-bad-600);
+      font: 500 13px var(--ar-font-sans);
+    }
+    .v3-muted {
+      color: var(--ar-ink-500);
+      font-weight: 400;
+    }
+    .v3-block {
+      display: block;
+      font-size: 11.5px;
+    }
 
-      .page-content {
-        padding: 1.5rem 2rem;
-        display: flex;
+    /* Profile */
+    .v3-profile {
+      padding: 1.1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: stretch;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+    }
+    .v3-profile__id {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      min-width: 0;
+      flex: 1 1 420px;
+    }
+    .v3-avatar {
+      flex: none;
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: var(--ar-blue-100);
+      color: var(--ar-blue-700);
+      font: 700 18px var(--ar-font-sans);
+    }
+    .v3-profile__text {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+    .v3-profile__name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .v3-profile__name h2 {
+      margin: 0;
+      font: 600 19px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .v3-ids {
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .v3-ids > div {
+      display: flex;
+      gap: 6px;
+      align-items: baseline;
+      padding: 3px 8px;
+      border-radius: var(--ar-radius-chip);
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-100);
+    }
+    .v3-ids dt {
+      font: 600 10.5px var(--ar-font-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ar-ink-500);
+    }
+    .v3-ids dd {
+      margin: 0;
+      font-size: 12.5px;
+      color: var(--ar-ink-900);
+    }
+    .v3-contact {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 16px;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-600);
+    }
+    .v3-contact > * {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .v3-contact a {
+      color: var(--ar-blue-600);
+      text-decoration: none;
+    }
+    .v3-contact a:hover {
+      text-decoration: underline;
+    }
+    .v3-terms {
+      flex: 0 1 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 0.8rem 1rem;
+      border-radius: var(--ar-radius-inset);
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-100);
+    }
+    .v3-terms__label {
+      font: 600 10.5px var(--ar-font-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ar-ink-500);
+    }
+    .v3-terms__row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-600);
+    }
+    .v3-terms__row strong {
+      color: var(--ar-ink-900);
+      font-weight: 600;
+      text-align: right;
+    }
+    .v3-terms__edit {
+      align-self: flex-start;
+      margin-top: 2px;
+    }
+
+    /* Create row */
+    .v3-create {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      padding: 0.75rem 1.1rem;
+    }
+    .v3-create__label {
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-600);
+    }
+    .v3-create__label strong {
+      color: var(--ar-ink-900);
+      font-weight: 600;
+    }
+    .v3-create__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .v3-black {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0.85rem 1.1rem;
+      border-radius: var(--ar-radius-card);
+      border: 1px solid var(--ar-red-200);
+      background: var(--ar-red-100);
+      color: var(--ar-bad-600);
+      font: 400 12.5px var(--ar-font-sans);
+    }
+    .v3-black div {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    /* Warning */
+    .v3-warn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0.85rem 1.1rem;
+      border-radius: var(--ar-radius-card);
+      border: 1px solid var(--ar-amber-200);
+      background: var(--ar-amber-50);
+      color: var(--ar-amber-800);
+    }
+    .v3-warn__text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font: 400 12.5px var(--ar-font-sans);
+    }
+    .v3-warn__text strong {
+      font-size: 13.5px;
+    }
+
+    /* KPIs */
+    .v3-kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .v3-kpi {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 0.9rem 1.1rem;
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-left: 4px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card);
+      box-shadow: var(--ar-shadow-card);
+    }
+    .v3-kpi--amber {
+      border-left-color: var(--ar-amber-500);
+    }
+    .v3-kpi--good {
+      border-left-color: var(--ar-good-600);
+    }
+    .v3-kpi__label {
+      font: 600 11px var(--ar-font-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ar-ink-500);
+    }
+    .v3-kpi__value {
+      font: 700 22px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+      font-variant-numeric: tabular-nums;
+    }
+    .v3-kpi__sub {
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+
+    /* Records */
+    .v3-records {
+      overflow: hidden;
+    }
+    .v3-tabs {
+      display: flex;
+      gap: 2px;
+      padding: 0 0.75rem;
+      border-bottom: 1px solid var(--ar-line-200);
+      overflow-x: auto;
+    }
+    .v3-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0.8rem 0.75rem 0.7rem;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: none;
+      font: 600 13px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .v3-tab:hover {
+      color: var(--ar-ink-900);
+    }
+    .v3-tab[aria-selected='true'] {
+      color: var(--ar-blue-700);
+      border-bottom-color: var(--ar-blue-600);
+    }
+    .v3-tab:focus-visible {
+      outline: none;
+      box-shadow: var(--ar-focus-ring);
+    }
+    .v3-tab__count {
+      min-width: 20px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: var(--ar-bg-100);
+      font: 600 11px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+      text-align: center;
+    }
+    .v3-tab[aria-selected='true'] .v3-tab__count {
+      background: var(--ar-blue-100);
+      color: var(--ar-blue-700);
+    }
+    .v3-panel {
+      overflow-x: auto;
+    }
+    .v3-table {
+      width: 100%;
+      border-collapse: collapse;
+      font: 400 13px var(--ar-font-sans);
+    }
+    .v3-table th {
+      padding: 0.6rem 1rem;
+      text-align: left;
+      background: var(--ar-bg-50);
+      border-bottom: 1px solid var(--ar-line-200);
+      font: 600 11px var(--ar-font-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ar-ink-500);
+      white-space: nowrap;
+    }
+    .v3-table td {
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid var(--ar-line-100);
+      vertical-align: middle;
+      color: var(--ar-ink-800);
+    }
+    .v3-table tbody tr:hover td {
+      background: var(--ar-hover);
+    }
+    .v3-table .num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .v3-table .act {
+      text-align: right;
+      width: 1%;
+    }
+    .v3-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .v3-cell .v3-muted {
+      font-size: 11.5px;
+    }
+    .v3-reason {
+      max-width: 360px;
+    }
+    .v3-good {
+      color: var(--ar-good-700);
+    }
+    .v3-bad {
+      color: var(--ar-bad-600);
+      font-weight: 600;
+    }
+    .v3-empty {
+      text-align: center;
+      padding: 2rem 1rem !important;
+      color: var(--ar-ink-500);
+    }
+    .v3-empty__cta {
+      margin-left: 6px;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--ar-blue-600);
+      font: 600 13px var(--ar-font-sans);
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .v3-empty__cta:hover {
+      text-decoration: underline;
+    }
+    .v3-stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 0.6rem 1rem;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .v3-stats a {
+      color: var(--ar-blue-600);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .v3-stats a:hover {
+      text-decoration: underline;
+    }
+
+    /* Empty and loading */
+    .v3-blank {
+      padding: 2.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+      color: var(--ar-ink-500);
+      font: 400 13px var(--ar-font-sans);
+    }
+    .v3-blank strong {
+      color: var(--ar-ink-900);
+      font-size: 15px;
+    }
+    .v3-skeleton {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .v3-skeleton__bar {
+      height: 12px;
+      width: 60%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--ar-bg-100), var(--ar-bg-50), var(--ar-bg-100));
+      background-size: 200% 100%;
+      animation: v3-shimmer 1.2s linear infinite;
+    }
+    .v3-skeleton__bar--title {
+      height: 20px;
+      width: 35%;
+    }
+    .v3-skeleton__bar--short {
+      width: 40%;
+    }
+    @keyframes v3-shimmer {
+      from {
+        background-position: 200% 0;
+      }
+      to {
+        background-position: -200% 0;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .v3-skeleton__bar {
+        animation: none;
+      }
+    }
+    .ar-visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    @media (max-width: 720px) {
+      .v3 {
+        padding: 1rem;
+      }
+      .v3-top__pick select {
+        min-width: 0;
+        max-width: 200px;
+      }
+      .v3-warn {
         flex-direction: column;
-        gap: 1.5rem;
+        align-items: flex-start;
       }
-
-      .topbar-actions {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-      }
-
-      .supplier-selector {
-        padding: 0.45rem 0.75rem;
-        border-radius: 6px;
-        border: 1px solid var(--ar-border, #cbd5e1);
-        font-size: 0.85rem;
-        font-weight: 500;
-        background: #ffffff;
-      }
-
-      .vendor-profile-card {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-border, #e2e8f0);
-        border-radius: 8px;
-        padding: 1.5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-      }
-
-      .vendor-identity {
-        display: flex;
-        align-items: center;
-        gap: 1.25rem;
-      }
-
-      .avatar-box {
-        width: 60px;
-        height: 60px;
-        background: #e0e7ff;
-        color: #3730a3;
-        font-size: 1.4rem;
-        font-weight: 700;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .identity-details {
-        display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
-
-        .name-row {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-
-          h2 {
-            margin: 0;
-            font-size: 1.35rem;
-            color: var(--ar-text-primary, #0f172a);
-          }
-        }
-      }
-
-      .statutory-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-
-        .badge-tag {
-          font-size: 0.75rem;
-          background: #f1f5f9;
-          padding: 0.15rem 0.5rem;
-          border-radius: 4px;
-          color: #475569;
-        }
-      }
-
-      .contact-line {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        font-size: 0.8rem;
-        color: #64748b;
-      }
-
-      .banking-box {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 0.85rem 1.25rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-        min-width: 240px;
-
-        .box-label {
-          font-size: 0.7rem;
-          text-transform: uppercase;
-          font-weight: 600;
-          color: #64748b;
-        }
-
-        .lead-time {
-          font-size: 0.75rem;
-          color: #0369a1;
-          margin-top: 0.25rem;
-        }
-      }
-
-      .msme-alert-banner {
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-        border-radius: 8px;
-        padding: 1rem 1.25rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-
-        .alert-icon {
-          font-size: 1.5rem;
-        }
-
-        .alert-text {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 0.15rem;
-          font-size: 0.85rem;
-          color: #991b1b;
-        }
-      }
-
-      .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-        gap: 1rem;
-      }
-
-      .kpi-card {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-border, #e2e8f0);
-        border-radius: 8px;
-        padding: 1rem 1.25rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-
-        &.amber {
-          border-left: 4px solid #f59e0b;
-        }
-        &.teal,
-        &.good {
-          border-left: 4px solid #0d9488;
-        }
-        &.red {
-          border-left: 4px solid #ef4444;
-        }
-
-        .label {
-          font-size: 0.78rem;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          color: var(--ar-text-muted, #64748b);
-          font-weight: 600;
-        }
-
-        .value {
-          font-size: 1.6rem;
-          font-weight: 700;
-          color: var(--ar-text-primary, #0f172a);
-        }
-
-        .sub {
-          font-size: 0.75rem;
-          color: var(--ar-text-secondary, #94a3b8);
-        }
-      }
-
-      .tabs-nav {
-        display: flex;
-        gap: 0.5rem;
-        border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 0.25rem;
-
-        .tab-btn {
-          padding: 0.5rem 1rem;
-          border: none;
-          background: transparent;
-          font-size: 0.85rem;
-          font-weight: 600;
-          color: #64748b;
-          cursor: pointer;
-          border-bottom: 2px solid transparent;
-
-          &.active {
-            color: #2563eb;
-            border-bottom-color: #2563eb;
-          }
-        }
-      }
-
-      .table-card {
-        background: var(--ar-surface, #ffffff);
-        border: 1px solid var(--ar-border, #e2e8f0);
-        border-radius: 8px;
-        overflow-x: auto;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-      }
-
-      .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: left;
-        font-size: 0.85rem;
-
-        th {
-          padding: 0.75rem 1rem;
-          background: #f8fafc;
-          border-bottom: 1px solid #e2e8f0;
-          font-weight: 600;
-          color: #475569;
-          text-transform: uppercase;
-          font-size: 0.72rem;
-          letter-spacing: 0.05em;
-        }
-
-        td {
-          padding: 0.75rem 1rem;
-          border-bottom: 1px solid #f1f5f9;
-          vertical-align: middle;
-        }
-      }
-
-      .cell-main {
-        display: flex;
-        flex-direction: column;
-        gap: 0.15rem;
-
-        .sub-text {
-          font-size: 0.74rem;
-          color: #64748b;
-        }
-      }
-
-      .text-right {
-        text-align: right;
-      }
-      .text-good {
-        color: #15803d;
-      }
-      .text-danger {
-        color: #b91c1c;
-      }
-      .font-mono {
-        font-family: ui-monospace, monospace;
-      }
-
-      .actions-col {
-        text-align: right;
-      }
-
-      .table-stats {
-        padding: 0.6rem 1rem;
-        font-size: 0.78rem;
-        color: #64748b;
-        border-top: 1px solid #f1f5f9;
-      }
-
-      .table-stats__all {
-        margin-left: 0.5rem;
-        color: var(--ar-blue-600, #2563eb);
-        font-weight: 600;
-        font-size: 0.78rem;
-        text-decoration: none;
-
-        &:hover {
-          text-decoration: underline;
-        }
-      }
-
-      .load-error {
-        margin: 0;
-        padding: 0.75rem 1rem;
-        border: 1px solid #fecaca;
-        border-radius: 8px;
-        background: #fef2f2;
-        color: #991b1b;
-        font-size: 0.85rem;
-      }
-
-      .sub-text {
-        font-size: 0.8rem;
-        color: #64748b;
-      }
-
-      .empty-state {
-        text-align: center;
-        padding: 2.5rem;
-        color: #94a3b8;
-      }
-    `,
-  ],
+    }
+  `,
 })
 export class Vendor360Component {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly vendor360Service = inject(Vendor360Service);
   private readonly cockpitOrigin = inject(CockpitOriginService);
+  private readonly permissions = inject(PermissionService);
+  private readonly plans = inject(PlanService);
+  private readonly account = inject(CurrentUserService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly MsmeClassification = MsmeClassification;
-  readonly VendorDebitNoteStatus = VendorDebitNoteStatus;
+  protected readonly tabs = TABS;
+  protected readonly inr = inr;
 
   /** The picker: every supplier (live), or the sample ones. */
   readonly suppliers = signal<{ id: string; name: string; detail: string | null }[]>(
@@ -1010,7 +1391,8 @@ export class Vendor360Component {
       : [],
   );
   readonly currentVendorId = signal<string>('');
-  readonly activeTab = signal<'bills' | 'grn' | 'po' | 'debit'>('bills');
+  /** The open tab, kept in the URL (`?tab=`) so the way back from a record lands on it again. */
+  readonly activeTab = signal<VendorTab>(readTab(this.route.snapshot.queryParamMap.get('tab')));
   readonly loaded = signal(environment.useMockData);
   readonly loadError = signal<string | null>(null);
 
@@ -1025,6 +1407,63 @@ export class Vendor360Component {
   readonly scope = computed<Params>(() => {
     const v = this.vendor();
     return v ? vendorParams(v) : {};
+  });
+
+  /**
+   * What this user may open or do from here: screens by their menu permission (as the menu and the route guard decide), actions
+   * by the API permission they need. Links and buttons for anything else are not shown.
+   */
+  protected readonly can = computed(() => {
+    this.account.isHost();
+    const open = (url: string) => canOpenUrl(url, this.permissions, this.plans, this.account);
+    const has = (p: string) => checkPolicy(p, this.permissions);
+    const orders = open('/purchasing');
+    const grn = open('/purchasing/grn');
+    const bills = open('/purchasing/bills');
+    const debitNotes = open('/purchasing/debit-notes');
+    return {
+      orders,
+      grn,
+      bills,
+      debitNotes,
+      editSupplier: orders && has(PURCHASING_PERMISSIONS.manageInventory),
+      newOrder: open('/purchasing/orders/new') && has(PURCHASING_PERMISSIONS.manageInventory),
+      newGrn: open('/purchasing/grn/new') && has(PURCHASING_PERMISSIONS.createGrn),
+      newBill: open('/purchasing/bills/new') && has(PURCHASING_PERMISSIONS.createBill),
+      newDebitNote:
+        open('/purchasing/debit-notes/new') && has(PURCHASING_PERMISSIONS.createDebitNote),
+    };
+  });
+
+  /** The records this user may create for the supplier, in the order the purchase cycle runs. */
+  protected readonly createActions = computed(() => {
+    const c = this.can();
+    const all: { label: string; route: string; icon: IconName; primary?: boolean; ok: boolean }[] =
+      [
+        {
+          label: 'Purchase order',
+          route: '/purchasing/orders/new',
+          icon: 'document',
+          ok: c.newOrder,
+        },
+        {
+          label: 'Inward GRN',
+          route: '/purchasing/grn/new',
+          icon: 'machine',
+          primary: true,
+          ok: c.newGrn,
+        },
+        { label: 'Vendor bill', route: '/purchasing/bills/new', icon: 'billing', ok: c.newBill },
+        {
+          label: 'Debit note',
+          route: '/purchasing/debit-notes/new',
+          icon: 'quotation',
+          ok: c.newDebitNote,
+        },
+      ];
+    // A blacklisted supplier can't be ordered from (the API refuses); the other records stay possible.
+    const blacklisted = !!this.vendor()?.isBlacklisted;
+    return all.filter((a) => a.ok && !(blacklisted && a.route === '/purchasing/orders/new'));
   });
 
   constructor() {
@@ -1046,7 +1485,60 @@ export class Vendor360Component {
   /** Picking a supplier opens their own cockpit URL, so the way back from other screens returns to them. */
   onVendorChange(id: string) {
     if (id && id !== this.currentVendorId()) {
-      void this.router.navigate(['/purchasing/vendor-360', id]);
+      void this.router.navigate(['/purchasing/vendor-360', id], {
+        queryParams: { tab: this.activeTab() },
+      });
+    }
+  }
+
+  protected selectTab(tab: VendorTab): void {
+    if (tab === this.activeTab()) return;
+    this.activeTab.set(tab);
+    void this.router
+      .navigate([], {
+        relativeTo: this.route,
+        queryParams: { tab },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      })
+      .then(() => this.cockpitOrigin.setCockpitName(this.vendor()?.name ?? null));
+  }
+
+  /** Arrow keys, Home and End move between the tabs (the ARIA tabs pattern). */
+  protected tabKey(event: KeyboardEvent, tab: VendorTab): void {
+    const i = TABS.indexOf(tab);
+    const next =
+      event.key === 'ArrowRight'
+        ? TABS[(i + 1) % TABS.length]
+        : event.key === 'ArrowLeft'
+          ? TABS[(i - 1 + TABS.length) % TABS.length]
+          : event.key === 'Home'
+            ? TABS[0]
+            : event.key === 'End'
+              ? TABS[TABS.length - 1]
+              : null;
+    if (!next) return;
+    event.preventDefault();
+    this.selectTab(next);
+    document.getElementById('v3-tab-' + next)?.focus();
+  }
+
+  protected tabLabel(tab: VendorTab): string {
+    return { bills: 'Bills', grn: 'Goods receipts', po: 'Purchase orders', debit: 'Debit notes' }[
+      tab
+    ];
+  }
+
+  protected tabCount(v: Vendor360Dto, tab: VendorTab): number {
+    switch (tab) {
+      case 'bills':
+        return v.totalVendorBillsCount ?? v.recentVendorBills.length;
+      case 'grn':
+        return v.totalGoodsReceiptNotesCount ?? v.recentGoodsReceiptNotes.length;
+      case 'po':
+        return v.totalPurchaseOrdersCount ?? v.recentPurchaseOrders.length;
+      case 'debit':
+        return v.totalDebitNotesCount ?? v.recentDebitNotes.length;
     }
   }
 
@@ -1077,7 +1569,10 @@ export class Vendor360Component {
   private openFirstSupplier() {
     const first = this.suppliers()[0];
     if (first) {
-      void this.router.navigate(['/purchasing/vendor-360', first.id], { replaceUrl: true });
+      void this.router.navigate(['/purchasing/vendor-360', first.id], {
+        replaceUrl: true,
+        queryParamsHandling: 'preserve',
+      });
     }
   }
 
@@ -1107,21 +1602,40 @@ export class Vendor360Component {
     return [v.address, place, v.pincode].filter(Boolean).join(', ');
   }
 
+  /** Inward gate entry for this supplier, on its own page. */
   goToInwardGate() {
     const v = this.vendor();
     if (v) {
-      void this.router.navigate(['/purchasing/grn'], { queryParams: vendorParams(v, { new: 1 }) });
+      void this.router.navigate(['/purchasing/grn/new'], { queryParams: vendorParams(v) });
     }
+  }
+
+  protected initials(name: string): string {
+    const words = name.split(/\s+/).filter((w) => /^[A-Za-z0-9]/.test(w));
+    return ((words[0]?.[0] ?? '') + (words[1]?.[0] ?? '')).toUpperCase() || '?';
+  }
+
+  /** The last four digits only: the full number is on the supplier record. */
+  protected maskAccount(account?: string | null): string {
+    return account ? '•••• ' + account.slice(-4) : '';
+  }
+
+  /** Quality reads as a figure only once something has been received. */
+  protected hasQuality(v: Vendor360Dto): boolean {
+    return (v.totalGoodsReceiptNotesCount ?? v.recentGoodsReceiptNotes.length) > 0;
+  }
+
+  protected paidShare(v: Vendor360Dto): string {
+    const billed = v.totalPaidInPaise + v.outstandingPayableInPaise;
+    return billed > 0 ? `${Math.round((v.totalPaidInPaise / billed) * 100)}%` : '—';
   }
 
   msmeTone(cat: MsmeClassification): ChipTone {
     switch (cat) {
       case MsmeClassification.Micro:
-        return 'teal';
       case MsmeClassification.Small:
-        return 'good';
       case MsmeClassification.Medium:
-        return 'amber';
+        return 'teal';
       default:
         return 'neutral';
     }
@@ -1130,13 +1644,13 @@ export class Vendor360Component {
   msmeLabel(cat: MsmeClassification): string {
     switch (cat) {
       case MsmeClassification.Micro:
-        return 'MSME (Micro)';
+        return 'MSME · Micro';
       case MsmeClassification.Small:
-        return 'MSME (Small)';
+        return 'MSME · Small';
       case MsmeClassification.Medium:
-        return 'MSME (Medium)';
+        return 'MSME · Medium';
       default:
-        return 'Large Enterprise';
+        return 'MSME not recorded';
     }
   }
 
@@ -1157,9 +1671,9 @@ export class Vendor360Component {
       case ThreeWayMatchStatus.Matched:
         return 'Matched';
       case ThreeWayMatchStatus.PriceVariance:
-        return 'Rate Discrepancy';
+        return 'Rate differs';
       case ThreeWayMatchStatus.QuantityVariance:
-        return 'Qty Discrepancy';
+        return 'Qty differs';
       default:
         return 'Pending';
     }
@@ -1179,9 +1693,11 @@ export class Vendor360Component {
   itcLabel(status: Gstr2bMatchStatus): string {
     switch (status) {
       case Gstr2bMatchStatus.MatchedIn2B:
-        return 'GSTR-2B ITC OK';
+        return 'In 2B';
+      case Gstr2bMatchStatus.MissingIn2B:
+        return 'Missing in 2B';
       default:
-        return 'Pending ITC';
+        return 'Not checked';
     }
   }
 
@@ -1201,9 +1717,9 @@ export class Vendor360Component {
   billLabel(status: VendorBillStatus): string {
     switch (status) {
       case VendorBillStatus.Paid:
-        return 'Fully Paid';
+        return 'Paid';
       case VendorBillStatus.PartiallyPaid:
-        return 'Partially Paid';
+        return 'Part paid';
       case VendorBillStatus.Approved:
         return 'Approved';
       default:
@@ -1229,11 +1745,11 @@ export class Vendor360Component {
       case QcInspectionStatus.Passed:
         return 'Passed';
       case QcInspectionStatus.PartiallyPassed:
-        return 'Partial';
+        return 'Partly passed';
       case QcInspectionStatus.Failed:
         return 'Failed';
       default:
-        return 'Pending';
+        return 'Awaiting QC';
     }
   }
 
@@ -1243,6 +1759,10 @@ export class Vendor360Component {
         return 'good';
       case GrnStatus.Billed:
         return 'teal';
+      case GrnStatus.UnderInspection:
+        return 'amber';
+      case GrnStatus.Rejected:
+        return 'bad';
       default:
         return 'neutral';
     }
@@ -1254,8 +1774,61 @@ export class Vendor360Component {
         return 'Approved';
       case GrnStatus.Billed:
         return 'Billed';
+      case GrnStatus.UnderInspection:
+        return 'Under QC';
+      case GrnStatus.Rejected:
+        return 'Rejected';
+      case GrnStatus.Cancelled:
+        return 'Cancelled';
       default:
-        return 'Inwarded';
+        return 'Draft';
     }
   }
+
+  protected poTone(state: string): ChipTone {
+    switch (state) {
+      case 'Received':
+      case 'Delivered':
+      case 'Closed':
+        return 'good';
+      case 'PartlyReceived':
+        return 'amber';
+      case 'Sent':
+        return 'teal';
+      case 'Cancelled':
+        return 'bad';
+      default:
+        return 'neutral';
+    }
+  }
+
+  protected poLabel(state: string): string {
+    return state === 'PartlyReceived' ? 'Part received' : state;
+  }
+
+  protected debitTone(status: VendorDebitNoteStatus): ChipTone {
+    switch (status) {
+      case VendorDebitNoteStatus.Settled:
+        return 'good';
+      case VendorDebitNoteStatus.Issued:
+        return 'amber';
+      default:
+        return 'neutral';
+    }
+  }
+
+  protected debitLabel(status: VendorDebitNoteStatus): string {
+    switch (status) {
+      case VendorDebitNoteStatus.Settled:
+        return 'Settled';
+      case VendorDebitNoteStatus.Issued:
+        return 'Issued';
+      default:
+        return VendorDebitNoteStatus[status] ?? 'Draft';
+    }
+  }
+}
+
+function readTab(value: string | null): VendorTab {
+  return (TABS as readonly string[]).includes(value ?? '') ? (value as VendorTab) : 'bills';
 }

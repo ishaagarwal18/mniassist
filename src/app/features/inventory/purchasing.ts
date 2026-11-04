@@ -6,14 +6,18 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
-import { SupplierScope, readSupplierScope } from '../../core/util/supplier-scope';
+import {
+  SupplierScope,
+  readSupplierScope,
+  supplierScopeParams,
+} from '../../core/util/supplier-scope';
+import { ConfirmService } from '../../core/ui/confirm.service';
 import { ArSupplierScopeBar } from '../purchasing/supplier-scope-bar';
 import { InventoryService, StockLocationDto } from '../../proxy/inventory/inventory.service';
 import {
   PurchaseOrderDto,
   PurchasingService,
   ReorderSuggestionDto,
-  SaveSupplierInput,
   SupplierDto,
 } from '../../proxy/inventory/purchasing.service';
 import { ProductService } from '../../proxy/library/product.service';
@@ -111,10 +115,10 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
       help="Orders to suppliers, received into stock at their cost. Stock is valued at moving average cost, the method Tally's Average Cost and SAP Business One's Moving Average use. Sent orders count as on order on the Stock page."
     >
       @if (canManage()) {
-        <button ar-button type="button" variant="ghost" (click)="openSupplier(null)">
+        <button ar-button type="button" variant="ghost" (click)="supplierPage(null)">
           New supplier
         </button>
-        <button ar-button type="button" variant="primary" icon="plus" (click)="openOrder(null)">
+        <button ar-button type="button" variant="primary" icon="plus" (click)="newOrderPage()">
           New order
         </button>
       }
@@ -199,7 +203,9 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
                       <td class="acts">
                         @if (canManage()) {
                           @if (o.state === 'Draft') {
-                            <button type="button" class="act" (click)="openOrder(o)">Edit</button>
+                            <button type="button" class="act" (click)="editOrderPage(o)">
+                              Edit
+                            </button>
                             <button type="button" class="act" (click)="markSent(o)">
                               Mark sent
                             </button>
@@ -297,12 +303,19 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
                     <tr [class.off]="!s.isActive">
                       <td>
                         <b>{{ s.name }}</b>
-                        @if (!s.isActive) {
+                        @if (s.isBlacklisted) {
+                          <span class="sub pu__black" [title]="s.blacklistReason || ''"
+                            >Blacklisted</span
+                          >
+                        } @else if (!s.isActive) {
                           <span class="sub">Not in use</span>
                         }
                       </td>
                       <td class="ar-mono">{{ s.gstin || '—' }}</td>
                       <td>
+                        @if (s.contactName) {
+                          {{ s.contactName }}
+                        }
                         {{ s.phone || '' }}
                         @if (s.email) {
                           <span class="sub">{{ s.email }}</span>
@@ -311,7 +324,9 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
                       <td class="num">{{ s.leadDays != null ? s.leadDays + ' days' : '—' }}</td>
                       <td class="acts">
                         @if (canManage()) {
-                          <button type="button" class="act" (click)="openSupplier(s)">Edit</button>
+                          <button type="button" class="act" (click)="supplierPage(s.id)">
+                            Edit
+                          </button>
                         }
                       </td>
                     </tr>
@@ -554,100 +569,6 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
         </div>
       </ar-dialog>
     }
-
-    @if (supplier(); as s) {
-      <ar-dialog [title]="s.id ? 'Edit supplier' : 'New supplier'" (dismiss)="supplier.set(null)">
-        <label class="ar-field" for="pu-sname">
-          <span class="ar-field__label">Name</span>
-          <input
-            required
-            maxlength="128"
-            id="pu-sname"
-            class="ar-field__input"
-            [value]="s.form.name"
-            (input)="patchSupplier({ name: $any($event.target).value })"
-          />
-        </label>
-        <div class="pu__grid">
-          <label class="ar-field" for="pu-sgst">
-            <span class="ar-field__label">GSTIN <span class="ar-field__opt">(optional)</span></span>
-            <input
-              id="pu-sgst"
-              class="ar-field__input ar-mono"
-              maxlength="15"
-              [value]="s.form.gstin ?? ''"
-              (input)="patchSupplier({ gstin: $any($event.target).value })"
-            />
-          </label>
-          <label class="ar-field" for="pu-slead">
-            <span class="ar-field__label"
-              >Lead time, days <span class="ar-field__opt">(optional)</span></span
-            >
-            <input
-              id="pu-slead"
-              class="ar-field__input"
-              inputmode="numeric"
-              [value]="s.form.leadDays ?? ''"
-              (input)="patchSupplier({ leadDays: toDays($any($event.target).value) })"
-            />
-          </label>
-          <label class="ar-field" for="pu-sphone">
-            <span class="ar-field__label">Phone <span class="ar-field__opt">(optional)</span></span>
-            <input
-              id="pu-sphone"
-              class="ar-field__input"
-              [value]="s.form.phone ?? ''"
-              (input)="patchSupplier({ phone: $any($event.target).value })"
-            />
-          </label>
-          <label class="ar-field" for="pu-semail">
-            <span class="ar-field__label">Email <span class="ar-field__opt">(optional)</span></span>
-            <input
-              id="pu-semail"
-              class="ar-field__input"
-              type="email"
-              [value]="s.form.email ?? ''"
-              (input)="patchSupplier({ email: $any($event.target).value })"
-            />
-          </label>
-        </div>
-        <label class="ar-field" for="pu-saddr">
-          <span class="ar-field__label">Address <span class="ar-field__opt">(optional)</span></span>
-          <input
-            id="pu-saddr"
-            class="ar-field__input"
-            [value]="s.form.address ?? ''"
-            (input)="patchSupplier({ address: $any($event.target).value })"
-          />
-        </label>
-        <label class="pu__check" for="pu-sactive">
-          <input
-            id="pu-sactive"
-            type="checkbox"
-            [checked]="s.form.isActive"
-            (change)="patchSupplier({ isActive: $any($event.target).checked })"
-          />
-          In use: offered on new orders
-        </label>
-        @if (dialogError(); as e) {
-          <p class="pu__err" role="alert">{{ e }}</p>
-        }
-        <div dialogActions>
-          <button ar-button type="button" variant="ghost" (click)="supplier.set(null)">
-            Cancel
-          </button>
-          <button
-            ar-button
-            type="button"
-            variant="primary"
-            [disabled]="busy()"
-            (click)="saveSupplier()"
-          >
-            {{ busy() ? 'Saving…' : 'Save' }}
-          </button>
-        </div>
-      </ar-dialog>
-    }
   `,
   styles: `
     :host {
@@ -804,6 +725,10 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
       font: 600 14px var(--ar-font-sans);
       font-variant-numeric: tabular-nums;
     }
+    .pu__black {
+      color: var(--ar-bad-600);
+      font-weight: 600;
+    }
     .pu__check {
       display: flex;
       gap: 8px;
@@ -831,6 +756,7 @@ export class ArPurchasing {
   private readonly permissions = inject(PermissionService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly confirm = inject(ConfirmService);
 
   /** Opened from Vendor 360 for one supplier: only their orders, and New order is for them. */
   protected readonly scope = signal<SupplierScope | null>(readSupplierScope());
@@ -889,7 +815,6 @@ export class ArPurchasing {
   protected readonly receiveNote = signal('');
 
   // Supplier editor.
-  protected readonly supplier = signal<{ id: string | null; form: SaveSupplierInput } | null>(null);
 
   constructor() {
     void this.load().then(() => this.openRequested());
@@ -908,10 +833,9 @@ export class ArPurchasing {
     const edit = q.get('edit');
     const supplier = edit ? this.suppliers().find((s) => s.id === edit) : undefined;
     if (supplier && this.canManage()) {
-      this.tab.set('suppliers');
-      this.openSupplier(supplier);
+      this.supplierPage(supplier.id, true);
     } else if (q.get('new') && this.canManage()) {
-      this.openOrder(null);
+      this.newOrderPage(true);
     }
   }
 
@@ -954,12 +878,16 @@ export class ArPurchasing {
     return ORDER_STATE[o.state] ?? { label: o.state, tone: 'neutral' as const };
   }
 
-  protected toDays(text: string): number | null {
-    const t = text.trim();
-    return /^\d{1,3}$/.test(t) ? Number(t) : null;
-  }
-
   // ---- Orders ----------------------------------------------------------------------------------------------------------------
+
+  /** A new order has its own page (/purchasing/orders/new), for the supplier in scope if any. */
+  protected newOrderPage(replaceUrl = false): void {
+    const sc = this.scope();
+    void this.router.navigate(['/purchasing/orders/new'], {
+      queryParams: sc ? supplierScopeParams(sc) : {},
+      replaceUrl,
+    });
+  }
 
   protected openOrder(o: PurchaseOrderDto | null, lines: DraftLine[] = []): void {
     this.dialogError.set(null);
@@ -1117,7 +1045,21 @@ export class ArPurchasing {
     );
   }
 
+  /** Editing a draft has its own page. */
+  protected editOrderPage(o: PurchaseOrderDto): void {
+    void this.router.navigate(['/purchasing/orders', o.id, 'edit']);
+  }
+
   protected async cancel(o: PurchaseOrderDto): Promise<void> {
+    const ok = await this.confirm.confirm({
+      title: `Cancel ${o.reference}?`,
+      message: `The order to ${o.supplierName} is cancelled and its parts no longer count as on order. This can't be undone.`,
+      details: [`${o.lines.length} line(s) · ${rupees(o.subtotalInPaise)} before GST`],
+      confirmText: 'Cancel order',
+      cancelText: 'Keep order',
+      tone: 'danger',
+    });
+    if (!ok) return;
     await this.act(o, () => this.api.cancel(o.id), `${o.reference} cancelled.`);
   }
 
@@ -1199,6 +1141,17 @@ export class ArPurchasing {
       this.dialogError.set('Enter what arrived on at least one line.');
       return;
     }
+    const ok = await this.confirm.confirm({
+      title: `Receive into stock against ${r.order.reference}?`,
+      message: `Stock and average costs are updated straight away at the order's prices.`,
+      details: lines.map((l) => {
+        const row = r.rows.find((x) => x.lineId === l.lineId)!;
+        return `${row.partNumber}: ${qty(l.quantity)} of ${qty(row.outstanding)} still to come`;
+      }),
+      confirmText: 'Receive',
+      tone: 'primary',
+    });
+    if (!ok) return;
     this.busy.set(true);
     this.dialogError.set(null);
     try {
@@ -1221,54 +1174,12 @@ export class ArPurchasing {
 
   // ---- Suppliers -------------------------------------------------------------------------------------------------------------
 
-  protected openSupplier(s: SupplierDto | null): void {
-    this.dialogError.set(null);
-    this.supplier.set({
-      id: s?.id ?? null,
-      form: {
-        name: s?.name ?? '',
-        gstin: s?.gstin ?? null,
-        phone: s?.phone ?? null,
-        email: s?.email ?? null,
-        address: s?.address ?? null,
-        leadDays: s?.leadDays ?? null,
-        isActive: s?.isActive ?? true,
-      },
-    });
-  }
-
-  protected patchSupplier(p: Partial<SaveSupplierInput>): void {
-    this.supplier.update((s) => (s ? { ...s, form: { ...s.form, ...p } } : s));
-  }
-
-  protected async saveSupplier(): Promise<void> {
-    const s = this.supplier();
-    if (!s) return;
-    this.busy.set(true);
-    this.dialogError.set(null);
-    try {
-      const form = {
-        ...s.form,
-        name: s.form.name.trim(),
-        gstin: s.form.gstin?.trim() || null,
-        phone: s.form.phone?.trim() || null,
-        email: s.form.email?.trim() || null,
-        address: s.form.address?.trim() || null,
-      };
-      if (!environment.useMockData) {
-        await firstValueFrom(
-          s.id ? this.api.updateSupplier(s.id, form) : this.api.createSupplier(form),
-        );
-        await this.load();
-      }
-      this.notice.set(`${form.name} saved.`);
-      this.supplier.set(null);
-      this.tab.set('suppliers');
-    } catch (e: unknown) {
-      this.dialogError.set(problem(e, 'The supplier could not be saved.'));
-    } finally {
-      this.busy.set(false);
-    }
+  /** New and edit supplier have their own page. */
+  protected supplierPage(id: string | null, replaceUrl = false): void {
+    void this.router.navigate(
+      id ? ['/purchasing/suppliers', id, 'edit'] : ['/purchasing/suppliers/new'],
+      { replaceUrl },
+    );
   }
 }
 

@@ -30,11 +30,13 @@ describe('account-contacts.logic', () => {
   });
 
   it('validates new contact draft fields', () => {
-    expect(validateNewContactDraft({ name: '', phone: '919822011000' })).toContain('name is required');
-    expect(validateNewContactDraft({ name: 'Test', phone: '123' })).toContain('at least 10 digits');
-    expect(validateNewContactDraft({ name: 'Test', phone: '919822011000', email: 'invalid-email' })).toContain(
-      'valid email',
+    expect(validateNewContactDraft({ name: '', phone: '919822011000' })).toContain(
+      'name is required',
     );
+    expect(validateNewContactDraft({ name: 'Test', phone: '123' })).toContain('at least 10 digits');
+    expect(
+      validateNewContactDraft({ name: 'Test', phone: '919822011000', email: 'invalid-email' }),
+    ).toContain('valid email');
     expect(
       validateNewContactDraft({ name: 'Test', phone: '919822011000', email: 'valid@example.com' }),
     ).toBeNull();

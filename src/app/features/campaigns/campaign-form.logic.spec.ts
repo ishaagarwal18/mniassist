@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  BLANK_CAMPAIGN_DRAFT,
-  CampaignDraft,
-  validateCampaignDraft,
-} from './campaign-form.logic';
+import { BLANK_CAMPAIGN_DRAFT, CampaignDraft, validateCampaignDraft } from './campaign-form.logic';
 
 describe('campaign-form.logic', () => {
   it('returns error when campaign name is blank', () => {
@@ -39,9 +35,7 @@ describe('campaign-form.logic', () => {
       channelId: 'ch-1',
       templateId: '',
     };
-    expect(validateCampaignDraft(draft, true, false)).toBe(
-      'Pick an approved template to send.',
-    );
+    expect(validateCampaignDraft(draft, true, false)).toBe('Pick an approved template to send.');
   });
 
   it('allows empty template when in mock environment', () => {

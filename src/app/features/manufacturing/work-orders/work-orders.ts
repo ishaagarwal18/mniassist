@@ -357,7 +357,9 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
             aria-label="Work Orders Master Table"
           >
             <table class="ar-table">
-              <caption class="sr-only">Work Orders Master Table</caption>
+              <caption class="sr-only">
+                Work Orders Master Table
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Order #</th>
@@ -378,7 +380,9 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                   <td>
                     <div class="wo-ref">
                       <span class="font-mono font-medium">{{ wo.workOrderNumber }}</span>
-                      <span class="text-sub" *ngIf="wo.salesOrderNumber">{{ wo.salesOrderNumber }}</span>
+                      <span class="text-sub" *ngIf="wo.salesOrderNumber">{{
+                        wo.salesOrderNumber
+                      }}</span>
                     </div>
                   </td>
                   <td>
@@ -390,7 +394,9 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                   </td>
                   <td class="text-right">
                     <div class="qty-progress">
-                      <span class="qty-numbers">{{ wo.producedQuantity }} / {{ wo.plannedQuantity }}</span>
+                      <span class="qty-numbers"
+                        >{{ wo.producedQuantity }} / {{ wo.plannedQuantity }}</span
+                      >
                       <div class="progress-bar-bg">
                         <div
                           class="progress-bar-fill"
@@ -407,12 +413,19 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                     <span class="stage-tag">{{ getStageLabel(wo.currentStage) }}</span>
                   </td>
                   <td>
-                    <ar-chip [tone]="getStatusTone(wo.status)" [dot]="wo.status === WorkOrderStatus.InProgress">
+                    <ar-chip
+                      [tone]="getStatusTone(wo.status)"
+                      [dot]="wo.status === WorkOrderStatus.InProgress"
+                    >
                       {{ getStatusLabel(wo.status) }}
                     </ar-chip>
                   </td>
                   <td class="text-right">
-                    <button ar-button variant="ghost" (click)="selectWorkOrder(wo); $event.stopPropagation()">
+                    <button
+                      ar-button
+                      variant="ghost"
+                      (click)="selectWorkOrder(wo); $event.stopPropagation()"
+                    >
                       View
                     </button>
                   </td>
@@ -431,7 +444,10 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
             <div>
               <div class="cockpit-title-row">
                 <h3>{{ wo.workOrderNumber }}</h3>
-                <ar-chip [tone]="getStatusTone(wo.status)" [dot]="wo.status === WorkOrderStatus.InProgress">
+                <ar-chip
+                  [tone]="getStatusTone(wo.status)"
+                  [dot]="wo.status === WorkOrderStatus.InProgress"
+                >
                   {{ getStatusLabel(wo.status) }}
                 </ar-chip>
               </div>
@@ -445,7 +461,9 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
             </div>
             <div class="cockpit-actions">
               <button
-                *ngIf="wo.status === WorkOrderStatus.Draft || wo.status === WorkOrderStatus.Scheduled"
+                *ngIf="
+                  wo.status === WorkOrderStatus.Draft || wo.status === WorkOrderStatus.Scheduled
+                "
                 ar-button
                 variant="primary"
                 (click)="releaseToShopFloor()"
@@ -516,7 +534,9 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
               aria-label="Shop Floor Routing Steps"
             >
               <table class="ar-table">
-                <caption class="sr-only">Shop Floor Routing Steps</caption>
+                <caption class="sr-only">
+                  Shop Floor Routing Steps
+                </caption>
                 <thead>
                   <tr>
                     <th scope="col">Seq</th>
@@ -601,7 +621,9 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
               aria-label="Allocated Material Issues"
             >
               <table class="ar-table">
-                <caption class="sr-only">Allocated Material Issues</caption>
+                <caption class="sr-only">
+                  Allocated Material Issues
+                </caption>
                 <thead>
                   <tr>
                     <th scope="col">Part #</th>
@@ -616,8 +638,13 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
                   <tr *ngFor="let m of wo.materialIssues">
                     <td class="font-mono font-medium">{{ m.componentPartNumber }}</td>
                     <td>{{ m.componentDescription }}</td>
-                    <td class="text-right font-mono">{{ m.requiredQuantity }} {{ m.unitOfMeasure }}</td>
-                    <td class="text-right font-mono" [class.text-success]="m.issuedQuantity >= m.requiredQuantity">
+                    <td class="text-right font-mono">
+                      {{ m.requiredQuantity }} {{ m.unitOfMeasure }}
+                    </td>
+                    <td
+                      class="text-right font-mono"
+                      [class.text-success]="m.issuedQuantity >= m.requiredQuantity"
+                    >
                       {{ m.issuedQuantity }} {{ m.unitOfMeasure }}
                     </td>
                     <td class="text-right font-mono text-danger">{{ m.wastedQuantity }}</td>
@@ -712,7 +739,9 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
         </label>
 
         <div class="dialog-actions">
-          <button ar-button variant="primary" (click)="createWorkOrder()">Generate Work Order</button>
+          <button ar-button variant="primary" (click)="createWorkOrder()">
+            Generate Work Order
+          </button>
           <button ar-button variant="ghost" (click)="isCreateOpen.set(false)">Cancel</button>
         </div>
       </div>
@@ -747,7 +776,11 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
           </label>
           <label class="ar-field">
             <span class="ar-field__label">Required Qty</span>
-            <input type="number" class="ar-field__input" [(ngModel)]="newMaterial.requiredQuantity" />
+            <input
+              type="number"
+              class="ar-field__input"
+              [(ngModel)]="newMaterial.requiredQuantity"
+            />
           </label>
           <label class="ar-field">
             <span class="ar-field__label">Issued Qty</span>
@@ -786,7 +819,8 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
         <p class="dialog-intro">
           Completing step
           <strong>#{{ step.stepSequence }} - {{ getStageLabel(step.stage) }}</strong> at
-          <em>{{ step.workCenterName }}</em>.
+          <em>{{ step.workCenterName }}</em
+          >.
         </p>
 
         <div class="form-grid">
@@ -808,7 +842,9 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
         </div>
 
         <div class="dialog-actions">
-          <button ar-button variant="primary" (click)="completeStep()">Confirm Step Completion</button>
+          <button ar-button variant="primary" (click)="completeStep()">
+            Confirm Step Completion
+          </button>
           <button ar-button variant="ghost" (click)="isCompleteStepOpen.set(false)">Cancel</button>
         </div>
       </div>
@@ -823,17 +859,26 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
     >
       <div class="dialog-form-body" *ngIf="selectedWo() as wo">
         <p class="dialog-intro">
-          Batch <strong>{{ wo.batchNumber }}</strong> for part <strong>{{ wo.partNumber }}</strong>. Planned: {{ wo.plannedQuantity }} units.
+          Batch <strong>{{ wo.batchNumber }}</strong> for part <strong>{{ wo.partNumber }}</strong
+          >. Planned: {{ wo.plannedQuantity }} units.
         </p>
 
         <div class="form-grid">
           <label class="ar-field">
             <span class="ar-field__label">Final Produced Good Quantity</span>
-            <input type="number" class="ar-field__input" [(ngModel)]="woCompletion.producedQuantity" />
+            <input
+              type="number"
+              class="ar-field__input"
+              [(ngModel)]="woCompletion.producedQuantity"
+            />
           </label>
           <label class="ar-field">
             <span class="ar-field__label">Total Scrapped / Rejected Quantity</span>
-            <input type="number" class="ar-field__input" [(ngModel)]="woCompletion.scrappedQuantity" />
+            <input
+              type="number"
+              class="ar-field__input"
+              [(ngModel)]="woCompletion.scrappedQuantity"
+            />
           </label>
           <label class="ar-field full-width">
             <span class="ar-field__label">Finished Goods Storage Warehouse & Rack</span>
@@ -846,7 +891,11 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
           </label>
           <label class="ar-field full-width">
             <span class="ar-field__label">Completion Remarks</span>
-            <textarea class="ar-field__input" rows="2" [(ngModel)]="woCompletion.remarks"></textarea>
+            <textarea
+              class="ar-field__input"
+              rows="2"
+              [(ngModel)]="woCompletion.remarks"
+            ></textarea>
           </label>
         </div>
 

@@ -10,6 +10,12 @@ body {
   margin: 0;
 }
 
+/* Inside the app shell the pages scroll themselves; the window never does (see ArAppShell). */
+html.ar-shell-open,
+html.ar-shell-open body {
+  overflow: hidden;
+}
+
 body {
   font-family: var(--ar-font-sans);
   font-size: 13px;
@@ -46,6 +52,15 @@ button {
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--ar-ink-400);
+}
+
+/* A scroll area without a visible scrollbar: still scrolls by wheel, touch and keyboard. */
+.ar-scroll--bare {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .ar-scroll {

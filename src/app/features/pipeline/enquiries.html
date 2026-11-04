@@ -20,9 +20,7 @@
       <button ar-button type="button" variant="ghost" (click)="managePipelines()">Pipelines</button>
     }
     @if (canCreate()) {
-      <a ar-button variant="primary" icon="plus" [routerLink]="['/enquiries/new']">
-        New enquiry
-      </a>
+      <a ar-button variant="primary" icon="plus" [routerLink]="['/enquiries/new']"> New enquiry </a>
     }
   </div>
 </ar-topbar>
@@ -113,7 +111,9 @@
   </div>
   <div class="kpi-mini-card">
     <span class="kpi-mini-lbl">Current Pipeline</span>
-    <strong class="kpi-mini-val font-sans">{{ currentPipeline()?.name || 'Default Pipeline' }}</strong>
+    <strong class="kpi-mini-val font-sans">{{
+      currentPipeline()?.name || 'Default Pipeline'
+    }}</strong>
     <span class="kpi-mini-sub">{{ columns().length }} active stages</span>
   </div>
 </div>
@@ -150,7 +150,8 @@
         <span class="card__ref ar-mono">{{ c.reference }}</span>
         @if (c.score != null) {
           <ar-chip [tone]="c.band === 'hot' ? 'good' : c.band === 'warm' ? 'amber' : 'neutral'">
-            {{ c.band === 'hot' ? '🔥 Hot' : c.band === 'warm' ? '⚡ Warm' : '❄️ Cold' }} {{ c.score }}
+            {{ c.band === 'hot' ? '🔥 Hot' : c.band === 'warm' ? '⚡ Warm' : '❄️ Cold' }}
+            {{ c.score }}
           </ar-chip>
         }
       </div>
@@ -170,7 +171,13 @@
         </div>
       </div>
       @if (next(c.card); as n) {
-        <button ar-button type="button" variant="ghost" class="card__advance-btn" (click)="advance(c.card, $event)">
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          class="card__advance-btn"
+          (click)="advance(c.card, $event)"
+        >
           Advance → {{ n.label }}
         </button>
       }

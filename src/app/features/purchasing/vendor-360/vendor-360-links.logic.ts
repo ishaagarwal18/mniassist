@@ -3,6 +3,7 @@ import { Params } from '@angular/router';
 import { supplierScopeParams } from '../../../core/util/supplier-scope';
 import { Vendor360Dto } from '../../../proxy/purchasing/vendor-360.models';
 import type { IconName } from '../../../ui/icon';
+import { PURCHASING_PERMISSIONS as P } from '../purchasing-permissions';
 
 /** One way out of the cockpit: a screen, opened on this supplier where it can be. */
 export interface VendorLink {
@@ -13,6 +14,11 @@ export interface VendorLink {
   count?: number;
   /** Shown under the label: what the link opens. */
   hint?: string;
+  /**
+   * The action permission the link also needs, beyond opening its screen (the screen's own menu permission is checked from the
+   * route): a "New …" link needs the role to create there.
+   */
+  permission?: string;
 }
 
 export interface VendorLinkGroup {
@@ -21,18 +27,17 @@ export interface VendorLinkGroup {
   links: VendorLink[];
 }
 
-/** Query params that open a purchasing list on just this supplier (`extra` adds `new=1`, `open=<id>`…). */
+/** Query params that open a purchasing list or new-record page on just this supplier (`extra` adds `open=<id>`…). */
 export function vendorParams(v: Pick<Vendor360Dto, 'id' | 'name'>, extra?: Params): Params {
   return supplierScopeParams({ supplierId: v.id ?? '', name: v.name }, extra);
 }
 
 /**
  * Every screen with something about this supplier, grouped by job, each opened on this supplier where the screen can filter by
- * supplier (its name in the search box where it can only search). The component leaves out screens the user may not open.
+ * supplier (its name in the search box where it can only search). `visibleVendorLinkGroups` leaves out what the user may not do.
  */
 export function vendorLinkGroups(v: Vendor360Dto): VendorLinkGroup[] {
   const scope = vendorParams(v);
-  const create = vendorParams(v, { new: 1 });
 
   return [
     {
@@ -41,9 +46,9 @@ export function vendorLinkGroups(v: Vendor360Dto): VendorLinkGroup[] {
       links: [
         {
           label: 'Supplier details',
-          route: '/purchasing',
-          params: { tab: 'suppliers', edit: v.id },
-          hint: 'GSTIN, contact, lead time',
+          route: `/purchasing/suppliers/${v.id}/edit`,
+          hint: 'Contact, addresses, bank, blacklist',
+          permission: P.manageInventory,
         },
         { label: 'All suppliers', route: '/purchasing', params: { tab: 'suppliers' } },
       ],
@@ -58,7 +63,12 @@ export function vendorLinkGroups(v: Vendor360Dto): VendorLinkGroup[] {
           params: scope,
           count: v.totalPurchaseOrdersCount ?? v.recentPurchaseOrders.length,
         },
-        { label: 'New purchase order', route: '/purchasing', params: create },
+        {
+          label: 'New purchase order',
+          route: '/purchasing/orders/new',
+          params: scope,
+          permission: P.manageInventory,
+        },
         {
           label: 'Reorder suggestions',
           route: '/purchasing',
@@ -77,7 +87,12 @@ export function vendorLinkGroups(v: Vendor360Dto): VendorLinkGroup[] {
           params: scope,
           count: v.totalGoodsReceiptNotesCount ?? v.recentGoodsReceiptNotes.length,
         },
-        { label: 'New goods receipt', route: '/purchasing/grn', params: create },
+        {
+          label: 'Inward goods receipt',
+          route: '/purchasing/grn/new',
+          params: scope,
+          permission: P.createGrn,
+        },
         { label: 'Stock', route: '/stock' },
         { label: 'Stock planning', route: '/stock/planning' },
       ],
@@ -92,14 +107,24 @@ export function vendorLinkGroups(v: Vendor360Dto): VendorLinkGroup[] {
           params: scope,
           count: v.totalVendorBillsCount ?? v.recentVendorBills.length,
         },
-        { label: 'Record a bill', route: '/purchasing/bills', params: create },
+        {
+          label: 'Record a bill',
+          route: '/purchasing/bills/new',
+          params: scope,
+          permission: P.createBill,
+        },
         {
           label: 'Debit notes',
           route: '/purchasing/debit-notes',
           params: scope,
           count: v.totalDebitNotesCount ?? v.recentDebitNotes.length,
         },
-        { label: 'Issue a debit note', route: '/purchasing/debit-notes', params: create },
+        {
+          label: 'Issue a debit note',
+          route: '/purchasing/debit-notes/new',
+          params: scope,
+          permission: P.createDebitNote,
+        },
       ],
     },
     {
@@ -112,4 +137,21 @@ export function vendorLinkGroups(v: Vendor360Dto): VendorLinkGroup[] {
       ],
     },
   ];
+}
+
+/**
+ * The groups as this user sees them: links to screens they may not open (`canOpen`, by route) or actions their role lacks
+ * (`granted`, by permission) are left out, and so are groups left empty.
+ */
+export function visibleVendorLinkGroups(
+  groups: VendorLinkGroup[],
+  canOpen: (route: string) => boolean,
+  granted: (permission: string) => boolean,
+): VendorLinkGroup[] {
+  return groups
+    .map((g) => ({
+      ...g,
+      links: g.links.filter((l) => canOpen(l.route) && (!l.permission || granted(l.permission))),
+    }))
+    .filter((g) => g.links.length > 0);
 }

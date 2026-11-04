@@ -15,10 +15,16 @@
         />
         <span>Near-certain matches only</span>
       </label>
-      <span class="dup__count-badge">{{ filteredPairs().length }} pair{{ filteredPairs().length === 1 ? '' : 's' }}</span>
+      <span class="dup__count-badge"
+        >{{ filteredPairs().length }} pair{{ filteredPairs().length === 1 ? '' : 's' }}</span
+      >
     </div>
     <div class="dup__search">
-      <ar-search-box placeholder="Search duplicates by name, company, or phone..." [query]="search()" (queryChange)="search.set($event)" />
+      <ar-search-box
+        placeholder="Search duplicates by name, company, or phone..."
+        [query]="search()"
+        (queryChange)="search.set($event)"
+      />
     </div>
   </div>
 
@@ -55,7 +61,8 @@
           </ar-chip>
           <span class="pr__why">
             @for (r of p.reasons; track r; let last = $last) {
-              <span class="pr__reason-pill">{{ reasonText(r) }}</span>{{ last ? '' : ' ' }}
+              <span class="pr__reason-pill">{{ reasonText(r) }}</span
+              >{{ last ? '' : ' ' }}
             }
           </span>
         </header>
@@ -86,7 +93,9 @@
                 @if (c?.hasMessenger) {
                   <span class="who__tag">Messenger</span>
                 }
-                <span class="who__tag who__tag--quiet">Last active {{ when(c?.lastActivityUtc) }}</span>
+                <span class="who__tag who__tag--quiet"
+                  >Last active {{ when(c?.lastActivityUtc) }}</span
+                >
               </p>
             </div>
           }
@@ -136,7 +145,8 @@
           }
         </div>
         <p class="mg__note">
-          The other record is merged and removed. Its communications, messages, deals, quotations and service history will automatically move to the surviving contact.
+          The other record is merged and removed. Its communications, messages, deals, quotations
+          and service history will automatically move to the surviving contact.
         </p>
       </section>
 

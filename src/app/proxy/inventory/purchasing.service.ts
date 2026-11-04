@@ -12,6 +12,20 @@ export interface SupplierDto {
   address?: string | null;
   leadDays?: number | null;
   isActive: boolean;
+  /** The person we deal with; phone and email reach them. */
+  contactName?: string | null;
+  contactDesignation?: string | null;
+  /** Where goods are dispatched from; `address` is the billing address. */
+  shippingAddress?: string | null;
+  bankAccountName?: string | null;
+  bankName?: string | null;
+  bankAccountNumber?: string | null;
+  bankIfsc?: string | null;
+  bankBranch?: string | null;
+  remarks?: string | null;
+  /** Not to be bought from: no new purchase orders, left out of supplier pickers. */
+  isBlacklisted?: boolean;
+  blacklistReason?: string | null;
 }
 
 export type SaveSupplierInput = Omit<SupplierDto, 'id'>;

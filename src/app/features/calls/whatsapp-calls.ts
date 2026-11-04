@@ -196,7 +196,9 @@ const SEED: WhatsAppCallDto[] = [
           <span class="wa__kpi-sub">Total talk: {{ length(stats().totalDuration) }}</span>
         </div>
         <div class="wa__kpi-card" [class.wa__kpi-card--bad]="stats().missed > 0">
-          <span class="wa__kpi-val" [class.text-bad]="stats().missed > 0" class="tabular-nums">{{ stats().missed }}</span>
+          <span class="wa__kpi-val" [class.text-bad]="stats().missed > 0" class="tabular-nums">{{
+            stats().missed
+          }}</span>
           <span class="wa__kpi-lbl">Missed Calls</span>
           <span class="wa__kpi-sub">Requires callback</span>
         </div>
@@ -283,7 +285,9 @@ const SEED: WhatsAppCallDto[] = [
                       <span class="wa__muted">· transferred</span>
                     }
                   </td>
-                  <td class="num tabular-nums">{{ c.durationSeconds ? length(c.durationSeconds) : '—' }}</td>
+                  <td class="num tabular-nums">
+                    {{ c.durationSeconds ? length(c.durationSeconds) : '—' }}
+                  </td>
                   <td>
                     @if (c.hasRecording && canRecordings()) {
                       @if (audio()[c.id]; as src) {
@@ -361,7 +365,9 @@ const SEED: WhatsAppCallDto[] = [
       gap: 2px;
       position: relative;
       overflow: hidden;
-      transition: transform var(--ar-ease), box-shadow var(--ar-ease);
+      transition:
+        transform var(--ar-ease),
+        box-shadow var(--ar-ease);
     }
     .wa__kpi-card:hover {
       transform: translateY(-1px);

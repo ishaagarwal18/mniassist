@@ -225,8 +225,13 @@ export class ArAppShell {
     // Reserve the host before its lazy component loads, so the first request
     // queues here rather than falling back to a native browser dialog.
     this.dialogs.hostAttached = true;
+    // The shell is exactly one screen tall and each page scrolls inside it, so the window itself
+    // never scrolls: no second scrollbar at the far right (e.g. from pop-ups attached to <body>).
+    const root = document.documentElement;
+    root.classList.add('ar-shell-open');
     inject(DestroyRef).onDestroy(() => {
       this.dialogs.hostAttached = false;
+      root.classList.remove('ar-shell-open');
     });
     void this.acting.refresh();
   }

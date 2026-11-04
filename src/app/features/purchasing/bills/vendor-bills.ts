@@ -1,23 +1,33 @@
+import { PermissionService } from '@abp/ng.core';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
-import { SupplierScope, readSupplierScope } from '../../../core/util/supplier-scope';
+import { checkPolicy } from '../../../core/auth/permission';
+import { ConfirmService } from '../../../core/ui/confirm.service';
+import { ToastService } from '../../../core/ui/toast.service';
+import { readApiError } from '../../../core/util/api-error';
+import { inr } from '../../../core/util/format';
+import {
+  SupplierScope,
+  readSupplierScope,
+  supplierScopeParams,
+} from '../../../core/util/supplier-scope';
+import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
 import { ArSupplierScopeBar } from '../supplier-scope-bar';
 import {
-  CreateVendorBillDto,
   CreateVendorBillLineDto,
   Gstr2bMatchStatus,
-  RecordVendorBillPaymentDto,
   ThreeWayMatchStatus,
   VendorBillDto,
   VendorBillStatus,
   VendorPaymentMode,
   VendorBillService,
 } from '../../../proxy/purchasing';
-import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArButton, ArChip, ChipTone } from '../../../ui';
 
 const MOCK_BILLS: VendorBillDto[] = [
   {
@@ -160,16 +170,23 @@ const MOCK_BILLS: VendorBillDto[] = [
   standalone: true,
   selector: 'ar-vendor-bills',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArSupplierScopeBar],
+  imports: [CommonModule, FormsModule, RouterLink, ArTopbar, ArButton, ArChip, ArSupplierScopeBar],
   template: `
     <ar-topbar
       title="Vendor Bills & 3-Way Matching"
       subtitle="Purchase invoices, 3-way reconciliation (PO-GRN-Bill), GST ITC & TDS"
     >
-      <button ar-button="primary" (click)="openCreateModal()">+ Record Vendor Bill</button>
+      @if (can().create) {
+        <button ar-button variant="ai" icon="upload" (click)="openCreatePage(true)">
+          Upload bill
+        </button>
+        <button ar-button variant="primary" icon="plus" (click)="openCreatePage()">
+          Record vendor bill
+        </button>
+      }
     </ar-topbar>
 
-    <div class="page-content">
+    <div class="page-content ar-scroll ar-scroll--bare">
       @if (scope(); as sc) {
         <ar-supplier-scope-bar [name]="sc.name" what="vendor bills" (showAll)="clearScope()" />
       }
@@ -272,10 +289,15 @@ const MOCK_BILLS: VendorBillDto[] = [
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let b of filteredBills()" [class.selected]="selectedBill()?.id === b.id">
+            <tr *ngFor="let b of filteredBills()">
               <td>
                 <div class="cell-main">
-                  <a class="code-link" (click)="viewBill(b)">{{ b.billNumber }}</a>
+                  <a
+                    class="code-link"
+                    [routerLink]="['/purchasing/bills', b.id]"
+                    [queryParams]="scopeParams()"
+                    >{{ b.billNumber }}</a
+                  >
                   <span class="sub-text"
                     >Inv: <strong>{{ b.vendorInvoiceNumber }}</strong></span
                   >
@@ -332,20 +354,28 @@ const MOCK_BILLS: VendorBillDto[] = [
               <td class="actions-col">
                 <div class="action-buttons">
                   <button
-                    ar-button="ghost"
-                    *ngIf="b.status === VendorBillStatus.PendingApproval"
+                    ar-button
+                    variant="ghost"
+                    *ngIf="can().approve && canApprove(b)"
                     (click)="approveBill(b)"
                   >
                     Approve
                   </button>
                   <button
-                    ar-button="primary"
-                    *ngIf="b.balanceDueInPaise > 0 && b.status !== VendorBillStatus.Cancelled"
-                    (click)="openPaymentDialog(b)"
+                    ar-button
+                    variant="primary"
+                    *ngIf="can().pay && canPay(b)"
+                    (click)="payPage(b)"
                   >
                     Pay
                   </button>
-                  <button ar-button="quiet" (click)="viewBill(b)">View</button>
+                  <a
+                    ar-button
+                    variant="quiet"
+                    [routerLink]="['/purchasing/bills', b.id]"
+                    [queryParams]="scopeParams()"
+                    >View</a
+                  >
                 </div>
               </td>
             </tr>
@@ -358,379 +388,14 @@ const MOCK_BILLS: VendorBillDto[] = [
         </table>
       </section>
     </div>
-
-    <!-- Bill Details Dossier Dialog -->
-    <ar-dialog
-      *ngIf="selectedBill()"
-      [title]="
-        'Vendor Bill: ' +
-        selectedBill()!.billNumber +
-        ' (' +
-        selectedBill()!.vendorInvoiceNumber +
-        ')'
-      "
-      (dismiss)="selectedBill.set(null)"
-    >
-      <div class="dialog-body" *ngIf="selectedBill() as b">
-        <div class="meta-row">
-          <div>
-            <span class="meta-label">Vendor / Supplier</span>
-            <h4>{{ b.supplierName }}</h4>
-            <p class="sub-text">
-              GSTIN: <span class="font-mono">{{ b.supplierGstin || 'Not provided' }}</span>
-            </p>
-          </div>
-          <div class="meta-status">
-            <ar-chip [tone]="billTone(b.status)">{{ billLabel(b.status) }}</ar-chip>
-            <ar-chip [tone]="matchTone(b.threeWayMatchStatus)"
-              >3-Way: {{ matchLabel(b.threeWayMatchStatus) }}</ar-chip
-            >
-            <ar-chip [tone]="itcTone(b.gstr2bMatchStatus)"
-              >ITC: {{ itcLabel(b.gstr2bMatchStatus) }}</ar-chip
-            >
-          </div>
-        </div>
-
-        <div class="grid-details">
-          <div class="info-card">
-            <h5>P2P Linkage & Dates</h5>
-            <p>
-              <strong>Vendor Invoice Date:</strong>
-              {{ b.vendorInvoiceDateUtc | date: 'mediumDate' }}
-            </p>
-            <p><strong>Payment Due Date:</strong> {{ b.dueDateUtc | date: 'mediumDate' }}</p>
-            <p>
-              <strong>Purchase Order Ref:</strong>
-              {{ b.purchaseOrderReference || 'Direct Booking' }}
-            </p>
-            <p><strong>Goods Receipt Note:</strong> {{ b.goodsReceiptNoteNumber || 'Direct' }}</p>
-          </div>
-          <div class="info-card">
-            <h5>Tax Withholding & Compliance</h5>
-            <p>
-              <strong>TDS Section:</strong> {{ b.tdsSection || 'N/A' }} ({{
-                b.tdsRateBasisPoints / 100
-              }}%)
-            </p>
-            <p>
-              <strong>TDS Deducted:</strong> ₹{{ b.tdsDeductedInPaise / 100 | number: '1.2-2' }}
-            </p>
-            <p>
-              <strong>Net Payable to Vendor:</strong>
-              <strong>₹{{ b.netPayableInPaise / 100 | number: '1.2-2' }}</strong>
-            </p>
-            <p><strong>Reverse Charge (RCM):</strong> {{ b.isReverseCharge ? 'Yes' : 'No' }}</p>
-          </div>
-        </div>
-
-        <h5 class="mt-4 mb-2">Billed Line Items (HSN & GST Breakdown)</h5>
-        <div class="lines-table-wrapper">
-          <table class="dialog-table">
-            <thead>
-              <tr>
-                <th>Part No</th>
-                <th>Description</th>
-                <th>HSN</th>
-                <th class="text-right">Qty</th>
-                <th class="text-right">Rate</th>
-                <th class="text-right">Taxable</th>
-                <th class="text-right">GST</th>
-                <th class="text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let line of b.lines">
-                <td class="font-mono">
-                  <strong>{{ line.partNumber }}</strong>
-                </td>
-                <td>{{ line.description }}</td>
-                <td class="font-mono">{{ line.hsnCode || '—' }}</td>
-                <td class="text-right font-mono">{{ line.billedQuantity }}</td>
-                <td class="text-right font-mono">
-                  ₹{{ line.unitPriceInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono">
-                  ₹{{ line.taxableAmountInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono">{{ line.taxRateBasisPoints / 100 }}%</td>
-                <td class="text-right font-mono">
-                  <strong>₹{{ line.lineTotalInPaise / 100 | number: '1.2-2' }}</strong>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Payment History if any -->
-        <h5 class="mt-4 mb-2" *ngIf="b.payments.length > 0">Disbursement & Settlement History</h5>
-        <div class="lines-table-wrapper" *ngIf="b.payments.length > 0">
-          <table class="dialog-table">
-            <thead>
-              <tr>
-                <th>Payment Date</th>
-                <th>Mode</th>
-                <th>Bank UTR / Reference</th>
-                <th>TDS Cert Ref</th>
-                <th class="text-right">Amount Paid</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let p of b.payments">
-                <td>{{ p.paymentDateUtc | date: 'mediumDate' }}</td>
-                <td>
-                  <span class="font-mono">{{ paymentModeLabel(p.paymentMode) }}</span>
-                </td>
-                <td class="font-mono">{{ p.referenceNumber || '—' }}</td>
-                <td>{{ p.tdsCertificateNumber || 'Form 16A Pending' }}</td>
-                <td class="text-right font-mono text-good">
-                  <strong>₹{{ p.amountInPaise / 100 | number: '1.2-2' }}</strong>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="dialog-actions mt-4">
-          <button
-            ar-button="primary"
-            *ngIf="b.balanceDueInPaise > 0"
-            (click)="openPaymentDialog(b)"
-          >
-            Disburse Payment (₹{{ b.balanceDueInPaise / 100 | number: '1.2-2' }})
-          </button>
-          <button
-            ar-button="ghost"
-            *ngIf="b.gstr2bMatchStatus !== Gstr2bMatchStatus.MatchedIn2B"
-            (click)="reconcileItc(b)"
-          >
-            Mark GSTR-2B Reconciled
-          </button>
-          <button ar-button="quiet" (click)="selectedBill.set(null)">Close</button>
-        </div>
-      </div>
-    </ar-dialog>
-
-    <!-- Record Payment Dialog -->
-    <ar-dialog
-      *ngIf="payingBill()"
-      title="Disburse Vendor Payment"
-      (dismiss)="payingBill.set(null)"
-    >
-      <div class="dialog-body" *ngIf="payingBill() as b">
-        <p class="dialog-intro">
-          Record bank payment for <strong>{{ b.billNumber }}</strong> to
-          <strong>{{ b.supplierName }}</strong
-          >.
-        </p>
-
-        <div class="payment-highlight">
-          <div>
-            <span>Net Balance Due:</span>
-            <h3>₹{{ b.balanceDueInPaise / 100 | number: '1.2-2' }}</h3>
-          </div>
-          <div>
-            <span>Statutory TDS Withheld:</span>
-            <h4>₹{{ b.tdsDeductedInPaise / 100 | number: '1.2-2' }}</h4>
-          </div>
-        </div>
-
-        <div class="form-grid mb-3">
-          <div class="form-group">
-            <label>Payment Amount (₹) *</label>
-            <input type="number" class="form-control" [(ngModel)]="paymentModel.amountRupees" />
-          </div>
-          <div class="form-group">
-            <label>Disbursement Mode *</label>
-            <select class="form-control" [(ngModel)]="paymentModel.paymentMode">
-              <option [ngValue]="VendorPaymentMode.NeftRtgs">NEFT / RTGS Bank Transfer</option>
-              <option [ngValue]="VendorPaymentMode.Upi">Corporate UPI</option>
-              <option [ngValue]="VendorPaymentMode.Cheque">Cheque</option>
-              <option [ngValue]="VendorPaymentMode.Cash">Petty Cash</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Bank UTR / Transaction Reference *</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="paymentModel.referenceNumber"
-              placeholder="e.g. HDFCR52026100912"
-            />
-          </div>
-          <div class="form-group">
-            <label>TDS Certificate (Form 16A / Challan Ref)</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="paymentModel.tdsCertificateNumber"
-              placeholder="e.g. TDS-CH-2026-Q3-019"
-            />
-          </div>
-        </div>
-
-        <div class="form-group mb-3">
-          <label>Payment Remarks</label>
-          <input
-            type="text"
-            class="form-control"
-            [(ngModel)]="paymentModel.remarks"
-            placeholder="e.g. Account payee transfer via HDFC NetBanking"
-          />
-        </div>
-
-        <div class="dialog-actions">
-          <button ar-button="primary" (click)="savePayment()">Confirm & Record Disbursement</button>
-          <button ar-button="ghost" (click)="payingBill.set(null)">Cancel</button>
-        </div>
-      </div>
-    </ar-dialog>
-
-    <!-- Create Vendor Bill Modal -->
-    <ar-dialog
-      *ngIf="showCreateModal()"
-      title="Record Vendor Bill (Purchase Invoice)"
-      (dismiss)="showCreateModal.set(false)"
-    >
-      <div class="dialog-body">
-        <div class="form-grid mb-3">
-          <div class="form-group">
-            <label>Supplier Name *</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newBill.supplierName"
-              placeholder="Bharat Precision Gears Pvt Ltd"
-            />
-          </div>
-          <div class="form-group">
-            <label>Supplier GSTIN</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newBill.supplierGstin"
-              placeholder="27AABCB1234F1Z5"
-            />
-          </div>
-          <div class="form-group">
-            <label>Vendor Invoice Number *</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newBill.vendorInvoiceNumber"
-              placeholder="INV-2026-4412"
-            />
-          </div>
-          <div class="form-group">
-            <label>PO Reference</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newBill.purchaseOrderReference"
-              placeholder="PO-2026-089"
-            />
-          </div>
-          <div class="form-group">
-            <label>GRN Number</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newBill.goodsReceiptNoteNumber"
-              placeholder="GRN-2026-0104"
-            />
-          </div>
-          <div class="form-group">
-            <label>TDS Withholding Section</label>
-            <select class="form-control" [(ngModel)]="newBill.tdsSection">
-              <option value="194Q">Sec 194Q - Purchase of Goods (0.1%)</option>
-              <option value="194C">Sec 194C - Contractor/Fabrication (1% / 2%)</option>
-              <option value="194J">Sec 194J - Technical Fees (2% / 10%)</option>
-              <option value="None">None (Exempt / Threshold not reached)</option>
-            </select>
-          </div>
-        </div>
-
-        <h5 class="mb-2">Billed Line Items</h5>
-        <table class="dialog-table mb-3">
-          <thead>
-            <tr>
-              <th>Part Number</th>
-              <th>Description</th>
-              <th>HSN</th>
-              <th>Qty</th>
-              <th>Rate (₹)</th>
-              <th>GST %</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of newBill.lines; let i = index">
-              <td>
-                <input
-                  type="text"
-                  class="form-control"
-                  [(ngModel)]="item.partNumber"
-                  placeholder="Part #"
-                />
-              </td>
-              <td>
-                <input
-                  type="text"
-                  class="form-control"
-                  [(ngModel)]="item.description"
-                  placeholder="Description"
-                />
-              </td>
-              <td>
-                <input
-                  type="text"
-                  class="form-control font-mono"
-                  [(ngModel)]="item.hsnCode"
-                  placeholder="84834000"
-                />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  class="form-control text-right"
-                  [(ngModel)]="item.billedQuantity"
-                />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  class="form-control text-right"
-                  [(ngModel)]="item.unitPriceRupees"
-                />
-              </td>
-              <td>
-                <select class="form-control" [(ngModel)]="item.taxRateBasisPoints">
-                  <option [ngValue]="1800">18%</option>
-                  <option [ngValue]="1200">12%</option>
-                  <option [ngValue]="2800">28%</option>
-                  <option [ngValue]="500">5%</option>
-                  <option [ngValue]="0">0%</option>
-                </select>
-              </td>
-              <td>
-                <button ar-button="ghost" (click)="removeNewBillLine(i)">x</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <button ar-button="ghost" class="mb-3" (click)="addNewBillLine()">+ Add Line</button>
-
-        <div class="dialog-actions">
-          <button ar-button="primary" (click)="saveNewBill()">Save & Perform 3-Way Match</button>
-          <button ar-button="ghost" (click)="showCreateModal.set(false)">Cancel</button>
-        </div>
-      </div>
-    </ar-dialog>
   `,
   styles: [
     `
       :host {
-        display: block;
-        padding-bottom: 3rem;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
       }
 
       .load-error {
@@ -744,10 +409,16 @@ const MOCK_BILLS: VendorBillDto[] = [
       }
 
       .page-content {
-        padding: 1.5rem 2rem;
+        flex: 1;
+        min-height: 0;
+        padding: 1.5rem 2rem 3rem;
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
+      }
+
+      .page-content > * {
+        flex-shrink: 0;
       }
 
       .kpi-grid {
@@ -1074,9 +745,22 @@ const MOCK_BILLS: VendorBillDto[] = [
 export class VendorBillsComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly permissions = inject(PermissionService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly toasts = inject(ToastService);
   private readonly billService = inject(VendorBillService);
 
   readonly VendorBillStatus = VendorBillStatus;
+  /** What this role may do here besides reading (each action's API permission). */
+  protected readonly can = computed(() => {
+    const has = (p: string) => checkPolicy(p, this.permissions);
+    return {
+      create: has(PURCHASING_PERMISSIONS.createBill),
+      approve: has(PURCHASING_PERMISSIONS.approveBill),
+      pay: has(PURCHASING_PERMISSIONS.payBill),
+    };
+  });
+
   readonly ThreeWayMatchStatus = ThreeWayMatchStatus;
   readonly Gstr2bMatchStatus = Gstr2bMatchStatus;
   readonly VendorPaymentMode = VendorPaymentMode;
@@ -1087,63 +771,6 @@ export class VendorBillsComponent {
   readonly allBills = signal<VendorBillDto[]>(environment.useMockData ? MOCK_BILLS : []);
   readonly filterQuery = signal<string>('');
   readonly selectedStatus = signal<VendorBillStatus | null>(null);
-
-  readonly selectedBill = signal<VendorBillDto | null>(null);
-  readonly payingBill = signal<VendorBillDto | null>(null);
-  readonly showCreateModal = signal<boolean>(false);
-
-  // Payment form
-  paymentModel: {
-    amountRupees: number;
-    paymentMode: VendorPaymentMode;
-    referenceNumber: string;
-    tdsCertificateNumber: string;
-    remarks: string;
-  } = {
-    amountRupees: 0,
-    paymentMode: VendorPaymentMode.NeftRtgs,
-    referenceNumber: '',
-    tdsCertificateNumber: '',
-    remarks: '',
-  };
-
-  // Create bill form
-  newBill: {
-    /** The real supplier, when the form was opened for one (from Vendor 360). */
-    supplierId: string;
-    supplierName: string;
-    supplierGstin: string;
-    vendorInvoiceNumber: string;
-    purchaseOrderReference: string;
-    goodsReceiptNoteNumber: string;
-    tdsSection: string;
-    lines: Array<{
-      partNumber: string;
-      description: string;
-      hsnCode: string;
-      billedQuantity: number;
-      unitPriceRupees: number;
-      taxRateBasisPoints: number;
-    }>;
-  } = {
-    supplierId: '',
-    supplierName: '',
-    supplierGstin: '',
-    vendorInvoiceNumber: '',
-    purchaseOrderReference: '',
-    goodsReceiptNoteNumber: '',
-    tdsSection: '194Q',
-    lines: [
-      {
-        partNumber: '',
-        description: '',
-        hsnCode: '84834000',
-        billedQuantity: 10,
-        unitPriceRupees: 2500,
-        taxRateBasisPoints: 1800,
-      },
-    ],
-  };
 
   readonly filteredBills = computed(() => {
     let list = this.allBills();
@@ -1190,6 +817,7 @@ export class VendorBillsComponent {
   );
 
   constructor() {
+    this.openRequested();
     this.loadData();
     this.checkQueryParams();
   }
@@ -1200,13 +828,21 @@ export class VendorBillsComponent {
     this.loadData();
   }
 
-  /** `?open=<id>` (from Vendor 360) opens that record once the list is in. */
-  private openRequest = this.route.snapshot.queryParamMap.get('open');
+  /** List links keep the supplier scope, so the way back returns to it. */
+  protected readonly scopeParams = computed(() => {
+    const sc = this.scope();
+    return sc ? supplierScopeParams(sc) : {};
+  });
+
+  /** `?open=<id>` (from Vendor 360 and older links) opens that bill's own page. */
   private openRequested(): void {
-    const id = this.openRequest;
-    this.openRequest = null;
-    const found = id ? this.allBills().find((x) => x.id === id) : undefined;
-    if (found) this.viewBill(found);
+    const id = this.route.snapshot.queryParamMap.get('open');
+    if (id) {
+      void this.router.navigate(['/purchasing/bills', id], {
+        queryParams: this.scopeParams(),
+        replaceUrl: true,
+      });
+    }
   }
 
   loadData() {
@@ -1217,267 +853,73 @@ export class VendorBillsComponent {
           next: (res) => {
             this.allBills.set(res?.items ?? []);
             this.loadError.set(null);
-            this.openRequested();
           },
           error: () => this.loadError.set('Vendor bills could not be loaded.'),
         });
     }
   }
 
+  /** Older links (`?new=1`, `?grnId=`) open the Record vendor bill page. */
   private checkQueryParams() {
-    this.route.queryParams.subscribe((params) => {
-      // From Vendor 360: a new record for the supplier in scope.
-      if (params['new'] && !params['grnId']) this.openCreateModal();
-      if (params['grnId']) {
-        this.openCreateModal();
-        if (params['supplierName']) {
-          this.newBill.supplierName = params['supplierName'];
-        }
-        this.newBill.goodsReceiptNoteNumber = `GRN-${params['grnId'].substring(0, 6)}`;
-      }
+    const q = this.route.snapshot.queryParamMap;
+    const grn = q.get('grnId');
+    if (!q.get('new') && !grn) return;
+    const sc = this.scope();
+    void this.router.navigate(['/purchasing/bills/new'], {
+      queryParams: grn ? { grn } : sc ? supplierScopeParams(sc) : {},
+      replaceUrl: true,
     });
   }
 
-  viewBill(b: VendorBillDto) {
-    this.selectedBill.set(b);
-  }
-
-  approveBill(b: VendorBillDto) {
-    const updated: VendorBillDto = {
-      ...b,
-      status: VendorBillStatus.Approved,
-    };
-    if (!environment.useMockData && b.id) {
-      this.billService.approve(b.id).subscribe({
-        next: (saved) => this.updateBillInState(saved),
-        error: (err) => console.error(err),
-      });
-    }
-    this.updateBillInState(updated);
-  }
-
-  reconcileItc(b: VendorBillDto) {
-    const updated: VendorBillDto = {
-      ...b,
-      gstr2bMatchStatus: Gstr2bMatchStatus.MatchedIn2B,
-    };
-    if (!environment.useMockData && b.id) {
-      this.billService.reconcileGstr2b(b.id, Gstr2bMatchStatus.MatchedIn2B).subscribe({
-        next: (saved) => this.updateBillInState(saved),
-        error: (err) => console.error(err),
-      });
-    }
-    this.updateBillInState(updated);
-    if (this.selectedBill()?.id === b.id) {
-      this.selectedBill.set(updated);
-    }
-  }
-
-  openPaymentDialog(b: VendorBillDto) {
-    this.payingBill.set(b);
-    this.paymentModel = {
-      amountRupees: b.balanceDueInPaise / 100,
-      paymentMode: VendorPaymentMode.NeftRtgs,
-      referenceNumber: `UTR-${Math.floor(10000000 + Math.random() * 90000000)}`,
-      tdsCertificateNumber: `TDS-${Date.now().toString().slice(-6)}`,
-      remarks: 'Settlement via Corporate NEFT',
-    };
-  }
-
-  savePayment() {
-    const b = this.payingBill();
-    if (!b) return;
-
-    const amountInPaise = Math.round(this.paymentModel.amountRupees * 100);
-    const newPaidTotal = b.paidAmountInPaise + amountInPaise;
-    const newBalance = Math.max(0, b.netPayableInPaise - newPaidTotal);
-    const newStatus = newBalance === 0 ? VendorBillStatus.Paid : VendorBillStatus.PartiallyPaid;
-
-    const newPayment = {
-      id: `vbp-${Date.now()}`,
-      vendorBillId: b.id || '',
-      paymentDateUtc: new Date().toISOString(),
-      amountInPaise,
-      paymentMode: this.paymentModel.paymentMode,
-      referenceNumber: this.paymentModel.referenceNumber,
-      tdsCertificateNumber: this.paymentModel.tdsCertificateNumber,
-      remarks: this.paymentModel.remarks,
-    };
-
-    const updated: VendorBillDto = {
-      ...b,
-      paidAmountInPaise: newPaidTotal,
-      balanceDueInPaise: newBalance,
-      status: newStatus,
-      payments: [...b.payments, newPayment],
-    };
-
-    if (!environment.useMockData && b.id) {
-      const dto: RecordVendorBillPaymentDto = {
-        amountInPaise,
-        paymentMode: this.paymentModel.paymentMode,
-        referenceNumber: this.paymentModel.referenceNumber,
-        tdsCertificateNumber: this.paymentModel.tdsCertificateNumber,
-        remarks: this.paymentModel.remarks,
-      };
-      this.billService.recordPayment(b.id, dto).subscribe({
-        next: (saved) => this.updateBillInState(saved),
-        error: (err) => console.error(err),
-      });
-    }
-
-    this.updateBillInState(updated);
-    this.payingBill.set(null);
-    if (this.selectedBill()?.id === b.id) {
-      this.selectedBill.set(updated);
-    }
-  }
-
-  openCreateModal() {
-    this.newBill = {
-      supplierId: this.scope()?.supplierId ?? '',
-      supplierName: this.scope()?.name ?? '',
-      supplierGstin: '',
-      vendorInvoiceNumber: '',
-      purchaseOrderReference: '',
-      goodsReceiptNoteNumber: '',
-      tdsSection: '194Q',
-      lines: [
-        {
-          partNumber: '',
-          description: '',
-          hsnCode: '84834000',
-          billedQuantity: 10,
-          unitPriceRupees: 2500,
-          taxRateBasisPoints: 1800,
-        },
-      ],
-    };
-    this.showCreateModal.set(true);
-  }
-
-  addNewBillLine() {
-    this.newBill.lines.push({
-      partNumber: '',
-      description: '',
-      hsnCode: '84834000',
-      billedQuantity: 5,
-      unitPriceRupees: 1500,
-      taxRateBasisPoints: 1800,
+  async approveBill(b: VendorBillDto) {
+    if (!b.id) return;
+    const ok = await this.confirm.confirm({
+      title: `Approve ${b.billNumber}?`,
+      message: `Approved, it can be paid. ${inr(b.netPayableInPaise)} becomes payable to ${b.supplierName}.`,
+      details: [`Invoice ${b.vendorInvoiceNumber}`],
+      confirmText: 'Approve',
+      tone: 'primary',
     });
-  }
-
-  removeNewBillLine(i: number) {
-    if (this.newBill.lines.length > 1) {
-      this.newBill.lines.splice(i, 1);
-    }
-  }
-
-  saveNewBill() {
-    if (!this.newBill.supplierName || !this.newBill.vendorInvoiceNumber) {
-      alert('Supplier name and Vendor Invoice number are required.');
+    if (!ok) return;
+    if (environment.useMockData) {
+      this.updateBillInState({ ...b, status: VendorBillStatus.Approved });
       return;
     }
-
-    let subtotalPaise = 0;
-    let totalTaxPaise = 0;
-
-    const mappedLines = this.newBill.lines.map((l, idx) => {
-      const taxable = Math.round(l.billedQuantity * l.unitPriceRupees * 100);
-      const tax = Math.round(taxable * (l.taxRateBasisPoints / 10000));
-      subtotalPaise += taxable;
-      totalTaxPaise += tax;
-      return {
-        id: `vbl-${Date.now()}-${idx}`,
-        vendorBillId: `vb-${Date.now()}`,
-        lineNumber: idx + 1,
-        partNumber: l.partNumber || `PART-${idx + 1}`,
-        description: l.description || 'Raw material item',
-        hsnCode: l.hsnCode,
-        billedQuantity: l.billedQuantity,
-        unitPriceInPaise: Math.round(l.unitPriceRupees * 100),
-        discountPercent: 0,
-        taxableAmountInPaise: taxable,
-        taxRateBasisPoints: l.taxRateBasisPoints,
-        cgstAmountInPaise: Math.round(tax / 2),
-        sgstAmountInPaise: Math.round(tax / 2),
-        igstAmountInPaise: 0,
-        lineTotalInPaise: taxable + tax,
-      };
-    });
-
-    const tdsRateBps =
-      this.newBill.tdsSection === '194Q' ? 10 : this.newBill.tdsSection === '194C' ? 100 : 0;
-    const tdsDeducted = Math.round(subtotalPaise * (tdsRateBps / 10000));
-    const grandTotal = subtotalPaise + totalTaxPaise;
-    const netPayable = grandTotal - tdsDeducted;
-
-    const created: VendorBillDto = {
-      id: `vb-${Date.now()}`,
-      billNumber: `VB-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      vendorInvoiceNumber: this.newBill.vendorInvoiceNumber,
-      vendorInvoiceDateUtc: new Date().toISOString(),
-      supplierId: this.newBill.supplierId || `sup-${Date.now()}`,
-      supplierName: this.newBill.supplierName,
-      supplierGstin: this.newBill.supplierGstin || '27AAACG0912K1Z9',
-      purchaseOrderReference: this.newBill.purchaseOrderReference,
-      goodsReceiptNoteNumber: this.newBill.goodsReceiptNoteNumber,
-      status: VendorBillStatus.Approved,
-      threeWayMatchStatus: ThreeWayMatchStatus.Matched,
-      dueDateUtc: new Date(Date.now() + 30 * 86_400_000).toISOString(),
-      subtotalInPaise: subtotalPaise,
-      discountInPaise: 0,
-      cgstInPaise: Math.round(totalTaxPaise / 2),
-      sgstInPaise: Math.round(totalTaxPaise / 2),
-      igstInPaise: 0,
-      totalTaxInPaise: totalTaxPaise,
-      tdsSection: this.newBill.tdsSection !== 'None' ? this.newBill.tdsSection : undefined,
-      tdsRateBasisPoints: tdsRateBps,
-      tdsDeductedInPaise: tdsDeducted,
-      grandTotalInPaise: grandTotal,
-      netPayableInPaise: netPayable,
-      paidAmountInPaise: 0,
-      balanceDueInPaise: netPayable,
-      gstr2bMatchStatus: Gstr2bMatchStatus.MatchedIn2B,
-      isReverseCharge: false,
-      creationTime: new Date().toISOString(),
-      lines: mappedLines,
-      payments: [],
-    };
-
-    if (!environment.useMockData) {
-      const dto: CreateVendorBillDto = {
-        vendorInvoiceNumber: this.newBill.vendorInvoiceNumber,
-        vendorInvoiceDateUtc: new Date().toISOString(),
-        supplierId: created.supplierId,
-        supplierName: this.newBill.supplierName,
-        supplierGstin: this.newBill.supplierGstin,
-        dueDateUtc: new Date(Date.now() + 30 * 86_400_000).toISOString(),
-        isInterState: false,
-        purchaseOrderReference: this.newBill.purchaseOrderReference,
-        goodsReceiptNoteNumber: this.newBill.goodsReceiptNoteNumber,
-        tdsSection: this.newBill.tdsSection !== 'None' ? this.newBill.tdsSection : undefined,
-        tdsRateBasisPoints: tdsRateBps,
-        isReverseCharge: false,
-        discountInPaise: 0,
-        lines: this.newBill.lines.map((l) => ({
-          partNumber: l.partNumber,
-          description: l.description,
-          hsnCode: l.hsnCode,
-          billedQuantity: l.billedQuantity,
-          unitPriceInPaise: Math.round(l.unitPriceRupees * 100),
-          discountPercent: 0,
-          taxRateBasisPoints: l.taxRateBasisPoints,
-        })),
-      };
-      this.billService.create(dto).subscribe({
-        next: (saved) => this.allBills.update((list) => [saved, ...list]),
-        error: (err) => console.error(err),
-      });
+    try {
+      const saved = await firstValueFrom(this.billService.approve(b.id, { skipHandleError: true }));
+      this.updateBillInState(saved);
+      this.toasts.success(`${saved.billNumber} approved.`);
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The bill could not be approved.'), 'Not approved');
     }
+  }
 
-    this.allBills.update((list) => [created, ...list]);
-    this.showCreateModal.set(false);
+  /** Paying opens the bill's page with the payment form ready. */
+  payPage(b: VendorBillDto) {
+    void this.router.navigate(['/purchasing/bills', b.id], {
+      queryParams: { ...this.scopeParams(), pay: 1 },
+    });
+  }
+
+  /** Recording a bill has its own page; opened for the supplier in scope, if any. */
+  openCreatePage(upload = false) {
+    const sc = this.scope();
+    void this.router.navigate(['/purchasing/bills/new'], {
+      queryParams: { ...(sc ? supplierScopeParams(sc) : {}), ...(upload ? { upload: 1 } : {}) },
+    });
+  }
+
+  /** Draft and pending bills can be approved (the API's rule). */
+  canApprove(b: VendorBillDto): boolean {
+    return b.status === VendorBillStatus.Draft || b.status === VendorBillStatus.PendingApproval;
+  }
+
+  /** Approved bills with something left to pay. */
+  canPay(b: VendorBillDto): boolean {
+    return (
+      b.balanceDueInPaise > 0 &&
+      (b.status === VendorBillStatus.Approved || b.status === VendorBillStatus.PartiallyPaid)
+    );
   }
 
   private updateBillInState(updated: VendorBillDto) {

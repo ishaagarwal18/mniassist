@@ -67,7 +67,8 @@ export function validateContactDraft(draft: ContactDraft): string | null {
 
 export function syncAccountToDraft(
   draft: ContactDraft,
-  account: { id: string; name: string; city?: string | null; state?: string | null } | null | undefined,
+  account:
+    { id: string; name: string; city?: string | null; state?: string | null } | null | undefined,
 ): ContactDraft {
   if (!account) {
     return { ...draft, accountId: '' };

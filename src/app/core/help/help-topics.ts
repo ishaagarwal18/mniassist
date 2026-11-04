@@ -1472,11 +1472,133 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Quality inspection decides what goes into stock and what is sent back.',
     ],
     steps: [
-      'Click + Inward Gate Entry (GRN) and enter the items received.',
-      'Click Save & Move to QC Inspection.',
+      'Click Inward gate entry (GRN) and enter the items received.',
+      'Click Save & send to QC.',
       'Record accepted and rejected quantities, then Confirm & Approve Put-Away.',
     ],
     tips: ['Rejected quantities can become a vendor debit note.'],
+  },
+  'purchasing/suppliers/new': {
+    benefits: [
+      'Keep each supplier’s contact, addresses and bank account in one place.',
+      'A blacklisted supplier can no longer be ordered from.',
+    ],
+    steps: [
+      'Enter the name, GSTIN and lead time.',
+      'Add the primary contact, billing and shipping addresses and bank details.',
+      'Click Add supplier.',
+    ],
+  },
+  'purchasing/suppliers/:id/edit': {
+    benefits: [
+      'Update a supplier’s contact, addresses, bank account and remarks.',
+      'Blacklist a supplier to stop new purchase orders while keeping their history.',
+    ],
+    steps: [
+      'Change the contact, addresses, bank details or remarks as needed.',
+      'To stop buying from them, tick Blacklist and give the reason, then click Save changes.',
+    ],
+    tips: ['Blacklisting keeps their history but stops new purchase orders.'],
+  },
+  'purchasing/orders/new': {
+    benefits: [
+      'Order parts from a supplier at the agreed price.',
+      'From Vendor 360, the supplier is filled in and you return to their Vendor 360.',
+    ],
+    steps: [
+      'Check the supplier, the store it is delivered to and the expected date.',
+      'Search the catalogue to add parts, or add the parts below minimum stock in one click.',
+      'Click Save draft order, then mark it sent from Purchasing once it has gone out.',
+    ],
+  },
+  'purchasing/orders/:id/edit': {
+    benefits: [
+      'Change a draft order before it goes to the supplier.',
+      'Parts, quantities, prices, delivery store and date stay editable until it is sent.',
+    ],
+    steps: [
+      'Change the supplier, delivery details or parts as needed.',
+      'Click Save changes, then mark it sent from Purchasing once it has gone out.',
+    ],
+  },
+  'purchasing/bills/new': {
+    benefits: [
+      "Record a supplier's tax invoice with GST and TDS worked out for you.",
+      'Linked to the goods receipt, it is matched against what was ordered and accepted.',
+    ],
+    steps: [
+      "Upload the supplier's invoice (PDF or photo) to fill the form, or pick the supplier and enter the invoice details.",
+      'Pick the goods receipt; its accepted items and order rates fill in.',
+      'Check the rates and GST, then click Save bill and approve it from Vendor bills.',
+    ],
+    tips: ['MSME suppliers must be paid within 45 days of acceptance.'],
+  },
+  'purchasing/bills/:id': {
+    benefits: [
+      'Everything about one supplier bill: invoice, PO and GRN links, tax, lines and payments.',
+      'Approve, pay or cancel it here, each with a confirmation first.',
+    ],
+    steps: [
+      'Check the 3-way match and the lines.',
+      'Click Approve, then Pay to record the bank transfer against it.',
+    ],
+    tips: ['A bill with payments recorded can no longer be cancelled.'],
+  },
+  'purchasing/debit-notes/:id': {
+    benefits: [
+      'Everything about one debit note: reason, bill and GRN, items and GST.',
+      'Issue it, mark it settled or cancel it here, each with a confirmation first.',
+    ],
+    steps: [
+      'Check the reason, items and total.',
+      'Click Issue to supplier; once they adjust or refund it, click Mark settled.',
+    ],
+  },
+  'purchasing/debit-notes/new': {
+    benefits: [
+      'Claim back rejected, short or over-charged goods from a supplier.',
+      'From a goods receipt, the rejected items fill in, priced from the bill.',
+    ],
+    steps: [
+      'Check the supplier and pick the bill or goods receipt it is against.',
+      'Choose a reason and check the items and rates.',
+      'Click Save debit note, then issue it from Debit notes.',
+    ],
+  },
+  'purchasing/grn/:id': {
+    benefits: [
+      'Everything about one goods receipt: gate entry, QC result, bins and rejections.',
+      'The next step, inspection, bill or debit note, is one click away.',
+    ],
+    steps: [
+      'Check the received items and their QC result.',
+      'Click Record QC inspection, Create vendor bill or Debit note for rejections.',
+    ],
+  },
+  'purchasing/grn/:id/inspect': {
+    benefits: [
+      'Record what passed QC and what was rejected, line by line.',
+      'Accepted quantities are received on the purchase order automatically.',
+    ],
+    steps: [
+      'Enter who inspected, then the accepted or rejected quantity and bin for each line.',
+      'Give a reason for anything rejected, then click Confirm inspection.',
+    ],
+    tips: ['Rejected quantities can then become a vendor debit note.'],
+  },
+  'purchasing/grn/new': {
+    benefits: [
+      "Record goods at the gate against the supplier's challan and purchase order.",
+      'From Vendor 360, the supplier is filled in and you return to their Vendor 360.',
+    ],
+    steps: [
+      'Check the supplier and pick the purchase order; its open items fill in.',
+      'Enter the challan number, then the quantity actually received on each line.',
+      'Click Save & send to QC. Stock is posted once QC accepts the goods.',
+    ],
+    tips: [
+      'A line received short of the challan is flagged so you can raise it with the supplier.',
+    ],
   },
   'purchasing/bills': {
     benefits: [

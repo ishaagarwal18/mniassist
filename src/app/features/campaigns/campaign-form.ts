@@ -25,23 +25,11 @@ import { ArButton } from '../../ui/button';
 import { ArCard } from '../../ui/card';
 import { ArChip } from '../../ui/chip';
 import { ArIcon } from '../../ui/icon';
-import {
-  BLANK_CAMPAIGN_DRAFT,
-  CampaignDraft,
-  validateCampaignDraft,
-} from './campaign-form.logic';
+import { BLANK_CAMPAIGN_DRAFT, CampaignDraft, validateCampaignDraft } from './campaign-form.logic';
 
 @Component({
   selector: 'ar-campaign-form',
-  imports: [
-    ArTopbar,
-    ArButton,
-    ArCard,
-    ArBanner,
-    ArIcon,
-    ArChip,
-    RouterLink,
-  ],
+  imports: [ArTopbar, ArButton, ArCard, ArBanner, ArIcon, ArChip, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './campaign-form.html',
   styleUrl: './campaign-form.scss',

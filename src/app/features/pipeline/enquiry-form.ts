@@ -29,13 +29,7 @@ import {
 
 @Component({
   selector: 'ar-enquiry-form',
-  imports: [
-    ArTopbar,
-    ArButton,
-    ArCard,
-    ArBanner,
-    ArContactPicker,
-  ],
+  imports: [ArTopbar, ArButton, ArCard, ArBanner, ArContactPicker],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './enquiry-form.html',
   styleUrl: './enquiry-form.scss',
@@ -65,7 +59,8 @@ export class ArEnquiryForm implements OnInit {
 
   ngOnInit(): void {
     const queryPipe = this.route.snapshot.queryParamMap.get('pipelineId');
-    const activePipeId = queryPipe || this.pipelineStore.pipelineId() || this.pipelines()[0]?.id || '';
+    const activePipeId =
+      queryPipe || this.pipelineStore.pipelineId() || this.pipelines()[0]?.id || '';
 
     this.draft.update((d) => ({
       ...d,

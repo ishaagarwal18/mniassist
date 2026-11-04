@@ -129,10 +129,7 @@ describe('ArEnquiryForm (New Enquiry Page)', () => {
     await fixture.whenStable();
 
     expect(storeCreateEnquiry).not.toHaveBeenCalled();
-    expect(toastWarning).toHaveBeenCalledWith(
-      'Pick the contact this enquiry is for.',
-      'Enquiry',
-    );
+    expect(toastWarning).toHaveBeenCalledWith('Pick the contact this enquiry is for.', 'Enquiry');
   });
 
   it('creates enquiry successfully and navigates to /enquiries', async () => {

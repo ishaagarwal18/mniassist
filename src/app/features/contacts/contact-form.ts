@@ -42,14 +42,7 @@ import { parseVCards } from './vcard';
 
 @Component({
   selector: 'ar-contact-form',
-  imports: [
-    ArTopbar,
-    ArButton,
-    ArCard,
-    ArBanner,
-    ArIcon,
-    ArChip,
-  ],
+  imports: [ArTopbar, ArButton, ArCard, ArBanner, ArIcon, ArChip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './contact-form.html',
   styleUrl: './contact-form.scss',
@@ -304,10 +297,14 @@ export class ArContactForm implements OnInit {
 
       if (editId) {
         await this.store.update(editId, payload);
-        this.toast.success(`Contact "${currentDraft.displayName.trim() || currentDraft.waId}" updated.`);
+        this.toast.success(
+          `Contact "${currentDraft.displayName.trim() || currentDraft.waId}" updated.`,
+        );
       } else {
         await this.store.create(payload);
-        this.toast.success(`Contact "${currentDraft.displayName.trim() || currentDraft.waId}" created successfully.`);
+        this.toast.success(
+          `Contact "${currentDraft.displayName.trim() || currentDraft.waId}" created successfully.`,
+        );
       }
 
       void this.router.navigate(['/contacts']);

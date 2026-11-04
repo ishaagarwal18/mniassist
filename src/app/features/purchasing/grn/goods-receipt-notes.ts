@@ -1,15 +1,19 @@
+import { PermissionService } from '@abp/ng.core';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
-import { SupplierScope, readSupplierScope } from '../../../core/util/supplier-scope';
+import { checkPolicy } from '../../../core/auth/permission';
+import {
+  SupplierScope,
+  readSupplierScope,
+  supplierScopeParams,
+} from '../../../core/util/supplier-scope';
+import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
 import { ArSupplierScopeBar } from '../supplier-scope-bar';
 import {
-  CompleteQcInspectionDto,
-  CreateGoodsReceiptNoteDto,
-  CreateGoodsReceiptNoteLineDto,
   GoodsReceiptNoteDto,
   GrnStatus,
   QcInspectionStatus,
@@ -17,7 +21,7 @@ import {
   VendorBillService,
   VendorDebitNoteService,
 } from '../../../proxy/purchasing';
-import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArButton, ArChip, ChipTone } from '../../../ui';
 
 const MOCK_GRNS: GoodsReceiptNoteDto[] = [
   {
@@ -152,16 +156,20 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
   standalone: true,
   selector: 'ar-goods-receipt-notes',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArSupplierScopeBar],
+  imports: [CommonModule, FormsModule, RouterLink, ArTopbar, ArButton, ArChip, ArSupplierScopeBar],
   template: `
     <ar-topbar
       title="Goods Receipt Notes (GRN)"
       subtitle="Inward warehouse gate entry, QC inspection & put-away management"
     >
-      <button ar-button="primary" (click)="openCreateModal()">+ Inward Gate Entry (GRN)</button>
+      @if (can().create) {
+        <button ar-button variant="primary" icon="plus" (click)="openCreatePage()">
+          Inward gate entry (GRN)
+        </button>
+      }
     </ar-topbar>
 
-    <div class="page-content">
+    <div class="page-content ar-scroll ar-scroll--bare">
       @if (scope(); as sc) {
         <ar-supplier-scope-bar [name]="sc.name" what="goods receipts" (showAll)="clearScope()" />
       }
@@ -250,10 +258,15 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let g of filteredGrns()" [class.selected]="selectedGrn()?.id === g.id">
+            <tr *ngFor="let g of filteredGrns()">
               <td>
                 <div class="cell-main">
-                  <a class="code-link" (click)="viewGrn(g)">{{ g.grnNumber }}</a>
+                  <a
+                    class="code-link"
+                    [routerLink]="['/purchasing/grn', g.id]"
+                    [queryParams]="scopeParams()"
+                    >{{ g.grnNumber }}</a
+                  >
                   <span class="sub-text">Gate: {{ g.gateEntryNumber || 'N/A' }}</span>
                   <span class="sub-text">{{ g.gateInTimeUtc | date: 'mediumDate' }}</span>
                 </div>
@@ -295,364 +308,72 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
               <td class="actions-col">
                 <div class="action-buttons">
                   <button
-                    ar-button="ghost"
+                    ar-button
+                    variant="ghost"
                     *ngIf="
-                      g.status === GrnStatus.UnderInspection ||
-                      g.qcStatus === QcInspectionStatus.Pending
+                      can().inspect &&
+                      (g.status === GrnStatus.UnderInspection ||
+                        g.qcStatus === QcInspectionStatus.Pending)
                     "
-                    (click)="openInspectionDialog(g)"
+                    (click)="inspectPage(g)"
                   >
                     Inspect
                   </button>
                   <button
-                    ar-button="quiet"
-                    *ngIf="g.status === GrnStatus.Approved"
+                    ar-button
+                    variant="quiet"
+                    *ngIf="can().bill && g.status === GrnStatus.Approved"
                     (click)="createVendorBill(g)"
                   >
                     Convert to Bill
                   </button>
                   <button
-                    ar-button="danger"
-                    *ngIf="totalRejected(g) > 0 && g.status !== GrnStatus.Cancelled"
+                    ar-button
+                    variant="danger"
+                    *ngIf="
+                      can().debitNote && totalRejected(g) > 0 && g.status !== GrnStatus.Cancelled
+                    "
                     (click)="createDebitNote(g)"
                     title="Generate Vendor Debit Note for rejected items"
                   >
                     Debit Note
                   </button>
-                  <button ar-button="ghost" (click)="viewGrn(g)">View</button>
+                  <a
+                    ar-button
+                    variant="ghost"
+                    [routerLink]="['/purchasing/grn', g.id]"
+                    [queryParams]="scopeParams()"
+                    >View</a
+                  >
                 </div>
               </td>
             </tr>
             <tr *ngIf="filteredGrns().length === 0">
               <td colspan="7" class="empty-state">
-                <p>No Goods Receipt Notes found matching the criteria.</p>
+                <p>No goods receipts match.</p>
+                <button
+                  *ngIf="can().create && allGrns().length === 0"
+                  ar-button
+                  variant="primary"
+                  icon="plus"
+                  (click)="openCreatePage()"
+                >
+                  Record the first inward GRN
+                </button>
               </td>
             </tr>
           </tbody>
         </table>
       </section>
     </div>
-
-    <!-- GRN Detail Drawer / Modal -->
-    <ar-dialog
-      *ngIf="selectedGrn()"
-      [title]="'GRN Dossier: ' + selectedGrn()!.grnNumber"
-      (dismiss)="selectedGrn.set(null)"
-    >
-      <div class="dialog-body" *ngIf="selectedGrn() as g">
-        <div class="meta-row">
-          <div>
-            <span class="meta-label">Supplier</span>
-            <h4>{{ g.supplierName }}</h4>
-            <p class="sub-text">
-              Challan Ref: {{ g.challanNumber }} | PO: {{ g.purchaseOrderReference || 'N/A' }}
-            </p>
-          </div>
-          <div class="meta-status">
-            <ar-chip [tone]="grnTone(g.status)">{{ grnLabel(g.status) }}</ar-chip>
-            <ar-chip [tone]="qcTone(g.qcStatus)">{{ qcLabel(g.qcStatus) }}</ar-chip>
-          </div>
-        </div>
-
-        <div class="grid-details">
-          <div class="info-card">
-            <h5>Gate Inward Information</h5>
-            <p><strong>Gate Entry #:</strong> {{ g.gateEntryNumber || 'N/A' }}</p>
-            <p><strong>Vehicle Number:</strong> {{ g.vehicleNumber || 'N/A' }}</p>
-            <p><strong>Transporter:</strong> {{ g.transporterName || 'Direct Delivery' }}</p>
-          </div>
-          <div class="info-card">
-            <h5>QC & Put-Away Inspection</h5>
-            <p>
-              <strong>Inspection Date:</strong>
-              {{ g.inspectedAtUtc ? (g.inspectedAtUtc | date: 'medium') : 'Pending' }}
-            </p>
-            <p><strong>QC Findings:</strong> {{ g.inspectorNotes || 'No remarks recorded.' }}</p>
-          </div>
-        </div>
-
-        <h5 class="mt-4 mb-2">Received Line Items & Bin Allocation</h5>
-        <div class="lines-table-wrapper">
-          <table class="dialog-table">
-            <thead>
-              <tr>
-                <th>Part No</th>
-                <th>Description</th>
-                <th class="text-right">Received</th>
-                <th class="text-right">Accepted</th>
-                <th class="text-right">Rejected</th>
-                <th>Storage Bin</th>
-                <th>Remarks</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let line of g.lines">
-                <td class="font-mono">
-                  <strong>{{ line.partNumber }}</strong>
-                </td>
-                <td>{{ line.description }}</td>
-                <td class="text-right">{{ line.receivedQuantity }} {{ line.unitOfMeasure }}</td>
-                <td class="text-right text-good">
-                  <strong>{{ line.acceptedQuantity }}</strong>
-                </td>
-                <td class="text-right text-danger">{{ line.rejectedQuantity }}</td>
-                <td>
-                  <span class="badge-bin">{{ line.storageBin || 'Unassigned' }}</span>
-                </td>
-                <td class="sub-text">{{ line.rejectionReason || '—' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="dialog-actions mt-4">
-          <button
-            ar-button="ghost"
-            *ngIf="g.status === GrnStatus.UnderInspection"
-            (click)="openInspectionDialog(g)"
-          >
-            Record QC Decision
-          </button>
-          <button
-            ar-button="primary"
-            *ngIf="g.status === GrnStatus.Approved"
-            (click)="createVendorBill(g)"
-          >
-            Create Vendor Bill
-          </button>
-          <button ar-button="danger" *ngIf="totalRejected(g) > 0" (click)="createDebitNote(g)">
-            Issue Debit Note for Rejections
-          </button>
-          <button ar-button="quiet" (click)="selectedGrn.set(null)">Close</button>
-        </div>
-      </div>
-    </ar-dialog>
-
-    <!-- Complete Inspection Dialog -->
-    <ar-dialog
-      *ngIf="inspectingGrn()"
-      title="Complete Material QC Inspection"
-      (dismiss)="inspectingGrn.set(null)"
-    >
-      <div class="dialog-body" *ngIf="inspectingGrn() as g">
-        <p class="dialog-intro">
-          Verify and record accepted vs rejected items for <strong>{{ g.grnNumber }}</strong> from
-          <strong>{{ g.supplierName }}</strong
-          >.
-        </p>
-
-        <div class="form-group mb-3">
-          <label>Quality Inspector Name *</label>
-          <input
-            type="text"
-            class="form-control"
-            [(ngModel)]="qcInspectionModel.inspectorName"
-            placeholder="e.g. Ramesh Pawar (QC Head)"
-          />
-        </div>
-
-        <div class="inspection-lines mb-3">
-          <table class="dialog-table">
-            <thead>
-              <tr>
-                <th>Part</th>
-                <th>Recv Qty</th>
-                <th>Accepted Qty</th>
-                <th>Rejected Qty</th>
-                <th>Storage Bin</th>
-                <th>Rejection Reason</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let line of qcInspectionModel.lines">
-                <td>
-                  <strong>{{ line.partNumber }}</strong>
-                </td>
-                <td>{{ line.receivedQuantity }}</td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control input-sm"
-                    [(ngModel)]="line.acceptedQuantity"
-                    (change)="onAcceptedChange(line)"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    class="form-control input-sm"
-                    [(ngModel)]="line.rejectedQuantity"
-                    (change)="onRejectedChange(line)"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    class="form-control input-sm"
-                    [(ngModel)]="line.storageLocation"
-                    placeholder="BIN-A1"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    class="form-control input-sm"
-                    [(ngModel)]="line.rejectionReason"
-                    placeholder="Reason if rejected"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="form-group mb-3">
-          <label>Inspection Summary / Quality Certificate Remarks</label>
-          <textarea
-            class="form-control"
-            rows="2"
-            [(ngModel)]="qcInspectionModel.qcRemarks"
-            placeholder="e.g. Surface roughness verified. Passed per ISO 9001 sampling standard."
-          ></textarea>
-        </div>
-
-        <div class="dialog-actions">
-          <button ar-button="primary" (click)="saveQcInspection()">
-            Confirm & Approve Put-Away
-          </button>
-          <button ar-button="ghost" (click)="inspectingGrn.set(null)">Cancel</button>
-        </div>
-      </div>
-    </ar-dialog>
-
-    <!-- Inward Gate Entry Modal -->
-    <ar-dialog
-      *ngIf="showCreateModal()"
-      title="Record Inward Gate Entry (GRN)"
-      (dismiss)="showCreateModal.set(false)"
-    >
-      <div class="dialog-body">
-        <div class="form-grid mb-3">
-          <div class="form-group">
-            <label>Supplier Name *</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newGrn.supplierName"
-              placeholder="e.g. Bharat Precision Gears Pvt Ltd"
-            />
-          </div>
-          <div class="form-group">
-            <label>Purchase Order Ref</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newGrn.purchaseOrderReference"
-              placeholder="PO-2026-0091"
-            />
-          </div>
-          <div class="form-group">
-            <label>Vendor Delivery Challan # *</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newGrn.challanNumber"
-              placeholder="DC-9921"
-            />
-          </div>
-          <div class="form-group">
-            <label>Gate Entry # *</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newGrn.gateEntryNumber"
-              placeholder="GE-2026-0422"
-            />
-          </div>
-          <div class="form-group">
-            <label>Vehicle Number</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newGrn.vehicleNumber"
-              placeholder="MH 12 AB 1234"
-            />
-          </div>
-          <div class="form-group">
-            <label>Transporter Name</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newGrn.transporterName"
-              placeholder="VRL Logistics"
-            />
-          </div>
-        </div>
-
-        <h5 class="mb-2">Line Items Received at Gate</h5>
-        <table class="dialog-table mb-3">
-          <thead>
-            <tr>
-              <th>Part Number</th>
-              <th>Description</th>
-              <th>Quantity</th>
-              <th>UOM</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of newGrn.lines; let i = index">
-              <td>
-                <input
-                  type="text"
-                  class="form-control"
-                  [(ngModel)]="item.partNumber"
-                  placeholder="Part #"
-                />
-              </td>
-              <td>
-                <input
-                  type="text"
-                  class="form-control"
-                  [(ngModel)]="item.description"
-                  placeholder="Description"
-                />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  class="form-control text-right"
-                  [(ngModel)]="item.receivedQuantity"
-                />
-              </td>
-              <td>
-                <input
-                  type="text"
-                  class="form-control"
-                  [(ngModel)]="item.unitOfMeasure"
-                  placeholder="NOS"
-                />
-              </td>
-              <td>
-                <button ar-button="ghost" (click)="removeNewGrnLine(i)">x</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <button ar-button="ghost" class="mb-3" (click)="addNewGrnLine()">+ Add Item</button>
-
-        <div class="dialog-actions">
-          <button ar-button="primary" (click)="saveNewGrn()">Save & Move to QC Inspection</button>
-          <button ar-button="ghost" (click)="showCreateModal.set(false)">Cancel</button>
-        </div>
-      </div>
-    </ar-dialog>
   `,
   styles: [
     `
       :host {
-        display: block;
-        padding-bottom: 3rem;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
       }
 
       .load-error {
@@ -666,10 +387,16 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
       }
 
       .page-content {
-        padding: 1.5rem 2rem;
+        flex: 1;
+        min-height: 0;
+        padding: 1.5rem 2rem 3rem;
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
+      }
+
+      .page-content > * {
+        flex-shrink: 0;
       }
 
       .kpi-grid {
@@ -997,10 +724,22 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
 })
 export class GoodsReceiptNotesComponent {
   private readonly router = inject(Router);
+  private readonly permissions = inject(PermissionService);
   private readonly route = inject(ActivatedRoute);
   private readonly grnService = inject(GoodsReceiptNoteService);
   private readonly billService = inject(VendorBillService);
   private readonly debitNoteService = inject(VendorDebitNoteService);
+
+  /** What this role may do here besides reading (each action's API permission). */
+  protected readonly can = computed(() => {
+    const has = (p: string) => checkPolicy(p, this.permissions);
+    return {
+      create: has(PURCHASING_PERMISSIONS.createGrn),
+      inspect: has(PURCHASING_PERMISSIONS.inspectGrn),
+      bill: has(PURCHASING_PERMISSIONS.createBill),
+      debitNote: has(PURCHASING_PERMISSIONS.createDebitNote),
+    };
+  });
 
   readonly GrnStatus = GrnStatus;
   readonly QcInspectionStatus = QcInspectionStatus;
@@ -1011,61 +750,6 @@ export class GoodsReceiptNotesComponent {
   readonly allGrns = signal<GoodsReceiptNoteDto[]>(environment.useMockData ? MOCK_GRNS : []);
   readonly filterQuery = signal<string>('');
   readonly selectedStatus = signal<GrnStatus | null>(null);
-
-  readonly selectedGrn = signal<GoodsReceiptNoteDto | null>(null);
-  readonly inspectingGrn = signal<GoodsReceiptNoteDto | null>(null);
-  readonly showCreateModal = signal<boolean>(false);
-
-  // Inspection form
-  qcInspectionModel: {
-    inspectorName: string;
-    qcRemarks: string;
-    lines: Array<{
-      goodsReceiptNoteLineId: string;
-      partNumber: string;
-      receivedQuantity: number;
-      acceptedQuantity: number;
-      rejectedQuantity: number;
-      storageLocation: string;
-      rejectionReason: string;
-    }>;
-  } = { inspectorName: '', qcRemarks: '', lines: [] };
-
-  // New GRN form
-  newGrn: {
-    /** The real supplier, when the form was opened for one (from Vendor 360). */
-    supplierId: string;
-    supplierName: string;
-    purchaseOrderReference: string;
-    challanNumber: string;
-    gateEntryNumber: string;
-    vehicleNumber: string;
-    transporterName: string;
-    lines: Array<{
-      partNumber: string;
-      description: string;
-      receivedQuantity: number;
-      unitOfMeasure: string;
-      unitPriceInPaise: number;
-    }>;
-  } = {
-    supplierId: '',
-    supplierName: '',
-    purchaseOrderReference: '',
-    challanNumber: '',
-    gateEntryNumber: '',
-    vehicleNumber: '',
-    transporterName: '',
-    lines: [
-      {
-        partNumber: '',
-        description: '',
-        receivedQuantity: 10,
-        unitOfMeasure: 'NOS',
-        unitPriceInPaise: 1000_00,
-      },
-    ],
-  };
 
   readonly filteredGrns = computed(() => {
     let list = this.allGrns();
@@ -1105,9 +789,16 @@ export class GoodsReceiptNotesComponent {
   );
 
   constructor() {
+    this.openRequested();
     this.loadData();
-    // From Vendor 360: a new goods receipt for the supplier in scope.
-    if (this.route.snapshot.queryParamMap.get('new')) this.openCreateModal();
+    // Older links (`?new=1`) open the inward gate entry page, for the supplier in scope.
+    if (this.route.snapshot.queryParamMap.get('new')) {
+      const sc = this.scope();
+      void this.router.navigate(['/purchasing/grn/new'], {
+        queryParams: sc ? supplierScopeParams(sc) : {},
+        replaceUrl: true,
+      });
+    }
   }
 
   protected clearScope(): void {
@@ -1116,13 +807,21 @@ export class GoodsReceiptNotesComponent {
     this.loadData();
   }
 
-  /** `?open=<id>` (from Vendor 360) opens that record once the list is in. */
-  private openRequest = this.route.snapshot.queryParamMap.get('open');
+  /** List links keep the supplier scope, so the way back returns to it. */
+  protected readonly scopeParams = computed(() => {
+    const sc = this.scope();
+    return sc ? supplierScopeParams(sc) : {};
+  });
+
+  /** `?open=<id>` (from Vendor 360 and older links) opens that receipt's own page. */
   private openRequested(): void {
-    const id = this.openRequest;
-    this.openRequest = null;
-    const found = id ? this.allGrns().find((x) => x.id === id) : undefined;
-    if (found) this.viewGrn(found);
+    const id = this.route.snapshot.queryParamMap.get('open');
+    if (id) {
+      void this.router.navigate(['/purchasing/grn', id], {
+        queryParams: this.scopeParams(),
+        replaceUrl: true,
+      });
+    }
   }
 
   loadData() {
@@ -1133,226 +832,35 @@ export class GoodsReceiptNotesComponent {
           next: (res) => {
             this.allGrns.set(res?.items ?? []);
             this.loadError.set(null);
-            this.openRequested();
           },
           error: () => this.loadError.set('Goods receipts could not be loaded.'),
         });
     }
   }
 
-  viewGrn(g: GoodsReceiptNoteDto) {
-    this.selectedGrn.set(g);
-  }
-
-  openInspectionDialog(g: GoodsReceiptNoteDto) {
-    this.inspectingGrn.set(g);
-    this.qcInspectionModel = {
-      inspectorName: 'QC Inspector',
-      qcRemarks: 'Inspected dimensions, finish, and test certs per standard.',
-      lines: g.lines.map((l) => ({
-        goodsReceiptNoteLineId: l.id || '',
-        partNumber: l.partNumber,
-        receivedQuantity: l.receivedQuantity,
-        acceptedQuantity: l.receivedQuantity,
-        rejectedQuantity: 0,
-        storageLocation: l.storageBin || 'BIN-A1',
-        rejectionReason: '',
-      })),
-    };
-  }
-
-  onAcceptedChange(line: any) {
-    line.rejectedQuantity = Math.max(0, line.receivedQuantity - line.acceptedQuantity);
-  }
-
-  onRejectedChange(line: any) {
-    line.acceptedQuantity = Math.max(0, line.receivedQuantity - line.rejectedQuantity);
-  }
-
-  saveQcInspection() {
-    const g = this.inspectingGrn();
-    if (!g) return;
-
-    const allPassed = this.qcInspectionModel.lines.every((l) => l.rejectedQuantity === 0);
-    const somePassed = this.qcInspectionModel.lines.some((l) => l.acceptedQuantity > 0);
-    const newQcStatus = allPassed
-      ? QcInspectionStatus.Passed
-      : somePassed
-        ? QcInspectionStatus.PartiallyPassed
-        : QcInspectionStatus.Failed;
-
-    const updatedLines = g.lines.map((orig) => {
-      const match = this.qcInspectionModel.lines.find((l) => l.goodsReceiptNoteLineId === orig.id);
-      if (match) {
-        return {
-          ...orig,
-          acceptedQuantity: match.acceptedQuantity,
-          rejectedQuantity: match.rejectedQuantity,
-          storageBin: match.storageLocation,
-          rejectionReason: match.rejectionReason,
-        };
-      }
-      return orig;
+  /** QC inspection has its own page. */
+  inspectPage(g: GoodsReceiptNoteDto) {
+    void this.router.navigate(['/purchasing/grn', g.id, 'inspect'], {
+      queryParams: this.scopeParams(),
     });
-
-    const updated: GoodsReceiptNoteDto = {
-      ...g,
-      status: GrnStatus.Approved,
-      qcStatus: newQcStatus,
-      inspectorNotes: `${this.qcInspectionModel.inspectorName}: ${this.qcInspectionModel.qcRemarks}`,
-      inspectedAtUtc: new Date().toISOString(),
-      lines: updatedLines,
-    };
-
-    if (!environment.useMockData && g.id) {
-      const dto: CompleteQcInspectionDto = {
-        qcStatus: newQcStatus,
-        inspectorNotes: `${this.qcInspectionModel.inspectorName}: ${this.qcInspectionModel.qcRemarks}`,
-        lineInspections: this.qcInspectionModel.lines.map((l) => ({
-          lineId: l.goodsReceiptNoteLineId,
-          acceptedQuantity: l.acceptedQuantity,
-          rejectedQuantity: l.rejectedQuantity,
-          storageBin: l.storageLocation,
-          rejectionReason: l.rejectionReason,
-        })),
-      };
-      this.grnService.completeInspection(g.id, dto).subscribe({
-        next: (saved) => {
-          this.updateGrnInState(saved);
-        },
-        error: (err) => console.error(err),
-      });
-    }
-
-    this.updateGrnInState(updated);
-    this.inspectingGrn.set(null);
-    if (this.selectedGrn()?.id === g.id) {
-      this.selectedGrn.set(updated);
-    }
   }
 
+  /** Bills this receipt's accepted goods, on the Record vendor bill page. */
   createVendorBill(g: GoodsReceiptNoteDto) {
-    this.router.navigate(['/purchasing/bills'], {
-      queryParams: { grnId: g.id, supplierName: g.supplierName },
-    });
+    void this.router.navigate(['/purchasing/bills/new'], { queryParams: { grn: g.id } });
   }
 
+  /** Debits this receipt's rejections, on the Issue debit note page. */
   createDebitNote(g: GoodsReceiptNoteDto) {
-    this.router.navigate(['/purchasing/debit-notes'], {
-      queryParams: { grnId: g.id, supplierName: g.supplierName },
+    void this.router.navigate(['/purchasing/debit-notes/new'], { queryParams: { grn: g.id } });
+  }
+
+  /** Inward gate entry has its own page; opened for the supplier in scope, if any. */
+  openCreatePage() {
+    const sc = this.scope();
+    void this.router.navigate(['/purchasing/grn/new'], {
+      queryParams: sc ? supplierScopeParams(sc) : {},
     });
-  }
-
-  openCreateModal() {
-    this.newGrn = {
-      supplierId: this.scope()?.supplierId ?? '',
-      supplierName: this.scope()?.name ?? '',
-      purchaseOrderReference: '',
-      challanNumber: '',
-      gateEntryNumber: `GE-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      vehicleNumber: '',
-      transporterName: '',
-      lines: [
-        {
-          partNumber: '',
-          description: '',
-          receivedQuantity: 10,
-          unitOfMeasure: 'NOS',
-          unitPriceInPaise: 1500_00,
-        },
-      ],
-    };
-    this.showCreateModal.set(true);
-  }
-
-  addNewGrnLine() {
-    this.newGrn.lines.push({
-      partNumber: '',
-      description: '',
-      receivedQuantity: 5,
-      unitOfMeasure: 'NOS',
-      unitPriceInPaise: 1000_00,
-    });
-  }
-
-  removeNewGrnLine(i: number) {
-    if (this.newGrn.lines.length > 1) {
-      this.newGrn.lines.splice(i, 1);
-    }
-  }
-
-  saveNewGrn() {
-    if (!this.newGrn.supplierName || !this.newGrn.challanNumber) {
-      alert('Supplier name and Challan number are required.');
-      return;
-    }
-
-    const created: GoodsReceiptNoteDto = {
-      id: `grn-${Date.now()}`,
-      grnNumber: `GRN-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      purchaseOrderId: 'po-adhoc',
-      purchaseOrderReference: this.newGrn.purchaseOrderReference || 'PO-2026-ADHOC',
-      supplierId: this.newGrn.supplierId || `sup-${Date.now()}`,
-      supplierName: this.newGrn.supplierName,
-      challanNumber: this.newGrn.challanNumber,
-      challanDateUtc: new Date().toISOString(),
-      vehicleNumber: this.newGrn.vehicleNumber,
-      transporterName: this.newGrn.transporterName,
-      gateEntryNumber: this.newGrn.gateEntryNumber,
-      gateInTimeUtc: new Date().toISOString(),
-      status: GrnStatus.UnderInspection,
-      qcStatus: QcInspectionStatus.Pending,
-      creationTime: new Date().toISOString(),
-      lines: this.newGrn.lines.map((l, idx) => ({
-        id: `grnl-${Date.now()}-${idx}`,
-        goodsReceiptNoteId: `grn-${Date.now()}`,
-        lineNumber: idx + 1,
-        partNumber: l.partNumber || `PART-${idx + 1}`,
-        description: l.description || 'Inward raw stock',
-        orderedQuantity: l.receivedQuantity,
-        challanQuantity: l.receivedQuantity,
-        receivedQuantity: l.receivedQuantity,
-        acceptedQuantity: 0,
-        rejectedQuantity: 0,
-        unitOfMeasure: l.unitOfMeasure,
-        storageBin: 'BAY-1',
-      })),
-    };
-
-    if (!environment.useMockData) {
-      const dto: CreateGoodsReceiptNoteDto = {
-        purchaseOrderId: undefined,
-        purchaseOrderReference: this.newGrn.purchaseOrderReference,
-        supplierId: created.supplierId,
-        supplierName: this.newGrn.supplierName,
-        challanNumber: this.newGrn.challanNumber,
-        challanDateUtc: new Date().toISOString(),
-        vehicleNumber: this.newGrn.vehicleNumber,
-        transporterName: this.newGrn.transporterName,
-        gateEntryNumber: this.newGrn.gateEntryNumber,
-        gateInTimeUtc: new Date().toISOString(),
-        lines: this.newGrn.lines.map((l) => ({
-          partNumber: l.partNumber,
-          description: l.description,
-          orderedQuantity: l.receivedQuantity,
-          challanQuantity: l.receivedQuantity,
-          receivedQuantity: l.receivedQuantity,
-          unitOfMeasure: l.unitOfMeasure,
-          storageBin: 'BAY-1',
-        })),
-      };
-      this.grnService.create(dto).subscribe({
-        next: (saved) => this.allGrns.update((list) => [saved, ...list]),
-        error: (err) => console.error(err),
-      });
-    }
-
-    this.allGrns.update((list) => [created, ...list]);
-    this.showCreateModal.set(false);
-  }
-
-  private updateGrnInState(updated: GoodsReceiptNoteDto) {
-    this.allGrns.update((list) => list.map((x) => (x.id === updated.id ? updated : x)));
   }
 
   totalReceived(g: GoodsReceiptNoteDto): number {

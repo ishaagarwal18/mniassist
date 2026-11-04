@@ -415,6 +415,72 @@ export const routes: Routes = [
         loadComponent: () => import('./features/inventory/purchasing').then((m) => m.ArPurchasing),
       },
       {
+        path: 'purchasing/suppliers/new',
+        title: 'New supplier · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/suppliers/supplier-form-page').then(
+            (m) => m.ArSupplierFormPage,
+          ),
+      },
+      {
+        path: 'purchasing/suppliers/:id/edit',
+        title: 'Edit supplier · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/suppliers/supplier-form-page').then(
+            (m) => m.ArSupplierFormPage,
+          ),
+      },
+      {
+        path: 'purchasing/orders/new',
+        title: 'New purchase order · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/orders/new-purchase-order').then(
+            (m) => m.ArNewPurchaseOrderPage,
+          ),
+      },
+      {
+        path: 'purchasing/orders/:id/edit',
+        title: 'Edit purchase order · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/orders/new-purchase-order').then(
+            (m) => m.ArNewPurchaseOrderPage,
+          ),
+      },
+      {
+        path: 'purchasing/bills/new',
+        title: 'Record vendor bill · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/bills/new-vendor-bill').then((m) => m.ArNewVendorBillPage),
+      },
+      {
+        path: 'purchasing/debit-notes/new',
+        title: 'Issue debit note · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/debit-notes/new-debit-note').then(
+            (m) => m.ArNewDebitNotePage,
+          ),
+      },
+      {
+        path: 'purchasing/grn/new',
+        title: 'Inward goods receipt · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/grn/new-goods-receipt').then(
+            (m) => m.ArNewGoodsReceiptPage,
+          ),
+      },
+      {
+        path: 'purchasing/grn/:id/inspect',
+        title: 'QC inspection · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/grn/grn-inspect-page').then((m) => m.ArGrnInspectPage),
+      },
+      {
+        path: 'purchasing/grn/:id',
+        title: 'Goods receipt · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/grn/grn-detail-page').then((m) => m.ArGrnDetailPage),
+      },
+      {
         path: 'purchasing/grn',
         title: 'Goods receipt (GRN) · MNI Assist',
         loadComponent: () =>
@@ -423,10 +489,24 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'purchasing/bills/:id',
+        title: 'Vendor bill · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/bills/bill-detail-page').then((m) => m.ArBillDetailPage),
+      },
+      {
         path: 'purchasing/bills',
         title: 'Vendor bills · MNI Assist',
         loadComponent: () =>
           import('./features/purchasing/bills/vendor-bills').then((m) => m.VendorBillsComponent),
+      },
+      {
+        path: 'purchasing/debit-notes/:id',
+        title: 'Debit note · MNI Assist',
+        loadComponent: () =>
+          import('./features/purchasing/debit-notes/debit-note-detail-page').then(
+            (m) => m.ArDebitNoteDetailPage,
+          ),
       },
       {
         path: 'purchasing/debit-notes',

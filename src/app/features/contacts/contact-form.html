@@ -33,7 +33,8 @@
         <div class="smart-fill-card__text">
           <strong class="smart-fill-card__title">Quick Import Assistant</strong>
           <p class="smart-fill-card__desc">
-            Instantly populate form fields by uploading a visiting card photo (AI OCR) or importing a phone vCard (.vcf).
+            Instantly populate form fields by uploading a visiting card photo (AI OCR) or importing
+            a phone vCard (.vcf).
           </p>
         </div>
       </div>
@@ -67,7 +68,10 @@
         <div class="smart-fill-notice" role="status">
           <ar-icon name="check" [size]="15" />
           <div class="smart-fill-notice__body">
-            <span>Populated from <strong>{{ source }}</strong>. Please verify details before saving.</span>
+            <span
+              >Populated from <strong>{{ source }}</strong
+              >. Please verify details before saving.</span
+            >
             @if (otherPhones().length) {
               <div class="smart-fill-notice__phones">
                 <span>Other phone numbers detected:</span>
@@ -93,7 +97,8 @@
                 WhatsApp Phone Number <span class="ar-field__req">*</span>
               </label>
               <span class="ar-field__hint">
-                Format: Country code + number without spaces or plus sign (e.g. <code>919821012345</code> for India).
+                Format: Country code + number without spaces or plus sign (e.g.
+                <code>919821012345</code> for India).
               </span>
               <input
                 id="contact-waId"
@@ -110,9 +115,7 @@
 
             <!-- Full Name -->
             <div class="ar-field">
-              <label for="contact-displayName" class="ar-field__label">
-                Full Name
-              </label>
+              <label for="contact-displayName" class="ar-field__label"> Full Name </label>
               <span class="ar-field__hint">First and last name as displayed in conversations</span>
               <input
                 id="contact-displayName"
@@ -151,7 +154,9 @@
               <label for="contact-email" class="ar-field__label">
                 Email Address <span class="ar-field__opt">optional</span>
               </label>
-              <span class="ar-field__hint">Used for official quotations, signing links, and ticket alerts</span>
+              <span class="ar-field__hint"
+                >Used for official quotations, signing links, and ticket alerts</span
+              >
               <input
                 id="contact-email"
                 name="email"
@@ -178,7 +183,8 @@
                 Company Account <span class="ar-field__opt">optional</span>
               </label>
               <span class="ar-field__hint">
-                Link this contact to an existing company or plant to sync activity with corporate CRM.
+                Link this contact to an existing company or plant to sync activity with corporate
+                CRM.
               </span>
               <select
                 id="contact-account"
@@ -198,11 +204,13 @@
 
             <!-- Company Name (Auto-synced or custom) -->
             <div class="ar-field">
-              <label for="contact-companyName" class="ar-field__label">
-                Company Name
-              </label>
+              <label for="contact-companyName" class="ar-field__label"> Company Name </label>
               <span class="ar-field__hint">
-                {{ selectedAccount() ? 'Synced from linked Account above' : 'Custom business or organization name' }}
+                {{
+                  selectedAccount()
+                    ? 'Synced from linked Account above'
+                    : 'Custom business or organization name'
+                }}
               </span>
               <input
                 id="contact-companyName"
@@ -224,7 +232,9 @@
               <label for="contact-role" class="ar-field__label">
                 Decision Role <span class="ar-field__req">*</span>
               </label>
-              <span class="ar-field__hint">Their authority category in purchase or operational decisions</span>
+              <span class="ar-field__hint"
+                >Their authority category in purchase or operational decisions</span
+              >
               <select
                 id="contact-role"
                 name="role"
@@ -295,7 +305,9 @@
                 City / Industrial Cluster <span class="ar-field__opt">optional</span>
               </label>
               <span class="ar-field__hint">
-                {{ draft().state ? 'Select city in ' + draft().state : 'City or manufacturing zone' }}
+                {{
+                  draft().state ? 'Select city in ' + draft().state : 'City or manufacturing zone'
+                }}
               </span>
               @if (availableCities().length) {
                 <select
@@ -332,9 +344,7 @@
 
       <!-- Bottom Action Footer -->
       <div class="form-footer">
-        <button ar-button type="button" variant="ghost" (click)="cancel()">
-          Cancel
-        </button>
+        <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
         <button
           ar-button
           type="button"

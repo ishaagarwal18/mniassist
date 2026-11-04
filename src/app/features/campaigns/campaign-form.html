@@ -61,7 +61,9 @@
                 Campaign Name <span class="ar-field__req">*</span>
               </label>
               <span class="ar-field__hint">
-                A descriptive internal title (e.g. <code>Q4 Spares &amp; Consumables Discount</code> or <code>AMC Expiry Reminder — West</code>).
+                A descriptive internal title (e.g.
+                <code>Q4 Spares &amp; Consumables Discount</code> or
+                <code>AMC Expiry Reminder — West</code>).
               </span>
               <input
                 id="campaign-name"
@@ -82,7 +84,8 @@
                 WhatsApp Business Channel <span class="ar-field__req">*</span>
               </label>
               <span class="ar-field__hint">
-                Select the verified phone number to send broadcast messages from. Templates are tied to specific numbers.
+                Select the verified phone number to send broadcast messages from. Templates are tied
+                to specific numbers.
               </span>
               <select
                 id="campaign-channel"
@@ -112,7 +115,8 @@
                 Template <span class="ar-field__req">*</span>
               </label>
               <span class="ar-field__hint">
-                Meta requires marketing campaigns to use pre-approved WhatsApp templates to guarantee message deliverability.
+                Meta requires marketing campaigns to use pre-approved WhatsApp templates to
+                guarantee message deliverability.
               </span>
 
               @if (templatesLoading()) {
@@ -131,7 +135,8 @@
                 >
                   @for (t of approvedTemplates(); track t.id) {
                     <option [value]="t.id" [selected]="t.id === draft().templateId">
-                      {{ t.name }} · {{ t.languageCode }} (Category: {{ t.category ?? 'Marketing' }})
+                      {{ t.name }} · {{ t.languageCode }} (Category:
+                      {{ t.category ?? 'Marketing' }})
                     </option>
                   }
                 </select>
@@ -152,7 +157,9 @@
                       </div>
                     }
                     <p class="template-tip">
-                      Audience filters and variable values (e.g. <code>{{ '{{1}}' }}</code> customer name, <code>{{ '{{2}}' }}</code> machine model) will be mapped on the next screen.
+                      Audience filters and variable values (e.g. <code>{{ '{{1}}' }}</code> customer
+                      name, <code>{{ '{{2}}' }}</code> machine model) will be mapped on the next
+                      screen.
                     </p>
                   </div>
                 }
@@ -163,7 +170,8 @@
                     <strong>No approved templates on this number yet.</strong>
                     <p>
                       Before sending a campaign, create and submit a template under
-                      <a routerLink="/templates">Templates</a>. Meta typically approves industrial notification and marketing templates within minutes.
+                      <a routerLink="/templates">Templates</a>. Meta typically approves industrial
+                      notification and marketing templates within minutes.
                     </p>
                   </div>
                 </div>
@@ -175,9 +183,7 @@
 
       <!-- Footer Actions -->
       <div class="form-footer">
-        <button ar-button type="button" variant="ghost" (click)="cancel()">
-          Cancel
-        </button>
+        <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
         <button
           ar-button
           type="button"

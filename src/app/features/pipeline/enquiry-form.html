@@ -34,7 +34,8 @@
                 Customer Contact <span class="ar-field__req">*</span>
               </span>
               <span class="ar-field__hint">
-                Search your directory by customer name or company. If they are not in your directory yet, you can add them directly below.
+                Search your directory by customer name or company. If they are not in your directory
+                yet, you can add them directly below.
               </span>
               <div class="contact-picker-wrapper">
                 <ar-contact-picker (picked)="onContactPicked($event)" />
@@ -47,7 +48,8 @@
                 Target Sales Pipeline <span class="ar-field__req">*</span>
               </label>
               <span class="ar-field__hint">
-                The qualification workflow, stages, and probability tracking this enquiry will follow.
+                The qualification workflow, stages, and probability tracking this enquiry will
+                follow.
               </span>
               <select
                 id="enquiry-pipeline"
@@ -78,7 +80,8 @@
                 Enquiry Title <span class="ar-field__req">*</span>
               </label>
               <span class="ar-field__hint">
-                Brief reference describing the deal (e.g. <code>VFD retrofit — packing line 2</code> or <code>5-Axis CNC Spares Kit</code>).
+                Brief reference describing the deal (e.g.
+                <code>VFD retrofit — packing line 2</code> or <code>5-Axis CNC Spares Kit</code>).
               </span>
               <input
                 id="enquiry-title"
@@ -96,10 +99,12 @@
             <!-- Detailed Requirement -->
             <div class="ar-field form-grid--col2">
               <label for="enquiry-requirement" class="ar-field__label">
-                Customer Requirement &amp; Specifications <span class="ar-field__opt">optional</span>
+                Customer Requirement &amp; Specifications
+                <span class="ar-field__opt">optional</span>
               </label>
               <span class="ar-field__hint">
-                Technical scope, application details, motor ratings, target delivery schedule, or customer pain points.
+                Technical scope, application details, motor ratings, target delivery schedule, or
+                customer pain points.
               </span>
               <textarea
                 id="enquiry-requirement"
@@ -157,9 +162,7 @@
 
       <!-- Footer Actions -->
       <div class="form-footer">
-        <button ar-button type="button" variant="ghost" (click)="cancel()">
-          Cancel
-        </button>
+        <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
         <button
           ar-button
           type="button"

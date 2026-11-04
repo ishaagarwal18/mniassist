@@ -108,9 +108,7 @@ describe('ArCampaignForm (New Campaign Page)', () => {
     expect(channelSelect).toBeDefined();
     expect(channelSelect.options.length).toBe(2);
 
-    expect(templateApiGetList).toHaveBeenCalledWith(
-      expect.objectContaining({ channelId: 'ch-1' }),
-    );
+    expect(templateApiGetList).toHaveBeenCalledWith(expect.objectContaining({ channelId: 'ch-1' }));
   });
 
   it('navigates back to /campaigns on cancel', async () => {
@@ -132,10 +130,7 @@ describe('ArCampaignForm (New Campaign Page)', () => {
     await fixture.whenStable();
 
     expect(storeCreate).not.toHaveBeenCalled();
-    expect(toastWarning).toHaveBeenCalledWith(
-      'Give the campaign a name.',
-      'Campaign',
-    );
+    expect(toastWarning).toHaveBeenCalledWith('Give the campaign a name.', 'Campaign');
   });
 
   it('creates draft campaign and navigates to builder cockpit with open query param', async () => {
@@ -154,11 +149,7 @@ describe('ArCampaignForm (New Campaign Page)', () => {
     submitButton?.click();
     await fixture.whenStable();
 
-    expect(storeCreate).toHaveBeenCalledWith(
-      'Q4 Special Retrofit Discount',
-      'ch-1',
-      'tmpl-1',
-    );
+    expect(storeCreate).toHaveBeenCalledWith('Q4 Special Retrofit Discount', 'ch-1', 'tmpl-1');
     expect(toastSuccess).toHaveBeenCalledWith(expect.stringContaining('created as draft'));
     expect(routerNavigate).toHaveBeenCalledWith(['/campaigns'], {
       queryParams: { open: 'c-101' },

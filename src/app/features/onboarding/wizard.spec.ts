@@ -104,9 +104,12 @@ describe('mobile verification resend and change mobile', () => {
 
   beforeEach(() => {
     mockChecklistService = {
-      get: () => of({ items: [{ step: Step.VerifyMobile, done: false, label: 'Verify your mobile' }] }),
+      get: () =>
+        of({ items: [{ step: Step.VerifyMobile, done: false, label: 'Verify your mobile' }] }),
       startMobileVerification: vi.fn(() => of(undefined)),
-      confirmMobileVerification: vi.fn(() => of({ items: [{ step: Step.VerifyMobile, done: true }] })),
+      confirmMobileVerification: vi.fn(() =>
+        of({ items: [{ step: Step.VerifyMobile, done: true }] }),
+      ),
     };
     mockToast = {
       warning: vi.fn(),
@@ -132,7 +135,9 @@ describe('mobile verification resend and change mobile', () => {
     const comp = fixture.componentInstance as any;
     comp.mobile.set('+91 9876543210');
     await comp.sendOtp();
-    expect(mockChecklistService.startMobileVerification).toHaveBeenCalledWith({ mobile: '919876543210' });
+    expect(mockChecklistService.startMobileVerification).toHaveBeenCalledWith({
+      mobile: '919876543210',
+    });
     expect(comp.otpSent()).toBe(true);
     expect(comp.resendCountdown()).toBe(30);
     expect(mockToast.info).toHaveBeenCalledWith(
@@ -161,11 +166,10 @@ describe('mobile verification resend and change mobile', () => {
     mockChecklistService.startMobileVerification.mockClear();
 
     await comp.resendOtp();
-    expect(mockChecklistService.startMobileVerification).toHaveBeenCalledWith({ mobile: '919876543210' });
-    expect(mockToast.success).toHaveBeenCalledWith(
-      'Verification code resent.',
-      'Verification',
-    );
+    expect(mockChecklistService.startMobileVerification).toHaveBeenCalledWith({
+      mobile: '919876543210',
+    });
+    expect(mockToast.success).toHaveBeenCalledWith('Verification code resent.', 'Verification');
   });
 
   it('changeMobile resets otpSent and otpCode while retaining the phone number and clearing timer', async () => {
@@ -182,4 +186,3 @@ describe('mobile verification resend and change mobile', () => {
     expect(comp.resendCountdown()).toBe(0);
   });
 });
-

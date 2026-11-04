@@ -28,7 +28,9 @@
   font: 500 12.5px var(--ar-font-sans);
   color: var(--ar-ink-700);
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 
   &:hover {
     border-color: var(--ar-primary, #0f766e);

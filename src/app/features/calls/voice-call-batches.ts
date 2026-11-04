@@ -149,7 +149,9 @@ const toMinute = (clock: string) => {
                     </div>
 
                     <div class="batch-item__meta">
-                      <span class="batch-item__line">{{ 'AutoReach::VoiceBatch.Line.' + batch.line | abpLocalization }}</span>
+                      <span class="batch-item__line">{{
+                        'AutoReach::VoiceBatch.Line.' + batch.line | abpLocalization
+                      }}</span>
                       <span class="batch-item__counts">
                         {{ batch.reached }} / {{ batch.total }} reached
                       </span>
@@ -178,28 +180,56 @@ const toMinute = (clock: string) => {
                       <ar-chip [tone]="statusTone(batch.status)" [dot]="batch.status === 'Running'">
                         {{ 'AutoReach::VoiceBatch.Status.' + batch.status | abpLocalization }}
                       </ar-chip>
-                      <span class="line-tag">{{ 'AutoReach::VoiceBatch.Line.' + batch.line | abpLocalization }}</span>
+                      <span class="line-tag">{{
+                        'AutoReach::VoiceBatch.Line.' + batch.line | abpLocalization
+                      }}</span>
                     </div>
                     <h2 class="detail-title">{{ batch.name }}</h2>
                   </div>
 
                   <div class="detail-actions">
                     @if (canSend() && (batch.status === 'Draft' || batch.status === 'Paused')) {
-                      <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="act('start')">
+                      <button
+                        ar-button
+                        type="button"
+                        variant="primary"
+                        [disabled]="busy()"
+                        (click)="act('start')"
+                      >
                         {{ 'AutoReach::VoiceBatch.Start' | abpLocalization }}
                       </button>
                     }
                     @if (canUpdate() && batch.status === 'Running') {
-                      <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="act('pause')">
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        [disabled]="busy()"
+                        (click)="act('pause')"
+                      >
                         {{ 'AutoReach::VoiceBatch.Pause' | abpLocalization }}
                       </button>
                     }
-                    @if (canUpdate() && batch.status !== 'Completed' && batch.status !== 'Cancelled') {
-                      <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="act('cancel')">
+                    @if (
+                      canUpdate() && batch.status !== 'Completed' && batch.status !== 'Cancelled'
+                    ) {
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        [disabled]="busy()"
+                        (click)="act('cancel')"
+                      >
                         {{ 'AutoReach::VoiceBatch.Cancel' | abpLocalization }}
                       </button>
                     }
-                    <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="refresh()">
+                    <button
+                      ar-button
+                      type="button"
+                      variant="ghost"
+                      [disabled]="busy()"
+                      (click)="refresh()"
+                    >
                       {{ 'AutoReach::VoiceBatch.Refresh' | abpLocalization }}
                     </button>
                   </div>
@@ -247,8 +277,12 @@ const toMinute = (clock: string) => {
                   <div class="upload-box__info">
                     <ar-icon name="plus" class="upload-icon" />
                     <div>
-                      <strong class="upload-title">{{ 'AutoReach::VoiceBatch.Upload' | abpLocalization }}</strong>
-                      <p class="upload-desc">{{ 'AutoReach::VoiceBatch.UploadHelp' | abpLocalization }}</p>
+                      <strong class="upload-title">{{
+                        'AutoReach::VoiceBatch.Upload' | abpLocalization
+                      }}</strong>
+                      <p class="upload-desc">
+                        {{ 'AutoReach::VoiceBatch.UploadHelp' | abpLocalization }}
+                      </p>
                     </div>
                   </div>
                   <label class="upload-btn-label">
@@ -282,14 +316,26 @@ const toMinute = (clock: string) => {
                   aria-label="Batch Call Recipients"
                 >
                   <table class="ar-table">
-                    <caption class="sr-only">Batch Call Recipients</caption>
+                    <caption class="sr-only">
+                      Batch Call Recipients
+                    </caption>
                     <thead>
                       <tr>
-                        <th scope="col">{{ 'AutoReach::VoiceBatch.Col.person' | abpLocalization }}</th>
-                        <th scope="col">{{ 'AutoReach::VoiceBatch.Col.status' | abpLocalization }}</th>
-                        <th scope="col" class="text-right">{{ 'AutoReach::VoiceBatch.Col.attempts' | abpLocalization }}</th>
-                        <th scope="col">{{ 'AutoReach::VoiceBatch.Col.next' | abpLocalization }}</th>
-                        <th scope="col">{{ 'AutoReach::VoiceBatch.Col.outcome' | abpLocalization }}</th>
+                        <th scope="col">
+                          {{ 'AutoReach::VoiceBatch.Col.person' | abpLocalization }}
+                        </th>
+                        <th scope="col">
+                          {{ 'AutoReach::VoiceBatch.Col.status' | abpLocalization }}
+                        </th>
+                        <th scope="col" class="text-right">
+                          {{ 'AutoReach::VoiceBatch.Col.attempts' | abpLocalization }}
+                        </th>
+                        <th scope="col">
+                          {{ 'AutoReach::VoiceBatch.Col.next' | abpLocalization }}
+                        </th>
+                        <th scope="col">
+                          {{ 'AutoReach::VoiceBatch.Col.outcome' | abpLocalization }}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -303,12 +349,18 @@ const toMinute = (clock: string) => {
                           </td>
                           <td>
                             <ar-chip [tone]="recipientTone(person.status)">
-                              {{ 'AutoReach::VoiceBatch.Recipient.' + person.status | abpLocalization }}
+                              {{
+                                'AutoReach::VoiceBatch.Recipient.' + person.status | abpLocalization
+                              }}
                             </ar-chip>
                           </td>
                           <td class="text-right font-mono">{{ person.attempts }}</td>
                           <td class="text-muted font-mono">
-                            {{ person.nextAttemptAtUtc ? (person.nextAttemptAtUtc | date: 'short') : '—' }}
+                            {{
+                              person.nextAttemptAtUtc
+                                ? (person.nextAttemptAtUtc | date: 'short')
+                                : '—'
+                            }}
                           </td>
                           <td>
                             {{ person.lastOutcome ? (person.lastOutcome | abpLocalization) : '—' }}
@@ -340,7 +392,9 @@ const toMinute = (clock: string) => {
       >
         <div class="dialog-body">
           <label class="ar-field">
-            <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.Name' | abpLocalization }}</span>
+            <span class="ar-field__label">{{
+              'AutoReach::VoiceBatch.Name' | abpLocalization
+            }}</span>
             <input
               class="ar-field__input"
               [(ngModel)]="model.name"
@@ -351,7 +405,9 @@ const toMinute = (clock: string) => {
 
           <div class="dialog-grid">
             <label class="ar-field">
-              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.Channel' | abpLocalization }}</span>
+              <span class="ar-field__label">{{
+                'AutoReach::VoiceBatch.Channel' | abpLocalization
+              }}</span>
               <select class="ar-field__input" [(ngModel)]="model.channelId">
                 @for (channel of channels(); track channel.id) {
                   <option [ngValue]="channel.id" translate="no">
@@ -362,7 +418,9 @@ const toMinute = (clock: string) => {
             </label>
 
             <label class="ar-field">
-              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.Line' | abpLocalization }}</span>
+              <span class="ar-field__label">{{
+                'AutoReach::VoiceBatch.Line' | abpLocalization
+              }}</span>
               <select class="ar-field__input" [(ngModel)]="model.line">
                 <option value="whatsapp">
                   {{ 'AutoReach::VoiceBatch.Line.whatsapp' | abpLocalization }}
@@ -378,7 +436,9 @@ const toMinute = (clock: string) => {
           </div>
 
           <label class="ar-field">
-            <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.Purpose' | abpLocalization }}</span>
+            <span class="ar-field__label">{{
+              'AutoReach::VoiceBatch.Purpose' | abpLocalization
+            }}</span>
             <textarea
               class="ar-field__input"
               rows="2"
@@ -390,12 +450,16 @@ const toMinute = (clock: string) => {
 
           <div class="dialog-grid-3">
             <label class="ar-field">
-              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.StartsAt' | abpLocalization }}</span>
+              <span class="ar-field__label">{{
+                'AutoReach::VoiceBatch.StartsAt' | abpLocalization
+              }}</span>
               <input class="ar-field__input" type="datetime-local" [(ngModel)]="model.startsAt" />
             </label>
 
             <label class="ar-field">
-              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.From' | abpLocalization }}</span>
+              <span class="ar-field__label">{{
+                'AutoReach::VoiceBatch.From' | abpLocalization
+              }}</span>
               <input
                 class="ar-field__input"
                 type="time"
@@ -406,7 +470,9 @@ const toMinute = (clock: string) => {
             </label>
 
             <label class="ar-field">
-              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.To' | abpLocalization }}</span>
+              <span class="ar-field__label">{{
+                'AutoReach::VoiceBatch.To' | abpLocalization
+              }}</span>
               <input
                 class="ar-field__input"
                 type="time"
@@ -419,7 +485,9 @@ const toMinute = (clock: string) => {
 
           <div class="dialog-grid-3">
             <label class="ar-field">
-              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.Concurrent' | abpLocalization }}</span>
+              <span class="ar-field__label">{{
+                'AutoReach::VoiceBatch.Concurrent' | abpLocalization
+              }}</span>
               <input
                 class="ar-field__input"
                 type="number"
@@ -430,7 +498,9 @@ const toMinute = (clock: string) => {
             </label>
 
             <label class="ar-field">
-              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.Attempts' | abpLocalization }}</span>
+              <span class="ar-field__label">{{
+                'AutoReach::VoiceBatch.Attempts' | abpLocalization
+              }}</span>
               <input
                 class="ar-field__input"
                 type="number"
@@ -441,7 +511,9 @@ const toMinute = (clock: string) => {
             </label>
 
             <label class="ar-field">
-              <span class="ar-field__label">{{ 'AutoReach::VoiceBatch.RetryAfter' | abpLocalization }}</span>
+              <span class="ar-field__label">{{
+                'AutoReach::VoiceBatch.RetryAfter' | abpLocalization
+              }}</span>
               <input
                 class="ar-field__input"
                 type="number"

@@ -3,13 +3,17 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { RouterLink } from '@angular/router';
 
 import { canOpenUrl } from '../../../core/auth/nav-access.guard';
+import { checkPolicy } from '../../../core/auth/permission';
 import { CurrentUserService } from '../../../core/services/current-user.service';
 import { PlanService } from '../../../core/services/plan.service';
 import { Vendor360Dto } from '../../../proxy/purchasing/vendor-360.models';
 import { ArIcon } from '../../../ui';
-import { vendorLinkGroups } from './vendor-360-links.logic';
+import { vendorLinkGroups, visibleVendorLinkGroups } from './vendor-360-links.logic';
 
-/** "Everything about this supplier": every related screen, opened on this supplier, that the user may open. */
+/**
+ * "Everything about this supplier": every related screen, opened on this supplier, that the user may open, and the actions
+ * (new order, inward GRN, bill, debit note, edit supplier) their role may do. Nothing shows a link that would end in "no access".
+ */
 @Component({
   selector: 'ar-vendor-360-links',
   imports: [RouterLink, ArIcon],
@@ -17,6 +21,9 @@ import { vendorLinkGroups } from './vendor-360-links.logic';
   template: `
     <section class="vl" aria-label="Everything about this supplier">
       <h2 class="vl__title">Everything about this supplier</h2>
+      @if (!groups().length) {
+        <p class="vl__none">Your role doesn't include the purchasing screens for this supplier.</p>
+      }
       <div class="vl__grid">
         @for (g of groups(); track g.title) {
           <div class="vl__group">
@@ -57,6 +64,11 @@ import { vendorLinkGroups } from './vendor-360-links.logic';
       margin: 0;
       font: 600 0.95rem var(--ar-font-sans);
       color: var(--ar-ink-900);
+    }
+    .vl__none {
+      margin: 0;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-500);
     }
     .vl__grid {
       display: grid;
@@ -130,13 +142,10 @@ export class ArVendor360Links {
 
   protected readonly groups = computed(() => {
     this.account.isHost();
-    return vendorLinkGroups(this.vendor())
-      .map((g) => ({
-        ...g,
-        links: g.links.filter((l) =>
-          canOpenUrl(l.route, this.permissions, this.plans, this.account),
-        ),
-      }))
-      .filter((g) => g.links.length > 0);
+    return visibleVendorLinkGroups(
+      vendorLinkGroups(this.vendor()),
+      (route) => canOpenUrl(route, this.permissions, this.plans, this.account),
+      (permission) => checkPolicy(permission, this.permissions),
+    );
   });
 }

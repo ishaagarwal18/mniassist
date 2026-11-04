@@ -135,7 +135,8 @@ import { errorMessage } from '../activities/activity-logic';
             @if (isMobileStep(step)) {
               @if (otpSent()) {
                 <p class="card__d">
-                  A 6-digit verification code was sent to <strong>{{ mobile() }}</strong>. Enter the code below.
+                  A 6-digit verification code was sent to <strong>{{ mobile() }}</strong
+                  >. Enter the code below.
                 </p>
                 <div class="row">
                   <input
@@ -164,7 +165,11 @@ import { errorMessage } from '../activities/activity-logic';
                     [disabled]="busy() || resendCountdown() > 0"
                     (click)="resendOtp()"
                   >
-                    {{ resendCountdown() > 0 ? 'Resend code (' + resendCountdown() + 's)' : 'Resend code' }}
+                    {{
+                      resendCountdown() > 0
+                        ? 'Resend code (' + resendCountdown() + 's)'
+                        : 'Resend code'
+                    }}
                   </button>
                   <button
                     ar-button

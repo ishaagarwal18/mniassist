@@ -35,6 +35,11 @@ export interface Vendor360Dto extends EntityDto<string> {
   bankName?: string;
   bankAccountNumber?: string;
   bankIfscCode?: string;
+  contactName?: string;
+  contactDesignation?: string;
+  shippingAddress?: string;
+  isBlacklisted?: boolean;
+  blacklistReason?: string;
   totalPurchasesInPaise: number;
   totalPaidInPaise: number;
   outstandingPayableInPaise: number;

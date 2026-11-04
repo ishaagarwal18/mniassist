@@ -129,7 +129,9 @@
     <section class="tk__group" [attr.aria-label]="g.label">
       <h2 class="tk__h">
         <ar-chip [tone]="bucketTone(g.bucket)">{{ g.label }}</ar-chip>
-        <span class="tk__count-badge">{{ g.tasks.length }} task{{ g.tasks.length === 1 ? '' : 's' }}</span>
+        <span class="tk__count-badge"
+          >{{ g.tasks.length }} task{{ g.tasks.length === 1 ? '' : 's' }}</span
+        >
       </h2>
 
       <ul class="tk__list">
@@ -156,7 +158,10 @@
                 }
               </div>
               <div class="tk__meta">
-                <span class="tk__due-tag" [class.tk__late]="isOverdue(t) && t.status === Status.Open">
+                <span
+                  class="tk__due-tag"
+                  [class.tk__late]="isOverdue(t) && t.status === Status.Open"
+                >
                   ⏱️ {{ dueText(t) }}
                 </span>
                 @if (!isMine(t)) {

@@ -1,11 +1,7 @@
 import { AccountRow, CustomerAccount } from '../../core/services/account.store';
 
 export type AccountFilterPreset =
-  | 'all'
-  | 'groups'
-  | 'subsidiaries'
-  | 'with-contacts'
-  | 'needs-contacts';
+  'all' | 'groups' | 'subsidiaries' | 'with-contacts' | 'needs-contacts';
 
 export interface AccountTreeRecord {
   id: string;

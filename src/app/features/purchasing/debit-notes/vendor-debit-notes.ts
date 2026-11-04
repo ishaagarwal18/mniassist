@@ -1,19 +1,30 @@
+import { PermissionService } from '@abp/ng.core';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
-import { SupplierScope, readSupplierScope } from '../../../core/util/supplier-scope';
+import { checkPolicy } from '../../../core/auth/permission';
+import { ConfirmService } from '../../../core/ui/confirm.service';
+import { ToastService } from '../../../core/ui/toast.service';
+import { readApiError } from '../../../core/util/api-error';
+import {
+  SupplierScope,
+  readSupplierScope,
+  supplierScopeParams,
+} from '../../../core/util/supplier-scope';
+import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
+import { issueConfirm, settleConfirm } from './debit-note-detail-page';
 import { ArSupplierScopeBar } from '../supplier-scope-bar';
 import {
-  CreateVendorDebitNoteDto,
   CreateVendorDebitNoteLineDto,
   VendorDebitNoteDto,
   VendorDebitNoteStatus,
   VendorDebitNoteService,
 } from '../../../proxy/purchasing';
-import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArButton, ArChip, ChipTone } from '../../../ui';
 
 const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
   {
@@ -98,16 +109,20 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
   standalone: true,
   selector: 'ar-vendor-debit-notes',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArSupplierScopeBar],
+  imports: [CommonModule, FormsModule, RouterLink, ArTopbar, ArButton, ArChip, ArSupplierScopeBar],
   template: `
     <ar-topbar
       title="Vendor Debit Notes"
       subtitle="Purchase return, QC rejection credit & supplier price adjustment notes"
     >
-      <button ar-button="primary" (click)="openCreateModal()">+ Issue Debit Note</button>
+      @if (can().create) {
+        <button ar-button variant="primary" icon="plus" (click)="openCreatePage()">
+          New debit note
+        </button>
+      }
     </ar-topbar>
 
-    <div class="page-content">
+    <div class="page-content ar-scroll ar-scroll--bare">
       @if (scope(); as sc) {
         <ar-supplier-scope-bar [name]="sc.name" what="debit notes" (showAll)="clearScope()" />
       }
@@ -186,13 +201,15 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
             </tr>
           </thead>
           <tbody>
-            <tr
-              *ngFor="let dn of filteredDebitNotes()"
-              [class.selected]="selectedDebitNote()?.id === dn.id"
-            >
+            <tr *ngFor="let dn of filteredDebitNotes()">
               <td>
                 <div class="cell-main">
-                  <a class="code-link" (click)="viewDebitNote(dn)">{{ dn.debitNoteNumber }}</a>
+                  <a
+                    class="code-link"
+                    [routerLink]="['/purchasing/debit-notes', dn.id]"
+                    [queryParams]="scopeParams()"
+                    >{{ dn.debitNoteNumber }}</a
+                  >
                   <span class="sub-text">{{ dn.issueDateUtc | date: 'mediumDate' }}</span>
                 </div>
               </td>
@@ -236,13 +253,29 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
               <td class="actions-col">
                 <div class="action-buttons">
                   <button
-                    ar-button="primary"
+                    ar-button
+                    variant="primary"
+                    *ngIf="can().issue && dn.status === VendorDebitNoteStatus.Draft"
+                    [disabled]="issuing() === dn.id"
+                    (click)="issueDebitNote(dn)"
+                  >
+                    Issue
+                  </button>
+                  <button
+                    ar-button
+                    variant="primary"
                     *ngIf="dn.status === VendorDebitNoteStatus.Issued"
                     (click)="settleDebitNote(dn)"
                   >
                     Settle
                   </button>
-                  <button ar-button="quiet" (click)="viewDebitNote(dn)">View</button>
+                  <a
+                    ar-button
+                    variant="quiet"
+                    [routerLink]="['/purchasing/debit-notes', dn.id]"
+                    [queryParams]="scopeParams()"
+                    >View</a
+                  >
                 </div>
               </td>
             </tr>
@@ -257,222 +290,14 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
     </div>
 
     <!-- View Debit Note Dialog -->
-    <ar-dialog
-      *ngIf="selectedDebitNote()"
-      [title]="'Vendor Debit Note: ' + selectedDebitNote()!.debitNoteNumber"
-      (dismiss)="selectedDebitNote.set(null)"
-    >
-      <div class="dialog-body" *ngIf="selectedDebitNote() as dn">
-        <div class="meta-row">
-          <div>
-            <span class="meta-label">Supplier Creditor</span>
-            <h4>{{ dn.supplierName }}</h4>
-            <p class="sub-text">Reason: {{ dn.reason }}</p>
-          </div>
-          <div class="meta-status">
-            <ar-chip [tone]="statusTone(dn.status)">{{ statusLabel(dn.status) }}</ar-chip>
-          </div>
-        </div>
-
-        <div class="grid-details">
-          <div class="info-card">
-            <h5>Document References</h5>
-            <p><strong>Issue Date:</strong> {{ dn.issueDateUtc | date: 'mediumDate' }}</p>
-            <p>
-              <strong>Bill Reference:</strong>
-              {{ dn.vendorBillNumber || 'Open Balance Adjustment' }}
-            </p>
-            <p><strong>GRN Reference:</strong> {{ dn.goodsReceiptNoteNumber || 'Direct' }}</p>
-          </div>
-          <div class="info-card">
-            <h5>Financial Recovery</h5>
-            <p>
-              <strong>Taxable Adjustment:</strong> ₹{{
-                dn.taxableAmountInPaise / 100 | number: '1.2-2'
-              }}
-            </p>
-            <p>
-              <strong>GST Adjustment:</strong> ₹{{
-                (dn.grandTotalInPaise - dn.taxableAmountInPaise) / 100 | number: '1.2-2'
-              }}
-            </p>
-            <p>
-              <strong>Total Recoverable:</strong>
-              <strong class="text-good">₹{{ dn.grandTotalInPaise / 100 | number: '1.2-2' }}</strong>
-            </p>
-          </div>
-        </div>
-
-        <h5 class="mt-4 mb-2">Debit Item Breakdown</h5>
-        <div class="lines-table-wrapper">
-          <table class="dialog-table">
-            <thead>
-              <tr>
-                <th>Part No</th>
-                <th>Description</th>
-                <th class="text-right">Qty</th>
-                <th class="text-right">Unit Rate</th>
-                <th class="text-right">Taxable</th>
-                <th class="text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let line of dn.lines">
-                <td class="font-mono">
-                  <strong>{{ line.partNumber }}</strong>
-                </td>
-                <td>{{ line.description }}</td>
-                <td class="text-right font-mono">{{ line.quantity }}</td>
-                <td class="text-right font-mono">
-                  ₹{{ line.unitPriceInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono">
-                  ₹{{ line.taxableAmountInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono">
-                  <strong>₹{{ line.lineTotalInPaise / 100 | number: '1.2-2' }}</strong>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="dialog-actions mt-4">
-          <button
-            ar-button="primary"
-            *ngIf="dn.status === VendorDebitNoteStatus.Issued"
-            (click)="settleDebitNote(dn)"
-          >
-            Mark as Settled / Deducted
-          </button>
-          <button ar-button="quiet" (click)="selectedDebitNote.set(null)">Close</button>
-        </div>
-      </div>
-    </ar-dialog>
-
-    <!-- Create Debit Note Modal -->
-    <ar-dialog
-      *ngIf="showCreateModal()"
-      title="Create Vendor Debit Note"
-      (dismiss)="showCreateModal.set(false)"
-    >
-      <div class="dialog-body">
-        <div class="form-grid mb-3">
-          <div class="form-group">
-            <label>Supplier Name *</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newDebitNote.supplierName"
-              placeholder="Sundram Fasteners Automotive"
-            />
-          </div>
-          <div class="form-group">
-            <label>Vendor Bill #</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newDebitNote.vendorBillNumber"
-              placeholder="VB-2026-0082"
-            />
-          </div>
-          <div class="form-group">
-            <label>Goods Receipt Note (GRN) #</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newDebitNote.goodsReceiptNoteNumber"
-              placeholder="GRN-2026-0103"
-            />
-          </div>
-          <div class="form-group">
-            <label>GST Supply Type</label>
-            <select class="form-control" [(ngModel)]="newDebitNote.isInterState">
-              <option [ngValue]="false">Intra-State (CGST + SGST)</option>
-              <option [ngValue]="true">Inter-State (IGST)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group mb-3">
-          <label>Reason for Debit Note *</label>
-          <input
-            type="text"
-            class="form-control"
-            [(ngModel)]="newDebitNote.reason"
-            placeholder="e.g. QC Rejection: Material out of tolerance / short supply"
-          />
-        </div>
-
-        <h5 class="mb-2">Items to Debit</h5>
-        <table class="dialog-table mb-3">
-          <thead>
-            <tr>
-              <th>Part Number</th>
-              <th>Description</th>
-              <th>Qty</th>
-              <th>Rate (₹)</th>
-              <th>GST %</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of newDebitNote.lines; let i = index">
-              <td>
-                <input
-                  type="text"
-                  class="form-control"
-                  [(ngModel)]="item.partNumber"
-                  placeholder="Part #"
-                />
-              </td>
-              <td>
-                <input
-                  type="text"
-                  class="form-control"
-                  [(ngModel)]="item.description"
-                  placeholder="Description"
-                />
-              </td>
-              <td>
-                <input type="number" class="form-control text-right" [(ngModel)]="item.quantity" />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  class="form-control text-right"
-                  [(ngModel)]="item.unitPriceRupees"
-                />
-              </td>
-              <td>
-                <select class="form-control" [(ngModel)]="item.taxRateBasisPoints">
-                  <option [ngValue]="1800">18%</option>
-                  <option [ngValue]="1200">12%</option>
-                  <option [ngValue]="2800">28%</option>
-                  <option [ngValue]="500">5%</option>
-                  <option [ngValue]="0">0%</option>
-                </select>
-              </td>
-              <td>
-                <button ar-button="ghost" (click)="removeLine(i)">x</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <button ar-button="ghost" class="mb-3" (click)="addLine()">+ Add Item</button>
-
-        <div class="dialog-actions">
-          <button ar-button="primary" (click)="saveNewDebitNote()">Issue Debit Note</button>
-          <button ar-button="ghost" (click)="showCreateModal.set(false)">Cancel</button>
-        </div>
-      </div>
-    </ar-dialog>
   `,
   styles: [
     `
       :host {
-        display: block;
-        padding-bottom: 3rem;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
       }
 
       .load-error {
@@ -486,10 +311,16 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
       }
 
       .page-content {
-        padding: 1.5rem 2rem;
+        flex: 1;
+        min-height: 0;
+        padding: 1.5rem 2rem 3rem;
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
+      }
+
+      .page-content > * {
+        flex-shrink: 0;
       }
 
       .kpi-grid {
@@ -795,7 +626,19 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
 export class VendorDebitNotesComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly permissions = inject(PermissionService);
+  private readonly toasts = inject(ToastService);
+  private readonly confirm = inject(ConfirmService);
   private readonly debitNoteService = inject(VendorDebitNoteService);
+
+  /** What this role may do here besides reading (each action's API permission). */
+  protected readonly can = computed(() => {
+    const has = (p: string) => checkPolicy(p, this.permissions);
+    return {
+      create: has(PURCHASING_PERMISSIONS.createDebitNote),
+      issue: has(PURCHASING_PERMISSIONS.issueDebitNote),
+    };
+  });
 
   readonly VendorDebitNoteStatus = VendorDebitNoteStatus;
 
@@ -808,42 +651,8 @@ export class VendorDebitNotesComponent {
   readonly filterQuery = signal<string>('');
   readonly selectedStatus = signal<VendorDebitNoteStatus | null>(null);
 
-  readonly selectedDebitNote = signal<VendorDebitNoteDto | null>(null);
-  readonly showCreateModal = signal<boolean>(false);
-
-  // New Debit Note model
-  newDebitNote: {
-    /** The real supplier, when the form was opened for one (from Vendor 360). */
-    supplierId: string;
-    supplierName: string;
-    vendorBillNumber: string;
-    goodsReceiptNoteNumber: string;
-    reason: string;
-    isInterState: boolean;
-    lines: Array<{
-      partNumber: string;
-      description: string;
-      quantity: number;
-      unitPriceRupees: number;
-      taxRateBasisPoints: number;
-    }>;
-  } = {
-    supplierId: '',
-    supplierName: '',
-    vendorBillNumber: '',
-    goodsReceiptNoteNumber: '',
-    reason: '',
-    isInterState: false,
-    lines: [
-      {
-        partNumber: '',
-        description: '',
-        quantity: 1,
-        unitPriceRupees: 1000,
-        taxRateBasisPoints: 1800,
-      },
-    ],
-  };
+  /** The draft being issued, while the call is out. */
+  protected readonly issuing = signal<string | null>(null);
 
   readonly filteredDebitNotes = computed(() => {
     let list = this.allDebitNotes();
@@ -885,6 +694,7 @@ export class VendorDebitNotesComponent {
   );
 
   constructor() {
+    this.openRequested();
     this.loadData();
     this.checkQueryParams();
   }
@@ -895,13 +705,21 @@ export class VendorDebitNotesComponent {
     this.loadData();
   }
 
-  /** `?open=<id>` (from Vendor 360) opens that record once the list is in. */
-  private openRequest = this.route.snapshot.queryParamMap.get('open');
+  /** List links keep the supplier scope, so the way back returns to it. */
+  protected readonly scopeParams = computed(() => {
+    const sc = this.scope();
+    return sc ? supplierScopeParams(sc) : {};
+  });
+
+  /** `?open=<id>` (from Vendor 360 and older links) opens that debit note's own page. */
   private openRequested(): void {
-    const id = this.openRequest;
-    this.openRequest = null;
-    const found = id ? this.allDebitNotes().find((x) => x.id === id) : undefined;
-    if (found) this.viewDebitNote(found);
+    const id = this.route.snapshot.queryParamMap.get('open');
+    if (id) {
+      void this.router.navigate(['/purchasing/debit-notes', id], {
+        queryParams: this.scopeParams(),
+        replaceUrl: true,
+      });
+    }
   }
 
   loadData() {
@@ -912,163 +730,72 @@ export class VendorDebitNotesComponent {
           next: (res) => {
             this.allDebitNotes.set(res?.items ?? []);
             this.loadError.set(null);
-            this.openRequested();
           },
           error: () => this.loadError.set('Debit notes could not be loaded.'),
         });
     }
   }
 
+  /** Older links (`?new=1`, `?grnId=`) open the Issue debit note page. */
   private checkQueryParams() {
-    this.route.queryParams.subscribe((params) => {
-      // From Vendor 360: a new record for the supplier in scope.
-      if (params['new'] && !params['grnId']) this.openCreateModal();
-      if (params['grnId']) {
-        this.openCreateModal();
-        if (params['supplierName']) {
-          this.newDebitNote.supplierName = params['supplierName'];
-        }
-        this.newDebitNote.goodsReceiptNoteNumber = `GRN-${params['grnId'].substring(0, 6)}`;
-        this.newDebitNote.reason = `QC Rejection deduction for GRN ${this.newDebitNote.goodsReceiptNoteNumber}`;
-      }
+    const q = this.route.snapshot.queryParamMap;
+    const grn = q.get('grnId');
+    if (!q.get('new') && !grn) return;
+    const sc = this.scope();
+    void this.router.navigate(['/purchasing/debit-notes/new'], {
+      queryParams: grn ? { grn } : sc ? supplierScopeParams(sc) : {},
+      replaceUrl: true,
     });
   }
 
-  viewDebitNote(dn: VendorDebitNoteDto) {
-    this.selectedDebitNote.set(dn);
-  }
-
-  settleDebitNote(dn: VendorDebitNoteDto) {
-    const updated: VendorDebitNoteDto = {
-      ...dn,
-      status: VendorDebitNoteStatus.Settled,
-    };
-    if (!environment.useMockData && dn.id) {
-      this.debitNoteService.settle(dn.id).subscribe({
-        next: (saved) => this.updateInState(saved),
-        error: (err) => console.error(err),
-      });
-    }
-    this.updateInState(updated);
-    if (this.selectedDebitNote()?.id === dn.id) {
-      this.selectedDebitNote.set(updated);
-    }
-  }
-
-  openCreateModal() {
-    this.newDebitNote = {
-      supplierId: this.scope()?.supplierId ?? '',
-      supplierName: this.scope()?.name ?? '',
-      vendorBillNumber: '',
-      goodsReceiptNoteNumber: '',
-      reason: '',
-      isInterState: false,
-      lines: [
-        {
-          partNumber: '',
-          description: '',
-          quantity: 1,
-          unitPriceRupees: 1000,
-          taxRateBasisPoints: 1800,
-        },
-      ],
-    };
-    this.showCreateModal.set(true);
-  }
-
-  addLine() {
-    this.newDebitNote.lines.push({
-      partNumber: '',
-      description: '',
-      quantity: 1,
-      unitPriceRupees: 500,
-      taxRateBasisPoints: 1800,
-    });
-  }
-
-  removeLine(i: number) {
-    if (this.newDebitNote.lines.length > 1) {
-      this.newDebitNote.lines.splice(i, 1);
-    }
-  }
-
-  saveNewDebitNote() {
-    if (!this.newDebitNote.supplierName || !this.newDebitNote.reason) {
-      alert('Supplier name and reason are required.');
+  /** Settling closes an issued note: asked first, shown only once the API agrees. */
+  async settleDebitNote(dn: VendorDebitNoteDto) {
+    if (!dn.id || !(await this.confirm.confirm(settleConfirm(dn)))) return;
+    if (environment.useMockData) {
+      this.updateInState({ ...dn, status: VendorDebitNoteStatus.Settled });
       return;
     }
-
-    let taxablePaise = 0;
-    let totalTaxPaise = 0;
-
-    const mappedLines = this.newDebitNote.lines.map((l, idx) => {
-      const taxable = Math.round(l.quantity * l.unitPriceRupees * 100);
-      const tax = Math.round(taxable * (l.taxRateBasisPoints / 10000));
-      taxablePaise += taxable;
-      totalTaxPaise += tax;
-      return {
-        id: `vdnl-${Date.now()}-${idx}`,
-        vendorDebitNoteId: `vdn-${Date.now()}`,
-        lineNumber: idx + 1,
-        partNumber: l.partNumber || `PART-${idx + 1}`,
-        description: l.description || 'Rejected or adjusted item',
-        quantity: l.quantity,
-        unitPriceInPaise: Math.round(l.unitPriceRupees * 100),
-        taxableAmountInPaise: taxable,
-        taxRateBasisPoints: l.taxRateBasisPoints,
-        cgstAmountInPaise: this.newDebitNote.isInterState ? 0 : Math.round(tax / 2),
-        sgstAmountInPaise: this.newDebitNote.isInterState ? 0 : Math.round(tax / 2),
-        igstAmountInPaise: this.newDebitNote.isInterState ? tax : 0,
-        lineTotalInPaise: taxable + tax,
-      };
-    });
-
-    const grandTotal = taxablePaise + totalTaxPaise;
-
-    const created: VendorDebitNoteDto = {
-      id: `vdn-${Date.now()}`,
-      debitNoteNumber: `DN-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      supplierId: this.newDebitNote.supplierId || `sup-${Date.now()}`,
-      supplierName: this.newDebitNote.supplierName,
-      vendorBillNumber: this.newDebitNote.vendorBillNumber,
-      goodsReceiptNoteNumber: this.newDebitNote.goodsReceiptNoteNumber,
-      status: VendorDebitNoteStatus.Issued,
-      issueDateUtc: new Date().toISOString(),
-      reason: this.newDebitNote.reason,
-      isInterState: this.newDebitNote.isInterState,
-      taxableAmountInPaise: taxablePaise,
-      cgstInPaise: this.newDebitNote.isInterState ? 0 : Math.round(totalTaxPaise / 2),
-      sgstInPaise: this.newDebitNote.isInterState ? 0 : Math.round(totalTaxPaise / 2),
-      igstInPaise: this.newDebitNote.isInterState ? totalTaxPaise : 0,
-      grandTotalInPaise: grandTotal,
-      creationTime: new Date().toISOString(),
-      lines: mappedLines,
-    };
-
-    if (!environment.useMockData) {
-      const dto: CreateVendorDebitNoteDto = {
-        supplierId: created.supplierId,
-        supplierName: this.newDebitNote.supplierName,
-        reason: this.newDebitNote.reason,
-        isInterState: this.newDebitNote.isInterState,
-        vendorBillNumber: this.newDebitNote.vendorBillNumber,
-        goodsReceiptNoteNumber: this.newDebitNote.goodsReceiptNoteNumber,
-        lines: this.newDebitNote.lines.map((l) => ({
-          partNumber: l.partNumber,
-          description: l.description,
-          quantity: l.quantity,
-          unitPriceInPaise: Math.round(l.unitPriceRupees * 100),
-          taxRateBasisPoints: l.taxRateBasisPoints,
-        })),
-      };
-      this.debitNoteService.create(dto).subscribe({
-        next: (saved) => this.allDebitNotes.update((list) => [saved, ...list]),
-        error: (err) => console.error(err),
-      });
+    this.issuing.set(dn.id);
+    try {
+      const saved = await firstValueFrom(
+        this.debitNoteService.settle(dn.id, { skipHandleError: true }),
+      );
+      this.updateInState(saved);
+      this.toasts.success(`${saved.debitNoteNumber} settled.`);
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The debit note could not be settled.'), 'Not settled');
+    } finally {
+      this.issuing.set(null);
     }
+  }
 
-    this.allDebitNotes.update((list) => [created, ...list]);
-    this.showCreateModal.set(false);
+  /** A new debit note has its own page; opened for the supplier in scope, if any. */
+  openCreatePage() {
+    const sc = this.scope();
+    void this.router.navigate(['/purchasing/debit-notes/new'], {
+      queryParams: sc ? supplierScopeParams(sc) : {},
+    });
+  }
+
+  /** Issues a draft to the supplier: shown as issued only once the API agrees. */
+  async issueDebitNote(dn: VendorDebitNoteDto) {
+    if (!dn.id || !(await this.confirm.confirm(issueConfirm(dn)))) return;
+    if (environment.useMockData) {
+      this.updateInState({ ...dn, status: VendorDebitNoteStatus.Issued });
+      return;
+    }
+    this.issuing.set(dn.id);
+    try {
+      const saved = await firstValueFrom(
+        this.debitNoteService.issue(dn.id, { skipHandleError: true }),
+      );
+      this.updateInState(saved);
+      this.toasts.success(`${saved.debitNoteNumber} issued to ${saved.supplierName}.`);
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The debit note could not be issued.'), 'Not issued');
+    } finally {
+      this.issuing.set(null);
+    }
   }
 
   private updateInState(updated: VendorDebitNoteDto) {

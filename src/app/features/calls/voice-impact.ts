@@ -190,19 +190,23 @@ function day(date: Date): string {
         <!-- Executive KPI Strip -->
         <section class="vi__tiles" aria-label="Executive KPI Summary">
           <div class="vi__tile">
-            <span class="vi__value" translate="no">{{ r.calls }}</span>AI calls
+            <span class="vi__value" translate="no">{{ r.calls }}</span
+            >AI calls
             <small translate="no">{{ r.minutes }} min · {{ r.handledByAi }} AI completed</small>
           </div>
           <div class="vi__tile">
-            <span class="vi__value" translate="no">{{ percent(r.goalMet, r.goalEvaluated) }}</span>goal met
+            <span class="vi__value" translate="no">{{ percent(r.goalMet, r.goalEvaluated) }}</span
+            >goal met
             <small translate="no">{{ r.goalMet }} / {{ r.goalEvaluated }}</small>
           </div>
           <div class="vi__tile">
-            <span class="vi__value" translate="no">{{ r.meetingsBooked + r.leads }}</span>meetings and leads
+            <span class="vi__value" translate="no">{{ r.meetingsBooked + r.leads }}</span
+            >meetings and leads
             <small translate="no">{{ r.meetingsBooked }} mtgs · {{ r.leads }} leads</small>
           </div>
           <div class="vi__tile">
-            <span class="vi__value" translate="no">{{ rupees(r.costPaise) }}</span>AI cost
+            <span class="vi__value" translate="no">{{ rupees(r.costPaise) }}</span
+            >AI cost
             <small translate="no">{{ rupees(r.costPerCallPaise) }} a call</small>
           </div>
           <div class="vi__tile">
@@ -210,7 +214,8 @@ function day(date: Date): string {
             <small translate="no">{{ rupees(r.staffCostPaise) }}</small>
           </div>
           <div class="vi__tile" [class.vi__loss]="r.netSavingPaise < 0">
-            <span class="vi__value" translate="no">{{ rupees(r.netSavingPaise) }}</span>estimated saving
+            <span class="vi__value" translate="no">{{ rupees(r.netSavingPaise) }}</span
+            >estimated saving
             <small translate="no">Net estimated benefit</small>
           </div>
         </section>
@@ -224,7 +229,8 @@ function day(date: Date): string {
               <div class="metric-row">
                 <span class="metric-row__label">Channel Mix (WhatsApp / Web / Phone / SIP)</span>
                 <span class="metric-row__val" translate="no">
-                  {{ r.whatsAppCalls }} / {{ r.websiteCalls }} / {{ r.phoneCalls }} / {{ r.sipCalls }}
+                  {{ r.whatsAppCalls }} / {{ r.websiteCalls }} / {{ r.phoneCalls }} /
+                  {{ r.sipCalls }}
                 </span>
               </div>
               <div class="metric-row">
@@ -232,7 +238,9 @@ function day(date: Date): string {
                 <span class="metric-row__val" translate="no">{{ r.outboundCalls }}</span>
               </div>
               <div class="metric-row">
-                <span class="metric-row__label">Fully Resolved by AI (without agent intervention)</span>
+                <span class="metric-row__label"
+                  >Fully Resolved by AI (without agent intervention)</span
+                >
                 <span class="metric-row__val text-good" translate="no">{{ r.handledByAi }}</span>
               </div>
               <div class="metric-row">
@@ -303,7 +311,9 @@ function day(date: Date): string {
               aria-label="Performance Breakdown by Agent"
             >
               <table class="ar-table">
-                <caption class="sr-only">Performance Breakdown by Agent</caption>
+                <caption class="sr-only">
+                  Performance Breakdown by Agent
+                </caption>
                 <thead>
                   <tr>
                     <th scope="col">Agent Persona</th>
@@ -327,7 +337,9 @@ function day(date: Date): string {
                           <span class="text-muted">–</span>
                         }
                       </td>
-                      <td class="text-right font-mono font-medium" translate="no">{{ rupees(a.costPaise) }}</td>
+                      <td class="text-right font-mono font-medium" translate="no">
+                        {{ rupees(a.costPaise) }}
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -337,7 +349,8 @@ function day(date: Date): string {
         }
 
         <p class="vi__footnote">
-          * Staff time savings are calculated from the handling minutes and hourly wage entered above for calls the AI completed to end. AI costs reflect recorded provider consumption.
+          * Staff time savings are calculated from the handling minutes and hourly wage entered
+          above for calls the AI completed to end. AI costs reflect recorded provider consumption.
         </p>
       }
     </main>
@@ -405,7 +418,9 @@ function day(date: Date): string {
       box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
       font-size: 0.85rem;
       color: var(--ar-ink-500);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
     }
 
     .vi__tile:hover {

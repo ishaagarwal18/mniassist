@@ -982,6 +982,7 @@
     "POST /api/auto-reach/user-security-admin/{}/set-password",
     "POST /api/auto-reach/user-security-admin/{}/unlock",
     "POST /api/auto-reach/vendor-bill",
+    "POST /api/auto-reach/vendor-bill-reader/read",
     "POST /api/auto-reach/vendor-bill/from-grn/{}",
     "POST /api/auto-reach/vendor-bill/{}/approve",
     "POST /api/auto-reach/vendor-bill/{}/cancel",

@@ -256,7 +256,9 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
           aria-label="Bill of Materials Catalog"
         >
           <table class="ar-table">
-            <caption class="sr-only">Bill of Materials Catalog</caption>
+            <caption class="sr-only">
+              Bill of Materials Catalog
+            </caption>
             <thead>
               <tr>
                 <th scope="col">BOM Number</th>
@@ -339,7 +341,9 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
     <!-- BOM Tree & Details Dialog -->
     <ar-dialog
       *ngIf="selectedBom()"
-      [title]="'BOM Structure: ' + selectedBom()!.bomNumber + ' (' + selectedBom()!.revisionCode + ')'"
+      [title]="
+        'BOM Structure: ' + selectedBom()!.bomNumber + ' (' + selectedBom()!.revisionCode + ')'
+      "
       width="min(860px, calc(100vw - 32px))"
       (dismiss)="selectedBom.set(null)"
     >
@@ -347,9 +351,12 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
         <div class="meta-row">
           <div>
             <span class="meta-label">Assembly Part</span>
-            <h4 class="assembly-name">{{ b.finishedGoodPartNumber }} — {{ b.finishedGoodDescription }}</h4>
+            <h4 class="assembly-name">
+              {{ b.finishedGoodPartNumber }} — {{ b.finishedGoodDescription }}
+            </h4>
             <p class="sub-text">
-              Base Quantity: {{ b.baseQuantity }} {{ b.finishedGoodUom }} | Revision: {{ b.revisionCode }}
+              Base Quantity: {{ b.baseQuantity }} {{ b.finishedGoodUom }} | Revision:
+              {{ b.revisionCode }}
             </p>
           </div>
           <div class="meta-status">
@@ -376,7 +383,9 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
           aria-label="Component Explosion Table"
         >
           <table class="ar-table">
-            <caption class="sr-only">Component Explosion Table</caption>
+            <caption class="sr-only">
+              Component Explosion Table
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Seq</th>
@@ -516,7 +525,9 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
           aria-label="Component Input Table"
         >
           <table class="ar-table">
-            <caption class="sr-only">Component Input Table</caption>
+            <caption class="sr-only">
+              Component Input Table
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Part No</th>
@@ -570,7 +581,10 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
                   />
                 </td>
                 <td>
-                  <select class="ar-field__input table-input input-sm" [(ngModel)]="item.routingStage">
+                  <select
+                    class="ar-field__input table-input input-sm"
+                    [(ngModel)]="item.routingStage"
+                  >
                     <option [ngValue]="RoutingStage.MaterialKitting">Kitting</option>
                     <option [ngValue]="RoutingStage.Machining">Machining</option>
                     <option [ngValue]="RoutingStage.Fabrication">Fabrication</option>
@@ -587,7 +601,9 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
                   />
                 </td>
                 <td>
-                  <button ar-button variant="ghost" (click)="removeItem(i)" title="Remove item">✕</button>
+                  <button ar-button variant="ghost" (click)="removeItem(i)" title="Remove item">
+                    ✕
+                  </button>
                 </td>
               </tr>
             </tbody>

@@ -120,7 +120,14 @@ interface WidgetForm extends Omit<VoiceWebWidgetInput, 'allowedOrigins'> {
 
       @if (!form()) {
         <div class="ww__create-row">
-          <button ar-button type="button" variant="primary" icon="plus" [disabled]="busy()" (click)="edit(null)">
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            icon="plus"
+            [disabled]="busy()"
+            (click)="edit(null)"
+          >
             Add a call button
           </button>
         </div>
@@ -141,7 +148,8 @@ interface WidgetForm extends Omit<VoiceWebWidgetInput, 'allowedOrigins'> {
               {{ f.id ? 'Edit Call Button' : 'New Website Call Button' }}
             </h2>
             <p class="form-card__subtitle">
-              Generates a single lightweight script tag. Visitors can talk to your voice agent from their browser with no phone line needed.
+              Generates a single lightweight script tag. Visitors can talk to your voice agent from
+              their browser with no phone line needed.
             </p>
           </div>
 
@@ -168,7 +176,9 @@ interface WidgetForm extends Omit<VoiceWebWidgetInput, 'allowedOrigins'> {
                   [disabled]="busy()"
                 >
                   @for (c of channels(); track c.id) {
-                    <option [ngValue]="c.id">{{ c.verifiedName }} · {{ c.displayPhoneNumber }}</option>
+                    <option [ngValue]="c.id">
+                      {{ c.verifiedName }} · {{ c.displayPhoneNumber }}
+                    </option>
                   }
                 </select>
               </label>
@@ -317,7 +327,9 @@ interface WidgetForm extends Omit<VoiceWebWidgetInput, 'allowedOrigins'> {
               <div class="widget-card__meter-section">
                 <div class="meter-head">
                   <span class="meter-label">Daily Call Quota</span>
-                  <span class="meter-val" translate="no">{{ w.callsToday }}/{{ w.dailyLimit }} calls</span>
+                  <span class="meter-val" translate="no"
+                    >{{ w.callsToday }}/{{ w.dailyLimit }} calls</span
+                  >
                 </div>
                 <div class="meter-track">
                   <div
@@ -359,13 +371,31 @@ interface WidgetForm extends Omit<VoiceWebWidgetInput, 'allowedOrigins'> {
 
               <footer class="widget-card__footer">
                 <div class="widget-card__actions">
-                  <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="edit(w)">
+                  <button
+                    ar-button
+                    type="button"
+                    variant="primary"
+                    [disabled]="busy()"
+                    (click)="edit(w)"
+                  >
                     Edit Settings
                   </button>
-                  <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="rotate(w)">
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="busy()"
+                    (click)="rotate(w)"
+                  >
                     Rotate API Key
                   </button>
-                  <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="remove(w)">
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="busy()"
+                    (click)="remove(w)"
+                  >
                     Delete
                   </button>
                 </div>
@@ -375,7 +405,9 @@ interface WidgetForm extends Omit<VoiceWebWidgetInput, 'allowedOrigins'> {
             <div class="ww__empty-state">
               <ar-icon name="phone" class="empty-icon" />
               <h3>No Website Call Buttons Created</h3>
-              <p>Add a button to let visitors trigger direct AI voice calls right from your website.</p>
+              <p>
+                Add a button to let visitors trigger direct AI voice calls right from your website.
+              </p>
               <button ar-button type="button" variant="primary" (click)="edit(null)">
                 + Add Call Button
               </button>
@@ -385,7 +417,8 @@ interface WidgetForm extends Omit<VoiceWebWidgetInput, 'allowedOrigins'> {
       </section>
 
       <p class="ww__note">
-        Calls stop for the day once the daily quota is reached. Rate limiting prevents repeat nuisance calls from the same network.
+        Calls stop for the day once the daily quota is reached. Rate limiting prevents repeat
+        nuisance calls from the same network.
       </p>
     </main>
   `,
@@ -586,9 +619,15 @@ interface WidgetForm extends Omit<VoiceWebWidgetInput, 'allowedOrigins'> {
       border-radius: 4px;
     }
 
-    .w-75 { width: 75%; }
-    .w-50 { width: 50%; }
-    .w-90 { width: 90%; }
+    .w-75 {
+      width: 75%;
+    }
+    .w-50 {
+      width: 50%;
+    }
+    .w-90 {
+      width: 90%;
+    }
 
     .mock-floating-button {
       position: absolute;
@@ -641,7 +680,9 @@ interface WidgetForm extends Omit<VoiceWebWidgetInput, 'allowedOrigins'> {
       flex-direction: column;
       gap: 16px;
       box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
     }
 
     .widget-card:hover {

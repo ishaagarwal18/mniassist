@@ -1090,7 +1090,12 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
             </div>
           </div>
 
-          <div class="table-responsive" tabindex="0" role="region" aria-label="Strategic Projection Matrix">
+          <div
+            class="table-responsive"
+            tabindex="0"
+            role="region"
+            aria-label="Strategic Projection Matrix"
+          >
             <table class="projection-table">
               <thead>
                 <tr>
@@ -1309,13 +1314,21 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
                 <div class="plan-meta-stats">
                   <span
                     >Target Revenue:
-                    <strong class="tabular-nums">{{ formatPaise(p.targetRevenueInPaise) }}</strong></span
+                    <strong class="tabular-nums">{{
+                      formatPaise(p.targetRevenueInPaise)
+                    }}</strong></span
                   >
                   <span
-                    >Margin: <strong class="tabular-nums">{{ p.targetGrossMarginPercent.toFixed(1) }}%</strong></span
+                    >Margin:
+                    <strong class="tabular-nums"
+                      >{{ p.targetGrossMarginPercent.toFixed(1) }}%</strong
+                    ></span
                   >
                   <span
-                    >EBITDA: <strong class="tabular-nums">{{ formatPaiseCompact(p.targetEbitdaInPaise) }}</strong></span
+                    >EBITDA:
+                    <strong class="tabular-nums">{{
+                      formatPaiseCompact(p.targetEbitdaInPaise)
+                    }}</strong></span
                   >
                 </div>
               </div>
@@ -1362,11 +1375,23 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
             </div>
             <div class="form-row">
               <label for="genGrowth">Annual Growth Rate Target (%)</label>
-              <input id="genGrowth" type="number" [(ngModel)]="genGrowthRate" step="0.5" class="form-input" />
+              <input
+                id="genGrowth"
+                type="number"
+                [(ngModel)]="genGrowthRate"
+                step="0.5"
+                class="form-input"
+              />
             </div>
             <div class="form-row">
               <label for="genMargin">Target Gross Margin (%)</label>
-              <input id="genMargin" type="number" [(ngModel)]="genGrossMargin" step="0.5" class="form-input" />
+              <input
+                id="genMargin"
+                type="number"
+                [(ngModel)]="genGrossMargin"
+                step="0.5"
+                class="form-input"
+              />
             </div>
             <div class="form-row">
               <label for="genHoriz">Planning Horizon</label>
@@ -1498,7 +1523,9 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         box-shadow: var(--ar-shadow-card);
         position: relative;
         overflow: hidden;
-        transition: transform var(--ar-ease), box-shadow var(--ar-ease);
+        transition:
+          transform var(--ar-ease),
+          box-shadow var(--ar-ease);
       }
 
       .kpi-card:hover {
@@ -1672,7 +1699,9 @@ const MOCK_SCENARIO_RESULT: ScenarioAnalysisResultDto = {
         flex-direction: column;
         gap: 0.5rem;
         border: 1px solid var(--ar-line-200);
-        transition: border-color var(--ar-ease), background var(--ar-ease);
+        transition:
+          border-color var(--ar-ease),
+          background var(--ar-ease);
       }
 
       .trajectory-item:hover,

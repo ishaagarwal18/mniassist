@@ -103,14 +103,21 @@
     @if (t.targetInPaise) {
       <div class="fc__meter-wrap">
         <div class="fc__meter-head">
-          <span>Target Attainment Progress: {{ pct(t.attainment) }}% Closed · {{ pct(t.projectedAttainment) }}% Expected</span>
+          <span
+            >Target Attainment Progress: {{ pct(t.attainment) }}% Closed ·
+            {{ pct(t.projectedAttainment) }}% Expected</span
+          >
           <span>Target: {{ money(t.targetInPaise) }}</span>
         </div>
         <div
           class="fc__meter"
           role="img"
           [attr.aria-label]="
-            'Closed ' + pct(t.attainment) + ', expected ' + pct(t.projectedAttainment) + ' of target'
+            'Closed ' +
+            pct(t.attainment) +
+            ', expected ' +
+            pct(t.projectedAttainment) +
+            ' of target'
           "
         >
           <span class="fc__meter-exp" [style.width.%]="expectedShare()"></span>

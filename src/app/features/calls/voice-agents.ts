@@ -1,6 +1,13 @@
 import { LocalizationPipe } from '@abp/ng.core';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ArTopbar } from '../../layout/topbar';
@@ -89,7 +96,9 @@ import { ArVoiceFunctions } from './voice-functions';
 
         <form class="create-form create" (submit)="$event.preventDefault(); create()">
           <label class="ar-field">
-            <span class="ar-field__label">{{ 'AutoReach::SharedAgents.Name' | abpLocalization }}</span>
+            <span class="ar-field__label">{{
+              'AutoReach::SharedAgents.Name' | abpLocalization
+            }}</span>
             <input
               class="ar-field__input"
               name="name"
@@ -101,7 +110,9 @@ import { ArVoiceFunctions } from './voice-functions';
             />
           </label>
           <label class="ar-field">
-            <span class="ar-field__label">{{ 'AutoReach::SharedAgents.CopyFrom' | abpLocalization }}</span>
+            <span class="ar-field__label">{{
+              'AutoReach::SharedAgents.CopyFrom' | abpLocalization
+            }}</span>
             <select
               class="ar-field__input"
               name="copyFrom"
@@ -118,7 +129,12 @@ import { ArVoiceFunctions } from './voice-functions';
             </select>
           </label>
           <div class="create-form__actions">
-            <button ar-button type="submit" variant="primary" [disabled]="busy() || !newName().trim()">
+            <button
+              ar-button
+              type="submit"
+              variant="primary"
+              [disabled]="busy() || !newName().trim()"
+            >
               {{ 'AutoReach::SharedAgents.Create' | abpLocalization }}
             </button>
           </div>
@@ -151,12 +167,18 @@ import { ArVoiceFunctions } from './voice-functions';
                       {{ 'AutoReach::VoiceAgent.Type.' + agent.type | abpLocalization }}
                     </span>
                     @if (agent.isPublished) {
-                      <ar-chip tone="good" [dot]="true">{{ 'AutoReach::SharedAgents.Published' | abpLocalization }}</ar-chip>
+                      <ar-chip tone="good" [dot]="true">{{
+                        'AutoReach::SharedAgents.Published' | abpLocalization
+                      }}</ar-chip>
                     } @else {
-                      <ar-chip tone="neutral">{{ 'AutoReach::SharedAgents.NotPublished' | abpLocalization }}</ar-chip>
+                      <ar-chip tone="neutral">{{
+                        'AutoReach::SharedAgents.NotPublished' | abpLocalization
+                      }}</ar-chip>
                     }
                     @if (agent.hasUnpublishedChanges) {
-                      <ar-chip tone="amber">{{ 'AutoReach::SharedAgents.Unpublished' | abpLocalization }}</ar-chip>
+                      <ar-chip tone="amber">{{
+                        'AutoReach::SharedAgents.Unpublished' | abpLocalization
+                      }}</ar-chip>
                     }
                   </div>
                   <h2 class="agent-card__name">{{ agent.name }}</h2>
@@ -166,15 +188,24 @@ import { ArVoiceFunctions } from './voice-functions';
               <div class="agent-card__body">
                 <div class="agent-card__section-label">
                   <ar-icon name="phone" class="icon-sm" />
-                  <span>{{ 'AutoReach::SharedAgents.Numbers' | abpLocalization }} ({{ agent.numbers.length }})</span>
+                  <span
+                    >{{ 'AutoReach::SharedAgents.Numbers' | abpLocalization }} ({{
+                      agent.numbers.length
+                    }})</span
+                  >
                 </div>
 
                 @if (agent.numbers.length) {
-                  <ul class="agent-card__number-list numbers" [attr.aria-label]="'AutoReach::SharedAgents.Numbers' | abpLocalization">
+                  <ul
+                    class="agent-card__number-list numbers"
+                    [attr.aria-label]="'AutoReach::SharedAgents.Numbers' | abpLocalization"
+                  >
                     @for (number of agent.numbers; track number.channelId) {
                       <li class="number-tag">
                         <span class="number-tag__name">{{ number.name }}</span>
-                        <span class="number-tag__phone" translate="no">{{ number.phoneNumber }}</span>
+                        <span class="number-tag__phone" translate="no">{{
+                          number.phoneNumber
+                        }}</span>
                         <button
                           type="button"
                           class="number-tag__remove link"
@@ -189,7 +220,9 @@ import { ArVoiceFunctions } from './voice-functions';
                     }
                   </ul>
                 } @else {
-                  <p class="agent-card__empty-numbers">{{ 'AutoReach::SharedAgents.NoNumbers' | abpLocalization }}</p>
+                  <p class="agent-card__empty-numbers">
+                    {{ 'AutoReach::SharedAgents.NoNumbers' | abpLocalization }}
+                  </p>
                 }
 
                 @if (!agent.isPublished && agent.numbers.length) {
@@ -206,19 +239,24 @@ import { ArVoiceFunctions } from './voice-functions';
                     {{ 'AutoReach::SharedAgents.Edit' | abpLocalization }}
                   </button>
                   <label class="assign-select assign">
-                    <span class="sr-only">{{ 'AutoReach::SharedAgents.AssignTo' | abpLocalization }}</span>
+                    <span class="sr-only">{{
+                      'AutoReach::SharedAgents.AssignTo' | abpLocalization
+                    }}</span>
                     <select
                       class="ar-field__input assign-select__input"
                       [attr.aria-label]="'AutoReach::SharedAgents.AssignTo' | abpLocalization"
                       [disabled]="busy()"
                       (change)="assign(agent, $any($event.target)); $any($event.target).value = ''"
                     >
-                      <option value="">+ {{ 'AutoReach::SharedAgents.AssignTo' | abpLocalization }}</option>
+                      <option value="">
+                        + {{ 'AutoReach::SharedAgents.AssignTo' | abpLocalization }}
+                      </option>
                       @for (number of assignable(agent); track number.channelId) {
                         <option [value]="number.channelId">
                           {{ number.name }} · {{ number.phoneNumber }}
                           @if (number.agentName) {
-                            ({{ 'AutoReach::SharedAgents.MovesFrom' | abpLocalization }} {{ number.agentName }})
+                            ({{ 'AutoReach::SharedAgents.MovesFrom' | abpLocalization }}
+                            {{ number.agentName }})
                           }
                         </option>
                       }
@@ -242,7 +280,13 @@ import { ArVoiceFunctions } from './voice-functions';
                   <div class="agent-card__confirm-delete" role="alert">
                     <span>{{ 'AutoReach::SharedAgents.ConfirmDelete' | abpLocalization }}</span>
                     <div class="confirm-actions">
-                      <button ar-button type="button" variant="danger" [disabled]="busy()" (click)="remove(agent.id)">
+                      <button
+                        ar-button
+                        type="button"
+                        variant="danger"
+                        [disabled]="busy()"
+                        (click)="remove(agent.id)"
+                      >
                         {{ 'AutoReach::SharedAgents.Delete' | abpLocalization }}
                       </button>
                       <button ar-button type="button" variant="ghost" (click)="deleting.set(null)">
@@ -254,28 +298,46 @@ import { ArVoiceFunctions } from './voice-functions';
 
                 @if (historyFor() === agent.id) {
                   <div class="agent-card__history-pane">
-                    <div class="ar-table-responsive" tabindex="0" role="region" [attr.aria-label]="'AutoReach::SharedAgents.History' | abpLocalization">
+                    <div
+                      class="ar-table-responsive"
+                      tabindex="0"
+                      role="region"
+                      [attr.aria-label]="'AutoReach::SharedAgents.History' | abpLocalization"
+                    >
                       <table class="ar-table history">
-                        <caption class="sr-only">{{ 'AutoReach::SharedAgents.History' | abpLocalization }}</caption>
+                        <caption class="sr-only">
+                          {{
+                            'AutoReach::SharedAgents.History' | abpLocalization
+                          }}
+                        </caption>
                         <thead>
                           <tr>
-                            <th scope="col">{{ 'AutoReach::SharedAgents.Number' | abpLocalization }}</th>
-                            <th scope="col">{{ 'AutoReach::SharedAgents.Assigned' | abpLocalization }}</th>
-                            <th scope="col">{{ 'AutoReach::SharedAgents.Ended' | abpLocalization }}</th>
+                            <th scope="col">
+                              {{ 'AutoReach::SharedAgents.Number' | abpLocalization }}
+                            </th>
+                            <th scope="col">
+                              {{ 'AutoReach::SharedAgents.Assigned' | abpLocalization }}
+                            </th>
+                            <th scope="col">
+                              {{ 'AutoReach::SharedAgents.Ended' | abpLocalization }}
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
                           @for (row of history(); track $index) {
                             <tr>
                               <td class="font-medium">
-                                {{ row.channelName }} · <span translate="no">{{ row.phoneNumber }}</span>
+                                {{ row.channelName }} ·
+                                <span translate="no">{{ row.phoneNumber }}</span>
                               </td>
                               <td>
-                                {{ row.assignedAtUtc | date: 'medium' }} <span class="text-muted">· {{ row.assignedBy || '—' }}</span>
+                                {{ row.assignedAtUtc | date: 'medium' }}
+                                <span class="text-muted">· {{ row.assignedBy || '—' }}</span>
                               </td>
                               <td>
                                 @if (row.endedAtUtc) {
-                                  {{ row.endedAtUtc | date: 'medium' }} <span class="text-muted">· {{ row.endedBy || '—' }}</span>
+                                  {{ row.endedAtUtc | date: 'medium' }}
+                                  <span class="text-muted">· {{ row.endedBy || '—' }}</span>
                                 } @else {
                                   {{ 'AutoReach::SharedAgents.Current' | abpLocalization }}
                                 }
@@ -419,7 +481,9 @@ import { ArVoiceFunctions } from './voice-functions';
       flex-direction: column;
       gap: 16px;
       box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
     }
 
     .agent-card:hover {

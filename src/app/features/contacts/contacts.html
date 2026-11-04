@@ -11,9 +11,7 @@
     </button>
   }
   @if (canCreate()) {
-    <a ar-button variant="primary" icon="plus" [routerLink]="['/contacts/new']">
-      New contact
-    </a>
+    <a ar-button variant="primary" icon="plus" [routerLink]="['/contacts/new']"> New contact </a>
   }
 </ar-topbar>
 
@@ -36,7 +34,13 @@
         <span
           class="segs__collapsed-tag"
           [attr.aria-label]="'Segments: ' + activeSegmentName() + ' selected'"
-          [title]="'Filter by segment · Active: ' + activeSegmentName() + ' (' + count(segmentCount()) + ')'"
+          [title]="
+            'Filter by segment · Active: ' +
+            activeSegmentName() +
+            ' (' +
+            count(segmentCount()) +
+            ')'
+          "
         >
           <ar-icon name="filter" [size]="14" />
         </span>
@@ -99,7 +103,13 @@
               [class.seg-mini--on]="s.id === activeSegment()"
               [attr.aria-pressed]="s.id === activeSegment()"
               [attr.aria-label]="s.name + ': ' + count(s.count) + ' contacts'"
-              [title]="s.name + ': ' + count(s.count) + ' contacts' + (s.id === activeSegment() ? ' (Selected)' : '')"
+              [title]="
+                s.name +
+                ': ' +
+                count(s.count) +
+                ' contacts' +
+                (s.id === activeSegment() ? ' (Selected)' : '')
+              "
               (click)="activeSegment.set(s.id)"
             >
               <span class="seg-mini__bar" aria-hidden="true"></span>
@@ -108,9 +118,7 @@
             </button>
             <div class="seg-mini__flyout" role="tooltip">
               <span class="seg-mini__flyout-name">{{ s.name }}</span>
-              <span class="seg-mini__flyout-meta">
-                {{ count(s.count) }} contacts
-              </span>
+              <span class="seg-mini__flyout-meta"> {{ count(s.count) }} contacts </span>
               <span
                 class="seg-mini__flyout-status"
                 [class.seg-mini__flyout-status--active]="s.id === activeSegment()"
@@ -130,7 +138,9 @@
             tabindex="0"
             role="status"
             [attr.aria-label]="'Suppressed: ' + count(suppressedTotal()) + ' contacts'"
-            [title]="'Suppressed: ' + count(suppressedTotal()) + ' contacts (opted out, invalid, blocked)'"
+            [title]="
+              'Suppressed: ' + count(suppressedTotal()) + ' contacts (opted out, invalid, blocked)'
+            "
           >
             <ar-icon name="shield" [size]="16" />
             <span class="seg-mini__count">{{ compactCount(suppressedTotal()) }}</span>
@@ -312,7 +322,9 @@
         </ejs-grid>
 
         <p class="table-pane__foot">
-          Showing {{ count(visible().length) }} of {{ count(segmentCount()) }} in “{{ activeSegmentName() }}”
+          Showing {{ count(visible().length) }} of {{ count(segmentCount()) }} in “{{
+            activeSegmentName()
+          }}”
         </p>
       }
     </div>

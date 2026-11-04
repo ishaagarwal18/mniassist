@@ -431,7 +431,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
                   <div class="item-customer">{{ ses.contactName }}</div>
                   <div class="item-quote">Quote: {{ ses.quotationReference }}</div>
                   <div class="item-metrics">
-                    <span class="metric-val tabular-nums">{{ formatInr(ses.currentAmountInPaise) }}</span>
+                    <span class="metric-val tabular-nums">{{
+                      formatInr(ses.currentAmountInPaise)
+                    }}</span>
                     <span class="metric-margin tabular-nums"
                       >Margin: {{ ses.currentMarginPercent | number: '1.1-1' }}%</span
                     >
@@ -482,12 +484,16 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
               <div class="financial-meter-strip">
                 <div class="meter-stat">
                   <div class="meter-stat-label">Original Quote</div>
-                  <div class="meter-stat-value tabular-nums">{{ formatInr(ses.originalAmountInPaise) }}</div>
+                  <div class="meter-stat-value tabular-nums">
+                    {{ formatInr(ses.originalAmountInPaise) }}
+                  </div>
                   <div class="meter-stat-sub">Target Margin: {{ ses.originalMarginPercent }}%</div>
                 </div>
                 <div class="meter-stat">
                   <div class="meter-stat-label">Estimated Cost Basis</div>
-                  <div class="meter-stat-value tabular-nums">{{ formatInr(ses.estimatedCostInPaise) }}</div>
+                  <div class="meter-stat-value tabular-nums">
+                    {{ formatInr(ses.estimatedCostInPaise) }}
+                  </div>
                   <div class="meter-stat-sub">Direct factory BOM</div>
                 </div>
                 <div class="meter-stat">
@@ -647,7 +653,12 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
             <div class="form-grid">
               <div class="form-group">
                 <label for="polName">Policy Name</label>
-                <input id="polName" type="text" class="form-control" [(ngModel)]="policyForm.name" />
+                <input
+                  id="polName"
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="policyForm.name"
+                />
               </div>
 
               <div class="form-group">
@@ -697,7 +708,12 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
 
               <div class="form-group">
                 <label for="polRounds">Max Back-and-Forth Rounds</label>
-                <input id="polRounds" type="number" class="form-control" [(ngModel)]="policyForm.maxRounds" />
+                <input
+                  id="polRounds"
+                  type="number"
+                  class="form-control"
+                  [(ngModel)]="policyForm.maxRounds"
+                />
                 <span class="field-hint">Number of counter-offers before Best & Final Offer</span>
               </div>
 
@@ -793,12 +809,22 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
 
               <div class="form-group">
                 <label for="simQuote">Initial Quotation Amount (₹)</label>
-                <input id="simQuote" type="number" class="form-control" [(ngModel)]="simQuoteRupees" />
+                <input
+                  id="simQuote"
+                  type="number"
+                  class="form-control"
+                  [(ngModel)]="simQuoteRupees"
+                />
               </div>
 
               <div class="form-group">
                 <label for="simCost">Estimated Factory Cost Basis (₹)</label>
-                <input id="simCost" type="number" class="form-control" [(ngModel)]="simCostRupees" />
+                <input
+                  id="simCost"
+                  type="number"
+                  class="form-control"
+                  [(ngModel)]="simCostRupees"
+                />
               </div>
 
               <div class="form-group">
@@ -915,7 +941,12 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
 
           <div class="form-group">
             <label for="intAmt">Approved Amount (₹)</label>
-            <input id="intAmt" type="number" class="form-control" [(ngModel)]="interventionFormRupees" />
+            <input
+              id="intAmt"
+              type="number"
+              class="form-control"
+              [(ngModel)]="interventionFormRupees"
+            />
           </div>
 
           <div class="form-group">
@@ -980,7 +1011,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         gap: 0.25rem;
         position: relative;
         overflow: hidden;
-        transition: transform var(--ar-ease), box-shadow var(--ar-ease);
+        transition:
+          transform var(--ar-ease),
+          box-shadow var(--ar-ease);
       }
       .kpi-card:hover {
         transform: translateY(-1px);
@@ -1097,7 +1130,9 @@ const MOCK_SESSIONS: NegotiationSessionDto[] = [
         padding: 0.875rem 1rem;
         border-bottom: 1px solid var(--ar-line-200);
         cursor: pointer;
-        transition: background var(--ar-ease), border-color var(--ar-ease);
+        transition:
+          background var(--ar-ease),
+          border-color var(--ar-ease);
       }
       .session-item:hover {
         background: var(--ar-bg-50);

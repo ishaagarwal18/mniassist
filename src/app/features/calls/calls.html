@@ -17,17 +17,23 @@
       <span class="cl__kpi-sub">Lifetime activity</span>
     </div>
     <div class="cl__kpi-card">
-      <span class="cl__kpi-val text-primary tabular-nums">{{ stats().inbound }} / {{ stats().outbound }}</span>
+      <span class="cl__kpi-val text-primary tabular-nums"
+        >{{ stats().inbound }} / {{ stats().outbound }}</span
+      >
       <span class="cl__kpi-lbl">Inbound / Outbound</span>
       <span class="cl__kpi-sub">Direction ratio</span>
     </div>
     <div class="cl__kpi-card" [class.cl__kpi-card--amber]="stats().waiting > 0">
-      <span class="cl__kpi-val" [class.text-amber]="stats().waiting > 0" class="tabular-nums">{{ stats().waiting }}</span>
+      <span class="cl__kpi-val" [class.text-amber]="stats().waiting > 0" class="tabular-nums">{{
+        stats().waiting
+      }}</span>
       <span class="cl__kpi-lbl">Needs Outcome</span>
       <span class="cl__kpi-sub">Pending rep log</span>
     </div>
     <div class="cl__kpi-card" [class.cl__kpi-card--teal]="stats().live > 0">
-      <span class="cl__kpi-val" [class.text-accent]="stats().live > 0" class="tabular-nums">{{ stats().live }}</span>
+      <span class="cl__kpi-val" [class.text-accent]="stats().live > 0" class="tabular-nums">{{
+        stats().live
+      }}</span>
       <span class="cl__kpi-lbl">Live In-Progress</span>
       <span class="cl__kpi-sub">Ringing / Talking</span>
     </div>
@@ -136,7 +142,9 @@
                   class="cl__transcript-toggle"
                 >
                   <ar-icon [name]="transcriptOf() === c.id ? 'chevdown' : 'document'" [size]="14" />
-                  {{ transcriptOf() === c.id ? 'Hide AI Call Transcript' : 'View AI Call Transcript' }}
+                  {{
+                    transcriptOf() === c.id ? 'Hide AI Call Transcript' : 'View AI Call Transcript'
+                  }}
                 </button>
                 @if (transcriptOf() === c.id) {
                   @if (transcript(); as t) {
@@ -159,7 +167,9 @@
                       </ol>
                       <div class="cl__transcript-meta">
                         @if (t.transcriptIncomplete) {
-                          <span class="cl__meta-pill cl__meta-pill--warn">Some words at the end may be missing</span>
+                          <span class="cl__meta-pill cl__meta-pill--warn"
+                            >Some words at the end may be missing</span
+                          >
                         }
                         @if (t.latency?.replies) {
                           <span class="cl__meta-pill">
@@ -183,9 +193,7 @@
 
           <div class="cl__act">
             @if (needs(c)) {
-              <button ar-button variant="primary" (click)="editing.set(c)">
-                Say how it went
-              </button>
+              <button ar-button variant="primary" (click)="editing.set(c)">Say how it went</button>
             } @else if (c.isOver && c.mode !== Mode.Ivr) {
               <button ar-button variant="ghost" (click)="editing.set(c)">Edit</button>
             } @else if (!c.isOver) {
@@ -199,9 +207,7 @@
       } @empty {
         <li class="cl__empty">
           {{
-            waiting()
-              ? 'Nothing is waiting for an outcome.'
-              : 'No calls match the selected filter.'
+            waiting() ? 'Nothing is waiting for an outcome.' : 'No calls match the selected filter.'
           }}
         </li>
       }

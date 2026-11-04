@@ -56,7 +56,12 @@ describe('accounts-tree.logic', () => {
 
   describe('buildAccountTreeRows', () => {
     it('maps self-referential tree structure correctly with root parentId as null', () => {
-      const parent = dummyAcc({ id: 'parent-1', name: 'Parent Group', childCount: 1, contactCount: 2 });
+      const parent = dummyAcc({
+        id: 'parent-1',
+        name: 'Parent Group',
+        childCount: 1,
+        contactCount: 2,
+      });
       const child = dummyAcc({
         id: 'child-1',
         name: 'Subsidiary Plant',
@@ -159,11 +164,14 @@ describe('accounts-tree.logic', () => {
     const sub = dummyAcc({ id: 's1', parentId: 'g1', contactCount: 4 });
     const emptyGroup = dummyAcc({ id: 'g2', contactCount: 0 });
 
-    const tree = buildAccountTreeRows([group, sub, emptyGroup], [
-      { account: group, depth: 1, subtreeContacts: 6 },
-      { account: sub, depth: 2, subtreeContacts: 4 },
-      { account: emptyGroup, depth: 1, subtreeContacts: 0 },
-    ]);
+    const tree = buildAccountTreeRows(
+      [group, sub, emptyGroup],
+      [
+        { account: group, depth: 1, subtreeContacts: 6 },
+        { account: sub, depth: 2, subtreeContacts: 4 },
+        { account: emptyGroup, depth: 1, subtreeContacts: 0 },
+      ],
+    );
 
     it('returns all when preset is all', () => {
       expect(filterAccountTree(tree, 'all')).toHaveLength(3);
