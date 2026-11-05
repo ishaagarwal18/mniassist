@@ -459,7 +459,8 @@ export class ArSettings {
 
   protected readonly categoryCounts = computed(() => {
     const list = this.authorizedSettings();
-    const counts: Record<string, number> = { All: list.length };
+    // Partial: a category the user may see nothing in has no entry, and the pill shows 0 for it.
+    const counts: Partial<Record<string, number>> = { All: list.length };
     for (const item of list) {
       counts[item.category] = (counts[item.category] ?? 0) + 1;
     }
