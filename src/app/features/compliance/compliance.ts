@@ -8,6 +8,8 @@ import { ArButton, ArChip, ArDialog, ArStatTile } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ArAiCallCompliance } from './ai-calls';
 import { ChipTone } from '../../ui/chip';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 
@@ -35,6 +37,8 @@ const KIND_LABEL: Record<ReqKind, string> = {
     DecimalPipe,
     ArSelect,
     ArAiCallCompliance,
+    ArGrid,
+    GridModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './compliance.html',

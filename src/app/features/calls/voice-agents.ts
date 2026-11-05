@@ -23,6 +23,8 @@ import {
 } from '../channels/shared-voice-agent.service';
 import { ArVoiceAgentDialog } from '../channels/voice-agent-dialog';
 import { ArVoiceFunctions } from './voice-functions';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 
 /**
  * Voice agents of the workspace rather than of one number. Each is edited, tested, published and versioned in the same window as a
@@ -42,6 +44,8 @@ import { ArVoiceFunctions } from './voice-functions';
     ArStatTile,
     ArVoiceAgentDialog,
     ArVoiceFunctions,
+    ArGrid,
+    GridModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -297,62 +301,43 @@ import { ArVoiceFunctions } from './voice-functions';
                 }
 
                 @if (historyFor() === agent.id) {
-                  <div class="agent-card__history-pane">
-                    <div
-                      class="ar-table-responsive"
-                      tabindex="0"
-                      role="region"
+                  <div class="history agent-card__history-pane">
+                    <ejs-grid
+                      arGrid="voice-agent-assignment-history"
+                      [dataSource]="history()"
                       [attr.aria-label]="'AutoReach::SharedAgents.History' | abpLocalization"
                     >
-                      <table class="ar-table history">
-                        <caption class="sr-only">
-                          {{
-                            'AutoReach::SharedAgents.History' | abpLocalization
-                          }}
-                        </caption>
-                        <thead>
-                          <tr>
-                            <th scope="col">
-                              {{ 'AutoReach::SharedAgents.Number' | abpLocalization }}
-                            </th>
-                            <th scope="col">
-                              {{ 'AutoReach::SharedAgents.Assigned' | abpLocalization }}
-                            </th>
-                            <th scope="col">
-                              {{ 'AutoReach::SharedAgents.Ended' | abpLocalization }}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @for (row of history(); track $index) {
-                            <tr>
-                              <td class="font-medium">
-                                {{ row.channelName }} ·
-                                <span translate="no">{{ row.phoneNumber }}</span>
-                              </td>
-                              <td>
-                                {{ row.assignedAtUtc | date: 'medium' }}
-                                <span class="text-muted">· {{ row.assignedBy || '—' }}</span>
-                              </td>
-                              <td>
-                                @if (row.endedAtUtc) {
-                                  {{ row.endedAtUtc | date: 'medium' }}
-                                  <span class="text-muted">· {{ row.endedBy || '—' }}</span>
-                                } @else {
-                                  {{ 'AutoReach::SharedAgents.Current' | abpLocalization }}
-                                }
-                              </td>
-                            </tr>
-                          } @empty {
-                            <tr>
-                              <td colspan="3" class="text-center text-muted">
-                                {{ 'AutoReach::SharedAgents.NoHistory' | abpLocalization }}
-                              </td>
-                            </tr>
-                          }
-                        </tbody>
-                      </table>
-                    </div>
+                      <e-columns>
+                        <e-column [headerText]="'AutoReach::SharedAgents.Number' | abpLocalization" width="220">
+                          <ng-template #template let-row>
+                            <span class="font-medium">
+                              {{ row.channelName }} ·
+                              <span translate="no">{{ row.phoneNumber }}</span>
+                            </span>
+                          </ng-template>
+                        </e-column>
+                        <e-column [headerText]="'AutoReach::SharedAgents.Assigned' | abpLocalization" width="200">
+                          <ng-template #template let-row>
+                            <div>
+                              {{ row.assignedAtUtc | date: 'medium' }}
+                              <span class="text-muted"> · {{ row.assignedBy || '—' }}</span>
+                            </div>
+                          </ng-template>
+                        </e-column>
+                        <e-column [headerText]="'AutoReach::SharedAgents.Ended' | abpLocalization" width="200">
+                          <ng-template #template let-row>
+                            <div>
+                              @if (row.endedAtUtc) {
+                                {{ row.endedAtUtc | date: 'medium' }}
+                                <span class="text-muted"> · {{ row.endedBy || '—' }}</span>
+                              } @else {
+                                {{ 'AutoReach::SharedAgents.Current' | abpLocalization }}
+                              }
+                            </div>
+                          </ng-template>
+                        </e-column>
+                      </e-columns>
+                    </ejs-grid>
                   </div>
                 }
               </footer>

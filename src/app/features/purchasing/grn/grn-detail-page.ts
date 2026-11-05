@@ -11,6 +11,8 @@ import { CockpitOriginService } from '../../../layout/cockpit-origin.service';
 import { ArTopbar } from '../../../layout/topbar';
 import { GoodsReceiptNoteDto, GoodsReceiptNoteService, GrnStatus } from '../../../proxy/purchasing';
 import { ArButton, ArChip, ArIcon } from '../../../ui';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../../ui/grid';
 import { PURCHASE_FORM_STYLES } from '../purchase-form';
 import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
 import { canInspect } from './grn-inspection.logic';
@@ -22,7 +24,7 @@ import { grnStatusChip, qcChip } from './grn-labels';
  */
 @Component({
   selector: 'ar-grn-detail-page',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, DatePipe, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, ArIcon, DatePipe, RouterLink, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -106,40 +108,45 @@ import { grnStatusChip, qcChip } from './grn-labels';
                 </p>
               </div>
             </header>
-            <div class="gd-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Part no.</th>
-                    <th>Description</th>
-                    <th class="num">Received</th>
-                    <th class="num">Accepted</th>
-                    <th class="num">Rejected</th>
-                    <th>Bin</th>
-                    <th>Rejection reason</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (l of g.lines; track l.id) {
-                    <tr>
-                      <td class="ar-mono">
-                        <strong>{{ l.partNumber }}</strong>
-                      </td>
-                      <td>{{ l.description }}</td>
-                      <td class="num">{{ l.receivedQuantity }} {{ l.unitOfMeasure }}</td>
-                      <td class="num gd-good">{{ l.acceptedQuantity }}</td>
-                      <td class="num" [class.gd-bad]="l.rejectedQuantity > 0">
-                        {{ l.rejectedQuantity }}
-                      </td>
-                      <td>
-                        <span class="gd-bin">{{ l.storageBin || 'Unassigned' }}</span>
-                      </td>
-                      <td class="gd-muted">{{ l.rejectionReason || '—' }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+            <ejs-grid
+              arGrid="goods-receipt-note-lines"
+              [dataSource]="g.lines"
+              aria-label="Received items"
+            >
+              <e-columns>
+                <e-column field="partNumber" headerText="Part no." width="150">
+                  <ng-template #template let-l>
+                    <strong class="ar-mono">{{ l.partNumber }}</strong>
+                  </ng-template>
+                </e-column>
+                <e-column field="description" headerText="Description" width="240"></e-column>
+                <e-column headerText="Received" width="130" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    {{ l.receivedQuantity }} {{ l.unitOfMeasure }}
+                  </ng-template>
+                </e-column>
+                <e-column field="acceptedQuantity" headerText="Accepted" width="110" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    <span class="gd-good">{{ l.acceptedQuantity }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="rejectedQuantity" headerText="Rejected" width="110" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    <span [class.gd-bad]="l.rejectedQuantity > 0">{{ l.rejectedQuantity }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="storageBin" headerText="Bin" width="130">
+                  <ng-template #template let-l>
+                    <span class="gd-bin">{{ l.storageBin || 'Unassigned' }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="rejectionReason" headerText="Rejection reason" width="180">
+                  <ng-template #template let-l>
+                    <span class="gd-muted">{{ l.rejectionReason || '—' }}</span>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           </section>
 
           <footer class="pf__bar">

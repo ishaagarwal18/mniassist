@@ -1,6 +1,7 @@
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -14,6 +15,7 @@ import {
   Gstr3bSummaryDto,
 } from '../../../proxy/finance';
 import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArGrid } from '../../../ui/grid';
 
 const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
   {
@@ -119,7 +121,18 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
 @Component({
   selector: 'app-gst-compliance',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, DecimalPipe, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DatePipe,
+    DecimalPipe,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArGrid,
+    GridModule,
+  ],
   template: `
     <ar-topbar title="GST Compliance & Statutory Auditor (GSTR-1, GSTR-3B, E-Way Bill)">
       <div actions class="topbar-actions">
@@ -192,51 +205,61 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
       <!-- TAB 1: OUTWARD REGISTER & E-WAY / E-INVOICE -->
       <section *ngIf="activeTab() === 'register'" class="tab-content-container">
         <div class="table-card">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Invoice #</th>
-                <th>Date</th>
-                <th>Counterparty & GSTIN</th>
-                <th>Section</th>
-                <th class="text-right">Taxable (₹)</th>
-                <th class="text-right">Tax (₹)</th>
-                <th class="text-right">Total (₹)</th>
-                <th>E-Invoice (IRN)</th>
-                <th>E-Way Bill</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let doc of records()">
-                <td>
+          <ejs-grid
+            arGrid="gst-register"
+            [dataSource]="records()"
+            aria-label="GST Outward Register"
+          >
+            <e-columns>
+              <e-column field="documentNumber" headerText="Invoice #" width="150">
+                <ng-template #template let-doc>
                   <span class="fw-bold font-mono">{{ doc.documentNumber }}</span>
-                </td>
-                <td>{{ doc.documentDateUtc | date: 'mediumDate' }}</td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="documentDateUtc" headerText="Date" width="130">
+                <ng-template #template let-doc>
+                  {{ doc.documentDateUtc | date: 'mediumDate' }}
+                </ng-template>
+              </e-column>
+              <e-column field="counterpartyLegalName" headerText="Counterparty & GSTIN" width="260">
+                <ng-template #template let-doc>
                   <div class="client-block">
                     <span class="client-name">{{ doc.counterpartyLegalName }}</span>
                     <span class="client-gstin font-mono"
                       >{{ doc.counterpartyGstin }} (POS: {{ doc.placeOfSupplyStateCode }})</span
                     >
                   </div>
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="section" headerText="Section" width="130">
+                <ng-template #template let-doc>
                   <span class="section-tag">{{ getSectionLabel(doc.section) }}</span>
-                </td>
-                <td class="text-right font-mono">
-                  ₹{{ doc.taxableAmountInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono text-tax">
-                  ₹{{
-                    (doc.igstAmountInPaise + doc.cgstAmountInPaise + doc.sgstAmountInPaise) / 100
-                      | number: '1.2-2'
-                  }}
-                </td>
-                <td class="text-right font-mono fw-bold">
-                  ₹{{ doc.totalInvoiceValueInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="taxableAmountInPaise" headerText="Taxable (₹)" textAlign="Right" width="140">
+                <ng-template #template let-doc>
+                  <span class="font-mono">₹{{ doc.taxableAmountInPaise / 100 | number: '1.2-2' }}</span>
+                </ng-template>
+              </e-column>
+              <e-column headerText="Tax (₹)" textAlign="Right" width="140">
+                <ng-template #template let-doc>
+                  <span class="font-mono text-tax">
+                    ₹{{
+                      (doc.igstAmountInPaise + doc.cgstAmountInPaise + doc.sgstAmountInPaise) / 100
+                        | number: '1.2-2'
+                    }}
+                  </span>
+                </ng-template>
+              </e-column>
+              <e-column field="totalInvoiceValueInPaise" headerText="Total (₹)" textAlign="Right" width="140">
+                <ng-template #template let-doc>
+                  <span class="font-mono fw-bold">
+                    ₹{{ doc.totalInvoiceValueInPaise / 100 | number: '1.2-2' }}
+                  </span>
+                </ng-template>
+              </e-column>
+              <e-column field="eInvoiceStatus" headerText="E-Invoice (IRN)" width="180">
+                <ng-template #template let-doc>
                   <div class="einvoice-cell">
                     <ar-chip [tone]="getEInvoiceTone(doc.eInvoiceStatus)">
                       {{ getEInvoiceLabel(doc.eInvoiceStatus) }}
@@ -245,8 +268,10 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
                       IRN: {{ doc.irnHash.substring(0, 10) }}...
                     </span>
                   </div>
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="eWayBillStatus" headerText="E-Way Bill" width="180">
+                <ng-template #template let-doc>
                   <div class="eway-cell">
                     <ar-chip [tone]="getEWayTone(doc.eWayBillStatus)">
                       {{ getEWayLabel(doc.eWayBillStatus) }}
@@ -255,8 +280,10 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
                       #{{ doc.ewayBillNumber }}
                     </span>
                   </div>
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column headerText="Actions" width="170" freeze="Right">
+                <ng-template #template let-doc>
                   <div class="actions-cell">
                     <button
                       *ngIf="doc.eInvoiceStatus === EInvoiceStatus.PendingGeneration"
@@ -284,10 +311,10 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
                       &#10003; Compliant
                     </span>
                   </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
         </div>
       </section>
 

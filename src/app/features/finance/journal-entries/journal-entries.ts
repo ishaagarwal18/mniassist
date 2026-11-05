@@ -1,6 +1,7 @@
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { GridModule, RecordClickEventArgs, RowSelectEventArgs } from '@syncfusion/ej2-angular-grids';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -13,6 +14,7 @@ import {
   JournalVoucherType,
 } from '../../../proxy/finance';
 import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArGrid } from '../../../ui/grid';
 
 const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
   {
@@ -230,7 +232,18 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
 @Component({
   selector: 'app-journal-entries',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, DecimalPipe, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DatePipe,
+    DecimalPipe,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArGrid,
+    GridModule,
+  ],
   template: `
     <ar-topbar title="Journal Vouchers (Double-Entry General Ledger)">
       <div actions class="topbar-actions">
@@ -303,46 +316,48 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
       <div class="journal-layout">
         <!-- Vouchers Table -->
         <section class="table-card">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Voucher #</th>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Narration</th>
-                <th class="text-right">Total Amount (₹)</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                *ngFor="let j of filteredEntries()"
-                [class.selected-row]="selectedEntry()?.id === j.id"
-                (click)="selectEntry(j)"
-                class="clickable-row"
-              >
-                <td>
+          <ejs-grid
+            arGrid="journal-entries"
+            [dataSource]="filteredEntries()"
+            [allowSelection]="true"
+            [selectionSettings]="{ mode: 'Row', type: 'Single' }"
+            (rowSelected)="onEntrySelected($event)"
+            (recordClick)="onEntryClick($event)"
+            aria-label="Journal vouchers"
+          >
+            <e-columns>
+              <e-column field="entryNumber" headerText="Voucher #" width="150">
+                <ng-template #template let-j>
                   <span class="voucher-code">{{ j.entryNumber }}</span>
-                </td>
-                <td>{{ j.entryDateUtc | date: 'mediumDate' }}</td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="entryDateUtc" headerText="Date" width="130">
+                <ng-template #template let-j>
+                  {{ j.entryDateUtc | date: 'mediumDate' }}
+                </ng-template>
+              </e-column>
+              <e-column field="voucherType" headerText="Type" width="130">
+                <ng-template #template let-j>
                   <span class="type-pill">{{ getVoucherTypeLabel(j.voucherType) }}</span>
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="narration" headerText="Narration" width="240">
+                <ng-template #template let-j>
                   <span class="narration-snippet">{{ j.narration }}</span>
-                </td>
-                <td class="text-right fw-bold">
-                  ₹{{ j.totalDebitInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="totalDebitInPaise" headerText="Total Amount (₹)" textAlign="Right" width="160">
+                <ng-template #template let-j>
+                  <span class="fw-bold">₹{{ j.totalDebitInPaise / 100 | number: '1.2-2' }}</span>
+                </ng-template>
+              </e-column>
+              <e-column field="status" headerText="Status" width="120">
+                <ng-template #template let-j>
                   <ar-chip [tone]="getStatusTone(j.status)">{{ getStatusLabel(j.status) }}</ar-chip>
-                </td>
-              </tr>
-              <tr *ngIf="filteredEntries().length === 0">
-                <td colspan="6" class="empty-cell">No journal vouchers match your search.</td>
-              </tr>
-            </tbody>
-          </table>
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
         </section>
 
         <!-- Right Cockpit: Voucher Details & Double-Entry Lines -->
@@ -397,54 +412,47 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
               <span class="badge-balanced">&#10003; Debits Equal Credits</span>
             </div>
 
-            <div class="table-responsive">
-              <table class="sub-table">
-                <thead>
-                  <tr>
-                    <th>Account Code</th>
-                    <th>Account Name</th>
-                    <th>Line Narration</th>
-                    <th class="text-right">Debit (₹)</th>
-                    <th class="text-right">Credit (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let l of entry.lines">
-                    <td class="fw-bold">{{ l.accountCode }}</td>
-                    <td>{{ l.accountName }}</td>
-                    <td class="text-muted">{{ l.lineNarration || '-' }}</td>
-                    <td class="text-right font-mono" [class.text-debit]="l.debitAmountInPaise > 0">
+            <ejs-grid
+              arGrid="journal-entry-lines"
+              [dataSource]="entry.lines"
+              aria-label="General Ledger Posting Lines"
+            >
+              <e-columns>
+                <e-column field="accountCode" headerText="Account Code" width="130">
+                  <ng-template #template let-l>
+                    <span class="fw-bold">{{ l.accountCode }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="accountName" headerText="Account Name" width="200"></e-column>
+                <e-column field="lineNarration" headerText="Line Narration" width="220">
+                  <ng-template #template let-l>
+                    <span class="text-muted">{{ l.lineNarration || '-' }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Debit (₹)" width="130" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    <span class="font-mono" [class.text-debit]="l.debitAmountInPaise > 0">
                       {{
                         l.debitAmountInPaise > 0
                           ? '₹' + (l.debitAmountInPaise / 100 | number: '1.2-2')
                           : '-'
                       }}
-                    </td>
-                    <td
-                      class="text-right font-mono"
-                      [class.text-credit]="l.creditAmountInPaise > 0"
-                    >
+                    </span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Credit (₹)" width="130" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    <span class="font-mono" [class.text-credit]="l.creditAmountInPaise > 0">
                       {{
                         l.creditAmountInPaise > 0
                           ? '₹' + (l.creditAmountInPaise / 100 | number: '1.2-2')
                           : '-'
                       }}
-                    </td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr class="totals-row">
-                    <td colspan="3" class="fw-bold">Total Vouched Amount</td>
-                    <td class="text-right fw-bold text-debit font-mono">
-                      ₹{{ entry.totalDebitInPaise / 100 | number: '1.2-2' }}
-                    </td>
-                    <td class="text-right fw-bold text-credit font-mono">
-                      ₹{{ entry.totalCreditInPaise / 100 | number: '1.2-2' }}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+                    </span>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           </div>
         </section>
       </div>
@@ -1115,6 +1123,18 @@ export class JournalEntriesComponent {
 
   selectEntry(j: JournalEntryDto): void {
     this.selectedEntry.set(j);
+  }
+
+  onEntrySelected(args: RowSelectEventArgs): void {
+    const row = (Array.isArray(args.data) ? args.data[0] : args.data) as
+      | JournalEntryDto
+      | undefined;
+    if (row) this.selectEntry(row);
+  }
+
+  onEntryClick(args: RecordClickEventArgs): void {
+    const row = args.rowData as JournalEntryDto | undefined;
+    if (row) this.selectEntry(row);
   }
 
   getStatusTone(status: JournalVoucherStatus): ChipTone {

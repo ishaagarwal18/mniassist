@@ -83,34 +83,44 @@
 
   <section class="card">
     <h2 class="card__h">Data-principal requests</h2>
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th>Kind</th>
-          <th>Requester</th>
-          <th>Contact</th>
-          <th>Received</th>
-          <th>SLA</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of requests(); track r.id) {
-          <tr [class.tbl__row--busy]="busy() === r.id">
-            <td>{{ kindLabel(r.kind) }}</td>
-            <td class="ar-mono">{{ r.requester }}</td>
-            <td>
-              @if (r.contact) {
-                {{ r.contact }}
-              } @else {
-                <ar-chip tone="warn" title="No contact matches the requester">No match</ar-chip>
-              }
-            </td>
-            <td>{{ when(r.receivedAt) }}</td>
-            <td>
-              <ar-chip [tone]="slaTone(r)">{{ slaLabel(r) }}</ar-chip>
-            </td>
-            <td class="actions">
+    <ejs-grid
+      arGrid="compliance-requests"
+      [dataSource]="requests()"
+      aria-label="Data-principal requests"
+    >
+      <e-columns>
+        <e-column headerText="Kind" width="160">
+          <ng-template #template let-r>
+            {{ kindLabel(r.kind) }}
+          </ng-template>
+        </e-column>
+        <e-column field="requester" headerText="Requester" width="160">
+          <ng-template #template let-r>
+            <span class="ar-mono">{{ r.requester }}</span>
+          </ng-template>
+        </e-column>
+        <e-column headerText="Contact" width="160">
+          <ng-template #template let-r>
+            @if (r.contact) {
+              {{ r.contact }}
+            } @else {
+              <ar-chip tone="warn" title="No contact matches the requester">No match</ar-chip>
+            }
+          </ng-template>
+        </e-column>
+        <e-column field="receivedAt" headerText="Received" width="130">
+          <ng-template #template let-r>
+            {{ when(r.receivedAt) }}
+          </ng-template>
+        </e-column>
+        <e-column headerText="SLA" width="130">
+          <ng-template #template let-r>
+            <ar-chip [tone]="slaTone(r)">{{ slaLabel(r) }}</ar-chip>
+          </ng-template>
+        </e-column>
+        <e-column headerText="Actions" width="150" freeze="Right">
+          <ng-template #template let-r>
+            <div class="actions">
               @if (r.state === 'received' || r.state === 'inProgress') {
                 <button ar-button variant="ghost" [disabled]="!!busy()" (click)="fulfil(r)">
                   Fulfil
@@ -119,34 +129,25 @@
                   Reject
                 </button>
               }
-            </td>
-          </tr>
-        }
-        @if (requests().length === 0 && !loading()) {
-          <tr>
-            <td colspan="6" class="muted">No requests on the clock.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+            </div>
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
   </section>
 
   <section class="card">
     <h2 class="card__h">Retention policies</h2>
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th>Data class</th>
-          <th>Keep for</th>
-          <th>Enforced</th>
-          <th>Last purge</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (p of policies(); track p.id) {
-          <tr>
-            <td>{{ p.dataClass }}</td>
-            <td>
+    <ejs-grid
+      arGrid="compliance-retention-policies"
+      [dataSource]="policies()"
+      aria-label="Retention policies"
+    >
+      <e-columns>
+        <e-column field="dataClass" headerText="Data class" width="180"></e-column>
+        <e-column headerText="Keep for" width="160">
+          <ng-template #template let-p>
+            <div class="days-cell">
               <input
                 class="days"
                 type="number"
@@ -157,60 +158,73 @@
                 [disabled]="isConsentClass(p.dataClass) || !!busy()"
                 (change)="onDaysChange(p.id, p.enabled, $event)"
               />
-              days
-            </td>
-            <td>
-              @if (isConsentClass(p.dataClass)) {
-                <ar-chip tone="neutral">never — evidence</ar-chip>
-              } @else {
-                <label class="sw">
-                  <input
-                    type="checkbox"
-                    [checked]="p.enabled"
-                    [disabled]="!!busy()"
-                    (change)="togglePolicy(p.id, p.days, $any($event.target).checked)"
-                  />
-                  {{ p.enabled ? 'on' : 'off' }}
-                </label>
-              }
-            </td>
-            <td class="muted">
+              <span>days</span>
+            </div>
+          </ng-template>
+        </e-column>
+        <e-column headerText="Enforced" width="140">
+          <ng-template #template let-p>
+            @if (isConsentClass(p.dataClass)) {
+              <ar-chip tone="neutral">never — evidence</ar-chip>
+            } @else {
+              <label class="sw">
+                <input
+                  type="checkbox"
+                  [checked]="p.enabled"
+                  [disabled]="!!busy()"
+                  (change)="togglePolicy(p.id, p.days, $any($event.target).checked)"
+                />
+                {{ p.enabled ? 'on' : 'off' }}
+              </label>
+            }
+          </ng-template>
+        </e-column>
+        <e-column headerText="Last purge" width="180">
+          <ng-template #template let-p>
+            <span class="muted">
               {{ when(p.lastRun) }}
               @if (p.lastRows > 0) {
                 , {{ p.lastRows | number: '1.0-0' }} rows
               }
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
+            </span>
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
   </section>
 
   @if (breaches().length > 0) {
     <section class="card">
       <h2 class="card__h">Breach log</h2>
-      <table class="tbl">
-        <thead>
-          <tr>
-            <th>Incident</th>
-            <th>Severity</th>
-            <th>State</th>
-            <th>Detected</th>
-            <th class="num">Affected</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (b of breaches(); track b.id) {
-            <tr>
-              <td>{{ b.title }}</td>
-              <td class="cap">{{ b.severity }}</td>
-              <td class="cap">{{ b.state }}</td>
-              <td>{{ when(b.detectedAt) }}</td>
-              <td class="num">{{ b.affected | number: '1.0-0' }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
+      <ejs-grid
+        arGrid="compliance-breach-log"
+        [dataSource]="breaches()"
+        aria-label="Breach log"
+      >
+        <e-columns>
+          <e-column field="title" headerText="Incident" width="200"></e-column>
+          <e-column field="severity" headerText="Severity" width="120">
+            <ng-template #template let-b>
+              <span class="cap">{{ b.severity }}</span>
+            </ng-template>
+          </e-column>
+          <e-column field="state" headerText="State" width="120">
+            <ng-template #template let-b>
+              <span class="cap">{{ b.state }}</span>
+            </ng-template>
+          </e-column>
+          <e-column field="detectedAt" headerText="Detected" width="140">
+            <ng-template #template let-b>
+              {{ when(b.detectedAt) }}
+            </ng-template>
+          </e-column>
+          <e-column field="affected" headerText="Affected" width="110" [textAlign]="'Right'">
+            <ng-template #template let-b>
+              {{ b.affected | number: '1.0-0' }}
+            </ng-template>
+          </e-column>
+        </e-columns>
+      </ejs-grid>
     </section>
   }
 </div>

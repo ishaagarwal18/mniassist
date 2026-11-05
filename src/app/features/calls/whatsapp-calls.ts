@@ -18,6 +18,8 @@ import { ArTopbar } from '../../layout/topbar';
 import { WhatsAppCallDto, WhatsAppCallService } from '../../proxy/messaging/whats-app-call.service';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 import { ArWhatsAppIvrDialog } from './whatsapp-ivr-dialog';
 import { ArVoiceConversations } from './voice-conversations';
 
@@ -80,6 +82,8 @@ const SEED: WhatsAppCallDto[] = [
     ArWhatsAppIvrDialog,
     ArVoiceConversations,
     LocalizationPipe,
+    ArGrid,
+    GridModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -229,101 +233,101 @@ const SEED: WhatsAppCallDto[] = [
             </button>
           </div>
         }
-        <div class="tbl-wrap" tabindex="0" role="region" aria-label="WhatsApp Calls Log">
-          <table class="tbl">
-            <thead>
-              <tr>
-                @if (canRecordings()) {
-                  <th scope="col" class="wa__pick">
-                    <input
-                      type="checkbox"
-                      aria-label="Select all calls shown"
-                      [checked]="allSelected()"
-                      (change)="selectAll($any($event.target).checked)"
-                    />
-                  </th>
-                }
-                <th scope="col">Customer</th>
-                <th scope="col">When</th>
-                <th scope="col">Call</th>
-                <th scope="col" class="num">Length</th>
-                <th scope="col">Recording</th>
-                @if (canRecordings()) {
-                  <th scope="col" aria-label="Actions"></th>
-                }
-              </tr>
-            </thead>
-            <tbody>
-              @for (c of rows(); track c.id) {
-                <tr>
-                  @if (canRecordings()) {
-                    <td class="wa__pick">
-                      <input
-                        type="checkbox"
-                        [attr.aria-label]="
-                          'Select the call with ' + (c.contactName || '+' + c.contactWaId)
-                        "
-                        [checked]="selected().has(c.id)"
-                        [disabled]="inProgress(c)"
-                        (change)="toggle(c.id, $any($event.target).checked)"
-                      />
-                    </td>
+        <ejs-grid
+          arGrid="whatsapp-calls"
+          [dataSource]="rows()"
+          aria-label="WhatsApp Calls Log"
+        >
+          <e-columns>
+            <e-column width="50" textAlign="Center" [visible]="canRecordings()">
+              <ng-template #headerTemplate>
+                <input
+                  type="checkbox"
+                  aria-label="Select all calls shown"
+                  [checked]="allSelected()"
+                  (change)="selectAll($any($event.target).checked)"
+                />
+              </ng-template>
+              <ng-template #template let-c>
+                <input
+                  type="checkbox"
+                  [attr.aria-label]="
+                    'Select the call with ' + (c.contactName || '+' + c.contactWaId)
+                  "
+                  [checked]="selected().has(c.id)"
+                  [disabled]="inProgress(c)"
+                  (change)="toggle(c.id, $any($event.target).checked)"
+                />
+              </ng-template>
+            </e-column>
+            <e-column field="contactName" headerText="Customer" width="200">
+              <ng-template #template let-c>
+                <div>
+                  <strong>{{ c.contactName || '+' + c.contactWaId }}</strong>
+                  @if (c.contactName && c.contactWaId) {
+                    <span class="wa__muted ar-mono block">+{{ c.contactWaId }}</span>
                   }
-                  <td>
-                    <strong>{{ c.contactName || '+' + c.contactWaId }}</strong>
-                    @if (c.contactName && c.contactWaId) {
-                      <span class="wa__muted ar-mono">+{{ c.contactWaId }}</span>
-                    }
-                  </td>
-                  <td>{{ when(c.rangAtUtc) }}</td>
-                  <td>
-                    <ar-chip [tone]="tone(c)" [dot]="true">{{ label(c) }}</ar-chip>
-                    @if (c.queueLabel) {
-                      <span class="wa__muted">· {{ c.queueLabel }} queue</span>
-                    }
-                    @if (c.transferCount) {
-                      <span class="wa__muted">· transferred</span>
-                    }
-                  </td>
-                  <td class="num tabular-nums">
-                    {{ c.durationSeconds ? length(c.durationSeconds) : '—' }}
-                  </td>
-                  <td>
-                    @if (c.hasRecording && canRecordings()) {
-                      @if (audio()[c.id]; as src) {
-                        <audio [src]="src" controls loading="lazy" preload="metadata"></audio>
-                      } @else {
-                        <button ar-button type="button" variant="ghost" (click)="play(c)">
-                          Play
-                        </button>
-                      }
-                    } @else {
-                      <span class="wa__muted">{{ c.hasRecording ? 'Kept' : '—' }}</span>
-                    }
-                  </td>
-                  @if (canRecordings()) {
-                    <td>
-                      @if (!inProgress(c)) {
-                        <button
-                          ar-button
-                          type="button"
-                          variant="ghost"
-                          [disabled]="deleting()"
-                          [attr.aria-label]="
-                            'Delete the call with ' + (c.contactName || '+' + c.contactWaId)
-                          "
-                          (click)="deleteOne(c)"
-                        >
-                          Delete
-                        </button>
-                      }
-                    </td>
+                </div>
+              </ng-template>
+            </e-column>
+            <e-column field="rangAtUtc" headerText="When" width="140">
+              <ng-template #template let-c>
+                {{ when(c.rangAtUtc) }}
+              </ng-template>
+            </e-column>
+            <e-column headerText="Call" width="220">
+              <ng-template #template let-c>
+                <ar-chip [tone]="tone(c)" [dot]="true">{{ label(c) }}</ar-chip>
+                @if (c.queueLabel) {
+                  <span class="wa__muted"> · {{ c.queueLabel }} queue</span>
+                }
+                @if (c.transferCount) {
+                  <span class="wa__muted"> · transferred</span>
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="durationSeconds" headerText="Length" width="100" [textAlign]="'Right'">
+              <ng-template #template let-c>
+                <span class="tabular-nums">
+                  {{ c.durationSeconds ? length(c.durationSeconds) : '—' }}
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Recording" width="180">
+              <ng-template #template let-c>
+                @if (c.hasRecording && canRecordings()) {
+                  @if (audio()[c.id]; as src) {
+                    <audio [src]="src" controls loading="lazy" preload="metadata"></audio>
+                  } @else {
+                    <button ar-button type="button" variant="ghost" (click)="play(c)">
+                      Play
+                    </button>
                   }
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+                } @else {
+                  <span class="wa__muted">{{ c.hasRecording ? 'Kept' : '—' }}</span>
+                }
+              </ng-template>
+            </e-column>
+            <e-column headerText="Actions" width="100" [textAlign]="'Right'" freeze="Right" [visible]="canRecordings()">
+              <ng-template #template let-c>
+                @if (!inProgress(c)) {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="deleting()"
+                    [attr.aria-label]="
+                      'Delete the call with ' + (c.contactName || '+' + c.contactWaId)
+                    "
+                    (click)="deleteOne(c)"
+                  >
+                    Delete
+                  </button>
+                }
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
         @if (rows().length < total()) {
           <button ar-button type="button" variant="ghost" (click)="more()">Show more</button>
         }

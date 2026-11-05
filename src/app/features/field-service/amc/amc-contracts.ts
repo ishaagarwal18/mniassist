@@ -1,6 +1,7 @@
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { GridModule, RecordClickEventArgs, RowSelectEventArgs } from '@syncfusion/ej2-angular-grids';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -14,6 +15,7 @@ import {
   RenewAmcContractDto,
 } from '../../../proxy/field-service';
 import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArGrid } from '../../../ui/grid';
 import { initialSearch } from '../../../core/util/customer-scope';
 
 const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
@@ -167,7 +169,18 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
 @Component({
   selector: 'app-amc-contracts',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, DecimalPipe, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DatePipe,
+    DecimalPipe,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArGrid,
+    GridModule,
+  ],
   template: `
     <ar-topbar title="Installed Base AMC Contracts (Field ERP)">
       <div actions class="topbar-actions">
@@ -249,63 +262,66 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
       <div class="amc-layout">
         <!-- Table -->
         <section class="table-card">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Contract #</th>
-                <th>Customer & Site</th>
-                <th>Equipment Serial & Model</th>
-                <th>Type</th>
-                <th>SLA / Visits</th>
-                <th>Value (₹)</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                *ngFor="let c of filteredContracts()"
-                [class.selected-row]="selectedContract()?.id === c.id"
-                (click)="selectContract(c)"
-                class="clickable-row"
-              >
-                <td>
+          <ejs-grid
+            arGrid="amc-contracts"
+            [dataSource]="filteredContracts()"
+            [allowSelection]="true"
+            [selectionSettings]="{ mode: 'Row', type: 'Single' }"
+            (rowSelected)="onContractSelected($event)"
+            (recordClick)="onContractClick($event)"
+            aria-label="AMC contracts"
+          >
+            <e-columns>
+              <e-column field="contractNumber" headerText="Contract #" width="150">
+                <ng-template #template let-c>
                   <span class="fw-bold text-primary-dark">{{ c.contractNumber }}</span>
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="customerName" headerText="Customer & Site" width="220">
+                <ng-template #template let-c>
                   <div class="client-info">
                     <span class="client-name">{{ c.customerName }}</span>
                     <span class="client-addr" *ngIf="c.customerSiteAddress">{{
                       c.customerSiteAddress
                     }}</span>
                   </div>
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="equipmentSerialNumber" headerText="Equipment Serial & Model" width="200">
+                <ng-template #template let-c>
                   <div class="equip-info">
                     <span class="serial-badge">{{ c.equipmentSerialNumber }}</span>
                     <span class="model-name">{{ c.equipmentModel }}</span>
                   </div>
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="contractType" headerText="Type" width="130">
+                <ng-template #template let-c>
                   <span class="type-pill">{{ getContractTypeLabel(c.contractType) }}</span>
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="slaResponseHours" headerText="SLA / Visits" width="140">
+                <ng-template #template let-c>
                   <div class="visit-metric">
                     <span>SLA: {{ c.slaResponseHours }}h</span>
                     <span class="text-sub"
                       >{{ c.visitsCompleted }} / {{ c.scheduledVisitsPerYear }} Visits</span
                     >
                   </div>
-                </td>
-                <td class="fw-bold">₹{{ c.contractValueInPaise / 100 | number: '1.2-2' }}</td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="contractValueInPaise" headerText="Value (₹)" textAlign="Right" width="130">
+                <ng-template #template let-c>
+                  <span class="fw-bold">₹{{ c.contractValueInPaise / 100 | number: '1.2-2' }}</span>
+                </ng-template>
+              </e-column>
+              <e-column field="status" headerText="Status" width="130">
+                <ng-template #template let-c>
                   <ar-chip [tone]="getStatusTone(c.status)">{{ getStatusLabel(c.status) }}</ar-chip>
-                </td>
-              </tr>
-              <tr *ngIf="filteredContracts().length === 0">
-                <td colspan="7" class="empty-cell">No AMC contracts match your query.</td>
-              </tr>
-            </tbody>
-          </table>
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
         </section>
 
         <!-- Right Cockpit: Contract Detail & Schedules -->
@@ -376,59 +392,60 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
               <span class="badge-count">{{ contract.schedules.length }} Scheduled</span>
             </div>
 
-            <div class="table-responsive">
-              <table class="sub-table">
-                <thead>
-                  <tr>
-                    <th>Visit</th>
-                    <th>Scheduled Date</th>
-                    <th>Completed Date</th>
-                    <th>Assigned Engineer</th>
-                    <th>Status & Notes</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let s of contract.schedules">
-                    <td class="fw-bold">Visit #{{ s.visitNumber }}</td>
-                    <td>{{ s.scheduledDateUtc | date: 'mediumDate' }}</td>
-                    <td>
-                      <span *ngIf="s.completedDateUtc">{{
-                        s.completedDateUtc | date: 'mediumDate'
-                      }}</span>
-                      <span *ngIf="!s.completedDateUtc" class="text-muted">-</span>
-                    </td>
-                    <td>
-                      <div class="eng-name">{{ s.assignedEngineer || 'Unassigned' }}</div>
-                    </td>
-                    <td>
-                      <div class="status-notes">
-                        <ar-chip [tone]="s.isCompleted ? 'good' : 'warn'">
-                          {{ s.isCompleted ? 'Completed' : 'Pending' }}
-                        </ar-chip>
-                        <div class="note-text" *ngIf="s.visitNotes">{{ s.visitNotes }}</div>
-                      </div>
-                    </td>
-                    <td>
-                      <button
-                        *ngIf="!s.isCompleted"
-                        ar-button="ghost"
-                        class="btn-xs"
-                        (click)="openCompleteVisitModal(s)"
-                      >
-                        Record Visit
-                      </button>
-                      <span *ngIf="s.isCompleted" class="text-done">&#10003; Done</span>
-                    </td>
-                  </tr>
-                  <tr *ngIf="!contract.schedules || contract.schedules.length === 0">
-                    <td colspan="6" class="text-center text-muted">
-                      No scheduled visits configured.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <ejs-grid
+              arGrid="amc-visit-schedules"
+              [dataSource]="contract.schedules"
+              aria-label="Preventive Maintenance Visits Calendar"
+            >
+              <e-columns>
+                <e-column headerText="Visit" width="110">
+                  <ng-template #template let-s>
+                    <span class="fw-bold">Visit #{{ s.visitNumber }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Scheduled Date" width="150">
+                  <ng-template #template let-s>
+                    {{ s.scheduledDateUtc | date: 'mediumDate' }}
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Completed Date" width="150">
+                  <ng-template #template let-s>
+                    <span *ngIf="s.completedDateUtc">{{
+                      s.completedDateUtc | date: 'mediumDate'
+                    }}</span>
+                    <span *ngIf="!s.completedDateUtc" class="text-muted">-</span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Assigned Engineer" width="160">
+                  <ng-template #template let-s>
+                    <div class="eng-name">{{ s.assignedEngineer || 'Unassigned' }}</div>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Status & Notes" width="180">
+                  <ng-template #template let-s>
+                    <div class="status-notes">
+                      <ar-chip [tone]="s.isCompleted ? 'good' : 'warn'">
+                        {{ s.isCompleted ? 'Completed' : 'Pending' }}
+                      </ar-chip>
+                      <div class="note-text" *ngIf="s.visitNotes">{{ s.visitNotes }}</div>
+                    </div>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Action" width="120" freeze="Right">
+                  <ng-template #template let-s>
+                    <button
+                      *ngIf="!s.isCompleted"
+                      ar-button="ghost"
+                      class="btn-xs"
+                      (click)="openCompleteVisitModal(s)"
+                    >
+                      Record Visit
+                    </button>
+                    <span *ngIf="s.isCompleted" class="text-done">&#10003; Done</span>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           </div>
         </section>
       </div>
@@ -1203,6 +1220,16 @@ export class AmcContractsComponent {
 
   selectContract(c: AmcContractDto): void {
     this.selectedContract.set(c);
+  }
+
+  onContractSelected(args: RowSelectEventArgs): void {
+    const row = (Array.isArray(args.data) ? args.data[0] : args.data) as AmcContractDto | undefined;
+    if (row) this.selectContract(row);
+  }
+
+  onContractClick(args: RecordClickEventArgs): void {
+    const row = args.rowData as AmcContractDto | undefined;
+    if (row) this.selectContract(row);
   }
 
   getStatusTone(status: AmcStatus): ChipTone {

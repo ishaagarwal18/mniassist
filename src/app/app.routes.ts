@@ -132,18 +132,18 @@ export const routes: Routes = [
     canActivateChild: [appAuthGuard, navAccessGuard],
     children: [
       {
-        path: 'home',
-        data: { preload: true },
-        title: 'Home · MNI Assist',
-        loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.ArDashboard),
-      },
-      {
         path: 'getting-started',
         title: 'Get started · MNI Assist',
         // Gone once every step is done: the menu hides it and the address opens Home.
         canActivate: [setupIncompleteGuard],
         loadComponent: () =>
           import('./features/onboarding/wizard').then((m) => m.ArOnboardingWizard),
+      },
+      {
+        path: 'home',
+        data: { preload: true },
+        title: 'Home · MNI Assist',
+        loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.ArDashboard),
       },
       {
         path: 'inbox',

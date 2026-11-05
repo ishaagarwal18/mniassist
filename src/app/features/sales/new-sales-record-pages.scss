@@ -1,0 +1,5 @@
+// Shared by the three New sales record pages. Kept as a file (styleUrl), not one inline `styles` string reused by several
+// components: identical inline styles in one file make @angular/build 21.2.x leak esbuild contexts, and `ng build` never exits.
+.new-record {
+  padding: 1.25rem 1.5rem 2rem;
+}

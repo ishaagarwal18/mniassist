@@ -9,6 +9,8 @@ import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service'
 import { SalesOrderDto } from '../../../proxy/sales/sales-order.models';
 import { SalesOrderService } from '../../../proxy/sales/sales-order.service';
 import { ArButton, ArChip, ArIcon } from '../../../ui';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../../ui/grid';
 import { SALES_RECORD_STYLES, SalesRecordPage } from '../sales-record-page';
 import {
   canConfirmOrder,
@@ -26,7 +28,7 @@ import { ArSalesExport } from '../sales-export';
  */
 @Component({
   selector: 'ar-sales-order-page',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSalesExport, DatePipe],
+  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSalesExport, DatePipe, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -113,43 +115,53 @@ import { ArSalesExport } from '../sales-export';
                 <p>{{ o.lines.length }} item(s), with what has been dispatched and invoiced.</p>
               </div>
             </header>
-            <div class="sr-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Part number & description</th>
-                    <th>HSN</th>
-                    <th class="num">Qty</th>
-                    <th class="num">Unit price</th>
-                    <th class="num">Dispatched</th>
-                    <th class="num">Invoiced</th>
-                    <th class="num">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (l of o.lines; track l.id) {
-                    <tr>
-                      <td>{{ l.lineNumber }}</td>
-                      <td>
-                        <strong class="ar-mono">{{ l.partNumber }}</strong>
-                        <span class="sr-sub">{{ l.description }}</span>
-                      </td>
-                      <td class="ar-mono">{{ l.hsnCode || '—' }}</td>
-                      <td class="num">
-                        <strong>{{ l.quantity }}</strong>
-                      </td>
-                      <td class="num">{{ inr(l.unitPriceInPaise) }}</td>
-                      <td class="num">{{ l.dispatchedQuantity }} / {{ l.quantity }}</td>
-                      <td class="num">{{ l.invoicedQuantity }} / {{ l.quantity }}</td>
-                      <td class="num">
-                        <strong>{{ inr(l.lineTotalInPaise) }}</strong>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+            <ejs-grid
+              arGrid="sales-order-lines"
+              [dataSource]="o.lines"
+              aria-label="Order items"
+            >
+              <e-columns>
+                <e-column field="lineNumber" headerText="#" width="60" [textAlign]="'Right'"></e-column>
+                <e-column field="partNumber" headerText="Part number & description" width="260">
+                  <ng-template #template let-l>
+                    <div>
+                      <strong class="ar-mono">{{ l.partNumber }}</strong>
+                      <span class="sr-sub block">{{ l.description }}</span>
+                    </div>
+                  </ng-template>
+                </e-column>
+                <e-column field="hsnCode" headerText="HSN" width="110">
+                  <ng-template #template let-l>
+                    <span class="ar-mono">{{ l.hsnCode || '—' }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="quantity" headerText="Qty" width="90" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    <strong>{{ l.quantity }}</strong>
+                  </ng-template>
+                </e-column>
+                <e-column field="unitPriceInPaise" headerText="Unit price" width="130" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    {{ inr(l.unitPriceInPaise) }}
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Dispatched" width="120" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    {{ l.dispatchedQuantity }} / {{ l.quantity }}
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Invoiced" width="120" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    {{ l.invoicedQuantity }} / {{ l.quantity }}
+                  </ng-template>
+                </e-column>
+                <e-column field="lineTotalInPaise" headerText="Total" width="140" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    <strong>{{ inr(l.lineTotalInPaise) }}</strong>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
             <dl class="pf__totals">
               <dt>Subtotal</dt>
               <dd>{{ inr(o.subtotalInPaise) }}</dd>

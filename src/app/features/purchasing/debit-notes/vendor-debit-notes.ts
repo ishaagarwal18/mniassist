@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import { checkPolicy } from '../../../core/auth/permission';
@@ -25,6 +26,7 @@ import {
   VendorDebitNoteService,
 } from '../../../proxy/purchasing';
 import { ArButton, ArChip, ChipTone } from '../../../ui';
+import { ArGrid } from '../../../ui/grid';
 
 const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
   {
@@ -109,7 +111,17 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
   standalone: true,
   selector: 'ar-vendor-debit-notes',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, RouterLink, ArTopbar, ArButton, ArChip, ArSupplierScopeBar],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArSupplierScopeBar,
+    ArGrid,
+    GridModule,
+  ],
   template: `
     <ar-topbar
       title="Vendor Debit Notes"
@@ -186,23 +198,14 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
 
       <!-- Debit Note Table -->
       <section class="table-card">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Debit Note #</th>
-              <th>Supplier</th>
-              <th>Linked Bill / GRN</th>
-              <th>Reason & Justification</th>
-              <th class="text-right">Taxable</th>
-              <th class="text-right">GST Total</th>
-              <th class="text-right">Grand Total</th>
-              <th>Status</th>
-              <th class="actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let dn of filteredDebitNotes()">
-              <td>
+        <ejs-grid
+          arGrid="vendor-debit-notes"
+          [dataSource]="filteredDebitNotes()"
+          aria-label="Vendor Debit Notes"
+        >
+          <e-columns>
+            <e-column field="debitNoteNumber" headerText="Debit Note #" width="160">
+              <ng-template #template let-dn>
                 <div class="cell-main">
                   <a
                     class="code-link"
@@ -212,16 +215,20 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
                   >
                   <span class="sub-text">{{ dn.issueDateUtc | date: 'mediumDate' }}</span>
                 </div>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="supplierName" headerText="Supplier" width="220">
+              <ng-template #template let-dn>
                 <div class="cell-main">
                   <strong>{{ dn.supplierName }}</strong>
                   <span class="badge-interstate font-mono">{{
                     dn.isInterState ? 'IGST (Inter-State)' : 'CGST+SGST (Intra-State)'
                   }}</span>
                 </div>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="vendorBillNumber" headerText="Linked Bill / GRN" width="180">
+              <ng-template #template let-dn>
                 <div class="cell-main">
                   <span class="sub-text" *ngIf="dn.vendorBillNumber"
                     >Bill: <strong>{{ dn.vendorBillNumber }}</strong></span
@@ -230,27 +237,41 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
                     >GRN: {{ dn.goodsReceiptNoteNumber }}</span
                   >
                 </div>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="reason" headerText="Reason & Justification" width="220">
+              <ng-template #template let-dn>
                 <span class="reason-text" [title]="dn.reason">{{ dn.reason }}</span>
-              </td>
-              <td class="text-right font-mono">
-                ₹{{ dn.taxableAmountInPaise / 100 | number: '1.2-2' }}
-              </td>
-              <td class="text-right font-mono">
-                ₹{{ (dn.grandTotalInPaise - dn.taxableAmountInPaise) / 100 | number: '1.2-2' }}
-              </td>
-              <td class="text-right font-mono">
-                <strong class="text-good"
+              </ng-template>
+            </e-column>
+            <e-column field="taxableAmountInPaise" headerText="Taxable" textAlign="Right" width="130">
+              <ng-template #template let-dn>
+                <span class="font-mono">₹{{ dn.taxableAmountInPaise / 100 | number: '1.2-2' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column headerText="GST Total" textAlign="Right" width="130">
+              <ng-template #template let-dn>
+                <span class="font-mono">
+                  ₹{{ (dn.grandTotalInPaise - dn.taxableAmountInPaise) / 100 | number: '1.2-2' }}
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column field="grandTotalInPaise" headerText="Grand Total" textAlign="Right" width="140">
+              <ng-template #template let-dn>
+                <strong class="text-good font-mono"
                   >₹{{ dn.grandTotalInPaise / 100 | number: '1.2-2' }}</strong
                 >
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="status" headerText="Status" width="130">
+              <ng-template #template let-dn>
                 <ar-chip [tone]="statusTone(dn.status)">
                   {{ statusLabel(dn.status) }}
                 </ar-chip>
-              </td>
-              <td class="actions-col">
+              </ng-template>
+            </e-column>
+            <e-column headerText="Actions" width="220" freeze="Right">
+              <ng-template #template let-dn>
                 <div class="action-buttons">
                   <button
                     ar-button
@@ -277,15 +298,10 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
                     >View</a
                   >
                 </div>
-              </td>
-            </tr>
-            <tr *ngIf="filteredDebitNotes().length === 0">
-              <td colspan="9" class="empty-state">
-                <p>No vendor debit notes found matching criteria.</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </section>
     </div>
 

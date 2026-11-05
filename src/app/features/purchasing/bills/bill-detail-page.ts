@@ -20,6 +20,8 @@ import {
   VendorPaymentMode,
 } from '../../../proxy/purchasing';
 import { ArButton, ArChip, ArIcon } from '../../../ui';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../../ui/grid';
 import { PURCHASE_FORM_STYLES, isoDay } from '../purchase-form';
 import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
 import {
@@ -43,7 +45,7 @@ import {
  */
 @Component({
   selector: 'ar-bill-detail-page',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, DatePipe, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, ArIcon, DatePipe, RouterLink, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -151,40 +153,46 @@ import {
                 <p>{{ b.lines.length }} item(s), HSN and GST per line.</p>
               </div>
             </header>
-            <div class="bd-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Part no.</th>
-                    <th>Description</th>
-                    <th>HSN</th>
-                    <th class="num">Qty</th>
-                    <th class="num">Rate</th>
-                    <th class="num">Taxable</th>
-                    <th class="num">GST</th>
-                    <th class="num">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (l of b.lines; track l.id) {
-                    <tr>
-                      <td class="ar-mono">
-                        <strong>{{ l.partNumber }}</strong>
-                      </td>
-                      <td>{{ l.description }}</td>
-                      <td class="ar-mono">{{ l.hsnCode || '—' }}</td>
-                      <td class="num">{{ l.billedQuantity }}</td>
-                      <td class="num">{{ inr(l.unitPriceInPaise) }}</td>
-                      <td class="num">{{ inr(l.taxableAmountInPaise) }}</td>
-                      <td class="num">{{ l.taxRateBasisPoints / 100 }}%</td>
-                      <td class="num">
-                        <strong>{{ inr(l.lineTotalInPaise) }}</strong>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+            <ejs-grid
+              arGrid="vendor-bill-lines"
+              [dataSource]="b.lines"
+              aria-label="Billed items"
+            >
+              <e-columns>
+                <e-column field="partNumber" headerText="Part no." width="150">
+                  <ng-template #template let-l>
+                    <strong class="ar-mono">{{ l.partNumber }}</strong>
+                  </ng-template>
+                </e-column>
+                <e-column field="description" headerText="Description" width="240"></e-column>
+                <e-column field="hsnCode" headerText="HSN" width="110">
+                  <ng-template #template let-l>
+                    <span class="ar-mono">{{ l.hsnCode || '—' }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="billedQuantity" headerText="Qty" width="90" [textAlign]="'Right'"></e-column>
+                <e-column field="unitPriceInPaise" headerText="Rate" width="120" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    {{ inr(l.unitPriceInPaise) }}
+                  </ng-template>
+                </e-column>
+                <e-column field="taxableAmountInPaise" headerText="Taxable" width="120" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    {{ inr(l.taxableAmountInPaise) }}
+                  </ng-template>
+                </e-column>
+                <e-column field="taxRateBasisPoints" headerText="GST" width="100" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    {{ l.taxRateBasisPoints / 100 }}%
+                  </ng-template>
+                </e-column>
+                <e-column field="lineTotalInPaise" headerText="Total" width="130" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    <strong>{{ inr(l.lineTotalInPaise) }}</strong>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           </section>
 
           @if (b.payments.length) {
@@ -195,32 +203,39 @@ import {
                   <p>{{ b.payments.length }} payment(s) recorded.</p>
                 </div>
               </header>
-              <div class="bd-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Mode</th>
-                      <th>Reference</th>
-                      <th>TDS certificate</th>
-                      <th class="num">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (p of b.payments; track p.id) {
-                      <tr>
-                        <td>{{ p.paymentDateUtc | date: 'mediumDate' }}</td>
-                        <td>{{ modeLabel(p.paymentMode) }}</td>
-                        <td class="ar-mono">{{ p.referenceNumber || '—' }}</td>
-                        <td>{{ p.tdsCertificateNumber || '—' }}</td>
-                        <td class="num bd-good">
-                          <strong>{{ inr(p.amountInPaise) }}</strong>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
+              <ejs-grid
+                arGrid="vendor-bill-payments"
+                [dataSource]="b.payments"
+                aria-label="Payments"
+              >
+                <e-columns>
+                  <e-column field="paymentDateUtc" headerText="Date" width="130">
+                    <ng-template #template let-p>
+                      {{ p.paymentDateUtc | date: 'mediumDate' }}
+                    </ng-template>
+                  </e-column>
+                  <e-column headerText="Mode" width="130">
+                    <ng-template #template let-p>
+                      {{ modeLabel(p.paymentMode) }}
+                    </ng-template>
+                  </e-column>
+                  <e-column field="referenceNumber" headerText="Reference" width="150">
+                    <ng-template #template let-p>
+                      <span class="ar-mono">{{ p.referenceNumber || '—' }}</span>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="tdsCertificateNumber" headerText="TDS certificate" width="150">
+                    <ng-template #template let-p>
+                      <span>{{ p.tdsCertificateNumber || '—' }}</span>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="amountInPaise" headerText="Amount" width="130" [textAlign]="'Right'">
+                    <ng-template #template let-p>
+                      <strong class="bd-good">{{ inr(p.amountInPaise) }}</strong>
+                    </ng-template>
+                  </e-column>
+                </e-columns>
+              </ejs-grid>
             </section>
           }
 

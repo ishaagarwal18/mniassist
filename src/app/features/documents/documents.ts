@@ -15,6 +15,8 @@ import {
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 import { ArSelect } from '../../ui/select';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
 import type { DocumentDeliveryDto } from '../../proxy/library/models';
@@ -95,7 +97,7 @@ function toDoc(d: LibraryDocumentDto): Doc {
  */
 @Component({
   selector: 'ar-documents',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox, ArSelect],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox, ArSelect, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './documents.html',
   styleUrl: './documents.scss',

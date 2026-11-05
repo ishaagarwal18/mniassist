@@ -29,6 +29,8 @@ import { BillingCycle } from '../../proxy/billing/billing-cycle.enum';
 import { InvoiceState } from '../../proxy/billing/invoice-state.enum';
 import type { InvoiceDto } from '../../proxy/billing/models';
 import { ArBanner, ArButton, ArChip, ArDialog, ArTabs } from '../../ui';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 import {
   InvoiceForm,
   MODE_OPTIONS,
@@ -54,7 +56,7 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
  */
 @Component({
   selector: 'ar-workspace-manage-dialog',
-  imports: [ArDialog, ArButton, ArBanner, ArChip, ArTabs, DatePipe, RouterLink],
+  imports: [ArDialog, ArButton, ArBanner, ArChip, ArTabs, DatePipe, RouterLink, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog
@@ -492,81 +494,82 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
             </div>
 
             @if (invoices(); as list) {
-              <div class="wm__table wm__inv">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Invoice</th>
-                      <th>Period</th>
-                      <th>Total</th>
-                      <th>State</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (i of list; track i.id) {
-                      <tr>
-                        <td>
-                          <div class="wm__user ar-mono">{{ i.number || 'Draft' }}</div>
-                          @if (i.dueAtUtc && i.state === State.Issued) {
-                            <div class="wm__sub">Due {{ i.dueAtUtc | date: 'dd MMM yyyy' }}</div>
-                          } @else if (i.paidAtUtc) {
-                            <div class="wm__sub">Paid {{ i.paidAtUtc | date: 'dd MMM yyyy' }}</div>
-                          }
-                        </td>
-                        <td>
-                          {{ i.periodStartUtc | date: 'dd MMM' : '+0530' }} –
-                          {{ i.periodEndUtc | date: 'dd MMM yyyy' : '+0530' }}
-                        </td>
-                        <td>{{ rupees(i.totalInPaise ?? 0) }}</td>
-                        <td>
-                          <ar-chip [tone]="chip(i.state).tone">{{ chip(i.state).label }}</ar-chip>
-                        </td>
-                        <td class="wm__act">
-                          @if (i.state === State.Draft) {
-                            <button
-                              ar-button
-                              type="button"
-                              variant="primary"
-                              [disabled]="busy()"
-                              (click)="issueInvoice(d, i)"
-                            >
-                              Issue
-                            </button>
-                          } @else if (i.state === State.Issued) {
-                            <button
-                              ar-button
-                              type="button"
-                              variant="ghost"
-                              [disabled]="busy()"
-                              (click)="markInvoicePaid(d, i)"
-                            >
-                              Mark paid
-                            </button>
-                          }
+              <ejs-grid
+                arGrid="workspace-manage-invoices"
+                [dataSource]="list"
+                aria-label="Workspace invoices"
+              >
+                <e-columns>
+                  <e-column headerText="Invoice" width="180">
+                    <ng-template #template let-i>
+                      <div>
+                        <div class="wm__user ar-mono font-semibold">{{ i.number || 'Draft' }}</div>
+                        @if (i.dueAtUtc && i.state === State.Issued) {
+                          <div class="wm__sub text-xs text-muted">Due {{ i.dueAtUtc | date: 'dd MMM yyyy' }}</div>
+                        } @else if (i.paidAtUtc) {
+                          <div class="wm__sub text-xs text-muted">Paid {{ i.paidAtUtc | date: 'dd MMM yyyy' }}</div>
+                        }
+                      </div>
+                    </ng-template>
+                  </e-column>
+                  <e-column headerText="Period" width="180">
+                    <ng-template #template let-i>
+                      {{ i.periodStartUtc | date: 'dd MMM' : '+0530' }} –
+                      {{ i.periodEndUtc | date: 'dd MMM yyyy' : '+0530' }}
+                    </ng-template>
+                  </e-column>
+                  <e-column headerText="Total" width="120" [textAlign]="'Right'">
+                    <ng-template #template let-i>
+                      <span class="font-bold">{{ rupees(i.totalInPaise ?? 0) }}</span>
+                    </ng-template>
+                  </e-column>
+                  <e-column headerText="State" width="120">
+                    <ng-template #template let-i>
+                      <ar-chip [tone]="chip(i.state).tone">{{ chip(i.state).label }}</ar-chip>
+                    </ng-template>
+                  </e-column>
+                  <e-column headerText="Actions" width="140" freeze="Right">
+                    <ng-template #template let-i>
+                      <div class="wm__act">
+                        @if (i.state === State.Draft) {
+                          <button
+                            ar-button
+                            type="button"
+                            variant="primary"
+                            [disabled]="busy()"
+                            (click)="issueInvoice(d, i)"
+                          >
+                            Issue
+                          </button>
+                        } @else if (i.state === State.Issued) {
                           <button
                             ar-button
                             type="button"
                             variant="ghost"
-                            icon="download"
                             [disabled]="busy()"
-                            [attr.aria-label]="
-                              'Download ' + (i.number || 'draft invoice') + ' as PDF'
-                            "
-                            (click)="downloadInvoice(d, i)"
+                            (click)="markInvoicePaid(d, i)"
                           >
-                            PDF
+                            Mark paid
                           </button>
-                        </td>
-                      </tr>
-                    } @empty {
-                      <tr>
-                        <td colspan="5">No invoices for this workspace yet.</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
+                        }
+                        <button
+                          ar-button
+                          type="button"
+                          variant="ghost"
+                          icon="download"
+                          [disabled]="busy()"
+                          [attr.aria-label]="
+                            'Download ' + (i.number || 'draft invoice') + ' as PDF'
+                          "
+                          (click)="downloadInvoice(d, i)"
+                        >
+                          PDF
+                        </button>
+                      </div>
+                    </ng-template>
+                  </e-column>
+                </e-columns>
+              </ejs-grid>
             } @else {
               <p class="wm__p">Loading invoices…</p>
             }

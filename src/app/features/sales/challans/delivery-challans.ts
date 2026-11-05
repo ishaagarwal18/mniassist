@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { GridModule, RecordClickEventArgs } from '@syncfusion/ej2-angular-grids';
 import { ToastService } from '../../../core/ui/toast.service';
 import { CustomerScope, readCustomerScope } from '../../../core/util/customer-scope';
 import { errorMessage } from '../../activities/activity-logic';
@@ -12,6 +13,7 @@ import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.se
 import { DeliveryChallanStatus, SalesExportFormat } from '../../../proxy/sales/sales-enums';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { ArButton, ArChip } from '../../../ui';
+import { ArGrid } from '../../../ui/grid';
 import { PermissionService } from '@abp/ng.core';
 import { grantedPolicy } from '../../../core/auth/permission';
 import {
@@ -30,7 +32,7 @@ import { ArSalesExport } from '../sales-export';
 @Component({
   selector: 'ar-delivery-challans',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArSalesExport],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArSalesExport, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -118,87 +120,92 @@ import { ArSalesExport } from '../sales-export';
 
       <!-- Challans Table -->
       <div class="table-card">
-        <table class="ar-table">
-          <thead>
-            <tr>
-              <th>Challan #</th>
-              <th>Customer</th>
-              <th>Order Ref</th>
-              <th>Purpose (GST Rule 55)</th>
-              <th>Dispatch Date</th>
-              <th>Logistics (LR & Vehicle)</th>
-              <th>Status</th>
-              <th class="actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (dc of filteredChallans(); track dc.id) {
-              <tr class="challan-row" (click)="openChallan(dc)">
-                <td class="font-mono font-bold text-primary">{{ dc.challanNumber }}</td>
-                <td>
-                  <div class="font-semibold">{{ dc.customerName }}</div>
-                  @if (dc.customerAccountName) {
-                    <div class="text-xs text-muted">{{ dc.customerAccountName }}</div>
-                  }
-                </td>
-                <td class="font-mono text-xs">
+        <ejs-grid
+          arGrid="delivery-challans"
+          [dataSource]="filteredChallans()"
+          (recordClick)="onChallanClick($event)"
+          aria-label="Delivery challans"
+        >
+          <e-columns>
+            <e-column field="challanNumber" headerText="Challan #" width="160">
+              <ng-template #template let-dc>
+                <span class="font-mono font-bold text-primary">{{ dc.challanNumber }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="customerName" headerText="Customer" width="220">
+              <ng-template #template let-dc>
+                <div class="font-semibold">{{ dc.customerName }}</div>
+                @if (dc.customerAccountName) {
+                  <div class="text-xs text-muted">{{ dc.customerAccountName }}</div>
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="salesOrderNumber" headerText="Order Ref" width="140">
+              <ng-template #template let-dc>
+                <span class="font-mono text-xs">
                   {{ dc.salesOrderNumber || 'Direct' }}
-                </td>
-                <td>
-                  <span class="type-tag">{{ getChallanTypeLabel(dc.type) }}</span>
-                </td>
-                <td>
-                  {{
-                    dc.dispatchedAtUtc
-                      ? (dc.dispatchedAtUtc | date: 'dd MMM yyyy')
-                      : (dc.challanDateUtc | date: 'dd MMM yyyy')
-                  }}
-                </td>
-                <td>
-                  @if (dc.vehicleNumber || dc.lrNumber) {
-                    <div class="font-mono text-xs">{{ dc.vehicleNumber || '—' }}</div>
-                    <div class="text-muted text-xs">LR: {{ dc.lrNumber || '—' }}</div>
-                  } @else {
-                    <span class="text-muted text-xs">Pending dispatch</span>
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column field="type" headerText="Purpose (GST Rule 55)" width="180">
+              <ng-template #template let-dc>
+                <span class="type-tag">{{ getChallanTypeLabel(dc.type) }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="challanDateUtc" headerText="Dispatch Date" width="130">
+              <ng-template #template let-dc>
+                {{
+                  dc.dispatchedAtUtc
+                    ? (dc.dispatchedAtUtc | date: 'dd MMM yyyy')
+                    : (dc.challanDateUtc | date: 'dd MMM yyyy')
+                }}
+              </ng-template>
+            </e-column>
+            <e-column headerText="Logistics (LR & Vehicle)" width="180">
+              <ng-template #template let-dc>
+                @if (dc.vehicleNumber || dc.lrNumber) {
+                  <div class="font-mono text-xs">{{ dc.vehicleNumber || '—' }}</div>
+                  <div class="text-muted text-xs">LR: {{ dc.lrNumber || '—' }}</div>
+                } @else {
+                  <span class="text-muted text-xs">Pending dispatch</span>
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="status" headerText="Status" width="130">
+              <ng-template #template let-dc>
+                <ar-chip [tone]="getStatusTone(dc.status)">
+                  {{ getStatusLabel(dc.status) }}
+                </ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Actions" width="220" freeze="Right">
+              <ng-template #template let-dc>
+                <div class="row-actions">
+                  <button class="action-btn" (click)="openChallan(dc)">View</button>
+                  @if (canDispatch(dc)) {
+                    <button class="action-btn primary" (click)="openChallan(dc, true)">
+                      Dispatch
+                    </button>
                   }
-                </td>
-                <td>
-                  <ar-chip [tone]="getStatusTone(dc.status)">
-                    {{ getStatusLabel(dc.status) }}
-                  </ar-chip>
-                </td>
-                <td class="actions-col" (click)="$event.stopPropagation()">
-                  <div class="row-actions">
-                    <button class="action-btn" (click)="openChallan(dc)">View</button>
-                    @if (canDispatch(dc)) {
-                      <button class="action-btn primary" (click)="openChallan(dc, true)">
-                        Dispatch
-                      </button>
-                    }
-                    @if (canDeliver(dc)) {
-                      <button class="action-btn success" (click)="markDelivered(dc)">
-                        Delivered
-                      </button>
-                    }
-                    @if (canInvoice(dc)) {
-                      <button
-                        class="action-btn primary"
-                        title="Generate GST Invoice"
-                        (click)="createInvoiceFromChallan(dc)"
-                      >
-                        Invoice
-                      </button>
-                    }
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="8" class="empty-state">No delivery challans found.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+                  @if (canDeliver(dc)) {
+                    <button class="action-btn success" (click)="markDelivered(dc)">
+                      Delivered
+                    </button>
+                  }
+                  @if (canInvoice(dc)) {
+                    <button
+                      class="action-btn primary"
+                      title="Generate GST Invoice"
+                      (click)="createInvoiceFromChallan(dc)"
+                    >
+                      Invoice
+                    </button>
+                  }
+                </div>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </div>
     </div>
   `,
@@ -425,6 +432,13 @@ export class ArDeliveryChallans {
     } else {
       this.loadChallans();
     }
+  }
+
+  onChallanClick(e: RecordClickEventArgs): void {
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('.row-actions, button, a')) return;
+    const row = e.rowData as DeliveryChallanDto | undefined;
+    if (row) this.openChallan(row);
   }
 
   /** The challan's own page (with the dispatch form open when `dispatch`), keeping this list's customer for Back. */

@@ -15,6 +15,8 @@ import {
   type LeadAdsPageDto,
 } from '../../proxy/lead-ads/lead-ads.service';
 import { ArBanner, ArButton, ArCard, ArChip, ArDialog } from '../../ui';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 import {
   platformLabel,
   readCallback,
@@ -43,7 +45,7 @@ function when(utc: string | null | undefined): string {
  */
 @Component({
   selector: 'ar-lead-forms',
-  imports: [ArTopbar, ArButton, ArCard, ArChip, ArBanner, ArDialog, RouterLink],
+  imports: [ArTopbar, ArButton, ArCard, ArChip, ArBanner, ArDialog, RouterLink, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -100,67 +102,69 @@ function when(utc: string | null | undefined): string {
       </ar-card>
 
       <ar-card heading="Recent leads">
-        <div class="lf__table">
-          <table>
-            <thead>
-              <tr>
-                <th>Received</th>
-                <th>Person</th>
-                <th>Form and ad</th>
-                <th>From</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (l of leads(); track l.id) {
-                <tr>
-                  <td>{{ when(l.submittedAtUtc ?? l.creationTime) }}</td>
-                  <td>
-                    @if (l.contactId) {
-                      <a [routerLink]="['/contacts', l.contactId]">{{
-                        l.contactName || 'Contact'
-                      }}</a>
-                    } @else {
-                      —
-                    }
-                  </td>
-                  <td>
-                    {{ l.formName || '—' }}
-                    @if (l.adName) {
-                      <span class="lf__muted"> · {{ l.adName }}</span>
-                    }
-                  </td>
-                  <td>{{ platform(l.platform) }}</td>
-                  <td>
-                    <ar-chip [tone]="tone(l.status)">{{ label(l.status) }}</ar-chip>
-                    @if (l.enquiryId) {
-                      <a class="lf__ref" [routerLink]="['/enquiries', l.enquiryId]">{{
-                        l.enquiryReference
-                      }}</a>
-                    }
-                    @if (l.error) {
-                      <div class="lf__error">{{ l.error }}</div>
-                    }
-                  </td>
-                  <td>
-                    @if (l.status === failed) {
-                      <button ar-button variant="ghost" [disabled]="busy()" (click)="retry(l)">
-                        Try again
-                      </button>
-                    }
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="6" class="lf__muted">
-                    No leads yet. They appear here within a minute of someone submitting your form.
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <ejs-grid
+          arGrid="lead-forms-leads"
+          [dataSource]="leads()"
+          aria-label="Recent leads"
+        >
+          <e-columns>
+            <e-column headerText="Received" width="140">
+              <ng-template #template let-l>
+                {{ when(l.submittedAtUtc ?? l.creationTime) }}
+              </ng-template>
+            </e-column>
+            <e-column headerText="Person" width="160">
+              <ng-template #template let-l>
+                @if (l.contactId) {
+                  <a [routerLink]="['/contacts', l.contactId]">{{
+                    l.contactName || 'Contact'
+                  }}</a>
+                } @else {
+                  —
+                }
+              </ng-template>
+            </e-column>
+            <e-column headerText="Form and ad" width="200">
+              <ng-template #template let-l>
+                <div>
+                  {{ l.formName || '—' }}
+                  @if (l.adName) {
+                    <span class="lf__muted block text-xs"> · {{ l.adName }}</span>
+                  }
+                </div>
+              </ng-template>
+            </e-column>
+            <e-column headerText="From" width="130">
+              <ng-template #template let-l>
+                {{ platform(l.platform) }}
+              </ng-template>
+            </e-column>
+            <e-column headerText="Status" width="180">
+              <ng-template #template let-l>
+                <div>
+                  <ar-chip [tone]="tone(l.status)">{{ label(l.status) }}</ar-chip>
+                  @if (l.enquiryId) {
+                    <a class="lf__ref ml-1" [routerLink]="['/enquiries', l.enquiryId]">{{
+                      l.enquiryReference
+                    }}</a>
+                  }
+                  @if (l.error) {
+                    <div class="lf__error text-xs">{{ l.error }}</div>
+                  }
+                </div>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Action" width="110" freeze="Right">
+              <ng-template #template let-l>
+                @if (l.status === failed) {
+                  <button ar-button variant="ghost" [disabled]="busy()" (click)="retry(l)">
+                    Try again
+                  </button>
+                }
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </ar-card>
     </div>
 

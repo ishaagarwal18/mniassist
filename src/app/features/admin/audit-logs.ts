@@ -647,24 +647,29 @@ const numberOrUndefined = (s: string) => {
           </span>
         </div>
         @if (c.propertyChanges.length) {
-          <table class="al__props">
-            <thead>
-              <tr>
-                <th>Field</th>
-                <th>Before</th>
-                <th>After</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (p of c.propertyChanges; track p.propertyName) {
-                <tr>
-                  <td class="ar-mono">{{ p.propertyName }}</td>
-                  <td>{{ value(p.originalValue) }}</td>
-                  <td>{{ value(p.newValue) }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <ejs-grid
+            arGrid="audit-log-property-changes"
+            [dataSource]="c.propertyChanges"
+            aria-label="Property Changes"
+          >
+            <e-columns>
+              <e-column field="propertyName" headerText="Field" width="160">
+                <ng-template #template let-p>
+                  <span class="ar-mono">{{ p.propertyName }}</span>
+                </ng-template>
+              </e-column>
+              <e-column headerText="Before" width="180">
+                <ng-template #template let-p>
+                  <span>{{ value(p.originalValue) }}</span>
+                </ng-template>
+              </e-column>
+              <e-column headerText="After" width="180">
+                <ng-template #template let-p>
+                  <span>{{ value(p.newValue) }}</span>
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
         }
       </div>
     </ng-template>

@@ -18,6 +18,8 @@ import {
   VendorDebitNoteStatus,
 } from '../../../proxy/purchasing';
 import { ArButton, ArChip, ArIcon, ChipTone } from '../../../ui';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../../ui/grid';
 import { PURCHASE_FORM_STYLES } from '../purchase-form';
 import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
 
@@ -41,7 +43,7 @@ export function debitStatusChip(s: VendorDebitNoteStatus): { label: string; tone
  */
 @Component({
   selector: 'ar-debit-note-detail-page',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, DatePipe, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, ArIcon, DatePipe, RouterLink, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -134,38 +136,41 @@ export function debitStatusChip(s: VendorDebitNoteStatus): { label: string; tone
                 <p>{{ n.lines.length }} item(s).</p>
               </div>
             </header>
-            <div class="dd-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Part no.</th>
-                    <th>Description</th>
-                    <th class="num">Qty</th>
-                    <th class="num">Rate</th>
-                    <th class="num">Taxable</th>
-                    <th class="num">GST</th>
-                    <th class="num">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (l of n.lines; track l.id) {
-                    <tr>
-                      <td class="ar-mono">
-                        <strong>{{ l.partNumber }}</strong>
-                      </td>
-                      <td>{{ l.description }}</td>
-                      <td class="num">{{ l.quantity }}</td>
-                      <td class="num">{{ inr(l.unitPriceInPaise) }}</td>
-                      <td class="num">{{ inr(l.taxableAmountInPaise) }}</td>
-                      <td class="num">{{ l.taxRateBasisPoints / 100 }}%</td>
-                      <td class="num">
-                        <strong>{{ inr(l.lineTotalInPaise) }}</strong>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+            <ejs-grid
+              arGrid="vendor-debit-note-lines"
+              [dataSource]="n.lines"
+              aria-label="Items debited"
+            >
+              <e-columns>
+                <e-column field="partNumber" headerText="Part no." width="150">
+                  <ng-template #template let-l>
+                    <strong class="ar-mono">{{ l.partNumber }}</strong>
+                  </ng-template>
+                </e-column>
+                <e-column field="description" headerText="Description" width="240"></e-column>
+                <e-column field="quantity" headerText="Qty" width="90" [textAlign]="'Right'"></e-column>
+                <e-column field="unitPriceInPaise" headerText="Rate" width="120" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    {{ inr(l.unitPriceInPaise) }}
+                  </ng-template>
+                </e-column>
+                <e-column field="taxableAmountInPaise" headerText="Taxable" width="120" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    {{ inr(l.taxableAmountInPaise) }}
+                  </ng-template>
+                </e-column>
+                <e-column field="taxRateBasisPoints" headerText="GST" width="100" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    {{ l.taxRateBasisPoints / 100 }}%
+                  </ng-template>
+                </e-column>
+                <e-column field="lineTotalInPaise" headerText="Total" width="130" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    <strong>{{ inr(l.lineTotalInPaise) }}</strong>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           </section>
 
           <footer class="pf__bar">

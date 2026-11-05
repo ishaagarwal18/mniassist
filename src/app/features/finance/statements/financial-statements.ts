@@ -10,6 +10,8 @@ import {
   TrialBalanceResultDto,
 } from '../../../proxy/finance';
 import { ArButton } from '../../../ui';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../../ui/grid';
 
 const MOCK_TRIAL_BALANCE: TrialBalanceResultDto = {
   items: [
@@ -580,7 +582,7 @@ const MOCK_BALANCE_SHEET: BalanceSheetResultDto = {
 @Component({
   selector: 'app-financial-statements',
   standalone: true,
-  imports: [CommonModule, FormsModule, DecimalPipe, ArTopbar, ArButton],
+  imports: [CommonModule, FormsModule, DecimalPipe, ArTopbar, ArButton, ArGrid, GridModule],
   template: `
     <ar-topbar title="Financial Statements (Statutory Ledger)">
       <div actions class="topbar-actions">
@@ -630,54 +632,42 @@ const MOCK_BALANCE_SHEET: BalanceSheetResultDto = {
           </div>
         </div>
 
-        <div class="table-card">
-          <table class="statement-table">
-            <thead>
-              <tr>
-                <th>Account Code</th>
-                <th>Account Description</th>
-                <th class="text-right">Debit Balance (₹)</th>
-                <th class="text-right">Credit Balance (₹)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of trialBalance().items">
-                <td>
-                  <span class="code-pill">{{ item.accountCode }}</span>
-                </td>
-                <td>{{ item.accountName }}</td>
-                <td class="text-right font-mono" [class.text-debit]="item.closingDebitInPaise > 0">
+        <ejs-grid
+          arGrid="trial-balance-grid"
+          [dataSource]="trialBalance().items"
+          aria-label="Trial Balance"
+        >
+          <e-columns>
+            <e-column field="accountCode" headerText="Account Code" width="130">
+              <ng-template #template let-item>
+                <span class="code-pill">{{ item.accountCode }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="accountName" headerText="Account Description" width="260"></e-column>
+            <e-column field="closingDebitInPaise" headerText="Debit Balance (₹)" width="160" [textAlign]="'Right'">
+              <ng-template #template let-item>
+                <span class="font-mono" [class.text-debit]="item.closingDebitInPaise > 0">
                   {{
                     item.closingDebitInPaise > 0
                       ? '₹' + (item.closingDebitInPaise / 100 | number: '1.2-2')
                       : '-'
                   }}
-                </td>
-                <td
-                  class="text-right font-mono"
-                  [class.text-credit]="item.closingCreditInPaise > 0"
-                >
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column field="closingCreditInPaise" headerText="Credit Balance (₹)" width="160" [textAlign]="'Right'">
+              <ng-template #template let-item>
+                <span class="font-mono" [class.text-credit]="item.closingCreditInPaise > 0">
                   {{
                     item.closingCreditInPaise > 0
                       ? '₹' + (item.closingCreditInPaise / 100 | number: '1.2-2')
                       : '-'
                   }}
-                </td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr class="statement-total-row">
-                <td colspan="2" class="fw-bold">Total Trial Balance Sum</td>
-                <td class="text-right font-mono text-debit fw-bold">
-                  ₹{{ trialBalance().totalClosingDebitInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono text-credit fw-bold">
-                  ₹{{ trialBalance().totalClosingCreditInPaise / 100 | number: '1.2-2' }}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+                </span>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </section>
 
       <!-- TAB 2: PROFIT & LOSS -->

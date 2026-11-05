@@ -10,6 +10,8 @@ import {
 } from '../../../proxy/sales/sales-invoice.models';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { ArButton, ArChip, ArIcon } from '../../../ui';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../../ui/grid';
 import { SALES_RECORD_STYLES, SalesRecordPage } from '../sales-record-page';
 import {
   SALES_PAYMENT_MODES,
@@ -34,7 +36,7 @@ import { ArSalesExport } from '../sales-export';
  */
 @Component({
   selector: 'ar-sales-invoice-page',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSalesExport, DatePipe],
+  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSalesExport, DatePipe, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -133,52 +135,58 @@ import { ArSalesExport } from '../sales-export';
                 <p>{{ inv.lines.length }} item(s), HSN and GST per line.</p>
               </div>
             </header>
-            <div class="sr-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Part number & description</th>
-                    <th>HSN</th>
-                    <th class="num">Qty</th>
-                    <th class="num">Rate</th>
-                    <th class="num">Taxable</th>
-                    <th class="num">GST</th>
-                    <th class="num">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (l of inv.lines; track l.id) {
-                    <tr>
-                      <td>{{ l.lineNumber }}</td>
-                      <td>
-                        <strong class="ar-mono">{{ l.partNumber }}</strong>
-                        <span class="sr-sub">{{ l.description }}</span>
-                      </td>
-                      <td class="ar-mono">{{ l.hsnCode || '—' }}</td>
-                      <td class="num">
-                        <strong>{{ l.quantity }}</strong>
-                      </td>
-                      <td class="num">{{ inr(l.unitPriceInPaise) }}</td>
-                      <td class="num">{{ inr(l.taxableAmountInPaise) }}</td>
-                      <td class="num">
-                        @if (inv.isInterState) {
-                          IGST {{ l.igstRateBasisPoints / 100 }}%:
-                          {{ inr(l.igstAmountInPaise) }}
-                        } @else {
-                          CGST {{ l.cgstRateBasisPoints / 100 }}% + SGST
-                          {{ l.sgstRateBasisPoints / 100 }}%:
-                          {{ inr(l.cgstAmountInPaise + l.sgstAmountInPaise) }}
-                        }
-                      </td>
-                      <td class="num">
-                        <strong>{{ inr(l.lineTotalInPaise) }}</strong>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+            <ejs-grid
+              arGrid="sales-invoice-lines"
+              [dataSource]="inv.lines"
+              aria-label="Line items & GST"
+            >
+              <e-columns>
+                <e-column field="lineNumber" headerText="#" width="60" [textAlign]="'Right'"></e-column>
+                <e-column field="partNumber" headerText="Part number & description" width="260">
+                  <ng-template #template let-l>
+                    <div>
+                      <strong class="ar-mono">{{ l.partNumber }}</strong>
+                      <span class="sr-sub block">{{ l.description }}</span>
+                    </div>
+                  </ng-template>
+                </e-column>
+                <e-column field="hsnCode" headerText="HSN" width="110">
+                  <ng-template #template let-l>
+                    <span class="ar-mono">{{ l.hsnCode || '—' }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="quantity" headerText="Qty" width="90" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    <strong>{{ l.quantity }}</strong>
+                  </ng-template>
+                </e-column>
+                <e-column field="unitPriceInPaise" headerText="Rate" width="130" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    {{ inr(l.unitPriceInPaise) }}
+                  </ng-template>
+                </e-column>
+                <e-column field="taxableAmountInPaise" headerText="Taxable" width="130" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    {{ inr(l.taxableAmountInPaise) }}
+                  </ng-template>
+                </e-column>
+                <e-column headerText="GST" width="180" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    @if (inv.isInterState) {
+                      IGST {{ l.igstRateBasisPoints / 100 }}%: {{ inr(l.igstAmountInPaise) }}
+                    } @else {
+                      CGST {{ l.cgstRateBasisPoints / 100 }}% + SGST {{ l.sgstRateBasisPoints / 100 }}%:
+                      {{ inr(l.cgstAmountInPaise + l.sgstAmountInPaise) }}
+                    }
+                  </ng-template>
+                </e-column>
+                <e-column field="lineTotalInPaise" headerText="Total" width="140" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    <strong>{{ inr(l.lineTotalInPaise) }}</strong>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
             <dl class="pf__totals">
               <dt>Taxable subtotal</dt>
               <dd>{{ inr(inv.subtotalInPaise) }}</dd>
@@ -204,32 +212,39 @@ import { ArSalesExport } from '../sales-export';
                   <p>{{ inv.payments.length }} payment(s) recorded.</p>
                 </div>
               </header>
-              <div class="sr-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Mode</th>
-                      <th>Reference</th>
-                      <th class="num">Amount</th>
-                      <th>Remarks</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (p of inv.payments; track p.id) {
-                      <tr>
-                        <td>{{ p.paymentDateUtc | date: 'dd MMM yyyy' }}</td>
-                        <td>{{ modeLabel(p.paymentMode) }}</td>
-                        <td class="ar-mono">{{ p.referenceNumber || '—' }}</td>
-                        <td class="num sr-good">
-                          <strong>{{ inr(p.amountInPaise) }}</strong>
-                        </td>
-                        <td>{{ p.remarks || '—' }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
+              <ejs-grid
+                arGrid="sales-invoice-payments"
+                [dataSource]="inv.payments"
+                aria-label="Payments received"
+              >
+                <e-columns>
+                  <e-column field="paymentDateUtc" headerText="Date" width="130">
+                    <ng-template #template let-p>
+                      {{ p.paymentDateUtc | date: 'dd MMM yyyy' }}
+                    </ng-template>
+                  </e-column>
+                  <e-column headerText="Mode" width="130">
+                    <ng-template #template let-p>
+                      {{ modeLabel(p.paymentMode) }}
+                    </ng-template>
+                  </e-column>
+                  <e-column field="referenceNumber" headerText="Reference" width="150">
+                    <ng-template #template let-p>
+                      <span class="ar-mono">{{ p.referenceNumber || '—' }}</span>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="amountInPaise" headerText="Amount" width="140" [textAlign]="'Right'">
+                    <ng-template #template let-p>
+                      <strong class="sr-good">{{ inr(p.amountInPaise) }}</strong>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="remarks" headerText="Remarks" width="200">
+                    <ng-template #template let-p>
+                      {{ p.remarks || '—' }}
+                    </ng-template>
+                  </e-column>
+                </e-columns>
+              </ejs-grid>
             </section>
           }
 

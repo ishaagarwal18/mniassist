@@ -132,32 +132,34 @@
 
   <section class="card">
     <h2 class="card__h">Ledger</h2>
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th>When</th>
-          <th>Type</th>
-          <th>Detail</th>
-          <th class="num">Amount</th>
-          <th class="num">Balance</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (t of d().transactions; track t.id) {
-          <tr>
-            <td>{{ when(t.at) }}</td>
-            <td>{{ t.kind }}</td>
-            <td class="muted">{{ t.description }}</td>
-            <td class="num" [class.neg]="t.amountInPaise < 0">{{ money(t.amountInPaise) }}</td>
-            <td class="num">{{ money(t.balanceAfterInPaise) }}</td>
-          </tr>
-        }
-        @if (d().transactions.length === 0 && !loading()) {
-          <tr>
-            <td colspan="5" class="muted">No wallet activity yet.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+    <ejs-grid
+      arGrid="billing-wallet-ledger"
+      [dataSource]="d().transactions"
+      aria-label="Wallet Activity Ledger"
+    >
+      <e-columns>
+        <e-column field="at" headerText="When" width="130">
+          <ng-template #template let-t>
+            {{ when(t.at) }}
+          </ng-template>
+        </e-column>
+        <e-column field="kind" headerText="Type" width="140"></e-column>
+        <e-column field="description" headerText="Detail" width="220">
+          <ng-template #template let-t>
+            <span class="muted">{{ t.description }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="amountInPaise" headerText="Amount" width="130" [textAlign]="'Right'">
+          <ng-template #template let-t>
+            <span [class.neg]="t.amountInPaise < 0">{{ money(t.amountInPaise) }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="balanceAfterInPaise" headerText="Balance" width="130" [textAlign]="'Right'">
+          <ng-template #template let-t>
+            {{ money(t.balanceAfterInPaise) }}
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
   </section>
 </div>

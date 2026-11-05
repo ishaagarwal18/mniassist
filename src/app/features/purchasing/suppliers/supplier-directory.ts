@@ -26,6 +26,8 @@ import {
   SupplierListStatus,
 } from '../../../proxy/inventory/purchasing.service';
 import { ArSearchBox } from '../../../ui/search-box';
+import { ArGrid } from '../../../ui/grid';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import {
   SupplierQuery,
   SUPPLIER_PAGE_SIZE,
@@ -43,7 +45,7 @@ import {
  */
 @Component({
   selector: 'ar-supplier-directory',
-  imports: [RouterLink, ArSearchBox],
+  imports: [RouterLink, ArSearchBox, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="sd__bar">
@@ -117,63 +119,65 @@ import {
           }
         </p>
       } @else {
-        <div class="tbl" [attr.aria-busy]="loading()">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Supplier</th>
-                <th scope="col">GSTIN</th>
-                <th scope="col">Contact</th>
-                <th scope="col" class="num">Lead time</th>
-                @if (r.showsDues) {
-                  <th scope="col" class="num">We owe</th>
+        <ejs-grid arGrid="suppliers" [dataSource]="r.items" aria-label="Suppliers">
+          <e-columns>
+            <e-column field="name" headerText="Supplier" width="220">
+              <ng-template #template let-s>
+                <b translate="no">{{ s.name }}</b>
+                @if (s.isBlacklisted) {
+                  <span class="sub sd__black" [title]="s.blacklistReason || ''">Blacklisted</span>
+                } @else if (!s.isActive) {
+                  <span class="sub">Not in use</span>
                 }
-                <th scope="col"><span class="sr">Actions</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (s of r.items; track s.id) {
-                <tr [class.off]="!s.isActive">
-                  <td>
-                    <b translate="no">{{ s.name }}</b>
-                    @if (s.isBlacklisted) {
-                      <span class="sub sd__black" [title]="s.blacklistReason || ''"
-                        >Blacklisted</span
-                      >
-                    } @else if (!s.isActive) {
-                      <span class="sub">Not in use</span>
-                    }
-                  </td>
-                  <td class="ar-mono">{{ s.gstin || '—' }}</td>
-                  <td>
-                    @if (s.contactName) {
-                      {{ s.contactName }}
-                    }
-                    {{ s.phone || '' }}
-                    @if (s.email) {
-                      <span class="sub">{{ s.email }}</span>
-                    }
-                    @if (!s.contactName && !s.phone && !s.email) {
-                      —
-                    }
-                  </td>
-                  <td class="num">{{ s.leadDays != null ? s.leadDays + ' days' : '—' }}</td>
-                  @if (r.showsDues) {
-                    <td class="num">{{ owed(s) }}</td>
+              </ng-template>
+            </e-column>
+            <e-column field="gstin" headerText="GSTIN" width="160">
+              <ng-template #template let-s>
+                <span class="ar-mono">{{ s.gstin || '—' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="contactName" headerText="Contact" width="200">
+              <ng-template #template let-s>
+                @if (s.contactName) {
+                  <div>{{ s.contactName }}</div>
+                }
+                @if (s.phone) {
+                  <div>{{ s.phone }}</div>
+                }
+                @if (s.email) {
+                  <div class="sub">{{ s.email }}</div>
+                }
+                @if (!s.contactName && !s.phone && !s.email) {
+                  —
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="leadDays" headerText="Lead time" textAlign="Right" width="120">
+              <ng-template #template let-s>
+                {{ s.leadDays != null ? s.leadDays + ' days' : '—' }}
+              </ng-template>
+            </e-column>
+            @if (r.showsDues) {
+              <e-column headerText="We owe" textAlign="Right" width="140">
+                <ng-template #template let-s>
+                  {{ owed(s) }}
+                </ng-template>
+              </e-column>
+            }
+            <e-column headerText="Actions" width="180" freeze="Right">
+              <ng-template #template let-s>
+                <div class="acts">
+                  @if (canOpen360()) {
+                    <a class="act" [routerLink]="['/purchasing/vendor-360', s.id]">Vendor 360</a>
                   }
-                  <td class="acts">
-                    @if (canOpen360()) {
-                      <a class="act" [routerLink]="['/purchasing/vendor-360', s.id]">Vendor 360</a>
-                    }
-                    @if (canManage()) {
-                      <button type="button" class="act" (click)="edit.emit(s.id)">Edit</button>
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+                  @if (canManage()) {
+                    <button type="button" class="act" (click)="edit.emit(s.id)">Edit</button>
+                  }
+                </div>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
         <nav class="sd__pager" aria-label="Supplier pages">
           <span class="sd__count" role="status">{{ label() }}</span>
           <button

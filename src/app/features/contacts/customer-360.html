@@ -546,67 +546,57 @@
           }
         </div>
 
-        <div class="table-responsive">
-          <table class="ar-table">
-            <thead>
-              <tr>
-                <th>Order #</th>
-                <th>Customer PO</th>
-                <th>Order Date</th>
-                <th class="num-col">Grand Total</th>
-                <th>Status</th>
-                <th class="actions-col">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (o of filteredOrders(); track o.id) {
-                <tr>
-                  <td class="font-mono font-bold text-primary">{{ o.orderNumber }}</td>
-                  <td>
-                    <span class="c360-meta-chip font-mono">{{ o.customerPoNumber || '—' }}</span>
-                  </td>
-                  <td>{{ o.orderDateUtc | date: 'dd MMM yyyy' }}</td>
-                  <td class="num-col font-bold">
-                    ₹{{ o.grandTotalInPaise / 100 | number: '1.2-2' }}
-                  </td>
-                  <td>
-                    <ar-chip [tone]="getOrderStatusTone(o.status)">
-                      {{ getOrderStatusLabel(o.status) }}
-                    </ar-chip>
-                  </td>
-                  <td class="actions-col">
-                    <a ar-button variant="ghost" [routerLink]="['/sales/orders', o.id]"> Open </a>
-                    <a
-                      ar-button
-                      variant="ghost"
-                      [routerLink]="['/contacts', o.customerId, 'message']"
-                      [queryParams]="{ document: 'o:' + o.id }"
-                      title="Send this order to its buyer on WhatsApp or email"
-                    >
-                      Send
-                    </a>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="6">
-                    <div class="empty-state">
-                      <div class="empty-state__icon">📋</div>
-                      <h3 class="empty-state__title">No sales orders found</h3>
-                      <p class="empty-state__hint">
-                        @if (orderSearchQuery()) {
-                          No orders matched "{{ orderSearchQuery() }}".
-                        } @else {
-                          No sales orders have been generated for this customer yet.
-                        }
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <ejs-grid
+          arGrid="customer-360-orders"
+          [dataSource]="filteredOrders()"
+          aria-label="Recent Sales Orders"
+        >
+          <e-columns>
+            <e-column field="orderNumber" headerText="Order #" width="150">
+              <ng-template #template let-o>
+                <span class="font-mono font-bold text-primary">{{ o.orderNumber }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="customerPoNumber" headerText="Customer PO" width="160">
+              <ng-template #template let-o>
+                <span class="c360-meta-chip font-mono">{{ o.customerPoNumber || '—' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="orderDateUtc" headerText="Order Date" width="130">
+              <ng-template #template let-o>
+                {{ o.orderDateUtc | date: 'dd MMM yyyy' }}
+              </ng-template>
+            </e-column>
+            <e-column field="grandTotalInPaise" headerText="Grand Total" width="140" [textAlign]="'Right'">
+              <ng-template #template let-o>
+                <span class="font-bold">₹{{ o.grandTotalInPaise / 100 | number: '1.2-2' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Status" width="140">
+              <ng-template #template let-o>
+                <ar-chip [tone]="getOrderStatusTone(o.status)">
+                  {{ getOrderStatusLabel(o.status) }}
+                </ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Action" width="140" freeze="Right">
+              <ng-template #template let-o>
+                <div class="actions-col">
+                  <a ar-button variant="ghost" [routerLink]="['/sales/orders', o.id]"> Open </a>
+                  <a
+                    ar-button
+                    variant="ghost"
+                    [routerLink]="['/contacts', o.customerId, 'message']"
+                    [queryParams]="{ document: 'o:' + o.id }"
+                    title="Send this order to its buyer on WhatsApp or email"
+                  >
+                    Send
+                  </a>
+                </div>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </div>
     }
 
@@ -640,64 +630,64 @@
           }
         </div>
 
-        <div class="table-responsive">
-          <table class="ar-table">
-            <thead>
-              <tr>
-                <th>Challan #</th>
-                <th>Order Ref</th>
-                <th>Transporter</th>
-                <th>Vehicle #</th>
-                <th>LR #</th>
-                <th>Status</th>
-                <th class="actions-col">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (dc of filteredChallans(); track dc.id) {
-                <tr>
-                  <td class="font-mono font-bold text-primary">{{ dc.challanNumber }}</td>
-                  <td class="font-mono text-xs">{{ dc.salesOrderNumber || 'Direct' }}</td>
-                  <td>{{ dc.transporterName || '—' }}</td>
-                  <td class="font-mono text-xs">{{ dc.vehicleNumber || '—' }}</td>
-                  <td class="font-mono text-xs">{{ dc.lrNumber || '—' }}</td>
-                  <td>
-                    <ar-chip [tone]="getChallanStatusTone(dc.status)">
-                      {{ getChallanStatusLabel(dc.status) }}
-                    </ar-chip>
-                  </td>
-                  <td class="actions-col">
-                    <a ar-button variant="ghost" [routerLink]="['/sales/challans', dc.id]">
-                      View
-                    </a>
-                    <a
-                      ar-button
-                      variant="ghost"
-                      [routerLink]="['/contacts', dc.customerId, 'message']"
-                      [queryParams]="{ document: 'c:' + dc.id }"
-                      title="Send this challan to its buyer on WhatsApp or email"
-                    >
-                      Send
-                    </a>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="7">
-                    <div class="empty-state">
-                      <div class="empty-state__icon">🚚</div>
-                      <h3 class="empty-state__title">No delivery challans recorded</h3>
-                      <p class="empty-state__hint">
-                        Delivery challans track physical dispatches, logistics transporters, and
-                        vehicle LR numbers.
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <ejs-grid
+          arGrid="customer-360-challans"
+          [dataSource]="filteredChallans()"
+          aria-label="Recent Delivery Challans"
+        >
+          <e-columns>
+            <e-column field="challanNumber" headerText="Challan #" width="150">
+              <ng-template #template let-dc>
+                <span class="font-mono font-bold text-primary">{{ dc.challanNumber }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="salesOrderNumber" headerText="Order Ref" width="140">
+              <ng-template #template let-dc>
+                <span class="font-mono text-xs">{{ dc.salesOrderNumber || 'Direct' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="transporterName" headerText="Transporter" width="160">
+              <ng-template #template let-dc>
+                {{ dc.transporterName || '—' }}
+              </ng-template>
+            </e-column>
+            <e-column field="vehicleNumber" headerText="Vehicle #" width="130">
+              <ng-template #template let-dc>
+                <span class="font-mono text-xs">{{ dc.vehicleNumber || '—' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="lrNumber" headerText="LR #" width="130">
+              <ng-template #template let-dc>
+                <span class="font-mono text-xs">{{ dc.lrNumber || '—' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Status" width="140">
+              <ng-template #template let-dc>
+                <ar-chip [tone]="getChallanStatusTone(dc.status)">
+                  {{ getChallanStatusLabel(dc.status) }}
+                </ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Action" width="140" freeze="Right">
+              <ng-template #template let-dc>
+                <div class="actions-col">
+                  <a ar-button variant="ghost" [routerLink]="['/sales/challans', dc.id]">
+                    View
+                  </a>
+                  <a
+                    ar-button
+                    variant="ghost"
+                    [routerLink]="['/contacts', dc.customerId, 'message']"
+                    [queryParams]="{ document: 'c:' + dc.id }"
+                    title="Send this challan to its buyer on WhatsApp or email"
+                  >
+                    Send
+                  </a>
+                </div>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </div>
     }
 
@@ -730,75 +720,76 @@
           }
         </div>
 
-        <div class="table-responsive">
-          <table class="ar-table">
-            <thead>
-              <tr>
-                <th>Invoice #</th>
-                <th>Order Ref</th>
-                <th>Issue Date</th>
-                <th>Due Date</th>
-                <th class="num-col">Invoice Total</th>
-                <th class="num-col">Balance Due</th>
-                <th>Status</th>
-                <th class="actions-col">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (inv of filteredInvoices(); track inv.id) {
-                <tr>
-                  <td class="font-mono font-bold text-primary">{{ inv.invoiceNumber }}</td>
-                  <td class="font-mono text-xs">{{ inv.salesOrderNumber || '—' }}</td>
-                  <td>{{ inv.issueDateUtc | date: 'dd MMM yyyy' }}</td>
-                  <td>
-                    {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}
-                    @if (isOverdue(inv.balanceDueInPaise, inv.dueDateUtc)) {
-                      <span class="c360-view-pill text-danger">OVERDUE</span>
-                    }
-                  </td>
-                  <td class="num-col font-bold">
-                    ₹{{ inv.grandTotalInPaise / 100 | number: '1.2-2' }}
-                  </td>
-                  <td class="num-col font-bold" [class.text-danger]="inv.balanceDueInPaise > 0">
-                    ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
-                  </td>
-                  <td>
-                    <ar-chip [tone]="getInvoiceStatusTone(inv.status)">
-                      {{ getInvoiceStatusLabel(inv.status) }}
-                    </ar-chip>
-                  </td>
-                  <td class="actions-col">
-                    <a ar-button variant="ghost" [routerLink]="['/sales/invoices', inv.id]">
-                      View
-                    </a>
-                    <a
-                      ar-button
-                      variant="ghost"
-                      [routerLink]="['/contacts', inv.customerId, 'message']"
-                      [queryParams]="{ document: 'i:' + inv.id }"
-                      title="Send this invoice to its buyer on WhatsApp or email"
-                    >
-                      Send
-                    </a>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="8">
-                    <div class="empty-state">
-                      <div class="empty-state__icon">🧾</div>
-                      <h3 class="empty-state__title">No commercial invoices found</h3>
-                      <p class="empty-state__hint">
-                        Invoices generated with GST tax calculations and payment terms will appear
-                        here.
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <ejs-grid
+          arGrid="customer-360-invoices"
+          [dataSource]="filteredInvoices()"
+          aria-label="Recent Invoices"
+        >
+          <e-columns>
+            <e-column field="invoiceNumber" headerText="Invoice #" width="150">
+              <ng-template #template let-inv>
+                <span class="font-mono font-bold text-primary">{{ inv.invoiceNumber }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="salesOrderNumber" headerText="Order Ref" width="140">
+              <ng-template #template let-inv>
+                <span class="font-mono text-xs">{{ inv.salesOrderNumber || '—' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="issueDateUtc" headerText="Issue Date" width="130">
+              <ng-template #template let-inv>
+                {{ inv.issueDateUtc | date: 'dd MMM yyyy' }}
+              </ng-template>
+            </e-column>
+            <e-column field="dueDateUtc" headerText="Due Date" width="150">
+              <ng-template #template let-inv>
+                <div>
+                  {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}
+                  @if (isOverdue(inv.balanceDueInPaise, inv.dueDateUtc)) {
+                    <span class="c360-view-pill text-danger">OVERDUE</span>
+                  }
+                </div>
+              </ng-template>
+            </e-column>
+            <e-column field="grandTotalInPaise" headerText="Invoice Total" width="140" [textAlign]="'Right'">
+              <ng-template #template let-inv>
+                <span class="font-bold">₹{{ inv.grandTotalInPaise / 100 | number: '1.2-2' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="balanceDueInPaise" headerText="Balance Due" width="140" [textAlign]="'Right'">
+              <ng-template #template let-inv>
+                <span class="font-bold" [class.text-danger]="inv.balanceDueInPaise > 0">
+                  ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Status" width="140">
+              <ng-template #template let-inv>
+                <ar-chip [tone]="getInvoiceStatusTone(inv.status)">
+                  {{ getInvoiceStatusLabel(inv.status) }}
+                </ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Action" width="140" freeze="Right">
+              <ng-template #template let-inv>
+                <div class="actions-col">
+                  <a ar-button variant="ghost" [routerLink]="['/sales/invoices', inv.id]">
+                    View
+                  </a>
+                  <a
+                    ar-button
+                    variant="ghost"
+                    [routerLink]="['/contacts', inv.customerId, 'message']"
+                    [queryParams]="{ document: 'i:' + inv.id }"
+                    title="Send this invoice to its buyer on WhatsApp or email"
+                  >
+                    Send
+                  </a>
+                </div>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </div>
     }
 
@@ -829,59 +820,53 @@
           }
         </div>
 
-        <div class="table-responsive">
-          <table class="ar-table">
-            <thead>
-              <tr>
-                <th>Serial #</th>
-                <th>Machine / Equipment Model</th>
-                <th>Commissioned</th>
-                <th>Operational Status</th>
-                <th>AMC Contract</th>
-                <th class="actions-col">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (ast of filteredAssets(); track ast.id) {
-                <tr>
-                  <td class="font-mono font-bold text-primary">{{ ast.serialNumber }}</td>
-                  <td class="font-semibold">{{ ast.modelName }}</td>
-                  <td>{{ (ast.commissionedDate | date: 'dd MMM yyyy') || '—' }}</td>
-                  <td>
-                    <ar-chip tone="good">{{ ast.status || 'Operational' }}</ar-chip>
-                  </td>
-                  <td>
-                    <ar-chip [tone]="getAmcStatusTone(ast.amcStatus)">
-                      {{ ast.amcStatus || 'None' }}
-                    </ar-chip>
-                  </td>
-                  <td class="actions-col">
-                    <a
-                      ar-button
-                      variant="ghost"
-                      routerLink="/installed-base"
-                      [queryParams]="{ open: ast.id }"
-                    >
-                      Details
-                    </a>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="6">
-                    <div class="empty-state">
-                      <div class="empty-state__icon">⚙️</div>
-                      <h3 class="empty-state__title">No machines registered in installed base</h3>
-                      <p class="empty-state__hint">
-                        Track machines, commissioning dates, warranty, and AMC service coverage.
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <ejs-grid
+          arGrid="customer-360-assets"
+          [dataSource]="filteredAssets()"
+          aria-label="Installed Equipment"
+        >
+          <e-columns>
+            <e-column field="serialNumber" headerText="Serial #" width="150">
+              <ng-template #template let-ast>
+                <span class="font-mono font-bold text-primary">{{ ast.serialNumber }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="modelName" headerText="Machine / Equipment Model" width="220">
+              <ng-template #template let-ast>
+                <span class="font-semibold">{{ ast.modelName }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="commissionedDate" headerText="Commissioned" width="140">
+              <ng-template #template let-ast>
+                {{ (ast.commissionedDate | date: 'dd MMM yyyy') || '—' }}
+              </ng-template>
+            </e-column>
+            <e-column headerText="Operational Status" width="160">
+              <ng-template #template let-ast>
+                <ar-chip tone="good">{{ ast.status || 'Operational' }}</ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column headerText="AMC Contract" width="150">
+              <ng-template #template let-ast>
+                <ar-chip [tone]="getAmcStatusTone(ast.amcStatus)">
+                  {{ ast.amcStatus || 'None' }}
+                </ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Action" width="110" freeze="Right">
+              <ng-template #template let-ast>
+                <a
+                  ar-button
+                  variant="ghost"
+                  routerLink="/installed-base"
+                  [queryParams]="{ open: ast.id }"
+                >
+                  Details
+                </a>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </div>
     }
 
@@ -897,59 +882,53 @@
           </div>
         </div>
 
-        <div class="table-responsive">
-          <table class="ar-table">
-            <thead>
-              <tr>
-                <th>Ticket #</th>
-                <th>Subject</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th class="actions-col">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (t of c.openTickets; track t.id) {
-                <tr>
-                  <td class="font-mono font-bold">{{ t.ticketNumber }}</td>
-                  <td class="font-semibold">{{ t.subject }}</td>
-                  <td>
-                    <ar-chip [tone]="getTicketPriorityTone(t.priority)">{{ t.priority }}</ar-chip>
-                  </td>
-                  <td>
-                    <ar-chip [tone]="t.status === 'Pending' ? 'warn' : 'teal'">{{
-                      t.status
-                    }}</ar-chip>
-                  </td>
-                  <td>{{ t.creationTime | date: 'dd MMM yyyy' }}</td>
-                  <td class="actions-col">
-                    <a
-                      ar-button
-                      variant="ghost"
-                      routerLink="/helpdesk"
-                      [queryParams]="{ open: t.id }"
-                    >
-                      Desk
-                    </a>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="6">
-                    <div class="empty-state">
-                      <div class="empty-state__icon">🎟️</div>
-                      <h3 class="empty-state__title">No open service tickets</h3>
-                      <p class="empty-state__hint">
-                        All service calls, breakdowns, and calibration requests are resolved.
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <ejs-grid
+          arGrid="customer-360-tickets"
+          [dataSource]="c.openTickets"
+          aria-label="Service Tickets"
+        >
+          <e-columns>
+            <e-column field="ticketNumber" headerText="Ticket #" width="140">
+              <ng-template #template let-t>
+                <span class="font-mono font-bold">{{ t.ticketNumber }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="subject" headerText="Subject" width="220">
+              <ng-template #template let-t>
+                <span class="font-semibold">{{ t.subject }}</span>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Priority" width="130">
+              <ng-template #template let-t>
+                <ar-chip [tone]="getTicketPriorityTone(t.priority)">{{ t.priority }}</ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Status" width="130">
+              <ng-template #template let-t>
+                <ar-chip [tone]="t.status === 'Pending' ? 'warn' : 'teal'">{{
+                  t.status
+                }}</ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column field="creationTime" headerText="Created" width="130">
+              <ng-template #template let-t>
+                {{ t.creationTime | date: 'dd MMM yyyy' }}
+              </ng-template>
+            </e-column>
+            <e-column headerText="Action" width="110" freeze="Right">
+              <ng-template #template let-t>
+                <a
+                  ar-button
+                  variant="ghost"
+                  routerLink="/helpdesk"
+                  [queryParams]="{ open: t.id }"
+                >
+                  Desk
+                </a>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </div>
     }
   } @else if (loading()) {

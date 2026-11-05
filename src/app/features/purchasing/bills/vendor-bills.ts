@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
@@ -28,6 +29,7 @@ import {
   VendorBillService,
 } from '../../../proxy/purchasing';
 import { ArButton, ArChip, ChipTone } from '../../../ui';
+import { ArGrid } from '../../../ui/grid';
 
 const MOCK_BILLS: VendorBillDto[] = [
   {
@@ -170,7 +172,17 @@ const MOCK_BILLS: VendorBillDto[] = [
   standalone: true,
   selector: 'ar-vendor-bills',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, RouterLink, ArTopbar, ArButton, ArChip, ArSupplierScopeBar],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArSupplierScopeBar,
+    ArGrid,
+    GridModule,
+  ],
   template: `
     <ar-topbar
       title="Vendor Bills & 3-Way Matching"
@@ -274,23 +286,14 @@ const MOCK_BILLS: VendorBillDto[] = [
 
       <!-- Bills Table -->
       <section class="table-card">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Bill & Invoice #</th>
-              <th>Supplier & GSTIN</th>
-              <th>PO & GRN Matching</th>
-              <th>3-Way Match</th>
-              <th>GSTR-2B ITC</th>
-              <th class="text-right">Total (Inc Tax)</th>
-              <th class="text-right">Balance Due</th>
-              <th>Status</th>
-              <th class="actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let b of filteredBills()">
-              <td>
+        <ejs-grid
+          arGrid="vendor-bills"
+          [dataSource]="filteredBills()"
+          aria-label="Vendor Bills"
+        >
+          <e-columns>
+            <e-column field="billNumber" headerText="Bill & Invoice #" width="180">
+              <ng-template #template let-b>
                 <div class="cell-main">
                   <a
                     class="code-link"
@@ -305,53 +308,72 @@ const MOCK_BILLS: VendorBillDto[] = [
                     >Dated: {{ b.vendorInvoiceDateUtc | date: 'mediumDate' }}</span
                   >
                 </div>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="supplierName" headerText="Supplier & GSTIN" width="220">
+              <ng-template #template let-b>
                 <div class="cell-main">
                   <strong>{{ b.supplierName }}</strong>
                   <span class="gstin-badge font-mono">{{ b.supplierGstin || 'Unregistered' }}</span>
                   <span class="sub-text">Due: {{ b.dueDateUtc | date: 'mediumDate' }}</span>
                 </div>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="purchaseOrderReference" headerText="PO & GRN Matching" width="180">
+              <ng-template #template let-b>
                 <div class="cell-main">
                   <span class="sub-text">PO: {{ b.purchaseOrderReference || 'Direct' }}</span>
                   <span class="sub-text">GRN: {{ b.goodsReceiptNoteNumber || 'Direct' }}</span>
                 </div>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="threeWayMatchStatus" headerText="3-Way Match" width="140">
+              <ng-template #template let-b>
                 <ar-chip [tone]="matchTone(b.threeWayMatchStatus)">
                   {{ matchLabel(b.threeWayMatchStatus) }}
                 </ar-chip>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="gstr2bMatchStatus" headerText="GSTR-2B ITC" width="140">
+              <ng-template #template let-b>
                 <ar-chip [tone]="itcTone(b.gstr2bMatchStatus)">
                   {{ itcLabel(b.gstr2bMatchStatus) }}
                 </ar-chip>
-              </td>
-              <td class="text-right font-mono">
-                <strong>₹{{ b.grandTotalInPaise / 100 | number: '1.2-2' }}</strong>
-                <div class="tax-sub text-muted" *ngIf="b.totalTaxInPaise > 0">
-                  Tax: ₹{{ b.totalTaxInPaise / 100 | number: '1.2-2' }}
+              </ng-template>
+            </e-column>
+            <e-column field="grandTotalInPaise" headerText="Total (Inc Tax)" textAlign="Right" width="160">
+              <ng-template #template let-b>
+                <div class="font-mono">
+                  <strong>₹{{ b.grandTotalInPaise / 100 | number: '1.2-2' }}</strong>
+                  <div class="tax-sub text-muted" *ngIf="b.totalTaxInPaise > 0">
+                    Tax: ₹{{ b.totalTaxInPaise / 100 | number: '1.2-2' }}
+                  </div>
+                  <div class="tax-sub text-danger" *ngIf="b.tdsDeductedInPaise > 0">
+                    TDS: -₹{{ b.tdsDeductedInPaise / 100 | number: '1.2-2' }}
+                  </div>
                 </div>
-                <div class="tax-sub text-danger" *ngIf="b.tdsDeductedInPaise > 0">
-                  TDS: -₹{{ b.tdsDeductedInPaise / 100 | number: '1.2-2' }}
-                </div>
-              </td>
-              <td class="text-right font-mono">
+              </ng-template>
+            </e-column>
+            <e-column field="balanceDueInPaise" headerText="Balance Due" textAlign="Right" width="150">
+              <ng-template #template let-b>
                 <span
+                  class="font-mono"
                   [class.text-danger]="b.balanceDueInPaise > 0"
                   [class.text-good]="b.balanceDueInPaise === 0"
                 >
                   ₹{{ b.balanceDueInPaise / 100 | number: '1.2-2' }}
                 </span>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="status" headerText="Status" width="130">
+              <ng-template #template let-b>
                 <ar-chip [tone]="billTone(b.status)">
                   {{ billLabel(b.status) }}
                 </ar-chip>
-              </td>
-              <td class="actions-col">
+              </ng-template>
+            </e-column>
+            <e-column headerText="Actions" width="200" freeze="Right">
+              <ng-template #template let-b>
                 <div class="action-buttons">
                   <button
                     ar-button
@@ -377,15 +399,10 @@ const MOCK_BILLS: VendorBillDto[] = [
                     >View</a
                   >
                 </div>
-              </td>
-            </tr>
-            <tr *ngIf="filteredBills().length === 0">
-              <td colspan="9" class="empty-state">
-                <p>No vendor bills found matching your filter criteria.</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </section>
     </div>
   `,

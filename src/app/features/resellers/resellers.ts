@@ -34,6 +34,8 @@ import type {
 } from '../../proxy/resellers/reseller.models';
 import { ResellerService } from '../../proxy/resellers/reseller.service';
 import { ArBanner, ArButton, ArCard, ArChip, ArStatTile, ArTabs } from '../../ui';
+import { ArGrid } from '../../ui/grid';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import {
   BILLING_MODEL_LABEL,
   DOMAIN_STATUS,
@@ -66,7 +68,17 @@ const PAGE = { maxResultCount: 200 };
 @Component({
   selector: 'ar-resellers',
   standalone: true,
-  imports: [ArTopbar, ArCard, ArButton, ArBanner, ArChip, ArStatTile, ArTabs],
+  imports: [
+    ArTopbar,
+    ArCard,
+    ArButton,
+    ArBanner,
+    ArChip,
+    ArStatTile,
+    ArTabs,
+    ArGrid,
+    GridModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -100,41 +112,43 @@ const PAGE = { maxResultCount: 200 };
                 one here.
               </p>
             } @else {
-              <div class="tbl-wrap">
-                <table class="ar-table">
-                  <thead>
-                    <tr>
-                      <th>Partner</th>
-                      <th>Status</th>
-                      <th>Tier</th>
-                      <th class="num">Commission</th>
-                      <th class="num">Accrued</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (p of partners(); track p.id) {
-                      <tr [class.sel]="p.id === selectedId()">
-                        <td>
-                          <strong>{{ p.companyName }}</strong>
-                          <span class="sub ar-mono">{{ p.partnerCode }}</span>
-                        </td>
-                        <td>
-                          <ar-chip [tone]="partnerStatus(p.status).tone">{{
-                            partnerStatus(p.status).label
-                          }}</ar-chip>
-                        </td>
-                        <td>{{ tierLabel(p.tier) }}</td>
-                        <td class="num">{{ bps(p.commissionRateBps) }}</td>
-                        <td class="num">{{ money(p.accruedCommissionPaise) }}</td>
-                        <td class="act">
-                          <button type="button" class="link" (click)="select(p.id)">Open</button>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
+              <ejs-grid arGrid="reseller-partners" [dataSource]="partners()" aria-label="Partners">
+                <e-columns>
+                  <e-column field="companyName" headerText="Partner" width="220">
+                    <ng-template #template let-p>
+                      <strong>{{ p.companyName }}</strong>
+                      <span class="sub ar-mono">{{ p.partnerCode }}</span>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="status" headerText="Status" width="140">
+                    <ng-template #template let-p>
+                      <ar-chip [tone]="partnerStatus(p.status).tone">{{
+                        partnerStatus(p.status).label
+                      }}</ar-chip>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="tier" headerText="Tier" width="130">
+                    <ng-template #template let-p>
+                      {{ tierLabel(p.tier) }}
+                    </ng-template>
+                  </e-column>
+                  <e-column field="commissionRateBps" headerText="Commission" textAlign="Right" width="130">
+                    <ng-template #template let-p>
+                      {{ bps(p.commissionRateBps) }}
+                    </ng-template>
+                  </e-column>
+                  <e-column field="accruedCommissionPaise" headerText="Accrued" textAlign="Right" width="140">
+                    <ng-template #template let-p>
+                      {{ money(p.accruedCommissionPaise) }}
+                    </ng-template>
+                  </e-column>
+                  <e-column headerText="" width="90" freeze="Right">
+                    <ng-template #template let-p>
+                      <button type="button" class="link" (click)="select(p.id)">Open</button>
+                    </ng-template>
+                  </e-column>
+                </e-columns>
+              </ejs-grid>
             }
           </ar-card>
         } @else if (!mock && loaded() && !partner()) {
@@ -362,59 +376,61 @@ const PAGE = { maxResultCount: 200 };
                 @if (clients().length === 0) {
                   <p class="empty">No client workspaces yet.</p>
                 } @else {
-                  <div class="tbl-wrap">
-                    <table class="ar-table">
-                      <thead>
-                        <tr>
-                          <th>Client</th>
-                          <th>Plan</th>
-                          <th class="num">Wholesale / month</th>
-                          <th class="num">Commission</th>
-                          <th>Status</th>
-                          <th></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (c of clients(); track c.id) {
-                          <tr>
-                            <td>{{ c.clientTenantName }}</td>
-                            <td>{{ c.subscribedPlanCode }} · {{ c.billingCycle }}</td>
-                            <td class="num">{{ money(c.wholesaleRatePaise) }}</td>
-                            <td class="num">{{ bps(c.commissionRateBps) }}</td>
-                            <td>
-                              <ar-chip [tone]="c.isActive ? 'good' : 'neutral'">{{
-                                c.isActive ? 'Active' : 'Inactive'
-                              }}</ar-chip>
-                            </td>
-                            <td class="act">
-                              @if (canClients()) {
-                                <button type="button" class="link" (click)="changePlan(p, c)">
-                                  Change plan
+                  <ejs-grid arGrid="reseller-clients" [dataSource]="clients()" aria-label="Client workspaces">
+                    <e-columns>
+                      <e-column field="clientTenantName" headerText="Client" width="200" />
+                      <e-column headerText="Plan" width="180">
+                        <ng-template #template let-c>
+                          {{ c.subscribedPlanCode }} · {{ c.billingCycle }}
+                        </ng-template>
+                      </e-column>
+                      <e-column field="wholesaleRatePaise" headerText="Wholesale / month" textAlign="Right" width="160">
+                        <ng-template #template let-c>
+                          {{ money(c.wholesaleRatePaise) }}
+                        </ng-template>
+                      </e-column>
+                      <e-column field="commissionRateBps" headerText="Commission" textAlign="Right" width="130">
+                        <ng-template #template let-c>
+                          {{ bps(c.commissionRateBps) }}
+                        </ng-template>
+                      </e-column>
+                      <e-column field="isActive" headerText="Status" width="130">
+                        <ng-template #template let-c>
+                          <ar-chip [tone]="c.isActive ? 'good' : 'neutral'">{{
+                            c.isActive ? 'Active' : 'Inactive'
+                          }}</ar-chip>
+                        </ng-template>
+                      </e-column>
+                      <e-column headerText="" width="180" freeze="Right">
+                        <ng-template #template let-c>
+                          @if (canClients()) {
+                            <div class="act">
+                              <button type="button" class="link" (click)="changePlan(p, c)">
+                                Change plan
+                              </button>
+                              @if (c.isActive) {
+                                <button
+                                  type="button"
+                                  class="link link--danger"
+                                  (click)="deactivateClient(p, c)"
+                                >
+                                  Deactivate
                                 </button>
-                                @if (c.isActive) {
-                                  <button
-                                    type="button"
-                                    class="link link--danger"
-                                    (click)="deactivateClient(p, c)"
-                                  >
-                                    Deactivate
-                                  </button>
-                                } @else {
-                                  <button
-                                    type="button"
-                                    class="link"
-                                    (click)="reactivateClient(p, c)"
-                                  >
-                                    Reactivate
-                                  </button>
-                                }
+                              } @else {
+                                <button
+                                  type="button"
+                                  class="link"
+                                  (click)="reactivateClient(p, c)"
+                                >
+                                  Reactivate
+                                </button>
                               }
-                            </td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
+                            </div>
+                          }
+                        </ng-template>
+                      </e-column>
+                    </e-columns>
+                  </ejs-grid>
                 }
               }
 
@@ -435,32 +451,40 @@ const PAGE = { maxResultCount: 200 };
                 @if (commissions().length === 0) {
                   <p class="empty">No commission earned yet.</p>
                 } @else {
-                  <div class="tbl-wrap">
-                    <table class="ar-table">
-                      <thead>
-                        <tr>
-                          <th>Invoice</th>
-                          <th>Client</th>
-                          <th class="num">Invoice amount</th>
-                          <th class="num">Rate</th>
-                          <th class="num">Earned</th>
-                          <th>Date</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (c of commissions(); track c.id) {
-                          <tr>
-                            <td class="ar-mono">{{ c.invoiceReference }}</td>
-                            <td>{{ clientName(c.clientTenantId) }}</td>
-                            <td class="num">{{ money(c.grossAmountPaise) }}</td>
-                            <td class="num">{{ bps(c.commissionBasisPoints) }}</td>
-                            <td class="num">{{ money(c.earnedCommissionPaise) }}</td>
-                            <td>{{ date(c.occurredAtUtc) }}</td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
+                  <ejs-grid arGrid="reseller-commissions" [dataSource]="commissions()" aria-label="Commissions">
+                    <e-columns>
+                      <e-column field="invoiceReference" headerText="Invoice" width="150">
+                        <ng-template #template let-c>
+                          <span class="ar-mono">{{ c.invoiceReference }}</span>
+                        </ng-template>
+                      </e-column>
+                      <e-column headerText="Client" width="180">
+                        <ng-template #template let-c>
+                          {{ clientName(c.clientTenantId) }}
+                        </ng-template>
+                      </e-column>
+                      <e-column field="grossAmountPaise" headerText="Invoice amount" textAlign="Right" width="140">
+                        <ng-template #template let-c>
+                          {{ money(c.grossAmountPaise) }}
+                        </ng-template>
+                      </e-column>
+                      <e-column field="commissionBasisPoints" headerText="Rate" textAlign="Right" width="110">
+                        <ng-template #template let-c>
+                          {{ bps(c.commissionBasisPoints) }}
+                        </ng-template>
+                      </e-column>
+                      <e-column field="earnedCommissionPaise" headerText="Earned" textAlign="Right" width="140">
+                        <ng-template #template let-c>
+                          {{ money(c.earnedCommissionPaise) }}
+                        </ng-template>
+                      </e-column>
+                      <e-column field="occurredAtUtc" headerText="Date" width="130">
+                        <ng-template #template let-c>
+                          {{ date(c.occurredAtUtc) }}
+                        </ng-template>
+                      </e-column>
+                    </e-columns>
+                  </ejs-grid>
                 }
               }
 
@@ -482,56 +506,62 @@ const PAGE = { maxResultCount: 200 };
                 @if (payouts().length === 0) {
                   <p class="empty">No payouts yet.</p>
                 } @else {
-                  <div class="tbl-wrap">
-                    <table class="ar-table">
-                      <thead>
-                        <tr>
-                          <th>Payout</th>
-                          <th class="num">Amount</th>
-                          <th>Status</th>
-                          <th>Requested</th>
-                          <th>Reference / reason</th>
-                          <th></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        @for (o of payouts(); track o.id) {
-                          <tr>
-                            <td class="ar-mono">{{ o.payoutNumber }}</td>
-                            <td class="num">{{ money(o.amountPaise) }}</td>
-                            <td>
-                              <ar-chip [tone]="payoutStatus(o.status).tone">{{
-                                payoutStatus(o.status).label
-                              }}</ar-chip>
-                            </td>
-                            <td>{{ date(o.requestedAtUtc) }}</td>
-                            <td>{{ o.paymentReference || o.rejectionReason || '—' }}</td>
-                            <td class="act">
-                              @if (hostView() && canProcessPayouts()) {
-                                @if (o.status === P.Requested) {
-                                  <button type="button" class="link" (click)="approvePayout(o)">
-                                    Approve
-                                  </button>
-                                }
-                                @if (o.status === P.Requested || o.status === P.Approved) {
-                                  <button type="button" class="link" (click)="settlePayout(o)">
-                                    Mark paid
-                                  </button>
-                                  <button
-                                    type="button"
-                                    class="link link--danger"
-                                    (click)="rejectPayout(o)"
-                                  >
-                                    Reject
-                                  </button>
-                                }
+                  <ejs-grid arGrid="reseller-payouts" [dataSource]="payouts()" aria-label="Payouts">
+                    <e-columns>
+                      <e-column field="payoutNumber" headerText="Payout" width="150">
+                        <ng-template #template let-o>
+                          <span class="ar-mono">{{ o.payoutNumber }}</span>
+                        </ng-template>
+                      </e-column>
+                      <e-column field="amountPaise" headerText="Amount" textAlign="Right" width="140">
+                        <ng-template #template let-o>
+                          {{ money(o.amountPaise) }}
+                        </ng-template>
+                      </e-column>
+                      <e-column field="status" headerText="Status" width="140">
+                        <ng-template #template let-o>
+                          <ar-chip [tone]="payoutStatus(o.status).tone">{{
+                            payoutStatus(o.status).label
+                          }}</ar-chip>
+                        </ng-template>
+                      </e-column>
+                      <e-column field="requestedAtUtc" headerText="Requested" width="130">
+                        <ng-template #template let-o>
+                          {{ date(o.requestedAtUtc) }}
+                        </ng-template>
+                      </e-column>
+                      <e-column headerText="Reference / reason" width="200">
+                        <ng-template #template let-o>
+                          {{ o.paymentReference || o.rejectionReason || '—' }}
+                        </ng-template>
+                      </e-column>
+                      <e-column headerText="" width="200" freeze="Right">
+                        <ng-template #template let-o>
+                          @if (hostView() && canProcessPayouts()) {
+                            <div class="act">
+                              @if (o.status === P.Requested) {
+                                <button type="button" class="link" (click)="approvePayout(o)">
+                                  Approve
+                                </button>
                               }
-                            </td>
-                          </tr>
-                        }
-                      </tbody>
-                    </table>
-                  </div>
+                              @if (o.status === P.Requested || o.status === P.Approved) {
+                                <button type="button" class="link" (click)="settlePayout(o)">
+                                  Mark paid
+                                </button>
+                                <button
+                                  type="button"
+                                  class="link link--danger"
+                                  (click)="rejectPayout(o)"
+                                >
+                                  Reject
+                                </button>
+                              }
+                            </div>
+                          }
+                        </ng-template>
+                      </e-column>
+                    </e-columns>
+                  </ejs-grid>
                 }
               }
             }

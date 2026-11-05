@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { GridModule, RecordClickEventArgs } from '@syncfusion/ej2-angular-grids';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import { SalesOrderDto } from '../../../proxy/sales/sales-order.models';
@@ -10,6 +11,7 @@ import { SalesExportFormat, SalesOrderStatus } from '../../../proxy/sales/sales-
 import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.service';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { ArButton, ArChip } from '../../../ui';
+import { ArGrid } from '../../../ui/grid';
 import { ToastService } from '../../../core/ui/toast.service';
 import { CustomerScope, readCustomerScope } from '../../../core/util/customer-scope';
 import { errorMessage } from '../../activities/activity-logic';
@@ -27,7 +29,7 @@ import { ArSalesExport } from '../sales-export';
 @Component({
   selector: 'ar-sales-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArSalesExport],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArSalesExport, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -120,87 +122,94 @@ import { ArSalesExport } from '../sales-export';
 
       <!-- Orders List Table -->
       <div class="table-card">
-        <table class="ar-table">
-          <thead>
-            <tr>
-              <th>Order #</th>
-              <th>Customer / Account</th>
-              <th>Customer PO</th>
-              <th>Order Date</th>
-              <th>Delivery terms</th>
-              <th class="num-col">Grand total</th>
-              <th>Status</th>
-              <th class="actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (order of filteredOrders(); track order.id) {
-              <tr class="order-row" (click)="openOrder(order)">
-                <td class="font-mono font-bold text-primary">{{ order.orderNumber }}</td>
-                <td>
-                  <div class="cust-title">{{ order.customerName }}</div>
-                  @if (order.customerAccountName) {
-                    <div class="cust-sub">{{ order.customerAccountName }}</div>
+        <ejs-grid
+          arGrid="sales-orders"
+          [dataSource]="filteredOrders()"
+          (recordClick)="onOrderClick($event)"
+          aria-label="Sales orders"
+        >
+          <e-columns>
+            <e-column field="orderNumber" headerText="Order #" width="150">
+              <ng-template #template let-order>
+                <span class="font-mono font-bold text-primary">{{ order.orderNumber }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="customerName" headerText="Customer / Account" width="220">
+              <ng-template #template let-order>
+                <div class="cust-title">{{ order.customerName }}</div>
+                @if (order.customerAccountName) {
+                  <div class="cust-sub">{{ order.customerAccountName }}</div>
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="customerPoNumber" headerText="Customer PO" width="160">
+              <ng-template #template let-order>
+                @if (order.customerPoNumber) {
+                  <span class="po-badge font-mono">{{ order.customerPoNumber }}</span>
+                  @if (order.customerPoDate) {
+                    <span class="po-date">{{ order.customerPoDate | date: 'dd MMM yyyy' }}</span>
                   }
-                </td>
-                <td>
-                  @if (order.customerPoNumber) {
-                    <span class="po-badge font-mono">{{ order.customerPoNumber }}</span>
-                    @if (order.customerPoDate) {
-                      <span class="po-date">{{ order.customerPoDate | date: 'dd MMM yyyy' }}</span>
-                    }
-                  } @else {
-                    <span class="text-muted">—</span>
-                  }
-                </td>
-                <td>{{ order.orderDateUtc | date: 'dd MMM yyyy' }}</td>
-                <td>{{ order.deliveryTerms || 'Standard' }}</td>
-                <td class="num-col font-bold">
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="orderDateUtc" headerText="Order Date" width="130">
+              <ng-template #template let-order>
+                {{ order.orderDateUtc | date: 'dd MMM yyyy' }}
+              </ng-template>
+            </e-column>
+            <e-column field="deliveryTerms" headerText="Delivery terms" width="140">
+              <ng-template #template let-order>
+                {{ order.deliveryTerms || 'Standard' }}
+              </ng-template>
+            </e-column>
+            <e-column field="grandTotalInPaise" headerText="Grand total" textAlign="Right" width="140">
+              <ng-template #template let-order>
+                <span class="num-col font-bold">
                   ₹{{ order.grandTotalInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td>
-                  <ar-chip [tone]="getStatusTone(order.status)">
-                    {{ getStatusLabel(order.status) }}
-                  </ar-chip>
-                </td>
-                <td class="actions-col" (click)="$event.stopPropagation()">
-                  <div class="row-actions">
-                    <button class="action-btn" title="View details" (click)="openOrder(order)">
-                      View
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column field="status" headerText="Status" width="140">
+              <ng-template #template let-order>
+                <ar-chip [tone]="getStatusTone(order.status)">
+                  {{ getStatusLabel(order.status) }}
+                </ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Actions" width="240" freeze="Right">
+              <ng-template #template let-order>
+                <div class="row-actions">
+                  <button class="action-btn" title="View details" (click)="openOrder(order)">
+                    View
+                  </button>
+                  @if (canConfirm(order)) {
+                    <button class="action-btn primary" (click)="confirmOrder(order)">
+                      Confirm
                     </button>
-                    @if (canConfirm(order)) {
-                      <button class="action-btn primary" (click)="confirmOrder(order)">
-                        Confirm
-                      </button>
-                    }
-                    @if (canFulfil(order)) {
-                      <button
-                        class="action-btn success"
-                        title="Create Delivery Challan"
-                        (click)="createChallan(order)"
-                      >
-                        Challan
-                      </button>
-                      <button
-                        class="action-btn primary"
-                        title="Generate GST Invoice"
-                        (click)="createInvoice(order)"
-                      >
-                        Invoice
-                      </button>
-                    }
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="8" class="empty-state">
-                  No sales orders found matching your criteria.
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+                  }
+                  @if (canFulfil(order)) {
+                    <button
+                      class="action-btn success"
+                      title="Create Delivery Challan"
+                      (click)="createChallan(order)"
+                    >
+                      Challan
+                    </button>
+                    <button
+                      class="action-btn primary"
+                      title="Generate GST Invoice"
+                      (click)="createInvoice(order)"
+                    >
+                      Invoice
+                    </button>
+                  }
+                </div>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </div>
     </div>
   `,
@@ -474,6 +483,13 @@ export class ArSalesOrders {
           },
         });
     }
+  }
+
+  onOrderClick(e: RecordClickEventArgs): void {
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('.row-actions, button, a')) return;
+    const row = e.rowData as SalesOrderDto | undefined;
+    if (row) this.openOrder(row);
   }
 
   /** The order's own page, keeping this list's customer so Back returns here. */

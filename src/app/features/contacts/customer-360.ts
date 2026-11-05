@@ -29,6 +29,8 @@ import {
   SalesOrderStatus,
 } from '../../proxy/sales/sales-enums';
 import { ArButton, ArChip, ArIcon, ArSearchBox, ArTabs, ChipTone } from '../../ui';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 import { ArCustomerActions } from './customer-actions';
 import { ArCustomer360Links } from './customer-360-links';
 import { CockpitOriginService } from '../../layout/cockpit-origin.service';
@@ -251,6 +253,8 @@ const ACCOUNT_TABS: readonly Customer360Tab[] = [
     ArIcon,
     ArCustomerActions,
     ArCustomer360Links,
+    ArGrid,
+    GridModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './customer-360.html',

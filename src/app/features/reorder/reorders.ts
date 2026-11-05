@@ -13,6 +13,8 @@ import {
   ReorderRequestDto,
 } from '../../proxy/reorder/reorder-portal.service';
 import { ArButton, ArChip } from '../../ui';
+import { ArGrid } from '../../ui/grid';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import type { ChipTone } from '../../ui/chip';
 import { rupees } from './reorder-logic';
 import { problem } from './reorder-pages';
@@ -69,7 +71,7 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
  */
 @Component({
   selector: 'ar-reorders',
-  imports: [ArTopbar, ArButton, ArChip, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, RouterLink, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -113,30 +115,23 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
 
       @if (approvals().length) {
         <h2 class="ro__h">Waiting for the customer's approver</h2>
-        <div class="tbl">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Received</th>
-                <th scope="col">Buyer</th>
-                <th scope="col">Company</th>
-                <th scope="col" class="num">Parts</th>
-                <th scope="col" class="num">Before GST</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (a of approvals(); track a.id) {
-                <tr>
-                  <td>{{ when(a.creationTime) }}</td>
-                  <td>{{ a.contactName || 'Buyer' }}</td>
-                  <td>{{ a.companyName || '—' }}</td>
-                  <td class="num">{{ a.lineCount }}</td>
-                  <td class="num">{{ money(a.subtotalInPaise) }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <ejs-grid arGrid="reorder-approvals" [dataSource]="approvals()" aria-label="Waiting for approvals">
+          <e-columns>
+            <e-column field="creationTime" headerText="Received" width="130">
+              <ng-template #template let-a>{{ when(a.creationTime) }}</ng-template>
+            </e-column>
+            <e-column field="contactName" headerText="Buyer" width="160">
+              <ng-template #template let-a>{{ a.contactName || 'Buyer' }}</ng-template>
+            </e-column>
+            <e-column field="companyName" headerText="Company" width="180">
+              <ng-template #template let-a>{{ a.companyName || '—' }}</ng-template>
+            </e-column>
+            <e-column field="lineCount" headerText="Parts" textAlign="Right" width="100" />
+            <e-column field="subtotalInPaise" headerText="Before GST" textAlign="Right" width="140">
+              <ng-template #template let-a>{{ money(a.subtotalInPaise) }}</ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
         <h2 class="ro__h">Requests</h2>
       }
 
@@ -146,103 +141,99 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
           inbox.
         </p>
       } @else {
-        <div class="tbl">
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Received</th>
-                <th scope="col">Customer</th>
-                <th scope="col">Quotation</th>
-                <th scope="col" class="num">Parts</th>
-                <th scope="col" class="num">Before GST</th>
-                <th scope="col">PO / delivery</th>
-                <th scope="col">Status</th>
-                <th scope="col">Delivery</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (r of requests(); track r.id) {
-                <tr>
-                  <td>{{ when(r.creationTime) }}</td>
-                  <td>{{ r.contactName || 'Customer' }}</td>
-                  <td>
-                    <a class="ar-mono" routerLink="/quotations">{{ r.quotationReference }}</a>
-                  </td>
-                  <td class="num">{{ r.lineCount }}</td>
-                  <td class="num">{{ money(r.subtotalInPaise) }}</td>
-                  <td>
-                    {{ r.poNumber || '—' }}
-                    @if (r.deliverySite) {
-                      <span class="sub">{{ r.deliverySite }}</span>
-                    }
-                    @if (r.note) {
-                      <span class="sub" translate="no">“{{ r.note }}”</span>
-                    }
-                  </td>
-                  <td>
-                    <ar-chip [tone]="state(r.state).tone" [dot]="true">{{
-                      state(r.state).label
-                    }}</ar-chip>
-                    @if (r.creditNote) {
-                      <span class="sub ro__credit">Outside credit terms: {{ r.creditNote }}</span>
-                    }
-                  </td>
-                  <td>
-                    @if (shipmentOf(r.quotationId); as s) {
-                      <ar-chip [tone]="shipState(s.status).tone" [dot]="true">{{
-                        shipState(s.status).label
-                      }}</ar-chip>
-                      <span class="sub"
-                        >{{ s.carrier }} · <span class="ar-mono">{{ s.trackingNumber }}</span></span
-                      >
-                      @if (s.lastUpdate) {
-                        <span class="sub">{{ s.lastUpdate }}</span>
+        <ejs-grid arGrid="reorder-requests" [dataSource]="requests()" aria-label="Re-order requests">
+          <e-columns>
+            <e-column field="creationTime" headerText="Received" width="130">
+              <ng-template #template let-r>{{ when(r.creationTime) }}</ng-template>
+            </e-column>
+            <e-column field="contactName" headerText="Customer" width="180">
+              <ng-template #template let-r>{{ r.contactName || 'Customer' }}</ng-template>
+            </e-column>
+            <e-column field="quotationReference" headerText="Quotation" width="160">
+              <ng-template #template let-r>
+                <a class="ar-mono" routerLink="/quotations">{{ r.quotationReference }}</a>
+              </ng-template>
+            </e-column>
+            <e-column field="lineCount" headerText="Parts" textAlign="Right" width="90" />
+            <e-column field="subtotalInPaise" headerText="Before GST" textAlign="Right" width="130">
+              <ng-template #template let-r>{{ money(r.subtotalInPaise) }}</ng-template>
+            </e-column>
+            <e-column headerText="PO / delivery" width="180">
+              <ng-template #template let-r>
+                {{ r.poNumber || '—' }}
+                @if (r.deliverySite) {
+                  <span class="sub">{{ r.deliverySite }}</span>
+                }
+                @if (r.note) {
+                  <span class="sub" translate="no">“{{ r.note }}”</span>
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="state" headerText="Status" width="160">
+              <ng-template #template let-r>
+                <ar-chip [tone]="state(r.state).tone" [dot]="true">{{
+                  state(r.state).label
+                }}</ar-chip>
+                @if (r.creditNote) {
+                  <span class="sub ro__credit">Outside credit terms: {{ r.creditNote }}</span>
+                }
+              </ng-template>
+            </e-column>
+            <e-column headerText="Delivery" width="240" freeze="Right">
+              <ng-template #template let-r>
+                @if (shipmentOf(r.quotationId); as s) {
+                  <ar-chip [tone]="shipState(s.status).tone" [dot]="true">{{
+                    shipState(s.status).label
+                  }}</ar-chip>
+                  <span class="sub"
+                    >{{ s.carrier }} · <span class="ar-mono">{{ s.trackingNumber }}</span></span
+                  >
+                  @if (s.lastUpdate) {
+                    <span class="sub">{{ s.lastUpdate }}</span>
+                  }
+                  @if (s.status !== 'Delivered') {
+                    <span class="ro__acts">
+                      @if (s.status === 'Dispatched') {
+                        <button
+                          type="button"
+                          class="ro__act"
+                          (click)="setShipment(s, 'InTransit')"
+                        >
+                          In transit
+                        </button>
                       }
-                      @if (s.status !== 'Delivered') {
-                        <span class="ro__acts">
-                          @if (s.status === 'Dispatched') {
-                            <button
-                              type="button"
-                              class="ro__act"
-                              (click)="setShipment(s, 'InTransit')"
-                            >
-                              In transit
-                            </button>
-                          }
-                          <button
-                            type="button"
-                            class="ro__act"
-                            (click)="setShipment(s, 'Delivered')"
-                          >
-                            Delivered
-                          </button>
-                          <button
-                            type="button"
-                            class="ro__act"
-                            (click)="setShipment(s, 'Exception')"
-                          >
-                            Problem
-                          </button>
-                        </span>
-                      }
-                    } @else if (r.state === 'Won') {
-                      <a
-                        ar-button
-                        variant="ghost"
-                        [routerLink]="['/reorders/dispatch', r.quotationId]"
-                        [queryParams]="{ ref: r.quotationReference }"
+                      <button
+                        type="button"
+                        class="ro__act"
+                        (click)="setShipment(s, 'Delivered')"
                       >
-                        Dispatch
-                      </a>
-                    } @else {
-                      —
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+                        Delivered
+                      </button>
+                      <button
+                        type="button"
+                        class="ro__act"
+                        (click)="setShipment(s, 'Exception')"
+                      >
+                        Problem
+                      </button>
+                    </span>
+                  }
+                } @else if (r.state === 'Won') {
+                  <a
+                    ar-button
+                    variant="ghost"
+                    [routerLink]="['/reorders/dispatch', r.quotationId]"
+                    [queryParams]="{ ref: r.quotationReference }"
+                  >
+                    Dispatch
+                  </a>
+                } @else {
+                  —
+                }
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       }
     </div>
   `,

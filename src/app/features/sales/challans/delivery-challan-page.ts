@@ -10,6 +10,8 @@ import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.se
 import { DeliveryChallanStatus, SalesExportFormat } from '../../../proxy/sales/sales-enums';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { ArButton, ArChip, ArIcon } from '../../../ui';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../../ui/grid';
 import { SALES_RECORD_STYLES, SalesRecordPage } from '../sales-record-page';
 import {
   canDeliverChallan,
@@ -32,7 +34,7 @@ import { ArSalesExport } from '../sales-export';
  */
 @Component({
   selector: 'ar-delivery-challan-page',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSalesExport, DatePipe],
+  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSalesExport, DatePipe, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -119,35 +121,38 @@ import { ArSalesExport } from '../sales-export';
                 <p>{{ dc.lines.length }} item(s).</p>
               </div>
             </header>
-            <div class="sr-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Part number & description</th>
-                    <th>HSN code</th>
-                    <th class="num">Quantity</th>
-                    <th>UOM</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (l of dc.lines; track l.id) {
-                    <tr>
-                      <td>{{ l.lineNumber }}</td>
-                      <td>
-                        <strong class="ar-mono">{{ l.partNumber }}</strong>
-                        <span class="sr-sub">{{ l.description }}</span>
-                      </td>
-                      <td class="ar-mono">{{ l.hsnCode || '—' }}</td>
-                      <td class="num">
-                        <strong>{{ l.quantity }}</strong>
-                      </td>
-                      <td>{{ l.unitOfMeasure || 'NOS' }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+            <ejs-grid
+              arGrid="delivery-challan-lines"
+              [dataSource]="dc.lines"
+              aria-label="Consigned items"
+            >
+              <e-columns>
+                <e-column field="lineNumber" headerText="#" width="60" [textAlign]="'Right'"></e-column>
+                <e-column field="partNumber" headerText="Part number & description" width="280">
+                  <ng-template #template let-l>
+                    <div>
+                      <strong class="ar-mono">{{ l.partNumber }}</strong>
+                      <span class="sr-sub block">{{ l.description }}</span>
+                    </div>
+                  </ng-template>
+                </e-column>
+                <e-column field="hsnCode" headerText="HSN code" width="120">
+                  <ng-template #template let-l>
+                    <span class="ar-mono">{{ l.hsnCode || '—' }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="quantity" headerText="Quantity" width="100" [textAlign]="'Right'">
+                  <ng-template #template let-l>
+                    <strong>{{ l.quantity }}</strong>
+                  </ng-template>
+                </e-column>
+                <e-column field="unitOfMeasure" headerText="UOM" width="100">
+                  <ng-template #template let-l>
+                    {{ l.unitOfMeasure || 'NOS' }}
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           </section>
 
           @if (dispatching()) {

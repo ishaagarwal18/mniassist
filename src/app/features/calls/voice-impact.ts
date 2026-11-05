@@ -14,6 +14,8 @@ import { ChannelService } from '../../proxy/channels/channel.service';
 import { ChannelDto } from '../../proxy/channels/models';
 import { ArButton } from '../../ui/button';
 import { ArIcon } from '../../ui/icon';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 
 export interface VoiceImpactInput {
   fromDate: string;
@@ -103,7 +105,7 @@ function day(date: Date): string {
  */
 @Component({
   selector: 'ar-voice-impact',
-  imports: [FormsModule, ArTopbar, ArButton, ArIcon],
+  imports: [FormsModule, ArTopbar, ArButton, ArIcon, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -304,47 +306,48 @@ function day(date: Date): string {
             <div class="table-card__head">
               <h2 class="table-card__title">Performance by Voice Agent</h2>
             </div>
-            <div
-              class="ar-table-responsive"
-              tabindex="0"
-              role="region"
+            <ejs-grid
+              arGrid="voice-impact-agents"
+              [dataSource]="r.agents"
               aria-label="Performance Breakdown by Agent"
             >
-              <table class="ar-table">
-                <caption class="sr-only">
-                  Performance Breakdown by Agent
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Agent Persona</th>
-                    <th scope="col" class="text-right">Total Calls</th>
-                    <th scope="col" class="text-right">Duration (min)</th>
-                    <th scope="col" class="text-right">Goal Met Rate</th>
-                    <th scope="col" class="text-right">AI Cost</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (a of r.agents; track a.agent) {
-                    <tr>
-                      <th scope="row" class="font-medium" translate="no">{{ a.agent }}</th>
-                      <td class="text-right font-mono" translate="no">{{ a.calls }}</td>
-                      <td class="text-right font-mono" translate="no">{{ a.minutes }}</td>
-                      <td class="text-right font-mono" translate="no">
-                        @if (a.goalEvaluated) {
-                          <span class="goal-pill">{{ percent(a.goalMet, a.goalEvaluated) }}</span>
-                          <span class="text-muted"> ({{ a.goalMet }}/{{ a.goalEvaluated }})</span>
-                        } @else {
-                          <span class="text-muted">–</span>
-                        }
-                      </td>
-                      <td class="text-right font-mono font-medium" translate="no">
-                        {{ rupees(a.costPaise) }}
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+              <e-columns>
+                <e-column field="agent" headerText="Agent Persona" width="220">
+                  <ng-template #template let-a>
+                    <span class="font-medium" translate="no">{{ a.agent }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="calls" headerText="Total Calls" width="130" [textAlign]="'Right'">
+                  <ng-template #template let-a>
+                    <span class="font-mono" translate="no">{{ a.calls }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="minutes" headerText="Duration (min)" width="140" [textAlign]="'Right'">
+                  <ng-template #template let-a>
+                    <span class="font-mono" translate="no">{{ a.minutes }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Goal Met Rate" width="180" [textAlign]="'Right'">
+                  <ng-template #template let-a>
+                    <div class="font-mono" translate="no">
+                      @if (a.goalEvaluated) {
+                        <span class="goal-pill">{{ percent(a.goalMet, a.goalEvaluated) }}</span>
+                        <span class="text-muted"> ({{ a.goalMet }}/{{ a.goalEvaluated }})</span>
+                      } @else {
+                        <span class="text-muted">–</span>
+                      }
+                    </div>
+                  </ng-template>
+                </e-column>
+                <e-column field="costPaise" headerText="AI Cost" width="140" [textAlign]="'Right'">
+                  <ng-template #template let-a>
+                    <span class="font-mono font-medium" translate="no">
+                      {{ rupees(a.costPaise) }}
+                    </span>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           </section>
         }
 

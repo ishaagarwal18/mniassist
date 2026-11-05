@@ -19,6 +19,8 @@ import { ArButton } from '../../../ui/button';
 import { ArChip, ChipTone } from '../../../ui/chip';
 import { ArDialog } from '../../../ui/dialog';
 import { ArStatTile } from '../../../ui/stat-tile';
+import { ArGrid } from '../../../ui/grid';
+import { GridModule, RecordClickEventArgs, RowSelectEventArgs } from '@syncfusion/ej2-angular-grids';
 
 const MOCK_WORK_ORDERS: WorkOrderDto[] = [
   {
@@ -260,7 +262,17 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
 @Component({
   selector: 'app-work-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArStatTile],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArStatTile,
+    ArGrid,
+    GridModule,
+  ],
   template: `
     <ar-topbar
       title="Work Orders (Shop Floor ERP)"
@@ -350,92 +362,82 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
       <div class="work-order-layout">
         <!-- Work Orders Table adhering to modern-web-guidance responsive-table -->
         <section class="table-card" [class.condensed]="selectedWo() !== null">
-          <div
-            class="ar-table-responsive"
-            tabindex="0"
-            role="region"
+          <ejs-grid
+            arGrid="work-orders"
+            [dataSource]="filteredWorkOrders()"
+            [allowSelection]="true"
+            [selectionSettings]="{ mode: 'Row', type: 'Single' }"
+            (rowSelected)="onWoSelected($event)"
+            (recordClick)="onWoClick($event)"
             aria-label="Work Orders Master Table"
           >
-            <table class="ar-table">
-              <caption class="sr-only">
-                Work Orders Master Table
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Order #</th>
-                  <th scope="col">Part & Batch</th>
-                  <th scope="col" class="text-right">Planned / Produced</th>
-                  <th scope="col">Stage</th>
-                  <th scope="col">Status</th>
-                  <th scope="col" class="text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  *ngFor="let wo of filteredWorkOrders()"
-                  [class.selected-row]="selectedWo()?.id === wo.id"
-                  (click)="selectWorkOrder(wo)"
-                  class="clickable-row"
-                >
-                  <td>
-                    <div class="wo-ref">
-                      <span class="font-mono font-medium">{{ wo.workOrderNumber }}</span>
-                      <span class="text-sub" *ngIf="wo.salesOrderNumber">{{
-                        wo.salesOrderNumber
-                      }}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div class="part-info">
-                      <span class="part-code">{{ wo.partNumber }}</span>
-                      <span class="part-name">{{ wo.description }}</span>
-                      <span class="batch-badge">Batch: {{ wo.batchNumber }}</span>
-                    </div>
-                  </td>
-                  <td class="text-right">
-                    <div class="qty-progress">
-                      <span class="qty-numbers"
-                        >{{ wo.producedQuantity }} / {{ wo.plannedQuantity }}</span
-                      >
-                      <div class="progress-bar-bg">
-                        <div
-                          class="progress-bar-fill"
-                          [style.width.%]="
-                            wo.plannedQuantity > 0
-                              ? (wo.producedQuantity / wo.plannedQuantity) * 100
-                              : 0
-                          "
-                        ></div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span class="stage-tag">{{ getStageLabel(wo.currentStage) }}</span>
-                  </td>
-                  <td>
-                    <ar-chip
-                      [tone]="getStatusTone(wo.status)"
-                      [dot]="wo.status === WorkOrderStatus.InProgress"
+            <e-columns>
+              <e-column field="workOrderNumber" headerText="Order #" width="150">
+                <ng-template #template let-wo>
+                  <div class="wo-ref">
+                    <span class="font-mono font-medium">{{ wo.workOrderNumber }}</span>
+                    <span class="text-sub" *ngIf="wo.salesOrderNumber">{{
+                      wo.salesOrderNumber
+                    }}</span>
+                  </div>
+                </ng-template>
+              </e-column>
+              <e-column field="partNumber" headerText="Part & Batch" width="220">
+                <ng-template #template let-wo>
+                  <div class="part-info">
+                    <span class="part-code">{{ wo.partNumber }}</span>
+                    <span class="part-name">{{ wo.description }}</span>
+                    <span class="batch-badge">Batch: {{ wo.batchNumber }}</span>
+                  </div>
+                </ng-template>
+              </e-column>
+              <e-column headerText="Planned / Produced" textAlign="Right" width="160">
+                <ng-template #template let-wo>
+                  <div class="qty-progress">
+                    <span class="qty-numbers"
+                      >{{ wo.producedQuantity }} / {{ wo.plannedQuantity }}</span
                     >
-                      {{ getStatusLabel(wo.status) }}
-                    </ar-chip>
-                  </td>
-                  <td class="text-right">
-                    <button
-                      ar-button
-                      variant="ghost"
-                      (click)="selectWorkOrder(wo); $event.stopPropagation()"
-                    >
-                      View
-                    </button>
-                  </td>
-                </tr>
-                <tr *ngIf="filteredWorkOrders().length === 0">
-                  <td colspan="6" class="empty-cell">No work orders match your search criteria.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                    <div class="progress-bar-bg">
+                      <div
+                        class="progress-bar-fill"
+                        [style.width.%]="
+                          wo.plannedQuantity > 0
+                            ? (wo.producedQuantity / wo.plannedQuantity) * 100
+                            : 0
+                        "
+                      ></div>
+                    </div>
+                  </div>
+                </ng-template>
+              </e-column>
+              <e-column field="currentStage" headerText="Stage" width="140">
+                <ng-template #template let-wo>
+                  <span class="stage-tag">{{ getStageLabel(wo.currentStage) }}</span>
+                </ng-template>
+              </e-column>
+              <e-column field="status" headerText="Status" width="130">
+                <ng-template #template let-wo>
+                  <ar-chip
+                    [tone]="getStatusTone(wo.status)"
+                    [dot]="wo.status === WorkOrderStatus.InProgress"
+                  >
+                    {{ getStatusLabel(wo.status) }}
+                  </ar-chip>
+                </ng-template>
+              </e-column>
+              <e-column headerText="Actions" width="100" freeze="Right">
+                <ng-template #template let-wo>
+                  <button
+                    ar-button
+                    variant="ghost"
+                    (click)="selectWorkOrder(wo); $event.stopPropagation()"
+                  >
+                    View
+                  </button>
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
         </section>
 
         <!-- Right Cockpit: Work Order Details & Routing / Material Management -->
@@ -527,74 +529,65 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
 
           <!-- Tab 1: Routing Steps adhering to modern-web-guidance responsive-table -->
           <div class="cockpit-tab-content" *ngIf="activeTab() === 'routing'">
-            <div
-              class="ar-table-responsive"
-              tabindex="0"
-              role="region"
+            <ejs-grid
+              arGrid="work-order-routing-steps"
+              [dataSource]="wo.routingSteps"
               aria-label="Shop Floor Routing Steps"
             >
-              <table class="ar-table">
-                <caption class="sr-only">
-                  Shop Floor Routing Steps
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Seq</th>
-                    <th scope="col">Stage</th>
-                    <th scope="col">Work Center</th>
-                    <th scope="col">Est / Act Hrs</th>
-                    <th scope="col">QC Inspection</th>
-                    <th scope="col" class="text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let step of wo.routingSteps">
-                    <td class="font-mono text-muted">#{{ step.stepSequence }}</td>
-                    <td>
-                      <span class="routing-stage-pill">{{ getStageLabel(step.stage) }}</span>
-                    </td>
-                    <td>
-                      <div class="wc-name">{{ step.workCenterName }}</div>
-                      <div class="wc-inspector" *ngIf="step.inspectedBy">
-                        By: {{ step.inspectedBy }}
-                      </div>
-                    </td>
-                    <td class="font-mono">
-                      <span>{{ step.actualHours || 0 }} / {{ step.estimatedHours }}h</span>
-                    </td>
-                    <td>
-                      <ar-chip
-                        [tone]="step.qcPassed ? 'good' : step.isCompleted ? 'warn' : 'neutral'"
-                      >
-                        {{
-                          step.qcPassed
-                            ? 'QC Passed'
-                            : step.isCompleted
-                              ? 'Inspection Done'
-                              : 'Pending'
-                        }}
-                      </ar-chip>
-                    </td>
-                    <td class="text-right">
-                      <button
-                        *ngIf="!step.isCompleted && wo.status === WorkOrderStatus.InProgress"
-                        ar-button
-                        variant="ghost"
-                        (click)="openCompleteStep(step)"
-                      >
-                        Complete Step
-                      </button>
-                      <span *ngIf="step.isCompleted" class="text-muted-check">&#10003; Done</span>
-                    </td>
-                  </tr>
-                  <tr *ngIf="!wo.routingSteps || wo.routingSteps.length === 0">
-                    <td colspan="6" class="text-center text-muted">
-                      No routing steps defined for this work order.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+              <e-columns>
+                <e-column field="stepSequence" headerText="Seq" width="80">
+                  <ng-template #template let-step>
+                    <span class="font-mono text-muted">#{{ step.stepSequence }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Stage" width="140">
+                  <ng-template #template let-step>
+                    <span class="routing-stage-pill">{{ getStageLabel(step.stage) }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Work Center" width="180">
+                  <ng-template #template let-step>
+                    <div class="wc-name">{{ step.workCenterName }}</div>
+                    <div class="wc-inspector" *ngIf="step.inspectedBy">
+                      By: {{ step.inspectedBy }}
+                    </div>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Est / Act Hrs" width="130">
+                  <ng-template #template let-step>
+                    <span class="font-mono">{{ step.actualHours || 0 }} / {{ step.estimatedHours }}h</span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="QC Inspection" width="150">
+                  <ng-template #template let-step>
+                    <ar-chip
+                      [tone]="step.qcPassed ? 'good' : step.isCompleted ? 'warn' : 'neutral'"
+                    >
+                      {{
+                        step.qcPassed
+                          ? 'QC Passed'
+                          : step.isCompleted
+                            ? 'Inspection Done'
+                            : 'Pending'
+                      }}
+                    </ar-chip>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Action" width="140" [textAlign]="'Right'" freeze="Right">
+                  <ng-template #template let-step>
+                    <button
+                      *ngIf="!step.isCompleted && wo.status === WorkOrderStatus.InProgress"
+                      ar-button
+                      variant="ghost"
+                      (click)="openCompleteStep(step)"
+                    >
+                      Complete Step
+                    </button>
+                    <span *ngIf="step.isCompleted" class="text-muted-check">&#10003; Done</span>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           </div>
 
           <!-- Tab 2: Material Issues adhering to modern-web-guidance responsive-table -->
@@ -614,52 +607,45 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
               </button>
             </div>
 
-            <div
-              class="ar-table-responsive"
-              tabindex="0"
-              role="region"
+            <ejs-grid
+              arGrid="work-order-material-issues"
+              [dataSource]="wo.materialIssues"
               aria-label="Allocated Material Issues"
             >
-              <table class="ar-table">
-                <caption class="sr-only">
-                  Allocated Material Issues
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Part #</th>
-                    <th scope="col">Description</th>
-                    <th scope="col" class="text-right">Req Qty</th>
-                    <th scope="col" class="text-right">Issued Qty</th>
-                    <th scope="col" class="text-right">Scrap</th>
-                    <th scope="col">Warehouse</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let m of wo.materialIssues">
-                    <td class="font-mono font-medium">{{ m.componentPartNumber }}</td>
-                    <td>{{ m.componentDescription }}</td>
-                    <td class="text-right font-mono">
-                      {{ m.requiredQuantity }} {{ m.unitOfMeasure }}
-                    </td>
-                    <td
-                      class="text-right font-mono"
+              <e-columns>
+                <e-column field="componentPartNumber" headerText="Part #" width="160">
+                  <ng-template #template let-m>
+                    <span class="font-mono font-medium">{{ m.componentPartNumber }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="componentDescription" headerText="Description" width="220"></e-column>
+                <e-column headerText="Req Qty" width="120" [textAlign]="'Right'">
+                  <ng-template #template let-m>
+                    <span class="font-mono">{{ m.requiredQuantity }} {{ m.unitOfMeasure }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Issued Qty" width="120" [textAlign]="'Right'">
+                  <ng-template #template let-m>
+                    <span
+                      class="font-mono"
                       [class.text-success]="m.issuedQuantity >= m.requiredQuantity"
                     >
                       {{ m.issuedQuantity }} {{ m.unitOfMeasure }}
-                    </td>
-                    <td class="text-right font-mono text-danger">{{ m.wastedQuantity }}</td>
-                    <td>
-                      <span class="wh-tag">{{ m.issuedFromWarehouse || 'Main Store' }}</span>
-                    </td>
-                  </tr>
-                  <tr *ngIf="!wo.materialIssues || wo.materialIssues.length === 0">
-                    <td colspan="6" class="text-center text-muted">
-                      No material issues recorded yet. Click '+ Issue Material' to allocate parts.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                    </span>
+                  </ng-template>
+                </e-column>
+                <e-column field="wastedQuantity" headerText="Scrap" width="100" [textAlign]="'Right'">
+                  <ng-template #template let-m>
+                    <span class="font-mono text-danger">{{ m.wastedQuantity }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Warehouse" width="140">
+                  <ng-template #template let-m>
+                    <span class="wh-tag">{{ m.issuedFromWarehouse || 'Main Store' }}</span>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           </div>
         </section>
       </div>
@@ -1513,6 +1499,16 @@ export class WorkOrdersComponent {
 
   selectWorkOrder(wo: WorkOrderDto): void {
     this.selectedWo.set(wo);
+  }
+
+  onWoSelected(args: RowSelectEventArgs): void {
+    const row = (Array.isArray(args.data) ? args.data[0] : args.data) as WorkOrderDto | undefined;
+    if (row) this.selectWorkOrder(row);
+  }
+
+  onWoClick(args: RecordClickEventArgs): void {
+    const row = args.rowData as WorkOrderDto | undefined;
+    if (row) this.selectWorkOrder(row);
   }
 
   getStatusTone(status: WorkOrderStatus): ChipTone {

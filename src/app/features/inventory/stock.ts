@@ -19,6 +19,8 @@ import {
 } from '../../proxy/inventory/inventory.service';
 import { ProductService } from '../../proxy/library/product.service';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArGrid } from '../../ui/grid';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArDateInput } from '../../ui/date-input';
 import { ArSelect } from '../../ui/select';
 import { parseRupees, rupees } from '../reorder/reorder-logic';
@@ -98,7 +100,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
  */
 @Component({
   selector: 'ar-stock',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ArDateInput],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ArDateInput, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -178,39 +180,40 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
             </div>
           </section>
           @if (erpRows().length) {
-            <div class="tbl">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Item</th>
-                    <th scope="col">Warehouse</th>
-                    <th scope="col" class="num">On hand</th>
-                    <th scope="col" class="num">Committed</th>
-                    <th scope="col" class="num">Available</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (r of erpRows(); track $index) {
-                    <tr [class.off]="!r.productId">
-                      <td>
-                        <b class="ar-mono">{{ r.itemCode }}</b>
-                        <span class="sub">{{
-                          r.productId
-                            ? r.productName
-                            : 'Not in the catalogue: not shown to customers'
-                        }}</span>
-                      </td>
-                      <td>{{ r.warehouse || '—' }}</td>
-                      <td class="num">{{ n(r.onHand) }}</td>
-                      <td class="num">{{ r.committed ? n(r.committed) : '—' }}</td>
-                      <td class="num">
-                        <b>{{ n(r.available) }}</b>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+            <ejs-grid arGrid="erp-stock" [dataSource]="erpRows()" aria-label="ERP Stock">
+              <e-columns>
+                <e-column field="itemCode" headerText="Item" width="220">
+                  <ng-template #template let-r>
+                    <b class="ar-mono">{{ r.itemCode }}</b>
+                    <span class="sub">{{
+                      r.productId
+                        ? r.productName
+                        : 'Not in the catalogue: not shown to customers'
+                    }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="warehouse" headerText="Warehouse" width="160">
+                  <ng-template #template let-r>
+                    {{ r.warehouse || '—' }}
+                  </ng-template>
+                </e-column>
+                <e-column field="onHand" headerText="On hand" textAlign="Right" width="110">
+                  <ng-template #template let-r>
+                    {{ n(r.onHand) }}
+                  </ng-template>
+                </e-column>
+                <e-column field="committed" headerText="Committed" textAlign="Right" width="110">
+                  <ng-template #template let-r>
+                    {{ r.committed ? n(r.committed) : '—' }}
+                  </ng-template>
+                </e-column>
+                <e-column field="available" headerText="Available" textAlign="Right" width="110">
+                  <ng-template #template let-r>
+                    <b>{{ n(r.available) }}</b>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           }
         } @else if (s.keptIn !== 'AutoReach') {
           <section class="setup">
@@ -259,88 +262,94 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
             }
           </p>
         } @else {
-          <div class="tbl">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Part</th>
-                  <th scope="col" class="num">On hand</th>
-                  <th scope="col" class="num">Held</th>
-                  <th scope="col" class="num">Available</th>
-                  <th scope="col" class="num">On order</th>
-                  <th scope="col" class="num">Value</th>
-                  <th scope="col">By location</th>
-                  <th scope="col"><span class="sr">Actions</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (i of visible(); track i.productId) {
-                  <tr [class.low]="i.isLow">
-                    <td>
-                      <b class="ar-mono">{{ i.partNumber }}</b>
-                      <span class="sub">{{ i.name }}</span>
-                      @if (i.tracking && i.tracking !== 'None') {
-                        <ar-chip tone="neutral">{{ numberingLabel(i.tracking) }}</ar-chip>
-                      }
-                    </td>
-                    <td class="num">{{ n(i.onHand) }}</td>
-                    <td class="num">{{ i.reserved ? n(i.reserved) : '—' }}</td>
-                    <td class="num">
-                      <b>{{ n(i.available) }}</b>
-                      @if (i.isLow) {
-                        <ar-chip tone="warn">Low</ar-chip>
-                      }
-                    </td>
-                    <td class="num">{{ i.onOrder ? n(i.onOrder) : '—' }}</td>
-                    <td class="num">
-                      @if (i.valueInPaise != null) {
-                        {{ money(i.valueInPaise) }}
-                        <span class="sub">{{ money(i.averageCostInPaise ?? 0) }} avg</span>
-                      } @else {
-                        —
-                      }
-                    </td>
-                    <td>
-                      @for (l of i.locations; track l.locationId) {
-                        <span class="loc" [class.loc--low]="l.isLow"
-                          >{{ l.locationName }}: {{ n(l.available)
-                          }}{{ l.minLevel != null ? ' (min ' + n(l.minLevel) + ')' : '' }}</span
-                        >
-                      }
-                    </td>
-                    <td class="acts">
-                      @if (tracking() && canManage()) {
-                        <button type="button" class="act" (click)="openMove(i, 'receive')">
-                          Receive
-                        </button>
-                        <button type="button" class="act" (click)="openMove(i, 'issue')">
-                          Issue
-                        </button>
-                        <button type="button" class="act" (click)="openMove(i, 'adjust')">
-                          Adjust
-                        </button>
-                        <button type="button" class="act" (click)="openMove(i, 'count')">
-                          Count
-                        </button>
-                        <button type="button" class="act" (click)="openMove(i, 'min')">
-                          Minimum
-                        </button>
-                        <button type="button" class="act" (click)="openNumbering(i)">
-                          Tracking
-                        </button>
-                      }
-                      @if (i.tracking && i.tracking !== 'None') {
-                        <button type="button" class="act" (click)="openLots(i)">
-                          {{ i.tracking === 'Serial' ? 'Serials' : 'Batches' }}
-                        </button>
-                      }
-                      <button type="button" class="act" (click)="openHistory(i)">History</button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+          <ejs-grid arGrid="stock-items" [dataSource]="visible()" aria-label="Stock items">
+            <e-columns>
+              <e-column field="partNumber" headerText="Part" width="240">
+                <ng-template #template let-i>
+                  <b class="ar-mono">{{ i.partNumber }}</b>
+                  <span class="sub">{{ i.name }}</span>
+                  @if (i.tracking && i.tracking !== 'None') {
+                    <ar-chip tone="neutral">{{ numberingLabel(i.tracking) }}</ar-chip>
+                  }
+                </ng-template>
+              </e-column>
+              <e-column field="onHand" headerText="On hand" textAlign="Right" width="110">
+                <ng-template #template let-i>
+                  {{ n(i.onHand) }}
+                </ng-template>
+              </e-column>
+              <e-column field="reserved" headerText="Held" textAlign="Right" width="100">
+                <ng-template #template let-i>
+                  {{ i.reserved ? n(i.reserved) : '—' }}
+                </ng-template>
+              </e-column>
+              <e-column field="available" headerText="Available" textAlign="Right" width="120">
+                <ng-template #template let-i>
+                  <b>{{ n(i.available) }}</b>
+                  @if (i.isLow) {
+                    <ar-chip tone="warn">Low</ar-chip>
+                  }
+                </ng-template>
+              </e-column>
+              <e-column field="onOrder" headerText="On order" textAlign="Right" width="110">
+                <ng-template #template let-i>
+                  {{ i.onOrder ? n(i.onOrder) : '—' }}
+                </ng-template>
+              </e-column>
+              <e-column field="valueInPaise" headerText="Value" textAlign="Right" width="130">
+                <ng-template #template let-i>
+                  @if (i.valueInPaise != null) {
+                    {{ money(i.valueInPaise) }}
+                    <span class="sub">{{ money(i.averageCostInPaise ?? 0) }} avg</span>
+                  } @else {
+                    —
+                  }
+                </ng-template>
+              </e-column>
+              <e-column headerText="By location" width="200">
+                <ng-template #template let-i>
+                  @for (l of i.locations; track l.locationId) {
+                    <span class="loc" [class.loc--low]="l.isLow"
+                      >{{ l.locationName }}: {{ n(l.available)
+                      }}{{ l.minLevel != null ? ' (min ' + n(l.minLevel) + ')' : '' }}</span
+                    >
+                  }
+                </ng-template>
+              </e-column>
+              <e-column headerText="Actions" width="320" freeze="Right">
+                <ng-template #template let-i>
+                  <div class="acts">
+                    @if (tracking() && canManage()) {
+                      <button type="button" class="act" (click)="openMove(i, 'receive')">
+                        Receive
+                      </button>
+                      <button type="button" class="act" (click)="openMove(i, 'issue')">
+                        Issue
+                      </button>
+                      <button type="button" class="act" (click)="openMove(i, 'adjust')">
+                        Adjust
+                      </button>
+                      <button type="button" class="act" (click)="openMove(i, 'count')">
+                        Count
+                      </button>
+                      <button type="button" class="act" (click)="openMove(i, 'min')">
+                        Minimum
+                      </button>
+                      <button type="button" class="act" (click)="openNumbering(i)">
+                        Tracking
+                      </button>
+                    }
+                    @if (i.tracking && i.tracking !== 'None') {
+                      <button type="button" class="act" (click)="openLots(i)">
+                        {{ i.tracking === 'Serial' ? 'Serials' : 'Batches' }}
+                      </button>
+                    }
+                    <button type="button" class="act" (click)="openHistory(i)">History</button>
+                  </div>
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
         }
       }
     </div>
@@ -559,43 +568,40 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
         @if (lv.rows.length === 0) {
           <p class="st__hint">None in stock.</p>
         } @else {
-          <div class="tbl">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">{{ lv.item.tracking === 'Serial' ? 'Serial' : 'Batch' }}</th>
-                  <th scope="col">Where</th>
-                  @if (lv.item.tracking === 'Batch') {
-                    <th scope="col">Expiry</th>
-                    <th scope="col" class="num">On hand</th>
+          <ejs-grid
+            arGrid="stock-lots"
+            [dataSource]="lv.rows"
+            aria-label="Stock Batches or Serials"
+          >
+            <e-columns>
+              <e-column [headerText]="lv.item.tracking === 'Serial' ? 'Serial' : 'Batch'" width="160">
+                <ng-template #template let-l>
+                  <button type="button" class="act font-mono" (click)="trace(l.number)">
+                    {{ l.number }}
+                  </button>
+                </ng-template>
+              </e-column>
+              <e-column field="locationName" headerText="Where" width="160"></e-column>
+              <e-column headerText="Expiry" width="140" [visible]="lv.item.tracking === 'Batch'">
+                <ng-template #template let-l>
+                  {{ l.expiresOn ? day(l.expiresOn) : '—' }}
+                  @if (l.expired) {
+                    <ar-chip tone="warn">Expired</ar-chip>
                   }
-                  <th scope="col">Received</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (l of lv.rows; track l.id) {
-                  <tr>
-                    <td class="ar-mono">
-                      <button type="button" class="act" (click)="trace(l.number)">
-                        {{ l.number }}
-                      </button>
-                    </td>
-                    <td>{{ l.locationName }}</td>
-                    @if (lv.item.tracking === 'Batch') {
-                      <td>
-                        {{ l.expiresOn ? day(l.expiresOn) : '—' }}
-                        @if (l.expired) {
-                          <ar-chip tone="warn">Expired</ar-chip>
-                        }
-                      </td>
-                      <td class="num">{{ n(l.onHand) }}</td>
-                    }
-                    <td>{{ day(l.receivedAtUtc) }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+                </ng-template>
+              </e-column>
+              <e-column field="onHand" headerText="On hand" width="100" [textAlign]="'Right'" [visible]="lv.item.tracking === 'Batch'">
+                <ng-template #template let-l>
+                  {{ n(l.onHand) }}
+                </ng-template>
+              </e-column>
+              <e-column field="receivedAtUtc" headerText="Received" width="120">
+                <ng-template #template let-l>
+                  {{ day(l.receivedAtUtc) }}
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
         }
       </ar-dialog>
     }
@@ -629,37 +635,40 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
           @if (rows.length === 0) {
             <p class="st__hint">Nothing recorded under that number.</p>
           } @else {
-            <div class="tbl">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">When</th>
-                    <th scope="col">Part</th>
-                    <th scope="col">What</th>
-                    <th scope="col">Where</th>
-                    <th scope="col" class="num">Change</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (r of rows; track r.id) {
-                    <tr>
-                      <td>{{ when(r.occurredAtUtc) }}</td>
-                      <td class="ar-mono">{{ r.partNumber }}</td>
-                      <td>
-                        {{ kindLabel(r.kind) }}
-                        @if (r.reason) {
-                          <span class="sub">{{ r.reason }}</span>
-                        }
-                      </td>
-                      <td>{{ r.locationName }}</td>
-                      <td class="num" [class.neg]="r.quantity < 0">
-                        {{ r.quantity > 0 ? '+' : '' }}{{ n(r.quantity) }}
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+            <ejs-grid
+              arGrid="stock-trace-rows"
+              [dataSource]="rows"
+              aria-label="Stock Trace Movements"
+            >
+              <e-columns>
+                <e-column field="occurredAtUtc" headerText="When" width="130">
+                  <ng-template #template let-r>
+                    {{ when(r.occurredAtUtc) }}
+                  </ng-template>
+                </e-column>
+                <e-column field="partNumber" headerText="Part" width="150">
+                  <ng-template #template let-r>
+                    <span class="ar-mono">{{ r.partNumber }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="What" width="180">
+                  <ng-template #template let-r>
+                    {{ kindLabel(r.kind) }}
+                    @if (r.reason) {
+                      <span class="sub block text-muted">{{ r.reason }}</span>
+                    }
+                  </ng-template>
+                </e-column>
+                <e-column field="locationName" headerText="Where" width="140"></e-column>
+                <e-column field="quantity" headerText="Change" width="110" [textAlign]="'Right'">
+                  <ng-template #template let-r>
+                    <span [class.neg]="r.quantity < 0">
+                      {{ r.quantity > 0 ? '+' : '' }}{{ n(r.quantity) }}
+                    </span>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           }
         }
         @if (dialogError(); as e) {
@@ -673,40 +682,43 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
         @if (h.rows.length === 0) {
           <p class="st__hint">No movements yet.</p>
         } @else {
-          <div class="tbl">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">When</th>
-                  <th scope="col">What</th>
-                  <th scope="col">Where</th>
-                  <th scope="col" class="num">Change</th>
-                  <th scope="col" class="num">On hand after</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (r of h.rows; track r.id) {
-                  <tr>
-                    <td>{{ when(r.occurredAtUtc) }}</td>
-                    <td>
-                      {{ kindLabel(r.kind) }}
-                      @if (r.lotNumber) {
-                        <span class="ar-mono"> · {{ r.lotNumber }}</span>
-                      }
-                      @if (r.reason) {
-                        <span class="sub">{{ r.reason }}</span>
-                      }
-                    </td>
-                    <td>{{ r.locationName }}</td>
-                    <td class="num" [class.neg]="r.quantity < 0">
-                      {{ r.quantity > 0 ? '+' : '' }}{{ n(r.quantity) }}
-                    </td>
-                    <td class="num">{{ n(r.onHandAfter) }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+          <ejs-grid
+            arGrid="stock-history-rows"
+            [dataSource]="h.rows"
+            aria-label="Stock Movement History"
+          >
+            <e-columns>
+              <e-column field="occurredAtUtc" headerText="When" width="130">
+                <ng-template #template let-r>
+                  {{ when(r.occurredAtUtc) }}
+                </ng-template>
+              </e-column>
+              <e-column headerText="What" width="200">
+                <ng-template #template let-r>
+                  {{ kindLabel(r.kind) }}
+                  @if (r.lotNumber) {
+                    <span class="ar-mono"> · {{ r.lotNumber }}</span>
+                  }
+                  @if (r.reason) {
+                    <span class="sub block text-muted">{{ r.reason }}</span>
+                  }
+                </ng-template>
+              </e-column>
+              <e-column field="locationName" headerText="Where" width="140"></e-column>
+              <e-column field="quantity" headerText="Change" width="110" [textAlign]="'Right'">
+                <ng-template #template let-r>
+                  <span [class.neg]="r.quantity < 0">
+                    {{ r.quantity > 0 ? '+' : '' }}{{ n(r.quantity) }}
+                  </span>
+                </ng-template>
+              </e-column>
+              <e-column field="onHandAfter" headerText="On hand after" width="130" [textAlign]="'Right'">
+                <ng-template #template let-r>
+                  {{ n(r.onHandAfter) }}
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
         }
       </ar-dialog>
     }
@@ -757,35 +769,40 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
               c.problems ? ', ' + c.problems + ' with a problem (skipped)' : ''
             }}.
           </p>
-          <div class="tbl tbl--short">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Line</th>
-                  <th scope="col">Part</th>
-                  <th scope="col" class="num">Now</th>
-                  <th scope="col" class="num">File</th>
-                  <th scope="col">Problem</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (l of c.lines; track l.line) {
-                  <tr [class.bad]="!!l.error">
-                    <td class="num">{{ l.line }}</td>
-                    <td>
-                      <span class="ar-mono">{{ l.partNumber }}</span>
-                      @if (l.location) {
-                        <span class="sub">{{ l.location }}</span>
-                      }
-                    </td>
-                    <td class="num">{{ l.onHandNow != null ? n(l.onHandNow) : '—' }}</td>
-                    <td class="num">{{ n(l.quantity) }}</td>
-                    <td>{{ l.error || '' }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+          <ejs-grid
+            arGrid="stock-import-lines"
+            [dataSource]="c.lines"
+            aria-label="Stock Import Lines"
+          >
+            <e-columns>
+              <e-column field="line" headerText="Line" width="70" [textAlign]="'Right'"></e-column>
+              <e-column field="partNumber" headerText="Part" width="160">
+                <ng-template #template let-l>
+                  <div>
+                    <span class="ar-mono">{{ l.partNumber }}</span>
+                    @if (l.location) {
+                      <span class="sub block text-muted">{{ l.location }}</span>
+                    }
+                  </div>
+                </ng-template>
+              </e-column>
+              <e-column field="onHandNow" headerText="Now" width="100" [textAlign]="'Right'">
+                <ng-template #template let-l>
+                  {{ l.onHandNow != null ? n(l.onHandNow) : '—' }}
+                </ng-template>
+              </e-column>
+              <e-column field="quantity" headerText="File" width="100" [textAlign]="'Right'">
+                <ng-template #template let-l>
+                  {{ n(l.quantity) }}
+                </ng-template>
+              </e-column>
+              <e-column field="error" headerText="Problem" width="200">
+                <ng-template #template let-l>
+                  <span class="bad font-medium">{{ l.error || '' }}</span>
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
         }
         @if (dialogError(); as e) {
           <p class="st__err" role="alert">{{ e }}</p>

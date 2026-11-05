@@ -144,35 +144,35 @@
       (dismiss)="deliveriesFor.set(null)"
     >
       <div class="dl__deliveries">
-        <table>
-          <thead>
-            <tr>
-              <th>Contact</th>
-              <th>Version</th>
-              <th>Sent</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (r of deliveries(); track $index) {
-              <tr>
-                <td>{{ r.contactName }}</td>
-                <td>
+        <ejs-grid
+          arGrid="document-deliveries"
+          [dataSource]="deliveries()"
+          aria-label="Document Deliveries"
+        >
+          <e-columns>
+            <e-column field="contactName" headerText="Contact" width="180"></e-column>
+            <e-column headerText="Version" width="110">
+              <ng-template #template let-r>
+                <span>
                   v{{ r.version }}
                   @if (r.version !== doc.version) {
                     <span class="dl__old"> (old)</span>
                   }
-                </td>
-                <td>{{ when(r.sentAtUtc) }}</td>
-                <td>{{ deliveryState(r) }}</td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="4">Not sent to anyone yet.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column field="sentAtUtc" headerText="Sent" width="130">
+              <ng-template #template let-r>
+                {{ when(r.sentAtUtc) }}
+              </ng-template>
+            </e-column>
+            <e-column headerText="Status" width="130">
+              <ng-template #template let-r>
+                {{ deliveryState(r) }}
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </div>
       <div dialogActions>
         <button ar-button type="button" variant="ghost" (click)="deliveriesFor.set(null)">

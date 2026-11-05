@@ -47,44 +47,61 @@
       }
     </p>
   } @else {
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th>Part number</th>
-          <th>Name</th>
-          <th>Category</th>
-          <th>Unit</th>
-          <th class="num">List price</th>
-          <th class="num">GST</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (p of products(); track p.id) {
-          <tr [class.off]="!p.isActive">
-            <td class="ar-mono">{{ p.partNumber }}</td>
-            <td>
-              {{ p.name }}
+    <ejs-grid
+      arGrid="products-catalog"
+      [dataSource]="products()"
+      aria-label="Products Catalogue"
+    >
+      <e-columns>
+        <e-column field="partNumber" headerText="Part number" width="160">
+          <ng-template #template let-p>
+            <span class="ar-mono">{{ p.partNumber }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="name" headerText="Name" width="220">
+          <ng-template #template let-p>
+            <div>
+              <span>{{ p.name }}</span>
               @if (!p.isActive) {
                 <ar-chip tone="warn">Inactive</ar-chip>
               }
-            </td>
-            <td class="muted">{{ p.category || '—' }}</td>
-            <td class="muted">{{ p.unit }}</td>
-            <td class="num">{{ money(p.listPriceInPaise ?? 0) }}</td>
-            <td class="num muted">{{ gstLabel(p) }}</td>
-            <td class="actions">
+            </div>
+          </ng-template>
+        </e-column>
+        <e-column field="category" headerText="Category" width="140">
+          <ng-template #template let-p>
+            <span class="muted">{{ p.category || '—' }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="unit" headerText="Unit" width="100">
+          <ng-template #template let-p>
+            <span class="muted">{{ p.unit }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="listPriceInPaise" headerText="List price" width="130" [textAlign]="'Right'">
+          <ng-template #template let-p>
+            {{ money(p.listPriceInPaise ?? 0) }}
+          </ng-template>
+        </e-column>
+        <e-column headerText="GST" width="120" [textAlign]="'Right'">
+          <ng-template #template let-p>
+            <span class="muted">{{ gstLabel(p) }}</span>
+          </ng-template>
+        </e-column>
+        <e-column headerText="Actions" width="140" [textAlign]="'Right'" freeze="Right">
+          <ng-template #template let-p>
+            <div class="actions">
               @if (canUpdate()) {
                 <button ar-button type="button" variant="ghost" (click)="openEdit(p)">Edit</button>
               }
               @if (canDelete()) {
                 <button ar-button type="button" variant="ghost" (click)="remove(p)">Delete</button>
               }
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
+            </div>
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
     @if (total() > products().length) {
       <p class="pd__empty">
         Showing the first {{ products().length }} of {{ total() }}. Narrow the search to find the

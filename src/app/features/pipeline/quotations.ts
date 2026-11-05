@@ -17,6 +17,8 @@ import { readApiError } from '../../core/util/api-error';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip } from '../../ui';
+import { ArGrid } from '../../ui/grid';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { environment } from '../../../environments/environment';
 import {
   QuotationSignatureService,
@@ -45,7 +47,7 @@ const STATE_TONE: Record<QState, ChipTone> = {
  */
 @Component({
   selector: 'ar-quotations',
-  imports: [ArTopbar, ArButton, ArChip, ArQuoteSignatureDialog, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, ArQuoteSignatureDialog, RouterLink, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quotations.html',
   styleUrl: './quotations.scss',

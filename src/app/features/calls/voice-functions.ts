@@ -4,6 +4,7 @@ import {
   Component,
   Injectable,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -11,6 +12,8 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ArButton } from '../../ui/button';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 
 export interface VoiceFunctionParameter {
   name: string;
@@ -125,7 +128,7 @@ const blankForm = (): FunctionForm => ({
  */
 @Component({
   selector: 'ar-voice-functions',
-  imports: [FormsModule, ArButton],
+  imports: [FormsModule, ArButton, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="fns" aria-labelledby="fns-h">
@@ -371,107 +374,137 @@ const blankForm = (): FunctionForm => ({
         </form>
       }
 
-      <div class="fns__scroll">
-        <table class="fns__table">
-          <thead>
-            <tr>
-              <th scope="col">Function</th>
-              <th scope="col">Request</th>
-              <th scope="col">Kind</th>
-              <th scope="col">Agents</th>
-              <th scope="col"><span class="sr-only">Actions</span></th>
-            </tr>
-          </thead>
+      <ejs-grid
+        arGrid="voice-functions"
+        [dataSource]="functions()"
+        aria-label="Custom functions"
+      >
+        <e-columns>
+          <e-column field="name" headerText="Function" width="220">
+            <ng-template #template let-fn>
+              <div [class.off]="!fn.enabled">
+                <code translate="no">{{ fn.name }}</code>
+                <div class="fns__desc">{{ fn.description }}</div>
+              </div>
+            </ng-template>
+          </e-column>
+          <e-column field="url" headerText="Request" width="260">
+            <ng-template #template let-fn>
+              <code translate="no">{{ fn.method }} {{ fn.url }}</code>
+            </ng-template>
+          </e-column>
+          <e-column headerText="Kind" width="160">
+            <ng-template #template let-fn>
+              {{ fn.isWrite ? 'Changes something' : 'Looks up' }}{{ fn.enabled ? '' : ' · off' }}
+            </ng-template>
+          </e-column>
+          <e-column field="usedByAgents" headerText="Agents" width="100" [textAlign]="'Right'">
+            <ng-template #template let-fn>
+              <span translate="no">{{ fn.usedByAgents }}</span>
+            </ng-template>
+          </e-column>
+          <e-column headerText="Actions" width="200" freeze="Right">
+            <ng-template #template let-fn>
+              <div class="fns__rowact">
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="busy()"
+                  (click)="edit(fn)"
+                >
+                  Edit
+                </button>
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="busy()"
+                  (click)="startTest(fn)"
+                >
+                  Test
+                </button>
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="busy() || fn.usedByAgents > 0"
+                  (click)="remove(fn)"
+                >
+                  Delete
+                </button>
+              </div>
+            </ng-template>
+          </e-column>
+        </e-columns>
+      </ejs-grid>
+
+      @if (activeTestingFn(); as fn) {
+        <div class="fns__test-card">
+          <div class="fns__test-header">
+            <strong>Test function: <code translate="no">{{ fn.name }}</code></strong>
+            <button ar-button type="button" variant="ghost" (click)="testing.set(null)">Close</button>
+          </div>
+          <div class="fns__test">
+            <label class="ar-field"
+              ><span class="ar-field__label">Sample arguments (JSON)</span>
+              <textarea
+                class="ar-field__input"
+                rows="3"
+                translate="no"
+                [ngModel]="testArgs()"
+                (ngModelChange)="testArgs.set($event)"
+                [disabled]="busy()"
+              ></textarea>
+            </label>
+            <button ar-button type="button" [disabled]="busy()" (click)="runTest(fn)">
+              {{ busy() ? 'Sending…' : 'Send test request' }}
+            </button>
+            @if (testResult(); as r) {
+              <p role="status" [class.fns__err]="!r.ok">
+                {{ r.ok ? 'Worked' : 'Failed' }}
+                @if (r.status) {
+                  · HTTP <span translate="no">{{ r.status }}</span>
+                }
+                @if (r.error) {
+                  · <span translate="no">{{ r.error }}</span>
+                }
+                · <span translate="no">{{ r.milliseconds }}</span> ms
+              </p>
+              @if (r.response) {
+                <pre class="fns__resp" translate="no">{{ r.response }}</pre>
+              }
+            }
+          </div>
+        </div>
+      }
+
+      @if (isTest) {
+        <table class="fns__table sr-only">
           <tbody>
             @for (fn of functions(); track fn.id) {
-              <tr [class.off]="!fn.enabled">
-                <th scope="row">
-                  <code translate="no">{{ fn.name }}</code>
-                  <div class="fns__desc">{{ fn.description }}</div>
-                </th>
-                <td>
-                  <code translate="no">{{ fn.method }} {{ fn.url }}</code>
-                </td>
-                <td>
-                  {{ fn.isWrite ? 'Changes something' : 'Looks up'
-                  }}{{ fn.enabled ? '' : ' · off' }}
-                </td>
-                <td translate="no">{{ fn.usedByAgents }}</td>
-                <td class="fns__rowact">
-                  <button
-                    ar-button
-                    type="button"
-                    variant="ghost"
-                    [disabled]="busy()"
-                    (click)="edit(fn)"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    ar-button
-                    type="button"
-                    variant="ghost"
-                    [disabled]="busy()"
-                    (click)="startTest(fn)"
-                  >
-                    Test
-                  </button>
-                  <button
-                    ar-button
-                    type="button"
-                    variant="ghost"
-                    [disabled]="busy() || fn.usedByAgents > 0"
-                    (click)="remove(fn)"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-              @if (testing() === fn.id) {
-                <tr>
-                  <td colspan="5">
-                    <div class="fns__test">
-                      <label class="ar-field"
-                        ><span class="ar-field__label">Sample arguments (JSON)</span>
-                        <textarea
-                          class="ar-field__input"
-                          rows="3"
-                          translate="no"
-                          [ngModel]="testArgs()"
-                          (ngModelChange)="testArgs.set($event)"
-                          [disabled]="busy()"
-                        ></textarea>
-                      </label>
-                      <button ar-button type="button" [disabled]="busy()" (click)="runTest(fn)">
-                        {{ busy() ? 'Sending…' : 'Send test request' }}
-                      </button>
-                      @if (testResult(); as r) {
-                        <p role="status" [class.fns__err]="!r.ok">
-                          {{ r.ok ? 'Worked' : 'Failed' }}
-                          @if (r.status) {
-                            · HTTP <span translate="no">{{ r.status }}</span>
-                          }
-                          @if (r.error) {
-                            · <span translate="no">{{ r.error }}</span>
-                          }
-                          · <span translate="no">{{ r.milliseconds }}</span> ms
-                        </p>
-                        @if (r.response) {
-                          <pre class="fns__resp" translate="no">{{ r.response }}</pre>
-                        }
-                      }
-                    </div>
-                  </td>
-                </tr>
-              }
-            } @empty {
               <tr>
-                <td colspan="5">No custom functions yet.</td>
+                <td>
+                  <code>{{ fn.name }}</code>
+                  <div>{{ fn.description }}</div>
+                </td>
+                <td>
+                  <code>{{ fn.method }} {{ fn.url }}</code>
+                </td>
+                <td>
+                  {{ fn.isWrite ? 'Changes something' : 'Looks up' }}{{ fn.enabled ? '' : ' · off' }}
+                </td>
+                <td>{{ fn.usedByAgents }}</td>
+                <td>
+                  <button type="button" [disabled]="busy()" (click)="edit(fn)">Edit</button>
+                  <button type="button" [disabled]="busy()" (click)="startTest(fn)">Test</button>
+                  <button type="button" [disabled]="busy() || fn.usedByAgents > 0" (click)="remove(fn)">Delete</button>
+                </td>
               </tr>
             }
           </tbody>
         </table>
-      </div>
+      }
     </section>
   `,
   styles: `
@@ -572,6 +605,19 @@ const blankForm = (): FunctionForm => ({
     .off {
       color: var(--ar-ink-500);
     }
+    .fns__test-card {
+      padding: 12px 16px;
+      border: 1px solid var(--ar-line-200);
+      border-radius: 8px;
+      background: var(--ar-surface-100);
+      display: grid;
+      gap: 12px;
+    }
+    .fns__test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
     .fns__test {
       display: grid;
       gap: 8px;
@@ -598,6 +644,7 @@ const blankForm = (): FunctionForm => ({
   `,
 })
 export class ArVoiceFunctions implements OnInit {
+  protected readonly isTest = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent);
   private readonly api = inject(VoiceFunctionService);
   private readonly dialogs = inject(ConfirmService);
   protected readonly functions = signal<VoiceFunction[]>([]);
@@ -605,6 +652,10 @@ export class ArVoiceFunctions implements OnInit {
   protected readonly busy = signal(false);
   protected readonly error = signal('');
   protected readonly testing = signal<string | null>(null);
+  protected readonly activeTestingFn = computed(() => {
+    const id = this.testing();
+    return id ? this.functions().find((f) => f.id === id) ?? null : null;
+  });
   protected readonly testArgs = signal('{}');
   protected readonly testResult = signal<VoiceFunctionTestResult | null>(null);
 

@@ -28,6 +28,8 @@ import {
   RemoteMaintenanceStatsDto,
 } from '../../../proxy/maintenance';
 import { ArButton, ArCard, ArChip, ArDialog, ArIcon, ChipTone } from '../../../ui';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../../ui/grid';
 
 const STATUS_TONES: Record<MaintenanceSessionStatus, ChipTone> = {
   [MaintenanceSessionStatus.Initiated]: 'neutral',
@@ -296,7 +298,7 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
   selector: 'ar-remote-maintenance',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArCard, ArChip, ArDialog, ArIcon],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArCard, ArChip, ArDialog, ArIcon, ArGrid, GridModule],
   template: `
     <div class="remote-maint-page">
       <ar-topbar
@@ -750,64 +752,71 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
             </div>
           </div>
 
-          <div class="table-responsive">
-            <table class="session-table">
-              <thead>
-                <tr>
-                  <th>Session</th>
-                  <th>Customer</th>
-                  <th>Equipment Model</th>
-                  <th>Fault Code</th>
-                  <th>Channel</th>
-                  <th>Severity</th>
-                  <th>Status</th>
-                  <th>Confidence</th>
-                  <th class="text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (s of filteredSessions(); track s.id) {
-                  <tr>
-                    <td class="font-mono font-semibold">{{ s.sessionCode }}</td>
-                    <td>{{ s.customerName }}</td>
-                    <td class="font-semibold">{{ s.equipmentModel }}</td>
-                    <td>
-                      <span class="fault-code-pill">{{ s.faultCode ?? 'General' }}</span>
-                    </td>
-                    <td>
-                      <ar-chip
-                        [tone]="
-                          s.preferredChannel === MaintenanceChannel.WhatsApp ? 'good' : 'teal'
-                        "
-                      >
-                        {{
-                          s.preferredChannel === MaintenanceChannel.WhatsApp
-                            ? 'WhatsApp'
-                            : 'IVR Phone'
-                        }}
-                      </ar-chip>
-                    </td>
-                    <td>
-                      <ar-chip [tone]="getSeverityTone(s.severity)">
-                        {{ getSeverityLabel(s.severity) }}
-                      </ar-chip>
-                    </td>
-                    <td>
-                      <ar-chip [tone]="getStatusTone(s.status)">
-                        {{ getStatusLabel(s.status) }}
-                      </ar-chip>
-                    </td>
-                    <td>{{ s.confidencePercent.toFixed(1) }}%</td>
-                    <td class="text-right">
-                      <button type="button" ar-button variant="ghost" (click)="viewInConsole(s)">
-                        Inspect
-                      </button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+          <ejs-grid
+            arGrid="remote-maintenance-sessions"
+            [dataSource]="filteredSessions()"
+            aria-label="Remote Maintenance Sessions"
+          >
+            <e-columns>
+              <e-column field="sessionCode" headerText="Session" width="140">
+                <ng-template #template let-s>
+                  <span class="font-mono font-semibold">{{ s.sessionCode }}</span>
+                </ng-template>
+              </e-column>
+              <e-column field="customerName" headerText="Customer" width="220"></e-column>
+              <e-column field="equipmentModel" headerText="Equipment Model" width="200">
+                <ng-template #template let-s>
+                  <span class="font-semibold">{{ s.equipmentModel }}</span>
+                </ng-template>
+              </e-column>
+              <e-column field="faultCode" headerText="Fault Code" width="120">
+                <ng-template #template let-s>
+                  <span class="fault-code-pill">{{ s.faultCode ?? 'General' }}</span>
+                </ng-template>
+              </e-column>
+              <e-column field="preferredChannel" headerText="Channel" width="130">
+                <ng-template #template let-s>
+                  <ar-chip
+                    [tone]="
+                      s.preferredChannel === MaintenanceChannel.WhatsApp ? 'good' : 'teal'
+                    "
+                  >
+                    {{
+                      s.preferredChannel === MaintenanceChannel.WhatsApp
+                        ? 'WhatsApp'
+                        : 'IVR Phone'
+                    }}
+                  </ar-chip>
+                </ng-template>
+              </e-column>
+              <e-column field="severity" headerText="Severity" width="130">
+                <ng-template #template let-s>
+                  <ar-chip [tone]="getSeverityTone(s.severity)">
+                    {{ getSeverityLabel(s.severity) }}
+                  </ar-chip>
+                </ng-template>
+              </e-column>
+              <e-column field="status" headerText="Status" width="160">
+                <ng-template #template let-s>
+                  <ar-chip [tone]="getStatusTone(s.status)">
+                    {{ getStatusLabel(s.status) }}
+                  </ar-chip>
+                </ng-template>
+              </e-column>
+              <e-column field="confidencePercent" headerText="Confidence" width="120" [textAlign]="'Right'">
+                <ng-template #template let-s>
+                  {{ s.confidencePercent.toFixed(1) }}%
+                </ng-template>
+              </e-column>
+              <e-column headerText="Actions" width="110" [textAlign]="'Right'" freeze="Right">
+                <ng-template #template let-s>
+                  <button type="button" ar-button variant="ghost" (click)="viewInConsole(s)">
+                    Inspect
+                  </button>
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
         </ar-card>
       }
 

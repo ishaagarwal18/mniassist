@@ -40,12 +40,6 @@ abstract class NewSalesRecordPage {
   }
 }
 
-const PAGE = `
-  .new-record {
-    padding: 1.25rem 1.5rem 2rem;
-  }
-`;
-
 @Component({
   selector: 'ar-new-sales-order-page',
   imports: [ArTopbar, ArNewSalesOrder],
@@ -57,7 +51,7 @@ const PAGE = `
       <ar-new-sales-order [initialCustomer]="customer" (closed)="done($event)" />
     </div>
   `,
-  styles: PAGE,
+  styleUrl: './new-sales-record-pages.scss',
 })
 export class ArNewSalesOrderPage extends NewSalesRecordPage {
   protected readonly list = '/sales/orders';
@@ -78,7 +72,7 @@ export class ArNewSalesOrderPage extends NewSalesRecordPage {
       <ar-new-delivery-challan [initialCustomer]="customer" (closed)="done($event)" />
     </div>
   `,
-  styles: PAGE,
+  styleUrl: './new-sales-record-pages.scss',
 })
 export class ArNewDeliveryChallanPage extends NewSalesRecordPage {
   protected readonly list = '/sales/challans';
@@ -99,7 +93,7 @@ export class ArNewDeliveryChallanPage extends NewSalesRecordPage {
       <ar-new-sales-invoice [initialCustomer]="customer" (closed)="done($event)" />
     </div>
   `,
-  styles: PAGE,
+  styleUrl: './new-sales-record-pages.scss',
 })
 export class ArNewSalesInvoicePage extends NewSalesRecordPage {
   protected readonly list = '/sales/invoices';

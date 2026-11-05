@@ -1,6 +1,7 @@
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { GridModule, RecordClickEventArgs, RowSelectEventArgs } from '@syncfusion/ej2-angular-grids';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -16,6 +17,7 @@ import {
   ServiceTicketType,
 } from '../../../proxy/field-service';
 import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArGrid } from '../../../ui/grid';
 import { initialSearch } from '../../../core/util/customer-scope';
 
 const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
@@ -153,7 +155,18 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
 @Component({
   selector: 'app-field-service-tickets',
   standalone: true,
-  imports: [CommonModule, FormsModule, DatePipe, DecimalPipe, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DatePipe,
+    DecimalPipe,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArGrid,
+    GridModule,
+  ],
   template: `
     <ar-topbar title="Field Service & Breakdown Tickets (Field ERP)">
       <div actions class="topbar-actions">
@@ -233,66 +246,66 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
       <div class="tickets-layout">
         <!-- Tickets Table -->
         <section class="table-card">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Ticket #</th>
-                <th>Customer & Site</th>
-                <th>Type & Priority</th>
-                <th>Machine & Serial</th>
-                <th>Assigned Engineer</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                *ngFor="let t of filteredTickets()"
-                [class.selected-row]="selectedTicket()?.id === t.id"
-                (click)="selectTicket(t)"
-                class="clickable-row"
-              >
-                <td>
+          <ejs-grid
+            arGrid="field-service-tickets"
+            [dataSource]="filteredTickets()"
+            [allowSelection]="true"
+            [selectionSettings]="{ mode: 'Row', type: 'Single' }"
+            (rowSelected)="onTicketSelected($event)"
+            (recordClick)="onTicketClick($event)"
+            aria-label="Service tickets"
+          >
+            <e-columns>
+              <e-column field="ticketNumber" headerText="Ticket #" width="160">
+                <ng-template #template let-t>
                   <div class="ticket-ref">
                     <span class="fw-bold">{{ t.ticketNumber }}</span>
                     <span class="ticket-time">{{ t.creationTime | date: 'short' }}</span>
                   </div>
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="customerName" headerText="Customer & Site" width="220">
+                <ng-template #template let-t>
                   <div class="client-info">
                     <span class="client-name">{{ t.customerName }}</span>
                     <span class="client-phone" *ngIf="t.customerContactPhone"
                       >&#9742; {{ t.customerContactPhone }}</span
                     >
                   </div>
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="ticketType" headerText="Type & Priority" width="160">
+                <ng-template #template let-t>
                   <div class="type-priority">
                     <span class="type-tag">{{ getTicketTypeLabel(t.ticketType) }}</span>
                     <ar-chip [tone]="getPriorityTone(t.priority)">
                       {{ getPriorityLabel(t.priority) }}
                     </ar-chip>
                   </div>
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="equipmentSerialNumber" headerText="Machine & Serial" width="200">
+                <ng-template #template let-t>
                   <div class="machine-info">
                     <span class="serial-badge">{{ t.equipmentSerialNumber }}</span>
                     <span class="model-name">{{ t.equipmentModel }}</span>
                   </div>
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="assignedFieldEngineer" headerText="Assigned Engineer" width="180">
+                <ng-template #template let-t>
                   <span class="eng-text">{{ t.assignedFieldEngineer || 'Unassigned' }}</span>
-                </td>
-                <td>
+                </ng-template>
+              </e-column>
+              <e-column field="status" headerText="Status" width="130">
+                <ng-template #template let-t>
                   <ar-chip [tone]="getStatusTone(t.status)">
                     {{ getStatusLabel(t.status) }}
                   </ar-chip>
-                </td>
-              </tr>
-              <tr *ngIf="filteredTickets().length === 0">
-                <td colspan="6" class="empty-cell">No service tickets found.</td>
-              </tr>
-            </tbody>
-          </table>
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
         </section>
 
         <!-- Right Cockpit: Detail, Spares, Resolution -->
@@ -374,39 +387,38 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
               </div>
             </div>
 
-            <div class="table-responsive">
-              <table class="sub-table">
-                <thead>
-                  <tr>
-                    <th>Part #</th>
-                    <th>Description</th>
-                    <th>Qty</th>
-                    <th>Unit Price (₹)</th>
-                    <th>Billing</th>
-                    <th>Total (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let sp of ticket.sparesConsumed">
-                    <td class="fw-bold">{{ sp.partNumber }}</td>
-                    <td>{{ sp.description }}</td>
-                    <td>{{ sp.quantity }}</td>
-                    <td>₹{{ sp.unitPriceInPaise / 100 | number: '1.2-2' }}</td>
-                    <td>
-                      <span class="billable-pill" [class.warranty]="!sp.isBillableToCustomer">
-                        {{ sp.isBillableToCustomer ? 'Billable to Client' : 'AMC / Warranty' }}
-                      </span>
-                    </td>
-                    <td class="fw-bold">₹{{ sp.lineTotalInPaise / 100 | number: '1.2-2' }}</td>
-                  </tr>
-                  <tr *ngIf="!ticket.sparesConsumed || ticket.sparesConsumed.length === 0">
-                    <td colspan="6" class="text-center text-muted">
-                      No spare parts replaced during this visit.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <ejs-grid
+              arGrid="ticket-spares-consumed"
+              [dataSource]="ticket.sparesConsumed"
+              aria-label="Spare Parts Consumed"
+            >
+              <e-columns>
+                <e-column field="partNumber" headerText="Part #" width="150">
+                  <ng-template #template let-sp>
+                    <span class="fw-bold">{{ sp.partNumber }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="description" headerText="Description" width="220"></e-column>
+                <e-column field="quantity" headerText="Qty" width="90" [textAlign]="'Right'"></e-column>
+                <e-column headerText="Unit Price (₹)" width="130" [textAlign]="'Right'">
+                  <ng-template #template let-sp>
+                    ₹{{ sp.unitPriceInPaise / 100 | number: '1.2-2' }}
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Billing" width="160">
+                  <ng-template #template let-sp>
+                    <span class="billable-pill" [class.warranty]="!sp.isBillableToCustomer">
+                      {{ sp.isBillableToCustomer ? 'Billable to Client' : 'AMC / Warranty' }}
+                    </span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Total (₹)" width="130" [textAlign]="'Right'">
+                  <ng-template #template let-sp>
+                    <span class="fw-bold">₹{{ sp.lineTotalInPaise / 100 | number: '1.2-2' }}</span>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           </div>
 
           <!-- Customer Signoff & CSAT (if resolved) -->
@@ -1279,6 +1291,18 @@ export class FieldServiceTicketsComponent {
 
   selectTicket(t: FieldServiceTicketDto): void {
     this.selectedTicket.set(t);
+  }
+
+  onTicketSelected(args: RowSelectEventArgs): void {
+    const row = (Array.isArray(args.data) ? args.data[0] : args.data) as
+      | FieldServiceTicketDto
+      | undefined;
+    if (row) this.selectTicket(row);
+  }
+
+  onTicketClick(args: RecordClickEventArgs): void {
+    const row = args.rowData as FieldServiceTicketDto | undefined;
+    if (row) this.selectTicket(row);
   }
 
   getStatusTone(status: ServiceTicketStatus): ChipTone {

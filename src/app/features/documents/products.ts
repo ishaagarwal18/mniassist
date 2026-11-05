@@ -14,6 +14,8 @@ import {
 } from '../../proxy/library';
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 import { ArSelect } from '../../ui/select';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 import { parseProductRows } from './product-import';
 import { ConfirmService } from '../../core/ui/confirm.service';
 
@@ -23,7 +25,7 @@ import { ConfirmService } from '../../core/ui/confirm.service';
  */
 @Component({
   selector: 'ar-products',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox, ArSelect],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox, ArSelect, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './products.html',
   styleUrl: './products.scss',

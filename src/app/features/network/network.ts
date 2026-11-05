@@ -36,6 +36,8 @@ import {
 } from './network-logic';
 import { ArRouteLeadDialog, problem } from './route-lead-dialog';
 import { ConfirmService } from '../../core/ui/confirm.service';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 
 const TAB_LEADS = 'Routed leads';
 const TAB_DEALERS = 'Dealers';
@@ -167,7 +169,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
  */
 @Component({
   selector: 'ar-network',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArTabs, ArRouteLeadDialog, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArTabs, ArRouteLeadDialog, RouterLink, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -743,30 +745,35 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
                   }
                 </h3>
                 <div class="quote__wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th scope="col">Part</th>
-                        <th scope="col">Description</th>
-                        <th scope="col" class="num">Qty</th>
-                        <th scope="col" class="num">Unit price</th>
-                        <th scope="col" class="num">Disc.</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (ln of q.lines; track $index) {
-                        <tr>
-                          <td class="ar-mono">{{ ln.partNumber || '—' }}</td>
-                          <td>{{ ln.description }}</td>
-                          <td class="num">{{ ln.quantity }} {{ ln.unit }}</td>
-                          <td class="num">{{ money(ln.unitPriceInPaise) }}</td>
-                          <td class="num">
-                            {{ ln.discountBasisPoints ? ln.discountBasisPoints / 100 + '%' : '—' }}
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
+                  <ejs-grid
+                    arGrid="network-quote-lines"
+                    [dataSource]="q.lines"
+                    aria-label="Quote items"
+                  >
+                    <e-columns>
+                      <e-column field="partNumber" headerText="Part" width="150">
+                        <ng-template #template let-ln>
+                          <span class="ar-mono">{{ ln.partNumber || '—' }}</span>
+                        </ng-template>
+                      </e-column>
+                      <e-column field="description" headerText="Description" width="220"></e-column>
+                      <e-column headerText="Qty" width="110" [textAlign]="'Right'">
+                        <ng-template #template let-ln>
+                          {{ ln.quantity }} {{ ln.unit }}
+                        </ng-template>
+                      </e-column>
+                      <e-column field="unitPriceInPaise" headerText="Unit price" width="130" [textAlign]="'Right'">
+                        <ng-template #template let-ln>
+                          {{ money(ln.unitPriceInPaise) }}
+                        </ng-template>
+                      </e-column>
+                      <e-column headerText="Disc." width="100" [textAlign]="'Right'">
+                        <ng-template #template let-ln>
+                          {{ ln.discountBasisPoints ? ln.discountBasisPoints / 100 + '%' : '—' }}
+                        </ng-template>
+                      </e-column>
+                    </e-columns>
+                  </ejs-grid>
                 </div>
               </section>
             }

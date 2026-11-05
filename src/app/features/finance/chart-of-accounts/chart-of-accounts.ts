@@ -1,6 +1,7 @@
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -12,6 +13,7 @@ import {
   CreateChartOfAccountDto,
 } from '../../../proxy/finance';
 import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArGrid } from '../../../ui/grid';
 
 const MOCK_COA: ChartOfAccountDto[] = [
   // Assets
@@ -379,7 +381,17 @@ const MOCK_COA: ChartOfAccountDto[] = [
 @Component({
   selector: 'app-chart-of-accounts',
   standalone: true,
-  imports: [CommonModule, FormsModule, DecimalPipe, ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DecimalPipe,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArGrid,
+    GridModule,
+  ],
   template: `
     <ar-topbar title="Chart of Accounts (General Ledger)">
       <div actions class="topbar-actions">
@@ -474,46 +486,54 @@ const MOCK_COA: ChartOfAccountDto[] = [
 
       <!-- Accounts Table -->
       <section class="table-card">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Account Code</th>
-              <th>Account Title & Description</th>
-              <th>Category</th>
-              <th>Sub-Category</th>
-              <th>Nature</th>
-              <th class="text-right">Current Ledger Balance</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let acc of filteredAccounts()">
-              <td>
+        <ejs-grid
+          arGrid="chart-of-accounts"
+          [dataSource]="filteredAccounts()"
+          aria-label="Chart of Accounts"
+        >
+          <e-columns>
+            <e-column field="accountCode" headerText="Account Code" width="140">
+              <ng-template #template let-acc>
                 <span class="code-badge">{{ acc.accountCode }}</span>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="accountName" headerText="Account Title & Description" width="260">
+              <ng-template #template let-acc>
                 <div class="acc-desc-block">
                   <span class="acc-name">{{ acc.accountName }}</span>
                   <span class="acc-sub" *ngIf="acc.description">{{ acc.description }}</span>
                 </div>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="category" headerText="Category" width="140">
+              <ng-template #template let-acc>
                 <ar-chip [tone]="getCategoryTone(acc.category)">
                   {{ getCategoryLabel(acc.category) }}
                 </ar-chip>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="subCategory" headerText="Sub-Category" width="160">
+              <ng-template #template let-acc>
                 <span class="subcat-tag">{{ getSubCategoryLabel(acc.subCategory) }}</span>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="normalBalance" headerText="Nature" width="130">
+              <ng-template #template let-acc>
                 <span
                   class="nature-tag"
                   [class.nature-dr]="acc.normalBalance === BalanceNature.Debit"
                 >
                   {{ acc.normalBalance === BalanceNature.Debit ? 'Dr (Debit)' : 'Cr (Credit)' }}
                 </span>
-              </td>
-              <td class="text-right">
+              </ng-template>
+            </e-column>
+            <e-column
+              field="currentBalanceInPaise"
+              headerText="Current Ledger Balance"
+              textAlign="Right"
+              width="180"
+            >
+              <ng-template #template let-acc>
                 <span
                   class="balance-value"
                   [class.text-debit]="acc.normalBalance === BalanceNature.Debit"
@@ -521,18 +541,17 @@ const MOCK_COA: ChartOfAccountDto[] = [
                 >
                   ₹{{ acc.currentBalanceInPaise / 100 | number: '1.2-2' }}
                 </span>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="isActive" headerText="Status" width="120">
+              <ng-template #template let-acc>
                 <ar-chip [tone]="acc.isActive ? 'good' : 'neutral'">
                   {{ acc.isActive ? 'Active' : 'Inactive' }}
                 </ar-chip>
-              </td>
-            </tr>
-            <tr *ngIf="filteredAccounts().length === 0">
-              <td colspan="7" class="empty-cell">No accounts found matching your criteria.</td>
-            </tr>
-          </tbody>
-        </table>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </section>
     </div>
 

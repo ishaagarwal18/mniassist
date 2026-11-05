@@ -23,6 +23,8 @@ import { ArChip } from '../../ui/chip';
 import { ArDialog } from '../../ui/dialog';
 import { ArIcon } from '../../ui/icon';
 import { ArStatTile } from '../../ui/stat-tile';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 
 interface BatchForm {
   name: string;
@@ -61,6 +63,8 @@ const toMinute = (clock: string) => {
     ArIcon,
     ArStatTile,
     ArDialog,
+    ArGrid,
+    GridModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -309,73 +313,75 @@ const toMinute = (clock: string) => {
               <!-- Recipients Roster Table adhering to modern-web-guidance responsive-table -->
               <div class="recipients-section">
                 <h3 class="recipients-title">Recipients Log ({{ recipients().length }})</h3>
-                <div
-                  class="ar-table-responsive"
-                  tabindex="0"
-                  role="region"
+                <ejs-grid
+                  arGrid="voice-call-recipients"
+                  [dataSource]="recipients()"
                   aria-label="Batch Call Recipients"
                 >
-                  <table class="ar-table">
-                    <caption class="sr-only">
-                      Batch Call Recipients
-                    </caption>
-                    <thead>
-                      <tr>
-                        <th scope="col">
-                          {{ 'AutoReach::VoiceBatch.Col.person' | abpLocalization }}
-                        </th>
-                        <th scope="col">
-                          {{ 'AutoReach::VoiceBatch.Col.status' | abpLocalization }}
-                        </th>
-                        <th scope="col" class="text-right">
-                          {{ 'AutoReach::VoiceBatch.Col.attempts' | abpLocalization }}
-                        </th>
-                        <th scope="col">
-                          {{ 'AutoReach::VoiceBatch.Col.next' | abpLocalization }}
-                        </th>
-                        <th scope="col">
-                          {{ 'AutoReach::VoiceBatch.Col.outcome' | abpLocalization }}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (person of recipients(); track person.id) {
-                        <tr>
-                          <td class="font-medium" translate="no">
-                            {{ person.contactName || person.phone }}
-                            @if (person.contactName) {
-                              <span class="text-muted block font-mono">{{ person.phone }}</span>
-                            }
-                          </td>
-                          <td>
-                            <ar-chip [tone]="recipientTone(person.status)">
-                              {{
-                                'AutoReach::VoiceBatch.Recipient.' + person.status | abpLocalization
-                              }}
-                            </ar-chip>
-                          </td>
-                          <td class="text-right font-mono">{{ person.attempts }}</td>
-                          <td class="text-muted font-mono">
-                            {{
-                              person.nextAttemptAtUtc
-                                ? (person.nextAttemptAtUtc | date: 'short')
-                                : '—'
-                            }}
-                          </td>
-                          <td>
-                            {{ person.lastOutcome ? (person.lastOutcome | abpLocalization) : '—' }}
-                          </td>
-                        </tr>
-                      } @empty {
-                        <tr>
-                          <td colspan="5" class="text-center text-muted">
-                            No recipients loaded. Upload a CSV file above to populate this batch.
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
+                  <e-columns>
+                    <e-column
+                      [headerText]="'AutoReach::VoiceBatch.Col.person' | abpLocalization"
+                      width="200"
+                    >
+                      <ng-template #template let-person>
+                        <div class="font-medium" translate="no">
+                          {{ person.contactName || person.phone }}
+                          @if (person.contactName) {
+                            <span class="text-muted block font-mono">{{ person.phone }}</span>
+                          }
+                        </div>
+                      </ng-template>
+                    </e-column>
+                    <e-column
+                      [headerText]="'AutoReach::VoiceBatch.Col.status' | abpLocalization"
+                      width="140"
+                    >
+                      <ng-template #template let-person>
+                        <ar-chip [tone]="recipientTone(person.status)">
+                          {{
+                            'AutoReach::VoiceBatch.Recipient.' + person.status | abpLocalization
+                          }}
+                        </ar-chip>
+                      </ng-template>
+                    </e-column>
+                    <e-column
+                      field="attempts"
+                      [headerText]="'AutoReach::VoiceBatch.Col.attempts' | abpLocalization"
+                      width="110"
+                      [textAlign]="'Right'"
+                    >
+                      <ng-template #template let-person>
+                        <span class="font-mono">{{ person.attempts }}</span>
+                      </ng-template>
+                    </e-column>
+                    <e-column
+                      field="nextAttemptAtUtc"
+                      [headerText]="'AutoReach::VoiceBatch.Col.next' | abpLocalization"
+                      width="160"
+                    >
+                      <ng-template #template let-person>
+                        <span class="text-muted font-mono">
+                          {{
+                            person.nextAttemptAtUtc
+                              ? (person.nextAttemptAtUtc | date: 'short')
+                              : '—'
+                          }}
+                        </span>
+                      </ng-template>
+                    </e-column>
+                    <e-column
+                      field="lastOutcome"
+                      [headerText]="'AutoReach::VoiceBatch.Col.outcome' | abpLocalization"
+                      width="180"
+                    >
+                      <ng-template #template let-person>
+                        <span>
+                          {{ person.lastOutcome ? (person.lastOutcome | abpLocalization) : '—' }}
+                        </span>
+                      </ng-template>
+                    </e-column>
+                  </e-columns>
+                </ejs-grid>
               </div>
             </section>
           }

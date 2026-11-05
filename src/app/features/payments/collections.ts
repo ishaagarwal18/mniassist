@@ -13,6 +13,8 @@ import {
   CollectionService,
 } from '../../proxy/integrations/collection.service';
 import { ArButton, ArChip } from '../../ui';
+import { ArGrid } from '../../ui/grid';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import type { ChipTone } from '../../ui/chip';
 
 const day = 86_400_000;
@@ -95,7 +97,7 @@ const SEED: CollectionBoardDto = {
  */
 @Component({
   selector: 'ar-collections',
-  imports: [ArTopbar, ArButton, ArChip, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, RouterLink, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -161,60 +163,60 @@ const SEED: CollectionBoardDto = {
           their balances.
         </p>
       } @else {
-        <div class="tbl-wrap">
-          <table class="tbl">
-            <thead>
-              <tr>
-                <th scope="col">Invoice</th>
-                <th scope="col">Customer</th>
-                <th scope="col">Due</th>
-                <th scope="col" class="num">Outstanding</th>
-                <th scope="col">Reminders</th>
-                @if (canManage()) {
-                  <th scope="col"><span class="sr-only">Actions</span></th>
+        <ejs-grid arGrid="collections" [dataSource]="rows()" aria-label="Unpaid invoices">
+          <e-columns>
+            <e-column field="number" headerText="Invoice" width="160">
+              <ng-template #template let-r>
+                <span class="ar-mono">{{ r.number }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="customerName" headerText="Customer" width="220">
+              <ng-template #template let-r>
+                {{ r.customerName || '—' }}
+              </ng-template>
+            </e-column>
+            <e-column headerText="Due" width="160">
+              <ng-template #template let-r>
+                <ar-chip [tone]="tone(r)" [dot]="true">{{ dueLabel(r) }}</ar-chip>
+                @if (r.dueDateAssumed) {
+                  <span
+                    class="cl__assumed"
+                    title="The ERP gave no due date: invoice date plus your credit days"
+                    >est.</span
+                  >
                 }
-              </tr>
-            </thead>
-            <tbody>
-              @for (r of rows(); track r.id) {
-                <tr>
-                  <td class="ar-mono">{{ r.number }}</td>
-                  <td>{{ r.customerName || '—' }}</td>
-                  <td>
-                    <ar-chip [tone]="tone(r)" [dot]="true">{{ dueLabel(r) }}</ar-chip>
-                    @if (r.dueDateAssumed) {
-                      <span
-                        class="cl__assumed"
-                        title="The ERP gave no due date: invoice date plus your credit days"
-                        >est.</span
-                      >
-                    }
-                  </td>
-                  <td class="num">{{ money(r.outstandingInPaise) }}</td>
-                  <td>
-                    {{ r.remindersSent }}
-                    @if (r.lastReminderAtUtc) {
-                      <span class="cl__muted">· last {{ ago(r.lastReminderAtUtc) }}</span>
-                    }
-                  </td>
-                  @if (canManage()) {
-                    <td class="act">
-                      <button
-                        ar-button
-                        type="button"
-                        variant="ghost"
-                        [disabled]="busy() === r.id"
-                        (click)="sendNow(r)"
-                      >
-                        {{ busy() === r.id ? 'Sending…' : 'Remind now' }}
-                      </button>
-                    </td>
-                  }
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+              </ng-template>
+            </e-column>
+            <e-column field="outstandingInPaise" headerText="Outstanding" textAlign="Right" width="140">
+              <ng-template #template let-r>
+                {{ money(r.outstandingInPaise) }}
+              </ng-template>
+            </e-column>
+            <e-column headerText="Reminders" width="180">
+              <ng-template #template let-r>
+                {{ r.remindersSent }}
+                @if (r.lastReminderAtUtc) {
+                  <span class="cl__muted">· last {{ ago(r.lastReminderAtUtc) }}</span>
+                }
+              </ng-template>
+            </e-column>
+            @if (canManage()) {
+              <e-column headerText="Actions" width="150" freeze="Right">
+                <ng-template #template let-r>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="busy() === r.id"
+                    (click)="sendNow(r)"
+                  >
+                    {{ busy() === r.id ? 'Sending…' : 'Remind now' }}
+                  </button>
+                </ng-template>
+              </e-column>
+            }
+          </e-columns>
+        </ejs-grid>
       }
     </div>
   `,

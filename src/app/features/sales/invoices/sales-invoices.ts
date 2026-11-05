@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { GridModule, RecordClickEventArgs } from '@syncfusion/ej2-angular-grids';
 import { ToastService } from '../../../core/ui/toast.service';
 import { CustomerScope, readCustomerScope } from '../../../core/util/customer-scope';
 import { errorMessage } from '../../activities/activity-logic';
@@ -11,6 +12,7 @@ import { SalesInvoiceDto } from '../../../proxy/sales/sales-invoice.models';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { SalesExportFormat, SalesInvoiceStatus } from '../../../proxy/sales/sales-enums';
 import { ArButton, ArChip } from '../../../ui';
+import { ArGrid } from '../../../ui/grid';
 import { PermissionService } from '@abp/ng.core';
 import { grantedPolicy } from '../../../core/auth/permission';
 import {
@@ -28,7 +30,7 @@ import { ArSalesExport } from '../sales-export';
 @Component({
   selector: 'ar-sales-invoices',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArSalesExport],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArSalesExport, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -132,71 +134,86 @@ import { ArSalesExport } from '../sales-export';
 
       <!-- Invoices Table -->
       <div class="table-card">
-        <table class="ar-table">
-          <thead>
-            <tr>
-              <th>Invoice #</th>
-              <th>Customer</th>
-              <th>Issue Date</th>
-              <th>Due Date</th>
-              <th class="num-col">Subtotal</th>
-              <th class="num-col">GST</th>
-              <th class="num-col">Grand Total</th>
-              <th class="num-col">Balance Due</th>
-              <th>Status</th>
-              <th class="actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (inv of filteredInvoices(); track inv.id) {
-              <tr class="inv-row" (click)="openInvoice(inv)">
-                <td class="font-mono font-bold text-primary">{{ inv.invoiceNumber }}</td>
-                <td>
-                  <div class="font-semibold">{{ inv.customerName }}</div>
-                  @if (inv.customerGstin) {
-                    <div class="font-mono text-xs text-muted">{{ inv.customerGstin }}</div>
-                  }
-                </td>
-                <td>{{ inv.issueDateUtc | date: 'dd MMM yyyy' }}</td>
-                <td>
-                  <span [class.text-danger]="isOverdue(inv)">
-                    {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}
-                  </span>
-                </td>
-                <td class="num-col">₹{{ inv.subtotalInPaise / 100 | number: '1.2-2' }}</td>
-                <td class="num-col">₹{{ inv.totalTaxInPaise / 100 | number: '1.2-2' }}</td>
-                <td class="num-col font-bold">
+        <ejs-grid
+          arGrid="sales-invoices"
+          [dataSource]="filteredInvoices()"
+          (recordClick)="onInvoiceClick($event)"
+          aria-label="Sales invoices"
+        >
+          <e-columns>
+            <e-column field="invoiceNumber" headerText="Invoice #" width="160">
+              <ng-template #template let-inv>
+                <span class="font-mono font-bold text-primary">{{ inv.invoiceNumber }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="customerName" headerText="Customer" width="220">
+              <ng-template #template let-inv>
+                <div class="font-semibold">{{ inv.customerName }}</div>
+                @if (inv.customerGstin) {
+                  <div class="font-mono text-xs text-muted">{{ inv.customerGstin }}</div>
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="issueDateUtc" headerText="Issue Date" width="130">
+              <ng-template #template let-inv>
+                {{ inv.issueDateUtc | date: 'dd MMM yyyy' }}
+              </ng-template>
+            </e-column>
+            <e-column field="dueDateUtc" headerText="Due Date" width="130">
+              <ng-template #template let-inv>
+                <span [class.text-danger]="isOverdue(inv)">
+                  {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column field="subtotalInPaise" headerText="Subtotal" textAlign="Right" width="130">
+              <ng-template #template let-inv>
+                <span class="num-col">₹{{ inv.subtotalInPaise / 100 | number: '1.2-2' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="totalTaxInPaise" headerText="GST" textAlign="Right" width="120">
+              <ng-template #template let-inv>
+                <span class="num-col">₹{{ inv.totalTaxInPaise / 100 | number: '1.2-2' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="grandTotalInPaise" headerText="Grand Total" textAlign="Right" width="140">
+              <ng-template #template let-inv>
+                <span class="num-col font-bold">
                   ₹{{ inv.grandTotalInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td class="num-col font-bold" [class.text-danger]="inv.balanceDueInPaise > 0">
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column field="balanceDueInPaise" headerText="Balance Due" textAlign="Right" width="140">
+              <ng-template #template let-inv>
+                <span class="num-col font-bold" [class.text-danger]="inv.balanceDueInPaise > 0">
                   ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td>
-                  <ar-chip [tone]="getStatusTone(inv.status)">
-                    {{ getStatusLabel(inv.status) }}
-                  </ar-chip>
-                </td>
-                <td class="actions-col" (click)="$event.stopPropagation()">
-                  <div class="row-actions">
-                    <button class="action-btn" (click)="openInvoice(inv)">View</button>
-                    @if (canIssue(inv)) {
-                      <button class="action-btn primary" (click)="issueInvoice(inv)">Issue</button>
-                    }
-                    @if (canPay(inv)) {
-                      <button class="action-btn success" (click)="openInvoice(inv, true)">
-                        Pay
-                      </button>
-                    }
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="10" class="empty-state">No commercial invoices found.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column field="status" headerText="Status" width="130">
+              <ng-template #template let-inv>
+                <ar-chip [tone]="getStatusTone(inv.status)">
+                  {{ getStatusLabel(inv.status) }}
+                </ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Actions" width="200" freeze="Right">
+              <ng-template #template let-inv>
+                <div class="row-actions">
+                  <button class="action-btn" (click)="openInvoice(inv)">View</button>
+                  @if (canIssue(inv)) {
+                    <button class="action-btn primary" (click)="issueInvoice(inv)">Issue</button>
+                  }
+                  @if (canPay(inv)) {
+                    <button class="action-btn success" (click)="openInvoice(inv, true)">
+                      Pay
+                    </button>
+                  }
+                </div>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </div>
     </div>
   `,
@@ -451,6 +468,13 @@ export class ArSalesInvoices {
     } else {
       this.loadInvoices();
     }
+  }
+
+  onInvoiceClick(e: RecordClickEventArgs): void {
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('.row-actions, button, a')) return;
+    const row = e.rowData as SalesInvoiceDto | undefined;
+    if (row) this.openInvoice(row);
   }
 
   /** The invoice's own page (with the payment form open when `pay`), keeping this list's customer for Back. */

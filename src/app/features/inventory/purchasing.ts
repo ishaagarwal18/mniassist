@@ -23,6 +23,8 @@ import {
 } from '../../proxy/inventory/purchasing.service';
 import { ProductService } from '../../proxy/library/product.service';
 import { ArButton, ArChip, ArDialog } from '../../ui';
+import { ArGrid } from '../../ui/grid';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArDateInput } from '../../ui/date-input';
 import { ArSelect } from '../../ui/select';
 import { rupees } from '../reorder/reorder-logic';
@@ -108,6 +110,8 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
     ArDateInput,
     ArSupplierScopeBar,
     ArSupplierDirectory,
+    ArGrid,
+    GridModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -162,71 +166,72 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
               No purchase orders yet. Start one with New order, or from the Reorder suggestions tab.
             </p>
           } @else {
-            <div class="tbl">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Order</th>
-                    <th scope="col">Supplier</th>
-                    <th scope="col">Expected</th>
-                    <th scope="col" class="num">Value</th>
-                    <th scope="col">To come</th>
-                    <th scope="col">Status</th>
-                    <th scope="col"><span class="sr">Actions</span></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (o of shownOrders(); track o.id) {
-                    <tr>
-                      <td>
-                        <b class="ar-mono">{{ o.reference }}</b>
+            <ejs-grid arGrid="purchase-orders" [dataSource]="shownOrders()" aria-label="Purchase orders">
+              <e-columns>
+                <e-column field="reference" headerText="Order" width="160">
+                  <ng-template #template let-o>
+                    <b class="ar-mono">{{ o.reference }}</b>
+                    <span class="sub"
+                      >{{ day(o.creationTime) }} · into {{ o.locationName }}</span
+                    >
+                  </ng-template>
+                </e-column>
+                <e-column field="supplierName" headerText="Supplier" width="200" />
+                <e-column field="expectedOn" headerText="Expected" width="130">
+                  <ng-template #template let-o>
+                    {{ o.expectedOn ? day(o.expectedOn) : '—' }}
+                  </ng-template>
+                </e-column>
+                <e-column field="subtotalInPaise" headerText="Value" textAlign="Right" width="130">
+                  <ng-template #template let-o>
+                    {{ money(o.subtotalInPaise) }}
+                  </ng-template>
+                </e-column>
+                <e-column headerText="To come" width="180">
+                  <ng-template #template let-o>
+                    @for (l of o.lines; track l.id) {
+                      @if (l.outstanding > 0 && o.state !== 'Cancelled') {
                         <span class="sub"
-                          >{{ day(o.creationTime) }} · into {{ o.locationName }}</span
+                          ><span class="ar-mono">{{ l.partNumber }}</span>
+                          {{ n(l.outstanding) }} of {{ n(l.quantity) }}</span
                         >
-                      </td>
-                      <td>{{ o.supplierName }}</td>
-                      <td>{{ o.expectedOn ? day(o.expectedOn) : '—' }}</td>
-                      <td class="num">{{ money(o.subtotalInPaise) }}</td>
-                      <td>
-                        @for (l of o.lines; track l.id) {
-                          @if (l.outstanding > 0 && o.state !== 'Cancelled') {
-                            <span class="sub"
-                              ><span class="ar-mono">{{ l.partNumber }}</span>
-                              {{ n(l.outstanding) }} of {{ n(l.quantity) }}</span
-                            >
-                          }
+                      }
+                    }
+                  </ng-template>
+                </e-column>
+                <e-column field="state" headerText="Status" width="130">
+                  <ng-template #template let-o>
+                    <ar-chip [tone]="stateOf(o).tone" [dot]="true">{{
+                      stateOf(o).label
+                    }}</ar-chip>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Actions" width="200" freeze="Right">
+                  <ng-template #template let-o>
+                    <div class="acts">
+                      @if (canManage()) {
+                        @if (o.state === 'Draft') {
+                          <button type="button" class="act" (click)="editOrderPage(o)">
+                            Edit
+                          </button>
+                          <button type="button" class="act" (click)="markSent(o)">
+                            Mark sent
+                          </button>
                         }
-                      </td>
-                      <td>
-                        <ar-chip [tone]="stateOf(o).tone" [dot]="true">{{
-                          stateOf(o).label
-                        }}</ar-chip>
-                      </td>
-                      <td class="acts">
-                        @if (canManage()) {
-                          @if (o.state === 'Draft') {
-                            <button type="button" class="act" (click)="editOrderPage(o)">
-                              Edit
-                            </button>
-                            <button type="button" class="act" (click)="markSent(o)">
-                              Mark sent
-                            </button>
-                          }
-                          @if (o.state === 'Sent' || o.state === 'PartlyReceived') {
-                            <button type="button" class="act" (click)="openReceive(o)">
-                              Receive
-                            </button>
-                          }
-                          @if (o.state === 'Draft' || o.state === 'Sent') {
-                            <button type="button" class="act" (click)="cancel(o)">Cancel</button>
-                          }
+                        @if (o.state === 'Sent' || o.state === 'PartlyReceived') {
+                          <button type="button" class="act" (click)="openReceive(o)">
+                            Receive
+                          </button>
                         }
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+                        @if (o.state === 'Draft' || o.state === 'Sent') {
+                          <button type="button" class="act" (click)="cancel(o)">Cancel</button>
+                        }
+                      }
+                    </div>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           }
         }
         @case ('suggestions') {
@@ -240,42 +245,44 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
               Parts below their minimum, counting what is on order. The suggestion brings each back
               to twice its minimum.
             </p>
-            <div class="tbl">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Part</th>
-                    <th scope="col" class="num">Available</th>
-                    <th scope="col" class="num">On order</th>
-                    <th scope="col" class="num">Minimum</th>
-                    <th scope="col" class="num">Buy</th>
-                    <th scope="col">Last bought</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (s of suggestions(); track s.productId) {
-                    <tr>
-                      <td>
-                        <b class="ar-mono">{{ s.partNumber }}</b>
-                        <span class="sub">{{ s.name }}</span>
-                      </td>
-                      <td class="num">{{ n(s.available) }}</td>
-                      <td class="num">{{ s.onOrder ? n(s.onOrder) : '—' }}</td>
-                      <td class="num">{{ n(s.minLevel) }}</td>
-                      <td class="num">
-                        <b>{{ n(s.suggested) }}</b>
-                      </td>
-                      <td>
-                        {{ s.lastSupplierName || '—' }}
-                        @if (s.lastCostInPaise != null) {
-                          <span class="sub">{{ money(s.lastCostInPaise) }} each</span>
-                        }
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+            <ejs-grid arGrid="reorder-suggestions" [dataSource]="suggestions()" aria-label="Reorder suggestions">
+              <e-columns>
+                <e-column field="partNumber" headerText="Part" width="200">
+                  <ng-template #template let-s>
+                    <b class="ar-mono">{{ s.partNumber }}</b>
+                    <span class="sub">{{ s.name }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column field="available" headerText="Available" textAlign="Right" width="110">
+                  <ng-template #template let-s>
+                    {{ n(s.available) }}
+                  </ng-template>
+                </e-column>
+                <e-column field="onOrder" headerText="On order" textAlign="Right" width="110">
+                  <ng-template #template let-s>
+                    {{ s.onOrder ? n(s.onOrder) : '—' }}
+                  </ng-template>
+                </e-column>
+                <e-column field="minLevel" headerText="Minimum" textAlign="Right" width="110">
+                  <ng-template #template let-s>
+                    {{ n(s.minLevel) }}
+                  </ng-template>
+                </e-column>
+                <e-column field="suggested" headerText="Buy" textAlign="Right" width="110">
+                  <ng-template #template let-s>
+                    <b>{{ n(s.suggested) }}</b>
+                  </ng-template>
+                </e-column>
+                <e-column field="lastSupplierName" headerText="Last bought" width="200">
+                  <ng-template #template let-s>
+                    {{ s.lastSupplierName || '—' }}
+                    @if (s.lastCostInPaise != null) {
+                      <span class="sub">{{ money(s.lastCostInPaise) }} each</span>
+                    }
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
             @if (canManage()) {
               <div>
                 <button ar-button type="button" variant="primary" (click)="orderSuggestions()">

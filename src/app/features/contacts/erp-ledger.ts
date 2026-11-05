@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 
 import { environment } from '../../../environments/environment';
 import { ErpCustomerLedgerDto, ErpSyncService } from '../../proxy/integrations/erp-sync.service';
@@ -11,6 +13,7 @@ import { rupees } from '../payments/payment-logic';
  */
 @Component({
   selector: 'ar-erp-ledger',
+  imports: [ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (ledger(); as l) {
@@ -27,32 +30,37 @@ import { rupees } from '../payments/payment-logic';
             </div>
           </div>
           @if (l.invoices.length > 0) {
-            <div class="led__scroll">
-              <table class="led__table">
-                <thead>
-                  <tr>
-                    <th>Invoice</th>
-                    <th>Date</th>
-                    <th>Due</th>
-                    <th class="num">Total</th>
-                    <th class="num">Unpaid</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (i of l.invoices; track i.number) {
-                    <tr [class.led__bad]="i.isOverdue">
-                      <td>{{ i.number }}</td>
-                      <td>{{ day(i.invoiceDateUtc) }}</td>
-                      <td>{{ i.dueDateUtc ? day(i.dueDateUtc) : '—' }}</td>
-                      <td class="num">{{ money(i.totalInPaise) }}</td>
-                      <td class="num">
-                        {{ i.outstandingInPaise != null ? money(i.outstandingInPaise) : '—' }}
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+            <ejs-grid
+              arGrid="erp-ledger-invoices"
+              [dataSource]="l.invoices"
+              aria-label="Invoices from the ERP"
+            >
+              <e-columns>
+                <e-column field="number" headerText="Invoice" width="130"></e-column>
+                <e-column field="invoiceDateUtc" headerText="Date" width="110">
+                  <ng-template #template let-i>
+                    {{ day(i.invoiceDateUtc) }}
+                  </ng-template>
+                </e-column>
+                <e-column field="dueDateUtc" headerText="Due" width="110">
+                  <ng-template #template let-i>
+                    {{ i.dueDateUtc ? day(i.dueDateUtc) : '—' }}
+                  </ng-template>
+                </e-column>
+                <e-column field="totalInPaise" headerText="Total" width="120" [textAlign]="'Right'">
+                  <ng-template #template let-i>
+                    {{ money(i.totalInPaise) }}
+                  </ng-template>
+                </e-column>
+                <e-column field="outstandingInPaise" headerText="Unpaid" width="120" [textAlign]="'Right'">
+                  <ng-template #template let-i>
+                    <span [class.led__bad]="i.isOverdue">
+                      {{ i.outstandingInPaise != null ? money(i.outstandingInPaise) : '—' }}
+                    </span>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           }
         </section>
       }

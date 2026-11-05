@@ -22,6 +22,8 @@ import {
 import { ArTopbar } from '../../layout/topbar';
 import { planByKey, priceLabel } from '../landing/landing-plans';
 import { ArBanner, ArButton, ArChip, ArMeter, ArStatTile } from '../../ui';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 
@@ -114,7 +116,7 @@ const SEED = {
  */
 @Component({
   selector: 'ar-billing',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArMeter, ArStatTile, DecimalPipe],
+  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArMeter, ArStatTile, DecimalPipe, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './billing.html',
   styleUrl: './billing.scss',

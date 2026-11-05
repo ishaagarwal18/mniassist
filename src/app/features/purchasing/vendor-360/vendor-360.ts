@@ -32,6 +32,8 @@ import {
   GrnStatus,
 } from '../../../proxy/purchasing';
 import { ArButton, ArChip, ArIcon, ChipTone, IconName } from '../../../ui';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../../ui/grid';
 import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
 import { ArSupplierFinder } from './supplier-finder';
 import { ArVendor360Links } from './vendor-360-links';
@@ -294,6 +296,8 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
     ArIcon,
     ArVendor360Links,
     ArSupplierFinder,
+    ArGrid,
+    GridModule,
   ],
   template: `
     <ar-topbar
@@ -535,90 +539,74 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
           >
             @switch (activeTab()) {
               @case ('bills') {
-                <table class="v3-table">
-                  <thead>
-                    <tr>
-                      <th>Bill</th>
-                      <th>Supplier invoice</th>
-                      <th>3-way match</th>
-                      <th>GSTR-2B</th>
-                      <th class="num">Total</th>
-                      <th class="num">Balance due</th>
-                      <th>Status</th>
-                      @if (can().bills) {
-                        <th><span class="ar-visually-hidden">Open</span></th>
-                      }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (b of v.recentVendorBills; track b.id) {
-                      <tr>
-                        <td class="ar-mono">
-                          <strong>{{ b.billNumber }}</strong>
-                        </td>
-                        <td>
-                          <div class="v3-cell">
-                            <span>{{ b.vendorInvoiceNumber }}</span>
-                            <span class="v3-muted">{{
-                              b.vendorInvoiceDateUtc | date: 'mediumDate'
-                            }}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <ar-chip [tone]="matchTone(b.threeWayMatchStatus)">{{
-                            matchLabel(b.threeWayMatchStatus)
-                          }}</ar-chip>
-                        </td>
-                        <td>
-                          <ar-chip [tone]="itcTone(b.gstr2bMatchStatus)">{{
-                            itcLabel(b.gstr2bMatchStatus)
-                          }}</ar-chip>
-                        </td>
-                        <td class="num ar-mono">{{ inr(b.grandTotalInPaise) }}</td>
-                        <td class="num ar-mono">
-                          <span
-                            [class.v3-bad]="b.balanceDueInPaise > 0"
-                            [class.v3-good]="b.balanceDueInPaise === 0"
-                            >{{ inr(b.balanceDueInPaise) }}</span
-                          >
+                <ejs-grid
+                  arGrid="vendor-360-bills"
+                  [dataSource]="v.recentVendorBills"
+                  aria-label="Recent Vendor Bills"
+                >
+                  <e-columns>
+                    <e-column field="billNumber" headerText="Bill" width="140">
+                      <ng-template #template let-b>
+                        <strong class="ar-mono">{{ b.billNumber }}</strong>
+                      </ng-template>
+                    </e-column>
+                    <e-column field="vendorInvoiceNumber" headerText="Supplier invoice" width="180">
+                      <ng-template #template let-b>
+                        <div class="v3-cell">
+                          <span>{{ b.vendorInvoiceNumber }}</span>
+                          <span class="v3-muted block">{{ b.vendorInvoiceDateUtc | date: 'mediumDate' }}</span>
+                        </div>
+                      </ng-template>
+                    </e-column>
+                    <e-column headerText="3-way match" width="140">
+                      <ng-template #template let-b>
+                        <ar-chip [tone]="matchTone(b.threeWayMatchStatus)">
+                          {{ matchLabel(b.threeWayMatchStatus) }}
+                        </ar-chip>
+                      </ng-template>
+                    </e-column>
+                    <e-column headerText="GSTR-2B" width="140">
+                      <ng-template #template let-b>
+                        <ar-chip [tone]="itcTone(b.gstr2bMatchStatus)">
+                          {{ itcLabel(b.gstr2bMatchStatus) }}
+                        </ar-chip>
+                      </ng-template>
+                    </e-column>
+                    <e-column field="grandTotalInPaise" headerText="Total" width="130" [textAlign]="'Right'">
+                      <ng-template #template let-b>
+                        <span class="ar-mono">{{ inr(b.grandTotalInPaise) }}</span>
+                      </ng-template>
+                    </e-column>
+                    <e-column field="balanceDueInPaise" headerText="Balance due" width="140" [textAlign]="'Right'">
+                      <ng-template #template let-b>
+                        <div class="ar-mono">
+                          <span [class.v3-bad]="b.balanceDueInPaise > 0" [class.v3-good]="b.balanceDueInPaise === 0">
+                            {{ inr(b.balanceDueInPaise) }}
+                          </span>
                           @if (b.dueDateUtc && b.balanceDueInPaise > 0) {
-                            <span class="v3-muted v3-block"
-                              >due {{ b.dueDateUtc | date: 'd MMM' }}</span
-                            >
+                            <span class="v3-muted v3-block">due {{ b.dueDateUtc | date: 'd MMM' }}</span>
                           }
-                        </td>
-                        <td>
-                          <ar-chip [tone]="billTone(b.status)">{{ billLabel(b.status) }}</ar-chip>
-                        </td>
-                        @if (can().bills) {
-                          <td class="act">
-                            <a
-                              ar-button
-                              variant="quiet"
-                              [routerLink]="['/purchasing/bills', b.id]"
-                              [queryParams]="scope()"
-                              >Open</a
-                            >
-                          </td>
-                        }
-                      </tr>
-                    } @empty {
-                      <tr>
-                        <td colspan="8" class="v3-empty">
-                          No bills from this supplier yet.
-                          @if (can().newBill) {
-                            <a
-                              routerLink="/purchasing/bills/new"
-                              [queryParams]="scope()"
-                              class="v3-empty__cta"
-                              >Record a bill</a
-                            >
-                          }
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+                        </div>
+                      </ng-template>
+                    </e-column>
+                    <e-column headerText="Status" width="130">
+                      <ng-template #template let-b>
+                        <ar-chip [tone]="billTone(b.status)">{{ billLabel(b.status) }}</ar-chip>
+                      </ng-template>
+                    </e-column>
+                    <e-column headerText="Actions" width="90" freeze="Right" [visible]="can().bills">
+                      <ng-template #template let-b>
+                        <a
+                          ar-button
+                          variant="quiet"
+                          [routerLink]="['/purchasing/bills', b.id]"
+                          [queryParams]="scope()"
+                          >Open</a
+                        >
+                      </ng-template>
+                    </e-column>
+                  </e-columns>
+                </ejs-grid>
                 <ng-container
                   *ngTemplateOutlet="
                     stats;
@@ -632,70 +620,63 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
                 />
               }
               @case ('grn') {
-                <table class="v3-table">
-                  <thead>
-                    <tr>
-                      <th>GRN</th>
-                      <th>Gate entry</th>
-                      <th>Purchase order</th>
-                      <th>Challan</th>
-                      <th>Vehicle</th>
-                      <th>QC</th>
-                      <th>Status</th>
-                      @if (can().grn) {
-                        <th><span class="ar-visually-hidden">Open</span></th>
-                      }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (g of v.recentGoodsReceiptNotes; track g.id) {
-                      <tr>
-                        <td class="ar-mono">
-                          <strong>{{ g.grnNumber }}</strong>
-                        </td>
-                        <td>
-                          <div class="v3-cell">
-                            <span>{{ g.gateEntryNumber || '—' }}</span>
-                            <span class="v3-muted">{{
-                              g.gateInTimeUtc || g.creationTime | date: 'mediumDate'
-                            }}</span>
-                          </div>
-                        </td>
-                        <td>{{ g.purchaseOrderReference || 'Direct' }}</td>
-                        <td class="ar-mono">{{ g.challanNumber }}</td>
-                        <td class="ar-mono">{{ g.vehicleNumber || '—' }}</td>
-                        <td>
-                          <ar-chip [tone]="qcTone(g.qcStatus)">{{ qcLabel(g.qcStatus) }}</ar-chip>
-                        </td>
-                        <td>
-                          <ar-chip [tone]="grnTone(g.status)">{{ grnLabel(g.status) }}</ar-chip>
-                        </td>
-                        @if (can().grn) {
-                          <td class="act">
-                            <a
-                              ar-button
-                              variant="quiet"
-                              [routerLink]="['/purchasing/grn', g.id]"
-                              [queryParams]="scope()"
-                              >Open</a
-                            >
-                          </td>
-                        }
-                      </tr>
-                    } @empty {
-                      <tr>
-                        <td colspan="8" class="v3-empty">
-                          Nothing received from this supplier yet.
-                          @if (can().newGrn) {
-                            <button type="button" class="v3-empty__cta" (click)="goToInwardGate()">
-                              Record an inward GRN
-                            </button>
-                          }
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+                <ejs-grid
+                  arGrid="vendor-360-grn"
+                  [dataSource]="v.recentGoodsReceiptNotes"
+                  aria-label="Recent Goods Receipts"
+                >
+                  <e-columns>
+                    <e-column field="grnNumber" headerText="GRN" width="140">
+                      <ng-template #template let-g>
+                        <strong class="ar-mono">{{ g.grnNumber }}</strong>
+                      </ng-template>
+                    </e-column>
+                    <e-column field="gateEntryNumber" headerText="Gate entry" width="160">
+                      <ng-template #template let-g>
+                        <div class="v3-cell">
+                          <span>{{ g.gateEntryNumber || '—' }}</span>
+                          <span class="v3-muted block">{{ (g.gateInTimeUtc || g.creationTime) | date: 'mediumDate' }}</span>
+                        </div>
+                      </ng-template>
+                    </e-column>
+                    <e-column field="purchaseOrderReference" headerText="Purchase order" width="150">
+                      <ng-template #template let-g>
+                        {{ g.purchaseOrderReference || 'Direct' }}
+                      </ng-template>
+                    </e-column>
+                    <e-column field="challanNumber" headerText="Challan" width="130">
+                      <ng-template #template let-g>
+                        <span class="ar-mono">{{ g.challanNumber }}</span>
+                      </ng-template>
+                    </e-column>
+                    <e-column field="vehicleNumber" headerText="Vehicle" width="130">
+                      <ng-template #template let-g>
+                        <span class="ar-mono">{{ g.vehicleNumber || '—' }}</span>
+                      </ng-template>
+                    </e-column>
+                    <e-column headerText="QC" width="120">
+                      <ng-template #template let-g>
+                        <ar-chip [tone]="qcTone(g.qcStatus)">{{ qcLabel(g.qcStatus) }}</ar-chip>
+                      </ng-template>
+                    </e-column>
+                    <e-column headerText="Status" width="130">
+                      <ng-template #template let-g>
+                        <ar-chip [tone]="grnTone(g.status)">{{ grnLabel(g.status) }}</ar-chip>
+                      </ng-template>
+                    </e-column>
+                    <e-column headerText="Actions" width="90" freeze="Right" [visible]="can().grn">
+                      <ng-template #template let-g>
+                        <a
+                          ar-button
+                          variant="quiet"
+                          [routerLink]="['/purchasing/grn', g.id]"
+                          [queryParams]="scope()"
+                          >Open</a
+                        >
+                      </ng-template>
+                    </e-column>
+                  </e-columns>
+                </ejs-grid>
                 <ng-container
                   *ngTemplateOutlet="
                     stats;
@@ -709,50 +690,40 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
                 />
               }
               @case ('po') {
-                <table class="v3-table">
-                  <thead>
-                    <tr>
-                      <th>Purchase order</th>
-                      <th>Ordered</th>
-                      <th>Expected</th>
-                      <th class="num">Items</th>
-                      <th class="num">Value</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (p of v.recentPurchaseOrders; track p.id) {
-                      <tr>
-                        <td class="ar-mono">
-                          <strong>{{ p.reference }}</strong>
-                        </td>
-                        <td>{{ p.creationTime | date: 'mediumDate' }}</td>
-                        <td>{{ p.expectedOn ? (p.expectedOn | date: 'mediumDate') : '—' }}</td>
-                        <td class="num">{{ p.lineCount }}</td>
-                        <td class="num ar-mono">
-                          <strong>{{ inr(p.subtotalInPaise) }}</strong>
-                        </td>
-                        <td>
-                          <ar-chip [tone]="poTone(p.state)">{{ poLabel(p.state) }}</ar-chip>
-                        </td>
-                      </tr>
-                    } @empty {
-                      <tr>
-                        <td colspan="6" class="v3-empty">
-                          No purchase orders to this supplier yet.
-                          @if (can().newOrder) {
-                            <a
-                              routerLink="/purchasing/orders/new"
-                              [queryParams]="scope()"
-                              class="v3-empty__cta"
-                              >Raise a purchase order</a
-                            >
-                          }
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+                <ejs-grid
+                  arGrid="vendor-360-po"
+                  [dataSource]="v.recentPurchaseOrders"
+                  aria-label="Recent Purchase Orders"
+                >
+                  <e-columns>
+                    <e-column field="reference" headerText="Purchase order" width="160">
+                      <ng-template #template let-p>
+                        <strong class="ar-mono">{{ p.reference }}</strong>
+                      </ng-template>
+                    </e-column>
+                    <e-column field="creationTime" headerText="Ordered" width="130">
+                      <ng-template #template let-p>
+                        {{ p.creationTime | date: 'mediumDate' }}
+                      </ng-template>
+                    </e-column>
+                    <e-column field="expectedOn" headerText="Expected" width="130">
+                      <ng-template #template let-p>
+                        {{ p.expectedOn ? (p.expectedOn | date: 'mediumDate') : '—' }}
+                      </ng-template>
+                    </e-column>
+                    <e-column field="lineCount" headerText="Items" width="90" [textAlign]="'Right'"></e-column>
+                    <e-column field="subtotalInPaise" headerText="Value" width="140" [textAlign]="'Right'">
+                      <ng-template #template let-p>
+                        <strong class="ar-mono">{{ inr(p.subtotalInPaise) }}</strong>
+                      </ng-template>
+                    </e-column>
+                    <e-column headerText="Status" width="130">
+                      <ng-template #template let-p>
+                        <ar-chip [tone]="poTone(p.state)">{{ poLabel(p.state) }}</ar-chip>
+                      </ng-template>
+                    </e-column>
+                  </e-columns>
+                </ejs-grid>
                 <ng-container
                   *ngTemplateOutlet="
                     stats;
@@ -766,64 +737,52 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
                 />
               }
               @case ('debit') {
-                <table class="v3-table">
-                  <thead>
-                    <tr>
-                      <th>Debit note</th>
-                      <th>Issued</th>
-                      <th>Reason</th>
-                      <th class="num">Amount</th>
-                      <th>Status</th>
-                      @if (can().debitNotes) {
-                        <th><span class="ar-visually-hidden">Open</span></th>
-                      }
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (dn of v.recentDebitNotes; track dn.id) {
-                      <tr>
-                        <td class="ar-mono">
-                          <strong>{{ dn.debitNoteNumber }}</strong>
-                        </td>
-                        <td>{{ dn.issueDateUtc | date: 'mediumDate' }}</td>
-                        <td class="v3-reason">{{ dn.reason }}</td>
-                        <td class="num ar-mono">
-                          <strong>{{ inr(dn.grandTotalInPaise) }}</strong>
-                        </td>
-                        <td>
-                          <ar-chip [tone]="debitTone(dn.status)">{{
-                            debitLabel(dn.status)
-                          }}</ar-chip>
-                        </td>
-                        @if (can().debitNotes) {
-                          <td class="act">
-                            <a
-                              ar-button
-                              variant="quiet"
-                              [routerLink]="['/purchasing/debit-notes', dn.id]"
-                              [queryParams]="scope()"
-                              >Open</a
-                            >
-                          </td>
-                        }
-                      </tr>
-                    } @empty {
-                      <tr>
-                        <td colspan="6" class="v3-empty">
-                          No debit notes for this supplier.
-                          @if (can().newDebitNote) {
-                            <a
-                              routerLink="/purchasing/debit-notes/new"
-                              [queryParams]="scope()"
-                              class="v3-empty__cta"
-                              >Issue a debit note</a
-                            >
-                          }
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+                <ejs-grid
+                  arGrid="vendor-360-debit"
+                  [dataSource]="v.recentDebitNotes"
+                  aria-label="Recent Debit Notes"
+                >
+                  <e-columns>
+                    <e-column field="debitNoteNumber" headerText="Debit note" width="150">
+                      <ng-template #template let-dn>
+                        <strong class="ar-mono">{{ dn.debitNoteNumber }}</strong>
+                      </ng-template>
+                    </e-column>
+                    <e-column field="issueDateUtc" headerText="Issued" width="130">
+                      <ng-template #template let-dn>
+                        {{ dn.issueDateUtc | date: 'mediumDate' }}
+                      </ng-template>
+                    </e-column>
+                    <e-column field="reason" headerText="Reason" width="220">
+                      <ng-template #template let-dn>
+                        <span class="v3-reason">{{ dn.reason }}</span>
+                      </ng-template>
+                    </e-column>
+                    <e-column field="grandTotalInPaise" headerText="Amount" width="130" [textAlign]="'Right'">
+                      <ng-template #template let-dn>
+                        <strong class="ar-mono">{{ inr(dn.grandTotalInPaise) }}</strong>
+                      </ng-template>
+                    </e-column>
+                    <e-column headerText="Status" width="130">
+                      <ng-template #template let-dn>
+                        <ar-chip [tone]="debitTone(dn.status)">{{
+                          debitLabel(dn.status)
+                        }}</ar-chip>
+                      </ng-template>
+                    </e-column>
+                    <e-column headerText="Actions" width="90" freeze="Right" [visible]="can().debitNotes">
+                      <ng-template #template let-dn>
+                        <a
+                          ar-button
+                          variant="quiet"
+                          [routerLink]="['/purchasing/debit-notes', dn.id]"
+                          [queryParams]="scope()"
+                          >Open</a
+                        >
+                      </ng-template>
+                    </e-column>
+                  </e-columns>
+                </ejs-grid>
                 <ng-container
                   *ngTemplateOutlet="
                     stats;

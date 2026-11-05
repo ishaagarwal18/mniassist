@@ -13,6 +13,8 @@ import {
 import { ArButton, ArChip } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 import { apiMessage } from '../signing/signing-logic';
 import { PAYMENT_STATUS_LABEL, rupees } from './payment-logic';
 
@@ -30,7 +32,7 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
  */
 @Component({
   selector: 'ar-payments-settings',
-  imports: [ArTopbar, ArButton, ArChip, ArSelect],
+  imports: [ArTopbar, ArButton, ArChip, ArSelect, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -136,48 +138,60 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
             No payment requests yet. Send one from a conversation in the inbox.
           </p>
         } @else {
-          <div class="pm__table-wrap">
-            <table class="pm__table">
-              <thead>
-                <tr>
-                  <th>Reference</th>
-                  <th>Customer</th>
-                  <th>For</th>
-                  <th class="pm__num">Amount</th>
-                  <th>Status</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (r of requests(); track r.id) {
-                  <tr>
-                    <td class="ar-mono">{{ r.reference }}</td>
-                    <td>{{ r.contactName || '—' }}</td>
-                    <td class="pm__desc">{{ r.description }}</td>
-                    <td class="pm__num">{{ money(r.amountInPaise) }}</td>
-                    <td>
-                      <ar-chip [tone]="tone[r.status]">{{ label[r.status] }}</ar-chip>
-                      @if (r.status === Status.Failed && r.failureReason) {
-                        <span class="pm__why">{{ r.failureReason }}</span>
-                      }
-                    </td>
-                    <td class="pm__row-actions">
-                      @if (r.status === Status.Pending || r.status === Status.Failed) {
-                        <button type="button" class="pm__link" (click)="copy(r.payUrl)">
-                          Copy link
+          <ejs-grid
+            arGrid="payment-requests"
+            [dataSource]="requests()"
+            aria-label="Payment requests"
+          >
+            <e-columns>
+              <e-column field="reference" headerText="Reference" width="140">
+                <ng-template #template let-r>
+                  <span class="ar-mono">{{ r.reference }}</span>
+                </ng-template>
+              </e-column>
+              <e-column field="contactName" headerText="Customer" width="160">
+                <ng-template #template let-r>
+                  {{ r.contactName || '—' }}
+                </ng-template>
+              </e-column>
+              <e-column field="description" headerText="For" width="200">
+                <ng-template #template let-r>
+                  <span class="pm__desc">{{ r.description }}</span>
+                </ng-template>
+              </e-column>
+              <e-column field="amountInPaise" headerText="Amount" width="130" [textAlign]="'Right'">
+                <ng-template #template let-r>
+                  <span class="pm__num">{{ money(r.amountInPaise) }}</span>
+                </ng-template>
+              </e-column>
+              <e-column headerText="Status" width="160">
+                <ng-template #template let-r>
+                  <div>
+                    <ar-chip [tone]="toneOf(r.status)">{{ labelOf(r.status) }}</ar-chip>
+                    @if (r.status === Status.Failed && r.failureReason) {
+                      <span class="pm__why block text-xs">{{ r.failureReason }}</span>
+                    }
+                  </div>
+                </ng-template>
+              </e-column>
+              <e-column headerText="Actions" width="140" freeze="Right">
+                <ng-template #template let-r>
+                  <div class="pm__row-actions">
+                    @if (r.status === Status.Pending || r.status === Status.Failed) {
+                      <button type="button" class="pm__link" (click)="copy(r.payUrl)">
+                        Copy link
+                      </button>
+                      @if (canCancel()) {
+                        <button type="button" class="pm__link pm__link--bad" (click)="cancel(r)">
+                          Cancel
                         </button>
-                        @if (canCancel()) {
-                          <button type="button" class="pm__link pm__link--bad" (click)="cancel(r)">
-                            Cancel
-                          </button>
-                        }
                       }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+                    }
+                  </div>
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
         }
       </section>
     </div>
@@ -294,8 +308,12 @@ export class ArPaymentsSettings {
 
   protected readonly Env = BillDeskEnvironment;
   protected readonly Status = PaymentRequestStatus;
-  protected readonly tone = STATUS_TONE;
-  protected readonly label = PAYMENT_STATUS_LABEL;
+  protected toneOf(status: PaymentRequestStatus): ChipTone {
+    return STATUS_TONE[status] ?? 'neutral';
+  }
+  protected labelOf(status: PaymentRequestStatus): string {
+    return PAYMENT_STATUS_LABEL[status] ?? String(status);
+  }
   protected readonly money = rupees;
   protected readonly canManage = grantedPolicy(
     'AutoReach.Payments.ManageGateway',

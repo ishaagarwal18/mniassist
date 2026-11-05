@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import { checkPolicy } from '../../../core/auth/permission';
@@ -22,6 +23,7 @@ import {
   VendorDebitNoteService,
 } from '../../../proxy/purchasing';
 import { ArButton, ArChip, ChipTone } from '../../../ui';
+import { ArGrid } from '../../../ui/grid';
 
 const MOCK_GRNS: GoodsReceiptNoteDto[] = [
   {
@@ -156,7 +158,17 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
   standalone: true,
   selector: 'ar-goods-receipt-notes',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, RouterLink, ArTopbar, ArButton, ArChip, ArSupplierScopeBar],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArSupplierScopeBar,
+    ArGrid,
+    GridModule,
+  ],
   template: `
     <ar-topbar
       title="Goods Receipt Notes (GRN)"
@@ -245,21 +257,14 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
 
       <!-- GRN Table -->
       <section class="table-card">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>GRN & Gate Details</th>
-              <th>Supplier & PO</th>
-              <th>Transport & Vehicle</th>
-              <th>Items & Qty</th>
-              <th>QC Status</th>
-              <th>Status</th>
-              <th class="actions-col">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let g of filteredGrns()">
-              <td>
+        <ejs-grid
+          arGrid="goods-receipt-notes"
+          [dataSource]="filteredGrns()"
+          aria-label="Goods Receipt Notes"
+        >
+          <e-columns>
+            <e-column field="grnNumber" headerText="GRN & Gate Details" width="180">
+              <ng-template #template let-g>
                 <div class="cell-main">
                   <a
                     class="code-link"
@@ -270,21 +275,27 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
                   <span class="sub-text">Gate: {{ g.gateEntryNumber || 'N/A' }}</span>
                   <span class="sub-text">{{ g.gateInTimeUtc | date: 'mediumDate' }}</span>
                 </div>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="supplierName" headerText="Supplier & PO" width="220">
+              <ng-template #template let-g>
                 <div class="cell-main">
                   <strong>{{ g.supplierName }}</strong>
                   <span class="sub-text">PO: {{ g.purchaseOrderReference || 'Direct' }}</span>
                   <span class="sub-text">Challan: {{ g.challanNumber }}</span>
                 </div>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="vehicleNumber" headerText="Transport & Vehicle" width="180">
+              <ng-template #template let-g>
                 <div class="cell-main">
                   <span class="badge-transport">{{ g.vehicleNumber || 'Self/Courier' }}</span>
                   <span class="sub-text">{{ g.transporterName || 'Direct Delivery' }}</span>
                 </div>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Items & Qty" width="200">
+              <ng-template #template let-g>
                 <div class="cell-main">
                   <span>{{ g.lines.length }} line items</span>
                   <span class="qty-accepted font-mono">
@@ -294,18 +305,24 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
                     Rej: {{ totalRejected(g) }}
                   </span>
                 </div>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="qcStatus" headerText="QC Status" width="140">
+              <ng-template #template let-g>
                 <ar-chip [tone]="qcTone(g.qcStatus)">
                   {{ qcLabel(g.qcStatus) }}
                 </ar-chip>
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="status" headerText="Status" width="130">
+              <ng-template #template let-g>
                 <ar-chip [tone]="grnTone(g.status)">
                   {{ grnLabel(g.status) }}
                 </ar-chip>
-              </td>
-              <td class="actions-col">
+              </ng-template>
+            </e-column>
+            <e-column headerText="Actions" width="260" freeze="Right">
+              <ng-template #template let-g>
                 <div class="action-buttons">
                   <button
                     ar-button
@@ -346,24 +363,10 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
                     >View</a
                   >
                 </div>
-              </td>
-            </tr>
-            <tr *ngIf="filteredGrns().length === 0">
-              <td colspan="7" class="empty-state">
-                <p>No goods receipts match.</p>
-                <button
-                  *ngIf="can().create && allGrns().length === 0"
-                  ar-button
-                  variant="primary"
-                  icon="plus"
-                  (click)="openCreatePage()"
-                >
-                  Record the first inward GRN
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </section>
     </div>
   `,

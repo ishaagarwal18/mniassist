@@ -17,6 +17,8 @@ import { ArButton } from '../../../ui/button';
 import { ArChip, ChipTone } from '../../../ui/chip';
 import { ArDialog } from '../../../ui/dialog';
 import { ArStatTile } from '../../../ui/stat-tile';
+import { ArGrid } from '../../../ui/grid';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 
 const MOCK_BOMS: BillOfMaterialDto[] = [
   {
@@ -163,7 +165,17 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
   standalone: true,
   selector: 'ar-bill-of-materials',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArStatTile],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArStatTile,
+    ArGrid,
+    GridModule,
+  ],
   template: `
     <ar-topbar
       title="Bill of Materials (BOM)"
@@ -249,92 +261,81 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
 
       <!-- BOM Table adhering to modern-web-guidance responsive-table -->
       <section class="table-card">
-        <div
-          class="ar-table-responsive"
-          tabindex="0"
-          role="region"
-          aria-label="Bill of Materials Catalog"
-        >
-          <table class="ar-table">
-            <caption class="sr-only">
-              Bill of Materials Catalog
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">BOM Number</th>
-                <th scope="col">Finished Good & Description</th>
-                <th scope="col">Revision</th>
-                <th scope="col">Type</th>
-                <th scope="col" class="text-right">Components</th>
-                <th scope="col" class="text-right">Est. Cost / Unit</th>
-                <th scope="col">Status</th>
-                <th scope="col" class="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let b of filteredBoms()" [class.selected]="selectedBom()?.id === b.id">
-                <td>
-                  <div class="cell-main">
-                    <a class="code-link" (click)="viewBom(b)">{{ b.bomNumber }}</a>
-                    <span class="sub-text">{{ b.creationTime | date: 'mediumDate' }}</span>
-                  </div>
-                </td>
-                <td>
-                  <div class="cell-main">
-                    <strong class="font-medium">{{ b.finishedGoodPartNumber }}</strong>
-                    <span class="sub-text">{{ b.finishedGoodDescription }}</span>
-                  </div>
-                </td>
-                <td>
-                  <span class="badge-rev">{{ b.revisionCode }}</span>
-                </td>
-                <td>
-                  <ar-chip [tone]="b.bomType === BomType.Manufacturing ? 'teal' : 'neutral'">
-                    {{ b.bomType === BomType.Manufacturing ? 'Manufacturing' : 'Engineering' }}
-                  </ar-chip>
-                </td>
-                <td class="text-right font-mono">
-                  <span>{{ b.items.length }} parts</span>
-                </td>
-                <td class="text-right font-mono">
+        <ejs-grid arGrid="bill-of-materials" [dataSource]="filteredBoms()" aria-label="Bill of Materials Catalog">
+          <e-columns>
+            <e-column field="bomNumber" headerText="BOM Number" width="160">
+              <ng-template #template let-b>
+                <div class="cell-main">
+                  <a class="code-link" (click)="viewBom(b)">{{ b.bomNumber }}</a>
+                  <span class="sub-text">{{ b.creationTime | date: 'mediumDate' }}</span>
+                </div>
+              </ng-template>
+            </e-column>
+            <e-column field="finishedGoodPartNumber" headerText="Finished Good & Description" width="260">
+              <ng-template #template let-b>
+                <div class="cell-main">
+                  <strong class="font-medium">{{ b.finishedGoodPartNumber }}</strong>
+                  <span class="sub-text">{{ b.finishedGoodDescription }}</span>
+                </div>
+              </ng-template>
+            </e-column>
+            <e-column field="revisionCode" headerText="Revision" width="110">
+              <ng-template #template let-b>
+                <span class="badge-rev">{{ b.revisionCode }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="bomType" headerText="Type" width="140">
+              <ng-template #template let-b>
+                <ar-chip [tone]="b.bomType === BomType.Manufacturing ? 'teal' : 'neutral'">
+                  {{ b.bomType === BomType.Manufacturing ? 'Manufacturing' : 'Engineering' }}
+                </ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Components" textAlign="Right" width="130">
+              <ng-template #template let-b>
+                <span class="font-mono">{{ b.items.length }} parts</span>
+              </ng-template>
+            </e-column>
+            <e-column field="totalEstimatedCostInPaise" headerText="Est. Cost / Unit" textAlign="Right" width="160">
+              <ng-template #template let-b>
+                <div class="font-mono">
                   <strong>₹{{ b.totalEstimatedCostInPaise / 100 | number: '1.2-2' }}</strong>
                   <span class="sub-text block">/ {{ b.finishedGoodUom }}</span>
-                </td>
-                <td>
-                  <ar-chip [tone]="bomTone(b.status)" [dot]="b.status === BomStatus.Active">
-                    {{ bomLabel(b.status) }}
-                  </ar-chip>
-                </td>
-                <td class="text-right">
-                  <div class="action-buttons">
-                    <button
-                      ar-button
-                      variant="primary"
-                      *ngIf="b.status === BomStatus.Active"
-                      (click)="createWorkOrderFromBom(b)"
-                    >
-                      Create WO
-                    </button>
-                    <button
-                      ar-button
-                      variant="ghost"
-                      *ngIf="b.status === BomStatus.Draft"
-                      (click)="activateBom(b)"
-                    >
-                      Activate
-                    </button>
-                    <button ar-button variant="ghost" (click)="viewBom(b)">View</button>
-                  </div>
-                </td>
-              </tr>
-              <tr *ngIf="filteredBoms().length === 0">
-                <td colspan="8" class="empty-state">
-                  <p>No Bill of Materials structures match your search or filter criteria.</p>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                </div>
+              </ng-template>
+            </e-column>
+            <e-column field="status" headerText="Status" width="130">
+              <ng-template #template let-b>
+                <ar-chip [tone]="bomTone(b.status)" [dot]="b.status === BomStatus.Active">
+                  {{ bomLabel(b.status) }}
+                </ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Actions" width="220" freeze="Right">
+              <ng-template #template let-b>
+                <div class="action-buttons">
+                  <button
+                    ar-button
+                    variant="primary"
+                    *ngIf="b.status === BomStatus.Active"
+                    (click)="createWorkOrderFromBom(b)"
+                  >
+                    Create WO
+                  </button>
+                  <button
+                    ar-button
+                    variant="ghost"
+                    *ngIf="b.status === BomStatus.Draft"
+                    (click)="activateBom(b)"
+                  >
+                    Activate
+                  </button>
+                  <button ar-button variant="ghost" (click)="viewBom(b)">View</button>
+                </div>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </section>
     </div>
 
@@ -376,63 +377,63 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
         </div>
 
         <h4 class="section-heading">Multi-Level Component Explosion</h4>
-        <div
-          class="ar-table-responsive"
-          tabindex="0"
-          role="region"
+        <ejs-grid
+          arGrid="bom-component-explosion"
+          [dataSource]="b.items"
           aria-label="Component Explosion Table"
         >
-          <table class="ar-table">
-            <caption class="sr-only">
-              Component Explosion Table
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Seq</th>
-                <th scope="col">Part Number</th>
-                <th scope="col">Description</th>
-                <th scope="col" class="text-right">Qty/Unit</th>
-                <th scope="col">UOM</th>
-                <th scope="col" class="text-right">Scrap %</th>
-                <th scope="col">Routing Stage</th>
-                <th scope="col" class="text-right">Unit Rate</th>
-                <th scope="col" class="text-right">Line Cost</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of b.items">
-                <td class="font-mono text-muted">{{ item.itemSequence }}</td>
-                <td class="font-mono">
+          <e-columns>
+            <e-column field="itemSequence" headerText="Seq" width="70">
+              <ng-template #template let-item>
+                <span class="font-mono text-muted">{{ item.itemSequence }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="componentPartNumber" headerText="Part Number" width="180">
+              <ng-template #template let-item>
+                <span class="font-mono">
                   <strong>{{ item.componentPartNumber }}</strong>
                   <span class="badge-sub" *ngIf="item.isSubAssembly">Sub-Assy</span>
-                </td>
-                <td>{{ item.componentDescription }}</td>
-                <td class="text-right font-mono">{{ item.quantityPerUnit }}</td>
-                <td>{{ item.unitOfMeasure }}</td>
-                <td class="text-right font-mono text-muted">{{ item.scrapPercentage }}%</td>
-                <td>
-                  <span class="badge-stage">{{ stageLabel(item.routingStage) }}</span>
-                </td>
-                <td class="text-right font-mono">
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column field="componentDescription" headerText="Description" width="220"></e-column>
+            <e-column field="quantityPerUnit" headerText="Qty/Unit" width="100" [textAlign]="'Right'">
+              <ng-template #template let-item>
+                <span class="font-mono">{{ item.quantityPerUnit }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="unitOfMeasure" headerText="UOM" width="80"></e-column>
+            <e-column field="scrapPercentage" headerText="Scrap %" width="100" [textAlign]="'Right'">
+              <ng-template #template let-item>
+                <span class="font-mono text-muted">{{ item.scrapPercentage }}%</span>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Routing Stage" width="140">
+              <ng-template #template let-item>
+                <span class="badge-stage">{{ stageLabel(item.routingStage) }}</span>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Unit Rate" width="120" [textAlign]="'Right'">
+              <ng-template #template let-item>
+                <span class="font-mono">
                   ₹{{ item.unitCostInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono font-medium">
+                </span>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Line Cost" width="130" [textAlign]="'Right'">
+              <ng-template #template let-item>
+                <span class="font-mono font-medium">
                   ₹{{
                     (item.quantityPerUnit *
                       (1 + item.scrapPercentage / 100) *
                       item.unitCostInPaise) /
                       100 | number: '1.2-2'
                   }}
-                </td>
-              </tr>
-              <tr *ngIf="b.items.length === 0">
-                <td colspan="9" class="empty-state">
-                  No components defined in this Bill of Materials.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                </span>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
 
         <div class="dialog-actions">
           <button
