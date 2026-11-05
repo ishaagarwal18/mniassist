@@ -9,8 +9,8 @@
  */
 export type SyncfusionBundle = 'core' | 'grid' | 'schedule' | 'kanban';
 
-/** Bump with the @syncfusion/* version so browsers fetch the new files. */
-const VERSION = '35.1.37';
+/** Bump with the @syncfusion/* version, or add a suffix when the CSS is rebuilt, so browsers fetch the new files. */
+const VERSION = '35.1.37-2';
 
 const FILE: Record<SyncfusionBundle, string> = {
   core: 'syncfusion',

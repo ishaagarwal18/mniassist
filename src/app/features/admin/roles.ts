@@ -8,8 +8,16 @@ import {
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-import { FilterService, ToolbarService, TreeGridModule } from '@syncfusion/ej2-angular-treegrid';
-import { PermissionDirective } from '@abp/ng.core';
+import {
+  FilterService,
+  FilterSettingsModel,
+  ReorderService,
+  ResizeService,
+  ToolbarService,
+  TreeGridModule,
+} from '@syncfusion/ej2-angular-treegrid';
+import { ActionEventArgs, InPlaceEditorModule } from '@syncfusion/ej2-angular-inplace-editor';
+import { PermissionDirective, PermissionService } from '@abp/ng.core';
 
 import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
@@ -20,7 +28,7 @@ import {
   PermissionsService,
 } from '../../proxy/permission-management';
 import { ArTopbar } from '../../layout/topbar';
-import { ArBanner, ArButton, ArCard, ArChip, ArDialog } from '../../ui';
+import { ArBanner, ArButton, ArCard, ArChip, ArDialog, ArIcon } from '../../ui';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
 import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
@@ -73,10 +81,12 @@ export interface RoleTreeRow {
     ArChip,
     ArBanner,
     ArDialog,
+    ArIcon,
     TreeGridModule,
+    InPlaceEditorModule,
     PermissionDirective,
   ],
-  providers: [ToolbarService, FilterService],
+  providers: [ToolbarService, FilterService, ResizeService, ReorderService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -134,24 +144,102 @@ export interface RoleTreeRow {
           gridLines="Horizontal"
           [enableHover]="true"
           [allowSelection]="false"
+          [allowResizing]="true"
+          [allowReordering]="true"
+          [allowFiltering]="true"
+          [filterSettings]="filterSettings"
           height="540"
         >
           <e-columns>
-            <e-column field="name" headerText="Role / Permission" minWidth="320">
+            <e-column field="name" headerText="Role / Permission" width="380" minWidth="240">
               <ng-template #template let-r>
-                @if (r.isRole) {
-                  <div class="row-role">
-                    <span class="row-role__name">{{ r.name }}</span>
+                @if (r.isRole && r.role; as role) {
+                  <div
+                    class="row-role"
+                    (click)="$event.stopPropagation()"
+                    (keydown)="$event.stopPropagation()"
+                  >
+                    @if (canUpdate() && !role.isStatic) {
+                      <ejs-inplaceeditor
+                        class="row-role__editor"
+                        mode="Inline"
+                        type="Text"
+                        name="roleName"
+                        editableOn="Click"
+                        actionOnBlur="Submit"
+                        [value]="role.name"
+                        [model]="nameEditorModel"
+                        [validationRules]="nameRules"
+                        [attr.title]="'Click to rename ' + role.name"
+                        (actionSuccess)="renameRole(role, $event)"
+                      />
+                    } @else {
+                      <span
+                        class="row-role__name"
+                        [attr.title]="
+                          role.isStatic ? 'Built-in role; its name cannot be changed' : null
+                        "
+                        >{{ role.name }}</span
+                      >
+                    }
                     <div class="row-role__chips">
-                      @if (r.isStatic) {
+                      @if (role.isStatic) {
                         <ar-chip tone="neutral">system</ar-chip>
                       }
-                      @if (r.isDefault) {
-                        <ar-chip tone="good">default</ar-chip>
+                      @if (canUpdate()) {
+                        <button
+                          type="button"
+                          class="flag"
+                          [class.flag--on]="role.isDefault"
+                          [attr.aria-pressed]="role.isDefault"
+                          [disabled]="flagBusy() === role.id"
+                          [title]="
+                            role.isDefault
+                              ? 'Given to new users automatically. Click to stop.'
+                              : 'Not given to new users. Click to give it to every new user.'
+                          "
+                          (click)="toggleFlag(role, 'isDefault')"
+                        >
+                          Default
+                        </button>
+                        <button
+                          type="button"
+                          class="flag"
+                          [class.flag--on]="role.isPublic"
+                          [attr.aria-pressed]="role.isPublic"
+                          [disabled]="flagBusy() === role.id"
+                          [title]="
+                            role.isPublic
+                              ? 'Shown when assigning roles. Click to hide it.'
+                              : 'Hidden when assigning roles. Click to show it.'
+                          "
+                          (click)="toggleFlag(role, 'isPublic')"
+                        >
+                          Public
+                        </button>
+                      } @else {
+                        @if (role.isDefault) {
+                          <ar-chip tone="good">default</ar-chip>
+                        }
+                        @if (role.isPublic) {
+                          <ar-chip tone="neutral">public</ar-chip>
+                        }
                       }
                     </div>
+                    @if (!role.isStatic) {
+                      <button
+                        type="button"
+                        class="icon-btn icon-btn--danger"
+                        *abpPermission="'AbpIdentity.Roles.Delete'"
+                        [title]="'Delete role ' + role.name"
+                        [attr.aria-label]="'Delete role ' + role.name"
+                        (click)="removeRole(role)"
+                      >
+                        <ar-icon name="trash" [size]="15" />
+                      </button>
+                    }
                   </div>
-                } @else {
+                } @else if (!r.isRole) {
                   <label
                     class="perm"
                     [class.perm--group]="r.isGroup"
@@ -170,7 +258,7 @@ export interface RoleTreeRow {
               </ng-template>
             </e-column>
 
-            <e-column field="detail" headerText="What it allows" width="340">
+            <e-column field="detail" headerText="What it allows" width="340" minWidth="200">
               <ng-template #template let-r>
                 @if (r.isRole) {
                   <span class="row-role__type">{{
@@ -184,7 +272,13 @@ export interface RoleTreeRow {
               </ng-template>
             </e-column>
 
-            <e-column headerText="Granted" width="160" textAlign="Right">
+            <e-column
+              headerText="Granted"
+              width="160"
+              minWidth="110"
+              textAlign="Right"
+              [allowFiltering]="false"
+            >
               <ng-template #template let-r>
                 @if (r.isRole) {
                   <span class="perm__count">{{ roleGrantedCount(r.roleName) }}</span>
@@ -195,56 +289,14 @@ export interface RoleTreeRow {
                 }
               </ng-template>
             </e-column>
-
-            <e-column headerText="Actions" width="200" textAlign="Right">
-              <ng-template #template let-r>
-                @if (r.isRole && r.role) {
-                  <div class="row-actions">
-                    @if (isRoleDirty(r.roleName)) {
-                      <button
-                        ar-button
-                        type="button"
-                        variant="primary"
-                        *abpPermission="'AbpIdentity.Roles.ManagePermissions'"
-                        [disabled]="savingRole() === r.roleName"
-                        (click)="saveRolePermissions(r.roleName)"
-                      >
-                        {{ savingRole() === r.roleName ? 'Saving…' : 'Save' }}
-                      </button>
-                    }
-                    <button
-                      type="button"
-                      class="link"
-                      *abpPermission="'AbpIdentity.Roles.Update'"
-                      (click)="openEditRole(r.role)"
-                    >
-                      Edit
-                    </button>
-                    @if (!r.isStatic) {
-                      <button
-                        type="button"
-                        class="link link--danger"
-                        *abpPermission="'AbpIdentity.Roles.Delete'"
-                        (click)="removeRole(r.role)"
-                      >
-                        Delete
-                      </button>
-                    }
-                  </div>
-                }
-              </ng-template>
-            </e-column>
           </e-columns>
           <ng-template #emptyRecordTemplate>No roles or permissions found.</ng-template>
         </ejs-treegrid>
       </ar-card>
     </div>
 
-    @if (roleDialog(); as mode) {
-      <ar-dialog
-        [title]="mode === 'create' ? 'New role' : 'Edit role'"
-        (dismiss)="roleDialog.set(null)"
-      >
+    @if (roleDialog()) {
+      <ar-dialog title="New role" (dismiss)="roleDialog.set(null)">
         <label class="fld">
           <span class="fld__k">Name</span>
           <input
@@ -306,6 +358,9 @@ export interface RoleTreeRow {
       align-items: center;
       gap: 10px;
     }
+    .row-role__editor {
+      min-width: 120px;
+    }
     .row-role__name {
       font: 600 13.5px var(--ar-font-sans);
       color: var(--ar-ink-900);
@@ -347,15 +402,48 @@ export interface RoleTreeRow {
       font: 600 12px var(--ar-font-mono);
       color: var(--ar-ink-500);
     }
-    .link {
+    .flag {
+      border: 1px dashed var(--ar-ink-300);
+      background: transparent;
+      border-radius: 999px;
+      padding: 1px 8px;
+      cursor: pointer;
+      font: 500 11px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
+    .flag:hover:not(:disabled) {
+      border-color: var(--ar-ink-500);
+      color: var(--ar-ink-700);
+    }
+    .flag--on {
+      border-style: solid;
+      border-color: var(--ar-teal-600);
+      background: var(--ar-teal-50);
+      color: var(--ar-teal-700);
+    }
+    .flag:disabled {
+      opacity: 0.6;
+      cursor: progress;
+    }
+    .flag:focus-visible,
+    .icon-btn:focus-visible {
+      outline: 2px solid var(--ar-teal-600);
+      outline-offset: 1px;
+    }
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
       border: 0;
+      border-radius: 6px;
       background: none;
       cursor: pointer;
-      font: 500 12px var(--ar-font-sans);
-      color: var(--ar-teal-600);
-      padding: 2px 4px;
+      color: var(--ar-ink-400);
     }
-    .link--danger {
+    .icon-btn--danger:hover {
+      background: var(--ar-red-100);
       color: var(--ar-red-600);
     }
     .chk {
@@ -379,7 +467,29 @@ export interface RoleTreeRow {
   `,
 })
 export class ArAdminRoles {
+  /**
+   * Excel-style filter per column (as on every other grid). 'Both' keeps a match's role and group above it and its
+   * sub-permissions below it, so a filtered permission still shows where it sits.
+   */
+  protected readonly filterSettings: FilterSettingsModel = { type: 'Excel', hierarchyMode: 'Both' };
+
+  /** The role name's in-place editor: required, at most 256 characters (ABP's limit). */
+  protected readonly nameEditorModel = { placeholder: 'Role name' };
+  protected readonly nameRules = {
+    roleName: {
+      required: [true, 'Enter a role name.'],
+      maxLength: [256, 'Use at most 256 characters.'],
+    },
+  };
+
   private readonly dialogs = inject(ConfirmService);
+  private readonly permissions = inject(PermissionService);
+  /** Renaming and the Default / Public switches need the role update permission. */
+  protected readonly canUpdate = signal(
+    this.permissions.getGrantedPolicy('AbpIdentity.Roles.Update'),
+  );
+  /** The role whose Default / Public switch is being saved. */
+  protected readonly flagBusy = signal<string | null>(null);
   private readonly roleApi = inject(IdentityRoleService);
   private readonly permApi = inject(PermissionsService);
   private readonly mock = environment.useMockData;
@@ -405,8 +515,7 @@ export class ArAdminRoles {
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
 
-  protected readonly roleDialog = signal<'create' | 'edit' | null>(null);
-  protected readonly editRoleTarget = signal<IdentityRoleDto | null>(null);
+  protected readonly roleDialog = signal<'create' | null>(null);
   protected readonly rName = signal('');
   protected readonly rDefault = signal(false);
   protected readonly rPublic = signal(true);
@@ -674,19 +783,10 @@ export class ArAdminRoles {
   }
 
   protected openCreate(): void {
-    this.editRoleTarget.set(null);
     this.rName.set('');
     this.rDefault.set(false);
     this.rPublic.set(true);
     this.roleDialog.set('create');
-  }
-
-  protected openEditRole(role: IdentityRoleDto): void {
-    this.editRoleTarget.set(role);
-    this.rName.set(role.name);
-    this.rDefault.set(role.isDefault ?? false);
-    this.rPublic.set(role.isPublic ?? true);
-    this.roleDialog.set('edit');
   }
 
   protected async saveRole(): Promise<void> {
@@ -695,34 +795,93 @@ export class ArAdminRoles {
     this.roleBusy.set(true);
     this.error.set(null);
     try {
-      if (this.roleDialog() === 'create') {
-        await firstValueFrom(
-          this.roleApi.create({
-            name,
-            isDefault: this.rDefault(),
-            isPublic: this.rPublic(),
-          }),
-        );
-        this.notice.set(`Role "${name}" created.`);
-      } else {
-        const target = this.editRoleTarget();
-        if (target) {
-          await firstValueFrom(
-            this.roleApi.update(target.id, {
-              name,
-              isDefault: this.rDefault(),
-              isPublic: this.rPublic(),
-            }),
-          );
-          this.notice.set(`Role "${name}" updated.`);
-        }
-      }
+      await firstValueFrom(
+        this.roleApi.create({
+          name,
+          isDefault: this.rDefault(),
+          isPublic: this.rPublic(),
+        }),
+      );
+      this.notice.set(`Role "${name}" created.`);
       this.roleDialog.set(null);
       this.tick.update((n) => n + 1);
     } catch (e) {
       this.error.set(readApiError(e));
     } finally {
       this.roleBusy.set(false);
+    }
+  }
+
+  /**
+   * Saves a name typed in the role's in-place editor. Permissions are stored against the role name, so a role with
+   * unsaved permission ticks is not renamed (the ticks would be lost); on any failure the grid reloads to show the
+   * name that is really saved.
+   */
+  protected async renameRole(role: IdentityRoleDto, e: ActionEventArgs): Promise<void> {
+    const name = String(e.value ?? '').trim();
+    if (!name || name === role.name) {
+      if (name !== String(e.value ?? '')) this.tick.update((n) => n + 1);
+      return;
+    }
+    if (this.isRoleDirty(role.name)) {
+      this.error.set(`Save or undo the permission changes on "${role.name}" before renaming it.`);
+      this.tick.update((n) => n + 1);
+      return;
+    }
+    const ok = await this.updateRole(role, { name }, `Role "${role.name}" renamed to "${name}".`);
+    if (ok) {
+      // Permissions are loaded per role name: drop the old entry so the new name loads fresh.
+      this.rolePermsMap.update((m) => {
+        const next = new Map(m);
+        next.delete(role.name);
+        return next;
+      });
+    }
+  }
+
+  /** The Default / Public switches beside a role's name. */
+  protected async toggleFlag(role: IdentityRoleDto, flag: 'isDefault' | 'isPublic'): Promise<void> {
+    if (this.flagBusy()) return;
+    const on = !role[flag];
+    const what =
+      flag === 'isDefault'
+        ? on
+          ? 'is now given to new users automatically'
+          : 'is no longer given to new users'
+        : on
+          ? 'is now shown when assigning roles'
+          : 'is now hidden when assigning roles';
+    this.flagBusy.set(role.id);
+    try {
+      await this.updateRole(role, { [flag]: on }, `Role "${role.name}" ${what}.`);
+    } finally {
+      this.flagBusy.set(null);
+    }
+  }
+
+  private async updateRole(
+    role: IdentityRoleDto,
+    change: Partial<Pick<IdentityRoleDto, 'name' | 'isDefault' | 'isPublic'>>,
+    message: string,
+  ): Promise<boolean> {
+    this.error.set(null);
+    this.notice.set(null);
+    try {
+      await firstValueFrom(
+        this.roleApi.update(role.id, {
+          name: role.name,
+          isDefault: role.isDefault ?? false,
+          isPublic: role.isPublic ?? true,
+          ...change,
+        }),
+      );
+      this.notice.set(message);
+      return true;
+    } catch (err) {
+      this.error.set(readApiError(err));
+      return false;
+    } finally {
+      this.tick.update((n) => n + 1);
     }
   }
 

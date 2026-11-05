@@ -72,16 +72,16 @@ export function canAccessNavItem(
   }
 
   // 1. Host vs Tenant role segregation for ordinary accounts
-  const isHost = account.isHost();
-  if (isHost) {
-    if (item.tenantOnly) {
-      return false;
-    }
-  } else {
-    if (item.hostOnly) {
-      return false;
-    }
-  }
+   const isHost = account.isHost();
+  // if (isHost) {
+  //   if (item.tenantOnly) {
+  //     return false;
+  //   }
+  // } else {
+  //   if (item.hostOnly) {
+  //     return false;
+  //   }
+  // }
 
   // 2. Permission check
   if (item.permission && !checkPolicy(item.permission, permissions)) {

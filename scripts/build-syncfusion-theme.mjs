@@ -75,6 +75,7 @@ const BUNDLES = {
     'menu/menu-lite.css',
     'drop-down-button/drop-down-button-lite.css',
     'split-button/split-button-lite.css',
+    'inplace-editor/inplace-editor-lite.css',
   ],
   'syncfusion-schedule': [
     'schedule/schedule-lite.css',
