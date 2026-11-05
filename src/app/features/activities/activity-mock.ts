@@ -6,6 +6,8 @@ import { environment } from '../../../environments/environment';
 import { PipelineStore } from '../../core/services/pipeline.service';
 import {
   ActivityDirectoryService,
+  ActivityLinkDto,
+  ActivitySendResultDto,
   ActivityUserDto,
   AttendeeResponse,
   CheckConflictsInput,
@@ -24,6 +26,8 @@ import {
   MeetingService,
   MeetingStatus,
   RecurrenceFrequency,
+  ReminderChannels,
+  ShareActivityInput,
   SlotDto,
   SuggestSlotsInput,
   TaskPriority,
@@ -116,10 +120,11 @@ export class ActivityMockStore {
   }
 
   task(
-    input: Partial<CreateUpdateCrmTaskDto> & {
+    input: Partial<Omit<CreateUpdateCrmTaskDto, 'links'>> & {
       title: string;
       assigneeUserId?: string | null;
       seriesId?: string;
+      links?: ActivityLinkDto[] | null;
     },
   ): CrmTaskDto {
     const id = newId('task');
@@ -140,6 +145,8 @@ export class ActivityMockStore {
       createdByUserId: MOCK_ME,
       contactId: input.contactId ?? null,
       contactName: null,
+      links: (input.links ?? []).map((l) => ({ ...l, label: l.label ?? 'Linked record' })),
+      reminderChannels: input.reminderChannels ?? ReminderChannels.None,
       enquiryId: input.enquiryId ?? null,
       enquiryReference: this.enquiryRef(input.enquiryId),
       quotationId: input.quotationId ?? null,
@@ -250,6 +257,21 @@ const paged = <T>(items: T[]): PagedResultDto<T> => ({ items, totalCount: items.
 /** The same calls as {@link CrmTaskService}, answered from memory. */
 export class MockCrmTaskApi {
   constructor(private readonly s: ActivityMockStore) {}
+
+  /** Demo data: nothing is sent; each person and channel says so. */
+  share = (_id: string, input: ShareActivityInput): Observable<ActivitySendResultDto> =>
+    of({
+      lines: input.userIds.flatMap((u) =>
+        [ReminderChannels.Email, ReminderChannels.WhatsApp, ReminderChannels.Sms]
+          .filter((c) => ((input.channels ?? ReminderChannels.WhatsApp) & c) !== 0)
+          .map((c) => ({
+            name: USERS.find((x) => x.userId === u)?.name ?? 'Colleague',
+            channel: c,
+            sent: false,
+            note: 'demo data: nothing is sent',
+          })),
+      ),
+    });
 
   getList = (input: GetCrmTasksInput): Observable<PagedResultDto<CrmTaskDto>> => {
     const now = Date.now();
@@ -407,6 +429,21 @@ export class MockCrmTaskApi {
 /** The same calls as {@link MeetingService}, answered from memory. */
 export class MockMeetingApi {
   constructor(private readonly s: ActivityMockStore) {}
+
+  /** Demo data: nothing is sent; each person and channel says so. */
+  share = (_id: string, input: ShareActivityInput): Observable<ActivitySendResultDto> =>
+    of({
+      lines: input.userIds.flatMap((u) =>
+        [ReminderChannels.Email, ReminderChannels.WhatsApp, ReminderChannels.Sms]
+          .filter((c) => ((input.channels ?? ReminderChannels.WhatsApp) & c) !== 0)
+          .map((c) => ({
+            name: USERS.find((x) => x.userId === u)?.name ?? 'Colleague',
+            channel: c,
+            sent: false,
+            note: 'demo data: nothing is sent',
+          })),
+      ),
+    });
 
   getList = (input: GetMeetingsInput): Observable<MeetingDto[]> => {
     const from = Date.parse(input.fromUtc);

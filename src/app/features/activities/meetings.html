@@ -36,6 +36,15 @@
   />
 }
 
+@if (sharing(); as sm) {
+  <ar-activity-share-dialog
+    kind="meeting"
+    [activityId]="sm.id!"
+    [title]="sm.title ?? ''"
+    (closed)="sharing.set(null)"
+  />
+}
+
 @if (detail(); as m) {
   <div class="dt__scrim" (click)="closeDetail()"></div>
   <div
@@ -77,6 +86,22 @@
       <p class="dt__row"><span>Organiser</span> {{ m.organizerName || 'Someone' }}</p>
       @if (m.contactName) {
         <p class="dt__row"><span>Customer</span> {{ m.contactName }}</p>
+      }
+      @if (m.links?.length) {
+        <p class="dt__row">
+          <span>Linked to</span>
+          <span class="dt__links">
+            @for (l of m.links; track l.type + ':' + l.recordId) {
+              <a
+                class="dt__link"
+                translate="no"
+                [routerLink]="linkRoute(l).path"
+                [queryParams]="linkRoute(l).query ?? null"
+                >{{ l.label }}</a
+              >
+            }
+          </span>
+        </p>
       }
       @if (m.description) {
         <p class="dt__row dt__row--text"><span>Notes</span> {{ m.description }}</p>
@@ -206,6 +231,9 @@
             >Join</a
           >
         }
+        <button ar-button type="button" variant="ghost" icon="user" (click)="sharing.set(m)">
+          Share with colleagues
+        </button>
         <a ar-button variant="ghost" icon="mail" [href]="share.mail(m)">Email</a>
         <a
           ar-button

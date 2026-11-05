@@ -18,6 +18,9 @@ export interface Vendor360SupplierDto extends EntityDto<string> {
   name: string;
   gstin?: string;
   isActive: boolean;
+  isBlacklisted?: boolean;
+  contactName?: string | null;
+  phone?: string | null;
 }
 
 export interface Vendor360Dto extends EntityDto<string> {

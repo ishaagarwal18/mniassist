@@ -75,6 +75,9 @@ export interface CrmTaskDto {
   quotationId?: string | null;
   completedAtUtc?: string | null;
   reminderLeadMinutes?: number | null;
+  /** Ways the reminder goes out besides the bell. */
+  reminderChannels?: ReminderChannels;
+  links?: ActivityLinkDto[];
   recurrence?: RecurrenceDto | null;
   seriesId?: string | null;
   nextTaskId?: string | null;
@@ -90,6 +93,9 @@ export interface CreateUpdateCrmTaskDto {
   enquiryId?: string | null;
   quotationId?: string | null;
   reminderLeadMinutes?: number | null;
+  reminderChannels?: ReminderChannels;
+  /** Null leaves them as they are; an empty list removes them all. */
+  links?: ActivityLinkInput[] | null;
   recurrence?: RecurrenceDto | null;
   utcOffsetMinutes?: number;
 }
@@ -146,6 +152,9 @@ export interface MeetingDto {
   outcome?: string | null;
   cancelReason?: string | null;
   reminderLeadMinutes?: number;
+  reminderChannels?: ReminderChannels;
+  remindCustomer?: boolean;
+  links?: ActivityLinkDto[];
   attendees?: MeetingAttendeeDto[];
   seriesId?: string | null;
   seriesIndex?: number;
@@ -168,6 +177,9 @@ export interface CreateUpdateMeetingDto {
   contactId?: string | null;
   enquiryId?: string | null;
   reminderLeadMinutes?: number;
+  reminderChannels?: ReminderChannels;
+  remindCustomer?: boolean;
+  links?: ActivityLinkInput[] | null;
   attendeeUserIds?: string[];
   guests?: GuestDto[];
   allowConflicts?: boolean;
@@ -224,4 +236,68 @@ export interface SlotDto {
 export interface IcsFileDto {
   fileName?: string;
   content?: string;
+}
+
+/** Ways a reminder goes out besides the bell; a set of flags. */
+export enum ReminderChannels {
+  None = 0,
+  Email = 1,
+  WhatsApp = 2,
+  Sms = 4,
+}
+
+export enum ActivityLinkType {
+  Contact = 1,
+  Account = 2,
+  Enquiry = 3,
+  Quotation = 4,
+  SalesOrder = 5,
+  SalesInvoice = 6,
+  DeliveryChallan = 7,
+  Campaign = 8,
+  ServiceTicket = 9,
+}
+
+export interface ActivityLinkInput {
+  type: ActivityLinkType;
+  recordId: string;
+}
+
+export interface ActivityLinkDto {
+  type?: ActivityLinkType;
+  recordId?: string;
+  label?: string;
+}
+
+export interface SearchActivityLinksInput {
+  type: ActivityLinkType;
+  filter?: string | null;
+  maxResultCount?: number;
+}
+
+export interface ShareActivityInput {
+  userIds: string[];
+  channels?: ReminderChannels;
+  note?: string | null;
+}
+
+export interface ActivitySendLineDto {
+  name?: string;
+  channel?: ReminderChannels;
+  sent?: boolean;
+  note?: string;
+}
+
+export interface ActivitySendResultDto {
+  lines?: ActivitySendLineDto[];
+}
+
+export interface ActivityMessagingSettingsDto {
+  smsTemplateId?: string | null;
+  taskTemplateApproved?: boolean;
+  meetingTemplateApproved?: boolean;
+}
+
+export interface UpdateActivityMessagingSettingsInput {
+  smsTemplateId?: string | null;
 }

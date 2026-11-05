@@ -32,6 +32,12 @@ const STATE: Record<string, QuotationState> = {
   expired: QuotationState.Expired,
 };
 
+/** Whose prices a part is looked up at: a saved quotation's, or (before it is saved) the customer's. */
+export interface QuoteContext {
+  quotationId?: string | null;
+  contactId?: string | null;
+}
+
 /**
  * What the quote line editor talks to. Live, it is the quotation and price list APIs. On mock data it is a small in-memory
  * catalogue and quote writer (see quote-mock.ts), so the editor can be tried without a backend; nothing is saved beyond the
@@ -103,26 +109,30 @@ export class QuoteEditorApi {
   }
 
   async resolve(
-    quotationId: string,
+    ctx: QuoteContext,
     priceListId: string | null,
     partNumber: string,
     quantity: number,
   ): Promise<ResolvedPriceDto> {
     if (this.mock) return demoResolve(partNumber, quantity, priceListId);
-    return firstValueFrom(
-      this.quotes.resolvePrice({ quotationId, priceListId, partNumber, quantity }),
-    );
+    return firstValueFrom(this.quotes.resolvePrice({ ...ctx, priceListId, partNumber, quantity }));
   }
 
   async search(
-    quotationId: string,
+    ctx: QuoteContext,
     priceListId: string | null,
     query: string | null,
   ): Promise<CatalogueMatchDto[]> {
     if (this.mock) return demoSearch(query, priceListId, 15);
     return firstValueFrom(
-      this.quotes.searchCatalogue({ query, quotationId, priceListId, maxResultCount: 15 }),
+      this.quotes.searchCatalogue({ ...ctx, query, priceListId, maxResultCount: 15 }),
     );
+  }
+
+  /** A new quotation: against an enquiry, or a manual one for a customer (the API opens the enquiry). */
+  async create(input: CreateUpdateQuotationDto): Promise<QuotationDto> {
+    const created = await this.store.createQuotation(input);
+    return this.mock ? this.remember(demoWrite(created, input)) : created;
   }
 
   async update(id: string, input: CreateUpdateQuotationDto): Promise<QuotationDto> {

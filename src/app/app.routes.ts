@@ -319,6 +319,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/pipeline/quotations').then((m) => m.ArQuotations),
       },
       {
+        path: 'quotations/new',
+        title: 'New quotation · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/quotation-form').then((m) => m.ArQuotationForm),
+      },
+      {
+        path: 'quotations/:id/edit',
+        title: 'Quotation · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/quotation-form').then((m) => m.ArQuotationForm),
+      },
+      {
         path: 'pipeline/ai-negotiator',
         title: 'Autonomous AI Negotiator · MNI Assist',
         loadComponent: () =>
@@ -344,6 +356,12 @@ export const routes: Routes = [
           import('./features/sales/new-sales-record-pages').then((m) => m.ArNewSalesOrderPage),
       },
       {
+        path: 'sales/orders/:id',
+        title: 'Sales order · MNI Assist',
+        loadComponent: () =>
+          import('./features/sales/orders/sales-order-page').then((m) => m.ArSalesOrderPage),
+      },
+      {
         path: 'sales/challans',
         title: 'Delivery challans · MNI Assist',
         loadComponent: () =>
@@ -356,6 +374,14 @@ export const routes: Routes = [
           import('./features/sales/new-sales-record-pages').then((m) => m.ArNewDeliveryChallanPage),
       },
       {
+        path: 'sales/challans/:id',
+        title: 'Delivery challan · MNI Assist',
+        loadComponent: () =>
+          import('./features/sales/challans/delivery-challan-page').then(
+            (m) => m.ArDeliveryChallanPage,
+          ),
+      },
+      {
         path: 'sales/invoices',
         title: 'Sales invoices · MNI Assist',
         loadComponent: () =>
@@ -366,6 +392,12 @@ export const routes: Routes = [
         title: 'New invoice · MNI Assist',
         loadComponent: () =>
           import('./features/sales/new-sales-record-pages').then((m) => m.ArNewSalesInvoicePage),
+      },
+      {
+        path: 'sales/invoices/:id',
+        title: 'Sales invoice · MNI Assist',
+        loadComponent: () =>
+          import('./features/sales/invoices/sales-invoice-page').then((m) => m.ArSalesInvoicePage),
       },
       {
         path: 'renewals',
@@ -381,6 +413,14 @@ export const routes: Routes = [
         path: 'collections',
         title: 'Collections · MNI Assist',
         loadComponent: () => import('./features/payments/collections').then((m) => m.ArCollections),
+      },
+      {
+        path: 'collections/settings',
+        title: 'Collection reminders · MNI Assist',
+        loadComponent: () =>
+          import('./features/payments/collections-settings-page').then(
+            (m) => m.ArCollectionsSettingsPage,
+          ),
       },
       {
         path: 'stock',
@@ -602,6 +642,24 @@ export const routes: Routes = [
         path: 'reorders',
         title: 'Re-orders · MNI Assist',
         loadComponent: () => import('./features/reorder/reorders').then((m) => m.ArReorders),
+      },
+      {
+        path: 'reorders/send',
+        title: 'Send a re-order link · MNI Assist',
+        loadComponent: () =>
+          import('./features/reorder/reorder-send-page').then((m) => m.ArReorderSendPage),
+      },
+      {
+        path: 'reorders/settings',
+        title: 'Re-order portal settings · MNI Assist',
+        loadComponent: () =>
+          import('./features/reorder/reorder-settings-page').then((m) => m.ArReorderSettingsPage),
+      },
+      {
+        path: 'reorders/dispatch/:quotationId',
+        title: 'Dispatch an order · MNI Assist',
+        loadComponent: () =>
+          import('./features/reorder/reorder-dispatch-page').then((m) => m.ArReorderDispatchPage),
       },
       {
         path: 'network',
@@ -892,6 +950,14 @@ export const routes: Routes = [
         title: 'AI assistant · MNI Assist',
         loadComponent: () =>
           import('./features/settings/ai-assistant').then((m) => m.ArAiAssistant),
+      },
+      {
+        path: 'settings/tasks-meetings',
+        title: 'Tasks & meetings · MNI Assist',
+        loadComponent: () =>
+          import('./features/settings/activity-messaging-settings').then(
+            (m) => m.ArActivityMessagingSettings,
+          ),
       },
       {
         path: 'settings/shipping',

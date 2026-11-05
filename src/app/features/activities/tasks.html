@@ -25,6 +25,15 @@
   />
 }
 
+@if (sharing(); as st) {
+  <ar-activity-share-dialog
+    kind="task"
+    [activityId]="st.id!"
+    [title]="st.title ?? ''"
+    (closed)="sharing.set(null)"
+  />
+}
+
 <div class="tk ar-scroll">
   <!-- Interactive Tasks Summary Ribbon -->
   @if (summary(); as s) {
@@ -167,11 +176,20 @@
                 @if (!isMine(t)) {
                   <span class="tk__meta-pill">👤 {{ t.assigneeName || 'Assigned' }}</span>
                 }
-                @if (t.contactName) {
-                  <span class="tk__meta-pill">🏢 {{ t.contactName }}</span>
-                }
-                @if (t.enquiryReference) {
-                  <span class="tk__meta-pill ar-mono">📋 {{ t.enquiryReference }}</span>
+                @if (t.links?.length) {
+                  @for (l of t.links!.slice(0, 3); track l.type + ':' + l.recordId) {
+                    <span class="tk__meta-pill" translate="no">🔗 {{ l.label }}</span>
+                  }
+                  @if (t.links!.length > 3) {
+                    <span class="tk__meta-pill">+{{ t.links!.length - 3 }} more</span>
+                  }
+                } @else {
+                  @if (t.contactName) {
+                    <span class="tk__meta-pill">🏢 {{ t.contactName }}</span>
+                  }
+                  @if (t.enquiryReference) {
+                    <span class="tk__meta-pill ar-mono">📋 {{ t.enquiryReference }}</span>
+                  }
                 }
                 @if (t.recurrence) {
                   <span class="tk__meta-pill">↻ {{ repeatText(t) }}</span>
@@ -182,6 +200,15 @@
               }
             </button>
             <div class="tk__actions">
+              <button
+                type="button"
+                class="tk__edit-btn"
+                (click)="sharing.set(t)"
+                title="Share with colleagues on WhatsApp"
+                aria-label="Share task"
+              >
+                Share
+              </button>
               <button
                 type="button"
                 class="tk__edit-btn"

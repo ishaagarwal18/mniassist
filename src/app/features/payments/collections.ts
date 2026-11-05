@@ -1,5 +1,6 @@
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -11,10 +12,7 @@ import {
   CollectionInvoiceDto,
   CollectionService,
 } from '../../proxy/integrations/collection.service';
-import { TemplateService } from '../../proxy/messaging/template.service';
-import { TemplateStatus } from '../../proxy/messaging/template-status.enum';
-import { ArButton, ArChip, ArDialog } from '../../ui';
-import { ArSelect } from '../../ui/select';
+import { ArButton, ArChip } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
 
 const day = 86_400_000;
@@ -97,7 +95,7 @@ const SEED: CollectionBoardDto = {
  */
 @Component({
   selector: 'ar-collections',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
+  imports: [ArTopbar, ArButton, ArChip, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -116,9 +114,9 @@ const SEED: CollectionBoardDto = {
         >
           {{ busy() === 'run' ? 'Sending…' : 'Send due reminders now' }}
         </button>
-        <button ar-button type="button" variant="ghost" icon="settings" (click)="openSettings()">
+        <a ar-button variant="ghost" icon="settings" routerLink="/collections/settings">
           Settings
-        </button>
+        </a>
       }
     </ar-topbar>
 
@@ -219,78 +217,6 @@ const SEED: CollectionBoardDto = {
         </div>
       }
     </div>
-
-    @if (settingsOpen()) {
-      <ar-dialog title="Collection reminders" (dismiss)="settingsOpen.set(false)">
-        <label class="cl__check" for="cl-on">
-          <input
-            id="cl-on"
-            type="checkbox"
-            [checked]="enabled()"
-            (change)="enabled.set($any($event.target).checked)"
-          />
-          Send reminders automatically
-        </label>
-        <label class="ar-field" for="cl-tpl">
-          <span class="ar-field__label">Approved WhatsApp template</span>
-          <select
-            required
-            id="cl-tpl"
-            class="ar-field__input"
-            [value]="templateId()"
-            (change)="templateId.set($any($event.target).value)"
-          >
-            <option value="">Choose a template…</option>
-            @for (t of templates(); track t.id) {
-              <option [value]="t.id">{{ t.name }} ({{ t.lang }})</option>
-            }
-          </select>
-        </label>
-        <p class="cl__hint">
-          Body values in order: customer name, invoice number, amount outstanding, due date. Add a
-          URL button ending in a variable to carry the pay link.
-        </p>
-        <label class="ar-field" for="cl-days">
-          <span class="ar-field__label"
-            >Credit days
-            <span class="ar-field__opt">(used when the ERP gives no due date)</span></span
-          >
-          <input
-            id="cl-days"
-            class="ar-field__input"
-            inputmode="numeric"
-            [value]="creditDays()"
-            (input)="creditDays.set($any($event.target).value)"
-          />
-        </label>
-        <label class="cl__check" for="cl-pay">
-          <input
-            id="cl-pay"
-            type="checkbox"
-            [checked]="payLink()"
-            (change)="payLink.set($any($event.target).checked)"
-          />
-          Include a BillDesk pay link for the amount outstanding
-        </label>
-        @if (settingsError(); as e) {
-          <p class="cl__err" role="alert">{{ e }}</p>
-        }
-        <div dialogActions>
-          <button ar-button type="button" variant="ghost" (click)="settingsOpen.set(false)">
-            Cancel
-          </button>
-          <button
-            ar-button
-            type="button"
-            variant="primary"
-            [disabled]="busy() === 'settings'"
-            (click)="saveSettings()"
-          >
-            {{ busy() === 'settings' ? 'Saving…' : 'Save' }}
-          </button>
-        </div>
-      </ar-dialog>
-    }
   `,
   styles: `
     :host {
@@ -398,12 +324,6 @@ const SEED: CollectionBoardDto = {
       font: 500 12.5px var(--ar-font-sans);
       color: var(--ar-good-600, #067647);
     }
-    .cl__check {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      font: 500 13px var(--ar-font-sans);
-    }
     .sr-only {
       position: absolute;
       width: 1px;
@@ -420,7 +340,6 @@ const SEED: CollectionBoardDto = {
 })
 export class ArCollections {
   private readonly api = inject(CollectionService);
-  private readonly templatesApi = inject(TemplateService);
   protected readonly canManage = grantedPolicy(
     'AutoReach.Collections.Manage',
     inject(PermissionService),
@@ -431,14 +350,6 @@ export class ArCollections {
   protected readonly busy = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
-
-  protected readonly settingsOpen = signal(false);
-  protected readonly enabled = signal(false);
-  protected readonly templateId = signal('');
-  protected readonly creditDays = signal('30');
-  protected readonly payLink = signal(true);
-  protected readonly templates = signal<{ id: string; name: string; lang: string }[]>([]);
-  protected readonly settingsError = signal<string | null>(null);
 
   protected readonly rows = computed(() => this.board()?.invoices ?? []);
   protected readonly subtitle = computed(() => {
@@ -519,69 +430,6 @@ export class ArCollections {
       await this.load();
     } catch (e: unknown) {
       this.error.set(this.problem(e, 'The reminders could not be sent.'));
-    } finally {
-      this.busy.set(null);
-    }
-  }
-
-  protected async openSettings(): Promise<void> {
-    this.settingsError.set(null);
-    this.settingsOpen.set(true);
-    if (environment.useMockData) return;
-    try {
-      const [s, list] = await Promise.all([
-        firstValueFrom(this.api.getSettings()),
-        firstValueFrom(
-          this.templatesApi.getList({ status: TemplateStatus.Approved, maxResultCount: 200 }),
-        ),
-      ]);
-      this.enabled.set(s.enabled);
-      this.templateId.set(s.templateId ?? '');
-      this.creditDays.set(String(s.creditDays));
-      this.payLink.set(s.includePayLink);
-      this.templates.set(
-        (list.items ?? []).map((t) => ({
-          id: t.id!,
-          name: t.name ?? 'Template',
-          lang: t.languageCode ?? '',
-        })),
-      );
-    } catch (e: unknown) {
-      this.settingsError.set(this.problem(e, 'Could not load the settings.'));
-    }
-  }
-
-  protected async saveSettings(): Promise<void> {
-    const days = Number(this.creditDays().trim());
-    if (!Number.isInteger(days) || days < 0 || days > 365) {
-      this.settingsError.set('Credit days must be a whole number from 0 to 365.');
-      return;
-    }
-    if (this.enabled() && !this.templateId()) {
-      this.settingsError.set('Choose an approved template before switching reminders on.');
-      return;
-    }
-    this.busy.set('settings');
-    this.settingsError.set(null);
-    try {
-      if (!environment.useMockData) {
-        await firstValueFrom(
-          this.api.updateSettings({
-            enabled: this.enabled(),
-            templateId: this.templateId() || null,
-            creditDays: days,
-            includePayLink: this.payLink(),
-          }),
-        );
-      }
-      this.settingsOpen.set(false);
-      this.notice.set(
-        this.enabled()
-          ? 'Reminders are on. The next pass runs within 6 hours.'
-          : 'Settings saved. Reminders are off.',
-      );
-    } catch (e: unknown) {
-      this.settingsError.set(this.problem(e, 'The settings could not be saved.'));
     } finally {
       this.busy.set(null);
     }

@@ -62,10 +62,10 @@ const WEIGHT_GROUPS: {
   {
     title: 'Contact',
     fields: [
-      { key: 'neverMessaged', label: 'Never messaged', sign: '−' },
-      { key: 'silentOver90Days', label: 'Silent over 90 days', sign: '−' },
-      { key: 'silentOver180Days', label: 'Silent over 180 days', sign: '−' },
-      { key: 'inTouchThisMonth', label: 'In touch this month', sign: '+' },
+      { key: 'neverMessaged', label: 'No messages received from customer', sign: '−' },
+      { key: 'silentOver90Days', label: 'No customer message over 90 days', sign: '−' },
+      { key: 'silentOver180Days', label: 'No customer message over 180 days', sign: '−' },
+      { key: 'inTouchThisMonth', label: 'Inbound message this month', sign: '+' },
     ],
   },
   {
@@ -113,9 +113,9 @@ const SEED: AccountHealthDto[] = [
     openRenewalValueInPaise: 1_62_000_00,
     computedAtUtc: now,
     reasons: [
-      { text: 'No message from them in 190 days', points: -20 },
-      { text: '2 tickets past the promised time', points: -20 },
-      { text: 'Invoices more than 30 days overdue', points: -15 },
+      { text: 'No customer message in 190 days', points: -20 },
+      { text: '2 overdue tickets past promised SLA resolution', points: -20 },
+      { text: 'Unpaid invoices overdue by 30+ days', points: -15 },
       { text: '1 quotation won this year', points: 5 },
     ],
   },
@@ -130,7 +130,7 @@ const SEED: AccountHealthDto[] = [
     computedAtUtc: now,
     reasons: [
       { text: '1 open service ticket', points: -5 },
-      { text: 'No message from them in 120 days', points: -10 },
+      { text: 'No customer message in 120 days', points: -10 },
     ],
   },
   {
@@ -143,7 +143,7 @@ const SEED: AccountHealthDto[] = [
     openRenewalValueInPaise: 65_000_00,
     computedAtUtc: now,
     reasons: [
-      { text: 'In touch this month', points: 5 },
+      { text: 'Inbound message received this month', points: 5 },
       { text: '2 AMC renewals won this year', points: 10 },
       { text: '1 quotation won this year', points: 5 },
     ],
@@ -392,11 +392,15 @@ const BAND_LABEL: Record<HealthBand, string> = {
 
                 <div class="reasons">
                   @for (r of h.reasons; track r.text) {
-                    <span class="reason-pill" [class.reason-pill--neg]="r.points < 0">
+                    <span
+                      class="reason-pill"
+                      [class.reason-pill--neg]="r.points < 0"
+                      [title]="reasonTooltip(r)"
+                    >
                       <strong class="ar-mono">{{
                         r.points > 0 ? '+' + r.points : r.points
                       }}</strong>
-                      {{ r.text }}
+                      {{ formatReason(r.text) }}
                     </span>
                   }
                 </div>
@@ -913,5 +917,56 @@ export class ArAccountHealth {
   protected monthLabel(yyyyMm: string): string {
     const [y, m] = yyyyMm.split('-').map(Number);
     return new Date(y, m - 1, 1).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+  }
+
+  protected formatReason(text: string): string {
+    if (!text) return '';
+    const trimmed = text.trim();
+    if (trimmed === 'Has never messaged you' || trimmed.toLowerCase() === 'never messaged') {
+      return 'No messages received from customer yet';
+    }
+    if (trimmed.startsWith('No message from them in ')) {
+      return trimmed.replace('No message from them in ', 'No customer message in ');
+    }
+    if (trimmed === 'In touch this month') {
+      return 'Inbound message received this month';
+    }
+    if (trimmed.includes('past the promised time')) {
+      return trimmed.replace('past the promised time', 'past promised SLA resolution');
+    }
+    if (trimmed.startsWith('Low satisfaction on tickets')) {
+      return trimmed.replace('Low satisfaction on tickets', 'Low ticket rating') + ' ★';
+    }
+    if (trimmed.startsWith('High satisfaction on tickets')) {
+      return trimmed.replace('High satisfaction on tickets', 'High ticket rating') + ' ★';
+    }
+    if (trimmed === 'Invoices more than 30 days overdue') {
+      return 'Unpaid invoices overdue by 30+ days';
+    }
+    return trimmed;
+  }
+
+  protected reasonTooltip(r: { text: string; points: number }): string {
+    const t = r.text.trim();
+    if (
+      t === 'Has never messaged you' ||
+      t.toLowerCase() === 'never messaged' ||
+      t === 'No messages received from customer yet'
+    ) {
+      return 'The customer has never initiated or replied to a message on your WhatsApp channel (-10 pts to health score)';
+    }
+    if (t.startsWith('No message from them in ') || t.startsWith('No customer message in ')) {
+      return 'No inbound WhatsApp messages received from this customer in this period';
+    }
+    if (t === 'In touch this month' || t === 'Inbound message received this month') {
+      return 'Customer sent an inbound message within the last 30 days (+5 pts to health score)';
+    }
+    if (t.includes('past the promised time') || t.includes('promised SLA')) {
+      return 'Service tickets that exceeded promised resolution time (SLA breach)';
+    }
+    if (t.includes('overdue') && (t.includes('Invoice') || t.includes('invoice'))) {
+      return 'Customer has pending invoice payments that are more than 30 days past their due date';
+    }
+    return `${this.formatReason(r.text)} (${r.points > 0 ? '+' : ''}${r.points} pts)`;
   }
 }

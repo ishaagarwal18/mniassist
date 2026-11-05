@@ -7,161 +7,28 @@ import { CustomerScope, readCustomerScope } from '../../../core/util/customer-sc
 import { errorMessage } from '../../activities/activity-logic';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
-import {
-  RecordSalesInvoicePaymentDto,
-  SalesInvoiceDto,
-} from '../../../proxy/sales/sales-invoice.models';
+import { SalesInvoiceDto } from '../../../proxy/sales/sales-invoice.models';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
-import {
-  SalesInvoiceKind,
-  SalesInvoiceStatus,
-  SalesPaymentMode,
-} from '../../../proxy/sales/sales-enums';
-import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { SalesExportFormat, SalesInvoiceStatus } from '../../../proxy/sales/sales-enums';
+import { ArButton, ArChip } from '../../../ui';
 import { PermissionService } from '@abp/ng.core';
 import { grantedPolicy } from '../../../core/auth/permission';
-import { ArNewSalesInvoice } from './new-sales-invoice';
-
-const MOCK_INVOICES: SalesInvoiceDto[] = [
-  {
-    id: 'inv-1',
-    invoiceNumber: 'INV-2026-0081',
-    kind: SalesInvoiceKind.TaxInvoice,
-    status: SalesInvoiceStatus.Issued,
-    salesOrderId: 'so-1',
-    salesOrderNumber: 'SO-2026-0041',
-    deliveryChallanId: 'dc-1',
-    deliveryChallanNumber: 'DC-2026-0019',
-    customerId: 'c1',
-    customerName: 'Kalyani Forge Ltd',
-    customerAccountId: 'acc1',
-    customerAccountName: 'Kalyani Group Pune',
-    customerGstin: '27AABCK1928F1Z8',
-    billingAddress: 'Gat No 12, Chakan MIDC, Pune 410501',
-    shippingAddress: 'Plant II, Chakan MIDC, Pune 410501',
-    placeOfSupplyStateCode: '27',
-    isInterState: false,
-    issueDateUtc: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    dueDateUtc: new Date(Date.now() + 28 * 86_400_000).toISOString(),
-    subtotalInPaise: 420_000_00,
-    discountInPaise: 0,
-    cgstInPaise: 37_800_00,
-    sgstInPaise: 37_800_00,
-    igstInPaise: 0,
-    totalTaxInPaise: 75_600_00,
-    grandTotalInPaise: 495_600_00,
-    paidAmountInPaise: 0,
-    balanceDueInPaise: 495_600_00,
-    irn: '8f7a29e18b6c4e09f58a7192bc58a0e194857201bc9384729103847592837482',
-    ewayBillNumber: '281982736412',
-    creationTime: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    lines: [
-      {
-        id: 'sil-1',
-        salesInvoiceId: 'inv-1',
-        lineNumber: 1,
-        partNumber: 'HV-400-P',
-        description: 'Proportional Directional Hydraulic Valve 350 Bar',
-        hsnCode: '84812000',
-        quantity: 4,
-        unitPriceInPaise: 85_000_00,
-        discountPercent: 0,
-        taxableAmountInPaise: 340_000_00,
-        taxRateBasisPoints: 1800,
-        cgstRateBasisPoints: 900,
-        sgstRateBasisPoints: 900,
-        igstRateBasisPoints: 0,
-        cgstAmountInPaise: 30_600_00,
-        sgstAmountInPaise: 30_600_00,
-        igstAmountInPaise: 0,
-        lineTotalInPaise: 401_200_00,
-      },
-      {
-        id: 'sil-2',
-        salesInvoiceId: 'inv-1',
-        lineNumber: 2,
-        partNumber: 'FK-HD-04',
-        description: 'High-pressure Filter Kit 10 Micron',
-        hsnCode: '84212900',
-        quantity: 8,
-        unitPriceInPaise: 10_000_00,
-        discountPercent: 0,
-        taxableAmountInPaise: 80_000_00,
-        taxRateBasisPoints: 1800,
-        cgstRateBasisPoints: 900,
-        sgstRateBasisPoints: 900,
-        igstRateBasisPoints: 0,
-        cgstAmountInPaise: 7_200_00,
-        sgstAmountInPaise: 7_200_00,
-        igstAmountInPaise: 0,
-        lineTotalInPaise: 94_400_00,
-      },
-    ],
-    payments: [],
-  },
-  {
-    id: 'inv-2',
-    invoiceNumber: 'INV-2026-0074',
-    kind: SalesInvoiceKind.TaxInvoice,
-    status: SalesInvoiceStatus.Paid,
-    salesOrderId: 'so-2',
-    salesOrderNumber: 'SO-2026-0038',
-    customerId: 'c2',
-    customerName: 'Thermax Babcock Boiler Works',
-    customerGstin: '27AAACT4410H1ZZ',
-    isInterState: false,
-    issueDateUtc: new Date(Date.now() - 10 * 86_400_000).toISOString(),
-    dueDateUtc: new Date(Date.now() + 20 * 86_400_000).toISOString(),
-    subtotalInPaise: 180_000_00,
-    discountInPaise: 5_000_00,
-    cgstInPaise: 15_750_00,
-    sgstInPaise: 15_750_00,
-    igstInPaise: 0,
-    totalTaxInPaise: 31_500_00,
-    grandTotalInPaise: 206_500_00,
-    paidAmountInPaise: 206_500_00,
-    balanceDueInPaise: 0,
-    creationTime: new Date(Date.now() - 10 * 86_400_000).toISOString(),
-    lines: [
-      {
-        id: 'sil-3',
-        salesInvoiceId: 'inv-2',
-        lineNumber: 1,
-        partNumber: 'ST-BRG-22',
-        description: 'Heavy duty ceramic bearing housing unit',
-        hsnCode: '84832000',
-        quantity: 10,
-        unitPriceInPaise: 18_000_00,
-        discountPercent: 2.78,
-        taxableAmountInPaise: 175_000_00,
-        taxRateBasisPoints: 1800,
-        cgstRateBasisPoints: 900,
-        sgstRateBasisPoints: 900,
-        igstRateBasisPoints: 0,
-        cgstAmountInPaise: 15_750_00,
-        sgstAmountInPaise: 15_750_00,
-        igstAmountInPaise: 0,
-        lineTotalInPaise: 206_500_00,
-      },
-    ],
-    payments: [
-      {
-        id: 'pmt-1',
-        salesInvoiceId: 'inv-2',
-        paymentDateUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-        amountInPaise: 206_500_00,
-        paymentMode: SalesPaymentMode.NeftRtgs,
-        referenceNumber: 'HDFC-N881923019',
-        remarks: 'Payment cleared via RTGS',
-      },
-    ],
-  },
-];
+import {
+  canIssueInvoice,
+  canPayInvoice,
+  invoiceStatusLabel,
+  invoiceStatusTone,
+  isInvoiceOverdue,
+  listQuery,
+  newRecordQuery,
+} from '../sales-records.logic';
+import { MOCK_INVOICES } from './sales-invoices.mock';
+import { ArSalesExport } from '../sales-export';
 
 @Component({
   selector: 'ar-sales-invoices',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArNewSalesInvoice],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArSalesExport],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -170,15 +37,17 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
       help="Issue GST invoices against orders or delivery challans. Compute statutory CGST+SGST or IGST automatically, track outstanding customer balances, and record payments received."
     >
       @if (canCreate()) {
-        <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">
+        <ar-sales-export
+          [fetch]="exportAll"
+          [fileName]="exportName()"
+          label="Export "
+          hint="Every invoice the filters show"
+        />
+        <button ar-button type="button" variant="primary" icon="plus" (click)="newInvoice()">
           New sales invoice
         </button>
       }
     </ar-topbar>
-
-    @if (creating()) {
-      <ar-new-sales-invoice (closed)="created($event)" />
-    }
 
     <div class="invoices-shell">
       @if (scope(); as sc) {
@@ -280,7 +149,7 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
           </thead>
           <tbody>
             @for (inv of filteredInvoices(); track inv.id) {
-              <tr class="inv-row" (click)="selectedInvoice.set(inv)">
+              <tr class="inv-row" (click)="openInvoice(inv)">
                 <td class="font-mono font-bold text-primary">{{ inv.invoiceNumber }}</td>
                 <td>
                   <div class="font-semibold">{{ inv.customerName }}</div>
@@ -309,12 +178,12 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
                 </td>
                 <td class="actions-col" (click)="$event.stopPropagation()">
                   <div class="row-actions">
-                    <button class="action-btn" (click)="selectedInvoice.set(inv)">View</button>
-                    @if (inv.status === SalesInvoiceStatus.Draft) {
+                    <button class="action-btn" (click)="openInvoice(inv)">View</button>
+                    @if (canIssue(inv)) {
                       <button class="action-btn primary" (click)="issueInvoice(inv)">Issue</button>
                     }
-                    @if (inv.balanceDueInPaise > 0 && inv.status !== SalesInvoiceStatus.Draft) {
-                      <button class="action-btn success" (click)="openPaymentDialog(inv)">
+                    @if (canPay(inv)) {
+                      <button class="action-btn success" (click)="openInvoice(inv, true)">
                         Pay
                       </button>
                     }
@@ -330,214 +199,6 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
         </table>
       </div>
     </div>
-
-    <!-- Invoice Details & Printable View Drawer -->
-    @if (selectedInvoice(); as inv) {
-      <ar-dialog
-        [title]="'Tax Invoice: ' + inv.invoiceNumber + ' (' + inv.customerName + ')'"
-        (dismiss)="selectedInvoice.set(null)"
-      >
-        <div class="detail-body">
-          <div class="inv-header-box">
-            <div class="inv-col">
-              <span class="meta-lbl">Billed To</span>
-              <div class="font-bold">{{ inv.customerName }}</div>
-              <div class="text-xs text-muted">{{ inv.billingAddress || 'Standard Address' }}</div>
-              <div class="text-xs font-mono">GSTIN: {{ inv.customerGstin || 'Unregistered' }}</div>
-            </div>
-            <div class="inv-col text-right">
-              <span class="meta-lbl">Invoice Details</span>
-              <div class="font-mono font-bold">{{ inv.invoiceNumber }}</div>
-              <div class="text-xs">Date: {{ inv.issueDateUtc | date: 'dd MMM yyyy' }}</div>
-              <div class="text-xs">Due: {{ inv.dueDateUtc | date: 'dd MMM yyyy' }}</div>
-              @if (inv.irn) {
-                <div class="text-xs font-mono text-muted" title="{{ inv.irn }}">
-                  IRN: {{ inv.irn.substring(0, 16) }}...
-                </div>
-              }
-            </div>
-          </div>
-
-          <h4 class="section-title">Line Items & GST Breakdown</h4>
-          <table class="ar-table inner-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Part Number & Description</th>
-                <th>HSN</th>
-                <th class="num-col">Qty</th>
-                <th class="num-col">Rate</th>
-                <th class="num-col">Taxable</th>
-                <th class="num-col">GST</th>
-                <th class="num-col">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (l of inv.lines; track l.id) {
-                <tr>
-                  <td>{{ l.lineNumber }}</td>
-                  <td>
-                    <div class="font-bold">{{ l.partNumber }}</div>
-                    <div class="text-muted text-xs">{{ l.description }}</div>
-                  </td>
-                  <td class="font-mono text-xs">{{ l.hsnCode || '—' }}</td>
-                  <td class="num-col font-bold">{{ l.quantity }}</td>
-                  <td class="num-col">₹{{ l.unitPriceInPaise / 100 | number: '1.2-2' }}</td>
-                  <td class="num-col">₹{{ l.taxableAmountInPaise / 100 | number: '1.2-2' }}</td>
-                  <td class="num-col text-xs">
-                    @if (inv.isInterState) {
-                      IGST {{ l.igstRateBasisPoints / 100 }}%: ₹{{
-                        l.igstAmountInPaise / 100 | number: '1.2-2'
-                      }}
-                    } @else {
-                      CGST {{ l.cgstRateBasisPoints / 100 }}% + SGST
-                      {{ l.sgstRateBasisPoints / 100 }}%: ₹{{
-                        (l.cgstAmountInPaise + l.sgstAmountInPaise) / 100 | number: '1.2-2'
-                      }}
-                    }
-                  </td>
-                  <td class="num-col font-bold">
-                    ₹{{ l.lineTotalInPaise / 100 | number: '1.2-2' }}
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-
-          <div class="totals-summary">
-            <div class="tot-row">
-              <span>Taxable Subtotal:</span>
-              <span>₹{{ inv.subtotalInPaise / 100 | number: '1.2-2' }}</span>
-            </div>
-            @if (!inv.isInterState) {
-              <div class="tot-row">
-                <span>CGST:</span>
-                <span>₹{{ inv.cgstInPaise / 100 | number: '1.2-2' }}</span>
-              </div>
-              <div class="tot-row">
-                <span>SGST:</span>
-                <span>₹{{ inv.sgstInPaise / 100 | number: '1.2-2' }}</span>
-              </div>
-            } @else {
-              <div class="tot-row">
-                <span>IGST:</span>
-                <span>₹{{ inv.igstInPaise / 100 | number: '1.2-2' }}</span>
-              </div>
-            }
-            <div class="tot-row grand">
-              <span>Invoice Total:</span>
-              <span class="font-bold">₹{{ inv.grandTotalInPaise / 100 | number: '1.2-2' }}</span>
-            </div>
-            <div class="tot-row text-success">
-              <span>Paid:</span>
-              <span>₹{{ inv.paidAmountInPaise / 100 | number: '1.2-2' }}</span>
-            </div>
-            <div class="tot-row text-danger font-bold">
-              <span>Balance Due:</span>
-              <span>₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}</span>
-            </div>
-          </div>
-
-          @if (inv.payments.length > 0) {
-            <h4 class="section-title">Payments Received</h4>
-            <table class="ar-table inner-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Mode</th>
-                  <th>Ref #</th>
-                  <th class="num-col">Amount</th>
-                  <th>Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (p of inv.payments; track p.id) {
-                  <tr>
-                    <td>{{ p.paymentDateUtc | date: 'dd MMM yyyy' }}</td>
-                    <td>{{ getPaymentModeLabel(p.paymentMode) }}</td>
-                    <td class="font-mono text-xs">{{ p.referenceNumber || '—' }}</td>
-                    <td class="num-col font-bold text-success">
-                      ₹{{ p.amountInPaise / 100 | number: '1.2-2' }}
-                    </td>
-                    <td class="text-xs">{{ p.remarks || '—' }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
-
-          <div class="drawer-actions">
-            @if (inv.status === SalesInvoiceStatus.Draft) {
-              <button ar-button variant="primary" (click)="issueInvoice(inv)">
-                Issue Tax Invoice
-              </button>
-            }
-            @if (inv.balanceDueInPaise > 0 && inv.status !== SalesInvoiceStatus.Draft) {
-              <button ar-button variant="primary" (click)="openPaymentDialog(inv)">
-                Record Payment
-              </button>
-            }
-            <button ar-button variant="ghost" (click)="viewCustomer360(inv.customerId)">
-              Customer 360 Dossier
-            </button>
-          </div>
-        </div>
-      </ar-dialog>
-    }
-
-    <!-- Record Payment Dialog -->
-    @if (paymentDialogInvoice(); as inv) {
-      <ar-dialog
-        [title]="'Record Payment for ' + inv.invoiceNumber"
-        (dismiss)="paymentDialogInvoice.set(null)"
-      >
-        <div class="payment-form">
-          <div class="form-group">
-            <label>Payment Amount (₹) *</label>
-            <input type="number" class="ar-input font-bold" [(ngModel)]="paymentAmountRupees" />
-          </div>
-          <div class="form-row">
-            <div class="form-group flex-1">
-              <label>Payment Mode *</label>
-              <select class="ar-input" [(ngModel)]="paymentMode">
-                <option [value]="SalesPaymentMode.NeftRtgs">NEFT / RTGS</option>
-                <option [value]="SalesPaymentMode.Upi">UPI</option>
-                <option [value]="SalesPaymentMode.Cheque">Cheque</option>
-                <option [value]="SalesPaymentMode.Cash">Cash</option>
-                <option [value]="SalesPaymentMode.Card">Credit/Debit Card</option>
-              </select>
-            </div>
-            <div class="form-group flex-1">
-              <label>UTR / Transaction Ref #</label>
-              <input
-                type="text"
-                class="ar-input font-mono"
-                [(ngModel)]="paymentRef"
-                placeholder="e.g. UTR-9821034"
-              />
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Remarks</label>
-            <input
-              type="text"
-              class="ar-input"
-              [(ngModel)]="paymentRemarks"
-              placeholder="Bank ledger notes"
-            />
-          </div>
-
-          <div class="dialog-foot">
-            <button ar-button variant="ghost" (click)="paymentDialogInvoice.set(null)">
-              Cancel
-            </button>
-            <button ar-button variant="primary" (click)="submitPayment(inv)">
-              Confirm Payment
-            </button>
-          </div>
-        </div>
-      </ar-dialog>
-    }
   `,
   styles: [
     `
@@ -605,9 +266,6 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
       }
       .text-danger {
         color: #dc2626;
-      }
-      .text-right {
-        text-align: right;
       }
       .filters-bar {
         display: flex;
@@ -718,84 +376,6 @@ const MOCK_INVOICES: SalesInvoiceDto[] = [
         padding: 3rem 1rem;
         color: var(--ar-ink-muted, #64748b);
       }
-      /* Detail */
-      .detail-body {
-        padding: 1rem 0;
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-      }
-      .inv-header-box {
-        display: flex;
-        justify-content: space-between;
-        background: var(--ar-surface-sunken, #f8fafc);
-        padding: 1rem;
-        border-radius: 6px;
-      }
-      .meta-lbl {
-        display: block;
-        font-size: 0.75rem;
-        color: var(--ar-ink-muted, #64748b);
-        margin-bottom: 0.25rem;
-      }
-      .section-title {
-        font-size: 0.875rem;
-        font-weight: 700;
-        margin: 0;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--ar-ink-muted, #64748b);
-      }
-      .inner-table {
-        border: 1px solid var(--ar-line, #e2e8f0);
-      }
-      .totals-summary {
-        margin-left: auto;
-        width: 280px;
-        display: flex;
-        flex-direction: column;
-        gap: 0.375rem;
-        padding: 0.75rem 0;
-      }
-      .tot-row {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.875rem;
-      }
-      .tot-row.grand {
-        font-size: 1.125rem;
-        border-top: 1px solid var(--ar-line, #e2e8f0);
-        padding-top: 0.5rem;
-        color: var(--ar-primary, #0284c7);
-      }
-      .drawer-actions {
-        display: flex;
-        gap: 0.75rem;
-        justify-content: flex-end;
-        padding-top: 1rem;
-        border-top: 1px solid var(--ar-line, #e2e8f0);
-      }
-      /* Payment form */
-      .payment-form {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        padding: 1rem 0;
-      }
-      .form-row {
-        display: flex;
-        gap: 1rem;
-      }
-      .flex-1 {
-        flex: 1;
-      }
-      .dialog-foot {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.75rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--ar-line, #e2e8f0);
-      }
     `,
   ],
 })
@@ -807,28 +387,17 @@ export class ArSalesInvoices {
   protected readonly scope = signal<CustomerScope | null>(readCustomerScope());
 
   readonly SalesInvoiceStatus = SalesInvoiceStatus;
-  readonly SalesInvoiceKind = SalesInvoiceKind;
-  readonly SalesPaymentMode = SalesPaymentMode;
 
   private readonly toasts = inject(ToastService);
   private readonly permissions = inject(PermissionService);
 
   protected readonly canCreate = grantedPolicy('AutoReach.SalesInvoices.Create', this.permissions);
-  /** The new-invoice form is open. */
-  protected readonly creating = signal(false);
 
   /** Demo rows only in mock mode; a real workspace sees its own invoices or none. */
   invoices = signal<SalesInvoiceDto[]>(environment.useMockData ? MOCK_INVOICES : []);
   loadError = signal<string | null>(null);
   searchQuery = signal<string>('');
   selectedStatus = signal<SalesInvoiceStatus | null>(null);
-  selectedInvoice = signal<SalesInvoiceDto | null>(null);
-  paymentDialogInvoice = signal<SalesInvoiceDto | null>(null);
-
-  paymentAmountRupees: number = 0;
-  paymentMode: SalesPaymentMode = SalesPaymentMode.NeftRtgs;
-  paymentRef: string = '';
-  paymentRemarks: string = '';
 
   totalBilled = computed(() => this.invoices().reduce((acc, i) => acc + i.grandTotalInPaise, 0));
   totalCollected = computed(() => this.invoices().reduce((acc, i) => acc + i.paidAmountInPaise, 0));
@@ -854,27 +423,48 @@ export class ArSalesInvoices {
     return list;
   });
 
+  /** Every invoice the list's customer, status and search match, not only the rows loaded. */
+  protected readonly exportAll = (format: SalesExportFormat) =>
+    this.invoiceService.export(
+      {
+        filter: this.searchQuery().trim() || undefined,
+        status: this.selectedStatus() ?? undefined,
+        customerId: this.scope()?.customerId ?? undefined,
+        customerAccountId: this.scope()?.accountId ?? undefined,
+      },
+      format,
+      { skipHandleError: true },
+    );
+  protected readonly exportName = () =>
+    ['Sales invoices', this.scope()?.name, new Date().toISOString().slice(0, 10)]
+      .filter(Boolean)
+      .join(' ');
+
   constructor() {
-    this.loadInvoices();
-    // ?open=<id> (from Customer 360 and other links) opens that record's panel.
+    // ?open=<id> (older links) now opens the invoice's own page.
     const openId = this.route.snapshot.queryParamMap.get('open');
-    if (openId && !environment.useMockData) {
-      this.invoiceService.get(openId).subscribe({
-        next: (record) => {
-          if (record) this.selectedInvoice.set(record);
-        },
+    if (openId) {
+      void this.router.navigate(['/sales/invoices', openId], {
+        queryParams: listQuery(this.scope()),
+        replaceUrl: true,
       });
+    } else {
+      this.loadInvoices();
     }
   }
 
-  protected created(invoice: SalesInvoiceDto | null): void {
-    this.creating.set(false);
-    if (!invoice) return;
-    this.invoices.update((list) => [invoice, ...list]);
-    this.selectedInvoice.set(invoice);
-    this.toasts.success(
-      `Invoice ${invoice.invoiceNumber} saved as a draft. Issue it when it is checked.`,
-    );
+  /** The invoice's own page (with the payment form open when `pay`), keeping this list's customer for Back. */
+  openInvoice(inv: SalesInvoiceDto, pay = false) {
+    if (inv.id)
+      void this.router.navigate(['/sales/invoices', inv.id], {
+        queryParams: { ...listQuery(this.scope()), pay: pay ? 1 : undefined },
+      });
+  }
+
+  newInvoice() {
+    void this.router.navigate(['/sales/invoices/new'], {
+      queryParams: newRecordQuery(this.scope()),
+    });
   }
 
   protected clearScope(): void {
@@ -917,129 +507,16 @@ export class ArSalesInvoices {
     }
   }
 
-  openPaymentDialog(inv: SalesInvoiceDto) {
-    this.paymentAmountRupees = inv.balanceDueInPaise / 100;
-    this.paymentMode = SalesPaymentMode.NeftRtgs;
-    this.paymentRef = '';
-    this.paymentRemarks = '';
-    this.paymentDialogInvoice.set(inv);
-  }
-
-  submitPayment(inv: SalesInvoiceDto) {
-    if (!inv.id) return;
-    const amountInPaise = Math.round(this.paymentAmountRupees * 100);
-    const input: RecordSalesInvoicePaymentDto = {
-      amountInPaise,
-      paymentMode: this.paymentMode,
-      referenceNumber: this.paymentRef,
-      remarks: this.paymentRemarks,
-    };
-
-    if (!environment.useMockData) {
-      this.invoiceService.recordPayment(inv.id, input).subscribe({
-        next: (updated) => {
-          this.updateInvoiceInList(updated);
-          this.paymentDialogInvoice.set(null);
-        },
-        // A failed payment is never shown as recorded: the money would look received when it is not.
-        error: (e: unknown) =>
-          this.toasts.error(errorMessage(e, 'The payment could not be recorded.')),
-      });
-    } else {
-      this.mockPayment(inv, amountInPaise);
-    }
-  }
-
-  private mockPayment(inv: SalesInvoiceDto, amountInPaise: number) {
-    const newPaid = inv.paidAmountInPaise + amountInPaise;
-    const newBal = Math.max(0, inv.grandTotalInPaise - newPaid);
-    const newStatus = newBal === 0 ? SalesInvoiceStatus.Paid : SalesInvoiceStatus.PartiallyPaid;
-
-    const payment = {
-      id: `pmt-${Date.now()}`,
-      salesInvoiceId: inv.id!,
-      paymentDateUtc: new Date().toISOString(),
-      amountInPaise,
-      paymentMode: this.paymentMode,
-      referenceNumber: this.paymentRef,
-      remarks: this.paymentRemarks,
-    };
-
-    const updated: SalesInvoiceDto = {
-      ...inv,
-      paidAmountInPaise: newPaid,
-      balanceDueInPaise: newBal,
-      status: newStatus,
-      payments: [payment, ...inv.payments],
-    };
-
-    this.updateInvoiceInList(updated);
-    this.paymentDialogInvoice.set(null);
-  }
-
-  viewCustomer360(customerId: string) {
-    this.router.navigate(['/contacts', customerId, '360']);
-  }
-
   private updateInvoiceInList(updated: SalesInvoiceDto) {
     this.invoices.update((list) => list.map((i) => (i.id === updated.id ? updated : i)));
-    if (this.selectedInvoice()?.id === updated.id) {
-      this.selectedInvoice.set(updated);
-    }
   }
 
   isOverdue(inv: SalesInvoiceDto): boolean {
-    return inv.balanceDueInPaise > 0 && new Date(inv.dueDateUtc) < new Date();
+    return isInvoiceOverdue(inv);
   }
 
-  getPaymentModeLabel(mode: SalesPaymentMode): string {
-    switch (mode) {
-      case SalesPaymentMode.NeftRtgs:
-        return 'NEFT / RTGS';
-      case SalesPaymentMode.Upi:
-        return 'UPI';
-      case SalesPaymentMode.Cheque:
-        return 'Cheque';
-      case SalesPaymentMode.Cash:
-        return 'Cash';
-      case SalesPaymentMode.Card:
-        return 'Card';
-      default:
-        return 'Other';
-    }
-  }
-
-  getStatusLabel(status: SalesInvoiceStatus): string {
-    switch (status) {
-      case SalesInvoiceStatus.Draft:
-        return 'Draft';
-      case SalesInvoiceStatus.Issued:
-        return 'Issued';
-      case SalesInvoiceStatus.PartiallyPaid:
-        return 'Partially Paid';
-      case SalesInvoiceStatus.Paid:
-        return 'Paid';
-      case SalesInvoiceStatus.Cancelled:
-        return 'Cancelled';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  getStatusTone(status: SalesInvoiceStatus): ChipTone {
-    switch (status) {
-      case SalesInvoiceStatus.Draft:
-        return 'neutral';
-      case SalesInvoiceStatus.Issued:
-        return 'teal';
-      case SalesInvoiceStatus.PartiallyPaid:
-        return 'amber';
-      case SalesInvoiceStatus.Paid:
-        return 'good';
-      case SalesInvoiceStatus.Cancelled:
-        return 'bad';
-      default:
-        return 'neutral';
-    }
-  }
+  readonly getStatusLabel = invoiceStatusLabel;
+  readonly getStatusTone = invoiceStatusTone;
+  readonly canIssue = canIssueInvoice;
+  readonly canPay = canPayInvoice;
 }

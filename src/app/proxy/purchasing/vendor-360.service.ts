@@ -21,6 +21,22 @@ export class Vendor360Service {
     );
   }
 
+  /** A few suppliers matching every word of `filter` (all when empty), usable ones first: the cockpit's finder. */
+  getSupplierMatches(
+    filter: string | null,
+    maxResultCount = 20,
+    config?: Partial<Rest.Config>,
+  ): Observable<Vendor360SupplierDto[]> {
+    return this.restService.request<any, Vendor360SupplierDto[]>(
+      {
+        method: 'GET',
+        url: '/api/auto-reach/vendor360/supplier-matches',
+        params: { filter: filter || undefined, maxResultCount },
+      },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
   getSuppliers(config?: Partial<Rest.Config>): Observable<Vendor360SupplierDto[]> {
     return this.restService.request<any, Vendor360SupplierDto[]>(
       {

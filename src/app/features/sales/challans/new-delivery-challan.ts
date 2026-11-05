@@ -1,17 +1,9 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-  untracked,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { PickerOption } from '../../../core/services/pipeline.service';
+import type { ProductDto } from '../../../proxy/library/product.service';
 import {
   CreateDeliveryChallanDto,
   DeliveryChallanDto,
@@ -22,24 +14,18 @@ import { ArButton, ArDialog } from '../../../ui';
 import { ArDateInput } from '../../../ui/date-input';
 import { ArSelect } from '../../../ui/select';
 import { errorMessage } from '../../activities/activity-logic';
-import { ArContactPicker } from '../../pipeline/contact-picker';
-import { EMPTY_PARTY, SalesParty, SalesPartyService } from '../sales-party';
-
-interface ChallanLine {
-  partNumber: string;
-  description: string;
-  hsnCode: string;
-  quantity: number;
-  unitOfMeasure: string;
-}
-
-const BLANK_LINE: ChallanLine = {
-  partNumber: '',
-  description: '',
-  hsnCode: '',
-  quantity: 1,
-  unitOfMeasure: 'Nos',
-};
+import { ArCatalogueItem, CatalogueSearch } from '../catalogue-item';
+import { ArSalesCustomer, SalesCustomerChoice } from '../sales-customer';
+import { EMPTY_PARTY, SalesParty, defaultShipIndex, shipToText } from '../sales-party';
+import {
+  ChallanLine,
+  blankChallanLine,
+  challanLineFromProduct,
+  editChallanLine,
+  filledChallanLines,
+  toChallanLines,
+  unitsFor,
+} from './new-delivery-challan.logic';
 
 /** Why goods move on a challan — the GST reasons a challan is used instead of an invoice. */
 export const CHALLAN_TYPES: readonly { value: DeliveryChallanType; label: string }[] = [
@@ -50,31 +36,26 @@ export const CHALLAN_TYPES: readonly { value: DeliveryChallanType; label: string
   { value: DeliveryChallanType.Other, label: 'Other' },
 ];
 
-const UNITS = ['Nos', 'Set', 'Kg', 'Mtr', 'Ltr', 'Box', 'Pair', 'Lot'] as const;
-
 /**
  * A new delivery challan raised directly — job work, supply on approval, returns, or goods sent before the order is in the system.
- * Picking the customer offers their account's shipping addresses. Saved as a draft; dispatched and invoiced from the list.
+ * The customer is an account and its contact person (or a contact with no account); the site address fills in from the account's
+ * default shipping address. Each item's name searches the product catalogue: picking one fills the item number, description,
+ * HSN and unit. Saved as a draft; dispatched and invoiced from its page.
  */
 @Component({
   selector: 'ar-new-delivery-challan',
-  imports: [ArDialog, ArButton, ArSelect, ArDateInput, ArContactPicker],
+  imports: [ArDialog, ArButton, ArSelect, ArDateInput, ArSalesCustomer, ArCatalogueItem],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog
       title="New delivery challan"
-      width="min(860px, calc(100vw - 32px))"
+      width="min(960px, calc(100vw - 32px))"
       (dismiss)="closed.emit(null)"
     >
       <div class="nc">
+        <ar-sales-customer [initialCustomer]="initialCustomer()" (changed)="onCustomer($event)" />
+
         <div class="nc__grid">
-          <div class="ar-field nc__wide">
-            <span class="ar-field__label">Customer <span class="ar-field__req">*</span></span>
-            <ar-contact-picker [initial]="initialCustomer()" (picked)="pickCustomer($event)" />
-            @if (party().accountName; as a) {
-              <span class="ar-field__hint">Account: {{ a }}</span>
-            }
-          </div>
           <label class="ar-field">
             <span class="ar-field__label">Challan type</span>
             <select
@@ -98,21 +79,28 @@ const UNITS = ['Nos', 'Set', 'Kg', 'Mtr', 'Ltr', 'Box', 'Pair', 'Lot'] as const;
           </label>
 
           <div class="ar-field nc__wide">
-            <span class="ar-field__label">Ship to</span>
+            <label class="ar-field__label" for="nc-ship">Shipping / Site address</label>
             @if (party().shipTo.length) {
-              <select class="ar-field__input" (change)="chooseShipTo(+$any($event.target).value)">
+              <select
+                class="ar-field__input"
+                aria-label="Ship to"
+                (change)="chooseShipTo(+$any($event.target).value)"
+              >
                 @for (s of party().shipTo; track $index; let i = $index) {
-                  <option [value]="i" [selected]="i === shipIndex()">{{ s.label }}</option>
+                  <option [value]="i" [selected]="i === shipIndex()">
+                    {{ s.label }}{{ s.isDefault ? ' (default)' : '' }}
+                  </option>
                 }
-                <option [value]="-1" [selected]="shipIndex() === -1">Other address…</option>
+                <option [value]="-1" [selected]="shipIndex() === -1">Billing address</option>
               </select>
             }
             <textarea
+              id="nc-ship"
               class="ar-field__input"
               rows="3"
               placeholder="Delivery site address"
               [value]="shippingAddress()"
-              (input)="shippingAddress.set($any($event.target).value); shipIndex.set(-1)"
+              (input)="shippingAddress.set($any($event.target).value)"
             ></textarea>
           </div>
           <label class="ar-field">
@@ -162,31 +150,44 @@ const UNITS = ['Nos', 'Set', 'Kg', 'Mtr', 'Ltr', 'Box', 'Pair', 'Lot'] as const;
         </div>
 
         <h4 class="nc__h">Items</h4>
+        @if (catalogue.blocked()) {
+          <span class="ar-field__hint">
+            The product catalogue isn't available to your role: type the item number and
+            description.
+          </span>
+        }
         <div class="nc__lines">
           <div class="nc__line nc__line--head" aria-hidden="true">
-            <span>Part no.</span><span>Description</span><span>HSN</span><span>Qty</span
-            ><span>Unit</span><span></span>
+            <span>Item name</span><span>Item no.</span><span>Description</span><span>HSN</span
+            ><span>Qty</span><span>Unit</span><span></span>
           </div>
           @for (l of lines(); track $index; let i = $index) {
             <div class="nc__line">
+              <ar-catalogue-item
+                [value]="l.itemName"
+                (typed)="patchLine(i, { itemName: $event })"
+                (picked)="pickItem(i, $event)"
+              />
               <input
-                class="ar-field__input"
-                aria-label="Part number"
+                class="ar-field__input ar-mono"
+                aria-label="Item number"
+                placeholder="Item no."
                 [value]="l.partNumber"
-                (input)="patchLine(i, 'partNumber', $any($event.target).value)"
+                (input)="patchLine(i, { partNumber: $any($event.target).value })"
               />
               <input
                 class="ar-field__input"
                 aria-label="Description"
+                placeholder="Description"
                 [value]="l.description"
-                (input)="patchLine(i, 'description', $any($event.target).value)"
+                (input)="patchLine(i, { description: $any($event.target).value })"
               />
               <input
                 class="ar-field__input ar-mono"
                 aria-label="HSN code"
                 maxlength="8"
                 [value]="l.hsnCode"
-                (input)="patchLine(i, 'hsnCode', $any($event.target).value)"
+                (input)="patchLine(i, { hsnCode: $any($event.target).value })"
               />
               <input
                 class="ar-field__input"
@@ -195,15 +196,15 @@ const UNITS = ['Nos', 'Set', 'Kg', 'Mtr', 'Ltr', 'Box', 'Pair', 'Lot'] as const;
                 min="0"
                 step="any"
                 [value]="l.quantity"
-                (input)="patchLine(i, 'quantity', +$any($event.target).value)"
+                (input)="patchLine(i, { quantity: +$any($event.target).value })"
               />
               <select
                 required
                 class="ar-field__input"
                 aria-label="Unit"
-                (change)="patchLine(i, 'unitOfMeasure', $any($event.target).value)"
+                (change)="patchLine(i, { unitOfMeasure: $any($event.target).value })"
               >
-                @for (u of units; track u) {
+                @for (u of units(l); track u) {
                   <option [value]="u" [selected]="u === l.unitOfMeasure">{{ u }}</option>
                 }
               </select>
@@ -257,7 +258,7 @@ const UNITS = ['Nos', 'Set', 'Kg', 'Mtr', 'Ltr', 'Box', 'Pair', 'Lot'] as const;
       align-items: end;
     }
     .nc__wide {
-      grid-column: span 2;
+      grid-column: 1 / -1;
     }
     .nc__h {
       margin: 4px 0 0;
@@ -270,9 +271,13 @@ const UNITS = ['Nos', 'Set', 'Kg', 'Mtr', 'Ltr', 'Box', 'Pair', 'Lot'] as const;
     }
     .nc__line {
       display: grid;
-      grid-template-columns: 1.3fr 2.4fr 0.9fr 0.7fr 0.8fr 28px;
+      grid-template-columns: 1.6fr 1.1fr 2fr 0.8fr 0.7fr 0.8fr 28px;
       gap: 6px;
-      align-items: center;
+      align-items: start;
+    }
+    .nc__line > input,
+    .nc__line > select {
+      min-width: 0;
     }
     .nc__line--head {
       font: 600 11px var(--ar-font-sans);
@@ -281,6 +286,7 @@ const UNITS = ['Nos', 'Set', 'Kg', 'Mtr', 'Ltr', 'Box', 'Pair', 'Lot'] as const;
       letter-spacing: 0.04em;
     }
     .nc__x {
+      height: 36px;
       background: none;
       border: 0;
       color: var(--ar-bad-600, #b42318);
@@ -320,21 +326,17 @@ const UNITS = ['Nos', 'Set', 'Kg', 'Mtr', 'Ltr', 'Box', 'Pair', 'Lot'] as const;
 })
 export class ArNewDeliveryChallan {
   private readonly api = inject(DeliveryChallanService);
-  private readonly parties = inject(SalesPartyService);
+  protected readonly catalogue = inject(CatalogueSearch);
 
   /** The challan saved, or null when cancelled. */
   readonly closed = output<DeliveryChallanDto | null>();
   /** The customer to start with, e.g. from an account's Customer 360 (?customer=…&customerName=…). */
   readonly initialCustomer = input<PickerOption | null>(null);
-  private readonly applyInitialCustomer = effect(() => {
-    const c = this.initialCustomer();
-    if (c) untracked(() => void this.pickCustomer(c));
-  });
 
   protected readonly types = CHALLAN_TYPES;
-  protected readonly units = UNITS;
+  protected readonly units = unitsFor;
 
-  protected readonly customer = signal<PickerOption | null>(null);
+  protected readonly choice = signal<SalesCustomerChoice | null>(null);
   protected readonly party = signal<SalesParty>(EMPTY_PARTY);
   protected readonly type = signal<DeliveryChallanType>(DeliveryChallanType.SupplyAgainstOrder);
   protected readonly challanDate = signal(new Date().toISOString().slice(0, 10));
@@ -345,62 +347,58 @@ export class ArNewDeliveryChallan {
   protected readonly lr = signal('');
   protected readonly eway = signal('');
   protected readonly remarks = signal('');
-  protected readonly lines = signal<ChallanLine[]>([{ ...BLANK_LINE }]);
+  protected readonly lines = signal<ChallanLine[]>([blankChallanLine()]);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  protected async pickCustomer(option: PickerOption | null): Promise<void> {
-    this.customer.set(option);
-    const party = option ? await this.parties.forContact(option.id) : EMPTY_PARTY;
-    if (this.customer()?.id !== option?.id) return;
-    this.party.set(party);
-    if (party.shipTo.length) {
-      this.chooseShipTo(
-        Math.max(
-          0,
-          party.shipTo.findIndex((s) => s.isDefault),
-        ),
-      );
-    } else {
-      this.shipIndex.set(-1);
-      this.shippingAddress.set(party.billingAddress);
+  /** A new customer choice; a new account (or none) refills the site address from it. */
+  protected onCustomer(choice: SalesCustomerChoice): void {
+    this.choice.set(choice);
+    this.error.set(null);
+    if (choice.party !== this.party()) {
+      this.party.set(choice.party);
+      this.chooseShipTo(defaultShipIndex(choice.party));
     }
   }
 
   protected chooseShipTo(index: number): void {
     this.shipIndex.set(index);
-    const s = this.party().shipTo[index];
-    if (s) this.shippingAddress.set(s.text);
+    this.shippingAddress.set(shipToText(this.party(), index));
   }
 
   protected addLine(): void {
-    this.lines.update((ls) => [...ls, { ...BLANK_LINE }]);
+    this.lines.update((ls) => [...ls, blankChallanLine()]);
   }
 
   protected removeLine(index: number): void {
     this.lines.update((ls) => (ls.length > 1 ? ls.filter((_, i) => i !== index) : ls));
   }
 
-  protected patchLine<K extends keyof ChallanLine>(
-    index: number,
-    key: K,
-    value: ChallanLine[K],
-  ): void {
-    this.lines.update((ls) => ls.map((l, i) => (i === index ? { ...l, [key]: value } : l)));
+  protected patchLine(index: number, patch: Partial<ChallanLine>): void {
+    this.lines.update((ls) => ls.map((l, i) => (i === index ? editChallanLine(l, patch) : l)));
+  }
+
+  protected pickItem(index: number, p: ProductDto): void {
+    this.lines.update((ls) => ls.map((l, i) => (i === index ? challanLineFromProduct(p, l) : l)));
   }
 
   protected async save(): Promise<void> {
-    const customer = this.customer();
+    const choice = this.choice();
+    const customer = choice?.customer;
     if (!customer) {
-      this.error.set('Pick the customer the goods are going to.');
+      this.error.set(
+        choice?.mode !== 'contact'
+          ? 'Choose the account and the contact person the goods are going to.'
+          : 'Pick the customer the goods are going to.',
+      );
       return;
     }
-    const lines = this.lines().filter((l) => l.partNumber.trim() || l.description.trim());
-    if (!lines.length) {
-      this.error.set('Add at least one item with a part number or description.');
+    const filled = filledChallanLines(this.lines());
+    if (!filled.length) {
+      this.error.set('Add at least one item with a name, item number or description.');
       return;
     }
-    if (lines.some((l) => !(l.quantity > 0))) {
+    if (filled.some((l) => !(l.quantity > 0))) {
       this.error.set('Every item needs a quantity above zero.');
       return;
     }
@@ -413,7 +411,7 @@ export class ArNewDeliveryChallan {
     const input: CreateDeliveryChallanDto = {
       type: this.type(),
       customerId: customer.id,
-      customerAccountId: this.party().accountId ?? undefined,
+      customerAccountId: choice.accountId ?? undefined,
       challanDateUtc: new Date(this.challanDate()).toISOString(),
       shippingAddress: this.shippingAddress().trim() || undefined,
       transporterName: this.transporter().trim() || undefined,
@@ -421,13 +419,7 @@ export class ArNewDeliveryChallan {
       lrNumber: this.lr().trim() || undefined,
       eWayBillNumber: eway || undefined,
       remarks: this.remarks().trim() || undefined,
-      lines: lines.map((l) => ({
-        partNumber: l.partNumber.trim() || l.description.trim(),
-        description: l.description.trim() || l.partNumber.trim(),
-        hsnCode: l.hsnCode.trim() || undefined,
-        quantity: l.quantity,
-        unitOfMeasure: l.unitOfMeasure,
-      })),
+      lines: toChallanLines(filled),
     };
 
     this.busy.set(true);

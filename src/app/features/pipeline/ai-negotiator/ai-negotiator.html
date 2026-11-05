@@ -1,0 +1,735 @@
+<ar-topbar
+  title="AI negotiator"
+  subtitle="Answers price push-back on a quotation within your margin rules, round by round"
+  help="When a customer asks for a lower price, type what they said into their negotiation. The negotiator answers within your rules (target margin, the lowest margin you accept, the largest discount, how many rounds) and passes anything outside them to you. It does not message the customer itself: copy its reply into their chat."
+>
+  @if (!demo) {
+    <button ar-button type="button" variant="primary" icon="plus" (click)="openStart()">
+      Start a negotiation
+    </button>
+  }
+</ar-topbar>
+
+<div class="ng ar-scroll">
+  @if (demo) {
+    <ar-banner tone="warn">
+      The negotiator works on your own quotations, so it needs the live API. This demo-data build
+      has none.
+    </ar-banner>
+  } @else if (loading()) {
+    <p class="ng__note">Loading…</p>
+  } @else if (loadError(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  } @else {
+    <div class="ng__kpis">
+      <button type="button" class="ng__kpi" (click)="tab.set('negotiations'); filter.set('open')">
+        <span>Open</span><strong>{{ totals().open }}</strong>
+        <small>waiting on the customer</small>
+      </button>
+      <button
+        type="button"
+        class="ng__kpi"
+        [class.ng__kpi--alert]="totals().needsYou > 0"
+        (click)="tab.set('negotiations'); filter.set('needs-you')"
+      >
+        <span>Needs you</span><strong>{{ totals().needsYou }}</strong>
+        <small>outside your rules</small>
+      </button>
+      <button type="button" class="ng__kpi" (click)="tab.set('negotiations'); filter.set('closed')">
+        <span>Agreed</span><strong>{{ totals().agreed }}</strong>
+        <small>of {{ totals().closed }} finished</small>
+      </button>
+      <div class="ng__kpi">
+        <span>Margin kept on agreed deals</span>
+        <strong>{{
+          totals().avgAgreedMargin === null ? '—' : totals().avgAgreedMargin + '%'
+        }}</strong>
+        <small>lowest allowed {{ draft().floorMarginPercent }}%</small>
+      </div>
+    </div>
+
+    <div class="ng__tabs" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        [class.on]="tab() === 'negotiations'"
+        (click)="tab.set('negotiations')"
+      >
+        Negotiations ({{ sessions().length }})
+      </button>
+      <button type="button" role="tab" [class.on]="tab() === 'rules'" (click)="tab.set('rules')">
+        Rules
+      </button>
+      @if (canPractise()) {
+        <button
+          type="button"
+          role="tab"
+          [class.on]="tab() === 'practice'"
+          (click)="tab.set('practice')"
+        >
+          Practice
+        </button>
+      }
+    </div>
+
+    @switch (tab()) {
+      @case ('negotiations') {
+        @if (!sessions().length) {
+          <ar-card heading="No negotiations yet">
+            <div class="ng__empty">
+              <p>
+                When a customer pushes back on a quotation's price, click
+                <strong>Start a negotiation</strong>, pick the quotation and type what they asked
+                for. The negotiator works out a reply within your <strong>Rules</strong>.
+              </p>
+              <div class="ng__empty-actions">
+                <button ar-button type="button" variant="primary" icon="plus" (click)="openStart()">
+                  Start a negotiation
+                </button>
+                @if (canPractise()) {
+                  <button ar-button type="button" variant="ghost" (click)="tab.set('practice')">
+                    Try it in Practice
+                  </button>
+                }
+              </div>
+            </div>
+          </ar-card>
+        } @else {
+          <div class="ng__split">
+            <!-- The list -->
+            <aside class="ng__list">
+              <div class="ng__filters">
+                @for (f of ['all', 'open', 'needs-you', 'closed']; track f) {
+                  <button type="button" [class.on]="filter() === f" (click)="filter.set($any(f))">
+                    {{
+                      f === 'all'
+                        ? 'All'
+                        : f === 'open'
+                          ? 'Open'
+                          : f === 'needs-you'
+                            ? 'Needs you'
+                            : 'Finished'
+                    }}
+                  </button>
+                }
+              </div>
+              <ul>
+                @for (s of shown(); track s.id) {
+                  <li>
+                    <button
+                      type="button"
+                      class="ng__item"
+                      [class.ng__item--on]="s.id === selectedId()"
+                      (click)="select(s)"
+                    >
+                      <span class="ng__item-top">
+                        <strong translate="no">{{ s.contactName || 'Customer' }}</strong>
+                        <ar-chip [tone]="statusOf[s.status].tone">{{
+                          statusOf[s.status].label
+                        }}</ar-chip>
+                      </span>
+                      <span class="ng__item-sub">
+                        <span class="ar-mono">{{ s.quotationReference }}</span> ·
+                        {{ money(s.currentAmountInPaise) }} · {{ s.currentDiscountPercent }}% off
+                      </span>
+                      <span class="ng__item-sub"
+                        >Round {{ s.roundCount }} ·
+                        {{ when(s.lastModificationTime ?? s.creationTime) }}</span
+                      >
+                    </button>
+                  </li>
+                } @empty {
+                  <li class="ng__note ng__pad">None here.</li>
+                }
+              </ul>
+            </aside>
+
+            <!-- The selected negotiation -->
+            @if (selected(); as s) {
+              <section class="ng__detail">
+                <header class="ng__head">
+                  <div>
+                    <h2>
+                      <span translate="no">{{ s.contactName || 'Customer' }}</span>
+                      <ar-chip [tone]="statusOf[s.status].tone">{{
+                        statusOf[s.status].label
+                      }}</ar-chip>
+                    </h2>
+                    <p class="ng__note">
+                      <span class="ar-mono">{{ s.sessionCode }}</span> · quotation
+                      <a class="ar-mono" [routerLink]="['/quotations', s.quotationId, 'edit']">{{
+                        s.quotationReference
+                      }}</a>
+                      @if (s.revisedQuotationId) {
+                        · revised
+                      }
+                    </p>
+                  </div>
+                  <div class="ng__head-actions">
+                    @if (
+                      canIntervene() &&
+                      (s.status === Status.Negotiating || s.status === Status.EscalatedToHuman)
+                    ) {
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        icon="user"
+                        (click)="openTakeOver(s)"
+                      >
+                        Take over
+                      </button>
+                    }
+                    @if (canIntervene() && s.status === Status.Agreed && !s.revisedQuotationId) {
+                      <button
+                        ar-button
+                        type="button"
+                        variant="primary"
+                        icon="check"
+                        [disabled]="!!working()"
+                        (click)="apply(s)"
+                      >
+                        {{ working() === 'apply' ? 'Revising…' : 'Apply to quotation' }}
+                      </button>
+                    }
+                  </div>
+                </header>
+
+                @if (s.status === Status.EscalatedToHuman && s.escalationReason) {
+                  <ar-banner tone="warn">{{ s.escalationReason }}</ar-banner>
+                }
+
+                <div class="ng__figures">
+                  <div>
+                    <span>Quoted</span><strong>{{ money(s.originalAmountInPaise) }}</strong>
+                  </div>
+                  <div>
+                    <span>Now</span><strong>{{ money(s.currentAmountInPaise) }}</strong>
+                  </div>
+                  <div>
+                    <span>Discount</span><strong>{{ s.currentDiscountPercent }}%</strong>
+                  </div>
+                  <div>
+                    <span>Margin</span><strong>{{ s.currentMarginPercent }}%</strong>
+                  </div>
+                  <div>
+                    <span>Payment terms</span><strong>{{ s.paymentTerms || '—' }}</strong>
+                  </div>
+                </div>
+                <div class="ng__margin" aria-hidden="true">
+                  <span
+                    class="ng__margin-fill"
+                    [style.width.%]="pos(s.currentMarginPercent)"
+                  ></span>
+                  <span
+                    class="ng__margin-mark ng__margin-mark--floor"
+                    [style.left.%]="pos(draft().floorMarginPercent)"
+                  ></span>
+                  <span
+                    class="ng__margin-mark"
+                    [style.left.%]="pos(draft().targetMarginPercent)"
+                  ></span>
+                </div>
+                <p class="ng__note">
+                  Margin {{ s.currentMarginPercent }}% · lowest allowed
+                  {{ draft().floorMarginPercent }}% · target {{ draft().targetMarginPercent }}%
+                  (cost estimated at {{ money(s.estimatedCostInPaise) }})
+                </p>
+
+                @if (outcome(); as o) {
+                  <div
+                    class="ng__outcome"
+                    [class.ng__outcome--warn]="o.tone === 'warn'"
+                    role="status"
+                  >
+                    <div class="ng__outcome-head">
+                      <strong>{{ o.title }}</strong>
+                      <button
+                        type="button"
+                        class="ng__x"
+                        aria-label="Dismiss"
+                        (click)="outcome.set(null)"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <ul>
+                      @for (l of o.lines; track $index) {
+                        <li>{{ l }}</li>
+                      }
+                    </ul>
+                    @if (o.reply) {
+                      <div class="ng__reply">
+                        <span class="ar-field__label">Reply to send the customer</span>
+                        <p translate="no">{{ o.reply }}</p>
+                        <button
+                          ar-button
+                          type="button"
+                          variant="ghost"
+                          icon="copy"
+                          (click)="copy(o.reply)"
+                        >
+                          Copy reply
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <h3 class="ng__h">Conversation</h3>
+                <ol class="ng__chat">
+                  @for (o of s.offers; track o.id) {
+                    <li class="ng__msg" [class]="'ng__msg ng__msg--' + side(o)">
+                      <div class="ng__msg-meta">
+                        <strong>{{ senderLabel[o.sender] }}</strong> · round {{ o.roundNumber }} ·
+                        {{ actionLabel[o.actionTaken] }} · {{ when(o.createdAtUtc) }}
+                      </div>
+                      <p translate="no">{{ o.messageContent }}</p>
+                      <div class="ng__msg-figs">
+                        {{ money(o.offeredAmountInPaise) }} · {{ o.discountPercent }}% off ·
+                        {{ o.marginPercent }}% margin
+                      </div>
+                      @if (o.aiReasoning) {
+                        <details>
+                          <summary>Why</summary>
+                          <p>{{ o.aiReasoning }}</p>
+                        </details>
+                      }
+                    </li>
+                  } @empty {
+                    <li class="ng__note">No rounds yet.</li>
+                  }
+                </ol>
+
+                @if (s.status === Status.Negotiating) {
+                  <div class="ng__next">
+                    <label class="ar-field" for="ng-said">
+                      <span class="ar-field__label">What the customer said next</span>
+                      <textarea
+                        id="ng-said"
+                        class="ar-field__input"
+                        rows="2"
+                        placeholder="e.g. Can you do ₹4,40,000 if we pay 50% advance?"
+                        [value]="customerSaid()"
+                        (input)="customerSaid.set($any($event.target).value)"
+                      ></textarea>
+                    </label>
+                    <button
+                      ar-button
+                      type="button"
+                      variant="primary"
+                      icon="sparkle"
+                      [disabled]="!!working() || !customerSaid().trim()"
+                      (click)="answer(s)"
+                    >
+                      {{ working() === 'answer' ? 'Working out a reply…' : 'Work out a reply' }}
+                    </button>
+                  </div>
+                }
+              </section>
+            } @else {
+              <section class="ng__detail ng__note">Pick a negotiation on the left.</section>
+            }
+          </div>
+        }
+      }
+
+      @case ('rules') {
+        <ar-card heading="How the negotiator may answer">
+          <div class="ng__rules">
+            <label class="ar-field" for="r-target">
+              <span class="ar-field__label">Target margin (%)</span>
+              <span class="ar-field__hint">Offers at or above this are accepted.</span>
+              <input
+                id="r-target"
+                class="ar-field__input"
+                inputmode="decimal"
+                [disabled]="!canManageRules()"
+                [value]="draft().targetMarginPercent"
+                (input)="patch('targetMarginPercent', num($any($event.target).value))"
+              />
+            </label>
+            <label class="ar-field" for="r-floor">
+              <span class="ar-field__label">Lowest margin you accept (%)</span>
+              <span class="ar-field__hint"
+                >It never goes below this; below it, it makes a final offer.</span
+              >
+              <input
+                id="r-floor"
+                class="ar-field__input"
+                inputmode="decimal"
+                [disabled]="!canManageRules()"
+                [value]="draft().floorMarginPercent"
+                (input)="patch('floorMarginPercent', num($any($event.target).value))"
+              />
+            </label>
+            <label class="ar-field" for="r-disc">
+              <span class="ar-field__label">Largest discount (%)</span>
+              <span class="ar-field__hint">On the quoted price.</span>
+              <input
+                id="r-disc"
+                class="ar-field__input"
+                inputmode="decimal"
+                [disabled]="!canManageRules()"
+                [value]="draft().maxDiscountPercent"
+                (input)="patch('maxDiscountPercent', num($any($event.target).value))"
+              />
+            </label>
+            <label class="ar-field" for="r-rounds">
+              <span class="ar-field__label">Rounds before a final offer</span>
+              <input
+                id="r-rounds"
+                class="ar-field__input"
+                inputmode="numeric"
+                [disabled]="!canManageRules()"
+                [value]="draft().maxRounds"
+                (input)="patch('maxRounds', num($any($event.target).value))"
+              />
+            </label>
+            <label class="ar-field" for="r-step">
+              <span class="ar-field__label">Concession per round (%)</span>
+              <input
+                id="r-step"
+                class="ar-field__input"
+                inputmode="decimal"
+                [disabled]="!canManageRules()"
+                [value]="draft().concessionStepPercent"
+                (input)="patch('concessionStepPercent', num($any($event.target).value))"
+              />
+            </label>
+            <label class="ar-field" for="r-limit">
+              <span class="ar-field__label">Deals above this go to you (₹)</span>
+              <span class="ar-field__hint">Larger deals are never agreed without a manager.</span>
+              <input
+                id="r-limit"
+                class="ar-field__input"
+                inputmode="decimal"
+                [disabled]="!canManageRules()"
+                [value]="draft().autoApprovalLimitInPaise / 100"
+                (input)="patch('autoApprovalLimitInPaise', num($any($event.target).value) * 100)"
+              />
+            </label>
+            <label class="ar-field ng__wide" for="r-strategy">
+              <span class="ar-field__label">Approach</span>
+              <select
+                id="r-strategy"
+                class="ar-field__input"
+                [disabled]="!canManageRules()"
+                (change)="patch('strategy', +$any($event.target).value)"
+              >
+                @for (st of strategies; track st.value) {
+                  <option [value]="st.value" [selected]="st.value === draft().strategy">
+                    {{ st.label }}
+                  </option>
+                }
+              </select>
+              <span class="ar-field__hint">{{ strategyHint() }}</span>
+            </label>
+            <label class="ng__check ng__wide">
+              <input
+                type="checkbox"
+                [disabled]="!canManageRules()"
+                [checked]="draft().allowPaymentTermTradeoffs"
+                (change)="patch('allowPaymentTermTradeoffs', $any($event.target).checked)"
+              />
+              May offer a lower price for advance payment
+            </label>
+            <label class="ng__check ng__wide">
+              <input
+                type="checkbox"
+                [disabled]="!canManageRules()"
+                [checked]="draft().allowVolumeCommitmentTradeoffs"
+                (change)="patch('allowVolumeCommitmentTradeoffs', $any($event.target).checked)"
+              />
+              May offer a lower price for a larger order (at least
+              <input
+                class="ar-field__input ng__inline"
+                inputmode="numeric"
+                [disabled]="!canManageRules()"
+                [value]="draft().minVolumeIncreasePercent"
+                (input)="patch('minVolumeIncreasePercent', num($any($event.target).value))"
+              />% more)
+            </label>
+          </div>
+          @if (rulesError(); as e) {
+            <p class="ng__err" role="alert">{{ e }}</p>
+          }
+          @if (canManageRules()) {
+            <div class="ng__rules-actions">
+              @if (rulesSavedAt(); as at) {
+                <span class="ng__note">Saved at {{ time(at) }}.</span>
+              }
+              <button
+                ar-button
+                type="button"
+                variant="primary"
+                [disabled]="!!working()"
+                (click)="saveRules()"
+              >
+                {{ working() === 'rules' ? 'Saving…' : 'Save rules' }}
+              </button>
+            </div>
+          } @else {
+            <p class="ng__note">You can see the rules; a manager can change them.</p>
+          }
+        </ar-card>
+      }
+
+      @case ('practice') {
+        <ar-card heading="Practice against a pretend customer">
+          <p class="ng__note">
+            Nothing is saved and nobody is messaged. See how your rules answer a customer before
+            using them on a real quotation.
+          </p>
+          <div class="ng__rules">
+            <label class="ar-field" for="p-quote">
+              <span class="ar-field__label">Quoted price (₹)</span>
+              <input
+                id="p-quote"
+                class="ar-field__input"
+                inputmode="decimal"
+                [value]="simQuote()"
+                (input)="simQuote.set($any($event.target).value)"
+              />
+            </label>
+            <label class="ar-field" for="p-cost">
+              <span class="ar-field__label">Your cost (₹)</span>
+              <input
+                id="p-cost"
+                class="ar-field__input"
+                inputmode="decimal"
+                [value]="simCost()"
+                (input)="simCost.set($any($event.target).value)"
+              />
+            </label>
+            <label class="ar-field" for="p-persona">
+              <span class="ar-field__label">Kind of customer</span>
+              <select
+                id="p-persona"
+                class="ar-field__input"
+                (change)="simPersona.set(+$any($event.target).value)"
+              >
+                @for (p of personas; track p.value) {
+                  <option [value]="p.value" [selected]="p.value === simPersona()">
+                    {{ p.label }}
+                  </option>
+                }
+              </select>
+            </label>
+            <label class="ar-field" for="p-demand">
+              <span class="ar-field__label">Discount they ask for (%)</span>
+              <input
+                id="p-demand"
+                class="ar-field__input"
+                inputmode="decimal"
+                [value]="simDemand()"
+                (input)="simDemand.set($any($event.target).value)"
+              />
+            </label>
+          </div>
+          <div class="ng__rules-actions">
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              icon="sparkle"
+              [disabled]="!!working()"
+              (click)="practise()"
+            >
+              {{ working() === 'practice' ? 'Playing it out…' : 'Play it out' }}
+            </button>
+          </div>
+        </ar-card>
+
+        @if (sim(); as r) {
+          <ar-card heading="How it went">
+            <div class="ng__figures">
+              <div>
+                <span>Ended</span><strong>{{ statusOf[r.finalStatus].label }}</strong>
+              </div>
+              <div>
+                <span>Final price</span><strong>{{ money(r.finalAmountInPaise) }}</strong>
+              </div>
+              <div>
+                <span>Discount</span><strong>{{ r.finalDiscountPercent }}%</strong>
+              </div>
+              <div>
+                <span>Margin kept</span><strong>{{ r.finalMarginPercent }}%</strong>
+              </div>
+            </div>
+            <p class="ng__summary">{{ r.simulationSummary }}</p>
+            <ol class="ng__chat">
+              @for (o of r.rounds; track $index) {
+                <li [class]="'ng__msg ng__msg--' + side(o)">
+                  <div class="ng__msg-meta">
+                    <strong>{{ senderLabel[o.sender] }}</strong> · round {{ o.roundNumber }} ·
+                    {{ actionLabel[o.actionTaken] }}
+                  </div>
+                  <p>{{ o.messageContent }}</p>
+                  <div class="ng__msg-figs">
+                    {{ money(o.offeredAmountInPaise) }} · {{ o.discountPercent }}% off ·
+                    {{ o.marginPercent }}% margin
+                  </div>
+                  @if (o.aiReasoning) {
+                    <details>
+                      <summary>Why</summary>
+                      <p>{{ o.aiReasoning }}</p>
+                    </details>
+                  }
+                </li>
+              }
+            </ol>
+          </ar-card>
+        }
+      }
+    }
+  }
+</div>
+
+@if (startOpen()) {
+  <ar-dialog title="Start a negotiation" (dismiss)="startOpen.set(false)">
+    <label class="ar-field" for="st-quote">
+      <span class="ar-field__label">Quotation</span>
+      @if (quotes().length) {
+        <select
+          id="st-quote"
+          class="ar-field__input"
+          (change)="startQuoteId.set($any($event.target).value)"
+        >
+          @for (q of quotes(); track q.id) {
+            <option [value]="q.id" [selected]="q.id === startQuoteId()">{{ quoteLabel(q) }}</option>
+          }
+        </select>
+      } @else {
+        <p class="ng__note">
+          No issued quotation without a negotiation already open. Issue one from
+          <a routerLink="/quotations">Quotations</a> first.
+        </p>
+      }
+    </label>
+    <label class="ar-field" for="st-msg">
+      <span class="ar-field__label">What the customer asked for</span>
+      <textarea
+        id="st-msg"
+        class="ar-field__input"
+        rows="3"
+        placeholder="e.g. Your price is too high. Can you do 12% less? We can pay 50% advance."
+        [value]="startMessage()"
+        (input)="startMessage.set($any($event.target).value)"
+      ></textarea>
+      <span class="ar-field__hint"
+        >A percentage, a rupee figure or payment terms in their words are all understood.</span
+      >
+    </label>
+    @if (dialogError(); as e) {
+      <p class="ng__err" role="alert">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="startOpen.set(false)">Cancel</button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        icon="sparkle"
+        [disabled]="!!working() || !quotes().length"
+        (click)="start()"
+      >
+        {{ working() === 'start' ? 'Working out a reply…' : 'Start and work out a reply' }}
+      </button>
+    </div>
+  </ar-dialog>
+}
+
+@if (takeOverOpen() && selected(); as s) {
+  <ar-dialog [title]="'Take over ' + s.sessionCode" (dismiss)="takeOverOpen.set(false)">
+    <label class="ar-field" for="to-action">
+      <span class="ar-field__label">Your decision</span>
+      <select
+        id="to-action"
+        class="ar-field__input"
+        (change)="toAction.set(+$any($event.target).value)"
+      >
+        <option [value]="Action.CounterOffer" [selected]="toAction() === Action.CounterOffer">
+          Make a counter-offer
+        </option>
+        <option [value]="Action.AcceptOffer" [selected]="toAction() === Action.AcceptOffer">
+          Accept the current price
+        </option>
+        <option
+          [value]="Action.RejectAndWalkAway"
+          [selected]="toAction() === Action.RejectAndWalkAway"
+        >
+          Walk away
+        </option>
+      </select>
+    </label>
+    @if (toAction() === Action.CounterOffer) {
+      <div class="ng__rules">
+        <label class="ar-field" for="to-amount">
+          <span class="ar-field__label">Your price (₹)</span>
+          <input
+            id="to-amount"
+            class="ar-field__input"
+            inputmode="decimal"
+            [value]="toAmount()"
+            (input)="toAmount.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field" for="to-terms">
+          <span class="ar-field__label"
+            >Payment terms <span class="ar-field__opt">optional</span></span
+          >
+          <input
+            id="to-terms"
+            class="ar-field__input"
+            [value]="toTerms()"
+            (input)="toTerms.set($any($event.target).value)"
+          />
+        </label>
+      </div>
+    }
+    @if (toAction() === Action.AcceptOffer) {
+      <p class="ng__note">
+        Accepting revises the quotation to {{ money(s.currentAmountInPaise) }} and issues it again.
+      </p>
+    }
+    <label class="ar-field" for="to-notes">
+      <span class="ar-field__label">Why (kept in the history)</span>
+      <input
+        id="to-notes"
+        class="ar-field__input"
+        [value]="toNotes()"
+        (input)="toNotes.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field" for="to-msg">
+      <span class="ar-field__label"
+        >Message for the customer <span class="ar-field__opt">optional</span></span
+      >
+      <textarea
+        id="to-msg"
+        class="ar-field__input"
+        rows="2"
+        [value]="toMessage()"
+        (input)="toMessage.set($any($event.target).value)"
+      ></textarea>
+    </label>
+    @if (dialogError(); as e) {
+      <p class="ng__err" role="alert">{{ e }}</p>
+    }
+    <div dialogActions>
+      <button ar-button type="button" variant="ghost" (click)="takeOverOpen.set(false)">
+        Cancel
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="!!working()"
+        (click)="takeOver(s)"
+      >
+        {{ working() === 'takeover' ? 'Saving…' : 'Save decision' }}
+      </button>
+    </div>
+  </ar-dialog>
+}

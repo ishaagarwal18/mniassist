@@ -1,0 +1,737 @@
+<ar-topbar
+  [title]="title()"
+  subtitle="Who it is for, the line items, and issuing it to the customer"
+  help="A quotation answers an open enquiry, or is raised by hand for a customer (a manual quotation: an enquiry is opened for them so follow-ups and won/lost still work). Parts are priced from the price list that fits the customer; anything can be typed by hand. Issuing makes the PDF final and starts the follow-up cadence."
+>
+  <button ar-button type="button" variant="ghost" (click)="cancel()">
+    {{ readOnly() ? 'Back' : 'Cancel' }}
+  </button>
+  @if (quote()?.id) {
+    <button
+      ar-button
+      type="button"
+      variant="ghost"
+      icon="download"
+      [disabled]="downloading()"
+      [attr.title]="dirty() ? 'Shows the quotation as last saved' : null"
+      (click)="downloadPdf()"
+    >
+      {{ downloading() ? 'Making PDF…' : 'PDF' }}
+    </button>
+  }
+  @if (!readOnly() && !loading()) {
+    <button
+      ar-button
+      type="button"
+      [variant]="canIssue() ? 'ghost' : 'primary'"
+      icon="check"
+      [disabled]="saving()"
+      (click)="save(false)"
+    >
+      {{ saving() ? 'Saving…' : isNew() ? 'Save draft' : 'Save changes' }}
+    </button>
+    @if (canIssue()) {
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        icon="send"
+        [disabled]="saving()"
+        (click)="save(true)"
+      >
+        {{ saving() ? 'Saving…' : 'Save and issue' }}
+      </button>
+    }
+  }
+</ar-topbar>
+
+<div class="qf ar-scroll">
+  <div class="qf__wrap">
+    @if (error(); as msg) {
+      <ar-banner tone="bad">{{ msg }}</ar-banner>
+    }
+
+    @if (loading()) {
+      <p class="qe__note">Loading…</p>
+    } @else {
+      <!-- 1. Who it is for -->
+      <ar-card heading="Customer">
+        @if (isNew()) {
+          <div class="qf__modes" role="radiogroup" aria-label="What the quotation is for">
+            <label class="qf__mode" [class.qf__mode--on]="header().mode === 'enquiry'">
+              <input
+                type="radio"
+                name="quote-for"
+                [checked]="header().mode === 'enquiry'"
+                (change)="setMode('enquiry')"
+              />
+              <span>
+                <strong>Against an enquiry</strong>
+                <small>Answers an open enquiry on the pipeline</small>
+              </span>
+            </label>
+            <label class="qf__mode" [class.qf__mode--on]="header().mode === 'manual'">
+              <input
+                type="radio"
+                name="quote-for"
+                [checked]="header().mode === 'manual'"
+                (change)="setMode('manual')"
+              />
+              <span>
+                <strong>Manual quotation</strong>
+                <small>For a customer directly, with no enquiry yet</small>
+              </span>
+            </label>
+          </div>
+
+          @if (header().mode === 'enquiry') {
+            <label class="ar-field" for="quote-enquiry">
+              <span class="ar-field__label">Enquiry <span class="qf__req">*</span></span>
+              @if (enquiryOptions().length) {
+                <select
+                  id="quote-enquiry"
+                  required
+                  class="ar-field__input"
+                  (change)="setEnquiry($any($event.target).value)"
+                >
+                  <option value="" [selected]="!header().enquiryId">Pick an open enquiry…</option>
+                  @for (o of enquiryOptions(); track o.id) {
+                    <option [value]="o.id" [selected]="o.id === header().enquiryId">
+                      {{ o.label }}
+                    </option>
+                  }
+                </select>
+              } @else {
+                <p class="qe__note">
+                  No open enquiries on this pipeline. Use a manual quotation, or create an enquiry
+                  first.
+                </p>
+              }
+            </label>
+          } @else {
+            <div class="qf__seg" role="radiogroup" aria-label="Quote a contact or an account">
+              <button
+                type="button"
+                class="qf__seg-btn"
+                role="radio"
+                [attr.aria-checked]="manualFor() === 'contact'"
+                [class.qf__seg-btn--on]="manualFor() === 'contact'"
+                (click)="setManualFor('contact')"
+              >
+                Contact
+              </button>
+              <button
+                type="button"
+                class="qf__seg-btn"
+                role="radio"
+                [attr.aria-checked]="manualFor() === 'account'"
+                [class.qf__seg-btn--on]="manualFor() === 'account'"
+                (click)="setManualFor('account')"
+              >
+                Account
+              </button>
+            </div>
+            <div class="qf__grid">
+              @if (manualFor() === 'contact') {
+                <div class="ar-field">
+                  <span class="ar-field__label">Customer <span class="qf__req">*</span></span>
+                  <ar-contact-picker
+                    [initial]="initialContact()"
+                    (picked)="onContactPicked($event)"
+                  />
+                </div>
+              } @else {
+                <div class="ar-field">
+                  <span class="ar-field__label">Account <span class="qf__req">*</span></span>
+                  @if (account(); as a) {
+                    <div class="qf__chosen">
+                      <span>{{ a.name }}</span>
+                      <button type="button" class="qe__link" (click)="clearAccount()">
+                        change
+                      </button>
+                    </div>
+                  } @else {
+                    <div class="qf__acct">
+                      <input
+                        id="quote-account"
+                        class="ar-field__input"
+                        type="search"
+                        autocomplete="off"
+                        placeholder="Search accounts by name"
+                        aria-label="Search accounts"
+                        [value]="accountTerm()"
+                        (input)="onAccountTerm($any($event.target).value)"
+                      />
+                      @if (accountResults().length) {
+                        <div class="qe__menu">
+                          @for (r of accountResults(); track r.id) {
+                            <button type="button" class="qf__acct-opt" (click)="chooseAccount(r)">
+                              <span>{{ r.name }}</span>
+                              @if (r.place) {
+                                <small>{{ r.place }}</small>
+                              }
+                            </button>
+                          }
+                        </div>
+                      } @else if (accountTerm().trim().length > 1) {
+                        <p class="qe__note">No account matches “{{ accountTerm() }}”.</p>
+                      }
+                    </div>
+                  }
+                </div>
+                @if (account()) {
+                  <label class="ar-field" for="quote-addressee">
+                    <span class="ar-field__label">Addressed to <span class="qf__req">*</span></span>
+                    @if (accountPeopleLoading()) {
+                      <p class="qe__note">Loading the account's people…</p>
+                    } @else if (accountPeople().length) {
+                      <select
+                        id="quote-addressee"
+                        class="ar-field__input"
+                        (change)="setAddressee($any($event.target).value)"
+                      >
+                        @for (c of accountPeople(); track c.id) {
+                          <option [value]="c.id" [selected]="c.id === header().contactId">
+                            {{ personName(c) }}
+                          </option>
+                        }
+                      </select>
+                    } @else {
+                      <p class="qe__note">
+                        This account has no people yet. Add a contact to it in Accounts first.
+                      </p>
+                    }
+                  </label>
+                }
+              }
+              <label class="ar-field" for="quote-title">
+                <span class="ar-field__label"
+                  >What it is for <span class="ar-field__opt">(optional)</span></span
+                >
+                <input
+                  id="quote-title"
+                  class="ar-field__input"
+                  maxlength="256"
+                  placeholder="e.g. Walk-in: panel spares"
+                  [value]="header().title"
+                  (input)="setTitle($any($event.target).value)"
+                />
+              </label>
+            </div>
+            <p class="qe__note">
+              An enquiry is opened for this customer behind the quotation, so its follow-ups,
+              won/lost and the pipeline figures work as for any other.
+            </p>
+          }
+        } @else if (quote(); as q) {
+          <div class="qf__meta">
+            <span class="ar-mono qf__ref">{{ q.reference }}</span>
+            @if (stateChip(); as sc) {
+              <ar-chip [tone]="sc.tone">{{ sc.label }}</ar-chip>
+            }
+            @if ((q.revisionNumber ?? 0) > 0) {
+              <span class="qe__note">rev {{ q.revisionNumber }}</span>
+            }
+            @if (customerLabel()) {
+              <span class="qf__who">{{ customerLabel() }}</span>
+            }
+          </div>
+          @if (issuedBefore() && !readOnly()) {
+            <p class="qe__note">
+              This quotation has been issued. Changes are not sent to the customer until you issue
+              it again, which starts a new revision.
+            </p>
+          }
+          @if (locked()) {
+            <p class="qe__note">
+              This quotation has been decided or has expired, so it is a record and cannot be
+              changed.
+            </p>
+          }
+        }
+      </ar-card>
+
+      <!-- 2. Line items -->
+      <ar-card heading="Line items">
+        <div class="qf__body">
+          <div class="qe__bar">
+            <label class="qe__list" for="quote-price-list">
+              <span class="ar-field__label">Price list</span>
+              <select
+                id="quote-price-list"
+                class="ar-field__input"
+                [disabled]="readOnly()"
+                (change)="setListId($any($event.target).value)"
+              >
+                <option value="" [selected]="!listId()">Best fit for this customer</option>
+                @for (l of lists(); track l.id) {
+                  <option [value]="l.id" [selected]="l.id === listId()">{{ listLabel(l) }}</option>
+                }
+              </select>
+            </label>
+
+            @if (!readOnly()) {
+              <div class="qe__pick">
+                <label class="ar-field__label" for="quote-part-search"
+                  >Add a part from the catalogue</label
+                >
+                <input
+                  id="quote-part-search"
+                  class="ar-field__input"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Part number or name"
+                  [value]="term()"
+                  (focus)="openPicker()"
+                  (blur)="closePickerSoon()"
+                  (input)="onTerm($any($event.target).value)"
+                />
+                @if (pickerOpen()) {
+                  <div class="qe__menu">
+                    @if (searching() && !matches().length) {
+                      <p class="qe__note">Searching…</p>
+                    }
+                    @for (m of matches(); track m.partNumber) {
+                      <button type="button" class="qe__opt" (mousedown)="pick(m)">
+                        <span class="ar-mono">{{ m.partNumber }}</span>
+                        <span class="qe__opt-name">{{ m.name }}</span>
+                        <span class="qe__opt-price">
+                          {{ money(m.unitPriceInPaise ?? 0) }} / {{ m.unit }}
+                          @if (m.priceListName) {
+                            <em>{{ m.priceListName }}</em>
+                          } @else if (m.onlyInPriceList) {
+                            <em>list only</em>
+                          }
+                        </span>
+                      </button>
+                    } @empty {
+                      @if (!searching()) {
+                        <p class="qe__note">No part matches. Add a line by hand instead.</p>
+                      }
+                    }
+                  </div>
+                }
+              </div>
+              <button ar-button type="button" variant="ghost" icon="plus" (click)="addBlank()">
+                Add a line by hand
+              </button>
+            }
+          </div>
+
+          <div class="qe__scroll">
+            <table class="qe__tbl">
+              <thead>
+                <tr>
+                  <th>Part number</th>
+                  <th>Description</th>
+                  <th class="num">Qty</th>
+                  <th>Unit</th>
+                  <th class="num">Price ₹</th>
+                  <th class="num">Disc %</th>
+                  <th class="num">GST %</th>
+                  <th class="num">Line total</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of rows(); track r.key) {
+                  <tr>
+                    <td>
+                      <input
+                        class="ar-field__input ar-mono"
+                        aria-label="Part number"
+                        placeholder="optional"
+                        [disabled]="readOnly()"
+                        [value]="r.partNumber"
+                        (input)="edit(r.key, 'partNumber', $any($event.target).value)"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        class="ar-field__input"
+                        aria-label="Description"
+                        required
+                        [disabled]="readOnly()"
+                        [value]="r.description"
+                        (input)="edit(r.key, 'description', $any($event.target).value)"
+                      />
+                      <span class="qe__src" [class.qe__src--list]="r.fromList">
+                        {{ sourceLabel(r) }}
+                        @if (!r.fromList && r.partNumber.trim() && !readOnly()) {
+                          ·
+                          <button type="button" class="qe__link" (click)="useListPrice(r)">
+                            use list price
+                          </button>
+                        }
+                      </span>
+                      @if (below(r)) {
+                        <span class="qe__warn">
+                          Under the minimum order of {{ r.moq }} for this part.
+                        </span>
+                      }
+                      @if (discountedBy(r) > 0) {
+                        <span class="qe__hint">
+                          {{ money(discountedBy(r)) }} under the list price of
+                          {{ money(r.listPaise ?? 0) }}.
+                        </span>
+                      }
+                    </td>
+                    <td class="num">
+                      <input
+                        class="ar-field__input num"
+                        inputmode="decimal"
+                        aria-label="Quantity"
+                        required
+                        [disabled]="readOnly()"
+                        [value]="r.quantity"
+                        (input)="edit(r.key, 'quantity', $any($event.target).value)"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        class="ar-field__input"
+                        aria-label="Unit"
+                        [disabled]="readOnly()"
+                        [value]="r.unit"
+                        (input)="edit(r.key, 'unit', $any($event.target).value)"
+                      />
+                    </td>
+                    <td class="num">
+                      <input
+                        class="ar-field__input num"
+                        inputmode="decimal"
+                        aria-label="Unit price in rupees"
+                        [disabled]="readOnly()"
+                        [value]="r.price"
+                        (input)="edit(r.key, 'price', $any($event.target).value)"
+                      />
+                    </td>
+                    <td class="num">
+                      <input
+                        class="ar-field__input num"
+                        inputmode="decimal"
+                        aria-label="Discount percent"
+                        [disabled]="readOnly()"
+                        [value]="r.discount"
+                        (input)="edit(r.key, 'discount', $any($event.target).value)"
+                      />
+                    </td>
+                    <td class="num">
+                      <input
+                        class="ar-field__input num"
+                        inputmode="decimal"
+                        aria-label="GST percent"
+                        [attr.placeholder]="ratePct(taxRate())"
+                        [disabled]="readOnly()"
+                        [value]="r.tax"
+                        (input)="edit(r.key, 'tax', $any($event.target).value)"
+                      />
+                    </td>
+                    <td class="num qe__total">{{ money(lineTotal(r)) }}</td>
+                    <td>
+                      @if (!readOnly()) {
+                        <button
+                          type="button"
+                          class="qe__x"
+                          aria-label="Remove line"
+                          (click)="remove(r.key)"
+                        >
+                          ×
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="9" class="qe__note">
+                      No lines yet. Search the catalogue above, or add a line by hand.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="qf__foot">
+            <label class="qe__rate" for="quote-gst">
+              <span class="ar-field__label">GST % for lines without their own rate</span>
+              <input
+                id="quote-gst"
+                class="ar-field__input num"
+                inputmode="decimal"
+                [disabled]="readOnly()"
+                [value]="quoteRatePct()"
+                (input)="setQuoteRate($any($event.target).value)"
+              />
+            </label>
+
+            <dl class="qe__sum">
+              <div>
+                <dt>Subtotal</dt>
+                <dd>{{ money(totals().subtotalPaise) }}</dd>
+              </div>
+              @for (t of totals().breakdown; track t.rateBasisPoints) {
+                <div>
+                  <dt>GST {{ ratePct(t.rateBasisPoints) }}%</dt>
+                  <dd>{{ money(t.taxPaise) }}</dd>
+                </div>
+              } @empty {
+                <div>
+                  <dt>GST</dt>
+                  <dd>{{ money(0) }}</dd>
+                </div>
+              }
+              <div class="qe__sum-total">
+                <dt>Total</dt>
+                <dd>{{ money(totals().totalPaise) }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          @if (quote() && !readOnly()) {
+            <section class="qe__reprice">
+              <div class="qe__reprice-head">
+                <div>
+                  <h3>Prices out of date?</h3>
+                  <p class="qe__note">
+                    Check the saved lines against the price list as it stands now. Lines priced by
+                    hand are left alone.
+                  </p>
+                </div>
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="repricing() || dirty()"
+                  (click)="previewReprice()"
+                >
+                  {{ repricing() ? 'Checking…' : 'Check prices' }}
+                </button>
+              </div>
+              @if (dirty()) {
+                <p class="qe__note">
+                  Save your changes first; the check reads the saved quotation.
+                </p>
+              }
+              @if (reprice(); as rp) {
+                @if (changedLines().length === 0) {
+                  <p class="qe__note">Every list-priced line is already at today's price.</p>
+                } @else {
+                  <table class="qe__tbl qe__tbl--small">
+                    <thead>
+                      <tr>
+                        <th>Part</th>
+                        <th class="num">Now</th>
+                        <th class="num">Would be</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (l of changedLines(); track l.lineId) {
+                        <tr>
+                          <td>
+                            <span class="ar-mono">{{ l.partNumber }}</span> {{ l.description }}
+                          </td>
+                          <td class="num">{{ money(l.oldUnitPriceInPaise ?? 0) }}</td>
+                          <td class="num">{{ money(l.newUnitPriceInPaise ?? 0) }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                  <p class="qe__note">
+                    Subtotal {{ money(rp.oldSubtotalInPaise ?? 0) }} →
+                    <strong>{{ money(rp.newSubtotalInPaise ?? 0) }}</strong>
+                  </p>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="primary"
+                    [disabled]="repricing()"
+                    (click)="applyReprice()"
+                  >
+                    Apply new prices
+                  </button>
+                }
+              }
+            </section>
+          }
+        </div>
+      </ar-card>
+
+      <!-- 3. Issue -->
+      @if (canIssue()) {
+        <ar-card heading="Issue to the customer">
+          <div class="qf__body">
+            <p class="qe__note">
+              Used by “Save and issue”. Issuing makes the PDF final and starts the follow-up
+              cadence{{ issuedBefore() ? '; issuing again sends a new revision' : '' }}. Total
+              {{ money(totals().totalPaise) }} including GST.
+            </p>
+            <div class="qf__grid">
+              <label class="ar-field" for="issue-days">
+                <span class="ar-field__label">Valid for (days)</span>
+                <input
+                  id="issue-days"
+                  class="ar-field__input"
+                  inputmode="numeric"
+                  [value]="validDays()"
+                  (input)="validDays.set($any($event.target).value)"
+                />
+              </label>
+              <div class="qf__checks" role="group" aria-label="Send it by">
+                <label class="qf__check" for="issue-wa">
+                  <input
+                    id="issue-wa"
+                    type="checkbox"
+                    [checked]="issueSendWa()"
+                    (change)="issueSendWa.set($any($event.target).checked)"
+                  />
+                  Send the PDF on WhatsApp
+                </label>
+                <label class="qf__check" for="issue-email">
+                  <input
+                    id="issue-email"
+                    type="checkbox"
+                    [checked]="issueSendEmail()"
+                    (change)="issueSendEmail.set($any($event.target).checked)"
+                  />
+                  Email the PDF
+                </label>
+              </div>
+            </div>
+
+            @if (issueSendWa() || issueSendEmail()) {
+              <div class="ar-field">
+                <span class="ar-field__label">Send to</span>
+                @if (recipientsLoading()) {
+                  <p class="qe__note">Loading who it can go to…</p>
+                } @else if (recipients().length) {
+                  <ul class="qf__people">
+                    @for (r of recipients(); track r.id; let first = $first) {
+                      <li>
+                        <label class="qf__person">
+                          <input
+                            type="checkbox"
+                            [checked]="sendTo().includes(r.id)"
+                            (change)="toggleRecipient(r.id, $any($event.target).checked)"
+                          />
+                          <span class="qf__person-name">
+                            {{ r.name }}
+                            @if (first) {
+                              <small>quotation contact</small>
+                            }
+                          </span>
+                          <span class="qf__person-ways">
+                            <span [class.qf__way--off]="!r.waId">{{
+                              r.waId ? 'WhatsApp +' + r.waId : 'no WhatsApp'
+                            }}</span>
+                            <span [class.qf__way--off]="!r.email">{{ r.email || 'no email' }}</span>
+                          </span>
+                        </label>
+                      </li>
+                    }
+                  </ul>
+                  @if (recipients().length === 1) {
+                    <p class="qe__note">
+                      Link this contact to an account to send it to their colleagues too.
+                    </p>
+                  }
+                } @else {
+                  <p class="qe__note">Choose who the quotation is for first.</p>
+                }
+                @if (unreachable().length) {
+                  <p class="qe__warn">
+                    {{ unreachable().join(', ') }}: no
+                    {{
+                      issueSendWa() && issueSendEmail()
+                        ? 'WhatsApp number or email address'
+                        : issueSendWa()
+                          ? 'WhatsApp number'
+                          : 'email address'
+                    }}
+                    on file, so it will not reach them.
+                  </p>
+                }
+              </div>
+            }
+
+            @if (issueSendEmail()) {
+              <label class="ar-field" for="issue-extra-emails">
+                <span class="ar-field__label"
+                  >Also email
+                  <span class="ar-field__opt">(optional, e.g. the purchase department)</span></span
+                >
+                <input
+                  id="issue-extra-emails"
+                  class="ar-field__input"
+                  type="text"
+                  inputmode="email"
+                  placeholder="purchase@customer.com, stores@customer.com"
+                  [value]="extraEmails()"
+                  (input)="extraEmails.set($any($event.target).value)"
+                />
+              </label>
+              <p class="qe__note">
+                The email uses the “Quotation issued” template (Settings › Email templates) with the
+                PDF attached, from your email channel if one is connected.
+              </p>
+            }
+            @if (issueSendWa()) {
+              <label class="ar-field" for="issue-template">
+                <span class="ar-field__label"
+                  >Template if their 24-hour window is closed
+                  <span class="ar-field__opt">(fills name, reference and total)</span></span
+                >
+                <select
+                  id="issue-template"
+                  class="ar-field__input"
+                  [value]="issueTemplateId()"
+                  (change)="issueTemplateId.set($any($event.target).value)"
+                >
+                  <option value="">Automatic: the approved “quotation_ready” template</option>
+                  @for (t of issueTemplates(); track t.id) {
+                    <option [value]="t.id">
+                      {{ t.name }} ·
+                      {{ t.headerKind === 'document' ? 'attaches the PDF' : 'text only, no PDF' }}
+                    </option>
+                  }
+                </select>
+              </label>
+              <p class="qe__note">
+                If the customer messaged in the last 24 hours, the PDF itself goes. Otherwise
+                WhatsApp only accepts an approved template, and the PDF goes only with a template
+                that has a document header. You will be told if the PDF or the message could not be
+                sent.
+              </p>
+            }
+          </div>
+        </ar-card>
+      }
+
+      @if (!readOnly()) {
+        <div class="qf__actions">
+          <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
+          <button
+            ar-button
+            type="button"
+            [variant]="canIssue() ? 'ghost' : 'primary'"
+            [disabled]="saving()"
+            (click)="save(false)"
+          >
+            {{ saving() ? 'Saving…' : isNew() ? 'Save draft' : 'Save changes' }}
+          </button>
+          @if (canIssue()) {
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              [disabled]="saving()"
+              (click)="save(true)"
+            >
+              {{ saving() ? 'Saving…' : 'Save and issue' }}
+            </button>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

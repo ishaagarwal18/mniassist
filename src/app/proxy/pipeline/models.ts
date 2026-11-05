@@ -47,7 +47,11 @@ export interface CreateUpdateInstalledAssetDto {
 }
 
 export interface CreateUpdateQuotationDto {
-  enquiryId?: string;
+  /** Null on a new quotation means a manual one for `contactId`: the API opens an enquiry behind it. */
+  enquiryId?: string | null;
+  contactId?: string | null;
+  /** What a manual quotation is for: the title of the enquiry opened behind it. */
+  title?: string | null;
   priceListId?: string | null;
   lines?: CreateUpdateQuotationLineDto[];
   taxRateBasisPoints?: number;
@@ -202,6 +206,11 @@ export interface IssueQuotationInput {
   validUntilUtc?: string;
   sendOnWhatsApp?: boolean;
   templateId?: string | null;
+  /** Email the PDF to each recipient's address and to `extraEmails`. */
+  sendByEmail?: boolean;
+  /** The quotation's contact and/or other contacts of the same account. Empty is the quotation's own contact. */
+  recipientContactIds?: string[] | null;
+  extraEmails?: string[] | null;
 }
 
 export interface MoveEnquiryInput {
@@ -221,6 +230,9 @@ export interface QuotationDto extends FullAuditedEntityDto<string> {
   /** Only on the response to issuing: whether it went to the customer on WhatsApp, and what happened. */
   sentOnWhatsApp?: boolean | null;
   whatsAppNote?: string | null;
+  /** Only on the response to issuing with email: whether every email went, and what happened to each. */
+  sentByEmail?: boolean | null;
+  emailNote?: string | null;
   reference?: string;
   enquiryId?: string;
   contactId?: string;

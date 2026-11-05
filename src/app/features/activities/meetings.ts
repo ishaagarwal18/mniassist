@@ -25,7 +25,14 @@ import { firstValueFrom } from 'rxjs';
 import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
 import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
 import { ArTopbar } from '../../layout/topbar';
-import { AttendeeResponse, MeetingDto, MeetingKind, MeetingStatus } from '../../proxy/activities';
+import {
+  ActivityLinkDto,
+  AttendeeResponse,
+  MeetingDto,
+  MeetingKind,
+  MeetingStatus,
+} from '../../proxy/activities';
+import { RouterLink } from '@angular/router';
 import { ArButton, ArChip, ArDraggable } from '../../ui';
 import { ToastService } from '../../core/ui/toast.service';
 import {
@@ -55,6 +62,8 @@ import {
   timeRange,
   weekOf,
 } from './activity-logic';
+import { ArActivityShareDialog } from './activity-share-dialog';
+import { linkRoute } from './activity-links.logic';
 import { ArMeetingDialog } from './meeting-dialog';
 
 // Syncfusion checks the licence in each component's constructor, before ours runs.
@@ -76,7 +85,16 @@ interface CalendarEvent {
  */
 @Component({
   selector: 'ar-meetings',
-  imports: [ArTopbar, ArButton, ArChip, ArMeetingDialog, ScheduleModule, ArDraggable],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArMeetingDialog,
+    ScheduleModule,
+    ArDraggable,
+    ArActivityShareDialog,
+    RouterLink,
+  ],
   providers: [DayService, WeekService, MonthService, AgendaService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './meetings.html',
@@ -307,6 +325,13 @@ export class ArMeetings {
   }
   private emails(m: MeetingDto): string[] {
     return (m.attendees ?? []).map((a) => a.email ?? '').filter((e) => e.includes('@'));
+  }
+
+  /** The meeting being shared with colleagues. */
+  protected readonly sharing = signal<MeetingDto | null>(null);
+
+  protected linkRoute(l: ActivityLinkDto) {
+    return linkRoute(l);
   }
 
   /** Links for the detail panel: email and WhatsApp, and other people's calendars. */

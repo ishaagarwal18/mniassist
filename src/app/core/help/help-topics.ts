@@ -37,7 +37,7 @@ const VENDOR_360: HelpTopic = {
     'Shows overdue bills and how reliably the vendor delivers.',
   ],
   steps: [
-    'Choose a vendor to see their history.',
+    'Type part of a vendor’s name, GSTIN, phone or contact person in the search box at the top, then pick them from the list (arrow keys and Enter work too).',
     'Everything about this supplier opens each related screen on just this vendor: orders, receipts, bills, debit notes, stock and finance.',
     'Use + Inward GRN to receive goods, or Open bill / Open GRN to work one record.',
     'On the screen you opened, the breadcrumb Vendor 360 · <vendor> brings you back here.',
@@ -411,11 +411,39 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Loss reasons feed the loss analysis in Analytics.',
     ],
     steps: [
-      'Click New quotation and pick the enquiry, then add products and prices.',
-      'Click Issue, then send the PDF or request a Signature.',
+      'Click New quotation, pick the enquiry (or the customer, for a manual quotation), add the line items, then Save and issue.',
+      'Click Edit to change the lines or issue it again, then send the PDF or request a Signature.',
       'Follow up on quotes due today.',
       'Mark each one Won or Lost. Lost needs a reason.',
     ],
+  },
+  'quotations/new': {
+    benefits: [
+      'Quote against an open enquiry, or by hand for any customer with a manual quotation.',
+      'Parts are priced from the price list that fits the customer; anything can also be typed in.',
+      'Save a draft, or save and issue it in one step, on WhatsApp and/or by email with the PDF attached.',
+    ],
+    steps: [
+      'Choose Against an enquiry and pick it, or Manual quotation and pick a contact, or an account and who there it is addressed to.',
+      'Search the catalogue to add parts, or click Add a line by hand.',
+      'Check quantities, prices, discounts and GST, then the totals.',
+      'To issue: set Valid for, tick WhatsApp and/or Email, tick who at the account gets it (add other addresses if needed), then click Save and issue.',
+    ],
+    tips: [
+      'A manual quotation opens an enquiry for the customer, so follow-ups and won/lost still work.',
+    ],
+  },
+  'quotations/:id/edit': {
+    benefits: [
+      'Change the lines of a draft or an issued quotation.',
+      'Issuing again sends the customer a new revision and restarts the follow-ups.',
+    ],
+    steps: [
+      'Change the parts, quantities, prices or GST.',
+      'Use Check prices to bring list-priced lines up to today.',
+      'Click Save changes, or Save and issue to send the new revision.',
+    ],
+    tips: ['Won, lost and expired quotations open read-only, as a record of what was offered.'],
   },
   'installed-base': {
     benefits: [
@@ -468,6 +496,36 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Open To check and issue, check each request, and issue the quotation.',
       'When paid or ordered, mark Dispatch, In transit and Delivered as it ships.',
       'Use Portal settings, Companies and Shipping to set up how the portal works.',
+    ],
+  },
+  'reorders/send': {
+    benefits: [
+      'Gives one customer their personal re-order page on WhatsApp.',
+      'The link also shows here, to copy into an email or another chat.',
+    ],
+    steps: [
+      'Choose the customer, then Continue: the link goes on WhatsApp.',
+      'Copy the link if it could not be sent, then Done to return to Re-orders.',
+    ],
+  },
+  'reorders/settings': {
+    benefits: [
+      'Decide what a customer request becomes: a draft quotation, or an order paid by link.',
+      'Set the page heading, link lifetime, minimum order, stock display and sign-in.',
+    ],
+    steps: [
+      'Switch the portal on and choose what happens when a customer sends a request.',
+      'Set the heading, link days, minimum order and the WhatsApp templates, then Save.',
+    ],
+  },
+  'reorders/dispatch/:quotationId': {
+    benefits: [
+      'Records how a won re-order was sent, with the docket to track it.',
+      'The customer can be told on WhatsApp, with the tracking link.',
+    ],
+    steps: [
+      'Enter the transporter and docket, LR or AWB number, or get Shiprocket rates and pick a courier.',
+      'Add the tracking link, expected date, packages and freight if known, then Dispatch.',
     ],
   },
   'stock/planning': {
@@ -550,6 +608,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     ],
     steps: [
       'Add suppliers under Suppliers (New supplier).',
+      'In Suppliers, search by any words of the name, GSTIN, phone, email or contact person; filter by status or Only suppliers we owe money; sort by name, most owed or newest; and page through 50 at a time.',
       'Open Reorder suggestions and start an order, or click New order.',
       'Click Mark sent when the order goes to the supplier.',
       'Click Receive when goods arrive. Stock updates automatically.',
@@ -568,6 +627,17 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Check the list for invoices that are still unpaid after the last reminder.',
     ],
   },
+  'collections/settings': {
+    benefits: [
+      'Choose the approved WhatsApp template your reminders use.',
+      'Set the credit days used when the ERP gives no due date, and add a pay link.',
+    ],
+    steps: [
+      'Pick the approved template and check the credit days.',
+      'Tick Send reminders automatically (and the pay link if wanted), then Save.',
+      'The pay link can be ticked once a payment gateway is connected in Settings › Payments.',
+    ],
+  },
   network: NETWORK,
   'network/incoming': NETWORK,
   tasks: {
@@ -577,9 +647,10 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'See your own tasks, or everyone’s.',
     ],
     steps: [
-      'Click New task, add what needs doing, a due date and, if relevant, the deal.',
-      'Switch between Mine and Everyone.',
-      'Tick a task when it is done.',
+      'Click New task, add what needs doing and a due date, and link it to contacts, accounts, leads, quotations, sales documents, campaigns or tickets.',
+      'Choose how the reminder reaches the assignee: the bell, plus email, WhatsApp or SMS.',
+      'Use Share to send a task to colleagues on WhatsApp.',
+      'Switch between Mine and Everyone. Tick a task when it is done.',
     ],
   },
   meetings: {
@@ -591,7 +662,8 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     steps: [
       'Click Schedule, add people, and pick a time (or a suggested free time).',
       'Use ‹ › and Today to move through the week. Switch between Mine and Everyone.',
-      'Open a meeting to Accept, Decline, Edit or Add to calendar.',
+      'Link it to the contacts, leads, quotations and other records it is about, and choose email, WhatsApp or SMS reminders (for the customer too, if you like).',
+      'Open a meeting to Accept, Decline, Edit, Share with colleagues or Add to calendar.',
       'Afterwards, Mark done or No-show so the history is accurate.',
     ],
   },
@@ -1077,6 +1149,17 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Dispatch won orders from Re-orders or Sales; delivery status follows on its own.',
     ],
   },
+  'settings/tasks-meetings': {
+    benefits: [
+      'Task and meeting reminders, and shared tasks and meetings, reach people on WhatsApp and SMS as well as email.',
+      'One place to see whether the WhatsApp templates are approved.',
+    ],
+    steps: [
+      'Add task_reminder and meeting_reminder from Templates › Industrial library and submit them to Meta.',
+      'Put each colleague’s mobile number on their user profile.',
+      'For SMS, register a reminder template with DLT and MSG91, then choose it here and click Save.',
+    ],
+  },
   'settings/email-sending': {
     benefits: [
       'Marketing email goes out under your own sender name.',
@@ -1358,12 +1441,13 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   },
   'sales/orders/new': {
     benefits: [
-      'Raise a sales order for a customer, with their PO, terms and items.',
-      'From an account, the customer is filled in and you return to its Customer 360.',
+      'Raise a sales order for an account and its contact person, with their PO, terms and items.',
+      'Addresses come from the account and items from your catalogue, so nothing is retyped.',
     ],
     steps: [
-      'Check the customer (from an account it is the newest contact; change it if another person placed the order).',
-      'Enter the PO number, terms, site address and the items, then Create Sales Order.',
+      'Choose the account, then the contact person who placed the order (or switch to Contact for a person with no account).',
+      'The billing and site addresses fill in from the account; pick another shipping address if the goods go elsewhere.',
+      'Type an item name and pick it from the catalogue: the item number, description and price fill in. Then Create Sales Order.',
     ],
   },
   'sales/challans/new': {
@@ -1372,8 +1456,9 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'From an account, the customer is filled in and you return to its Customer 360.',
     ],
     steps: [
-      'Check the customer, the challan type and the ship-to address.',
-      'Add the items sent, then save the challan as a draft and dispatch it from Delivery challans.',
+      'Choose the account, then the contact person the goods go to (or switch to Contact for a person with no account).',
+      'The site address fills in from the account; pick another shipping address if the goods go elsewhere, and set the challan type.',
+      'Type an item name and pick it from the catalogue: the item number, description, HSN and unit fill in. Then save the draft; its page opens, ready to dispatch.',
     ],
   },
   'sales/invoices/new': {
@@ -1383,7 +1468,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     ],
     steps: [
       'Check the customer and their GSTIN, the dates and the items.',
-      'Save it as a draft, then issue it from Sales invoices once it is checked.',
+      'Save it as a draft; its page opens, where you issue it once it is checked.',
     ],
   },
   'installed-base/new': {
@@ -1410,27 +1495,29 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   'contacts/accounts/:accountId/360': CUSTOMER_360,
   'pipeline/ai-negotiator': {
     benefits: [
-      'Answers price questions and counter-offers instantly, within limits you set.',
-      'Never goes below your floor price or above your discount ceiling.',
-      'You can step in on any conversation and take over.',
+      'Answers price push-back on a quotation within limits you set.',
+      'Never goes below your lowest margin or above your largest discount, and passes anything else to you.',
+      'Keeps every round of the negotiation, with the reason for each answer.',
     ],
     steps: [
-      'Set the discount limits and floor margin, then click Save Guardrails.',
-      'Use Run AI Simulation to see how the agent would answer a counter-offer.',
-      'Review the live negotiation sessions and step in where needed.',
-      'When a deal is agreed, click Confirm & Apply to update the quotation.',
+      'Set the target margin, the lowest margin you accept and the largest discount under Rules, then click Save rules.',
+      'Click Start a negotiation, pick the issued quotation and type what the customer asked for.',
+      'Copy the reply into the customer’s chat. When they answer, type it under What the customer said next.',
+      'Use Take over to decide yourself. Once agreed, click Apply to quotation to issue the revised price.',
+      'Try your rules first under Practice; nothing is saved there.',
     ],
   },
   'pipeline/projection-plan': {
     benefits: [
-      'One plan for the year, with targets set by period and product.',
-      'Compares the plan with your actual pipeline and sales as they come in.',
-      'Scenarios show the effect of a change before you commit to it.',
+      'One plan for the year, with revenue and margin targets by quarter and business line.',
+      'Compares the plan with your issued sales invoices as they come in.',
+      'Scenarios show the year 15% worse and 15% better than plan.',
     ],
     steps: [
-      'Create a plan for the fiscal year, or generate one from your pipeline and past sales.',
-      'Adjust the targets by period, then activate the plan.',
-      'Sync actuals to see how you are tracking, and run scenarios to test changes.',
+      'Click Generate plan to start from the last 12 months of invoices and the open pipeline, or New plan to type a yearly target.',
+      'Check the figures under Lines (Edit targets to change any), then click Activate.',
+      'Click Sync actuals to read the invoices into each quarter; the result is shown at the top of the page.',
+      'Click Scenarios to see the conservative and optimistic cases.',
     ],
   },
   'sales/orders': {
@@ -1440,8 +1527,21 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     ],
     steps: [
       'Click + New Sales order, choose the customer and add line items.',
-      'Click Confirm Sales Order once the customer PO is in hand.',
-      'Use Create Delivery Challan to ship, or Generate Sales Invoice to bill.',
+      'Click an order to open its page; Confirm sales order once the customer PO is in hand.',
+      'Use Create delivery challan to ship, or Generate sales invoice to bill.',
+      'Export PDF or Export Excel saves every order the search, status and customer show (not only the rows loaded); Excel adds a sheet of their lines.',
+    ],
+  },
+  'sales/orders/:id': {
+    benefits: [
+      'Everything about one order on one page: PO, terms, site address, items and totals.',
+      'Shows how much of each item has been dispatched and invoiced.',
+    ],
+    steps: [
+      'Check the customer PO and the items.',
+      'Confirm a draft order; from a confirmed one, Create delivery challan or Generate sales invoice (each opens on its own page).',
+      'Back returns to the list, or to the Customer 360 you came from.',
+      'PDF downloads the printed sales order; Excel saves it with its lines.',
     ],
   },
   'sales/challans': {
@@ -1450,9 +1550,22 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Turns into a tax invoice once the goods are delivered.',
     ],
     steps: [
-      'Create a challan from a confirmed sales order.',
-      'Click Dispatch and enter the vehicle and transport details.',
-      'Click Mark as Delivered when the goods arrive, then bill it with Bill Delivery (Tax Invoice).',
+      'Create a challan from a confirmed sales order, or with New challan.',
+      'Click Dispatch: the challan opens with the transport form, for the vehicle, LR and e-Way Bill.',
+      'Mark it delivered when the goods arrive, then bill it with Bill delivery (tax invoice).',
+      'Export PDF or Export Excel saves every challan the search, status and customer show; Excel adds a sheet of their items.',
+    ],
+  },
+  'sales/challans/:id': {
+    benefits: [
+      'One challan on one page: Rule 55 purpose, transport, site address and the goods.',
+      'Dispatch, delivery and billing are done from the same page.',
+    ],
+    steps: [
+      'Click Dispatch consignment and enter the transporter, vehicle number, LR and 12-digit e-Way Bill, then Confirm dispatch.',
+      'Click Mark as delivered when the goods arrive.',
+      'Click Bill delivery (tax invoice) to raise the invoice; its page opens.',
+      'PDF downloads the printed delivery challan; Excel saves it with its items.',
     ],
   },
   'sales/invoices': {
@@ -1461,9 +1574,22 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Shows what each customer still owes.',
     ],
     steps: [
-      'Create an invoice from a sales order or a delivery challan.',
+      'Create an invoice from a sales order or a delivery challan, or with New sales invoice.',
       'Check the lines and taxes, then click Issue.',
-      'Click Record Payment when the money arrives.',
+      'Click Pay when the money arrives: the invoice opens with the payment form.',
+      'Export PDF or Export Excel saves every invoice the search, status and customer show; Excel adds sheets of their lines and payments.',
+    ],
+  },
+  'sales/invoices/:id': {
+    benefits: [
+      'One tax invoice on one page: GSTIN, lines with CGST + SGST or IGST, totals and payments.',
+      'Shows the balance due and whether it is overdue.',
+    ],
+    steps: [
+      'Check the lines and taxes, then Issue tax invoice.',
+      'Click Record payment, enter the amount, mode and UTR, then Confirm payment.',
+      'Back returns to the list, or to the Customer 360 you came from.',
+      'PDF downloads the printed invoice with its GST split; Excel saves it with its lines and payments.',
     ],
   },
   'purchasing/grn': {

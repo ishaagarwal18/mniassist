@@ -1,5 +1,6 @@
 import { Rest, RestService, PagedResultDto } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
+import { SalesExportFormat } from './sales-enums';
 import type {
   CreateSalesInvoiceDto,
   GetSalesInvoicesInput,
@@ -107,6 +108,37 @@ export class SalesInvoiceService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/sales-invoice/${id}/cancel`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** The sales invoice as its printed PDF, or an Excel workbook of it and its lines. */
+  download = (id: string, format: SalesExportFormat, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, Blob>(
+      {
+        method: 'POST',
+        responseType: 'blob',
+        headers: { Accept: 'application/octet-stream' },
+        url: `/api/auto-reach/sales-invoice/${id}/download`,
+        params: { format },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Every invoice the filters match (paging ignored), as a PDF register or an Excel workbook. */
+  export = (
+    input: Omit<GetSalesInvoicesInput, 'maxResultCount' | 'skipCount' | 'sorting'>,
+    format: SalesExportFormat,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, Blob>(
+      {
+        method: 'POST',
+        responseType: 'blob',
+        headers: { Accept: 'application/octet-stream' },
+        url: '/api/auto-reach/sales-invoice/export',
+        params: { format },
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );

@@ -5,7 +5,11 @@ import { environment } from '../../../environments/environment';
 import { AccountMasterDataService } from '../../core/services/account-master-data.service';
 import { AccountStore } from '../../core/services/account.store';
 import { ContactService } from '../../proxy/contacts/contact.service';
-import type { AccountShippingAddressDto, CustomerAccountDto } from '../../proxy/contacts/models';
+import type {
+  AccountShippingAddressDto,
+  ContactDto,
+  CustomerAccountDto,
+} from '../../proxy/contacts/models';
 
 /** One place goods can go, as a new invoice or challan offers it. */
 export interface ShipToOption {
@@ -49,6 +53,21 @@ export function formatAddress(
   return [street?.trim(), last].filter(Boolean).join('\n');
 }
 
+/** The ship-to an account starts with: its default shipping address, else its first, else none (-1: the billing address). */
+export function defaultShipIndex(party: SalesParty): number {
+  if (!party.shipTo.length) return -1;
+  const i = party.shipTo.findIndex((s) => s.isDefault);
+  return i >= 0 ? i : 0;
+}
+
+/** The site address for a ship-to choice: that shipping address, or the billing address. */
+export function shipToText(party: SalesParty, index: number): string {
+  return party.shipTo[index]?.text ?? party.billingAddress;
+}
+
+export const personName = (c: ContactDto): string =>
+  c.displayName || c.waId || c.emailAddress || 'Unnamed';
+
 /**
  * Looks up a customer's company (the contact's account) so a new invoice or challan starts with its GSTIN, billing address and
  * shipping addresses filled in. A contact with no account gives an empty party: the user types the details.
@@ -64,7 +83,15 @@ export class SalesPartyService {
       const accountId = environment.useMockData
         ? null
         : (await firstValueFrom(this.contacts.get(contactId, { skipHandleError: true }))).accountId;
-      if (!accountId) return EMPTY_PARTY;
+      return accountId ? await this.forAccount(accountId) : EMPTY_PARTY;
+    } catch {
+      return EMPTY_PARTY;
+    }
+  }
+
+  /** The account itself, when the document starts from the company rather than one of its people. */
+  async forAccount(accountId: string): Promise<SalesParty> {
+    try {
       const account = await this.accounts.details(accountId);
       return account ? this.fromAccount(account) : EMPTY_PARTY;
     } catch {

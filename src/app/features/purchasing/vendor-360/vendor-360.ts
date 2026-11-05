@@ -28,10 +28,12 @@ import {
   VendorDebitNoteStatus,
   Vendor360Dto,
   Vendor360Service,
+  Vendor360SupplierDto,
   GrnStatus,
 } from '../../../proxy/purchasing';
 import { ArButton, ArChip, ArIcon, ChipTone, IconName } from '../../../ui';
 import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
+import { ArSupplierFinder } from './supplier-finder';
 import { ArVendor360Links } from './vendor-360-links';
 import { vendorParams } from './vendor-360-links.logic';
 
@@ -283,31 +285,27 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
   standalone: true,
   selector: 'ar-vendor-360',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, ArTopbar, ArButton, ArChip, ArIcon, ArVendor360Links],
+  imports: [
+    CommonModule,
+    RouterLink,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArIcon,
+    ArVendor360Links,
+    ArSupplierFinder,
+  ],
   template: `
     <ar-topbar
       title="Vendor 360"
       subtitle="One supplier: orders, receipts, bills, quality and MSME payment dues"
     >
       <div class="v3-top">
-        <label class="v3-top__pick">
-          <span class="ar-visually-hidden">Supplier</span>
-          <select
-            class="ar-field__input"
-            aria-label="Supplier"
-            [disabled]="!suppliers().length"
-            (change)="onVendorChange($any($event.target).value)"
-          >
-            @if (!suppliers().length) {
-              <option value="">{{ loaded() ? 'No suppliers' : 'Loading suppliers…' }}</option>
-            }
-            @for (s of suppliers(); track s.id) {
-              <option [value]="s.id" [selected]="s.id === currentVendorId()" translate="no">
-                {{ s.name }}{{ s.detail ? ' · ' + s.detail : '' }}
-              </option>
-            }
-          </select>
-        </label>
+        <ar-supplier-finder
+          [currentName]="vendor()?.name ?? null"
+          [local]="mockSuppliers"
+          (picked)="onVendorChange($event)"
+        />
       </div>
     </ar-topbar>
 
@@ -846,7 +844,7 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
       <div class="v3 ar-scroll ar-scroll--bare">
         @if (loadError(); as e) {
           <p class="v3-alert" role="alert">{{ e }}</p>
-        } @else if (loaded() && suppliers().length === 0) {
+        } @else if (loaded() && !hasSuppliers()) {
           <section class="v3-card v3-blank">
             <ar-icon name="contacts" [size]="28" />
             <strong>No suppliers yet</strong>
@@ -903,11 +901,6 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
       display: flex;
       align-items: center;
       gap: 10px;
-    }
-    .v3-top__pick select {
-      min-width: 260px;
-      max-width: 380px;
-      font-weight: 500;
     }
     .v3-card {
       background: var(--ar-white);
@@ -1355,10 +1348,6 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
       .v3 {
         padding: 1rem;
       }
-      .v3-top__pick select {
-        min-width: 0;
-        max-width: 200px;
-      }
       .v3-warn {
         flex-direction: column;
         align-items: flex-start;
@@ -1380,16 +1369,18 @@ export class Vendor360Component {
   protected readonly tabs = TABS;
   protected readonly inr = inr;
 
-  /** The picker: every supplier (live), or the sample ones. */
-  readonly suppliers = signal<{ id: string; name: string; detail: string | null }[]>(
-    environment.useMockData
-      ? MOCK_VENDORS_360.map((v) => ({
-          id: v.id ?? '',
-          name: v.name,
-          detail: [v.city, v.state].filter(Boolean).join(', ') || null,
-        }))
-      : [],
-  );
+  /** Sample suppliers for the finder (mock data); live, the finder searches the server. */
+  protected readonly mockSuppliers: Vendor360SupplierDto[] | null = environment.useMockData
+    ? MOCK_VENDORS_360.map((v) => ({
+        id: v.id ?? '',
+        name: v.name,
+        gstin: v.gstin,
+        phone: v.phone,
+        isActive: true,
+      }))
+    : null;
+  /** False once the server has said there is no supplier at all. */
+  readonly hasSuppliers = signal(true);
   readonly currentVendorId = signal<string>('');
   /** The open tab, kept in the URL (`?tab=`) so the way back from a record lands on it again. */
   readonly activeTab = signal<VendorTab>(readTab(this.route.snapshot.queryParamMap.get('tab')));
@@ -1479,7 +1470,6 @@ export class Vendor360Component {
         this.openFirstSupplier();
       }
     });
-    if (!environment.useMockData) this.loadSuppliers();
   }
 
   /** Picking a supplier opens their own cockpit URL, so the way back from other screens returns to them. */
@@ -1542,38 +1532,31 @@ export class Vendor360Component {
     }
   }
 
-  private loadSuppliers() {
+  /** The bare /purchasing/vendor-360 opens the first supplier's cockpit (usable ones first, then by name). */
+  private openFirstSupplier() {
+    const go = (id: string) =>
+      void this.router.navigate(['/purchasing/vendor-360', id], {
+        replaceUrl: true,
+        queryParamsHandling: 'preserve',
+      });
+    if (environment.useMockData) {
+      if (MOCK_VENDORS_360[0]?.id) go(MOCK_VENDORS_360[0].id);
+      return;
+    }
     this.vendor360Service
-      .getSuppliers()
+      .getSupplierMatches(null, 1)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (list) => {
-          this.suppliers.set(
-            list.map((s) => ({
-              id: s.id ?? '',
-              name: s.name,
-              detail: s.isActive ? (s.gstin ?? null) : 'inactive',
-            })),
-          );
+        next: ([first]) => {
           this.loaded.set(true);
-          if (!this.currentVendorId()) this.openFirstSupplier();
+          this.hasSuppliers.set(!!first);
+          if (first?.id) go(first.id);
         },
         error: () => {
           this.loaded.set(true);
           this.loadError.set('Suppliers could not be loaded.');
         },
       });
-  }
-
-  /** The bare /purchasing/vendor-360 opens the first supplier's cockpit. */
-  private openFirstSupplier() {
-    const first = this.suppliers()[0];
-    if (first) {
-      void this.router.navigate(['/purchasing/vendor-360', first.id], {
-        replaceUrl: true,
-        queryParamsHandling: 'preserve',
-      });
-    }
   }
 
   private loadVendor(id: string) {

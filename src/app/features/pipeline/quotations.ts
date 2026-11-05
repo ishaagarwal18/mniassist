@@ -1,5 +1,4 @@
 import { PermissionService } from '@abp/ng.core';
-import { TemplateService } from '../../core/services/template.service';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,14 +8,15 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { grantedPolicy } from '../../core/auth/permission';
 import { PipelineStore, QState, Quotation } from '../../core/services/pipeline.service';
+import { readApiError } from '../../core/util/api-error';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip, ArDialog } from '../../ui';
-import { ArSelect } from '../../ui/select';
+import { ArButton, ArChip } from '../../ui';
 import { environment } from '../../../environments/environment';
 import {
   QuotationSignatureService,
@@ -24,7 +24,6 @@ import {
   SignatureRequestStatus,
 } from '../../proxy/pipeline';
 import { SIGNATURE_STATUS_LABEL } from '../signing/signing-logic';
-import { ArQuoteEditor } from './quote-editor';
 import { ArQuoteSignatureDialog } from './quote-signature-dialog';
 import { ChipTone } from '../../ui/chip';
 import { ConfirmService } from '../../core/ui/confirm.service';
@@ -46,7 +45,7 @@ const STATE_TONE: Record<QState, ChipTone> = {
  */
 @Component({
   selector: 'ar-quotations',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArQuoteEditor, ArQuoteSignatureDialog, ArSelect],
+  imports: [ArTopbar, ArButton, ArChip, ArQuoteSignatureDialog, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quotations.html',
   styleUrl: './quotations.scss',
@@ -57,12 +56,10 @@ export class ArQuotations {
   private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(PipelineStore);
   private readonly signatures = inject(QuotationSignatureService);
-  private readonly templateStore = inject(TemplateService);
 
   protected readonly canCreate = grantedPolicy('AutoReach.Quotations.Create', this.permissions);
   protected readonly canUpdate = grantedPolicy('AutoReach.Quotations.Update', this.permissions);
   protected readonly canDelete = grantedPolicy('AutoReach.Quotations.Delete', this.permissions);
-  protected readonly canIssuePolicy = grantedPolicy('AutoReach.Quotations.Issue', this.permissions);
 
   protected readonly quotes = this.store.quotes;
   protected readonly loading = this.store.loading;
@@ -119,44 +116,9 @@ export class ArQuotations {
     this.store.reloadQuotes();
   }
 
-  // ---- Line editor -----------------------------------------------------
-  protected readonly editingId = signal<string | null>(null);
-
-  protected editorClosed(saved: boolean): void {
-    this.editingId.set(null);
-    if (saved) this.store.reloadQuotes();
-  }
-
-  // ---- New quotation dialog -----------------------------------------
-  protected readonly dialogOpen = signal(false);
-  protected readonly saving = signal(false);
-  protected readonly error = signal<string | null>(null);
-  protected readonly enquiryOptions = signal<{ id: string; label: string }[]>([]);
-  protected readonly enquiryId = signal('');
-
-  protected openDialog(): void {
-    const opts = this.store.openEnquiryOptions();
-    this.enquiryOptions.set(opts);
-    this.enquiryId.set(opts[0]?.id ?? '');
-    this.error.set(null);
-    this.dialogOpen.set(true);
-  }
-
-  protected async createQuotation(): Promise<void> {
-    if (!this.enquiryId()) {
-      this.toasts.warning('Pick the enquiry this quotation is for.', 'Quotation');
-      return;
-    }
-    this.saving.set(true);
-    this.error.set(null);
-    try {
-      await this.store.createQuotation(this.enquiryId());
-      this.dialogOpen.set(false);
-    } catch (e: unknown) {
-      this.error.set(e instanceof Error ? e.message : 'The quotation could not be created.');
-    } finally {
-      this.saving.set(false);
-    }
+  /** Decided and expired quotations open read-only; the rest open to be edited (and issued) on their page. */
+  protected isRecord(q: Quotation): boolean {
+    return q.state === 'won' || q.state === 'lost' || q.state === 'expired';
   }
 
   protected readonly awaitingDecision = computed(
@@ -197,61 +159,6 @@ export class ArQuotations {
     return `in ${days}d`;
   }
 
-  // ---- Issue dialog -----------------------------------------------------
-  protected readonly issuing = signal<Quotation | null>(null);
-  protected readonly validDays = signal('30');
-  protected readonly issueSendWa = signal(true);
-  protected readonly issueTemplateId = signal('');
-  protected readonly issueError = signal<string | null>(null);
-  protected readonly issueNotice = signal<{ tone: 'good' | 'warn'; text: string } | null>(null);
-  /** Approved templates for when the customer's 24-hour window is closed (name, reference and total fill the variables). */
-  protected readonly issueTemplates = computed(() =>
-    this.templateStore.all().filter((t) => t.status === 'approved' && t.variableCount <= 3),
-  );
-
-  protected canIssue(q: Quotation): boolean {
-    return this.canIssuePolicy() && (q.state === 'draft' || q.state === 'revised');
-  }
-
-  protected openIssue(q: Quotation): void {
-    this.validDays.set('30');
-    this.issueSendWa.set(true);
-    this.issueTemplateId.set('');
-    this.issueError.set(null);
-    this.issuing.set(q);
-  }
-
-  protected async issue(): Promise<void> {
-    const q = this.issuing();
-    if (!q) return;
-    const days = Number(this.validDays());
-    if (!Number.isInteger(days) || days < 1 || days > 365) {
-      this.issueError.set('Valid for must be a whole number of days, 1 to 365.');
-      return;
-    }
-    this.busy.set(q.id);
-    this.issueError.set(null);
-    try {
-      const validUntil = new Date(Date.now() + days * 86_400_000).toISOString();
-      const result = await this.store.issueQuote(
-        q.id,
-        validUntil,
-        this.issueSendWa(),
-        this.issueSendWa() && this.issueTemplateId() ? this.issueTemplateId() : null,
-      );
-      this.issuing.set(null);
-      this.issueNotice.set(
-        result.note
-          ? { tone: result.sent ? 'good' : 'warn', text: `${q.reference} issued. ${result.note}` }
-          : { tone: 'good', text: `${q.reference} issued.` },
-      );
-    } catch (e: unknown) {
-      this.issueError.set(e instanceof Error ? e.message : 'The quotation could not be issued.');
-    } finally {
-      this.busy.set(null);
-    }
-  }
-
   protected async won(q: Quotation): Promise<void> {
     this.busy.set(q.id);
     try {
@@ -281,7 +188,12 @@ export class ArQuotations {
   protected async download(q: Quotation): Promise<void> {
     this.busy.set(q.id);
     try {
-      await this.store.downloadQuote(q.id);
+      await this.store.downloadQuote(q.id, q.reference);
+    } catch (e: unknown) {
+      this.toasts.error(
+        readApiError(e, `The PDF of ${q.reference} could not be made.`),
+        'Quotation',
+      );
     } finally {
       this.busy.set(null);
     }

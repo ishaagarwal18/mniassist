@@ -284,3 +284,16 @@
   flex-wrap: wrap;
   gap: 6px;
 }
+
+.dt__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.dt__link {
+  color: var(--ar-teal-600);
+  text-decoration: none;
+}
+.dt__link:hover {
+  text-decoration: underline;
+}

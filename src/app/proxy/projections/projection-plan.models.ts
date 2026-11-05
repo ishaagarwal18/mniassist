@@ -142,6 +142,10 @@ export interface PeriodQuarterlySummaryDto {
 }
 
 export interface ExecutiveProjectionDashboardDto {
+  /** False when the workspace has no plan yet; everything else is zero. */
+  hasPlan: boolean;
+  planId?: string | null;
+  planCode?: string | null;
   totalProjectedAnnualRevenueInPaise: number;
   totalProjectedAnnualRevenueInRupees: number;
   ytdActualRevenueInPaise: number;
@@ -155,4 +159,25 @@ export interface ExecutiveProjectionDashboardDto {
   forecastedYearEndLandingInRupees: number;
   businessLines: BusinessLineProjectionSummaryDto[];
   quarterlyTrajections: PeriodQuarterlySummaryDto[];
+}
+
+export interface GenerateProjectionPlanResultDto {
+  plan: ProjectionPlanDto;
+  trailingRevenueInPaise: number;
+  trailingInvoiceCount: number;
+  weightedPipelineInPaise: number;
+  openEnquiryCount: number;
+  usedPlaceholderBaseline: boolean;
+  /** The working, in a few sentences. */
+  steps: string[];
+}
+
+export interface SyncProjectionActualsResultDto {
+  plan: ProjectionPlanDto;
+  invoiceCount: number;
+  invoicedInPaise: number;
+  periodsWithActuals: number;
+  periodCount: number;
+  previousActualRevenueInPaise: number;
+  summary: string;
 }

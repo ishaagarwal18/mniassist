@@ -17,6 +17,12 @@ import type {
   SlotDto,
   SuggestSlotsInput,
   AttendeeResponse,
+  ActivityLinkDto,
+  ActivityMessagingSettingsDto,
+  ActivitySendResultDto,
+  SearchActivityLinksInput,
+  ShareActivityInput,
+  UpdateActivityMessagingSettingsInput,
 } from './activity.models';
 
 /** The workspace's active members, for choosing who does a task or who is in a meeting. */
@@ -101,6 +107,12 @@ export class CrmTaskService {
       { apiName: this.apiName, ...config },
     );
 
+  share = (id: string, input: ShareActivityInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ActivitySendResultDto>(
+      { method: 'POST', url: `/api/auto-reach/crm-task/${id}/share`, body: input },
+      { apiName: this.apiName, ...config },
+    );
+
   getSummary = (
     utcOffsetMinutes: number,
     assigneeUserId?: string | null,
@@ -120,6 +132,12 @@ export class CrmTaskService {
 export class MeetingService {
   private restService = inject(RestService);
   apiName = 'AutoReach';
+
+  share = (id: string, input: ShareActivityInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ActivitySendResultDto>(
+      { method: 'POST', url: `/api/auto-reach/meeting/${id}/share`, body: input },
+      { apiName: this.apiName, ...config },
+    );
 
   getList = (input: GetMeetingsInput, config?: Partial<Rest.Config>) =>
     this.restService.request<any, MeetingDto[]>(
@@ -205,6 +223,37 @@ export class MeetingService {
   getIcs = (id: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, IcsFileDto>(
       { method: 'GET', url: `/api/auto-reach/meeting/${id}/ics` },
+      { apiName: this.apiName, ...config },
+    );
+}
+
+@Injectable({ providedIn: 'root' })
+export class ActivityLinkService {
+  private restService = inject(RestService);
+  apiName = 'AutoReach';
+
+  search = (input: SearchActivityLinksInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ActivityLinkDto[]>(
+      {
+        method: 'GET',
+        url: '/api/auto-reach/activity-link/search',
+        params: { type: input.type, filter: input.filter, maxResultCount: input.maxResultCount },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getMessagingSettings = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ActivityMessagingSettingsDto>(
+      { method: 'GET', url: '/api/auto-reach/activity-link/messaging-settings' },
+      { apiName: this.apiName, ...config },
+    );
+
+  updateMessagingSettings = (
+    input: UpdateActivityMessagingSettingsInput,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, ActivityMessagingSettingsDto>(
+      { method: 'PUT', url: '/api/auto-reach/activity-link/messaging-settings', body: input },
       { apiName: this.apiName, ...config },
     );
 }

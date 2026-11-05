@@ -138,10 +138,13 @@ const TONE: Record<SignatureRequestStatus, ChipTone> = {
                 [value]="templateId()"
                 (change)="templateId.set($any($event.target).value)"
               >
-                <option value="">Send as a plain message (only inside the 24-hour window)</option>
+                <option value="">
+                  Send the PDF with the link (only inside the 24-hour window)
+                </option>
                 @for (t of templateChoices(); track t.id) {
                   <option [value]="t.id" [selected]="t.id === templateId()">
-                    {{ t.name }} · {{ t.language }}
+                    {{ t.name }} · {{ t.language }} ·
+                    {{ t.headerKind === 'document' ? 'attaches the PDF' : 'text only, no PDF' }}
                   </option>
                 }
               </select>
@@ -157,9 +160,10 @@ const TONE: Record<SignatureRequestStatus, ChipTone> = {
             <span>Ask the signer for a one-time code we email them (needs an email address)</span>
           </label>
           <p class="qs__note">
-            WhatsApp goes only to a customer who has agreed to be messaged, and outside the 24-hour
-            window it needs an approved template. If something cannot be sent, you are told why and
-            can still copy the link.
+            The quotation PDF goes with the link: attached to the email, and on WhatsApp as the
+            document (outside the 24-hour window only with a template that has a document header).
+            WhatsApp goes only to a customer who has agreed to be messaged. If something cannot be
+            sent, you are told why and can still copy the link.
           </p>
         </fieldset>
 

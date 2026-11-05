@@ -798,6 +798,13 @@ export const NAV: readonly NavGroup[] = [
         tenantOnly: true,
       },
       {
+        label: 'Tasks & meetings',
+        icon: 'bell',
+        route: '/settings/tasks-meetings',
+        permission: 'AutoReach.Activities',
+        tenantOnly: true,
+      },
+      {
         label: 'Shipping',
         icon: 'send',
         route: '/settings/shipping',

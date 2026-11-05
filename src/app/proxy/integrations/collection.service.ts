@@ -33,6 +33,8 @@ export interface CollectionSettingsDto {
   templateId?: string | null;
   creditDays: number;
   includePayLink: boolean;
+  /** Read only: the gateway pay links go through, or null when the workspace has none that can collect. */
+  payLinkGateway?: string | null;
 }
 
 /** Q4: overdue-invoice collections on WhatsApp. */

@@ -1,126 +1,179 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-  untracked,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { environment } from '../../../../environments/environment';
 import { PickerOption } from '../../../core/services/pipeline.service';
+import type { ProductDto } from '../../../proxy/library/product.service';
 import { SalesOrderStatus } from '../../../proxy/sales/sales-enums';
-import {
-  CreateSalesOrderDto,
-  CreateSalesOrderLineDto,
-  SalesOrderDto,
-} from '../../../proxy/sales/sales-order.models';
+import { CreateSalesOrderDto, SalesOrderDto } from '../../../proxy/sales/sales-order.models';
 import { SalesOrderService } from '../../../proxy/sales/sales-order.service';
 import { ArButton, ArDialog } from '../../../ui';
+import { ArSelect } from '../../../ui/select';
 import { errorMessage } from '../../activities/activity-logic';
-import { ArContactPicker } from '../../pipeline/contact-picker';
-
-type OrderLine = { partNumber: string; description: string; quantity: number; unitPrice: number };
-const blankLine = (): OrderLine => ({ partNumber: '', description: '', quantity: 1, unitPrice: 0 });
+import { ArCatalogueItem, CatalogueSearch } from '../catalogue-item';
+import { ArSalesCustomer, SalesCustomerChoice } from '../sales-customer';
+import { EMPTY_PARTY, SalesParty, defaultShipIndex, shipToText } from '../sales-party';
+import {
+  OrderLine,
+  blankLine,
+  editLine,
+  lineFromProduct,
+  toOrderLines,
+} from './new-sales-order.logic';
 
 /**
- * A new sales order: the customer, their PO, terms, the site address and the items. In a dialog on Sales orders, and the whole
- * page at /sales/orders/new (from an account's Customer 360). Emits the created order, or null when cancelled.
+ * A new sales order, shown as the page at /sales/orders/new (from Sales orders or Customer 360). The customer is an account and
+ * the contact person who placed the order (or a contact with no account); choosing them fills the billing and site addresses from
+ * the account, the site from its default shipping address. Each item's name searches the product catalogue: picking one fills
+ * the item number, description, HSN, price and GST. Emits the created order, or null when cancelled.
  */
 @Component({
   selector: 'ar-new-sales-order',
-  imports: [FormsModule, ArButton, ArDialog, ArContactPicker],
+  imports: [FormsModule, ArButton, ArDialog, ArSalesCustomer, ArCatalogueItem, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-dialog title="Create New Sales Order" (dismiss)="closed.emit(null)">
-      <div class="create-form">
-        <div class="form-row">
-          <div class="form-group flex-1">
-            <label>Customer *</label>
-            <ar-contact-picker [initial]="customer()" (picked)="customer.set($event)" />
-          </div>
-          <div class="form-group flex-1">
-            <label>Customer PO Number *</label>
+    <ar-dialog
+      title="Create New Sales Order"
+      width="min(920px, calc(100vw - 32px))"
+      (dismiss)="closed.emit(null)"
+    >
+      <div class="so">
+        <ar-sales-customer [initialCustomer]="initialCustomer()" (changed)="onCustomer($event)" />
+
+        <div class="so__grid">
+          <label class="ar-field" for="so-po">
+            <span class="ar-field__label">Customer PO number <span class="so__req">*</span></span>
             <input
+              id="so-po"
               type="text"
-              class="ar-input"
+              class="ar-field__input"
               [(ngModel)]="order.customerPoNumber"
               placeholder="e.g. PO-KF-1029"
             />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group flex-1">
-            <label>Payment Terms (Days)</label>
+          </label>
+          <label class="ar-field" for="so-days">
+            <span class="ar-field__label">Payment terms (days)</span>
             <input
+              id="so-days"
               type="number"
-              class="ar-input"
+              class="ar-field__input"
               [(ngModel)]="order.paymentTermsDays"
               placeholder="30"
             />
-          </div>
-          <div class="form-group flex-1">
-            <label>Delivery Terms</label>
+          </label>
+          <label class="ar-field so__wide" for="so-delivery">
+            <span class="ar-field__label">Delivery terms</span>
             <input
+              id="so-delivery"
               type="text"
-              class="ar-input"
+              class="ar-field__input"
               [(ngModel)]="order.deliveryTerms"
               placeholder="Ex-Works / FOR Destination"
             />
+          </label>
+
+          <label class="ar-field so__half" for="so-bill">
+            <span class="ar-field__label">Billing address</span>
+            <textarea
+              id="so-bill"
+              class="ar-field__input"
+              rows="3"
+              [value]="billingAddress()"
+              (input)="billingAddress.set($any($event.target).value)"
+            ></textarea>
+          </label>
+          <div class="ar-field so__half">
+            <label class="ar-field__label" for="so-ship">Shipping / Site address</label>
+            @if (party().shipTo.length) {
+              <select
+                class="ar-field__input"
+                aria-label="Ship to"
+                (change)="chooseShipTo(+$any($event.target).value)"
+              >
+                @for (s of party().shipTo; track $index; let i = $index) {
+                  <option [value]="i" [selected]="i === shipIndex()">
+                    {{ s.label }}{{ s.isDefault ? ' (default)' : '' }}
+                  </option>
+                }
+                <option [value]="-1" [selected]="shipIndex() === -1">Billing address</option>
+              </select>
+            }
+            <textarea
+              id="so-ship"
+              class="ar-field__input"
+              rows="3"
+              placeholder="Site delivery address"
+              [value]="shippingAddress()"
+              (input)="shippingAddress.set($any($event.target).value)"
+            ></textarea>
           </div>
         </div>
 
-        <div class="form-group">
-          <label>Shipping / Site Address</label>
-          <input
-            type="text"
-            class="ar-input"
-            [(ngModel)]="order.shippingAddress"
-            placeholder="Site delivery address"
-          />
-        </div>
-
-        <h4 class="section-title">Order Items</h4>
-        @for (item of lines; track $index) {
-          <div class="item-edit-row">
-            <input
-              type="text"
-              class="ar-input flex-2"
-              placeholder="Part Number"
-              [(ngModel)]="item.partNumber"
-            />
-            <input
-              type="text"
-              class="ar-input flex-3"
-              placeholder="Description"
-              [(ngModel)]="item.description"
-            />
-            <input
-              type="number"
-              class="ar-input flex-1"
-              placeholder="Qty"
-              [(ngModel)]="item.quantity"
-            />
-            <input
-              type="number"
-              class="ar-input flex-2"
-              placeholder="Price (₹)"
-              [(ngModel)]="item.unitPrice"
-            />
-            <button type="button" class="remove-btn" (click)="removeLine($index)">✕</button>
-          </div>
+        <h4 class="so__h">Order items</h4>
+        @if (catalogue.blocked()) {
+          <span class="ar-field__hint">
+            The product catalogue isn't available to your role: type the item number and
+            description.
+          </span>
         }
-
-        <div class="add-line-wrap">
-          <button type="button" class="add-line-btn" (click)="addLine()">+ Add line item</button>
+        <div class="so__lines">
+          <div class="so__line so__line--head" aria-hidden="true">
+            <span>Item name</span><span>Item no.</span><span>Description</span><span>Qty</span
+            ><span>Price ₹</span><span></span>
+          </div>
+          @for (l of lines(); track $index; let i = $index) {
+            <div class="so__line">
+              <ar-catalogue-item
+                [value]="l.itemName"
+                (typed)="patchLine(i, { itemName: $event })"
+                (picked)="pickItem(i, $event)"
+              />
+              <input
+                class="ar-field__input ar-mono"
+                aria-label="Item number"
+                placeholder="Item no."
+                [value]="l.partNumber"
+                (input)="patchLine(i, { partNumber: $any($event.target).value })"
+              />
+              <input
+                class="ar-field__input"
+                aria-label="Description"
+                placeholder="Description"
+                [value]="l.description"
+                (input)="patchLine(i, { description: $any($event.target).value })"
+              />
+              <input
+                type="number"
+                min="0"
+                class="ar-field__input so__num"
+                aria-label="Quantity"
+                [value]="l.quantity"
+                (input)="patchLine(i, { quantity: +$any($event.target).value })"
+              />
+              <input
+                type="number"
+                min="0"
+                class="ar-field__input so__num"
+                aria-label="Price in rupees"
+                [value]="l.unitPrice"
+                (input)="patchLine(i, { unitPrice: +$any($event.target).value })"
+              />
+              <button
+                type="button"
+                class="so__x"
+                aria-label="Remove item"
+                [disabled]="lines().length === 1"
+                (click)="removeLine(i)"
+              >
+                ✕
+              </button>
+            </div>
+          }
         </div>
+        <button type="button" class="so__add" (click)="addLine()">+ Add line item</button>
 
         @if (error(); as e) {
-          <p class="load-error" role="alert">{{ e }}</p>
+          <p class="so__error" role="alert">{{ e }}</p>
         }
       </div>
       <div dialogActions>
@@ -132,145 +185,199 @@ const blankLine = (): OrderLine => ({ partNumber: '', description: '', quantity:
     </ar-dialog>
   `,
   styles: `
-    .create-form {
+    .so {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 14px;
     }
-    .form-row {
+    .so__grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 14px;
+      align-items: start;
+    }
+    .so__wide {
+      grid-column: 1 / -1;
+    }
+    .so__half {
       display: flex;
-      gap: 1rem;
+      flex-direction: column;
+      gap: 6px;
     }
-    .flex-1 {
-      flex: 1;
+    .so__req {
+      color: var(--ar-bad-600);
     }
-    .flex-2 {
-      flex: 2;
-    }
-    .flex-3 {
-      flex: 3;
-    }
-    .form-group label {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-      color: var(--ar-ink-muted, #64748b);
-    }
-    .ar-input {
-      width: 100%;
-      padding: 0.5rem 0.75rem;
-      border-radius: 6px;
-      border: 1px solid var(--ar-line-strong, #cbd5e1);
-      background: var(--ar-surface, #ffffff);
-      color: var(--ar-ink-heavy, #0f172a);
-      font-size: 0.875rem;
-    }
-    .section-title {
-      font-size: 0.875rem;
-      font-weight: 700;
-      margin: 0;
+    .so__h {
+      margin: 4px 0 0;
+      font: 700 12px var(--ar-font-sans);
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: var(--ar-ink-muted, #64748b);
+      color: var(--ar-ink-500);
     }
-    .item-edit-row {
+    .so__lines {
       display: flex;
-      gap: 0.5rem;
-      align-items: center;
+      flex-direction: column;
+      gap: 8px;
     }
-    .remove-btn {
-      background: transparent;
-      border: none;
-      color: #ef4444;
-      font-size: 1rem;
+    .so__line {
+      display: grid;
+      grid-template-columns:
+        minmax(150px, 2fr) minmax(100px, 1.2fr) minmax(140px, 2.2fr)
+        70px 100px 32px;
+      gap: 8px;
+      align-items: start;
+    }
+    .so__line > input {
+      min-width: 0;
+    }
+    .so__line--head {
+      font: 600 11px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .so__num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .so__x {
+      height: 36px;
+      background: none;
+      border: 0;
+      color: var(--ar-ink-500);
       cursor: pointer;
-      padding: 0 0.5rem;
+      border-radius: var(--ar-radius-control);
     }
-    .add-line-btn {
-      background: transparent;
-      border: 1px dashed var(--ar-primary, #0284c7);
-      color: var(--ar-primary, #0284c7);
-      padding: 0.5rem;
-      border-radius: 6px;
-      width: 100%;
+    .so__x:hover:not(:disabled) {
+      color: var(--ar-bad-600);
+      background: var(--ar-red-100);
+    }
+    .so__x:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
+    .so__add {
+      align-self: flex-start;
+      background: none;
+      border: 1px dashed var(--ar-line-300);
+      border-radius: var(--ar-radius-control);
+      padding: 7px 12px;
+      font: 600 12.5px var(--ar-font-sans);
+      color: var(--ar-blue-600);
       cursor: pointer;
-      font-weight: 600;
-      font-size: 0.8125rem;
     }
-    .load-error {
+    .so__add:hover {
+      background: var(--ar-blue-100);
+    }
+    .so__error {
       margin: 0;
       padding: 0.75rem 1rem;
-      border: 1px solid var(--ar-bad-200, #fecaca);
+      border: 1px solid var(--ar-red-200);
       border-radius: 8px;
-      background: var(--ar-bad-50, #fef2f2);
-      color: var(--ar-bad-700, #b91c1c);
+      background: var(--ar-red-100);
+      color: var(--ar-bad-600);
+    }
+    @media (max-width: 760px) {
+      .so__grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .so__line {
+        grid-template-columns: 1fr 1fr;
+      }
+      .so__line--head {
+        display: none;
+      }
     }
   `,
 })
 export class ArNewSalesOrder {
   private readonly orderService = inject(SalesOrderService);
+  protected readonly catalogue = inject(CatalogueSearch);
 
-  /** The customer to start with: picked on Sales orders, or passed from an account's Customer 360. */
+  /** The customer to start with: a contact passed from Customer 360 or a list showing one customer. */
   readonly initialCustomer = input<PickerOption | null>(null);
   readonly closed = output<SalesOrderDto | null>();
 
-  protected readonly customer = signal<PickerOption | null>(null);
+  protected readonly choice = signal<SalesCustomerChoice | null>(null);
+  protected readonly party = signal<SalesParty>(EMPTY_PARTY);
+  protected readonly billingAddress = signal('');
+  protected readonly shippingAddress = signal('');
+  protected readonly shipIndex = signal(-1);
+  protected readonly lines = signal<OrderLine[]>([blankLine()]);
+
   protected readonly error = signal<string | null>(null);
   protected readonly creating = signal(false);
   protected order = {
     customerPoNumber: '',
     paymentTermsDays: 30,
     deliveryTerms: 'Ex-Works',
-    shippingAddress: '',
   };
-  protected lines: OrderLine[] = [blankLine()];
 
-  private readonly applyInitialCustomer = effect(() => {
-    const c = this.initialCustomer();
-    untracked(() => this.customer.set(c));
-  });
+  /** A new customer choice; a new account (or none) refills the billing and site addresses from it. */
+  protected onCustomer(choice: SalesCustomerChoice): void {
+    this.choice.set(choice);
+    this.error.set(null);
+    if (choice.party !== this.party()) {
+      this.party.set(choice.party);
+      this.billingAddress.set(choice.party.billingAddress);
+      this.chooseShipTo(defaultShipIndex(choice.party));
+    }
+  }
+
+  protected chooseShipTo(index: number): void {
+    this.shipIndex.set(index);
+    this.shippingAddress.set(shipToText(this.party(), index));
+  }
+
+  // ---- Items ---------------------------------------------------------------------
+
+  protected patchLine(index: number, patch: Partial<OrderLine>): void {
+    this.lines.update((ls) => ls.map((l, i) => (i === index ? editLine(l, patch) : l)));
+  }
 
   protected addLine(): void {
-    this.lines.push(blankLine());
+    this.lines.update((ls) => [...ls, blankLine()]);
   }
 
   protected removeLine(index: number): void {
-    if (this.lines.length > 1) this.lines.splice(index, 1);
+    this.lines.update((ls) => (ls.length > 1 ? ls.filter((_, i) => i !== index) : ls));
   }
 
+  protected pickItem(index: number, p: ProductDto): void {
+    this.lines.update((ls) => ls.map((l, i) => (i === index ? lineFromProduct(p, l) : l)));
+  }
+
+  // ---- Save ----------------------------------------------------------------------
+
   protected submit(): void {
-    const customer = this.customer();
+    const choice = this.choice();
+    const customer = choice?.customer;
     if (!customer) {
-      this.error.set('Pick the customer this order is for.');
+      this.error.set(
+        choice?.mode !== 'contact'
+          ? 'Choose the account and the contact person who placed this order.'
+          : 'Pick the customer this order is for.',
+      );
       return;
     }
-    if (!this.order.customerPoNumber) {
+    if (!this.order.customerPoNumber.trim()) {
       this.error.set('Enter the customer PO number.');
       return;
     }
-
-    const lines: CreateSalesOrderLineDto[] = this.lines
-      .filter((l) => l.partNumber && l.quantity > 0)
-      .map((l) => ({
-        partNumber: l.partNumber,
-        description: l.description || l.partNumber,
-        quantity: l.quantity,
-        unitPriceInPaise: Math.round(l.unitPrice * 100),
-        discountPercent: 0,
-        taxRateBasisPoints: 1800,
-      }));
+    const lines = toOrderLines(this.lines());
     if (lines.length === 0) {
-      this.error.set('Add at least one line with a part number and quantity.');
+      this.error.set('Add at least one item with an item number and quantity.');
       return;
     }
 
     const input: CreateSalesOrderDto = {
       customerId: customer.id,
-      customerPoNumber: this.order.customerPoNumber,
+      customerAccountId: choice.accountId ?? undefined,
+      customerPoNumber: this.order.customerPoNumber.trim(),
       paymentTermsDays: this.order.paymentTermsDays,
       deliveryTerms: this.order.deliveryTerms,
-      shippingAddress: this.order.shippingAddress,
+      billingAddress: this.billingAddress().trim() || undefined,
+      shippingAddress: this.shippingAddress().trim() || undefined,
       discountInPaise: 0,
       lines,
     };
@@ -308,6 +415,7 @@ function mockOrder(input: CreateSalesOrderDto, customerName: string): SalesOrder
     status: SalesOrderStatus.Draft,
     paymentTermsDays: input.paymentTermsDays,
     deliveryTerms: input.deliveryTerms,
+    billingAddress: input.billingAddress,
     shippingAddress: input.shippingAddress,
     orderDateUtc: new Date().toISOString(),
     subtotalInPaise: subtotal,
@@ -321,10 +429,11 @@ function mockOrder(input: CreateSalesOrderDto, customerName: string): SalesOrder
       lineNumber: i + 1,
       partNumber: l.partNumber,
       description: l.description,
+      hsnCode: l.hsnCode,
       quantity: l.quantity,
       unitPriceInPaise: l.unitPriceInPaise,
       discountPercent: 0,
-      taxRateBasisPoints: 1800,
+      taxRateBasisPoints: l.taxRateBasisPoints,
       lineTotalInPaise: l.quantity * l.unitPriceInPaise,
       dispatchedQuantity: 0,
       invoicedQuantity: 0,

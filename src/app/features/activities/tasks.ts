@@ -23,6 +23,7 @@ import {
   groupTasks,
   utcOffsetMinutes,
 } from './activity-logic';
+import { ArActivityShareDialog } from './activity-share-dialog';
 import { ArTaskDialog } from './task-dialog';
 import { recurrenceLabel } from './recurrence';
 import { initialSearch } from '../../core/util/customer-scope';
@@ -33,7 +34,7 @@ import { initialSearch } from '../../core/util/customer-scope';
  */
 @Component({
   selector: 'ar-tasks',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSearchBox, ArTaskDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSearchBox, ArTaskDialog, ArActivityShareDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './tasks.html',
   styleUrl: './tasks.scss',
@@ -59,6 +60,8 @@ export class ArTasks {
   protected readonly quickTitle = signal('');
   protected readonly editing = signal<CrmTaskDto | null>(null);
   protected readonly creating = signal(false);
+  /** The task being shared with colleagues. */
+  protected readonly sharing = signal<CrmTaskDto | null>(null);
 
   private readonly tick = signal(0);
   /** Groups are worked out against this, refreshed with each load, so "today" is right whenever the list was read. */

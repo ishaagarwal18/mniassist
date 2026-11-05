@@ -11,10 +11,12 @@ import {
 import { firstValueFrom } from 'rxjs';
 
 import {
+  ActivityLinkDto,
   CreateUpdateCrmTaskDto,
   CrmTaskDto,
   CrmTaskStatus,
   RecurrenceFrequency,
+  ReminderChannels,
   TaskPriority,
 } from '../../proxy/activities';
 import { ArButton, ArDialog } from '../../ui';
@@ -31,7 +33,10 @@ import {
   nowLocalInput,
   pastTimeProblem,
 } from './activity-logic';
+import { ArActivityLinks } from './activity-links-editor';
+import { linksOf, toLinkInputs } from './activity-links.logic';
 import { ArRecurrencePicker } from './recurrence-picker';
+import { ArReminderChannels } from './reminder-channels';
 import { NO_REPEAT, RecurrenceDraft, recurrenceProblem, toDraft, toRecurrence } from './recurrence';
 import { ConfirmService } from '../../core/ui/confirm.service';
 
@@ -47,7 +52,15 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
 /** Making and changing a task. */
 @Component({
   selector: 'ar-task-dialog',
-  imports: [ArDialog, ArButton, ArRecurrencePicker, ArSelect, ArDateInput],
+  imports: [
+    ArDialog,
+    ArButton,
+    ArRecurrencePicker,
+    ArSelect,
+    ArDateInput,
+    ArActivityLinks,
+    ArReminderChannels,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog [title]="task() ? 'Edit task' : 'New task'" (dismiss)="closed.emit()">
@@ -130,6 +143,10 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
         </label>
       </div>
 
+      @if (due() && reminder() !== null) {
+        <ar-reminder-channels label="Remind them by" [(channels)]="channels" />
+      }
+
       @if (due()) {
         <ar-recurrence-picker [(draft)]="repeat" />
       } @else {
@@ -139,21 +156,7 @@ const REMINDERS: { label: string; minutes: number | null }[] = [
         </p>
       }
 
-      <label class="ar-field">
-        <span class="ar-field__label"
-          >About a deal <span class="ar-field__opt">optional</span></span
-        >
-        <select
-          id="task-enquiry"
-          class="ar-field__input"
-          (change)="enquiryId.set($any($event.target).value)"
-        >
-          <option value="" [selected]="!enquiryId()">Not about a deal</option>
-          @for (o of directory.enquiryOptions(); track o.id) {
-            <option [value]="o.id" [selected]="o.id === enquiryId()">{{ o.label }}</option>
-          }
-        </select>
-      </label>
+      <ar-activity-links [(links)]="links" />
 
       <label class="ar-field">
         <span class="ar-field__label">Notes <span class="ar-field__opt">optional</span></span>
@@ -242,7 +245,9 @@ export class ArTaskDialog implements OnInit {
   protected readonly priority = signal<TaskPriority>(TaskPriority.Normal);
   protected readonly assignee = signal('');
   protected readonly reminder = signal<number | null>(15);
-  protected readonly enquiryId = signal('');
+  /** What the task is about: contacts, accounts, leads, quotations, sales documents, campaigns, tickets. */
+  protected readonly links = signal<ActivityLinkDto[]>([]);
+  protected readonly channels = signal<ReminderChannels>(ReminderChannels.None);
   protected readonly repeat = signal<RecurrenceDraft>({ ...NO_REPEAT });
   protected readonly repeatProblem = computed(() =>
     this.due() ? recurrenceProblem(this.repeat(), false) : null,
@@ -264,11 +269,16 @@ export class ArTaskDialog implements OnInit {
       this.priority.set(t.priority ?? TaskPriority.Normal);
       this.assignee.set(t.assigneeUserId ?? '');
       this.reminder.set(t.reminderLeadMinutes ?? null);
-      this.enquiryId.set(t.enquiryId ?? '');
+      this.links.set(linksOf(t));
+      this.channels.set(t.reminderChannels ?? ReminderChannels.None);
       this.repeat.set(toDraft(t.recurrence));
     } else {
       this.assignee.set(this.directory.meId ?? '');
-      this.enquiryId.set(this.enquiryPreset() ?? '');
+      const preset = this.enquiryPreset();
+      if (preset) {
+        const label = this.directory.enquiryOptions().find((o) => o.id === preset)?.label;
+        this.links.set(linksOf({ enquiryId: preset, enquiryReference: label ?? 'This deal' }));
+      }
     }
     await this.directory.load();
     if (!this.assignee())
@@ -283,8 +293,9 @@ export class ArTaskDialog implements OnInit {
       dueAtUtc: due,
       priority: this.priority(),
       assigneeUserId: this.assignee() || null,
-      enquiryId: this.enquiryId() || null,
+      links: toLinkInputs(this.links()),
       reminderLeadMinutes: due ? this.reminder() : null,
+      reminderChannels: due && this.reminder() !== null ? this.channels() : ReminderChannels.None,
       // Sent as none rather than left out when it does not repeat, so turning repeating off is an instruction and not a silence.
       recurrence: due
         ? (toRecurrence(this.repeat()) ?? { frequency: RecurrenceFrequency.None })

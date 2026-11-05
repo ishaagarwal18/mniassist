@@ -65,7 +65,7 @@ import { ArDialog } from '../../ui/dialog';
         <p role="status">{{ notice() }}</p>
       }
       @if (createdRecord(); as record) {
-        <a ar-button variant="ghost" [routerLink]="record.path" [queryParams]="{ open: record.id }"
+        <a ar-button variant="ghost" [routerLink]="[record.path, record.id]"
           >Review created draft</a
         >
       }

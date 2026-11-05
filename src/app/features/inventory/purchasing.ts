@@ -13,6 +13,7 @@ import {
 } from '../../core/util/supplier-scope';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ArSupplierScopeBar } from '../purchasing/supplier-scope-bar';
+import { ArSupplierDirectory } from '../purchasing/suppliers/supplier-directory';
 import { InventoryService, StockLocationDto } from '../../proxy/inventory/inventory.service';
 import {
   PurchaseOrderDto,
@@ -106,6 +107,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
     ArSelect,
     ArDateInput,
     ArSupplierScopeBar,
+    ArSupplierDirectory,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -284,57 +286,11 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
           }
         }
         @case ('suppliers') {
-          @if (suppliers().length === 0) {
-            <p class="pu__hint">No suppliers yet. Add one with New supplier.</p>
-          } @else {
-            <div class="tbl">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Supplier</th>
-                    <th scope="col">GSTIN</th>
-                    <th scope="col">Contact</th>
-                    <th scope="col" class="num">Lead time</th>
-                    <th scope="col"><span class="sr">Actions</span></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (s of suppliers(); track s.id) {
-                    <tr [class.off]="!s.isActive">
-                      <td>
-                        <b>{{ s.name }}</b>
-                        @if (s.isBlacklisted) {
-                          <span class="sub pu__black" [title]="s.blacklistReason || ''"
-                            >Blacklisted</span
-                          >
-                        } @else if (!s.isActive) {
-                          <span class="sub">Not in use</span>
-                        }
-                      </td>
-                      <td class="ar-mono">{{ s.gstin || '—' }}</td>
-                      <td>
-                        @if (s.contactName) {
-                          {{ s.contactName }}
-                        }
-                        {{ s.phone || '' }}
-                        @if (s.email) {
-                          <span class="sub">{{ s.email }}</span>
-                        }
-                      </td>
-                      <td class="num">{{ s.leadDays != null ? s.leadDays + ' days' : '—' }}</td>
-                      <td class="acts">
-                        @if (canManage()) {
-                          <button type="button" class="act" (click)="supplierPage(s.id)">
-                            Edit
-                          </button>
-                        }
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
+          <ar-supplier-directory
+            [canManage]="canManage()"
+            [local]="mockSuppliers"
+            (edit)="supplierPage($event)"
+          />
         }
       }
     </div>
@@ -725,10 +681,6 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
       font: 600 14px var(--ar-font-sans);
       font-variant-numeric: tabular-nums;
     }
-    .pu__black {
-      color: var(--ar-bad-600);
-      font-weight: 600;
-    }
     .pu__check {
       display: flex;
       gap: 8px;
@@ -770,6 +722,8 @@ export class ArPurchasing {
   protected readonly tab = signal<Tab>('orders');
   protected readonly orders = signal<PurchaseOrderDto[]>([]);
   protected readonly suppliers = signal<SupplierDto[]>([]);
+  /** Sample suppliers for the Suppliers tab (mock data); live, it pages through the server. */
+  protected readonly mockSuppliers = environment.useMockData ? MOCK_SUPPLIERS : null;
   protected readonly suggestions = signal<ReorderSuggestionDto[]>([]);
   protected readonly locations = signal<StockLocationDto[]>([]);
   protected readonly busy = signal(false);

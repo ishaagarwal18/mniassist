@@ -371,8 +371,7 @@
                 @let o = c.recentOrders[0];
                 <a
                   class="highlight-row"
-                  routerLink="/sales/orders"
-                  [queryParams]="{ open: o.id }"
+                  [routerLink]="['/sales/orders', o.id]"
                   title="View order details"
                 >
                   <div class="highlight-label">
@@ -397,8 +396,7 @@
                 @let dc = c.recentChallans[0];
                 <a
                   class="highlight-row"
-                  routerLink="/sales/challans"
-                  [queryParams]="{ open: dc.id }"
+                  [routerLink]="['/sales/challans', dc.id]"
                   title="View challan details"
                 >
                   <div class="highlight-label">
@@ -420,8 +418,7 @@
                 @let inv = c.recentInvoices[0];
                 <a
                   class="highlight-row"
-                  routerLink="/sales/invoices"
-                  [queryParams]="{ open: inv.id }"
+                  [routerLink]="['/sales/invoices', inv.id]"
                   title="View invoice details"
                 >
                   <div class="highlight-label">
@@ -578,14 +575,7 @@
                     </ar-chip>
                   </td>
                   <td class="actions-col">
-                    <a
-                      ar-button
-                      variant="ghost"
-                      routerLink="/sales/orders"
-                      [queryParams]="{ open: o.id }"
-                    >
-                      Open
-                    </a>
+                    <a ar-button variant="ghost" [routerLink]="['/sales/orders', o.id]"> Open </a>
                     <a
                       ar-button
                       variant="ghost"
@@ -677,12 +667,7 @@
                     </ar-chip>
                   </td>
                   <td class="actions-col">
-                    <a
-                      ar-button
-                      variant="ghost"
-                      routerLink="/sales/challans"
-                      [queryParams]="{ open: dc.id }"
-                    >
+                    <a ar-button variant="ghost" [routerLink]="['/sales/challans', dc.id]">
                       View
                     </a>
                     <a
@@ -783,12 +768,7 @@
                     </ar-chip>
                   </td>
                   <td class="actions-col">
-                    <a
-                      ar-button
-                      variant="ghost"
-                      routerLink="/sales/invoices"
-                      [queryParams]="{ open: inv.id }"
-                    >
+                    <a ar-button variant="ghost" [routerLink]="['/sales/invoices', inv.id]">
                       View
                     </a>
                     <a

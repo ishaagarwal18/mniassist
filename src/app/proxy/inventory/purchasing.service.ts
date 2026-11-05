@@ -88,6 +88,47 @@ export interface ReorderSuggestionDto {
   lastSupplierName?: string | null;
 }
 
+export enum SupplierListStatus {
+  All = 0,
+  Active = 1,
+  NotInUse = 2,
+  Blacklisted = 3,
+}
+
+export enum SupplierListSort {
+  Name = 0,
+  OutstandingHighest = 1,
+  Newest = 2,
+}
+
+export interface GetSupplierListInput {
+  /** Words that must each be in the name, GSTIN, phone, email or contact person. */
+  filter?: string;
+  status?: SupplierListStatus;
+  /** Only suppliers with an unpaid bill balance. */
+  withDuesOnly?: boolean;
+  sort?: SupplierListSort;
+  skipCount?: number;
+  maxResultCount?: number;
+}
+
+export interface SupplierListItemDto extends SupplierDto {
+  /** Unpaid bill balances; null when the user may not see vendor bills. */
+  outstandingPayableInPaise?: number | null;
+}
+
+export interface SupplierListDto {
+  totalCount: number;
+  items: SupplierListItemDto[];
+  /** Suppliers matching the search in each status, whatever status is picked. */
+  allCount: number;
+  activeCount: number;
+  notInUseCount: number;
+  blacklistedCount: number;
+  /** Whether outstanding amounts (and the dues filter and sort) are available to this user. */
+  showsDues: boolean;
+}
+
 /** Suppliers, purchase orders and reorder suggestions (re-order portal add-on). */
 @Injectable({ providedIn: 'root' })
 export class PurchasingService {
@@ -102,6 +143,25 @@ export class PurchasingService {
         headers: { Accept: 'application/json' },
         url: `${this.base}/suppliers`,
         params: { activeOnly },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** One page of the supplier directory, searched and filtered on the server. */
+  getSupplierList = (input: GetSupplierListInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, SupplierListDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `${this.base}/supplier-list`,
+        params: {
+          filter: input.filter || undefined,
+          status: input.status,
+          withDuesOnly: input.withDuesOnly,
+          sort: input.sort,
+          skipCount: input.skipCount,
+          maxResultCount: input.maxResultCount,
+        },
       },
       { apiName: this.apiName, ...config },
     );

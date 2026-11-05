@@ -6,6 +6,7 @@ import { firstValueFrom, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   CreateUpdateEnquiryDto,
+  CreateUpdateQuotationDto,
   CreateUpdateInstalledAssetDto,
   DealScoreBand,
   EnquiryBoardColumnDto,
@@ -15,6 +16,7 @@ import {
   EnquiryService,
   EnquiryStage,
   InstalledAssetDto,
+  IssueQuotationInput,
   InstalledAssetService,
   LostReasonCategory,
   PipelineStageDto,
@@ -788,18 +790,24 @@ export class PipelineStore {
     };
   }
 
-  /** Issues a draft or revised quotation; returns what happened on WhatsApp when that was asked for. */
+  /** Issues a quotation (a draft, or an issued one again as a revision); returns what happened on WhatsApp and by email. */
   async issueQuote(
     id: string,
-    validUntilIso: string,
-    sendOnWhatsApp: boolean,
-    templateId: string | null,
-  ): Promise<{ sent?: boolean | null; note?: string | null }> {
-    const dto = await firstValueFrom(
-      this.quotationApi.issue(id, { validUntilUtc: validUntilIso, sendOnWhatsApp, templateId }),
-    );
+    input: IssueQuotationInput,
+  ): Promise<{
+    sent?: boolean | null;
+    note?: string | null;
+    emailSent?: boolean | null;
+    emailNote?: string | null;
+  }> {
+    const dto = await firstValueFrom(this.quotationApi.issue(id, input));
     this.reload();
-    return { sent: dto.sentOnWhatsApp, note: dto.whatsAppNote };
+    return {
+      sent: dto.sentOnWhatsApp,
+      note: dto.whatsAppNote,
+      emailSent: dto.sentByEmail,
+      emailNote: dto.emailNote,
+    };
   }
 
   async markQuoteWon(id: string): Promise<void> {
@@ -812,8 +820,18 @@ export class PipelineStore {
     this.reload();
   }
 
-  async downloadQuote(id: string): Promise<string> {
-    return firstValueFrom(this.quotationApi.generatePdf(id));
+  /**
+   * Saves the quotation document to the user's computer: a draft as it stands, an issued one as it was sent. It is a PDF, or a
+   * printable HTML page when the server could not make a PDF.
+   */
+  async downloadQuote(id: string, reference: string): Promise<void> {
+    const blob = await firstValueFrom(this.quotationApi.downloadPdf(id));
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${reference || 'quotation'}.${blob.type.includes('html') ? 'html' : 'pdf'}`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   async recordService(id: string): Promise<void> {
@@ -933,24 +951,26 @@ export class PipelineStore {
     this.reload();
   }
 
-  async createQuotation(enquiryId: string): Promise<void> {
+  /** Creates a quotation (lines included) and returns it. A manual one gives a contact instead of an enquiry. */
+  async createQuotation(input: CreateUpdateQuotationDto): Promise<QuotationDto> {
     if (environment.useMockData) {
-      const newQ: Quotation = {
+      const created: QuotationDto = {
         id: 'q-' + Date.now(),
         reference: `QTN-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-        revision: 1,
-        state: 'draft',
-        totalInPaise: 50_000_00,
-        daysSinceIssue: 0,
-        issuedAt: new Date().toISOString().slice(0, 10),
+        state: QuotationState.Draft,
+        revisionNumber: 0,
+        enquiryId: input.enquiryId ?? undefined,
+        contactId: input.contactId ?? undefined,
+        priceListId: input.priceListId ?? null,
+        taxRateBasisPoints: input.taxRateBasisPoints ?? 1800,
+        lines: [],
       };
-      this.mockQuotes.update((list) => [newQ, ...list]);
-      return;
+      this.mockQuotes.update((list) => [quotation(created), ...list]);
+      return created;
     }
-    await firstValueFrom(
-      this.quotationApi.create({ enquiryId, lines: [], taxRateBasisPoints: 1800 }),
-    );
+    const created = await firstValueFrom(this.quotationApi.create(input));
     this.quotesResource.reload();
+    return created;
   }
 
   async deleteQuote(id: string): Promise<void> {

@@ -6,157 +6,28 @@ import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import { SalesOrderDto } from '../../../proxy/sales/sales-order.models';
 import { SalesOrderService } from '../../../proxy/sales/sales-order.service';
-import { SalesOrderStatus } from '../../../proxy/sales/sales-enums';
+import { SalesExportFormat, SalesOrderStatus } from '../../../proxy/sales/sales-enums';
 import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.service';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
-import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArButton, ArChip } from '../../../ui';
 import { ToastService } from '../../../core/ui/toast.service';
 import { CustomerScope, readCustomerScope } from '../../../core/util/customer-scope';
-import { PickerOption } from '../../../core/services/pipeline.service';
 import { errorMessage } from '../../activities/activity-logic';
-import { ArNewSalesOrder } from './new-sales-order';
-
-const MOCK_ORDERS: SalesOrderDto[] = [
-  {
-    id: 'so-1',
-    orderNumber: 'SO-2026-0041',
-    customerId: 'c1',
-    customerName: 'Kalyani Forge Ltd',
-    customerAccountId: 'acc1',
-    customerAccountName: 'Kalyani Group Pune',
-    customerPoNumber: 'PO-KF-9982',
-    customerPoDate: new Date(Date.now() - 5 * 86_400_000).toISOString(),
-    status: SalesOrderStatus.Confirmed,
-    paymentTermsDays: 30,
-    deliveryTerms: 'FOR Chakan Plant',
-    billingAddress: 'Gat No 12, Chakan MIDC, Pune 410501',
-    shippingAddress: 'Plant II, Chakan MIDC, Pune 410501',
-    orderDateUtc: new Date(Date.now() - 4 * 86_400_000).toISOString(),
-    expectedDeliveryDateUtc: new Date(Date.now() + 10 * 86_400_000).toISOString(),
-    confirmedAtUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-    subtotalInPaise: 420_000_00,
-    discountInPaise: 0,
-    taxInPaise: 75_600_00,
-    grandTotalInPaise: 495_600_00,
-    notes: 'Urgent hydraulic valve assembly for line 4 upgrade.',
-    creationTime: new Date(Date.now() - 4 * 86_400_000).toISOString(),
-    lines: [
-      {
-        id: 'sol-1',
-        salesOrderId: 'so-1',
-        lineNumber: 1,
-        partNumber: 'HV-400-P',
-        description: 'Proportional Directional Hydraulic Valve 350 Bar',
-        hsnCode: '84812000',
-        quantity: 4,
-        unitPriceInPaise: 85_000_00,
-        discountPercent: 0,
-        taxRateBasisPoints: 1800,
-        lineTotalInPaise: 340_000_00,
-        dispatchedQuantity: 0,
-        invoicedQuantity: 0,
-        outstandingDispatch: 4,
-        outstandingInvoice: 4,
-      },
-      {
-        id: 'sol-2',
-        salesOrderId: 'so-1',
-        lineNumber: 2,
-        partNumber: 'FK-HD-04',
-        description: 'High-pressure Filter Kit 10 Micron',
-        hsnCode: '84212900',
-        quantity: 8,
-        unitPriceInPaise: 10_000_00,
-        discountPercent: 0,
-        taxRateBasisPoints: 1800,
-        lineTotalInPaise: 80_000_00,
-        dispatchedQuantity: 0,
-        invoicedQuantity: 0,
-        outstandingDispatch: 8,
-        outstandingInvoice: 8,
-      },
-    ],
-  },
-  {
-    id: 'so-2',
-    orderNumber: 'SO-2026-0038',
-    customerId: 'c2',
-    customerName: 'Thermax Babcock Boiler Works',
-    customerAccountId: 'acc2',
-    customerAccountName: 'Thermax Industrial',
-    customerPoNumber: 'TB-PO-4411',
-    status: SalesOrderStatus.PartiallyDispatched,
-    paymentTermsDays: 45,
-    deliveryTerms: 'Ex-Works Bhosari',
-    orderDateUtc: new Date(Date.now() - 14 * 86_400_000).toISOString(),
-    expectedDeliveryDateUtc: new Date(Date.now() + 4 * 86_400_000).toISOString(),
-    confirmedAtUtc: new Date(Date.now() - 13 * 86_400_000).toISOString(),
-    subtotalInPaise: 180_000_00,
-    discountInPaise: 5_000_00,
-    taxInPaise: 31_500_00,
-    grandTotalInPaise: 206_500_00,
-    creationTime: new Date(Date.now() - 14 * 86_400_000).toISOString(),
-    lines: [
-      {
-        id: 'sol-3',
-        salesOrderId: 'so-2',
-        lineNumber: 1,
-        partNumber: 'ST-BRG-22',
-        description: 'Heavy duty ceramic bearing housing unit',
-        hsnCode: '84832000',
-        quantity: 10,
-        unitPriceInPaise: 18_000_00,
-        discountPercent: 2.78,
-        taxRateBasisPoints: 1800,
-        lineTotalInPaise: 175_000_00,
-        dispatchedQuantity: 5,
-        invoicedQuantity: 5,
-        outstandingDispatch: 5,
-        outstandingInvoice: 5,
-      },
-    ],
-  },
-  {
-    id: 'so-3',
-    orderNumber: 'SO-2026-0035',
-    customerId: 'c3',
-    customerName: 'Deccan Pumps & Compressors',
-    customerPoNumber: 'DPC-991',
-    status: SalesOrderStatus.Draft,
-    paymentTermsDays: 15,
-    deliveryTerms: 'Ex-Works',
-    orderDateUtc: new Date().toISOString(),
-    subtotalInPaise: 95_000_00,
-    discountInPaise: 0,
-    taxInPaise: 17_100_00,
-    grandTotalInPaise: 112_100_00,
-    creationTime: new Date().toISOString(),
-    lines: [
-      {
-        id: 'sol-4',
-        salesOrderId: 'so-3',
-        lineNumber: 1,
-        partNumber: 'CS-SEAL-90',
-        description: 'Mechanical Seal Cartridge SiC/SiC/Viton',
-        hsnCode: '84841000',
-        quantity: 5,
-        unitPriceInPaise: 19_000_00,
-        discountPercent: 0,
-        taxRateBasisPoints: 1800,
-        lineTotalInPaise: 95_000_00,
-        dispatchedQuantity: 0,
-        invoicedQuantity: 0,
-        outstandingDispatch: 5,
-        outstandingInvoice: 5,
-      },
-    ],
-  },
-];
+import {
+  canConfirmOrder,
+  canFulfilOrder,
+  listQuery,
+  newRecordQuery,
+  orderStatusLabel,
+  orderStatusTone,
+} from '../sales-records.logic';
+import { MOCK_ORDERS } from './orders.mock';
+import { ArSalesExport } from '../sales-export';
 
 @Component({
   selector: 'ar-sales-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArDialog, ArNewSalesOrder],
+  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArSalesExport],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -165,7 +36,13 @@ const MOCK_ORDERS: SalesOrderDto[] = [
       help="Sales Orders capture confirmed customer PO numbers, delivery terms, and line items. From here you can issue GST Delivery Challans or Commercial Invoices directly."
     >
       <div actions class="actions-row">
-        <button ar-button variant="primary" (click)="openCreateModal()">+ New Sales order</button>
+        <ar-sales-export
+          [fetch]="exportAll"
+          [fileName]="exportName()"
+          label="Export "
+          hint="Every order the filters show"
+        />
+        <button ar-button variant="primary" (click)="newOrder()">+ New Sales order</button>
       </div>
     </ar-topbar>
 
@@ -258,7 +135,7 @@ const MOCK_ORDERS: SalesOrderDto[] = [
           </thead>
           <tbody>
             @for (order of filteredOrders(); track order.id) {
-              <tr class="order-row" (click)="selectOrder(order)">
+              <tr class="order-row" (click)="openOrder(order)">
                 <td class="font-mono font-bold text-primary">{{ order.orderNumber }}</td>
                 <td>
                   <div class="cust-title">{{ order.customerName }}</div>
@@ -288,18 +165,15 @@ const MOCK_ORDERS: SalesOrderDto[] = [
                 </td>
                 <td class="actions-col" (click)="$event.stopPropagation()">
                   <div class="row-actions">
-                    <button class="action-btn" title="View details" (click)="selectOrder(order)">
+                    <button class="action-btn" title="View details" (click)="openOrder(order)">
                       View
                     </button>
-                    @if (order.status === SalesOrderStatus.Draft) {
+                    @if (canConfirm(order)) {
                       <button class="action-btn primary" (click)="confirmOrder(order)">
                         Confirm
                       </button>
                     }
-                    @if (
-                      order.status === SalesOrderStatus.Confirmed ||
-                      order.status === SalesOrderStatus.PartiallyDispatched
-                    ) {
+                    @if (canFulfil(order)) {
                       <button
                         class="action-btn success"
                         title="Create Delivery Challan"
@@ -329,128 +203,6 @@ const MOCK_ORDERS: SalesOrderDto[] = [
         </table>
       </div>
     </div>
-
-    <!-- Order Detail Drawer / Modal -->
-    @if (selectedOrder(); as ord) {
-      <ar-dialog
-        [title]="'Sales Order: ' + ord.orderNumber + ' (' + ord.customerName + ')'"
-        (dismiss)="selectedOrder.set(null)"
-      >
-        <div class="detail-body">
-          <div class="meta-grid">
-            <div class="meta-item">
-              <span class="meta-lbl">Status</span>
-              <ar-chip [tone]="getStatusTone(ord.status)">{{ getStatusLabel(ord.status) }}</ar-chip>
-            </div>
-            <div class="meta-item">
-              <span class="meta-lbl">Customer PO</span>
-              <span class="meta-val font-mono">{{ ord.customerPoNumber || 'N/A' }}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-lbl">Payment Terms</span>
-              <span class="meta-val">{{
-                ord.paymentTermsDays ? ord.paymentTermsDays + ' days' : 'Advance'
-              }}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-lbl">Expected Delivery</span>
-              <span class="meta-val">{{
-                ord.expectedDeliveryDateUtc
-                  ? (ord.expectedDeliveryDateUtc | date: 'dd MMM yyyy')
-                  : 'TBD'
-              }}</span>
-            </div>
-            <div class="meta-item full">
-              <span class="meta-lbl">Shipping Address</span>
-              <span class="meta-val">{{ ord.shippingAddress || 'Default site address' }}</span>
-            </div>
-          </div>
-
-          <h4 class="section-title">Order Line Items</h4>
-          <table class="ar-table inner-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Part Number & Description</th>
-                <th>HSN</th>
-                <th class="num-col">Qty</th>
-                <th class="num-col">Unit Price</th>
-                <th class="num-col">Dispatched</th>
-                <th class="num-col">Invoiced</th>
-                <th class="num-col">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (l of ord.lines; track l.id) {
-                <tr>
-                  <td>{{ l.lineNumber }}</td>
-                  <td>
-                    <div class="font-bold">{{ l.partNumber }}</div>
-                    <div class="text-muted text-xs">{{ l.description }}</div>
-                  </td>
-                  <td class="font-mono text-xs">{{ l.hsnCode || '—' }}</td>
-                  <td class="num-col font-bold">{{ l.quantity }}</td>
-                  <td class="num-col">₹{{ l.unitPriceInPaise / 100 | number: '1.2-2' }}</td>
-                  <td class="num-col">{{ l.dispatchedQuantity }} / {{ l.quantity }}</td>
-                  <td class="num-col">{{ l.invoicedQuantity }} / {{ l.quantity }}</td>
-                  <td class="num-col font-bold">
-                    ₹{{ l.lineTotalInPaise / 100 | number: '1.2-2' }}
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-
-          <div class="totals-summary">
-            <div class="tot-row">
-              <span>Subtotal:</span>
-              <span>₹{{ ord.subtotalInPaise / 100 | number: '1.2-2' }}</span>
-            </div>
-            <div class="tot-row">
-              <span>GST Tax:</span>
-              <span>₹{{ ord.taxInPaise / 100 | number: '1.2-2' }}</span>
-            </div>
-            @if (ord.discountInPaise > 0) {
-              <div class="tot-row text-success">
-                <span>Discount:</span>
-                <span>-₹{{ ord.discountInPaise / 100 | number: '1.2-2' }}</span>
-              </div>
-            }
-            <div class="tot-row grand">
-              <span>Grand Total:</span>
-              <span class="font-bold">₹{{ ord.grandTotalInPaise / 100 | number: '1.2-2' }}</span>
-            </div>
-          </div>
-
-          <div class="drawer-actions">
-            @if (ord.status === SalesOrderStatus.Draft) {
-              <button ar-button variant="primary" (click)="confirmOrder(ord)">
-                Confirm Sales Order
-              </button>
-            }
-            @if (
-              ord.status === SalesOrderStatus.Confirmed ||
-              ord.status === SalesOrderStatus.PartiallyDispatched
-            ) {
-              <button ar-button variant="ghost" (click)="createChallan(ord)">
-                Create Delivery Challan
-              </button>
-              <button ar-button variant="primary" (click)="createInvoice(ord)">
-                Generate Sales Invoice
-              </button>
-            }
-            <button ar-button variant="ghost" (click)="viewCustomer360(ord.customerId)">
-              Customer 360 Dossier
-            </button>
-          </div>
-        </div>
-      </ar-dialog>
-    }
-
-    <!-- Create Order Dialog (the same form as the /sales/orders/new page) -->
-    @if (showCreateDialog()) {
-      <ar-new-sales-order [initialCustomer]="newOrderCustomer()" (closed)="orderCreated($event)" />
-    }
   `,
   styles: [
     `
@@ -619,71 +371,6 @@ const MOCK_ORDERS: SalesOrderDto[] = [
         padding: 3rem 1rem;
         color: var(--ar-ink-muted, #64748b);
       }
-      /* Detail drawer */
-      .detail-body {
-        padding: 1rem 0;
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-      }
-      .meta-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.75rem;
-        background: var(--ar-surface-sunken, #f8fafc);
-        padding: 1rem;
-        border-radius: 6px;
-      }
-      .meta-item.full {
-        grid-column: span 2;
-      }
-      .meta-lbl {
-        display: block;
-        font-size: 0.75rem;
-        color: var(--ar-ink-muted, #64748b);
-        margin-bottom: 0.25rem;
-      }
-      .meta-val {
-        font-size: 0.875rem;
-        font-weight: 500;
-      }
-      .section-title {
-        font-size: 0.875rem;
-        font-weight: 700;
-        margin: 0;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--ar-ink-muted, #64748b);
-      }
-      .inner-table {
-        border: 1px solid var(--ar-line, #e2e8f0);
-      }
-      .totals-summary {
-        margin-left: auto;
-        width: 260px;
-        display: flex;
-        flex-direction: column;
-        gap: 0.375rem;
-        padding: 0.75rem 0;
-      }
-      .tot-row {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.875rem;
-      }
-      .tot-row.grand {
-        font-size: 1.125rem;
-        border-top: 1px solid var(--ar-line, #e2e8f0);
-        padding-top: 0.5rem;
-        color: var(--ar-primary, #0284c7);
-      }
-      .drawer-actions {
-        display: flex;
-        gap: 0.75rem;
-        justify-content: flex-end;
-        padding-top: 1rem;
-        border-top: 1px solid var(--ar-line, #e2e8f0);
-      }
     `,
   ],
 })
@@ -703,12 +390,8 @@ export class ArSalesOrders {
   /** Demo rows only in mock mode; a real workspace sees its own orders or none. */
   orders = signal<SalesOrderDto[]>(environment.useMockData ? MOCK_ORDERS : []);
   loadError = signal<string | null>(null);
-  /** The customer the new order is for: a real contact, picked or passed as ?customer=. */
-  newOrderCustomer = signal<PickerOption | null>(null);
   searchQuery = signal<string>('');
   selectedStatus = signal<SalesOrderStatus | null>(null);
-  selectedOrder = signal<SalesOrderDto | null>(null);
-  showCreateDialog = signal<boolean>(false);
 
   filteredOrders = computed(() => {
     let list = this.orders();
@@ -728,24 +411,42 @@ export class ArSalesOrders {
     return list;
   });
 
+  /** Every order the list's customer, status and search match, not only the rows loaded. */
+  protected readonly exportAll = (format: SalesExportFormat) =>
+    this.orderService.export(
+      {
+        filter: this.searchQuery().trim() || undefined,
+        status: this.selectedStatus() ?? undefined,
+        customerId: this.scope()?.customerId ?? undefined,
+        customerAccountId: this.scope()?.accountId ?? undefined,
+      },
+      format,
+      { skipHandleError: true },
+    );
+  protected readonly exportName = () =>
+    ['Sales orders', this.scope()?.name, new Date().toISOString().slice(0, 10)]
+      .filter(Boolean)
+      .join(' ');
+
   constructor() {
-    this.loadOrders();
-    // ?new=1 opens the order form; &customer=<contact id>&customerName=… picks the customer.
+    // Older links: ?new=1 (with &customer=<contact id>&customerName=…) and ?open=<id> now have their own pages.
     const query = this.route.snapshot.queryParamMap;
-    if (query.get('new')) {
-      const customerId = query.get('customer');
-      this.openCreateModal(
-        customerId ? { id: customerId, label: query.get('customerName') || 'Customer' } : null,
-      );
-    }
-    // ?open=<id> (from Customer 360 and other links) opens that record's panel.
     const openId = query.get('open');
-    if (openId && !environment.useMockData) {
-      this.orderService.get(openId).subscribe({
-        next: (record) => {
-          if (record) this.selectedOrder.set(record);
+    if (query.get('new')) {
+      void this.router.navigate(['/sales/orders/new'], {
+        queryParams: {
+          customer: query.get('customer') || undefined,
+          customerName: query.get('customerName') || undefined,
         },
+        replaceUrl: true,
       });
+    } else if (openId) {
+      void this.router.navigate(['/sales/orders', openId], {
+        queryParams: listQuery(this.scope()),
+        replaceUrl: true,
+      });
+    } else {
+      this.loadOrders();
     }
   }
 
@@ -775,22 +476,18 @@ export class ArSalesOrders {
     }
   }
 
-  selectOrder(order: SalesOrderDto) {
-    this.selectedOrder.set(order);
+  /** The order's own page, keeping this list's customer so Back returns here. */
+  openOrder(order: SalesOrderDto) {
+    if (order.id)
+      void this.router.navigate(['/sales/orders', order.id], {
+        queryParams: listQuery(this.scope()),
+      });
   }
 
-  openCreateModal(customer: PickerOption | null = null) {
-    this.newOrderCustomer.set(customer);
-    this.showCreateDialog.set(true);
-  }
-
-  /** The order form closed: with the order it created, or null when cancelled. */
-  orderCreated(created: SalesOrderDto | null) {
-    this.showCreateDialog.set(false);
-    if (!created) return;
-    this.orders.update((list) => [created, ...list]);
-    if (!environment.useMockData)
-      this.toasts.success(`Sales order ${created.orderNumber} created.`);
+  newOrder() {
+    void this.router.navigate(['/sales/orders/new'], {
+      queryParams: newRecordQuery(this.scope()),
+    });
   }
 
   confirmOrder(order: SalesOrderDto) {
@@ -820,7 +517,7 @@ export class ArSalesOrders {
     }
     this.challanService.createFromSalesOrder(order.id).subscribe({
       next: (challan) => {
-        this.router.navigate(['/sales/challans'], { queryParams: { open: challan.id } });
+        this.router.navigate(['/sales/challans', challan.id]);
       },
       error: (e: unknown) =>
         this.toasts.error(
@@ -837,7 +534,7 @@ export class ArSalesOrders {
     }
     this.invoiceService.createFromSalesOrder(order.id).subscribe({
       next: (invoice) => {
-        this.router.navigate(['/sales/invoices'], { queryParams: { open: invoice.id } });
+        this.router.navigate(['/sales/invoices', invoice.id]);
       },
       error: (e: unknown) =>
         this.toasts.error(
@@ -846,56 +543,12 @@ export class ArSalesOrders {
     });
   }
 
-  viewCustomer360(customerId: string) {
-    this.router.navigate(['/contacts', customerId, '360']);
-  }
-
   private updateOrderInList(updated: SalesOrderDto) {
     this.orders.update((list) => list.map((o) => (o.id === updated.id ? updated : o)));
-    if (this.selectedOrder()?.id === updated.id) {
-      this.selectedOrder.set(updated);
-    }
   }
 
-  getStatusLabel(status: SalesOrderStatus): string {
-    switch (status) {
-      case SalesOrderStatus.Draft:
-        return 'Draft';
-      case SalesOrderStatus.Confirmed:
-        return 'Confirmed';
-      case SalesOrderStatus.InProduction:
-        return 'In Production';
-      case SalesOrderStatus.PartiallyDispatched:
-        return 'Partially Dispatched';
-      case SalesOrderStatus.Dispatched:
-        return 'Dispatched';
-      case SalesOrderStatus.Completed:
-        return 'Completed';
-      case SalesOrderStatus.Cancelled:
-        return 'Cancelled';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  getStatusTone(status: SalesOrderStatus): ChipTone {
-    switch (status) {
-      case SalesOrderStatus.Draft:
-        return 'neutral';
-      case SalesOrderStatus.Confirmed:
-        return 'teal';
-      case SalesOrderStatus.InProduction:
-        return 'amber';
-      case SalesOrderStatus.PartiallyDispatched:
-        return 'warn';
-      case SalesOrderStatus.Dispatched:
-        return 'good';
-      case SalesOrderStatus.Completed:
-        return 'good';
-      case SalesOrderStatus.Cancelled:
-        return 'bad';
-      default:
-        return 'neutral';
-    }
-  }
+  readonly getStatusLabel = orderStatusLabel;
+  readonly getStatusTone = orderStatusTone;
+  readonly canConfirm = canConfirmOrder;
+  readonly canFulfil = canFulfilOrder;
 }

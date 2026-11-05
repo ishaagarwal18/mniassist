@@ -20,6 +20,7 @@ import {
   MeetingKind,
   SlotDto,
 } from '../../proxy/activities';
+import { ActivityLinkDto, ActivityLinkType, ReminderChannels } from '../../proxy/activities';
 import { ArButton, ArDialog } from '../../ui';
 import {
   GOOGLE_MEET_NEW_URL,
@@ -31,7 +32,10 @@ import { ArDateInput } from '../../ui/date-input';
 import { ArSelect } from '../../ui/select';
 import { ActivityDirectory } from './activity-directory';
 import { ActivityGateway } from './activity-mock';
+import { ArActivityLinks } from './activity-links-editor';
+import { linksOf, toLinkInputs } from './activity-links.logic';
 import { ArRecurrencePicker } from './recurrence-picker';
+import { ArReminderChannels } from './reminder-channels';
 import { NO_REPEAT, RecurrenceDraft, recurrenceProblem, toRecurrence } from './recurrence';
 import {
   KIND_LABEL,
@@ -65,7 +69,15 @@ const REMINDERS: { label: string; minutes: number }[] = [
  */
 @Component({
   selector: 'ar-meeting-dialog',
-  imports: [ArDialog, ArButton, ArRecurrencePicker, ArSelect, ArDateInput],
+  imports: [
+    ArDialog,
+    ArButton,
+    ArRecurrencePicker,
+    ArSelect,
+    ArDateInput,
+    ArActivityLinks,
+    ArReminderChannels,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog
@@ -301,21 +313,26 @@ const REMINDERS: { label: string; minutes: number }[] = [
         }
       </div>
 
-      <label class="ar-field">
-        <span class="ar-field__label"
-          >About a deal <span class="ar-field__opt">optional</span></span
-        >
-        <select
-          id="mt-enquiry"
-          class="ar-field__input"
-          (change)="enquiryId.set($any($event.target).value)"
-        >
-          <option value="" [selected]="!enquiryId()">Not about a deal</option>
-          @for (o of directory.enquiryOptions(); track o.id) {
-            <option [value]="o.id" [selected]="o.id === enquiryId()">{{ o.label }}</option>
+      <ar-activity-links [(links)]="links" />
+
+      @if (reminder() > 0) {
+        <ar-reminder-channels label="Remind by" [(channels)]="channels">
+          @if (channels() !== 0) {
+            <label class="mt__customer">
+              <input
+                type="checkbox"
+                [disabled]="!hasCustomer()"
+                [checked]="remindCustomer() && hasCustomer()"
+                (change)="remindCustomer.set($any($event.target).checked)"
+              />
+              Remind the customer too
+              @if (!hasCustomer()) {
+                <span class="ar-field__opt">(link a contact or a lead first)</span>
+              }
+            </label>
           }
-        </select>
-      </label>
+        </ar-reminder-channels>
+      }
 
       <label class="ar-field">
         <span class="ar-field__label">Notes <span class="ar-field__opt">optional</span></span>
@@ -347,6 +364,12 @@ const REMINDERS: { label: string; minutes: number }[] = [
     </ar-dialog>
   `,
   styles: `
+    .mt__customer {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font: 400 13px var(--ar-font-sans);
+    }
     .mt__links {
       font: 400 11.5px/1.5 var(--ar-font-sans);
       color: var(--ar-ink-400);
@@ -550,7 +573,15 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
   protected readonly kind = signal<MeetingKind>(MeetingKind.InPerson);
   protected readonly where = signal('');
   protected readonly reminder = signal(15);
-  protected readonly enquiryId = signal('');
+  /** What the meeting is about; its first contact (or a lead's customer) is who "remind the customer" reaches. */
+  protected readonly links = signal<ActivityLinkDto[]>([]);
+  protected readonly channels = signal<ReminderChannels>(ReminderChannels.None);
+  protected readonly remindCustomer = signal(false);
+  protected readonly hasCustomer = computed(() =>
+    this.links().some(
+      (l) => l.type === ActivityLinkType.Contact || l.type === ActivityLinkType.Enquiry,
+    ),
+  );
   protected readonly attendees = signal<ReadonlySet<string>>(new Set());
   protected readonly guests = signal<{ name: string; email: string }[]>([]);
   protected readonly userFilter = signal('');
@@ -611,7 +642,9 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
       this.kind.set(m.kind ?? MeetingKind.InPerson);
       this.where.set(m.location ?? m.meetingUrl ?? '');
       this.reminder.set(m.reminderLeadMinutes ?? 15);
-      this.enquiryId.set(m.enquiryId ?? '');
+      this.links.set(linksOf(m));
+      this.channels.set(m.reminderChannels ?? ReminderChannels.None);
+      this.remindCustomer.set(!!m.remindCustomer);
       this.attendees.set(
         new Set((m.attendees ?? []).filter((a) => a.userId).map((a) => a.userId!)),
       );
@@ -624,7 +657,11 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
       this.start.set(
         toLocalInput((this.startPreset() ?? defaultMeetingStart(new Date())).toISOString()),
       );
-      this.enquiryId.set(this.enquiryPreset() ?? '');
+      const preset = this.enquiryPreset();
+      if (preset) {
+        const label = this.directory.enquiryOptions().find((o) => o.id === preset)?.label;
+        this.links.set(linksOf({ enquiryId: preset, enquiryReference: label ?? 'This deal' }));
+      }
     }
 
     await this.directory.load();
@@ -754,8 +791,11 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
       kind: this.kind(),
       location: where && !isLink ? where : null,
       meetingUrl: where && isLink ? where : null,
-      enquiryId: this.enquiryId() || null,
+      links: toLinkInputs(this.links()),
       reminderLeadMinutes: this.reminder(),
+      reminderChannels: this.reminder() > 0 ? this.channels() : ReminderChannels.None,
+      remindCustomer:
+        this.reminder() > 0 && this.channels() !== 0 && this.remindCustomer() && this.hasCustomer(),
       attendeeUserIds: [...this.attendees()].filter((id) => id !== this.directory.meId),
       guests: this.guests()
         .filter((g) => g.name.trim())

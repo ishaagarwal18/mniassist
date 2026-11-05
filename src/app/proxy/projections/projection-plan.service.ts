@@ -7,6 +7,8 @@ import type {
   GetProjectionPlanListInput,
   ProjectionPlanDto,
   ScenarioAnalysisResultDto,
+  GenerateProjectionPlanResultDto,
+  SyncProjectionActualsResultDto,
 } from './projection-plan.models';
 
 @Injectable({
@@ -91,7 +93,7 @@ export class ProjectionPlanService {
     input: GenerateProjectionPlanInput,
     config?: Partial<Rest.Config>,
   ) =>
-    this.restService.request<any, ProjectionPlanDto>(
+    this.restService.request<any, GenerateProjectionPlanResultDto>(
       {
         method: 'POST',
         headers: { Accept: 'application/json' },
@@ -111,19 +113,19 @@ export class ProjectionPlanService {
       { apiName: this.apiName, ...config },
     );
 
-  getExecutiveDashboard = (fiscalYear?: string, config?: Partial<Rest.Config>) =>
+  getExecutiveDashboard = (planId?: string | null, config?: Partial<Rest.Config>) =>
     this.restService.request<any, ExecutiveProjectionDashboardDto>(
       {
         method: 'GET',
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/projection-plan/executive-dashboard',
-        params: { fiscalYear },
+        params: { planId: planId ?? undefined },
       },
       { apiName: this.apiName, ...config },
     );
 
   syncActualsFromErp = (id: string, config?: Partial<Rest.Config>) =>
-    this.restService.request<any, ProjectionPlanDto>(
+    this.restService.request<any, SyncProjectionActualsResultDto>(
       {
         method: 'POST',
         headers: { Accept: 'application/json' },

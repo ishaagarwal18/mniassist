@@ -43,6 +43,17 @@ export class QuotationService {
       { apiName: this.apiName, ...config },
     );
 
+  downloadPdf = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, Blob>(
+      {
+        method: 'POST',
+        responseType: 'blob',
+        headers: { Accept: 'application/octet-stream' },
+        url: `/api/auto-reach/quotation/${id}/download-pdf`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
   generatePdf = (id: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, string>(
       {

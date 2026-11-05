@@ -47,3 +47,9 @@ export enum SalesPaymentMode {
   Card = 4,
   Other = 5,
 }
+
+/** The file a download comes as: the printed PDF (a register for a list) or an Excel workbook. */
+export enum SalesExportFormat {
+  Pdf = 0,
+  Excel = 1,
+}

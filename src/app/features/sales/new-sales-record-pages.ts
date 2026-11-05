@@ -14,10 +14,11 @@ import { ArNewSalesInvoice } from './invoices/new-sales-invoice';
 import { ArNewSalesOrder } from './orders/new-sales-order';
 
 /**
- * The New sales order / delivery challan / invoice pages (/sales/orders/new, /sales/challans/new, /sales/invoices/new): the
- * same form as the dialog on each list, shown as the page (AR_DIALOG_INLINE). `?customer=<contact id>&customerName=…` picks the
- * customer, as an account's Customer 360 does. Saved or cancelled, it returns to the Customer 360 it was opened from (its
- * breadcrumb leads there too), otherwise to the list, opening the new record.
+ * The New sales order / delivery challan / invoice pages (/sales/orders/new, /sales/challans/new, /sales/invoices/new): each
+ * form is written as a dialog and shown as the page (AR_DIALOG_INLINE). `?customer=<contact id>&customerName=…` picks the
+ * customer, as an account's Customer 360 and a list showing one customer do. Saved or cancelled, it returns to the Customer 360
+ * it was opened from (its breadcrumb leads there too); otherwise a saved record opens on its own page, a cancelled one returns
+ * to the list.
  */
 abstract class NewSalesRecordPage {
   private readonly router = inject(Router);
@@ -34,7 +35,7 @@ abstract class NewSalesRecordPage {
 
   protected finish(created: { id?: string } | null, message: string): void {
     if (created?.id) this.toasts.success(message);
-    const fallback = created?.id ? `${this.list}?open=${created.id}` : this.list;
+    const fallback = created?.id ? `${this.list}/${created.id}` : this.list;
     void this.router.navigateByUrl(this.origin.returnUrl(fallback));
   }
 }
