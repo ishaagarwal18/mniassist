@@ -24,6 +24,7 @@ import { ArBanner, ArButton, ArCard, ArChip, ArDialog } from '../../ui';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
 import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
+import { describeGroup, describePermission } from './permission-text';
 
 // Syncfusion checks the licence in each component's constructor, before ours runs.
 registerSyncfusionLicense();
@@ -44,7 +45,10 @@ export interface RoleTreeRow {
   id: string;
   parentId: string | null;
   name: string;
+  /** The raw permission key, shown only as a tooltip. */
   key: string;
+  /** One sentence on what the permission allows (empty for role and group rows). */
+  detail: string;
   isRole: boolean;
   isGroup: boolean;
   isPerm: boolean;
@@ -166,14 +170,16 @@ export interface RoleTreeRow {
               </ng-template>
             </e-column>
 
-            <e-column field="key" headerText="Permission key / Details" width="280">
+            <e-column field="detail" headerText="What it allows" width="340">
               <ng-template #template let-r>
                 @if (r.isRole) {
                   <span class="row-role__type">{{
                     r.isStatic ? 'System role' : 'Custom workspace role'
                   }}</span>
                 } @else if (!r.isGroup) {
-                  <span class="ar-mono perm__key">{{ r.key }}</span>
+                  <span class="perm__detail" [attr.title]="'Permission key: ' + r.key">{{
+                    r.detail
+                  }}</span>
                 }
               </ng-template>
             </e-column>
@@ -330,9 +336,12 @@ export interface RoleTreeRow {
       font-weight: 600;
       color: var(--ar-ink-900);
     }
-    .perm__key {
-      font-size: 11.5px;
-      color: var(--ar-ink-400);
+    .perm__detail {
+      display: block;
+      white-space: normal;
+      line-height: 1.4;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-500);
     }
     .perm__count {
       font: 600 12px var(--ar-font-mono);
@@ -458,6 +467,7 @@ export class ArAdminRoles {
         parentId: null,
         name: r.name,
         key: '',
+        detail: r.isStatic ? 'System role' : 'Custom workspace role',
         isRole: true,
         isGroup: false,
         isPerm: false,
@@ -474,20 +484,28 @@ export class ArAdminRoles {
           rows.push({
             id: groupId,
             parentId: roleRowId,
-            name: g.displayName ?? g.name ?? '',
+            name: describeGroup(g.name, g.displayName),
             key: '',
+            detail: '',
             isRole: false,
             isGroup: true,
             isPerm: false,
             roleName: r.name,
           });
+          const labels = new Map(g.permissions.map((p) => [p.name, p.displayName]));
           for (const p of g.permissions) {
             const parentPermId = p.parentName ? `${roleRowId}:perm:${p.parentName}` : groupId;
+            const text = describePermission(
+              p.name,
+              p.displayName,
+              p.parentName ? (labels.get(p.parentName) ?? p.parentName) : null,
+            );
             rows.push({
               id: `${roleRowId}:perm:${p.name}`,
               parentId: parentPermId,
-              name: p.displayName ?? p.name,
+              name: text.title,
               key: p.name,
+              detail: text.detail,
               isRole: false,
               isGroup: false,
               isPerm: true,

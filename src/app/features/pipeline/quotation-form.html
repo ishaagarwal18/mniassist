@@ -318,139 +318,142 @@
             }
           </div>
 
-          <div class="qe__scroll">
-            <table class="qe__tbl">
-              <thead>
-                <tr>
-                  <th>Part number</th>
-                  <th>Description</th>
-                  <th class="num">Qty</th>
-                  <th>Unit</th>
-                  <th class="num">Price ₹</th>
-                  <th class="num">Disc %</th>
-                  <th class="num">GST %</th>
-                  <th class="num">Line total</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (r of rows(); track r.key) {
-                  <tr>
-                    <td>
-                      <input
-                        class="ar-field__input ar-mono"
-                        aria-label="Part number"
-                        placeholder="optional"
-                        [disabled]="readOnly()"
-                        [value]="r.partNumber"
-                        (input)="edit(r.key, 'partNumber', $any($event.target).value)"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        class="ar-field__input"
-                        aria-label="Description"
-                        required
-                        [disabled]="readOnly()"
-                        [value]="r.description"
-                        (input)="edit(r.key, 'description', $any($event.target).value)"
-                      />
-                      <span class="qe__src" [class.qe__src--list]="r.fromList">
-                        {{ sourceLabel(r) }}
-                        @if (!r.fromList && r.partNumber.trim() && !readOnly()) {
-                          ·
-                          <button type="button" class="qe__link" (click)="useListPrice(r)">
-                            use list price
-                          </button>
-                        }
-                      </span>
-                      @if (below(r)) {
-                        <span class="qe__warn">
-                          Under the minimum order of {{ r.moq }} for this part.
-                        </span>
-                      }
-                      @if (discountedBy(r) > 0) {
-                        <span class="qe__hint">
-                          {{ money(discountedBy(r)) }} under the list price of
-                          {{ money(r.listPaise ?? 0) }}.
-                        </span>
-                      }
-                    </td>
-                    <td class="num">
-                      <input
-                        class="ar-field__input num"
-                        inputmode="decimal"
-                        aria-label="Quantity"
-                        required
-                        [disabled]="readOnly()"
-                        [value]="r.quantity"
-                        (input)="edit(r.key, 'quantity', $any($event.target).value)"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        class="ar-field__input"
-                        aria-label="Unit"
-                        [disabled]="readOnly()"
-                        [value]="r.unit"
-                        (input)="edit(r.key, 'unit', $any($event.target).value)"
-                      />
-                    </td>
-                    <td class="num">
-                      <input
-                        class="ar-field__input num"
-                        inputmode="decimal"
-                        aria-label="Unit price in rupees"
-                        [disabled]="readOnly()"
-                        [value]="r.price"
-                        (input)="edit(r.key, 'price', $any($event.target).value)"
-                      />
-                    </td>
-                    <td class="num">
-                      <input
-                        class="ar-field__input num"
-                        inputmode="decimal"
-                        aria-label="Discount percent"
-                        [disabled]="readOnly()"
-                        [value]="r.discount"
-                        (input)="edit(r.key, 'discount', $any($event.target).value)"
-                      />
-                    </td>
-                    <td class="num">
-                      <input
-                        class="ar-field__input num"
-                        inputmode="decimal"
-                        aria-label="GST percent"
-                        [attr.placeholder]="ratePct(taxRate())"
-                        [disabled]="readOnly()"
-                        [value]="r.tax"
-                        (input)="edit(r.key, 'tax', $any($event.target).value)"
-                      />
-                    </td>
-                    <td class="num qe__total">{{ money(lineTotal(r)) }}</td>
-                    <td>
-                      @if (!readOnly()) {
-                        <button
-                          type="button"
-                          class="qe__x"
-                          aria-label="Remove line"
-                          (click)="remove(r.key)"
-                        >
-                          ×
+          <ejs-grid
+            arGrid="quotation-lines"
+            [dataSource]="rows()"
+            aria-label="Quotation line items"
+            [arGridSearch]="false"
+            [arGridTools]="false"
+          >
+            <e-columns>
+              <e-column field="partNumber" headerText="Part number" width="140">
+                <ng-template #template let-r>
+                  <input
+                    class="ar-field__input ar-mono"
+                    aria-label="Part number"
+                    placeholder="optional"
+                    [disabled]="readOnly()"
+                    [value]="r.partNumber"
+                    (input)="edit(r.key, 'partNumber', $any($event.target).value)"
+                  />
+                </ng-template>
+              </e-column>
+              <e-column field="description" headerText="Description" minWidth="240">
+                <ng-template #template let-r>
+                  <div>
+                    <input
+                      class="ar-field__input"
+                      aria-label="Description"
+                      required
+                      [disabled]="readOnly()"
+                      [value]="r.description"
+                      (input)="edit(r.key, 'description', $any($event.target).value)"
+                    />
+                    <div class="qe__src" [class.qe__src--list]="r.fromList">
+                      {{ sourceLabel(r) }}
+                      @if (!r.fromList && r.partNumber.trim() && !readOnly()) {
+                        ·
+                        <button type="button" class="qe__link" (click)="useListPrice(r)">
+                          use list price
                         </button>
                       }
-                    </td>
-                  </tr>
-                } @empty {
-                  <tr>
-                    <td colspan="9" class="qe__note">
-                      No lines yet. Search the catalogue above, or add a line by hand.
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                    @if (below(r)) {
+                      <div class="qe__warn">
+                        Under the minimum order of {{ r.moq }} for this part.
+                      </div>
+                    }
+                    @if (discountedBy(r) > 0) {
+                      <div class="qe__hint">
+                        {{ money(discountedBy(r)) }} under the list price of
+                        {{ money(r.listPaise ?? 0) }}.
+                      </div>
+                    }
+                  </div>
+                </ng-template>
+              </e-column>
+              <e-column field="quantity" headerText="Qty" width="90" [textAlign]="'Right'">
+                <ng-template #template let-r>
+                  <input
+                    class="ar-field__input num"
+                    inputmode="decimal"
+                    aria-label="Quantity"
+                    required
+                    [disabled]="readOnly()"
+                    [value]="r.quantity"
+                    (input)="edit(r.key, 'quantity', $any($event.target).value)"
+                  />
+                </ng-template>
+              </e-column>
+              <e-column field="unit" headerText="Unit" width="80">
+                <ng-template #template let-r>
+                  <input
+                    class="ar-field__input"
+                    aria-label="Unit"
+                    [disabled]="readOnly()"
+                    [value]="r.unit"
+                    (input)="edit(r.key, 'unit', $any($event.target).value)"
+                  />
+                </ng-template>
+              </e-column>
+              <e-column field="price" headerText="Price ₹" width="110" [textAlign]="'Right'">
+                <ng-template #template let-r>
+                  <input
+                    class="ar-field__input num"
+                    inputmode="decimal"
+                    aria-label="Unit price in rupees"
+                    [disabled]="readOnly()"
+                    [value]="r.price"
+                    (input)="edit(r.key, 'price', $any($event.target).value)"
+                  />
+                </ng-template>
+              </e-column>
+              <e-column field="discount" headerText="Disc %" width="90" [textAlign]="'Right'">
+                <ng-template #template let-r>
+                  <input
+                    class="ar-field__input num"
+                    inputmode="decimal"
+                    aria-label="Discount percent"
+                    [disabled]="readOnly()"
+                    [value]="r.discount"
+                    (input)="edit(r.key, 'discount', $any($event.target).value)"
+                  />
+                </ng-template>
+              </e-column>
+              <e-column field="tax" headerText="GST %" width="90" [textAlign]="'Right'">
+                <ng-template #template let-r>
+                  <input
+                    class="ar-field__input num"
+                    inputmode="decimal"
+                    aria-label="GST percent"
+                    [attr.placeholder]="ratePct(taxRate())"
+                    [disabled]="readOnly()"
+                    [value]="r.tax"
+                    (input)="edit(r.key, 'tax', $any($event.target).value)"
+                  />
+                </ng-template>
+              </e-column>
+              <e-column headerText="Line total" width="130" [textAlign]="'Right'">
+                <ng-template #template let-r>
+                  <span class="num qe__total font-mono font-bold">{{ money(lineTotal(r)) }}</span>
+                </ng-template>
+              </e-column>
+              <e-column headerText="" width="50" freeze="Right">
+                <ng-template #template let-r>
+                  @if (!readOnly()) {
+                    <button
+                      type="button"
+                      class="qe__x"
+                      aria-label="Remove line"
+                      (click)="remove(r.key)"
+                    >
+                      ×
+                    </button>
+                  }
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
 
           <div class="qf__foot">
             <label class="qe__rate" for="quote-gst">
@@ -517,26 +520,31 @@
                 @if (changedLines().length === 0) {
                   <p class="qe__note">Every list-priced line is already at today's price.</p>
                 } @else {
-                  <table class="qe__tbl qe__tbl--small">
-                    <thead>
-                      <tr>
-                        <th>Part</th>
-                        <th class="num">Now</th>
-                        <th class="num">Would be</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (l of changedLines(); track l.lineId) {
-                        <tr>
-                          <td>
-                            <span class="ar-mono">{{ l.partNumber }}</span> {{ l.description }}
-                          </td>
-                          <td class="num">{{ money(l.oldUnitPriceInPaise ?? 0) }}</td>
-                          <td class="num">{{ money(l.newUnitPriceInPaise ?? 0) }}</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
+                  <ejs-grid
+                    arGrid="quotation-reprice-preview"
+                    [dataSource]="changedLines()"
+                    aria-label="Reprice preview"
+                    [arGridSearch]="false"
+                    [arGridTools]="false"
+                  >
+                    <e-columns>
+                      <e-column field="partNumber" headerText="Part" minWidth="180">
+                        <ng-template #template let-l>
+                          <span class="ar-mono">{{ l.partNumber }}</span> {{ l.description }}
+                        </ng-template>
+                      </e-column>
+                      <e-column headerText="Now" width="120" [textAlign]="'Right'">
+                        <ng-template #template let-l>
+                          <span class="num font-mono">{{ money(l.oldUnitPriceInPaise ?? 0) }}</span>
+                        </ng-template>
+                      </e-column>
+                      <e-column headerText="Would be" width="120" [textAlign]="'Right'">
+                        <ng-template #template let-l>
+                          <span class="num font-mono font-bold">{{ money(l.newUnitPriceInPaise ?? 0) }}</span>
+                        </ng-template>
+                      </e-column>
+                    </e-columns>
+                  </ejs-grid>
                   <p class="qe__note">
                     Subtotal {{ money(rp.oldSubtotalInPaise ?? 0) }} →
                     <strong>{{ money(rp.newSubtotalInPaise ?? 0) }}</strong>

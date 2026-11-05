@@ -19,7 +19,7 @@ import {
   VendorBillStatus,
   VendorPaymentMode,
 } from '../../../proxy/purchasing';
-import { ArButton, ArChip, ArIcon } from '../../../ui';
+import { ArButton, ArChip, ArIcon, ArDateInput, ArSelect } from '../../../ui';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../../ui/grid';
 import { PURCHASE_FORM_STYLES, isoDay } from '../purchase-form';
@@ -45,7 +45,7 @@ import {
  */
 @Component({
   selector: 'ar-bill-detail-page',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, DatePipe, RouterLink, ArGrid, GridModule],
+  imports: [ArTopbar, ArButton, ArChip, ArIcon, DatePipe, RouterLink, ArGrid, GridModule, ArDateInput, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

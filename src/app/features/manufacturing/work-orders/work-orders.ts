@@ -20,6 +20,7 @@ import { ArChip, ChipTone } from '../../../ui/chip';
 import { ArDialog } from '../../../ui/dialog';
 import { ArStatTile } from '../../../ui/stat-tile';
 import { ArGrid } from '../../../ui/grid';
+import { ArDateInput } from '../../../ui';
 import { GridModule, RecordClickEventArgs, RowSelectEventArgs } from '@syncfusion/ej2-angular-grids';
 
 const MOCK_WORK_ORDERS: WorkOrderDto[] = [
@@ -272,6 +273,7 @@ const MOCK_WORK_ORDERS: WorkOrderDto[] = [
     ArStatTile,
     ArGrid,
     GridModule,
+    ArDateInput,
   ],
   template: `
     <ar-topbar

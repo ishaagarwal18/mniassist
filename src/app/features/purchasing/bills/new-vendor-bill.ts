@@ -33,7 +33,7 @@ import {
   VendorBillStatus,
 } from '../../../proxy/purchasing';
 import { VendorBillReaderService } from '../../../proxy/purchasing';
-import { ArButton, ArIcon } from '../../../ui';
+import { ArButton, ArIcon, ArDateInput, ArSelect } from '../../../ui';
 import {
   ArPfSupplier,
   GST_RATES,
@@ -65,7 +65,7 @@ import {
  */
 @Component({
   selector: 'ar-new-vendor-bill-page',
-  imports: [ArTopbar, ArButton, ArIcon, ArPfSupplier],
+  imports: [ArTopbar, ArButton, ArIcon, ArPfSupplier, ArDateInput, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

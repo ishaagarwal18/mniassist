@@ -371,66 +371,53 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
 
       <!-- TAB 3: GSTR-3B RECONCILIATION -->
       <section *ngIf="activeTab() === 'gstr3b'" class="tab-content-container">
-        <div class="table-card">
-          <table class="statement-table">
-            <thead>
-              <tr>
-                <th>Statutory Heading (GSTR-3B Table)</th>
-                <th class="text-right">Total Taxable Value (₹)</th>
-                <th class="text-right">Integrated Tax IGST (₹)</th>
-                <th class="text-right">Central Tax CGST (₹)</th>
-                <th class="text-right">State Tax SGST (₹)</th>
-                <th class="text-right">Total Tax Payable (₹)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="fw-bold">3.1(a) Outward Taxable Supplies (Other than zero rated)</td>
-                <td class="text-right font-mono">
-                  ₹{{ gstr3b().outwardTaxableInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono">
-                  ₹{{ gstr1().totalIgstInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono">
-                  ₹{{ gstr1().totalCgstInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono">
-                  ₹{{ gstr1().totalSgstInPaise / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono fw-bold text-tax">
-                  ₹{{ gstr3b().outwardTaxPayableInPaise / 100 | number: '1.2-2' }}
-                </td>
-              </tr>
-              <tr class="itc-row">
-                <td class="fw-bold">4. Eligible Input Tax Credit (ITC) Available from GSTR-2B</td>
-                <td class="text-right font-mono">-</td>
-                <td class="text-right font-mono">
-                  ₹{{ (gstr3b().eligibleItcInPaise * 0.5) / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono">
-                  ₹{{ (gstr3b().eligibleItcInPaise * 0.25) / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono">
-                  ₹{{ (gstr3b().eligibleItcInPaise * 0.25) / 100 | number: '1.2-2' }}
-                </td>
-                <td class="text-right font-mono fw-bold text-success">
-                  ₹{{ gstr3b().eligibleItcInPaise / 100 | number: '1.2-2' }}
-                </td>
-              </tr>
-              <tr class="cash-payable-row">
-                <td class="fw-bold">5. Net Tax Payable in Cash (Electronic Cash Ledger Deposit)</td>
-                <td class="text-right font-mono">-</td>
-                <td class="text-right font-mono">-</td>
-                <td class="text-right font-mono">-</td>
-                <td class="text-right font-mono">-</td>
-                <td class="text-right font-mono fw-bold text-profit">
-                  ₹{{ gstr3b().netGstPayableInCashInPaise / 100 | number: '1.2-2' }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <ejs-grid
+          arGrid="gstr3b-reconciliation"
+          [dataSource]="gstr3bRows()"
+          aria-label="GSTR-3B Statutory Reconciliation"
+          [arGridSearch]="false"
+          [arGridTools]="false"
+        >
+          <e-columns>
+            <e-column field="heading" headerText="Statutory Heading (GSTR-3B Table)" minWidth="280">
+              <ng-template #template let-r>
+                <strong class="font-medium">{{ r.heading }}</strong>
+              </ng-template>
+            </e-column>
+            <e-column field="taxable" headerText="Total Taxable Value (₹)" width="180" [textAlign]="'Right'">
+              <ng-template #template let-r>
+                <span class="font-mono">{{ r.taxable != null ? ('₹' + (r.taxable | number: '1.2-2')) : '-' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="igst" headerText="Integrated Tax IGST (₹)" width="180" [textAlign]="'Right'">
+              <ng-template #template let-r>
+                <span class="font-mono">{{ r.igst != null ? ('₹' + (r.igst | number: '1.2-2')) : '-' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="cgst" headerText="Central Tax CGST (₹)" width="180" [textAlign]="'Right'">
+              <ng-template #template let-r>
+                <span class="font-mono">{{ r.cgst != null ? ('₹' + (r.cgst | number: '1.2-2')) : '-' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="sgst" headerText="State Tax SGST (₹)" width="180" [textAlign]="'Right'">
+              <ng-template #template let-r>
+                <span class="font-mono">{{ r.sgst != null ? ('₹' + (r.sgst | number: '1.2-2')) : '-' }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="totalTax" headerText="Total Tax Payable (₹)" width="190" [textAlign]="'Right'">
+              <ng-template #template let-r>
+                <strong
+                  class="font-mono"
+                  [class.text-tax]="r.type === 'outward'"
+                  [class.text-success]="r.type === 'itc'"
+                  [class.text-profit]="r.type === 'cash'"
+                >
+                  ₹{{ r.totalTax | number: '1.2-2' }}
+                </strong>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </section>
     </div>
 
@@ -852,6 +839,41 @@ export class GstComplianceComponent {
       netGstPayableInCashInPaise: netCash,
       electronicCreditLedgerBalanceInPaise: 0,
     };
+  });
+
+  readonly gstr3bRows = computed(() => {
+    const b = this.gstr3b();
+    const r1 = this.gstr1();
+    if (!b || !r1) return [];
+    return [
+      {
+        heading: '3.1(a) Outward Taxable Supplies (Other than zero rated)',
+        taxable: b.outwardTaxableInPaise / 100,
+        igst: r1.totalIgstInPaise / 100,
+        cgst: r1.totalCgstInPaise / 100,
+        sgst: r1.totalSgstInPaise / 100,
+        totalTax: b.outwardTaxPayableInPaise / 100,
+        type: 'outward',
+      },
+      {
+        heading: '4. Eligible Input Tax Credit (ITC) Available from GSTR-2B',
+        taxable: null,
+        igst: (b.eligibleItcInPaise * 0.5) / 100,
+        cgst: (b.eligibleItcInPaise * 0.25) / 100,
+        sgst: (b.eligibleItcInPaise * 0.25) / 100,
+        totalTax: b.eligibleItcInPaise / 100,
+        type: 'itc',
+      },
+      {
+        heading: '5. Net Tax Payable in Cash (Electronic Cash Ledger Deposit)',
+        taxable: null,
+        igst: null,
+        cgst: null,
+        sgst: null,
+        totalTax: b.netGstPayableInCashInPaise / 100,
+        type: 'cash',
+      },
+    ];
   });
 
   readonly EInvoiceStatus = EInvoiceStatus;

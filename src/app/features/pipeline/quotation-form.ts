@@ -35,6 +35,8 @@ import {
 } from '../../proxy/pipeline';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
 import { ChipTone } from '../../ui/chip';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 import { ArContactPicker } from './contact-picker';
 import { QuoteContext, QuoteEditorApi } from './quote-editor.api';
 import {
@@ -83,7 +85,7 @@ const STATE_LABEL: Record<QuotationState, { label: string; tone: ChipTone }> = {
  */
 @Component({
   selector: 'ar-quotation-form',
-  imports: [ArTopbar, ArButton, ArCard, ArChip, ArBanner, ArContactPicker],
+  imports: [ArTopbar, ArButton, ArCard, ArChip, ArBanner, ArContactPicker, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quotation-form.html',
   styleUrl: './quotation-form.scss',

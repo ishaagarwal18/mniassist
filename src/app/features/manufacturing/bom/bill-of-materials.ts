@@ -519,97 +519,95 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
         </div>
 
         <h4 class="section-heading">Bill of Materials Components</h4>
-        <div
-          class="ar-table-responsive"
-          tabindex="0"
-          role="region"
+        <ejs-grid
+          arGrid="bom-draft-items"
+          [dataSource]="newBom.items"
           aria-label="Component Input Table"
+          [arGridSearch]="false"
+          [arGridTools]="false"
         >
-          <table class="ar-table">
-            <caption class="sr-only">
-              Component Input Table
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Part No</th>
-                <th scope="col">Description</th>
-                <th scope="col" class="text-right">Qty</th>
-                <th scope="col">UOM</th>
-                <th scope="col" class="text-right">Scrap %</th>
-                <th scope="col">Routing Stage</th>
-                <th scope="col" class="text-right">Cost (₹)</th>
-                <th scope="col"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of newBom.items; let i = index">
-                <td>
-                  <input
-                    type="text"
-                    class="ar-field__input table-input"
-                    [(ngModel)]="item.componentPartNumber"
-                    placeholder="Part #"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    class="ar-field__input table-input"
-                    [(ngModel)]="item.componentDescription"
-                    placeholder="Description"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    class="ar-field__input table-input text-right"
-                    [(ngModel)]="item.quantityPerUnit"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    class="ar-field__input table-input input-xs"
-                    [(ngModel)]="item.unitOfMeasure"
-                    placeholder="NOS"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    class="ar-field__input table-input text-right input-xs"
-                    [(ngModel)]="item.scrapPercentage"
-                  />
-                </td>
-                <td>
-                  <select
-                    class="ar-field__input table-input input-sm"
-                    [(ngModel)]="item.routingStage"
-                  >
-                    <option [ngValue]="RoutingStage.MaterialKitting">Kitting</option>
-                    <option [ngValue]="RoutingStage.Machining">Machining</option>
-                    <option [ngValue]="RoutingStage.Fabrication">Fabrication</option>
-                    <option [ngValue]="RoutingStage.HeatTreatment">Heat Treat</option>
-                    <option [ngValue]="RoutingStage.Assembly">Assembly</option>
-                    <option [ngValue]="RoutingStage.FinalTesting">Testing</option>
-                  </select>
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    class="ar-field__input table-input text-right"
-                    [(ngModel)]="item.unitCostRupees"
-                  />
-                </td>
-                <td>
-                  <button ar-button variant="ghost" (click)="removeItem(i)" title="Remove item">
-                    ✕
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+          <e-columns>
+            <e-column field="componentPartNumber" headerText="Part No" width="130">
+              <ng-template #template let-item>
+                <input
+                  type="text"
+                  class="ar-field__input table-input"
+                  [(ngModel)]="item.componentPartNumber"
+                  placeholder="Part #"
+                />
+              </ng-template>
+            </e-column>
+            <e-column field="componentDescription" headerText="Description" minWidth="180">
+              <ng-template #template let-item>
+                <input
+                  type="text"
+                  class="ar-field__input table-input"
+                  [(ngModel)]="item.componentDescription"
+                  placeholder="Description"
+                />
+              </ng-template>
+            </e-column>
+            <e-column field="quantityPerUnit" headerText="Qty" width="90" [textAlign]="'Right'">
+              <ng-template #template let-item>
+                <input
+                  type="number"
+                  class="ar-field__input table-input text-right"
+                  [(ngModel)]="item.quantityPerUnit"
+                />
+              </ng-template>
+            </e-column>
+            <e-column field="unitOfMeasure" headerText="UOM" width="80">
+              <ng-template #template let-item>
+                <input
+                  type="text"
+                  class="ar-field__input table-input input-xs"
+                  [(ngModel)]="item.unitOfMeasure"
+                  placeholder="NOS"
+                />
+              </ng-template>
+            </e-column>
+            <e-column field="scrapPercentage" headerText="Scrap %" width="90" [textAlign]="'Right'">
+              <ng-template #template let-item>
+                <input
+                  type="number"
+                  class="ar-field__input table-input text-right input-xs"
+                  [(ngModel)]="item.scrapPercentage"
+                />
+              </ng-template>
+            </e-column>
+            <e-column field="routingStage" headerText="Routing Stage" width="140">
+              <ng-template #template let-item>
+                <select
+                  class="ar-field__input table-input input-sm"
+                  [(ngModel)]="item.routingStage"
+                >
+                  <option [ngValue]="RoutingStage.MaterialKitting">Kitting</option>
+                  <option [ngValue]="RoutingStage.Machining">Machining</option>
+                  <option [ngValue]="RoutingStage.Fabrication">Fabrication</option>
+                  <option [ngValue]="RoutingStage.HeatTreatment">Heat Treat</option>
+                  <option [ngValue]="RoutingStage.Assembly">Assembly</option>
+                  <option [ngValue]="RoutingStage.FinalTesting">Testing</option>
+                </select>
+              </ng-template>
+            </e-column>
+            <e-column field="unitCostRupees" headerText="Cost (₹)" width="110" [textAlign]="'Right'">
+              <ng-template #template let-item>
+                <input
+                  type="number"
+                  class="ar-field__input table-input text-right"
+                  [(ngModel)]="item.unitCostRupees"
+                />
+              </ng-template>
+            </e-column>
+            <e-column headerText="" width="60">
+              <ng-template #template let-item>
+                <button ar-button variant="ghost" (click)="removeItem(item)" title="Remove item">
+                  ✕
+                </button>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
         <button ar-button variant="ghost" (click)="addItem()">+ Add Component</button>
 
         <div class="dialog-actions">
@@ -1080,20 +1078,27 @@ export class BillOfMaterialsComponent {
   }
 
   addItem() {
-    this.newBom.items.push({
-      componentPartNumber: '',
-      componentDescription: '',
-      quantityPerUnit: 1,
-      unitOfMeasure: 'NOS',
-      scrapPercentage: 1,
-      routingStage: RoutingStage.Assembly,
-      unitCostRupees: 500,
-    });
+    this.newBom.items = [
+      ...this.newBom.items,
+      {
+        componentPartNumber: '',
+        componentDescription: '',
+        quantityPerUnit: 1,
+        unitOfMeasure: 'NOS',
+        scrapPercentage: 1,
+        routingStage: RoutingStage.Assembly,
+        unitCostRupees: 500,
+      },
+    ];
   }
 
-  removeItem(i: number) {
+  removeItem(target: number | any) {
     if (this.newBom.items.length > 1) {
-      this.newBom.items.splice(i, 1);
+      if (typeof target === 'number') {
+        this.newBom.items = this.newBom.items.filter((_, idx) => idx !== target);
+      } else {
+        this.newBom.items = this.newBom.items.filter((item) => item !== target);
+      }
     }
   }
 

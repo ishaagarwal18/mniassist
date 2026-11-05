@@ -13,7 +13,7 @@ import {
   JournalVoucherStatus,
   JournalVoucherType,
 } from '../../../proxy/finance';
-import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArButton, ArChip, ArDialog, ArDateInput, ArSelect, ChipTone } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
 
 const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
@@ -243,6 +243,8 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
     ArDialog,
     ArGrid,
     GridModule,
+    ArDateInput,
+    ArSelect,
   ],
   template: `
     <ar-topbar title="Journal Vouchers (Double-Entry General Ledger)">
@@ -507,56 +509,62 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
         </div>
 
         <h5 class="mt-4 mb-2">Double-Entry Ledger Lines</h5>
-        <table class="dialog-lines-table mb-3">
-          <thead>
-            <tr>
-              <th>Account Code</th>
-              <th>Debit (INR)</th>
-              <th>Credit (INR)</th>
-              <th>Narration</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let line of draftLines(); let i = index">
-              <td>
+        <ejs-grid
+          arGrid="journal-draft-lines"
+          [dataSource]="draftLines()"
+          aria-label="Double-Entry Ledger Lines"
+          [arGridSearch]="false"
+          [arGridTools]="false"
+          class="mb-3"
+        >
+          <e-columns>
+            <e-column field="accountCode" headerText="Account Code" width="160">
+              <ng-template #template let-line>
                 <input
                   type="text"
                   class="form-control input-sm"
                   [(ngModel)]="line.accountCode"
                   placeholder="Code (e.g. 1010)"
                 />
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="debitRupees" headerText="Debit (INR)" width="150" [textAlign]="'Right'">
+              <ng-template #template let-line>
                 <input
                   type="number"
                   class="form-control text-right input-sm"
                   [(ngModel)]="line.debitRupees"
                   (input)="recalculateDraftTotals()"
                 />
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="creditRupees" headerText="Credit (INR)" width="150" [textAlign]="'Right'">
+              <ng-template #template let-line>
                 <input
                   type="number"
                   class="form-control text-right input-sm"
                   [(ngModel)]="line.creditRupees"
                   (input)="recalculateDraftTotals()"
                 />
-              </td>
-              <td>
+              </ng-template>
+            </e-column>
+            <e-column field="lineNarration" headerText="Narration" minWidth="180">
+              <ng-template #template let-line>
                 <input
                   type="text"
                   class="form-control input-sm"
                   [(ngModel)]="line.lineNarration"
                   placeholder="Notes"
                 />
-              </td>
-              <td>
-                <button ar-button="ghost" class="btn-xs" (click)="removeDraftLine(i)">x</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </ng-template>
+            </e-column>
+            <e-column headerText="" width="60">
+              <ng-template #template let-line>
+                <button ar-button="ghost" class="btn-xs" (click)="removeDraftLine(line)">x</button>
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
 
         <div class="lines-actions-row">
           <button ar-button="ghost" (click)="addDraftLine()">+ Add Ledger Line</button>
@@ -1210,8 +1218,12 @@ export class JournalEntriesComponent {
     ]);
   }
 
-  removeDraftLine(index: number): void {
-    this.draftLines.update((lines) => lines.filter((_, i) => i !== index));
+  removeDraftLine(target: number | any): void {
+    this.draftLines.update((lines) =>
+      typeof target === 'number'
+        ? lines.filter((_, i) => i !== target)
+        : lines.filter((l) => l !== target),
+    );
   }
 
   recalculateDraftTotals(): void {

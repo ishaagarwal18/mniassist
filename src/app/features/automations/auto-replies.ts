@@ -9,7 +9,7 @@ import { AutoReplyService } from '../../proxy/messaging/auto-reply.service';
 import { CsatService } from '../../proxy/messaging/csat.service';
 import type { AutoReplySettingsDto, CsatSettingsDto } from '../../proxy/messaging/models';
 import { ArTopbar } from '../../layout/topbar';
-import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
+import { ArBanner, ArButton, ArCard, ArChip, ArSelect } from '../../ui';
 import {
   AutoReplyForm,
   EMPTY_FORM,
@@ -29,7 +29,7 @@ import {
  */
 @Component({
   selector: 'ar-auto-replies',
-  imports: [ArTopbar, ArCard, ArButton, ArBanner, ArChip],
+  imports: [ArTopbar, ArCard, ArButton, ArBanner, ArChip, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

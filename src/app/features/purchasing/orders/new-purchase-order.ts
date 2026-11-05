@@ -25,7 +25,7 @@ import {
   ReorderSuggestionDto,
 } from '../../../proxy/inventory/purchasing.service';
 import { ProductService } from '../../../proxy/library/product.service';
-import { ArButton, ArIcon } from '../../../ui';
+import { ArButton, ArIcon, ArDateInput, ArSelect } from '../../../ui';
 import { DraftLine, draftTotal, readLines } from '../../inventory/purchasing-logic';
 import {
   ArPfSupplier,
@@ -48,7 +48,7 @@ interface PartHit {
  */
 @Component({
   selector: 'ar-new-purchase-order-page',
-  imports: [ArTopbar, ArButton, ArIcon, ArPfSupplier],
+  imports: [ArTopbar, ArButton, ArIcon, ArPfSupplier, ArDateInput, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

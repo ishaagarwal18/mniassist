@@ -685,105 +685,51 @@ const MOCK_BALANCE_SHEET: BalanceSheetResultDto = {
           </div>
         </div>
 
-        <div class="table-card">
-          <table class="statement-table">
-            <thead>
-              <tr>
-                <th>Financial Schedule / Ledger Account</th>
-                <th class="text-right">Amount (₹)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Revenue Section -->
-              <tr class="section-heading-row">
-                <td colspan="2">I. Operating Revenue</td>
-              </tr>
-              <tr *ngFor="let r of pnl().operatingRevenue">
-                <td class="indent-1">{{ r.accountCode }} - {{ r.accountName }}</td>
-                <td class="text-right font-mono">₹{{ r.amountInPaise / 100 | number: '1.2-2' }}</td>
-              </tr>
-              <tr *ngFor="let oi of pnl().otherIncome">
-                <td class="indent-1">{{ oi.accountCode }} - {{ oi.accountName }}</td>
-                <td class="text-right font-mono">
-                  ₹{{ oi.amountInPaise / 100 | number: '1.2-2' }}
-                </td>
-              </tr>
-              <tr class="subtotal-row">
-                <td class="fw-bold">Total Gross Revenue (A)</td>
-                <td class="text-right font-mono fw-bold">
-                  ₹{{ pnl().totalGrossRevenueInPaise / 100 | number: '1.2-2' }}
-                </td>
-              </tr>
-
-              <!-- COGS Section -->
-              <tr class="section-heading-row">
-                <td colspan="2">II. Cost of Goods Sold (COGS)</td>
-              </tr>
-              <tr *ngFor="let c of pnl().costOfGoodsSold">
-                <td class="indent-1">{{ c.accountCode }} - {{ c.accountName }}</td>
-                <td class="text-right font-mono">₹{{ c.amountInPaise / 100 | number: '1.2-2' }}</td>
-              </tr>
-              <tr class="subtotal-row">
-                <td class="fw-bold">Total Cost of Goods Sold (B)</td>
-                <td class="text-right font-mono fw-bold">
-                  ₹{{ pnl().totalCogsInPaise / 100 | number: '1.2-2' }}
-                </td>
-              </tr>
-
-              <!-- Gross Profit -->
-              <tr class="highlight-row">
-                <td class="fw-bold">GROSS PROFIT (A - B)</td>
-                <td class="text-right font-mono fw-bold text-success">
-                  ₹{{ pnl().grossProfitInPaise / 100 | number: '1.2-2' }}
-                </td>
-              </tr>
-
-              <!-- Operating Expenses Section -->
-              <tr class="section-heading-row">
-                <td colspan="2">III. Operating Expenses & Overheads</td>
-              </tr>
-              <tr *ngFor="let oe of pnl().operatingExpenses">
-                <td class="indent-1">{{ oe.accountCode }} - {{ oe.accountName }}</td>
-                <td class="text-right font-mono">
-                  ₹{{ oe.amountInPaise / 100 | number: '1.2-2' }}
-                </td>
-              </tr>
-              <tr class="subtotal-row">
-                <td class="fw-bold">Total Operating Overheads (C)</td>
-                <td class="text-right font-mono fw-bold">
-                  ₹{{ pnl().totalOperatingExpensesInPaise / 100 | number: '1.2-2' }}
-                </td>
-              </tr>
-
-              <!-- EBITDA -->
-              <tr class="highlight-row">
-                <td class="fw-bold">OPERATING PROFIT (EBITDA)</td>
-                <td class="text-right font-mono fw-bold text-debit">
-                  ₹{{ pnl().operatingProfitEbitdaInPaise / 100 | number: '1.2-2' }}
-                </td>
-              </tr>
-
-              <!-- Depreciation & Taxes -->
-              <tr class="section-heading-row">
-                <td colspan="2">IV. Depreciation & Provisions</td>
-              </tr>
-              <tr *ngFor="let dt of pnl().taxAndDepreciation">
-                <td class="indent-1">{{ dt.accountCode }} - {{ dt.accountName }}</td>
-                <td class="text-right font-mono">
-                  ₹{{ dt.amountInPaise / 100 | number: '1.2-2' }}
-                </td>
-              </tr>
-
-              <!-- Net Profit -->
-              <tr class="net-profit-row">
-                <td class="fw-bold">NET PROFIT AFTER TAX (PAT)</td>
-                <td class="text-right font-mono fw-bold text-profit">
-                  ₹{{ pnl().netProfitInPaise / 100 | number: '1.2-2' }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <ejs-grid
+          arGrid="pnl-statement"
+          [dataSource]="pnlStatementRows()"
+          aria-label="Profit & Loss Statement"
+          [arGridSearch]="false"
+          [arGridTools]="false"
+        >
+          <e-columns>
+            <e-column field="schedule" headerText="Financial Schedule / Ledger Account" minWidth="320">
+              <ng-template #template let-r>
+                @switch (r.type) {
+                  @case ('section') {
+                    <strong class="font-bold text-ink-900">{{ r.schedule }}</strong>
+                  }
+                  @case ('item') {
+                    <span class="indent-1 text-ink-700">{{ r.schedule }}</span>
+                  }
+                  @case ('subtotal') {
+                    <span class="fw-bold">{{ r.schedule }}</span>
+                  }
+                  @case ('highlight') {
+                    <span class="fw-bold text-debit">{{ r.schedule }}</span>
+                  }
+                  @case ('net-profit') {
+                    <span class="fw-bold text-profit">{{ r.schedule }}</span>
+                  }
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="amount" headerText="Amount (₹)" width="200" [textAlign]="'Right'">
+              <ng-template #template let-r>
+                @if (r.amount !== null) {
+                  <span
+                    class="font-mono"
+                    [class.fw-bold]="r.type !== 'item'"
+                    [class.text-profit]="r.type === 'net-profit'"
+                    [class.text-success]="r.type === 'highlight'"
+                  >
+                    ₹{{ r.amount | number: '1.2-2' }}
+                  </span>
+                }
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
       </section>
 
       <!-- TAB 3: BALANCE SHEET -->
@@ -1158,6 +1104,72 @@ export class FinancialStatementsComponent {
   readonly trialBalance = signal<TrialBalanceResultDto>(MOCK_TRIAL_BALANCE);
   readonly pnl = signal<ProfitAndLossResultDto>(MOCK_PNL);
   readonly balanceSheet = signal<BalanceSheetResultDto>(MOCK_BALANCE_SHEET);
+
+  readonly pnlStatementRows = computed(() => {
+    const p = this.pnl();
+    if (!p) return [];
+    return [
+      { schedule: 'I. Operating Revenue', amount: null, type: 'section' },
+      ...p.operatingRevenue.map((r) => ({
+        schedule: `${r.accountCode} - ${r.accountName}`,
+        amount: r.amountInPaise / 100,
+        type: 'item',
+      })),
+      ...p.otherIncome.map((oi) => ({
+        schedule: `${oi.accountCode} - ${oi.accountName}`,
+        amount: oi.amountInPaise / 100,
+        type: 'item',
+      })),
+      {
+        schedule: 'Total Gross Revenue (A)',
+        amount: p.totalGrossRevenueInPaise / 100,
+        type: 'subtotal',
+      },
+      { schedule: 'II. Cost of Goods Sold (COGS)', amount: null, type: 'section' },
+      ...p.costOfGoodsSold.map((c) => ({
+        schedule: `${c.accountCode} - ${c.accountName}`,
+        amount: c.amountInPaise / 100,
+        type: 'item',
+      })),
+      {
+        schedule: 'Total Cost of Goods Sold (B)',
+        amount: p.totalCogsInPaise / 100,
+        type: 'subtotal',
+      },
+      {
+        schedule: 'GROSS PROFIT (A - B)',
+        amount: p.grossProfitInPaise / 100,
+        type: 'highlight',
+      },
+      { schedule: 'III. Operating Expenses & Overheads', amount: null, type: 'section' },
+      ...p.operatingExpenses.map((oe) => ({
+        schedule: `${oe.accountCode} - ${oe.accountName}`,
+        amount: oe.amountInPaise / 100,
+        type: 'item',
+      })),
+      {
+        schedule: 'Total Operating Overheads (C)',
+        amount: p.totalOperatingExpensesInPaise / 100,
+        type: 'subtotal',
+      },
+      {
+        schedule: 'OPERATING PROFIT (EBITDA)',
+        amount: p.operatingProfitEbitdaInPaise / 100,
+        type: 'highlight',
+      },
+      { schedule: 'IV. Depreciation & Provisions', amount: null, type: 'section' },
+      ...p.taxAndDepreciation.map((dt) => ({
+        schedule: `${dt.accountCode} - ${dt.accountName}`,
+        amount: dt.amountInPaise / 100,
+        type: 'item',
+      })),
+      {
+        schedule: 'NET PROFIT AFTER TAX (PAT)',
+        amount: p.netProfitInPaise / 100,
+        type: 'net-profit',
+      },
+    ];
+  });
 
   constructor() {
     this.loadStatements();

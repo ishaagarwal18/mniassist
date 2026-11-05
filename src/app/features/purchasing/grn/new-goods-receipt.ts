@@ -26,7 +26,7 @@ import {
   GrnStatus,
   QcInspectionStatus,
 } from '../../../proxy/purchasing';
-import { ArButton, ArIcon } from '../../../ui';
+import { ArButton, ArIcon, ArDateInput, ArSelect } from '../../../ui';
 import {
   ArPfSupplier,
   PURCHASE_FORM_STYLES,
@@ -55,7 +55,7 @@ import {
  */
 @Component({
   selector: 'ar-new-goods-receipt-page',
-  imports: [ArTopbar, ArButton, ArIcon, ArPfSupplier, RouterLink],
+  imports: [ArTopbar, ArButton, ArIcon, ArPfSupplier, RouterLink, ArDateInput, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

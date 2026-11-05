@@ -32,7 +32,7 @@ import {
   VendorDebitNoteService,
   VendorDebitNoteStatus,
 } from '../../../proxy/purchasing';
-import { ArButton, ArIcon } from '../../../ui';
+import { ArButton, ArIcon, ArSelect } from '../../../ui';
 import {
   ArPfSupplier,
   GST_RATES,
@@ -62,7 +62,7 @@ import {
  */
 @Component({
   selector: 'ar-new-debit-note-page',
-  imports: [ArTopbar, ArButton, ArIcon, ArPfSupplier],
+  imports: [ArTopbar, ArButton, ArIcon, ArPfSupplier, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

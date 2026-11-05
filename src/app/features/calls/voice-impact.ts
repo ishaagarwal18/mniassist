@@ -15,7 +15,7 @@ import { ChannelDto } from '../../proxy/channels/models';
 import { ArButton } from '../../ui/button';
 import { ArIcon } from '../../ui/icon';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
-import { ArGrid } from '../../ui/grid';
+import { ArDateInput, ArGrid, ArSelect } from '../../ui';
 
 export interface VoiceImpactInput {
   fromDate: string;
@@ -105,7 +105,7 @@ function day(date: Date): string {
  */
 @Component({
   selector: 'ar-voice-impact',
-  imports: [FormsModule, ArTopbar, ArButton, ArIcon, ArGrid, GridModule],
+  imports: [FormsModule, ArTopbar, ArButton, ArIcon, ArGrid, GridModule, ArDateInput, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar

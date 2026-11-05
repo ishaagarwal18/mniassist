@@ -69,45 +69,46 @@
           (input)="recSource.set($any($event.target).value)"
         />
       </label>
-      <table class="ar-table recd__lines">
-        <caption class="sr-only">
-          Lines from Meta's invoice
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Category</th>
-            <th scope="col">Paid messages</th>
-            <th scope="col">Amount, ₹</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (c of categories; track c.key) {
-            <tr>
-              <th scope="row">{{ c.label }}</th>
-              <td>
-                <input
-                  class="ar-field__input"
-                  inputmode="numeric"
-                  [attr.id]="'rec-n-' + c.key"
-                  [attr.aria-label]="c.label + ' paid messages'"
-                  [value]="line(c.key).messages"
-                  (input)="setLine(c.key, 'messages', $any($event.target).value)"
-                />
-              </td>
-              <td>
-                <input
-                  class="ar-field__input"
-                  inputmode="decimal"
-                  [attr.id]="'rec-a-' + c.key"
-                  [attr.aria-label]="c.label + ' amount in rupees'"
-                  [value]="line(c.key).amount"
-                  (input)="setLine(c.key, 'amount', $any($event.target).value)"
-                />
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+      <ejs-grid
+        arGrid="meta-invoice-lines"
+        [dataSource]="categories"
+        aria-label="Lines from Meta's invoice"
+        [arGridSearch]="false"
+        [arGridTools]="false"
+        class="recd__lines"
+      >
+        <e-columns>
+          <e-column field="label" headerText="Category" width="160">
+            <ng-template #template let-c>
+              <strong>{{ c.label }}</strong>
+            </ng-template>
+          </e-column>
+          <e-column headerText="Paid messages" width="160">
+            <ng-template #template let-c>
+              <input
+                class="ar-field__input"
+                inputmode="numeric"
+                [attr.id]="'rec-n-' + c.key"
+                [attr.aria-label]="c.label + ' paid messages'"
+                [value]="line(c.key).messages"
+                (input)="setLine(c.key, 'messages', $any($event.target).value)"
+              />
+            </ng-template>
+          </e-column>
+          <e-column headerText="Amount, ₹" width="160">
+            <ng-template #template let-c>
+              <input
+                class="ar-field__input"
+                inputmode="decimal"
+                [attr.id]="'rec-a-' + c.key"
+                [attr.aria-label]="c.label + ' amount in rupees'"
+                [value]="line(c.key).amount"
+                (input)="setLine(c.key, 'amount', $any($event.target).value)"
+              />
+            </ng-template>
+          </e-column>
+        </e-columns>
+      </ejs-grid>
     }
     @if (recError(); as e) {
       <p class="recd__error" role="alert">{{ e }}</p>

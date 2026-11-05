@@ -28,7 +28,7 @@ import { WorkspaceFeatureMode } from '../../proxy/administration/workspace-featu
 import { BillingCycle } from '../../proxy/billing/billing-cycle.enum';
 import { InvoiceState } from '../../proxy/billing/invoice-state.enum';
 import type { InvoiceDto } from '../../proxy/billing/models';
-import { ArBanner, ArButton, ArChip, ArDialog, ArTabs } from '../../ui';
+import { ArBanner, ArButton, ArChip, ArDialog, ArTabs, ArDateInput, ArSelect } from '../../ui';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../ui/grid';
 import {
@@ -56,7 +56,7 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
  */
 @Component({
   selector: 'ar-workspace-manage-dialog',
-  imports: [ArDialog, ArButton, ArBanner, ArChip, ArTabs, DatePipe, RouterLink, ArGrid, GridModule],
+  imports: [ArDialog, ArButton, ArBanner, ArChip, ArTabs, DatePipe, RouterLink, ArGrid, GridModule, ArDateInput, ArSelect],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog
@@ -269,45 +269,49 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
               Turn one feature on or off for this workspace whatever its plan says. “As the plan
               says” removes the override.
             </p>
-            <div class="wm__table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Feature</th>
-                    <th>In the plan</th>
-                    <th>Override</th>
-                    <th>Gets it</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (f of d.features; track f.feature) {
-                    <tr>
-                      <td>{{ label(f.feature) }}</td>
-                      <td>{{ f.includedByPlan ? 'Yes' : 'No' }}</td>
-                      <td>
-                        <select
-                          arNative
-                          class="ar-field__input wm__mode"
-                          [attr.aria-label]="'Override for ' + label(f.feature)"
-                          [value]="f.mode"
-                          [disabled]="busy()"
-                          (change)="setFeature(d, f, +$any($event.target).value)"
-                        >
-                          @for (m of modes; track m.value) {
-                            <option [value]="m.value">{{ m.label }}</option>
-                          }
-                        </select>
-                      </td>
-                      <td>
-                        <ar-chip [tone]="f.effective ? 'good' : 'neutral'">
-                          {{ f.effective ? 'On' : 'Off' }}
-                        </ar-chip>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+            <ejs-grid
+              arGrid="workspace-feature-overrides"
+              [dataSource]="d.features"
+              aria-label="Feature Overrides"
+              [arGridSearch]="false"
+              [arGridTools]="false"
+            >
+              <e-columns>
+                <e-column field="feature" headerText="Feature" width="220">
+                  <ng-template #template let-f>
+                    <span>{{ label(f.feature) }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="In the plan" width="120">
+                  <ng-template #template let-f>
+                    <span>{{ f.includedByPlan ? 'Yes' : 'No' }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Override" width="180">
+                  <ng-template #template let-f>
+                    <select
+                      arNative
+                      class="ar-field__input wm__mode"
+                      [attr.aria-label]="'Override for ' + label(f.feature)"
+                      [value]="f.mode"
+                      [disabled]="busy()"
+                      (change)="setFeature(d, f, +$any($event.target).value)"
+                    >
+                      @for (m of modes; track m.value) {
+                        <option [value]="m.value">{{ m.label }}</option>
+                      }
+                    </select>
+                  </ng-template>
+                </e-column>
+                <e-column headerText="Gets it" width="120">
+                  <ng-template #template let-f>
+                    <ar-chip [tone]="f.effective ? 'good' : 'neutral'">
+                      {{ f.effective ? 'On' : 'Off' }}
+                    </ar-chip>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+            </ejs-grid>
           }
 
           @case ('Users') {
@@ -317,120 +321,121 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
               asked to choose their own at the next sign-in unless you untick that.
             </p>
             @if (users(); as list) {
-              <div class="wm__table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>User</th>
-                      <th>Status</th>
-                      <th>Password last changed</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (u of list; track u.id) {
-                      <tr>
-                        <td>
-                          <div class="wm__user">{{ u.name || u.userName }}</div>
-                          <div class="wm__sub">{{ u.email || u.userName }}</div>
-                        </td>
-                        <td>
-                          @if (!u.isActive) {
-                            <ar-chip tone="neutral">Inactive</ar-chip>
-                          } @else if (u.isLockedOut) {
-                            <ar-chip tone="bad">Locked out</ar-chip>
-                          } @else {
-                            <ar-chip tone="good">Active</ar-chip>
-                          }
-                          @if (u.mustChangePasswordOnNextSignIn) {
-                            <ar-chip tone="amber">Must change password</ar-chip>
-                          }
-                        </td>
-                        <td>
-                          {{
-                            u.lastPasswordChangeTime
-                              ? (u.lastPasswordChangeTime | date: 'dd MMM yyyy, HH:mm')
-                              : '—'
-                          }}
-                        </td>
-                        <td class="wm__act">
-                          <button
-                            ar-button
-                            type="button"
-                            variant="ghost"
-                            icon="shield"
-                            [disabled]="busy()"
-                            (click)="openPassword(u)"
-                          >
-                            Set password
-                          </button>
-                        </td>
-                      </tr>
-                      @if (pwFor()?.id === u.id) {
-                        <tr>
-                          <td colspan="4">
-                            <div class="wm__pw">
-                              <label class="fld">
-                                <span class="fld__k"
-                                  >New password for {{ u.name || u.userName }}</span
-                                >
-                                <input
-                                  class="ar-field__input"
-                                  type="password"
-                                  autocomplete="new-password"
-                                  [value]="pwNew()"
-                                  (input)="pwNew.set($any($event.target).value)"
-                                />
-                              </label>
-                              <label class="fld">
-                                <span class="fld__k">Type it again</span>
-                                <input
-                                  class="ar-field__input"
-                                  type="password"
-                                  autocomplete="new-password"
-                                  [value]="pwAgain()"
-                                  (input)="pwAgain.set($any($event.target).value)"
-                                />
-                              </label>
-                              <label class="wm__check">
-                                <input
-                                  type="checkbox"
-                                  [checked]="pwMustChange()"
-                                  (change)="pwMustChange.set($any($event.target).checked)"
-                                />
-                                Ask them to choose a new one at their next sign-in
-                              </label>
-                              <div class="wm__row">
-                                <button
-                                  ar-button
-                                  type="button"
-                                  variant="primary"
-                                  [disabled]="busy()"
-                                  (click)="setPassword(d, u)"
-                                >
-                                  {{ busy() ? 'Saving…' : 'Set password' }}
-                                </button>
-                                <button
-                                  ar-button
-                                  type="button"
-                                  variant="ghost"
-                                  (click)="pwFor.set(null)"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      }
-                    } @empty {
-                      <tr>
-                        <td colspan="4">No users in this workspace.</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
+              <ejs-grid
+                arGrid="workspace-users"
+                [dataSource]="list"
+                aria-label="Workspace Users"
+              >
+                <e-columns>
+                  <e-column field="userName" headerText="User" width="220">
+                    <ng-template #template let-u>
+                      <div class="wm__user">{{ u.name || u.userName }}</div>
+                      <div class="wm__sub">{{ u.email || u.userName }}</div>
+                    </ng-template>
+                  </e-column>
+                  <e-column headerText="Status" width="180">
+                    <ng-template #template let-u>
+                      <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                        @if (!u.isActive) {
+                          <ar-chip tone="neutral">Inactive</ar-chip>
+                        } @else if (u.isLockedOut) {
+                          <ar-chip tone="bad">Locked out</ar-chip>
+                        } @else {
+                          <ar-chip tone="good">Active</ar-chip>
+                        }
+                        @if (u.mustChangePasswordOnNextSignIn) {
+                          <ar-chip tone="amber">Must change password</ar-chip>
+                        }
+                      </div>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="lastPasswordChangeTime" headerText="Password last changed" width="180">
+                    <ng-template #template let-u>
+                      <span>
+                        {{
+                          u.lastPasswordChangeTime
+                            ? (u.lastPasswordChangeTime | date: 'dd MMM yyyy, HH:mm')
+                            : '—'
+                        }}
+                      </span>
+                    </ng-template>
+                  </e-column>
+                  <e-column headerText="Actions" width="150" freeze="Right">
+                    <ng-template #template let-u>
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        icon="shield"
+                        [disabled]="busy()"
+                        (click)="openPassword(u)"
+                      >
+                        Set password
+                      </button>
+                    </ng-template>
+                  </e-column>
+                </e-columns>
+              </ejs-grid>
+
+              @if (pwFor(); as u) {
+                <div class="wm__pw-card">
+                  <div class="wm__pw-head">
+                    <h4 style="margin: 0; font-size: 14px;">Set new password for <strong>{{ u.name || u.userName }}</strong></h4>
+                    <button ar-button type="button" variant="ghost" (click)="pwFor.set(null)">Cancel</button>
+                  </div>
+                  <div class="wm__pw">
+                    <label class="fld">
+                      <span class="fld__k"
+                        >New password for {{ u.name || u.userName }}</span
+                      >
+                      <input
+                        class="ar-field__input"
+                        type="password"
+                        autocomplete="new-password"
+                        [value]="pwNew()"
+                        (input)="pwNew.set($any($event.target).value)"
+                      />
+                    </label>
+                    <label class="fld">
+                      <span class="fld__k">Type it again</span>
+                      <input
+                        class="ar-field__input"
+                        type="password"
+                        autocomplete="new-password"
+                        [value]="pwAgain()"
+                        (input)="pwAgain.set($any($event.target).value)"
+                      />
+                    </label>
+                    <label class="wm__check">
+                      <input
+                        type="checkbox"
+                        [checked]="pwMustChange()"
+                        (change)="pwMustChange.set($any($event.target).checked)"
+                      />
+                      Ask them to choose a new one at their next sign-in
+                    </label>
+                    <div class="wm__row">
+                      <button
+                        ar-button
+                        type="button"
+                        variant="primary"
+                        [disabled]="busy()"
+                        (click)="setPassword(d, u)"
+                      >
+                        {{ busy() ? 'Saving…' : 'Set password' }}
+                      </button>
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        (click)="pwFor.set(null)"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
             } @else {
               <p class="wm__p">Loading users…</p>
             }
@@ -708,6 +713,20 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
     .wm__act {
       text-align: right;
       white-space: nowrap;
+    }
+    .wm__pw-card {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid var(--ar-line-200);
+      border-radius: 8px;
+      background: var(--ar-surface-100);
+      display: grid;
+      gap: 12px;
+    }
+    .wm__pw-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .wm__pw {
       display: grid;

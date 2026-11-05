@@ -14,7 +14,7 @@ import {
   CreateAmcContractDto,
   RenewAmcContractDto,
 } from '../../../proxy/field-service';
-import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArButton, ArChip, ArDialog, ArDateInput, ArSelect, ChipTone } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
 import { initialSearch } from '../../../core/util/customer-scope';
 
@@ -180,6 +180,8 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
     ArDialog,
     ArGrid,
     GridModule,
+    ArDateInput,
+    ArSelect,
   ],
   template: `
     <ar-topbar title="Installed Base AMC Contracts (Field ERP)">
