@@ -1,140 +1,658 @@
 @if (isPage) {
   <ar-topbar [title]="editingId() ? 'Edit feature flag rule' : 'New feature flag rule'">
-    <button ar-button type="button" variant="ghost" (click)="close()">Back to feature flags</button>
+    <button ar-button type="button" variant="ghost" (click)="close()">
+      <ar-icon name="chevron" [size]="14" style="transform: rotate(180deg);" />
+      Back to feature flags
+    </button>
   </ar-topbar>
   <div class="ar-form-page ar-scroll">
-    <ng-container *ngTemplateOutlet="ruleFormTpl" />
+    <div class="ff-page-form-wrap">
+      <ng-container *ngTemplateOutlet="ruleFormTpl" />
+    </div>
   </div>
 } @else {
   <ar-topbar
     title="Feature flags"
-    subtitle="Staged rollout per workspace"
-    help="Stage a feature to specific workspaces before switching it on for everyone."
+    subtitle="Staged rollout per workspace · Platform management"
+    help="Stage a feature to specific workspaces before switching it on for everyone. A workspace override always wins over global percentage rollouts."
   >
-    <button ar-button variant="primary" icon="plus" (click)="goNew()">New rule</button>
+    <button
+      ar-button
+      type="button"
+      [variant]="simulatorOpen() ? 'primary' : 'quiet'"
+      (click)="toggleSimulator()"
+    >
+      <ar-icon name="bolt" [size]="14" />
+      {{ simulatorOpen() ? 'Hide Simulator' : 'Test Workspace Flag' }}
+    </button>
+    <button ar-button variant="primary" (click)="goNew()">
+      <ar-icon name="plus" [size]="14" />
+      New rule
+    </button>
   </ar-topbar>
 
-  <div class="ff ar-scroll">
-    <p class="ff__intro">
-      A key can be on for everyone, on for a percentage of workspaces (a stable hash decides which), or
-      overridden on/off for one workspace. A workspace override always wins.
-    </p>
+  <div class="ff-container ar-scroll">
+    <!-- Stat Summary Tiles -->
+    <section class="ff-metrics" aria-label="Feature flag metrics">
+      <ar-stat-tile
+        label="Total Rules"
+        [value]="metrics().total + ' rules'"
+        note="Active policies in system"
+        tone="teal"
+      />
+      <ar-stat-tile
+        label="Active On"
+        [value]="metrics().active + ' active'"
+        note="100% full enablement"
+        tone="good"
+      />
+      <ar-stat-tile
+        label="Canary Staged"
+        [value]="metrics().staged + ' rolling out'"
+        note="Partitioned by tenant hash"
+        tone="amber"
+      />
+      <ar-stat-tile
+        label="Workspace Overrides"
+        [value]="metrics().overrides + ' overrides'"
+        note="Dedicated tenant rules"
+        tone="neutral"
+      />
+    </section>
 
-    @if (loading()) {
-      <p class="ff__empty">Loading…</p>
-    } @else {
-      <ejs-grid
-        arGrid="feature-flags-grid"
-        [dataSource]="flags()"
-        aria-label="Feature flags"
-      >
-        <e-columns>
-          <e-column field="key" headerText="Feature" width="260">
-            <ng-template #template let-f>
-              <span class="font-medium">{{ keyLabel(f.key) }}</span>
-            </ng-template>
-          </e-column>
-          <e-column headerText="Scope / Workspace" width="240">
-            <ng-template #template let-f>
-              <div>
-                <span>{{ f.tenantId ? (f.tenantName || f.tenantId) : 'Global default' }}</span>
-                @if (f.note) {
-                  <span class="ff__meta-note">{{ f.note }}</span>
+    <!-- Contextual Explanation Banner -->
+    <ar-banner tone="teal">
+      <span>
+        <strong>Rule Evaluation Precedence:</strong> Workspace overrides take absolute precedence.
+        For un-overridden workspaces, percentage rollout uses a deterministic hash on the Workspace ID.
+        All others follow the global default rule.
+      </span>
+      <div banner-actions>
+        <button ar-button variant="quiet" type="button" (click)="toggleSimulator()">
+          {{ simulatorOpen() ? 'Close Simulator' : 'Run Simulator' }}
+        </button>
+      </div>
+    </ar-banner>
+
+    <!-- Interactive Flag Resolution Simulator -->
+    @if (simulatorOpen()) {
+      <section class="e-card ff-sim-card" aria-label="Feature flag resolution simulator">
+        <header class="ff-sim-card__head">
+          <div class="ff-sim-card__title-group">
+            <span class="ff-sim-card__badge">
+              <ar-icon name="bolt" [size]="15" />
+              Runtime Simulator
+            </span>
+            <h3 class="ff-sim-card__title">Workspace Feature Resolution Sandbox</h3>
+            <p class="ff-sim-card__sub">
+              Test how any workspace evaluates against configured rules without affecting production traffic.
+            </p>
+          </div>
+          <button
+            ar-button
+            variant="ghost"
+            type="button"
+            class="ff-sim-card__close"
+            (click)="simulatorOpen.set(false)"
+            aria-label="Close simulator"
+          >
+            <ar-icon name="close" [size]="14" />
+          </button>
+        </header>
+
+        <div class="ff-sim-card__body">
+          <div class="ff-sim-inputs">
+            <label class="ar-field">
+              <span class="ar-field__label">Target Workspace</span>
+              <select
+                class="ar-field__input"
+                [value]="simTenantId()"
+                (change)="simTenantId.set($any($event.target).value)"
+              >
+                @for (t of tenants(); track t.id) {
+                  <option [value]="t.id">{{ t.name }} ({{ t.id }})</option>
                 }
-              </div>
-            </ng-template>
-          </e-column>
-          <e-column headerText="Status" width="180">
-            <ng-template #template let-f>
-              <ar-chip [tone]="f.enabled ? 'good' : (f.rolloutPercent ?? 0) > 0 ? 'amber' : 'neutral'">
-                {{ state(f) }}
-              </ar-chip>
-            </ng-template>
-          </e-column>
-          <e-column headerText="Actions" width="150" textAlign="Right">
-            <ng-template #template let-f>
-              <div class="fr__act">
-                <button ar-button variant="ghost" (click)="goEdit(f)">Edit</button>
-                <button ar-button variant="ghost" (click)="remove(f)">Delete</button>
-              </div>
-            </ng-template>
-          </e-column>
-        </e-columns>
-        <ng-template #emptyRecordTemplate>No feature flag rules configured.</ng-template>
-      </ejs-grid>
-    }
-  </div>
-}
+              </select>
+            </label>
 
-<ng-template #ruleFormTpl>
-  @if (editorOpen()) {
-    <ar-dialog title="Feature flag rule" (dismiss)="close()">
-      <label class="ar-field">
-        <span class="ar-field__label">Feature</span>
-        <select
-          required
-          class="ar-field__input"
-          [value]="form().key"
-          (change)="patch('key', $any($event.target).value)"
+            <label class="ar-field">
+              <span class="ar-field__label">Or Custom Workspace ID</span>
+              <input
+                class="ar-field__input ar-mono"
+                placeholder="e.g. tenant-demo-99"
+                [value]="simTenantId()"
+                (input)="simTenantId.set($any($event.target).value)"
+              />
+            </label>
+
+            <label class="ar-field">
+              <span class="ar-field__label">Feature Key</span>
+              <select
+                class="ar-field__input"
+                [value]="simFeatureKey()"
+                (change)="simFeatureKey.set($any($event.target).value)"
+              >
+                @for (k of definitions; track k.value) {
+                  <option [value]="k.value">{{ k.label }} ({{ k.value }})</option>
+                }
+              </select>
+            </label>
+          </div>
+
+          <!-- Simulation Result Box -->
+          @if (simulationResult(); as res) {
+            <div
+              class="ff-sim-result"
+              [class.ff-sim-result--on]="res.enabled"
+              [class.ff-sim-result--off]="!res.enabled"
+            >
+              <div class="ff-sim-result__header">
+                <div class="ff-sim-result__status">
+                  <span
+                    class="ff-sim-result__dot"
+                    [class.ff-sim-result__dot--on]="res.enabled"
+                  ></span>
+                  <span class="ff-sim-result__verdict">
+                    {{ res.enabled ? 'ACTIVE (ON)' : 'INACTIVE (OFF)' }}
+                  </span>
+                </div>
+                <div class="ff-sim-result__tags">
+                  <ar-chip [tone]="res.source === 'override' ? 'amber' : res.source === 'canary' ? 'teal' : 'neutral'">
+                    {{ res.source === 'override' ? 'Workspace Override' : res.source === 'canary' ? 'Canary Rollout' : 'Global Default' }}
+                  </ar-chip>
+                  <span class="ff-sim-result__bucket ar-mono">
+                    Bucket #{{ res.bucket }} / 100
+                  </span>
+                </div>
+              </div>
+
+              <p class="ff-sim-result__reason">{{ res.reason }}</p>
+
+              <div class="ff-sim-result__footer">
+                <span class="ff-sim-result__meta">
+                  Workspace: <strong>{{ resolveTenantName(simTenantId()) || simTenantId() }}</strong> · Feature: <strong>{{ simFeatureKey() }}</strong>
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Filter & Search Toolbar -->
+    <section class="ff-toolbar" aria-label="Feature flag filters">
+      <div class="ff-toolbar__search">
+        <ar-search-box
+          [placeholder]="'Search feature, key, workspace or note…'"
+          [(query)]="searchQuery"
+        />
+      </div>
+
+      <div class="ff-toolbar__filters" role="tablist" aria-label="Filter scope">
+        <button
+          type="button"
+          class="ff-pill-btn"
+          [class.ff-pill-btn--active]="scopeFilter() === 'all'"
+          (click)="scopeFilter.set('all')"
         >
-          @for (k of keys; track k.value) {
+          All Rules <span class="ff-pill-count">{{ metrics().total }}</span>
+        </button>
+        <button
+          type="button"
+          class="ff-pill-btn"
+          [class.ff-pill-btn--active]="scopeFilter() === 'global'"
+          (click)="scopeFilter.set('global')"
+        >
+          Global <span class="ff-pill-count">{{ metrics().globals }}</span>
+        </button>
+        <button
+          type="button"
+          class="ff-pill-btn"
+          [class.ff-pill-btn--active]="scopeFilter() === 'override'"
+          (click)="scopeFilter.set('override')"
+        >
+          Overrides <span class="ff-pill-count">{{ metrics().overrides }}</span>
+        </button>
+        <button
+          type="button"
+          class="ff-pill-btn"
+          [class.ff-pill-btn--active]="scopeFilter() === 'active'"
+          (click)="scopeFilter.set('active')"
+        >
+          Active On <span class="ff-pill-count">{{ metrics().active }}</span>
+        </button>
+        <button
+          type="button"
+          class="ff-pill-btn"
+          [class.ff-pill-btn--active]="scopeFilter() === 'staged'"
+          (click)="scopeFilter.set('staged')"
+        >
+          Staged % <span class="ff-pill-count">{{ metrics().staged }}</span>
+        </button>
+        <button
+          type="button"
+          class="ff-pill-btn"
+          [class.ff-pill-btn--active]="scopeFilter() === 'disabled'"
+          (click)="scopeFilter.set('disabled')"
+        >
+          Disabled
+        </button>
+      </div>
+
+      <div class="ff-toolbar__feature-select">
+        <select
+          class="ar-field__input ff-filter-select"
+          [value]="featureFilter()"
+          (change)="featureFilter.set($any($event.target).value)"
+          aria-label="Filter by feature"
+        >
+          <option value="all">All Features</option>
+          @for (k of definitions; track k.value) {
             <option [value]="k.value">{{ k.label }}</option>
           }
         </select>
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">
-          Workspace ID <span class="ar-field__opt">blank = global default</span>
-        </span>
-        <input
-          class="ar-field__input ar-mono"
-          placeholder="Leave empty for global rule"
-          [value]="form().tenantId"
-          (input)="patch('tenantId', $any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field__opt-row">
-        <input
-          type="checkbox"
-          [checked]="form().enabled"
-          (change)="patch('enabled', $any($event.target).checked)"
-        />
-        <span>On for everyone this rule covers</span>
-      </label>
-      @if (!form().enabled && !form().tenantId) {
-        <label class="ar-field ff__narrow">
-          <span class="ar-field__label">Rollout %</span>
-          <input
+      </div>
+    </section>
+
+    <!-- Rules Data Table -->
+    <div class="ff-grid-card">
+      @if (loading()) {
+        <div class="ff-empty-state">
+          <span class="ff-empty-spinner"></span>
+          <p>Loading feature flag rules…</p>
+        </div>
+      } @else {
+        <ejs-grid
+          arGrid="feature-flags-grid"
+          [dataSource]="filteredFlags()"
+          aria-label="Feature flags"
+        >
+          <e-columns>
+            <!-- Feature Column -->
+            <e-column field="key" headerText="Feature" width="280">
+              <ng-template #template let-f>
+                <div class="ff-cell-feature">
+                  <div class="ff-cell-feature__head">
+                    <span class="ff-cell-feature__title">{{ keyLabel(f.key) }}</span>
+                    @if (featureDef(f.key); as def) {
+                      <span class="ff-badge-cat">{{ def.category }}</span>
+                    }
+                  </div>
+                  <div class="ff-cell-feature__sub">
+                    <button
+                      type="button"
+                      class="ff-key-pill"
+                      title="Click to copy feature key"
+                      (click)="copyKey(f.key, $event)"
+                    >
+                      <code>{{ f.key }}</code>
+                      <ar-icon name="copy" [size]="12" class="ff-copy-icon" />
+                    </button>
+                    @if (featureDef(f.key); as def) {
+                      <span class="ff-cell-feature__desc">{{ def.description }}</span>
+                    }
+                  </div>
+                </div>
+              </ng-template>
+            </e-column>
+
+            <!-- Scope / Workspace Column -->
+            <e-column headerText="Scope / Target" width="250">
+              <ng-template #template let-f>
+                <div class="ff-cell-scope">
+                  @if (f.tenantId) {
+                    <div class="ff-scope-target">
+                      <ar-chip tone="amber">Workspace Override</ar-chip>
+                      <strong class="ff-scope-tenant">{{ f.tenantName || resolveTenantName(f.tenantId) }}</strong>
+                      <span class="ff-scope-tenant-id ar-mono">ID: {{ f.tenantId }}</span>
+                    </div>
+                  } @else {
+                    <div class="ff-scope-target">
+                      <ar-chip tone="teal">Global Default</ar-chip>
+                      <span class="ff-scope-global-desc">Applies across all workspaces</span>
+                    </div>
+                  }
+                  @if (f.note) {
+                    <div class="ff-scope-note" title="{{ f.note }}">
+                      <span class="ff-note-icon">💬</span>
+                      <span>{{ f.note }}</span>
+                    </div>
+                  }
+                </div>
+              </ng-template>
+            </e-column>
+
+            <!-- Rollout & Status Column -->
+            <e-column headerText="Rollout & Status" width="210">
+              <ng-template #template let-f>
+                <div class="ff-cell-status">
+                  <div class="ff-status-row">
+                    @if (f.enabled) {
+                      <ar-chip tone="good" [dot]="true">On for all (100%)</ar-chip>
+                    } @else if ((f.rolloutPercent ?? 0) > 0) {
+                      <ar-chip tone="amber" [dot]="true">{{ f.rolloutPercent }}% Canary Staged</ar-chip>
+                    } @else {
+                      <ar-chip tone="neutral" [dot]="true">Disabled (0%)</ar-chip>
+                    }
+                  </div>
+
+                  @if (!f.enabled && (f.rolloutPercent ?? 0) > 0) {
+                    <div class="ff-mini-progress" title="{{ f.rolloutPercent }}% workspaces covered">
+                      <div
+                        class="ff-mini-progress__bar"
+                        [style.width.%]="f.rolloutPercent"
+                      ></div>
+                    </div>
+                  }
+                </div>
+              </ng-template>
+            </e-column>
+
+            <!-- Quick Toggle Column -->
+            <e-column headerText="Quick Toggle" width="130" textAlign="Center">
+              <ng-template #template let-f>
+                <button
+                  type="button"
+                  class="ff-toggle-btn"
+                  [class.ff-toggle-btn--active]="f.enabled"
+                  [class.ff-toggle-btn--staged]="!f.enabled && (f.rolloutPercent ?? 0) > 0"
+                  [title]="f.enabled ? 'Click to disable' : 'Click to enable 100%'"
+                  (click)="quickToggle(f, $event)"
+                >
+                  <span class="ff-toggle-slider"></span>
+                  <span class="ff-toggle-text">{{ f.enabled ? 'Enabled' : ((f.rolloutPercent ?? 0) > 0 ? 'Staged' : 'Off') }}</span>
+                </button>
+              </ng-template>
+            </e-column>
+
+            <!-- Actions Column -->
+            <e-column headerText="Actions" width="160" textAlign="Right">
+              <ng-template #template let-f>
+                <div class="ff-row-actions">
+                  <button
+                    ar-button
+                    variant="quiet"
+                    type="button"
+                    title="Simulate this rule in sandbox"
+                    (click)="simulateFor(f)"
+                  >
+                    <ar-icon name="bolt" [size]="13" />
+                  </button>
+                  <button
+                    ar-button
+                    variant="ghost"
+                    type="button"
+                    (click)="goEdit(f)"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    ar-button
+                    variant="ghost"
+                    type="button"
+                    class="ff-btn-delete"
+                    (click)="remove(f, $event)"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </ng-template>
+            </e-column>
+          </e-columns>
+
+          <ng-template #emptyRecordTemplate>
+            <div class="ff-grid-empty">
+              <ar-icon name="shield" [size]="28" class="ff-grid-empty__icon" />
+              <h4>No feature flag rules match your filter</h4>
+              <p>Adjust your search query or create a new rollout policy.</p>
+              <button ar-button variant="primary" type="button" (click)="goNew()">
+                Create feature flag rule
+              </button>
+            </div>
+          </ng-template>
+        </ejs-grid>
+      }
+    </div>
+  </div>
+}
+
+<!-- Dialog / Full-Page Form Template -->
+<ng-template #ruleFormTpl>
+  @if (editorOpen()) {
+    <ar-dialog
+      [title]="editingId() ? 'Edit feature flag rule' : 'New feature flag rule'"
+      (dismiss)="close()"
+    >
+      <div class="ff-dialog-content">
+        <!-- Feature Picker -->
+        <label class="ar-field">
+          <span class="ar-field__label">Target Feature <span class="ar-field__opt">required</span></span>
+          <select
             required
-            min="0"
-            max="100"
             class="ar-field__input"
-            type="number"
-            min="0"
-            max="100"
-            [value]="form().rolloutPercent"
-            (input)="patch('rolloutPercent', +$any($event.target).value)"
+            [value]="form().key"
+            (change)="patch('key', $any($event.target).value)"
+          >
+            @for (k of definitions; track k.value) {
+              <option [value]="k.value">{{ k.label }} ({{ k.value }})</option>
+            }
+          </select>
+          @if (featureDef(form().key); as currentDef) {
+            <span class="ff-field-hint">
+              <strong>{{ currentDef.category }}</strong>: {{ currentDef.description }}
+            </span>
+          }
+        </label>
+
+        <!-- Scope Selection (Segmented Cards) -->
+        <div class="ar-field">
+          <span class="ar-field__label">Rule Scope</span>
+          <div class="ff-scope-selector" role="radiogroup">
+            <button
+              type="button"
+              class="ff-scope-card"
+              [class.ff-scope-card--active]="form().scopeType === 'global'"
+              (click)="patch('scopeType', 'global')"
+            >
+              <div class="ff-scope-card__icon">🌐</div>
+              <div class="ff-scope-card__text">
+                <strong>Global Platform Rule</strong>
+                <span>Applies baseline policy to all workspaces.</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="ff-scope-card"
+              [class.ff-scope-card--active]="form().scopeType === 'override'"
+              (click)="patch('scopeType', 'override')"
+            >
+              <div class="ff-scope-card__icon">🏢</div>
+              <div class="ff-scope-card__text">
+                <strong>Workspace Override</strong>
+                <span>Pins feature on or off for a specific tenant.</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- If Scope is Override: Workspace Selector -->
+        @if (form().scopeType === 'override') {
+          <div class="ff-override-fields">
+            <label class="ar-field">
+              <span class="ar-field__label">Select Workspace</span>
+              <select
+                class="ar-field__input"
+                [value]="form().tenantId"
+                (change)="selectScopeWorkspace($any($event.target).value)"
+              >
+                <option value="">-- Choose from existing workspaces --</option>
+                @for (t of tenants(); track t.id) {
+                  <option [value]="t.id">{{ t.name }} ({{ t.id }})</option>
+                }
+              </select>
+            </label>
+
+            <div class="ff-id-row">
+              <label class="ar-field" style="flex: 1;">
+                <span class="ar-field__label">Workspace ID</span>
+                <input
+                  required
+                  class="ar-field__input ar-mono"
+                  placeholder="e.g. t-1"
+                  [value]="form().tenantId"
+                  (input)="patch('tenantId', $any($event.target).value)"
+                />
+              </label>
+
+              <label class="ar-field" style="flex: 1;">
+                <span class="ar-field__label">Workspace Name <span class="ar-field__opt">optional</span></span>
+                <input
+                  class="ar-field__input"
+                  placeholder="e.g. Sun Energy Automation"
+                  [value]="form().tenantName"
+                  (input)="patch('tenantName', $any($event.target).value)"
+                />
+              </label>
+            </div>
+
+            <div class="ff-callout-tip">
+              💡 <strong>Workspace Override Rule:</strong> Overrides take 100% precedence over any global staged rollout percentages.
+            </div>
+          </div>
+        }
+
+        <!-- Rollout Strategy Selection -->
+        <div class="ar-field">
+          <span class="ar-field__label">Rollout Strategy</span>
+          <div class="ff-strategy-pills" role="radiogroup">
+            <button
+              type="button"
+              class="ff-strat-btn"
+              [class.ff-strat-btn--active]="form().strategy === 'on'"
+              (click)="patch('strategy', 'on')"
+            >
+              <span class="ff-strat-dot ff-strat-dot--good"></span>
+              On for Everyone (100%)
+            </button>
+            @if (form().scopeType === 'global') {
+              <button
+                type="button"
+                class="ff-strat-btn"
+                [class.ff-strat-btn--active]="form().strategy === 'staged'"
+                (click)="patch('strategy', 'staged')"
+              >
+                <span class="ff-strat-dot ff-strat-dot--amber"></span>
+                Staged Canary Rollout (%)
+              </button>
+            }
+            <button
+              type="button"
+              class="ff-strat-btn"
+              [class.ff-strat-btn--active]="form().strategy === 'off'"
+              (click)="patch('strategy', 'off')"
+            >
+              <span class="ff-strat-dot ff-strat-dot--neutral"></span>
+              Switched Off (0%)
+            </button>
+          </div>
+        </div>
+
+        <!-- Rollout Percentage Slider & Presets (if Global + Staged) -->
+        @if (form().scopeType === 'global' && form().strategy === 'staged') {
+          <div class="ff-canary-box">
+            <div class="ff-canary-head">
+              <span class="ar-field__label">Rollout Coverage</span>
+              <strong class="ff-canary-percent-display">{{ form().rolloutPercent }}%</strong>
+            </div>
+
+            <input
+              type="range"
+              min="1"
+              max="100"
+              step="1"
+              class="ff-slider"
+              [value]="form().rolloutPercent"
+              (input)="patch('rolloutPercent', +$any($event.target).value)"
+            />
+
+            <div class="ff-preset-chips">
+              <span class="ff-preset-label">Quick Presets:</span>
+              <button
+                type="button"
+                class="ff-chip-preset"
+                [class.ff-chip-preset--active]="form().rolloutPercent === 10"
+                (click)="patch('rolloutPercent', 10)"
+              >
+                10%
+              </button>
+              <button
+                type="button"
+                class="ff-chip-preset"
+                [class.ff-chip-preset--active]="form().rolloutPercent === 25"
+                (click)="patch('rolloutPercent', 25)"
+              >
+                25%
+              </button>
+              <button
+                type="button"
+                class="ff-chip-preset"
+                [class.ff-chip-preset--active]="form().rolloutPercent === 50"
+                (click)="patch('rolloutPercent', 50)"
+              >
+                50%
+              </button>
+              <button
+                type="button"
+                class="ff-chip-preset"
+                [class.ff-chip-preset--active]="form().rolloutPercent === 75"
+                (click)="patch('rolloutPercent', 75)"
+              >
+                75%
+              </button>
+              <button
+                type="button"
+                class="ff-chip-preset"
+                [class.ff-chip-preset--active]="form().rolloutPercent === 100"
+                (click)="patch('rolloutPercent', 100)"
+              >
+                100%
+              </button>
+            </div>
+            <p class="ff-canary-desc">
+              Workspaces are deterministically partitioned by a stable hash on their ID. The same workspaces always receive the feature reliably.
+            </p>
+          </div>
+        }
+
+        <!-- Internal Audit Note -->
+        <label class="ar-field">
+          <span class="ar-field__label">Audit Note <span class="ar-field__opt">optional</span></span>
+          <input
+            class="ar-field__input"
+            placeholder="e.g. Early access pilot for partner accounts or Meta migration safety"
+            [value]="form().note"
+            (input)="patch('note', $any($event.target).value)"
           />
         </label>
-      }
-      <label class="ar-field">
-        <span class="ar-field__label">Note <span class="ar-field__opt">optional</span></span>
-        <input
-          class="ar-field__input"
-          placeholder="e.g. Early access partner"
-          [value]="form().note"
-          (input)="patch('note', $any($event.target).value)"
-        />
-      </label>
 
-      @if (error(); as msg) {
-        <p class="ff__err">{{ msg }}</p>
-      }
+        <!-- Live Rule Preview Card -->
+        <div class="ff-rule-preview">
+          <div class="ff-rule-preview__title">
+            <ar-icon name="check" [size]="14" />
+            <span>Rule Evaluation Preview</span>
+          </div>
+          <p class="ff-rule-preview__text">{{ rulePreviewText() }}</p>
+        </div>
+
+        @if (error(); as msg) {
+          <p class="ff__err">{{ msg }}</p>
+        }
+      </div>
 
       <div dialogActions>
-        <button ar-button variant="ghost" (click)="close()">Cancel</button>
-        <button ar-button variant="primary" [disabled]="busy()" (click)="save()">
-          {{ busy() ? 'Saving…' : 'Save' }}
+        <button ar-button variant="ghost" type="button" (click)="close()">Cancel</button>
+        <button ar-button variant="primary" type="button" [disabled]="busy()" (click)="save()">
+          {{ busy() ? 'Saving…' : (editingId() ? 'Update Rule' : 'Create Rule') }}
         </button>
       </div>
     </ar-dialog>
