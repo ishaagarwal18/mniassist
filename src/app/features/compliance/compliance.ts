@@ -1,5 +1,6 @@
-import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ComplianceStore, DpdpRequest, ReqKind } from '../../core/services/compliance.service';
 import { DataRequestKind } from '../../proxy/compliance';
@@ -39,6 +40,7 @@ const KIND_LABEL: Record<ReqKind, string> = {
     ArAiCallCompliance,
     ArGrid,
     GridModule,
+    NgTemplateOutlet,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './compliance.html',
@@ -48,6 +50,15 @@ export class ArCompliance {
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
   private readonly store = inject(ComplianceStore);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  protected readonly pageTitle = computed(() =>
+    this.mode === 'new' ? 'Log a DPDP request' : 'Compliance',
+  );
 
   protected readonly loading = this.store.loading;
   protected readonly overview = this.store.overview;
@@ -55,6 +66,24 @@ export class ArCompliance {
   protected readonly policies = this.store.policies;
   protected readonly breaches = this.store.breaches;
   protected readonly busy = signal<string | null>(null);
+
+  constructor() {
+    if (this.mode === 'new') {
+      this.openDialog();
+    }
+  }
+
+  protected goNew(): void {
+    if (this.router) void this.router.navigate(['/compliance/requests/new']);
+    else this.openDialog();
+  }
+
+  protected close(): void {
+    this.dialogOpen.set(false);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/compliance']);
+    }
+  }
 
   protected kindLabel(k: ReqKind): string {
     return KIND_LABEL[k];
@@ -91,7 +120,7 @@ export class ArCompliance {
     this.saving.set(true);
     try {
       await this.store.logRequest(this.newKind(), who);
-      this.dialogOpen.set(false);
+      this.close();
     } finally {
       this.saving.set(false);
     }

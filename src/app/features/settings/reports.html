@@ -1,50 +1,60 @@
-<ar-topbar
-  title="Scheduled reports"
-  subtitle="A summary of the last day, week or month, sent on a schedule"
-  help="A daily report covers yesterday, a weekly one the seven days before the send day, a monthly one the month before it, each compared with the period before. Email goes to the workspace admins and any extra addresses, with the full report as a PDF."
->
-  <button ar-button variant="primary" icon="plus" (click)="openNew()">New report</button>
-</ar-topbar>
+@if (isPage) {
+  <ar-topbar [title]="pageTitle()">
+    <button ar-button type="button" variant="ghost" (click)="close()">Back to Scheduled reports</button>
+  </ar-topbar>
+  <div class="ar-form-page ar-scroll">
+    <ng-container *ngTemplateOutlet="formsTpl" />
+  </div>
+} @else {
+  <ar-topbar
+    title="Scheduled reports"
+    subtitle="A summary of the last day, week or month, sent on a schedule"
+    help="A daily report covers yesterday, a weekly one the seven days before the send day, a monthly one the month before it, each compared with the period before. Email goes to the workspace admins and any extra addresses, with the full report as a PDF."
+  >
+    <button ar-button variant="primary" icon="plus" (click)="goNew()">New report</button>
+  </ar-topbar>
 
-<div class="rep ar-scroll">
-  @if (loading()) {
-    <p class="rep__empty">Loading…</p>
-  } @else if (reports().length === 0) {
-    <p class="rep__empty">No scheduled reports. Add one to have a summary sent to you.</p>
-  }
+  <div class="rep ar-scroll">
+    @if (loading()) {
+      <p class="rep__empty">Loading…</p>
+    } @else if (reports().length === 0) {
+      <p class="rep__empty">No scheduled reports. Add one to have a summary sent to you.</p>
+    }
 
-  @for (r of reports(); track r.id) {
-    <article class="rr" [class.rr--off]="!r.isActive">
-      <div class="rr__main">
-        <h2 class="rr__name">{{ r.name }}</h2>
-        <p class="rr__meta">
-          {{ kindLabel(r.kind) }} · {{ cadenceLabel(r.cadence) }} at {{ r.sendHourLocal }}:00 ·
-          {{ channelSummary(r.channels) }}
-        </p>
-        <p class="rr__runs">
-          Last sent {{ when(r.lastRunAtUtc) }} · next {{ when(r.nextRunAtUtc) }}
-        </p>
-        @if (r.lastRunNote; as note) {
-          <p class="rr__note" [class.rr__note--warn]="isProblem(note)">{{ note }}</p>
+    @for (r of reports(); track r.id) {
+      <article class="rr" [class.rr--off]="!r.isActive">
+        <div class="rr__main">
+          <h2 class="rr__name">{{ r.name }}</h2>
+          <p class="rr__meta">
+            {{ kindLabel(r.kind) }} · {{ cadenceLabel(r.cadence) }} at {{ r.sendHourLocal }}:00 ·
+            {{ channelSummary(r.channels) }}
+          </p>
+          <p class="rr__runs">
+            Last sent {{ when(r.lastRunAtUtc) }} · next {{ when(r.nextRunAtUtc) }}
+          </p>
+          @if (r.lastRunNote; as note) {
+            <p class="rr__note" [class.rr__note--warn]="isProblem(note)">{{ note }}</p>
+          }
+        </div>
+        @if (!r.isActive) {
+          <ar-chip tone="warn">Paused</ar-chip>
         }
-      </div>
-      @if (!r.isActive) {
-        <ar-chip tone="warn">Paused</ar-chip>
-      }
-      <div class="rr__act">
-        <button ar-button variant="ghost" (click)="preview(r)">Preview</button>
-        <button ar-button variant="primary" [disabled]="sending() === r.id" (click)="runNow(r)">
-          {{ sending() === r.id ? 'Sending…' : 'Send now' }}
-        </button>
-        <button ar-button variant="ghost" (click)="openEdit(r)">Edit</button>
-        <button ar-button variant="ghost" (click)="remove(r)">Delete</button>
-      </div>
-    </article>
-  }
-</div>
+        <div class="rr__act">
+          <button ar-button variant="ghost" (click)="goPreview(r)">Preview</button>
+          <button ar-button variant="primary" [disabled]="sending() === r.id" (click)="runNow(r)">
+            {{ sending() === r.id ? 'Sending…' : 'Send now' }}
+          </button>
+          <button ar-button variant="ghost" (click)="goEdit(r)">Edit</button>
+          <button ar-button variant="ghost" (click)="remove(r)">Delete</button>
+        </div>
+      </article>
+    }
+  </div>
+}
 
-@if (editorOpen()) {
-  <ar-dialog [title]="editingId() ? 'Edit report' : 'New report'" (dismiss)="editorOpen.set(false)">
+<ng-template #formsTpl>
+  @if (editorOpen()) {
+    <ar-dialog [title]="editingId() ? 'Edit report' : 'New report'" (dismiss)="close()">
     <label class="ar-field">
       <span class="ar-field__label">Name</span>
       <input
@@ -168,7 +178,7 @@
     }
 
     <div dialogActions>
-      <button ar-button variant="ghost" (click)="editorOpen.set(false)">Cancel</button>
+      <button ar-button variant="ghost" (click)="close()">Cancel</button>
       <button ar-button variant="primary" [disabled]="busy()" (click)="save()">
         {{ busy() ? 'Saving…' : 'Save' }}
       </button>
@@ -180,11 +190,12 @@
   <ar-dialog
     [title]="p.subject"
     width="min(720px, calc(100vw - 32px))"
-    (dismiss)="previewing.set(null)"
+    (dismiss)="close()"
   >
     <iframe class="rep__preview" title="Report preview" sandbox="" [srcdoc]="p.html"></iframe>
     <div dialogActions>
-      <button ar-button variant="ghost" (click)="previewing.set(null)">Close</button>
+      <button ar-button variant="ghost" (click)="close()">Close</button>
     </div>
   </ar-dialog>
 }
+</ng-template>

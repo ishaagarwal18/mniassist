@@ -440,6 +440,7 @@ import { pathOf } from './cockpit-origin.logic';
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-shrink: 0;
     }
   `,
 })

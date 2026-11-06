@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,8 +7,11 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { inr, inrCompact } from '../../../core/util/format';
+import { PickerOption } from '../../../core/services/pipeline.service';
+import { inrCompact } from '../../../core/util/format';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -27,7 +29,20 @@ import {
   RemoteMaintenanceSessionDto,
   RemoteMaintenanceStatsDto,
 } from '../../../proxy/maintenance';
-import { ArButton, ArCard, ArChip, ArDialog, ArIcon, ChipTone } from '../../../ui';
+import { ContactService } from '../../../proxy/contacts/contact.service';
+import {
+  ArButton,
+  ArCard,
+  ArChip,
+  ArDialog,
+  ArIcon,
+  ArMeter,
+  ArStatTile,
+  ArTabs,
+  ChipTone,
+  MeterTone,
+} from '../../../ui';
+import { ArContactPicker } from '../../pipeline/contact-picker';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../../ui/grid';
 
@@ -41,11 +56,11 @@ const STATUS_TONES: Record<MaintenanceSessionStatus, ChipTone> = {
 };
 
 const STATUS_LABELS: Record<MaintenanceSessionStatus, string> = {
-  [MaintenanceSessionStatus.Initiated]: 'Initiated',
+  [MaintenanceSessionStatus.Initiated]: 'Started',
   [MaintenanceSessionStatus.Diagnosing]: 'Diagnosing',
-  [MaintenanceSessionStatus.RemediationProvided]: 'Remediation Ready',
-  [MaintenanceSessionStatus.ResolvedRemotely]: 'Resolved Remotely',
-  [MaintenanceSessionStatus.EscalatedToFieldTicket]: 'Escalated to Field',
+  [MaintenanceSessionStatus.RemediationProvided]: 'Fix suggested',
+  [MaintenanceSessionStatus.ResolvedRemotely]: 'Resolved remotely',
+  [MaintenanceSessionStatus.EscalatedToFieldTicket]: 'Escalated to a visit',
   [MaintenanceSessionStatus.Cancelled]: 'Cancelled',
 };
 
@@ -60,7 +75,7 @@ const SEVERITY_LABELS: Record<MaintenanceSeverity, string> = {
   [MaintenanceSeverity.Low]: 'Low',
   [MaintenanceSeverity.Medium]: 'Medium',
   [MaintenanceSeverity.High]: 'High',
-  [MaintenanceSeverity.CriticalEmergency]: 'Critical / Emergency',
+  [MaintenanceSeverity.CriticalEmergency]: 'Critical',
 };
 
 const MOCK_TURNS_WHATSAPP: MaintenanceDiagnosticTurnDto[] = [
@@ -294,304 +309,338 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
   estimatedCostSavingsInRupees: 435_000,
 };
 
+/** Sensor names and units the AI sends in a session's telemetry snapshot; anything else is shown by its own name. */
+const TELEMETRY_LABELS: Record<string, { label: string; unit: string }> = {
+  temp_c: { label: 'Temperature', unit: '°C' },
+  bus_voltage: { label: 'DC bus voltage', unit: 'V' },
+  motor_current: { label: 'Motor current', unit: 'A' },
+  fan_rpm: { label: 'Fan speed', unit: 'rpm' },
+  ping_loss_percent: { label: 'Packet loss', unit: '%' },
+};
+
+export interface TelemetryReading {
+  key: string;
+  label: string;
+  value: string;
+}
+
+/** The readings in a telemetry snapshot (JSON object), labelled; none when it is missing or not an object. */
+export function telemetryReadings(json: string | null | undefined): TelemetryReading[] {
+  if (!json) return [];
+  let data: unknown;
+  try {
+    data = JSON.parse(json);
+  } catch {
+    return [];
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return [];
+  return Object.entries(data as Record<string, unknown>)
+    .filter(([, v]) => typeof v === 'number' || typeof v === 'string')
+    .map(([key, v]) => {
+      const known = TELEMETRY_LABELS[key];
+      const label =
+        known?.label ??
+        key
+          .replace(/[_-]+/g, ' ')
+          .replace(/([a-z])([A-Z])/g, '$1 $2')
+          .toLowerCase()
+          .replace(/^\w/, (c) => c.toUpperCase());
+      return { key, label, value: `${v}${known ? ' ' + known.unit : ''}`.replace(' °C', '°C') };
+    });
+}
+
+/** A JSON list of strings (steps, spares); a plain string becomes one item. */
+export function stringList(json: string | null | undefined): string[] {
+  if (!json) return [];
+  try {
+    const parsed: unknown = JSON.parse(json);
+    if (Array.isArray(parsed)) return parsed.map(String).filter((s) => s.trim());
+    return [String(parsed)];
+  } catch {
+    return [json];
+  }
+}
+
+/** "CustomerConfirmedResolution" / "IVR_Step1_Selected" → "Customer confirmed resolution" / "IVR step1 selected". */
+export function actionLabel(action: string): string {
+  const words = action
+    .replace(/_/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .trim()
+    .split(/\s+/);
+  return words
+    .map((w, i) => (i === 0 || /^[A-Z]{2,}$/.test(w) ? w : w.toLowerCase()))
+    .join(' ')
+    .replace(/^\w/, (c) => c.toUpperCase());
+}
+
+const TABS = ['Live console', 'All sessions'] as const;
+type Tab = (typeof TABS)[number];
+
+/**
+ * AI remote maintenance: a technician reports a breakdown over WhatsApp or the IVR line, the AI diagnoses it from the fault code,
+ * symptoms and telemetry, and guides the fix step by step; when it cannot be fixed remotely it is escalated to a field visit.
+ * The live console shows one session (equipment, conversation, AI plan); All sessions lists them.
+ */
 @Component({
   selector: 'ar-remote-maintenance',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArCard, ArChip, ArDialog, ArIcon, ArGrid, GridModule],
+  imports: [
+    FormsModule,
+    ArTopbar,
+    ArButton,
+    ArCard,
+    ArChip,
+    ArDialog,
+    ArIcon,
+    ArMeter,
+    ArStatTile,
+    ArTabs,
+    ArGrid,
+    GridModule,
+    RouterLink,
+  ],
   template: `
-    <div class="remote-maint-page">
-      <ar-topbar
-        title="AI Remote Maintenance & Diagnostics"
-        subtitle="24/7 autonomous equipment diagnostics and remediation guidance over WhatsApp & IVR voice"
+    <ar-topbar
+      title="Remote maintenance"
+      subtitle="AI diagnoses breakdowns over WhatsApp and the IVR line, and guides the fix"
+      help="A technician reports a fault; the AI works out the likely cause from the fault code, symptoms and machine readings, then guides the fix step by step. If it can't be fixed remotely, escalate it to a field visit."
+    >
+      <button
+        type="button"
+        ar-button
+        variant="ghost"
+        icon="refresh"
+        [disabled]="isLoading()"
+        (click)="loadData()"
       >
-        <div class="topbar-actions">
-          <button
-            type="button"
-            ar-button
-            variant="ai"
-            icon="sparkle"
-            (click)="showInitiateModal.set(true)"
-          >
-            New Diagnostic Session
-          </button>
-          <button type="button" ar-button variant="ghost" icon="refresh" (click)="loadData()">
-            Refresh
-          </button>
+        Refresh
+      </button>
+      <a ar-button variant="ai" icon="sparkle" routerLink="/field-service/remote-maintenance/new">
+        New session
+      </a>
+    </ar-topbar>
+
+    <div class="rm ar-scroll" [attr.aria-busy]="isLoading()">
+      @if (loadError(); as e) {
+        <div class="rm__alert" role="alert">
+          <ar-icon name="alert" [size]="16" />
+          <span>{{ e }}</span>
+          <button type="button" class="rm__link" (click)="loadData()">Try again</button>
         </div>
-      </ar-topbar>
+      }
 
-      <!-- Executive KPIs -->
-      <section class="kpi-grid">
-        <ar-card class="kpi-card">
-          <div class="kpi-label">Remote Resolution Rate</div>
-          <div class="kpi-value text-good">{{ stats()?.remoteResolutionRatePercent ?? 76.3 }}%</div>
-          <div class="kpi-subtext">
-            <span
-              >{{ stats()?.resolvedRemotelyCount ?? 29 }} of
-              {{ stats()?.totalSessions ?? 38 }} sessions</span
-            >
-            <ar-chip tone="good">Resolved Remotely</ar-chip>
-          </div>
-        </ar-card>
-
-        <ar-card class="kpi-card">
-          <div class="kpi-label">Field Deflection Savings</div>
-          <div class="kpi-value text-accent">
-            {{ formatRupeesCompact(stats()?.estimatedCostSavingsInRupees ?? 435000) }}
-          </div>
-          <div class="kpi-subtext">
-            <span>Travel & logistics saved</span>
-            <span class="pill-badge positive">₹15K / trip</span>
-          </div>
-        </ar-card>
-
-        <ar-card class="kpi-card">
-          <div class="kpi-label">Channel Distribution</div>
-          <div class="kpi-value channel-split-val">
-            <span class="wa-part">{{ stats()?.whatsAppSessionCount ?? 24 }} WA</span>
-            <span class="ivr-part">/ {{ stats()?.ivrSessionCount ?? 14 }} IVR</span>
-          </div>
-          <div class="kpi-subtext">
-            <span>User Choice: 63% WhatsApp · 37% IVR</span>
-            <ar-chip tone="teal">Dual Channel</ar-chip>
-          </div>
-        </ar-card>
-
-        <ar-card class="kpi-card">
-          <div class="kpi-label">Avg Remediation Time</div>
-          <div class="kpi-value">{{ stats()?.averageResolutionTimeMinutes ?? 26.5 }}m</div>
-          <div class="kpi-subtext">
-            <span>Downtime reduced by 72%</span>
-            <ar-chip tone="neutral">High Velocity</ar-chip>
-          </div>
-        </ar-card>
+      <section class="rm__tiles" aria-label="Summary">
+        <ar-stat-tile
+          label="Resolved remotely"
+          [value]="stats() ? round(stats()!.remoteResolutionRatePercent) + '%' : '–'"
+          [note]="
+            stats()
+              ? stats()!.resolvedRemotelyCount + ' of ' + stats()!.totalSessions + ' sessions'
+              : null
+          "
+          tone="good"
+        />
+        <ar-stat-tile
+          label="Field visits avoided"
+          [value]="stats() ? formatRupeesCompact(stats()!.estimatedCostSavingsInRupees) : '–'"
+          [note]="stats() ? 'Saved at ₹15,000 a visit' : null"
+          tone="teal"
+        />
+        <ar-stat-tile
+          label="Escalated to a visit"
+          [value]="stats()?.escalatedToFieldCount ?? '–'"
+          [note]="stats() ? 'Sessions that needed an engineer on site' : null"
+        />
+        <ar-stat-tile
+          label="Average time to resolve"
+          [value]="stats() ? round(stats()!.averageResolutionTimeMinutes) + ' min' : '–'"
+          [note]="stats() ? channelSplit() : null"
+        />
       </section>
 
-      <!-- View Switcher Tabs -->
-      <div class="tab-bar">
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'console'"
-          (click)="activeTab.set('console')"
-        >
-          <ar-icon name="sparkle"></ar-icon>
-          Live Diagnostic Console
-        </button>
-        <button
-          type="button"
-          class="tab-btn"
-          [class.active]="activeTab() === 'sessions'"
-          (click)="activeTab.set('sessions')"
-        >
-          <ar-icon name="document"></ar-icon>
-          All Sessions History ({{ sessions().length }})
-        </button>
-      </div>
+      <ar-tabs [tabs]="tabs" [active]="activeTab()" (activeChange)="activeTab.set($any($event))" />
 
-      <!-- Tab 1: Live Diagnostic Console -->
-      @if (activeTab() === 'console') {
-        <div class="console-layout">
-          <!-- Session Selector Strip & Active Channel Picker -->
-          <div class="session-bar">
-            <div class="session-picker">
-              <label>Active Session:</label>
-              <select [(ngModel)]="selectedSessionId" (change)="onSessionSelected()">
-                @for (s of sessions(); track s.id) {
-                  <option [value]="s.id">
-                    {{ s.sessionCode }} · {{ s.customerName }} · {{ s.equipmentModel }}
-                  </option>
-                }
-              </select>
+      @if (activeTab() === 'Live console') {
+        @if (currentSession(); as s) {
+          <!-- Session bar -->
+          <ar-card class="rm__bar-card">
+            <div class="rm__bar">
+              <label class="ar-field rm__pick">
+                <span class="ar-field__label">Session</span>
+                <select
+                  class="ar-field__input"
+                  [ngModel]="selectedSessionId"
+                  (ngModelChange)="selectedSessionId = $event; onSessionSelected()"
+                >
+                  @for (o of sessions(); track o.id) {
+                    <option [value]="o.id">
+                      {{ o.sessionCode }} · {{ o.customerName }} · {{ o.equipmentModel }}
+                    </option>
+                  }
+                </select>
+              </label>
+              <div class="rm__bar-meta">
+                <ar-chip [tone]="getStatusTone(s.status)" [dot]="true">{{
+                  getStatusLabel(s.status)
+                }}</ar-chip>
+                <ar-chip [tone]="getSeverityTone(s.severity)"
+                  >{{ getSeverityLabel(s.severity) }} severity</ar-chip
+                >
+              </div>
+
             </div>
-
-            <!-- User Channel Toggle (WhatsApp vs IVR) -->
-            <div class="channel-toggle-box">
-              <span class="toggle-label">Active Channel:</span>
-              <div class="toggle-buttons">
+            <div class="rm__bar">
+               <div class="rm__seg" role="radiogroup" aria-label="Channel for this session">
                 <button
                   type="button"
-                  class="ch-btn"
-                  [class.selected]="
-                    currentSession()?.preferredChannel === MaintenanceChannel.WhatsApp
-                  "
+                  role="radio"
+                  class="rm__seg-btn"
+                  [class.rm__seg-btn--on]="s.preferredChannel === MaintenanceChannel.WhatsApp"
+                  [attr.aria-checked]="s.preferredChannel === MaintenanceChannel.WhatsApp"
+                  [disabled]="isClosed(s)"
                   (click)="switchChannel(MaintenanceChannel.WhatsApp)"
                 >
-                  <ar-icon name="send"></ar-icon>
-                  WhatsApp
+                  <ar-icon name="send" [size]="14" /> WhatsApp
                 </button>
                 <button
                   type="button"
-                  class="ch-btn"
-                  [class.selected]="
-                    currentSession()?.preferredChannel === MaintenanceChannel.IvrPhone
-                  "
+                  role="radio"
+                  class="rm__seg-btn"
+                  [class.rm__seg-btn--on]="s.preferredChannel === MaintenanceChannel.IvrPhone"
+                  [attr.aria-checked]="s.preferredChannel === MaintenanceChannel.IvrPhone"
+                  [disabled]="isClosed(s)"
                   (click)="switchChannel(MaintenanceChannel.IvrPhone)"
                 >
-                  <ar-icon name="tower"></ar-icon>
-                  IVR Phone
+                  <ar-icon name="phone" [size]="14" /> IVR phone
                 </button>
               </div>
             </div>
+          </ar-card>
 
-            <div class="session-status-badge">
-              <ar-chip [tone]="getStatusTone(currentSession()?.status ?? 0)">
-                {{ getStatusLabel(currentSession()?.status ?? 0) }}
-              </ar-chip>
-            </div>
-          </div>
+          <div class="rm__console">
+            <!-- Equipment -->
+            <ar-card heading="Equipment" class="rm__col">
+              <dl class="rm__facts">
+                <div>
+                  <dt>Customer</dt>
+                  <dd translate="no">{{ s.customerName }}</dd>
+                </div>
+                <div>
+                  <dt>Phone</dt>
+                  <dd class="ar-mono" translate="no">{{ s.customerContactPhone || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>Model</dt>
+                  <dd translate="no">{{ s.equipmentModel }}</dd>
+                </div>
+                <div>
+                  <dt>Serial no.</dt>
+                  <dd class="ar-mono" translate="no">{{ s.equipmentSerialNumber || '—' }}</dd>
+                </div>
+                <div>
+                  <dt>Fault code</dt>
+                  <dd>
+                    @if (s.faultCode) {
+                      <span class="rm__code" translate="no">{{ s.faultCode }}</span>
+                    } @else {
+                      <span class="rm__muted">None reported</span>
+                    }
+                  </dd>
+                </div>
+              </dl>
 
-          <!-- 3-Column Diagnostic Workspace -->
-          <div class="diagnostic-grid">
-            <!-- Left Deck: Equipment & Telemetry Telemetry -->
-            <ar-card class="deck-card">
-              <div class="deck-header">
-                <h3>Equipment & Telemetry</h3>
-                <ar-chip [tone]="getSeverityTone(currentSession()?.severity ?? 0)">
-                  {{ getSeverityLabel(currentSession()?.severity ?? 0) }}
-                </ar-chip>
-              </div>
+              <h4 class="rm__sub">Machine readings</h4>
+              @if (telemetry().length) {
+                <ul class="rm__sensors">
+                  @for (t of telemetry(); track t.key) {
+                    <li>
+                      <span>{{ t.label }}</span>
+                      <strong translate="no">{{ t.value }}</strong>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="rm__muted">No readings were sent with this session.</p>
+              }
 
-              <div class="equipment-meta">
-                <div class="meta-row">
-                  <span class="lbl">Customer:</span>
-                  <span class="val font-semibold">{{ currentSession()?.customerName }}</span>
-                </div>
-                <div class="meta-row">
-                  <span class="lbl">Phone:</span>
-                  <span class="val font-mono">{{ currentSession()?.customerContactPhone }}</span>
-                </div>
-                <div class="meta-row">
-                  <span class="lbl">Model:</span>
-                  <span class="val font-semibold">{{ currentSession()?.equipmentModel }}</span>
-                </div>
-                <div class="meta-row">
-                  <span class="lbl">Serial No:</span>
-                  <span class="val font-mono">{{ currentSession()?.equipmentSerialNumber }}</span>
-                </div>
-                <div class="meta-row">
-                  <span class="lbl">Fault Code:</span>
-                  <span class="val fault-code-pill">{{
-                    currentSession()?.faultCode ?? 'General Breakdown'
-                  }}</span>
-                </div>
-              </div>
-
-              <!-- Live Sensor Gauges -->
-              <div class="sensor-readings">
-                <h4>Machine Sensor Telemetry</h4>
-                <div class="sensors-grid">
-                  <div class="sensor-box">
-                    <span class="sensor-lbl">Heatsink Temp</span>
-                    <span class="sensor-val" [class.val-hot]="getTelemetry().temp_c > 75">
-                      {{ getTelemetry().temp_c }}°C
-                    </span>
-                    <span class="sensor-lim">Max: 85°C</span>
-                  </div>
-                  <div class="sensor-box">
-                    <span class="sensor-lbl">DC Bus Voltage</span>
-                    <span class="sensor-val">{{ getTelemetry().bus_voltage }}V</span>
-                    <span class="sensor-lim">Nominal: 560V</span>
-                  </div>
-                  <div class="sensor-box">
-                    <span class="sensor-lbl">Motor Current</span>
-                    <span
-                      class="sensor-val"
-                      [class.val-warn]="(getTelemetry().motor_current ?? 0) > 18"
-                    >
-                      {{ getTelemetry().motor_current ?? 14.2 }}A
-                    </span>
-                    <span class="sensor-lim">Rated: 18.0A</span>
-                  </div>
-                  <div class="sensor-box">
-                    <span class="sensor-lbl">Est. Downtime</span>
-                    <span class="sensor-val text-accent"
-                      >~{{ currentSession()?.estimatedDowntimeMinutes ?? 30 }}m</span
-                    >
-                    <span class="sensor-lim">Without visit</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="symptom-notes">
-                <h4>Reported Symptoms</h4>
-                <p>{{ currentSession()?.reportedSymptoms }}</p>
-              </div>
+              <h4 class="rm__sub">Reported symptoms</h4>
+              <p class="rm__text">{{ s.reportedSymptoms || 'None given.' }}</p>
             </ar-card>
 
-            <!-- Center Deck: Interactive Channel Stream (WhatsApp / IVR) -->
-            <ar-card class="stream-card">
-              <div class="stream-header">
-                @if (currentSession()?.preferredChannel === MaintenanceChannel.WhatsApp) {
-                  <div class="channel-title wa-title">
-                    <ar-icon name="send"></ar-icon>
-                    <span>WhatsApp Diagnostic Conversation</span>
-                  </div>
-                  <span class="stream-channel-sub">Live 2-way industrial support</span>
-                } @else {
-                  <div class="channel-title ivr-title">
-                    <ar-icon name="tower"></ar-icon>
-                    <span>IVR Automated Voice Interaction</span>
-                  </div>
-                  <span class="stream-channel-sub">Exotel synthesized phone flow</span>
-                }
-              </div>
-
-              <!-- Conversation Turns / Transcript Bubble List -->
-              <div class="turns-container">
-                @for (t of currentSession()?.diagnosticTurns ?? []; track t.id) {
-                  <div
-                    class="turn-bubble"
-                    [class.user-turn]="
-                      t.turnType === DiagnosticTurnType.UserPrompt ||
-                      t.turnType === DiagnosticTurnType.IvrMenuChoice
-                    "
-                    [class.ai-turn]="
-                      t.turnType === DiagnosticTurnType.RemediationGuidance ||
-                      t.turnType === DiagnosticTurnType.AiDiagnosis
-                    "
-                    [class.ivr-bubble]="t.channel === MaintenanceChannel.IvrPhone"
+            <!-- Conversation -->
+            <ar-card class="rm__col rm__chat-card">
+              <header class="rm__chat-head">
+                <span
+                  class="rm__chat-icon"
+                  [class.rm__chat-icon--ivr]="s.preferredChannel === MaintenanceChannel.IvrPhone"
+                >
+                  <ar-icon
+                    [name]="s.preferredChannel === MaintenanceChannel.WhatsApp ? 'send' : 'phone'"
+                    [size]="16"
+                  />
+                </span>
+                <div>
+                  <h3>
+                    {{
+                      s.preferredChannel === MaintenanceChannel.WhatsApp
+                        ? 'WhatsApp conversation'
+                        : 'IVR call'
+                    }}
+                  </h3>
+                  <small
+                    >{{ s.diagnosticTurns.length }}
+                    {{ s.diagnosticTurns.length === 1 ? 'exchange' : 'exchanges' }}</small
                   >
-                    <div class="turn-meta">
-                      <span class="turn-sender">
-                        {{
-                          t.turnType === DiagnosticTurnType.UserPrompt ||
-                          t.turnType === DiagnosticTurnType.IvrMenuChoice
-                            ? 'Technician / Caller'
-                            : 'AutoReach AI Support'
-                        }}
-                      </span>
-                      <span class="turn-time">{{ formatTime(t.createdAtUtc) }}</span>
-                    </div>
+                </div>
+              </header>
 
-                    @if (t.turnType === DiagnosticTurnType.IvrMenuChoice) {
-                      <div class="dtmf-chip">
-                        <span>Pressed Key:</span> <strong>[{{ t.inputOrPrompt }}]</strong>
+              <ol class="rm__turns" aria-label="Conversation">
+                @for (t of s.diagnosticTurns; track t.id) {
+                  <li class="rm__turn">
+                    @if (t.inputOrPrompt) {
+                      <div class="rm__msg rm__msg--tech">
+                        <span class="rm__who">Technician · {{ formatTime(t.createdAtUtc) }}</span>
+                        @if (t.turnType === DiagnosticTurnType.IvrMenuChoice) {
+                          <span class="rm__key"
+                            >Pressed <kbd>{{ t.inputOrPrompt }}</kbd></span
+                          >
+                        } @else {
+                          <p>{{ t.inputOrPrompt }}</p>
+                        }
                       </div>
-                    } @else {
-                      <div class="turn-text">{{ t.inputOrPrompt }}</div>
                     }
-
-                    <div class="turn-response">
-                      <pre class="formatted-ai-response">{{ t.aiResponseOrGuidance }}</pre>
-                    </div>
-
-                    @if (t.actionTaken) {
-                      <div class="action-tag">Action: {{ t.actionTaken }}</div>
+                    @if (t.aiResponseOrGuidance) {
+                      <div class="rm__msg rm__msg--ai">
+                        <span class="rm__who"
+                          ><ar-icon name="sparkle" [size]="12" /> AI assistant</span
+                        >
+                        <p class="rm__pre">{{ t.aiResponseOrGuidance }}</p>
+                        @if (t.actionTaken) {
+                          <span class="rm__action">{{ actionText(t.actionTaken) }}</span>
+                        }
+                      </div>
                     }
-                  </div>
+                  </li>
+                } @empty {
+                  <li class="rm__muted rm__turns-empty">No messages yet.</li>
                 }
-              </div>
+              </ol>
 
-              <!-- Channel Interaction Input Box -->
-              <div class="interaction-input-box">
-                @if (currentSession()?.preferredChannel === MaintenanceChannel.WhatsApp) {
-                  <div class="wa-input-row">
+              <div class="rm__compose">
+                @if (isClosed(s)) {
+                  <p class="rm__muted">
+                    This session is {{ getStatusLabel(s.status).toLowerCase() }}: no more replies.
+                  </p>
+                } @else if (s.preferredChannel === MaintenanceChannel.WhatsApp) {
+                  <div class="rm__compose-row">
                     <input
                       type="text"
+                      class="ar-field__input"
+                      aria-label="Technician's reply"
+                      placeholder="Type the technician's reply, e.g. 'Insulation is 25 MΩ'"
                       [(ngModel)]="waMessageInput"
-                      placeholder="Type technician reply (e.g. 'Insulation is 25 MΩ', 'FIXED', 'ESCALATE')..."
                       (keyup.enter)="sendWhatsAppTurn()"
                     />
                     <button
@@ -605,1056 +654,834 @@ const MOCK_STATS: RemoteMaintenanceStatsDto = {
                       Send
                     </button>
                   </div>
-                  <div class="quick-chips">
+                  <div class="rm__quick" aria-label="Quick replies">
                     <button
                       type="button"
-                      class="quick-chip"
+                      class="rm__chip"
                       (click)="quickReply('Insulation measured 25 MΩ. Healthy.')"
                     >
-                      Quick: Insulation Healthy
+                      Insulation healthy
                     </button>
                     <button
                       type="button"
-                      class="quick-chip"
+                      class="rm__chip"
                       (click)="quickReply('FIXED: Machine running normal.')"
                     >
-                      Quick: Fixed &amp; Running
+                      Fixed and running
                     </button>
                     <button
                       type="button"
-                      class="quick-chip"
+                      class="rm__chip"
                       (click)="quickReply('ESCALATE: Motor windings burnt.')"
                     >
-                      Quick: Burnt / Escalate
+                      Needs an engineer
                     </button>
                   </div>
                 } @else {
-                  <!-- IVR Dialpad Interaction -->
-                  <div class="ivr-keypad-panel">
-                    <span class="keypad-title">Simulate DTMF Keypress:</span>
-                    <div class="keypad-grid">
-                      <button type="button" class="key-btn" (click)="sendIvrDigit('1')">
-                        1: Steps
-                      </button>
-                      <button type="button" class="key-btn" (click)="sendIvrDigit('2')">
-                        2: Reset
-                      </button>
-                      <button type="button" class="key-btn" (click)="sendIvrDigit('9')">
-                        9: Resolved
-                      </button>
-                      <button type="button" class="key-btn key-esc" (click)="sendIvrDigit('0')">
-                        0: Engineer
-                      </button>
-                    </div>
+                  <span class="ar-label">Keypad</span>
+                  <div class="rm__keypad">
+                    <button type="button" class="rm__key-btn" (click)="sendIvrDigit('1')">
+                      <kbd>1</kbd> Steps
+                    </button>
+                    <button type="button" class="rm__key-btn" (click)="sendIvrDigit('2')">
+                      <kbd>2</kbd> Reset
+                    </button>
+                    <button type="button" class="rm__key-btn" (click)="sendIvrDigit('9')">
+                      <kbd>9</kbd> Fixed
+                    </button>
+                    <button
+                      type="button"
+                      class="rm__key-btn rm__key-btn--esc"
+                      (click)="sendIvrDigit('0')"
+                    >
+                      <kbd>0</kbd> Engineer
+                    </button>
                   </div>
                 }
               </div>
             </ar-card>
 
-            <!-- Right Deck: AI Diagnostics & Resolution Deck -->
-            <ar-card class="deck-card">
-              <div class="deck-header">
-                <h3>AI Root Cause &amp; Plan</h3>
-                <div class="confidence-badge">
-                  <span class="conf-num"
-                    >{{ currentSession()?.confidencePercent?.toFixed(1) }}%</span
-                  >
-                  <span class="conf-lbl">confidence</span>
+            <!-- AI plan -->
+            <ar-card heading="AI diagnosis" class="rm__col">
+              <div class="rm__conf">
+                <div class="rm__conf-top">
+                  <span>Confidence</span>
+                  <strong>{{
+                    s.confidencePercent ? s.confidencePercent.toFixed(0) + '%' : '–'
+                  }}</strong>
                 </div>
+                <ar-meter
+                  [value]="s.confidencePercent || 0"
+                  [tone]="confidenceTone(s.confidencePercent)"
+                  [thickness]="6"
+                  label="Diagnosis confidence"
+                />
               </div>
 
-              <!-- Root Cause Explanation -->
-              <div class="diagnosis-box">
-                <h4>Diagnosis</h4>
-                <p>{{ currentSession()?.rootCauseDiagnosis }}</p>
-              </div>
+              <h4 class="rm__sub">Likely cause</h4>
+              <p class="rm__text">
+                {{ s.rootCauseDiagnosis || 'The AI is still working out the cause.' }}
+              </p>
 
-              <!-- Remediation Checklist -->
-              <div class="remediation-box">
-                <h4>Remediation Steps</h4>
-                <ol class="steps-list">
-                  @for (step of parsedRemediationSteps(); track $index) {
+              @if (remediationSteps().length) {
+                <h4 class="rm__sub">Steps to fix</h4>
+                <ol class="rm__steps">
+                  @for (step of remediationSteps(); track $index) {
                     <li>{{ step }}</li>
                   }
                 </ol>
-              </div>
+              }
 
-              <!-- Recommended Spare Parts -->
-              <div class="spares-box">
-                <h4>Recommended OEM Spares</h4>
-                <ul class="spares-list">
-                  @for (spare of parsedSpareParts(); track $index) {
+              @if (spareParts().length) {
+                <h4 class="rm__sub">Spares that may be needed</h4>
+                <ul class="rm__spares">
+                  @for (p of spareParts(); track $index) {
                     <li>
-                      <ar-icon name="machine"></ar-icon>
-                      <span>{{ spare }}</span>
+                      <ar-icon name="machine" [size]="14" /><span translate="no">{{ p }}</span>
                     </li>
                   }
                 </ul>
-              </div>
+              }
 
-              <!-- Action Controls -->
-              <div class="resolution-actions">
+              @if (s.estimatedDowntimeMinutes) {
+                <p class="rm__downtime">
+                  <ar-icon name="clock" [size]="14" /> About {{ s.estimatedDowntimeMinutes }} min
+                  downtime if fixed remotely
+                </p>
+              }
+
+              @if (s.resolutionNotes) {
+                <div
+                  class="rm__outcome"
+                  [class.rm__outcome--bad]="
+                    s.status === MaintenanceSessionStatus.EscalatedToFieldTicket
+                  "
+                >
+                  {{ s.resolutionNotes }}
+                </div>
+              }
+
+              <div class="rm__decide">
                 <button
                   type="button"
                   ar-button
                   variant="primary"
-                  [disabled]="
-                    currentSession()?.status === MaintenanceSessionStatus.ResolvedRemotely
-                  "
+                  [disabled]="isClosed(s)"
                   (click)="markResolvedRemotely()"
                 >
-                  Mark Resolved Remotely
+                  Mark resolved
                 </button>
                 <button
                   type="button"
                   ar-button
                   variant="danger"
-                  [disabled]="
-                    currentSession()?.status === MaintenanceSessionStatus.EscalatedToFieldTicket
-                  "
+                  [disabled]="isClosed(s)"
                   (click)="openEscalateModal()"
                 >
-                  Escalate to Field Visit
+                  Escalate to a visit
                 </button>
               </div>
             </ar-card>
           </div>
-        </div>
+        } @else if (!isLoading()) {
+          <ar-card>
+            <div class="rm__empty">
+              <span class="rm__empty-icon"><ar-icon name="machine" [size]="24" /></span>
+              <h2>No remote maintenance sessions yet</h2>
+              <p>
+                Start one when a customer reports a breakdown. The AI diagnoses it and guides their
+                technician over WhatsApp or the IVR line.
+              </p>
+              <a ar-button variant="ai" icon="sparkle" routerLink="/field-service/remote-maintenance/new">
+                New session
+              </a>
+            </div>
+          </ar-card>
+        }
       }
 
-      <!-- Tab 2: Sessions History Table -->
-      @if (activeTab() === 'sessions') {
-        <ar-card class="history-card">
-          <div class="history-toolbar">
-            <div class="filter-group">
-              <label>Channel:</label>
-              <select [(ngModel)]="filterChannel" (change)="applyFilters()">
-                <option [ngValue]="null">All Channels</option>
+      @if (activeTab() === 'All sessions') {
+        <ar-card>
+          <div class="rm__filters">
+            <label class="ar-field">
+              <span class="ar-field__label">Channel</span>
+              <select
+                class="ar-field__input"
+                [(ngModel)]="filterChannel"
+                (ngModelChange)="applyFilters()"
+              >
+                <option [ngValue]="null">All channels</option>
                 <option [ngValue]="MaintenanceChannel.WhatsApp">WhatsApp</option>
-                <option [ngValue]="MaintenanceChannel.IvrPhone">IVR Phone</option>
+                <option [ngValue]="MaintenanceChannel.IvrPhone">IVR phone</option>
               </select>
-            </div>
-            <div class="filter-group">
-              <label>Status:</label>
-              <select [(ngModel)]="filterStatus" (change)="applyFilters()">
-                <option [ngValue]="null">All Statuses</option>
-                <option [ngValue]="MaintenanceSessionStatus.ResolvedRemotely">
-                  Resolved Remotely
-                </option>
-                <option [ngValue]="MaintenanceSessionStatus.Diagnosing">Diagnosing</option>
-                <option [ngValue]="MaintenanceSessionStatus.EscalatedToFieldTicket">
-                  Escalated to Field
-                </option>
+            </label>
+            <label class="ar-field">
+              <span class="ar-field__label">Status</span>
+              <select
+                class="ar-field__input"
+                [(ngModel)]="filterStatus"
+                (ngModelChange)="applyFilters()"
+              >
+                <option [ngValue]="null">All statuses</option>
+                @for (o of statusOptions; track o.value) {
+                  <option [ngValue]="o.value">{{ o.label }}</option>
+                }
               </select>
-            </div>
-            <div class="record-counter">
-              Showing {{ filteredSessions().length }} of {{ sessions().length }} sessions
-            </div>
+            </label>
+            <span class="rm__count"
+              >{{ filteredSessions().length }} of {{ sessions().length }} sessions</span
+            >
           </div>
 
           <ejs-grid
             arGrid="remote-maintenance-sessions"
             [dataSource]="filteredSessions()"
-            aria-label="Remote Maintenance Sessions"
+            aria-label="Remote maintenance sessions"
           >
             <e-columns>
-              <e-column field="sessionCode" headerText="Session" width="140">
+              <e-column field="sessionCode" headerText="Session" width="150">
                 <ng-template #template let-s>
-                  <span class="font-mono font-semibold">{{ s.sessionCode }}</span>
-                </ng-template>
-              </e-column>
-              <e-column field="customerName" headerText="Customer" width="220"></e-column>
-              <e-column field="equipmentModel" headerText="Equipment Model" width="200">
-                <ng-template #template let-s>
-                  <span class="font-semibold">{{ s.equipmentModel }}</span>
-                </ng-template>
-              </e-column>
-              <e-column field="faultCode" headerText="Fault Code" width="120">
-                <ng-template #template let-s>
-                  <span class="fault-code-pill">{{ s.faultCode ?? 'General' }}</span>
-                </ng-template>
-              </e-column>
-              <e-column field="preferredChannel" headerText="Channel" width="130">
-                <ng-template #template let-s>
-                  <ar-chip
-                    [tone]="
-                      s.preferredChannel === MaintenanceChannel.WhatsApp ? 'good' : 'teal'
-                    "
-                  >
-                    {{
-                      s.preferredChannel === MaintenanceChannel.WhatsApp
-                        ? 'WhatsApp'
-                        : 'IVR Phone'
-                    }}
-                  </ar-chip>
-                </ng-template>
-              </e-column>
-              <e-column field="severity" headerText="Severity" width="130">
-                <ng-template #template let-s>
-                  <ar-chip [tone]="getSeverityTone(s.severity)">
-                    {{ getSeverityLabel(s.severity) }}
-                  </ar-chip>
-                </ng-template>
-              </e-column>
-              <e-column field="status" headerText="Status" width="160">
-                <ng-template #template let-s>
-                  <ar-chip [tone]="getStatusTone(s.status)">
-                    {{ getStatusLabel(s.status) }}
-                  </ar-chip>
-                </ng-template>
-              </e-column>
-              <e-column field="confidencePercent" headerText="Confidence" width="120" [textAlign]="'Right'">
-                <ng-template #template let-s>
-                  {{ s.confidencePercent.toFixed(1) }}%
-                </ng-template>
-              </e-column>
-              <e-column headerText="Actions" width="110" [textAlign]="'Right'" freeze="Right">
-                <ng-template #template let-s>
-                  <button type="button" ar-button variant="ghost" (click)="viewInConsole(s)">
-                    Inspect
+                  <button type="button" class="rm__link ar-mono" (click)="viewInConsole(s)">
+                    {{ s.sessionCode }}
                   </button>
                 </ng-template>
+              </e-column>
+              <e-column field="customerName" headerText="Customer" width="220" />
+              <e-column field="equipmentModel" headerText="Equipment" width="210" />
+              <e-column field="faultCode" headerText="Fault code" width="140">
+                <ng-template #template let-s>
+                  @if (s.faultCode) {
+                    <span class="rm__code" translate="no">{{ s.faultCode }}</span>
+                  } @else {
+                    <span class="rm__muted">—</span>
+                  }
+                </ng-template>
+              </e-column>
+              <e-column field="preferredChannel" headerText="Channel" width="120">
+                <ng-template #template let-s>
+                  {{
+                    s.preferredChannel === MaintenanceChannel.WhatsApp ? 'WhatsApp' : 'IVR phone'
+                  }}
+                </ng-template>
+              </e-column>
+              <e-column field="severity" headerText="Severity" width="140">
+                <ng-template #template let-s>
+                  <ar-chip [tone]="getSeverityTone(s.severity)">{{
+                    getSeverityLabel(s.severity)
+                  }}</ar-chip>
+                </ng-template>
+              </e-column>
+              <e-column field="status" headerText="Status" width="170">
+                <ng-template #template let-s>
+                  <ar-chip [tone]="getStatusTone(s.status)" [dot]="true">{{
+                    getStatusLabel(s.status)
+                  }}</ar-chip>
+                </ng-template>
+              </e-column>
+              <e-column
+                field="confidencePercent"
+                headerText="Confidence"
+                width="120"
+                textAlign="Right"
+              >
+                <ng-template #template let-s>
+                  {{ s.confidencePercent ? s.confidencePercent.toFixed(0) + '%' : '–' }}
+                </ng-template>
+              </e-column>
+              <e-column field="creationTime" headerText="Started" width="150">
+                <ng-template #template let-s>{{ formatDateTime(s.creationTime) }}</ng-template>
               </e-column>
             </e-columns>
           </ejs-grid>
         </ar-card>
       }
-
-      <!-- Modal: Initiate Diagnostic Session -->
-      @if (showInitiateModal()) {
-        <ar-dialog
-          title="Initiate AI Remote Diagnostic Session"
-          (dismiss)="showInitiateModal.set(false)"
-        >
-          <div class="dialog-form">
-            <div class="form-row">
-              <label>Customer Name *</label>
-              <input
-                type="text"
-                [(ngModel)]="initCustomerName"
-                class="form-input"
-                placeholder="e.g. Tata Motors Powertrain"
-              />
-            </div>
-            <div class="form-row">
-              <label>Technician / Contact Phone *</label>
-              <input
-                type="text"
-                [(ngModel)]="initCustomerPhone"
-                class="form-input"
-                placeholder="e.g. +91 98220 54321"
-              />
-            </div>
-            <div class="form-row">
-              <label>Equipment Model *</label>
-              <input
-                type="text"
-                [(ngModel)]="initEquipmentModel"
-                class="form-input"
-                placeholder="e.g. Siemens Sinamics G120 (7.5 kW)"
-              />
-            </div>
-            <div class="form-row">
-              <label>Equipment Serial Number *</label>
-              <input
-                type="text"
-                [(ngModel)]="initEquipmentSerial"
-                class="form-input"
-                placeholder="e.g. SN-G120-88412"
-              />
-            </div>
-            <div class="form-row">
-              <label>Equipment Category</label>
-              <select [(ngModel)]="initCategory" class="form-input">
-                @for (opt of equipmentCategoryOptions; track opt.value) {
-                  <option [ngValue]="opt.value">{{ opt.label }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-row">
-              <label>Preferred Interaction Channel *</label>
-              <select [(ngModel)]="initChannel" class="form-input font-semibold">
-                @for (ch of maintenanceChannelOptions; track ch.value) {
-                  <option [ngValue]="ch.value">{{ ch.label }}</option>
-                }
-              </select>
-            </div>
-            <div class="form-row">
-              <label>Fault Code (from display/HMI)</label>
-              <input
-                type="text"
-                [(ngModel)]="initFaultCode"
-                class="form-input"
-                placeholder="e.g. F0002, F0004, ERR_PROFINET_TIMEOUT"
-              />
-            </div>
-            <div class="form-row">
-              <label>Reported Symptoms &amp; Fault Description *</label>
-              <textarea
-                [(ngModel)]="initSymptoms"
-                rows="3"
-                class="form-input"
-                placeholder="Describe symptoms, noise, odors, or tripping sequence..."
-              ></textarea>
-            </div>
-            <div class="form-row">
-              <label>Severity Level</label>
-              <select [(ngModel)]="initSeverity" class="form-input">
-                @for (sev of maintenanceSeverityOptions; track sev.value) {
-                  <option [ngValue]="sev.value">{{ sev.label }}</option>
-                }
-              </select>
-            </div>
-          </div>
-          <div dialogActions class="dialog-actions">
-            <button type="button" ar-button variant="ghost" (click)="showInitiateModal.set(false)">
-              Cancel
-            </button>
-            <button
-              type="button"
-              ar-button
-              variant="ai"
-              icon="sparkle"
-              [disabled]="!initCustomerName.trim() || !initEquipmentModel.trim()"
-              (click)="onInitiateSubmit()"
-            >
-              Start Diagnostic Session
-            </button>
-          </div>
-        </ar-dialog>
-      }
-
-      <!-- Modal: Escalate to Field Ticket -->
-      @if (showEscalateModal()) {
-        <ar-dialog title="Escalate to On-Site Field Visit" (dismiss)="showEscalateModal.set(false)">
-          <div class="dialog-form">
-            <p class="dialog-alert">
-              Remote diagnostics could not resolve this fault. An emergency Field Service Ticket
-              will be dispatched with full diagnostic history.
-            </p>
-            <div class="form-row">
-              <label>Escalation Reason *</label>
-              <textarea
-                [(ngModel)]="escalateReason"
-                rows="3"
-                class="form-input"
-                placeholder="Specify why remote support was exhausted..."
-              ></textarea>
-            </div>
-            <div class="form-row">
-              <label>Assigned Field Service Engineer</label>
-              <input
-                type="text"
-                [(ngModel)]="escalateEngineer"
-                class="form-input"
-                placeholder="e.g. Mahesh Joshi (Senior Drive Specialist)"
-              />
-            </div>
-          </div>
-          <div dialogActions class="dialog-actions">
-            <button type="button" ar-button variant="ghost" (click)="showEscalateModal.set(false)">
-              Cancel
-            </button>
-            <button
-              type="button"
-              ar-button
-              variant="danger"
-              [disabled]="!escalateReason.trim()"
-              (click)="confirmEscalateToField()"
-            >
-              Confirm Escalation
-            </button>
-          </div>
-        </ar-dialog>
-      }
     </div>
+
+    <!-- Escalate -->
+    @if (showEscalateModal()) {
+      <ar-dialog title="Escalate to a field visit" (dismiss)="showEscalateModal.set(false)">
+        <div class="rm__form rm__form--one">
+          <p class="rm__note">
+            A field service ticket is raised with the whole diagnostic history, so the engineer
+            arrives knowing what was tried.
+          </p>
+          <label class="ar-field">
+            <span class="ar-field__label"
+              >Why it can't be fixed remotely <span class="ar-field__req">*</span></span
+            >
+            <textarea class="ar-field__input" rows="3" [(ngModel)]="escalateReason"></textarea>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label"
+              >Field engineer <span class="ar-field__opt">optional</span></span
+            >
+            <input
+              class="ar-field__input"
+              [(ngModel)]="escalateEngineer"
+              placeholder="Who should go"
+            />
+          </label>
+        </div>
+        <div dialogActions>
+          <button type="button" ar-button variant="ghost" (click)="showEscalateModal.set(false)">
+            Cancel
+          </button>
+          <button
+            type="button"
+            ar-button
+            variant="danger"
+            [disabled]="!escalateReason.trim()"
+            (click)="confirmEscalateToField()"
+          >
+            Escalate
+          </button>
+        </div>
+      </ar-dialog>
+    }
   `,
-  styles: [
-    `
-      .remote-maint-page {
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-        padding: 1.5rem;
-        max-width: 1480px;
-        margin: 0 auto;
-      }
-
-      .topbar-actions {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-      }
-
-      /* KPI Grid */
-      .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1rem;
-      }
-
-      .kpi-card {
-        padding: 1.25rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      .kpi-label {
-        font-size: 0.8125rem;
-        font-weight: 500;
-        color: var(--color-text-muted, #64748b);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
-
-      .kpi-value {
-        font-size: 1.875rem;
-        font-weight: 700;
-        line-height: 1.1;
-      }
-
-      .channel-split-val {
-        font-size: 1.625rem;
-      }
-
-      .wa-part {
-        color: #059669;
-      }
-
-      .ivr-part {
-        color: #2563eb;
-      }
-
-      .kpi-subtext {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: 0.75rem;
-        color: var(--color-text-muted, #64748b);
-        margin-top: 0.25rem;
-      }
-
-      .pill-badge {
-        padding: 0.125rem 0.375rem;
-        border-radius: 4px;
-        font-weight: 600;
-      }
-
-      .pill-badge.positive {
-        color: #059669;
-        background: #ecfdf5;
-      }
-
-      .text-good {
-        color: #10b981;
-      }
-      .text-accent {
-        color: #3b82f6;
-      }
-      .text-warn {
-        color: #f59e0b;
-      }
-      .text-muted {
-        color: #94a3b8;
-      }
-      .font-semibold {
-        font-weight: 600;
-      }
-      .font-mono {
-        font-family: monospace;
-      }
-      .text-right {
-        text-align: right;
-      }
-
-      /* Tab Bar */
-      .tab-bar {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        border-bottom: 1px solid var(--color-border, #e2e8f0);
-        padding-bottom: 0.25rem;
-      }
-
-      .tab-btn {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.625rem 1rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        border: none;
-        background: none;
-        color: var(--color-text-muted, #64748b);
-        cursor: pointer;
-        border-radius: 6px;
-        transition: all 0.15s ease-in-out;
-      }
-
-      .tab-btn:hover {
-        color: var(--color-text-primary, #0f172a);
-        background: var(--color-bg-hover, #f8fafc);
-      }
-
-      .tab-btn.active {
-        color: #2563eb;
-        background: #eff6ff;
-        font-weight: 600;
-      }
-
-      /* Console Layout */
-      .console-layout {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .session-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 0.875rem 1.25rem;
-        background: #ffffff;
-        border: 1px solid var(--color-border, #e2e8f0);
-        border-radius: 8px;
-      }
-
-      .session-picker {
-        display: flex;
-        align-items: center;
-        gap: 0.625rem;
-        font-size: 0.875rem;
-      }
-
-      .session-picker select {
-        padding: 0.375rem 0.75rem;
-        border-radius: 6px;
-        border: 1px solid #cbd5e1;
-        font-weight: 500;
-        min-width: 320px;
-      }
-
-      .channel-toggle-box {
-        display: flex;
-        align-items: center;
-        gap: 0.625rem;
-      }
-
-      .toggle-label {
-        font-size: 0.8125rem;
-        color: #64748b;
-        font-weight: 600;
-      }
-
-      .toggle-buttons {
-        display: flex;
-        background: #f1f5f9;
-        border-radius: 6px;
-        padding: 2px;
-      }
-
-      .ch-btn {
-        display: flex;
-        align-items: center;
-        gap: 0.375rem;
-        padding: 0.375rem 0.875rem;
-        font-size: 0.8125rem;
-        font-weight: 600;
-        border: none;
-        background: none;
-        border-radius: 4px;
-        cursor: pointer;
-        color: #64748b;
-        transition: all 0.15s ease;
-      }
-
-      .ch-btn.selected {
-        background: #ffffff;
-        color: #0f172a;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      }
-
-      /* Diagnostic 3-Column Grid */
-      .diagnostic-grid {
-        display: grid;
-        grid-template-columns: 320px 1fr 340px;
-        gap: 1.25rem;
-        align-items: start;
-      }
-
-      @media (max-width: 1200px) {
-        .diagnostic-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      .deck-card,
-      .stream-card {
-        padding: 1.25rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .deck-header,
-      .stream-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border-bottom: 1px solid #f1f5f9;
-        padding-bottom: 0.75rem;
-      }
-
-      .deck-header h3 {
-        margin: 0;
-        font-size: 1rem;
-        font-weight: 600;
-      }
-
-      .equipment-meta {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        font-size: 0.8125rem;
-      }
-
-      .meta-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 0.5rem;
-      }
-
-      .meta-row .lbl {
-        color: #64748b;
-      }
-
-      .fault-code-pill {
-        display: inline-block;
-        padding: 0.125rem 0.5rem;
-        background: #fef2f2;
-        color: #b91c1c;
-        font-weight: 700;
-        border-radius: 4px;
-        font-size: 0.75rem;
-      }
-
-      /* Telemetry Sensors */
-      .sensor-readings h4,
-      .symptom-notes h4,
-      .diagnosis-box h4,
-      .remediation-box h4,
-      .spares-box h4 {
-        margin: 0 0 0.5rem;
-        font-size: 0.8125rem;
-        font-weight: 600;
-        color: #475569;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
-
-      .sensors-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
-      }
-
-      .sensor-box {
-        padding: 0.625rem;
-        background: #f8fafc;
-        border-radius: 6px;
-        display: flex;
-        flex-direction: column;
-        gap: 0.125rem;
-        border: 1px solid #edf2f7;
-      }
-
-      .sensor-lbl {
-        font-size: 0.6875rem;
-        color: #64748b;
-      }
-
-      .sensor-val {
-        font-size: 1.125rem;
-        font-weight: 700;
-        color: #0f172a;
-      }
-
-      .sensor-val.val-hot {
-        color: #dc2626;
-      }
-      .sensor-val.val-warn {
-        color: #d97706;
-      }
-
-      .sensor-lim {
-        font-size: 0.6875rem;
-        color: #94a3b8;
-      }
-
-      .symptom-notes p,
-      .diagnosis-box p {
-        margin: 0;
-        font-size: 0.8125rem;
-        line-height: 1.45;
-        color: #334155;
-      }
-
-      /* Stream Center Column */
-      .stream-card {
-        min-height: 540px;
-      }
-
-      .channel-title {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-weight: 600;
-        font-size: 0.9375rem;
-      }
-
-      .wa-title {
-        color: #059669;
-      }
-      .ivr-title {
-        color: #2563eb;
-      }
-
-      .stream-channel-sub {
-        font-size: 0.75rem;
-        color: #64748b;
-      }
-
-      .turns-container {
-        display: flex;
-        flex-direction: column;
-        gap: 0.875rem;
-        max-height: 400px;
-        overflow-y: auto;
-        padding: 0.5rem;
-        background: #f8fafc;
-        border-radius: 8px;
-      }
-
-      .turn-bubble {
-        padding: 0.875rem;
-        border-radius: 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 0.375rem;
-        font-size: 0.8125rem;
-        border: 1px solid #e2e8f0;
-        background: #ffffff;
-      }
-
-      .turn-bubble.user-turn {
-        background: #f0fdf4;
-        border-color: #bbf7d0;
-      }
-
-      .turn-bubble.ivr-bubble {
-        background: #f0f9ff;
-        border-color: #bae6fd;
-      }
-
-      .turn-meta {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.6875rem;
-        color: #64748b;
-      }
-
-      .turn-sender {
-        font-weight: 600;
-      }
-
-      .formatted-ai-response {
-        margin: 0;
-        font-family: inherit;
-        white-space: pre-wrap;
-        font-size: 0.8125rem;
-        line-height: 1.45;
-        color: #1e293b;
-      }
-
-      .dtmf-chip {
-        background: #e0f2fe;
-        color: #0369a1;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.75rem;
-      }
-
-      .action-tag {
-        font-size: 0.6875rem;
-        color: #059669;
-        font-weight: 600;
-        align-self: flex-end;
-      }
-
-      /* Interaction Input Box */
-      .interaction-input-box {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        margin-top: auto;
-      }
-
-      .wa-input-row {
-        display: flex;
-        gap: 0.5rem;
-      }
-
-      .wa-input-row input {
-        flex: 1;
-        padding: 0.5rem 0.75rem;
-        border-radius: 6px;
-        border: 1px solid #cbd5e1;
-        font-size: 0.8125rem;
-      }
-
-      .quick-chips {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-      }
-
-      .quick-chip {
-        background: #e2e8f0;
-        border: none;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.6875rem;
-        cursor: pointer;
-        color: #334155;
-        font-weight: 500;
-      }
-
-      .quick-chip:hover {
-        background: #cbd5e1;
-      }
-
-      .ivr-keypad-panel {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-
-      .keypad-title {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #475569;
-      }
-
-      .keypad-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 0.5rem;
-      }
-
-      .key-btn {
-        padding: 0.5rem 0.25rem;
-        border: 1px solid #cbd5e1;
-        background: #ffffff;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        cursor: pointer;
-        text-align: center;
-        transition: all 0.1s ease;
-      }
-
-      .key-btn:hover {
-        background: #eff6ff;
-        border-color: #3b82f6;
-        color: #1d4ed8;
-      }
-
-      .key-esc {
-        color: #b91c1c;
-      }
-
-      /* Right Deck: AI Plan & Remediation */
-      .confidence-badge {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-      }
-
-      .conf-num {
-        font-weight: 700;
-        font-size: 1.125rem;
-        color: #059669;
-        line-height: 1;
-      }
-
-      .conf-lbl {
-        font-size: 0.625rem;
-        color: #64748b;
-        text-transform: uppercase;
-      }
-
-      .diagnosis-box {
-        background: #f8fafc;
-        padding: 0.75rem;
-        border-radius: 6px;
-        border-left: 3px solid #3b82f6;
-      }
-
-      .steps-list {
-        margin: 0;
-        padding-left: 1.25rem;
-        font-size: 0.8125rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.375rem;
-        line-height: 1.4;
-        color: #334155;
-      }
-
-      .spares-list {
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        display: flex;
-        flex-direction: column;
-        gap: 0.375rem;
-        font-size: 0.75rem;
-      }
-
-      .spares-list li {
-        display: flex;
-        align-items: center;
-        gap: 0.375rem;
-        padding: 0.375rem 0.5rem;
-        background: #f1f5f9;
-        border-radius: 4px;
-        font-weight: 500;
-        color: #1e293b;
-      }
-
-      .resolution-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        margin-top: auto;
-        padding-top: 0.75rem;
-        border-top: 1px solid #f1f5f9;
-      }
-
-      /* History Table */
-      .history-card {
-        padding: 1.25rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .history-toolbar {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        flex-wrap: wrap;
-      }
-
-      .filter-group {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-      }
-
-      .filter-group select {
-        padding: 0.375rem 0.75rem;
-        border-radius: 6px;
-        border: 1px solid #cbd5e1;
-        font-size: 0.875rem;
-      }
-
-      .record-counter {
-        margin-left: auto;
-        font-size: 0.8125rem;
-        color: #64748b;
-      }
-
-      .table-responsive {
-        overflow-x: auto;
-      }
-
-      .session-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.875rem;
-      }
-
-      .session-table th {
-        padding: 0.75rem 0.875rem;
-        background: #f8fafc;
-        border-bottom: 2px solid #e2e8f0;
-        color: #475569;
-        font-weight: 600;
-        text-align: left;
-      }
-
-      .session-table td {
-        padding: 0.75rem 0.875rem;
-        border-bottom: 1px solid #f1f5f9;
-        vertical-align: middle;
-      }
-
-      /* Dialog styling */
-      .dialog-form {
-        display: flex;
-        flex-direction: column;
-        gap: 0.875rem;
-        padding: 0.5rem 0;
-      }
-
-      .dialog-alert {
-        padding: 0.75rem;
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-        border-radius: 6px;
-        color: #991b1b;
-        font-size: 0.8125rem;
-        margin: 0;
-      }
-
-      .form-row {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-      }
-
-      .form-row label {
-        font-size: 0.8125rem;
-        font-weight: 600;
-        color: #334155;
-      }
-
-      .form-input {
-        padding: 0.5rem 0.75rem;
-        border-radius: 6px;
-        border: 1px solid #cbd5e1;
-        font-size: 0.875rem;
-        width: 100%;
-        box-sizing: border-box;
-      }
-
-      .dialog-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.75rem;
-        margin-top: 1rem;
-        padding-top: 0.875rem;
-        border-top: 1px solid #e2e8f0;
-      }
-    `,
-  ],
+  styles: `
+    :host {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+    .rm {
+      flex: 1;
+      min-height: 0;
+      padding: 18px 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .rm > ar-card,
+    .rm ar-card {
+      display: block;
+      min-width: 0;
+    }
+    .rm__alert {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: var(--ar-red-100);
+      border: 1px solid var(--ar-red-200);
+      border-radius: var(--ar-radius-control);
+      color: var(--ar-bad-600);
+      font: 500 13px var(--ar-font-sans);
+    }
+    .rm__alert .rm__link {
+      margin-left: auto;
+      color: var(--ar-bad-600);
+    }
+    .rm__link {
+      padding: 0;
+      background: none;
+      border: 0;
+      cursor: pointer;
+      font: 600 12.5px var(--ar-font-sans);
+      color: var(--ar-blue-600);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .rm__tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    /* Session bar */
+    .rm__bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 12px 16px;
+    }
+    .rm__pick {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1 1 320px;
+      min-width: 0;
+    }
+    .rm__bar-meta {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      padding-bottom: 6px;
+    }
+    .rm__seg {
+      display: inline-flex;
+      border: 1px solid var(--ar-line-300);
+      border-radius: var(--ar-radius-control);
+      overflow: hidden;
+    }
+    .rm__seg-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: var(--ar-white);
+      border: 0;
+      cursor: pointer;
+      font: 500 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .rm__seg-btn + .rm__seg-btn {
+      border-left: 1px solid var(--ar-line-300);
+    }
+    .rm__seg-btn--on {
+      background: var(--ar-blue-100);
+      color: var(--ar-blue-700);
+      font-weight: 600;
+    }
+    .rm__seg-btn:disabled {
+      cursor: default;
+      opacity: 0.6;
+    }
+
+    /* Console */
+    .rm__console {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) minmax(360px, 1.6fr) minmax(260px, 1.1fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .rm__facts {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font: 400 12.5px var(--ar-font-sans);
+    }
+    .rm__facts > div {
+      display: grid;
+      grid-template-columns: 82px minmax(0, 1fr);
+      gap: 8px;
+    }
+    .rm__facts dt {
+      color: var(--ar-ink-500);
+    }
+    .rm__facts dd {
+      margin: 0;
+      color: var(--ar-ink-900);
+      font-weight: 500;
+      overflow-wrap: anywhere;
+    }
+    .rm__code {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: var(--ar-radius-chip);
+      background: var(--ar-amber-50);
+      border: 1px solid var(--ar-amber-200);
+      color: var(--ar-amber-800);
+      font: 600 11.5px var(--ar-font-mono);
+    }
+    .rm__sub {
+      margin: 16px 0 8px;
+      font: 700 11px var(--ar-font-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ar-ink-500);
+    }
+    .rm__text {
+      margin: 0;
+      font: 400 13px var(--ar-font-sans);
+      line-height: 1.5;
+      color: var(--ar-ink-800);
+    }
+    .rm__muted {
+      margin: 0;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-400);
+    }
+    .rm__sensors {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .rm__sensors li {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 8px 10px;
+      border: 1px solid var(--ar-line-100);
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-bg-50);
+      font: 400 11.5px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .rm__sensors strong {
+      font: 600 15px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Conversation */
+    .rm__chat-card {
+      display: flex;
+      flex-direction: column;
+    }
+    .rm__chat-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--ar-line-100);
+    }
+    .rm__chat-head h3 {
+      margin: 0;
+      font: 600 14px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .rm__chat-head small {
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .rm__chat-icon {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--ar-good-50);
+      color: var(--ar-good-700);
+    }
+    .rm__chat-icon--ivr {
+      background: var(--ar-blue-100);
+      color: var(--ar-blue-700);
+    }
+    .rm__turns {
+      list-style: none;
+      margin: 0;
+      padding: 14px 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 560px;
+      overflow-y: auto;
+    }
+    .rm__turn {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .rm__turns-empty {
+      padding: 24px 0;
+      text-align: center;
+    }
+    .rm__msg {
+      max-width: 88%;
+      padding: 9px 12px;
+      border-radius: 12px;
+      font: 400 13px var(--ar-font-sans);
+      line-height: 1.5;
+      color: var(--ar-ink-800);
+    }
+    .rm__msg p {
+      margin: 0;
+    }
+    .rm__msg--tech {
+      align-self: flex-end;
+      background: var(--ar-blue-100);
+      border-bottom-right-radius: 4px;
+    }
+    .rm__msg--ai {
+      align-self: flex-start;
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-200);
+      border-bottom-left-radius: 4px;
+    }
+    .rm__pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .rm__who {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 3px;
+      font: 600 11px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .rm__key kbd,
+    .rm__key-btn kbd {
+      display: inline-grid;
+      place-items: center;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 5px;
+      border: 1px solid var(--ar-line-300);
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      background: var(--ar-white);
+      font: 700 12px var(--ar-font-mono);
+      color: var(--ar-ink-900);
+    }
+    .rm__action {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 1px 8px;
+      border-radius: var(--ar-radius-chip);
+      background: var(--ar-teal-50);
+      color: var(--ar-teal-700);
+      font: 500 11px var(--ar-font-sans);
+    }
+    .rm__compose {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid var(--ar-line-100);
+    }
+    .rm__compose-row {
+      display: flex;
+      gap: 8px;
+    }
+    .rm__compose-row input {
+      flex: 1;
+      min-width: 0;
+    }
+    .rm__quick {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .rm__chip {
+      padding: 4px 10px;
+      border: 1px solid var(--ar-line-300);
+      border-radius: 999px;
+      background: var(--ar-white);
+      cursor: pointer;
+      font: 500 12px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .rm__chip:hover {
+      border-color: var(--ar-blue-500);
+      color: var(--ar-blue-700);
+    }
+    .rm__keypad {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .rm__key-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-white);
+      cursor: pointer;
+      font: 500 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .rm__key-btn:hover {
+      background: var(--ar-bg-50);
+    }
+    .rm__key-btn--esc {
+      color: var(--ar-bad-600);
+    }
+
+    /* AI plan */
+    .rm__conf {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .rm__conf-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .rm__conf-top strong {
+      font: 600 20px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .rm__steps {
+      margin: 0;
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font: 400 13px var(--ar-font-sans);
+      line-height: 1.45;
+      color: var(--ar-ink-800);
+    }
+    .rm__spares {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .rm__spares li {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      padding: 7px 10px;
+      border: 1px solid var(--ar-line-100);
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-bg-50);
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-800);
+    }
+    .rm__spares ar-icon {
+      margin-top: 2px;
+      color: var(--ar-ink-400);
+    }
+    .rm__downtime {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 14px 0 0;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-600);
+    }
+    .rm__outcome {
+      margin-top: 14px;
+      padding: 9px 12px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-good-50);
+      color: var(--ar-good-700);
+      font: 400 12.5px var(--ar-font-sans);
+      line-height: 1.45;
+    }
+    .rm__outcome--bad {
+      background: var(--ar-red-100);
+      color: var(--ar-bad-600);
+    }
+    .rm__decide {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--ar-line-100);
+    }
+
+    /* Empty */
+    .rm__empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 36px 16px;
+      text-align: center;
+    }
+    .rm__empty-icon {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: var(--ar-blue-100);
+      color: var(--ar-blue-700);
+    }
+    .rm__empty h2 {
+      margin: 4px 0 0;
+      font: 600 15px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .rm__empty p {
+      margin: 0 0 6px;
+      max-width: 440px;
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+
+    /* All sessions */
+    .rm__filters {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .rm__filters .ar-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 180px;
+    }
+    .rm__count {
+      margin-left: auto;
+      padding-bottom: 8px;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+
+    /* Dialog forms */
+    .rm__form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 14px;
+    }
+    .rm__form--one {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .rm__form .ar-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .rm__wide {
+      grid-column: 1 / -1;
+    }
+    .rm__note {
+      margin: 0;
+      padding: 9px 12px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-amber-50);
+      border: 1px solid var(--ar-amber-200);
+      color: var(--ar-amber-800);
+      font: 400 12.5px var(--ar-font-sans);
+      line-height: 1.45;
+    }
+    .rm__form-error {
+      margin: 0;
+      padding: 8px 12px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-red-100);
+      color: var(--ar-bad-600);
+      font: 500 12.5px var(--ar-font-sans);
+    }
+
+    @media (max-width: 1180px) {
+      .rm__console {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+      .rm__chat-card {
+        grid-column: 1 / -1;
+        order: -1;
+      }
+    }
+    @media (max-width: 760px) {
+      .rm {
+        padding: 14px 16px 24px;
+      }
+      .rm__console,
+      .rm__form {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .rm__keypad {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  `,
 })
 export class ArRemoteMaintenance implements OnInit {
   private service = inject(RemoteMaintenanceService);
+  private contacts = inject(ContactService);
   private toasts = inject(ToastService);
 
   readonly MaintenanceChannel = MaintenanceChannel;
@@ -1663,28 +1490,37 @@ export class ArRemoteMaintenance implements OnInit {
   readonly equipmentCategoryOptions = equipmentCategoryOptions;
   readonly maintenanceChannelOptions = maintenanceChannelOptions;
   readonly maintenanceSeverityOptions = maintenanceSeverityOptions;
+  readonly tabs = TABS;
+  readonly statusOptions = [
+    MaintenanceSessionStatus.Diagnosing,
+    MaintenanceSessionStatus.RemediationProvided,
+    MaintenanceSessionStatus.ResolvedRemotely,
+    MaintenanceSessionStatus.EscalatedToFieldTicket,
+    MaintenanceSessionStatus.Cancelled,
+  ].map((value) => ({ value, label: STATUS_LABELS[value] }));
 
-  activeTab = signal<'console' | 'sessions'>('console');
+  activeTab = signal<Tab>('Live console');
   isLoading = signal(false);
+  loadError = signal<string | null>(null);
 
-  sessions = signal<RemoteMaintenanceSessionDto[]>(MOCK_SESSIONS);
-  currentSession = signal<RemoteMaintenanceSessionDto | null>(MOCK_SESSIONS[0]);
-  stats = signal<RemoteMaintenanceStatsDto | null>(MOCK_STATS);
+  sessions = signal<RemoteMaintenanceSessionDto[]>([]);
+  currentSession = signal<RemoteMaintenanceSessionDto | null>(null);
+  stats = signal<RemoteMaintenanceStatsDto | null>(null);
 
-  selectedSessionId = MOCK_SESSIONS[0].id;
+  selectedSessionId = '';
   waMessageInput = '';
 
-  // Filters for Tab 2
+  // All sessions filters
   filterChannel: MaintenanceChannel | null = null;
   filterStatus: MaintenanceSessionStatus | null = null;
-  filteredSessions = signal<RemoteMaintenanceSessionDto[]>(MOCK_SESSIONS);
+  filteredSessions = signal<RemoteMaintenanceSessionDto[]>([]);
 
-  // Modals
+  // Dialogs
   showInitiateModal = signal(false);
   showEscalateModal = signal(false);
 
-  // Initiate form
-  initCustomerName = '';
+  // New session form
+  initContact = signal<PickerOption | null>(null);
   initCustomerPhone = '';
   initEquipmentModel = '';
   initEquipmentSerial = '';
@@ -1693,29 +1529,19 @@ export class ArRemoteMaintenance implements OnInit {
   initFaultCode = '';
   initSymptoms = '';
   initSeverity = MaintenanceSeverity.Medium;
+  initBusy = signal(false);
+  initError = signal<string | null>(null);
 
   // Escalate form
   escalateReason = '';
-  escalateEngineer = 'Mahesh Joshi (Senior Drive Specialist)';
+  escalateEngineer = '';
 
-  parsedRemediationSteps = computed(() => {
-    const raw = this.currentSession()?.remediationStepsJson;
-    if (!raw) return [];
-    try {
-      return JSON.parse(raw) as string[];
-    } catch {
-      return [raw];
-    }
-  });
-
-  parsedSpareParts = computed(() => {
-    const raw = this.currentSession()?.recommendedSparePartsJson;
-    if (!raw) return [];
-    try {
-      return JSON.parse(raw) as string[];
-    } catch {
-      return [raw];
-    }
+  remediationSteps = computed(() => stringList(this.currentSession()?.remediationStepsJson));
+  spareParts = computed(() => stringList(this.currentSession()?.recommendedSparePartsJson));
+  telemetry = computed(() => telemetryReadings(this.currentSession()?.telemetrySnapshotJson));
+  channelSplit = computed(() => {
+    const s = this.stats();
+    return s ? `${s.whatsAppSessionCount} WhatsApp · ${s.ivrSessionCount} IVR` : '';
   });
 
   ngOnInit(): void {
@@ -1724,211 +1550,175 @@ export class ArRemoteMaintenance implements OnInit {
 
   loadData(): void {
     if (environment.useMockData) {
-      this.sessions.set(MOCK_SESSIONS);
-      this.currentSession.set(MOCK_SESSIONS[0]);
-      this.selectedSessionId = MOCK_SESSIONS[0].id;
+      this.setSessions(MOCK_SESSIONS);
       this.stats.set(MOCK_STATS);
-      this.applyFilters();
       return;
     }
 
     this.isLoading.set(true);
+    this.loadError.set(null);
     this.service.getList({ maxResultCount: 50 }).subscribe({
       next: (res) => {
-        if (res.items && res.items.length > 0) {
-          this.sessions.set(res.items);
-          this.currentSession.set(res.items[0]);
-          this.selectedSessionId = res.items[0].id;
-          this.applyFilters();
-        } else {
-          this.sessions.set(MOCK_SESSIONS);
-          this.currentSession.set(MOCK_SESSIONS[0]);
-          this.selectedSessionId = MOCK_SESSIONS[0].id;
-          this.applyFilters();
-        }
+        this.setSessions(res.items ?? []);
         this.isLoading.set(false);
       },
       error: () => {
-        this.sessions.set(MOCK_SESSIONS);
-        this.currentSession.set(MOCK_SESSIONS[0]);
-        this.selectedSessionId = MOCK_SESSIONS[0].id;
-        this.applyFilters();
+        this.loadError.set('The sessions could not be loaded.');
         this.isLoading.set(false);
       },
     });
 
     this.service.getStats().subscribe({
       next: (s) => this.stats.set(s),
-      error: () => this.stats.set(MOCK_STATS),
+      error: () => this.stats.set(null),
     });
+  }
+
+  /** A new list: keep the session on screen when it is still there, else show the newest. */
+  private setSessions(list: RemoteMaintenanceSessionDto[]): void {
+    this.sessions.set(list);
+    const keep = list.find((s) => s.id === this.selectedSessionId) ?? list[0] ?? null;
+    this.currentSession.set(keep);
+    this.selectedSessionId = keep?.id ?? '';
+    this.applyFilters();
+  }
+
+  /** Replace one session everywhere it is shown. */
+  private updateSession(updated: RemoteMaintenanceSessionDto): void {
+    this.currentSession.set(updated);
+    this.sessions.update((list) => list.map((s) => (s.id === updated.id ? updated : s)));
+    this.applyFilters();
   }
 
   onSessionSelected(): void {
     const found = this.sessions().find((s) => s.id === this.selectedSessionId);
-    if (found) {
-      this.currentSession.set(found);
-    }
+    if (found) this.currentSession.set(found);
   }
 
   viewInConsole(session: RemoteMaintenanceSessionDto): void {
     this.currentSession.set(session);
-    this.selectedSessionId = session.id;
-    this.activeTab.set('console');
+    this.selectedSessionId = session.id ?? '';
+    this.activeTab.set('Live console');
+  }
+
+  isClosed(s: RemoteMaintenanceSessionDto): boolean {
+    return (
+      s.status === MaintenanceSessionStatus.ResolvedRemotely ||
+      s.status === MaintenanceSessionStatus.EscalatedToFieldTicket ||
+      s.status === MaintenanceSessionStatus.Cancelled
+    );
   }
 
   switchChannel(newChannel: MaintenanceChannel): void {
     const cur = this.currentSession();
-    if (!cur || !cur.id) return;
-    const sessionId = cur.id;
+    if (!cur?.id || cur.preferredChannel === newChannel) return;
 
     if (environment.useMockData) {
-      const updated: RemoteMaintenanceSessionDto = {
-        ...cur,
-        preferredChannel: newChannel,
-      };
-      this.currentSession.set(updated);
-      this.sessions.update((list) => list.map((s) => (s.id === sessionId ? updated : s)));
+      this.updateSession({ ...cur, preferredChannel: newChannel });
       this.toasts.info(
-        `Support channel switched to ${newChannel === MaintenanceChannel.WhatsApp ? 'WhatsApp' : 'IVR Phone'}.`,
+        `Channel switched to ${newChannel === MaintenanceChannel.WhatsApp ? 'WhatsApp' : 'IVR phone'}.`,
       );
       return;
     }
 
-    this.service.switchChannel({ sessionId, newChannel }).subscribe({
+    this.service.switchChannel({ sessionId: cur.id, newChannel }).subscribe({
       next: (res) => {
-        this.currentSession.set(res);
+        this.updateSession(res);
         this.toasts.info('Channel switched.');
       },
-      error: (err) => this.toasts.error(err?.message ?? 'Failed to switch channel.'),
+      error: (err) =>
+        this.toasts.error(err?.error?.error?.message ?? 'The channel could not be switched.'),
     });
   }
 
   sendWhatsAppTurn(): void {
     const text = this.waMessageInput.trim();
-    if (!text) return;
-
     const cur = this.currentSession();
-    if (!cur || !cur.id) return;
-    const sessionId = cur.id;
+    if (!text || !cur?.id) return;
 
     if (environment.useMockData) {
-      const turnNum = cur.diagnosticTurns.length + 1;
-      let reply = `Received: "${text}". Sensor telemetry is within expected range. Next step: please verify 24V supply on terminal block X12.`;
-      let resolved = cur.resolvedRemotely;
-      let status = cur.status;
-
-      if (text.toLowerCase().includes('fixed') || text.toLowerCase().includes('running')) {
-        reply =
-          'Great news! Extruder running at normal current. Fault cleared and machine operational. Session resolved remotely! 🚀';
-        resolved = true;
-        status = MaintenanceSessionStatus.ResolvedRemotely;
-      }
-
+      const fixed = /fixed|running/i.test(text);
       const newTurn: MaintenanceDiagnosticTurnDto = {
         id: 't-' + Date.now(),
-        sessionId: sessionId,
-        turnNumber: turnNum,
+        sessionId: cur.id,
+        turnNumber: cur.diagnosticTurns.length + 1,
         turnType: DiagnosticTurnType.UserPrompt,
         channel: MaintenanceChannel.WhatsApp,
         inputOrPrompt: text,
-        aiResponseOrGuidance: reply,
-        actionTaken: resolved ? 'CustomerConfirmedResolution' : 'StepFollowup',
+        aiResponseOrGuidance: fixed
+          ? 'Great news: the fault is cleared and the machine is running. Session resolved remotely.'
+          : `Received: "${text}". Readings are within range. Next, check the 24V supply on terminal block X12.`,
+        actionTaken: fixed ? 'CustomerConfirmedResolution' : 'StepFollowup',
         createdAtUtc: new Date().toISOString(),
       };
-
-      const updated: RemoteMaintenanceSessionDto = {
+      this.updateSession({
         ...cur,
-        resolvedRemotely: resolved,
-        status: status,
+        resolvedRemotely: fixed || cur.resolvedRemotely,
+        status: fixed ? MaintenanceSessionStatus.ResolvedRemotely : cur.status,
         diagnosticTurns: [...cur.diagnosticTurns, newTurn],
-      };
-
-      this.currentSession.set(updated);
-      this.sessions.update((list) => list.map((s) => (s.id === sessionId ? updated : s)));
+      });
       this.waMessageInput = '';
-      this.toasts.success('WhatsApp reply transmitted.');
       return;
     }
 
     this.service
       .sendChannelTurn({
-        sessionId: sessionId,
+        sessionId: cur.id,
         turnType: DiagnosticTurnType.UserPrompt,
         channel: MaintenanceChannel.WhatsApp,
         inputOrPrompt: text,
       })
       .subscribe({
         next: (res) => {
-          this.currentSession.set(res);
+          this.updateSession(res);
           this.waMessageInput = '';
-          this.toasts.success('WhatsApp reply processed.');
         },
-        error: (err) => this.toasts.error(err?.message ?? 'Failed to send WhatsApp turn.'),
+        error: (err) =>
+          this.toasts.error(err?.error?.error?.message ?? 'The reply could not be sent.'),
       });
   }
 
   sendIvrDigit(digit: string): void {
     const cur = this.currentSession();
-    if (!cur || !cur.id) return;
-    const sessionId = cur.id;
+    if (!cur?.id) return;
 
     if (environment.useMockData) {
-      const turnNum = cur.diagnosticTurns.length + 1;
-      let spoken = `IVR Spoken: Key '${digit}' processed.`;
-      let status = cur.status;
-
-      if (digit === '1')
-        spoken =
-          'IVR Spoken: Step 1 active. Ensure motor power is isolated. Check resistance across U-V-W phases. Press 9 when complete, or 0 for an engineer.';
-      if (digit === '2')
-        spoken =
-          'IVR Spoken: Step 2 active. To reset parameter fault, hold Stop/Reset button for 3 seconds until fault LED clears. Press 9 if successful, or 0 to escalate.';
-      if (digit === '9') {
-        spoken =
-          'IVR Spoken: Excellent! Verification acknowledged. Session logged as resolved. Have a productive shift!';
-        status = MaintenanceSessionStatus.ResolvedRemotely;
-      }
-      if (digit === '0')
-        spoken =
-          'IVR Spoken: Connecting you now to our on-call senior industrial automation field engineer. Please hold...';
-
+      const spoken: Record<string, string> = {
+        '1': 'Step 1: isolate the motor power, then check resistance across the U-V-W phases. Press 9 when done, or 0 for an engineer.',
+        '2': 'Step 2: hold Stop/Reset for 3 seconds until the fault LED clears. Press 9 if it worked, or 0 to escalate.',
+        '9': 'Thank you. The fault is logged as cleared and the session is resolved.',
+        '0': 'Connecting you to the on-call field engineer. Please hold.',
+      };
       const newTurn: MaintenanceDiagnosticTurnDto = {
         id: 't-' + Date.now(),
-        sessionId: sessionId,
-        turnNumber: turnNum,
+        sessionId: cur.id,
+        turnNumber: cur.diagnosticTurns.length + 1,
         turnType: DiagnosticTurnType.IvrMenuChoice,
         channel: MaintenanceChannel.IvrPhone,
         inputOrPrompt: digit,
-        aiResponseOrGuidance: spoken,
+        aiResponseOrGuidance: spoken[digit] ?? `Key ${digit} received.`,
         actionTaken: 'IVR_Key_' + digit,
         createdAtUtc: new Date().toISOString(),
       };
-
-      const updated: RemoteMaintenanceSessionDto = {
+      this.updateSession({
         ...cur,
-        status: status,
+        status: digit === '9' ? MaintenanceSessionStatus.ResolvedRemotely : cur.status,
         diagnosticTurns: [...cur.diagnosticTurns, newTurn],
-      };
-
-      this.currentSession.set(updated);
-      this.sessions.update((list) => list.map((s) => (s.id === sessionId ? updated : s)));
-      this.toasts.info(`IVR DTMF digit [${digit}] simulated.`);
+      });
       return;
     }
 
     this.service
       .sendChannelTurn({
-        sessionId: sessionId,
+        sessionId: cur.id,
         turnType: DiagnosticTurnType.IvrMenuChoice,
         channel: MaintenanceChannel.IvrPhone,
         inputOrPrompt: digit,
       })
       .subscribe({
-        next: (res) => {
-          this.currentSession.set(res);
-          this.toasts.info(`IVR digit [${digit}] processed.`);
-        },
-        error: (err) => this.toasts.error(err?.message ?? 'Failed to process IVR digit.'),
+        next: (res) => this.updateSession(res),
+        error: (err) =>
+          this.toasts.error(err?.error?.error?.message ?? 'The key press could not be sent.'),
       });
   }
 
@@ -1939,191 +1729,198 @@ export class ArRemoteMaintenance implements OnInit {
 
   markResolvedRemotely(): void {
     const cur = this.currentSession();
-    if (!cur || !cur.id) return;
-    const sessionId = cur.id;
+    if (!cur?.id) return;
+    const notes = 'Operator confirmed the equipment is running normally after the remote fix.';
 
     if (environment.useMockData) {
-      const updated: RemoteMaintenanceSessionDto = {
+      this.updateSession({
         ...cur,
         status: MaintenanceSessionStatus.ResolvedRemotely,
         resolvedRemotely: true,
-        resolutionNotes: 'Operator verified equipment operating normally after remote remediation.',
-      };
-      this.currentSession.set(updated);
-      this.sessions.update((list) => list.map((s) => (s.id === sessionId ? updated : s)));
-      this.toasts.success('Session resolved remotely without field dispatch! 🎉');
+        resolutionNotes: notes,
+      });
+      this.toasts.success('Session resolved remotely.');
       return;
     }
 
-    this.service
-      .resolveRemotely({
-        sessionId: sessionId,
-        resolutionNotes: 'Operator verified equipment operating normally after remote remediation.',
-      })
-      .subscribe({
-        next: (res) => {
-          this.currentSession.set(res);
-          this.toasts.success('Session resolved remotely.');
-        },
-        error: (err) => this.toasts.error(err?.message ?? 'Failed to resolve session.'),
-      });
+    this.service.resolveRemotely({ sessionId: cur.id, resolutionNotes: notes }).subscribe({
+      next: (res) => {
+        this.updateSession(res);
+        this.toasts.success('Session resolved remotely.');
+        this.refreshStats();
+      },
+      error: (err) =>
+        this.toasts.error(err?.error?.error?.message ?? 'The session could not be resolved.'),
+    });
   }
 
   openEscalateModal(): void {
-    this.escalateReason = `Hardware fault persists on ${this.currentSession()?.equipmentModel}. Requires physical component replacement and on-site testing.`;
+    const model = this.currentSession()?.equipmentModel;
+    this.escalateReason = model
+      ? `The fault on ${model} persists after the remote steps. It needs a part replaced and tested on site.`
+      : '';
+    this.escalateEngineer = '';
     this.showEscalateModal.set(true);
   }
 
   confirmEscalateToField(): void {
     const cur = this.currentSession();
-    if (!cur || !cur.id) return;
-    const sessionId = cur.id;
+    if (!cur?.id || !this.escalateReason.trim()) return;
 
     if (environment.useMockData) {
-      const updated: RemoteMaintenanceSessionDto = {
+      this.updateSession({
         ...cur,
         status: MaintenanceSessionStatus.EscalatedToFieldTicket,
         fieldVisitRequired: true,
-        resolutionNotes: `Escalated to field service ticket: ${this.escalateReason}`,
-      };
-      this.currentSession.set(updated);
-      this.sessions.update((list) => list.map((s) => (s.id === sessionId ? updated : s)));
+        resolutionNotes: `Escalated to a field visit: ${this.escalateReason}`,
+      });
       this.showEscalateModal.set(false);
-      this.toasts.info('Escalated to Field Service Ticket! Engineer notified.');
+      this.toasts.info('Escalated to a field visit.');
       return;
     }
 
     this.service
       .escalateToFieldTicket({
-        sessionId: sessionId,
-        reason: this.escalateReason,
-        assignedFieldEngineer: this.escalateEngineer,
+        sessionId: cur.id,
+        reason: this.escalateReason.trim(),
+        assignedFieldEngineer: this.escalateEngineer.trim() || undefined,
       })
       .subscribe({
         next: (res) => {
-          this.currentSession.set(res);
+          this.updateSession(res);
           this.showEscalateModal.set(false);
-          this.toasts.info('Escalated to Field Service Ticket.');
+          this.toasts.info('Escalated to a field visit. A field service ticket was raised.');
+          this.refreshStats();
         },
-        error: (err) => this.toasts.error(err?.message ?? 'Failed to escalate session.'),
+        error: (err) =>
+          this.toasts.error(err?.error?.error?.message ?? 'The session could not be escalated.'),
       });
   }
 
+  private refreshStats(): void {
+    if (environment.useMockData) return;
+    this.service.getStats().subscribe({ next: (s) => this.stats.set(s), error: () => undefined });
+  }
+
+  openInitiate(): void {
+    this.initContact.set(null);
+    this.initCustomerPhone = '';
+    this.initEquipmentModel = '';
+    this.initEquipmentSerial = '';
+    this.initCategory = EquipmentCategory.VfdAndDrive;
+    this.initChannel = MaintenanceChannel.WhatsApp;
+    this.initFaultCode = '';
+    this.initSymptoms = '';
+    this.initSeverity = MaintenanceSeverity.Medium;
+    this.initError.set(null);
+    this.showInitiateModal.set(true);
+  }
+
+  /** The contact reporting the fault; their WhatsApp number fills the phone. */
+  async pickInitContact(option: PickerOption | null): Promise<void> {
+    this.initContact.set(option);
+    if (!option || environment.useMockData) return;
+    try {
+      const c = await firstValueFrom(this.contacts.get(option.id, { skipHandleError: true }));
+      if (this.initContact()?.id === option.id && c.waId && !this.initCustomerPhone.trim()) {
+        this.initCustomerPhone = c.waId.startsWith('+') ? c.waId : `+${c.waId}`;
+      }
+    } catch {
+      // The phone is typed by hand.
+    }
+  }
+
   onInitiateSubmit(): void {
-    if (!this.initCustomerName.trim() || !this.initEquipmentModel.trim()) return;
+    const contact = this.initContact();
+    const phone = this.initCustomerPhone.trim();
+    const missing = [
+      !contact && 'the customer contact',
+      !phone && 'their phone',
+      !this.initEquipmentModel.trim() && 'the equipment model',
+      !this.initEquipmentSerial.trim() && 'the serial number',
+      !this.initSymptoms.trim() && 'what happened',
+    ].filter(Boolean);
+    if (missing.length || !contact) {
+      this.initError.set(`Fill in ${missing.join(', ')}.`);
+      return;
+    }
 
     const input: InitiateRemoteMaintenanceInput = {
-      customerId: 'c-' + Date.now(),
-      customerName: this.initCustomerName,
-      customerContactPhone: this.initCustomerPhone || '+91 98000 00000',
+      customerId: contact.id,
+      contactId: contact.id,
+      customerName: contact.label,
+      customerContactPhone: phone,
       equipmentCategory: this.initCategory,
-      equipmentModel: this.initEquipmentModel,
-      equipmentSerialNumber:
-        this.initEquipmentSerial || 'SN-AUTO-' + Date.now().toString().slice(-4),
+      equipmentModel: this.initEquipmentModel.trim(),
+      equipmentSerialNumber: this.initEquipmentSerial.trim(),
       preferredChannel: this.initChannel,
-      faultCode: this.initFaultCode || undefined,
-      reportedSymptoms: this.initSymptoms || 'Equipment stopped during operation.',
+      faultCode: this.initFaultCode.trim() || undefined,
+      reportedSymptoms: this.initSymptoms.trim(),
       severity: this.initSeverity,
     };
 
     if (environment.useMockData) {
-      const newSession: RemoteMaintenanceSessionDto = {
-        id: 's-' + Date.now(),
-        sessionCode: 'RMS-2026-' + (this.sessions().length + 1).toString().padStart(4, '0'),
-        customerId: input.customerId,
-        customerName: input.customerName,
-        customerContactPhone: input.customerContactPhone,
-        equipmentCategory: input.equipmentCategory,
-        equipmentModel: input.equipmentModel,
-        equipmentSerialNumber: input.equipmentSerialNumber,
-        preferredChannel: input.preferredChannel,
-        status: MaintenanceSessionStatus.RemediationProvided,
-        severity: input.severity,
-        faultCode: input.faultCode,
-        reportedSymptoms: input.reportedSymptoms,
-        rootCauseDiagnosis: `Fault telemetry matched against ${input.equipmentModel} technical guide. Primary cause: parameter deviation or thermal threshold trip.`,
-        confidencePercent: 91.5,
-        remediationStepsJson: JSON.stringify([
-          'Inspect incoming voltage balance across phases.',
-          'Verify control wiring on terminal blocks.',
-          'Check parameter settings on control panel.',
-        ]),
-        recommendedSparePartsJson: JSON.stringify([
-          'Standard OEM Service Pack for ' + input.equipmentModel,
-        ]),
-        estimatedDowntimeMinutes: 30,
+      const id = 's-' + Date.now();
+      const created: RemoteMaintenanceSessionDto = {
+        id,
+        sessionCode: 'RMS-' + String(this.sessions().length + 1).padStart(4, '0'),
+        ...input,
+        status: MaintenanceSessionStatus.Diagnosing,
+        confidencePercent: 0,
+        estimatedDowntimeMinutes: 0,
         resolvedRemotely: false,
         fieldVisitRequired: false,
-        diagnosticTurns: [
-          {
-            id: 't-' + Date.now(),
-            sessionId: 's-' + Date.now(),
-            turnNumber: 1,
-            turnType: DiagnosticTurnType.UserPrompt,
-            channel: input.preferredChannel,
-            inputOrPrompt: input.reportedSymptoms,
-            aiResponseOrGuidance:
-              input.preferredChannel === MaintenanceChannel.WhatsApp
-                ? `🤖 AutoReach AI Support initialized for ${input.equipmentModel}. Root cause identified with 91.5% confidence. Please review the checklist steps.`
-                : `IVR Spoken: Welcome to MNI 24/7 Diagnostics for ${input.equipmentModel}. Press 1 for checklist steps, 0 for engineer.`,
-            actionTaken: 'SessionInitiated',
-            createdAtUtc: new Date().toISOString(),
-          },
-        ],
+        diagnosticTurns: [],
         creationTime: new Date().toISOString(),
-      };
-
-      this.sessions.update((list) => [newSession, ...list]);
-      this.currentSession.set(newSession);
-      this.selectedSessionId = newSession.id;
-      this.showInitiateModal.set(false);
-      this.applyFilters();
-      this.toasts.success(
-        `Remote diagnostic session ${newSession.sessionCode} initiated via ${input.preferredChannel === MaintenanceChannel.WhatsApp ? 'WhatsApp' : 'IVR'}!`,
-      );
+      } as RemoteMaintenanceSessionDto;
+      this.afterCreated(created);
       return;
     }
 
+    this.initBusy.set(true);
+    this.initError.set(null);
     this.service.initiateSession(input).subscribe({
       next: (created) => {
-        this.sessions.update((list) => [created, ...list]);
-        this.currentSession.set(created);
-        this.selectedSessionId = created.id;
-        this.showInitiateModal.set(false);
-        this.applyFilters();
-        this.toasts.success(`Session ${created.sessionCode} started.`);
+        this.initBusy.set(false);
+        this.afterCreated(created);
+        this.refreshStats();
       },
-      error: (err) => this.toasts.error(err?.message ?? 'Failed to initiate session.'),
+      error: (err) => {
+        this.initBusy.set(false);
+        this.initError.set(err?.error?.error?.message ?? 'The session could not be started.');
+      },
     });
+  }
+
+  private afterCreated(created: RemoteMaintenanceSessionDto): void {
+    this.sessions.update((list) => [created, ...list]);
+    this.currentSession.set(created);
+    this.selectedSessionId = created.id ?? '';
+    this.applyFilters();
+    this.showInitiateModal.set(false);
+    this.activeTab.set('Live console');
+    this.toasts.success(`Session ${created.sessionCode} started.`);
   }
 
   applyFilters(): void {
     let list = [...this.sessions()];
-
-    if (this.filterChannel !== null) {
+    if (this.filterChannel !== null)
       list = list.filter((s) => s.preferredChannel === this.filterChannel);
-    }
-
-    if (this.filterStatus !== null) {
-      list = list.filter((s) => s.status === this.filterStatus);
-    }
-
+    if (this.filterStatus !== null) list = list.filter((s) => s.status === this.filterStatus);
     this.filteredSessions.set(list);
   }
 
-  getTelemetry(): {
-    temp_c: number;
-    bus_voltage: number;
-    motor_current?: number;
-    fan_rpm?: number;
-  } {
-    const raw = this.currentSession()?.telemetrySnapshotJson;
-    if (!raw) return { temp_c: 65, bus_voltage: 560, motor_current: 14.2 };
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return { temp_c: 65, bus_voltage: 560, motor_current: 14.2 };
-    }
+  confidenceTone(percent: number | null | undefined): MeterTone {
+    const p = percent ?? 0;
+    return p >= 85 ? 'good' : p >= 65 ? 'amber' : 'bad';
+  }
+
+  actionText(action: string): string {
+    return actionLabel(action);
+  }
+
+  round(value: number): number {
+    return Math.round(value * 10) / 10;
   }
 
   formatRupeesCompact(val: number): string {
@@ -2132,12 +1929,23 @@ export class ArRemoteMaintenance implements OnInit {
 
   formatTime(iso: string): string {
     if (!iso) return '';
-    try {
-      const d = new Date(iso);
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return '';
-    }
+    const d = new Date(iso);
+    return isNaN(d.getTime())
+      ? ''
+      : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  formatDateTime(iso: string | undefined): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return isNaN(d.getTime())
+      ? ''
+      : d.toLocaleString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
   }
 
   getStatusTone(status: MaintenanceSessionStatus): ChipTone {
@@ -2145,7 +1953,7 @@ export class ArRemoteMaintenance implements OnInit {
   }
 
   getStatusLabel(status: MaintenanceSessionStatus): string {
-    return STATUS_LABELS[status] ?? 'Initiated';
+    return STATUS_LABELS[status] ?? 'Started';
   }
 
   getSeverityTone(severity: MaintenanceSeverity): ChipTone {

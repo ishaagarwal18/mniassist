@@ -1,15 +1,14 @@
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { GridModule, RecordClickEventArgs, RowSelectEventArgs } from '@syncfusion/ej2-angular-grids';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import {
-  AssignFieldServiceTicketDto,
   CreateFieldServiceTicketDto,
   FieldServiceTicketDto,
   FieldServiceTicketService,
-  RecordSpareConsumedDto,
   ResolveFieldServiceTicketDto,
   ServiceTicketPriority,
   ServiceTicketSpareConsumedDto,
@@ -166,11 +165,12 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
     ArDialog,
     ArGrid,
     GridModule,
+    RouterLink,
   ],
   template: `
     <ar-topbar title="Field Service & Breakdown Tickets (Field ERP)">
       <div actions class="topbar-actions">
-        <button ar-button="primary" (click)="openCreate()">+ Raise Service Ticket</button>
+        <a ar-button="primary" routerLink="/field-service/tickets/new">+ Raise Service Ticket</a>
       </div>
     </ar-topbar>
 
@@ -330,16 +330,16 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
               </p>
             </div>
             <div class="cockpit-actions">
-              <button
+              <a
                 *ngIf="
                   ticket.status === ServiceTicketStatus.Open ||
                   ticket.status === ServiceTicketStatus.Assigned
                 "
                 ar-button="ghost"
-                (click)="openAssignModal(ticket)"
+                [routerLink]="['/field-service/tickets', ticket.id, 'assign']"
               >
                 Assign Engineer
-              </button>
+              </a>
               <button
                 *ngIf="
                   ticket.status === ServiceTicketStatus.InProgress ||
@@ -374,16 +374,16 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
                 <span class="spares-total">
                   Total: ₹{{ ticket.totalSparesCostInPaise / 100 | number: '1.2-2' }}
                 </span>
-                <button
+                <a
                   *ngIf="
                     ticket.status !== ServiceTicketStatus.Resolved &&
                     ticket.status !== ServiceTicketStatus.Closed
                   "
                   ar-button="ghost"
-                  (click)="openRecordSpareModal(ticket)"
+                  [routerLink]="['/field-service/tickets', ticket.id, 'spares']"
                 >
                   + Add Spare Part
-                </button>
+                </a>
               </div>
             </div>
 
@@ -439,201 +439,6 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
         </section>
       </div>
     </div>
-
-    <!-- Create Ticket Dialog -->
-    <ar-dialog
-      *ngIf="isCreateOpen()"
-      title="Raise Field Service / Breakdown Ticket"
-      (dismiss)="isCreateOpen.set(false)"
-    >
-      <div class="modal-body-container">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Ticket Number</label>
-            <input type="text" class="form-control" [(ngModel)]="newTicket.ticketNumber" />
-          </div>
-          <div class="form-group">
-            <label>Customer Name</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newTicket.customerName"
-              placeholder="Client Name"
-            />
-          </div>
-          <div class="form-group">
-            <label>Customer Site Address</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newTicket.customerSiteAddress"
-              placeholder="Plant, Bay, City"
-            />
-          </div>
-          <div class="form-group">
-            <label>Customer Contact Phone</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newTicket.customerContactPhone"
-              placeholder="+91 ..."
-            />
-          </div>
-          <div class="form-group">
-            <label>Equipment Serial Number</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newTicket.equipmentSerialNumber"
-              placeholder="e.g. PR-400T-2024-09"
-            />
-          </div>
-          <div class="form-group">
-            <label>Equipment Model / Machine</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newTicket.equipmentModel"
-              placeholder="e.g. Stamping Press"
-            />
-          </div>
-          <div class="form-group">
-            <label>Ticket Type</label>
-            <select class="form-control" [(ngModel)]="newTicket.ticketType">
-              <option [ngValue]="ServiceTicketType.Breakdown">Emergency Breakdown</option>
-              <option [ngValue]="ServiceTicketType.PreventiveMaintenance">
-                Preventive Maintenance
-              </option>
-              <option [ngValue]="ServiceTicketType.InstallationCommissioning">
-                Installation & Commissioning
-              </option>
-              <option [ngValue]="ServiceTicketType.Calibration">Instrumentation Calibration</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Priority</label>
-            <select class="form-control" [(ngModel)]="newTicket.priority">
-              <option [ngValue]="ServiceTicketPriority.CriticalEmergency">
-                Critical Emergency (Production Halted)
-              </option>
-              <option [ngValue]="ServiceTicketPriority.High">High</option>
-              <option [ngValue]="ServiceTicketPriority.Medium">Medium</option>
-              <option [ngValue]="ServiceTicketPriority.Low">Low</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group full-width mt-3">
-          <label>Problem Description / Breakdown Symptoms</label>
-          <textarea
-            class="form-control"
-            rows="3"
-            [(ngModel)]="newTicket.issueDescription"
-            placeholder="Describe error codes, hydraulic leaks, PLC alarms..."
-          ></textarea>
-        </div>
-
-        <div class="dialog-actions mt-4">
-          <button ar-button="primary" (click)="createTicket()">Raise Ticket</button>
-          <button ar-button="ghost" (click)="isCreateOpen.set(false)">Cancel</button>
-        </div>
-      </div>
-    </ar-dialog>
-
-    <!-- Assign Engineer Dialog -->
-    <ar-dialog
-      *ngIf="isAssignOpen()"
-      title="Dispatch & Assign Field Service Engineer"
-      (dismiss)="isAssignOpen.set(false)"
-    >
-      <div class="modal-body-container" *ngIf="selectedTicket() as ticket">
-        <p class="mb-3">
-          Assigning engineer for <strong>{{ ticket.ticketNumber }}</strong> ({{
-            ticket.customerName
-          }}).
-        </p>
-
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Field Engineer Name</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="assignForm.assignedFieldEngineer"
-              placeholder="Engineer Name"
-            />
-          </div>
-          <div class="form-group">
-            <label>Scheduled On-Site Visit Date/Time</label>
-            <input
-              type="datetime-local"
-              class="form-control"
-              [(ngModel)]="assignForm.scheduledVisitDateUtc"
-            />
-          </div>
-        </div>
-
-        <div class="dialog-actions mt-4">
-          <button ar-button="primary" (click)="assignTicket()">Dispatch Engineer</button>
-          <button ar-button="ghost" (click)="isAssignOpen.set(false)">Cancel</button>
-        </div>
-      </div>
-    </ar-dialog>
-
-    <!-- Record Spare Part Consumed Dialog -->
-    <ar-dialog
-      *ngIf="isRecordSpareOpen()"
-      title="Record Spare Part Replaced"
-      (dismiss)="isRecordSpareOpen.set(false)"
-    >
-      <div class="modal-body-container">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Spare Part Number</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newSpare.partNumber"
-              placeholder="e.g. SK-FKM-90"
-            />
-          </div>
-          <div class="form-group">
-            <label>Part Description</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newSpare.description"
-              placeholder="Viton Seal Kit..."
-            />
-          </div>
-          <div class="form-group">
-            <label>Quantity Replaced</label>
-            <input type="number" class="form-control" [(ngModel)]="newSpare.quantity" />
-          </div>
-          <div class="form-group">
-            <label>Unit Price (INR)</label>
-            <input
-              type="number"
-              class="form-control"
-              [ngModel]="newSpare.unitPriceInPaise / 100"
-              (ngModelChange)="newSpare.unitPriceInPaise = $event * 100"
-            />
-          </div>
-        </div>
-
-        <div class="form-check mt-3">
-          <label class="checkbox-label">
-            <input type="checkbox" [(ngModel)]="newSpare.isBillableToCustomer" />
-            <span>Billable to customer (uncheck if covered under AMC/Warranty)</span>
-          </label>
-        </div>
-
-        <div class="dialog-actions mt-4">
-          <button ar-button="primary" (click)="recordSpare()">Add Replaced Part</button>
-          <button ar-button="ghost" (click)="isRecordSpareOpen.set(false)">Cancel</button>
-        </div>
-      </div>
-    </ar-dialog>
 
     <!-- Resolve Ticket Dialog -->
     <ar-dialog
@@ -1188,8 +993,6 @@ export class FieldServiceTicketsComponent {
 
   // Dialogs
   readonly isCreateOpen = signal<boolean>(false);
-  readonly isAssignOpen = signal<boolean>(false);
-  readonly isRecordSpareOpen = signal<boolean>(false);
   readonly isResolveOpen = signal<boolean>(false);
 
   newTicket: CreateFieldServiceTicketDto = {
@@ -1203,19 +1006,6 @@ export class FieldServiceTicketsComponent {
     ticketType: ServiceTicketType.Breakdown,
     priority: ServiceTicketPriority.High,
     issueDescription: '',
-  };
-
-  assignForm: AssignFieldServiceTicketDto = {
-    assignedFieldEngineer: 'Sunil Deshmukh',
-    scheduledVisitDateUtc: new Date(Date.now() + 4 * 3600_000).toISOString(),
-  };
-
-  newSpare: RecordSpareConsumedDto = {
-    partNumber: '',
-    description: '',
-    quantity: 1,
-    unitPriceInPaise: 5_000_00,
-    isBillableToCustomer: false,
   };
 
   resolveForm: ResolveFieldServiceTicketDto = {
@@ -1442,86 +1232,6 @@ export class FieldServiceTicketsComponent {
     this.tickets.update((list) => [created, ...list]);
     this.selectedTicket.set(created);
     this.isCreateOpen.set(false);
-  }
-
-  openAssignModal(ticket: FieldServiceTicketDto): void {
-    this.assignForm = {
-      assignedFieldEngineer: ticket.assignedFieldEngineer || 'Sunil Deshmukh',
-      scheduledVisitDateUtc: new Date().toISOString().substring(0, 16),
-    };
-    this.isAssignOpen.set(true);
-  }
-
-  assignTicket(): void {
-    const sel = this.selectedTicket();
-    if (!sel) return;
-
-    if (!environment.useMockData && sel.id) {
-      this.ticketService.assign(sel.id, this.assignForm).subscribe({
-        next: (updated) => {
-          this.updateTicketInState(updated);
-          this.isAssignOpen.set(false);
-        },
-      });
-      return;
-    }
-
-    const updated: FieldServiceTicketDto = {
-      ...sel,
-      assignedFieldEngineer: this.assignForm.assignedFieldEngineer,
-      scheduledVisitDateUtc: this.assignForm.scheduledVisitDateUtc,
-      status: ServiceTicketStatus.Assigned,
-    };
-
-    this.updateTicketInState(updated);
-    this.isAssignOpen.set(false);
-  }
-
-  openRecordSpareModal(ticket: FieldServiceTicketDto): void {
-    this.newSpare = {
-      partNumber: '',
-      description: '',
-      quantity: 1,
-      unitPriceInPaise: 4_500_00,
-      isBillableToCustomer: false,
-    };
-    this.isRecordSpareOpen.set(true);
-  }
-
-  recordSpare(): void {
-    const sel = this.selectedTicket();
-    if (!sel || !this.newSpare.partNumber) return;
-
-    if (!environment.useMockData && sel.id) {
-      this.ticketService.recordSpare(sel.id, this.newSpare).subscribe({
-        next: (updated) => {
-          this.updateTicketInState(updated);
-          this.isRecordSpareOpen.set(false);
-        },
-      });
-      return;
-    }
-
-    const lineTotal = Number(this.newSpare.quantity) * Number(this.newSpare.unitPriceInPaise);
-    const spareItem: ServiceTicketSpareConsumedDto = {
-      id: `sp-${Date.now()}`,
-      serviceTicketId: sel.id || '',
-      partNumber: this.newSpare.partNumber,
-      description: this.newSpare.description,
-      quantity: Number(this.newSpare.quantity),
-      unitPriceInPaise: Number(this.newSpare.unitPriceInPaise),
-      isBillableToCustomer: this.newSpare.isBillableToCustomer,
-      lineTotalInPaise: lineTotal,
-    };
-
-    const updated: FieldServiceTicketDto = {
-      ...sel,
-      sparesConsumed: [...(sel.sparesConsumed || []), spareItem],
-      totalSparesCostInPaise: (sel.totalSparesCostInPaise || 0) + lineTotal,
-    };
-
-    this.updateTicketInState(updated);
-    this.isRecordSpareOpen.set(false);
   }
 
   openResolveModal(ticket: FieldServiceTicketDto): void {

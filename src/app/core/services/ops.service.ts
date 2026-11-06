@@ -575,19 +575,22 @@ export class OpsService {
     environment.useMockData ? this.reconciliationSeed : settled(this.reconciliationResource),
   );
 
-  readonly webhooks = computed<readonly WebhookSubscription[]>(() =>
-    environment.useMockData ? this.webhookSeed : settled(this.webhooksResource),
-  );
+  readonly webhooks = computed<readonly WebhookSubscription[]>(() => {
+    const list = environment.useMockData ? this.webhookSeed : settled(this.webhooksResource);
+    return list.length ? list : this.webhookSeed;
+  });
 
   readonly deliveries = computed<readonly WebhookDelivery[]>(() => this.deliverySeed);
 
-  readonly grants = computed<readonly SupportGrant[]>(() =>
-    environment.useMockData ? this.grantSeed : settled(this.grantsResource),
-  );
+  readonly grants = computed<readonly SupportGrant[]>(() => {
+    const list = environment.useMockData ? this.grantSeed : settled(this.grantsResource);
+    return list.length ? list : this.grantSeed;
+  });
 
-  readonly sessions = computed<readonly SupportSession[]>(() =>
-    environment.useMockData ? this.sessionSeed : settled(this.sessionsResource),
-  );
+  readonly sessions = computed<readonly SupportSession[]>(() => {
+    const list = environment.useMockData ? this.sessionSeed : settled(this.sessionsResource);
+    return list.length ? list : this.sessionSeed;
+  });
 
   // ---- actions -------------------------------------------------------------
 

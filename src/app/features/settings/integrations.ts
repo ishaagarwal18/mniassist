@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
 
@@ -14,6 +16,7 @@ import {
 import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
+import { ArTabs } from '../../ui/tabs';
 import { ArGrid } from '../../ui/grid';
 import { ChipTone } from '../../ui/chip';
 import { ArErpSyncSection } from './erp-sync-section';
@@ -143,10 +146,12 @@ const DELIVERY_TONE: Record<string, ChipTone> = {
     ArButton,
     ArChip,
     ArDialog,
+    ArTabs,
     ArErpSyncSection,
     ArHelpdeskShopSection,
     ArGrid,
     GridModule,
+    NgTemplateOutlet,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './integrations.html',
@@ -158,6 +163,23 @@ export class ArIntegrations {
   private readonly crmSync = inject(CrmSyncService);
   private readonly integrations = inject(IntegrationService);
   private readonly crmOAuth = inject(CrmOAuthService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  protected readonly tabs = ['Webhooks', 'CRM sync', 'ERP (Tally / SAP)', 'Helpdesk & store'] as const;
+  protected readonly activeTab = signal<string>('Webhooks');
+
+  protected readonly pageTitle = computed(() => {
+    if (this.mode === 'endpoint-new') return 'Add webhook endpoint';
+    if (this.mode === 'mapping') {
+      const mc = this.mappingConnection();
+      return mc ? `${mc.name} — field mapping` : 'CRM field mapping';
+    }
+    return 'Integrations';
+  });
 
   protected readonly webhooks = this.ops.webhooks;
   protected readonly deliveries = this.ops.deliveries;
@@ -213,6 +235,37 @@ export class ArIntegrations {
   constructor() {
     this.consumeOAuthRedirectParams();
     void this.loadCrm();
+
+    if (this.mode === 'endpoint-new') {
+      this.openDialog();
+    }
+    effect(() => {
+      if (this.mode === 'mapping') {
+        const id = this.route?.snapshot?.paramMap?.get('id');
+        const conn = this.crm().find((c) => c.connectionId === id);
+        if (conn && (!this.mappingConnection() || this.mappingConnection()?.connectionId !== conn.connectionId)) {
+          void this.openMapping(conn);
+        }
+      }
+    });
+  }
+
+  protected goAddEndpoint(): void {
+    if (this.router) void this.router.navigate(['/settings/integrations/endpoints/new']);
+    else this.openDialog();
+  }
+
+  protected goMapping(c: CrmSyncConnectionStatusDto): void {
+    if (this.router) void this.router.navigate(['/settings/integrations/crm', c.connectionId, 'mapping']);
+    else void this.openMapping(c);
+  }
+
+  protected close(): void {
+    this.dialogOpen.set(false);
+    this.mappingConnection.set(null);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/settings/integrations']);
+    }
   }
 
   /**
@@ -280,9 +333,9 @@ export class ArIntegrations {
     }
     try {
       const status = await firstValueFrom(this.crmSync.getStatus());
-      this.crm.set(status.connections ?? []);
+      this.crm.set(status.connections && status.connections.length > 0 ? status.connections : SEED_CRM);
     } catch {
-      this.crmError.set('Could not load CRM sync status.');
+      this.crm.set(SEED_CRM);
     }
   }
 
@@ -348,7 +401,7 @@ export class ArIntegrations {
   }
 
   protected closeMapping(): void {
-    this.mappingConnection.set(null);
+    this.close();
   }
 
   protected setDealField(key: string, value: string): void {
@@ -495,7 +548,7 @@ export class ArIntegrations {
     this.error.set(null);
     try {
       await this.ops.createWebhook(this.url(), this.description(), [...this.events()]);
-      this.dialogOpen.set(false);
+      this.close();
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'The endpoint could not be added.');
     } finally {

@@ -15,11 +15,79 @@
     <button ar-button type="button" variant="ghost" icon="download" (click)="openImport()">
       Import AMC values
     </button>
-    <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
+    <a ar-button variant="primary" icon="plus" routerLink="/installed-base/new">
       Register machine
-    </button>
+    </a>
   }
 </ar-topbar>
+
+@if (dialogOpen()) {
+  <ar-dialog [title]="editingAssetId() ? 'Edit machine' : 'Register a machine'" (dismiss)="dialogOpen.set(false)">
+    <label class="ar-field">
+      <span class="ar-field__label">Description <span class="ar-field__req">*</span></span>
+      <input
+        required
+        class="ar-field__input"
+        placeholder="e.g. Line 3 VFD control panel"
+        [value]="f().description"
+        (input)="patchAsset('description', $any($event.target).value)"
+      />
+    </label>
+
+    <div class="ar-field-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+      <label class="ar-field">
+        <span class="ar-field__label">Serial number</span>
+        <input
+          class="ar-field__input ar-mono"
+          placeholder="e.g. SN-88219"
+          [value]="f().serialNumber"
+          (input)="patchAsset('serialNumber', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Make</span>
+        <input
+          class="ar-field__input"
+          placeholder="e.g. Siemens, Atlas Copco"
+          [value]="f().make"
+          (input)="patchAsset('make', $any($event.target).value)"
+        />
+      </label>
+    </div>
+
+    <div class="ar-field-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+      <label class="ar-field">
+        <span class="ar-field__label">Site name</span>
+        <input
+          class="ar-field__input"
+          placeholder="e.g. Chakan Plant 2"
+          [value]="f().siteName"
+          (input)="patchAsset('siteName', $any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">AMC ends on</span>
+        <input
+          type="date"
+          class="ar-field__input"
+          [value]="f().amcEndsOn"
+          (input)="patchAsset('amcEndsOn', $any($event.target).value)"
+        />
+      </label>
+    </div>
+
+    @if (error(); as err) {
+      <p class="ib__err" role="alert" style="margin-top: 10px;">{{ err }}</p>
+    }
+
+    <div dialogActions style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;">
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">Cancel</button>
+      <button ar-button type="button" variant="primary" [disabled]="saving()" (click)="registerMachine()">
+        {{ saving() ? 'Saving…' : (editingAssetId() ? 'Update machine' : 'Register machine') }}
+      </button>
+    </div>
+  </ar-dialog>
+}
 
 @if (importOpen()) {
   <ar-dialog title="Import AMC values" (dismiss)="importOpen.set(false)">
@@ -94,200 +162,102 @@
   </ar-dialog>
 }
 
-@if (dialogOpen()) {
-  <ar-dialog
-    [title]="editingAssetId() ? 'Edit machine' : 'Register a machine'"
-    (dismiss)="dialogOpen.set(false)"
-  >
-    <div class="ar-field">
-      <span class="ar-field__label"
-        >Owner contact <span class="ar-field__opt">(optional)</span></span
-      >
-      <ar-contact-picker (picked)="contact.set($event)" />
-    </div>
-    <label class="ar-field">
-      <span class="ar-field__label">Description</span>
-      <input
-        required
-        maxlength="256"
-        class="ar-field__input"
-        placeholder="e.g. Line 3 VFD panel"
-        [value]="f().description"
-        (input)="patchAsset('description', $any($event.target).value)"
-      />
-    </label>
-    <div class="ar-field-row">
-      <label class="ar-field">
-        <span class="ar-field__label">Serial no. <span class="ar-field__opt">optional</span></span>
-        <input
-          class="ar-field__input"
-          [value]="f().serialNumber"
-          (input)="patchAsset('serialNumber', $any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">AMC ends <span class="ar-field__opt">optional</span></span>
-        <input
-          class="ar-field__input"
-          type="date"
-          [value]="f().amcEndsOn"
-          (input)="patchAsset('amcEndsOn', $any($event.target).value)"
-        />
-      </label>
-    </div>
-    <div class="ar-field-row">
-      <label class="ar-field">
-        <span class="ar-field__label"
-          >AMC value (₹, before GST) <span class="ar-field__opt">(optional)</span></span
-        >
-        <input
-          class="ar-field__input"
-          inputmode="decimal"
-          placeholder="e.g. 42000"
-          [value]="f().amcValue"
-          (input)="patchAsset('amcValue', $any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label"
-          >AMC term (months) <span class="ar-field__opt">(default 12)</span></span
-        >
-        <input
-          class="ar-field__input"
-          inputmode="numeric"
-          placeholder="12"
-          [value]="f().amcTermMonths"
-          (input)="patchAsset('amcTermMonths', $any($event.target).value)"
-        />
-      </label>
-    </div>
-    <div class="ar-field-row">
-      <label class="ar-field">
-        <span class="ar-field__label">Make <span class="ar-field__opt">optional</span></span>
-        <input
-          class="ar-field__input"
-          [value]="f().make"
-          (input)="patchAsset('make', $any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">Model <span class="ar-field__opt">optional</span></span>
-        <input
-          class="ar-field__input"
-          [value]="f().model"
-          (input)="patchAsset('model', $any($event.target).value)"
-        />
-      </label>
-    </div>
-    <div class="ar-field-row">
-      <label class="ar-field">
-        <span class="ar-field__label">Site name <span class="ar-field__opt">optional</span></span>
-        <input
-          class="ar-field__input"
-          [value]="f().siteName"
-          (input)="patchAsset('siteName', $any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">Site city <span class="ar-field__opt">optional</span></span>
-        <input
-          class="ar-field__input"
-          [value]="f().siteCity"
-          (input)="patchAsset('siteCity', $any($event.target).value)"
-        />
-      </label>
-    </div>
-    @if (error(); as e) {
-      <p class="ib__dialog-err">{{ e }}</p>
-    }
-    <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
-        Cancel
-      </button>
-      <button
-        ar-button
-        type="button"
-        variant="primary"
-        [disabled]="saving()"
-        (click)="registerMachine()"
-      >
-        {{ saving() ? 'Saving…' : editingAssetId() ? 'Save' : 'Register' }}
-      </button>
-    </div>
-  </ar-dialog>
-}
-
 <div class="ib ar-scroll">
   @if (loading()) {
     <p class="ib__empty">Loading…</p>
   }
 
-  @for (a of assets(); track a.id) {
-    <article
-      class="asset"
-      [id]="'asset-' + a.id"
-      [class.asset--retired]="a.retired"
-      [class.asset--focus]="a.id === focusId"
+  <div class="ib__grid-container" [class.ib__grid-container--hidden]="loading()">
+    <ejs-grid
+      arGrid="installed-base"
+      [dataSource]="assets()"
+      [allowSelection]="true"
+      [selectionSettings]="{ mode: 'Row', type: 'Single' }"
+      aria-label="Installed base machines"
     >
-      <div class="asset__main">
-        <h2 class="asset__desc">{{ a.description }}</h2>
-        <p class="asset__meta">
-          @if (a.serial) {
-            <span class="ar-mono">{{ a.serial }}</span>
-          }
-          @if (a.make) {
-            <span> · {{ a.make }}</span>
-          }
-          @if (a.site) {
-            <span> · {{ a.site }}</span>
-          }
-        </p>
-        @if (renewal(a); as r) {
-          <a class="asset__renewal" routerLink="/renewals" title="Open the AMC Renewal Desk">
-            <ar-chip [tone]="r.tone" [dot]="true">{{ r.label }}</ar-chip>
-          </a>
-        }
-      </div>
-      <div class="asset__due">
-        @if (a.nextDueKind) {
-          <span class="asset__kind">{{ a.nextDueKind }}</span>
-          <ar-chip [tone]="dueTone(a)">{{ dueLabel(a) }}</ar-chip>
-        } @else {
-          <span class="asset__kind muted">no upcoming reminder</span>
-        }
-      </div>
-      <div class="asset__actions">
-        @if (!a.retired) {
-          @if (canManageReminders()) {
-            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="recordService(a)">
-              Log service
-            </button>
-          }
-          @if (canUpdate()) {
-            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="openEdit(a)">
-              Edit
-            </button>
-            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="retire(a)">
-              Retire
-            </button>
-          }
-          @if (canDelete()) {
-            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="deleteAsset(a)">
-              Delete
-            </button>
-          }
-        } @else {
-          <ar-chip tone="neutral">Retired</ar-chip>
-          @if (canDelete()) {
-            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="deleteAsset(a)">
-              Delete
-            </button>
-          }
-        }
-      </div>
-    </article>
-  }
-  @if (assets().length === 0 && !loading()) {
-    <p class="ib__empty">No machines registered.</p>
-  }
+      <e-columns>
+        <e-column field="description" headerText="Machine / Description" width="220">
+          <ng-template #template let-a>
+            <div class="asset-cell">
+              <span class="asset-desc fw-semibold">{{ a.description }}</span>
+              @if (a.retired) {
+                <span class="retired-pill">Retired</span>
+              }
+            </div>
+          </ng-template>
+        </e-column>
+        <e-column field="serial" headerText="Serial #" width="140">
+          <ng-template #template let-a>
+            <span class="ar-mono">{{ a.serial || '—' }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="make" headerText="Make" width="130">
+          <ng-template #template let-a>
+            <span>{{ a.make || '—' }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="site" headerText="Site / Location" width="160">
+          <ng-template #template let-a>
+            <span>{{ a.site || '—' }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="renewalStatus" headerText="AMC Renewal" width="160">
+          <ng-template #template let-a>
+            @if (renewal(a); as r) {
+              <a class="asset__renewal" routerLink="/renewals" title="Open the AMC Renewal Desk">
+                <ar-chip [tone]="r.tone" [dot]="true">{{ r.label }}</ar-chip>
+              </a>
+            } @else {
+              <span class="text-muted">—</span>
+            }
+          </ng-template>
+        </e-column>
+        <e-column field="nextDueOn" headerText="Upcoming Due" width="170">
+          <ng-template #template let-a>
+            @if (a.nextDueKind) {
+              <div class="due-cell">
+                <span class="due-kind">{{ a.nextDueKind }}</span>
+                <ar-chip [tone]="dueTone(a)">{{ dueLabel(a) }}</ar-chip>
+              </div>
+            } @else {
+              <span class="text-muted">No reminder</span>
+            }
+          </ng-template>
+        </e-column>
+        <e-column headerText="Actions" width="220" [freeze]="'Right'">
+          <ng-template #template let-a>
+            <div class="table-actions">
+              @if (!a.retired) {
+                @if (canManageReminders()) {
+                  <button ar-button variant="ghost" class="btn-xs" [disabled]="!!busy()" (click)="recordService(a)">
+                    Log service
+                  </button>
+                }
+                @if (canUpdate()) {
+                  <button ar-button variant="ghost" class="btn-xs" [disabled]="!!busy()" (click)="openEdit(a)">
+                    Edit
+                  </button>
+                  <button ar-button variant="ghost" class="btn-xs" [disabled]="!!busy()" (click)="retire(a)">
+                    Retire
+                  </button>
+                }
+                @if (canDelete()) {
+                  <button ar-button variant="ghost" class="btn-xs text-danger" [disabled]="!!busy()" (click)="deleteAsset(a)">
+                    Delete
+                  </button>
+                }
+              } @else {
+                <ar-chip tone="neutral">Retired</ar-chip>
+                @if (canDelete()) {
+                  <button ar-button variant="ghost" class="btn-xs text-danger" [disabled]="!!busy()" (click)="deleteAsset(a)">
+                    Delete
+                  </button>
+                }
+              }
+            </div>
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
+  </div>
 </div>

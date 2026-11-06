@@ -103,6 +103,18 @@ export class GstComplianceService {
     );
   }
 
+  /** Brings the period's issued sales invoices that are not yet in the register into it; returns how many were added. */
+  recordIssuedInvoices(returnPeriod: string, config?: Partial<Rest.Config>): Observable<number> {
+    return this.restService.request<any, number>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/gst-compliance/record-issued-invoices',
+        params: { returnPeriod },
+      },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
   generateEWayBill(
     id: string,
     input: GenerateEWayBillInput,

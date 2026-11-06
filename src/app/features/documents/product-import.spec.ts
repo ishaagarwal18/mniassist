@@ -36,6 +36,11 @@ describe('parseProductRows', () => {
     expect(parseProductRows('A1,Thing,10,no,,,5%')[0].taxRateBasisPoints).toBe(500);
   });
 
+  it('reads the purchase price from the eighth column when there is one', () => {
+    expect(parseProductRows('A1	Thing	100	Nos			18	₹72.50')[0].purchasePriceInPaise).toBe(7250);
+    expect(parseProductRows('A1,Thing,100')[0].purchasePriceInPaise).toBeNull();
+  });
+
   it('reads an unreadable price as zero', () => {
     expect(parseProductRows('A1,Thing,abc')[0].listPriceInPaise).toBe(0);
   });

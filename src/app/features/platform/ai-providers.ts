@@ -11,6 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton } from '../../ui/button';
+import { ToastService } from '../../core/ui/toast.service';
 
 export interface AiProviderStatus {
   key: string;
@@ -365,6 +366,7 @@ export class AiProviderSettingsService {
 })
 export class ArAiProviders implements OnInit {
   private readonly api = inject(AiProviderSettingsService);
+  private readonly toasts = inject(ToastService);
   protected readonly settings = signal<AiProviderSettings | null>(null);
   protected readonly choice = signal<string>('auto');
   protected readonly fallback = signal(true);
@@ -426,8 +428,11 @@ export class ArAiProviders implements OnInit {
     try {
       this.show(await firstValueFrom(this.api.update(null, s.voiceEngineFallback, paise)));
       this.ratesSaved.set(true);
+      this.toasts.success('Call cost rates saved.', 'Saved');
     } catch {
-      this.ratesError.set('The rates could not be saved.');
+      const msg = 'The rates could not be saved.';
+      this.ratesError.set(msg);
+      this.toasts.error(msg, 'Error');
     } finally {
       this.busy.set(false);
     }
@@ -441,8 +446,11 @@ export class ArAiProviders implements OnInit {
     try {
       this.show(await firstValueFrom(this.api.update(this.choice(), this.fallback())));
       this.saved.set(true);
+      this.toasts.success('Analysis model settings saved.', 'Saved');
     } catch {
-      this.error.set('The choice could not be saved.');
+      const msg = 'The choice could not be saved.';
+      this.error.set(msg);
+      this.toasts.error(msg, 'Error');
     } finally {
       this.busy.set(false);
     }

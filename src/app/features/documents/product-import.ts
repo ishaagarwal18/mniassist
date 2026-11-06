@@ -1,8 +1,8 @@
 import type { ImportProductRow } from '../../proxy/library';
 
 /**
- * Turns pasted spreadsheet rows into products. Columns, in order: part number, name, price (₹),
- * unit, category, HSN, GST %. Comma or tab separated (tab wins when a row has one, so names can hold commas).
+ * Turns pasted spreadsheet rows into products. Columns, in order: part number, name, sales price (₹),
+ * unit, category, HSN, GST %, purchase price (₹, optional). Comma or tab separated (tab wins when a row has one, so names can hold commas).
  * A first row that starts with "part" is a header and dropped. Nothing is judged here beyond reading
  * the price: rows with no part number or name are still sent, and the server reports them as skipped.
  */
@@ -15,6 +15,8 @@ export function parseProductRows(text: string): ImportProductRow[] {
     const rupees = Number((cells[2] ?? '').replace(/[₹,\s]/g, ''));
     const gst = (cells[6] ?? '').replace(/[%\s]/g, '');
     const gstPercent = gst === '' ? NaN : Number(gst);
+    const bought = (cells[7] ?? '').replace(/[₹,s]/g, '');
+    const purchaseRupees = bought === '' ? NaN : Number(bought);
     return {
       partNumber: cells[0] || null,
       name: cells[1] || null,
@@ -23,6 +25,9 @@ export function parseProductRows(text: string): ImportProductRow[] {
       category: cells[4] || null,
       hsnCode: cells[5] || null,
       taxRateBasisPoints: Number.isFinite(gstPercent) ? Math.round(gstPercent * 100) : null,
+      purchasePriceInPaise: Number.isFinite(purchaseRupees)
+        ? Math.round(purchaseRupees * 100)
+        : null,
       isActive: true,
     };
   });

@@ -1,428 +1,454 @@
-<ar-topbar
-  title="Integrations"
-  [subtitle]="subtitle()"
-  help="Outbound webhooks and CRM sync. An endpoint that fails 20 times in a row is disabled automatically — check the delivery log here if a connected system has gone quiet."
->
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
-    Add endpoint
-  </button>
-</ar-topbar>
+@if (isPage) {
+  <ar-topbar [title]="pageTitle()">
+    <button ar-button type="button" variant="ghost" (click)="close()">Back to Integrations</button>
+  </ar-topbar>
+  <div class="ar-form-page ar-scroll">
+    <ng-container *ngTemplateOutlet="formsTpl" />
+  </div>
+} @else {
+  <ar-topbar
+    title="Integrations"
+    [subtitle]="subtitle()"
+    help="Outbound webhooks and CRM sync. An endpoint that fails 20 times in a row is disabled automatically — check the delivery log here if a connected system has gone quiet."
+  >
+    @if (activeTab() === 'Webhooks') {
+      <button ar-button type="button" variant="primary" icon="plus" (click)="goAddEndpoint()">
+        Add endpoint
+      </button>
+    }
+  </ar-topbar>
 
-@if (dialogOpen()) {
-  <ar-dialog title="Add a webhook endpoint" (dismiss)="dialogOpen.set(false)">
-    <label class="ar-field">
-      <span class="ar-field__label">Endpoint URL</span>
-      <input
-        required
-        class="ar-field__input"
-        type="url"
-        placeholder="https://…"
-        [value]="url()"
-        (input)="url.set($any($event.target).value)"
-      />
-    </label>
-    <label class="ar-field">
-      <span class="ar-field__label">Description <span class="ar-field__opt">(optional)</span></span>
-      <input
-        class="ar-field__input"
-        [value]="description()"
-        (input)="description.set($any($event.target).value)"
-      />
-    </label>
-    <div class="ar-field">
-      <span class="ar-field__label">Events</span>
-      <div class="intg__events">
-        @for (e of allEvents; track e.value) {
-          <label class="intg__event">
-            <input
-              type="checkbox"
-              [checked]="events().has(e.value)"
-              (change)="toggleEvent(e.value, $any($event.target).checked)"
-            />
-            {{ e.label }}
-          </label>
+  <ar-tabs
+    [tabs]="tabs"
+    [(active)]="activeTab"
+    style="padding: 0 20px; border-bottom: 1px solid var(--ar-line-200); background: var(--ar-card-bg);"
+  />
+
+  @if (activeTab() === 'Webhooks') {
+    <div class="intg">
+      <aside class="intg__list ar-scroll" aria-label="Webhook endpoints">
+        @for (w of webhooks(); track w.id) {
+          <button
+            class="hook"
+            type="button"
+            [class.hook--on]="w.id === selected()?.id"
+            [attr.aria-pressed]="w.id === selected()?.id"
+            (click)="select(w.id)"
+          >
+            <div class="hook__top">
+              <span class="hook__name">{{ w.description }}</span>
+              <ar-chip [tone]="w.enabled ? 'good' : 'bad'" [dot]="true">
+                {{ w.enabled ? 'Live' : 'Disabled' }}
+              </ar-chip>
+            </div>
+            <p class="hook__url ar-mono">{{ w.url }}</p>
+            <p class="hook__events">
+              {{ w.events.length }} event{{ w.events.length === 1 ? '' : 's' }}
+            </p>
+          </button>
         }
-      </div>
-    </div>
-    @if (error(); as err) {
-      <p class="intg__dialog-err">{{ err }}</p>
-    }
-    <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
-        Cancel
-      </button>
-      <button
-        ar-button
-        type="button"
-        variant="primary"
-        [disabled]="saving()"
-        (click)="createEndpoint()"
-      >
-        {{ saving() ? 'Adding…' : 'Add endpoint' }}
-      </button>
-    </div>
-  </ar-dialog>
-}
+      </aside>
 
-<div class="intg">
-  <aside class="intg__list ar-scroll" aria-label="Webhook endpoints">
-    @for (w of webhooks(); track w.id) {
-      <button
-        class="hook"
-        type="button"
-        [class.hook--on]="w.id === selected()?.id"
-        [attr.aria-pressed]="w.id === selected()?.id"
-        (click)="select(w.id)"
-      >
-        <div class="hook__top">
-          <span class="hook__name">{{ w.description }}</span>
-          <ar-chip [tone]="w.enabled ? 'good' : 'bad'" [dot]="true">
-            {{ w.enabled ? 'Live' : 'Disabled' }}
-          </ar-chip>
-        </div>
-        <p class="hook__url ar-mono">{{ w.url }}</p>
-        <p class="hook__events">
-          {{ w.events.length }} event{{ w.events.length === 1 ? '' : 's' }}
-        </p>
-      </button>
-    }
-  </aside>
+      <section class="intg__detail ar-scroll">
+        @if (selected(); as w) {
+          @if (!w.enabled) {
+            <ar-banner tone="bad">
+              This endpoint switched itself off after {{ w.consecutiveFailures }} consecutive failures.
+              Events raised while it is off are not queued — fix the endpoint, then re-enable it.
+            </ar-banner>
+          }
 
-  <section class="intg__detail ar-scroll">
-    @if (selected(); as w) {
-      @if (!w.enabled) {
-        <ar-banner tone="bad">
-          This endpoint switched itself off after {{ w.consecutiveFailures }} consecutive failures.
-          Events raised while it is off are not queued — fix the endpoint, then re-enable it.
-        </ar-banner>
+          <div class="panel">
+            <header class="panel__head">
+              <div>
+                <h2 class="panel__title">{{ w.description }}</h2>
+                <p class="panel__url ar-mono">{{ w.url }}</p>
+              </div>
+              <div class="panel__actions">
+                <button ar-button variant="ghost">Send test</button>
+                @if (!w.enabled) {
+                  <button ar-button variant="primary">Re-enable</button>
+                }
+              </div>
+            </header>
+
+            <dl class="facts">
+              <div>
+                <dt>Last success</dt>
+                <dd class="ar-mono">{{ when(w.lastSuccessAt) }}</dd>
+              </div>
+              <div>
+                <dt>Last failure</dt>
+                <dd class="ar-mono">{{ when(w.lastFailureAt) }}</dd>
+              </div>
+              <div>
+                <dt>Consecutive failures</dt>
+                <dd class="ar-mono" [class.facts__bad]="w.consecutiveFailures > 0">
+                  {{ w.consecutiveFailures }}
+                </dd>
+              </div>
+              <div>
+                <dt>Signing</dt>
+                <dd>HMAC-SHA256, secret set</dd>
+              </div>
+            </dl>
+
+            @if (w.lastError) {
+              <p class="panel__error ar-mono">{{ w.lastError }}</p>
+            }
+
+            <div class="events">
+              <p class="ar-label">Subscribed events</p>
+              <div class="events__row">
+                @for (e of w.events; track e) {
+                  <ar-chip tone="neutral" [mono]="true">{{ eventLabel(e) }}</ar-chip>
+                }
+              </div>
+            </div>
+
+            <div class="signing">
+              <p class="ar-label">Verifying a payload</p>
+              <p class="signing__text">
+                Every request carries <code>X-AutoReach-Signature-256</code> and
+                <code>X-AutoReach-Timestamp</code>. The signature is an HMAC-SHA256 over
+                <code>{{ '{timestamp}.{body}' }}</code> using your signing secret — the same shape Meta
+                uses, so code that already verifies Meta's webhooks works here unchanged. The timestamp
+                is inside the signed material, which is what stops a captured payload being replayed.
+              </p>
+              <button ar-button variant="ghost">Rotate secret</button>
+            </div>
+          </div>
+
+          <section class="panel">
+            <h3 class="panel__title panel__title--sub">Recent deliveries</h3>
+            <ejs-grid
+              arGrid="webhook-deliveries"
+              [dataSource]="deliveryRows()"
+              aria-label="Recent webhook deliveries"
+            >
+              <e-columns>
+                <e-column field="event" headerText="Event">
+                  <ng-template #template let-d
+                    ><span class="ar-mono">{{ d.event }}</span></ng-template
+                  >
+                </e-column>
+                <e-column field="state" headerText="State" width="140">
+                  <ng-template #template let-d>
+                    <ar-chip [tone]="d.tone">{{ d.state }}</ar-chip>
+                  </ng-template>
+                </e-column>
+                <e-column
+                  field="attempts"
+                  headerText="Attempts"
+                  type="number"
+                  textAlign="Right"
+                  width="110"
+                >
+                  <ng-template #template let-d
+                    ><span class="ar-mono">{{ d.attempts }}</span></ng-template
+                  >
+                </e-column>
+                <e-column field="status" headerText="Status" textAlign="Right" width="100">
+                  <ng-template #template let-d
+                    ><span class="ar-mono">{{ d.status }}</span></ng-template
+                  >
+                </e-column>
+                <e-column field="when" headerText="When" width="150">
+                  <ng-template #template let-d
+                    ><span class="ar-mono">{{ d.when }}</span></ng-template
+                  >
+                </e-column>
+              </e-columns>
+              <ng-template #emptyRecordTemplate>No deliveries yet.</ng-template>
+            </ejs-grid>
+          </section>
+        } @else {
+          <p class="empty">No endpoints configured.</p>
+        }
+      </section>
+    </div>
+  } @else if (activeTab() === 'CRM sync') {
+    <section class="crm ar-scroll" style="flex:1;overflow-y:auto;" aria-label="CRM two-way sync">
+      <h2 class="crm__title">CRM two-way sync</h2>
+      <p class="crm__lead">
+        Enquiries and quotations are pushed to a connected Zoho CRM, HubSpot or Salesforce as deals when
+        they are created or move stage, and the contact behind each one is pushed as its own
+        contact/lead record first. With timeline logging on, WhatsApp replies and messages sent to that
+        contact — campaign sends included, if you choose — are also logged as notes or activities on
+        their record. A change made back in the CRM — the deal stage or its value — flows into the
+        pipeline when the CRM posts to the inbound webhook below. A connection made through Connect
+        below refreshes its own access token automatically; one pasted in by hand does not.
+      </p>
+
+      @if (oAuthBanner(); as banner) {
+        <ar-banner [tone]="banner.tone">{{ banner.message }}</ar-banner>
       }
 
-      <div class="panel">
-        <header class="panel__head">
-          <div>
-            <h2 class="panel__title">{{ w.description }}</h2>
-            <p class="panel__url ar-mono">{{ w.url }}</p>
-          </div>
-          <div class="panel__actions">
-            <button ar-button variant="ghost">Send test</button>
-            @if (!w.enabled) {
-              <button ar-button variant="primary">Re-enable</button>
-            }
-          </div>
-        </header>
+      @if (crmError(); as e) {
+        <p class="intg__dialog-err">{{ e }}</p>
+      }
 
-        <dl class="facts">
-          <div>
-            <dt>Last success</dt>
-            <dd class="ar-mono">{{ when(w.lastSuccessAt) }}</dd>
-          </div>
-          <div>
-            <dt>Last failure</dt>
-            <dd class="ar-mono">{{ when(w.lastFailureAt) }}</dd>
-          </div>
-          <div>
-            <dt>Consecutive failures</dt>
-            <dd class="ar-mono" [class.facts__bad]="w.consecutiveFailures > 0">
-              {{ w.consecutiveFailures }}
-            </dd>
-          </div>
-          <div>
-            <dt>Signing</dt>
-            <dd>HMAC-SHA256, secret set</dd>
-          </div>
-        </dl>
-
-        @if (w.lastError) {
-          <p class="panel__error ar-mono">{{ w.lastError }}</p>
-        }
-
-        <div class="events">
-          <p class="ar-label">Subscribed events</p>
-          <div class="events__row">
-            @for (e of w.events; track e) {
-              <ar-chip tone="neutral" [mono]="true">{{ eventLabel(e) }}</ar-chip>
-            }
-          </div>
-        </div>
-
-        <div class="signing">
-          <p class="ar-label">Verifying a payload</p>
-          <p class="signing__text">
-            Every request carries <code>X-AutoReach-Signature-256</code> and
-            <code>X-AutoReach-Timestamp</code>. The signature is an HMAC-SHA256 over
-            <code>{{ '{timestamp}.{body}' }}</code> using your signing secret — the same shape Meta
-            uses, so code that already verifies Meta's webhooks works here unchanged. The timestamp
-            is inside the signed material, which is what stops a captured payload being replayed.
-          </p>
-          <button ar-button variant="ghost">Rotate secret</button>
-        </div>
-      </div>
-
-      <section class="panel">
-        <h3 class="panel__title panel__title--sub">Recent deliveries</h3>
-        <ejs-grid
-          arGrid="webhook-deliveries"
-          [dataSource]="deliveryRows()"
-          aria-label="Recent webhook deliveries"
-        >
-          <e-columns>
-            <e-column field="event" headerText="Event">
-              <ng-template #template let-d
-                ><span class="ar-mono">{{ d.event }}</span></ng-template
-              >
-            </e-column>
-            <e-column field="state" headerText="State" width="140">
-              <ng-template #template let-d>
-                <ar-chip [tone]="d.tone">{{ d.state }}</ar-chip>
-              </ng-template>
-            </e-column>
-            <e-column
-              field="attempts"
-              headerText="Attempts"
-              type="number"
-              textAlign="Right"
-              width="110"
-            >
-              <ng-template #template let-d
-                ><span class="ar-mono">{{ d.attempts }}</span></ng-template
-              >
-            </e-column>
-            <e-column field="status" headerText="Status" textAlign="Right" width="100">
-              <ng-template #template let-d
-                ><span class="ar-mono">{{ d.status }}</span></ng-template
-              >
-            </e-column>
-            <e-column field="when" headerText="When" width="150">
-              <ng-template #template let-d
-                ><span class="ar-mono">{{ d.when }}</span></ng-template
-              >
-            </e-column>
-          </e-columns>
-          <ng-template #emptyRecordTemplate>No deliveries yet.</ng-template>
-        </ejs-grid>
-      </section>
-    } @else {
-      <p class="empty">No endpoints configured.</p>
-    }
-  </section>
-</div>
-
-<section class="crm" aria-label="CRM two-way sync">
-  <h2 class="crm__title">CRM two-way sync</h2>
-  <p class="crm__lead">
-    Enquiries and quotations are pushed to a connected Zoho CRM, HubSpot or Salesforce as deals when
-    they are created or move stage, and the contact behind each one is pushed as its own
-    contact/lead record first. With timeline logging on, WhatsApp replies and messages sent to that
-    contact — campaign sends included, if you choose — are also logged as notes or activities on
-    their record. A change made back in the CRM — the deal stage or its value — flows into the
-    pipeline when the CRM posts to the inbound webhook below. A connection made through Connect
-    below refreshes its own access token automatically; one pasted in by hand does not.
-  </p>
-
-  @if (oAuthBanner(); as banner) {
-    <ar-banner [tone]="banner.tone">{{ banner.message }}</ar-banner>
-  }
-
-  @if (crmError(); as e) {
-    <p class="intg__dialog-err">{{ e }}</p>
-  }
-
-  <div class="crm__connect">
-    @for (k of oAuthKinds; track k.kind) {
-      <button
-        ar-button
-        type="button"
-        variant="ghost"
-        [disabled]="oAuthStarting() === k.kind"
-        (click)="startOAuth(k.kind)"
-      >
-        {{ oAuthStarting() === k.kind ? 'Redirecting…' : 'Connect ' + k.label }}
-      </button>
-    }
-  </div>
-
-  @for (c of crm(); track c.connectionId) {
-    <article class="crm__row">
-      <div class="crm__head">
-        <span class="crm__name">{{ c.name }}</span>
-        <ar-chip [tone]="c.state === 1 ? 'good' : 'warn'" [dot]="true">
-          {{ crmKindLabel(c.kind) }}
-        </ar-chip>
-      </div>
-      <p class="crm__counts">
-        {{ c.linkedContacts }} contact{{ c.linkedContacts === 1 ? '' : 's' }} ·
-        {{ c.linkedEnquiries }} enquir{{ c.linkedEnquiries === 1 ? 'y' : 'ies' }} ·
-        {{ c.linkedQuotations }} quotation{{ c.linkedQuotations === 1 ? '' : 's' }} linked ·
-        @if (c.supportsTimelineSync) {
-          {{
-            c.timelineEnabled
-              ? c.loggedMessages +
-                ' message' +
-                (c.loggedMessages === 1 ? '' : 's') +
-                ' on timelines'
-              : 'timeline off'
-          }}
-          ·
-        }
-        @if (c.supportsAccountSync) {
-          {{
-            c.accountsEnabled
-              ? c.linkedAccounts + ' compan' + (c.linkedAccounts === 1 ? 'y' : 'ies') + ' linked'
-              : 'companies off'
-          }}
-          ·
-        }
-        pushed
-        {{ when(c.lastOutboundAtUtc ?? undefined) }} · received
-        {{ when(c.lastInboundAtUtc ?? undefined) }}
-      </p>
-      <p class="crm__hook">
-        Inbound webhook: <code>{{ c.inboundWebhookPath }}</code>
-      </p>
-      <div class="crm__actions">
-        <button
-          ar-button
-          type="button"
-          variant="ghost"
-          [disabled]="resyncing() === c.connectionId"
-          (click)="resync(c.connectionId)"
-        >
-          {{ resyncing() === c.connectionId ? 'Resyncing…' : 'Resync open enquiries' }}
-        </button>
-        <button ar-button type="button" variant="ghost" (click)="openMapping(c)">
-          Field mapping & currency
-        </button>
-        @if (isOAuthKind(c.kind)) {
+      <div class="crm__connect">
+        @for (k of oAuthKinds; track k.kind) {
           <button
             ar-button
             type="button"
             variant="ghost"
-            [disabled]="oAuthStarting() === c.kind"
-            (click)="startOAuth($any(c.kind), c.connectionId)"
+            [disabled]="oAuthStarting() === k.kind"
+            (click)="startOAuth(k.kind)"
           >
-            {{ oAuthStarting() === c.kind ? 'Redirecting…' : 'Reconnect' }}
+            {{ oAuthStarting() === k.kind ? 'Redirecting…' : 'Connect ' + k.label }}
           </button>
         }
       </div>
-    </article>
-  } @empty {
-    <p class="empty">
-      No CRM with two-way sync is connected. Use Connect above for Zoho CRM, HubSpot or Salesforce.
-    </p>
-  }
-</section>
 
-<ar-erp-sync-section />
-<ar-helpdesk-shop-section />
-
-@if (mappingConnection(); as mc) {
-  <ar-dialog title="{{ mc.name }} — field mapping" (dismiss)="closeMapping()">
-    @if (mappingLoading()) {
-      <p class="empty">Loading current configuration…</p>
-    } @else {
-      <p class="crm__mapping-lead">
-        Leave a field blank to keep {{ crmKindLabel(mc.kind) }}'s own default (shown as the
-        placeholder). Only fields you set here are sent as overrides.
-      </p>
-
-      <label class="ar-field">
-        <span class="ar-field__label">
-          Currency code
-          <span class="ar-field__opt">(optional — labels the amount, does not convert it)</span>
-        </span>
-        <input
-          class="ar-field__input"
-          placeholder="e.g. INR, USD"
-          [value]="mappingCurrency()"
-          (input)="mappingCurrency.set($any($event.target).value)"
-        />
-      </label>
-
-      @if (mc.supportsTimelineSync) {
-        <p class="ar-label crm__mapping-heading">Conversation timeline</p>
-        <label class="intg__event">
-          <input
-            type="checkbox"
-            [checked]="timelineEnabled()"
-            (change)="timelineEnabled.set($any($event.target).checked)"
-          />
-          Log WhatsApp messages on the contact's {{ crmKindLabel(mc.kind) }} timeline
-        </label>
-        <label class="intg__event">
-          <input
-            type="checkbox"
-            [checked]="timelineCampaigns()"
-            [disabled]="!timelineEnabled()"
-            (change)="timelineCampaigns.set($any($event.target).checked)"
-          />
-          Include campaign sends (one CRM entry per recipient — counts against its API limits)
-        </label>
-      }
-
-      @if (mc.supportsAccountSync) {
-        <p class="ar-label crm__mapping-heading">Company accounts</p>
-        <label class="intg__event">
-          <input
-            type="checkbox"
-            [checked]="accountsEnabled()"
-            (change)="accountsEnabled.set($any($event.target).checked)"
-          />
-          Sync company accounts to {{ crmKindLabel(mc.kind) }}, keeping the parent-child hierarchy,
-          and link each contact to its account
-        </label>
-        <p class="crm__mapping-lead">
-          Creates a company record for each account (parents first). Nothing is deleted in
-          {{ crmKindLabel(mc.kind) }} when an account is deleted here.
-          {{ crmKindLabel(mc.kind) }} needs to be reconnected once so it grants access to company
-          records.
+      @for (c of crm(); track c.connectionId) {
+        <article class="crm__row">
+          <div class="crm__head">
+            <span class="crm__name">{{ c.name }}</span>
+            <ar-chip [tone]="c.state === 1 ? 'good' : 'warn'" [dot]="true">
+              {{ crmKindLabel(c.kind) }}
+            </ar-chip>
+          </div>
+          <p class="crm__counts">
+            {{ c.linkedContacts }} contact{{ c.linkedContacts === 1 ? '' : 's' }} ·
+            {{ c.linkedEnquiries }} enquir{{ c.linkedEnquiries === 1 ? 'y' : 'ies' }} ·
+            {{ c.linkedQuotations }} quotation{{ c.linkedQuotations === 1 ? '' : 's' }} linked ·
+            @if (c.supportsTimelineSync) {
+              {{
+                c.timelineEnabled
+                  ? c.loggedMessages +
+                    ' message' +
+                    (c.loggedMessages === 1 ? '' : 's') +
+                    ' on timelines'
+                  : 'timeline off'
+              }}
+              ·
+            }
+            @if (c.supportsAccountSync) {
+              {{
+                c.accountsEnabled
+                  ? c.linkedAccounts + ' compan' + (c.linkedAccounts === 1 ? 'y' : 'ies') + ' linked'
+                  : 'companies off'
+              }}
+              ·
+            }
+            pushed
+            {{ when(c.lastOutboundAtUtc ?? undefined) }} · received
+            {{ when(c.lastInboundAtUtc ?? undefined) }}
+          </p>
+          <p class="crm__hook">
+            Inbound webhook: <code>{{ c.inboundWebhookPath }}</code>
+          </p>
+          <div class="crm__actions">
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="resyncing() === c.connectionId"
+              (click)="resync(c.connectionId)"
+            >
+              {{ resyncing() === c.connectionId ? 'Resyncing…' : 'Resync open enquiries' }}
+            </button>
+            <button ar-button type="button" variant="ghost" (click)="goMapping(c)">
+              Field mapping & currency
+            </button>
+            @if (isOAuthKind(c.kind)) {
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                [disabled]="oAuthStarting() === c.kind"
+                (click)="startOAuth($any(c.kind), c.connectionId)"
+              >
+                {{ oAuthStarting() === c.kind ? 'Redirecting…' : 'Reconnect' }}
+              </button>
+            }
+          </div>
+        </article>
+      } @empty {
+        <p class="empty">
+          No CRM with two-way sync is connected. Use Connect above for Zoho CRM, HubSpot or Salesforce.
         </p>
       }
+    </section>
+  } @else if (activeTab() === 'ERP (Tally / SAP)') {
+    <div class="ar-scroll" style="flex:1;padding:20px;overflow-y:auto;">
+      <ar-erp-sync-section />
+    </div>
+  } @else if (activeTab() === 'Helpdesk & store') {
+    <div class="ar-scroll" style="flex:1;padding:20px;overflow-y:auto;">
+      <ar-helpdesk-shop-section />
+    </div>
+  }
+}
 
-      <p class="ar-label crm__mapping-heading">Deal fields</p>
-      <div class="crm__mapping-grid">
-        @for (f of dealFields(); track f.key) {
-          <label class="ar-field">
-            <span class="ar-field__label">{{ f.label }}</span>
-            <input
-              class="ar-field__input"
-              [placeholder]="defaultFor(f, mc.kind)"
-              [value]="dealValue(f.key)"
-              (input)="setDealField(f.key, $any($event.target).value)"
-            />
-          </label>
-        }
+<ng-template #formsTpl>
+  @if (dialogOpen()) {
+    <ar-dialog title="Add a webhook endpoint" (dismiss)="close()">
+      <label class="ar-field">
+        <span class="ar-field__label">Endpoint URL</span>
+        <input
+          required
+          class="ar-field__input"
+          type="url"
+          placeholder="https://…"
+          [value]="url()"
+          (input)="url.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Description <span class="ar-field__opt">(optional)</span></span>
+        <input
+          class="ar-field__input"
+          [value]="description()"
+          (input)="description.set($any($event.target).value)"
+        />
+      </label>
+      <div class="ar-field">
+        <span class="ar-field__label">Events</span>
+        <div class="intg__events">
+          @for (e of allEvents; track e.value) {
+            <label class="intg__event">
+              <input
+                type="checkbox"
+                [checked]="events().has(e.value)"
+                (change)="toggleEvent(e.value, $any($event.target).checked)"
+              />
+              {{ e.label }}
+            </label>
+          }
+        </div>
       </div>
-
-      <p class="ar-label crm__mapping-heading">Contact fields</p>
-      <div class="crm__mapping-grid">
-        @for (f of contactFields(); track f.key) {
-          <label class="ar-field">
-            <span class="ar-field__label">{{ f.label }}</span>
-            <input
-              class="ar-field__input"
-              [placeholder]="defaultFor(f, mc.kind)"
-              [value]="contactValue(f.key)"
-              (input)="setContactField(f.key, $any($event.target).value)"
-            />
-          </label>
-        }
-      </div>
-
-      @if (mappingError(); as err) {
+      @if (error(); as err) {
         <p class="intg__dialog-err">{{ err }}</p>
       }
-    }
-    <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="closeMapping()">Cancel</button>
-      <button
-        ar-button
-        type="button"
-        variant="primary"
-        [disabled]="mappingSaving() || mappingLoading()"
-        (click)="saveMapping()"
-      >
-        {{ mappingSaving() ? 'Saving…' : 'Save mapping' }}
-      </button>
-    </div>
-  </ar-dialog>
-}
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="close()">
+          Cancel
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="saving()"
+          (click)="createEndpoint()"
+        >
+          {{ saving() ? 'Adding…' : 'Add endpoint' }}
+        </button>
+      </div>
+    </ar-dialog>
+  }
+
+  @if (mappingConnection(); as mc) {
+    <ar-dialog title="{{ mc.name }} — field mapping" (dismiss)="close()">
+      @if (mappingLoading()) {
+        <p class="empty">Loading current configuration…</p>
+      } @else {
+        <p class="crm__mapping-lead">
+          Leave a field blank to keep {{ crmKindLabel(mc.kind) }}'s own default (shown as the
+          placeholder). Only fields you set here are sent as overrides.
+        </p>
+
+        <label class="ar-field">
+          <span class="ar-field__label">
+            Currency code
+            <span class="ar-field__opt">(optional — labels the amount, does not convert it)</span>
+          </span>
+          <input
+            class="ar-field__input"
+            placeholder="e.g. INR, USD"
+            [value]="mappingCurrency()"
+            (input)="mappingCurrency.set($any($event.target).value)"
+          />
+        </label>
+
+        @if (mc.supportsTimelineSync) {
+          <p class="ar-label crm__mapping-heading">Conversation timeline</p>
+          <label class="intg__event">
+            <input
+              type="checkbox"
+              [checked]="timelineEnabled()"
+              (change)="timelineEnabled.set($any($event.target).checked)"
+            />
+            Log WhatsApp messages on the contact's {{ crmKindLabel(mc.kind) }} timeline
+          </label>
+          <label class="intg__event">
+            <input
+              type="checkbox"
+              [checked]="timelineCampaigns()"
+              [disabled]="!timelineEnabled()"
+              (change)="timelineCampaigns.set($any($event.target).checked)"
+            />
+            Include campaign sends (one CRM entry per recipient — counts against its API limits)
+          </label>
+        }
+
+        @if (mc.supportsAccountSync) {
+          <p class="ar-label crm__mapping-heading">Company accounts</p>
+          <label class="intg__event">
+            <input
+              type="checkbox"
+              [checked]="accountsEnabled()"
+              (change)="accountsEnabled.set($any($event.target).checked)"
+            />
+            Sync company accounts to {{ crmKindLabel(mc.kind) }}, keeping the parent-child hierarchy,
+            and link each contact to its account
+          </label>
+          <p class="crm__mapping-lead">
+            Creates a company record for each account (parents first). Nothing is deleted in
+            {{ crmKindLabel(mc.kind) }} when an account is deleted here.
+            {{ crmKindLabel(mc.kind) }} needs to be reconnected once so it grants access to company
+            records.
+          </p>
+        }
+
+        <p class="ar-label crm__mapping-heading">Deal fields</p>
+        <div class="crm__mapping-grid">
+          @for (f of dealFields(); track f.key) {
+            <label class="ar-field">
+              <span class="ar-field__label">{{ f.label }}</span>
+              <input
+                class="ar-field__input"
+                [placeholder]="defaultFor(f, mc.kind)"
+                [value]="dealValue(f.key)"
+                (input)="setDealField(f.key, $any($event.target).value)"
+              />
+            </label>
+          }
+        </div>
+
+        <p class="ar-label crm__mapping-heading">Contact fields</p>
+        <div class="crm__mapping-grid">
+          @for (f of contactFields(); track f.key) {
+            <label class="ar-field">
+              <span class="ar-field__label">{{ f.label }}</span>
+              <input
+                class="ar-field__input"
+                [placeholder]="defaultFor(f, mc.kind)"
+                [value]="contactValue(f.key)"
+                (input)="setContactField(f.key, $any($event.target).value)"
+              />
+            </label>
+          }
+        </div>
+
+        @if (mappingError(); as err) {
+          <p class="intg__dialog-err">{{ err }}</p>
+        }
+      }
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="mappingSaving() || mappingLoading()"
+          (click)="saveMapping()"
+        >
+          {{ mappingSaving() ? 'Saving…' : 'Save mapping' }}
+        </button>
+      </div>
+    </ar-dialog>
+  }
+</ng-template>

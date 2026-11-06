@@ -681,3 +681,21 @@
   font: 700 10px var(--ar-font-mono);
   color: #15803d;
 }
+
+.ar-form-page {
+  .modal-backdrop {
+    position: static;
+    background: transparent;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 1;
+  }
+  .modal-card {
+    max-width: 680px;
+    width: 100%;
+    box-shadow: none;
+    border: 1px solid var(--ar-line-200);
+    margin: 1.5rem auto;
+  }
+}

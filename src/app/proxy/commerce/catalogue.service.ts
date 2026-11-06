@@ -75,6 +75,12 @@ export class CatalogueService {
       { apiName: this.apiName, ...config },
     );
 
+  get = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, CatalogueProductDto>(
+      { method: 'GET', url: `/api/auto-reach/catalogue/${id}` },
+      { apiName: this.apiName, ...config },
+    );
+
   create = (input: CreateUpdateCatalogueProductDto, config?: Partial<Rest.Config>) =>
     this.restService.request<any, CatalogueProductDto>(
       { method: 'POST', url: '/api/auto-reach/catalogue', body: input },

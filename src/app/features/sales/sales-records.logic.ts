@@ -131,7 +131,7 @@ export function dispatchFormFor(c: DeliveryChallanDto): DispatchDeliveryChallanD
     transporterName: c.transporterName || '',
     vehicleNumber: c.vehicleNumber || '',
     lrNumber: c.lrNumber || '',
-    ewayBillNumber: c.ewayBillNumber || '',
+    eWayBillNumber: c.eWayBillNumber || '',
   };
 }
 
@@ -140,7 +140,7 @@ export function validateDispatch(f: DispatchDeliveryChallanDto): Record<string, 
   const e: Record<string, string> = {};
   if (!f.transporterName?.trim()) e['transporter'] = 'Enter the transporter.';
   if (!f.vehicleNumber?.trim()) e['vehicle'] = 'Enter the vehicle number.';
-  const eway = (f.ewayBillNumber ?? '').replace(/\s/g, '');
+  const eway = (f.eWayBillNumber ?? '').replace(/\s/g, '');
   if (eway && !/^\d{12}$/.test(eway)) e['eway'] = 'An e-Way Bill number has 12 digits.';
   return e;
 }
@@ -152,7 +152,7 @@ export function toDispatchDto(f: DispatchDeliveryChallanDto): DispatchDeliveryCh
     transporterName: f.transporterName?.trim(),
     vehicleNumber: f.vehicleNumber?.trim(),
     lrNumber: opt(f.lrNumber),
-    ewayBillNumber: opt(f.ewayBillNumber?.replace(/\s/g, '')),
+    eWayBillNumber: opt(f.eWayBillNumber?.replace(/\s/g, '')),
   };
 }
 

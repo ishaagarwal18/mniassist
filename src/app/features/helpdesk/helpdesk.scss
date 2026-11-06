@@ -69,58 +69,69 @@
   font: 500 12px var(--ar-font-sans);
 }
 
-.hd__list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.hd__row {
-  display: flex;
-  gap: 12px;
-  padding: 12px 14px;
+.hd__grid-card {
   background: var(--ar-white);
   border: 1px solid var(--ar-line-200);
   border-radius: var(--ar-radius-card);
-  cursor: pointer;
+  overflow: hidden;
 }
-.hd__row:hover {
-  border-color: var(--ar-line-300);
+
+.ticket-link {
+  text-decoration: none;
+  font-weight: 700;
+  &:hover {
+    text-decoration: underline;
+  }
 }
-.hd__main {
-  flex: 1;
-  min-width: 0;
-}
-.hd__head {
+
+.subject-cell {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 2px;
 }
-.hd__ref {
+
+.subject-title {
+  font-weight: 600;
+  color: var(--ar-ink-900);
+  white-space: normal;
+  line-height: 1.4;
+}
+
+.deal-badge {
+  font-size: 11px;
+  color: var(--ar-ink-500);
+  font-weight: 500;
+}
+
+.contact-name {
+  font-size: 13px;
+  color: var(--ar-ink-800);
+}
+
+.assignee-text {
+  font-size: 13px;
+  color: var(--ar-ink-700);
+}
+
+.sla-badge {
   font-size: 12px;
+  font-weight: 500;
+  color: var(--ar-ink-600);
+  &--bad {
+    color: var(--ar-red-600);
+    font-weight: 700;
+  }
+}
+
+.text-muted {
   color: var(--ar-ink-400);
 }
-.hd__due {
-  font: 500 12px var(--ar-font-sans);
-  color: var(--ar-ink-500);
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
 }
-.hd__due--bad {
-  color: var(--ar-red-600);
-}
-.hd__subject {
-  margin: 4px 0 0;
-  font: 600 14px var(--ar-font-sans);
-  color: var(--ar-ink-900);
-  overflow-wrap: anywhere;
-}
-.hd__line {
-  margin: 4px 0 0;
-  font: 400 12.5px var(--ar-font-sans);
-  color: var(--ar-ink-600);
-}
+
 .hd__empty {
   margin: 0;
   padding: 24px 0;

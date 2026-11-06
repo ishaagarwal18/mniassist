@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
@@ -46,154 +48,165 @@ function localInput(utc?: string | null): string {
  */
 @Component({
   selector: 'ar-status-incidents',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar
-      title="Status page"
-      subtitle="Incidents and maintenance customers see at /status"
-      help="Post an incident as soon as customers are affected, update it at least every hour, and resolve it with what happened."
-    >
-      <a ar-button variant="ghost" href="/status" target="_blank" rel="noopener"
-        >Open status page</a
+    @if (isPage) {
+      <ar-topbar [title]="pageTitle()">
+        <button ar-button type="button" variant="ghost" (click)="close()">Back to Status page</button>
+      </ar-topbar>
+      <div class="ar-form-page ar-scroll">
+        <ng-container *ngTemplateOutlet="formsTpl" />
+      </div>
+    } @else {
+      <ar-topbar
+        title="Status page"
+        subtitle="Incidents and maintenance customers see at /status"
+        help="Post an incident as soon as customers are affected, update it at least every hour, and resolve it with what happened."
       >
-      <button ar-button variant="primary" icon="plus" (click)="openNew()">New incident</button>
-    </ar-topbar>
+        <a ar-button variant="ghost" href="/status" target="_blank" rel="noopener"
+          >Open status page</a
+        >
+        <button ar-button variant="primary" icon="plus" (click)="goNew()">New incident</button>
+      </ar-topbar>
 
-    <div class="si ar-scroll">
-      @for (i of incidents(); track i.id) {
-        <article class="si__row" [class.si__row--done]="!!i.resolvedAtUtc">
-          <div class="si__main">
-            <h2>{{ i.title }}</h2>
-            <p class="si__msg">{{ i.message }}</p>
-            <p class="si__meta">
-              {{ parts(i) }} · from {{ time(i.startsAtUtc) }}
-              @if (i.resolvedAtUtc) {
-                · resolved {{ time(i.resolvedAtUtc) }}
-              }
-            </p>
-          </div>
-          <ar-chip
-            [tone]="
-              i.resolvedAtUtc
-                ? 'neutral'
-                : i.impact === 2
-                  ? 'bad'
-                  : i.impact === 1
-                    ? 'warn'
-                    : 'teal'
-            "
-          >
-            {{ i.resolvedAtUtc ? 'Resolved' : impact(i.impact) }}
-          </ar-chip>
-          <div class="si__act">
-            @if (!i.resolvedAtUtc) {
-              <button ar-button variant="ghost" (click)="openEdit(i)">Update</button>
-              <button ar-button variant="ghost" (click)="resolve(i)">Resolve</button>
-            }
-            <button ar-button variant="ghost" (click)="remove(i)">Delete</button>
-          </div>
-        </article>
-      } @empty {
-        <p class="si__empty">Nothing posted. The status page shows all systems operational.</p>
-      }
-    </div>
-
-    @if (draft(); as d) {
-      <ar-dialog
-        [title]="d.id ? 'Update incident' : 'New incident'"
-        width="min(560px, calc(100vw - 32px))"
-        (dismiss)="draft.set(null)"
-      >
-        <form class="si__form" (submit)="$event.preventDefault(); save()">
-          <label class="ar-field">
-            <span class="ar-field__label">Title</span>
-            <input
-              class="ar-field__input"
-              required
-              maxlength="160"
-              placeholder="WhatsApp messages delayed"
-              [value]="d.title"
-              (input)="patch({ title: $any($event.target).value })"
-            />
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">Impact</span>
-            <select
-              class="ar-field__input"
-              [value]="d.impact"
-              (change)="patch({ impact: +$any($event.target).value })"
+      <div class="si ar-scroll">
+        @for (i of incidents(); track i.id) {
+          <article class="si__row" [class.si__row--done]="!!i.resolvedAtUtc">
+            <div class="si__main">
+              <h2>{{ i.title }}</h2>
+              <p class="si__msg">{{ i.message }}</p>
+              <p class="si__meta">
+                {{ parts(i) }} · from {{ time(i.startsAtUtc) }}
+                @if (i.resolvedAtUtc) {
+                  · resolved {{ time(i.resolvedAtUtc) }}
+                }
+              </p>
+            </div>
+            <ar-chip
+              [tone]="
+                i.resolvedAtUtc
+                  ? 'neutral'
+                  : i.impact === 2
+                    ? 'bad'
+                    : i.impact === 1
+                      ? 'warn'
+                      : 'teal'
+              "
             >
-              <option [value]="1">Minor — slower or failing for some</option>
-              <option [value]="2">Major — down for most</option>
-              <option [value]="0">Planned maintenance</option>
-            </select>
-          </label>
-          <fieldset class="si__parts">
-            <legend class="ar-field__label">Affected</legend>
-            @for (c of components; track c.value) {
-              <label>
-                <input
-                  type="checkbox"
-                  [checked]="has(d.components, c.value)"
-                  (change)="patch({ components: toggle(d.components, c.value) })"
-                />
-                {{ c.label }}
-              </label>
-            }
-          </fieldset>
-          <label class="ar-field">
-            <span class="ar-field__label">Message to customers</span>
-            <textarea
-              class="ar-field__input"
-              rows="4"
-              required
-              maxlength="2000"
-              placeholder="What is affected, what to do meanwhile, when we will update next."
-              [value]="d.message"
-              (input)="patch({ message: $any($event.target).value })"
-            ></textarea>
-          </label>
-          <div class="si__when">
+              {{ i.resolvedAtUtc ? 'Resolved' : impact(i.impact) }}
+            </ar-chip>
+            <div class="si__act">
+              @if (!i.resolvedAtUtc) {
+                <button ar-button variant="ghost" (click)="goEdit(i)">Update</button>
+                <button ar-button variant="ghost" (click)="resolve(i)">Resolve</button>
+              }
+              <button ar-button variant="ghost" (click)="remove(i)">Delete</button>
+            </div>
+          </article>
+        } @empty {
+          <p class="si__empty">Nothing posted. The status page shows all systems operational.</p>
+        }
+      </div>
+    }
+
+    <ng-template #formsTpl>
+      @if (draft(); as d) {
+        <ar-dialog
+          [title]="d.id ? 'Update incident' : 'New incident'"
+          width="min(560px, calc(100vw - 32px))"
+          (dismiss)="close()"
+        >
+          <form class="si__form" (submit)="$event.preventDefault(); save()">
             <label class="ar-field">
-              <span class="ar-field__label">{{ d.impact === 0 ? 'Starts' : 'Started' }}</span>
+              <span class="ar-field__label">Title</span>
               <input
                 class="ar-field__input"
-                type="datetime-local"
-                [value]="d.starts"
-                (input)="patch({ starts: $any($event.target).value })"
+                required
+                maxlength="160"
+                placeholder="WhatsApp messages delayed"
+                [value]="d.title"
+                (input)="patch({ title: $any($event.target).value })"
               />
             </label>
-            @if (d.impact === 0) {
+            <label class="ar-field">
+              <span class="ar-field__label">Impact</span>
+              <select
+                class="ar-field__input"
+                [value]="d.impact"
+                (change)="patch({ impact: +$any($event.target).value })"
+              >
+                <option [value]="1">Minor — slower or failing for some</option>
+                <option [value]="2">Major — down for most</option>
+                <option [value]="0">Planned maintenance</option>
+              </select>
+            </label>
+            <fieldset class="si__parts">
+              <legend class="ar-field__label">Affected</legend>
+              @for (c of components; track c.value) {
+                <label>
+                  <input
+                    type="checkbox"
+                    [checked]="has(d.components, c.value)"
+                    (change)="patch({ components: toggle(d.components, c.value) })"
+                  />
+                  {{ c.label }}
+                </label>
+              }
+            </fieldset>
+            <label class="ar-field">
+              <span class="ar-field__label">Message to customers</span>
+              <textarea
+                class="ar-field__input"
+                rows="4"
+                required
+                maxlength="2000"
+                placeholder="What is affected, what to do meanwhile, when we will update next."
+                [value]="d.message"
+                (input)="patch({ message: $any($event.target).value })"
+              ></textarea>
+            </label>
+            <div class="si__when">
               <label class="ar-field">
-                <span class="ar-field__label">Planned end</span>
+                <span class="ar-field__label">{{ d.impact === 0 ? 'Starts' : 'Started' }}</span>
                 <input
                   class="ar-field__input"
                   type="datetime-local"
-                  [value]="d.plannedEnd"
-                  (input)="patch({ plannedEnd: $any($event.target).value })"
+                  [value]="d.starts"
+                  (input)="patch({ starts: $any($event.target).value })"
                 />
               </label>
+              @if (d.impact === 0) {
+                <label class="ar-field">
+                  <span class="ar-field__label">Planned end</span>
+                  <input
+                    class="ar-field__input"
+                    type="datetime-local"
+                    [value]="d.plannedEnd"
+                    (input)="patch({ plannedEnd: $any($event.target).value })"
+                  />
+                </label>
+              }
+            </div>
+            @if (error(); as e) {
+              <p class="si__error">{{ e }}</p>
             }
+          </form>
+          <div dialogActions>
+            <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              [disabled]="busy() || !d.title.trim() || !d.message.trim() || !d.components"
+              (click)="save()"
+            >
+              {{ d.id ? 'Post update' : 'Post' }}
+            </button>
           </div>
-          @if (error(); as e) {
-            <p class="si__error">{{ e }}</p>
-          }
-        </form>
-        <div dialogActions>
-          <button ar-button type="button" variant="ghost" (click)="draft.set(null)">Cancel</button>
-          <button
-            ar-button
-            type="button"
-            variant="primary"
-            [disabled]="busy() || !d.title.trim() || !d.message.trim() || !d.components"
-            (click)="save()"
-          >
-            {{ d.id ? 'Post update' : 'Post' }}
-          </button>
-        </div>
-      </ar-dialog>
-    }
+        </ar-dialog>
+      }
+    </ng-template>
   `,
   styles: `
     .si {
@@ -266,6 +279,15 @@ export class ArStatusIncidents {
   private readonly api = inject(PlatformStatusService);
   private readonly dialogs = inject(ConfirmService);
   private readonly toasts = inject(ToastService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  protected readonly pageTitle = computed(() =>
+    this.draft()?.id ? 'Update incident' : 'Open incident',
+  );
 
   protected readonly components = COMPONENTS;
   protected readonly impact = impactLabel;
@@ -283,6 +305,38 @@ export class ArStatusIncidents {
   protected readonly draft = signal<Draft | null>(null);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
+
+  constructor() {
+    if (this.mode === 'new') {
+      this.openNew();
+    }
+    effect(() => {
+      if (this.mode === 'edit') {
+        const id = this.route?.snapshot?.paramMap?.get('id');
+        const item = this.incidents().find((x) => x.id === id);
+        if (item && (!this.draft() || this.draft()?.id !== item.id)) {
+          this.openEdit(item);
+        }
+      }
+    });
+  }
+
+  protected goNew(): void {
+    if (this.router) void this.router.navigate(['/platform/status/new']);
+    else this.openNew();
+  }
+
+  protected goEdit(i: StatusIncidentDto): void {
+    if (this.router) void this.router.navigate(['/platform/status', i.id, 'edit']);
+    else this.openEdit(i);
+  }
+
+  protected close(): void {
+    this.draft.set(null);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/platform/status']);
+    }
+  }
 
   protected has(flags: StatusComponents, c: StatusComponents): boolean {
     return (flags & c) === c;
@@ -342,7 +396,7 @@ export class ArStatusIncidents {
     try {
       await firstValueFrom(d.id ? this.api.update(d.id, input) : this.api.create(input));
       this.toasts.success(d.id ? 'Update posted.' : 'Posted to the status page.');
-      this.draft.set(null);
+      this.close();
       this.tick.update((n) => n + 1);
     } catch (e) {
       this.error.set(readApiError(e, 'Could not post it.'));

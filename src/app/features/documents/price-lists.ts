@@ -1,6 +1,8 @@
 import { PermissionService } from '@abp/ng.core';
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { grantedPolicy } from '../../core/auth/permission';
@@ -26,57 +28,74 @@ interface ItemRow {
  */
 @Component({
   selector: 'ar-price-lists',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArDateInput],
+  imports: [NgTemplateOutlet, ArTopbar, ArButton, ArChip, ArDialog, ArDateInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar
-      title="Price lists"
-      subtitle="Region & distributor-tier pricing"
-      help="Prices scoped by region and distributor tier. When a broadcast goes out, MNI Assist resolves the single most specific active list for each distributor automatically."
-    >
-      @if (canCreate()) {
-        <button ar-button variant="primary" icon="plus" (click)="openNew()">New price list</button>
-      }
-    </ar-topbar>
+    @if (isPage) {
+      <ar-topbar title="Price lists">
+        <button ar-button type="button" variant="ghost" (click)="close()">
+          Back to price lists
+        </button>
+      </ar-topbar>
+      <div class="ar-form-page">
+        @if (loadError(); as e) {
+          <p class="pl__err">{{ e }}</p>
+        }
+        @if (editorOpen()) {
+          <ng-container *ngTemplateOutlet="editor" />
+        }
+      </div>
+    } @else {
+      <ar-topbar
+        title="Price lists"
+        subtitle="Region & distributor-tier pricing"
+        help="Prices scoped by region and distributor tier. When a broadcast goes out, MNI Assist resolves the single most specific active list for each distributor automatically."
+      >
+        @if (canCreate()) {
+          <button ar-button variant="primary" icon="plus" (click)="goNew()">New price list</button>
+        }
+      </ar-topbar>
 
-    <div class="pl ar-scroll">
-      @if (loading()) {
-        <p class="pl__empty">Loading…</p>
-      } @else if (lists().length === 0) {
-        <p class="pl__empty">
-          No price lists yet. Add one scoped to a region and a distributor tier.
-        </p>
-      }
+      <div class="pl ar-scroll">
+        @if (loading()) {
+          <p class="pl__empty">Loading…</p>
+        } @else if (lists().length === 0) {
+          <p class="pl__empty">
+            No price lists yet. Add one scoped to a region and a distributor tier.
+          </p>
+        }
 
-      @for (l of lists(); track l.id) {
-        <article class="pr" [class.pr--off]="!l.isActive">
-          <div class="pr__main">
-            <h2 class="pr__name">{{ l.name }}</h2>
-            <p class="pr__scope">
-              {{ l.region || 'Any region' }} · {{ l.distributorTier || 'Any tier' }} ·
-              {{ (l.items || []).length }} SKU{{ (l.items || []).length === 1 ? '' : 's' }} · from
-              {{ l.effectiveFrom }}
-            </p>
-          </div>
-          @if (!l.isActive) {
-            <ar-chip tone="warn">Inactive</ar-chip>
-          }
-          <div class="pr__act">
-            @if (canUpdate()) {
-              <button ar-button variant="ghost" (click)="openEdit(l)">Edit</button>
+        @for (l of lists(); track l.id) {
+          <article class="pr" [class.pr--off]="!l.isActive">
+            <div class="pr__main">
+              <h2 class="pr__name">{{ l.name }}</h2>
+              <p class="pr__scope">
+                {{ l.region || 'Any region' }} · {{ l.distributorTier || 'Any tier' }} ·
+                {{ (l.items || []).length }} SKU{{ (l.items || []).length === 1 ? '' : 's' }} · from
+                {{ l.effectiveFrom }}
+              </p>
+            </div>
+            @if (!l.isActive) {
+              <ar-chip tone="warn">Inactive</ar-chip>
             }
-            @if (canDelete()) {
-              <button ar-button variant="ghost" (click)="remove(l)">Delete</button>
-            }
-          </div>
-        </article>
-      }
-    </div>
+            <div class="pr__act">
+              @if (canUpdate()) {
+                <button ar-button variant="ghost" (click)="goEdit(l)">Edit</button>
+              }
+              @if (canDelete()) {
+                <button ar-button variant="ghost" (click)="remove(l)">Delete</button>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
 
-    @if (editorOpen()) {
+    <ng-template #editor>
       <ar-dialog
         [title]="editingId() ? 'Edit price list' : 'New price list'"
-        (dismiss)="editorOpen.set(false)"
+        width="min(760px, calc(100vw - 32px))"
+        (dismiss)="close()"
       >
         <label class="ar-field">
           <span class="ar-field__label">Name</span>
@@ -168,13 +187,13 @@ interface ItemRow {
         }
 
         <div dialogActions>
-          <button ar-button variant="ghost" (click)="editorOpen.set(false)">Cancel</button>
+          <button ar-button variant="ghost" (click)="close()">Cancel</button>
           <button ar-button variant="primary" [disabled]="busy()" (click)="save()">
             {{ busy() ? 'Saving…' : 'Save' }}
           </button>
         </div>
       </ar-dialog>
-    }
+    </ng-template>
   `,
   styles: `
     :host {
@@ -272,6 +291,13 @@ export class ArPriceLists {
   private readonly permissions = inject(PermissionService);
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(PriceListService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  /** Which form this route shows as a page ('new', 'edit'), or the list. */
+  protected readonly mode = (this.route.snapshot.data['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+  protected readonly loadError = signal<string | null>(null);
 
   protected readonly canCreate = grantedPolicy('AutoReach.Library.Create', this.permissions);
   protected readonly canUpdate = grantedPolicy('AutoReach.Library.Update', this.permissions);
@@ -279,7 +305,7 @@ export class ArPriceLists {
 
   private readonly tick = signal(0);
   private readonly resource = rxResource({
-    params: () => ({ tick: this.tick() }),
+    params: () => (this.isPage ? undefined : { tick: this.tick() }),
     stream: () => this.api.getList({ skipCount: 0, maxResultCount: 100 }),
     defaultValue: { items: [] as PriceListDto[], totalCount: 0 },
   });
@@ -291,11 +317,37 @@ export class ArPriceLists {
   protected readonly name = signal('');
   protected readonly region = signal('');
   protected readonly tier = signal('');
-  protected readonly effectiveFrom = signal(new Date().toISOString().slice(0, 10));
+  protected readonly effectiveFrom = signal(new Date().toLocaleDateString('en-CA'));
   protected readonly active = signal(true);
   protected readonly rows = signal<ItemRow[]>([]);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
+
+  constructor() {
+    if (this.mode === 'new') this.openNew();
+    else if (this.mode === 'edit') void this.loadForEdit(this.route.snapshot.paramMap.get('id'));
+  }
+
+  private async loadForEdit(id: string | null): Promise<void> {
+    if (!id) return;
+    try {
+      this.openEdit(await firstValueFrom(this.api.get(id, { skipHandleError: true })));
+    } catch {
+      this.loadError.set('This price list could not be found. It may have been deleted.');
+    }
+  }
+
+  protected goNew(): void {
+    void this.router.navigate(['/documents/price-lists/new']);
+  }
+  protected goEdit(l: PriceListDto): void {
+    if (l.id) void this.router.navigate(['/documents/price-lists', l.id, 'edit']);
+  }
+  /** Back to the list (Cancel, and after a save). */
+  protected close(): void {
+    this.editorOpen.set(false);
+    if (this.isPage) void this.router.navigate(['/documents/price-lists']);
+  }
 
   protected setRow(i: number, key: keyof ItemRow, value: string): void {
     this.rows.update((list) => list.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
@@ -315,7 +367,7 @@ export class ArPriceLists {
     this.name.set('');
     this.region.set('');
     this.tier.set('');
-    this.effectiveFrom.set(new Date().toISOString().slice(0, 10));
+    this.effectiveFrom.set(new Date().toLocaleDateString('en-CA'));
     this.active.set(true);
     this.rows.set([{ sku: '', description: '', price: '', uom: 'each', moq: '1' }]);
     this.error.set(null);
@@ -374,8 +426,8 @@ export class ArPriceLists {
       const id = this.editingId();
       if (id) await firstValueFrom(this.api.update(id, this.toDto()));
       else await firstValueFrom(this.api.create(this.toDto()));
-      this.editorOpen.set(false);
       this.tick.update((n) => n + 1);
+      this.close();
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'Could not save the price list.');
     } finally {

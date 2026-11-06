@@ -17,6 +17,19 @@ export function isStaleChunkError(e: unknown): boolean {
   );
 }
 
+/**
+ * The dev server's version of the same problem. `ng serve` pre-bundles libraries with Vite; when it re-bundles (a
+ * library was added or first imported, or the server restarted) a tab that is already open keeps the old copy of
+ * @angular/core while the next lazy page brings the new one. `inject()` from one copy cannot see the other's
+ * injection context, so a service such as BrandingService fails with NG0203. A production build has one bundle and
+ * cannot mix copies, so only a dev build treats it as stale: there a real NG0203 bug still shows after one reload.
+ */
+export function isMixedDevBuildError(e: unknown, devMode: boolean): boolean {
+  if (!devMode) return false;
+  const message = String((e as { message?: unknown } | null)?.message ?? e ?? '');
+  return /NG0203/.test(message);
+}
+
 /** Reloads the page once per 30 seconds; false when it already tried just now. */
 export function reloadForStaleChunk(
   now = Date.now(),

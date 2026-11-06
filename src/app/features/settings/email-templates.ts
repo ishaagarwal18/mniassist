@@ -8,6 +8,8 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { PermissionService } from '@abp/ng.core';
@@ -38,20 +40,28 @@ const PREVIEW_DELAY_MS = 600;
  */
 @Component({
   selector: 'ar-email-templates',
-  imports: [ArTopbar, ArCard, ArButton, ArChip, ArBanner, ArDialog],
+  imports: [ArTopbar, ArCard, ArButton, ArChip, ArBanner, ArDialog, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar
-      title="Email templates"
-      subtitle="The wording of invitations, password resets and quotation emails"
-      help="Change what the platform's own emails say. The variables listed under each email, such as the workspace name, are filled in when it is sent. Keep the html.escape filter on anything a person typed, such as names. Restore default puts the original wording back."
-    >
-      @if (canEdit()) {
-        <button ar-button type="button" variant="primary" icon="plus" (click)="openCreate()">
-          New template
-        </button>
-      }
-    </ar-topbar>
+    @if (isPage) {
+      <ar-topbar [title]="pageTitle()">
+        <button ar-button type="button" variant="ghost" (click)="close()">Back to Email templates</button>
+      </ar-topbar>
+      <div class="ar-form-page ar-scroll">
+        <ng-container *ngTemplateOutlet="formsTpl" />
+      </div>
+    } @else {
+      <ar-topbar
+        title="Email templates"
+        subtitle="The wording of invitations, password resets and quotation emails"
+        help="Change what the platform's own emails say. The variables listed under each email, such as the workspace name, are filled in when it is sent. Keep the html.escape filter on anything a person typed, such as names. Restore default puts the original wording back."
+      >
+        @if (canEdit()) {
+          <button ar-button type="button" variant="primary" icon="plus" (click)="goCreate()">
+            New template
+          </button>
+        }
+      </ar-topbar>
 
     <div class="et ar-scroll">
       <nav class="et__list" aria-label="Email templates">
@@ -198,80 +208,83 @@ const PREVIEW_DELAY_MS = 600;
         }
       </div>
     </div>
+  }
 
-    @if (createDialog()) {
-      <ar-dialog title="New email template" (dismiss)="createDialog.set(false)">
-        @if (createError(); as e) {
-          <ar-banner tone="bad">{{ e }}</ar-banner>
-        }
-        <label class="fld">
-          <span class="fld__k">Template Key (unique identifier)</span>
-          <input
-            required
-            class="ar-field__input"
-            maxlength="128"
-            placeholder="e.g. OrderConfirmation"
-            [value]="newKey()"
-            (input)="newKey.set($any($event.target).value)"
-          />
-        </label>
-        <label class="fld">
-          <span class="fld__k">Display Name</span>
-          <input
-            required
-            class="ar-field__input"
-            maxlength="256"
-            placeholder="e.g. Order confirmation"
-            [value]="newDisplayName()"
-            (input)="newDisplayName.set($any($event.target).value)"
-          />
-        </label>
-        <label class="fld">
-          <span class="fld__k">Description</span>
-          <input
-            class="ar-field__input"
-            maxlength="1024"
-            placeholder="e.g. Sent when a customer places an order"
-            [value]="newDesc()"
-            (input)="newDesc.set($any($event.target).value)"
-          />
-        </label>
-        <label class="fld">
-          <span class="fld__k">Subject</span>
-          <input
-            class="ar-field__input"
-            maxlength="512"
-            [placeholder]="'e.g. Order confirmed · {{ model.workspace_name }}'"
-            [value]="newSubject()"
-            (input)="newSubject.set($any($event.target).value)"
-          />
-        </label>
-        <label class="fld">
-          <span class="fld__k">Body (HTML)</span>
-          <textarea
-            class="ar-field__input et__code"
-            rows="8"
-            spellcheck="false"
-            [value]="newBody()"
-            (input)="newBody.set($any($event.target).value)"
-          ></textarea>
-        </label>
-        <div dialogActions>
-          <button ar-button type="button" variant="ghost" (click)="createDialog.set(false)">
-            Cancel
-          </button>
-          <button
-            ar-button
-            type="button"
-            variant="primary"
-            [disabled]="creating()"
-            (click)="submitCreate()"
-          >
-            {{ creating() ? 'Creating…' : 'Create template' }}
-          </button>
-        </div>
-      </ar-dialog>
-    }
+    <ng-template #formsTpl>
+      @if (createDialog()) {
+        <ar-dialog title="New email template" (dismiss)="close()">
+          @if (createError(); as e) {
+            <ar-banner tone="bad">{{ e }}</ar-banner>
+          }
+          <label class="fld">
+            <span class="fld__k">Template Key (unique identifier)</span>
+            <input
+              required
+              class="ar-field__input"
+              maxlength="128"
+              placeholder="e.g. OrderConfirmation"
+              [value]="newKey()"
+              (input)="newKey.set($any($event.target).value)"
+            />
+          </label>
+          <label class="fld">
+            <span class="fld__k">Display Name</span>
+            <input
+              required
+              class="ar-field__input"
+              maxlength="256"
+              placeholder="e.g. Order confirmation"
+              [value]="newDisplayName()"
+              (input)="newDisplayName.set($any($event.target).value)"
+            />
+          </label>
+          <label class="fld">
+            <span class="fld__k">Description</span>
+            <input
+              class="ar-field__input"
+              maxlength="1024"
+              placeholder="e.g. Sent when a customer places an order"
+              [value]="newDesc()"
+              (input)="newDesc.set($any($event.target).value)"
+            />
+          </label>
+          <label class="fld">
+            <span class="fld__k">Subject</span>
+            <input
+              class="ar-field__input"
+              maxlength="512"
+              [placeholder]="'e.g. Order confirmed · {{ model.workspace_name }}'"
+              [value]="newSubject()"
+              (input)="newSubject.set($any($event.target).value)"
+            />
+          </label>
+          <label class="fld">
+            <span class="fld__k">Body (HTML)</span>
+            <textarea
+              class="ar-field__input et__code"
+              rows="8"
+              spellcheck="false"
+              [value]="newBody()"
+              (input)="newBody.set($any($event.target).value)"
+            ></textarea>
+          </label>
+          <div dialogActions>
+            <button ar-button type="button" variant="ghost" (click)="close()">
+              Cancel
+            </button>
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              [disabled]="creating()"
+              (click)="submitCreate()"
+            >
+              {{ creating() ? 'Creating…' : 'Create template' }}
+            </button>
+          </div>
+        </ar-dialog>
+      }
+    </ng-template>
   `,
   styles: `
     :host {
@@ -411,7 +424,16 @@ export class ArEmailTemplates {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly dialogs = inject(ConfirmService);
   private readonly toast = inject(ToastService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
   private readonly mock = environment.useMockData;
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  protected readonly pageTitle = computed(() =>
+    this.mode === 'new' ? 'New email template' : 'Email templates',
+  );
 
   private readonly subjectInput = viewChild<ElementRef<HTMLInputElement>>('subjectInput');
   private readonly bodyInput = viewChild<ElementRef<HTMLTextAreaElement>>('bodyInput');
@@ -458,6 +480,10 @@ export class ArEmailTemplates {
   private previewSeq = 0;
 
   constructor() {
+    if (this.mode === 'new') {
+      this.openCreate();
+    }
+
     // Open the first template once the list arrives.
     effect(() => {
       const first = this.templates()[0];
@@ -473,6 +499,18 @@ export class ArEmailTemplates {
       clearTimeout(this.previewTimer);
       this.previewTimer = setTimeout(() => void this.preview(key, subject, body), PREVIEW_DELAY_MS);
     });
+  }
+
+  protected goCreate(): void {
+    if (this.router) void this.router.navigate(['/settings/email-templates/new']);
+    else this.openCreate();
+  }
+
+  protected close(): void {
+    this.createDialog.set(false);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/settings/email-templates']);
+    }
   }
 
   protected isCustom(key: string): boolean {
@@ -519,6 +557,9 @@ export class ArEmailTemplates {
       this.show(created);
       this.selectedKey.set(created.key);
       this.toast.success(`Template "${displayName}" created.`);
+      if (this.isPage && this.router) {
+        void this.router.navigate(['/settings/email-templates']);
+      }
     } catch (e) {
       this.createError.set(readApiError(e));
     } finally {

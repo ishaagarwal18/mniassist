@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -15,7 +15,6 @@ import {
 } from '../../../proxy/manufacturing';
 import { ArButton } from '../../../ui/button';
 import { ArChip, ChipTone } from '../../../ui/chip';
-import { ArDialog } from '../../../ui/dialog';
 import { ArStatTile } from '../../../ui/stat-tile';
 import { ArGrid } from '../../../ui/grid';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
@@ -171,17 +170,17 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
     ArTopbar,
     ArButton,
     ArChip,
-    ArDialog,
     ArStatTile,
     ArGrid,
     GridModule,
+    RouterLink,
   ],
   template: `
     <ar-topbar
       title="Bill of Materials (BOM)"
       subtitle="Multi-level product structures, component routing, scrap allowances & costing"
     >
-      <button ar-button variant="primary" (click)="openCreateModal()">+ Create New BOM</button>
+      <a ar-button variant="primary" routerLink="/manufacturing/bom/new">+ Create New BOM</a>
     </ar-topbar>
 
     <div class="page-content">
@@ -266,7 +265,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
             <e-column field="bomNumber" headerText="BOM Number" width="160">
               <ng-template #template let-b>
                 <div class="cell-main">
-                  <a class="code-link" (click)="viewBom(b)">{{ b.bomNumber }}</a>
+                  <a class="code-link" [routerLink]="['/manufacturing/bom', b.id]">{{ b.bomNumber }}</a>
                   <span class="sub-text">{{ b.creationTime | date: 'mediumDate' }}</span>
                 </div>
               </ng-template>
@@ -330,7 +329,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
                   >
                     Activate
                   </button>
-                  <button ar-button variant="ghost" (click)="viewBom(b)">View</button>
+                  <a ar-button variant="ghost" [routerLink]="['/manufacturing/bom', b.id]">View</a>
                 </div>
               </ng-template>
             </e-column>
@@ -338,284 +337,6 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
         </ejs-grid>
       </section>
     </div>
-
-    <!-- BOM Tree & Details Dialog -->
-    <ar-dialog
-      *ngIf="selectedBom()"
-      [title]="
-        'BOM Structure: ' + selectedBom()!.bomNumber + ' (' + selectedBom()!.revisionCode + ')'
-      "
-      width="min(860px, calc(100vw - 32px))"
-      (dismiss)="selectedBom.set(null)"
-    >
-      <div class="dialog-body" *ngIf="selectedBom() as b">
-        <div class="meta-row">
-          <div>
-            <span class="meta-label">Assembly Part</span>
-            <h4 class="assembly-name">
-              {{ b.finishedGoodPartNumber }} — {{ b.finishedGoodDescription }}
-            </h4>
-            <p class="sub-text">
-              Base Quantity: {{ b.baseQuantity }} {{ b.finishedGoodUom }} | Revision:
-              {{ b.revisionCode }}
-            </p>
-          </div>
-          <div class="meta-status">
-            <ar-chip [tone]="bomTone(b.status)">{{ bomLabel(b.status) }}</ar-chip>
-          </div>
-        </div>
-
-        <div class="cost-summary-box">
-          <div>
-            <span class="box-label">Total Computed Unit Cost</span>
-            <h3 class="cost-val">₹{{ b.totalEstimatedCostInPaise / 100 | number: '1.2-2' }}</h3>
-          </div>
-          <div>
-            <span class="box-label">Assembly Scale</span>
-            <h4 class="parts-val">{{ b.items.length }} configured parts</h4>
-          </div>
-        </div>
-
-        <h4 class="section-heading">Multi-Level Component Explosion</h4>
-        <ejs-grid
-          arGrid="bom-component-explosion"
-          [dataSource]="b.items"
-          aria-label="Component Explosion Table"
-        >
-          <e-columns>
-            <e-column field="itemSequence" headerText="Seq" width="70">
-              <ng-template #template let-item>
-                <span class="font-mono text-muted">{{ item.itemSequence }}</span>
-              </ng-template>
-            </e-column>
-            <e-column field="componentPartNumber" headerText="Part Number" width="180">
-              <ng-template #template let-item>
-                <span class="font-mono">
-                  <strong>{{ item.componentPartNumber }}</strong>
-                  <span class="badge-sub" *ngIf="item.isSubAssembly">Sub-Assy</span>
-                </span>
-              </ng-template>
-            </e-column>
-            <e-column field="componentDescription" headerText="Description" width="220"></e-column>
-            <e-column field="quantityPerUnit" headerText="Qty/Unit" width="100" [textAlign]="'Right'">
-              <ng-template #template let-item>
-                <span class="font-mono">{{ item.quantityPerUnit }}</span>
-              </ng-template>
-            </e-column>
-            <e-column field="unitOfMeasure" headerText="UOM" width="80"></e-column>
-            <e-column field="scrapPercentage" headerText="Scrap %" width="100" [textAlign]="'Right'">
-              <ng-template #template let-item>
-                <span class="font-mono text-muted">{{ item.scrapPercentage }}%</span>
-              </ng-template>
-            </e-column>
-            <e-column headerText="Routing Stage" width="140">
-              <ng-template #template let-item>
-                <span class="badge-stage">{{ stageLabel(item.routingStage) }}</span>
-              </ng-template>
-            </e-column>
-            <e-column headerText="Unit Rate" width="120" [textAlign]="'Right'">
-              <ng-template #template let-item>
-                <span class="font-mono">
-                  ₹{{ item.unitCostInPaise / 100 | number: '1.2-2' }}
-                </span>
-              </ng-template>
-            </e-column>
-            <e-column headerText="Line Cost" width="130" [textAlign]="'Right'">
-              <ng-template #template let-item>
-                <span class="font-mono font-medium">
-                  ₹{{
-                    (item.quantityPerUnit *
-                      (1 + item.scrapPercentage / 100) *
-                      item.unitCostInPaise) /
-                      100 | number: '1.2-2'
-                  }}
-                </span>
-              </ng-template>
-            </e-column>
-          </e-columns>
-        </ejs-grid>
-
-        <div class="dialog-actions">
-          <button
-            ar-button
-            variant="primary"
-            *ngIf="b.status === BomStatus.Active"
-            (click)="createWorkOrderFromBom(b)"
-          >
-            Generate Work Order
-          </button>
-          <button
-            ar-button
-            variant="ghost"
-            *ngIf="b.status === BomStatus.Draft"
-            (click)="activateBom(b)"
-          >
-            Release to Production
-          </button>
-          <button ar-button variant="ghost" (click)="selectedBom.set(null)">Close</button>
-        </div>
-      </div>
-    </ar-dialog>
-
-    <!-- Create BOM Modal -->
-    <ar-dialog
-      *ngIf="showCreateModal()"
-      title="Create Bill of Materials (BOM)"
-      width="min(860px, calc(100vw - 32px))"
-      (dismiss)="showCreateModal.set(false)"
-    >
-      <div class="dialog-body">
-        <div class="form-grid">
-          <label class="ar-field">
-            <span class="ar-field__label">Finished Good Part # *</span>
-            <input
-              type="text"
-              class="ar-field__input"
-              [(ngModel)]="newBom.finishedGoodPartNumber"
-              placeholder="e.g. HV-400-P"
-            />
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">Revision Code *</span>
-            <input
-              type="text"
-              class="ar-field__input"
-              [(ngModel)]="newBom.revisionCode"
-              placeholder="Rev A"
-            />
-          </label>
-          <label class="ar-field full-width">
-            <span class="ar-field__label">Product Description *</span>
-            <input
-              type="text"
-              class="ar-field__input"
-              [(ngModel)]="newBom.finishedGoodDescription"
-              placeholder="e.g. Proportional Directional Hydraulic Valve 350 Bar"
-            />
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">BOM Type</span>
-            <select class="ar-field__input" [(ngModel)]="newBom.bomType">
-              <option [ngValue]="BomType.Manufacturing">Manufacturing BOM (Production)</option>
-              <option [ngValue]="BomType.Engineering">Engineering BOM (Prototype)</option>
-              <option [ngValue]="BomType.Kit">Sales / Spare Kit</option>
-            </select>
-          </label>
-          <div class="uom-field-group">
-            <label class="ar-field">
-              <span class="ar-field__label">Base Quantity</span>
-              <input type="number" class="ar-field__input" [(ngModel)]="newBom.baseQuantity" />
-            </label>
-            <label class="ar-field">
-              <span class="ar-field__label">UOM</span>
-              <input
-                type="text"
-                class="ar-field__input uom-input"
-                [(ngModel)]="newBom.finishedGoodUom"
-                placeholder="NOS"
-              />
-            </label>
-          </div>
-        </div>
-
-        <h4 class="section-heading">Bill of Materials Components</h4>
-        <ejs-grid
-          arGrid="bom-draft-items"
-          [dataSource]="newBom.items"
-          aria-label="Component Input Table"
-          [arGridSearch]="false"
-          [arGridTools]="false"
-        >
-          <e-columns>
-            <e-column field="componentPartNumber" headerText="Part No" width="130">
-              <ng-template #template let-item>
-                <input
-                  type="text"
-                  class="ar-field__input table-input"
-                  [(ngModel)]="item.componentPartNumber"
-                  placeholder="Part #"
-                />
-              </ng-template>
-            </e-column>
-            <e-column field="componentDescription" headerText="Description" minWidth="180">
-              <ng-template #template let-item>
-                <input
-                  type="text"
-                  class="ar-field__input table-input"
-                  [(ngModel)]="item.componentDescription"
-                  placeholder="Description"
-                />
-              </ng-template>
-            </e-column>
-            <e-column field="quantityPerUnit" headerText="Qty" width="90" [textAlign]="'Right'">
-              <ng-template #template let-item>
-                <input
-                  type="number"
-                  class="ar-field__input table-input text-right"
-                  [(ngModel)]="item.quantityPerUnit"
-                />
-              </ng-template>
-            </e-column>
-            <e-column field="unitOfMeasure" headerText="UOM" width="80">
-              <ng-template #template let-item>
-                <input
-                  type="text"
-                  class="ar-field__input table-input input-xs"
-                  [(ngModel)]="item.unitOfMeasure"
-                  placeholder="NOS"
-                />
-              </ng-template>
-            </e-column>
-            <e-column field="scrapPercentage" headerText="Scrap %" width="90" [textAlign]="'Right'">
-              <ng-template #template let-item>
-                <input
-                  type="number"
-                  class="ar-field__input table-input text-right input-xs"
-                  [(ngModel)]="item.scrapPercentage"
-                />
-              </ng-template>
-            </e-column>
-            <e-column field="routingStage" headerText="Routing Stage" width="140">
-              <ng-template #template let-item>
-                <select
-                  class="ar-field__input table-input input-sm"
-                  [(ngModel)]="item.routingStage"
-                >
-                  <option [ngValue]="RoutingStage.MaterialKitting">Kitting</option>
-                  <option [ngValue]="RoutingStage.Machining">Machining</option>
-                  <option [ngValue]="RoutingStage.Fabrication">Fabrication</option>
-                  <option [ngValue]="RoutingStage.HeatTreatment">Heat Treat</option>
-                  <option [ngValue]="RoutingStage.Assembly">Assembly</option>
-                  <option [ngValue]="RoutingStage.FinalTesting">Testing</option>
-                </select>
-              </ng-template>
-            </e-column>
-            <e-column field="unitCostRupees" headerText="Cost (₹)" width="110" [textAlign]="'Right'">
-              <ng-template #template let-item>
-                <input
-                  type="number"
-                  class="ar-field__input table-input text-right"
-                  [(ngModel)]="item.unitCostRupees"
-                />
-              </ng-template>
-            </e-column>
-            <e-column headerText="" width="60">
-              <ng-template #template let-item>
-                <button ar-button variant="ghost" (click)="removeItem(item)" title="Remove item">
-                  ✕
-                </button>
-              </ng-template>
-            </e-column>
-          </e-columns>
-        </ejs-grid>
-        <button ar-button variant="ghost" (click)="addItem()">+ Add Component</button>
-
-        <div class="dialog-actions">
-          <button ar-button variant="primary" (click)="saveNewBom()">Save & Compute Costing</button>
-          <button ar-button variant="ghost" (click)="showCreateModal.set(false)">Cancel</button>
-        </div>
-      </div>
-    </ar-dialog>
   `,
   styles: [
     `
@@ -1045,7 +766,7 @@ export class BillOfMaterialsComponent {
   }
 
   createWorkOrderFromBom(b: BillOfMaterialDto) {
-    this.router.navigate(['/manufacturing/work-orders'], {
+    this.router.navigate(['/manufacturing/work-orders/new'], {
       queryParams: {
         bomId: b.id,
         partNumber: b.finishedGoodPartNumber,

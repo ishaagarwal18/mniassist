@@ -33,7 +33,6 @@ export interface DeliveryChallanDto extends FullAuditedEntityDto<string> {
   vehicleNumber?: string;
   lrNumber?: string;
   eWayBillNumber?: string;
-  ewayBillNumber?: string;
   remarks?: string;
   lines: DeliveryChallanLineDto[];
 }
@@ -61,7 +60,6 @@ export interface CreateDeliveryChallanDto {
   vehicleNumber?: string;
   lrNumber?: string;
   eWayBillNumber?: string;
-  ewayBillNumber?: string;
   remarks?: string;
   lines: CreateDeliveryChallanLineDto[];
 }
@@ -71,7 +69,6 @@ export interface DispatchDeliveryChallanDto {
   vehicleNumber?: string;
   lrNumber?: string;
   eWayBillNumber?: string;
-  ewayBillNumber?: string;
   dispatchedAtUtc?: string;
 }
 

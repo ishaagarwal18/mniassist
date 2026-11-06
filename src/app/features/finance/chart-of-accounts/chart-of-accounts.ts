@@ -1,8 +1,10 @@
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { environment } from '../../../../environments/environment';
+import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
   AccountCategory,
@@ -10,9 +12,8 @@ import {
   BalanceNature,
   ChartOfAccountDto,
   ChartOfAccountService,
-  CreateChartOfAccountDto,
 } from '../../../proxy/finance';
-import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArButton, ArChip, ChipTone } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
 
 const MOCK_COA: ChartOfAccountDto[] = [
@@ -388,9 +389,9 @@ const MOCK_COA: ChartOfAccountDto[] = [
     ArTopbar,
     ArButton,
     ArChip,
-    ArDialog,
     ArGrid,
     GridModule,
+    RouterLink,
   ],
   template: `
     <ar-topbar title="Chart of Accounts (General Ledger)">
@@ -398,7 +399,7 @@ const MOCK_COA: ChartOfAccountDto[] = [
         <button ar-button="ghost" (click)="seedStandardAccounts()">
           &#9881; Bootstrap Standard COA
         </button>
-        <button ar-button="primary" (click)="openCreate()">+ Add Account</button>
+        <a ar-button="primary" routerLink="/finance/chart-of-accounts/new">+ Add Account</a>
       </div>
     </ar-topbar>
 
@@ -554,105 +555,6 @@ const MOCK_COA: ChartOfAccountDto[] = [
         </ejs-grid>
       </section>
     </div>
-
-    <!-- Create Account Dialog -->
-    <ar-dialog
-      *ngIf="isCreateOpen()"
-      title="Add General Ledger Account"
-      (dismiss)="isCreateOpen.set(false)"
-    >
-      <div class="modal-body-container">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Account Code</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newAccount.accountCode"
-              placeholder="e.g. 1015, 6050"
-            />
-          </div>
-          <div class="form-group">
-            <label>Account Name</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newAccount.accountName"
-              placeholder="Account Title"
-            />
-          </div>
-          <div class="form-group">
-            <label>Category</label>
-            <select
-              class="form-control"
-              [(ngModel)]="newAccount.category"
-              (change)="onCategoryChange()"
-            >
-              <option [ngValue]="AccountCategory.Asset">Asset (1xxx)</option>
-              <option [ngValue]="AccountCategory.Liability">Liability (2xxx)</option>
-              <option [ngValue]="AccountCategory.Equity">Equity (3xxx)</option>
-              <option [ngValue]="AccountCategory.Revenue">Revenue (4xxx)</option>
-              <option [ngValue]="AccountCategory.Expense">Expense (5/6xxx)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Sub-Category</label>
-            <select class="form-control" [(ngModel)]="newAccount.subCategory">
-              <option [ngValue]="AccountSubCategory.BankAndCash">Bank and Cash</option>
-              <option [ngValue]="AccountSubCategory.AccountsReceivable">Accounts Receivable</option>
-              <option [ngValue]="AccountSubCategory.Inventory">Inventory</option>
-              <option [ngValue]="AccountSubCategory.CurrentAsset">Current Asset</option>
-              <option [ngValue]="AccountSubCategory.NonCurrentAsset">
-                Non-Current / Fixed Asset
-              </option>
-              <option [ngValue]="AccountSubCategory.AccountsPayable">Accounts Payable</option>
-              <option [ngValue]="AccountSubCategory.DutiesAndTaxes">Duties and Taxes</option>
-              <option [ngValue]="AccountSubCategory.CurrentLiability">Current Liability</option>
-              <option [ngValue]="AccountSubCategory.NonCurrentLiability">
-                Non-Current Liability
-              </option>
-              <option [ngValue]="AccountSubCategory.ShareCapital">Share Capital</option>
-              <option [ngValue]="AccountSubCategory.RetainedEarnings">Retained Earnings</option>
-              <option [ngValue]="AccountSubCategory.OperatingRevenue">Operating Revenue</option>
-              <option [ngValue]="AccountSubCategory.OtherIncome">Other Income</option>
-              <option [ngValue]="AccountSubCategory.CostOfGoodsSold">
-                Cost of Goods Sold (COGS)
-              </option>
-              <option [ngValue]="AccountSubCategory.OperatingExpense">Operating Expense</option>
-              <option [ngValue]="AccountSubCategory.DepreciationAndAmortization">
-                Depreciation & Amortization
-              </option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Normal Balance Nature</label>
-            <select class="form-control" [(ngModel)]="newAccount.normalBalance">
-              <option [ngValue]="BalanceNature.Debit">Debit (Dr)</option>
-              <option [ngValue]="BalanceNature.Credit">Credit (Cr)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Opening Balance (INR)</label>
-            <input
-              type="number"
-              class="form-control"
-              [ngModel]="newAccount.openingBalanceInPaise / 100"
-              (ngModelChange)="newAccount.openingBalanceInPaise = $event * 100"
-            />
-          </div>
-        </div>
-
-        <div class="form-group full-width mt-3">
-          <label>Account Description & Purpose</label>
-          <textarea class="form-control" rows="2" [(ngModel)]="newAccount.description"></textarea>
-        </div>
-
-        <div class="dialog-actions mt-4">
-          <button ar-button="primary" (click)="createAccount()">Add Account</button>
-          <button ar-button="ghost" (click)="isCreateOpen.set(false)">Cancel</button>
-        </div>
-      </div>
-    </ar-dialog>
   `,
   styles: [
     `
@@ -916,6 +818,7 @@ const MOCK_COA: ChartOfAccountDto[] = [
 })
 export class ChartOfAccountsComponent {
   private readonly coaService = inject(ChartOfAccountService);
+  private readonly toasts = inject(ToastService);
 
   readonly accounts = signal<ChartOfAccountDto[]>(MOCK_COA);
   readonly isLoading = signal<boolean>(false);
@@ -923,19 +826,6 @@ export class ChartOfAccountsComponent {
   // Filters
   readonly searchQuery = signal<string>('');
   readonly categoryFilter = signal<string>('ALL');
-
-  // Dialog
-  readonly isCreateOpen = signal<boolean>(false);
-
-  newAccount: CreateChartOfAccountDto = {
-    accountCode: '',
-    accountName: '',
-    category: AccountCategory.Asset,
-    subCategory: AccountSubCategory.CurrentAsset,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 0,
-    description: '',
-  };
 
   readonly filteredAccounts = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
@@ -1070,69 +960,19 @@ export class ChartOfAccountsComponent {
     }
   }
 
-  onCategoryChange(): void {
-    if (
-      this.newAccount.category === AccountCategory.Asset ||
-      this.newAccount.category === AccountCategory.Expense
-    ) {
-      this.newAccount.normalBalance = BalanceNature.Debit;
-    } else {
-      this.newAccount.normalBalance = BalanceNature.Credit;
-    }
-  }
-
-  openCreate(): void {
-    this.newAccount = {
-      accountCode: '',
-      accountName: '',
-      category: AccountCategory.Asset,
-      subCategory: AccountSubCategory.CurrentAsset,
-      normalBalance: BalanceNature.Debit,
-      openingBalanceInPaise: 0,
-      description: '',
-    };
-    this.isCreateOpen.set(true);
-  }
-
-  createAccount(): void {
-    if (!this.newAccount.accountCode || !this.newAccount.accountName) return;
-
-    if (!environment.useMockData) {
-      this.coaService.create(this.newAccount).subscribe({
-        next: (created) => {
-          this.accounts.update((list) => [...list, created]);
-          this.isCreateOpen.set(false);
-        },
-      });
-      return;
-    }
-
-    const created: ChartOfAccountDto = {
-      id: `coa-${this.newAccount.accountCode}`,
-      accountCode: this.newAccount.accountCode,
-      accountName: this.newAccount.accountName,
-      category: this.newAccount.category,
-      subCategory: this.newAccount.subCategory,
-      normalBalance: this.newAccount.normalBalance,
-      openingBalanceInPaise: Number(this.newAccount.openingBalanceInPaise),
-      currentBalanceInPaise: Number(this.newAccount.openingBalanceInPaise),
-      isActive: true,
-      isSystemAccount: false,
-      description: this.newAccount.description,
-    };
-
-    this.accounts.update((list) => [...list, created]);
-    this.isCreateOpen.set(false);
-  }
-
   seedStandardAccounts(): void {
     if (!environment.useMockData) {
       this.coaService.seedStandardCoa().subscribe({
-        next: () => this.loadAccounts(),
+        next: (count) => {
+          this.loadAccounts();
+          this.toasts.success(`Standard Chart of Accounts bootstrapped with ${count || 26} accounts.`);
+        },
+        error: () => this.toasts.error('Failed to bootstrap standard COA.'),
       });
       return;
     }
 
     this.accounts.set(MOCK_COA);
+    this.toasts.success('Standard Chart of Accounts loaded (26 manufacturing & service ledgers).');
   }
 }

@@ -40,7 +40,7 @@ interface AccountOption {
 }
 
 /**
- * The customer fields of a new sales order or challan: an account (searched by name) and the contact person on it, or a contact
+ * The customer fields of a new sales order, challan or invoice: an account (searched by name) and the contact person on it, or a contact
  * with no account. Each change reports the person and the account's party, from which the form fills its addresses.
  */
 @Component({

@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
 
@@ -57,7 +59,7 @@ const STATE_TONE: Record<InvoiceState, ChipTone> = {
  */
 @Component({
   selector: 'ar-invoices',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ArDateInput, ArGrid, GridModule],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ArDateInput, ArGrid, GridModule, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './invoices.html',
   styleUrl: './invoices.scss',
@@ -66,6 +68,17 @@ export class ArInvoices {
   private readonly toasts = inject(ToastService);
   private readonly checkout = inject(PlatformCheckoutRunner);
   private readonly checkoutApi = inject(PlatformCheckoutService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  protected readonly pageTitle = computed(() => {
+    if (this.mode === 'generate') return 'Generate invoice';
+    if (this.mode === 'reconcile') return "Check Meta's invoice";
+    return 'Invoices';
+  });
 
   /** Razorpay / PayU, when the platform has either (M11-7). */
   private readonly gateways = signal<CheckoutGatewayDto[]>([]);
@@ -74,6 +87,30 @@ export class ArInvoices {
 
   constructor() {
     if (!environment.useMockData) void this.checkout.gateways().then((g) => this.gateways.set(g));
+
+    if (this.mode === 'generate') {
+      this.openDialog();
+    } else if (this.mode === 'reconcile') {
+      void this.openReconcile();
+    }
+  }
+
+  protected goGenerate(): void {
+    if (this.router) void this.router.navigate(['/billing/invoices/generate']);
+    else this.openDialog();
+  }
+
+  protected goReconcile(): void {
+    if (this.router) void this.router.navigate(['/billing/invoices/reconcile']);
+    else void this.openReconcile();
+  }
+
+  protected close(): void {
+    this.dialogOpen.set(false);
+    this.recOpen.set(false);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/billing/invoices']);
+    }
   }
 
   protected async payNow(v: Invoice): Promise<void> {
@@ -251,7 +288,7 @@ export class ArInvoices {
         customerGstin: v.gstin.trim() || undefined,
         customerAddress: v.address.trim() || undefined,
       });
-      this.dialogOpen.set(false);
+      this.close();
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'The invoice could not be generated.');
     } finally {

@@ -1,55 +1,22 @@
-<ar-topbar
-  title="Compliance"
-  subtitle="DPDP requests, retention and breach log"
-  help="DPDP data-principal requests, retention settings and the breach log. Every rights request runs on a 30-day SLA clock, shown right on its row."
->
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
-    Log a request
-  </button>
-</ar-topbar>
+@if (isPage) {
+  <ar-topbar [title]="pageTitle()">
+    <button ar-button type="button" variant="ghost" (click)="close()">Back to Compliance</button>
+  </ar-topbar>
+  <div class="ar-form-page ar-scroll">
+    <ng-container *ngTemplateOutlet="formsTpl" />
+  </div>
+} @else {
+  <ar-topbar
+    title="Compliance"
+    subtitle="DPDP requests, retention and breach log"
+    help="DPDP data-principal requests, retention settings and the breach log. Every rights request runs on a 30-day SLA clock, shown right on its row."
+  >
+    <button ar-button type="button" variant="primary" icon="plus" (click)="goNew()">
+      Log a request
+    </button>
+  </ar-topbar>
 
-@if (dialogOpen()) {
-  <ar-dialog title="Log a DPDP request" (dismiss)="dialogOpen.set(false)">
-    <p class="cx__dialog-note">
-      For a request received by email, phone or post. A request that comes through the opt-out
-      keyword is logged automatically.
-    </p>
-    <label class="ar-field">
-      <span class="ar-field__label">Request type</span>
-      <select required class="ar-field__input" (change)="newKind.set(+$any($event.target).value)">
-        @for (k of requestKinds; track k.value) {
-          <option [value]="k.value" [selected]="k.value === newKind()">{{ k.label }}</option>
-        }
-      </select>
-    </label>
-    <label class="ar-field">
-      <span class="ar-field__label">Requester identifier</span>
-      <input
-        required
-        class="ar-field__input"
-        placeholder="Phone or email they gave"
-        [value]="requester()"
-        (input)="requester.set($any($event.target).value)"
-      />
-    </label>
-    <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
-        Cancel
-      </button>
-      <button
-        ar-button
-        type="button"
-        variant="primary"
-        [disabled]="saving()"
-        (click)="saveRequest()"
-      >
-        {{ saving() ? 'Logging…' : 'Log request' }}
-      </button>
-    </div>
-  </ar-dialog>
-}
-
-<div class="cx ar-scroll">
+  <div class="cx ar-scroll">
   <div class="cx__stats">
     <ar-stat-tile
       label="Open requests"
@@ -227,4 +194,48 @@
       </ejs-grid>
     </section>
   }
-</div>
+  </div>
+}
+
+<ng-template #formsTpl>
+  @if (dialogOpen()) {
+    <ar-dialog title="Log a DPDP request" (dismiss)="close()">
+      <p class="cx__dialog-note">
+        For a request received by email, phone or post. A request that comes through the opt-out
+        keyword is logged automatically.
+      </p>
+      <label class="ar-field">
+        <span class="ar-field__label">Request type</span>
+        <select required class="ar-field__input" (change)="newKind.set(+$any($event.target).value)">
+          @for (k of requestKinds; track k.value) {
+            <option [value]="k.value" [selected]="k.value === newKind()">{{ k.label }}</option>
+          }
+        </select>
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Requester identifier</span>
+        <input
+          required
+          class="ar-field__input"
+          placeholder="Phone or email they gave"
+          [value]="requester()"
+          (input)="requester.set($any($event.target).value)"
+        />
+      </label>
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="close()">
+          Cancel
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="saving()"
+          (click)="saveRequest()"
+        >
+          {{ saving() ? 'Logging…' : 'Log request' }}
+        </button>
+      </div>
+    </ar-dialog>
+  }
+</ng-template>

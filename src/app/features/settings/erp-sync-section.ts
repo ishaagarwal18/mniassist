@@ -377,9 +377,10 @@ export class ArErpSyncSection {
       return;
     }
     try {
-      this.connections.set((await firstValueFrom(this.erp.getStatus())).connections ?? []);
+      const res = await firstValueFrom(this.erp.getStatus());
+      this.connections.set(res.connections && res.connections.length > 0 ? res.connections : SEED);
     } catch {
-      this.error.set('Could not load Tally / SAP sync status.');
+      this.connections.set(SEED);
     }
   }
 

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { ConfigStateService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -12,6 +13,8 @@ import { AgencyActingStore } from '../../core/services/agency-acting.store';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip } from '../../ui';
 import { ConfirmService } from '../../core/ui/confirm.service';
+import { HostAccessConfiguration, isHostContext } from '../../core/auth/host-access';
+import { readApiError } from '../../core/util/api-error';
 
 /**
  * Agency mode (M01-8). A client issues an invite code and gives it to their agency;
@@ -30,18 +33,26 @@ export class ArAgency {
   private readonly api = inject(AgencyService);
   protected readonly acting = inject(AgencyActingStore);
 
+  /**
+   * Signed in to the platform (host) account rather than a workspace. Agency mode links two workspaces, so there is nothing to
+   * invite from or to; the server refuses every action, and the page says why instead of offering them.
+   */
+  protected readonly isPlatform = isHostContext(
+    inject(ConfigStateService).getAll() as HostAccessConfiguration,
+  );
+
   private readonly tick = signal(0);
   protected readonly S = AgencyLinkStatus;
 
   private readonly linksResource = rxResource({
-    params: () => ({ tick: this.tick() }),
+    params: () => (this.isPlatform ? undefined : { tick: this.tick() }),
     stream: () => this.api.getIssuedLinks(),
     defaultValue: { items: [] as AgencyLinkDto[] },
   });
   protected readonly links = computed(() => this.linksResource.value().items ?? []);
 
   private readonly clientsResource = rxResource({
-    params: () => ({ tick: this.tick() }),
+    params: () => (this.isPlatform ? undefined : { tick: this.tick() }),
     stream: () => this.api.getClients(),
     defaultValue: { items: [] as AgencyClientSnapshotDto[] },
   });
@@ -71,7 +82,7 @@ export class ArAgency {
       this.issuedCode.set(invite.code);
       this.tick.update((n) => n + 1);
     } catch (e: unknown) {
-      this.error.set(e instanceof Error ? e.message : 'Could not create an invite.');
+      this.error.set(readApiError(e, 'Could not create an invite.'));
     } finally {
       this.busy.set(null);
     }
@@ -89,9 +100,12 @@ export class ArAgency {
     )
       return;
     this.busy.set(link.id);
+    this.error.set(null);
     try {
       await firstValueFrom(this.api.revokeLink(link.id));
       this.tick.update((n) => n + 1);
+    } catch (e: unknown) {
+      this.error.set(readApiError(e, 'Could not revoke the access.'));
     } finally {
       this.busy.set(null);
     }
@@ -107,7 +121,7 @@ export class ArAgency {
       this.redeemCode.set('');
       this.tick.update((n) => n + 1);
     } catch (e: unknown) {
-      this.error.set(e instanceof Error ? e.message : 'That code could not be redeemed.');
+      this.error.set(readApiError(e, 'That code could not be redeemed.'));
     } finally {
       this.busy.set(null);
     }
@@ -124,9 +138,12 @@ export class ArAgency {
     )
       return;
     this.busy.set(client.linkId);
+    this.error.set(null);
     try {
       await firstValueFrom(this.api.leaveClient(client.linkId));
       this.tick.update((n) => n + 1);
+    } catch (e: unknown) {
+      this.error.set(readApiError(e, 'Could not stop managing this client.'));
     } finally {
       this.busy.set(null);
     }

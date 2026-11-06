@@ -1,5 +1,7 @@
 import { PermissionService } from '@abp/ng.core';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, forkJoin, map, of, switchMap } from 'rxjs';
 
@@ -102,11 +104,10 @@ const SEED: readonly ManagedNumber[] = [
  * PIN is set here and never shown again — there is no screen that needs to read it
  * back, and every log that might capture it is a liability.
  */
-import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'ar-numbers',
-  imports: [RouterLink, ArTopbar, ArBanner, ArButton, ArChip, ArConnectNumberDialog, ArDialog],
+  imports: [RouterLink, ArTopbar, ArBanner, ArButton, ArChip, ArConnectNumberDialog, ArDialog, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './numbers.html',
   styleUrl: './numbers.scss',
@@ -115,6 +116,17 @@ export class ArNumbers {
   private readonly permissions = inject(PermissionService);
   private readonly toasts = inject(ToastService);
   private readonly api = inject(ChannelApi);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  protected readonly pageTitle = computed(() => {
+    if (this.mode === 'connect') return 'Connect a number';
+    if (this.mode === 'release') return 'Release number';
+    return 'Display name & PIN';
+  });
 
   protected readonly canOnboard = grantedPolicy('AutoReach.Channels.Onboard', this.permissions);
   protected readonly canManage = grantedPolicy('AutoReach.Channels.Manage', this.permissions);
@@ -170,6 +182,46 @@ export class ArNumbers {
   protected readonly draftPin = signal('');
   protected readonly draftCurrentPin = signal('');
   protected readonly busy = signal(false);
+
+  constructor() {
+    effect(() => {
+      const list = this.numbers();
+      if (list.length > 0) {
+        this.checkRouteParam();
+      }
+    });
+    if (this.mode === 'connect') {
+      this.connectOpen.set(true);
+    }
+  }
+
+  private checkRouteParam(): void {
+    if (this.mode === 'connect') {
+      this.connectOpen.set(true);
+    } else if (this.mode === 'release') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const n = this.numbers().find((x) => x.channelId === id);
+      if (n) this.openRelease(n);
+    }
+  }
+
+  protected goConnect(): void {
+    if (this.router) void this.router.navigate(['/channels/numbers/connect']);
+    else this.connectOpen.set(true);
+  }
+
+  protected goRelease(n: ManagedNumber): void {
+    if (this.router && n.channelId) void this.router.navigate(['/channels/numbers', n.channelId, 'release']);
+    else this.openRelease(n);
+  }
+
+  protected close(): void {
+    this.connectOpen.set(false);
+    this.releasing.set(null);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/channels/numbers']);
+    }
+  }
 
   protected readonly subtitle = computed(() => {
     const list = this.numbers();
@@ -263,7 +315,7 @@ export class ArNumbers {
           }),
         );
       }
-      this.releasing.set(null);
+      this.close();
       this.toasts.success(
         this.releaseDeregister()
           ? `${n.displayPhoneNumber} was released and deregistered at Meta.`

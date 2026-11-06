@@ -3,7 +3,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  InjectionToken,
   OnDestroy,
   afterEveryRender,
   afterNextRender,
@@ -16,6 +15,7 @@ import { BeforeCloseEventArgs, DialogComponent } from '@syncfusion/ej2-angular-p
 
 import { registerSyncfusionLicense } from '../core/ui/syncfusion-license';
 import { ensureSyncfusionTheme } from '../core/ui/syncfusion-theme';
+import { AR_DIALOG_INLINE } from './dialog-inline';
 import { isSubmitClick, recheckMarked, validateWithin } from './form-validation';
 
 /**
@@ -25,12 +25,8 @@ import { isSubmitClick, recheckMarked, validateWithin } from './form-validation'
 const DIALOG_Z_BASE = 1200;
 let openDialogs = 0;
 
-/**
- * Provided (as `true`) by a page that shows a form normally used in a dialog, e.g. `/sales/orders/new`. Every `ar-dialog` under
- * it renders in the page instead: a card with the title, the fields and the actions, the same checks before the main button,
- * no overlay. The form component itself does not change.
- */
-export const AR_DIALOG_INLINE = new InjectionToken<boolean>('AR_DIALOG_INLINE');
+// AR_DIALOG_INLINE lives in its own file so the routes can provide it without loading the dialog.
+export { AR_DIALOG_INLINE } from './dialog-inline';
 
 /**
  * A modal Syncfusion dialog (`ejs-dialog`): overlay, centred panel, titled header

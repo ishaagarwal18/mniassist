@@ -77,6 +77,19 @@ export class ArDashboard {
     () => inr(this.spend().avoidedCharge24hInPaise) + ' avoided in the last 24h',
   );
 
+  protected readonly customDashboard = computed(() => {
+    try {
+      const raw = localStorage.getItem('ar_custom_dashboards');
+      if (!raw) return null;
+      const list = JSON.parse(raw);
+      if (!Array.isArray(list) || list.length === 0) return null;
+      const pinnedId = localStorage.getItem('ar_home_dashboard');
+      return (pinnedId ? list.find((d: any) => d.id === pinnedId) : null) ?? list[0];
+    } catch {
+      return null;
+    }
+  });
+
   protected readonly freeMessagesLabel = computed(() => count(this.spend().freeMessages24h));
 
   /** The five most recent campaigns, for the table. */

@@ -1,74 +1,20 @@
-<ar-topbar
-  title="Support access"
-  [subtitle]="subtitle()"
-  help="Grant MNI Assist's own support team temporary, logged access to help you troubleshoot — revoke it the moment the issue's resolved."
->
-  @if (!isHost()) {
-    <button ar-button variant="primary" icon="plus" (click)="openGrant()">Grant access</button>
-  }
-</ar-topbar>
+@if (isPage) {
+  <ar-topbar title="Grant support access">
+    <button ar-button type="button" variant="ghost" (click)="close()">Back to Support access</button>
+  </ar-topbar>
+  <div class="ar-form-page ar-scroll">
+    <ng-container *ngTemplateOutlet="formsTpl" />
+  </div>
+} @else {
+  <ar-topbar
+    title="Support access"
+    [subtitle]="subtitle()"
+    help="Grant MNI Assist's own support team temporary, logged access to help you troubleshoot — revoke it the moment the issue's resolved."
+  >
+    <button ar-button variant="primary" icon="plus" (click)="goGrant()">Grant access</button>
+  </ar-topbar>
 
-@if (grantOpen()) {
-  <ar-dialog title="Grant support access" (dismiss)="grantOpen.set(false)">
-    <p class="sa__lead">
-      MNI Assist support can enter your workspace until the grant expires or you revoke it. Every
-      action they take is logged below.
-    </p>
-    <label class="ar-field">
-      <span class="ar-field__label">Why support needs access</span>
-      <textarea
-        class="ar-field__input"
-        rows="3"
-        required
-        maxlength="512"
-        placeholder="e.g. Campaign stuck in Sending since this morning"
-        [value]="reason()"
-        (input)="reason.set($any($event.target).value)"
-      ></textarea>
-    </label>
-    <div class="ar-field-row">
-      <label class="ar-field">
-        <span class="ar-field__label">For how long</span>
-        <select class="ar-field__input" required (change)="hours.set(+$any($event.target).value)">
-          @for (h of durations; track h.hours) {
-            <option [value]="h.hours" [selected]="h.hours === hours()">{{ h.label }}</option>
-          }
-        </select>
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label"
-          >Ticket reference <span class="ar-field__opt">optional</span></span
-        >
-        <input
-          class="ar-field__input ar-mono"
-          maxlength="64"
-          placeholder="SUP-1042"
-          [value]="ticket()"
-          (input)="ticket.set($any($event.target).value)"
-        />
-      </label>
-    </div>
-    <label class="sa__write">
-      <input
-        type="checkbox"
-        [checked]="allowsWrite()"
-        (change)="allowsWrite.set($any($event.target).checked)"
-      />
-      <span>
-        <b>Allow changes</b> — without this, support can look but not change anything. Turn it on
-        only if they asked to fix something for you.
-      </span>
-    </label>
-    <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="grantOpen.set(false)">Cancel</button>
-      <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="grant()">
-        {{ busy() ? 'Granting…' : 'Grant access' }}
-      </button>
-    </div>
-  </ar-dialog>
-}
-
-<div class="sa ar-scroll">
+  <div class="sa ar-scroll">
   @if (isHost()) {
     <ar-banner tone="teal">
       Support access is granted by each workspace, from inside it. You are signed in to the platform
@@ -215,3 +161,66 @@
     </section>
   }
 </div>
+}
+
+<ng-template #formsTpl>
+  @if (grantOpen()) {
+    <ar-dialog title="Grant support access" (dismiss)="close()">
+      <p class="sa__lead">
+        MNI Assist support can enter your workspace until the grant expires or you revoke it. Every
+        action they take is logged below.
+      </p>
+      <label class="ar-field">
+        <span class="ar-field__label">Why support needs access</span>
+        <textarea
+          class="ar-field__input"
+          rows="3"
+          required
+          maxlength="512"
+          placeholder="e.g. Campaign stuck in Sending since this morning"
+          [value]="reason()"
+          (input)="reason.set($any($event.target).value)"
+        ></textarea>
+      </label>
+      <div class="ar-field-row">
+        <label class="ar-field">
+          <span class="ar-field__label">For how long</span>
+          <select class="ar-field__input" required (change)="hours.set(+$any($event.target).value)">
+            @for (h of durations; track h.hours) {
+              <option [value]="h.hours" [selected]="h.hours === hours()">{{ h.label }}</option>
+            }
+          </select>
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label"
+            >Ticket reference <span class="ar-field__opt">optional</span></span
+          >
+          <input
+            class="ar-field__input ar-mono"
+            maxlength="64"
+            placeholder="SUP-1042"
+            [value]="ticket()"
+            (input)="ticket.set($any($event.target).value)"
+          />
+        </label>
+      </div>
+      <label class="sa__write">
+        <input
+          type="checkbox"
+          [checked]="allowsWrite()"
+          (change)="allowsWrite.set($any($event.target).checked)"
+        />
+        <span>
+          <b>Allow changes</b> — without this, support can look but not change anything. Turn it on
+          only if they asked to fix something for you.
+        </span>
+      </label>
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
+        <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="grant()">
+          {{ busy() ? 'Granting…' : 'Grant access' }}
+        </button>
+      </div>
+    </ar-dialog>
+  }
+</ng-template>

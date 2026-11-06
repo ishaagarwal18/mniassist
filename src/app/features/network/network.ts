@@ -1,6 +1,7 @@
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -169,25 +170,33 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
  */
 @Component({
   selector: 'ar-network',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArTabs, ArRouteLeadDialog, RouterLink, ArGrid, GridModule],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArTabs, ArRouteLeadDialog, RouterLink, ArGrid, GridModule, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar
-      title="Dealer network"
-      [subtitle]="subtitle()"
-      help="For OEMs and their dealers. As the OEM: invite your dealers, give each a territory, and route enquiries to whoever covers the customer; you then see the dealer's stage, quotes and activity on every lead. As a dealer: enter the OEM's invite code, then accept or decline the leads it sends you."
-    >
-      @if (canManage() && runsNetwork() && tab() !== incomingTab) {
-        <button ar-button type="button" variant="ghost" icon="settings" (click)="openSettings()">
-          Settings
-        </button>
-        <button ar-button type="button" variant="primary" icon="plus" (click)="openInvite()">
-          Invite a dealer
-        </button>
-      }
-    </ar-topbar>
+    @if (isPage) {
+      <ar-topbar [title]="pageTitle()">
+        <button ar-button type="button" variant="ghost" (click)="close()">Back to Dealer network</button>
+      </ar-topbar>
+      <div class="ar-form-page ar-scroll">
+        <ng-container *ngTemplateOutlet="formsTpl" />
+      </div>
+    } @else {
+      <ar-topbar
+        title="Dealer network"
+        [subtitle]="subtitle()"
+        help="For OEMs and their dealers. As the OEM: invite your dealers, give each a territory, and route enquiries to whoever covers the customer; you then see the dealer's stage, quotes and activity on every lead. As a dealer: enter the OEM's invite code, then accept or decline the leads it sends you."
+      >
+        @if (canManage() && runsNetwork() && tab() !== incomingTab) {
+          <button ar-button type="button" variant="ghost" icon="settings" (click)="goSettings()">
+            Settings
+          </button>
+          <button ar-button type="button" variant="primary" icon="plus" (click)="goInvite()">
+            Invite a dealer
+          </button>
+        }
+      </ar-topbar>
 
-    <div class="nw">
+      <div class="nw">
       <ar-tabs [tabs]="tabs()" [(active)]="tab" />
 
       <div class="nw__body ar-scroll">
@@ -224,7 +233,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
             <ul class="list">
               @for (l of visibleLeads(); track l.id) {
                 <li>
-                  <button type="button" class="lead" (click)="openLead(l)">
+                  <button type="button" class="lead" (click)="goLead(l)">
                     <span class="lead__main">
                       <span class="ar-mono lead__ref">{{ l.oemEnquiryReference }}</span>
                       <b>{{ l.title || 'Enquiry' }}</b>
@@ -302,7 +311,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
                           New code
                         </button>
                       }
-                      <button ar-button type="button" variant="ghost" (click)="openTerritory(d)">
+                      <button ar-button type="button" variant="ghost" (click)="goTerritory(d)">
                         Edit territory
                       </button>
                       @if (d.state === 'Active') {
@@ -453,7 +462,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
                           type="button"
                           variant="ghost"
                           [disabled]="busy() === o.id"
-                          (click)="openConversation(o)"
+                          (click)="goConversation(o)"
                         >
                           Conversation
                         </button>
@@ -484,11 +493,13 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
         }
       </div>
     </div>
+  }
 
+  <ng-template #formsTpl>
     @if (inviteOpen()) {
       <ar-dialog
         [title]="editing() ? 'Territory · ' + editing()!.dealerName : 'Invite a dealer'"
-        (dismiss)="inviteOpen.set(false)"
+        (dismiss)="close()"
       >
         @if (created(); as c) {
           <p class="nw__hint">
@@ -571,11 +582,11 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
             <button ar-button type="button" variant="ghost" (click)="copyCode(created()!)">
               Copy code
             </button>
-            <button ar-button type="button" variant="primary" (click)="inviteOpen.set(false)">
+            <button ar-button type="button" variant="primary" (click)="close()">
               Done
             </button>
           } @else {
-            <button ar-button type="button" variant="ghost" (click)="inviteOpen.set(false)">
+            <button ar-button type="button" variant="ghost" (click)="close()">
               Cancel
             </button>
             <button
@@ -595,7 +606,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
     @if (conversation(); as c) {
       <ar-dialog
         [title]="'Conversation with ' + c.offer.oemName"
-        (dismiss)="conversation.set(null)"
+        (dismiss)="close()"
       >
         <p class="nw__hint">
           {{ c.offer.oemName }}'s WhatsApp conversation with the customer before the lead came to
@@ -617,7 +628,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
     }
 
     @if (settingsOpen()) {
-      <ar-dialog title="Network settings" (dismiss)="settingsOpen.set(false)">
+      <ar-dialog title="Network settings" (dismiss)="close()">
         <label class="check" for="nw-reroute">
           <input
             id="nw-reroute"
@@ -678,7 +689,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
           <p class="nw__err" role="alert">{{ e }}</p>
         }
         <div dialogActions>
-          <button ar-button type="button" variant="ghost" (click)="settingsOpen.set(false)">
+          <button ar-button type="button" variant="ghost" (click)="close()">
             Cancel
           </button>
           <button
@@ -697,7 +708,7 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
     @if (lead(); as d) {
       <ar-dialog
         [title]="d.oemEnquiryReference + ' · ' + stateLabel(d.state)"
-        (dismiss)="lead.set(null)"
+        (dismiss)="close()"
       >
         <p class="nw__hint">
           <b>{{ d.title || 'Enquiry' }}</b> · {{ where(d)
@@ -849,8 +860,9 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
     }
 
     @if (routing(); as enquiryId) {
-      <ar-route-lead-dialog [enquiryId]="enquiryId" (closed)="routed($event)" />
+      <ar-route-lead-dialog [enquiryId]="enquiryId" (closed)="routed($event); close()" />
     }
+  </ng-template>
   `,
   styles: `
     :host {
@@ -1181,6 +1193,12 @@ export class ArNetwork {
   private readonly api = inject(NetworkService);
   private readonly dealerApi = inject(DealerNetworkService);
   private readonly permissions = inject(PermissionService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
   protected readonly canManage = grantedPolicy('AutoReach.Network.Manage', this.permissions);
   protected readonly canRoute = grantedPolicy('AutoReach.Network.Route', this.permissions);
 
@@ -1196,8 +1214,25 @@ export class ArNetwork {
     this.runsNetwork() ? [TAB_LEADS, TAB_DEALERS, TAB_INCOMING] : [TAB_INCOMING],
   );
   protected readonly tab = signal<string>(
-    inject(ActivatedRoute).snapshot.data['tab'] === 'incoming' ? TAB_INCOMING : TAB_LEADS,
+    this.route?.snapshot?.data?.['tab'] === 'incoming' ? TAB_INCOMING : TAB_LEADS,
   );
+
+  protected readonly pageTitle = computed(() => {
+    switch (this.mode) {
+      case 'invite':
+        return 'Invite a dealer';
+      case 'territory':
+        return this.editing() ? `Territory · ${this.editing()!.dealerName}` : 'Dealer territory';
+      case 'settings':
+        return 'Network settings';
+      case 'lead':
+        return this.lead() ? `${this.lead()!.oemEnquiryReference} · ${this.stateLabel(this.lead()!.state)}` : 'Lead details';
+      case 'conversation':
+        return this.conversation() ? `Conversation with ${this.conversation()!.offer.oemName}` : 'Customer conversation';
+      default:
+        return 'Dealer network';
+    }
+  });
 
   protected readonly dealers = signal<DealerLinkDto[]>([]);
   protected readonly leads = signal<NetworkLeadDto[]>([]);
@@ -1265,6 +1300,7 @@ export class ArNetwork {
           territory: { states: [], cities: [], pinPrefixes: ['4110', '4111'], productLines: [] },
         },
       ]);
+      this.checkRouteParam();
       return;
     }
     // Each side loads on its own: a dealer's workspace has no dealers of its own, and an OEM's may never have joined anyone.
@@ -1284,6 +1320,64 @@ export class ArNetwork {
       settle(firstValueFrom(this.dealerApi.getMemberships()), (v) => this.memberships.set(v)),
       settle(firstValueFrom(this.dealerApi.getOffers()), (v) => this.offers.set(v)),
     ]);
+    this.checkRouteParam();
+  }
+
+  private checkRouteParam(): void {
+    if (this.mode === 'invite') {
+      this.openInvite();
+    } else if (this.mode === 'territory') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const d = this.dealers().find((x) => x.id === id);
+      if (d) this.openTerritory(d);
+      else this.openInvite();
+    } else if (this.mode === 'settings') {
+      void this.openSettings();
+    } else if (this.mode === 'lead') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const l = this.leads().find((x) => x.id === id);
+      if (l) void this.openLead(l);
+    } else if (this.mode === 'conversation') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const o = this.offers().find((x) => x.id === id);
+      if (o) void this.openConversation(o);
+    }
+  }
+
+  protected goInvite(): void {
+    if (this.router) void this.router.navigate(['/network/invite']);
+    else this.openInvite();
+  }
+
+  protected goTerritory(d: DealerLinkDto): void {
+    if (this.router && d.id) void this.router.navigate(['/network/dealers', d.id, 'edit']);
+    else this.openTerritory(d);
+  }
+
+  protected goSettings(): void {
+    if (this.router) void this.router.navigate(['/network/settings']);
+    else void this.openSettings();
+  }
+
+  protected goLead(l: NetworkLeadDto): void {
+    if (this.router && l.id) void this.router.navigate(['/network/leads', l.id]);
+    else void this.openLead(l);
+  }
+
+  protected goConversation(o: NetworkOfferDto): void {
+    if (this.router && o.id) void this.router.navigate(['/network/offers', o.id, 'conversation']);
+    else void this.openConversation(o);
+  }
+
+  protected close(): void {
+    this.inviteOpen.set(false);
+    this.settingsOpen.set(false);
+    this.lead.set(null);
+    this.conversation.set(null);
+    this.routing.set(null);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/network']);
+    }
   }
 
   protected countLeads(state: NetworkLeadState | null): number {

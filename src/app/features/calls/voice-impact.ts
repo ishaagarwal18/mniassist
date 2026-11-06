@@ -3,19 +3,22 @@ import {
   ChangeDetectionStrategy,
   Component,
   Injectable,
-  OnInit,
+  computed,
+  effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { ReportPeriodStore } from '../../core/services/report-period.store';
 import { ArTopbar } from '../../layout/topbar';
 import { ChannelService } from '../../proxy/channels/channel.service';
 import { ChannelDto } from '../../proxy/channels/models';
 import { ArButton } from '../../ui/button';
-import { ArIcon } from '../../ui/icon';
+import { ArIcon, IconName } from '../../ui/icon';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
-import { ArDateInput, ArGrid, ArSelect } from '../../ui';
+import { ArCard, ArGrid, ArMeter, ArStatTile } from '../../ui';
+import { ArPeriodPicker } from '../../ui/period-picker';
 
 export interface VoiceImpactInput {
   fromDate: string;
@@ -93,584 +96,812 @@ export class VoiceImpactService {
   }
 }
 
-/** yyyy-MM-dd of a local date. */
-function day(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+/** Icons for the actions the AI took on calls. */
+const ACTION_ICONS = {
+  meetings: 'clock',
+  leads: 'enquiry',
+  crm: 'contacts',
+  tickets: 'document',
+  followUps: 'send',
+  payments: 'billing',
+  functions: 'bolt',
+} as const satisfies Record<string, IconName>;
+
+/** A labelled count with its share of a whole, for the bar lists. */
+interface Bar {
+  label: string;
+  value: number;
+  share: number;
+  tone: 'blue' | 'teal' | 'good' | 'amber' | 'bad' | 'ink';
+}
+
+/** Share of a whole as a whole percentage; 0 when there is nothing to share. */
+export function shareOf(part: number, whole: number): number {
+  return whole > 0 ? Math.round((100 * part) / whole) : 0;
 }
 
 /**
  * What the AI voice agents did over a period: calls, outcomes, actions, leads, AI cost and the staff time those calls would have
- * taken. For a pilot's impact report or any month; the staff figures come from the two numbers entered here.
+ * taken. The period is the shared report period (top bar); the staff figures come from the two assumptions on the Savings card.
  */
 @Component({
   selector: 'ar-voice-impact',
-  imports: [FormsModule, ArTopbar, ArButton, ArIcon, ArGrid, GridModule, ArDateInput, ArSelect],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArIcon,
+    ArGrid,
+    GridModule,
+    ArPeriodPicker,
+    ArStatTile,
+    ArCard,
+    ArMeter,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
       title="AI impact report"
-      help="What your AI voice agents did, what it cost and the staff time it saved."
-    />
-    <main class="vi">
-      <!-- Filter Parameters Card -->
-      <section class="vi__filter-card" aria-label="Report Parameters">
-        <form class="vi__form" (submit)="$event.preventDefault(); load()">
-          <label class="ar-field">
-            <span class="ar-field__label">From Date</span>
-            <input class="ar-field__input" type="date" name="from" [(ngModel)]="input.fromDate" />
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">To Date</span>
-            <input class="ar-field__input" type="date" name="to" [(ngModel)]="input.toDate" />
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">Phone Number</span>
-            <select class="ar-field__input" name="channel" [(ngModel)]="input.channelId">
-              <option [ngValue]="null">All Numbers & Lines</option>
-              @for (c of channels(); track c.id) {
-                <option [ngValue]="c.id">{{ c.verifiedName }} · {{ c.displayPhoneNumber }}</option>
-              }
-            </select>
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">Person time per call (mins)</span>
-            <input
-              class="ar-field__input"
-              type="number"
-              name="minutes"
-              min="1"
-              max="60"
-              [(ngModel)]="input.handlingMinutesPerCall"
-            />
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">Staff cost per hour (₹)</span>
-            <input
-              class="ar-field__input"
-              type="number"
-              name="cost"
-              min="0"
-              max="100000"
-              [(ngModel)]="input.staffCostPerHourRupees"
-            />
-          </label>
-          <div class="vi__actions">
-            <button ar-button type="submit" variant="primary" [disabled]="busy()">
-              {{ busy() ? 'Generating…' : 'Generate Report' }}
-            </button>
-            <button
-              ar-button
-              type="button"
-              variant="ghost"
-              [disabled]="busy() || !report()"
-              (click)="download('pdf')"
-            >
-              Export PDF
-            </button>
-            <button
-              ar-button
-              type="button"
-              variant="ghost"
-              [disabled]="busy() || !report()"
-              (click)="download('csv')"
-            >
-              Export CSV
-            </button>
-          </div>
-        </form>
-      </section>
+      [subtitle]="period.label()"
+      help="What your AI voice agents did, what it cost and the staff time it saved. Staff savings use the two assumptions on the Savings card."
+    >
+      <select
+        class="ar-field__input vi__line"
+        aria-label="Phone number or line"
+        (change)="channelId.set($any($event.target).value || null)"
+      >
+        <option value="" [selected]="!channelId()">All numbers and lines</option>
+        @for (c of channels(); track c.id) {
+          <option [value]="c.id" [selected]="c.id === channelId()">
+            {{ c.verifiedName }} · {{ c.displayPhoneNumber }}
+          </option>
+        }
+      </select>
+      <ar-period-picker [comparable]="false" />
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        [disabled]="busy() || !report()"
+        (click)="download('pdf')"
+      >
+        PDF
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        [disabled]="busy() || !report()"
+        (click)="download('csv')"
+      >
+        CSV
+      </button>
+    </ar-topbar>
 
+    <div class="vi ar-scroll" [attr.aria-busy]="busy()">
       @if (error()) {
         <div class="vi__alert" role="alert">
-          <ar-icon name="alert" />
+          <ar-icon name="alert" [size]="16" />
           <span>{{ error() }}</span>
+          <button type="button" class="vi__retry" (click)="load()">Try again</button>
         </div>
       }
 
       @if (report(); as r) {
-        <!-- Executive KPI Strip -->
-        <section class="vi__tiles" aria-label="Executive KPI Summary">
-          <div class="vi__tile">
-            <span class="vi__value" translate="no">{{ r.calls }}</span
-            >AI calls
-            <small translate="no">{{ r.minutes }} min · {{ r.handledByAi }} AI completed</small>
-          </div>
-          <div class="vi__tile">
-            <span class="vi__value" translate="no">{{ percent(r.goalMet, r.goalEvaluated) }}</span
-            >goal met
-            <small translate="no">{{ r.goalMet }} / {{ r.goalEvaluated }}</small>
-          </div>
-          <div class="vi__tile">
-            <span class="vi__value" translate="no">{{ r.meetingsBooked + r.leads }}</span
-            >meetings and leads
-            <small translate="no">{{ r.meetingsBooked }} mtgs · {{ r.leads }} leads</small>
-          </div>
-          <div class="vi__tile">
-            <span class="vi__value" translate="no">{{ rupees(r.costPaise) }}</span
-            >AI cost
-            <small translate="no">{{ rupees(r.costPerCallPaise) }} a call</small>
-          </div>
-          <div class="vi__tile">
-            <span class="vi__value" translate="no">{{ r.staffHours }} h</span>staff time
-            <small translate="no">{{ rupees(r.staffCostPaise) }}</small>
-          </div>
-          <div class="vi__tile" [class.vi__loss]="r.netSavingPaise < 0">
-            <span class="vi__value" translate="no">{{ rupees(r.netSavingPaise) }}</span
-            >estimated saving
-            <small translate="no">Net estimated benefit</small>
-          </div>
+        <section class="vi__tiles" aria-label="Summary">
+          <ar-stat-tile
+            label="AI calls"
+            [value]="r.calls"
+            [note]="r.minutes + ' min · ' + duration(r.averageSeconds) + ' average'"
+          />
+          <ar-stat-tile
+            label="Resolved by AI"
+            [value]="percent(r.handledByAi, r.calls)"
+            [note]="r.handledByAi + ' of ' + r.calls + ' without a person'"
+            tone="good"
+          />
+          <ar-stat-tile
+            label="Goal met"
+            [value]="percent(r.goalMet, r.goalEvaluated)"
+            [note]="
+              r.goalEvaluated
+                ? r.goalMet + ' of ' + r.goalEvaluated + ' calls with a goal'
+                : 'No call had a goal set'
+            "
+          />
+          <ar-stat-tile
+            label="Meetings and leads"
+            [value]="r.meetingsBooked + r.leads"
+            [note]="r.meetingsBooked + ' meetings · ' + r.leads + ' leads'"
+            tone="teal"
+          />
+          <ar-stat-tile
+            label="AI cost"
+            [value]="rupees(r.costPaise)"
+            [note]="rupees(r.costPerCallPaise) + ' a call'"
+          />
+          <ar-stat-tile
+            label="Estimated saving"
+            [value]="rupees(r.netSavingPaise)"
+            [note]="
+              r.netSavingPaise < 0
+                ? 'AI cost more than the staff time'
+                : 'Staff time saved, less AI cost'
+            "
+            [tone]="r.netSavingPaise < 0 ? 'bad' : 'good'"
+          />
         </section>
 
-        <!-- Metrics Grid -->
-        <div class="vi__content-grid">
-          <!-- Call Volume & Channel Breakdown -->
-          <section class="vi__card">
-            <h2 class="vi__card-title">Call Channels & Routing</h2>
-            <div class="metric-list">
-              <div class="metric-row">
-                <span class="metric-row__label">Channel Mix (WhatsApp / Web / Phone / SIP)</span>
-                <span class="metric-row__val" translate="no">
-                  {{ r.whatsAppCalls }} / {{ r.websiteCalls }} / {{ r.phoneCalls }} /
-                  {{ r.sipCalls }}
-                </span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__label">Outbound Campaign Calls Placed</span>
-                <span class="metric-row__val" translate="no">{{ r.outboundCalls }}</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__label"
-                  >Fully Resolved by AI (without agent intervention)</span
+        @if (r.calls === 0) {
+          <ar-card>
+            <div class="vi__empty">
+              <ar-icon name="phone" [size]="28" />
+              <h2>No AI calls in this period</h2>
+              <p>
+                Choose a longer period or another line. Calls appear here once an AI voice agent
+                answers or places them.
+              </p>
+            </div>
+          </ar-card>
+        } @else {
+          <div class="vi__cols">
+            <ar-card heading="Savings">
+              <div class="vi__sum" aria-label="How the saving is worked out">
+                <div class="vi__sum-row">
+                  <span>Staff time the AI took on</span>
+                  <strong>{{ r.staffHours }} h</strong>
+                </div>
+                <div class="vi__sum-row">
+                  <span>Cost of that staff time</span>
+                  <strong>{{ rupees(r.staffCostPaise) }}</strong>
+                </div>
+                <div class="vi__sum-row">
+                  <span>Less AI cost</span>
+                  <strong>− {{ rupees(r.costPaise) }}</strong>
+                </div>
+                <div
+                  class="vi__sum-row vi__sum-row--total"
+                  [class.vi__sum-row--loss]="r.netSavingPaise < 0"
                 >
-                <span class="metric-row__val text-good" translate="no">{{ r.handledByAi }}</span>
+                  <span>Estimated saving</span>
+                  <strong>{{ rupees(r.netSavingPaise) }}</strong>
+                </div>
               </div>
-              <div class="metric-row">
-                <span class="metric-row__label">Escalated / Handed to Human Staff</span>
-                <span class="metric-row__val" translate="no">{{ r.handedToPeople }}</span>
+              <div class="vi__assume">
+                <span class="ar-label">Assumptions</span>
+                <div class="vi__assume-row">
+                  <label class="ar-field">
+                    <span class="ar-field__label">Person time per call (min)</span>
+                    <input
+                      class="ar-field__input"
+                      type="number"
+                      min="1"
+                      max="60"
+                      [value]="minutesPerCall()"
+                      (change)="setMinutes(+$any($event.target).value)"
+                    />
+                  </label>
+                  <label class="ar-field">
+                    <span class="ar-field__label">Staff cost per hour (₹)</span>
+                    <input
+                      class="ar-field__input"
+                      type="number"
+                      min="0"
+                      max="100000"
+                      [value]="costPerHour()"
+                      (change)="setCost(+$any($event.target).value)"
+                    />
+                  </label>
+                </div>
+                <p class="vi__hint">
+                  Counted only for calls the AI completed to the end. AI cost is what the voice
+                  providers recorded.
+                </p>
               </div>
-              <div class="metric-row">
-                <span class="metric-row__label">Opt-Out Requests Received</span>
-                <span class="metric-row__val" translate="no">{{ r.optOuts }}</span>
-              </div>
-            </div>
-          </section>
+            </ar-card>
 
-          <!-- Customer Sentiment & Actions Executed -->
-          <section class="vi__card">
-            <h2 class="vi__card-title">Sentiment & Downstream Actions</h2>
-            <div class="metric-list">
-              <div class="metric-row">
-                <span class="metric-row__label">Sentiment (Positive / Neutral / Negative)</span>
-                <span class="metric-row__val" translate="no">
-                  <span class="sentiment-pill positive">{{ r.positive }}</span> /
-                  <span class="sentiment-pill neutral">{{ r.neutral }}</span> /
-                  <span class="sentiment-pill negative">{{ r.negative }}</span>
-                </span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__label">Meetings Automatically Scheduled</span>
-                <span class="metric-row__val text-teal" translate="no">{{ r.meetingsBooked }}</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__label">New CRM Leads Created</span>
-                <span class="metric-row__val text-good" translate="no">{{ r.leads }}</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__label">CRM Contact / Account Updates</span>
-                <span class="metric-row__val" translate="no">{{ r.crmUpdates }}</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__label">Support Tickets Opened</span>
-                <span class="metric-row__val" translate="no">{{ r.ticketsRaised }}</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__label">WhatsApp Follow-up Messages Sent</span>
-                <span class="metric-row__val" translate="no">{{ r.followUpsSent }}</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__label">Payment Links Dispatched</span>
-                <span class="metric-row__val" translate="no">{{ r.paymentLinksSent }}</span>
-              </div>
-              <div class="metric-row">
-                <span class="metric-row__label">Custom Voice Functions Executed</span>
-                <span class="metric-row__val" translate="no">{{ r.functionsRun }}</span>
-              </div>
-            </div>
-          </section>
-        </div>
+            <ar-card heading="Where the calls came from">
+              <ul class="vi__bars">
+                @for (b of channelBars(); track b.label) {
+                  <li class="vi__bar">
+                    <span class="vi__bar-label">{{ b.label }}</span>
+                    <span class="vi__bar-track"
+                      ><span
+                        [class]="'vi__bar-fill vi__bar-fill--' + b.tone"
+                        [style.width.%]="b.share"
+                      ></span
+                    ></span>
+                    <span class="vi__bar-value">{{ b.value }}</span>
+                    <span class="vi__bar-share">{{ b.share }}%</span>
+                  </li>
+                }
+              </ul>
+              <p class="vi__hint">
+                {{ r.outboundCalls }} of these were outbound calls placed by the AI (campaigns and
+                call batches).
+              </p>
+            </ar-card>
 
-        @if (r.agents.length > 0) {
-          <!-- Agent Breakdown Table adhering to modern-web-guidance responsive-table -->
-          <section class="vi__agent-table-card">
-            <div class="table-card__head">
-              <h2 class="table-card__title">Performance by Voice Agent</h2>
-            </div>
-            <ejs-grid
-              arGrid="voice-impact-agents"
-              [dataSource]="r.agents"
-              aria-label="Performance Breakdown by Agent"
-            >
-              <e-columns>
-                <e-column field="agent" headerText="Agent Persona" width="220">
-                  <ng-template #template let-a>
-                    <span class="font-medium" translate="no">{{ a.agent }}</span>
-                  </ng-template>
-                </e-column>
-                <e-column field="calls" headerText="Total Calls" width="130" [textAlign]="'Right'">
-                  <ng-template #template let-a>
-                    <span class="font-mono" translate="no">{{ a.calls }}</span>
-                  </ng-template>
-                </e-column>
-                <e-column field="minutes" headerText="Duration (min)" width="140" [textAlign]="'Right'">
-                  <ng-template #template let-a>
-                    <span class="font-mono" translate="no">{{ a.minutes }}</span>
-                  </ng-template>
-                </e-column>
-                <e-column headerText="Goal Met Rate" width="180" [textAlign]="'Right'">
-                  <ng-template #template let-a>
-                    <div class="font-mono" translate="no">
+            <ar-card heading="How the calls ended">
+              <ul class="vi__bars">
+                @for (b of outcomeBars(); track b.label) {
+                  <li class="vi__bar">
+                    <span class="vi__bar-label">{{ b.label }}</span>
+                    <span class="vi__bar-track"
+                      ><span
+                        [class]="'vi__bar-fill vi__bar-fill--' + b.tone"
+                        [style.width.%]="b.share"
+                      ></span
+                    ></span>
+                    <span class="vi__bar-value">{{ b.value }}</span>
+                    <span class="vi__bar-share">{{ b.share }}%</span>
+                  </li>
+                }
+              </ul>
+            </ar-card>
+
+            <ar-card heading="Customer sentiment">
+              @if (sentimentTotal() > 0) {
+                <div class="vi__stack" role="img" [attr.aria-label]="sentimentLabel()">
+                  @for (s of sentiment(); track s.label) {
+                    @if (s.value > 0) {
+                      <span
+                        [class]="'vi__stack-part vi__bar-fill--' + s.tone"
+                        [style.flex-grow]="s.value"
+                      ></span>
+                    }
+                  }
+                </div>
+                <ul class="vi__legend">
+                  @for (s of sentiment(); track s.label) {
+                    <li>
+                      <span [class]="'vi__dot vi__bar-fill--' + s.tone"></span>
+                      <span>{{ s.label }}</span>
+                      <strong>{{ s.value }}</strong>
+                      <small>{{ s.share }}%</small>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="vi__hint">No call in this period has a sentiment yet.</p>
+              }
+            </ar-card>
+          </div>
+
+          <ar-card heading="What the AI did on calls">
+            <ul class="vi__actions">
+              @for (a of actions(); track a.label) {
+                <li class="vi__action">
+                  <span class="vi__action-icon"><ar-icon [name]="a.icon" [size]="16" /></span>
+                  <strong>{{ a.value }}</strong>
+                  <span>{{ a.label }}</span>
+                </li>
+              }
+            </ul>
+          </ar-card>
+
+          @if (r.agents.length > 0) {
+            <ar-card heading="By voice agent">
+              <ejs-grid
+                arGrid="voice-impact-agents"
+                [dataSource]="r.agents"
+                aria-label="Results by voice agent"
+              >
+                <e-columns>
+                  <e-column field="agent" headerText="Agent" width="220">
+                    <ng-template #template let-a>
+                      <span class="vi__agent" translate="no">{{ a.agent }}</span>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="calls" headerText="Calls" width="110" textAlign="Right" />
+                  <e-column field="minutes" headerText="Minutes" width="120" textAlign="Right" />
+                  <e-column headerText="Goal met" width="220">
+                    <ng-template #template let-a>
                       @if (a.goalEvaluated) {
-                        <span class="goal-pill">{{ percent(a.goalMet, a.goalEvaluated) }}</span>
-                        <span class="text-muted"> ({{ a.goalMet }}/{{ a.goalEvaluated }})</span>
+                        <div class="vi__goal">
+                          <ar-meter
+                            [value]="share(a.goalMet, a.goalEvaluated)"
+                            tone="good"
+                            [thickness]="6"
+                            [label]="'Goal met ' + percent(a.goalMet, a.goalEvaluated)"
+                          />
+                          <span>{{ percent(a.goalMet, a.goalEvaluated) }}</span>
+                          <small>{{ a.goalMet }}/{{ a.goalEvaluated }}</small>
+                        </div>
                       } @else {
-                        <span class="text-muted">–</span>
+                        <span class="vi__muted">No goal set</span>
                       }
-                    </div>
-                  </ng-template>
-                </e-column>
-                <e-column field="costPaise" headerText="AI Cost" width="140" [textAlign]="'Right'">
-                  <ng-template #template let-a>
-                    <span class="font-mono font-medium" translate="no">
-                      {{ rupees(a.costPaise) }}
-                    </span>
-                  </ng-template>
-                </e-column>
-              </e-columns>
-            </ejs-grid>
-          </section>
+                    </ng-template>
+                  </e-column>
+                  <e-column field="costPaise" headerText="AI cost" width="130" textAlign="Right">
+                    <ng-template #template let-a>
+                      <span class="vi__num">{{ rupees(a.costPaise) }}</span>
+                    </ng-template>
+                  </e-column>
+                </e-columns>
+              </ejs-grid>
+            </ar-card>
+          }
         }
-
-        <p class="vi__footnote">
-          * Staff time savings are calculated from the handling minutes and hourly wage entered
-          above for calls the AI completed to end. AI costs reflect recorded provider consumption.
-        </p>
+      } @else if (busy()) {
+        <section class="vi__tiles" aria-hidden="true">
+          @for (i of skeletons; track i) {
+            <div class="vi__skeleton"></div>
+          }
+        </section>
       }
-    </main>
+    </div>
   `,
   styles: `
     .vi {
-      padding: 24px 32px;
-      display: grid;
-      gap: 24px;
-      max-width: 1440px;
-      margin: 0 auto;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    .vi__filter-card {
-      background: var(--ar-white);
-      border: 1px solid var(--ar-line-200);
-      border-radius: var(--ar-radius-card, 10px);
-      padding: 20px 24px;
-      box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
-    }
-
-    .vi__form {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px;
-      align-items: flex-end;
-    }
-
-    .vi__actions {
+      flex: 1;
+      min-height: 0;
+      padding: 18px 24px 32px;
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      padding-bottom: 2px;
+      flex-direction: column;
+      gap: 14px;
     }
-
+    .vi > ar-card {
+      display: block;
+      min-width: 0;
+    }
+    .vi__line {
+      width: auto;
+      max-width: 240px;
+      height: 32px;
+      font-size: 12.5px;
+    }
     .vi__alert {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       padding: 10px 14px;
-      background: #fef3f2;
-      border: 1px solid #fecdca;
-      border-radius: 6px;
-      color: #b42318;
-      font-size: 0.875rem;
+      background: var(--ar-red-100);
+      border: 1px solid var(--ar-red-200);
+      border-radius: var(--ar-radius-control);
+      color: var(--ar-bad-600);
+      font: 500 13px var(--ar-font-sans);
     }
-
+    .vi__retry {
+      margin-left: auto;
+      background: none;
+      border: 0;
+      cursor: pointer;
+      font: 600 12.5px var(--ar-font-sans);
+      color: var(--ar-bad-600);
+      text-decoration: underline;
+    }
     .vi__tiles {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .vi__skeleton {
+      height: 92px;
+      border-radius: var(--ar-radius-card);
+      background: linear-gradient(90deg, var(--ar-bg-100), var(--ar-bg-50), var(--ar-bg-100));
+      background-size: 200% 100%;
+      animation: vi-shimmer 1.2s ease-in-out infinite;
+    }
+    @keyframes vi-shimmer {
+      to {
+        background-position: -200% 0;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .vi__skeleton {
+        animation: none;
+      }
+    }
+    .vi__cols {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .vi__cols ar-card {
+      display: block;
+      min-width: 0;
     }
 
-    .vi__tile {
-      background: var(--ar-white);
-      border: 1px solid var(--ar-line-200);
-      border-radius: var(--ar-radius-card, 10px);
-      padding: 16px;
+    .vi__sum {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .vi__sum-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .vi__sum-row strong {
+      font-weight: 600;
+      color: var(--ar-ink-900);
+      font-variant-numeric: tabular-nums;
+    }
+    .vi__sum-row--total {
+      margin-top: 2px;
+      padding-top: 10px;
+      border-top: 1px solid var(--ar-line-200);
+      align-items: baseline;
+    }
+    .vi__sum-row--total span {
+      font-weight: 600;
+      color: var(--ar-ink-900);
+    }
+    .vi__sum-row--total strong {
+      font-size: 20px;
+      color: var(--ar-good-700);
+    }
+    .vi__sum-row--loss strong {
+      color: var(--ar-bad-600);
+    }
+    .vi__assume {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-bg-50);
+      border: 1px solid var(--ar-line-100);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .vi__assume-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .vi__assume-row .ar-field {
       display: flex;
       flex-direction: column;
       gap: 4px;
-      box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
-      font-size: 0.85rem;
+      min-width: 0;
+    }
+    .vi__hint {
+      margin: 10px 0 0;
+      font: 400 12px var(--ar-font-sans);
       color: var(--ar-ink-500);
-      transition:
-        transform 0.15s ease,
-        box-shadow 0.15s ease;
+      line-height: 1.45;
+    }
+    .vi__assume .vi__hint {
+      margin: 0;
     }
 
-    .vi__tile:hover {
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-    }
-
-    .vi__value {
-      font: 700 1.6rem var(--ar-font-sans);
-      color: var(--ar-ink-900);
-      line-height: 1.1;
-    }
-
-    .vi__tile small {
-      color: var(--ar-ink-400);
-      font-size: 0.75rem;
-      margin-top: 2px;
-    }
-
-    .vi__loss .vi__value {
-      color: #b42318;
-    }
-
-    .vi__content-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-      gap: 20px;
-    }
-
-    .vi__card {
-      background: var(--ar-white);
-      border: 1px solid var(--ar-line-200);
-      border-radius: var(--ar-radius-card, 10px);
-      padding: 20px;
-      box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
-    }
-
-    .vi__card-title {
-      font: 600 1.05rem var(--ar-font-sans);
-      color: var(--ar-ink-900);
-      margin: 0 0 16px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--ar-line-200);
-    }
-
-    .metric-list {
+    .vi__bars {
+      list-style: none;
+      margin: 0;
+      padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
-
-    .metric-row {
-      display: flex;
-      justify-content: space-between;
+    .vi__bar {
+      display: grid;
+      grid-template-columns: 140px minmax(0, 1fr) 48px 40px;
+      gap: 10px;
       align-items: center;
-      gap: 12px;
-      font-size: 0.875rem;
-    }
-
-    .metric-row__label {
+      font: 400 12.5px var(--ar-font-sans);
       color: var(--ar-ink-700);
     }
-
-    .metric-row__val {
+    .vi__bar-track {
+      height: 8px;
+      border-radius: 999px;
+      background: var(--ar-bg-100);
+      overflow: hidden;
+    }
+    .vi__bar-fill {
+      display: block;
+      height: 100%;
+      border-radius: 999px;
+      min-width: 2px;
+    }
+    .vi__bar-value {
+      text-align: right;
       font-weight: 600;
       color: var(--ar-ink-900);
+      font-variant-numeric: tabular-nums;
+    }
+    .vi__bar-share {
+      text-align: right;
+      color: var(--ar-ink-400);
+      font-variant-numeric: tabular-nums;
+    }
+    .vi__bar-fill--blue {
+      background: var(--ar-blue-500);
+    }
+    .vi__bar-fill--teal {
+      background: var(--ar-teal-500);
+    }
+    .vi__bar-fill--good {
+      background: var(--ar-good-600);
+    }
+    .vi__bar-fill--amber {
+      background: var(--ar-amber-500);
+    }
+    .vi__bar-fill--bad {
+      background: var(--ar-bad-600);
+    }
+    .vi__bar-fill--ink {
+      background: var(--ar-ink-300);
     }
 
-    .text-good {
-      color: #027a48;
+    .vi__stack {
+      display: flex;
+      gap: 2px;
+      height: 14px;
+      border-radius: 999px;
+      overflow: hidden;
     }
-
-    .text-teal {
-      color: #0a776f;
+    .vi__stack-part {
+      flex-basis: 0;
+      min-width: 4px;
     }
-
-    .sentiment-pill {
-      display: inline-block;
-      padding: 1px 6px;
-      border-radius: 4px;
-      font-size: 0.8rem;
+    .vi__legend {
+      list-style: none;
+      margin: 14px 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-700);
     }
-
-    .sentiment-pill.positive {
-      background: #ecfdf3;
-      color: #027a48;
+    .vi__legend li {
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr) auto 40px;
+      gap: 10px;
+      align-items: center;
     }
-
-    .sentiment-pill.neutral {
-      background: #f2f4f7;
-      color: #344054;
-    }
-
-    .sentiment-pill.negative {
-      background: #fef3f2;
-      color: #b42318;
-    }
-
-    .vi__agent-table-card {
-      background: var(--ar-white);
-      border: 1px solid var(--ar-line-200);
-      border-radius: var(--ar-radius-card, 10px);
-      padding: 20px;
-      box-shadow: var(--ar-shadow-card, 0 1px 3px rgba(0, 0, 0, 0.05));
-    }
-
-    .table-card__head {
-      margin-bottom: 16px;
-    }
-
-    .table-card__title {
-      font: 600 1.05rem var(--ar-font-sans);
+    .vi__legend strong {
+      font-weight: 600;
       color: var(--ar-ink-900);
+      font-variant-numeric: tabular-nums;
+    }
+    .vi__legend small {
+      text-align: right;
+      color: var(--ar-ink-400);
+    }
+    .vi__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    .vi__actions {
+      list-style: none;
       margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 10px;
+    }
+    .vi__action {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      column-gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid var(--ar-line-100);
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-bg-50);
+    }
+    .vi__action-icon {
+      grid-row: span 2;
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--ar-blue-100);
+      color: var(--ar-blue-700);
+    }
+    .vi__action strong {
+      font: 600 18px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+    .vi__action span:last-child {
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-500);
     }
 
-    .ar-table-responsive {
-      overflow-x: auto;
-      border: 1px solid var(--ar-line-200);
-      border-radius: 6px;
-    }
-
-    .ar-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.875rem;
-
-      thead th {
-        position: sticky;
-        top: 0;
-        background: var(--ar-bg-50);
-        color: var(--ar-ink-700);
-        font-weight: 600;
-        text-align: start;
-        padding: 10px 14px;
-        border-bottom: 1px solid var(--ar-line-200);
-        white-space: nowrap;
-        z-index: 1;
-      }
-
-      tbody td,
-      tbody th {
-        padding: 10px 14px;
-        border-bottom: 1px solid var(--ar-line-200);
-        color: var(--ar-ink-900);
-        text-align: start;
-      }
-
-      tbody tr:last-child td,
-      tbody tr:last-child th {
-        border-bottom: none;
-      }
-
-      tbody tr:hover {
-        background: var(--ar-bg-50);
-      }
-    }
-
-    .goal-pill {
-      font-weight: 600;
-      color: #027a48;
-    }
-
-    .text-right {
-      text-align: right !important;
-    }
-
-    .font-mono {
-      font-family: var(--ar-font-mono, monospace);
-    }
-
-    .font-medium {
+    .vi__agent {
       font-weight: 500;
     }
-
-    .text-muted {
+    .vi__goal {
+      display: grid;
+      grid-template-columns: minmax(60px, 1fr) 40px auto;
+      gap: 8px;
+      align-items: center;
+      font-variant-numeric: tabular-nums;
+    }
+    .vi__goal small,
+    .vi__muted {
       color: var(--ar-ink-400);
-      font-size: 0.8rem;
+      font-size: 12px;
+    }
+    .vi__num {
+      font-variant-numeric: tabular-nums;
     }
 
-    .vi__footnote {
+    .vi__empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 32px 16px;
+      text-align: center;
+      color: var(--ar-ink-400);
+    }
+    .vi__empty h2 {
+      margin: 6px 0 0;
+      font: 600 15px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .vi__empty p {
       margin: 0;
-      color: var(--ar-ink-400);
-      font-size: 0.82rem;
-      line-height: 1.4;
+      max-width: 420px;
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-500);
     }
 
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
-      white-space: nowrap;
+    @media (max-width: 960px) {
+      .vi__cols {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    @media (max-width: 640px) {
+      .vi {
+        padding: 14px 16px 24px;
+      }
+      .vi__bar {
+        grid-template-columns: 100px minmax(0, 1fr) 40px 36px;
+      }
+      .vi__assume-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
   `,
 })
-export class ArVoiceImpact implements OnInit {
+export class ArVoiceImpact {
   private readonly api = inject(VoiceImpactService);
   private readonly channelsApi = inject(ChannelService);
+  protected readonly period = inject(ReportPeriodStore);
+
+  protected readonly skeletons = [1, 2, 3, 4, 5, 6];
   protected readonly channels = signal<ChannelDto[]>([]);
+  protected readonly channelId = signal<string | null>(null);
+  protected readonly minutesPerCall = signal(6);
+  protected readonly costPerHour = signal(300);
   protected readonly report = signal<VoiceImpactReport | null>(null);
   protected readonly busy = signal(false);
   protected readonly error = signal('');
-  protected readonly input: VoiceImpactInput = {
-    fromDate: day(new Date(Date.now() - 29 * 86_400_000)),
-    toDate: day(new Date()),
-    channelId: null,
-    handlingMinutesPerCall: 6,
-    staffCostPerHourRupees: 300,
-  };
 
-  async ngOnInit(): Promise<void> {
+  /** The report's input: the shared period, the line and the two assumptions. */
+  private readonly input = computed<VoiceImpactInput>(() => ({
+    fromDate: this.period.dates().from,
+    toDate: this.period.dates().to,
+    channelId: this.channelId(),
+    handlingMinutesPerCall: this.minutesPerCall(),
+    staffCostPerHourRupees: this.costPerHour(),
+  }));
+
+  private seq = 0;
+
+  constructor() {
+    void this.loadChannels();
+    // Reload whenever the period, the line or an assumption changes.
+    effect(() => {
+      const input = this.input();
+      untracked(() => void this.load(input));
+    });
+  }
+
+  protected readonly channelBars = computed<Bar[]>(() => {
+    const r = this.report();
+    if (!r) return [];
+    const bars: Omit<Bar, 'share'>[] = [
+      { label: 'WhatsApp', value: r.whatsAppCalls, tone: 'good' },
+      { label: 'Phone', value: r.phoneCalls, tone: 'blue' },
+      { label: 'Website', value: r.websiteCalls, tone: 'teal' },
+      { label: 'SIP trunk', value: r.sipCalls, tone: 'ink' },
+    ];
+    return bars.map((b) => ({ ...b, share: shareOf(b.value, r.calls) }));
+  });
+
+  protected readonly outcomeBars = computed<Bar[]>(() => {
+    const r = this.report();
+    if (!r) return [];
+    const bars: Omit<Bar, 'share'>[] = [
+      { label: 'Resolved by AI', value: r.handledByAi, tone: 'good' },
+      { label: 'Handed to a person', value: r.handedToPeople, tone: 'amber' },
+      { label: 'Asked not to be called', value: r.optOuts, tone: 'bad' },
+    ];
+    return bars.map((b) => ({ ...b, share: shareOf(b.value, r.calls) }));
+  });
+
+  protected readonly sentimentTotal = computed(() => {
+    const r = this.report();
+    return r ? r.positive + r.neutral + r.negative : 0;
+  });
+
+  protected readonly sentiment = computed<Bar[]>(() => {
+    const r = this.report();
+    const total = this.sentimentTotal();
+    if (!r) return [];
+    const bars: Omit<Bar, 'share'>[] = [
+      { label: 'Positive', value: r.positive, tone: 'good' },
+      { label: 'Neutral', value: r.neutral, tone: 'ink' },
+      { label: 'Negative', value: r.negative, tone: 'bad' },
+    ];
+    return bars.map((b) => ({ ...b, share: shareOf(b.value, total) }));
+  });
+
+  protected readonly sentimentLabel = computed(() =>
+    this.sentiment()
+      .map((s) => `${s.label} ${s.value} (${s.share}%)`)
+      .join(', '),
+  );
+
+  protected readonly actions = computed<{ label: string; value: number; icon: IconName }[]>(() => {
+    const r = this.report();
+    if (!r) return [];
+    return [
+      { label: 'Meetings booked', value: r.meetingsBooked, icon: ACTION_ICONS.meetings },
+      { label: 'Leads created', value: r.leads, icon: ACTION_ICONS.leads },
+      { label: 'CRM records updated', value: r.crmUpdates, icon: ACTION_ICONS.crm },
+      { label: 'Tickets raised', value: r.ticketsRaised, icon: ACTION_ICONS.tickets },
+      { label: 'WhatsApp follow-ups', value: r.followUpsSent, icon: ACTION_ICONS.followUps },
+      { label: 'Payment links sent', value: r.paymentLinksSent, icon: ACTION_ICONS.payments },
+      { label: 'Custom functions run', value: r.functionsRun, icon: ACTION_ICONS.functions },
+    ];
+  });
+
+  private async loadChannels(): Promise<void> {
     try {
       const page = await firstValueFrom(this.channelsApi.getList({ maxResultCount: 100 } as never));
       this.channels.set((page.items ?? []).filter((c) => c.provider === 0));
     } catch {
       this.channels.set([]);
     }
-    await this.load();
   }
 
-  protected async load(): Promise<void> {
-    if (this.busy()) return;
-    if (!this.input.fromDate || !this.input.toDate || this.input.toDate < this.input.fromDate) {
-      this.error.set('Choose a start date and an end date on or after it.');
-      return;
-    }
+  protected setMinutes(value: number): void {
+    if (value >= 1 && value <= 60) this.minutesPerCall.set(value);
+  }
+
+  protected setCost(value: number): void {
+    if (value >= 0 && value <= 100_000) this.costPerHour.set(value);
+  }
+
+  protected async load(input: VoiceImpactInput = this.input()): Promise<void> {
+    const seq = ++this.seq;
     this.busy.set(true);
     this.error.set('');
     try {
-      this.report.set(await firstValueFrom(this.api.get(this.input)));
+      const report = await firstValueFrom(this.api.get(input));
+      if (seq === this.seq) this.report.set(report);
     } catch {
-      this.error.set('The report could not be made. Choose a period of up to a year.');
+      if (seq === this.seq) {
+        this.error.set('The report could not be made. Choose a period of up to a year.');
+      }
     } finally {
-      this.busy.set(false);
+      if (seq === this.seq) this.busy.set(false);
     }
   }
 
   protected async download(format: 'pdf' | 'csv'): Promise<void> {
     if (this.busy()) return;
+    const input = this.input();
     this.busy.set(true);
     try {
-      const blob = await firstValueFrom(this.api.export(this.input, format));
+      const blob = await firstValueFrom(this.api.export(input, format));
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `ai-impact-${this.input.fromDate}-to-${this.input.toDate}.${format}`;
+      link.download = `ai-impact-${input.fromDate}-to-${input.toDate}.${format}`;
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch {
@@ -680,8 +911,18 @@ export class ArVoiceImpact implements OnInit {
     }
   }
 
+  protected share(part: number, whole: number): number {
+    return shareOf(part, whole);
+  }
+
   protected percent(part: number, whole: number): string {
-    return whole === 0 ? '–' : `${Math.round((100 * part) / whole)}%`;
+    return whole === 0 ? '–' : `${shareOf(part, whole)}%`;
+  }
+
+  /** 95 → "1m 35s". */
+  protected duration(seconds: number): string {
+    const s = Math.round(seconds);
+    return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
   }
 
   protected rupees(paise: number): string {

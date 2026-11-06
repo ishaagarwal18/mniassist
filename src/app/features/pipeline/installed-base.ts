@@ -21,15 +21,16 @@ import { amcCommercials, renewalChip } from './renewal-logic';
 import type { AmcImportResultDto } from '../../proxy/pipeline/models';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ArGrid } from '../../ui/grid';
 
 /**
  * Installed base (M10). Every machine with its AMC / calibration / warranty dates —
- * the register the reminder engine reads from. The soonest due date leads each row
- * because that is the thing that turns into a utility message.
+ * the register the reminder engine reads from.
  */
 @Component({
   selector: 'ar-installed-base',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArContactPicker, RouterLink, ArDateInput],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, RouterLink, GridModule, ArGrid],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './installed-base.html',
   styleUrl: './installed-base.scss',

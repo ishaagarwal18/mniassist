@@ -1,7 +1,27 @@
-import { Routes } from '@angular/router';
+import { Route, Routes } from '@angular/router';
 import { appAuthGuard } from './core/auth/auth.guard';
+import { AR_DIALOG_INLINE } from './ui/dialog-inline';
 import { navAccessGuard } from './core/auth/nav-access.guard';
 import { setupIncompleteGuard } from './features/onboarding/setup-incomplete.guard';
+
+/**
+ * A screen's form, written as a dialog, shown as its own page: the same component as the list, told which form to show by
+ * `data.mode` (e.g. 'new', 'edit', 'import'), with every `ar-dialog` under it rendered in the page (AR_DIALOG_INLINE).
+ */
+function formPage(
+  path: string,
+  title: string,
+  mode: string,
+  loadComponent: Route['loadComponent'],
+): Route {
+  return {
+    path,
+    title: `${title} · MNI Assist`,
+    data: { mode },
+    providers: [{ provide: AR_DIALOG_INLINE, useValue: true }],
+    loadComponent,
+  };
+}
 
 /** Every feature is lazily loaded — the shell and the design system are the
  *  only things in the initial bundle. */
@@ -266,6 +286,9 @@ export const routes: Routes = [
         title: 'Analytics · MNI Assist',
         loadComponent: () => import('./features/analytics/analytics').then((m) => m.ArAnalytics),
       },
+      formPage('analytics/drilldown', 'Conversion drill-down', 'drilldown', () =>
+        import('./features/analytics/analytics').then((m) => m.ArAnalytics),
+      ),
       {
         path: 'analytics/campaigns',
         title: 'Campaign results · MNI Assist',
@@ -291,6 +314,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/analytics/dashboards').then((m) => m.ArCustomDashboards),
       },
+      formPage('analytics/dashboards/new', 'New dashboard', 'new', () =>
+        import('./features/analytics/dashboards').then((m) => m.ArCustomDashboards),
+      ),
+      formPage('analytics/dashboards/:id/edit', 'Edit dashboard', 'edit', () =>
+        import('./features/analytics/dashboards').then((m) => m.ArCustomDashboards),
+      ),
       {
         path: 'enquiries',
         title: 'Enquiries · MNI Assist',
@@ -408,6 +437,12 @@ export const routes: Routes = [
         path: 'spares',
         title: 'Spares due · MNI Assist',
         loadComponent: () => import('./features/pipeline/spares').then((m) => m.ArSpares),
+      },
+      {
+        path: 'spares/rules',
+        title: 'Spares automation rules · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/spares-rules-page').then((m) => m.ArSparesRulesPage),
       },
       {
         path: 'collections',
@@ -577,6 +612,26 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'manufacturing/bom/new',
+        title: 'Create Bill of Materials · MNI Assist',
+        loadComponent: () =>
+          import('./features/manufacturing/bom/new-bom-page').then((m) => m.ArNewBomPage),
+      },
+      {
+        path: 'manufacturing/bom/:id',
+        title: 'BOM Details · MNI Assist',
+        loadComponent: () =>
+          import('./features/manufacturing/bom/bom-detail-page').then((m) => m.ArBomDetailPage),
+      },
+      {
+        path: 'manufacturing/work-orders/new',
+        title: 'New work order · MNI Assist',
+        loadComponent: () =>
+          import('./features/manufacturing/work-orders/new-work-order-page').then(
+            (m) => m.ArNewWorkOrderPage,
+          ),
+      },
+      {
         path: 'manufacturing/work-orders',
         title: 'Work orders · MNI Assist',
         loadComponent: () =>
@@ -591,11 +646,59 @@ export const routes: Routes = [
           import('./features/field-service/amc/amc-contracts').then((m) => m.AmcContractsComponent),
       },
       {
+        path: 'field-service/amc/new',
+        title: 'New AMC Contract · MNI Assist',
+        loadComponent: () =>
+          import('./features/field-service/amc/new-amc-contract-page').then(
+            (m) => m.ArNewAmcContractPage,
+          ),
+      },
+      {
+        path: 'field-service/amc/renew/:id',
+        title: 'Renew AMC Contract · MNI Assist',
+        loadComponent: () =>
+          import('./features/field-service/amc/renew-amc-contract-page').then(
+            (m) => m.ArRenewAmcContractPage,
+          ),
+      },
+      {
+        path: 'field-service/amc/record-visit/:contractId/:visitId',
+        title: 'Record Preventive Visit · MNI Assist',
+        loadComponent: () =>
+          import('./features/field-service/amc/record-amc-visit-page').then(
+            (m) => m.ArRecordAmcVisitPage,
+          ),
+      },
+      {
         path: 'field-service/tickets',
         title: 'Field tickets · MNI Assist',
         loadComponent: () =>
           import('./features/field-service/tickets/field-service-tickets').then(
             (m) => m.FieldServiceTicketsComponent,
+          ),
+      },
+      {
+        path: 'field-service/tickets/new',
+        title: 'Raise Service Ticket · MNI Assist',
+        loadComponent: () =>
+          import('./features/field-service/tickets/new-ticket-page').then(
+            (m) => m.ArNewFieldTicketPage,
+          ),
+      },
+      {
+        path: 'field-service/tickets/:id/assign',
+        title: 'Assign Field Engineer · MNI Assist',
+        loadComponent: () =>
+          import('./features/field-service/tickets/assign-engineer-page').then(
+            (m) => m.ArAssignEngineerPage,
+          ),
+      },
+      {
+        path: 'field-service/tickets/:id/spares',
+        title: 'Add Spare Parts · MNI Assist',
+        loadComponent: () =>
+          import('./features/field-service/tickets/add-spare-parts-page').then(
+            (m) => m.ArAddSparePartsPage,
           ),
       },
       {
@@ -607,6 +710,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'field-service/remote-maintenance/new',
+        title: 'New Diagnostic Session · MNI Assist',
+        loadComponent: () =>
+          import('./features/field-service/remote-maintenance/new-session-page').then(
+            (m) => m.ArNewDiagnosticSessionPage,
+          ),
+      },
+      {
         path: 'finance/chart-of-accounts',
         title: 'Chart of accounts · MNI Assist',
         loadComponent: () =>
@@ -615,11 +726,35 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'finance/chart-of-accounts/new',
+        title: 'Add Account · MNI Assist',
+        loadComponent: () =>
+          import('./features/finance/chart-of-accounts/new-account-page').then(
+            (m) => m.ArNewAccountPage,
+          ),
+      },
+      {
         path: 'finance/journal-entries',
         title: 'Journal vouchers · MNI Assist',
         loadComponent: () =>
           import('./features/finance/journal-entries/journal-entries').then(
             (m) => m.JournalEntriesComponent,
+          ),
+      },
+      {
+        path: 'finance/journal-entries/new',
+        title: 'New Journal Voucher · MNI Assist',
+        loadComponent: () =>
+          import('./features/finance/journal-entries/new-journal-voucher-page').then(
+            (m) => m.ArNewJournalVoucherPage,
+          ),
+      },
+      {
+        path: 'finance/journal-entries/:id/edit',
+        title: 'Edit Journal Voucher · MNI Assist',
+        loadComponent: () =>
+          import('./features/finance/journal-entries/new-journal-voucher-page').then(
+            (m) => m.ArNewJournalVoucherPage,
           ),
       },
       {
@@ -636,6 +771,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/finance/gst-compliance/gst-compliance').then(
             (m) => m.GstComplianceComponent,
+          ),
+      },
+      {
+        path: 'finance/gst-compliance/eway/:id',
+        title: 'Generate E-Way Bill · MNI Assist',
+        loadComponent: () =>
+          import('./features/finance/gst-compliance/generate-eway-page').then(
+            (m) => m.ArGenerateEWayPage,
           ),
       },
       {
@@ -666,6 +809,21 @@ export const routes: Routes = [
         title: 'Dealer network · MNI Assist',
         loadComponent: () => import('./features/network/network').then((m) => m.ArNetwork),
       },
+      formPage('network/invite', 'Invite a dealer', 'invite', () =>
+        import('./features/network/network').then((m) => m.ArNetwork),
+      ),
+      formPage('network/dealers/:id/edit', 'Dealer territory', 'territory', () =>
+        import('./features/network/network').then((m) => m.ArNetwork),
+      ),
+      formPage('network/settings', 'Network settings', 'settings', () =>
+        import('./features/network/network').then((m) => m.ArNetwork),
+      ),
+      formPage('network/leads/:id', 'Lead details', 'lead', () =>
+        import('./features/network/network').then((m) => m.ArNetwork),
+      ),
+      formPage('network/offers/:id/conversation', 'Customer conversation', 'conversation', () =>
+        import('./features/network/network').then((m) => m.ArNetwork),
+      ),
       {
         path: 'network/incoming',
         title: 'Leads for us · MNI Assist',
@@ -700,6 +858,9 @@ export const routes: Routes = [
         title: 'Compliance · MNI Assist',
         loadComponent: () => import('./features/compliance/compliance').then((m) => m.ArCompliance),
       },
+      formPage('compliance/requests/new', 'Log a DPDP request · MNI Assist', 'new', () =>
+        import('./features/compliance/compliance').then((m) => m.ArCompliance),
+      ),
       {
         path: 'automations',
         title: 'Automations · MNI Assist',
@@ -750,9 +911,35 @@ export const routes: Routes = [
           import('./features/calls/whatsapp-calls').then((m) => m.ArWhatsAppCalls),
       },
       {
+        path: 'calls/whatsapp/conversations',
+        title: 'WhatsApp Voice Conversations · MNI Assist',
+        loadComponent: () =>
+          import('./features/calls/voice-conversations-page').then(
+            (m) => m.ArVoiceConversationsPage,
+          ),
+      },
+      {
+        path: 'calls/whatsapp/ivr',
+        title: 'WhatsApp Call Menu (IVR) · MNI Assist',
+        loadComponent: () =>
+          import('./features/calls/whatsapp-ivr-page').then((m) => m.ArWhatsAppIvrPage),
+      },
+      {
         path: 'calls/ai-agents',
         title: 'AI voice agents · MNI Assist',
         loadComponent: () => import('./features/calls/voice-agents').then((m) => m.ArVoiceAgents),
+      },
+      {
+        path: 'calls/ai-agents/new',
+        title: 'New AI Voice Agent · MNI Assist',
+        loadComponent: () =>
+          import('./features/calls/new-voice-agent-page').then((m) => m.ArNewVoiceAgentPage),
+      },
+      {
+        path: 'calls/ai-agents/:id',
+        title: 'Edit AI Voice Agent · MNI Assist',
+        loadComponent: () =>
+          import('./features/calls/voice-agent-editor-page').then((m) => m.ArVoiceAgentEditorPage),
       },
       {
         path: 'whats-new',
@@ -777,9 +964,35 @@ export const routes: Routes = [
           import('./features/calls/voice-call-batches').then((m) => m.ArVoiceCallBatches),
       },
       {
+        path: 'calls/ai-batches/new',
+        title: 'New AI Call Batch · MNI Assist',
+        loadComponent: () =>
+          import('./features/calls/new-voice-batch-page').then((m) => m.ArNewVoiceBatchPage),
+      },
+      {
         path: 'helpdesk',
         title: 'Helpdesk · MNI Assist',
         loadComponent: () => import('./features/helpdesk/helpdesk').then((m) => m.ArHelpdesk),
+      },
+      {
+        path: 'helpdesk/new',
+        title: 'New Ticket · MNI Assist',
+        loadComponent: () =>
+          import('./features/helpdesk/new-ticket-page').then((m) => m.ArNewTicketPage),
+      },
+      {
+        path: 'helpdesk/settings',
+        title: 'Helpdesk Settings · MNI Assist',
+        loadComponent: () =>
+          import('./features/helpdesk/helpdesk-settings-page').then(
+            (m) => m.ArHelpdeskSettingsPage,
+          ),
+      },
+      {
+        path: 'helpdesk/:id',
+        title: 'Ticket Details · MNI Assist',
+        loadComponent: () =>
+          import('./features/helpdesk/ticket-detail-page').then((m) => m.ArTicketDetailPage),
       },
       {
         path: 'meetings',
@@ -791,41 +1004,110 @@ export const routes: Routes = [
         title: 'Documents · MNI Assist',
         loadComponent: () => import('./features/documents/documents').then((m) => m.ArDocuments),
       },
+      formPage('documents/new', 'Upload a document', 'new', () =>
+        import('./features/documents/documents').then((m) => m.ArDocuments),
+      ),
       {
         path: 'documents/products',
         title: 'Products · MNI Assist',
         loadComponent: () => import('./features/documents/products').then((m) => m.ArProducts),
       },
+      formPage('documents/products/new', 'New product', 'new', () =>
+        import('./features/documents/products').then((m) => m.ArProducts),
+      ),
+      formPage('documents/products/units', 'Units of measure', 'units', () =>
+        import('./features/documents/products').then((m) => m.ArProducts),
+      ),
+      formPage('documents/products/import', 'Import products', 'import', () =>
+        import('./features/documents/products').then((m) => m.ArProducts),
+      ),
+      formPage('documents/products/:id/edit', 'Edit product', 'edit', () =>
+        import('./features/documents/products').then((m) => m.ArProducts),
+      ),
       {
         path: 'documents/price-lists',
         title: 'Price lists · MNI Assist',
         loadComponent: () => import('./features/documents/price-lists').then((m) => m.ArPriceLists),
       },
+      formPage('documents/price-lists/new', 'New price list', 'new', () =>
+        import('./features/documents/price-lists').then((m) => m.ArPriceLists),
+      ),
+      formPage('documents/price-lists/:id/edit', 'Edit price list', 'edit', () =>
+        import('./features/documents/price-lists').then((m) => m.ArPriceLists),
+      ),
+      formPage('documents/:id/edit', 'Edit document', 'edit', () =>
+        import('./features/documents/documents').then((m) => m.ArDocuments),
+      ),
       {
         path: 'billing',
         title: 'Billing · MNI Assist',
         loadComponent: () => import('./features/billing/billing').then((m) => m.ArBilling),
       },
+      formPage('billing/top-up', 'Top up wallet · MNI Assist', 'topup', () =>
+        import('./features/billing/billing').then((m) => m.ArBilling),
+      ),
       {
         path: 'channels',
         title: 'Channels · MNI Assist',
         loadComponent: () => import('./features/channels/channels').then((m) => m.ArChannels),
       },
+      formPage('channels/connect', 'Connect channel', 'connect', () =>
+        import('./features/channels/channels').then((m) => m.ArChannels),
+      ),
+      formPage('channels/:id/voice-agent', 'Voice agent', 'voice-agent', () =>
+        import('./features/channels/channels').then((m) => m.ArChannels),
+      ),
       {
         path: 'channels/numbers',
         title: 'Display name & PIN · MNI Assist',
         loadComponent: () => import('./features/channels/numbers').then((m) => m.ArNumbers),
       },
+      formPage('channels/numbers/connect', 'Connect number', 'connect', () =>
+        import('./features/channels/numbers').then((m) => m.ArNumbers),
+      ),
+      formPage('channels/numbers/:id/release', 'Release number', 'release', () =>
+        import('./features/channels/numbers').then((m) => m.ArNumbers),
+      ),
       {
         path: 'channels/telecom',
         title: 'Telecom & Reseller Numbers · MNI Assist',
         loadComponent: () => import('./features/channels/telecom').then((m) => m.ArTelecom),
       },
+      formPage('channels/telecom/new', 'Add telecom number', 'new', () =>
+        import('./features/channels/telecom').then((m) => m.ArTelecom),
+      ),
+      formPage('channels/telecom/settings', 'Telecom settings', 'settings', () =>
+        import('./features/channels/telecom').then((m) => m.ArTelecom),
+      ),
+      formPage('channels/telecom/allocate/:id', 'Allocate telecom number', 'allocate', () =>
+        import('./features/channels/telecom').then((m) => m.ArTelecom),
+      ),
+      formPage('channels/telecom/release/:id', 'Release telecom number', 'release', () =>
+        import('./features/channels/telecom').then((m) => m.ArTelecom),
+      ),
+      formPage('channels/telecom/audit', 'Compliance audit report', 'audit', () =>
+        import('./features/channels/telecom').then((m) => m.ArTelecom),
+      ),
       {
         path: 'resellers',
         title: 'Reseller programme · MNI Assist',
         loadComponent: () => import('./features/resellers/resellers').then((m) => m.ArResellers),
       },
+      formPage('resellers/register', 'Register partner', 'register', () =>
+        import('./features/resellers/resellers').then((m) => m.ArResellers),
+      ),
+      formPage('resellers/:id/edit', 'Edit partner', 'edit', () =>
+        import('./features/resellers/resellers').then((m) => m.ArResellers),
+      ),
+      formPage('resellers/:id/tier', 'Partner tier', 'tier', () =>
+        import('./features/resellers/resellers').then((m) => m.ArResellers),
+      ),
+      formPage('resellers/:id/branding', 'Partner branding', 'branding', () =>
+        import('./features/resellers/resellers').then((m) => m.ArResellers),
+      ),
+      formPage('resellers/:id/clients/new', 'Add client workspace', 'add-client', () =>
+        import('./features/resellers/resellers').then((m) => m.ArResellers),
+      ),
       {
         path: 'channels/lead-forms',
         title: 'Lead forms · MNI Assist',
@@ -854,10 +1136,31 @@ export const routes: Routes = [
         title: 'Catalogue · MNI Assist',
         loadComponent: () => import('./features/channels/catalogue').then((m) => m.ArCatalogue),
       },
+      formPage('channels/catalogue/new', 'Add catalogue product', 'new', () =>
+        import('./features/channels/catalogue').then((m) => m.ArCatalogue),
+      ),
+      formPage('channels/catalogue/from-products', 'Add from products', 'from-products', () =>
+        import('./features/channels/catalogue').then((m) => m.ArCatalogue),
+      ),
+      formPage('channels/catalogue/:id/edit', 'Edit catalogue product', 'edit', () =>
+        import('./features/channels/catalogue').then((m) => m.ArCatalogue),
+      ),
       {
         path: 'channels/voice-ivr',
         title: 'Voice / IVR · MNI Assist',
         loadComponent: () => import('./features/channels/voice-ivr').then((m) => m.ArVoiceIvr),
+      },
+      {
+        path: 'channels/voice-ivr/prompts/new',
+        title: 'New IVR Prompt · MNI Assist',
+        loadComponent: () =>
+          import('./features/channels/ivr-prompt-page').then((m) => m.ArIvrPromptPage),
+      },
+      {
+        path: 'channels/voice-ivr/prompts/:id',
+        title: 'Edit IVR Prompt · MNI Assist',
+        loadComponent: () =>
+          import('./features/channels/ivr-prompt-page').then((m) => m.ArIvrPromptPage),
       },
       {
         path: 'notifications',
@@ -870,6 +1173,12 @@ export const routes: Routes = [
         title: 'Invoices · MNI Assist',
         loadComponent: () => import('./features/billing/invoices').then((m) => m.ArInvoices),
       },
+      formPage('billing/invoices/generate', 'Generate invoice · MNI Assist', 'generate', () =>
+        import('./features/billing/invoices').then((m) => m.ArInvoices),
+      ),
+      formPage('billing/invoices/reconcile', "Check Meta's invoice · MNI Assist", 'reconcile', () =>
+        import('./features/billing/invoices').then((m) => m.ArInvoices),
+      ),
       {
         path: 'settings',
         title: 'Settings · MNI Assist',
@@ -890,6 +1199,12 @@ export const routes: Routes = [
         title: 'Teams · MNI Assist',
         loadComponent: () => import('./features/settings/teams').then((m) => m.ArTeams),
       },
+      formPage('settings/teams/new', 'New team', 'new', () =>
+        import('./features/settings/teams').then((m) => m.ArTeams),
+      ),
+      formPage('settings/teams/:id/edit', 'Edit team', 'edit', () =>
+        import('./features/settings/teams').then((m) => m.ArTeams),
+      ),
       {
         path: 'settings/business-profile',
         title: 'Business profile · MNI Assist',
@@ -906,6 +1221,18 @@ export const routes: Routes = [
         title: 'Workspaces · MNI Assist',
         loadComponent: () => import('./features/admin/tenants').then((m) => m.ArAdminTenants),
       },
+      formPage('admin/tenants/new', 'New workspace · MNI Assist', 'new', () =>
+        import('./features/admin/tenants').then((m) => m.ArAdminTenants),
+      ),
+      formPage('admin/tenants/:id/rename', 'Rename workspace · MNI Assist', 'rename', () =>
+        import('./features/admin/tenants').then((m) => m.ArAdminTenants),
+      ),
+      formPage('admin/tenants/:id/features', 'Workspace features · MNI Assist', 'features', () =>
+        import('./features/admin/tenants').then((m) => m.ArAdminTenants),
+      ),
+      formPage('admin/tenants/:id/manage', 'Manage workspace · MNI Assist', 'manage', () =>
+        import('./features/admin/tenants').then((m) => m.ArAdminTenants),
+      ),
       {
         path: 'admin/users',
         title: 'Users · MNI Assist',
@@ -928,6 +1255,9 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/settings/email-templates').then((m) => m.ArEmailTemplates),
       },
+      formPage('settings/email-templates/new', 'New email template · MNI Assist', 'new', () =>
+        import('./features/settings/email-templates').then((m) => m.ArEmailTemplates),
+      ),
       {
         path: 'admin/audit-logs',
         title: 'Audit log · MNI Assist',
@@ -939,18 +1269,39 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/settings/reports').then((m) => m.ArScheduledReports),
       },
+      formPage('settings/reports/new', 'New scheduled report', 'new', () =>
+        import('./features/settings/reports').then((m) => m.ArScheduledReports),
+      ),
+      formPage('settings/reports/:id/edit', 'Edit scheduled report', 'edit', () =>
+        import('./features/settings/reports').then((m) => m.ArScheduledReports),
+      ),
+      formPage('settings/reports/:id/preview', 'Preview scheduled report', 'preview', () =>
+        import('./features/settings/reports').then((m) => m.ArScheduledReports),
+      ),
       {
         path: 'settings/integrations',
         title: 'Integrations · MNI Assist',
         loadComponent: () =>
           import('./features/settings/integrations').then((m) => m.ArIntegrations),
       },
+      formPage('settings/integrations/endpoints/new', 'Add webhook endpoint · MNI Assist', 'endpoint-new', () =>
+        import('./features/settings/integrations').then((m) => m.ArIntegrations),
+      ),
+      formPage('settings/integrations/crm/:id/mapping', 'Field mapping · MNI Assist', 'mapping', () =>
+        import('./features/settings/integrations').then((m) => m.ArIntegrations),
+      ),
       {
         path: 'settings/ai-assistant',
         title: 'AI assistant · MNI Assist',
         loadComponent: () =>
           import('./features/settings/ai-assistant').then((m) => m.ArAiAssistant),
       },
+      formPage('settings/ai-assistant/articles/new', 'Add knowledge article · MNI Assist', 'new', () =>
+        import('./features/settings/ai-assistant').then((m) => m.ArAiAssistant),
+      ),
+      formPage('settings/ai-assistant/articles/:id/edit', 'Edit knowledge article · MNI Assist', 'edit', () =>
+        import('./features/settings/ai-assistant').then((m) => m.ArAiAssistant),
+      ),
       {
         path: 'settings/tasks-meetings',
         title: 'Tasks & meetings · MNI Assist',
@@ -967,9 +1318,8 @@ export const routes: Routes = [
       },
       {
         path: 'settings/payments',
-        title: 'Payments · MNI Assist',
-        loadComponent: () =>
-          import('./features/payments/payments-settings').then((m) => m.ArPaymentsSettings),
+        redirectTo: 'platform/payment-gateways',
+        pathMatch: 'full',
       },
       {
         path: 'settings/email-sending',
@@ -983,6 +1333,9 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/settings/support-access').then((m) => m.ArSupportAccess),
       },
+      formPage('settings/support-access/grant', 'Grant support access', 'grant', () =>
+        import('./features/settings/support-access').then((m) => m.ArSupportAccess),
+      ),
       {
         path: 'settings/agency',
         title: 'Agency mode · MNI Assist',
@@ -993,12 +1346,21 @@ export const routes: Routes = [
         title: 'Platform · MNI Assist',
         loadComponent: () => import('./features/platform/console').then((m) => m.ArPlatformConsole),
       },
+      formPage('platform/rates/new', 'Schedule rate card · MNI Assist', 'rates-new', () =>
+        import('./features/platform/console').then((m) => m.ArPlatformConsole),
+      ),
       {
         path: 'platform/feature-flags',
         title: 'Feature flags · MNI Assist',
         loadComponent: () =>
           import('./features/platform/feature-flags').then((m) => m.ArFeatureFlags),
       },
+      formPage('platform/feature-flags/new', 'New feature flag rule', 'new', () =>
+        import('./features/platform/feature-flags').then((m) => m.ArFeatureFlags),
+      ),
+      formPage('platform/feature-flags/:id/edit', 'Edit feature flag rule', 'edit', () =>
+        import('./features/platform/feature-flags').then((m) => m.ArFeatureFlags),
+      ),
       {
         path: 'platform/payment-gateways',
         title: 'Payment gateways · MNI Assist',
@@ -1023,6 +1385,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/platform/status-incidents').then((m) => m.ArStatusIncidents),
       },
+      formPage('platform/status/new', 'Open incident · MNI Assist', 'new', () =>
+        import('./features/platform/status-incidents').then((m) => m.ArStatusIncidents),
+      ),
+      formPage('platform/status/:id/edit', 'Update incident · MNI Assist', 'edit', () =>
+        import('./features/platform/status-incidents').then((m) => m.ArStatusIncidents),
+      ),
       { path: '**', redirectTo: 'home' },
     ],
   },

@@ -7,6 +7,8 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
 
@@ -33,7 +35,7 @@ import type {
   ResellerWhiteLabelProfileDto,
 } from '../../proxy/resellers/reseller.models';
 import { ResellerService } from '../../proxy/resellers/reseller.service';
-import { ArBanner, ArButton, ArCard, ArChip, ArStatTile, ArTabs } from '../../ui';
+import { ArBanner, ArButton, ArCard, ArChip, ArDialog, ArStatTile, ArTabs } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import {
@@ -74,26 +76,36 @@ const PAGE = { maxResultCount: 200 };
     ArButton,
     ArBanner,
     ArChip,
+    ArDialog,
     ArStatTile,
     ArTabs,
     ArGrid,
     GridModule,
+    NgTemplateOutlet,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar
-      title="Reseller programme"
-      [subtitle]="subtitle()"
-      help="Agencies and distributors who sell AutoReach under their own brand: their branding and domain, the client workspaces they manage, the commission they earn and the payouts they request."
-    >
-      @if (hostView()) {
-        <button ar-button type="button" variant="primary" icon="plus" (click)="register()">
-          Add partner
-        </button>
-      }
-    </ar-topbar>
+    @if (isPage) {
+      <ar-topbar [title]="pageTitle()">
+        <button ar-button type="button" variant="ghost" (click)="close()">Back to Reseller programme</button>
+      </ar-topbar>
+      <div class="ar-form-page ar-scroll">
+        <ng-container *ngTemplateOutlet="formsTpl" />
+      </div>
+    } @else {
+      <ar-topbar
+        title="Reseller programme"
+        [subtitle]="subtitle()"
+        help="Agencies and distributors who sell AutoReach under their own brand: their branding and domain, the client workspaces they manage, the commission they earn and the payouts they request."
+      >
+        @if (hostView()) {
+          <button ar-button type="button" variant="primary" icon="plus" (click)="goRegister()">
+            Add partner
+          </button>
+        }
+      </ar-topbar>
 
-    <div class="page ar-scroll">
+      <div class="page ar-scroll">
       <div class="page__col">
         @if (mock) {
           <ar-banner tone="teal"
@@ -194,7 +206,7 @@ const PAGE = { maxResultCount: 200 };
                     Reactivate
                   </button>
                 }
-                <button ar-button type="button" variant="ghost" (click)="changeTier(p)">
+                <button ar-button type="button" variant="ghost" (click)="goChangeTier(p)">
                   Change tier
                 </button>
               }
@@ -260,7 +272,7 @@ const PAGE = { maxResultCount: 200 };
                   </div>
                 </dl>
                 <div class="row-actions">
-                  <button ar-button type="button" variant="ghost" (click)="editDetails(p)">
+                  <button ar-button type="button" variant="ghost" (click)="goEditDetails(p)">
                     Edit contact details
                   </button>
                 </div>
@@ -301,7 +313,7 @@ const PAGE = { maxResultCount: 200 };
                   </dl>
                   @if (canBrand()) {
                     <div class="row-actions">
-                      <button ar-button type="button" variant="ghost" (click)="editBranding(b)">
+                      <button ar-button type="button" variant="ghost" (click)="goEditBranding(b)">
                         Edit branding
                       </button>
                     </div>
@@ -367,7 +379,7 @@ const PAGE = { maxResultCount: 200 };
                       type="button"
                       variant="primary"
                       icon="plus"
-                      (click)="addClient(p)"
+                      (click)="goAddClient(p)"
                     >
                       Add client workspace
                     </button>
@@ -569,6 +581,309 @@ const PAGE = { maxResultCount: 200 };
         }
       </div>
     </div>
+  }
+
+  <ng-template #formsTpl>
+    @if (registerOpen()) {
+      <ar-dialog
+        [title]="hostView() ? 'Add a partner' : 'Register as a reseller partner'"
+        (dismiss)="close()"
+      >
+        <label class="ar-field">
+          <span class="ar-field__label">Partner code</span>
+          <input
+            class="ar-field__input"
+            placeholder="e.g. CLOUDREACH"
+            [value]="registerDraft().partnerCode"
+            (input)="patchRegisterDraft({ partnerCode: $any($event.target).value })"
+          />
+          <span class="ar-field__hint">Letters, numbers or hyphens; shown on invoices and payouts.</span>
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Company name</span>
+          <input
+            class="ar-field__input"
+            [value]="registerDraft().companyName"
+            (input)="patchRegisterDraft({ companyName: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Contact name</span>
+          <input
+            class="ar-field__input"
+            [value]="registerDraft().contactName"
+            (input)="patchRegisterDraft({ contactName: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Contact email</span>
+          <input
+            type="email"
+            class="ar-field__input"
+            [value]="registerDraft().contactEmail"
+            (input)="patchRegisterDraft({ contactEmail: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Contact phone</span>
+          <input
+            type="tel"
+            class="ar-field__input"
+            [value]="registerDraft().contactPhone"
+            (input)="patchRegisterDraft({ contactPhone: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Website <span class="ar-field__opt">(optional)</span></span>
+          <input
+            type="url"
+            class="ar-field__input"
+            [value]="registerDraft().websiteUrl"
+            (input)="patchRegisterDraft({ websiteUrl: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">GSTIN or tax ID <span class="ar-field__opt">(optional)</span></span>
+          <input
+            class="ar-field__input"
+            [value]="registerDraft().taxId"
+            (input)="patchRegisterDraft({ taxId: $any($event.target).value })"
+          />
+        </label>
+        <div dialogActions>
+          <button ar-button variant="ghost" (click)="close()">Cancel</button>
+          <button ar-button variant="primary" (click)="saveRegister()">
+            {{ hostView() ? 'Add partner' : 'Register' }}
+          </button>
+        </div>
+      </ar-dialog>
+    }
+
+    @if (editDetailsOpen() && editingPartner(); as p) {
+      <ar-dialog title="Edit contact details" (dismiss)="close()">
+        <label class="ar-field">
+          <span class="ar-field__label">Company name</span>
+          <input
+            class="ar-field__input"
+            [value]="editDraft().companyName"
+            (input)="patchEditDraft({ companyName: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Contact name</span>
+          <input
+            class="ar-field__input"
+            [value]="editDraft().contactName"
+            (input)="patchEditDraft({ contactName: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Contact email</span>
+          <input
+            type="email"
+            class="ar-field__input"
+            [value]="editDraft().contactEmail"
+            (input)="patchEditDraft({ contactEmail: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Contact phone</span>
+          <input
+            type="tel"
+            class="ar-field__input"
+            [value]="editDraft().contactPhone"
+            (input)="patchEditDraft({ contactPhone: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Website</span>
+          <input
+            type="url"
+            class="ar-field__input"
+            [value]="editDraft().websiteUrl"
+            (input)="patchEditDraft({ websiteUrl: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">GSTIN or tax ID</span>
+          <input
+            class="ar-field__input"
+            [value]="editDraft().taxId"
+            (input)="patchEditDraft({ taxId: $any($event.target).value })"
+          />
+        </label>
+        <div dialogActions>
+          <button ar-button variant="ghost" (click)="close()">Cancel</button>
+          <button ar-button variant="primary" (click)="saveEditDetails()">Save</button>
+        </div>
+      </ar-dialog>
+    }
+
+    @if (tierOpen() && editingPartner(); as p) {
+      <ar-dialog [title]="'Tier for ' + p.companyName" (dismiss)="close()">
+        <label class="ar-field">
+          <span class="ar-field__label">Tier</span>
+          <select
+            class="ar-field__input"
+            [value]="tierDraft().tier"
+            (change)="patchTierDraft({ tier: +$any($event.target).value })"
+          >
+            @for (t of tiers; track t) {
+              <option [value]="t">{{ tierLabel(t) }}</option>
+            }
+          </select>
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Billing model</span>
+          <select
+            class="ar-field__input"
+            [value]="tierDraft().billingModel"
+            (change)="patchTierDraft({ billingModel: +$any($event.target).value })"
+          >
+            @for (m of models; track m) {
+              <option [value]="m">{{ billingLabel(m) }}</option>
+            }
+          </select>
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Commission rate (%)</span>
+          <input
+            class="ar-field__input"
+            placeholder="0"
+            [value]="tierDraft().commissionRatePercent"
+            (input)="patchTierDraft({ commissionRatePercent: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Wholesale discount (%)</span>
+          <input
+            class="ar-field__input"
+            placeholder="0"
+            [value]="tierDraft().wholesaleDiscountPercent"
+            (input)="patchTierDraft({ wholesaleDiscountPercent: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Most client workspaces</span>
+          <input
+            type="number"
+            class="ar-field__input"
+            [value]="tierDraft().maxManagedTenants"
+            (input)="patchTierDraft({ maxManagedTenants: +$any($event.target).value })"
+          />
+        </label>
+        <div dialogActions>
+          <button ar-button variant="ghost" (click)="close()">Cancel</button>
+          <button ar-button variant="primary" (click)="saveTier()">Save tier</button>
+        </div>
+      </ar-dialog>
+    }
+
+    @if (brandingOpen()) {
+      <ar-dialog title="Branding & white-label" (dismiss)="close()">
+        <label class="ar-field">
+          <span class="ar-field__label">Brand name</span>
+          <input
+            class="ar-field__input"
+            [value]="brandingDraft().brandName"
+            (input)="patchBrandingDraft({ brandName: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Primary colour (Hex e.g. #1769FF)</span>
+          <input
+            class="ar-field__input"
+            [value]="brandingDraft().primaryColorHex"
+            (input)="patchBrandingDraft({ primaryColorHex: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Secondary colour</span>
+          <input
+            class="ar-field__input"
+            [value]="brandingDraft().secondaryColorHex"
+            (input)="patchBrandingDraft({ secondaryColorHex: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Logo URL (light backgrounds)</span>
+          <input
+            type="url"
+            class="ar-field__input"
+            [value]="brandingDraft().logoUrlLight"
+            (input)="patchBrandingDraft({ logoUrlLight: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Logo URL (dark backgrounds)</span>
+          <input
+            type="url"
+            class="ar-field__input"
+            [value]="brandingDraft().logoUrlDark"
+            (input)="patchBrandingDraft({ logoUrlDark: $any($event.target).value })"
+          />
+        </label>
+        <div dialogActions>
+          <button ar-button variant="ghost" (click)="close()">Cancel</button>
+          <button ar-button variant="primary" (click)="saveBranding()">Save branding</button>
+        </div>
+      </ar-dialog>
+    }
+
+    @if (addClientOpen() && editingPartner(); as p) {
+      <ar-dialog title="Add a client workspace" (dismiss)="close()">
+        <label class="ar-field">
+          <span class="ar-field__label">Client name</span>
+          <input
+            class="ar-field__input"
+            [value]="clientDraft().name"
+            (input)="patchClientDraft({ name: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Plan</span>
+          <input
+            class="ar-field__input"
+            [value]="clientDraft().plan"
+            (input)="patchClientDraft({ plan: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Billing cycle</span>
+          <select
+            class="ar-field__input"
+            [value]="clientDraft().billingCycle"
+            (change)="patchClientDraft({ billingCycle: $any($event.target).value })"
+          >
+            <option value="Monthly">Monthly</option>
+            <option value="Annual">Annual</option>
+          </select>
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Wholesale rate per month (₹)</span>
+          <input
+            type="number"
+            class="ar-field__input"
+            [value]="clientDraft().wholesaleRupees"
+            (input)="patchClientDraft({ wholesaleRupees: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Your price to the client per month (₹, optional)</span>
+          <input
+            type="number"
+            class="ar-field__input"
+            [value]="clientDraft().clientPriceRupees"
+            (input)="patchClientDraft({ clientPriceRupees: $any($event.target).value })"
+          />
+        </label>
+        <div dialogActions>
+          <button ar-button variant="ghost" (click)="close()">Cancel</button>
+          <button ar-button variant="primary" (click)="saveClient()">Add client</button>
+        </div>
+      </ar-dialog>
+    }
+  </ng-template>
   `,
   styles: `
     .page {
@@ -687,6 +1002,93 @@ export class ArResellers {
   private readonly currentUser = inject(CurrentUserService);
   private readonly dialogs = inject(ConfirmService);
   private readonly toasts = inject(ToastService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  protected readonly tiers = [
+    ResellerTier.Registered,
+    ResellerTier.Silver,
+    ResellerTier.Gold,
+    ResellerTier.Platinum,
+    ResellerTier.Enterprise,
+  ];
+  protected readonly models = [
+    ResellerBillingModel.RevenueShareCommission,
+    ResellerBillingModel.WholesaleMarkup,
+    ResellerBillingModel.Hybrid,
+  ];
+
+  protected readonly registerOpen = signal(false);
+  protected readonly editDetailsOpen = signal(false);
+  protected readonly tierOpen = signal(false);
+  protected readonly brandingOpen = signal(false);
+  protected readonly addClientOpen = signal(false);
+  protected readonly editingPartner = signal<ResellerPartnerDto | null>(null);
+
+  protected readonly registerDraft = signal({
+    partnerCode: '',
+    companyName: '',
+    contactName: '',
+    contactEmail: '',
+    contactPhone: '',
+    websiteUrl: '',
+    taxId: '',
+  });
+
+  protected readonly editDraft = signal({
+    companyName: '',
+    contactName: '',
+    contactEmail: '',
+    contactPhone: '',
+    websiteUrl: '',
+    taxId: '',
+  });
+
+  protected readonly tierDraft = signal({
+    tier: ResellerTier.Registered,
+    billingModel: ResellerBillingModel.RevenueShareCommission,
+    commissionRatePercent: '',
+    wholesaleDiscountPercent: '',
+    maxManagedTenants: 10,
+  });
+
+  protected readonly brandingDraft = signal({
+    brandName: '',
+    primaryColorHex: '#1769FF',
+    secondaryColorHex: '#0D2D6C',
+    logoUrlLight: '',
+    logoUrlDark: '',
+  });
+
+  protected readonly clientDraft = signal({
+    name: '',
+    plan: 'Professional',
+    billingCycle: 'Monthly',
+    wholesaleRupees: '15000',
+    clientPriceRupees: '25000',
+    commissionPercent: '',
+    notes: '',
+  });
+
+  protected readonly pageTitle = computed(() => {
+    switch (this.mode) {
+      case 'register':
+        return this.hostView() ? 'Add a partner' : 'Register as a reseller partner';
+      case 'edit':
+        return 'Edit contact details';
+      case 'tier':
+        return 'Partner tier & commission';
+      case 'branding':
+        return 'White-label branding';
+      case 'add-client':
+        return 'Add client workspace';
+      default:
+        return 'Reseller programme';
+    }
+  });
 
   protected readonly mock = environment.useMockData;
   protected readonly tabs = TABS as unknown as readonly string[];
@@ -765,6 +1167,7 @@ export class ArResellers {
       this.partners.set(page.items ?? []);
       const keep = this.selectedId();
       if (keep) await this.loadPartner(keep);
+      this.checkRouteParam();
     });
     this.loaded.set(true);
   }
@@ -774,6 +1177,7 @@ export class ArResellers {
       const p = await firstValueFrom(this.api.getCurrentPartner());
       this.partner.set(p ?? null);
       this.selectedId.set(p?.id ?? null);
+      this.checkRouteParam();
     });
     this.loaded.set(true);
   }
@@ -853,6 +1257,255 @@ export class ArResellers {
     this.selectedId.set(id);
     this.tab.set('Overview');
     void this.run(() => this.loadPartner(id));
+  }
+
+  protected patchRegisterDraft(patch: Partial<ReturnType<typeof this.registerDraft>>): void {
+    this.registerDraft.update((d) => ({ ...d, ...patch }));
+  }
+  protected patchEditDraft(patch: Partial<ReturnType<typeof this.editDraft>>): void {
+    this.editDraft.update((d) => ({ ...d, ...patch }));
+  }
+  protected patchTierDraft(patch: Partial<ReturnType<typeof this.tierDraft>>): void {
+    this.tierDraft.update((d) => ({ ...d, ...patch }));
+  }
+  protected patchBrandingDraft(patch: Partial<ReturnType<typeof this.brandingDraft>>): void {
+    this.brandingDraft.update((d) => ({ ...d, ...patch }));
+  }
+  protected patchClientDraft(patch: Partial<ReturnType<typeof this.clientDraft>>): void {
+    this.clientDraft.update((d) => ({ ...d, ...patch }));
+  }
+
+  private checkRouteParam(): void {
+    if (this.mode === 'register') {
+      this.registerOpen.set(true);
+    } else if (this.mode === 'edit') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const p = this.partners().find((x) => x.id === id) || this.partner();
+      if (p) this.goEditDetails(p);
+    } else if (this.mode === 'tier') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const p = this.partners().find((x) => x.id === id) || this.partner();
+      if (p) this.goChangeTier(p);
+    } else if (this.mode === 'branding') {
+      const b = this.profile();
+      if (b) this.goEditBranding(b);
+    } else if (this.mode === 'add-client') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const p = this.partners().find((x) => x.id === id) || this.partner();
+      if (p) this.goAddClient(p);
+    }
+  }
+
+  protected goRegister(): void {
+    this.registerDraft.set({
+      partnerCode: '',
+      companyName: '',
+      contactName: '',
+      contactEmail: '',
+      contactPhone: '',
+      websiteUrl: '',
+      taxId: '',
+    });
+    this.registerOpen.set(true);
+    if (this.router) void this.router.navigate(['/resellers/register']);
+  }
+
+  protected goEditDetails(p: ResellerPartnerDto): void {
+    this.editingPartner.set(p);
+    this.editDraft.set({
+      companyName: p.companyName,
+      contactName: p.contactName,
+      contactEmail: p.contactEmail,
+      contactPhone: p.contactPhone,
+      websiteUrl: p.websiteUrl ?? '',
+      taxId: p.taxId ?? '',
+    });
+    this.editDetailsOpen.set(true);
+    if (this.router && p.id) void this.router.navigate(['/resellers', p.id, 'edit']);
+  }
+
+  protected goChangeTier(p: ResellerPartnerDto): void {
+    this.editingPartner.set(p);
+    this.tierDraft.set({
+      tier: p.tier,
+      billingModel: p.billingModel,
+      commissionRatePercent: formatBps(p.commissionRateBps),
+      wholesaleDiscountPercent: formatBps(p.wholesaleDiscountBps),
+      maxManagedTenants: p.maxManagedTenants || 10,
+    });
+    this.tierOpen.set(true);
+    if (this.router && p.id) void this.router.navigate(['/resellers', p.id, 'tier']);
+  }
+
+  protected goEditBranding(b: ResellerWhiteLabelProfileDto): void {
+    this.brandingDraft.set({
+      brandName: b.brandName,
+      primaryColorHex: b.primaryColorHex || '#1769FF',
+      secondaryColorHex: b.secondaryColorHex || '#0D2D6C',
+      logoUrlLight: b.logoUrlLight ?? '',
+      logoUrlDark: b.logoUrlDark ?? '',
+    });
+    this.brandingOpen.set(true);
+    const pid = b.partnerId || this.partner()?.id;
+    if (this.router && pid) void this.router.navigate(['/resellers', pid, 'branding']);
+  }
+
+  protected goAddClient(p: ResellerPartnerDto): void {
+    this.editingPartner.set(p);
+    this.clientDraft.set({
+      name: '',
+      plan: 'Professional',
+      billingCycle: 'Monthly',
+      wholesaleRupees: '15000',
+      clientPriceRupees: '25000',
+      commissionPercent: formatBps(p.commissionRateBps),
+      notes: '',
+    });
+    this.addClientOpen.set(true);
+    if (this.router && p.id) void this.router.navigate(['/resellers', p.id, 'clients', 'new']);
+  }
+
+  protected close(): void {
+    this.registerOpen.set(false);
+    this.editDetailsOpen.set(false);
+    this.tierOpen.set(false);
+    this.brandingOpen.set(false);
+    this.addClientOpen.set(false);
+    this.editingPartner.set(null);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/resellers']);
+    }
+  }
+
+  protected async saveRegister(): Promise<void> {
+    const v = this.registerDraft();
+    const input = {
+      partnerCode: v.partnerCode.trim(),
+      companyName: v.companyName.trim(),
+      contactName: v.contactName.trim(),
+      contactEmail: v.contactEmail.trim(),
+      contactPhone: v.contactPhone.trim(),
+      websiteUrl: v.websiteUrl.trim() || undefined,
+      taxId: v.taxId.trim() || undefined,
+    };
+    const prob = registrationProblem(input);
+    if (prob) {
+      this.toasts.warning(prob);
+      return;
+    }
+    await this.act(
+      async () => {
+        const p = await firstValueFrom(this.api.registerPartner(input as Required<typeof input>));
+        this.selectedId.set(p.id);
+        this.close();
+      },
+      this.hostView() ? 'Partner added.' : 'Registration sent for approval.',
+    );
+  }
+
+  protected async saveEditDetails(): Promise<void> {
+    const p = this.editingPartner();
+    if (!p) return;
+    const v = this.editDraft();
+    await this.act(
+      async () => {
+        await firstValueFrom(
+          this.api.updatePartner(p.id, {
+            companyName: v.companyName.trim(),
+            contactName: v.contactName.trim(),
+            contactEmail: v.contactEmail.trim(),
+            contactPhone: v.contactPhone.trim(),
+            websiteUrl: v.websiteUrl.trim() || undefined,
+            taxId: v.taxId.trim() || undefined,
+          }),
+        );
+        this.close();
+      },
+      'Contact details saved.',
+    );
+  }
+
+  protected async saveTier(): Promise<void> {
+    const p = this.editingPartner();
+    if (!p) return;
+    const v = this.tierDraft();
+    const commission = v.commissionRatePercent.trim() ? percentToBps(v.commissionRatePercent) : undefined;
+    const discount = v.wholesaleDiscountPercent.trim() ? percentToBps(v.wholesaleDiscountPercent) : undefined;
+    if (commission === null || discount === null) {
+      this.toasts.warning('Enter rates as a percentage between 0 and 100.');
+      return;
+    }
+    await this.act(
+      async () => {
+        await firstValueFrom(
+          this.api.updateTier(p.id, {
+            tier: v.tier,
+            billingModel: v.billingModel,
+            commissionRateBps: commission,
+            wholesaleDiscountBps: discount,
+            maxManagedTenants: v.maxManagedTenants || undefined,
+          }),
+        );
+        this.close();
+      },
+      'Tier saved.',
+    );
+  }
+
+  protected async saveBranding(): Promise<void> {
+    const pid = this.editingPartner()?.id || this.profile()?.partnerId || this.partner()?.id;
+    if (!pid) return;
+    const v = this.brandingDraft();
+    if (!isHexColour(v.primaryColorHex) || !isHexColour(v.secondaryColorHex)) {
+      this.toasts.warning('Enter colours as a six-digit hex, e.g. #1769FF.');
+      return;
+    }
+    await this.act(
+      async () => {
+        await firstValueFrom(
+          this.api.updateWhiteLabelBranding(pid, {
+            brandName: v.brandName.trim(),
+            primaryColorHex: v.primaryColorHex.trim(),
+            secondaryColorHex: v.secondaryColorHex.trim(),
+            logoUrlLight: v.logoUrlLight.trim() || undefined,
+            logoUrlDark: v.logoUrlDark.trim() || undefined,
+            hidePlatformBranding: false,
+          }),
+        );
+        this.close();
+      },
+      'Branding saved.',
+    );
+  }
+
+  protected async saveClient(): Promise<void> {
+    const p = this.editingPartner();
+    if (!p) return;
+    const v = this.clientDraft();
+    const wholesale = rupeesToPaise(v.wholesaleRupees);
+    const price = v.clientPriceRupees.trim() ? rupeesToPaise(v.clientPriceRupees) : undefined;
+    const commission = v.commissionPercent.trim() ? percentToBps(v.commissionPercent) : undefined;
+    if (wholesale === null || price === null || commission === null) {
+      this.toasts.warning('Enter amounts in rupees and the rate as a percentage between 0 and 100.');
+      return;
+    }
+    await this.act(
+      async () => {
+        await firstValueFrom(
+          this.api.provisionClientTenant(p.id, {
+            clientTenantName: v.name.trim(),
+            subscribedPlanCode: v.plan.trim(),
+            billingCycle: v.billingCycle || 'Monthly',
+            wholesaleRatePaise: wholesale,
+            customMonthlyPricePaise: price ?? undefined,
+            customCommissionRateBps: commission ?? undefined,
+            notes: v.notes.trim() || undefined,
+          }),
+        );
+        this.close();
+      },
+      'Client workspace added.',
+    );
   }
 
   // ---- partners ----

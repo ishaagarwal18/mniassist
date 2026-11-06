@@ -1,4 +1,4 @@
-import { isStaleChunkError, reloadForStaleChunk } from './stale-chunk';
+import { isMixedDevBuildError, isStaleChunkError, reloadForStaleChunk } from './stale-chunk';
 
 describe('stale chunk recovery', () => {
   it('recognises the browsers’ messages for a missing lazy chunk', () => {
@@ -26,5 +26,14 @@ describe('stale chunk recovery', () => {
     expect(reloadForStaleChunk(5_000, storage, reload)).toBe(false);
     expect(reloadForStaleChunk(40_000, storage, reload)).toBe(true);
     expect(reloads).toBe(2);
+  });
+
+  it('treats NG0203 as a dev-server re-bundle only in dev mode', () => {
+    const err = new Error(
+      'NG0203: The `_RestService` token injection failed. `inject()` function must be called from an injection context',
+    );
+    expect(isMixedDevBuildError(err, true)).toBe(true);
+    expect(isMixedDevBuildError(err, false)).toBe(false);
+    expect(isMixedDevBuildError(new Error('NG0100: changed after checked'), true)).toBe(false);
   });
 });

@@ -104,9 +104,9 @@ import { ArSalesExport } from '../sales-export';
                     <dt>IRN</dt>
                     <dd class="ar-mono" [title]="inv.irn">{{ inv.irn.substring(0, 16) }}…</dd>
                   }
-                  @if (inv.ewayBillNumber) {
+                  @if (inv.eWayBillNumber) {
                     <dt>e-Way Bill</dt>
-                    <dd class="ar-mono">{{ inv.ewayBillNumber }}</dd>
+                    <dd class="ar-mono">{{ inv.eWayBillNumber }}</dd>
                   }
                 </dl>
               </div>

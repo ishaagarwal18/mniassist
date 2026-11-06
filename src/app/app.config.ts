@@ -1,4 +1,9 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  ErrorHandler,
+  isDevMode,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { provideRouter, withNavigationErrorHandler, withPreloading } from '@angular/router';
 import { IdlePreloading } from './core/util/idle-preloading';
@@ -10,7 +15,25 @@ import { environment } from '../environments/environment';
 import { AgencyActingInterceptor } from './core/http/agency-acting.interceptor';
 import { ApiFeedbackInterceptor } from './core/http/api-feedback.interceptor';
 import { AutoReachPermissionService } from './core/auth/auto-reach-permission.service';
-import { isStaleChunkError, reloadForStaleChunk } from './core/util/stale-chunk';
+import {
+  isMixedDevBuildError,
+  isStaleChunkError,
+  reloadForStaleChunk,
+} from './core/util/stale-chunk';
+
+/** Dev server only: an open tab mixing two copies of Angular after Vite re-bundled reloads once (see stale-chunk.ts). */
+class DevRebundleErrorHandler extends ErrorHandler {
+  override handleError(error: unknown): void {
+    if (isMixedDevBuildError(error, isDevMode()) && reloadForStaleChunk()) {
+      console.warn(
+        '[dev] The dev server re-bundled its libraries; reloading this tab once.',
+        error,
+      );
+      return;
+    }
+    super.handleError(error);
+  }
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -19,10 +42,14 @@ export const appConfig: ApplicationConfig = {
       routes,
       withPreloading(IdlePreloading),
       // A tab from before a deploy asks for chunk files the server no longer has: reload once.
+      // In dev, the same after `ng serve` re-bundled its libraries (two copies of Angular → NG0203).
       withNavigationErrorHandler((e) => {
-        if (isStaleChunkError(e.error)) reloadForStaleChunk();
+        if (isStaleChunkError(e.error) || isMixedDevBuildError(e.error, isDevMode())) {
+          reloadForStaleChunk();
+        }
       }),
     ),
+    { provide: ErrorHandler, useClass: DevRebundleErrorHandler },
     provideHttpClient(withInterceptorsFromDi()),
     { provide: PermissionService, useClass: AutoReachPermissionService },
     { provide: HTTP_INTERCEPTORS, useClass: AgencyActingInterceptor, multi: true },

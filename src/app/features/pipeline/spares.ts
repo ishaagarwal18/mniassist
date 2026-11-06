@@ -136,15 +136,14 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
         >
           {{ busy() === 'scan' ? 'Checking…' : 'Check now' }}
         </button>
-        <button
+        <a
           ar-button
-          type="button"
           variant="ghost"
           icon="settings"
-          (click)="rulesOpen.set(true)"
+          routerLink="/spares/rules"
         >
           Rules ({{ rules().length }})
-        </button>
+        </a>
         <button ar-button type="button" variant="ghost" icon="send" (click)="openReminders()">
           Customer reminders{{ reminders().enabled ? ' · on' : '' }}
         </button>
@@ -392,130 +391,6 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
             (click)="saveReminders()"
           >
             {{ busy() === 'rem-save' ? 'Saving…' : 'Save' }}
-          </button>
-        </div>
-      </ar-dialog>
-    }
-
-    @if (rulesOpen()) {
-      <ar-dialog title="Spare part rules" (dismiss)="rulesOpen.set(false)">
-        <ul class="rules">
-          @for (u of rules(); track u.id) {
-            <li>
-              <span>
-                <b>{{ u.assetLabel }}</b
-                >: {{ u.quantityPerMachine }} × {{ u.description }} (<span class="ar-mono">{{
-                  u.partNumber
-                }}</span
-                >) every {{ u.intervalDays }} days, shown {{ u.leadDays }} days ahead
-                <small
-                  >{{ u.machineCount }} machine{{ u.machineCount === 1 ? '' : 's' }} match{{
-                    u.isActive ? '' : ' · paused'
-                  }}</small
-                >
-              </span>
-              <button
-                type="button"
-                class="rules__x"
-                [attr.aria-label]="'Delete rule for ' + u.assetLabel"
-                (click)="deleteRule(u)"
-              >
-                ×
-              </button>
-            </li>
-          } @empty {
-            <li>No rules yet.</li>
-          }
-        </ul>
-        <fieldset class="rule-form">
-          <legend>Add a rule</legend>
-          <label class="ar-field" for="sp-asset">
-            <span class="ar-field__label">Machine (make and model, or its part number)</span>
-            <input
-              required
-              id="sp-asset"
-              class="ar-field__input"
-              placeholder="Atlas Copco GA 37"
-              [value]="draft().assetLabel"
-              (input)="set('assetLabel', $any($event.target).value)"
-            />
-          </label>
-          <div class="rule-form__row">
-            <label class="ar-field" for="sp-part">
-              <span class="ar-field__label">Spare part number</span>
-              <input
-                required
-                id="sp-part"
-                class="ar-field__input ar-mono"
-                placeholder="AF-2901"
-                [value]="draft().partNumber"
-                (input)="set('partNumber', $any($event.target).value)"
-              />
-            </label>
-            <label class="ar-field" for="sp-desc">
-              <span class="ar-field__label"
-                >Description <span class="ar-field__opt">(optional)</span></span
-              >
-              <input
-                id="sp-desc"
-                class="ar-field__input"
-                placeholder="Air filter element"
-                [value]="draft().description"
-                (input)="set('description', $any($event.target).value)"
-              />
-            </label>
-          </div>
-          <div class="rule-form__row">
-            <label class="ar-field" for="sp-qty">
-              <span class="ar-field__label">Per machine</span>
-              <input
-                required
-                id="sp-qty"
-                class="ar-field__input"
-                inputmode="decimal"
-                [value]="draft().quantityPerMachine"
-                (input)="set('quantityPerMachine', $any($event.target).value)"
-              />
-            </label>
-            <label class="ar-field" for="sp-int">
-              <span class="ar-field__label">Every (days)</span>
-              <input
-                required
-                id="sp-int"
-                class="ar-field__input"
-                inputmode="numeric"
-                [value]="draft().intervalDays"
-                (input)="set('intervalDays', $any($event.target).value)"
-              />
-            </label>
-            <label class="ar-field" for="sp-lead">
-              <span class="ar-field__label">Show ahead (days)</span>
-              <input
-                required
-                id="sp-lead"
-                class="ar-field__input"
-                inputmode="numeric"
-                [value]="draft().leadDays"
-                (input)="set('leadDays', $any($event.target).value)"
-              />
-            </label>
-          </div>
-        </fieldset>
-        @if (ruleError(); as e) {
-          <p class="sp__err" role="alert">{{ e }}</p>
-        }
-        <div dialogActions>
-          <button ar-button type="button" variant="ghost" (click)="rulesOpen.set(false)">
-            Close
-          </button>
-          <button
-            ar-button
-            type="button"
-            variant="primary"
-            [disabled]="busy() === 'rule'"
-            (click)="addRule()"
-          >
-            {{ busy() === 'rule' ? 'Adding…' : 'Add rule' }}
           </button>
         </div>
       </ar-dialog>

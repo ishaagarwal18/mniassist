@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LocalizationPipe, PermissionService } from '@abp/ng.core';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ArVoiceAgentDialog } from './voice-agent-dialog';
@@ -30,6 +31,7 @@ import { ArSmsInboundCard } from './sms-inbound-card';
     ArSmsInboundCard,
     ArVoiceAgentDialog,
     LocalizationPipe,
+    NgTemplateOutlet,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './channels.html',
@@ -37,6 +39,11 @@ import { ArSmsInboundCard } from './sms-inbound-card';
 })
 export class ArChannels {
   private readonly store = inject(ChannelService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
 
   protected readonly channels = this.store.channels;
   protected readonly loading = this.store.loading;
@@ -46,6 +53,37 @@ export class ArChannels {
     'AutoReach.Channels.Manage',
     inject(PermissionService),
   );
+
+  protected readonly pageTitle = computed(() =>
+    this.mode === 'connect' ? 'Connect a number' : 'Voice agent',
+  );
+
+  constructor() {
+    if (this.mode === 'connect') {
+      this.connectOpen.set(true);
+    } else if (this.mode === 'voice-agent') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      if (id) this.voiceAgentChannel.set(id);
+    }
+  }
+
+  protected goConnect(): void {
+    if (this.router) void this.router.navigate(['/channels/connect']);
+    else this.connectOpen.set(true);
+  }
+
+  protected goVoiceAgent(channelId: string): void {
+    if (this.router && channelId) void this.router.navigate(['/channels', channelId, 'voice-agent']);
+    else this.voiceAgentChannel.set(channelId);
+  }
+
+  protected close(): void {
+    this.connectOpen.set(false);
+    this.voiceAgentChannel.set(null);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/channels']);
+    }
+  }
 
   protected readonly restrictedCount = computed(
     () => this.channels().filter((c) => c.restricted).length,

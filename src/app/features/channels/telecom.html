@@ -1,22 +1,30 @@
-<ar-topbar
-  title="Telecom & Reseller Numbers"
-  [subtitle]="subtitle()"
-  help="Manage your virtual WhatsApp number inventory pool, allocate numbers to tenant workspaces, and maintain regulatory compliance under the Telecommunications Act 2023, TRAI DLT, and Meta Tech Provider guidelines."
->
-  <button ar-button type="button" variant="ghost" icon="refresh" (click)="store.refresh()">
-    Refresh
-  </button>
-  <button ar-button type="button" variant="ghost" icon="shield" (click)="runAudit()">
-    Run compliance audit
-  </button>
-  @if (canManage()) {
-    <button ar-button type="button" variant="primary" icon="plus" (click)="openAddNumberDialog()">
-      Add number to pool
+@if (isPage) {
+  <ar-topbar [title]="pageTitle()">
+    <button ar-button type="button" variant="ghost" (click)="close()">Back to Telecom</button>
+  </ar-topbar>
+  <div class="ar-form-page ar-scroll">
+    <ng-container *ngTemplateOutlet="formsTpl" />
+  </div>
+} @else {
+  <ar-topbar
+    title="Telecom & Reseller Numbers"
+    [subtitle]="subtitle()"
+    help="Manage your virtual WhatsApp number inventory pool, allocate numbers to tenant workspaces, and maintain regulatory compliance under the Telecommunications Act 2023, TRAI DLT, and Meta Tech Provider guidelines."
+  >
+    <button ar-button type="button" variant="ghost" icon="refresh" (click)="store.refresh()">
+      Refresh
     </button>
-  }
-</ar-topbar>
+    <button ar-button type="button" variant="ghost" icon="shield" (click)="goAudit()">
+      Run compliance audit
+    </button>
+    @if (canManage()) {
+      <button ar-button type="button" variant="primary" icon="plus" (click)="goAddNumber()">
+        Add number to pool
+      </button>
+    }
+  </ar-topbar>
 
-<div class="tc ar-scroll">
+  <div class="tc ar-scroll">
   <!-- ── Tab Navigation ────────────────────────────────────────────────────── -->
   <nav class="tc__tabs" role="tablist">
     <button
@@ -140,7 +148,7 @@
               type="button"
               variant="primary"
               icon="plus"
-              (click)="openAddNumberDialog()"
+              (click)="goAddNumber()"
             >
               Add a new number to pool
             </button>
@@ -243,14 +251,14 @@
                     type="button"
                     variant="primary"
                     icon="check"
-                    (click)="openAllocateDialog(n)"
+                    (click)="goAllocate(n)"
                   >
                     Allocate to workspace
                   </button>
                 }
 
                 @if (n.status === ResellerNumberStatus.Allocated && canResell()) {
-                  <button ar-button type="button" variant="ghost" (click)="openReleaseDialog(n)">
+                  <button ar-button type="button" variant="ghost" (click)="goRelease(n)">
                     Release number
                   </button>
                 }
@@ -310,7 +318,7 @@
                 type="button"
                 variant="ghost"
                 icon="settings"
-                (click)="openEditSettingsDialog()"
+                (click)="goSettings()"
               >
                 Edit profile
               </button>
@@ -490,19 +498,22 @@
     </div>
   }
 </div>
+}
+
+<ng-template #formsTpl>
 
 <!-- ════════════════════════════════════════════════════════════════════════════
      DIALOG 1: ADD NUMBER TO INVENTORY POOL
      ════════════════════════════════════════════════════════════════════════════ -->
 @if (addNumberDialogOpen()) {
-  <div class="modal-backdrop" (click)="addNumberDialogOpen.set(false)">
+  <div class="modal-backdrop" (click)="close()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <header class="modal-head">
         <div>
           <h3>Add Number to Inventory Pool</h3>
           <p>Add a new virtual DID or SIM-bound line from an authorized telecom carrier.</p>
         </div>
-        <button type="button" class="modal-close" (click)="addNumberDialogOpen.set(false)">
+        <button type="button" class="modal-close" (click)="close()">
           ✕
         </button>
       </header>
@@ -593,7 +604,7 @@
       </div>
 
       <footer class="modal-foot">
-        <button ar-button variant="ghost" (click)="addNumberDialogOpen.set(false)">Cancel</button>
+        <button ar-button variant="ghost" (click)="close()">Cancel</button>
         <button
           ar-button
           variant="primary"
@@ -612,14 +623,14 @@
      DIALOG 2: ALLOCATE NUMBER TO TENANT
      ════════════════════════════════════════════════════════════════════════════ -->
 @if (allocateDialogOpen() && selectedNumber(); as num) {
-  <div class="modal-backdrop" (click)="allocateDialogOpen.set(false)">
+  <div class="modal-backdrop" (click)="close()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <header class="modal-head">
         <div>
           <h3>Allocate Number to Workspace</h3>
           <p>Assign {{ num.e164 }} ({{ num.tspCarrier }}) to an active tenant workspace.</p>
         </div>
-        <button type="button" class="modal-close" (click)="allocateDialogOpen.set(false)">✕</button>
+        <button type="button" class="modal-close" (click)="close()">✕</button>
       </header>
 
       <div class="modal-body">
@@ -666,7 +677,7 @@
       </div>
 
       <footer class="modal-foot">
-        <button ar-button variant="ghost" (click)="allocateDialogOpen.set(false)">Cancel</button>
+        <button ar-button variant="ghost" (click)="close()">Cancel</button>
         <button
           ar-button
           variant="primary"
@@ -685,14 +696,14 @@
      DIALOG 3: RELEASE NUMBER
      ════════════════════════════════════════════════════════════════════════════ -->
 @if (releaseDialogOpen() && selectedNumber(); as num) {
-  <div class="modal-backdrop" (click)="releaseDialogOpen.set(false)">
+  <div class="modal-backdrop" (click)="close()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <header class="modal-head">
         <div>
           <h3>Release Number from Workspace</h3>
           <p>Remove {{ num.e164 }} from active usage and place into quarantine cooling-off.</p>
         </div>
-        <button type="button" class="modal-close" (click)="releaseDialogOpen.set(false)">✕</button>
+        <button type="button" class="modal-close" (click)="close()">✕</button>
       </header>
 
       <div class="modal-body">
@@ -724,7 +735,7 @@
       </div>
 
       <footer class="modal-foot">
-        <button ar-button variant="ghost" (click)="releaseDialogOpen.set(false)">Cancel</button>
+        <button ar-button variant="ghost" (click)="close()">Cancel</button>
         <button ar-button variant="danger" icon="alert" (click)="submitRelease()">
           Release & quarantine
         </button>
@@ -737,14 +748,14 @@
      DIALOG 4: EDIT TELECOM SETTINGS
      ════════════════════════════════════════════════════════════════════════════ -->
 @if (editSettingsDialogOpen()) {
-  <div class="modal-backdrop" (click)="editSettingsDialogOpen.set(false)">
+  <div class="modal-backdrop" (click)="close()">
     <div class="modal-card modal-card--lg" (click)="$event.stopPropagation()">
       <header class="modal-head">
         <div>
           <h3>Edit Telecom Entity Registration</h3>
           <p>Update regulatory identification numbers and CTSO appointment.</p>
         </div>
-        <button type="button" class="modal-close" (click)="editSettingsDialogOpen.set(false)">
+        <button type="button" class="modal-close" (click)="close()">
           ✕
         </button>
       </header>
@@ -889,7 +900,7 @@
       </div>
 
       <footer class="modal-foot">
-        <button ar-button variant="ghost" (click)="editSettingsDialogOpen.set(false)">
+        <button ar-button variant="ghost" (click)="close()">
           Cancel
         </button>
         <button ar-button variant="primary" icon="check" (click)="submitSettings()">
@@ -904,14 +915,14 @@
      DIALOG 5: COMPLIANCE AUDIT RESULTS REPORT
      ════════════════════════════════════════════════════════════════════════════ -->
 @if (auditDialogOpen() && store.auditResult(); as res) {
-  <div class="modal-backdrop" (click)="auditDialogOpen.set(false)">
+  <div class="modal-backdrop" (click)="close()">
     <div class="modal-card modal-card--lg" (click)="$event.stopPropagation()">
       <header class="modal-head">
         <div>
           <h3>Telecom Compliance & SIM-Binding Audit Certificate</h3>
           <p>Audited at {{ when(res.auditTimestampUtc) }}</p>
         </div>
-        <button type="button" class="modal-close" (click)="auditDialogOpen.set(false)">✕</button>
+        <button type="button" class="modal-close" (click)="close()">✕</button>
       </header>
 
       <div class="modal-body">
@@ -946,8 +957,9 @@
       </div>
 
       <footer class="modal-foot">
-        <button ar-button variant="primary" (click)="auditDialogOpen.set(false)">Done</button>
+        <button ar-button variant="primary" (click)="close()">Done</button>
       </footer>
     </div>
   </div>
 }
+</ng-template>

@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, isDevMode, signal } from '@angular/core';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -64,7 +64,31 @@ export class PwaService {
     this.registerServiceWorker(win);
   }
 
+  private async removeDevServiceWorker(win: Window): Promise<void> {
+    if (!('serviceWorker' in win.navigator)) return;
+    try {
+      const registrations = await win.navigator.serviceWorker.getRegistrations();
+      const keys = 'caches' in win ? await win.caches.keys() : [];
+      const ours = keys.filter((k) => k.startsWith('mni-assist'));
+      if (!registrations.length && !ours.length) return;
+      await Promise.all(registrations.map((r) => r.unregister()));
+      await Promise.all(ours.map((k) => win.caches.delete(k)));
+      // The page itself was served by the old worker: load it once more, from the dev server.
+      if (win.navigator.serviceWorker.controller) win.location.reload();
+    } catch {
+      // Nothing to remove, or the browser refused: the dev server still serves the current code.
+    }
+  }
+
   private registerServiceWorker(win: Window): void {
+    // Not on the dev server. The worker answers script requests from its cache first, so after `ng serve` rebuilt, a reload
+    // still ran the previous code (an old page, a fixed bug still there) — and could mix two builds' chunks. A worker a
+    // previous dev session installed is removed, with its caches, so the next load is the code on disk.
+    if (isDevMode()) {
+      void this.removeDevServiceWorker(win);
+      return;
+    }
+
     const isSecure =
       win.location.protocol === 'https:' ||
       win.location.hostname === 'localhost' ||

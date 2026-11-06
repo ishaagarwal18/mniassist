@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -20,8 +21,6 @@ import { ArButton, ArChip, ArDialog } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../ui/grid';
-import { ArWhatsAppIvrDialog } from './whatsapp-ivr-dialog';
-import { ArVoiceConversations } from './voice-conversations';
 
 const ago = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
 
@@ -79,11 +78,10 @@ const SEED: WhatsAppCallDto[] = [
     ArButton,
     ArChip,
     ArDialog,
-    ArWhatsAppIvrDialog,
-    ArVoiceConversations,
     LocalizationPipe,
     ArGrid,
     GridModule,
+    RouterLink,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -93,9 +91,9 @@ const SEED: WhatsAppCallDto[] = [
       help="Calls customers made to your WhatsApp number and calls your team made to customers who allowed it. When recording is on, the browser on the call records both sides and saves it when the call ends; tell customers that calls are recorded."
     >
       @if (canRecordings()) {
-        <button ar-button type="button" variant="ghost" (click)="conversationsOpen.set(true)">
+        <a ar-button variant="ghost" routerLink="/calls/whatsapp/conversations">
           {{ 'AutoReach::VoiceConversation.Title' | abpLocalization }}
-        </button>
+        </a>
         <label class="wa__toggle" for="wa-rec">
           <input
             id="wa-rec"
@@ -113,9 +111,9 @@ const SEED: WhatsAppCallDto[] = [
         }
       }
       @if (canMenu()) {
-        <button ar-button type="button" variant="ghost" (click)="menuOpen.set(true)">
+        <a ar-button variant="ghost" routerLink="/calls/whatsapp/ivr">
           Call menu (IVR)
-        </button>
+        </a>
       }
       <label class="wa__toggle" for="wa-missed">
         <input
@@ -173,13 +171,6 @@ const SEED: WhatsAppCallDto[] = [
           <button ar-button type="button" variant="primary" (click)="closeNotice()">Done</button>
         </div>
       </ar-dialog>
-    }
-
-    @if (conversationsOpen()) {
-      <ar-voice-conversations (closed)="conversationsOpen.set(false)" />
-    }
-    @if (menuOpen()) {
-      <ar-whatsapp-ivr-dialog (closed)="menuOpen.set(false)" />
     }
 
     <div class="wa ar-scroll">
@@ -536,8 +527,6 @@ export class ArWhatsAppCalls {
   );
   /** The call menu routes calls to teams, so it is configured by whoever manages teams. */
   protected readonly canMenu = grantedPolicy('AutoReach.Teams.Manage', this.permissions);
-  protected readonly menuOpen = signal(false);
-  protected readonly conversationsOpen = signal(false);
 
   protected readonly rows = signal<WhatsAppCallDto[]>([]);
   protected readonly total = signal(0);

@@ -309,8 +309,7 @@
           <button
             ar-button
             type="button"
-            [disabled]="!c.googleOAuthAvailable || connectingOAuth() !== null"
-            [title]="c.googleOAuthAvailable ? '' : 'Not set up on this deployment'"
+            [disabled]="connectingOAuth() !== null"
             (click)="connectOAuth(OAuth.Google)"
           >
             {{ connectingOAuth() === OAuth.Google ? 'Connecting…' : 'Connect Gmail' }}
@@ -318,8 +317,7 @@
           <button
             ar-button
             type="button"
-            [disabled]="!c.microsoftOAuthAvailable || connectingOAuth() !== null"
-            [title]="c.microsoftOAuthAvailable ? '' : 'Not set up on this deployment'"
+            [disabled]="connectingOAuth() !== null"
             (click)="connectOAuth(OAuth.Microsoft)"
           >
             {{ connectingOAuth() === OAuth.Microsoft ? 'Connecting…' : 'Connect Microsoft 365' }}

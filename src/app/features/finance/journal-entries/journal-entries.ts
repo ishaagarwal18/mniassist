@@ -1,20 +1,22 @@
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { GridModule, RecordClickEventArgs, RowSelectEventArgs } from '@syncfusion/ej2-angular-grids';
 import { environment } from '../../../../environments/environment';
+import { ConfirmService } from '../../../core/ui/confirm.service';
+import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
-  CreateJournalEntryDto,
-  CreateJournalEntryLineDto,
   JournalEntryDto,
   JournalEntryLineDto,
   JournalEntryService,
   JournalVoucherStatus,
   JournalVoucherType,
 } from '../../../proxy/finance';
-import { ArButton, ArChip, ArDialog, ArDateInput, ArSelect, ChipTone } from '../../../ui';
+import { ArButton, ArChip, ChipTone } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
+import { deleteStoredJournalEntry, getStoredJournalEntries } from './journal-entry-storage';
 
 const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
   {
@@ -240,16 +242,14 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
     ArTopbar,
     ArButton,
     ArChip,
-    ArDialog,
     ArGrid,
     GridModule,
-    ArDateInput,
-    ArSelect,
+    RouterLink,
   ],
   template: `
     <ar-topbar title="Journal Vouchers (Double-Entry General Ledger)">
       <div actions class="topbar-actions">
-        <button ar-button="primary" (click)="openCreate()">+ New Journal Voucher</button>
+        <a ar-button="primary" routerLink="/finance/journal-entries/new">+ New Journal Voucher</a>
       </div>
     </ar-topbar>
 
@@ -391,6 +391,21 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
               >
                 Post to General Ledger
               </button>
+              <a
+                *ngIf="entry.status === JournalVoucherStatus.Draft"
+                ar-button="ghost"
+                [routerLink]="['/finance/journal-entries', entry.id, 'edit']"
+              >
+                ✏ Edit Voucher
+              </a>
+              <button
+                *ngIf="entry.status === JournalVoucherStatus.Draft"
+                ar-button="ghost"
+                class="text-danger"
+                (click)="deleteEntry(entry)"
+              >
+                🗑 Delete Voucher
+              </button>
               <button
                 *ngIf="entry.status === JournalVoucherStatus.Posted"
                 ar-button="ghost"
@@ -459,136 +474,6 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
         </section>
       </div>
     </div>
-
-    <!-- Create Journal Entry Dialog -->
-    <ar-dialog
-      *ngIf="isCreateOpen()"
-      title="Create Double-Entry Journal Voucher"
-      (dismiss)="isCreateOpen.set(false)"
-    >
-      <div class="modal-body-container">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Voucher Number</label>
-            <input type="text" class="form-control" [(ngModel)]="newEntry.entryNumber" />
-          </div>
-          <div class="form-group">
-            <label>Voucher Date</label>
-            <input type="date" class="form-control" [(ngModel)]="newEntry.entryDateUtc" />
-          </div>
-          <div class="form-group">
-            <label>Voucher Type</label>
-            <select class="form-control" [(ngModel)]="newEntry.voucherType">
-              <option [ngValue]="JournalVoucherType.GeneralJournal">General Journal (JV)</option>
-              <option [ngValue]="JournalVoucherType.SalesVoucher">Sales Voucher</option>
-              <option [ngValue]="JournalVoucherType.PurchaseVoucher">Purchase Voucher</option>
-              <option [ngValue]="JournalVoucherType.PaymentVoucher">Payment Voucher</option>
-              <option [ngValue]="JournalVoucherType.ReceiptVoucher">Receipt Voucher</option>
-              <option [ngValue]="JournalVoucherType.ContraVoucher">Contra Voucher</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Reference Document #</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="newEntry.referenceDocumentNumber"
-              placeholder="INV-..., GRN-..., PO-..."
-            />
-          </div>
-        </div>
-
-        <div class="form-group full-width mt-3">
-          <label>Narration & Explanation</label>
-          <textarea
-            class="form-control"
-            rows="2"
-            [(ngModel)]="newEntry.narration"
-            placeholder="Explain business transaction..."
-          ></textarea>
-        </div>
-
-        <h5 class="mt-4 mb-2">Double-Entry Ledger Lines</h5>
-        <ejs-grid
-          arGrid="journal-draft-lines"
-          [dataSource]="draftLines()"
-          aria-label="Double-Entry Ledger Lines"
-          [arGridSearch]="false"
-          [arGridTools]="false"
-          class="mb-3"
-        >
-          <e-columns>
-            <e-column field="accountCode" headerText="Account Code" width="160">
-              <ng-template #template let-line>
-                <input
-                  type="text"
-                  class="form-control input-sm"
-                  [(ngModel)]="line.accountCode"
-                  placeholder="Code (e.g. 1010)"
-                />
-              </ng-template>
-            </e-column>
-            <e-column field="debitRupees" headerText="Debit (INR)" width="150" [textAlign]="'Right'">
-              <ng-template #template let-line>
-                <input
-                  type="number"
-                  class="form-control text-right input-sm"
-                  [(ngModel)]="line.debitRupees"
-                  (input)="recalculateDraftTotals()"
-                />
-              </ng-template>
-            </e-column>
-            <e-column field="creditRupees" headerText="Credit (INR)" width="150" [textAlign]="'Right'">
-              <ng-template #template let-line>
-                <input
-                  type="number"
-                  class="form-control text-right input-sm"
-                  [(ngModel)]="line.creditRupees"
-                  (input)="recalculateDraftTotals()"
-                />
-              </ng-template>
-            </e-column>
-            <e-column field="lineNarration" headerText="Narration" minWidth="180">
-              <ng-template #template let-line>
-                <input
-                  type="text"
-                  class="form-control input-sm"
-                  [(ngModel)]="line.lineNarration"
-                  placeholder="Notes"
-                />
-              </ng-template>
-            </e-column>
-            <e-column headerText="" width="60">
-              <ng-template #template let-line>
-                <button ar-button="ghost" class="btn-xs" (click)="removeDraftLine(line)">x</button>
-              </ng-template>
-            </e-column>
-          </e-columns>
-        </ejs-grid>
-
-        <div class="lines-actions-row">
-          <button ar-button="ghost" (click)="addDraftLine()">+ Add Ledger Line</button>
-          <div class="draft-totals">
-            <span
-              >Debit: <strong>₹{{ draftTotalDebit() | number: '1.2-2' }}</strong></span
-            >
-            <span
-              >Credit: <strong>₹{{ draftTotalCredit() | number: '1.2-2' }}</strong></span
-            >
-            <span [class.text-success]="isDraftBalanced()" [class.text-danger]="!isDraftBalanced()">
-              Diff: <strong>₹{{ draftTotalDebit() - draftTotalCredit() | number: '1.2-2' }}</strong>
-            </span>
-          </div>
-        </div>
-
-        <div class="dialog-actions mt-4">
-          <button ar-button="primary" [disabled]="!isDraftBalanced()" (click)="createEntry()">
-            Create & Record Voucher
-          </button>
-          <button ar-button="ghost" (click)="isCreateOpen.set(false)">Cancel</button>
-        </div>
-      </div>
-    </ar-dialog>
   `,
   styles: [
     `
@@ -1026,6 +911,8 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
 })
 export class JournalEntriesComponent {
   private readonly journalService = inject(JournalEntryService);
+  private readonly confirmService = inject(ConfirmService);
+  private readonly toasts = inject(ToastService);
 
   readonly journalEntries = signal<JournalEntryDto[]>(MOCK_JOURNAL_ENTRIES);
   readonly selectedEntry = signal<JournalEntryDto | null>(MOCK_JOURNAL_ENTRIES[0]);
@@ -1034,46 +921,6 @@ export class JournalEntriesComponent {
   // Filters
   readonly searchQuery = signal<string>('');
   readonly statusFilter = signal<string>('ALL');
-
-  // Dialog
-  readonly isCreateOpen = signal<boolean>(false);
-
-  newEntry: CreateJournalEntryDto = {
-    entryNumber: '',
-    entryDateUtc: new Date().toISOString().substring(0, 10),
-    voucherType: JournalVoucherType.GeneralJournal,
-    narration: '',
-    lines: [],
-  };
-
-  readonly draftLines = signal<
-    { accountCode: string; debitRupees: number; creditRupees: number; lineNarration: string }[]
-  >([
-    {
-      accountCode: '1010',
-      debitRupees: 50000,
-      creditRupees: 0,
-      lineNarration: 'Disbursement from Bank',
-    },
-    {
-      accountCode: '6040',
-      debitRupees: 0,
-      creditRupees: 50000,
-      lineNarration: 'Office expense provision',
-    },
-  ]);
-
-  readonly draftTotalDebit = computed(() =>
-    this.draftLines().reduce((acc, l) => acc + (Number(l.debitRupees) || 0), 0),
-  );
-  readonly draftTotalCredit = computed(() =>
-    this.draftLines().reduce((acc, l) => acc + (Number(l.creditRupees) || 0), 0),
-  );
-  readonly isDraftBalanced = computed(
-    () =>
-      Math.abs(this.draftTotalDebit() - this.draftTotalCredit()) === 0 &&
-      this.draftTotalDebit() > 0,
-  );
 
   readonly filteredEntries = computed(() => {
     const q = this.searchQuery().trim().toLowerCase();
@@ -1114,18 +961,38 @@ export class JournalEntriesComponent {
   }
 
   loadEntries(): void {
-    if (environment.useMockData) return;
+    const stored = getStoredJournalEntries();
+    if (environment.useMockData) {
+      const merged =
+        stored.length > 0
+          ? [...stored, ...MOCK_JOURNAL_ENTRIES.filter((m) => !stored.some((s) => s.id === m.id))]
+          : MOCK_JOURNAL_ENTRIES;
+      this.journalEntries.set(merged);
+      this.selectedEntry.set(merged[0] ?? null);
+      return;
+    }
 
     this.isLoading.set(true);
     this.journalService.getList({ maxResultCount: 100 }).subscribe({
       next: (res) => {
-        if (res.items && res.items.length > 0) {
-          this.journalEntries.set(res.items);
-          this.selectedEntry.set(res.items[0]);
-        }
+        const items = res.items && res.items.length > 0 ? res.items : MOCK_JOURNAL_ENTRIES;
+        const merged =
+          stored.length > 0
+            ? [...stored, ...items.filter((m) => !stored.some((s) => s.id === m.id))]
+            : items;
+        this.journalEntries.set(merged);
+        this.selectedEntry.set(merged[0] ?? null);
         this.isLoading.set(false);
       },
-      error: () => this.isLoading.set(false),
+      error: () => {
+        const merged =
+          stored.length > 0
+            ? [...stored, ...MOCK_JOURNAL_ENTRIES.filter((m) => !stored.some((s) => s.id === m.id))]
+            : MOCK_JOURNAL_ENTRIES;
+        this.journalEntries.set(merged);
+        this.selectedEntry.set(merged[0] ?? null);
+        this.isLoading.set(false);
+      },
     });
   }
 
@@ -1190,79 +1057,39 @@ export class JournalEntriesComponent {
     }
   }
 
-  openCreate(): void {
-    const nextSeq = this.journalEntries().length + 1;
-    this.newEntry = {
-      entryNumber: `JV-2026-${String(nextSeq + 45).padStart(4, '0')}`,
-      entryDateUtc: new Date().toISOString().substring(0, 10),
-      voucherType: JournalVoucherType.GeneralJournal,
-      narration: '',
-      lines: [],
-    };
-    this.draftLines.set([
-      { accountCode: '1010', debitRupees: 50000, creditRupees: 0, lineNarration: 'Bank payment' },
-      {
-        accountCode: '6020',
-        debitRupees: 0,
-        creditRupees: 50000,
-        lineNarration: 'Tooling expense',
-      },
-    ]);
-    this.isCreateOpen.set(true);
-  }
+  async deleteEntry(entry: JournalEntryDto): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: 'Delete Journal Voucher',
+      message: `Are you sure you want to delete ${entry.entryNumber}? This voucher will be permanently removed.`,
+      confirmText: 'Delete Voucher',
+      cancelText: 'Cancel',
+      tone: 'danger',
+    });
 
-  addDraftLine(): void {
-    this.draftLines.update((lines) => [
-      ...lines,
-      { accountCode: '', debitRupees: 0, creditRupees: 0, lineNarration: '' },
-    ]);
-  }
+    if (!confirmed) return;
 
-  removeDraftLine(target: number | any): void {
-    this.draftLines.update((lines) =>
-      typeof target === 'number'
-        ? lines.filter((_, i) => i !== target)
-        : lines.filter((l) => l !== target),
-    );
-  }
+    if (!environment.useMockData && entry.id && !entry.id.startsWith('jv-')) {
+      this.journalService.delete(entry.id).subscribe({
+        next: () => {
+          if (entry.id) deleteStoredJournalEntry(entry.id);
+          this.journalEntries.update((list) => list.filter((j) => j.id !== entry.id));
+          const remaining = this.journalEntries();
+          this.selectedEntry.set(remaining[0] ?? null);
+          this.toasts.success(`Voucher ${entry.entryNumber} deleted.`);
+        },
+        error: (err) => {
+          this.toasts.error(err?.error?.error?.message ?? 'Failed to delete voucher');
+        },
+      });
+      return;
+    }
 
-  recalculateDraftTotals(): void {
-    // triggers signal update
-    this.draftLines.update((l) => [...l]);
-  }
-
-  createEntry(): void {
-    if (!this.isDraftBalanced() || !this.newEntry.narration) return;
-
-    const totalDebitPaise = this.draftTotalDebit() * 100;
-    const totalCreditPaise = this.draftTotalCredit() * 100;
-
-    const created: JournalEntryDto = {
-      id: `jv-${Date.now()}`,
-      entryNumber: this.newEntry.entryNumber || `JV-2026-0099`,
-      entryDateUtc: this.newEntry.entryDateUtc,
-      voucherType: this.newEntry.voucherType,
-      status: JournalVoucherStatus.Posted,
-      narration: this.newEntry.narration,
-      totalDebitInPaise: totalDebitPaise,
-      totalCreditInPaise: totalCreditPaise,
-      postedAtUtc: new Date().toISOString(),
-      postedBy: 'Chief Accountant Rajesh Iyer',
-      lines: this.draftLines().map((dl, idx) => ({
-        id: `jvl-${Date.now()}-${idx}`,
-        journalEntryId: `jv-${Date.now()}`,
-        accountId: `coa-${dl.accountCode}`,
-        accountCode: dl.accountCode,
-        accountName: `Account ${dl.accountCode}`,
-        debitAmountInPaise: dl.debitRupees * 100,
-        creditAmountInPaise: dl.creditRupees * 100,
-        lineNarration: dl.lineNarration,
-      })),
-    };
-
-    this.journalEntries.update((list) => [created, ...list]);
-    this.selectedEntry.set(created);
-    this.isCreateOpen.set(false);
+    // Local / fallback mode
+    if (entry.id) deleteStoredJournalEntry(entry.id);
+    this.journalEntries.update((list) => list.filter((j) => j.id !== entry.id));
+    const remaining = this.journalEntries();
+    this.selectedEntry.set(remaining[0] ?? null);
+    this.toasts.success(`Voucher ${entry.entryNumber} deleted.`);
   }
 
   postEntry(entry: JournalEntryDto): void {

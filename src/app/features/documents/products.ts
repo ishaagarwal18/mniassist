@@ -1,16 +1,20 @@
 import { PermissionService } from '@abp/ng.core';
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { grantedPolicy } from '../../core/auth/permission';
 import { inr } from '../../core/util/format';
+import { readApiError } from '../../core/util/api-error';
 import { ArTopbar } from '../../layout/topbar';
 import {
   CreateUpdateProductDto,
   ImportProductsResultDto,
   ProductDto,
   ProductService,
+  ProductUnitDto,
 } from '../../proxy/library';
 import { ArButton, ArChip, ArDialog, ArSearchBox } from '../../ui';
 import { ArSelect } from '../../ui/select';
@@ -25,7 +29,17 @@ import { ConfirmService } from '../../core/ui/confirm.service';
  */
 @Component({
   selector: 'ar-products',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox, ArSelect, ArGrid, GridModule],
+  imports: [
+    NgTemplateOutlet,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArSearchBox,
+    ArSelect,
+    ArGrid,
+    GridModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './products.html',
   styleUrl: './products.scss',
@@ -34,6 +48,14 @@ export class ArProducts {
   private readonly permissions = inject(PermissionService);
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(ProductService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  /** Which form this route shows as a page ('new', 'edit', 'import', 'units'), or the list. */
+  protected readonly mode = (this.route.snapshot.data['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+  /** The product an edit page could not load. */
+  protected readonly loadError = signal<string | null>(null);
 
   protected readonly canCreate = grantedPolicy('AutoReach.Library.Create', this.permissions);
   protected readonly canUpdate = grantedPolicy('AutoReach.Library.Update', this.permissions);
@@ -45,12 +67,15 @@ export class ArProducts {
   private readonly tick = signal(0);
 
   private readonly resource = rxResource({
-    params: () => ({
-      filter: this.filter(),
-      category: this.category(),
-      activeOnly: this.activeOnly(),
-      tick: this.tick(),
-    }),
+    params: () =>
+      this.isPage
+        ? undefined
+        : {
+            filter: this.filter(),
+            category: this.category(),
+            activeOnly: this.activeOnly(),
+            tick: this.tick(),
+          },
     stream: ({ params }) =>
       this.api.getList({
         filter: params.filter || null,
@@ -78,7 +103,10 @@ export class ArProducts {
   protected readonly name = signal('');
   protected readonly description = signal('');
   protected readonly unit = signal('no');
+  /** The sales price in rupees, as typed. */
   protected readonly price = signal('');
+  /** The purchase price in rupees, as typed; blank when not recorded. */
+  protected readonly purchasePrice = signal('');
   protected readonly categoryText = signal('');
   protected readonly hsn = signal('');
   /** Percent as typed; blank means the quotation's own rate. */
@@ -87,9 +115,147 @@ export class ArProducts {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  // ---- Units of measure ---------------------------------------------------------------------
+  protected readonly units = signal<ProductUnitDto[]>([]);
+  protected readonly unitsLoading = signal(false);
+  protected readonly addingUnit = signal(false);
+  protected readonly newUnit = signal('');
+  protected readonly unitError = signal<string | null>(null);
+  /** The choices for the Unit list: the workspace's units, and the product's own when it is not one of them. */
+  protected readonly unitOptions = computed(() => {
+    const names = this.units().map((u) => u.name);
+    const current = this.unit().trim();
+    return current && !names.some((n) => n.toLowerCase() === current.toLowerCase())
+      ? [current, ...names]
+      : names;
+  });
+  /** Sales price less purchase price, and as a share of the sales price; null without both. */
+  protected readonly margin = computed(() => {
+    const sell = Number(this.price().replace(/,/g, ''));
+    const buy = Number(this.purchasePrice().replace(/,/g, ''));
+    if (!this.purchasePrice().trim() || !(sell > 0) || !Number.isFinite(buy)) return null;
+    const paise = Math.round((sell - buy) * 100);
+    return { paise, percent: Math.round(((sell - buy) / sell) * 1000) / 10 };
+  });
+
   protected readonly importOpen = signal(false);
   protected readonly pasted = signal('');
   protected readonly importResult = signal<ImportProductsResultDto | null>(null);
+
+  constructor() {
+    if (this.mode === 'new') this.openNew();
+    else if (this.mode === 'import') this.openImport();
+    else if (this.mode === 'edit') void this.loadForEdit(this.route.snapshot.paramMap.get('id'));
+    if (this.mode === 'new' || this.mode === 'edit' || this.mode === 'units') void this.loadUnits();
+  }
+
+  private async loadForEdit(id: string | null): Promise<void> {
+    if (!id) return;
+    try {
+      this.openEdit(await firstValueFrom(this.api.get(id, { skipHandleError: true })));
+    } catch {
+      this.loadError.set('This product could not be found. It may have been deleted.');
+    }
+  }
+
+  // The list opens each form as its own page.
+  protected goNew(): void {
+    void this.router.navigate(['/documents/products/new']);
+  }
+  protected goImport(): void {
+    void this.router.navigate(['/documents/products/import']);
+  }
+  protected goUnits(): void {
+    void this.router.navigate(['/documents/products/units']);
+  }
+  protected goEdit(p: ProductDto): void {
+    if (p.id) void this.router.navigate(['/documents/products', p.id, 'edit']);
+  }
+  /** Back to the list (the page's Cancel and Close, and after a save). */
+  protected close(): void {
+    this.editorOpen.set(false);
+    this.importOpen.set(false);
+    if (this.isPage) void this.router.navigate(['/documents/products']);
+  }
+
+  private async loadUnits(): Promise<void> {
+    this.unitsLoading.set(true);
+    try {
+      this.units.set(await firstValueFrom(this.api.getUnits({ skipHandleError: true })));
+    } catch {
+      this.unitError.set('The unit list could not be loaded.');
+    } finally {
+      this.unitsLoading.set(false);
+    }
+  }
+
+  /** The Unit list's last choice opens a box to add a unit. */
+  protected onUnitChange(value: string): void {
+    if (value === '__add__') {
+      this.newUnit.set('');
+      this.unitError.set(null);
+      this.addingUnit.set(true);
+      return;
+    }
+    this.unit.set(value);
+  }
+
+  /** Adds a unit to the workspace's list; from the product form it is chosen for the product too. */
+  protected async addUnit(choose = true): Promise<void> {
+    const name = this.newUnit().trim();
+    if (!name) {
+      this.unitError.set('Type the unit, e.g. Box or Kg.');
+      return;
+    }
+    if (name.length > 16) {
+      this.unitError.set('A unit has at most 16 characters.');
+      return;
+    }
+    this.unitError.set(null);
+    try {
+      const added = await firstValueFrom(this.api.addUnit(name, { skipHandleError: true }));
+      this.units.update((list) =>
+        list.some((u) => u.name.toLowerCase() === added.name.toLowerCase())
+          ? list
+          : [...list, added].sort((a, b) => a.name.localeCompare(b.name)),
+      );
+      if (choose) this.unit.set(added.name);
+      this.newUnit.set('');
+      this.addingUnit.set(false);
+    } catch (e: unknown) {
+      this.unitError.set(readApiError(e, 'The unit could not be added.'));
+    }
+  }
+
+  protected cancelAddUnit(): void {
+    this.addingUnit.set(false);
+    this.unitError.set(null);
+  }
+
+  protected usage(u: ProductUnitDto): string {
+    return u.productCount
+      ? u.productCount + ' product' + (u.productCount === 1 ? '' : 's')
+      : 'Not used';
+  }
+
+  protected async removeUnit(u: ProductUnitDto): Promise<void> {
+    if (u.productCount > 0) return;
+    if (
+      !(await this.dialogs.delete(
+        'this unit',
+        u.name,
+        'Products already using it are not changed.',
+      ))
+    )
+      return;
+    this.unitError.set(null);
+    try {
+      await firstValueFrom(this.api.deleteUnit(u.name, { skipHandleError: true }));
+      this.units.update((list) => list.filter((x) => x.name !== u.name));
+    } catch (e: unknown) {
+      this.unitError.set(readApiError(e, 'The unit could not be removed.'));
+    }
+  }
 
   protected money(paise: number): string {
     return inr(paise);
@@ -100,8 +266,9 @@ export class ArProducts {
     this.partNumber.set('');
     this.name.set('');
     this.description.set('');
-    this.unit.set('no');
+    this.unit.set('Nos');
     this.price.set('');
+    this.purchasePrice.set('');
     this.categoryText.set('');
     this.hsn.set('');
     this.gst.set('');
@@ -121,6 +288,9 @@ export class ArProducts {
     this.description.set(p.description ?? '');
     this.unit.set(p.unit ?? 'no');
     this.price.set(String((p.listPriceInPaise ?? 0) / 100));
+    this.purchasePrice.set(
+      p.purchasePriceInPaise == null ? '' : String(p.purchasePriceInPaise / 100),
+    );
     this.categoryText.set(p.category ?? '');
     this.hsn.set(p.hsnCode ?? '');
     this.gst.set(p.taxRateBasisPoints == null ? '' : String(p.taxRateBasisPoints / 100));
@@ -136,6 +306,10 @@ export class ArProducts {
       description: this.description().trim() || null,
       unit: this.unit().trim() || 'no',
       listPriceInPaise: Math.round((Number(this.price().replace(/,/g, '')) || 0) * 100),
+      purchasePriceInPaise:
+        this.purchasePrice().trim() === ''
+          ? null
+          : Math.round((Number(this.purchasePrice().replace(/,/g, '')) || 0) * 100),
       hsnCode: this.hsn().trim() || null,
       category: this.categoryText().trim() || null,
       taxRateBasisPoints:
@@ -151,6 +325,13 @@ export class ArProducts {
       return;
     }
     if (
+      this.purchasePrice().trim() &&
+      !Number.isFinite(Number(this.purchasePrice().replace(/,/g, '')))
+    ) {
+      this.error.set('The purchase price must be a number.');
+      return;
+    }
+    if (
       dto.taxRateBasisPoints != null &&
       (dto.taxRateBasisPoints < 0 || dto.taxRateBasisPoints > 3000)
     ) {
@@ -163,8 +344,8 @@ export class ArProducts {
       const id = this.editingId();
       if (id) await firstValueFrom(this.api.update(id, dto));
       else await firstValueFrom(this.api.create(dto));
-      this.editorOpen.set(false);
       this.tick.update((n) => n + 1);
+      this.close();
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'Could not save the product.');
     } finally {

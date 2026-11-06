@@ -5,122 +5,133 @@
 />
 
 <div class="ag ar-scroll">
-  @if (error(); as e) {
-    <p class="ag__err">{{ e }}</p>
-  }
-
-  <section class="ag__block">
-    <h2 class="ag__h">Agencies with access to this workspace</h2>
-    <p class="ag__lead">
-      Create an invite code and give it to your agency. They redeem it to get a read-only view of
-      this workspace's numbers. You can revoke access at any time.
-    </p>
-
-    <button
-      ar-button
-      type="button"
-      variant="primary"
-      [disabled]="busy() === 'issue'"
-      (click)="issueInvite()"
-    >
-      {{ busy() === 'issue' ? 'Creating…' : 'Create invite code' }}
-    </button>
-
-    @if (issuedCode(); as code) {
-      <p class="ag__code">
-        Give this code to your agency now — it is shown only once:
-        <code>{{ code }}</code>
+  @if (isPlatform) {
+    <section class="ag__block">
+      <h2 class="ag__h">Agency mode is for workspaces</h2>
+      <p class="ag__lead">
+        You are signed in to the platform account, which is not a workspace. Agency mode links two
+        workspaces: a client workspace creates an invite code, and its agency's workspace redeems
+        it. Sign in to a workspace to create or redeem a code.
       </p>
+    </section>
+  } @else {
+    @if (error(); as e) {
+      <p class="ag__err" role="alert">{{ e }}</p>
     }
 
-    @for (l of links(); track l.id) {
-      <article class="ag__row">
-        <div>
-          <span class="ag__row-name">{{ l.agencyDisplayName ?? 'Unredeemed invite' }}</span>
-          <ar-chip
-            [tone]="l.status === S.Active ? 'good' : l.status === S.Pending ? 'neutral' : 'warn'"
-          >
-            {{ statusLabel(l.status) }}
-          </ar-chip>
-        </div>
-        @if (l.status !== S.Revoked) {
-          <button
-            ar-button
-            type="button"
-            variant="ghost"
-            [disabled]="busy() === l.id"
-            (click)="revoke(l)"
-          >
-            Revoke
-          </button>
-        }
-      </article>
-    } @empty {
-      <p class="ag__empty">No agency invites yet.</p>
-    }
-  </section>
-
-  <section class="ag__block">
-    <h2 class="ag__h">Client workspaces you manage</h2>
-
-    @if (acting.session(); as s) {
-      <p class="ag__acting">
-        You are in a read-only session in <strong>{{ s.clientDisplayName }}</strong
-        >.
-        <button type="button" (click)="exitActing()">End session</button>
+    <section class="ag__block">
+      <h2 class="ag__h">Agencies with access to this workspace</h2>
+      <p class="ag__lead">
+        Create an invite code and give it to your agency. They redeem it to get a read-only view of
+        this workspace's numbers. You can revoke access at any time.
       </p>
-    }
 
-    <div class="ag__redeem">
-      <input
-        class="ar-field__input ar-mono"
-        placeholder="AG-…"
-        [value]="redeemCode()"
-        (input)="redeemCode.set($any($event.target).value)"
-      />
       <button
         ar-button
         type="button"
         variant="primary"
-        [disabled]="busy() === 'redeem'"
-        (click)="redeem()"
+        [disabled]="busy() === 'issue'"
+        (click)="issueInvite()"
       >
-        {{ busy() === 'redeem' ? 'Redeeming…' : 'Redeem a client code' }}
+        {{ busy() === 'issue' ? 'Creating…' : 'Create invite code' }}
       </button>
-    </div>
 
-    @for (c of clients(); track c.linkId) {
-      <article class="ag__client">
-        <div class="ag__client-head">
-          <span class="ag__row-name">{{ c.clientDisplayName }}</span>
-          <div class="ag__client-actions">
-            <button
-              ar-button
-              type="button"
-              variant="primary"
-              [disabled]="busy() === 'enter-' + c.linkId || acting.isActing()"
-              (click)="enter(c)"
+      @if (issuedCode(); as code) {
+        <p class="ag__code">
+          Give this code to your agency now — it is shown only once:
+          <code>{{ code }}</code>
+        </p>
+      }
+
+      @for (l of links(); track l.id) {
+        <article class="ag__row">
+          <div>
+            <span class="ag__row-name">{{ l.agencyDisplayName ?? 'Unredeemed invite' }}</span>
+            <ar-chip
+              [tone]="l.status === S.Active ? 'good' : l.status === S.Pending ? 'neutral' : 'warn'"
             >
-              {{ c.actingNow ? 'In session' : 'Enter workspace' }}
-            </button>
+              {{ statusLabel(l.status) }}
+            </ar-chip>
+          </div>
+          @if (l.status !== S.Revoked) {
             <button
               ar-button
               type="button"
               variant="ghost"
-              [disabled]="busy() === c.linkId"
-              (click)="leave(c)"
+              [disabled]="busy() === l.id"
+              (click)="revoke(l)"
             >
-              Leave
+              Revoke
             </button>
-          </div>
-        </div>
-        <p class="ag__client-stats">
-          {{ c.openConversations }} open conversation(s) · {{ c.runningCampaigns }} running
-          campaign(s) · {{ rupees(c.spendThisMonthInPaise) }} spent this month
+          }
+        </article>
+      } @empty {
+        <p class="ag__empty">No agency invites yet.</p>
+      }
+    </section>
+
+    <section class="ag__block">
+      <h2 class="ag__h">Client workspaces you manage</h2>
+
+      @if (acting.session(); as s) {
+        <p class="ag__acting">
+          You are in a read-only session in <strong>{{ s.clientDisplayName }}</strong
+          >.
+          <button type="button" (click)="exitActing()">End session</button>
         </p>
-      </article>
-    } @empty {
-      <p class="ag__empty">You are not managing any client workspaces.</p>
-    }
-  </section>
+      }
+
+      <div class="ag__redeem">
+        <input
+          class="ar-field__input ar-mono"
+          placeholder="AG-…"
+          [value]="redeemCode()"
+          (input)="redeemCode.set($any($event.target).value)"
+        />
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="busy() === 'redeem'"
+          (click)="redeem()"
+        >
+          {{ busy() === 'redeem' ? 'Redeeming…' : 'Redeem a client code' }}
+        </button>
+      </div>
+
+      @for (c of clients(); track c.linkId) {
+        <article class="ag__client">
+          <div class="ag__client-head">
+            <span class="ag__row-name">{{ c.clientDisplayName }}</span>
+            <div class="ag__client-actions">
+              <button
+                ar-button
+                type="button"
+                variant="primary"
+                [disabled]="busy() === 'enter-' + c.linkId || acting.isActing()"
+                (click)="enter(c)"
+              >
+                {{ c.actingNow ? 'In session' : 'Enter workspace' }}
+              </button>
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                [disabled]="busy() === c.linkId"
+                (click)="leave(c)"
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+          <p class="ag__client-stats">
+            {{ c.openConversations }} open conversation(s) · {{ c.runningCampaigns }} running
+            campaign(s) · {{ rupees(c.spendThisMonthInPaise) }} spent this month
+          </p>
+        </article>
+      } @empty {
+        <p class="ag__empty">You are not managing any client workspaces.</p>
+      }
+    </section>
+  }
 </div>

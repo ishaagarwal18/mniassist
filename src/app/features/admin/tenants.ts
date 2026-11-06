@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
@@ -39,27 +41,36 @@ const SEED: TenantDto[] = [
     ArTenantFeaturesDialog,
     ArWorkspaceManageDialog,
     PermissionDirective,
+    NgTemplateOutlet,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar
-      title="Workspaces"
-      [subtitle]="subtitle()"
-      help="Every tenant workspace on this platform instance. Creating one here is a host-admin action — most customers should sign up for their own instead."
-    >
-      <button
-        ar-button
-        type="button"
-        variant="primary"
-        icon="plus"
-        *abpPermission="'AbpTenantManagement.Tenants.Create'"
-        (click)="openCreate()"
+    @if (isPage) {
+      <ar-topbar [title]="pageTitle()">
+        <button ar-button type="button" variant="ghost" (click)="close()">Back to Workspaces</button>
+      </ar-topbar>
+      <div class="ar-form-page ar-scroll">
+        <ng-container *ngTemplateOutlet="formsTpl" />
+      </div>
+    } @else {
+      <ar-topbar
+        title="Workspaces"
+        [subtitle]="subtitle()"
+        help="Every tenant workspace on this platform instance. Creating one here is a host-admin action — most customers should sign up for their own instead."
       >
-        New workspace
-      </button>
-    </ar-topbar>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          icon="plus"
+          *abpPermission="'AbpTenantManagement.Tenants.Create'"
+          (click)="goCreate()"
+        >
+          New workspace
+        </button>
+      </ar-topbar>
 
-    <div class="page ar-scroll">
+      <div class="page ar-scroll">
       <div class="page__col">
         @if (error(); as e) {
           <ar-banner tone="bad">{{ e }}</ar-banner>
@@ -90,7 +101,7 @@ const SEED: TenantDto[] = [
                       type="button"
                       class="link"
                       *abpPermission="'AutoReach.Administration.ManageTenants'"
-                      (click)="manageTenant.set(t)"
+                      (click)="goManage(t)"
                     >
                       Manage
                     </button>
@@ -98,7 +109,7 @@ const SEED: TenantDto[] = [
                       type="button"
                       class="link"
                       *abpPermission="'AbpTenantManagement.Tenants.ManageFeatures'"
-                      (click)="openFeatures(t)"
+                      (click)="goFeatures(t)"
                     >
                       Features
                     </button>
@@ -106,7 +117,7 @@ const SEED: TenantDto[] = [
                       type="button"
                       class="link"
                       *abpPermission="'AbpTenantManagement.Tenants.Update'"
-                      (click)="openRename(t)"
+                      (click)="goRename(t)"
                     >
                       Rename
                     </button>
@@ -127,12 +138,14 @@ const SEED: TenantDto[] = [
         </ar-card>
       </div>
     </div>
+  }
 
+  <ng-template #formsTpl>
     @if (featuresTenant(); as ft) {
       <ar-tenant-features-dialog
         [tenantId]="ft.id"
         [tenantName]="ft.name"
-        (closed)="featuresTenant.set(null)"
+        (closed)="close()"
       />
     }
 
@@ -147,7 +160,7 @@ const SEED: TenantDto[] = [
     @if (dialog(); as mode) {
       <ar-dialog
         [title]="mode === 'create' ? 'New workspace' : 'Rename workspace'"
-        (dismiss)="dialog.set(null)"
+        (dismiss)="close()"
       >
         <label class="fld">
           <span class="fld__k">Workspace name</span>
@@ -194,13 +207,14 @@ const SEED: TenantDto[] = [
         }
 
         <div dialogActions>
-          <button ar-button type="button" variant="ghost" (click)="dialog.set(null)">Cancel</button>
+          <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
           <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
             {{ busy() ? 'Saving…' : mode === 'create' ? 'Create workspace' : 'Save' }}
           </button>
         </div>
       </ar-dialog>
     }
+  </ng-template>
   `,
   styles: `
     .page {
@@ -255,6 +269,81 @@ const SEED: TenantDto[] = [
 export class ArAdminTenants {
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(TenantService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  protected readonly pageTitle = computed(() => {
+    switch (this.mode) {
+      case 'new': return 'New workspace';
+      case 'rename': return 'Rename workspace';
+      case 'features': return 'Workspace features';
+      case 'manage': return 'Manage workspace';
+      default: return 'Workspaces';
+    }
+  });
+
+  constructor() {
+    effect(() => {
+      const list = this.tenants();
+      if (list.length > 0) {
+        this.checkRouteParam();
+      }
+    });
+    if (this.mode === 'new') {
+      this.openCreate();
+    }
+  }
+
+  private checkRouteParam(): void {
+    if (this.mode === 'new') {
+      this.openCreate();
+    } else if (this.mode === 'rename') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const t = this.tenants().find((x) => x.id === id);
+      if (t) this.openRename(t);
+    } else if (this.mode === 'features') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const t = this.tenants().find((x) => x.id === id);
+      if (t) this.openFeatures(t);
+    } else if (this.mode === 'manage') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const t = this.tenants().find((x) => x.id === id);
+      if (t) this.manageTenant.set(t);
+    }
+  }
+
+  protected goCreate(): void {
+    if (this.router) void this.router.navigate(['/admin/tenants/new']);
+    else this.openCreate();
+  }
+
+  protected goRename(t: TenantDto): void {
+    if (this.router && t.id) void this.router.navigate(['/admin/tenants', t.id, 'rename']);
+    else this.openRename(t);
+  }
+
+  protected goFeatures(t: TenantDto): void {
+    if (this.router && t.id) void this.router.navigate(['/admin/tenants', t.id, 'features']);
+    else this.openFeatures(t);
+  }
+
+  protected goManage(t: TenantDto): void {
+    if (this.router && t.id) void this.router.navigate(['/admin/tenants', t.id, 'manage']);
+    else this.manageTenant.set(t);
+  }
+
+  protected close(): void {
+    this.dialog.set(null);
+    this.featuresTenant.set(null);
+    this.manageTenant.set(null);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/admin/tenants']);
+    }
+  }
+
   private readonly mock = environment.useMockData;
 
   private readonly tick = signal(0);
@@ -283,7 +372,7 @@ export class ArAdminTenants {
   protected readonly manageTenant = signal<TenantDto | null>(null);
 
   protected manageClosed(changed: boolean): void {
-    this.manageTenant.set(null);
+    this.close();
     if (changed) this.reload();
   }
 
@@ -342,7 +431,7 @@ export class ArAdminTenants {
         await firstValueFrom(this.api.update(this.editingId()!, { name: this.fSlug() }));
         this.notice.set('Workspace renamed.');
       }
-      this.dialog.set(null);
+      this.close();
       this.reload();
     } catch (e) {
       this.error.set(readApiError(e));

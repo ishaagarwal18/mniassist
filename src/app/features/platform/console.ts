@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, forkJoin, map } from 'rxjs';
 
@@ -264,7 +266,7 @@ function toRateHistory(cards: RateCardDto[]): RateHistory[] {
  */
 @Component({
   selector: 'ar-platform-console',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArStatTile, ArSelect, ArDateInput],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArStatTile, ArSelect, ArDateInput, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './console.html',
   styleUrl: './console.scss',
@@ -273,6 +275,33 @@ export class ArPlatformConsole {
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(PlatformAdminService);
   private readonly atRisk = inject(AtRiskStore);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  protected readonly pageTitle = computed(() =>
+    this.mode === 'rates-new' ? 'Schedule rate card' : 'Platform console',
+  );
+
+  constructor() {
+    if (this.mode === 'rates-new') {
+      this.openRate();
+    }
+  }
+
+  protected goNewRate(): void {
+    if (this.router) void this.router.navigate(['/platform/rates/new']);
+    else this.openRate();
+  }
+
+  protected close(): void {
+    this.rateOpen.set(false);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/platform']);
+    }
+  }
 
   protected readonly atRiskOnly = signal(false);
 
@@ -336,7 +365,7 @@ export class ArPlatformConsole {
       await firstValueFrom(
         open?.id ? this.api.supersedeRateCard(open.id, input) : this.api.createRateCard(input),
       );
-      this.rateOpen.set(false);
+      this.close();
       this.resource.reload();
     } catch (e: unknown) {
       this.rateError.set(

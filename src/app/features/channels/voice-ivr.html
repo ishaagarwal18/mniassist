@@ -4,9 +4,9 @@
   help="Use WhatsApp for agent calls and Exotel for phone calls with automated IVR. Connect each provider separately. The prompts below are served to Exotel live."
 >
   @if (canManage()) {
-    <button ar-button variant="primary" icon="plus" [disabled]="busy()" (click)="openCreate()">
+    <a ar-button variant="primary" icon="plus" routerLink="/channels/voice-ivr/prompts/new">
       New prompt
-    </button>
+    </a>
   }
 </ar-topbar>
 
@@ -602,9 +602,9 @@
                     Set as entry point
                   </button>
                 }
-                <button ar-button variant="ghost" [disabled]="busy()" (click)="openEdit(p)">
+                <a ar-button variant="ghost" [routerLink]="['/channels/voice-ivr/prompts', p.id]">
                   Edit
-                </button>
+                </a>
                 <button ar-button variant="danger" [disabled]="busy()" (click)="removePrompt(p)">
                   Delete
                 </button>
@@ -677,89 +677,6 @@
       }
     </section>
   </div>
-}
-
-@if (createOpen()) {
-  <ar-dialog [title]="editingId() ? 'Edit prompt' : 'New prompt'" (dismiss)="closeDialog()">
-    <label class="ar-field">
-      <span class="ar-field__label">Internal name</span>
-      <input
-        required
-        maxlength="128"
-        class="ar-field__input"
-        [value]="draft().name"
-        maxlength="128"
-        placeholder="Main menu"
-        (input)="patchDraft('name', $any($event.target).value)"
-      />
-    </label>
-    <label class="ar-field">
-      <span class="ar-field__label">Spoken text</span>
-      <textarea
-        required
-        class="ar-field__input"
-        rows="3"
-        maxlength="1024"
-        placeholder="Thanks for calling. Press 1 for sales, 2 for support."
-        [value]="draft().sayText"
-        (input)="patchDraft('sayText', $any($event.target).value)"
-      ></textarea>
-      <span class="vi__field-hint">
-        What Exotel's Say applet speaks — copy this into the matching step of the dashboard flow.
-      </span>
-    </label>
-    <div class="ar-field-row">
-      <label class="ar-field">
-        <span class="ar-field__label">Max digits to collect</span>
-        <input
-          required
-          min="1"
-          max="20"
-          class="ar-field__input"
-          type="number"
-          min="1"
-          max="10"
-          [value]="draft().maxDigits"
-          (input)="patchDraft('maxDigits', +$any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">Input timeout (seconds)</span>
-        <input
-          required
-          min="1"
-          max="60"
-          class="ar-field__input"
-          type="number"
-          min="1"
-          max="60"
-          [value]="draft().inputTimeoutSeconds"
-          (input)="patchDraft('inputTimeoutSeconds', +$any($event.target).value)"
-        />
-      </label>
-    </div>
-    <label class="vi__checkbox">
-      <input
-        type="checkbox"
-        [checked]="draft().isEntryPoint"
-        (change)="patchDraft('isEntryPoint', $any($event.target).checked)"
-      />
-      Make this the channel's entry point
-    </label>
-
-    <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="closeDialog()">Cancel</button>
-      <button
-        ar-button
-        type="button"
-        variant="primary"
-        [disabled]="!canSaveDraft() || busy()"
-        (click)="savePrompt()"
-      >
-        {{ busy() ? 'Saving…' : 'Save' }}
-      </button>
-    </div>
-  </ar-dialog>
 }
 
 @if (branchPromptId(); as promptId) {

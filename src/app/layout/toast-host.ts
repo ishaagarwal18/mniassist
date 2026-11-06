@@ -43,10 +43,12 @@ const escape = (s: string) =>
   styles: `
     :host {
       position: fixed;
-      top: 0;
-      right: 0;
+      top: calc(var(--ar-topbar-height, 56px) + 12px);
+      right: 16px;
       width: 0;
       height: 0;
+      z-index: 2147483000;
+      pointer-events: none;
     }
   `,
   template: `

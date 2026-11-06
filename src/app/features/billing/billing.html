@@ -1,14 +1,22 @@
-<ar-topbar
-  title="Billing"
-  [subtitle]="planName() + ' plan'"
-  help="Your prepaid wallet, current plan and usage against its limits. Limits are enforced the moment you try to exceed them, not as a surprise on the invoice."
->
-  <button ar-button variant="primary" icon="billing" [disabled]="busy()" (click)="topUp()">
-    Top up wallet
-  </button>
-</ar-topbar>
+@if (isPage) {
+  <ar-topbar [title]="pageTitle()">
+    <button ar-button type="button" variant="ghost" (click)="close()">Back to Billing</button>
+  </ar-topbar>
+  <div class="ar-form-page ar-scroll">
+    <ng-container *ngTemplateOutlet="formsTpl" />
+  </div>
+} @else {
+  <ar-topbar
+    title="Billing"
+    [subtitle]="planName() + ' plan'"
+    help="Your prepaid wallet, current plan and usage against its limits. Limits are enforced the moment you try to exceed them, not as a surprise on the invoice."
+  >
+    <button ar-button variant="primary" icon="billing" [disabled]="busy()" (click)="goTopUp()">
+      Top up wallet
+    </button>
+  </ar-topbar>
 
-<div class="bl ar-scroll">
+  <div class="bl ar-scroll">
   @if (requested(); as r) {
     <ar-banner tone="teal">
       You chose the <strong>{{ r.name }}</strong> plan · {{ r.price }}/month + GST. Activate it to
@@ -162,4 +170,63 @@
       </e-columns>
     </ejs-grid>
   </section>
-</div>
+  </div>
+}
+
+<ng-template #formsTpl>
+  @if (topUpOpen()) {
+    <ar-dialog title="Top up wallet" (dismiss)="close()">
+      <p class="bl__dialog-note" style="margin-bottom: 12px; color: var(--ar-text-muted);">
+        You pay on the gateway’s secure page; the wallet is credited as soon as payment is confirmed.
+      </p>
+      <label class="ar-field">
+        <span class="ar-field__label">Amount (₹)</span>
+        <input
+          type="number"
+          min="100"
+          max="1000000"
+          required
+          class="ar-field__input"
+          [value]="topUpAmount()"
+          (input)="topUpAmount.set(+$any($event.target).value)"
+        />
+      </label>
+      @if (availableGateways().length > 1) {
+        <label class="ar-field">
+          <span class="ar-field__label">Pay with</span>
+          <select
+            class="ar-field__input"
+            [value]="topUpGateway()"
+            (change)="topUpGateway.set($any($event.target).value)"
+          >
+            @for (g of availableGateways(); track g.name) {
+              <option [value]="g.name">{{ g.label }}</option>
+            }
+          </select>
+        </label>
+      } @else if (availableGateways().length === 0) {
+        <label class="ar-field">
+          <span class="ar-field__label">Payment reference / notes</span>
+          <input
+            class="ar-field__input"
+            placeholder="e.g. Bank transfer / gateway ref"
+            [value]="topUpReference()"
+            (input)="topUpReference.set($any($event.target).value)"
+          />
+        </label>
+      }
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="busy()"
+          (click)="submitTopUp()"
+        >
+          {{ busy() ? 'Processing…' : 'Continue to payment' }}
+        </button>
+      </div>
+    </ar-dialog>
+  }
+</ng-template>

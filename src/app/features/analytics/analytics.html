@@ -1,19 +1,27 @@
-<ar-topbar
-  title="Analytics"
-  [subtitle]="period.label()"
-  help="Messaging volume, spend, template and agent performance, and how your pipeline is converting. Pick a period at the top; with Compare on, each figure is set against the period just before. Click a row to see what is behind it, or export as CSV, Excel or PDF."
->
-  <ar-period-picker />
-  <div class="rangepick">
-    @for (f of exportFormats; track f.value) {
-      <button ar-button type="button" variant="ghost" icon="download" (click)="export(f.value)">
-        {{ f.label }}
-      </button>
-    }
+@if (isPage) {
+  <ar-topbar title="Conversion drill-down" [subtitle]="period.label()">
+    <button ar-button type="button" variant="ghost" (click)="closeDrill()">Back to Analytics</button>
+  </ar-topbar>
+  <div class="ar-form-page ar-scroll">
+    <ng-container *ngTemplateOutlet="drillTpl" />
   </div>
-</ar-topbar>
+} @else {
+  <ar-topbar
+    title="Analytics"
+    [subtitle]="period.label()"
+    help="Messaging volume, spend, template and agent performance, and how your pipeline is converting. Pick a period at the top; with Compare on, each figure is set against the period just before. Click a row to see what is behind it, or export as CSV, Excel or PDF."
+  >
+    <ar-period-picker />
+    <div class="rangepick">
+      @for (f of exportFormats; track f.value) {
+        <button ar-button type="button" variant="ghost" icon="download" (click)="export(f.value)">
+          {{ f.label }}
+        </button>
+      }
+    </div>
+  </ar-topbar>
 
-<div class="an ar-scroll">
+  <div class="an ar-scroll">
   @if (notInPlan()) {
     <ar-banner tone="teal">
       Spend, template, agent and conversion reports come with full analytics, which your plan does
@@ -318,21 +326,21 @@
         <e-column field="label" [headerText]="dimensionLabel(conversion().dimension)" width="180" />
         <e-column field="won" headerText="Won" type="number" textAlign="Right">
           <ng-template #template let-r>
-            <button type="button" class="an__drill" [disabled]="!r.won" (click)="drill(r, 'won')">
+            <button type="button" class="an__drill" [disabled]="!r.won" (click)="drillToPage(r, 'won')">
               {{ r.won }}
             </button>
           </ng-template>
         </e-column>
         <e-column field="lost" headerText="Lost" type="number" textAlign="Right">
           <ng-template #template let-r>
-            <button type="button" class="an__drill" [disabled]="!r.lost" (click)="drill(r, 'lost')">
+            <button type="button" class="an__drill" [disabled]="!r.lost" (click)="drillToPage(r, 'lost')">
               {{ r.lost }}
             </button>
           </ng-template>
         </e-column>
         <e-column field="open" headerText="Open" type="number" textAlign="Right">
           <ng-template #template let-r>
-            <button type="button" class="an__drill" [disabled]="!r.open" (click)="drill(r, 'open')">
+            <button type="button" class="an__drill" [disabled]="!r.open" (click)="drillToPage(r, 'open')">
               {{ r.open }}
             </button>
           </ng-template>
@@ -404,63 +412,66 @@
       </ejs-grid>
     </section>
   }
-</div>
-
-@if (drilling(); as d) {
-  <ar-dialog
-    [title]="d.title"
-    width="min(760px, calc(100vw - 32px))"
-    (dismiss)="drilling.set(null)"
-  >
-    <p class="an__drill-sub">
-      {{ period.label() }} · {{ d.rows.length }} enquir{{ d.rows.length === 1 ? 'y' : 'ies'
-      }}{{ d.rows.length >= 200 ? ' (the most recent 200)' : '' }}
-    </p>
-    @if (d.loading) {
-      <p class="card__empty">Loading…</p>
-    } @else {
-      <ejs-grid
-        arGrid="conversion-enquiries"
-        [arGridPageSize]="10"
-        [dataSource]="d.rows"
-        aria-label="Enquiries behind this figure"
-      >
-        <e-columns>
-          <e-column field="reference" headerText="Enquiry" width="200">
-            <ng-template #template let-e>
-              <a class="an__link" routerLink="/enquiries" [queryParams]="{ open: e.id }">{{
-                e.reference
-              }}</a>
-              @if (e.title) {
-                <span class="an__drill-title">{{ e.title }}</span>
-              }
-            </ng-template>
-          </e-column>
-          <e-column field="contact" headerText="Customer" width="170">
-            <ng-template #template let-e>
-              {{ e.contact }}
-              @if (e.company) {
-                <span class="an__drill-title">{{ e.company }}</span>
-              }
-            </ng-template>
-          </e-column>
-          <e-column field="outcomeText" headerText="Outcome" width="150" />
-          <e-column
-            field="value"
-            headerText="Value (₹)"
-            type="number"
-            textAlign="Right"
-            format="N0"
-            width="110"
-          />
-          <e-column field="owner" headerText="Owner" width="110" />
-          <e-column field="when" headerText="Date" width="100" />
-        </e-columns>
-        <ng-template #emptyRecordTemplate>Nothing here.</ng-template>
-      </ejs-grid>
-    }
-    <div dialogActions>
-      <button ar-button variant="ghost" (click)="drilling.set(null)">Close</button>
-    </div>
-  </ar-dialog>
+  </div>
 }
+
+<ng-template #drillTpl>
+  @if (drilling(); as d) {
+    <ar-dialog
+      [title]="d.title"
+      width="min(760px, calc(100vw - 32px))"
+      (dismiss)="closeDrill()"
+    >
+      <p class="an__drill-sub">
+        {{ period.label() }} · {{ d.rows.length }} enquir{{ d.rows.length === 1 ? 'y' : 'ies'
+        }}{{ d.rows.length >= 200 ? ' (the most recent 200)' : '' }}
+      </p>
+      @if (d.loading) {
+        <p class="card__empty">Loading…</p>
+      } @else {
+        <ejs-grid
+          arGrid="conversion-enquiries"
+          [arGridPageSize]="10"
+          [dataSource]="d.rows"
+          aria-label="Enquiries behind this figure"
+        >
+          <e-columns>
+            <e-column field="reference" headerText="Enquiry" width="200">
+              <ng-template #template let-e>
+                <a class="an__link" routerLink="/enquiries" [queryParams]="{ open: e.id }">{{
+                  e.reference
+                }}</a>
+                @if (e.title) {
+                  <span class="an__drill-title">{{ e.title }}</span>
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="contact" headerText="Customer" width="170">
+              <ng-template #template let-e>
+                {{ e.contact }}
+                @if (e.company) {
+                  <span class="an__drill-title">{{ e.company }}</span>
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="outcomeText" headerText="Outcome" width="150" />
+            <e-column
+              field="value"
+              headerText="Value (₹)"
+              type="number"
+              textAlign="Right"
+              format="N0"
+              width="110"
+            />
+            <e-column field="owner" headerText="Owner" width="110" />
+            <e-column field="when" headerText="Date" width="100" />
+          </e-columns>
+          <ng-template #emptyRecordTemplate>Nothing here.</ng-template>
+        </ejs-grid>
+      }
+      <div dialogActions>
+        <button ar-button variant="ghost" (click)="closeDrill()">Close</button>
+      </div>
+    </ar-dialog>
+  }
+</ng-template>

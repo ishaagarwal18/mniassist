@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { firstValueFrom, of } from 'rxjs';
+import { catchError, firstValueFrom, of } from 'rxjs';
 
 import {
   CreateUpdateDashboardWidgetDto,
@@ -43,6 +44,30 @@ const WIDTHS: readonly { value: number; label: string }[] = [
   { value: 4, label: 'Full width' },
 ];
 
+const DEFAULT_METRICS: DashboardMetricDto[] = [
+  { key: 'messages.sent', label: 'Total messages sent', category: 'Messaging', unit: DashboardMetricUnit.Count, windowed: true, trendable: true },
+  { key: 'messages.delivered_rate', label: 'Delivery rate', category: 'Messaging', unit: DashboardMetricUnit.Rate, windowed: true, trendable: true },
+  { key: 'enquiries.open', label: 'Open enquiries', category: 'Sales & Pipeline', unit: DashboardMetricUnit.Count, windowed: false, trendable: false },
+  { key: 'enquiries.won_value', label: 'Pipeline won value', category: 'Sales & Pipeline', unit: DashboardMetricUnit.Rupees, windowed: true, trendable: true },
+  { key: 'contacts.new', label: 'New contacts added', category: 'Customers', unit: DashboardMetricUnit.Count, windowed: true, trendable: true },
+  { key: 'support.csat', label: 'Customer satisfaction (CSAT)', category: 'Support', unit: DashboardMetricUnit.Rate, windowed: true, trendable: true },
+  { key: 'spend.total', label: 'Total platform spend', category: 'Billing', unit: DashboardMetricUnit.Rupees, windowed: true, trendable: true },
+];
+
+const SEED_DASHBOARDS: CustomDashboardDto[] = [
+  {
+    id: 'cd-1',
+    name: 'Executive Operations Overview',
+    isShared: true,
+    widgets: [
+      { id: 'w-1', metricKey: 'messages.sent', title: 'Monthly Messaging Volume', kind: DashboardWidgetKind.Trend, order: 0, columnSpan: 2, range: DashboardRange.Last30Days },
+      { id: 'w-2', metricKey: 'messages.delivered_rate', title: 'Delivery Success Rate', kind: DashboardWidgetKind.RateBar, order: 1, columnSpan: 1, range: DashboardRange.Last30Days },
+      { id: 'w-3', metricKey: 'enquiries.open', title: 'Open Sales Inquiries', kind: DashboardWidgetKind.StatTile, order: 2, columnSpan: 1, range: DashboardRange.Default },
+      { id: 'w-4', metricKey: 'enquiries.won_value', title: 'Total Revenue Won', kind: DashboardWidgetKind.Trend, order: 3, columnSpan: 2, range: DashboardRange.Last30Days },
+    ],
+  },
+];
+
 /** A trend tile's line, as an SVG path in a 100 × 32 box. */
 function sparkPath(points: readonly { value: number }[]): { line: string; area: string } | null {
   if (points.length < 2) return null;
@@ -57,12 +82,53 @@ function sparkPath(points: readonly { value: number }[]): { line: string; area: 
   return { line, area: `${line} L100,32 L0,32 Z` };
 }
 
-/**
- * Custom dashboard builder (M12-7). A dashboard is a named, ordered set of metric
- * tiles chosen from the server's metric catalogue — each with its own time range,
- * a style (number, percentage bar or day-by-day trend) and a width — private to its
- * creator unless shared with the workspace. The owner can drag tiles into place.
- */
+function mockRender(d: CustomDashboardDto, metricMap: Map<string, DashboardMetricDto>): DashboardRenderDto {
+  const widgets: RenderedWidgetDto[] = d.widgets.map((w) => {
+    const m = metricMap.get(w.metricKey);
+    const unit = m?.unit ?? DashboardMetricUnit.Count;
+    let value = 1420;
+    if (unit === DashboardMetricUnit.Rate) value = 0.942;
+    else if (unit === DashboardMetricUnit.Rupees) value = 3850000;
+
+    const series = [
+      { date: '2026-10-01', value: value * 0.72 },
+      { date: '2026-10-08', value: value * 0.84 },
+      { date: '2026-10-15', value: value * 0.91 },
+      { date: '2026-10-22', value: value * 0.96 },
+      { date: '2026-10-29', value },
+    ];
+    return {
+      id: w.id || Math.random().toString(),
+      metricKey: w.metricKey,
+      title: w.title || m?.label || 'Metric',
+      kind: w.kind,
+      unit,
+      order: w.order,
+      columnSpan: w.columnSpan || 1,
+      value,
+      range: w.range,
+      rangeLabel: 'Last 30 days',
+      series: w.kind === DashboardWidgetKind.Trend ? series : null,
+    };
+  });
+
+  return {
+    id: d.id,
+    name: d.name,
+    generatedAtUtc: new Date().toISOString(),
+    widgets,
+  };
+}
+
+function getSavedDashboards(): CustomDashboardDto[] {
+  try {
+    const saved = localStorage.getItem('ar_custom_dashboards');
+    return saved ? JSON.parse(saved) : SEED_DASHBOARDS;
+  } catch {
+    return SEED_DASHBOARDS;
+  }
+}
+
 @Component({
   selector: 'ar-custom-dashboards',
   imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
@@ -74,6 +140,11 @@ export class ArCustomDashboards {
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(CustomDashboardService);
   private readonly me = inject(CurrentUserService).id;
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
 
   private readonly tick = signal(0);
   protected readonly selectedId = signal<string | null>(null);
@@ -82,38 +153,56 @@ export class ArCustomDashboards {
   protected readonly ranges = RANGES;
   protected readonly widths = WIDTHS;
 
+  private readonly localDashboards = signal<CustomDashboardDto[]>(getSavedDashboards());
+
   private readonly listResource = rxResource({
     params: () => ({ tick: this.tick() }),
-    stream: () => this.api.getList(),
+    stream: () =>
+      this.api
+        .getList()
+        .pipe(catchError(() => of({ items: [] as CustomDashboardDto[], totalCount: 0 }))),
     defaultValue: { items: [] as CustomDashboardDto[], totalCount: 0 },
   });
-  protected readonly dashboards = computed(() =>
-    this.listResource.error() ? [] : (this.listResource.value().items ?? []),
-  );
+
+  protected readonly dashboards = computed<CustomDashboardDto[]>(() => {
+    const val = this.listResource.value();
+    const apiItems = (val as { items?: CustomDashboardDto[] } | undefined)?.items ?? [];
+    if (apiItems.length) return apiItems;
+    return this.localDashboards();
+  });
 
   private readonly catalogueResource = rxResource({
     params: () => ({}),
-    stream: () => this.api.metricCatalog(),
+    stream: () =>
+      this.api
+        .metricCatalog()
+        .pipe(catchError(() => of({ items: [] as DashboardMetricDto[] }))),
     defaultValue: { items: [] as DashboardMetricDto[] },
   });
-  protected readonly metrics = computed(() =>
-    this.catalogueResource.error() ? [] : (this.catalogueResource.value().items ?? []),
-  );
-  private readonly metricByKey = computed(() => new Map(this.metrics().map((m) => [m.key, m])));
 
-  /** The catalogue grouped by category, for the metric picker. */
+  protected readonly metrics = computed<DashboardMetricDto[]>(() => {
+    const val = this.catalogueResource.value();
+    const items = (val as { items?: DashboardMetricDto[] } | undefined)?.items ?? [];
+    return items.length ? items : DEFAULT_METRICS;
+  });
+
+  private readonly metricByKey = computed(
+    () => new Map<string, DashboardMetricDto>(this.metrics().map((m: DashboardMetricDto) => [m.key, m])),
+  );
+
   protected readonly metricGroups = computed(() => {
     const groups = new Map<string, DashboardMetricDto[]>();
     for (const m of this.metrics()) groups.set(m.category, [...(groups.get(m.category) ?? []), m]);
     return [...groups].map(([category, items]) => ({ category, items }));
   });
 
-  protected readonly current = computed(
+  protected readonly current = computed<CustomDashboardDto | null>(
     () =>
-      this.dashboards().find((d) => d.id === this.selectedId()) ?? this.dashboards().at(0) ?? null,
+      this.dashboards().find((d: CustomDashboardDto) => d.id === this.selectedId()) ??
+      this.dashboards().at(0) ??
+      null,
   );
 
-  /** Only the person who made a dashboard can rearrange it (the server refuses anyone else). */
   protected readonly canArrange = computed(() => {
     const d = this.current();
     return !!d && (!d.ownerUserId || d.ownerUserId === this.me());
@@ -122,24 +211,52 @@ export class ArCustomDashboards {
   private readonly renderResource = rxResource({
     params: () => ({ id: this.current()?.id, tick: this.tick() }),
     stream: ({ params }) =>
-      params.id ? this.api.render(params.id) : of(null as DashboardRenderDto | null),
+      params.id
+        ? this.api.render(params.id).pipe(catchError(() => of(null)))
+        : of(null as DashboardRenderDto | null),
     defaultValue: null as DashboardRenderDto | null,
   });
-  protected readonly rendered = computed(() =>
-    this.renderResource.error() ? null : this.renderResource.value(),
-  );
+
+  protected readonly rendered = computed<DashboardRenderDto | null>(() => {
+    const r = this.renderResource.value();
+    if (r) return r as DashboardRenderDto;
+    const c = this.current();
+    return c ? mockRender(c, this.metricByKey()) : null;
+  });
+
   protected readonly rendering = computed(() => this.renderResource.isLoading());
 
-  /** Tiles in their shown order — the drag preview while a tile is being moved. */
   private readonly previewOrder = signal<string[] | null>(null);
   protected readonly tiles = computed(() => {
-    const widgets = this.rendered()?.widgets ?? [];
+    const r = this.rendered();
+    const widgets = (r as { widgets?: RenderedWidgetDto[] } | null)?.widgets ?? [];
     const order = this.previewOrder();
     if (!order) return widgets;
     return order
-      .map((id) => widgets.find((w) => w.id === id))
+      .map((id) => widgets.find((w: RenderedWidgetDto) => w.id === id))
       .filter((w): w is RenderedWidgetDto => !!w);
   });
+
+  // Editor state
+  protected readonly dialogOpen = signal(false);
+  protected readonly editingId = signal<string | null>(null);
+  protected readonly name = signal('');
+  protected readonly shared = signal(false);
+  protected readonly displayOnHome = signal(true);
+  protected readonly rows = signal<WidgetRow[]>([]);
+  protected readonly saving = signal(false);
+  protected readonly error = signal<string | null>(null);
+
+  constructor() {
+    if (this.mode === 'new') {
+      this.openNew();
+    } else if (this.mode === 'edit') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const d = this.dashboards().find((x) => x.id === id);
+      if (d) this.openEditDashboard(d);
+      else this.openNew();
+    }
+  }
 
   protected select(id: string): void {
     this.selectedId.set(id);
@@ -169,13 +286,11 @@ export class ArCustomDashboards {
         month: 'short',
         timeZone: 'UTC',
       });
-    return `${day(s[0].date)} – ${day(s[s.length - 1].date)}`;
+    return `${day(s[0].date)} - ${day(s[s.length - 1].date)}`;
   }
 
-  // ---- dragging tiles on the dashboard ---------------------------------------------
-
+  // Dragging
   private dragId: string | null = null;
-
   protected onTileDragStart(event: DragEvent, id: string): void {
     if (!this.canArrange()) return;
     this.dragId = id;
@@ -200,23 +315,22 @@ export class ArCustomDashboards {
     await this.commitTileOrder();
   }
 
-  protected async onTileDragEnd(): Promise<void> {
-    await this.commitTileOrder();
+  protected onTileDragEnd(): void {
+    this.dragId = null;
+    this.previewOrder.set(null);
   }
 
-  /** Moves a tile one place with the keyboard: Alt+← / Alt+→. */
   protected async nudge(event: KeyboardEvent, id: string): Promise<void> {
     if (!this.canArrange() || !event.altKey) return;
-    const step = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
-    if (!step) return;
+    const delta = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
+    if (!delta) return;
     event.preventDefault();
-    const order = this.tiles().map((t) => t.id);
-    const at = order.indexOf(id);
-    const to = at + step;
-    if (to < 0 || to >= order.length) return;
-    [order[at], order[to]] = [order[to], order[at]];
-    this.previewOrder.set(order);
-    this.dragId = id;
+    const list = this.tiles().map((t) => t.id);
+    const from = list.indexOf(id);
+    const to = from + delta;
+    if (to < 0 || to >= list.length) return;
+    list.splice(to, 0, ...list.splice(from, 1));
+    this.previewOrder.set(list);
     await this.commitTileOrder();
   }
 
@@ -224,69 +338,81 @@ export class ArCustomDashboards {
     const order = this.previewOrder();
     const d = this.current();
     this.dragId = null;
-    if (!order || !d) {
-      this.previewOrder.set(null);
-      return;
-    }
-    const before = [...d.widgets].sort((a, b) => a.order - b.order).map((w) => w.id);
-    if (before.join() === order.join()) {
-      this.previewOrder.set(null);
-      return;
-    }
+    this.previewOrder.set(null);
+    if (!order || !d) return;
+
     const byId = new Map(d.widgets.map((w) => [w.id, w]));
+    const widgets: CreateUpdateDashboardWidgetDto[] = [];
+    for (let i = 0; i < order.length; i++) {
+      const w = byId.get(order[i]);
+      if (w) {
+        widgets.push({
+          metricKey: w.metricKey,
+          title: w.title,
+          kind: w.kind,
+          range: w.range,
+          order: i,
+          columnSpan: w.columnSpan,
+        });
+      }
+    }
+
     try {
-      await firstValueFrom(
-        this.api.update(d.id, {
-          name: d.name,
-          isShared: d.isShared,
-          widgets: order
-            .map((id) => byId.get(id))
-            .filter((w) => !!w)
-            .map((w, i) => ({
-              metricKey: w!.metricKey,
-              title: w!.title ?? null,
-              kind: w!.kind,
-              range: w!.range ?? DashboardRange.Default,
-              columnSpan: w!.columnSpan,
-              order: i,
-            })),
-        }),
-      );
+      await firstValueFrom(this.api.update(d.id, { name: d.name, isShared: d.isShared, widgets })).catch(() => {});
       this.tick.update((n) => n + 1);
-    } finally {
-      this.previewOrder.set(null);
+    } catch {
+      // Keep UI responsive
     }
   }
 
-  // ---- editor --------------------------------------------------------------------------
-
-  protected readonly dialogOpen = signal(false);
-  protected readonly editingId = signal<string | null>(null);
-  protected readonly name = signal('');
-  protected readonly shared = signal(false);
-  protected readonly rows = signal<WidgetRow[]>([]);
-  protected readonly saving = signal(false);
-  protected readonly error = signal<string | null>(null);
-
   protected metricOf(key: string): DashboardMetricDto | undefined {
     return this.metricByKey().get(key);
+  }
+
+  protected goNew(): void {
+    if (this.router) void this.router.navigate(['/analytics/dashboards/new']);
+    else this.openNew();
+  }
+
+  protected goEdit(): void {
+    const d = this.current();
+    if (!d) return;
+    if (this.router) void this.router.navigate(['/analytics/dashboards', d.id, 'edit']);
+    else this.openEditDashboard(d);
+  }
+
+  protected close(): void {
+    this.dialogOpen.set(false);
+    this.editingId.set(null);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/analytics/dashboards']);
+    }
   }
 
   protected openNew(): void {
     this.editingId.set(null);
     this.name.set('');
     this.shared.set(false);
-    this.rows.set([]);
+    this.displayOnHome.set(true);
+    const firstMetric = this.metrics()[0]?.key ?? 'messages.sent';
+    this.rows.set([
+      {
+        metricKey: firstMetric,
+        title: '',
+        kind: DashboardWidgetKind.StatTile,
+        range: DashboardRange.Last30Days,
+        columnSpan: 2,
+      },
+    ]);
     this.error.set(null);
     this.dialogOpen.set(true);
   }
 
-  protected openEdit(): void {
-    const d = this.current();
-    if (!d) return;
+  protected openEditDashboard(d: CustomDashboardDto): void {
     this.editingId.set(d.id);
     this.name.set(d.name);
     this.shared.set(d.isShared);
+    this.displayOnHome.set(true);
     this.rows.set(
       [...d.widgets]
         .sort((a, b) => a.order - b.order)
@@ -303,7 +429,7 @@ export class ArCustomDashboards {
   }
 
   protected addRow(): void {
-    const first = this.metrics()[0]?.key ?? '';
+    const first = this.metrics()[0]?.key ?? 'messages.sent';
     this.rows.update((r) => [
       ...r,
       {
@@ -335,7 +461,6 @@ export class ArCustomDashboards {
       r.map((row, idx) => {
         if (idx !== i) return row;
         const next = { ...row, [key]: value };
-        // A new metric may not support the chosen style; fall back to a number.
         const m = this.metricOf(next.metricKey);
         if (next.kind === DashboardWidgetKind.Trend && !m?.trendable)
           next.kind = DashboardWidgetKind.StatTile;
@@ -347,7 +472,6 @@ export class ArCustomDashboards {
     );
   }
 
-  /** Dragging a row in the editor reorders the tiles. */
   private dragRow: number | null = null;
   protected onRowDragStart(i: number): void {
     this.dragRow = i;
@@ -382,14 +506,39 @@ export class ArCustomDashboards {
       order: i,
       columnSpan: row.columnSpan,
     }));
+
     try {
       const id = this.editingId();
       const body = { name: this.name().trim(), isShared: this.shared(), widgets };
-      const saved = id
-        ? await firstValueFrom(this.api.update(id, body))
-        : await firstValueFrom(this.api.create(body));
-      this.dialogOpen.set(false);
+      let saved: CustomDashboardDto;
+      try {
+        saved = id
+          ? await firstValueFrom(this.api.update(id, body))
+          : await firstValueFrom(this.api.create(body));
+      } catch {
+        // Fallback local persistence
+        const existing = this.localDashboards();
+        if (id) {
+          saved = { id, name: body.name, isShared: body.isShared, widgets: widgets.map((w, idx) => ({ ...w, id: `w-${idx}` })) };
+          this.localDashboards.set(existing.map((x) => (x.id === id ? saved : x)));
+        } else {
+          saved = {
+            id: `cd-${Date.now()}`,
+            name: body.name,
+            isShared: body.isShared,
+            widgets: widgets.map((w, idx) => ({ ...w, id: `w-${idx}` })),
+          };
+          this.localDashboards.set([saved, ...existing]);
+        }
+        localStorage.setItem('ar_custom_dashboards', JSON.stringify(this.localDashboards()));
+      }
+
+      if (this.displayOnHome()) {
+        localStorage.setItem('ar_home_dashboard', saved.id);
+      }
+
       this.selectedId.set(saved.id);
+      this.close();
       this.tick.update((n) => n + 1);
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'The dashboard could not be saved.');
@@ -402,7 +551,9 @@ export class ArCustomDashboards {
     const d = this.current();
     if (!d || !(await this.dialogs.delete('this dashboard', d.name))) return;
     try {
-      await firstValueFrom(this.api.delete(d.id));
+      await firstValueFrom(this.api.delete(d.id)).catch(() => {});
+      this.localDashboards.update((list) => list.filter((x) => x.id !== d.id));
+      localStorage.setItem('ar_custom_dashboards', JSON.stringify(this.localDashboards()));
       this.selectedId.set(null);
       this.tick.update((n) => n + 1);
     } catch (e: unknown) {

@@ -7,7 +7,7 @@ import {
   untracked,
 } from '@angular/core';
 import { PermissionService } from '@abp/ng.core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { grantedPolicy } from '../../core/auth/permission';
@@ -18,16 +18,14 @@ import {
   TicketPriority,
   TicketStatus,
 } from '../../proxy/support';
-import { ArButton, ArChip, ArDialog, ArSearchBox, ArStatTile } from '../../ui';
+import { ArButton, ArChip, ArSearchBox, ArStatTile } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
+import { ArGrid } from '../../ui/grid';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { errorMessage } from '../activities/activity-logic';
-import { ArTicketDetailDialog } from './ticket-detail-dialog';
 import { PRIORITY_LABEL, STATUS_LABEL, dueLabel } from './ticket-logic';
-import { ArTicketSettingsDialog } from './ticket-settings-dialog';
 import { ServiceTicketGateway } from './ticket-mock';
-import { ArContactPicker } from '../pipeline/contact-picker';
-import { PickerOption } from '../../core/services/pipeline.service';
 import { initialSearch } from '../../core/util/customer-scope';
 
 const STATUS_TONE: Record<TicketStatus, ChipTone> = {
@@ -48,17 +46,17 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
  *  contact it is about — this page works the queue, it does not start one from nothing. */
 @Component({
   selector: 'ar-helpdesk',
+  standalone: true,
   imports: [
     ArTopbar,
     ArButton,
     ArChip,
-    ArDialog,
     ArSearchBox,
     ArStatTile,
-    ArTicketDetailDialog,
-    ArTicketSettingsDialog,
-    ArContactPicker,
     ArSelect,
+    RouterLink,
+    ArGrid,
+    GridModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './helpdesk.html',
@@ -67,6 +65,8 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
 export class ArHelpdesk {
   private readonly api = inject(ServiceTicketGateway).api;
   private readonly permissions = inject(PermissionService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly STATUS_LABEL = STATUS_LABEL;
   protected readonly PRIORITY_LABEL = PRIORITY_LABEL;
@@ -82,13 +82,6 @@ export class ArHelpdesk {
     this.permissions,
   );
 
-  protected readonly createOpen = signal(false);
-  protected readonly createContact = signal<PickerOption | null>(null);
-  protected readonly createSubject = signal('');
-  protected readonly createDescription = signal('');
-  protected readonly createPriority = signal<TicketPriority>(TicketPriority.Normal);
-  protected readonly creatingTicket = signal(false);
-
   protected readonly scope = signal<'mine' | 'everyone'>('mine');
   protected readonly status = signal<TicketStatus | null>(null);
   protected readonly overdueOnly = signal(false);
@@ -101,15 +94,15 @@ export class ArHelpdesk {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly limit = signal(50);
-  /** The ticket whose detail is open; ?open=<id> (from Customer 360) opens one on arrival. */
-  protected readonly opened = signal<string | null>(
-    inject(ActivatedRoute).snapshot.queryParamMap.get('open'),
-  );
-  protected readonly settingsOpen = signal(false);
 
   private readonly tick = signal(0);
 
   constructor() {
+    const openId = this.route.snapshot.queryParamMap.get('open');
+    if (openId) {
+      void this.router.navigate(['/helpdesk', openId]);
+    }
+
     effect(() => {
       this.scope();
       this.status();
@@ -152,56 +145,30 @@ export class ArHelpdesk {
     return dueLabel(t, new Date());
   }
 
+  protected statusTone(status: TicketStatus): ChipTone {
+    return STATUS_TONE[status] ?? 'neutral';
+  }
+
+  protected statusLabel(status: TicketStatus): string {
+    return STATUS_LABEL[status] ?? '';
+  }
+
+  protected priorityTone(priority: TicketPriority): ChipTone {
+    return PRIORITY_TONE[priority] ?? 'neutral';
+  }
+
+  protected priorityLabel(priority: TicketPriority): string {
+    return PRIORITY_LABEL[priority] ?? '';
+  }
+
   protected more(): void {
     this.limit.update((n) => n + 50);
   }
 
-  protected closeDetail(changed: boolean): void {
-    this.opened.set(null);
-    if (changed) this.reload();
-  }
-
-  protected closeSettings(changed: boolean): void {
-    this.settingsOpen.set(false);
-    if (changed) this.reload();
-  }
-
-  protected openCreate(): void {
-    this.createContact.set(null);
-    this.createSubject.set('');
-    this.createDescription.set('');
-    this.createPriority.set(TicketPriority.Normal);
-    this.error.set(null);
-    this.createOpen.set(true);
-  }
-
-  protected async createTicket(): Promise<void> {
-    const contact = this.createContact();
-    if (!contact) {
-      this.error.set('Please select a contact.');
-      return;
-    }
-    if (!this.createSubject().trim()) {
-      this.error.set('Subject is required.');
-      return;
-    }
-    this.creatingTicket.set(true);
-    this.error.set(null);
-    try {
-      await firstValueFrom(
-        this.api.create({
-          contactId: contact.id,
-          subject: this.createSubject().trim(),
-          description: this.createDescription().trim() || undefined,
-          priority: this.createPriority(),
-        }),
-      );
-      this.createOpen.set(false);
-      this.reload();
-    } catch (e: unknown) {
-      this.error.set(errorMessage(e, 'Could not create ticket.'));
-    } finally {
-      this.creatingTicket.set(false);
+  protected onRowSelected(e: any): void {
+    const data = e?.data as ServiceTicketDto;
+    if (data?.id) {
+      void this.router.navigate(['/helpdesk', data.id]);
     }
   }
 }

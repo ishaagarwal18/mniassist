@@ -2,71 +2,54 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
   input,
   output,
   signal,
-  untracked,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { AccountMasterDataService } from '../../../core/services/account-master-data.service';
 import { PickerOption } from '../../../core/services/pipeline.service';
+import type { ProductDto } from '../../../proxy/library/product.service';
 import { WorkspaceProfileService } from '../../../proxy/business/workspace-profile.service';
 import { SalesInvoiceKind, SalesInvoiceStatus } from '../../../proxy/sales/sales-enums';
 import { CreateSalesInvoiceDto, SalesInvoiceDto } from '../../../proxy/sales/sales-invoice.models';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { ArButton, ArDialog } from '../../../ui';
-import { ArDateInput } from '../../../ui/date-input';
-import { ArSelect } from '../../../ui/select';
 import { errorMessage } from '../../activities/activity-logic';
-import { ArContactPicker } from '../../pipeline/contact-picker';
-import { EMPTY_PARTY, SalesParty, SalesPartyService } from '../sales-party';
+import { ArCatalogueItem, CatalogueSearch } from '../catalogue-item';
+import { ArSalesCustomer, SalesCustomerChoice } from '../sales-customer';
+import { EMPTY_PARTY, SalesParty, defaultShipIndex, shipToText } from '../sales-party';
+import {
+  GST_RATES,
+  InvoiceLine,
+  PAYMENT_TERMS,
+  blankInvoiceLine,
+  editInvoiceLine,
+  invoiceLineFromProduct,
+  invoiceTotals,
+  isStarted,
+  lineTaxablePaise,
+  plusDays,
+  toInvoiceLines,
+} from './new-sales-invoice.logic';
 
-interface InvoiceLine {
-  partNumber: string;
-  description: string;
-  hsnCode: string;
-  quantity: number;
-  unitPrice: number;
-  discountPercent: number;
-  gstPercent: number;
-}
+/** Today in the browser's time zone (yyyy-mm-dd); toISOString would give yesterday before 05:30 IST. */
+const localToday = () => plusDays(new Date().toLocaleDateString('en-CA'), 0);
 
-const BLANK_LINE: InvoiceLine = {
-  partNumber: '',
-  description: '',
-  hsnCode: '',
-  quantity: 1,
-  unitPrice: 0,
-  discountPercent: 0,
-  gstPercent: 18,
-};
-
-const GST_RATES = [0, 5, 12, 18, 28] as const;
-
-const today = () => new Date().toISOString().slice(0, 10);
-const plusDays = (iso: string, days: number) => {
-  const d = new Date(iso);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-};
-
-/** Taxable value of a line in paise: quantity × rate, less its discount. */
-export function lineTaxablePaise(l: InvoiceLine): number {
-  const gross = Math.round(l.quantity * l.unitPrice * 100);
-  return Math.round(gross * (1 - Math.min(100, Math.max(0, l.discountPercent)) / 100));
-}
+const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
 /**
- * A new sales invoice raised directly — not from an order or a challan. Picking the customer fills the GSTIN, billing and shipping
- * addresses from their account; the place of supply decides CGST+SGST or IGST. Saved as a draft for review, then issued from the list.
+ * A new sales invoice raised directly — not from an order or a challan — shown as the page at /sales/invoices/new. It is billed
+ * to an account (and the contact person on it) or to a contact with no account; an account fills the GSTIN, billing and shipping
+ * addresses, and the site decides the place of supply and so CGST + SGST or IGST. Each item's name searches the product
+ * catalogue: picking one fills the item number, description, HSN, rate and GST. Saved as a draft, issued from its page.
  */
 @Component({
   selector: 'ar-new-sales-invoice',
-  imports: [ArDialog, ArButton, ArSelect, ArDateInput, ArContactPicker],
+  imports: [ArDialog, ArButton, ArSalesCustomer, ArCatalogueItem],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog
@@ -75,222 +58,335 @@ export function lineTaxablePaise(l: InvoiceLine): number {
       (dismiss)="closed.emit(null)"
     >
       <div class="ni">
-        <div class="ni__grid">
-          <div class="ar-field ni__wide">
-            <span class="ar-field__label">Customer <span class="ar-field__req">*</span></span>
-            <ar-contact-picker [initial]="initialCustomer()" (picked)="pickCustomer($event)" />
-            @if (party().accountName; as a) {
-              <span class="ar-field__hint">Account: {{ a }}</span>
-            } @else if (customer()) {
-              <span class="ar-field__hint">
-                This contact has no account: enter the GSTIN and addresses below.
-              </span>
-            }
-          </div>
-          <label class="ar-field">
-            <span class="ar-field__label">Document</span>
-            <select
-              required
-              class="ar-field__input"
-              (change)="kind.set(+$any($event.target).value)"
-            >
-              <option [value]="Kind.TaxInvoice" [selected]="kind() === Kind.TaxInvoice">
-                Tax invoice
-              </option>
-              <option [value]="Kind.BillOfSupply" [selected]="kind() === Kind.BillOfSupply">
-                Bill of supply (no GST)
-              </option>
-            </select>
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label"
-              >Customer GSTIN <span class="ar-field__opt">optional</span></span
-            >
-            <input
-              class="ar-field__input ar-mono"
-              maxlength="15"
-              [value]="gstin()"
-              (input)="setGstin($any($event.target).value)"
-            />
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">Invoice date</span>
-            <input
-              type="date"
-              class="ar-field__input"
-              [value]="issueDate()"
-              (input)="issueDate.set($any($event.target).value)"
-            />
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">Due date</span>
-            <input
-              type="date"
-              class="ar-field__input"
-              [value]="dueDate()"
-              (input)="dueDate.set($any($event.target).value)"
-            />
-          </label>
-          <label class="ar-field">
-            <span class="ar-field__label">Place of supply</span>
-            <select
-              required
-              class="ar-field__input"
-              (change)="setPlaceOfSupply($any($event.target).value)"
-            >
-              <option value="" [selected]="!placeCode()">Choose state…</option>
-              @for (s of states(); track s.name) {
-                <option [value]="s.code" [selected]="s.code === placeCode()">
-                  {{ s.code }} · {{ s.name }}
+        <!-- Bill to -->
+        <section class="ni__sec" aria-labelledby="ni-billto">
+          <header class="ni__sec-head">
+            <h3 id="ni-billto" class="ni__sec-title">Bill to</h3>
+            <p class="ni__sec-sub">An account and its contact person, or a contact on their own.</p>
+          </header>
+          <ar-sales-customer [initialCustomer]="initialCustomer()" (changed)="onCustomer($event)" />
+          @if (choice()?.mode === 'contact' && choice()?.customer && !party().accountId) {
+            <p class="ni__note">
+              This contact has no account: enter their GSTIN and addresses below.
+            </p>
+          }
+          <div class="ni__grid ni__grid--3">
+            <label class="ar-field">
+              <span class="ar-field__label">Document</span>
+              <select class="ar-field__input" (change)="kind.set(+$any($event.target).value)">
+                <option [value]="Kind.TaxInvoice" [selected]="kind() === Kind.TaxInvoice">
+                  Tax invoice
                 </option>
+                <option [value]="Kind.BillOfSupply" [selected]="kind() === Kind.BillOfSupply">
+                  Bill of supply (no GST)
+                </option>
+              </select>
+            </label>
+            <label class="ar-field ni__span2">
+              <span class="ar-field__label"
+                >Customer GSTIN <span class="ar-field__opt">optional</span></span
+              >
+              <input
+                class="ar-field__input ar-mono"
+                maxlength="15"
+                placeholder="e.g. 27ABCDE1234F1Z5"
+                [class.ni__invalid]="gstinInvalid()"
+                [value]="gstin()"
+                (input)="setGstin($any($event.target).value)"
+              />
+              @if (gstinInvalid()) {
+                <span class="ar-field__hint ni__bad"
+                  >A GSTIN has 15 characters, like 27ABCDE1234F1Z5.</span
+                >
               }
-            </select>
-          </label>
-          <label class="ni__check">
+            </label>
+          </div>
+        </section>
+
+        <!-- Invoice details -->
+        <section class="ni__sec" aria-labelledby="ni-details">
+          <header class="ni__sec-head">
+            <h3 id="ni-details" class="ni__sec-title">Invoice details</h3>
+          </header>
+          <div class="ni__grid ni__grid--4">
+            <label class="ar-field">
+              <span class="ar-field__label">Invoice date</span>
+              <input
+                type="date"
+                class="ar-field__input"
+                [value]="issueDate()"
+                (input)="setIssueDate($any($event.target).value)"
+              />
+            </label>
+            <label class="ar-field">
+              <span class="ar-field__label">Payment terms</span>
+              <select class="ar-field__input" (change)="setTerms($any($event.target).value)">
+                @for (d of paymentTerms; track d) {
+                  <option [value]="d" [selected]="terms() === d">
+                    {{ d === 0 ? 'Due on receipt' : 'Net ' + d + ' days' }}
+                  </option>
+                }
+                <option value="custom" [selected]="terms() === null">Custom date</option>
+              </select>
+            </label>
+            <label class="ar-field">
+              <span class="ar-field__label">Due date</span>
+              <input
+                type="date"
+                class="ar-field__input"
+                [min]="issueDate()"
+                [value]="dueDate()"
+                (input)="setDueDate($any($event.target).value)"
+              />
+            </label>
+            <label class="ar-field">
+              <span class="ar-field__label">Place of supply</span>
+              <select
+                class="ar-field__input"
+                (change)="setPlaceOfSupply($any($event.target).value)"
+              >
+                <option value="" [selected]="!placeCode()">Choose state…</option>
+                @for (s of states(); track s.name) {
+                  <option [value]="s.code" [selected]="s.code === placeCode()">
+                    {{ s.code }} · {{ s.name }}
+                  </option>
+                }
+              </select>
+            </label>
+          </div>
+          <label class="ni__switch">
             <input
               type="checkbox"
               [checked]="interState()"
               (change)="interState.set($any($event.target).checked)"
             />
-            Inter-state supply (IGST instead of CGST + SGST)
+            <span>
+              <strong>Inter-state supply</strong>
+              <small>{{
+                interState()
+                  ? 'IGST is charged.'
+                  : 'CGST + SGST are charged. Tick when the place of supply is outside your state.'
+              }}</small>
+            </span>
           </label>
-          <label class="ar-field ni__half">
-            <span class="ar-field__label">Billing address</span>
-            <textarea
-              class="ar-field__input"
-              rows="3"
-              [value]="billingAddress()"
-              (input)="billingAddress.set($any($event.target).value)"
-            ></textarea>
-          </label>
-          <div class="ar-field ni__half">
-            <span class="ar-field__label">Shipping address</span>
-            @if (party().shipTo.length) {
-              <select class="ar-field__input" (change)="chooseShipTo(+$any($event.target).value)">
-                @for (s of party().shipTo; track $index; let i = $index) {
-                  <option [value]="i" [selected]="i === shipIndex()">{{ s.label }}</option>
-                }
-                <option [value]="-1" [selected]="shipIndex() === -1">Other address…</option>
-              </select>
-            }
-            <textarea
-              class="ar-field__input"
-              rows="3"
-              [value]="shippingAddress()"
-              (input)="shippingAddress.set($any($event.target).value); shipIndex.set(-1)"
-            ></textarea>
-          </div>
-        </div>
+        </section>
 
-        <h4 class="ni__h">Items</h4>
-        <div class="ni__lines">
-          <div class="ni__line ni__line--head" aria-hidden="true">
-            <span>Part no.</span><span>Description</span><span>HSN</span><span>Qty</span>
-            <span>Rate ₹</span><span>Disc %</span><span>GST %</span><span class="num">Amount ₹</span
-            ><span></span>
-          </div>
-          @for (l of lines(); track $index; let i = $index) {
-            <div class="ni__line">
-              <input
+        <!-- Addresses -->
+        <section class="ni__sec" aria-labelledby="ni-addr">
+          <header class="ni__sec-head">
+            <h3 id="ni-addr" class="ni__sec-title">Addresses</h3>
+          </header>
+          <div class="ni__grid ni__grid--2">
+            <label class="ar-field">
+              <span class="ar-field__label">Billing address</span>
+              <textarea
                 class="ar-field__input"
-                aria-label="Part number"
-                [value]="l.partNumber"
-                (input)="patchLine(i, 'partNumber', $any($event.target).value)"
-              />
-              <input
+                rows="3"
+                [value]="billingAddress()"
+                (input)="billingAddress.set($any($event.target).value)"
+              ></textarea>
+            </label>
+            <div class="ar-field">
+              <span class="ar-field__label">Shipping / site address</span>
+              @if (party().shipTo.length) {
+                <select
+                  class="ar-field__input"
+                  aria-label="Ship to"
+                  (change)="chooseShipTo(+$any($event.target).value)"
+                >
+                  @for (s of party().shipTo; track $index; let i = $index) {
+                    <option [value]="i" [selected]="i === shipIndex()">
+                      {{ s.label }}{{ s.isDefault ? ' (default)' : '' }}
+                    </option>
+                  }
+                  <option [value]="-1" [selected]="shipIndex() === -1">
+                    Same as billing / other…
+                  </option>
+                </select>
+              }
+              <textarea
                 class="ar-field__input"
-                aria-label="Description"
-                [value]="l.description"
-                (input)="patchLine(i, 'description', $any($event.target).value)"
-              />
-              <input
-                class="ar-field__input ar-mono"
-                aria-label="HSN code"
-                maxlength="8"
-                [value]="l.hsnCode"
-                (input)="patchLine(i, 'hsnCode', $any($event.target).value)"
-              />
-              <input
-                class="ar-field__input"
-                aria-label="Quantity"
-                type="number"
-                min="0"
-                step="any"
-                [value]="l.quantity"
-                (input)="patchLine(i, 'quantity', +$any($event.target).value)"
-              />
-              <input
-                class="ar-field__input"
-                aria-label="Rate in rupees"
-                type="number"
-                min="0"
-                step="any"
-                [value]="l.unitPrice"
-                (input)="patchLine(i, 'unitPrice', +$any($event.target).value)"
-              />
-              <input
-                class="ar-field__input"
-                aria-label="Discount percent"
-                type="number"
-                min="0"
-                max="100"
-                [value]="l.discountPercent"
-                (input)="patchLine(i, 'discountPercent', +$any($event.target).value)"
-              />
-              <select
-                required
-                class="ar-field__input"
-                aria-label="GST rate"
-                [disabled]="kind() === Kind.BillOfSupply"
-                (change)="patchLine(i, 'gstPercent', +$any($event.target).value)"
-              >
-                @for (r of gstRates; track r) {
-                  <option [value]="r" [selected]="r === l.gstPercent">{{ r }}%</option>
-                }
-              </select>
-              <span class="num">{{ money(taxable(l)) }}</span>
-              <button
-                type="button"
-                class="ni__x"
-                [attr.aria-label]="'Remove line ' + (i + 1)"
-                [disabled]="lines().length === 1"
-                (click)="removeLine(i)"
-              >
-                ✕
-              </button>
+                rows="3"
+                aria-label="Shipping address"
+                [value]="shippingAddress()"
+                (input)="shippingAddress.set($any($event.target).value); shipIndex.set(-1)"
+              ></textarea>
             </div>
-          }
-          <button type="button" class="ni__add" (click)="addLine()">+ Add item</button>
-        </div>
+          </div>
+        </section>
 
-        <div class="ni__foot">
+        <!-- Items -->
+        <section class="ni__sec" aria-labelledby="ni-items">
+          <header class="ni__sec-head">
+            <h3 id="ni-items" class="ni__sec-title">Invoice items</h3>
+            <p class="ni__sec-sub">
+              {{
+                catalogue.blocked()
+                  ? "The product catalogue isn't available to your role: type the item number and description."
+                  : 'Search an item by name to fill its number, HSN, rate and GST from the catalogue.'
+              }}
+            </p>
+          </header>
+
+          <ol class="ni__items">
+            @for (l of lines(); track $index; let i = $index) {
+              <li class="ni__item">
+                <span class="ni__no" aria-hidden="true">{{ i + 1 }}</span>
+                <div class="ni__row ni__row--main">
+                  <div class="ar-field">
+                    <span class="ar-field__label">Item name</span>
+                    <ar-catalogue-item
+                      [value]="l.itemName"
+                      (typed)="patchLine(i, { itemName: $event })"
+                      (picked)="pickItem(i, $event)"
+                    />
+                  </div>
+                  <label class="ar-field">
+                    <span class="ar-field__label">Item no.</span>
+                    <input
+                      class="ar-field__input ar-mono"
+                      placeholder="Item no."
+                      [value]="l.partNumber"
+                      (input)="patchLine(i, { partNumber: $any($event.target).value })"
+                    />
+                  </label>
+                  <label class="ar-field">
+                    <span class="ar-field__label">Qty</span>
+                    <input
+                      class="ar-field__input ni__num"
+                      type="number"
+                      min="0"
+                      step="any"
+                      [value]="l.quantity"
+                      (input)="patchLine(i, { quantity: +$any($event.target).value })"
+                    />
+                  </label>
+                  <label class="ar-field">
+                    <span class="ar-field__label">Rate ₹</span>
+                    <input
+                      class="ar-field__input ni__num"
+                      type="number"
+                      min="0"
+                      step="any"
+                      [value]="l.unitPrice"
+                      (input)="patchLine(i, { unitPrice: +$any($event.target).value })"
+                    />
+                  </label>
+                  <div class="ni__amount">
+                    <span class="ar-field__label">Amount ₹</span>
+                    <strong>{{ money(taxable(l)) }}</strong>
+                  </div>
+                </div>
+                <div class="ni__row ni__row--more">
+                  <label class="ar-field">
+                    <span class="ar-field__label">Description</span>
+                    <input
+                      class="ar-field__input"
+                      placeholder="What is being sold"
+                      [value]="l.description"
+                      (input)="patchLine(i, { description: $any($event.target).value })"
+                    />
+                  </label>
+                  <label class="ar-field">
+                    <span class="ar-field__label">HSN / SAC</span>
+                    <input
+                      class="ar-field__input ar-mono"
+                      maxlength="8"
+                      [value]="l.hsnCode"
+                      (input)="patchLine(i, { hsnCode: $any($event.target).value })"
+                    />
+                  </label>
+                  <label class="ar-field">
+                    <span class="ar-field__label">Disc %</span>
+                    <input
+                      class="ar-field__input ni__num"
+                      type="number"
+                      min="0"
+                      max="100"
+                      [value]="l.discountPercent"
+                      (input)="patchLine(i, { discountPercent: +$any($event.target).value })"
+                    />
+                  </label>
+                  <label class="ar-field">
+                    <span class="ar-field__label">GST %</span>
+                    <select
+                      class="ar-field__input"
+                      [disabled]="kind() === Kind.BillOfSupply"
+                      (change)="patchLine(i, { gstPercent: +$any($event.target).value })"
+                    >
+                      @for (r of gstRates; track r) {
+                        <option [value]="r" [selected]="r === l.gstPercent">{{ r }}%</option>
+                      }
+                    </select>
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  class="ni__x"
+                  [attr.aria-label]="'Remove item ' + (i + 1)"
+                  [title]="
+                    lines().length === 1 ? 'An invoice needs at least one item' : 'Remove this item'
+                  "
+                  [disabled]="lines().length === 1"
+                  (click)="removeLine(i)"
+                >
+                  ✕
+                </button>
+              </li>
+            }
+          </ol>
+          <button type="button" class="ni__add" (click)="addLine()">+ Add item</button>
+        </section>
+
+        <!-- Summary -->
+        <section class="ni__foot" aria-label="Notes and totals">
           <label class="ar-field ni__notes">
             <span class="ar-field__label"
               >Notes <span class="ar-field__opt">printed on the invoice</span></span
             >
             <textarea
               class="ar-field__input"
-              rows="2"
+              rows="4"
+              placeholder="Bank details, delivery terms, thank-you note…"
               [value]="notes()"
               (input)="notes.set($any($event.target).value)"
             ></textarea>
           </label>
           <dl class="ni__totals">
-            <dt>Taxable value</dt>
-            <dd>{{ money(totals().taxable) }}</dd>
-            @if (interState()) {
-              <dt>IGST</dt>
-              <dd>{{ money(totals().tax) }}</dd>
+            <div>
+              <dt>Items</dt>
+              <dd>{{ startedCount() }}</dd>
+            </div>
+            <div>
+              <dt>Taxable value</dt>
+              <dd>₹ {{ money(totals().taxable) }}</dd>
+            </div>
+            @if (kind() === Kind.BillOfSupply) {
+              <div>
+                <dt>GST</dt>
+                <dd>Not charged</dd>
+              </div>
+            } @else if (interState()) {
+              <div>
+                <dt>IGST</dt>
+                <dd>₹ {{ money(totals().tax) }}</dd>
+              </div>
             } @else {
-              <dt>CGST</dt>
-              <dd>{{ money(totals().tax / 2) }}</dd>
-              <dt>SGST</dt>
-              <dd>{{ money(totals().tax / 2) }}</dd>
+              <div>
+                <dt>CGST</dt>
+                <dd>₹ {{ money(totals().tax / 2) }}</dd>
+              </div>
+              <div>
+                <dt>SGST</dt>
+                <dd>₹ {{ money(totals().tax / 2) }}</dd>
+              </div>
             }
-            <dt class="ni__grand">Total</dt>
-            <dd class="ni__grand">{{ money(totals().taxable + totals().tax) }}</dd>
+            <div class="ni__grand">
+              <dt>Total</dt>
+              <dd>₹ {{ money(totals().taxable + totals().tax) }}</dd>
+            </div>
           </dl>
-        </div>
+        </section>
 
         @if (error(); as e) {
           <p class="ni__err" role="alert">{{ e }}</p>
@@ -308,58 +404,186 @@ export function lineTaxablePaise(l: InvoiceLine): number {
     .ni {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 18px;
+    }
+    .ni__sec {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--ar-line-100);
+    }
+    .ni__sec-head {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .ni__sec-title {
+      margin: 0;
+      font: 700 12px var(--ar-font-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ar-ink-500);
+    }
+    .ni__sec-sub {
+      margin: 0;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .ni__note {
+      margin: 0;
+      padding: 8px 12px;
+      border-radius: var(--ar-radius-control);
+      background: var(--ar-amber-50);
+      border: 1px solid var(--ar-amber-200);
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-amber-800);
     }
     .ni__grid {
       display: grid;
+      gap: 12px 14px;
+      align-items: start;
+    }
+    .ni__grid--2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .ni__grid--3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .ni__grid--4 {
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px 14px;
-      align-items: end;
     }
-    .ni__wide {
+    .ni__span2 {
       grid-column: span 2;
     }
-    .ni__half {
-      grid-column: span 2;
-    }
-    .ni__check {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      font: 400 12.5px var(--ar-font-sans);
-      grid-column: span 2;
-    }
-    .ni__h {
-      margin: 4px 0 0;
-      font: 600 13px var(--ar-font-sans);
-    }
-    .ni__lines {
+    .ni__grid .ar-field {
       display: flex;
       flex-direction: column;
       gap: 6px;
+      min-width: 0;
     }
-    .ni__line {
-      display: grid;
-      grid-template-columns: 1.2fr 2fr 0.8fr 0.6fr 0.9fr 0.6fr 0.7fr 0.9fr 28px;
-      gap: 6px;
-      align-items: center;
+    .ni__invalid {
+      border-color: var(--ar-bad-600);
     }
-    .ni__line--head {
-      font: 600 11px var(--ar-font-sans);
+    .ni__bad {
+      color: var(--ar-bad-600);
+    }
+    .ni__switch {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      cursor: pointer;
+      font: 400 12.5px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .ni__switch input {
+      margin-top: 2px;
+    }
+    .ni__switch span {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .ni__switch strong {
+      font-weight: 600;
+      color: var(--ar-ink-800);
+    }
+    .ni__switch small {
+      font-size: 12px;
       color: var(--ar-ink-500);
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
     }
-    .num {
+
+    .ni__items {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ni__item {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px 44px 12px 44px;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card);
+      background: var(--ar-bg-50);
+    }
+    .ni__item:focus-within {
+      border-color: var(--ar-blue-200);
+      background: var(--ar-white);
+    }
+    .ni__no {
+      position: absolute;
+      top: 14px;
+      left: 12px;
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--ar-blue-100);
+      color: var(--ar-blue-700);
+      font: 700 11px var(--ar-font-sans);
+    }
+    .ni__row {
+      display: grid;
+      gap: 10px;
+      align-items: end;
+    }
+    .ni__row .ar-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .ni__row .ar-field__label {
+      font-size: 11px;
+    }
+    .ni__row--main {
+      grid-template-columns: minmax(180px, 2.4fr) minmax(110px, 1.2fr) 80px 110px 120px;
+    }
+    .ni__row--more {
+      grid-template-columns: minmax(180px, 3.6fr) 110px 80px 110px;
+    }
+    .ni__num {
       text-align: right;
       font-variant-numeric: tabular-nums;
-      font: 500 12.5px var(--ar-font-sans);
+    }
+    .ni__amount {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-end;
+    }
+    .ni__amount .ar-field__label {
+      font-size: 11px;
+    }
+    .ni__amount strong {
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      font: 700 14px var(--ar-font-sans);
+      font-variant-numeric: tabular-nums;
+      color: var(--ar-ink-900);
     }
     .ni__x {
+      position: absolute;
+      top: 10px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
       background: none;
       border: 0;
-      color: var(--ar-bad-600, #b42318);
+      border-radius: var(--ar-radius-control);
+      color: var(--ar-ink-400);
       cursor: pointer;
+    }
+    .ni__x:hover:not(:disabled) {
+      color: var(--ar-bad-600);
+      background: var(--ar-red-100);
     }
     .ni__x:disabled {
       opacity: 0.3;
@@ -368,87 +592,132 @@ export function lineTaxablePaise(l: InvoiceLine): number {
     .ni__add {
       align-self: flex-start;
       background: none;
-      border: 1px dashed var(--ar-line-200);
-      border-radius: 6px;
-      padding: 6px 12px;
+      border: 1px dashed var(--ar-line-300);
+      border-radius: var(--ar-radius-control);
+      padding: 7px 14px;
       font: 600 12.5px var(--ar-font-sans);
-      color: var(--ar-teal-700, #0f766e);
+      color: var(--ar-blue-600);
       cursor: pointer;
     }
+    .ni__add:hover {
+      background: var(--ar-blue-100);
+    }
+
     .ni__foot {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
       gap: 20px;
-      align-items: flex-start;
+      align-items: start;
     }
     .ni__notes {
-      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
     .ni__totals {
       margin: 0;
-      display: grid;
-      grid-template-columns: auto auto;
-      gap: 4px 18px;
-      font: 400 12.5px var(--ar-font-sans);
-      min-width: 220px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-card);
+      background: var(--ar-bg-50);
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-700);
+    }
+    .ni__totals > div {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .ni__totals dt {
+      color: var(--ar-ink-500);
     }
     .ni__totals dd {
       margin: 0;
-      text-align: right;
       font-variant-numeric: tabular-nums;
     }
     .ni__grand {
+      margin-top: 4px;
+      padding-top: 10px;
+      border-top: 1px solid var(--ar-line-200);
+      align-items: baseline;
+    }
+    .ni__grand dt {
       font-weight: 700;
+      color: var(--ar-ink-900);
+    }
+    .ni__grand dd {
+      font: 700 18px var(--ar-font-sans);
       color: var(--ar-ink-900);
     }
     .ni__err {
       margin: 0;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--ar-red-200);
+      border-radius: 8px;
+      background: var(--ar-red-100);
       font: 500 12.5px var(--ar-font-sans);
-      color: var(--ar-bad-600, #b42318);
+      color: var(--ar-bad-600);
     }
-    @media (max-width: 760px) {
-      .ni__grid {
-        grid-template-columns: 1fr 1fr;
+    @media (max-width: 860px) {
+      .ni__grid--4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
-      .ni__line {
-        grid-template-columns: 1fr 1fr;
+      .ni__row--main,
+      .ni__row--more {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
-      .ni__line--head {
-        display: none;
+      .ni__amount {
+        align-items: flex-start;
+      }
+      .ni__foot {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    @media (max-width: 560px) {
+      .ni__grid--2,
+      .ni__grid--3,
+      .ni__grid--4 {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .ni__span2 {
+        grid-column: auto;
       }
     }
   `,
 })
 export class ArNewSalesInvoice {
   private readonly api = inject(SalesInvoiceService);
-  private readonly parties = inject(SalesPartyService);
   private readonly masterData = inject(AccountMasterDataService);
   private readonly workspace = inject(WorkspaceProfileService);
+  protected readonly catalogue = inject(CatalogueSearch);
 
   /** The invoice saved, or null when cancelled. */
   readonly closed = output<SalesInvoiceDto | null>();
   /** The customer to start with, e.g. from an account's Customer 360 (?customer=…&customerName=…). */
   readonly initialCustomer = input<PickerOption | null>(null);
-  private readonly applyInitialCustomer = effect(() => {
-    const c = this.initialCustomer();
-    if (c) untracked(() => void this.pickCustomer(c));
-  });
 
   protected readonly Kind = SalesInvoiceKind;
   protected readonly gstRates = GST_RATES;
+  protected readonly paymentTerms = PAYMENT_TERMS;
 
-  protected readonly customer = signal<PickerOption | null>(null);
+  protected readonly choice = signal<SalesCustomerChoice | null>(null);
   protected readonly party = signal<SalesParty>(EMPTY_PARTY);
   protected readonly kind = signal<SalesInvoiceKind>(SalesInvoiceKind.TaxInvoice);
   protected readonly gstin = signal('');
-  protected readonly issueDate = signal(today());
-  protected readonly dueDate = signal(plusDays(today(), 30));
+  protected readonly issueDate = signal(localToday());
+  /** Days from the invoice date to the due date; null when a date was picked by hand. */
+  protected readonly terms = signal<number | null>(30);
+  protected readonly dueDate = signal(plusDays(localToday(), 30));
   protected readonly placeCode = signal('');
   protected readonly interState = signal(false);
   protected readonly billingAddress = signal('');
   protected readonly shippingAddress = signal('');
   protected readonly shipIndex = signal(-1);
   protected readonly notes = signal('');
-  protected readonly lines = signal<InvoiceLine[]>([{ ...BLANK_LINE }]);
+  protected readonly lines = signal<InvoiceLine[]>([blankInvoiceLine()]);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -464,39 +733,40 @@ export class ArNewSalesInvoice {
       .sort((a, b) => a.code.localeCompare(b.code)),
   );
 
-  protected readonly totals = computed(() => {
-    let taxable = 0;
-    let tax = 0;
-    const gst = this.kind() !== SalesInvoiceKind.BillOfSupply;
-    for (const l of this.lines()) {
-      const t = lineTaxablePaise(l);
-      taxable += t;
-      if (gst) tax += Math.round((t * l.gstPercent) / 100);
-    }
-    return { taxable, tax };
+  protected readonly totals = computed(() =>
+    invoiceTotals(this.lines(), this.kind() === SalesInvoiceKind.BillOfSupply),
+  );
+  protected readonly startedCount = computed(() => this.lines().filter(isStarted).length);
+  protected readonly gstinInvalid = computed(() => {
+    const g = this.gstin();
+    return g.length === 15 && !GSTIN_PATTERN.test(g);
   });
 
   constructor() {
     if (!environment.useMockData) {
       firstValueFrom(this.workspace.get({ skipHandleError: true }))
-        .then((p) => (this.ownStateCode = p?.stateCode ?? null))
+        .then((p) => {
+          this.ownStateCode = p?.stateCode ?? null;
+          if (this.placeCode()) this.setPlaceOfSupply(this.placeCode());
+        })
         .catch(() => undefined);
     }
   }
 
-  protected async pickCustomer(option: PickerOption | null): Promise<void> {
-    this.customer.set(option);
-    const party = option ? await this.parties.forContact(option.id) : EMPTY_PARTY;
-    if (this.customer()?.id !== option?.id) return;
+  // ---- Customer ------------------------------------------------------------------
+
+  /** A new customer choice; a new account (or none) refills the GSTIN, addresses and place of supply from it. */
+  protected onCustomer(choice: SalesCustomerChoice): void {
+    this.choice.set(choice);
+    this.error.set(null);
+    if (choice.party === this.party()) return;
+    const party = choice.party;
     this.party.set(party);
     this.gstin.set(party.gstin ?? '');
     this.billingAddress.set(party.billingAddress);
-    const def = Math.max(
-      0,
-      party.shipTo.findIndex((s) => s.isDefault),
-    );
-    if (party.shipTo.length) {
-      this.chooseShipTo(def);
+    const index = defaultShipIndex(party);
+    if (index >= 0) {
+      this.chooseShipTo(index);
     } else {
       this.shipIndex.set(-1);
       this.shippingAddress.set(party.billingAddress);
@@ -507,11 +777,10 @@ export class ArNewSalesInvoice {
   /** Goods going to a site: its address, and its state as the place of supply. */
   protected chooseShipTo(index: number): void {
     this.shipIndex.set(index);
-    const s = this.party().shipTo[index];
-    if (!s) return;
-    this.shippingAddress.set(s.text);
-    if (s.gstin) this.gstin.set(s.gstin);
-    this.setPlaceOfSupply(s.stateCode ?? this.party().billingStateCode ?? '');
+    this.shippingAddress.set(shipToText(this.party(), index));
+    const site = this.party().shipTo[index];
+    if (site?.gstin) this.gstin.set(site.gstin);
+    this.setPlaceOfSupply(site?.stateCode ?? this.party().billingStateCode ?? '');
   }
 
   protected setGstin(value: string): void {
@@ -525,20 +794,48 @@ export class ArNewSalesInvoice {
     if (code && this.ownStateCode) this.interState.set(code !== this.ownStateCode);
   }
 
+  // ---- Dates ---------------------------------------------------------------------
+
+  protected setIssueDate(value: string): void {
+    if (!value) return;
+    this.issueDate.set(value);
+    const t = this.terms();
+    if (t !== null) this.dueDate.set(plusDays(value, t));
+  }
+
+  protected setTerms(value: string): void {
+    if (value === 'custom') {
+      this.terms.set(null);
+      return;
+    }
+    const days = +value;
+    this.terms.set(days);
+    this.dueDate.set(plusDays(this.issueDate(), days));
+  }
+
+  protected setDueDate(value: string): void {
+    if (!value) return;
+    this.dueDate.set(value);
+    const match = PAYMENT_TERMS.find((d) => plusDays(this.issueDate(), d) === value);
+    this.terms.set(match ?? null);
+  }
+
+  // ---- Items ---------------------------------------------------------------------
+
   protected addLine(): void {
-    this.lines.update((ls) => [...ls, { ...BLANK_LINE }]);
+    this.lines.update((ls) => [...ls, blankInvoiceLine()]);
   }
 
   protected removeLine(index: number): void {
     this.lines.update((ls) => (ls.length > 1 ? ls.filter((_, i) => i !== index) : ls));
   }
 
-  protected patchLine<K extends keyof InvoiceLine>(
-    index: number,
-    key: K,
-    value: InvoiceLine[K],
-  ): void {
-    this.lines.update((ls) => ls.map((l, i) => (i === index ? { ...l, [key]: value } : l)));
+  protected patchLine(index: number, patch: Partial<InvoiceLine>): void {
+    this.lines.update((ls) => ls.map((l, i) => (i === index ? editInvoiceLine(l, patch) : l)));
+  }
+
+  protected pickItem(index: number, p: ProductDto): void {
+    this.lines.update((ls) => ls.map((l, i) => (i === index ? invoiceLineFromProduct(p, l) : l)));
   }
 
   protected taxable(l: InvoiceLine): number {
@@ -552,23 +849,30 @@ export class ArNewSalesInvoice {
     });
   }
 
+  // ---- Save ----------------------------------------------------------------------
+
   protected async save(): Promise<void> {
-    const customer = this.customer();
+    const choice = this.choice();
+    const customer = choice?.customer;
     if (!customer) {
-      this.error.set('Pick the customer this invoice is for.');
+      this.error.set(
+        choice?.mode === 'contact'
+          ? 'Pick the contact this invoice is for.'
+          : 'Choose the account and the contact person this invoice is for.',
+      );
       return;
     }
     const gstin = this.gstin().trim();
-    if (gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gstin)) {
+    if (gstin && !GSTIN_PATTERN.test(gstin)) {
       this.error.set("That GSTIN isn't valid. It has 15 characters, like 27ABCDE1234F1Z5.");
       return;
     }
-    const lines = this.lines().filter((l) => l.partNumber.trim() || l.description.trim());
-    if (!lines.length) {
-      this.error.set('Add at least one item with a part number or description.');
+    const started = this.lines().filter(isStarted);
+    if (!started.length) {
+      this.error.set('Add at least one item: pick it from the catalogue or type its name.');
       return;
     }
-    if (lines.some((l) => !(l.quantity > 0))) {
+    if (started.some((l) => !(l.quantity > 0))) {
       this.error.set('Every item needs a quantity above zero.');
       return;
     }
@@ -581,25 +885,17 @@ export class ArNewSalesInvoice {
     const input: CreateSalesInvoiceDto = {
       kind: this.kind(),
       customerId: customer.id,
-      customerAccountId: this.party().accountId ?? undefined,
+      customerAccountId: choice.accountId ?? undefined,
       customerGstin: gstin || undefined,
       billingAddress: this.billingAddress().trim() || undefined,
       shippingAddress: this.shippingAddress().trim() || undefined,
       placeOfSupplyStateCode: this.placeCode() || undefined,
       isInterState: this.interState(),
-      issueDateUtc: new Date(this.issueDate()).toISOString(),
-      dueDateUtc: new Date(this.dueDate()).toISOString(),
+      issueDateUtc: new Date(`${this.issueDate()}T00:00:00`).toISOString(),
+      dueDateUtc: new Date(`${this.dueDate()}T00:00:00`).toISOString(),
       discountInPaise: 0,
       notes: this.notes().trim() || undefined,
-      lines: lines.map((l) => ({
-        partNumber: l.partNumber.trim() || l.description.trim(),
-        description: l.description.trim() || l.partNumber.trim(),
-        hsnCode: l.hsnCode.trim() || undefined,
-        quantity: l.quantity,
-        unitPriceInPaise: Math.round(l.unitPrice * 100),
-        discountPercent: l.discountPercent || 0,
-        taxRateBasisPoints: billOfSupply ? 0 : Math.round(l.gstPercent * 100),
-      })),
+      lines: toInvoiceLines(this.lines(), billOfSupply),
     };
 
     this.busy.set(true);

@@ -1,20 +1,22 @@
 import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
+import { RouterLink } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { environment } from '../../../../environments/environment';
+import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
   EInvoiceStatus,
   EWayBillStatus,
-  GenerateEWayBillInput,
   GstAuditRegisterDto,
   GstComplianceService,
   Gstr1Section,
   Gstr1SummaryDto,
   Gstr3bSummaryDto,
 } from '../../../proxy/finance';
-import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArButton, ArChip, ChipTone } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
 
 const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
@@ -42,8 +44,8 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
     signedQrCode:
       'https://einvoice1.gst.gov.in/verify?irn=8b4d1b823e59bcf7e1d5204859a0fbc5928d3ef71829e0839218d6e7f8a920b1',
     eWayBillStatus: EWayBillStatus.Active,
-    ewayBillNumber: '271049283719',
-    ewayBillValidUntilUtc: new Date(Date.now() + 2 * 86_400_000).toISOString(),
+    eWayBillNumber: '271049283719',
+    eWayBillValidUntilUtc: new Date(Date.now() + 2 * 86_400_000).toISOString(),
     transporterGstin: '27AAACG1234A1Z5',
     vehicleNumber: 'MH-14-BT-4590',
     distanceInKm: 140,
@@ -70,8 +72,8 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
     eInvoiceAckNo: '1120260400832',
     eInvoiceAckDateUtc: new Date(Date.now() - 2 * 86_400_000).toISOString(),
     eWayBillStatus: EWayBillStatus.Active,
-    ewayBillNumber: '221049284820',
-    ewayBillValidUntilUtc: new Date(Date.now() + 4 * 86_400_000).toISOString(),
+    eWayBillNumber: '221049284820',
+    eWayBillValidUntilUtc: new Date(Date.now() + 4 * 86_400_000).toISOString(),
     transporterGstin: '22AAACT9988C1Z1',
     vehicleNumber: 'CG-04-ME-1122',
     distanceInKm: 850,
@@ -118,6 +120,26 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
   },
 ];
 
+/** GST return periods (MMYYYY) for the last `count` months by the Indian calendar, newest first. */
+export function recentReturnPeriods(
+  count: number,
+  now = Date.now(),
+): { value: string; label: string }[] {
+  const ist = new Date(now + 5.5 * 3_600_000);
+  const out: { value: string; label: string }[] = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(Date.UTC(ist.getUTCFullYear(), ist.getUTCMonth() - i, 1));
+    const value = String(d.getUTCMonth() + 1).padStart(2, '0') + d.getUTCFullYear();
+    const label = d.toLocaleDateString('en-IN', {
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    });
+    out.push({ value, label: i === 0 ? `${label} (current)` : label });
+  }
+  return out;
+}
+
 @Component({
   selector: 'app-gst-compliance',
   standalone: true,
@@ -126,20 +148,25 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
     FormsModule,
     DatePipe,
     DecimalPipe,
+    RouterLink,
     ArTopbar,
     ArButton,
     ArChip,
-    ArDialog,
     ArGrid,
     GridModule,
   ],
   template: `
     <ar-topbar title="GST Compliance & Statutory Auditor (GSTR-1, GSTR-3B, E-Way Bill)">
       <div actions class="topbar-actions">
-        <select class="period-select" [(ngModel)]="selectedPeriod" (change)="onPeriodChange()">
-          <option value="042026">April 2026 (Active Return)</option>
-          <option value="032026">March 2026 (Filed)</option>
-          <option value="022026">February 2026 (Filed)</option>
+        <select
+          class="period-select"
+          aria-label="Return period"
+          [ngModel]="selectedPeriod()"
+          (ngModelChange)="onPeriodChange($event)"
+        >
+          @for (p of periods; track p.value) {
+            <option [value]="p.value">{{ p.label }}</option>
+          }
         </select>
       </div>
     </ar-topbar>
@@ -205,6 +232,14 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
       <!-- TAB 1: OUTWARD REGISTER & E-WAY / E-INVOICE -->
       <section *ngIf="activeTab() === 'register'" class="tab-content-container">
         <div class="table-card">
+          @if (loadError(); as e) {
+            <p class="register-note register-note--bad" role="alert">{{ e }}</p>
+          } @else if (!loading() && records().length === 0) {
+            <p class="register-note">
+              No issued sales invoices in this period. An invoice appears here once it is issued on
+              Sales → Invoices; then its e-invoice and e-way bill can be generated.
+            </p>
+          }
           <ejs-grid
             arGrid="gst-register"
             [dataSource]="records()"
@@ -236,9 +271,16 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
                   <span class="section-tag">{{ getSectionLabel(doc.section) }}</span>
                 </ng-template>
               </e-column>
-              <e-column field="taxableAmountInPaise" headerText="Taxable (₹)" textAlign="Right" width="140">
+              <e-column
+                field="taxableAmountInPaise"
+                headerText="Taxable (₹)"
+                textAlign="Right"
+                width="140"
+              >
                 <ng-template #template let-doc>
-                  <span class="font-mono">₹{{ doc.taxableAmountInPaise / 100 | number: '1.2-2' }}</span>
+                  <span class="font-mono"
+                    >₹{{ doc.taxableAmountInPaise / 100 | number: '1.2-2' }}</span
+                  >
                 </ng-template>
               </e-column>
               <e-column headerText="Tax (₹)" textAlign="Right" width="140">
@@ -251,7 +293,12 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
                   </span>
                 </ng-template>
               </e-column>
-              <e-column field="totalInvoiceValueInPaise" headerText="Total (₹)" textAlign="Right" width="140">
+              <e-column
+                field="totalInvoiceValueInPaise"
+                headerText="Total (₹)"
+                textAlign="Right"
+                width="140"
+              >
                 <ng-template #template let-doc>
                   <span class="font-mono fw-bold">
                     ₹{{ doc.totalInvoiceValueInPaise / 100 | number: '1.2-2' }}
@@ -276,8 +323,8 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
                     <ar-chip [tone]="getEWayTone(doc.eWayBillStatus)">
                       {{ getEWayLabel(doc.eWayBillStatus) }}
                     </ar-chip>
-                    <span class="ewb-num font-mono" *ngIf="doc.ewayBillNumber">
-                      #{{ doc.ewayBillNumber }}
+                    <span class="ewb-num font-mono" *ngIf="doc.eWayBillNumber">
+                      #{{ doc.eWayBillNumber }}
                     </span>
                   </div>
                 </ng-template>
@@ -293,14 +340,14 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
                     >
                       Generate IRN
                     </button>
-                    <button
+                    <a
                       *ngIf="doc.eWayBillStatus === EWayBillStatus.PendingGeneration"
                       ar-button="ghost"
                       class="btn-xs"
-                      (click)="openEWayBillModal(doc)"
+                      [routerLink]="['/finance/gst-compliance/eway', doc.id]"
                     >
                       Generate E-Way
-                    </button>
+                    </a>
                     <span
                       *ngIf="
                         doc.eInvoiceStatus === EInvoiceStatus.Generated &&
@@ -384,27 +431,60 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
                 <strong class="font-medium">{{ r.heading }}</strong>
               </ng-template>
             </e-column>
-            <e-column field="taxable" headerText="Total Taxable Value (₹)" width="180" [textAlign]="'Right'">
+            <e-column
+              field="taxable"
+              headerText="Total Taxable Value (₹)"
+              width="180"
+              [textAlign]="'Right'"
+            >
               <ng-template #template let-r>
-                <span class="font-mono">{{ r.taxable != null ? ('₹' + (r.taxable | number: '1.2-2')) : '-' }}</span>
+                <span class="font-mono">{{
+                  r.taxable != null ? '₹' + (r.taxable | number: '1.2-2') : '-'
+                }}</span>
               </ng-template>
             </e-column>
-            <e-column field="igst" headerText="Integrated Tax IGST (₹)" width="180" [textAlign]="'Right'">
+            <e-column
+              field="igst"
+              headerText="Integrated Tax IGST (₹)"
+              width="180"
+              [textAlign]="'Right'"
+            >
               <ng-template #template let-r>
-                <span class="font-mono">{{ r.igst != null ? ('₹' + (r.igst | number: '1.2-2')) : '-' }}</span>
+                <span class="font-mono">{{
+                  r.igst != null ? '₹' + (r.igst | number: '1.2-2') : '-'
+                }}</span>
               </ng-template>
             </e-column>
-            <e-column field="cgst" headerText="Central Tax CGST (₹)" width="180" [textAlign]="'Right'">
+            <e-column
+              field="cgst"
+              headerText="Central Tax CGST (₹)"
+              width="180"
+              [textAlign]="'Right'"
+            >
               <ng-template #template let-r>
-                <span class="font-mono">{{ r.cgst != null ? ('₹' + (r.cgst | number: '1.2-2')) : '-' }}</span>
+                <span class="font-mono">{{
+                  r.cgst != null ? '₹' + (r.cgst | number: '1.2-2') : '-'
+                }}</span>
               </ng-template>
             </e-column>
-            <e-column field="sgst" headerText="State Tax SGST (₹)" width="180" [textAlign]="'Right'">
+            <e-column
+              field="sgst"
+              headerText="State Tax SGST (₹)"
+              width="180"
+              [textAlign]="'Right'"
+            >
               <ng-template #template let-r>
-                <span class="font-mono">{{ r.sgst != null ? ('₹' + (r.sgst | number: '1.2-2')) : '-' }}</span>
+                <span class="font-mono">{{
+                  r.sgst != null ? '₹' + (r.sgst | number: '1.2-2') : '-'
+                }}</span>
               </ng-template>
             </e-column>
-            <e-column field="totalTax" headerText="Total Tax Payable (₹)" width="190" [textAlign]="'Right'">
+            <e-column
+              field="totalTax"
+              headerText="Total Tax Payable (₹)"
+              width="190"
+              [textAlign]="'Right'"
+            >
               <ng-template #template let-r>
                 <strong
                   class="font-mono"
@@ -420,52 +500,6 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
         </ejs-grid>
       </section>
     </div>
-
-    <!-- Generate E-Way Bill Modal -->
-    <ar-dialog
-      *ngIf="isEwbOpen()"
-      title="Generate Automated GST E-Way Bill"
-      (dismiss)="isEwbOpen.set(false)"
-    >
-      <div class="modal-body-container" *ngIf="targetRecord() as doc">
-        <p class="mb-3">
-          Generating E-Way Bill for Invoice <strong>{{ doc.documentNumber }}</strong> (Consignee:
-          {{ doc.counterpartyLegalName }}).
-        </p>
-
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Vehicle Number (Part B)</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="ewbForm.vehicleNumber"
-              placeholder="e.g. MH-12-QE-4590"
-            />
-          </div>
-          <div class="form-group">
-            <label>Transporter GSTIN</label>
-            <input
-              type="text"
-              class="form-control"
-              [(ngModel)]="ewbForm.transporterGstin"
-              placeholder="27AAACT1234A1Z0"
-            />
-          </div>
-          <div class="form-group">
-            <label>Transit Distance (KM)</label>
-            <input type="number" class="form-control" [(ngModel)]="ewbForm.distanceInKm" />
-          </div>
-        </div>
-
-        <div class="dialog-actions mt-4">
-          <button ar-button="primary" (click)="confirmGenerateEWayBill()">
-            Generate & Sign E-Way Bill
-          </button>
-          <button ar-button="ghost" (click)="isEwbOpen.set(false)">Cancel</button>
-        </div>
-      </div>
-    </ar-dialog>
   `,
   styles: [
     `
@@ -632,6 +666,20 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
       }
 
       .einvoice-cell,
+      .register-note {
+        margin: 0 0 12px;
+        padding: 10px 14px;
+        border-radius: var(--ar-radius-control);
+        background: var(--ar-bg-50);
+        border: 1px solid var(--ar-line-200);
+        font: 400 13px var(--ar-font-sans);
+        color: var(--ar-ink-600);
+      }
+      .register-note--bad {
+        background: var(--ar-red-100);
+        border-color: var(--ar-red-200);
+        color: var(--ar-bad-600);
+      }
       .eway-cell {
         display: flex;
         flex-direction: column;
@@ -787,19 +835,16 @@ const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
 })
 export class GstComplianceComponent {
   private readonly gstService = inject(GstComplianceService);
+  private readonly toasts = inject(ToastService);
 
-  readonly selectedPeriod = '042026';
+  /** The last twelve GST return periods (MMYYYY), this month first. */
+  readonly periods = recentReturnPeriods(12);
+  readonly selectedPeriod = signal(this.periods[0].value);
+  readonly loading = signal(false);
+  readonly loadError = signal<string | null>(null);
   readonly activeTab = signal<'register' | 'gstr1' | 'gstr3b'>('register');
 
-  readonly records = signal<GstAuditRegisterDto[]>(MOCK_GST_RECORDS);
-  readonly targetRecord = signal<GstAuditRegisterDto | null>(null);
-  readonly isEwbOpen = signal<boolean>(false);
-
-  ewbForm: GenerateEWayBillInput = {
-    vehicleNumber: 'MH-14-BT-4590',
-    transporterGstin: '27AAACG1234A1Z5',
-    distanceInKm: 150,
-  };
+  readonly records = signal<GstAuditRegisterDto[]>(environment.useMockData ? MOCK_GST_RECORDS : []);
 
   readonly gstr1 = computed<Gstr1SummaryDto>(() => {
     const list = this.records();
@@ -811,7 +856,7 @@ export class GstComplianceComponent {
     const sgst = list.reduce((acc, r) => acc + r.sgstAmountInPaise, 0);
 
     return {
-      returnPeriod: this.selectedPeriod,
+      returnPeriod: this.selectedPeriod(),
       totalInvoiceCount: list.length,
       b2bInvoiceCount: b2b,
       b2cInvoiceCount: 0,
@@ -832,7 +877,7 @@ export class GstComplianceComponent {
     const netCash = Math.max(0, outwardTax - eligibleItc);
 
     return {
-      returnPeriod: this.selectedPeriod,
+      returnPeriod: this.selectedPeriod(),
       outwardTaxableInPaise: taxable,
       outwardTaxPayableInPaise: outwardTax,
       eligibleItcInPaise: eligibleItc,
@@ -881,23 +926,43 @@ export class GstComplianceComponent {
   readonly Gstr1Section = Gstr1Section;
 
   constructor() {
-    this.loadGstRecords();
+    void this.loadGstRecords();
   }
 
-  loadGstRecords(): void {
+  /**
+   * The period's register. Issued invoices that are not in it yet (issued before invoices were recorded on issue) are brought
+   * in first, so every issued invoice can have its e-invoice and e-way bill generated.
+   */
+  async loadGstRecords(): Promise<void> {
     if (environment.useMockData) return;
-
-    this.gstService.getList({ returnPeriod: this.selectedPeriod, maxResultCount: 100 }).subscribe({
-      next: (res) => {
-        if (res.items && res.items.length > 0) {
-          this.records.set(res.items);
-        }
-      },
-    });
+    const period = this.selectedPeriod();
+    this.loading.set(true);
+    this.loadError.set(null);
+    try {
+      try {
+        await firstValueFrom(
+          this.gstService.recordIssuedInvoices(period, { skipHandleError: true }),
+        );
+      } catch {
+        // The list below still shows what is recorded.
+      }
+      const res = await firstValueFrom(
+        this.gstService.getList({ returnPeriod: period, maxResultCount: 500 }),
+      );
+      if (period === this.selectedPeriod()) this.records.set(res.items ?? []);
+    } catch {
+      if (period === this.selectedPeriod()) {
+        this.records.set([]);
+        this.loadError.set('The GST register could not be loaded.');
+      }
+    } finally {
+      if (period === this.selectedPeriod()) this.loading.set(false);
+    }
   }
 
-  onPeriodChange(): void {
-    this.loadGstRecords();
+  onPeriodChange(period: string): void {
+    this.selectedPeriod.set(period);
+    void this.loadGstRecords();
   }
 
   getSectionLabel(sec: Gstr1Section): string {
@@ -982,7 +1047,13 @@ export class GstComplianceComponent {
   generateEInvoice(doc: GstAuditRegisterDto): void {
     if (!environment.useMockData && doc.id) {
       this.gstService.generateEInvoice(doc.id).subscribe({
-        next: (updated) => this.updateRecordInState(updated),
+        next: (updated) => {
+          this.updateRecordInState(updated);
+          this.toasts.success(`IRN generated successfully for ${doc.documentNumber}`);
+        },
+        error: (err) => {
+          this.toasts.error(err?.error?.error?.message ?? 'IRN generation failed on GST portal.');
+        },
       });
       return;
     }
@@ -996,43 +1067,7 @@ export class GstComplianceComponent {
       signedQrCode: 'https://einvoice1.gst.gov.in/verify',
     };
     this.updateRecordInState(updated);
-  }
-
-  openEWayBillModal(doc: GstAuditRegisterDto): void {
-    this.targetRecord.set(doc);
-    this.ewbForm = {
-      vehicleNumber: 'MH-14-BT-4590',
-      transporterGstin: '27AAACG1234A1Z5',
-      distanceInKm: 150,
-    };
-    this.isEwbOpen.set(true);
-  }
-
-  confirmGenerateEWayBill(): void {
-    const doc = this.targetRecord();
-    if (!doc) return;
-
-    if (!environment.useMockData && doc.id) {
-      this.gstService.generateEWayBill(doc.id, this.ewbForm).subscribe({
-        next: (updated) => {
-          this.updateRecordInState(updated);
-          this.isEwbOpen.set(false);
-        },
-      });
-      return;
-    }
-
-    const updated: GstAuditRegisterDto = {
-      ...doc,
-      eWayBillStatus: EWayBillStatus.Active,
-      ewayBillNumber: `27104928${Math.floor(Math.random() * 9000 + 1000)}`,
-      ewayBillValidUntilUtc: new Date(Date.now() + 2 * 86_400_000).toISOString(),
-      vehicleNumber: this.ewbForm.vehicleNumber,
-      transporterGstin: this.ewbForm.transporterGstin,
-      distanceInKm: this.ewbForm.distanceInKm,
-    };
-    this.updateRecordInState(updated);
-    this.isEwbOpen.set(false);
+    this.toasts.success(`IRN generated successfully for ${doc.documentNumber}`);
   }
 
   private updateRecordInState(updated: GstAuditRegisterDto): void {

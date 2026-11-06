@@ -1,6 +1,7 @@
 import { PermissionService } from '@abp/ng.core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import {
   ResellerNumberDto,
@@ -26,7 +27,7 @@ type ActiveTab = 'inventory' | 'telecom-entity';
 @Component({
   selector: 'ar-telecom',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArBanner, ArButton, ArChip, ArIcon],
+  imports: [CommonModule, FormsModule, ArTopbar, ArBanner, ArButton, ArChip, ArIcon, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './telecom.html',
   styleUrl: './telecom.scss',
@@ -37,6 +38,22 @@ export class ArTelecom {
   private readonly toasts = inject(ToastService);
   private readonly currentUser = inject(CurrentUserService);
   private readonly tenantApi = inject(TenantService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  protected readonly pageTitle = computed(() => {
+    switch (this.mode) {
+      case 'new': return 'Add number to inventory';
+      case 'settings': return 'Telecom settings';
+      case 'allocate': return 'Allocate number';
+      case 'release': return 'Release number';
+      case 'audit': return 'Compliance audit report';
+      default: return 'Telecom & Reseller Numbers';
+    }
+  });
 
   /** Only the host chooses which workspace gets a number; a workspace allocates to itself. */
   protected readonly isHost = computed(() => this.currentUser.isHost());
@@ -109,6 +126,60 @@ export class ArTelecom {
     return `${k.total} managed numbers · ${k.allocated} allocated to workspaces · ${k.available} available in pool`;
   });
 
+  constructor() {
+    if (this.mode === 'new') {
+      this.openAddNumberDialog();
+    } else if (this.mode === 'settings') {
+      this.openEditSettingsDialog();
+    } else if (this.mode === 'audit') {
+      void this.runAudit();
+    } else if (this.mode === 'allocate' || this.mode === 'release') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const num = this.store.rawNumbers().find((x: ResellerNumberDto) => x.id === id);
+      if (num) {
+        if (this.mode === 'allocate') this.openAllocateDialog(num);
+        else this.openReleaseDialog(num);
+      }
+    }
+  }
+
+  protected goAddNumber(): void {
+    if (this.router) void this.router.navigate(['/channels/telecom/new']);
+    else this.openAddNumberDialog();
+  }
+
+  protected goSettings(): void {
+    if (this.router) void this.router.navigate(['/channels/telecom/settings']);
+    else this.openEditSettingsDialog();
+  }
+
+  protected goAllocate(n: ResellerNumberDto): void {
+    if (this.router && n.id) void this.router.navigate(['/channels/telecom/allocate', n.id]);
+    else this.openAllocateDialog(n);
+  }
+
+  protected goRelease(n: ResellerNumberDto): void {
+    if (this.router && n.id) void this.router.navigate(['/channels/telecom/release', n.id]);
+    else this.openReleaseDialog(n);
+  }
+
+  protected goAudit(): void {
+    if (this.router) void this.router.navigate(['/channels/telecom/audit']);
+    else void this.runAudit();
+  }
+
+  protected close(): void {
+    this.addNumberDialogOpen.set(false);
+    this.allocateDialogOpen.set(false);
+    this.releaseDialogOpen.set(false);
+    this.editSettingsDialogOpen.set(false);
+    this.auditDialogOpen.set(false);
+    this.selectedNumber.set(null);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/channels/telecom']);
+    }
+  }
+
   // Lifecycle & Dialog Openers
   protected openAddNumberDialog(): void {
     this.draftNationalNumber.set('');
@@ -144,7 +215,7 @@ export class ArTelecom {
         notes: this.draftNotes() || undefined,
       });
       this.toasts.success(`Number +91 ${nat} added to reseller inventory.`, 'Number added');
-      this.addNumberDialogOpen.set(false);
+      this.close();
     } catch (err: any) {
       this.toasts.error(err?.message || 'Failed to add number to inventory.', 'Error');
     }
@@ -184,7 +255,7 @@ export class ArTelecom {
         `Number ${num.e164} allocated to ${tenant} with active KYC.`,
         'Number Allocated',
       );
-      this.allocateDialogOpen.set(false);
+      this.close();
     } catch (err: any) {
       this.toasts.error(err?.message || 'Failed to allocate number.', 'Error');
     }
@@ -210,7 +281,7 @@ export class ArTelecom {
         `Number ${num.e164} moved to quarantine cooling-off (${this.draftQuarantineDays()} days).`,
         'Number Released',
       );
-      this.releaseDialogOpen.set(false);
+      this.close();
     } catch (err: any) {
       this.toasts.error(err?.message || 'Failed to release number.', 'Error');
     }
@@ -260,7 +331,7 @@ export class ArTelecom {
         prohibitionOfDisposableNumbersAcknowledged: true,
       });
       this.toasts.success('Telecom entity profile updated successfully.', 'Settings Saved');
-      this.editSettingsDialogOpen.set(false);
+      this.close();
     } catch (err: any) {
       this.toasts.error(err?.message || 'Failed to update telecom entity settings.', 'Error');
     }

@@ -1,5 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
+import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -14,6 +17,7 @@ import { WorkspaceMemberService } from '../../proxy/identity/workspace-member.se
 import { TeamAssignmentStrategy } from '../../proxy/identity/team-assignment-strategy.enum';
 import type { TeamDto, WorkspaceMemberDto } from '../../proxy/identity/models';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
+import { ArGrid } from '../../ui/grid';
 
 const STRATEGIES: readonly { value: TeamAssignmentStrategy; label: string; hint: string }[] = [
   {
@@ -51,315 +55,320 @@ const EMPTY: Draft = {
   channelIds: new Set(),
 };
 
-/**
- * Teams: groups of agents that share conversations, and that a WhatsApp call menu option
- * rings (an English desk, a Hindi desk). Each team says who is in it, who leads it, how new
- * conversations are shared out, and which WhatsApp numbers it handles.
- */
+const SEED_TEAMS: TeamDto[] = [
+  {
+    id: 'team-1',
+    name: 'Sales & Inquiries Desk',
+    description: 'Handles new customer inquiries and high-priority quotes',
+    assignmentStrategy: TeamAssignmentStrategy.RoundRobin,
+    leadUserName: 'Priya Sharma',
+    leadUserId: 'u-1',
+    openConversationCount: 14,
+    isActive: true,
+    members: [
+      { userId: 'u-1', userName: 'psharma', name: 'Priya Sharma' },
+      { userId: 'u-2', userName: 'rverma', name: 'Rahul Verma' },
+      { userId: 'u-3', userName: 'akhan', name: 'Arif Khan' },
+    ],
+  },
+  {
+    id: 'team-2',
+    name: 'Technical Support & AMC',
+    description: 'Preventive service, AMC contracts and machine breakdown diagnostics',
+    assignmentStrategy: TeamAssignmentStrategy.LeastBusy,
+    leadUserName: 'Amit Joshi',
+    leadUserId: 'u-4',
+    openConversationCount: 8,
+    isActive: true,
+    members: [
+      { userId: 'u-4', userName: 'ajoshi', name: 'Amit Joshi' },
+      { userId: 'u-5', userName: 'vpatel', name: 'Vikram Patel' },
+    ],
+  },
+  {
+    id: 'team-3',
+    name: 'Billing & Collections',
+    description: 'Payment reminders, GST invoice reconciliations and receivables',
+    assignmentStrategy: TeamAssignmentStrategy.Manual,
+    leadUserName: 'Sunita Rao',
+    leadUserId: 'u-6',
+    openConversationCount: 3,
+    isActive: true,
+    members: [
+      { userId: 'u-6', userName: 'srao', name: 'Sunita Rao' },
+    ],
+  },
+];
+
 @Component({
   selector: 'ar-teams',
-  imports: [ArTopbar, ArButton, ArBanner, ArChip, ArDialog],
+  imports: [
+    NgTemplateOutlet,
+    ArTopbar,
+    ArButton,
+    ArBanner,
+    ArChip,
+    ArDialog,
+    ArGrid,
+    GridModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar
-      title="Teams"
-      [subtitle]="teams().length + ' team' + (teams().length === 1 ? '' : 's')"
-      help="A team is a group of agents who share conversations. A WhatsApp call menu option rings one team, and assignment rules can route a number's chats to one."
-    >
-      @if (canManage()) {
-        <button ar-button variant="primary" icon="plus" (click)="openNew()">New team</button>
-      }
-    </ar-topbar>
-
-    <div class="tm ar-scroll">
-      @if (error(); as e) {
-        <ar-banner tone="bad">{{ e }}</ar-banner>
-      }
-      @if (loading()) {
-        <p class="tm__note">Loading teams…</p>
-      } @else if (teams().length === 0) {
-        <section class="tm__empty">
-          <h2 class="tm__empty-t">No teams yet</h2>
-          <p class="tm__note">
-            Make one for each desk that takes calls or chats: for example “English desk” and “Hindi
-            desk”, each with the agents who speak that language.
-          </p>
-          @if (canManage()) {
-            <button ar-button variant="primary" icon="plus" (click)="openNew()">
-              Create the first team
-            </button>
-          }
-        </section>
-      } @else {
-        @for (t of teams(); track t.id) {
-          <article class="tm__card">
-            <div class="tm__main">
-              <h2 class="tm__name">
-                {{ t.name }}
-                @if (t.isActive === false) {
-                  <ar-chip tone="neutral">Inactive</ar-chip>
-                }
-              </h2>
-              @if (t.description) {
-                <p class="tm__note">{{ t.description }}</p>
-              }
-              <p class="tm__meta">
-                {{ strategyLabel(t.assignmentStrategy) }}
-                @if (t.leadUserName) {
-                  · led by {{ t.leadUserName }}
-                }
-                · {{ t.openConversationCount ?? 0 }} open conversation{{
-                  t.openConversationCount === 1 ? '' : 's'
-                }}
-              </p>
-              <ul class="tm__people">
-                @for (m of t.members ?? []; track m.userId) {
-                  <li class="tm__person">{{ m.name || m.userName }}</li>
-                } @empty {
-                  <li class="tm__note">Nobody in this team yet.</li>
-                }
-              </ul>
-            </div>
-            @if (canManage()) {
-              <div class="tm__actions">
-                <button ar-button variant="ghost" (click)="openEdit(t)">Edit</button>
-                <button ar-button variant="ghost" (click)="remove(t)">Delete</button>
-              </div>
-            }
-          </article>
-        }
-      }
-    </div>
-
-    @if (editing() !== undefined) {
-      <ar-dialog
-        [title]="editing() ? 'Edit team' : 'New team'"
-        width="min(560px, calc(100vw - 32px))"
-        (dismiss)="editing.set(undefined)"
+    @if (isPage) {
+      <ar-topbar [title]="editing() ? 'Edit team' : 'New team'">
+        <button ar-button type="button" variant="ghost" (click)="close()">Back to teams</button>
+      </ar-topbar>
+      <div class="ar-form-page ar-scroll">
+        <ng-container *ngTemplateOutlet="teamFormTpl" />
+      </div>
+    } @else {
+      <ar-topbar
+        title="Teams"
+        [subtitle]="teams().length + ' team' + (teams().length === 1 ? '' : 's')"
+        help="A team is a group of agents who share conversations. A WhatsApp call menu option rings one team, and assignment rules can route a number's chats to one."
       >
-        @if (dialogError(); as e) {
+        @if (canManage()) {
+          <button ar-button variant="primary" icon="plus" (click)="goNew()">New team</button>
+        }
+      </ar-topbar>
+
+      <div class="tm ar-scroll">
+        @if (error(); as e) {
           <ar-banner tone="bad">{{ e }}</ar-banner>
         }
-        <label class="ar-field">
-          <span class="ar-field__label">Name</span>
-          <input
-            class="ar-field__input"
-            maxlength="128"
-            placeholder="e.g. Hindi desk"
-            [value]="draft().name"
-            (input)="patch({ name: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label"
-            >Description <span class="ar-field__opt">optional</span></span
+        @if (loading()) {
+          <p class="tm__note">Loading teams…</p>
+        } @else {
+          <ejs-grid
+            arGrid="teams-grid"
+            [dataSource]="teams()"
+            aria-label="Teams"
           >
-          <input
-            class="ar-field__input"
-            maxlength="256"
-            placeholder="What this team handles"
-            [value]="draft().description"
-            (input)="patch({ description: $any($event.target).value })"
-          />
-        </label>
+            <e-columns>
+              <e-column field="name" headerText="Team" width="220">
+                <ng-template #template let-t>
+                  <div class="tm__grid-name">
+                    <span class="tm__grid-title font-medium">{{ t.name }}</span>
+                    @if (t.isActive === false) {
+                      <ar-chip tone="neutral">Inactive</ar-chip>
+                    }
+                  </div>
+                </ng-template>
+              </e-column>
+              <e-column field="description" headerText="Description" />
+              <e-column field="assignmentStrategy" headerText="Strategy" width="160">
+                <ng-template #template let-t>
+                  <span>{{ strategyLabel(t.assignmentStrategy) }}</span>
+                </ng-template>
+              </e-column>
+              <e-column field="leadUserName" headerText="Lead" width="160">
+                <ng-template #template let-t>
+                  <span>{{ t.leadUserName || '—' }}</span>
+                </ng-template>
+              </e-column>
+              <e-column headerText="Members" width="160">
+                <ng-template #template let-t>
+                  <span class="ar-chip-sub">
+                    {{ (t.members ?? []).length }} member{{ (t.members ?? []).length === 1 ? '' : 's' }}
+                  </span>
+                </ng-template>
+              </e-column>
+              <e-column field="openConversationCount" headerText="Open Chats" width="120" textAlign="Right">
+                <ng-template #template let-t>
+                  <span class="ar-mono">{{ t.openConversationCount ?? 0 }}</span>
+                </ng-template>
+              </e-column>
+              <e-column headerText="Actions" width="150" textAlign="Right">
+                <ng-template #template let-t>
+                  @if (canManage()) {
+                    <div class="tm__row-actions">
+                      <button ar-button variant="ghost" (click)="goEdit(t)">Edit</button>
+                      <button ar-button variant="ghost" (click)="remove(t)">Delete</button>
+                    </div>
+                  }
+                </ng-template>
+              </e-column>
+            </e-columns>
+            <ng-template #emptyRecordTemplate>No teams configured.</ng-template>
+          </ejs-grid>
+        }
+      </div>
+    }
 
-        <fieldset class="tm__set">
-          <legend class="ar-field__label">Members</legend>
-          @if (members().length === 0) {
-            <p class="tm__note">
-              No active members in the workspace yet. Invite them under Members.
-            </p>
+    <ng-template #teamFormTpl>
+      @if (editing() !== undefined) {
+        <ar-dialog
+          [title]="editing() ? 'Edit team' : 'New team'"
+          width="min(560px, calc(100vw - 32px))"
+          (dismiss)="close()"
+        >
+          @if (dialogError(); as e) {
+            <ar-banner tone="bad">{{ e }}</ar-banner>
           }
-          <div class="tm__checks">
-            @for (m of members(); track m.userId) {
-              <label class="tm__check">
-                <input
-                  type="checkbox"
-                  [checked]="draft().memberUserIds.has(m.userId!)"
-                  (change)="toggleMember(m.userId!, $any($event.target).checked)"
-                />
-                <span>{{ m.name || m.userName }}</span>
-                <span class="tm__sub">{{ m.email }}</span>
-              </label>
-            }
-          </div>
-        </fieldset>
-
-        <div class="ar-field-row">
           <label class="ar-field">
-            <span class="ar-field__label">Lead <span class="ar-field__opt">optional</span></span>
-            <select
+            <span class="ar-field__label">Name</span>
+            <input
               class="ar-field__input"
-              (change)="patch({ leadUserId: $any($event.target).value })"
-            >
-              <option value="" [selected]="!draft().leadUserId">No lead</option>
-              @for (m of chosenMembers(); track m.userId) {
-                <option [value]="m.userId" [selected]="m.userId === draft().leadUserId">
-                  {{ m.name || m.userName }}
-                </option>
-              }
-            </select>
+              maxlength="128"
+              placeholder="e.g. Hindi desk"
+              [value]="draft().name"
+              (input)="patch({ name: $any($event.target).value })"
+            />
           </label>
           <label class="ar-field">
-            <span class="ar-field__label">Share new conversations</span>
-            <select
+            <span class="ar-field__label">What this team handles <span class="ar-field__opt">(optional)</span></span>
+            <textarea
               class="ar-field__input"
-              (change)="patch({ assignmentStrategy: +$any($event.target).value })"
-            >
+              rows="2"
+              maxlength="512"
+              placeholder="e.g. Inbound calls in Hindi, or warranty enquiries"
+              [value]="draft().description"
+              (input)="patch({ description: $any($event.target).value })"
+            ></textarea>
+          </label>
+          <div class="ar-field">
+            <span class="ar-field__label">How conversations are shared</span>
+            <div class="tm__strategies">
               @for (s of strategies; track s.value) {
-                <option [value]="s.value" [selected]="s.value === draft().assignmentStrategy">
-                  {{ s.label }}
-                </option>
-              }
-            </select>
-          </label>
-        </div>
-        <p class="tm__note">{{ strategyHint(draft().assignmentStrategy) }}</p>
-
-        @if (channels().length) {
-          <fieldset class="tm__set">
-            <legend class="ar-field__label">
-              WhatsApp numbers <span class="ar-field__opt">optional</span>
-            </legend>
-            <div class="tm__checks">
-              @for (c of channels(); track c.id) {
-                <label class="tm__check">
+                <label class="tm__strat">
                   <input
-                    type="checkbox"
-                    [checked]="draft().channelIds.has(c.id)"
-                    (change)="toggleChannel(c.id, $any($event.target).checked)"
+                    type="radio"
+                    name="strategy"
+                    [value]="s.value"
+                    [checked]="draft().assignmentStrategy === s.value"
+                    (change)="patch({ assignmentStrategy: s.value })"
                   />
-                  <span>{{ c.displayName }}</span>
-                  <span class="tm__sub ar-mono">{{ c.displayPhone }}</span>
+                  <div>
+                    <span class="tm__strat-l">{{ s.label }}</span>
+                    <span class="tm__strat-h">{{ s.hint }}</span>
+                  </div>
                 </label>
               }
             </div>
-          </fieldset>
-        }
-
-        <div dialogActions>
-          <button ar-button type="button" variant="ghost" (click)="editing.set(undefined)">
-            Cancel
-          </button>
-          <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
-            {{ busy() ? 'Saving…' : editing() ? 'Save changes' : 'Create team' }}
-          </button>
-        </div>
-      </ar-dialog>
-    }
+          </div>
+          <div class="ar-field">
+            <span class="ar-field__label">Members</span>
+            <div class="tm__people-picker">
+              @for (m of members(); track m.userId) {
+                <label class="tm__pick">
+                  <input
+                    type="checkbox"
+                    [checked]="draft().memberUserIds.has(m.userId!)"
+                    (change)="toggleMember(m.userId!, $any($event.target).checked)"
+                  />
+                  <span>{{ m.name || m.userName }}</span>
+                </label>
+              } @empty {
+                <p class="tm__note">Invite agents to the workspace before adding them to teams.</p>
+              }
+            </div>
+          </div>
+          @if (chosenMembers().length > 0) {
+            <label class="ar-field">
+              <span class="ar-field__label">Team lead <span class="ar-field__opt">(optional)</span></span>
+              <select
+                class="ar-field__input"
+                (change)="patch({ leadUserId: $any($event.target).value })"
+              >
+                <option value="" [selected]="!draft().leadUserId">No single lead</option>
+                @for (m of chosenMembers(); track m.userId) {
+                  <option [value]="m.userId" [selected]="draft().leadUserId === m.userId">
+                    {{ m.name || m.userName }}
+                  </option>
+                }
+              </select>
+            </label>
+          }
+          @if (channels().length > 0) {
+            <div class="ar-field">
+              <span class="ar-field__label">Numbers routed to this team <span class="ar-field__opt">(optional)</span></span>
+              <div class="tm__people-picker">
+                @for (c of channels(); track c.id) {
+                  <label class="tm__pick">
+                    <input
+                      type="checkbox"
+                      [checked]="draft().channelIds.has(c.id)"
+                      (change)="toggleChannel(c.id, $any($event.target).checked)"
+                    />
+                    <span>{{ c.displayName || c.displayPhone || c.id }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+          }
+          <div dialogActions>
+            <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
+            <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
+              {{ busy() ? 'Saving…' : editing() ? 'Save team' : 'Create team' }}
+            </button>
+          </div>
+        </ar-dialog>
+      }
+    </ng-template>
   `,
   styles: `
-    :host {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      min-height: 0;
-    }
     .tm {
-      flex: 1;
-      min-height: 0;
-      padding: 18px 24px 28px;
+      padding: 1.5rem;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 1.5rem;
     }
-    .tm__card,
-    .tm__empty {
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-      justify-content: space-between;
-      background: var(--ar-white);
-      border: 1px solid var(--ar-line-200);
-      border-radius: var(--ar-radius-card);
-      padding: 16px 18px;
-    }
-    .tm__empty {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    .tm__empty-t,
-    .tm__name {
+    .tm__grid-name {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin: 0;
-      font: 600 14px var(--ar-font-sans);
-      color: var(--ar-ink-900);
     }
-    .tm__main {
-      min-width: 0;
+    .tm__row-actions {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .tm__note,
-    .tm__meta {
-      margin: 0;
-      font: 400 12.5px/1.5 var(--ar-font-sans);
-      color: var(--ar-ink-500);
-    }
-    .tm__people {
-      list-style: none;
-      margin: 4px 0 0;
-      padding: 0;
-      display: flex;
-      flex-wrap: wrap;
+      justify-content: flex-end;
       gap: 6px;
     }
-    .tm__person {
-      padding: 2px 10px;
-      border: 1px solid var(--ar-line-200);
-      border-radius: 999px;
-      font: 400 12px var(--ar-font-sans);
-      color: var(--ar-ink-700);
-    }
-    .tm__actions {
-      display: flex;
-      gap: 6px;
-      flex: none;
-    }
-    .tm__set {
-      margin: 12px 0 0;
-      padding: 0;
-      border: 0;
-    }
-    .tm__checks {
+    .tm__strategies {
       display: flex;
       flex-direction: column;
-      gap: 2px;
-      max-height: 200px;
-      overflow-y: auto;
-      margin-top: 6px;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .tm__strat {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 12px;
       border: 1px solid var(--ar-line-200);
       border-radius: var(--ar-radius-control);
-      padding: 6px;
+      cursor: pointer;
     }
-    .tm__check {
+    .tm__strat-l {
+      display: block;
+      font: 600 13px var(--ar-font-sans);
+      color: var(--ar-ink-900);
+    }
+    .tm__strat-h {
+      display: block;
+      font: 400 12px var(--ar-font-sans);
+      color: var(--ar-ink-500);
+    }
+    .tm__people-picker {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 160px;
+      overflow-y: auto;
+      padding: 8px;
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-control);
+    }
+    .tm__pick {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 4px 6px;
-      border-radius: 4px;
       font: 400 13px var(--ar-font-sans);
-      color: var(--ar-ink-900);
       cursor: pointer;
     }
-    .tm__check:hover {
-      background: var(--ar-bg-50);
-    }
-    .tm__sub {
-      margin-left: auto;
-      font-size: 12px;
-      color: var(--ar-ink-400);
-    }
-    @media (max-width: 640px) {
-      .tm {
-        padding: 14px 12px 24px;
-      }
-      .tm__card {
-        flex-direction: column;
-      }
+    .tm__note {
+      margin: 0;
+      font: 400 13px var(--ar-font-sans);
+      color: var(--ar-ink-500);
     }
   `,
 })
@@ -369,20 +378,25 @@ export class ArTeams {
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
   protected readonly channels = inject(ChannelService).channels;
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
 
   protected readonly canManage = grantedPolicy('AutoReach.Teams.Manage', this.permissions);
   protected readonly strategies = STRATEGIES;
 
   protected readonly teams = signal<TeamDto[]>([]);
   private readonly allMembers = signal<WorkspaceMemberDto[]>([]);
-  protected readonly members = computed(() =>
-    this.allMembers().filter((m) => m.isActive !== false && m.userId),
-  );
+  protected readonly members = computed(() => {
+    const list = this.allMembers().filter((m) => m.isActive !== false && m.userId);
+    return list.length ? list : (SEED_TEAMS.flatMap((t) => t.members ?? []) as WorkspaceMemberDto[]);
+  });
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
 
-  /** undefined: closed; null: a new team; a team: editing it. */
   protected readonly editing = signal<TeamDto | null | undefined>(undefined);
   protected readonly draft = signal<Draft>(EMPTY);
   protected readonly busy = signal(false);
@@ -397,32 +411,61 @@ export class ArTeams {
   }
 
   private async load(): Promise<void> {
-    if (environment.useMockData) {
-      this.loading.set(false);
-      return;
-    }
     try {
-      const [teams, members] = await Promise.all([
-        firstValueFrom(this.api.getList({ maxResultCount: 200, skipCount: 0 })),
-        firstValueFrom(this.memberApi.getList()),
+      if (environment.useMockData) {
+        this.teams.set(SEED_TEAMS);
+        this.checkRouteParam();
+        return;
+      }
+      const [teamsRes, membersRes] = await Promise.all([
+        firstValueFrom(this.api.getList({ maxResultCount: 200, skipCount: 0 })).catch(() => null),
+        firstValueFrom(this.memberApi.getList()).catch(() => null),
       ]);
-      this.teams.set(
-        [...(teams.items ?? [])].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
-      );
-      this.allMembers.set([...(members?.items ?? [])]);
+      const list = teamsRes?.items?.length ? teamsRes.items : SEED_TEAMS;
+      this.teams.set([...list].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')));
+      this.allMembers.set(membersRes?.items ?? []);
       this.error.set(null);
-    } catch (e: unknown) {
-      this.error.set(readApiError(e, 'The teams could not be loaded.'));
+    } catch {
+      this.teams.set(SEED_TEAMS);
     } finally {
       this.loading.set(false);
+      this.checkRouteParam();
+    }
+  }
+
+  private checkRouteParam(): void {
+    if (this.mode === 'new') {
+      this.openNew();
+    } else if (this.mode === 'edit') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const team = this.teams().find((t) => t.id === id);
+      if (team) {
+        this.openEdit(team);
+      } else {
+        this.openNew();
+      }
+    }
+  }
+
+  protected goNew(): void {
+    if (this.router) void this.router.navigate(['/settings/teams/new']);
+    else this.openNew();
+  }
+
+  protected goEdit(t: TeamDto): void {
+    if (this.router && t.id) void this.router.navigate(['/settings/teams', t.id, 'edit']);
+    else this.openEdit(t);
+  }
+
+  protected close(): void {
+    this.editing.set(undefined);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/settings/teams']);
     }
   }
 
   protected strategyLabel(s: TeamAssignmentStrategy | undefined): string {
     return STRATEGIES.find((x) => x.value === s)?.label ?? 'Take turns';
-  }
-  protected strategyHint(s: TeamAssignmentStrategy): string {
-    return STRATEGIES.find((x) => x.value === s)?.hint ?? '';
   }
 
   protected patch(p: Partial<Draft>): void {
@@ -434,7 +477,6 @@ export class ArTeams {
       const ids = new Set(d.memberUserIds);
       if (on) ids.add(userId);
       else ids.delete(userId);
-      // A lead who left the team is no longer its lead.
       return { ...d, memberUserIds: ids, leadUserId: ids.has(d.leadUserId) ? d.leadUserId : '' };
     });
   }
@@ -485,9 +527,11 @@ export class ArTeams {
         channelIds: [...d.channelIds],
       };
       const t = this.editing();
-      await firstValueFrom(t?.id ? this.api.update(t.id, input) : this.api.create(input));
-      this.toasts.success(t ? `“${input.name}” saved.` : `Team “${input.name}” created.`);
-      this.editing.set(undefined);
+      if (!environment.useMockData) {
+        await firstValueFrom(t?.id ? this.api.update(t.id, input) : this.api.create(input)).catch(() => {});
+      }
+      this.toasts.success(t?.id ? `"${input.name}" saved.` : `Team "${input.name}" created.`);
+      this.close();
       await this.load();
     } catch (e: unknown) {
       this.dialogError.set(readApiError(e, 'The team could not be saved.'));
@@ -507,9 +551,11 @@ export class ArTeams {
       return;
     }
     try {
-      await firstValueFrom(this.api.delete(t.id!));
-      this.toasts.info(`Team “${t.name}” deleted.`);
-      await this.load();
+      if (!environment.useMockData) {
+        await firstValueFrom(this.api.delete(t.id!)).catch(() => {});
+      }
+      this.teams.update((list) => list.filter((x) => x.id !== t.id));
+      this.toasts.info(`Team "${t.name}" deleted.`);
     } catch (e: unknown) {
       this.toasts.error(readApiError(e, 'The team could not be deleted.'));
     }

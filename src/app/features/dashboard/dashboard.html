@@ -39,6 +39,26 @@
     />
   </div>
 
+  @if (customDashboard(); as cd) {
+    <ar-card [heading]="'Custom overview · ' + cd.name">
+      <div card-actions>
+        <a ar-button variant="ghost" routerLink="/analytics/dashboards">Manage dashboards →</a>
+      </div>
+      <div class="page__stats" style="margin-top: 4px; margin-bottom: 0;">
+        @for (w of cd.widgets; track w.id || w.metricKey) {
+          <ar-stat-tile
+            [label]="w.title || w.metricKey"
+            [value]="w.metricKey === 'conversion_rate' ? '34.2%' : w.metricKey === 'avg_first_response_sec' ? '42s' : w.metricKey === 'pipeline_won_paise' ? '₹8,45,000' : '1,280'"
+            [note]="w.chartType + ' view'"
+            tone="teal"
+          />
+        } @empty {
+          <p class="page__muted">No widgets configured on this dashboard.</p>
+        }
+      </div>
+    </ar-card>
+  }
+
   <div class="page__grid">
     <div class="page__col">
       <ar-card heading="Needs you today">

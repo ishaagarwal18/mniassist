@@ -37,7 +37,7 @@ export const MOCK_INVOICES: SalesInvoiceDto[] = [
     paidAmountInPaise: 0,
     balanceDueInPaise: 495_600_00,
     irn: '8f7a29e18b6c4e09f58a7192bc58a0e194857201bc9384729103847592837482',
-    ewayBillNumber: '281982736412',
+    eWayBillNumber: '281982736412',
     creationTime: new Date(Date.now() - 2 * 86_400_000).toISOString(),
     lines: [
       {

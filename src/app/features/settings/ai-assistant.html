@@ -1,67 +1,22 @@
-<ar-topbar
-  title="AI assistant"
-  [subtitle]="subtitle()"
-  help="Answers inbound WhatsApp messages from your knowledge base, inside the 24-hour service window, and hands the conversation to a person whenever it isn't sure. Test it in 'Try a question' before switching it on."
->
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openArticle()">
-    Add article
-  </button>
-</ar-topbar>
-
-@if (editing(); as target) {
-  <ar-dialog
-    [title]="target.id ? 'Edit article' : 'Add a knowledge article'"
-    (dismiss)="editing.set(null)"
+@if (isPage) {
+  <ar-topbar [title]="pageTitle()">
+    <button ar-button type="button" variant="ghost" (click)="close()">Back to AI assistant</button>
+  </ar-topbar>
+  <div class="ar-form-page ar-scroll">
+    <ng-container *ngTemplateOutlet="formsTpl" />
+  </div>
+} @else {
+  <ar-topbar
+    title="AI assistant"
+    [subtitle]="subtitle()"
+    help="Answers inbound WhatsApp messages from your knowledge base, inside the 24-hour service window, and hands the conversation to a person whenever it isn't sure. Test it in 'Try a question' before switching it on."
   >
-    <label class="ar-field">
-      <span class="ar-field__label">Title</span>
-      <input
-        required
-        maxlength="256"
-        class="ar-field__input"
-        placeholder="e.g. Warranty and returns"
-        [value]="draftTitle()"
-        (input)="draftTitle.set($any($event.target).value)"
-      />
-    </label>
-    <label class="ar-field">
-      <span class="ar-field__label">Text</span>
-      <textarea
-        required
-        class="ar-field__input ai__textarea"
-        rows="9"
-        placeholder="Write it the way you'd want a customer to hear it. One topic per article retrieves best."
-        [value]="draftBody()"
-        (input)="draftBody.set($any($event.target).value)"
-      ></textarea>
-    </label>
-    <label class="ai__check">
-      <input
-        type="checkbox"
-        [checked]="draftEnabled()"
-        (change)="draftEnabled.set($any($event.target).checked)"
-      />
-      The assistant may answer from this article
-    </label>
-    @if (articleError(); as err) {
-      <p class="ai__err">{{ err }}</p>
-    }
-    <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="editing.set(null)">Cancel</button>
-      <button
-        ar-button
-        type="button"
-        variant="primary"
-        [disabled]="savingArticle()"
-        (click)="saveArticle()"
-      >
-        {{ savingArticle() ? 'Saving…' : 'Save article' }}
-      </button>
-    </div>
-  </ar-dialog>
-}
+    <button ar-button type="button" variant="primary" icon="plus" (click)="goNewArticle()">
+      Add article
+    </button>
+  </ar-topbar>
 
-<div class="ai ar-scroll">
+  <div class="ai ar-scroll">
   @if (status(); as s) {
     @if (!s.modelConfigured) {
       <ar-banner tone="warn">
@@ -344,7 +299,7 @@
           <ng-template #template let-a>
             <span class="ai__row-actions">
               @if (a.article.source === Source.Manual) {
-                <button ar-button type="button" variant="ghost" (click)="openArticle(a.article)">
+                <button ar-button type="button" variant="ghost" (click)="goEditArticle(a.article)">
                   Edit
                 </button>
               }
@@ -391,4 +346,60 @@
       <ng-template #emptyRecordTemplate>No decisions yet.</ng-template>
     </ejs-grid>
   </section>
-</div>
+  </div>
+}
+
+<ng-template #formsTpl>
+  @if (editing(); as target) {
+    <ar-dialog
+      [title]="target.id ? 'Edit article' : 'Add a knowledge article'"
+      (dismiss)="close()"
+    >
+      <label class="ar-field">
+        <span class="ar-field__label">Title</span>
+        <input
+          required
+          maxlength="256"
+          class="ar-field__input"
+          placeholder="e.g. Warranty and returns"
+          [value]="draftTitle()"
+          (input)="draftTitle.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Text</span>
+        <textarea
+          required
+          class="ar-field__input ai__textarea"
+          rows="9"
+          placeholder="Write it the way you'd want a customer to hear it. One topic per article retrieves best."
+          [value]="draftBody()"
+          (input)="draftBody.set($any($event.target).value)"
+        ></textarea>
+      </label>
+      <label class="ai__check">
+        <input
+          type="checkbox"
+          [checked]="draftEnabled()"
+          (change)="draftEnabled.set($any($event.target).checked)"
+        />
+        The assistant may answer from this article
+      </label>
+      @if (articleError(); as err) {
+        <p class="ai__err">{{ err }}</p>
+      }
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="savingArticle()"
+          (click)="saveArticle()"
+        >
+          {{ savingArticle() ? 'Saving…' : 'Save article' }}
+        </button>
+      </div>
+    </ar-dialog>
+  }
+</ng-template>

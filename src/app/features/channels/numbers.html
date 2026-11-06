@@ -1,26 +1,30 @@
-<ar-topbar
-  title="Display name &amp; PIN"
-  [subtitle]="subtitle()"
-  help="Your number's display name and two-step verification PIN — both live with Meta, not MNI Assist. The PIN is shown once, at the moment you set it, and never again."
->
-  <button ar-button type="button" variant="ghost" icon="refresh" (click)="refresh()">
-    Refresh
-  </button>
-  <a ar-button variant="ghost" icon="tower" routerLink="/channels/telecom">
-    Telecom entity & pool
-  </a>
-  @if (canOnboard()) {
-    <button ar-button type="button" variant="primary" icon="plus" (click)="connectOpen.set(true)">
-      Connect a number
+@if (isPage) {
+  <ar-topbar [title]="pageTitle()">
+    <button ar-button type="button" variant="ghost" (click)="close()">Back to Numbers</button>
+  </ar-topbar>
+  <div class="ar-form-page ar-scroll">
+    <ng-container *ngTemplateOutlet="formsTpl" />
+  </div>
+} @else {
+  <ar-topbar
+    title="Display name &amp; PIN"
+    [subtitle]="subtitle()"
+    help="Your number's display name and two-step verification PIN — both live with Meta, not MNI Assist. The PIN is shown once, at the moment you set it, and never again."
+  >
+    <button ar-button type="button" variant="ghost" icon="refresh" (click)="refresh()">
+      Refresh
     </button>
-  }
-</ar-topbar>
+    <a ar-button variant="ghost" icon="tower" routerLink="/channels/telecom">
+      Telecom entity & pool
+    </a>
+    @if (canOnboard()) {
+      <button ar-button type="button" variant="primary" icon="plus" (click)="goConnect()">
+        Connect a number
+      </button>
+    }
+  </ar-topbar>
 
-@if (connectOpen()) {
-  <ar-connect-number-dialog (close)="connectOpen.set(false)" />
-}
-
-<div class="nm ar-scroll">
+  <div class="nm ar-scroll">
   <ar-banner tone="teal">
     The display name and the two-step PIN belong to Meta, not to MNI Assist. A name change goes
     through review and can be refused; a PIN protects the number from being re-registered on someone
@@ -179,7 +183,7 @@
 
       @if (canOnboard()) {
         <footer class="num__foot">
-          <button ar-button type="button" variant="danger" icon="trash" (click)="openRelease(n)">
+          <button ar-button type="button" variant="danger" icon="trash" (click)="goRelease(n)">
             Release number
           </button>
         </footer>
@@ -187,61 +191,68 @@
     </article>
   }
 </div>
-
-@if (releasing(); as n) {
-  <ar-dialog [title]="'Release ' + n.displayPhoneNumber + '?'" (dismiss)="releasing.set(null)">
-    <div class="rel">
-      <p class="rel__p">
-        This workspace stops sending and receiving on this number straight away. Its stored access
-        token and two-step PIN are deleted. Conversations and message history stay.
-      </p>
-      <p class="rel__p">
-        Campaigns that are scheduled, running or paused on it must be finished or cancelled first.
-      </p>
-
-      <label class="rel__check">
-        <input
-          type="checkbox"
-          [checked]="releaseDeregister()"
-          (change)="releaseDeregister.set($any($event.target).checked)"
-        />
-        <span>
-          <strong>Also deregister it at Meta.</strong> Needed to move the number to another provider
-          or back to the WhatsApp Business app. It then stops working on every app until it is
-          registered again. Leave this off to connect it to another workspace later.
-        </span>
-      </label>
-
-      <label class="ar-field">
-        <span class="ar-field__label">Type the number to confirm</span>
-        <input
-          class="ar-field__input ar-mono"
-          type="text"
-          autocomplete="off"
-          [placeholder]="n.displayPhoneNumber"
-          [value]="releaseConfirm()"
-          (input)="releaseConfirm.set($any($event.target).value)"
-        />
-      </label>
-
-      @if (releaseError(); as e) {
-        <p class="rel__err" role="alert">{{ e }}</p>
-      }
-
-      <div class="rel__actions">
-        <button ar-button type="button" variant="ghost" (click)="releasing.set(null)">
-          Cancel
-        </button>
-        <button
-          ar-button
-          type="button"
-          variant="danger"
-          [disabled]="busy() || !releaseMatches()"
-          (click)="release()"
-        >
-          {{ busy() ? 'Releasing…' : 'Release number' }}
-        </button>
-      </div>
-    </div>
-  </ar-dialog>
 }
+
+<ng-template #formsTpl>
+  @if (connectOpen()) {
+    <ar-connect-number-dialog (close)="close()" />
+  }
+
+  @if (releasing(); as n) {
+    <ar-dialog [title]="'Release ' + n.displayPhoneNumber + '?'" (dismiss)="close()">
+      <div class="rel">
+        <p class="rel__p">
+          This workspace stops sending and receiving on this number straight away. Its stored access
+          token and two-step PIN are deleted. Conversations and message history stay.
+        </p>
+        <p class="rel__p">
+          Campaigns that are scheduled, running or paused on it must be finished or cancelled first.
+        </p>
+
+        <label class="rel__check">
+          <input
+            type="checkbox"
+            [checked]="releaseDeregister()"
+            (change)="releaseDeregister.set($any($event.target).checked)"
+          />
+          <span>
+            <strong>Also deregister it at Meta.</strong> Needed to move the number to another provider
+            or back to the WhatsApp Business app. It then stops working on every app until it is
+            registered again. Leave this off to connect it to another workspace later.
+          </span>
+        </label>
+
+        <label class="ar-field">
+          <span class="ar-field__label">Type the number to confirm</span>
+          <input
+            class="ar-field__input ar-mono"
+            type="text"
+            autocomplete="off"
+            [placeholder]="n.displayPhoneNumber"
+            [value]="releaseConfirm()"
+            (input)="releaseConfirm.set($any($event.target).value)"
+          />
+        </label>
+
+        @if (releaseError(); as e) {
+          <p class="rel__err" role="alert">{{ e }}</p>
+        }
+
+        <div class="rel__actions">
+          <button ar-button type="button" variant="ghost" (click)="close()">
+            Cancel
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="danger"
+            [disabled]="busy() || !releaseMatches()"
+            (click)="release()"
+          >
+            {{ busy() ? 'Releasing…' : 'Release number' }}
+          </button>
+        </div>
+      </div>
+    </ar-dialog>
+  }
+</ng-template>

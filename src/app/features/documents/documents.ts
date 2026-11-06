@@ -1,6 +1,8 @@
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, map } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -97,7 +99,17 @@ function toDoc(d: LibraryDocumentDto): Doc {
  */
 @Component({
   selector: 'ar-documents',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSearchBox, ArSelect, ArGrid, GridModule],
+  imports: [
+    NgTemplateOutlet,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArSearchBox,
+    ArSelect,
+    ArGrid,
+    GridModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './documents.html',
   styleUrl: './documents.scss',
@@ -107,6 +119,49 @@ export class ArDocuments {
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(LibraryService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  /** Which form this route shows as a page ('new', 'edit'), or the list. */
+  protected readonly mode = (this.route.snapshot.data['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+  protected readonly loadError = signal<string | null>(null);
+
+  constructor() {
+    if (this.mode === 'new') this.openDialog();
+    else if (this.mode === 'edit') void this.loadForEdit(this.route.snapshot.paramMap.get('id'));
+  }
+
+  /** The document with its access settings, which the list does not carry. */
+  private async loadForEdit(id: string | null): Promise<void> {
+    if (!id) return;
+    if (environment.useMockData) {
+      const d = this.mockDocs().find((x) => x.id === id);
+      if (d) this.openEdit(d);
+      else this.loadError.set('This document could not be found.');
+      return;
+    }
+    try {
+      const dto = await firstValueFrom(this.api.get(id, { skipHandleError: true }));
+      this.openEdit(toDoc(dto));
+      this.visibility.set(dto.visibility ?? DocumentVisibility.Public);
+      this.allowedAccounts.set((dto.allowedAccountIds ?? []).join(', '));
+    } catch {
+      this.loadError.set('This document could not be found. It may have been deleted.');
+    }
+  }
+
+  protected goNew(): void {
+    void this.router.navigate(['/documents/new']);
+  }
+  protected goEdit(d: Doc): void {
+    void this.router.navigate(['/documents', d.id, 'edit']);
+  }
+  /** Back to the library (Cancel, and after a save). */
+  protected close(): void {
+    this.dialogOpen.set(false);
+    if (this.isPage) void this.router.navigate(['/documents']);
+  }
 
   protected readonly canCreate = grantedPolicy('AutoReach.Library.Create', this.permissions);
   protected readonly canUpdate = grantedPolicy('AutoReach.Library.Update', this.permissions);
@@ -253,7 +308,7 @@ export class ArDocuments {
         this.toasts.success('Document uploaded.');
       }
       this.resource.reload();
-      this.dialogOpen.set(false);
+      this.close();
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'The action failed.');
     } finally {
@@ -353,7 +408,7 @@ export class ArDocuments {
   }
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { q: this.query() }),
+    params: () => (environment.useMockData || this.isPage ? undefined : { q: this.query() }),
     stream: ({ params }) =>
       this.api
         .getList({ filter: params.q, skipCount: 0, maxResultCount: 200 })

@@ -78,4 +78,29 @@ export class JournalEntryService {
       { apiName: this.apiName, ...config },
     );
   }
+
+  update(
+    id: string,
+    input: CreateJournalEntryDto,
+    config?: Partial<Rest.Config>,
+  ): Observable<JournalEntryDto> {
+    return this.restService.request<any, JournalEntryDto>(
+      {
+        method: 'PUT',
+        url: `/api/auto-reach/journal-entry/${id}`,
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
+  delete(id: string, config?: Partial<Rest.Config>): Observable<void> {
+    return this.restService.request<any, void>(
+      {
+        method: 'DELETE',
+        url: `/api/auto-reach/journal-entry/${id}`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+  }
 }

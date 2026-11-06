@@ -1,218 +1,27 @@
-<ar-topbar
-  title="Invoices"
-  [subtitle]="subtitle()"
-  help="GST invoices and reconciliation in one place. An unresolved variance — a mismatch nobody's confirmed yet — is called out separately from what's simply outstanding."
->
-  <button ar-button type="button" variant="ghost" icon="refresh" (click)="openReconcile()">
-    Check Meta's invoice
-  </button>
-  <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
-    Generate invoice
-  </button>
-</ar-topbar>
+@if (isPage) {
+  <ar-topbar [title]="pageTitle()">
+    <button ar-button type="button" variant="ghost" (click)="close()">Back to Invoices</button>
+  </ar-topbar>
+  <div class="ar-form-page ar-scroll">
+    <ng-container *ngTemplateOutlet="formsTpl" />
+  </div>
+} @else {
+  <ar-topbar
+    title="Invoices"
+    [subtitle]="subtitle()"
+    help="GST invoices and reconciliation in one place. An unresolved variance — a mismatch nobody's confirmed yet — is called out separately from what's simply outstanding."
+  >
+    <button ar-button type="button" variant="ghost" icon="refresh" (click)="goReconcile()">
+      Check Meta's invoice
+    </button>
+    <button ar-button type="button" variant="primary" icon="plus" (click)="goGenerate()">
+      Generate invoice
+    </button>
+  </ar-topbar>
 
-@if (recOpen()) {
-  <ar-dialog title="Check Meta's invoice" (dismiss)="recOpen.set(false)">
-    @if (recResult(); as r) {
-      <p class="recd__result" [class.recd__result--bad]="!r.withinTolerance">
-        @if (r.withinTolerance) {
-          The invoice matches the meter: {{ count(r.metaCount) }} paid messages,
-          {{ inr(r.metaCostInPaise) }} ({{ variancePercent(r.varianceBasisPoints) }}, inside
-          tolerance).
-        } @else {
-          Off by {{ variancePercent(r.varianceBasisPoints) }}: the meter says
-          {{ inr(r.ourCostInPaise) }}, Meta invoiced {{ inr(r.metaCostInPaise) }}. The run below
-          shows which category and the likely cause.
-        }
-      </p>
-    } @else {
-      <p class="recd__hint">
-        Copy the WhatsApp lines from Meta's invoice for one number and one month: paid messages and
-        the amount in rupees before GST. Free messages (service, and utility inside the 24-hour
-        window) aren't on the invoice and aren't entered.
-      </p>
-      <div class="recd__row">
-        <label class="ar-field" for="rec-channel">
-          <span class="ar-field__label">WhatsApp number</span>
-          <select
-            required
-            id="rec-channel"
-            class="ar-field__input"
-            [value]="recChannel()"
-            (change)="recChannel.set($any($event.target).value)"
-          >
-            @for (c of recChannels(); track c.id) {
-              <option [value]="c.id">{{ c.number }}</option>
-            }
-          </select>
-        </label>
-        <label class="ar-field" for="rec-month">
-          <span class="ar-field__label">Month</span>
-          <input
-            required
-            id="rec-month"
-            class="ar-field__input"
-            type="month"
-            [value]="recMonth()"
-            (input)="recMonth.set($any($event.target).value)"
-          />
-        </label>
-      </div>
-      <label class="ar-field" for="rec-source">
-        <span class="ar-field__label">Invoice number</span>
-        <input
-          required
-          id="rec-source"
-          class="ar-field__input"
-          placeholder="FBADS-IN-2026-0917"
-          [value]="recSource()"
-          (input)="recSource.set($any($event.target).value)"
-        />
-      </label>
-      <ejs-grid
-        arGrid="meta-invoice-lines"
-        [dataSource]="categories"
-        aria-label="Lines from Meta's invoice"
-        [arGridSearch]="false"
-        [arGridTools]="false"
-        class="recd__lines"
-      >
-        <e-columns>
-          <e-column field="label" headerText="Category" width="160">
-            <ng-template #template let-c>
-              <strong>{{ c.label }}</strong>
-            </ng-template>
-          </e-column>
-          <e-column headerText="Paid messages" width="160">
-            <ng-template #template let-c>
-              <input
-                class="ar-field__input"
-                inputmode="numeric"
-                [attr.id]="'rec-n-' + c.key"
-                [attr.aria-label]="c.label + ' paid messages'"
-                [value]="line(c.key).messages"
-                (input)="setLine(c.key, 'messages', $any($event.target).value)"
-              />
-            </ng-template>
-          </e-column>
-          <e-column headerText="Amount, ₹" width="160">
-            <ng-template #template let-c>
-              <input
-                class="ar-field__input"
-                inputmode="decimal"
-                [attr.id]="'rec-a-' + c.key"
-                [attr.aria-label]="c.label + ' amount in rupees'"
-                [value]="line(c.key).amount"
-                (input)="setLine(c.key, 'amount', $any($event.target).value)"
-              />
-            </ng-template>
-          </e-column>
-        </e-columns>
-      </ejs-grid>
-    }
-    @if (recError(); as e) {
-      <p class="recd__error" role="alert">{{ e }}</p>
-    }
-    <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="recOpen.set(false)">
-        {{ recResult() ? 'Done' : 'Cancel' }}
-      </button>
-      @if (!recResult()) {
-        <button
-          ar-button
-          type="button"
-          variant="primary"
-          [disabled]="recBusy()"
-          (click)="reconcile()"
-        >
-          {{ recBusy() ? 'Checking…' : 'Check against the meter' }}
-        </button>
-      }
-    </div>
-  </ar-dialog>
-}
 
-@if (dialogOpen()) {
-  <ar-dialog title="Generate a GST invoice" (dismiss)="dialogOpen.set(false)">
-    <p class="inv__dialog-note">
-      Bills wallet usage for the period. Issued separately once you have checked it.
-    </p>
-    <div class="ar-field-row">
-      <label class="ar-field">
-        <span class="ar-field__label">Period start</span>
-        <input
-          required
-          class="ar-field__input"
-          type="date"
-          [value]="g().periodStart"
-          (input)="patchInvoice('periodStart', $any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">Period end</span>
-        <input
-          required
-          class="ar-field__input"
-          type="date"
-          [value]="g().periodEnd"
-          (input)="patchInvoice('periodEnd', $any($event.target).value)"
-        />
-      </label>
-    </div>
-    <label class="ar-field">
-      <span class="ar-field__label">Customer legal name</span>
-      <input
-        required
-        class="ar-field__input"
-        [value]="g().legalName"
-        (input)="patchInvoice('legalName', $any($event.target).value)"
-      />
-    </label>
-    <div class="ar-field-row">
-      <label class="ar-field">
-        <span class="ar-field__label">GSTIN <span class="ar-field__opt">(optional)</span></span>
-        <input
-          class="ar-field__input"
-          [value]="g().gstin"
-          (input)="patchInvoice('gstin', $any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">Place of supply (state code)</span>
-        <input
-          required
-          pattern="\d{2}"
-          title="Two digits, e.g. 27 for Maharashtra."
-          class="ar-field__input"
-          inputmode="numeric"
-          maxlength="2"
-          placeholder="e.g. 27"
-          [value]="g().stateCode"
-          (input)="patchInvoice('stateCode', $any($event.target).value)"
-        />
-      </label>
-    </div>
-    <label class="ar-field">
-      <span class="ar-field__label">Address <span class="ar-field__opt">(optional)</span></span>
-      <input
-        class="ar-field__input"
-        [value]="g().address"
-        (input)="patchInvoice('address', $any($event.target).value)"
-      />
-    </label>
-    @if (error(); as e) {
-      <p class="inv__dialog-err">{{ e }}</p>
-    }
-    <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
-        Cancel
-      </button>
-      <button ar-button type="button" variant="primary" [disabled]="saving()" (click)="generate()">
-        {{ saving() ? 'Generating…' : 'Generate' }}
-      </button>
-    </div>
-  </ar-dialog>
-}
+
+
 
 <div class="inv">
   <aside class="inv__list ar-scroll" aria-label="Invoices">
@@ -468,4 +277,210 @@
       </section>
     }
   </section>
-</div>
+  </div>
+}
+
+<ng-template #formsTpl>
+  @if (recOpen()) {
+    <ar-dialog title="Check Meta's invoice" (dismiss)="close()">
+      @if (recResult(); as r) {
+        <p class="recd__result" [class.recd__result--bad]="!r.withinTolerance">
+          @if (r.withinTolerance) {
+            The invoice matches the meter: {{ count(r.metaCount) }} paid messages,
+            {{ inr(r.metaCostInPaise) }} ({{ variancePercent(r.varianceBasisPoints) }}, inside
+            tolerance).
+          } @else {
+            Off by {{ variancePercent(r.varianceBasisPoints) }}: the meter says
+            {{ inr(r.ourCostInPaise) }}, Meta invoiced {{ inr(r.metaCostInPaise) }}. The run below
+            shows which category and the likely cause.
+          }
+        </p>
+      } @else {
+        <p class="recd__hint">
+          Copy the WhatsApp lines from Meta's invoice for one number and one month: paid messages and
+          the amount in rupees before GST. Free messages (service, and utility inside the 24-hour
+          window) aren't on the invoice and aren't entered.
+        </p>
+        <div class="recd__row">
+          <label class="ar-field" for="rec-channel">
+            <span class="ar-field__label">WhatsApp number</span>
+            <select
+              required
+              id="rec-channel"
+              class="ar-field__input"
+              [value]="recChannel()"
+              (change)="recChannel.set($any($event.target).value)"
+            >
+              @for (c of recChannels(); track c.id) {
+                <option [value]="c.id">{{ c.number }}</option>
+              }
+            </select>
+          </label>
+          <label class="ar-field" for="rec-month">
+            <span class="ar-field__label">Month</span>
+            <input
+              required
+              id="rec-month"
+              class="ar-field__input"
+              type="month"
+              [value]="recMonth()"
+              (input)="recMonth.set($any($event.target).value)"
+            />
+          </label>
+        </div>
+        <label class="ar-field" for="rec-source">
+          <span class="ar-field__label">Invoice number</span>
+          <input
+            required
+            id="rec-source"
+            class="ar-field__input"
+            placeholder="FBADS-IN-2026-0917"
+            [value]="recSource()"
+            (input)="recSource.set($any($event.target).value)"
+          />
+        </label>
+        <ejs-grid
+          arGrid="meta-invoice-lines"
+          [dataSource]="categories"
+          aria-label="Lines from Meta's invoice"
+          [arGridSearch]="false"
+          [arGridTools]="false"
+          class="recd__lines"
+        >
+          <e-columns>
+            <e-column field="label" headerText="Category" width="160">
+              <ng-template #template let-c>
+                <strong>{{ c.label }}</strong>
+              </ng-template>
+            </e-column>
+            <e-column headerText="Paid messages" width="160">
+              <ng-template #template let-c>
+                <input
+                  class="ar-field__input"
+                  inputmode="numeric"
+                  [attr.id]="'rec-n-' + c.key"
+                  [attr.aria-label]="c.label + ' paid messages'"
+                  [value]="line(c.key).messages"
+                  (input)="setLine(c.key, 'messages', $any($event.target).value)"
+                />
+              </ng-template>
+            </e-column>
+            <e-column headerText="Amount, ₹" width="160">
+              <ng-template #template let-c>
+                <input
+                  class="ar-field__input"
+                  inputmode="decimal"
+                  [attr.id]="'rec-a-' + c.key"
+                  [attr.aria-label]="c.label + ' amount in rupees'"
+                  [value]="line(c.key).amount"
+                  (input)="setLine(c.key, 'amount', $any($event.target).value)"
+                />
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
+      }
+      @if (recError(); as e) {
+        <p class="recd__error" role="alert">{{ e }}</p>
+      }
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="close()">
+          {{ recResult() ? 'Done' : 'Cancel' }}
+        </button>
+        @if (!recResult()) {
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="recBusy()"
+            (click)="reconcile()"
+          >
+            {{ recBusy() ? 'Checking…' : 'Check against the meter' }}
+          </button>
+        }
+      </div>
+    </ar-dialog>
+  }
+
+  @if (dialogOpen()) {
+    <ar-dialog title="Generate a GST invoice" (dismiss)="close()">
+      <p class="inv__dialog-note">
+        Bills wallet usage for the period. Issued separately once you have checked it.
+      </p>
+      <div class="ar-field-row">
+        <label class="ar-field">
+          <span class="ar-field__label">Period start</span>
+          <input
+            required
+            class="ar-field__input"
+            type="date"
+            [value]="g().periodStart"
+            (input)="patchInvoice('periodStart', $any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Period end</span>
+          <input
+            required
+            class="ar-field__input"
+            type="date"
+            [value]="g().periodEnd"
+            (input)="patchInvoice('periodEnd', $any($event.target).value)"
+          />
+        </label>
+      </div>
+      <label class="ar-field">
+        <span class="ar-field__label">Customer legal name</span>
+        <input
+          required
+          class="ar-field__input"
+          [value]="g().legalName"
+          (input)="patchInvoice('legalName', $any($event.target).value)"
+        />
+      </label>
+      <div class="ar-field-row">
+        <label class="ar-field">
+          <span class="ar-field__label">GSTIN <span class="ar-field__opt">(optional)</span></span>
+          <input
+            class="ar-field__input"
+            [value]="g().gstin"
+            (input)="patchInvoice('gstin', $any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Place of supply (state code)</span>
+          <input
+            required
+            pattern="\d{2}"
+            title="Two digits, e.g. 27 for Maharashtra."
+            class="ar-field__input"
+            inputmode="numeric"
+            maxlength="2"
+            placeholder="e.g. 27"
+            [value]="g().stateCode"
+            (input)="patchInvoice('stateCode', $any($event.target).value)"
+          />
+        </label>
+      </div>
+      <label class="ar-field">
+        <span class="ar-field__label">Address <span class="ar-field__opt">(optional)</span></span>
+        <input
+          class="ar-field__input"
+          [value]="g().address"
+          (input)="patchInvoice('address', $any($event.target).value)"
+        />
+      </label>
+      @if (error(); as e) {
+        <p class="inv__dialog-err">{{ e }}</p>
+      }
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="close()">
+          Cancel
+        </button>
+        <button ar-button type="button" variant="primary" [disabled]="saving()" (click)="generate()">
+          {{ saving() ? 'Generating…' : 'Generate' }}
+        </button>
+      </div>
+    </ar-dialog>
+  }
+</ng-template>

@@ -168,19 +168,40 @@ export class ArEmailSending {
 
   /** Starts the interactive connect flow and leaves the SPA — the consent screen isn't an Angular route. */
   protected async connectOAuth(provider: EmailOAuthProvider): Promise<void> {
-    if (this.mock) {
-      this.error.set('The connect flow needs the real API — not available against sample data.');
-      return;
-    }
-
     this.connectingOAuth.set(provider);
     this.error.set(null);
     this.notice.set(null);
     try {
+      if (this.mock) {
+        await new Promise((r) => setTimeout(r, 600));
+        this.notice.set(
+          provider === EmailOAuthProvider.Google
+            ? 'Connected to Gmail (mock mode).'
+            : 'Connected to Microsoft 365 (mock mode).',
+        );
+        this.channel.update((c) =>
+          c
+            ? {
+                ...c,
+                hasImap: true,
+                imapOAuthProvider: provider,
+                syncEnabled: true,
+                lastSyncedAtUtc: new Date().toISOString(),
+              }
+            : c,
+        );
+        return;
+      }
       const result = await firstValueFrom(this.oauth.start(provider));
       window.location.href = result.authorizeUrl;
     } catch (e) {
-      this.error.set(this.message(e, 'The connect flow could not be started.'));
+      this.error.set(
+        this.message(
+          e,
+          'The connect flow could not be started. Please check that OAuth credentials are configured on the server.',
+        ),
+      );
+    } finally {
       this.connectingOAuth.set(null);
     }
   }

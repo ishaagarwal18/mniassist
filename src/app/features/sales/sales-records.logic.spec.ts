@@ -76,22 +76,22 @@ describe('sales records', () => {
       transporterName: '',
       vehicleNumber: 'MH 12 AB 1234',
       lrNumber: '',
-      ewayBillNumber: '',
+      eWayBillNumber: '',
     });
     expect(Object.keys(validateDispatch(f))).toEqual(['transporter']);
-    expect(validateDispatch({ ...f, transporterName: 'VRL', ewayBillNumber: '1234' })).toEqual({
+    expect(validateDispatch({ ...f, transporterName: 'VRL', eWayBillNumber: '1234' })).toEqual({
       eway: 'An e-Way Bill number has 12 digits.',
     });
     expect(
-      validateDispatch({ ...f, transporterName: 'VRL', ewayBillNumber: '2819 8273 6412' }),
+      validateDispatch({ ...f, transporterName: 'VRL', eWayBillNumber: '2819 8273 6412' }),
     ).toEqual({});
     expect(
-      toDispatchDto({ ...f, transporterName: ' VRL ', ewayBillNumber: '2819 8273 6412' }),
+      toDispatchDto({ ...f, transporterName: ' VRL ', eWayBillNumber: '2819 8273 6412' }),
     ).toEqual({
       transporterName: 'VRL',
       vehicleNumber: 'MH 12 AB 1234',
       lrNumber: undefined,
-      ewayBillNumber: '281982736412',
+      eWayBillNumber: '281982736412',
     });
   });
 

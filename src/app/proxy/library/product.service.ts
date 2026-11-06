@@ -8,7 +8,10 @@ export interface ProductDto {
   name?: string;
   description?: string | null;
   unit?: string;
+  /** The sales price. */
   listPriceInPaise?: number;
+  /** The purchase (cost) price; null when not recorded. */
+  purchasePriceInPaise?: number | null;
   hsnCode?: string | null;
   category?: string | null;
   taxRateBasisPoints?: number | null;
@@ -20,7 +23,9 @@ export interface CreateUpdateProductDto {
   name: string;
   description?: string | null;
   unit?: string;
+  /** The sales price. */
   listPriceInPaise: number;
+  purchasePriceInPaise?: number | null;
   hsnCode?: string | null;
   category?: string | null;
   taxRateBasisPoints?: number | null;
@@ -41,10 +46,17 @@ export interface ImportProductRow {
   description?: string | null;
   unit?: string | null;
   listPriceInPaise: number;
+  purchasePriceInPaise?: number | null;
   hsnCode?: string | null;
   category?: string | null;
   taxRateBasisPoints?: number | null;
   isActive?: boolean;
+}
+
+/** A unit of measure products can be sold in, and how many products use it. */
+export interface ProductUnitDto {
+  name: string;
+  productCount: number;
 }
 
 export interface ImportProductsResultDto {
@@ -74,6 +86,12 @@ export class ProductService {
       { apiName: this.apiName, ...config },
     );
 
+  get = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ProductDto>(
+      { method: 'GET', url: `/api/auto-reach/product/${id}` },
+      { apiName: this.apiName, ...config },
+    );
+
   create = (input: CreateUpdateProductDto, config?: Partial<Rest.Config>) =>
     this.restService.request<any, ProductDto>(
       { method: 'POST', url: '/api/auto-reach/product', body: input },
@@ -95,6 +113,26 @@ export class ProductService {
   import = (products: ImportProductRow[], config?: Partial<Rest.Config>) =>
     this.restService.request<any, ImportProductsResultDto>(
       { method: 'POST', url: '/api/auto-reach/product/import', body: { products } },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** The workspace's units of measure, plus any a product already uses. */
+  getUnits = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ProductUnitDto[]>(
+      { method: 'GET', url: '/api/auto-reach/product/units' },
+      { apiName: this.apiName, ...config },
+    );
+
+  addUnit = (name: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ProductUnitDto>(
+      { method: 'POST', url: '/api/auto-reach/product/unit', body: { name } },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Refused while products still use the unit. */
+  deleteUnit = (name: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, void>(
+      { method: 'DELETE', url: '/api/auto-reach/product/unit', params: { name } },
       { apiName: this.apiName, ...config },
     );
 

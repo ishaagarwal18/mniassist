@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -21,7 +21,7 @@ import {
 } from '../../proxy/billing/platform-checkout.service';
 import { ArTopbar } from '../../layout/topbar';
 import { planByKey, priceLabel } from '../landing/landing-plans';
-import { ArBanner, ArButton, ArChip, ArMeter, ArStatTile } from '../../ui';
+import { ArBanner, ArButton, ArChip, ArDialog, ArMeter, ArStatTile } from '../../ui';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../ui/grid';
 import { ConfirmService } from '../../core/ui/confirm.service';
@@ -116,7 +116,19 @@ const SEED = {
  */
 @Component({
   selector: 'ar-billing',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArMeter, ArStatTile, DecimalPipe, ArGrid, GridModule],
+  imports: [
+    ArTopbar,
+    ArBanner,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArMeter,
+    ArStatTile,
+    DecimalPipe,
+    ArGrid,
+    GridModule,
+    NgTemplateOutlet,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './billing.html',
   styleUrl: './billing.scss',
@@ -131,12 +143,90 @@ export class ArBilling {
   private readonly checkout = inject(PlatformCheckoutRunner);
   private readonly checkoutApi = inject(PlatformCheckoutService);
 
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  protected readonly pageTitle = computed(() => 'Top up wallet');
+
+  protected readonly topUpOpen = signal(false);
+  protected readonly topUpAmount = signal(20000);
+  protected readonly topUpReference = signal('');
+  protected readonly topUpGateway = signal('Razorpay');
+  protected readonly availableGateways = signal<CheckoutGatewayDto[]>([]);
+
   constructor() {
     this.announceCheckoutReturn();
     // Follow the link's plan while on the page too (e.g. another plan link opened from here).
     this.route.queryParamMap
       .pipe(takeUntilDestroyed())
       .subscribe((q) => this.requestedKey.set(q.get('plan')));
+
+    if (this.mode === 'topup') {
+      this.topUpOpen.set(true);
+    }
+    void this.loadGateways();
+  }
+
+  private async loadGateways(): Promise<void> {
+    try {
+      const g = environment.useMockData ? [] : await this.checkout.gateways();
+      this.availableGateways.set(g);
+      if (g.length > 0) this.topUpGateway.set(g[0].name);
+    } catch {
+      this.availableGateways.set([]);
+    }
+  }
+
+  protected goTopUp(): void {
+    if (this.router && !this.isPage) {
+      void this.router.navigate(['/billing/top-up']);
+    } else {
+      this.topUpOpen.set(true);
+    }
+  }
+
+  protected close(): void {
+    this.topUpOpen.set(false);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/billing']);
+    }
+  }
+
+  protected async submitTopUp(): Promise<void> {
+    const rupees = Number(this.topUpAmount());
+    if (!rupees || rupees < 100) {
+      this.toasts.warning('Amount must be at least ₹100.', 'Top-up');
+      return;
+    }
+    const amountInPaise = Math.round(rupees * 100);
+    const gateways = this.availableGateways();
+    this.busy.set(true);
+    try {
+      if (gateways.length > 0) {
+        const gateway = this.topUpGateway() || gateways[0].name;
+        const start = await firstValueFrom(this.checkoutApi.startTopUp({ gateway, amountInPaise }));
+        const outcome = await this.checkout.pay(start);
+        if (outcome === 'paid') {
+          this.toasts.success(`${inr(amountInPaise)} added to the wallet.`, 'Top-up');
+          this.tick.update((n) => n + 1);
+          this.close();
+        } else if (outcome === 'failed') {
+          this.toasts.error('The payment did not go through.', 'Top-up');
+        }
+      } else {
+        const ref = this.topUpReference().trim() || `MANUAL-${Date.now()}`;
+        await firstValueFrom(
+          this.walletApi.topUp({ amountInPaise, reference: ref }),
+        );
+        this.toasts.success(`${inr(amountInPaise)} added to the wallet.`, 'Top-up');
+        this.tick.update((n) => n + 1);
+        this.close();
+      }
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e) || 'The payment could not be processed.', 'Top-up');
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   /**

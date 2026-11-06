@@ -920,8 +920,7 @@
                 <a
                   ar-button
                   variant="ghost"
-                  routerLink="/helpdesk"
-                  [queryParams]="{ open: t.id }"
+                  [routerLink]="['/helpdesk', t.id]"
                 >
                   Desk
                 </a>

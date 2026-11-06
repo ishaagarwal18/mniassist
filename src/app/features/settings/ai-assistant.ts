@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
 
@@ -98,7 +100,7 @@ const OUTCOME_LABEL: Record<ChatbotOutcome, string> = {
  */
 @Component({
   selector: 'ar-ai-assistant',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArDialog, ArGrid, GridModule],
+  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArDialog, ArGrid, GridModule, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './ai-assistant.html',
   styleUrl: './ai-assistant.scss',
@@ -106,6 +108,15 @@ const OUTCOME_LABEL: Record<ChatbotOutcome, string> = {
 export class ArAiAssistant {
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(AiAssistantService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  protected readonly pageTitle = computed(() =>
+    this.editing()?.id ? 'Edit article' : 'Add a knowledge article',
+  );
 
   protected readonly Source = KnowledgeSource;
 
@@ -176,6 +187,36 @@ export class ArAiAssistant {
 
   constructor() {
     void this.load();
+
+    if (this.mode === 'new') {
+      this.openArticle();
+    }
+    effect(() => {
+      if (this.mode === 'edit') {
+        const id = this.route?.snapshot?.paramMap?.get('id');
+        const article = this.articles().find((a) => a.id === id);
+        if (article && (!this.editing() || this.editing()?.id !== article.id)) {
+          this.openArticle(article);
+        }
+      }
+    });
+  }
+
+  protected goNewArticle(): void {
+    if (this.router) void this.router.navigate(['/settings/ai-assistant/articles/new']);
+    else this.openArticle();
+  }
+
+  protected goEditArticle(article: KnowledgeArticleDto): void {
+    if (this.router) void this.router.navigate(['/settings/ai-assistant/articles', article.id, 'edit']);
+    else this.openArticle(article);
+  }
+
+  protected close(): void {
+    this.editing.set(null);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/settings/ai-assistant']);
+    }
   }
 
   private async load(): Promise<void> {
@@ -347,7 +388,7 @@ export class ArAiAssistant {
         );
         await this.refreshStatus();
       }
-      this.editing.set(null);
+      this.close();
     } catch (e: unknown) {
       this.articleError.set(this.messageOf(e, 'The article could not be saved.'));
     } finally {

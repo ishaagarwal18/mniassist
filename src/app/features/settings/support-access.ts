@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 
 import { OpsService } from '../../core/services/ops.service';
@@ -21,15 +23,37 @@ import { ArGrid } from '../../ui/grid';
  */
 @Component({
   selector: 'ar-support-access',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArDialog, ArSelect, ArGrid, GridModule],
+  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArDialog, ArSelect, ArGrid, GridModule, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './support-access.html',
   styleUrl: './support-access.scss',
 })
 export class ArSupportAccess {
   private readonly ops = inject(OpsService);
-
   private readonly dialogs = inject(ConfirmService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  constructor() {
+    if (this.mode === 'grant') {
+      this.openGrant();
+    }
+  }
+
+  protected goGrant(): void {
+    if (this.router) void this.router.navigate(['/settings/support-access/grant']);
+    else this.openGrant();
+  }
+
+  protected close(): void {
+    this.grantOpen.set(false);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/settings/support-access']);
+    }
+  }
   /** Grants belong to a workspace; a host (platform) user has none to give. */
   protected readonly isHost = inject(CurrentUserService).isHost;
 
@@ -69,7 +93,7 @@ export class ArSupportAccess {
         allowsWrite: this.allowsWrite(),
         ticketRef: this.ticket().trim() || null,
       });
-      this.grantOpen.set(false);
+      this.close();
     } catch {
       /* the server's reason is shown as a toast; the dialog stays open */
     } finally {

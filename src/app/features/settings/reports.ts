@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
@@ -61,7 +63,7 @@ const BLANK: Draft = {
  */
 @Component({
   selector: 'ar-scheduled-reports',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './reports.html',
   styleUrl: './reports.scss',
@@ -71,6 +73,16 @@ export class ArScheduledReports {
   private readonly api = inject(ScheduledReportService);
   private readonly toasts = inject(ToastService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  protected readonly pageTitle = computed(() => {
+    if (this.mode === 'preview') return 'Report preview';
+    return this.editingId() ? 'Edit scheduled report' : 'New scheduled report';
+  });
 
   /** The report being sent right now, so its button shows progress. */
   protected readonly sending = signal<string | null>(null);
@@ -95,6 +107,56 @@ export class ArScheduledReports {
   protected readonly draft = signal<Draft>({ ...BLANK });
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
+
+  constructor() {
+    effect(() => {
+      const list = this.reports();
+      if (list.length > 0) {
+        this.checkRouteParam();
+      }
+    });
+    if (this.mode === 'new') {
+      this.openNew();
+    }
+  }
+
+  private checkRouteParam(): void {
+    if (this.mode === 'new') {
+      this.openNew();
+    } else if (this.mode === 'edit') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const r = this.reports().find((x) => x.id === id);
+      if (r) this.openEdit(r);
+      else this.openNew();
+    } else if (this.mode === 'preview') {
+      const id = this.route?.snapshot?.paramMap?.get('id');
+      const r = this.reports().find((x) => x.id === id);
+      if (r) void this.preview(r);
+    }
+  }
+
+  protected goNew(): void {
+    if (this.router) void this.router.navigate(['/settings/reports/new']);
+    else this.openNew();
+  }
+
+  protected goEdit(r: ScheduledReportDto): void {
+    if (this.router && r.id) void this.router.navigate(['/settings/reports', r.id, 'edit']);
+    else this.openEdit(r);
+  }
+
+  protected goPreview(r: ScheduledReportDto): void {
+    if (this.router && r.id) void this.router.navigate(['/settings/reports', r.id, 'preview']);
+    else void this.preview(r);
+  }
+
+  protected close(): void {
+    this.editorOpen.set(false);
+    this.previewing.set(null);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/settings/reports']);
+    }
+  }
 
   protected kindLabel(k?: ScheduledReportKind): string {
     return KINDS.find((x) => x.value === k)?.label ?? '';
@@ -175,7 +237,7 @@ export class ArScheduledReports {
       const id = this.editingId();
       if (id) await firstValueFrom(this.api.update(id, this.toDto(d)));
       else await firstValueFrom(this.api.create(this.toDto(d)));
-      this.editorOpen.set(false);
+      this.close();
       this.tick.update((n) => n + 1);
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'Could not save the report.');

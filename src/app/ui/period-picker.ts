@@ -63,32 +63,60 @@ import { ArSelect } from './select';
     :host {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+      gap: 6px;
+      flex-wrap: nowrap;
+      white-space: nowrap;
     }
     .pp__preset {
-      min-width: 150px;
+      min-width: 128px;
+      height: 32px;
+      padding: 0 8px;
+      font-size: 12px;
+      background: var(--ar-white);
+      border: 1px solid var(--ar-line-200);
+      border-radius: var(--ar-radius-md, 6px);
+      color: var(--ar-ink-800);
     }
     .pp__dates {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
+      background: var(--ar-surface-100, #f8fafc);
+      padding: 1px 6px;
+      border-radius: var(--ar-radius-md, 6px);
+      border: 1px solid var(--ar-line-200, #e2e8f0);
+      height: 32px;
+      box-sizing: border-box;
     }
     .pp__date {
-      width: 140px;
+      width: 105px;
+      height: 26px;
+      padding: 0 4px;
+      font-size: 11px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ar-ink-800);
+      box-shadow: none;
+    }
+    .pp__date:focus {
+      background: var(--ar-white, #fff);
+      border-color: var(--ar-primary, #0ea5e9);
+      outline: none;
     }
     .pp__to {
-      font: 400 12px var(--ar-font-sans);
-      color: var(--ar-ink-500);
+      font: 500 11px var(--ar-font-sans);
+      color: var(--ar-ink-400, #94a3b8);
+      padding: 0 1px;
     }
     .pp__compare {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      font: 500 12px var(--ar-font-sans);
+      gap: 4px;
+      font: 500 11.5px var(--ar-font-sans);
       color: var(--ar-ink-700);
       cursor: pointer;
       white-space: nowrap;
+      margin-left: 2px;
     }
   `,
 })

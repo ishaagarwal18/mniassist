@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton } from '../../ui/button';
@@ -21,7 +22,6 @@ import {
   VoiceAgentAssignment,
   VoiceAgentChannel,
 } from '../channels/shared-voice-agent.service';
-import { ArVoiceAgentDialog } from '../channels/voice-agent-dialog';
 import { ArVoiceFunctions } from './voice-functions';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../ui/grid';
@@ -42,17 +42,19 @@ import { ArGrid } from '../../ui/grid';
     ArChip,
     ArIcon,
     ArStatTile,
-    ArVoiceAgentDialog,
     ArVoiceFunctions,
     ArGrid,
     GridModule,
+    RouterLink,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
       [title]="'AutoReach::SharedAgents.Title' | abpLocalization"
       [help]="'AutoReach::SharedAgents.Help' | abpLocalization"
-    />
+    >
+      <a ar-button variant="primary" routerLink="/calls/ai-agents/new">+ Add agent</a>
+    </ar-topbar>
     <main class="agents">
       <!-- Executive KPI Cards -->
       <section class="agents__kpis" aria-label="Voice Agents Overview">
@@ -239,9 +241,9 @@ import { ArGrid } from '../../ui/grid';
 
               <footer class="agent-card__footer">
                 <div class="agent-card__actions">
-                  <button ar-button type="button" variant="primary" (click)="editing.set(agent.id)">
+                  <a ar-button variant="primary" [routerLink]="['/calls/ai-agents', agent.id]">
                     {{ 'AutoReach::SharedAgents.Edit' | abpLocalization }}
-                  </button>
+                  </a>
                   <label class="assign-select assign">
                     <span class="sr-only">{{
                       'AutoReach::SharedAgents.AssignTo' | abpLocalization
@@ -348,9 +350,6 @@ import { ArGrid } from '../../ui/grid';
 
       <ar-voice-functions />
     </main>
-    @if (editing(); as id) {
-      <ar-voice-agent-dialog [channelId]="id" (close)="closeEditor()" />
-    }
   `,
   styles: `
     .agents {
@@ -703,6 +702,7 @@ import { ArGrid } from '../../ui/grid';
 })
 export class ArVoiceAgents implements OnInit {
   private readonly api = inject(SharedVoiceAgentService);
+  private readonly router = inject(Router);
   protected readonly agents = signal<SharedVoiceAgent[]>([]);
   protected readonly channels = signal<VoiceAgentChannel[]>([]);
   protected readonly loading = signal(true);
@@ -770,7 +770,7 @@ export class ArVoiceAgents implements OnInit {
       const agent = await firstValueFrom(this.api.create(name, this.copyFrom() || null));
       this.newName.set('');
       this.copyFrom.set('');
-      this.editing.set(agent.id);
+      void this.router.navigate(['/calls/ai-agents', agent.id]);
     });
   }
 

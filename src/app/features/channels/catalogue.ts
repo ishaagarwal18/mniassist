@@ -8,6 +8,8 @@ import {
   untracked,
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { NgTemplateOutlet } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, of } from 'rxjs';
 
 import { PermissionService } from '@abp/ng.core';
@@ -55,7 +57,7 @@ const STATE_LABEL: Record<CatalogueSyncState, string> = {
  */
 @Component({
   selector: 'ar-catalogue',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog],
+  imports: [NgTemplateOutlet, ArTopbar, ArButton, ArChip, ArDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './catalogue.html',
   styleUrl: './catalogue.scss',
@@ -66,6 +68,13 @@ export class ArCatalogue {
   private readonly api = inject(CatalogueService);
   private readonly channels = inject(ChannelService);
   private readonly productApi = inject(ProductService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  /** Which form this route shows as a page ('new', 'edit', 'from-products'), or the list. */
+  protected readonly mode = (this.route.snapshot.data['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+  protected readonly loadError = signal<string | null>(null);
 
   protected readonly canManage = grantedPolicy('AutoReach.Channels.Manage', this.permissions);
 
@@ -91,12 +100,40 @@ export class ArCatalogue {
   private readonly linkChecked = new Set<string>();
 
   constructor() {
+    if (this.mode === 'new') this.openAdd();
+    else if (this.mode === 'from-products') void this.openFromProducts();
+    else if (this.mode === 'edit') void this.loadForEdit(this.route.snapshot.paramMap.get('id'));
     effect(() => {
       const id = this.channelId();
       if (!id || this.linkChecked.has(id)) return;
       this.linkChecked.add(id);
       untracked(() => void this.linkExisting(id));
     });
+  }
+
+  private async loadForEdit(id: string | null): Promise<void> {
+    if (!id) return;
+    try {
+      this.openEdit(await firstValueFrom(this.api.get(id, { skipHandleError: true })));
+    } catch {
+      this.loadError.set('This product could not be found. It may have been removed.');
+    }
+  }
+
+  protected goAdd(): void {
+    void this.router.navigate(['/channels/catalogue/new']);
+  }
+  protected goFromProducts(): void {
+    void this.router.navigate(['/channels/catalogue/from-products']);
+  }
+  protected goEdit(p: CatalogueProductDto): void {
+    void this.router.navigate(['/channels/catalogue', p.id, 'edit']);
+  }
+  /** Back to the catalogue (Cancel and Close, and after a save). */
+  protected close(): void {
+    this.dialogOpen.set(false);
+    this.fromProductsOpen.set(false);
+    if (this.isPage) void this.router.navigate(['/channels/catalogue']);
   }
 
   /** Listings typed in before the product catalogue existed are linked to the products whose SKUs they carry. */
@@ -284,8 +321,8 @@ export class ArCatalogue {
       const id = this.editingId();
       if (id) await firstValueFrom(this.api.update(id, body));
       else await firstValueFrom(this.api.create(body));
-      this.dialogOpen.set(false);
       this.tick.update((n) => n + 1);
+      this.close();
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'The product could not be saved.');
     } finally {

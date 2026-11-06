@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ArTopbar } from '../../layout/topbar';
 import {
@@ -20,7 +21,6 @@ import { ChannelDto } from '../../proxy/channels/models';
 import { ChannelService } from '../../proxy/channels/channel.service';
 import { ArButton } from '../../ui/button';
 import { ArChip } from '../../ui/chip';
-import { ArDialog } from '../../ui/dialog';
 import { ArIcon } from '../../ui/icon';
 import { ArStatTile } from '../../ui/stat-tile';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
@@ -62,9 +62,9 @@ const toMinute = (clock: string) => {
     ArChip,
     ArIcon,
     ArStatTile,
-    ArDialog,
     ArGrid,
     GridModule,
+    RouterLink,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -73,9 +73,9 @@ const toMinute = (clock: string) => {
       [help]="'AutoReach::VoiceBatch.Help' | abpLocalization"
     >
       @if (canCreate()) {
-        <button ar-button type="button" variant="primary" (click)="openNew()">
+        <a ar-button variant="primary" routerLink="/calls/ai-batches/new">
           + {{ 'AutoReach::VoiceBatch.New' | abpLocalization }}
-        </button>
+        </a>
       }
     </ar-topbar>
 
@@ -123,9 +123,9 @@ const toMinute = (clock: string) => {
           <h3>No AI Call Batches Yet</h3>
           <p>{{ 'AutoReach::VoiceBatch.Empty' | abpLocalization }}</p>
           @if (canCreate()) {
-            <button ar-button type="button" variant="primary" (click)="openNew()">
+            <a ar-button variant="primary" routerLink="/calls/ai-batches/new">
               + {{ 'AutoReach::VoiceBatch.New' | abpLocalization }}
-            </button>
+            </a>
           }
         </div>
       } @else {
@@ -388,161 +388,6 @@ const toMinute = (clock: string) => {
         </div>
       }
     </main>
-
-    <!-- Create Batch Modal Dialog -->
-    @if (form(); as model) {
-      <ar-dialog
-        [title]="'AutoReach::VoiceBatch.New' | abpLocalization"
-        width="min(680px, calc(100vw - 32px))"
-        (dismiss)="form.set(null)"
-      >
-        <div class="dialog-body">
-          <label class="ar-field">
-            <span class="ar-field__label">{{
-              'AutoReach::VoiceBatch.Name' | abpLocalization
-            }}</span>
-            <input
-              class="ar-field__input"
-              [(ngModel)]="model.name"
-              maxlength="128"
-              placeholder="e.g. Q4 Machinery Maintenance Followup"
-            />
-          </label>
-
-          <div class="dialog-grid">
-            <label class="ar-field">
-              <span class="ar-field__label">{{
-                'AutoReach::VoiceBatch.Channel' | abpLocalization
-              }}</span>
-              <select class="ar-field__input" [(ngModel)]="model.channelId">
-                @for (channel of channels(); track channel.id) {
-                  <option [ngValue]="channel.id" translate="no">
-                    {{ channel.verifiedName || channel.displayPhoneNumber }}
-                  </option>
-                }
-              </select>
-            </label>
-
-            <label class="ar-field">
-              <span class="ar-field__label">{{
-                'AutoReach::VoiceBatch.Line' | abpLocalization
-              }}</span>
-              <select class="ar-field__input" [(ngModel)]="model.line">
-                <option value="whatsapp">
-                  {{ 'AutoReach::VoiceBatch.Line.whatsapp' | abpLocalization }}
-                </option>
-                <option value="phone">
-                  {{ 'AutoReach::VoiceBatch.Line.phone' | abpLocalization }}
-                </option>
-                <option value="sip">
-                  {{ 'AutoReach::VoiceBatch.Line.sip' | abpLocalization }}
-                </option>
-              </select>
-            </label>
-          </div>
-
-          <label class="ar-field">
-            <span class="ar-field__label">{{
-              'AutoReach::VoiceBatch.Purpose' | abpLocalization
-            }}</span>
-            <textarea
-              class="ar-field__input"
-              rows="2"
-              [(ngModel)]="model.purpose"
-              maxlength="500"
-              placeholder="Context or objective provided to the agent for this specific campaign..."
-            ></textarea>
-          </label>
-
-          <div class="dialog-grid-3">
-            <label class="ar-field">
-              <span class="ar-field__label">{{
-                'AutoReach::VoiceBatch.StartsAt' | abpLocalization
-              }}</span>
-              <input class="ar-field__input" type="datetime-local" [(ngModel)]="model.startsAt" />
-            </label>
-
-            <label class="ar-field">
-              <span class="ar-field__label">{{
-                'AutoReach::VoiceBatch.From' | abpLocalization
-              }}</span>
-              <input
-                class="ar-field__input"
-                type="time"
-                min="09:00"
-                max="21:00"
-                [(ngModel)]="model.windowStart"
-              />
-            </label>
-
-            <label class="ar-field">
-              <span class="ar-field__label">{{
-                'AutoReach::VoiceBatch.To' | abpLocalization
-              }}</span>
-              <input
-                class="ar-field__input"
-                type="time"
-                min="09:00"
-                max="21:00"
-                [(ngModel)]="model.windowEnd"
-              />
-            </label>
-          </div>
-
-          <div class="dialog-grid-3">
-            <label class="ar-field">
-              <span class="ar-field__label">{{
-                'AutoReach::VoiceBatch.Concurrent' | abpLocalization
-              }}</span>
-              <input
-                class="ar-field__input"
-                type="number"
-                min="1"
-                max="20"
-                [(ngModel)]="model.maxConcurrent"
-              />
-            </label>
-
-            <label class="ar-field">
-              <span class="ar-field__label">{{
-                'AutoReach::VoiceBatch.Attempts' | abpLocalization
-              }}</span>
-              <input
-                class="ar-field__input"
-                type="number"
-                min="1"
-                max="5"
-                [(ngModel)]="model.maxAttempts"
-              />
-            </label>
-
-            <label class="ar-field">
-              <span class="ar-field__label">{{
-                'AutoReach::VoiceBatch.RetryAfter' | abpLocalization
-              }}</span>
-              <input
-                class="ar-field__input"
-                type="number"
-                min="15"
-                max="1440"
-                [(ngModel)]="model.retryAfterMinutes"
-              />
-            </label>
-          </div>
-
-          <p class="dialog-rules-note">{{ 'AutoReach::VoiceBatch.Rules' | abpLocalization }}</p>
-        </div>
-
-        <div dialogActions class="dialog-actions">
-          <button ar-button type="button" variant="ghost" (click)="form.set(null)">
-            {{ 'AutoReach::VoiceBatch.Close' | abpLocalization }}
-          </button>
-          <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="create()">
-            {{ 'AutoReach::VoiceBatch.Create' | abpLocalization }}
-          </button>
-        </div>
-      </ar-dialog>
-    }
   `,
   styles: `
     .batches {

@@ -84,29 +84,32 @@ describe('AI impact report', () => {
     return { fixture, root: fixture.nativeElement as HTMLElement };
   }
 
-  it('loads the last 30 days and shows outcomes, cost and the saving', async () => {
+  it('loads the shared report period and shows outcomes, cost and the saving', async () => {
     const { root } = await create();
     const asked = api.get.mock.calls[0][0];
     expect(asked.handlingMinutesPerCall).toBe(6);
     expect(asked.staffCostPerHourRupees).toBe(300);
     expect(asked.toDate >= asked.fromDate).toBe(true);
+    const tiles = Array.from(root.querySelectorAll('ar-stat-tile')).map((t) =>
+      t.textContent!.replace(/s+/g, ' ').trim(),
+    );
+    expect(tiles.some((t) => t.startsWith('AI calls 120'))).toBe(true);
+    expect(tiles.some((t) => t.startsWith('Goal met 70%'))).toBe(true);
+    expect(tiles.some((t) => t.startsWith('Meetings and leads 30'))).toBe(true);
+    expect(tiles.some((t) => t.startsWith('AI cost ₹1,500'))).toBe(true);
     const text = root.textContent!;
-    expect(text).toContain('120AI calls');
-    expect(text).toContain('70%goal met');
-    expect(text).toContain('30meetings and leads');
-    expect(text).toContain('₹1,500AI cost');
+    expect(text).toContain('Estimated saving');
     expect(text).toContain('Sales qualifier');
   });
 
-  it('refuses an end date before the start', async () => {
+  it('reloads when an assumption changes', async () => {
     const { fixture, root } = await create();
-    const to = root.querySelector('input[name="to"]') as HTMLInputElement;
-    to.value = '2000-01-01';
-    to.dispatchEvent(new Event('input'));
+    const minutes = root.querySelector('.vi__assume input') as HTMLInputElement;
+    minutes.value = '10';
+    minutes.dispatchEvent(new Event('change'));
     fixture.detectChanges();
-    (root.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
-    fixture.detectChanges();
-    expect(api.get).toHaveBeenCalledTimes(1);
-    expect(root.querySelector('[role="alert"]')?.textContent).toContain('end date');
+    await fixture.whenStable();
+    expect(api.get).toHaveBeenCalledTimes(2);
+    expect(api.get.mock.calls[1][0].handlingMinutesPerCall).toBe(10);
   });
 });

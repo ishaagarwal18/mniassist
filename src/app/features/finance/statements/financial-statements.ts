@@ -586,7 +586,9 @@ const MOCK_BALANCE_SHEET: BalanceSheetResultDto = {
   template: `
     <ar-topbar title="Financial Statements (Statutory Ledger)">
       <div actions class="topbar-actions">
-        <button ar-button="ghost" (click)="printStatement()">&#128424; Print Statement</button>
+        <button ar-button="ghost" (click)="exportToExcel()">📊 Export to Excel</button>
+        <button ar-button="ghost" (click)="exportToPdf()">📄 Export to PDF</button>
+        <button ar-button="ghost" (click)="printStatement()">🖨 Print</button>
       </div>
     </ar-topbar>
 
@@ -1193,5 +1195,249 @@ export class FinancialStatementsComponent {
 
   printStatement(): void {
     window.print();
+  }
+
+  exportToExcel(): void {
+    const tab = this.activeTab();
+    let csvContent = '';
+    let fileName = '';
+
+    if (tab === 'trial-balance') {
+      fileName = 'Trial_Balance_Report';
+      csvContent += 'AutoReach MNI Assist - Financial Statements: Trial Balance\r\n';
+      csvContent += `Generated At: ${new Date().toLocaleString()}\r\n\r\n`;
+      csvContent += 'Account Code,Account Name,Opening Debit (INR),Period Debit (INR),Period Credit (INR),Closing Debit (INR),Closing Credit (INR)\r\n';
+      const tb = this.trialBalance();
+      for (const item of tb.items) {
+        csvContent += `"${item.accountCode}","${item.accountName.replace(/"/g, '""')}",${(item.openingBalanceInPaise / 100).toFixed(2)},${(item.periodDebitInPaise / 100).toFixed(2)},${(item.periodCreditInPaise / 100).toFixed(2)},${(item.closingDebitInPaise / 100).toFixed(2)},${(item.closingCreditInPaise / 100).toFixed(2)}\r\n`;
+      }
+      csvContent += `"TOTAL","Grand Total",${(tb.totalOpeningDebitInPaise / 100).toFixed(2)},${(tb.totalPeriodDebitInPaise / 100).toFixed(2)},${(tb.totalPeriodCreditInPaise / 100).toFixed(2)},${(tb.totalClosingDebitInPaise / 100).toFixed(2)},${(tb.totalClosingCreditInPaise / 100).toFixed(2)}\r\n`;
+    } else if (tab === 'pnl') {
+      fileName = 'Profit_and_Loss_Statement';
+      csvContent += 'AutoReach MNI Assist - Financial Statements: Profit & Loss Statement\r\n';
+      csvContent += `Generated At: ${new Date().toLocaleString()}\r\n\r\n`;
+      csvContent += 'Schedule / Account Line Item,Amount (INR)\r\n';
+      for (const row of this.pnlStatementRows()) {
+        const amt = row.amount !== null ? row.amount.toFixed(2) : '';
+        csvContent += `"${row.schedule.replace(/"/g, '""')}",${amt}\r\n`;
+      }
+    } else {
+      fileName = 'Balance_Sheet_Report';
+      const bs = this.balanceSheet();
+      csvContent += 'AutoReach MNI Assist - Financial Statements: Balance Sheet\r\n';
+      csvContent += `Generated At: ${new Date().toLocaleString()}\r\n\r\n`;
+      csvContent += 'Classification,Account Code & Name,Amount (INR)\r\n';
+
+      csvContent += '"ASSETS","",""\r\n';
+      for (const sec of bs.assets) {
+        csvContent += `"${sec.title}","",""\r\n`;
+        for (const item of sec.items) {
+          csvContent += `"${sec.title}","${item.accountCode} - ${item.accountName.replace(/"/g, '""')}",${(item.amountInPaise / 100).toFixed(2)}\r\n`;
+        }
+        csvContent += `"${sec.title} - Subtotal","Subtotal",${(sec.totalInPaise / 100).toFixed(2)}\r\n`;
+      }
+      csvContent += `"TOTAL ASSETS","Grand Total",${(bs.totalAssetsInPaise / 100).toFixed(2)}\r\n\r\n`;
+
+      csvContent += '"LIABILITIES & EQUITY","",""\r\n';
+      for (const sec of bs.liabilities) {
+        csvContent += `"${sec.title}","",""\r\n`;
+        for (const item of sec.items) {
+          csvContent += `"${sec.title}","${item.accountCode} - ${item.accountName.replace(/"/g, '""')}",${(item.amountInPaise / 100).toFixed(2)}\r\n`;
+        }
+        csvContent += `"${sec.title} - Subtotal","Subtotal",${(sec.totalInPaise / 100).toFixed(2)}\r\n`;
+      }
+      for (const sec of bs.equity) {
+        csvContent += `"${sec.title}","",""\r\n`;
+        for (const item of sec.items) {
+          csvContent += `"${sec.title}","${item.accountCode} - ${item.accountName.replace(/"/g, '""')}",${(item.amountInPaise / 100).toFixed(2)}\r\n`;
+        }
+        csvContent += `"${sec.title} - Subtotal","Subtotal",${(sec.totalInPaise / 100).toFixed(2)}\r\n`;
+      }
+      csvContent += `"TOTAL LIABILITIES & EQUITY","Grand Total",${(bs.totalLiabilitiesAndEquityInPaise / 100).toFixed(2)}\r\n`;
+    }
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${fileName}_${new Date().toISOString().substring(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  exportToPdf(): void {
+    const tab = this.activeTab();
+    let title = 'Trial Balance';
+    let bodyHtml = '';
+
+    if (tab === 'trial-balance') {
+      title = 'Trial Balance';
+      const tb = this.trialBalance();
+      const rows = tb.items
+        .map(
+          (item) => `
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:7px 8px; font-weight:600; font-family:monospace;">${item.accountCode}</td>
+          <td style="padding:7px 8px;">${item.accountName}</td>
+          <td style="padding:7px 8px; text-align:right; font-family:monospace;">₹${(item.openingBalanceInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+          <td style="padding:7px 8px; text-align:right; font-family:monospace;">₹${(item.periodDebitInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+          <td style="padding:7px 8px; text-align:right; font-family:monospace;">₹${(item.periodCreditInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+          <td style="padding:7px 8px; text-align:right; font-family:monospace; font-weight:600; color:#0284c7;">₹${(item.closingDebitInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+          <td style="padding:7px 8px; text-align:right; font-family:monospace; font-weight:600; color:#16a34a;">₹${(item.closingCreditInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+        </tr>
+      `,
+        )
+        .join('');
+
+      bodyHtml = `
+        <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:16px;">
+          <thead>
+            <tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
+              <th style="padding:8px; text-align:left;">Code</th>
+              <th style="padding:8px; text-align:left;">Account Name</th>
+              <th style="padding:8px; text-align:right;">Opening</th>
+              <th style="padding:8px; text-align:right;">Period Debit</th>
+              <th style="padding:8px; text-align:right;">Period Credit</th>
+              <th style="padding:8px; text-align:right;">Closing Debit</th>
+              <th style="padding:8px; text-align:right;">Closing Credit</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+            <tr style="background:#f8fafc; font-weight:bold; border-top:2px solid #0f172a; font-family:monospace;">
+              <td colspan="2" style="padding:9px 8px; font-family:sans-serif;">TOTAL</td>
+              <td style="padding:9px 8px; text-align:right;">₹${(tb.totalOpeningDebitInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+              <td style="padding:9px 8px; text-align:right;">₹${(tb.totalPeriodDebitInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+              <td style="padding:9px 8px; text-align:right;">₹${(tb.totalPeriodCreditInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+              <td style="padding:9px 8px; text-align:right; color:#0284c7;">₹${(tb.totalClosingDebitInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+              <td style="padding:9px 8px; text-align:right; color:#16a34a;">₹${(tb.totalClosingCreditInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+    } else if (tab === 'pnl') {
+      title = 'Profit & Loss Statement';
+      const rows = this.pnlStatementRows()
+        .map((r) => {
+          const isHeader = r.type === 'section';
+          const isSubtotal = r.type === 'subtotal';
+          const isHighlight = r.type === 'highlight' || r.type === 'net-profit';
+          const bg = isHeader
+            ? 'background:#e2e8f0; font-weight:bold;'
+            : isHighlight
+              ? 'background:#f0fdf4; font-weight:bold; color:#15803d;'
+              : isSubtotal
+                ? 'background:#f8fafc; font-weight:bold;'
+                : '';
+          return `
+          <tr style="${bg} border-bottom:1px solid #e2e8f0;">
+            <td style="padding:8px 10px; ${isHeader ? 'font-size:13px; text-transform:uppercase;' : ''}">${r.schedule}</td>
+            <td style="padding:8px 10px; text-align:right; font-family:monospace; font-weight:600;">
+              ${r.amount !== null ? '₹' + r.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
+            </td>
+          </tr>
+        `;
+        })
+        .join('');
+
+      bodyHtml = `
+        <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:16px;">
+          <thead>
+            <tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
+              <th style="padding:8px 10px; text-align:left;">Schedule / Particulars</th>
+              <th style="padding:8px 10px; text-align:right;">Amount (INR)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      `;
+    } else {
+      title = 'Balance Sheet';
+      const bs = this.balanceSheet();
+      let sectionsHtml = '';
+
+      sectionsHtml += `<tr style="background:#0284c7; color:#fff; font-weight:bold;"><td colspan="2" style="padding:8px 10px; text-transform:uppercase;">ASSETS</td></tr>`;
+      for (const sec of bs.assets) {
+        sectionsHtml += `<tr style="background:#f8fafc; font-weight:600;"><td colspan="2" style="padding:7px 10px; color:#334155;">${sec.title}</td></tr>`;
+        for (const item of sec.items) {
+          sectionsHtml += `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:6px 20px;">${item.accountCode} - ${item.accountName}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(item.amountInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+        }
+        sectionsHtml += `<tr style="border-top:1px dashed #cbd5e1; font-weight:bold; background:#fafafa;"><td style="padding:6px 20px;">Subtotal: ${sec.title}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(sec.totalInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+      }
+      sectionsHtml += `<tr style="background:#0369a1; color:#fff; font-weight:bold;"><td style="padding:8px 10px;">TOTAL ASSETS</td><td style="padding:8px 10px; text-align:right; font-family:monospace;">₹${(bs.totalAssetsInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+
+      sectionsHtml += `<tr style="background:#d97706; color:#fff; font-weight:bold;"><td colspan="2" style="padding:8px 10px; margin-top:15px; text-transform:uppercase;">LIABILITIES & EQUITY</td></tr>`;
+      for (const sec of bs.liabilities) {
+        sectionsHtml += `<tr style="background:#f8fafc; font-weight:600;"><td colspan="2" style="padding:7px 10px; color:#334155;">${sec.title}</td></tr>`;
+        for (const item of sec.items) {
+          sectionsHtml += `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:6px 20px;">${item.accountCode} - ${item.accountName}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(item.amountInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+        }
+        sectionsHtml += `<tr style="border-top:1px dashed #cbd5e1; font-weight:bold; background:#fafafa;"><td style="padding:6px 20px;">Subtotal: ${sec.title}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(sec.totalInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+      }
+      for (const sec of bs.equity) {
+        sectionsHtml += `<tr style="background:#f8fafc; font-weight:600;"><td colspan="2" style="padding:7px 10px; color:#334155;">${sec.title}</td></tr>`;
+        for (const item of sec.items) {
+          sectionsHtml += `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:6px 20px;">${item.accountCode} - ${item.accountName}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(item.amountInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+        }
+        sectionsHtml += `<tr style="border-top:1px dashed #cbd5e1; font-weight:bold; background:#fafafa;"><td style="padding:6px 20px;">Subtotal: ${sec.title}</td><td style="padding:6px 10px; text-align:right; font-family:monospace;">₹${(sec.totalInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+      }
+      sectionsHtml += `<tr style="background:#15803d; color:#fff; font-weight:bold;"><td style="padding:8px 10px;">TOTAL LIABILITIES & EQUITY</td><td style="padding:8px 10px; text-align:right; font-family:monospace;">₹${(bs.totalLiabilitiesAndEquityInPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td></tr>`;
+
+      bodyHtml = `
+        <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:16px;">
+          <thead>
+            <tr style="background:#f1f5f9; border-bottom:2px solid #cbd5e1;">
+              <th style="padding:8px 10px; text-align:left;">Category / Line Item</th>
+              <th style="padding:8px 10px; text-align:right;">Amount (INR)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sectionsHtml}
+          </tbody>
+        </table>
+      `;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${title} - AutoReach MNI Assist</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1e293b; padding: 24px; margin: 0; }
+            .report-header { border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 16px; }
+            .report-title { font-size: 20px; font-weight: bold; margin: 0 0 4px 0; color: #0f172a; }
+            .report-meta { font-size: 12px; color: #64748b; margin: 0; }
+            @media print {
+              body { padding: 0; }
+              @page { size: auto; margin: 15mm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="report-header">
+            <h1 class="report-title">AutoReach MNI Assist - ${title}</h1>
+            <p class="report-meta">Statutory Industrial Accounting Ledger &bull; Generated on ${new Date().toLocaleString()}</p>
+          </div>
+          ${bodyHtml}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
   }
 }

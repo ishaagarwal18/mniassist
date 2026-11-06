@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -7,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ArChart } from '../../ui/chart';
 import { ArChartSeries } from '../../ui/chart-series';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
@@ -66,6 +66,7 @@ const OUTCOME_LABEL: Record<Outcome, string> = { won: 'Won', lost: 'Lost', open:
 @Component({
   selector: 'ar-analytics',
   imports: [
+    NgTemplateOutlet,
     RouterLink,
     ArTopbar,
     ArBanner,
@@ -88,6 +89,42 @@ const OUTCOME_LABEL: Record<Outcome, string> = { won: 'Won', lost: 'Lost', open:
 export class ArAnalytics {
   private readonly store = inject(AnalyticsStore);
   private readonly api = inject(AnalyticsService);
+  private readonly route = inject(ActivatedRoute, { optional: true });
+  private readonly router = inject(Router, { optional: true });
+
+  protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
+  protected readonly isPage = this.mode !== 'list';
+
+  constructor() {
+    if (this.mode === 'drilldown') {
+      const q = this.route?.snapshot?.queryParams;
+      if (q && q['key']) {
+        void this.drill(
+          { key: q['key'], label: q['label'] || q['key'] },
+          (q['outcome'] as Outcome) || 'won',
+        );
+      } else {
+        void this.drill({ key: 'Meta', label: 'Meta Ads' }, 'won');
+      }
+    }
+  }
+
+  protected drillToPage(row: { key: string; label: string }, outcome: Outcome): void {
+    if (this.router) {
+      void this.router.navigate(['/analytics/drilldown'], {
+        queryParams: { key: row.key, label: row.label, outcome },
+      });
+    } else {
+      void this.drill(row, outcome);
+    }
+  }
+
+  protected closeDrill(): void {
+    this.drilling.set(null);
+    if (this.isPage && this.router) {
+      void this.router.navigate(['/analytics']);
+    }
+  }
 
   protected readonly loading = this.store.loading;
   protected readonly notInPlan = this.store.notInPlan;

@@ -1,187 +1,200 @@
-<ar-topbar
-  title="Documents"
-  [subtitle]="documents().length + ' in the library'"
-  help="Your datasheet and drawing library, indexed by part number. Set Access to control who can receive a document — public, verified dealers only, or named accounts only."
->
-  @if (canCreate()) {
-    <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
-      Upload document
-    </button>
-  }
-</ar-topbar>
-
-@if (dialogOpen()) {
-  <ar-dialog
-    [title]="editingDoc() ? 'Edit document' : 'Upload a document'"
-    (dismiss)="dialogOpen.set(false)"
-  >
-    @if (!editingDoc()) {
-      <label class="ar-field">
-        <span class="ar-field__label">File</span>
-        <input class="ar-field__input" type="file" (change)="onFile($event)" />
-      </label>
-    }
-    <label class="ar-field">
-      <span class="ar-field__label">Title</span>
-      <input
-        required
-        maxlength="256"
-        class="ar-field__input"
-        [value]="title()"
-        (input)="title.set($any($event.target).value)"
-      />
-    </label>
-    <div class="ar-field-row">
-      <label class="ar-field">
-        <span class="ar-field__label">Category <span class="ar-field__opt">(optional)</span></span>
-        <input
-          class="ar-field__input"
-          placeholder="datasheet / drawing / contract"
-          [value]="category()"
-          (input)="category.set($any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label"
-          >Part numbers <span class="ar-field__opt">(comma-separated)</span></span
-        >
-        <input
-          class="ar-field__input"
-          [value]="parts()"
-          (input)="parts.set($any($event.target).value)"
-        />
-      </label>
-    </div>
-    <label class="ar-field">
-      <span class="ar-field__label">Access</span>
-      <select
-        required
-        class="ar-field__input"
-        [value]="visibility()"
-        (change)="visibility.set(+$any($event.target).value)"
-      >
-        @for (o of visibilityOptions; track o.value) {
-          <option [value]="o.value">{{ o.label }}</option>
-        }
-      </select>
-    </label>
-    @if (visibility() === DV.NamedAccounts) {
-      <label class="ar-field">
-        <span class="ar-field__label"
-          >Allowed account IDs <span class="ar-field__opt">(comma-separated)</span></span
-        >
-        <input
-          class="ar-field__input ar-mono"
-          [value]="allowedAccounts()"
-          (input)="allowedAccounts.set($any($event.target).value)"
-        />
-      </label>
-    }
-    @if (error(); as e) {
+@if (isPage) {
+  <ar-topbar title="Documents">
+    <button ar-button type="button" variant="ghost" (click)="close()">Back to documents</button>
+  </ar-topbar>
+  <div class="ar-form-page">
+    @if (loadError(); as e) {
       <p class="dl__dialog-err">{{ e }}</p>
     }
-    <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
-        Cancel
+    <ng-container *ngTemplateOutlet="editor" />
+  </div>
+} @else {
+  <ar-topbar
+    title="Documents"
+    [subtitle]="documents().length + ' in the library'"
+    help="Your datasheet and drawing library, indexed by part number. Set Access to control who can receive a document — public, verified dealers only, or named accounts only."
+  >
+    @if (canCreate()) {
+      <button ar-button type="button" variant="primary" icon="plus" (click)="goNew()">
+        Upload document
       </button>
-      <button ar-button type="button" variant="primary" [disabled]="uploading()" (click)="save()">
-        {{ uploading() ? 'Saving…' : editingDoc() ? 'Save' : 'Upload' }}
-      </button>
+    }
+  </ar-topbar>
+
+  <div class="dl ar-scroll">
+    <div class="dl__bar">
+      <ar-search-box placeholder="Search title or part number" [(query)]="query" />
     </div>
-  </ar-dialog>
+
+    @if (loading()) {
+      <p class="dl__empty">Loading…</p>
+    }
+
+    @for (d of documents(); track d.id) {
+      <article class="doc">
+        <div class="doc__main">
+          <h2 class="doc__title">{{ d.title }}</h2>
+          <p class="doc__meta">
+            @if (d.category) {
+              <ar-chip tone="neutral">{{ d.category }}</ar-chip>
+            }
+            <ar-chip tone="teal">v{{ d.version }}</ar-chip>
+            <span>{{ d.sizeLabel }}</span>
+            <span>· {{ d.sendCount }} deliveries</span>
+            <span>· last sent {{ when(d.lastSentAt) }}</span>
+          </p>
+          @if (d.parts.length > 0) {
+            <p class="doc__parts">
+              @for (p of d.parts; track p) {
+                <span class="doc__part ar-mono">{{ p }}</span>
+              }
+            </p>
+          }
+        </div>
+        <div class="doc__actions">
+          @if (canUpdate()) {
+            <button ar-button variant="ghost" (click)="goEdit(d)">Edit</button>
+          }
+          <button ar-button variant="ghost" (click)="showDeliveries(d)">Sent to</button>
+          @if (canUpdate()) {
+            <button ar-button variant="ghost" (click)="replaceInput.click()">Replace file</button>
+            <input #replaceInput type="file" hidden (change)="replaceFile(d, replaceInput)" />
+          }
+          <button ar-button variant="ghost" (click)="downloadDoc(d)">Download</button>
+          @if (canDelete()) {
+            <button ar-button variant="ghost" (click)="deleteDoc(d)">Delete</button>
+          }
+        </div>
+      </article>
+    }
+    @if (deliveriesFor(); as doc) {
+      <ar-dialog
+        [title]="'Sent to · ' + doc.title"
+        width="min(640px, calc(100vw - 32px))"
+        (dismiss)="deliveriesFor.set(null)"
+      >
+        <div class="dl__deliveries">
+          <ejs-grid
+            arGrid="document-deliveries"
+            [dataSource]="deliveries()"
+            aria-label="Document Deliveries"
+          >
+            <e-columns>
+              <e-column field="contactName" headerText="Contact" width="180"></e-column>
+              <e-column headerText="Version" width="110">
+                <ng-template #template let-r>
+                  <span>
+                    v{{ r.version }}
+                    @if (r.version !== doc.version) {
+                      <span class="dl__old"> (old)</span>
+                    }
+                  </span>
+                </ng-template>
+              </e-column>
+              <e-column field="sentAtUtc" headerText="Sent" width="130">
+                <ng-template #template let-r>
+                  {{ when(r.sentAtUtc) }}
+                </ng-template>
+              </e-column>
+              <e-column headerText="Status" width="130">
+                <ng-template #template let-r>
+                  {{ deliveryState(r) }}
+                </ng-template>
+              </e-column>
+            </e-columns>
+          </ejs-grid>
+        </div>
+        <div dialogActions>
+          <button ar-button type="button" variant="ghost" (click)="deliveriesFor.set(null)">
+            Close
+          </button>
+        </div>
+      </ar-dialog>
+    }
+    @if (documents().length === 0 && !loading()) {
+      <p class="dl__empty">
+        Nothing in the library. Upload a datasheet and key it to a part number.
+      </p>
+    }
+  </div>
 }
 
-<div class="dl ar-scroll">
-  <div class="dl__bar">
-    <ar-search-box placeholder="Search title or part number" [(query)]="query" />
-  </div>
-
-  @if (loading()) {
-    <p class="dl__empty">Loading…</p>
-  }
-
-  @for (d of documents(); track d.id) {
-    <article class="doc">
-      <div class="doc__main">
-        <h2 class="doc__title">{{ d.title }}</h2>
-        <p class="doc__meta">
-          @if (d.category) {
-            <ar-chip tone="neutral">{{ d.category }}</ar-chip>
-          }
-          <ar-chip tone="teal">v{{ d.version }}</ar-chip>
-          <span>{{ d.sizeLabel }}</span>
-          <span>· {{ d.sendCount }} deliveries</span>
-          <span>· last sent {{ when(d.lastSentAt) }}</span>
-        </p>
-        @if (d.parts.length > 0) {
-          <p class="doc__parts">
-            @for (p of d.parts; track p) {
-              <span class="doc__part ar-mono">{{ p }}</span>
-            }
-          </p>
-        }
+<ng-template #editor>
+  @if (dialogOpen()) {
+    <ar-dialog [title]="editingDoc() ? 'Edit document' : 'Upload a document'" (dismiss)="close()">
+      @if (!editingDoc()) {
+        <label class="ar-field">
+          <span class="ar-field__label">File</span>
+          <input class="ar-field__input" type="file" (change)="onFile($event)" />
+        </label>
+      }
+      <label class="ar-field">
+        <span class="ar-field__label">Title</span>
+        <input
+          required
+          maxlength="256"
+          class="ar-field__input"
+          [value]="title()"
+          (input)="title.set($any($event.target).value)"
+        />
+      </label>
+      <div class="ar-field-row">
+        <label class="ar-field">
+          <span class="ar-field__label"
+            >Category <span class="ar-field__opt">(optional)</span></span
+          >
+          <input
+            class="ar-field__input"
+            placeholder="datasheet / drawing / contract"
+            [value]="category()"
+            (input)="category.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label"
+            >Part numbers <span class="ar-field__opt">(comma-separated)</span></span
+          >
+          <input
+            class="ar-field__input"
+            [value]="parts()"
+            (input)="parts.set($any($event.target).value)"
+          />
+        </label>
       </div>
-      <div class="doc__actions">
-        @if (canUpdate()) {
-          <button ar-button variant="ghost" (click)="openEdit(d)">Edit</button>
-        }
-        <button ar-button variant="ghost" (click)="showDeliveries(d)">Sent to</button>
-        @if (canUpdate()) {
-          <button ar-button variant="ghost" (click)="replaceInput.click()">Replace file</button>
-          <input #replaceInput type="file" hidden (change)="replaceFile(d, replaceInput)" />
-        }
-        <button ar-button variant="ghost" (click)="downloadDoc(d)">Download</button>
-        @if (canDelete()) {
-          <button ar-button variant="ghost" (click)="deleteDoc(d)">Delete</button>
-        }
-      </div>
-    </article>
-  }
-  @if (deliveriesFor(); as doc) {
-    <ar-dialog
-      [title]="'Sent to · ' + doc.title"
-      width="min(640px, calc(100vw - 32px))"
-      (dismiss)="deliveriesFor.set(null)"
-    >
-      <div class="dl__deliveries">
-        <ejs-grid
-          arGrid="document-deliveries"
-          [dataSource]="deliveries()"
-          aria-label="Document Deliveries"
+      <label class="ar-field">
+        <span class="ar-field__label">Access</span>
+        <select
+          required
+          class="ar-field__input"
+          [value]="visibility()"
+          (change)="visibility.set(+$any($event.target).value)"
         >
-          <e-columns>
-            <e-column field="contactName" headerText="Contact" width="180"></e-column>
-            <e-column headerText="Version" width="110">
-              <ng-template #template let-r>
-                <span>
-                  v{{ r.version }}
-                  @if (r.version !== doc.version) {
-                    <span class="dl__old"> (old)</span>
-                  }
-                </span>
-              </ng-template>
-            </e-column>
-            <e-column field="sentAtUtc" headerText="Sent" width="130">
-              <ng-template #template let-r>
-                {{ when(r.sentAtUtc) }}
-              </ng-template>
-            </e-column>
-            <e-column headerText="Status" width="130">
-              <ng-template #template let-r>
-                {{ deliveryState(r) }}
-              </ng-template>
-            </e-column>
-          </e-columns>
-        </ejs-grid>
-      </div>
+          @for (o of visibilityOptions; track o.value) {
+            <option [value]="o.value">{{ o.label }}</option>
+          }
+        </select>
+      </label>
+      @if (visibility() === DV.NamedAccounts) {
+        <label class="ar-field">
+          <span class="ar-field__label"
+            >Allowed account IDs <span class="ar-field__opt">(comma-separated)</span></span
+          >
+          <input
+            class="ar-field__input ar-mono"
+            [value]="allowedAccounts()"
+            (input)="allowedAccounts.set($any($event.target).value)"
+          />
+        </label>
+      }
+      @if (error(); as e) {
+        <p class="dl__dialog-err">{{ e }}</p>
+      }
       <div dialogActions>
-        <button ar-button type="button" variant="ghost" (click)="deliveriesFor.set(null)">
-          Close
+        <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
+        <button ar-button type="button" variant="primary" [disabled]="uploading()" (click)="save()">
+          {{ uploading() ? 'Saving…' : editingDoc() ? 'Save' : 'Upload' }}
         </button>
       </div>
     </ar-dialog>
   }
-  @if (documents().length === 0 && !loading()) {
-    <p class="dl__empty">Nothing in the library. Upload a datasheet and key it to a part number.</p>
-  }
-</div>
+</ng-template>

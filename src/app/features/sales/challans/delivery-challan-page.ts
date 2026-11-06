@@ -97,7 +97,7 @@ import { ArSalesExport } from '../sales-export';
                   <dt>Lorry receipt (LR)</dt>
                   <dd class="ar-mono">{{ dc.lrNumber || '—' }}</dd>
                   <dt>e-Way Bill</dt>
-                  <dd class="ar-mono">{{ dc.ewayBillNumber || '—' }}</dd>
+                  <dd class="ar-mono">{{ dc.eWayBillNumber || '—' }}</dd>
                 </dl>
               </div>
               <div class="sr-box">
@@ -220,8 +220,8 @@ import { ArSalesExport } from '../sales-export';
                     inputmode="numeric"
                     placeholder="e.g. 281982736412"
                     [attr.aria-invalid]="!!err('eway')"
-                    [value]="dispatch().ewayBillNumber"
-                    (input)="patchDispatch({ ewayBillNumber: $any($event.target).value })"
+                    [value]="dispatch().eWayBillNumber"
+                    (input)="patchDispatch({ eWayBillNumber: $any($event.target).value })"
                   />
                   @if (err('eway'); as e) {
                     <span class="pf__err">{{ e }}</span>

@@ -23,8 +23,8 @@ export interface GstAuditRegisterDto extends FullAuditedEntityDto<string> {
   eInvoiceAckDateUtc?: string;
   signedQrCode?: string;
   eWayBillStatus: EWayBillStatus;
-  ewayBillNumber?: string;
-  ewayBillValidUntilUtc?: string;
+  eWayBillNumber?: string;
+  eWayBillValidUntilUtc?: string;
   transporterGstin?: string;
   vehicleNumber?: string;
   distanceInKm?: number;

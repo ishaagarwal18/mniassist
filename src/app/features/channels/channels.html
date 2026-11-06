@@ -1,85 +1,96 @@
-<ar-topbar
-  title="Channels"
-  [subtitle]="
-    channels().length +
-    ' connected' +
-    (restrictedCount() ? ' · ' + restrictedCount() + ' restricted' : '')
-  "
-  help="Every connected WhatsApp number. The usage meter turns amber past 60% of today's sending limit and red past 80% — that's your cue to spread sends across more of the day."
->
-  <a ar-button variant="ghost" routerLink="/channels/numbers">Display name &amp; PIN</a>
-  <button ar-button type="button" variant="primary" icon="plus" (click)="connectOpen.set(true)">
-    Connect a number
-  </button>
-</ar-topbar>
+@if (isPage) {
+  <ar-topbar [title]="pageTitle()">
+    <button ar-button type="button" variant="ghost" (click)="close()">Back to Channels</button>
+  </ar-topbar>
+  <div class="ar-form-page ar-scroll">
+    <ng-container *ngTemplateOutlet="formsTpl" />
+  </div>
+} @else {
+  <ar-topbar
+    title="Channels"
+    [subtitle]="
+      channels().length +
+      ' connected' +
+      (restrictedCount() ? ' · ' + restrictedCount() + ' restricted' : '')
+    "
+    help="Every connected WhatsApp number. The usage meter turns amber past 60% of today's sending limit and red past 80% — that's your cue to spread sends across more of the day."
+  >
+    <a ar-button variant="ghost" routerLink="/channels/numbers">Display name &amp; PIN</a>
+    <button ar-button type="button" variant="primary" icon="plus" (click)="goConnect()">
+      Connect a number
+    </button>
+  </ar-topbar>
 
-@if (connectOpen()) {
-  <ar-connect-number-dialog (close)="connectOpen.set(false)" />
+  <div class="ch ar-scroll">
+    @if (loading()) {
+      <p class="ch__empty">Loading…</p>
+    }
+
+    @for (c of channels(); track c.id) {
+      <article class="chan" [class.chan--restricted]="c.restricted">
+        <header class="chan__head">
+          <div>
+            <h2 class="chan__phone ar-mono">{{ c.displayPhone }}</h2>
+            <p class="chan__name">{{ c.displayName }}</p>
+          </div>
+          <div class="chan__chips">
+            <ar-chip [tone]="qualityTone(c.quality)" [dot]="true">
+              {{ c.quality === 'unknown' ? 'no rating' : c.quality + ' quality' }}
+            </ar-chip>
+            <ar-chip tone="neutral" [mono]="true">{{ tierLabel(c) }}</ar-chip>
+            @if (c.restricted) {
+              <ar-chip tone="bad">Restricted</ar-chip>
+            }
+          </div>
+        </header>
+
+        <div class="chan__body">
+          <div class="chan__meter">
+            <ar-meter
+              [value]="utilisation(c)"
+              [tone]="utilisation(c) > 80 ? 'bad' : utilisation(c) > 60 ? 'amber' : 'good'"
+              [label]="
+                limit(c) === null
+                  ? 'unlimited tier'
+                  : count(c.used24h) + ' of ' + count(limit(c)!) + ' recipients / 24h'
+              "
+            />
+          </div>
+          <dl class="chan__facts">
+            <div>
+              <dt>Throughput</dt>
+              <dd>{{ c.throughput }} msg/s</dd>
+            </div>
+            <div>
+              <dt>WABA</dt>
+              <dd class="ar-mono">{{ c.wabaId }}</dd>
+            </div>
+            <div>
+              <dt>Display name</dt>
+              <dd>{{ c.nameStatus }}</dd>
+            </div>
+          </dl>
+        </div>
+        @if (canManageVoiceAgent() && c.supportsVoiceAi) {
+          <button ar-button type="button" variant="ghost" (click)="goVoiceAgent(c.id)">
+            {{ 'AutoReach::VoiceAgent.Title' | abpLocalization }}
+          </button>
+        }
+      </article>
+    }
+    @if (channels().length === 0 && !loading()) {
+      <p class="ch__empty">No numbers connected. Run Embedded Signup to add one.</p>
+    }
+
+    <ar-sms-inbound-card />
+  </div>
 }
-@if (voiceAgentChannel(); as channelId) {
-  <ar-voice-agent-dialog [channelId]="channelId" (close)="voiceAgentChannel.set(null)" />
-}
 
-<div class="ch ar-scroll">
-  @if (loading()) {
-    <p class="ch__empty">Loading…</p>
+<ng-template #formsTpl>
+  @if (connectOpen()) {
+    <ar-connect-number-dialog (close)="close()" />
   }
-
-  @for (c of channels(); track c.id) {
-    <article class="chan" [class.chan--restricted]="c.restricted">
-      <header class="chan__head">
-        <div>
-          <h2 class="chan__phone ar-mono">{{ c.displayPhone }}</h2>
-          <p class="chan__name">{{ c.displayName }}</p>
-        </div>
-        <div class="chan__chips">
-          <ar-chip [tone]="qualityTone(c.quality)" [dot]="true">
-            {{ c.quality === 'unknown' ? 'no rating' : c.quality + ' quality' }}
-          </ar-chip>
-          <ar-chip tone="neutral" [mono]="true">{{ tierLabel(c) }}</ar-chip>
-          @if (c.restricted) {
-            <ar-chip tone="bad">Restricted</ar-chip>
-          }
-        </div>
-      </header>
-
-      <div class="chan__body">
-        <div class="chan__meter">
-          <ar-meter
-            [value]="utilisation(c)"
-            [tone]="utilisation(c) > 80 ? 'bad' : utilisation(c) > 60 ? 'amber' : 'good'"
-            [label]="
-              limit(c) === null
-                ? 'unlimited tier'
-                : count(c.used24h) + ' of ' + count(limit(c)!) + ' recipients / 24h'
-            "
-          />
-        </div>
-        <dl class="chan__facts">
-          <div>
-            <dt>Throughput</dt>
-            <dd>{{ c.throughput }} msg/s</dd>
-          </div>
-          <div>
-            <dt>WABA</dt>
-            <dd class="ar-mono">{{ c.wabaId }}</dd>
-          </div>
-          <div>
-            <dt>Display name</dt>
-            <dd>{{ c.nameStatus }}</dd>
-          </div>
-        </dl>
-      </div>
-      @if (canManageVoiceAgent() && c.supportsVoiceAi) {
-        <button ar-button type="button" variant="ghost" (click)="voiceAgentChannel.set(c.id)">
-          {{ 'AutoReach::VoiceAgent.Title' | abpLocalization }}
-        </button>
-      }
-    </article>
+  @if (voiceAgentChannel(); as channelId) {
+    <ar-voice-agent-dialog [channelId]="channelId" (close)="close()" />
   }
-  @if (channels().length === 0 && !loading()) {
-    <p class="ch__empty">No numbers connected. Run Embedded Signup to add one.</p>
-  }
-
-  <ar-sms-inbound-card />
-</div>
+</ng-template>

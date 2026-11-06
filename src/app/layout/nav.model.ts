@@ -19,8 +19,8 @@ export interface NavItem {
   /** Shown only for platform host administration. Hidden for tenant workspaces. */
   readonly hostOnly?: boolean;
 
-  // /** Shown in tenant workspace mode and to the host administrator. */
-  // readonly tenantOnly?: boolean;
+  /** Shown in tenant workspace mode and to the host administrator. */
+  readonly tenantOnly?: boolean;
 
   /** An AI feature: drawn with the teal AI marker instead of the blue one. */
   readonly ai?: boolean;
@@ -811,14 +811,6 @@ export const NAV: readonly NavGroup[] = [
         route: '/settings/shipping',
         permission: 'AutoReach.ReorderPortal.Settings',
         feature: 'ReorderPortal',
-        //tenantOnly: true,
-      },
-      {
-        label: 'Payments',
-        icon: 'billing',
-        route: '/settings/payments',
-        permission: 'AutoReach.Payments',
-        feature: 'Payments',
         //tenantOnly: true,
       },
       {

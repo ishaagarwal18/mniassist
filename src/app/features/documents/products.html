@@ -1,275 +1,419 @@
-<ar-topbar
-  title="Products"
-  [subtitle]="total() + ' part' + (total() === 1 ? '' : 's')"
-  help="The parts you quote. Each has a part number, a unit and a list price. On a quotation, a price list can set a different price for a customer; the list price here is the fallback, and what discounts are measured against."
->
-  @if (canCreate()) {
-    <button ar-button type="button" variant="ghost" (click)="openImport()">Import</button>
-    <button ar-button type="button" variant="primary" icon="plus" (click)="openNew()">
-      New product
-    </button>
-  }
-</ar-topbar>
-
-<div class="pd__bar">
-  <ar-search-box placeholder="Part number or name" [(query)]="filter" />
-  <select
-    id="product-category-filter"
-    class="ar-field__input pd__cat"
-    aria-label="Category"
-    (change)="category.set($any($event.target).value)"
+@if (isPage) {
+  <ar-topbar
+    title="Products"
+    [subtitle]="
+      mode === 'import' ? 'Import from a spreadsheet' : mode === 'units' ? 'Units of measure' : ''
+    "
   >
-    <option value="">All categories</option>
-    @for (c of categories(); track c) {
-      <option [value]="c" [selected]="c === category()">{{ c }}</option>
+    <button ar-button type="button" variant="ghost" (click)="close()">Back to products</button>
+  </ar-topbar>
+  <div class="ar-form-page">
+    @if (loadError(); as e) {
+      <p class="pd__err">{{ e }}</p>
     }
-  </select>
-  <label class="pd__chk">
-    <input
-      id="product-active-only"
-      type="checkbox"
-      [checked]="activeOnly()"
-      (change)="activeOnly.set($any($event.target).checked)"
-    />
-    <span>Active only</span>
-  </label>
-</div>
+    <ng-container *ngTemplateOutlet="forms" />
+  </div>
+} @else {
+  <ar-topbar
+    title="Products"
+    [subtitle]="total() + ' part' + (total() === 1 ? '' : 's')"
+    help="The parts you quote. Each has a part number, a unit and a list price. On a quotation, a price list can set a different price for a customer; the list price here is the fallback, and what discounts are measured against."
+  >
+    @if (canCreate()) {
+      <button ar-button type="button" variant="ghost" (click)="goUnits()">Units</button>
+      <button ar-button type="button" variant="ghost" (click)="goImport()">Import</button>
+      <button ar-button type="button" variant="primary" icon="plus" (click)="goNew()">
+        New product
+      </button>
+    }
+  </ar-topbar>
 
-<div class="pd ar-scroll">
-  @if (loading()) {
-    <p class="pd__empty">Loading…</p>
-  } @else if (products().length === 0) {
-    <p class="pd__empty">
-      @if (filter() || category() || activeOnly()) {
-        No products match.
-      } @else {
-        No products yet. Add one, or paste a spreadsheet with Import.
-      }
-    </p>
-  } @else {
-    <ejs-grid
-      arGrid="products-catalog"
-      [dataSource]="products()"
-      aria-label="Products Catalogue"
+  <div class="pd__bar">
+    <ar-search-box placeholder="Part number or name" [(query)]="filter" />
+    <select
+      id="product-category-filter"
+      class="ar-field__input pd__cat"
+      aria-label="Category"
+      (change)="category.set($any($event.target).value)"
     >
-      <e-columns>
-        <e-column field="partNumber" headerText="Part number" width="160">
-          <ng-template #template let-p>
-            <span class="ar-mono">{{ p.partNumber }}</span>
-          </ng-template>
-        </e-column>
-        <e-column field="name" headerText="Name" width="220">
-          <ng-template #template let-p>
-            <div>
-              <span>{{ p.name }}</span>
-              @if (!p.isActive) {
-                <ar-chip tone="warn">Inactive</ar-chip>
-              }
-            </div>
-          </ng-template>
-        </e-column>
-        <e-column field="category" headerText="Category" width="140">
-          <ng-template #template let-p>
-            <span class="muted">{{ p.category || '—' }}</span>
-          </ng-template>
-        </e-column>
-        <e-column field="unit" headerText="Unit" width="100">
-          <ng-template #template let-p>
-            <span class="muted">{{ p.unit }}</span>
-          </ng-template>
-        </e-column>
-        <e-column field="listPriceInPaise" headerText="List price" width="130" [textAlign]="'Right'">
-          <ng-template #template let-p>
-            {{ money(p.listPriceInPaise ?? 0) }}
-          </ng-template>
-        </e-column>
-        <e-column headerText="GST" width="120" [textAlign]="'Right'">
-          <ng-template #template let-p>
-            <span class="muted">{{ gstLabel(p) }}</span>
-          </ng-template>
-        </e-column>
-        <e-column headerText="Actions" width="140" [textAlign]="'Right'" freeze="Right">
-          <ng-template #template let-p>
-            <div class="actions">
-              @if (canUpdate()) {
-                <button ar-button type="button" variant="ghost" (click)="openEdit(p)">Edit</button>
-              }
-              @if (canDelete()) {
-                <button ar-button type="button" variant="ghost" (click)="remove(p)">Delete</button>
-              }
-            </div>
-          </ng-template>
-        </e-column>
-      </e-columns>
-    </ejs-grid>
-    @if (total() > products().length) {
-      <p class="pd__empty">
-        Showing the first {{ products().length }} of {{ total() }}. Narrow the search to find the
-        rest.
-      </p>
-    }
-  }
-</div>
-
-@if (editorOpen()) {
-  <ar-dialog
-    [title]="editingId() ? 'Edit product' : 'New product'"
-    (dismiss)="editorOpen.set(false)"
-  >
-    <div class="ar-field-row">
-      <label class="ar-field">
-        <span class="ar-field__label">Part number</span>
-        <input
-          required
-          maxlength="64"
-          id="product-part"
-          class="ar-field__input"
-          [value]="partNumber()"
-          (input)="partNumber.set($any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">Unit</span>
-        <input
-          required
-          id="product-unit"
-          class="ar-field__input"
-          [value]="unit()"
-          (input)="unit.set($any($event.target).value)"
-        />
-      </label>
-    </div>
-    <label class="ar-field">
-      <span class="ar-field__label">Name</span>
+      <option value="">All categories</option>
+      @for (c of categories(); track c) {
+        <option [value]="c" [selected]="c === category()">{{ c }}</option>
+      }
+    </select>
+    <label class="pd__chk">
       <input
-        required
-        id="product-name"
-        class="ar-field__input"
-        [value]="name()"
-        (input)="name.set($any($event.target).value)"
-      />
-    </label>
-    <label class="ar-field">
-      <span class="ar-field__label">Description <span class="ar-field__opt">optional</span></span>
-      <input
-        id="product-desc"
-        class="ar-field__input"
-        [value]="description()"
-        (input)="description.set($any($event.target).value)"
-      />
-    </label>
-    <div class="ar-field-row">
-      <label class="ar-field">
-        <span class="ar-field__label">List price ₹</span>
-        <input
-          required
-          id="product-price"
-          class="ar-field__input"
-          inputmode="decimal"
-          [value]="price()"
-          (input)="price.set($any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">Category <span class="ar-field__opt">optional</span></span>
-        <input
-          id="product-cat"
-          class="ar-field__input"
-          [value]="categoryText()"
-          (input)="categoryText.set($any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label"
-          >GST % <span class="ar-field__opt">blank = quote's</span></span
-        >
-        <input
-          id="product-gst"
-          class="ar-field__input"
-          inputmode="decimal"
-          [value]="gst()"
-          (input)="gst.set($any($event.target).value)"
-        />
-      </label>
-      <label class="ar-field">
-        <span class="ar-field__label">HSN <span class="ar-field__opt">optional</span></span>
-        <input
-          id="product-hsn"
-          class="ar-field__input"
-          [value]="hsn()"
-          (input)="hsn.set($any($event.target).value)"
-        />
-      </label>
-    </div>
-    <label class="ar-field__opt-row">
-      <input
-        id="product-active"
+        id="product-active-only"
         type="checkbox"
-        [checked]="active()"
-        (change)="active.set($any($event.target).checked)"
+        [checked]="activeOnly()"
+        (change)="activeOnly.set($any($event.target).checked)"
       />
-      <span>Active — can be added to quotations</span>
+      <span>Active only</span>
     </label>
-    @if (error(); as msg) {
-      <p class="pd__err">{{ msg }}</p>
+  </div>
+
+  <div class="pd ar-scroll">
+    @if (loading()) {
+      <p class="pd__empty">Loading…</p>
+    } @else if (products().length === 0) {
+      <p class="pd__empty">
+        @if (filter() || category() || activeOnly()) {
+          No products match.
+        } @else {
+          No products yet. Add one, or paste a spreadsheet with Import.
+        }
+      </p>
+    } @else {
+      <ejs-grid arGrid="products-catalog" [dataSource]="products()" aria-label="Products Catalogue">
+        <e-columns>
+          <e-column field="partNumber" headerText="Part number" width="160">
+            <ng-template #template let-p>
+              <span class="ar-mono">{{ p.partNumber }}</span>
+            </ng-template>
+          </e-column>
+          <e-column field="name" headerText="Name" width="220">
+            <ng-template #template let-p>
+              <div>
+                <span>{{ p.name }}</span>
+                @if (!p.isActive) {
+                  <ar-chip tone="warn">Inactive</ar-chip>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+          <e-column field="category" headerText="Category" width="140">
+            <ng-template #template let-p>
+              <span class="muted">{{ p.category || '—' }}</span>
+            </ng-template>
+          </e-column>
+          <e-column field="unit" headerText="Unit" width="100">
+            <ng-template #template let-p>
+              <span class="muted">{{ p.unit }}</span>
+            </ng-template>
+          </e-column>
+          <e-column
+            field="listPriceInPaise"
+            headerText="Sales price"
+            width="130"
+            [textAlign]="'Right'"
+          >
+            <ng-template #template let-p>
+              {{ money(p.listPriceInPaise ?? 0) }}
+            </ng-template>
+          </e-column>
+          <e-column
+            field="purchasePriceInPaise"
+            headerText="Purchase price"
+            width="140"
+            [textAlign]="'Right'"
+          >
+            <ng-template #template let-p>
+              @if (p.purchasePriceInPaise != null) {
+                {{ money(p.purchasePriceInPaise) }}
+              } @else {
+                <span class="muted">—</span>
+              }
+            </ng-template>
+          </e-column>
+          <e-column headerText="GST" width="120" [textAlign]="'Right'">
+            <ng-template #template let-p>
+              <span class="muted">{{ gstLabel(p) }}</span>
+            </ng-template>
+          </e-column>
+          <e-column headerText="Actions" width="140" [textAlign]="'Right'" freeze="Right">
+            <ng-template #template let-p>
+              <div class="actions">
+                @if (canUpdate()) {
+                  <button ar-button type="button" variant="ghost" (click)="goEdit(p)">Edit</button>
+                }
+                @if (canDelete()) {
+                  <button ar-button type="button" variant="ghost" (click)="remove(p)">
+                    Delete
+                  </button>
+                }
+              </div>
+            </ng-template>
+          </e-column>
+        </e-columns>
+      </ejs-grid>
+      @if (total() > products().length) {
+        <p class="pd__empty">
+          Showing the first {{ products().length }} of {{ total() }}. Narrow the search to find the
+          rest.
+        </p>
+      }
     }
-    <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="editorOpen.set(false)">
-        Cancel
-      </button>
-      <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
-        {{ busy() ? 'Saving…' : 'Save' }}
-      </button>
-    </div>
-  </ar-dialog>
+  </div>
 }
 
-@if (importOpen()) {
-  <ar-dialog title="Import products" (dismiss)="importOpen.set(false)">
-    <p class="pd__note">
-      Paste rows from a spreadsheet. Columns in order: part number, name, price ₹, unit, category,
-      HSN, GST %. A part number that already exists is updated; the rest are added.
-    </p>
-    <label class="ar-field">
-      <span class="ar-field__label">Rows</span>
-      <textarea
-        required
-        id="product-import"
-        class="ar-field__input pd__paste"
-        rows="8"
-        placeholder="VFD-15KW, 15 kW drive, 45000, no, Drives, 85044090, 18"
-        [value]="pasted()"
-        (input)="pasted.set($any($event.target).value)"
-      ></textarea>
-    </label>
-    @if (importResult(); as r) {
+<ng-template #forms>
+  @if (mode === 'units') {
+    <ar-dialog title="Units of measure" (dismiss)="close()">
       <p class="pd__note">
-        <strong>{{ r.created }}</strong> added, <strong>{{ r.updated }}</strong> updated{{
-          r.skipped?.length ? ', ' + r.skipped?.length + ' skipped:' : '.'
-        }}
+        The units a product can be sold in. Add your own; a unit can be removed once no product uses
+        it.
       </p>
-      @if (r.skipped?.length) {
-        <ul class="pd__skipped">
-          @for (s of r.skipped; track $index) {
-            <li>{{ s }}</li>
+      @if (canCreate() || canUpdate()) {
+        <div class="pd__unit-add">
+          <input
+            class="ar-field__input"
+            maxlength="16"
+            aria-label="New unit"
+            placeholder="New unit, e.g. Carton"
+            [value]="newUnit()"
+            (input)="newUnit.set($any($event.target).value)"
+            (keydown.enter)="$event.preventDefault(); addUnit(false)"
+          />
+          <button ar-button type="button" variant="primary" icon="plus" (click)="addUnit(false)">
+            Add unit
+          </button>
+        </div>
+      }
+      @if (unitError(); as e) {
+        <p class="pd__err">{{ e }}</p>
+      }
+      @if (unitsLoading() && !units().length) {
+        <p class="pd__note">Loading…</p>
+      } @else {
+        <ul class="pd__units">
+          @for (u of units(); track u.name) {
+            <li>
+              <span class="pd__unit-name">{{ u.name }}</span>
+              <span class="muted">{{ usage(u) }}</span>
+              @if (canUpdate() || canCreate()) {
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="u.productCount > 0"
+                  [title]="
+                    u.productCount > 0 ? 'In use: change those products first' : 'Remove ' + u.name
+                  "
+                  (click)="removeUnit(u)"
+                >
+                  Remove
+                </button>
+              }
+            </li>
           }
         </ul>
       }
-    }
-    @if (error(); as msg) {
-      <p class="pd__err">{{ msg }}</p>
-    }
-    <div dialogActions>
-      <button ar-button type="button" variant="ghost" (click)="importOpen.set(false)">Close</button>
-      <button
-        ar-button
-        type="button"
-        variant="primary"
-        [disabled]="busy() || !pasted().trim()"
-        (click)="runImport()"
-      >
-        {{ busy() ? 'Importing…' : 'Import' }}
-      </button>
-    </div>
-  </ar-dialog>
-}
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="close()">Done</button>
+      </div>
+    </ar-dialog>
+  }
+
+  @if (editorOpen()) {
+    <ar-dialog [title]="editingId() ? 'Edit product' : 'New product'" (dismiss)="close()">
+      <div class="ar-field-row">
+        <label class="ar-field">
+          <span class="ar-field__label">Part number</span>
+          <input
+            required
+            maxlength="64"
+            id="product-part"
+            class="ar-field__input"
+            [value]="partNumber()"
+            (input)="partNumber.set($any($event.target).value)"
+          />
+        </label>
+        <div class="ar-field">
+          <label class="ar-field__label" for="product-unit">Unit</label>
+          @if (addingUnit()) {
+            <div class="pd__unit-add">
+              <input
+                id="product-unit"
+                class="ar-field__input"
+                maxlength="16"
+                placeholder="New unit, e.g. Box"
+                [value]="newUnit()"
+                (input)="newUnit.set($any($event.target).value)"
+                (keydown.enter)="$event.preventDefault(); addUnit()"
+              />
+              <button ar-button type="button" variant="primary" (click)="addUnit()">Add</button>
+              <button ar-button type="button" variant="ghost" (click)="cancelAddUnit()">
+                Cancel
+              </button>
+            </div>
+          } @else {
+            <select
+              required
+              id="product-unit"
+              class="ar-field__input"
+              [disabled]="unitsLoading() && !units().length"
+              (change)="onUnitChange($any($event.target).value)"
+            >
+              @for (u of unitOptions(); track u) {
+                <option [value]="u" [selected]="u.toLowerCase() === unit().toLowerCase()">
+                  {{ u }}
+                </option>
+              }
+              @if (canCreate() || canUpdate()) {
+                <option value="__add__">+ Add a new unit…</option>
+              }
+            </select>
+          }
+          @if (unitError(); as e) {
+            <span class="ar-field__hint pd__bad">{{ e }}</span>
+          }
+        </div>
+      </div>
+      <label class="ar-field">
+        <span class="ar-field__label">Name</span>
+        <input
+          required
+          id="product-name"
+          class="ar-field__input"
+          [value]="name()"
+          (input)="name.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Description <span class="ar-field__opt">optional</span></span>
+        <input
+          id="product-desc"
+          class="ar-field__input"
+          [value]="description()"
+          (input)="description.set($any($event.target).value)"
+        />
+      </label>
+      <div class="ar-field-row">
+        <label class="ar-field">
+          <span class="ar-field__label">Sales price ₹</span>
+          <input
+            required
+            id="product-price"
+            class="ar-field__input"
+            inputmode="decimal"
+            [value]="price()"
+            (input)="price.set($any($event.target).value)"
+          />
+          <span class="ar-field__hint">What quotations and invoices charge, before GST.</span>
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label"
+            >Purchase price ₹ <span class="ar-field__opt">optional</span></span
+          >
+          <input
+            id="product-purchase-price"
+            class="ar-field__input"
+            inputmode="decimal"
+            [value]="purchasePrice()"
+            (input)="purchasePrice.set($any($event.target).value)"
+          />
+          @if (margin(); as m) {
+            <span class="ar-field__hint" [class.pd__bad]="m.paise < 0">
+              Margin {{ money(m.paise) }} ({{ m.percent }}%)
+            </span>
+          } @else {
+            <span class="ar-field__hint">What it costs you to buy.</span>
+          }
+        </label>
+      </div>
+      <div class="ar-field-row">
+        <label class="ar-field">
+          <span class="ar-field__label">Category <span class="ar-field__opt">optional</span></span>
+          <input
+            id="product-cat"
+            class="ar-field__input"
+            [value]="categoryText()"
+            (input)="categoryText.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label"
+            >GST % <span class="ar-field__opt">blank = quote's</span></span
+          >
+          <input
+            id="product-gst"
+            class="ar-field__input"
+            inputmode="decimal"
+            [value]="gst()"
+            (input)="gst.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">HSN <span class="ar-field__opt">optional</span></span>
+          <input
+            id="product-hsn"
+            class="ar-field__input"
+            [value]="hsn()"
+            (input)="hsn.set($any($event.target).value)"
+          />
+        </label>
+      </div>
+      <label class="ar-field__opt-row">
+        <input
+          id="product-active"
+          type="checkbox"
+          [checked]="active()"
+          (change)="active.set($any($event.target).checked)"
+        />
+        <span>Active — can be added to quotations</span>
+      </label>
+      @if (error(); as msg) {
+        <p class="pd__err">{{ msg }}</p>
+      }
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
+        <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
+          {{ busy() ? 'Saving…' : 'Save' }}
+        </button>
+      </div>
+    </ar-dialog>
+  }
+
+  @if (importOpen()) {
+    <ar-dialog title="Import products" (dismiss)="close()">
+      <p class="pd__note">
+        Paste rows from a spreadsheet. Columns in order: part number, name, sales price ₹, unit,
+        category, HSN, GST %, purchase price ₹ (optional). A part number that already exists is
+        updated; the rest are added.
+      </p>
+      <label class="ar-field">
+        <span class="ar-field__label">Rows</span>
+        <textarea
+          required
+          id="product-import"
+          class="ar-field__input pd__paste"
+          rows="8"
+          placeholder="VFD-15KW, 15 kW drive, 45000, no, Drives, 85044090, 18"
+          [value]="pasted()"
+          (input)="pasted.set($any($event.target).value)"
+        ></textarea>
+      </label>
+      @if (importResult(); as r) {
+        <p class="pd__note">
+          <strong>{{ r.created }}</strong> added, <strong>{{ r.updated }}</strong> updated{{
+            r.skipped?.length ? ', ' + r.skipped?.length + ' skipped:' : '.'
+          }}
+        </p>
+        @if (r.skipped?.length) {
+          <ul class="pd__skipped">
+            @for (s of r.skipped; track $index) {
+              <li>{{ s }}</li>
+            }
+          </ul>
+        }
+      }
+      @if (error(); as msg) {
+        <p class="pd__err">{{ msg }}</p>
+      }
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="close()">
+          {{ importResult() ? 'Done' : 'Cancel' }}
+        </button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="busy() || !pasted().trim()"
+          (click)="runImport()"
+        >
+          {{ busy() ? 'Importing…' : 'Import' }}
+        </button>
+      </div>
+    </ar-dialog>
+  }
+</ng-template>

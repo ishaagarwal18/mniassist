@@ -63,7 +63,7 @@ export interface SalesInvoiceDto extends FullAuditedEntityDto<string> {
   balanceDueInPaise: number;
   irn?: string;
   qrCodeData?: string;
-  ewayBillNumber?: string;
+  eWayBillNumber?: string;
   notes?: string;
   termsAndConditions?: string;
   lines: SalesInvoiceLineDto[];
@@ -99,7 +99,7 @@ export interface CreateSalesInvoiceDto {
   discountInPaise: number;
   irn?: string;
   qrCodeData?: string;
-  ewayBillNumber?: string;
+  eWayBillNumber?: string;
   notes?: string;
   termsAndConditions?: string;
   lines: CreateSalesInvoiceLineDto[];

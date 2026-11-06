@@ -20,7 +20,7 @@ export const MOCK_CHALLANS: DeliveryChallanDto[] = [
     transporterName: 'VRL Logistics Ltd',
     vehicleNumber: 'MH 14 HG 4521',
     lrNumber: 'VRL-PUN-982104',
-    ewayBillNumber: '281982736412',
+    eWayBillNumber: '281982736412',
     remarks: 'Material dispatched in 2 wooden crates with shock watch indicators.',
     creationTime: new Date(Date.now() - 2 * 86_400_000).toISOString(),
     lines: [
@@ -59,7 +59,7 @@ export const MOCK_CHALLANS: DeliveryChallanDto[] = [
     transporterName: 'Express Fleet Transport',
     vehicleNumber: 'MH 12 QX 9081',
     lrNumber: 'EFT-77123',
-    ewayBillNumber: '281982664910',
+    eWayBillNumber: '281982664910',
     remarks: 'Sent for heat treatment and CNC grinding job work.',
     creationTime: new Date(Date.now() - 7 * 86_400_000).toISOString(),
     lines: [
