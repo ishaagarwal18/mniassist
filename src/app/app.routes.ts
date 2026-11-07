@@ -884,6 +884,24 @@ export const routes: Routes = [
           import('./features/pipeline/register-machine').then((m) => m.ArRegisterMachine),
       },
       {
+        path: 'obsolescence',
+        title: 'Obsolescence radar · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/obsolescence/radar-page').then((m) => m.ArRadarPage),
+      },
+      {
+        path: 'documents/lifecycle',
+        title: 'Lifecycle rules · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/obsolescence/lifecycle-page').then((m) => m.ArLifecyclePage),
+      },
+      {
+        path: 'installed-base/:id',
+        title: 'Machine · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/machine/machine-page').then((m) => m.ArMachinePage),
+      },
+      {
         path: 'compliance',
         title: 'Compliance · MNI Assist',
         loadComponent: () => import('./features/compliance/compliance').then((m) => m.ArCompliance),

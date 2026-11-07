@@ -1,0 +1,131 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.mp {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.mp__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px 20px;
+  margin: 0;
+}
+.mp__facts dt {
+  font: 600 11px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 2px;
+}
+.mp__facts dd {
+  margin: 0;
+  font: 400 13px var(--ar-font-sans);
+  color: var(--ar-ink-800);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.mp__select {
+  width: auto;
+  padding: 4px 8px;
+}
+.mp__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.mp__spacer {
+  flex: 1;
+}
+.mp__problems {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.mp__form {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--ar-teal-500);
+  border-radius: var(--ar-radius-control);
+  margin-bottom: 12px;
+}
+.mp__wide {
+  grid-column: span 3;
+}
+.mp__note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}
+.mp__form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+@media (max-width: 900px) {
+  .mp__form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .mp__wide {
+    grid-column: span 2;
+  }
+}
+.mp__muted {
+  margin: 0;
+  color: var(--ar-ink-400);
+  font: 400 12px var(--ar-font-sans);
+}
+.mp__table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 13px var(--ar-font-sans);
+}
+.mp__table th {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--ar-line-200);
+  font: 600 11px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.mp__table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--ar-line-100);
+  color: var(--ar-ink-800);
+}
+.mp__small {
+  margin-top: 2px;
+  color: var(--ar-ink-400);
+  font: 400 11.5px var(--ar-font-sans);
+}
+.mp__num {
+  text-align: right;
+}
+.mp__btns {
+  display: flex;
+  gap: 4px;
+}
+.mp__btn {
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-300);
+  border-radius: var(--ar-radius-control);
+  padding: 3px 9px;
+  cursor: pointer;
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}

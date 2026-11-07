@@ -1,0 +1,125 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.lc {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.lc__card {
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-card);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.lc__card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+.lc__h {
+  margin: 0;
+  font: 600 14px var(--ar-font-sans);
+  color: var(--ar-ink-800);
+}
+.lc__form {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  border-color: var(--ar-teal-500);
+}
+.lc__wide {
+  grid-column: span 2;
+}
+@media (max-width: 1000px) {
+  .lc__form {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.lc__form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.lc__problems {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+.lc__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.lc__search {
+  min-width: 280px;
+}
+.lc__select {
+  width: auto;
+}
+.lc__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 400 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}
+.lc__muted {
+  color: var(--ar-ink-400);
+  font: 400 12px var(--ar-font-sans);
+}
+.lc__empty {
+  max-width: 620px;
+}
+.lc__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.lc__table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 13px var(--ar-font-sans);
+}
+.lc__table th {
+  text-align: left;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--ar-line-200);
+  font: 600 11px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.lc__table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ar-line-100);
+  color: var(--ar-ink-800);
+}
+.lc__num {
+  text-align: right;
+}
+.lc__btns {
+  display: flex;
+  gap: 4px;
+}
+.lc__btn {
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-300);
+  border-radius: var(--ar-radius-control);
+  padding: 3px 9px;
+  cursor: pointer;
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}

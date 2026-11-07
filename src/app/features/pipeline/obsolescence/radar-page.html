@@ -1,0 +1,365 @@
+<ar-topbar
+  title="Obsolescence radar"
+  [subtitle]="subtitle()"
+  help="Every installed component whose part its maker is phasing out, by account and site, ranked by risk. A component gets its stage from the most specific lifecycle rule (its part number, else its make and series); the score adds the machine's age, criticality, your stock of the old part and whether it is under your AMC. Rows are re-scored when a rule or a component is saved, and every night, so a last-buy date passing moves them without anyone editing."
+>
+  @if (canEditRules()) {
+    <a ar-button variant="ghost" routerLink="/documents/lifecycle">Lifecycle rules</a>
+  }
+  <button
+    ar-button
+    type="button"
+    variant="ghost"
+    icon="refresh"
+    [disabled]="busy() || mock"
+    (click)="rescan()"
+  >
+    Scan now
+  </button>
+</ar-topbar>
+
+<div class="rd ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">The radar needs the live API. In demo mode it stays empty.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  @if (summary(); as s) {
+    <div class="rd__tiles">
+      <ar-stat-tile label="Phase-out" [value]="s.phaseOut" tone="amber"></ar-stat-tile>
+      <ar-stat-tile label="Last-buy" [value]="s.lastBuy" tone="warn"></ar-stat-tile>
+      <ar-stat-tile label="Discontinued" [value]="s.discontinued" tone="bad"></ar-stat-tile>
+      <ar-stat-tile label="End of support" [value]="s.endOfSupport" tone="bad"></ar-stat-tile>
+      <ar-stat-tile
+        label="High risk"
+        [value]="s.high"
+        [note]="s.medium + ' medium · ' + s.low + ' low'"
+        tone="bad"
+      ></ar-stat-tile>
+      <ar-stat-tile
+        label="Migration value"
+        [value]="value(s.estimatedValueInPaise)"
+        note="Replacements at list price"
+        tone="teal"
+      ></ar-stat-tile>
+    </div>
+  }
+
+  <div class="rd__bar">
+    <div class="rd__tabs" role="tablist" aria-label="Which rows to show">
+      <button
+        type="button"
+        role="tab"
+        class="rd__tab"
+        [class.rd__tab--on]="view() === View.Open"
+        [attr.aria-selected]="view() === View.Open"
+        (click)="show(View.Open)"
+      >
+        At risk
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="rd__tab"
+        [class.rd__tab--on]="view() === View.Announced"
+        [attr.aria-selected]="view() === View.Announced"
+        (click)="show(View.Announced)"
+      >
+        Announced ({{ summary()?.announced ?? 0 }})
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="rd__tab"
+        [class.rd__tab--on]="view() === View.Dismissed"
+        [attr.aria-selected]="view() === View.Dismissed"
+        (click)="show(View.Dismissed)"
+      >
+        Dismissed ({{ summary()?.dismissed ?? 0 }})
+      </button>
+    </div>
+  </div>
+
+  <form class="rd__filters" (submit)="$event.preventDefault(); load()" aria-label="Filters">
+    <input
+      class="ar-field__input rd__search"
+      type="search"
+      placeholder="Part, machine, account or site"
+      aria-label="Search the radar"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+    <input
+      class="ar-field__input"
+      placeholder="Make"
+      aria-label="Make"
+      [value]="make()"
+      (input)="make.set($any($event.target).value)"
+    />
+    <input
+      class="ar-field__input"
+      placeholder="Series"
+      aria-label="Series"
+      [value]="series()"
+      (input)="series.set($any($event.target).value)"
+    />
+    <select
+      class="ar-field__input"
+      aria-label="Stage"
+      (change)="setStage($any($event.target).value)"
+    >
+      <option value="" [selected]="stage() === null">Any stage</option>
+      @for (s of stages; track s) {
+        <option [value]="s" [selected]="stage() === s">{{ stageText(s) }}</option>
+      }
+    </select>
+    <select class="ar-field__input" aria-label="Risk" (change)="setBand($any($event.target).value)">
+      <option value="" [selected]="band() === null">Any risk</option>
+      @for (b of bands; track b) {
+        <option [value]="b" [selected]="band() === b">{{ bandText(b) }}</option>
+      }
+    </select>
+    <input
+      class="ar-field__input"
+      placeholder="City"
+      aria-label="City"
+      [value]="city()"
+      (input)="city.set($any($event.target).value)"
+    />
+    <select
+      class="ar-field__input"
+      aria-label="Owner"
+      (change)="owner.set($any($event.target).value); load()"
+    >
+      <option value="" [selected]="!owner()">Any owner</option>
+      @for (p of people(); track p.userId) {
+        <option [value]="p.userId" [selected]="owner() === p.userId" translate="no">
+          {{ p.name }}
+        </option>
+      }
+    </select>
+    <label class="rd__check">
+      <input
+        type="checkbox"
+        [checked]="amcOnly()"
+        (change)="toggleFlag('amc', $any($event.target).checked)"
+      />
+      AMC customers only
+    </label>
+    <label class="rd__check">
+      <input
+        type="checkbox"
+        [checked]="notNotified()"
+        (change)="toggleFlag('notified', $any($event.target).checked)"
+      />
+      Not yet notified
+    </label>
+    <button ar-button type="submit" variant="ghost" icon="search">Apply</button>
+    <button ar-button type="button" variant="ghost" (click)="clearFilters()">Clear</button>
+  </form>
+
+  @if (selectedCount()) {
+    <div class="rd__actions" role="region" aria-label="Selected rows">
+      <strong>{{ selectedCount() }} selected</strong>
+      @if (view() === View.Dismissed) {
+        <button ar-button type="button" [disabled]="busy()" (click)="restore()">
+          Put back on the radar
+        </button>
+      } @else {
+        <select
+          class="ar-field__input"
+          aria-label="Reason for dismissing"
+          (change)="reason.set($any($event.target).value)"
+        >
+          @for (r of reasons; track r) {
+            <option [value]="r" [selected]="reason() === r">{{ r }}</option>
+          }
+          <option value="other" [selected]="reason() === 'other'">Another reason…</option>
+        </select>
+        @if (reason() === 'other') {
+          <input
+            class="ar-field__input"
+            maxlength="256"
+            placeholder="Why?"
+            aria-label="Other reason"
+            [value]="otherReason()"
+            (input)="otherReason.set($any($event.target).value)"
+          />
+        }
+        <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="dismiss()">
+          Dismiss
+        </button>
+      }
+      <span class="rd__sep"></span>
+      <select
+        class="ar-field__input"
+        aria-label="Give to"
+        (change)="assignTo.set($any($event.target).value)"
+      >
+        <option value="" [selected]="!assignTo()">Nobody</option>
+        @for (p of people(); track p.userId) {
+          <option [value]="p.userId" [selected]="assignTo() === p.userId" translate="no">
+            {{ p.name }}
+          </option>
+        }
+      </select>
+      <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="assign()">
+        Assign
+      </button>
+      <span class="rd__spacer"></span>
+      <button ar-button type="button" variant="ghost" (click)="clearSelection()">
+        Clear selection
+      </button>
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="rd__muted">Loading…</p>
+  } @else if (!rows().length) {
+    <p class="rd__muted rd__empty">
+      @switch (view()) {
+        @case (View.Announced) {
+          No phase-outs are announced for a later date.
+        }
+        @case (View.Dismissed) {
+          Nothing has been dismissed.
+        }
+        @default {
+          Nothing is at risk with these filters. Record the components inside your customers'
+          machines (on each machine's page) and add the makers' lifecycle notices; the radar fills
+          in as soon as a component's part is phased out.
+        }
+      }
+    </p>
+  } @else {
+    @for (g of groups(); track g.contactId) {
+      <section class="rd__account" [attr.aria-label]="g.account">
+        <header class="rd__account-head">
+          <input
+            type="checkbox"
+            [attr.aria-label]="'Select all of ' + g.account"
+            [checked]="allSelected(siteRows(g))"
+            (change)="toggleAll(siteRows(g), $any($event.target).checked)"
+          />
+          <a
+            class="rd__account-name"
+            translate="no"
+            [routerLink]="['/contacts', g.contactId, '360']"
+          >
+            {{ g.account }}
+          </a>
+          <span class="rd__muted"
+            >{{ g.count }} component{{ g.count === 1 ? '' : 's' }} · {{ g.sites.length }} site{{
+              g.sites.length === 1 ? '' : 's'
+            }}</span
+          >
+          <span class="rd__score">Highest {{ g.score }}</span>
+        </header>
+        @for (s of g.sites; track s.key) {
+          <div class="rd__site">
+            <div class="rd__site-head">
+              <input
+                type="checkbox"
+                [attr.aria-label]="'Select all at ' + s.site"
+                [checked]="allSelected(s.rows)"
+                (change)="toggleAll(s.rows, $any($event.target).checked)"
+              />
+              <span translate="no">{{ s.site }}{{ s.city ? ', ' + s.city : '' }}</span>
+              <span class="rd__score">Site score {{ s.score }}</span>
+            </div>
+            <table class="rd__table">
+              <thead>
+                <tr>
+                  <th scope="col" class="rd__pick" aria-label="Select"></th>
+                  <th scope="col">Machine</th>
+                  <th scope="col">Component</th>
+                  <th scope="col">Make · series</th>
+                  <th scope="col" class="rd__num">Qty</th>
+                  <th scope="col">Stage</th>
+                  <th scope="col">Risk</th>
+                  <th scope="col">Replacement</th>
+                  <th scope="col">Last service</th>
+                  <th scope="col">Migration</th>
+                  <th scope="col">Owner</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of s.rows; track r.id) {
+                  <tr [class.rd__row--on]="isSelected(r.id)">
+                    <td class="rd__pick">
+                      <input
+                        type="checkbox"
+                        [attr.aria-label]="'Select ' + r.partNumber"
+                        [checked]="isSelected(r.id)"
+                        (change)="toggle(r.id, $any($event.target).checked)"
+                      />
+                    </td>
+                    <td translate="no">
+                      <a [routerLink]="['/installed-base', r.installedAssetId]">{{
+                        r.machineDescription
+                      }}</a>
+                      @if (r.machineSerial) {
+                        <div class="rd__muted ar-mono">{{ r.machineSerial }}</div>
+                      }
+                    </td>
+                    <td translate="no">
+                      <div class="ar-mono">{{ r.partNumber }}</div>
+                      <div class="rd__muted">
+                        {{ r.componentDescription }}{{ r.position ? ' · ' + r.position : '' }}
+                      </div>
+                    </td>
+                    <td translate="no">
+                      {{ r.make || '—' }}{{ r.series ? ' · ' + r.series : '' }}
+                    </td>
+                    <td class="rd__num">{{ r.quantity }}</td>
+                    <td>
+                      <ar-chip [tone]="stageTone(r.stage)">{{ stageText(r.stage) }}</ar-chip>
+                      <div class="rd__muted">
+                        {{ r.isAnnounced ? 'from' : 'since' }} {{ r.effectiveOn | date: 'd MMM y' }}
+                      </div>
+                      @if (r.lastBuyOn) {
+                        <div class="rd__muted">Last buy {{ r.lastBuyOn | date: 'd MMM y' }}</div>
+                      }
+                    </td>
+                    <td>
+                      <span class="rd__points">{{ r.score }}</span>
+                      <ar-chip [tone]="bandTone(r.band)">{{ bandText(r.band) }}</ar-chip>
+                    </td>
+                    <td>
+                      @if (r.replacementProblem) {
+                        <ar-chip tone="warn">No current replacement</ar-chip>
+                      } @else {
+                        <span class="ar-mono" translate="no">{{ r.replacementLabel }}</span>
+                        @if (r.estimatedValueInPaise) {
+                          <div class="rd__muted">{{ inr(r.estimatedValueInPaise) }}</div>
+                        }
+                      }
+                    </td>
+                    <td>{{ r.lastServicedOn ? (r.lastServicedOn | date: 'd MMM y') : '—' }}</td>
+                    <td>
+                      {{ stateText(r.state) }}
+                      @if (r.dismissedReason) {
+                        <div class="rd__muted" translate="no">{{ r.dismissedReason }}</div>
+                      }
+                    </td>
+                    <td translate="no">{{ r.ownerName || '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+    @if (more()) {
+      <div class="rd__more">
+        <span class="rd__muted">Showing {{ rows().length }} of {{ total() }}.</span>
+        <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="loadMore()">
+          Show more
+        </button>
+      </div>
+    }
+  }
+</div>

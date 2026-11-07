@@ -95,7 +95,7 @@ export const NAV: readonly NavGroup[] = [
         icon: 'analytics',
         route: '/account-health',
         permission: 'AutoReach.Contacts',
-       // tenantOnly: true,
+        // tenantOnly: true,
       },
       {
         label: 'Duplicates',
@@ -458,6 +458,14 @@ export const NAV: readonly NavGroup[] = [
         //tenantOnly: true,
       },
       {
+        label: 'Obsolescence radar',
+        icon: 'machine',
+        route: '/obsolescence',
+        permission: 'AutoReach.Obsolescence',
+        feature: 'PipelineCrm',
+        //tenantOnly: true,
+      },
+      {
         label: 'Spares due',
         icon: 'machine',
         route: '/spares',
@@ -542,6 +550,14 @@ export const NAV: readonly NavGroup[] = [
         icon: 'machine',
         route: '/documents/products',
         permission: 'AutoReach.Library',
+        feature: 'DocumentLibrary',
+        //tenantOnly: true,
+      },
+      {
+        label: 'Lifecycle rules',
+        icon: 'refresh',
+        route: '/documents/lifecycle',
+        permission: 'AutoReach.Library.Lifecycle',
         feature: 'DocumentLibrary',
         //tenantOnly: true,
       },

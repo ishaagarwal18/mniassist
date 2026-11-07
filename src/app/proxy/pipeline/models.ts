@@ -195,6 +195,10 @@ export interface InstalledAssetDto extends FullAuditedEntityDto<string> {
   isRetired?: boolean;
   amcValueInPaise?: number | null;
   amcTermMonths?: number | null;
+  /** How much the machine stopping costs the customer (MachineCriticality: 0 low, 1 medium, 2 high). */
+  criticality?: number;
+  /** When the component list was last checked against the machine. */
+  componentsCheckedOn?: string | null;
   /** Where the machine's latest AMC renewal stands (RenewalStatus), when the Renewal Desk tracks one. */
   renewalStatus?: number | null;
   renewalEndsOn?: string | null;

@@ -22,7 +22,10 @@
 </ar-topbar>
 
 @if (dialogOpen()) {
-  <ar-dialog [title]="editingAssetId() ? 'Edit machine' : 'Register a machine'" (dismiss)="dialogOpen.set(false)">
+  <ar-dialog
+    [title]="editingAssetId() ? 'Edit machine' : 'Register a machine'"
+    (dismiss)="dialogOpen.set(false)"
+  >
     <label class="ar-field">
       <span class="ar-field__label">Description <span class="ar-field__req">*</span></span>
       <input
@@ -34,7 +37,10 @@
       />
     </label>
 
-    <div class="ar-field-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+    <div
+      class="ar-field-row"
+      style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px"
+    >
       <label class="ar-field">
         <span class="ar-field__label">Serial number</span>
         <input
@@ -55,7 +61,10 @@
       </label>
     </div>
 
-    <div class="ar-field-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+    <div
+      class="ar-field-row"
+      style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px"
+    >
       <label class="ar-field">
         <span class="ar-field__label">Site name</span>
         <input
@@ -77,13 +86,21 @@
     </div>
 
     @if (error(); as err) {
-      <p class="ib__err" role="alert" style="margin-top: 10px;">{{ err }}</p>
+      <p class="ib__err" role="alert" style="margin-top: 10px">{{ err }}</p>
     }
 
-    <div dialogActions style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;">
-      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">Cancel</button>
-      <button ar-button type="button" variant="primary" [disabled]="saving()" (click)="registerMachine()">
-        {{ saving() ? 'Saving…' : (editingAssetId() ? 'Update machine' : 'Register machine') }}
+    <div dialogActions style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px">
+      <button ar-button type="button" variant="ghost" (click)="dialogOpen.set(false)">
+        Cancel
+      </button>
+      <button
+        ar-button
+        type="button"
+        variant="primary"
+        [disabled]="saving()"
+        (click)="registerMachine()"
+      >
+        {{ saving() ? 'Saving…' : editingAssetId() ? 'Update machine' : 'Register machine' }}
       </button>
     </div>
   </ar-dialog>
@@ -179,7 +196,9 @@
         <e-column field="description" headerText="Machine / Description" width="220">
           <ng-template #template let-a>
             <div class="asset-cell">
-              <span class="asset-desc fw-semibold">{{ a.description }}</span>
+              <a class="asset-desc fw-semibold" [routerLink]="['/installed-base', a.id]">{{
+                a.description
+              }}</a>
               @if (a.retired) {
                 <span class="retired-pill">Retired</span>
               }
@@ -229,27 +248,57 @@
             <div class="table-actions">
               @if (!a.retired) {
                 @if (canManageReminders()) {
-                  <button ar-button variant="ghost" class="btn-xs" [disabled]="!!busy()" (click)="recordService(a)">
+                  <button
+                    ar-button
+                    variant="ghost"
+                    class="btn-xs"
+                    [disabled]="!!busy()"
+                    (click)="recordService(a)"
+                  >
                     Log service
                   </button>
                 }
                 @if (canUpdate()) {
-                  <button ar-button variant="ghost" class="btn-xs" [disabled]="!!busy()" (click)="openEdit(a)">
+                  <button
+                    ar-button
+                    variant="ghost"
+                    class="btn-xs"
+                    [disabled]="!!busy()"
+                    (click)="openEdit(a)"
+                  >
                     Edit
                   </button>
-                  <button ar-button variant="ghost" class="btn-xs" [disabled]="!!busy()" (click)="retire(a)">
+                  <button
+                    ar-button
+                    variant="ghost"
+                    class="btn-xs"
+                    [disabled]="!!busy()"
+                    (click)="retire(a)"
+                  >
                     Retire
                   </button>
                 }
                 @if (canDelete()) {
-                  <button ar-button variant="ghost" class="btn-xs text-danger" [disabled]="!!busy()" (click)="deleteAsset(a)">
+                  <button
+                    ar-button
+                    variant="ghost"
+                    class="btn-xs text-danger"
+                    [disabled]="!!busy()"
+                    (click)="deleteAsset(a)"
+                  >
                     Delete
                   </button>
                 }
               } @else {
                 <ar-chip tone="neutral">Retired</ar-chip>
                 @if (canDelete()) {
-                  <button ar-button variant="ghost" class="btn-xs text-danger" [disabled]="!!busy()" (click)="deleteAsset(a)">
+                  <button
+                    ar-button
+                    variant="ghost"
+                    class="btn-xs text-danger"
+                    [disabled]="!!busy()"
+                    (click)="deleteAsset(a)"
+                  >
                     Delete
                   </button>
                 }

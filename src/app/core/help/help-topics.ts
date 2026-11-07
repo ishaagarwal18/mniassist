@@ -477,6 +477,51 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Click Quote from a file to read a new customer file.',
     ],
   },
+  obsolescence: {
+    benefits: [
+      'See every customer machine holding a part its maker is phasing out, by account and site, before it breaks down.',
+      'The riskiest come first: the stage, the machine’s age and criticality, your stock of the old part and your AMC all count.',
+    ],
+    steps: [
+      'Record the components inside machines (each machine’s page) and the makers’ notices (Lifecycle rules).',
+      'Filter by make, series, stage, risk, city or owner; tick rows to assign them to a colleague.',
+      'Dismiss rows that need no work, with a reason; they come back only if the stage gets worse.',
+    ],
+    tips: [
+      'Announced shows phase-outs dated ahead: they count from their date.',
+      'The radar is re-scored on every save and each night at 2 am, so passing dates take effect on their own.',
+    ],
+  },
+  'documents/lifecycle': {
+    benefits: [
+      'One notice from a maker (S7-300 phased out) flags every installed component in that series at once.',
+      'The preview shows how many components and sites a maker’s list touches before anything is saved.',
+    ],
+    steps: [
+      'Download the CSV template and fill it from the maker’s phase-out list, or add a rule by hand.',
+      'Import it, check the preview, then save.',
+      'Give each rule its replacement: a part from your catalogue, or a successor series.',
+    ],
+    tips: [
+      'A rule on a part number beats the rule on its series: mark a part Active to keep it off the radar.',
+      'Rules marked "No current replacement" point at a part that is itself phased out, or loop: fix them here.',
+    ],
+  },
+  'installed-base/:id': {
+    benefits: [
+      'See what is inside a machine: PLC, I/O cards, drives, HMI, with their make, series and firmware.',
+      'When a maker phases a part out, every machine that holds it can be found, and its customer told before a breakdown.',
+    ],
+    steps: [
+      'Set how critical the machine is to the customer.',
+      'Add components by hand, read a nameplate photo, import a CSV (download the template), or copy a bill of materials.',
+      'After a site visit, click Mark list checked.',
+    ],
+    tips: [
+      'A part from your catalogue takes its name, make and series from it; leave those fields blank.',
+      'A list not checked for a year is marked as possibly out of date.',
+    ],
+  },
   'quotations/cross-references': {
     benefits: [
       'Another make’s part number in a tender finds your item, priced, without a search.',

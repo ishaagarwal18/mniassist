@@ -204,6 +204,20 @@ const EXACT: Record<string, PermissionText> = {
     title: 'See everyone’s tasks and meetings',
     detail: 'See tasks and meetings of every team member, not only their own.',
   },
+  'AutoReach.InstalledBase.Components': {
+    title: 'Record machine components',
+    detail:
+      'Add, import and edit the parts inside installed machines (PLC, drives, HMI) for the obsolescence radar.',
+  },
+  'AutoReach.Library.Lifecycle': {
+    title: 'Manage lifecycle rules',
+    detail:
+      'Set makers’ phase-out stages, last-buy dates and replacements, and import their lists. Re-scores the radar.',
+  },
+  'AutoReach.Obsolescence': {
+    title: 'Use the obsolescence radar',
+    detail: 'See customer machines holding phased-out parts, and dismiss or assign them.',
+  },
   'AutoReach.InstalledBase.ManageReminders': {
     title: 'Manage service reminders',
     detail: 'Set up the reminders sent for installed machines (service due, warranty end).',

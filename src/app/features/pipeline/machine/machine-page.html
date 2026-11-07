@@ -1,0 +1,303 @@
+<ar-topbar
+  [title]="machine()?.description ?? 'Machine'"
+  [subtitle]="
+    machine()
+      ? (machine()!.serialNumber ? 'Serial ' + machine()!.serialNumber + ' · ' : '') +
+        (machine()!.contactDisplayName ?? '')
+      : ''
+  "
+  help="One installed machine and the parts inside it: PLC, I/O cards, drives, HMI. When a maker phases a part out, the obsolescence radar finds every machine that holds it from this list. Add parts by hand, import a CSV, read a nameplate photo, or copy a bill of materials."
+>
+  <a ar-button variant="ghost" routerLink="/installed-base">Installed base</a>
+</ar-topbar>
+
+<div class="mp ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">Machine details need the live API.</ar-banner>
+  }
+  @if (loadError(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  @if (machine(); as m) {
+    <ar-card heading="Machine">
+      <dl class="mp__facts">
+        <div>
+          <dt>Make / model</dt>
+          <dd translate="no">{{ m.make || '—' }} {{ m.model || '' }}</dd>
+        </div>
+        <div>
+          <dt>Site</dt>
+          <dd translate="no">{{ m.siteName || '—' }}{{ m.siteCity ? ', ' + m.siteCity : '' }}</dd>
+        </div>
+        <div>
+          <dt>Commissioned</dt>
+          <dd>{{ m.commissionedOn ? (m.commissionedOn | date: 'd MMM y') : '—' }}</dd>
+        </div>
+        <div>
+          <dt>AMC ends</dt>
+          <dd>{{ m.amcEndsOn ? (m.amcEndsOn | date: 'd MMM y') : 'No AMC' }}</dd>
+        </div>
+        <div>
+          <dt>Criticality</dt>
+          <dd>
+            <select
+              class="ar-field__input mp__select"
+              aria-label="Criticality"
+              [disabled]="!canEdit()"
+              (change)="setCriticality($any($event.target).value)"
+            >
+              <option [value]="Criticality.Low" [selected]="m.criticality === Criticality.Low">
+                Low: others can cover
+              </option>
+              <option
+                [value]="Criticality.Medium"
+                [selected]="m.criticality === Criticality.Medium"
+              >
+                Medium
+              </option>
+              <option [value]="Criticality.High" [selected]="m.criticality === Criticality.High">
+                High: stops the plant
+              </option>
+            </select>
+          </dd>
+        </div>
+        <div>
+          <dt>Component list checked</dt>
+          <dd>
+            {{ m.componentsCheckedOn ? (m.componentsCheckedOn | date: 'd MMM y') : 'Never' }}
+            @if (stale()) {
+              <ar-chip tone="warn">May be out of date</ar-chip>
+            }
+          </dd>
+        </div>
+      </dl>
+    </ar-card>
+
+    <ar-card heading="Components">
+      @if (canEdit()) {
+        <div class="mp__actions">
+          <button ar-button type="button" icon="plus" [disabled]="busy()" (click)="openNew()">
+            Add a component
+          </button>
+          <input #plate type="file" hidden accept="image/*,.pdf" (change)="readNameplate($event)" />
+          <button
+            ar-button
+            type="button"
+            variant="ai"
+            icon="camera"
+            [disabled]="busy()"
+            (click)="plate.click()"
+          >
+            Read a nameplate photo
+          </button>
+          <input #csv type="file" hidden accept=".csv,text/csv" (change)="importFile($event)" />
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            icon="upload"
+            [disabled]="busy()"
+            (click)="csv.click()"
+          >
+            Import CSV
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            icon="download"
+            (click)="downloadTemplate()"
+          >
+            CSV template
+          </button>
+          @if (canUseBoms()) {
+            <select
+              class="ar-field__input mp__select"
+              aria-label="Bill of materials to copy"
+              (focus)="loadBoms()"
+              (change)="bomId.set($any($event.target).value)"
+            >
+              <option value="">Copy from a bill of materials…</option>
+              @for (b of boms(); track b.id) {
+                <option [value]="b.id">{{ b.bomNumber }} · {{ b.finishedGoodDescription }}</option>
+              }
+            </select>
+            @if (bomId()) {
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                [disabled]="busy()"
+                (click)="copyBom()"
+              >
+                Copy
+              </button>
+            }
+          }
+          <span class="mp__spacer"></span>
+          <button ar-button type="button" variant="ghost" icon="check" (click)="markChecked()">
+            Mark list checked
+          </button>
+        </div>
+      }
+
+      @if (importProblems().length) {
+        <ar-banner tone="warn">
+          Some rows were skipped:
+          <ul class="mp__problems" translate="no">
+            @for (p of importProblems(); track $index) {
+              <li>{{ p }}</li>
+            }
+          </ul>
+        </ar-banner>
+      }
+
+      @if (formOpen()) {
+        <form class="mp__form" (submit)="$event.preventDefault(); save()" aria-label="Component">
+          @if (draftNote(); as n) {
+            <p class="mp__note" translate="no">{{ n }}</p>
+          }
+          <label class="ar-field">
+            <span class="ar-field__label">Part number</span>
+            <input
+              class="ar-field__input ar-mono"
+              maxlength="64"
+              [value]="form().partNumber"
+              (input)="patch({ partNumber: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field mp__wide">
+            <span class="ar-field__label"
+              >Description <span class="ar-field__opt">blank = catalogue name</span></span
+            >
+            <input
+              class="ar-field__input"
+              maxlength="256"
+              [value]="form().description ?? ''"
+              (input)="patch({ description: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Make</span>
+            <input
+              class="ar-field__input"
+              maxlength="64"
+              [value]="form().make ?? ''"
+              (input)="patch({ make: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Series</span>
+            <input
+              class="ar-field__input"
+              maxlength="64"
+              placeholder="e.g. S7-300"
+              [value]="form().series ?? ''"
+              (input)="patch({ series: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Qty</span>
+            <input
+              class="ar-field__input"
+              type="number"
+              min="1"
+              max="10000"
+              [value]="form().quantity"
+              (input)="patch({ quantity: +$any($event.target).value || 1 })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Position</span>
+            <input
+              class="ar-field__input"
+              maxlength="64"
+              placeholder="e.g. Rack 0 slot 2"
+              [value]="form().position ?? ''"
+              (input)="patch({ position: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Firmware</span>
+            <input
+              class="ar-field__input"
+              maxlength="32"
+              [value]="form().firmware ?? ''"
+              (input)="patch({ firmware: $any($event.target).value })"
+            />
+          </label>
+          <div class="mp__form-actions">
+            <button ar-button type="button" variant="ghost" (click)="formOpen.set(false)">
+              Cancel
+            </button>
+            <button ar-button type="submit" [disabled]="busy()">
+              {{ editingId() ? 'Save' : 'Add' }}
+            </button>
+          </div>
+        </form>
+      }
+
+      @if (!components().length) {
+        <p class="mp__muted">
+          No components recorded yet. Add the PLC, I/O, drives and HMI inside this machine so a
+          phase-out can be traced to it.
+        </p>
+      } @else {
+        <table class="mp__table">
+          <thead>
+            <tr>
+              <th scope="col">Position</th>
+              <th scope="col">Part number</th>
+              <th scope="col">Description</th>
+              <th scope="col">Make · series</th>
+              <th scope="col" class="mp__num">Qty</th>
+              <th scope="col">Firmware</th>
+              <th scope="col">Lifecycle</th>
+              <th scope="col">From</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody translate="no">
+            @for (c of components(); track c.id) {
+              <tr>
+                <td>{{ c.position || '—' }}</td>
+                <td class="ar-mono">{{ c.partNumber }}</td>
+                <td>{{ c.description }}</td>
+                <td>{{ c.make || '—' }}{{ c.series ? ' · ' + c.series : '' }}</td>
+                <td class="mp__num">{{ c.quantity }}</td>
+                <td>{{ c.firmware || '—' }}</td>
+                <td translate="yes">
+                  @if (c.stage !== null && c.stage !== undefined) {
+                    <ar-chip [tone]="stageTone(c.stage)">{{ stageText(c.stage) }}</ar-chip>
+                    @if (c.stageAnnounced) {
+                      <div class="mp__small">from {{ c.stageEffectiveOn | date: 'd MMM y' }}</div>
+                    } @else if (c.riskBand !== null && c.riskBand !== undefined) {
+                      <div class="mp__small">
+                        Risk {{ c.riskScore }} · {{ bandText(c.riskBand) }}
+                      </div>
+                    }
+                    @if (c.replacementLabel) {
+                      <div class="mp__small" translate="no">→ {{ c.replacementLabel }}</div>
+                    }
+                  } @else {
+                    <ar-chip tone="good">Active</ar-chip>
+                  }
+                </td>
+                <td translate="yes">{{ sourceText(c.source) }}</td>
+                <td>
+                  @if (canEdit()) {
+                    <div class="mp__btns" translate="yes">
+                      <button type="button" class="mp__btn" (click)="openEdit(c)">Edit</button>
+                      <button type="button" class="mp__btn" (click)="remove(c)">Remove</button>
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </ar-card>
+  }
+</div>

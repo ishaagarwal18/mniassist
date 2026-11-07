@@ -1,0 +1,367 @@
+<ar-topbar
+  title="Lifecycle rules"
+  [subtitle]="
+    total() + ' rules' + (problems() ? ' · ' + problems() + ' without a current replacement' : '')
+  "
+  help="Makers' phase-out notices: a whole series (make + series) or one part number, the stage it is at from a date, its last-buy date and what replaces it. A part-number rule beats its series rule. Import the maker's list as a CSV: you see how many installed components and sites each row touches before anything is saved. Every save re-scores the obsolescence radar at once."
+>
+  <a ar-button variant="ghost" routerLink="/obsolescence">Radar</a>
+  <button ar-button type="button" variant="ghost" icon="download" (click)="downloadTemplate()">
+    CSV template
+  </button>
+  <input #csv type="file" hidden accept=".csv,text/csv" (change)="previewImport($event)" />
+  <button
+    ar-button
+    type="button"
+    variant="ghost"
+    icon="upload"
+    [disabled]="busy() || mock"
+    (click)="csv.click()"
+  >
+    Import maker's list
+  </button>
+  <button ar-button type="button" icon="plus" [disabled]="mock" (click)="openNew()">
+    Add a rule
+  </button>
+</ar-topbar>
+
+<div class="lc ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal"
+      >Lifecycle rules need the live API. In demo mode the list stays empty.</ar-banner
+    >
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+  @if (outcome(); as o) {
+    <ar-banner tone="teal"> {{ o }} <a routerLink="/obsolescence">Open the radar</a> </ar-banner>
+  }
+
+  @if (preview(); as p) {
+    <section class="lc__card" aria-label="Import preview">
+      <header class="lc__card-head">
+        <h2 class="lc__h">
+          Preview of <span translate="no">{{ previewName() }}</span>
+        </h2>
+        <span class="lc__muted"
+          >Nothing is saved yet. This list puts {{ p.componentsAffected }} installed component{{
+            p.componentsAffected === 1 ? '' : 's'
+          }}
+          at {{ p.sitesAffected }} site{{ p.sitesAffected === 1 ? '' : 's' }} at risk.</span
+        >
+      </header>
+      @if (p.problems.length) {
+        <ar-banner tone="warn">
+          These rows will be skipped:
+          <ul class="lc__problems" translate="no">
+            @for (x of p.problems; track $index) {
+              <li>{{ x }}</li>
+            }
+          </ul>
+        </ar-banner>
+      }
+      @if (p.rows.length) {
+        <table class="lc__table">
+          <thead>
+            <tr>
+              <th scope="col">Row</th>
+              <th scope="col">Part or series</th>
+              <th scope="col">Stage</th>
+              <th scope="col">From</th>
+              <th scope="col">Last buy</th>
+              <th scope="col">Replacement</th>
+              <th scope="col">Relation</th>
+              <th scope="col">Change</th>
+              <th scope="col" class="lc__num">Components</th>
+              <th scope="col" class="lc__num">Sites</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of p.rows; track r.row) {
+              <tr>
+                <td>{{ r.row }}</td>
+                <td translate="no">
+                  <span class="lc__muted">{{ r.make }}</span>
+                  <span [class.ar-mono]="r.partNumber">{{ r.partNumber ?? r.series }}</span>
+                </td>
+                <td>
+                  <ar-chip [tone]="stageTone(r.stage)">{{ stageText(r.stage) }}</ar-chip>
+                </td>
+                <td>{{ r.effectiveOn | date: 'd MMM y' }}</td>
+                <td>{{ r.lastBuyOn ? (r.lastBuyOn | date: 'd MMM y') : '—' }}</td>
+                <td translate="no">
+                  {{ r.replacement ?? '—' }}
+                  @if (r.replacement && !r.replacementInCatalogue) {
+                    <span class="lc__muted" translate="yes">(series)</span>
+                  }
+                </td>
+                <td>{{ relationText(r.relation) }}</td>
+                <td>{{ r.updates ? 'Updates a rule' : 'New rule' }}</td>
+                <td class="lc__num">{{ r.components }}</td>
+                <td class="lc__num">{{ r.sites }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+      <div class="lc__form-actions">
+        <button ar-button type="button" variant="ghost" (click)="cancelImport()">Cancel</button>
+        <button
+          ar-button
+          type="button"
+          [disabled]="busy() || !p.rows.length"
+          (click)="confirmImport()"
+        >
+          Save {{ p.rows.length }} rule{{ p.rows.length === 1 ? '' : 's' }}
+        </button>
+      </div>
+    </section>
+  }
+
+  @if (formOpen()) {
+    <form
+      class="lc__card lc__form"
+      (submit)="$event.preventDefault(); save()"
+      aria-label="Lifecycle rule"
+    >
+      <label class="ar-field">
+        <span class="ar-field__label">Make</span>
+        <input
+          class="ar-field__input"
+          maxlength="64"
+          placeholder="e.g. Siemens"
+          [value]="form().make"
+          (input)="patch({ make: $any($event.target).value })"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Applies to</span>
+        <select class="ar-field__input" (change)="patch({ target: $any($event.target).value })">
+          <option value="series" [selected]="form().target === 'series'">A whole series</option>
+          <option value="part" [selected]="form().target === 'part'">One part number</option>
+        </select>
+      </label>
+      @if (form().target === 'series') {
+        <label class="ar-field">
+          <span class="ar-field__label">Series</span>
+          <input
+            class="ar-field__input"
+            maxlength="64"
+            placeholder="e.g. S7-300"
+            [value]="form().series"
+            (input)="patch({ series: $any($event.target).value })"
+          />
+        </label>
+      } @else {
+        <label class="ar-field">
+          <span class="ar-field__label">Part number</span>
+          <input
+            class="ar-field__input ar-mono"
+            maxlength="64"
+            [value]="form().partNumber"
+            (input)="patch({ partNumber: $any($event.target).value })"
+          />
+        </label>
+      }
+      <label class="ar-field">
+        <span class="ar-field__label">Stage</span>
+        <select class="ar-field__input" (change)="patch({ stage: +$any($event.target).value })">
+          @for (s of stages; track s) {
+            <option [value]="s" [selected]="form().stage === s">{{ stageText(s) }}</option>
+          }
+        </select>
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">From</span>
+        <input
+          class="ar-field__input"
+          type="date"
+          [value]="form().effectiveOn"
+          (change)="patch({ effectiveOn: $any($event.target).value })"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label"
+          >Last-buy date <span class="ar-field__opt">optional</span></span
+        >
+        <input
+          class="ar-field__input"
+          type="date"
+          [value]="form().lastBuyOn"
+          (change)="patch({ lastBuyOn: $any($event.target).value })"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label"
+          >Replaced by part <span class="ar-field__opt">from your catalogue</span></span
+        >
+        <input
+          class="ar-field__input ar-mono"
+          maxlength="64"
+          [value]="form().replacementPartNumber"
+          (input)="patch({ replacementPartNumber: $any($event.target).value })"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">…or by series</span>
+        <input
+          class="ar-field__input"
+          maxlength="64"
+          placeholder="e.g. S7-1500"
+          [disabled]="!!form().replacementPartNumber.trim()"
+          [value]="form().replacementSeries"
+          (input)="patch({ replacementSeries: $any($event.target).value })"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Fit</span>
+        <select class="ar-field__input" (change)="patch({ relation: +$any($event.target).value })">
+          @for (r of relations; track r) {
+            <option [value]="r" [selected]="form().relation === r">{{ relationText(r) }}</option>
+          }
+        </select>
+      </label>
+      <label class="ar-field lc__wide">
+        <span class="ar-field__label">Note <span class="ar-field__opt">optional</span></span>
+        <input
+          class="ar-field__input"
+          maxlength="512"
+          [value]="form().note"
+          (input)="patch({ note: $any($event.target).value })"
+        />
+      </label>
+      <label class="ar-field lc__wide">
+        <span class="ar-field__label"
+          >Maker's notice <span class="ar-field__opt">number or link</span></span
+        >
+        <input
+          class="ar-field__input"
+          maxlength="256"
+          [value]="form().sourceReference"
+          (input)="patch({ sourceReference: $any($event.target).value })"
+        />
+      </label>
+      <div class="lc__form-actions">
+        <button ar-button type="button" variant="ghost" (click)="formOpen.set(false)">
+          Cancel
+        </button>
+        <button ar-button type="submit" [disabled]="busy()">
+          {{ editingId() ? 'Save' : 'Add' }}
+        </button>
+      </div>
+    </form>
+  }
+
+  <div class="lc__bar">
+    <form class="lc__search" (submit)="$event.preventDefault(); load()">
+      <input
+        class="ar-field__input"
+        type="search"
+        placeholder="Search makes, series, part numbers and notes"
+        aria-label="Search lifecycle rules"
+        [value]="filter()"
+        (input)="filter.set($any($event.target).value)"
+      />
+    </form>
+    <select
+      class="ar-field__input lc__select"
+      aria-label="Stage"
+      (change)="setStageFilter($any($event.target).value)"
+    >
+      <option value="" [selected]="stageFilter() === null">Any stage</option>
+      @for (s of stages; track s) {
+        <option [value]="s" [selected]="stageFilter() === s">{{ stageText(s) }}</option>
+      }
+    </select>
+    <label class="lc__check">
+      <input
+        type="checkbox"
+        [checked]="problemsOnly()"
+        (change)="showProblems($any($event.target).checked)"
+      />
+      Only rules without a current replacement
+    </label>
+  </div>
+
+  @if (loading()) {
+    <p class="lc__muted">Loading…</p>
+  } @else if (!rows().length) {
+    <p class="lc__muted lc__empty">
+      No lifecycle rules yet. Import a maker's phase-out list (download the CSV template), or add a
+      rule for a series such as Siemens S7-300.
+    </p>
+  } @else {
+    <ejs-grid arGrid="lifecycle-rules" [dataSource]="rows()" aria-label="Lifecycle rules">
+      <e-columns>
+        <e-column field="make" headerText="Make · part or series" width="240">
+          <ng-template #template let-r>
+            <div class="lc__cell" translate="no">
+              <span class="lc__muted">{{ r.make }}</span>
+              @if (r.partNumber) {
+                <span class="ar-mono">{{ r.partNumber }}</span>
+              } @else {
+                <span>{{ r.series }} <span class="lc__muted" translate="yes">series</span></span>
+              }
+            </div>
+          </ng-template>
+        </e-column>
+        <e-column field="stage" headerText="Stage" width="170">
+          <ng-template #template let-r>
+            <div class="lc__cell">
+              <ar-chip [tone]="stageTone(r.stage)">{{ stageText(r.stage) }}</ar-chip>
+              <span class="lc__muted"
+                >{{ r.isAnnounced ? 'from' : 'since' }} {{ r.effectiveOn | date: 'd MMM y' }}</span
+              >
+            </div>
+          </ng-template>
+        </e-column>
+        <e-column field="lastBuyOn" headerText="Last buy" width="110">
+          <ng-template #template let-r>{{
+            r.lastBuyOn ? (r.lastBuyOn | date: 'd MMM y') : '—'
+          }}</ng-template>
+        </e-column>
+        <e-column field="replacementPartNumber" headerText="Replaced by" width="220">
+          <ng-template #template let-r>
+            <div class="lc__cell" translate="no">
+              @if (r.replacementPartNumber || r.replacementSeries) {
+                <span [class.ar-mono]="r.replacementPartNumber">{{
+                  r.replacementPartNumber ?? r.replacementSeries + ' series'
+                }}</span>
+                <span class="lc__muted" translate="yes">{{ relationText(r.relation) }}</span>
+              }
+              @if (r.stage !== Stage.Active) {
+                @if (r.replacementProblem) {
+                  <ar-chip tone="warn" translate="yes">No current replacement</ar-chip>
+                } @else if (
+                  r.currentReplacement &&
+                  r.currentReplacement !==
+                    (r.replacementPartNumber ?? r.replacementSeries + ' series')
+                ) {
+                  <span class="lc__muted" translate="yes"
+                    >Now: <span translate="no">{{ r.currentReplacement }}</span></span
+                  >
+                }
+              }
+            </div>
+          </ng-template>
+        </e-column>
+        <e-column field="atRiskComponents" headerText="At risk" width="90" textAlign="Right">
+        </e-column>
+        <e-column field="sourceReference" headerText="Notice" width="160">
+          <ng-template #template let-r>
+            <span class="lc__muted" translate="no">{{ r.sourceReference ?? '' }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="id" headerText="" width="140">
+          <ng-template #template let-r>
+            <div class="lc__btns">
+              <button type="button" class="lc__btn" (click)="openEdit(r)">Edit</button>
+              <button type="button" class="lc__btn" (click)="remove(r)">Delete</button>
+            </div>
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
+  }
+</div>

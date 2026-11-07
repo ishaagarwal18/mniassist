@@ -28,6 +28,8 @@ export * from './amc-renewal.service';
 export * from './photo-quote.service';
 export * from './boq-import.service';
 export * from './cross-reference.service';
+export * from './installed-component.service';
+export * from './obsolescence.service';
 export * from './spares.service';
 export * from './negotiation-enums';
 export * from './negotiation-agent.models';
