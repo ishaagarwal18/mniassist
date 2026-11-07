@@ -92,6 +92,8 @@ export class ArBoqImportReviewPage {
   protected readonly searchResults = signal<CatalogueMatchDto[]>([]);
   protected readonly searching = signal(false);
   protected readonly priceText = signal('');
+  /** Remember a change as a cross-reference, so the same line is matched to the same part next time. */
+  protected readonly remember = signal(true);
 
   protected readonly lines = computed(() => {
     const i = this.item();
@@ -247,7 +249,16 @@ export class ArBoqImportReviewPage {
   protected async choose(partNumber: string): Promise<void> {
     const e = this.editing();
     if (!e) return;
-    if (await this.decide([{ lineId: e.line.id, decision: BoqLineDecision.Changed, partNumber }])) {
+    if (
+      await this.decide([
+        {
+          lineId: e.line.id,
+          decision: BoqLineDecision.Changed,
+          partNumber,
+          remember: this.remember(),
+        },
+      ])
+    ) {
       this.editing.set(null);
     }
   }

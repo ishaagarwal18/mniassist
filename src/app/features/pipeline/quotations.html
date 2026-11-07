@@ -3,6 +3,9 @@
   [subtitle]="awaitingDecision() + ' awaiting a decision'"
   help="Every quotation, raised against an enquiry or by hand for a customer, with whose follow-up is due front and centre. New quotation and Edit open a page with the line items and issuing. Marking one Lost requires a reason — that feeds the loss-reason breakdown in Analytics."
 >
+  @if (canCrossReference()) {
+    <a ar-button variant="ghost" routerLink="/quotations/cross-references">Cross-references</a>
+  }
   @if (canImport()) {
     <a ar-button variant="ghost" routerLink="/quotations/imports">File imports</a>
   }

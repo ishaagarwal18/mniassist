@@ -476,6 +476,20 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Click Quote from a file to read a new customer file.',
     ],
   },
+  'quotations/cross-references': {
+    benefits: [
+      'Another make’s part number in a tender finds your item, priced, without a search.',
+      'Corrections made on the review page are learned, so the same line is matched next time.',
+    ],
+    steps: [
+      'Download the CSV template, fill in other makes’ numbers beside yours, and click Import CSV; or add one at a time above the list.',
+      'Under Awaiting approval, check what engineers’ corrections taught and Approve the right ones.',
+    ],
+    tips: [
+      'Until approved, a learned cross-reference is offered as a suggestion, not accepted.',
+      'Mark a near match Functional or Upgrade: those lines are always left for a person to check.',
+    ],
+  },
   'quotations/:id/edit': {
     benefits: [
       'Change the lines of a draft or an issued quotation.',

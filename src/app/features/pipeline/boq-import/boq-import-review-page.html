@@ -384,6 +384,14 @@
                 Search to see matching items, or price the line by hand instead.
               </p>
             }
+            <label class="br__remember">
+              <input
+                type="checkbox"
+                [checked]="remember()"
+                (change)="remember.set($any($event.target).checked)"
+              />
+              Remember: quote this line as the chosen item next time
+            </label>
           } @else {
             <form class="br__search" (submit)="$event.preventDefault(); savePrice()">
               <label class="ar-field">

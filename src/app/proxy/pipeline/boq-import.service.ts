@@ -21,6 +21,10 @@ export enum BoqMatchKind {
   None = 0,
   Exact = 1,
   Search = 2,
+  /** Quoted as our part before (a learned cross-reference). */
+  Learned = 3,
+  /** Another make's number found in the cross-reference table. */
+  CrossRef = 4,
 }
 
 export enum BoqConfidence {
@@ -69,6 +73,8 @@ export interface BoqLineDecisionInput {
   unitPriceInPaise?: number | null;
   /** A corrected quantity; null keeps the one read off the file. */
   quantity?: number | null;
+  /** For a change or an accepted suggestion: remember it as a cross-reference (default true). */
+  remember?: boolean;
 }
 
 export interface UpdateBoqLinesInput {

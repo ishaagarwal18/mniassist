@@ -1,0 +1,212 @@
+<ar-topbar
+  title="Cross-references"
+  [subtitle]="total() + ' cross-references · ' + waiting() + ' awaiting approval'"
+  help="Another make's part number, or a customer's wording, and the part you quote for it. Quote from a file checks these before searching: a Siemens or ABB number in a tender finds your item. Import a CSV, add one here, or change a line on the review page and it is learned. A learned one is offered as a suggestion until a manager approves it."
+>
+  <a ar-button variant="ghost" routerLink="/quotations/imports">File imports</a>
+  <button ar-button type="button" variant="ghost" icon="download" (click)="downloadTemplate()">
+    CSV template
+  </button>
+  <input #csv type="file" hidden accept=".csv,text/csv" (change)="importFile($event)" />
+  <button
+    ar-button
+    type="button"
+    variant="primary"
+    icon="upload"
+    [disabled]="busy()"
+    (click)="csv.click()"
+  >
+    Import CSV
+  </button>
+</ar-topbar>
+
+<div class="xr ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal"
+      >Cross-references need the live API. In demo mode the list stays empty.</ar-banner
+    >
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+  @if (importProblems().length) {
+    <ar-banner tone="warn">
+      Some rows were skipped:
+      <ul class="xr__problems" translate="no">
+        @for (p of importProblems(); track $index) {
+          <li>{{ p }}</li>
+        }
+      </ul>
+    </ar-banner>
+  }
+
+  <form
+    class="xr__card"
+    (submit)="$event.preventDefault(); add()"
+    aria-label="Add a cross-reference"
+  >
+    <label class="ar-field">
+      <span class="ar-field__label">Other make</span>
+      <input
+        class="ar-field__input"
+        placeholder="e.g. Siemens"
+        maxlength="64"
+        [value]="otherMake()"
+        (input)="otherMake.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Their part number</span>
+      <input
+        class="ar-field__input ar-mono"
+        maxlength="256"
+        [value]="otherPart()"
+        (input)="otherPart.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Our part number</span>
+      <input
+        class="ar-field__input ar-mono"
+        maxlength="64"
+        [value]="ourPart()"
+        (input)="ourPart.set($any($event.target).value)"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Relation</span>
+      <select class="ar-field__input" (change)="relation.set(+$any($event.target).value)">
+        @for (r of relations; track r) {
+          <option [value]="r" [selected]="relation() === r">{{ relationText(r) }}</option>
+        }
+      </select>
+    </label>
+    <label class="ar-field xr__note">
+      <span class="ar-field__label">Note</span>
+      <input
+        class="ar-field__input"
+        maxlength="512"
+        placeholder="e.g. needs a separate braking resistor"
+        [value]="note()"
+        (input)="note.set($any($event.target).value)"
+      />
+    </label>
+    <button ar-button type="submit" icon="plus" [disabled]="!canAdd()">Add</button>
+  </form>
+
+  <div class="xr__bar">
+    <div class="xr__tabs" role="tablist" aria-label="Which cross-references to show">
+      <button
+        type="button"
+        role="tab"
+        class="xr__tab"
+        [class.xr__tab--on]="!onlyWaiting()"
+        [attr.aria-selected]="!onlyWaiting()"
+        (click)="showWaiting(false)"
+      >
+        All
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="xr__tab"
+        [class.xr__tab--on]="onlyWaiting()"
+        [attr.aria-selected]="onlyWaiting()"
+        (click)="showWaiting(true)"
+      >
+        Awaiting approval ({{ waiting() }})
+      </button>
+    </div>
+    <form class="xr__search" (submit)="$event.preventDefault(); load()">
+      <input
+        class="ar-field__input"
+        type="search"
+        placeholder="Search part numbers, makes and notes"
+        aria-label="Search cross-references"
+        [value]="filter()"
+        (input)="filter.set($any($event.target).value)"
+      />
+    </form>
+    <span class="xr__spacer"></span>
+    @if (canApprove() && onlyWaiting() && rows().length) {
+      <button ar-button type="button" variant="ghost" icon="check" (click)="approveAllShown()">
+        Approve all shown
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <p class="xr__muted">Loading…</p>
+  } @else if (!rows().length) {
+    <p class="xr__muted xr__empty">
+      @if (onlyWaiting()) {
+        Nothing is awaiting approval.
+      } @else {
+        No cross-references yet. Import a CSV, add one above, or change lines on the review page.
+      }
+    </p>
+  } @else {
+    <ejs-grid arGrid="cross-references" [dataSource]="rows()" aria-label="Cross-references">
+      <e-columns>
+        <e-column field="otherPartNumber" headerText="The customer asks for" width="280">
+          <ng-template #template let-r>
+            <div class="xr__cell" translate="no">
+              @if (r.otherMake) {
+                <span class="xr__muted">{{ r.otherMake }}</span>
+              }
+              <span [class.ar-mono]="!r.byDescription">{{ r.otherPartNumber }}</span>
+              @if (r.byDescription) {
+                <span class="xr__muted">(the line's wording)</span>
+              }
+            </div>
+          </ng-template>
+        </e-column>
+        <e-column field="ourPartNumber" headerText="We quote" width="240">
+          <ng-template #template let-r>
+            <div class="xr__cell">
+              <span class="ar-mono">{{ r.ourPartNumber }}</span>
+              @if (r.ourItemName) {
+                <span class="xr__muted">{{ r.ourItemName }}</span>
+              }
+            </div>
+          </ng-template>
+        </e-column>
+        <e-column field="relation" headerText="Relation" width="120">
+          <ng-template #template let-r>{{ relationText(r.relation) }}</ng-template>
+        </e-column>
+        <e-column field="source" headerText="From" width="110">
+          <ng-template #template let-r>{{ sourceText(r.source) }}</ng-template>
+        </e-column>
+        <e-column field="timesUsed" headerText="Used" width="80" textAlign="Right"></e-column>
+        <e-column field="isApproved" headerText="Status" width="160">
+          <ng-template #template let-r>
+            @if (r.isApproved) {
+              <ar-chip tone="good">Approved</ar-chip>
+            } @else {
+              <ar-chip tone="warn">Awaiting approval</ar-chip>
+            }
+          </ng-template>
+        </e-column>
+        <e-column field="note" headerText="Note" width="220">
+          <ng-template #template let-r>
+            <span class="xr__muted" translate="no">{{ r.note ?? '' }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="id" headerText="" width="170">
+          <ng-template #template let-r>
+            @if (canApprove()) {
+              <div class="xr__btns">
+                @if (!r.isApproved) {
+                  <button type="button" class="xr__btn xr__btn--main" (click)="approve([r.id])">
+                    Approve
+                  </button>
+                }
+                <button type="button" class="xr__btn" (click)="remove(r)">Delete</button>
+              </div>
+            }
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
+  }
+</div>

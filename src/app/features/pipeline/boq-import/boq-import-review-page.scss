@@ -229,3 +229,10 @@
 .br__search .ar-field__input {
   flex: 1;
 }
+.br__remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}

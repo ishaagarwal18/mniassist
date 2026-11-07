@@ -382,6 +382,14 @@ export const routes: Routes = [
           import('./features/pipeline/boq-import/boq-imports').then((m) => m.ArBoqImports),
       },
       {
+        path: 'quotations/cross-references',
+        title: 'Cross-references · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/boq-import/cross-references').then(
+            (m) => m.ArCrossReferences,
+          ),
+      },
+      {
         path: 'pipeline/ai-negotiator',
         title: 'Autonomous AI Negotiator · MNI Assist',
         loadComponent: () =>

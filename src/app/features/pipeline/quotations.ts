@@ -64,6 +64,10 @@ export class ArQuotations {
   protected readonly canDelete = grantedPolicy('AutoReach.Quotations.Delete', this.permissions);
   /** Reading a customer's BOQ or RFQ file into a draft quotation (needs the AI assistant on the plan). */
   protected readonly canImport = grantedPolicy('AutoReach.Quotations.Import', this.permissions);
+  protected readonly canCrossReference = grantedPolicy(
+    'AutoReach.Quotations.CrossReferences',
+    this.permissions,
+  );
 
   protected readonly quotes = this.store.quotes;
   protected readonly loading = this.store.loading;

@@ -59,6 +59,14 @@ export function matchLabel(line: BoqImportLineDto): { label: string; tone: ChipT
       return line.confidence === BoqConfidence.High
         ? { label: 'Exact', tone: 'good' }
         : { label: 'Exact, check', tone: 'warn' };
+    case BoqMatchKind.Learned:
+      return line.confidence === BoqConfidence.High
+        ? { label: 'Learned', tone: 'good' }
+        : { label: 'Learned, not approved', tone: 'warn' };
+    case BoqMatchKind.CrossRef:
+      return line.confidence === BoqConfidence.High
+        ? { label: 'Cross-ref', tone: 'good' }
+        : { label: 'Cross-ref, check', tone: 'warn' };
     case BoqMatchKind.Search:
       return { label: 'Suggested', tone: 'amber' };
     default:
@@ -192,3 +200,12 @@ export function mapProblem(map: BoqSheetMapDto): string | null {
     return `Sheet “${map.sheet}”: choose the part number or the description column.`;
   return null;
 }
+
+// ---- Cross-references (slice 3) --------------------------------------------------------------------------------------
+
+/** The CSV the cross-reference import takes, with one example row. */
+export const CROSS_REFERENCE_TEMPLATE = [
+  'Other make,Other part number,Our part number,Relation,Note',
+  'Siemens,6SL3210-1KE17-5UF1,ATV320U30N4,Equivalent,',
+  '',
+].join(String.fromCharCode(13, 10));

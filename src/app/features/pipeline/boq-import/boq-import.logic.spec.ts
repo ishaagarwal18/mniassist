@@ -82,6 +82,13 @@ describe('BOQ import logic', () => {
     expect(matchLabel(line({ decision: BoqLineDecision.ManualPrice })).label).toBe(
       'Priced by hand',
     );
+    expect(matchLabel(line({ matchKind: BoqMatchKind.Learned })).label).toBe('Learned');
+    expect(
+      matchLabel(line({ matchKind: BoqMatchKind.Learned, confidence: BoqConfidence.Medium })).label,
+    ).toBe('Learned, not approved');
+    expect(
+      matchLabel(line({ matchKind: BoqMatchKind.CrossRef, confidence: BoqConfidence.Medium })).tone,
+    ).toBe('warn');
   });
 
   it('shows the lines to decide, keeping one just decided in view', () => {
