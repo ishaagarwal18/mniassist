@@ -4,6 +4,18 @@
   help="Each line of the customer's file, with the item it matched in your catalogue. Exact matches are accepted already; check the rest. Accept a suggestion, change it to another item, price the line by hand, or skip it. When no line is left to decide, create the draft quotation and finish it in the quote editor."
 >
   <a ar-button variant="ghost" routerLink="/quotations/imports">All imports</a>
+  @if (item()?.state === State.Review || item()?.state === State.Drafted) {
+    <button
+      ar-button
+      type="button"
+      variant="ghost"
+      icon="download"
+      title="The lines not found or only weakly suggested, as an Excel file"
+      (click)="exportExceptions()"
+    >
+      Export exceptions
+    </button>
+  }
   @if (item() && !closed()) {
     <button ar-button type="button" variant="ghost" [disabled]="saving()" (click)="discard()">
       Discard

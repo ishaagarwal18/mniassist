@@ -67,6 +67,8 @@ export function matchLabel(line: BoqImportLineDto): { label: string; tone: ChipT
       return line.confidence === BoqConfidence.High
         ? { label: 'Cross-ref', tone: 'good' }
         : { label: 'Cross-ref, check', tone: 'warn' };
+    case BoqMatchKind.Attribute:
+      return { label: 'By rating', tone: 'amber' };
     case BoqMatchKind.Search:
       return { label: 'Suggested', tone: 'amber' };
     default:
@@ -209,3 +211,31 @@ export const CROSS_REFERENCE_TEMPLATE = [
   'Siemens,6SL3210-1KE17-5UF1,ATV320U30N4,Equivalent,',
   '',
 ].join(String.fromCharCode(13, 10));
+
+// ---- Product ratings (slice 4) ---------------------------------------------------------------------------------------
+
+/** The ratings BOQ lines are matched on, as the API knows them. */
+export const RATING_KEYS: { key: string; label: string; unit?: string }[] = [
+  { key: 'power_kw', label: 'Power', unit: 'kW' },
+  { key: 'voltage_v', label: 'Voltage', unit: 'V (e.g. 415 or 380-480)' },
+  { key: 'current_a', label: 'Current', unit: 'A' },
+  { key: 'phases', label: 'Phases' },
+  { key: 'poles', label: 'Poles' },
+  { key: 'ip', label: 'IP rating', unit: 'two digits, e.g. 55' },
+  { key: 'breaking_ka', label: 'Breaking capacity', unit: 'kA' },
+  { key: 'di', label: 'Digital inputs' },
+  { key: 'do', label: 'Digital outputs' },
+  { key: 'ai', label: 'Analog inputs' },
+  { key: 'ao', label: 'Analog outputs' },
+  { key: 'screen_in', label: 'Screen', unit: 'inch' },
+  { key: 'size_sqmm', label: 'Conductor size', unit: 'sq mm' },
+  { key: 'cores', label: 'Cores' },
+  { key: 'sensing_mm', label: 'Sensing distance', unit: 'mm' },
+];
+
+/** Rating rows as typed, to the map the API stores: blank keys and values dropped, the last of a key kept. */
+export function ratingsOf(rows: { key: string; value: string }[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const r of rows) if (r.key && r.value.trim()) out[r.key] = r.value.trim();
+  return out;
+}

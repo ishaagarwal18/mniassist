@@ -290,6 +290,23 @@ export class ArBoqImportReviewPage {
     return typeof v === 'string' && v.length > 0;
   }
 
+  /** The lines not found or only weakly suggested, as an Excel file to send the OEM or a colleague. */
+  protected async exportExceptions(): Promise<void> {
+    const i = this.item();
+    if (!i) return;
+    try {
+      const blob = await firstValueFrom(this.api.exportExceptions(i.id));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${i.reference}-exceptions.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The exceptions could not be exported.'));
+    }
+  }
+
   protected async retry(): Promise<void> {
     this.saving.set(true);
     try {

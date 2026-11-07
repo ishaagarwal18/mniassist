@@ -8,6 +8,8 @@ import { firstValueFrom } from 'rxjs';
 import { grantedPolicy } from '../../core/auth/permission';
 import { inr } from '../../core/util/format';
 import { readApiError } from '../../core/util/api-error';
+import { RATING_KEYS, ratingsOf } from '../pipeline/boq-import/boq-import.logic';
+import { ToastService } from '../../core/ui/toast.service';
 import { ArTopbar } from '../../layout/topbar';
 import {
   CreateUpdateProductDto,
@@ -47,6 +49,7 @@ import { ConfirmService } from '../../core/ui/confirm.service';
 export class ArProducts {
   private readonly permissions = inject(PermissionService);
   private readonly dialogs = inject(ConfirmService);
+  private readonly toasts = inject(ToastService);
   private readonly api = inject(ProductService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -112,6 +115,12 @@ export class ArProducts {
   /** Percent as typed; blank means the quotation's own rate. */
   protected readonly gst = signal('');
   protected readonly active = signal(true);
+  protected readonly make = signal('');
+  protected readonly series = signal('');
+  /** Ratings for BOQ matching, as rows of the form. */
+  protected readonly ratings = signal<{ key: string; value: string }[]>([]);
+  protected readonly ratingKeys = RATING_KEYS;
+  protected readonly filling = signal(false);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
@@ -273,6 +282,9 @@ export class ArProducts {
     this.hsn.set('');
     this.gst.set('');
     this.active.set(true);
+    this.make.set('');
+    this.series.set('');
+    this.ratings.set([]);
     this.error.set(null);
     this.editorOpen.set(true);
   }
@@ -295,8 +307,47 @@ export class ArProducts {
     this.hsn.set(p.hsnCode ?? '');
     this.gst.set(p.taxRateBasisPoints == null ? '' : String(p.taxRateBasisPoints / 100));
     this.active.set(p.isActive ?? true);
+    this.make.set(p.make ?? '');
+    this.series.set(p.series ?? '');
+    this.ratings.set(Object.entries(p.attributes ?? {}).map(([key, value]) => ({ key, value })));
     this.error.set(null);
     this.editorOpen.set(true);
+  }
+
+  protected addRating(): void {
+    const used = new Set(this.ratings().map((r) => r.key));
+    const next = RATING_KEYS.find((k) => !used.has(k.key))?.key ?? '';
+    this.ratings.update((rows) => [...rows, { key: next, value: '' }]);
+  }
+
+  protected setRating(index: number, change: Partial<{ key: string; value: string }>): void {
+    this.ratings.update((rows) => rows.map((r, i) => (i === index ? { ...r, ...change } : r)));
+  }
+
+  protected removeRating(index: number): void {
+    this.ratings.update((rows) => rows.filter((_, i) => i !== index));
+  }
+
+  protected ratingUnit(key: string): string {
+    return RATING_KEYS.find((k) => k.key === key)?.unit ?? '';
+  }
+
+  /** Reads the ratings each product's name states into products that have none yet. */
+  protected async fillRatings(): Promise<void> {
+    this.filling.set(true);
+    try {
+      const n = await firstValueFrom(this.api.fillAttributes(false));
+      this.toasts.success(
+        n
+          ? `Ratings stored for ${n} product${n === 1 ? '' : 's'}. Check them on each product.`
+          : 'No product names stated ratings that were not stored already.',
+      );
+      this.resource.reload();
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The ratings could not be filled.'));
+    } finally {
+      this.filling.set(false);
+    }
   }
 
   private toDto(): CreateUpdateProductDto {
@@ -315,6 +366,9 @@ export class ArProducts {
       taxRateBasisPoints:
         this.gst().trim() === '' ? null : Math.round((Number(this.gst()) || 0) * 100),
       isActive: this.active(),
+      make: this.make().trim() || null,
+      series: this.series().trim() || null,
+      attributes: ratingsOf(this.ratings()),
     };
   }
 

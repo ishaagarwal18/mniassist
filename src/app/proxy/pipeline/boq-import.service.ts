@@ -25,6 +25,8 @@ export enum BoqMatchKind {
   Learned = 3,
   /** Another make's number found in the cross-reference table. */
   CrossRef = 4,
+  /** A product of the same kind meeting every rating the line states. */
+  Attribute = 5,
 }
 
 export enum BoqConfidence {
@@ -340,6 +342,18 @@ export class BoqImportService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/boq-import/${id}/quotation`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** The lines not found or only weakly suggested, as an Excel file. */
+  exportExceptions = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, Blob>(
+      {
+        method: 'POST',
+        responseType: 'blob',
+        headers: { Accept: 'application/octet-stream' },
+        url: `/api/auto-reach/boq-import/${id}/export-exceptions`,
       },
       { apiName: this.apiName, ...config },
     );

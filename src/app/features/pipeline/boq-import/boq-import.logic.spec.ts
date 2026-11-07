@@ -12,6 +12,7 @@ import {
 } from '../../../proxy/pipeline/boq-import.service';
 import {
   acceptableSuggestions,
+  ratingsOf,
   assign,
   columnLetter,
   mapProblem,
@@ -83,6 +84,7 @@ describe('BOQ import logic', () => {
       'Priced by hand',
     );
     expect(matchLabel(line({ matchKind: BoqMatchKind.Learned })).label).toBe('Learned');
+    expect(matchLabel(line({ matchKind: BoqMatchKind.Attribute })).label).toBe('By rating');
     expect(
       matchLabel(line({ matchKind: BoqMatchKind.Learned, confidence: BoqConfidence.Medium })).label,
     ).toBe('Learned, not approved');
@@ -186,5 +188,16 @@ describe('BOQ import logic', () => {
     map = assign(map, 1, null);
     expect(mapProblem(map)).toContain('part number or the description');
     expect(mapProblem({ ...map, include: false })).toBeNull();
+  });
+
+  it('keeps only filled ratings, the last of a key winning', () => {
+    expect(
+      ratingsOf([
+        { key: 'power_kw', value: ' 15 ' },
+        { key: 'ip', value: '' },
+        { key: '', value: '4' },
+        { key: 'power_kw', value: '18.5' },
+      ]),
+    ).toEqual({ power_kw: '18.5' });
   });
 });

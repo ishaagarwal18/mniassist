@@ -139,3 +139,28 @@
   font-weight: 500;
   color: var(--ar-ink-900);
 }
+.pd__ratings {
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-control);
+  padding: 10px 12px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pd__rating {
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.pd__ratings .pd__link {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-teal-700);
+  text-decoration: underline;
+}

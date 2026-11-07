@@ -463,7 +463,8 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     ],
     tips: [
       'Accept every suggestion accepts all suggested items at once; check the list first.',
-      'Hover a match chip to see why it matched.',
+      'Hover a match chip to see why it matched. By rating means a product of the same kind meets every rating the line states; always check it.',
+      'Export exceptions gives an Excel file of the lines not found, to ask the OEM.',
     ],
   },
   'quotations/imports': {

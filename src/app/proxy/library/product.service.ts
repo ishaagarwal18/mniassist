@@ -16,6 +16,10 @@ export interface ProductDto {
   category?: string | null;
   taxRateBasisPoints?: number | null;
   isActive?: boolean;
+  make?: string | null;
+  series?: string | null;
+  /** Ratings stored for BOQ matching (power_kw, voltage_v, …); empty when read from the name. */
+  attributes?: Record<string, string>;
 }
 
 export interface CreateUpdateProductDto {
@@ -30,6 +34,10 @@ export interface CreateUpdateProductDto {
   category?: string | null;
   taxRateBasisPoints?: number | null;
   isActive: boolean;
+  make?: string | null;
+  series?: string | null;
+  /** Ratings for BOQ matching; unknown keys are dropped, an empty set clears them. Null leaves them as they are. */
+  attributes?: Record<string, string> | null;
 }
 
 export interface GetProductListInput {
@@ -51,6 +59,8 @@ export interface ImportProductRow {
   category?: string | null;
   taxRateBasisPoints?: number | null;
   isActive?: boolean;
+  make?: string | null;
+  series?: string | null;
 }
 
 /** A unit of measure products can be sold in, and how many products use it. */
@@ -133,6 +143,17 @@ export class ProductService {
   deleteUnit = (name: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, void>(
       { method: 'DELETE', url: '/api/auto-reach/product/unit', params: { name } },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Stores the ratings each product's name states (15 kW, 415 V, IP55…); returns how many products were given ratings. */
+  fillAttributes = (overwrite = false, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, number>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/product/fill-attributes',
+        body: { overwrite },
+      },
       { apiName: this.apiName, ...config },
     );
 

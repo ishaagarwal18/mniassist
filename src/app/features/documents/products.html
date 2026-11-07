@@ -22,6 +22,18 @@
     @if (canCreate()) {
       <button ar-button type="button" variant="ghost" (click)="goUnits()">Units</button>
       <button ar-button type="button" variant="ghost" (click)="goImport()">Import</button>
+      @if (canUpdate()) {
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="filling()"
+          title="Store the ratings each product's name states (15 kW, 415 V, IP55…), for matching BOQ lines"
+          (click)="fillRatings()"
+        >
+          {{ filling() ? 'Filling…' : 'Fill ratings' }}
+        </button>
+      }
       <button ar-button type="button" variant="primary" icon="plus" (click)="goNew()">
         New product
       </button>
@@ -343,6 +355,61 @@
           />
         </label>
       </div>
+      <div class="ar-field-row">
+        <label class="ar-field">
+          <span class="ar-field__label">Make <span class="ar-field__opt">optional</span></span>
+          <input
+            class="ar-field__input"
+            maxlength="64"
+            placeholder="e.g. ABB"
+            [value]="make()"
+            (input)="make.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Series <span class="ar-field__opt">optional</span></span>
+          <input
+            class="ar-field__input"
+            maxlength="64"
+            placeholder="e.g. ACS580"
+            [value]="series()"
+            (input)="series.set($any($event.target).value)"
+          />
+        </label>
+      </div>
+      <fieldset class="pd__ratings">
+        <legend class="ar-field__label">
+          Ratings <span class="ar-field__opt">for matching BOQ lines that have no part number</span>
+        </legend>
+        @if (!ratings().length) {
+          <p class="ar-field__hint">
+            None stored: they are read from the name and description (for example “15 kW 415 V
+            IP55”). Add them here when the name does not say.
+          </p>
+        }
+        @for (r of ratings(); track $index; let i = $index) {
+          <div class="pd__rating">
+            <select
+              class="ar-field__input"
+              [attr.aria-label]="'Rating ' + (i + 1)"
+              (change)="setRating(i, { key: $any($event.target).value })"
+            >
+              @for (k of ratingKeys; track k.key) {
+                <option [value]="k.key" [selected]="k.key === r.key">{{ k.label }}</option>
+              }
+            </select>
+            <input
+              class="ar-field__input"
+              [attr.aria-label]="'Value of rating ' + (i + 1)"
+              [placeholder]="ratingUnit(r.key)"
+              [value]="r.value"
+              (input)="setRating(i, { value: $any($event.target).value })"
+            />
+            <button type="button" class="pd__link" (click)="removeRating(i)">Remove</button>
+          </div>
+        }
+        <button type="button" class="pd__link" (click)="addRating()">+ Add a rating</button>
+      </fieldset>
       <label class="ar-field__opt-row">
         <input
           id="product-active"
