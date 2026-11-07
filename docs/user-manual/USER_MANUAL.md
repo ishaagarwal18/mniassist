@@ -1,6 +1,8 @@
 # MNI Assist — Complete User Manual
 
-**Edition:** 1.1 · **Reviewed:** 27 October 2026 · **Format:** end-user guide
+**Edition:** 1.2 · **Reviewed:** 6 November 2026 · **Format:** end-user guide
+
+**New in 1.2:** the menu is regrouped into plain groups, with a breadcrumb back to [Customer 360](#page-contacts-360), [Vendor 360](#page-purchasing-vendor-360) or a campaign, and a right-hand rail for Inbox, Notifications, help, What’s new, language, theme and sign-out. Most windows for creating and opening records are now their own pages: sales orders, challans and invoices (with PDF and Excel), [quotations](#page-quotations-new) (manual quotations, email with the PDF), purchasing (suppliers, orders, receipts, bills, debit notes), manufacturing, field service, helpdesk, finance and re-orders. Accounts carry a GSTIN with billing and shipping addresses; tasks and meetings link to records and remind on WhatsApp and SMS. Voice agents gain [playbooks, custom functions and account, helpdesk and shop tools](#page-calls-ai-agents-new), a [website call button](#page-calls-web-widget), an [AI impact report](#page-calls-ai-impact) and [call compliance](#page-compliance). New public pages: [ROI calculator](#page-roi) and [industries](#page-industries). Host operators set [payment gateways](#page-platform-payment-gateways) on screen.
 
 **New in 1.1:** AI voice agents can take actions during calls, search your knowledge base and catalogue, remember returning callers, place outbound WhatsApp calls and call whole lists ([AI call batches](#page-calls-ai-batches)); calls are analysed afterwards and can be reviewed, corrected and exported ([AI conversations](#window-011)); agents can be tested from the browser ([test call](#panel-ar-voice-agent-test)). Agents can also hand a call to a person in a chosen team, with the reason and a summary; can follow a conversation flow of stages; can be drafted from a description, saved as workspace templates in folders, exported and imported as files, reviewed before publishing and compared version by version. One agent can serve several numbers ([AI voice agents](#page-calls-ai-agents)). See the [voice agent window](#dialog-ar-voice-agent-dialog-1).
 
@@ -56,13 +58,14 @@ A visible page may still have read-only access. Create, update, delete, send, pa
 
 ### Navigation, language, theme and sign-out
 
-1. Use the left-hand menu to open a page. Use **Search menu** to find a menu item by name.
+1. Use the left-hand menu to open a page. Items sit in groups named for the job: Customers, Marketing, Purchasing & stock, Sales, Orders & invoices, Calls, Service, Manufacturing, Finance, Products & documents, Partners, Reports, Channels, Administration, Settings, Billing and (for host operators) Platform. Click a group heading to fold or unfold it, and use **Search menu** to find an item by name.
 2. On a narrow screen tap the header menu button to open the navigation drawer; choose a page and close the drawer if it remains open.
-3. Use the header notification bell or Inbox icon when those tools are available to your account.
-4. Open the combined **language and theme** menu in the header, or the corresponding control in the left profile menu. Select English, Hindi, Marathi or Gujarati where offered, and choose the light/dark appearance.
+3. Use the right-hand rail for **Inbox** and **Notifications** (with counts of new items), **Help & Guide**, **What’s new**, **Language**, **Theme** and **Sign out**. On a narrow screen open it with **Open utilities menu** in the header.
+4. Under **Language** choose English, Hindi, Marathi or Gujarati where offered; under **Theme** choose the light or dark appearance.
 5. Click **Your profile** in the profile menu to update your account.
-6. Click **Sign out** in the top bar or profile menu when finished. A **Signed out** session notice means you must sign in again before continuing.
-7. Open the page’s help control where offered for a short explanation of that screen.
+6. Click **Sign out** when finished. A **Signed out** session notice means you must sign in again before continuing; if your role was changed, the notice says so.
+7. Open **Help & Guide** for the screen you are on: **What it does**, **Benefits** and **How to use it**.
+8. The breadcrumb at the top shows where you are. A screen opened from Customer 360, Vendor 360 or a campaign shows that record in the breadcrumb (for example **Customers › Customer 360 · *name* › Sales invoices**); click it to go back.
 
 [Screenshot S001: Desktop header and expanded left profile menu; arrows point to the combined language/theme dropdown, Your profile and top-bar Sign out. Use a sample user and no live account details.]
 
@@ -78,7 +81,7 @@ A visible page may still have read-only access. Create, update, delete, send, pa
 6. Resolve the displayed validation message before trying again. Closing a window is not a save, and **Cancel** normally abandons the proposed change.
 7. Review any confirmation. Delete, release, merge, fulfil, post, issue and send actions can have different consequences from saving a draft.
 
-Some tables offer column sorting, filters, paging, resizing or exports. Use only the controls present on that table. Exports can contain customer information; share them through your organisation’s approved process. A queued export is downloaded from **My exports** once ready.
+Creating or opening a record usually opens its own page; **Back** returns you to the list, or to the 360 screen you came from. Some tables offer column sorting, filters, paging, resizing or exports. Use only the controls present on that table. Exports can contain customer information; share them through your organisation’s approved process. A queued export is downloaded from **My exports** once ready.
 
 ### Common business distinctions
 
@@ -102,7 +105,7 @@ Some tables offer column sorting, filters, paging, resizing or exports. Use only
 3. Complete **Business profile**, then review member roles and teams.
 4. Connect the intended WhatsApp or other channel and check its status.
 5. Add a small set of approved test contacts and confirm their communication permissions.
-6. Add your real product names, part numbers and approved prices in **Documents → Products**; publish eligible WhatsApp catalogue entries separately when used.
+6. Add your real product names, part numbers and approved prices in **Products & documents → Products**; publish eligible WhatsApp catalogue entries separately when used.
 7. Copy or write templates, submit them for the intended WhatsApp account and wait for approval before relying on them outside the reply window.
 8. Test one permitted conversation, enquiry and quotation before a bulk campaign or automation.
 9. Review Billing, integrations, recording/consent and AI settings with the responsible administrator.
@@ -354,6 +357,8 @@ The routes below identify the screen if you need help finding it. Entries contai
 | [Re-order spares](#page-r-token) | `/r/:token` |
 | [Sign in](#page-reorder-code) | `/reorder/:code` |
 | [Spares catalogue](#page-catalogue-code) | `/catalogue/:code` |
+| [ROI calculator](#page-roi) | `/roi` |
+| [Industries](#page-industries) | `/industries`, `/industries/:segment` |
 
 <a id="page-sign-token"></a>
 
@@ -522,6 +527,54 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Tips and common errors:** A price may be hidden or shown as price on request. A catalogue enquiry is not a confirmed order or payment.
 
+<a id="page-roi"></a>
+
+### ROI calculator
+
+**Open:** `/roi`. **Who can use it:** Anyone; no sign-in is needed.
+
+**Purpose:** Estimate what AI voice agents would save a business before it signs up.
+
+**Prerequisites:** None. You need the AI call rate (rupees a minute) agreed with the MNI Assist team, because no rate is published on the page.
+
+**Views and sections:** What would AI voice agents save you?; your call figures; the estimate (calls the AI handles to the end, staff time freed, staff cost freed, AI minutes, AI call cost, plan).
+
+**Step-by-step**
+
+1. Open the ROI calculator from the website, or go to `/roi`.
+2. Enter **Calls a month**, **Average call length (minutes)** and **A person's time per call, with notes (minutes)**.
+3. Enter **Cost of an hour of their time (₹)** and **Calls the AI handles to the end (%)**.
+4. Enter the **AI call rate (₹ a minute)**. If you do not have it, the field reads **Ask our team**, and no estimate is shown until you enter it.
+5. Choose the plan. AI voice agents come with Pro and Enterprise, so only those two are offered, and the plan fee is included in the estimate.
+6. Read the estimate. It changes as you edit any figure.
+
+[Screenshot P120: ROI calculator with sample figures (2,000 calls a month, 4-minute calls) and the estimate panel filled in; highlight “AI call rate (₹ a minute)” and the staff cost freed figure. Use made-up figures only.]
+
+**Tips and common errors:** The estimate is only as good as the figures entered. It is not a quotation, and the AI call rate is the one agreed with the MNI Assist team, not a published price.
+
+<a id="page-industries"></a>
+
+### Industries
+
+**Open:** `/industries` lists the industries; `/industries/system-integrators`, `/industries/oems` and `/industries/distributors` open one. **Who can use it:** Anyone; no sign-in is needed.
+
+**Purpose:** See how MNI Assist is used in your kind of business.
+
+**Prerequisites:** None.
+
+**Views and sections:** Industries; for each industry: Sound familiar? (the usual problems), What MNI Assist does for you, Ready AI agents for you.
+
+**Step-by-step**
+
+1. Open **Industries** from the website header or footer.
+2. Choose system integrators, OEMs or distributors.
+3. Read the problems, what MNI Assist does about each, and the ready-made AI agents for that industry.
+4. Use the page's sign-up or ROI calculator link to go further.
+
+[Screenshot P121: Industries page for OEMs showing “Sound familiar?” and “Ready AI agents for you”; highlight the sign-up link.]
+
+**Tips and common errors:** The pages describe typical use. What a workspace can use depends on its plan.
+
 <a id="daily-workspace-and-customers"></a>
 
 ## Daily workspace and customers
@@ -538,6 +591,12 @@ The routes below identify the screen if you need help finding it. Entries contai
 | [Duplicates](#page-contacts-duplicates) | `/contacts/duplicates` |
 | [Account health](#page-account-health) | `/account-health` |
 | [Notifications](#page-notifications) | `/notifications` |
+| [What's new](#page-whats-new) | `/whats-new` |
+| [New contact / Edit contact](#page-contacts-new) | `/contacts/new`, `/contacts/:id/edit` |
+| [New account / Edit account](#page-contacts-accounts-new) | `/contacts/accounts/new`, `/contacts/accounts/:accountId/edit` |
+| [Buyers & credit](#page-contacts-accounts-credit) | `/contacts/accounts/credit` |
+| [Account roll-up](#page-contacts-accounts-rollup) | `/contacts/accounts/:accountId/rollup` |
+| [Message customer](#page-contacts-message) | `/contacts/:id/message` |
 
 <a id="page-home"></a>
 
@@ -567,26 +626,48 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 ### Get started
 
-**Open:** `/getting-started`. **Who can use it:** Signed-in users with access to this page.
+**Open:** `/getting-started`. **Who can use it:** Signed-in users with access to this page, until the checklist is complete.
 
 **Purpose:** Complete the workspace setup checklist in a guided order.
 
 **Prerequisites:** Sign in as a workspace member with permission for the relevant setup task.
 
-**Views and sections:** You’re set up..
+**Views and sections:** The setup steps; You’re set up.
 
 **Step-by-step**
 
 1. Open **Get started**; the checklist selects the first unfinished step.
 2. For email verification click **Send confirmation link**, open the email, then return and click **I’ve opened the link**.
-3. For mobile verification request the displayed code, enter it and click **Confirm**.
+3. For mobile verification request the code, enter it and click **Confirm**. If it has not arrived, wait for the countdown, then click **Resend code**.
 4. For each remaining setup task click **Go and do it**, complete that page, then return to the checklist.
 5. Use **Back**, **Next** or **Skip for now** to navigate; select a step on the rail to revisit it.
 6. Click **Finish** when ready, or **Dismiss** to hide the checklist.
 
-[Screenshot P018: Get started page showing its principal sections and a suitable sample record; highlight “Get started” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
+[Screenshot P018: Get started page with the mobile-verification step open and the Resend code countdown visible. Use approved sample data; obscure personal details, account secrets and private links.]
 
-**Tips and common errors:** Email and mobile verification require the actual verification flow; they cannot be completed merely by ticking I’ve done this. Skipping does not complete a task.
+**Tips and common errors:** Email and mobile verification need the real verification flow; ticking I’ve done this does not complete them, and skipping does not complete a task. Once every step is complete, **Get started** leaves the menu, and opening `/getting-started` takes you to **Home**.
+
+<a id="page-whats-new"></a>
+
+### What's new
+
+**Open:** `/whats-new`, or **What’s new** on the right-hand rail. **Who can use it:** Signed-in users.
+
+**Purpose:** See the latest features, newest first.
+
+**Prerequisites:** None.
+
+**Views and sections:** One card for each release, with its changes.
+
+**Step-by-step**
+
+1. Open **What’s new**.
+2. Read the latest release at the top.
+3. Click **Open** beside a change to go straight to that screen.
+
+[Screenshot P122: What's new page showing the newest release card; highlight an Open link.]
+
+**Tips and common errors:** A change listed here may still depend on your plan, your permissions or a provider connection.
 
 <a id="page-inbox"></a>
 
@@ -675,54 +756,172 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Open:** `/contacts/accounts`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action.
 
-**Purpose:** Group contacts by customer company, plant or subsidiary.
+**Purpose:** Keep the companies you sell to, with their GST number, billing and shipping addresses, and the people who work there.
 
-**Prerequisites:** Contacts access; a company name and, for subsidiaries, an existing parent account.
+**Prerequisites:** Accounts access. Buyers and credit need the re-order portal settings permission.
 
-**Views and sections:** Company list; hierarchy; account editor; rollup; account contacts; ERP ledger.
+**Views and sections:** Account list; account form; roll-up; Customer 360; buyers and credit.
 
 **Step-by-step**
 
-1. Open **Accounts** and search for the company.
-2. Click **New account**, enter **Name** and the available industry, website, city, state and notes.
-3. Choose **Parent account** only when this company belongs under another account, then click **Create**.
-4. Use **Add subsidiary** on a parent to create a child account.
-5. Open **Rollup** or the account’s contacts to review totals; select **Include subsidiaries** when needed.
-6. Use **Edit** to update the company and **Save**.
+1. Search for the company before adding it.
+2. Click **New account**. The account opens as its own page (see [New account / Edit account](#page-contacts-accounts-new)).
+3. Open an account's **Customer 360** to see its orders, challans, invoices, payments, machines and service.
+4. Click **Rollup** to add up its contacts, enquiries and pipeline, with or without its subsidiaries.
+5. Click **Credit** on a row, or **Buyers & credit** in the toolbar, to set who may order on the re-order portal and the account's credit limit, terms and hold.
 
-**Related windows:** [Edit account / New account](#dialog-ar-accounts-1); [Account / — rollup](#dialog-ar-accounts-2); [Contacts at](#dialog-ar-accounts-3).
+[Screenshot P024: Accounts page with a sample company row; highlight New account, Rollup, Credit and the Customer 360 link. Use approved sample data.]
 
-[Screenshot P022: Accounts page showing its principal sections and a suitable sample record; highlight “Accounts” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
+**Tips and common errors:** Industry, state and city come from shared pick-lists; cities are filtered by the state chosen. A contact's orders and invoices show on its account's Customer 360, so link each buyer to their account.
 
-**Tips and common errors:** Putting two companies under one parent changes the scope of rollup views. It does not merge their individual contact records.
+<a id="page-contacts-accounts-new"></a>
+
+### New account / Edit account
+
+**Open:** `/contacts/accounts/new`. **Other entry paths:** `/contacts/accounts/:accountId/edit`. **Who can use it:** Users who may create or edit accounts.
+
+**Purpose:** Record a company with its GST number, billing address and one or more shipping addresses.
+
+**Prerequisites:** Accounts access.
+
+**Views and sections:** Company details; GSTIN; billing address and PIN; shipping addresses; parent account.
+
+**Step-by-step**
+
+1. Enter the account name and choose its **Industry Sector**.
+2. Enter the **GST No. (GSTIN)** where the company is GST-registered.
+3. Choose **State / Territory**, then **City / Industrial Hub** (the cities shown follow the state), and enter the **Billing Address** and PIN.
+4. Under **Shipping Addresses**, click **Add address** for each one: label, address, city, state, PIN and, for a site registered separately, its own GSTIN. Mark one as the default.
+5. Select a parent account if the company belongs to a group.
+6. Click **Create Account** (or **Save Changes** when editing).
+
+[Screenshot P123: New account page with GSTIN, billing address and two shipping addresses, one marked default; highlight Create Account.]
+
+**Tips and common errors:** If an industry is missing, choose **+ Add new industry sector...**; the new value is kept for your workspace. Sales orders, challans and invoices take the billing address and the default shipping address from here, so keep them current.
+
+<a id="page-contacts-accounts-credit"></a>
+
+### Buyers & credit
+
+**Open:** `/contacts/accounts/credit`, or **Credit** on an account row. **Who can use it:** Users with the re-order portal settings permission.
+
+**Purpose:** Choose a customer company and set who may order for it on the re-order portal, and its credit limit, payment terms and hold.
+
+**Prerequisites:** The customer company must exist in Accounts, with its people as contacts.
+
+**Views and sections:** Customer company; buyers and approvers; credit limit; payment terms; hold.
+
+**Step-by-step**
+
+1. Choose the customer company (from an account row it is already chosen).
+2. Add the buyers who may order and the approvers who must approve.
+3. Set the credit limit and payment terms, or put the company on hold.
+4. Click **Done** to go back to where you came from.
+
+[Screenshot P124: Buyers & credit page for a sample company with one buyer, one approver and a credit limit.]
+
+**Tips and common errors:** This used to be a window on the Re-orders page and is now reached from Accounts.
+
+<a id="page-contacts-accounts-rollup"></a>
+
+### Account roll-up
+
+**Open:** `/contacts/accounts/:accountId/rollup`, from **Rollup** on an account. **Who can use it:** Users with access to Accounts.
+
+**Purpose:** See everything an account adds up to: contacts, open and won enquiries, pipeline value, deal stages and its ERP ledger.
+
+**Prerequisites:** An existing account.
+
+**Views and sections:** Totals; stages; key contacts; ERP ledger.
+
+**Step-by-step**
+
+1. Click **Rollup** on an account.
+2. Tick **Include subsidiaries** to add every company and plant beneath it.
+3. Open a key contact, the account's Customer 360 or its ERP ledger for the detail.
+
+[Screenshot P125: Account roll-up with Include subsidiaries ticked.]
+
+**Tips and common errors:** The ERP ledger shows only when an ERP connection is synced.
 
 <a id="page-contacts-360"></a>
 
 ### Customer 360
 
-**Open:** `/contacts/360`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action.
+**Open:** `/contacts/360`. **Who can use it:** Signed-in users with Customer 360 access; selling actions need sales permissions.
 
-**Other entry paths:** `/contacts/accounts/:accountId/360`, `/contacts/:id/360`. The same screen/procedure is used; a callback is entered automatically after provider authorisation.
+**Other entry paths:** `/contacts/accounts/:accountId/360` (a company), `/contacts/:id/360` (one person).
 
-**Purpose:** Review a complete customer or company relationship in one place.
+**Purpose:** Review a complete customer or company relationship in one place, and open every related screen for just that customer.
 
 **Prerequisites:** Customer 360 access and an existing contact or account.
 
-**Views and sections:** Customer summary; timeline; sales orders; challans; invoices/payments; tickets; installed machinery; customer-action windows.
+**Views and sections:** Picker with Accounts and Contacts tabs; customer summary and credit; timeline; sales orders; challans; invoices and payments; tickets; installed machinery; Everything about this customer.
 
 **Step-by-step**
 
-1. Open **Customer 360** and find the required customer, or open the customer view from another page.
+1. Open **Customer 360**. Choose the **Accounts** or **Contacts** tab, type in the search box and pick the customer; the lists are searched on the server and shown ten to a page.
 2. Confirm the selected person or company before acting.
-3. If viewing a company, choose whether to **Include subsidiaries**.
-4. Review **Sales Orders**, **Delivery Challans**, **Invoices & Payments**, **Open Tickets** and **Installed Machinery**.
-5. Open the relevant record or use an available customer action to message, record payment, create a challan or create an invoice.
+3. On an account, choose whether to **Include subsidiaries**, then review **Sales Orders**, **Delivery Challans**, **Invoices & Payments**, **Open Tickets** and **Installed Machinery**.
+4. On an account, use **+ New Order**, **Create delivery challan**, **Create invoice** or **Record payment**; **Send** on an order, challan or invoice messages it to its buyer.
+5. On a person, use **Message customer** (see [Message customer](#page-contacts-message)). A person's orders and invoices are on their account: use **Orders & invoices** to open the account's 360, or **Link to an account** / **Create an account** if they have none.
+6. Use **Everything about this customer** to open any related list (orders, challans, invoices, collections, quotations, tickets, machines, inbox) already narrowed to this customer.
+7. On the screen you opened, the breadcrumb **Customers › Customer 360 · *name*** brings you back. A list narrowed to one customer shows a bar with **Show all** to see everyone again.
 
 **Related windows:** [Record payment / Create delivery challan / Create invoice](#dialog-ar-customer-actions-1).
 
-[Screenshot P023: Customer 360 page showing its principal sections and a suitable sample record; highlight “Customer 360” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
+[Screenshot P023: Customer 360 for a sample account showing the summary, the Everything about this customer panel and the breadcrumb; use approved sample data; obscure personal details, account secrets and private links.]
 
-**Tips and common errors:** Company totals may include subsidiaries when selected. Recording a payment does not itself prove the bank received money; use a verified reference.
+**Tips and common errors:** Company totals include subsidiaries only when ticked. A person's view does not sell: orders, challans and invoices belong to the account. Recording a payment does not itself prove the bank received money; use a verified reference.
+
+<a id="page-contacts-new"></a>
+
+### New contact / Edit contact
+
+**Open:** `/contacts/new`. **Other entry paths:** `/contacts/:id/edit`. **Who can use it:** Users who may create or edit contacts.
+
+**Purpose:** Add or update one person, with their WhatsApp number, role and company.
+
+**Prerequisites:** Contacts access.
+
+**Views and sections:** Phone and name; designation and decision role; account; state and cluster; visiting card scan.
+
+**Step-by-step**
+
+1. Enter the WhatsApp number in international format, for example 919821012345.
+2. Enter the name and designation, and link the contact to their account.
+3. Choose their role in buying decisions (for example Purchase, Maintenance or Plant Head).
+4. Choose the state and industrial cluster.
+5. Save. To fill the form faster, scan a visiting card photo first.
+
+**Fields:** see [Edit contact / New contact](#dialog-ar-contacts-1).
+
+[Screenshot P126: New contact page with a sample number, name and account; highlight the visiting card scan and Save.]
+
+**Tips and common errors:** Linking a contact to an account rolls their enquiries and activity up to the company and puts their orders on its Customer 360.
+
+<a id="page-contacts-message"></a>
+
+### Message customer
+
+**Open:** `/contacts/:id/message`, from **Message customer** on Customer 360. **Who can use it:** Users who may message customers.
+
+**Purpose:** Message one customer on WhatsApp, email or SMS from your workspace, logged in the inbox and on their timeline.
+
+**Prerequisites:** A connected channel; for WhatsApp outside the 24-hour window, an approved template.
+
+**Views and sections:** Channel and number; template and variables or free text; attachment; preview.
+
+**Step-by-step**
+
+1. Choose how to send it and, for WhatsApp, which of your numbers.
+2. Pick an approved template and fill its variables, or write free text inside an open WhatsApp conversation.
+3. Optionally attach an order, challan, invoice or payment receipt of the company (not on SMS): search by number and preview it.
+4. Click **Send message**. You return to Customer 360.
+
+[Screenshot P127: Message customer page with WhatsApp chosen, a template filled in and an invoice attached.]
+
+**Tips and common errors:** The attachment goes as a secure link. Outside WhatsApp's 24-hour window only an approved template can be sent.
 
 <a id="page-contacts-duplicates"></a>
 
@@ -816,6 +1015,8 @@ The routes below identify the screen if you need help finding it. Entries contai
 <a id="page-campaigns"></a>
 
 ### Campaigns
+
+**New in 1.2:** **New campaign** now opens its own page, `/campaigns/new` (name, number, approved template, then **Create Draft**). An opened campaign shows links to its template, its audience, results, the wallet and a follow-up, and writes `?open=` to the address so the link can be shared. Pages opened from it show the breadcrumb **Marketing › Campaign · *name***.
 
 **Open:** `/campaigns`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action.
 
@@ -1067,6 +1268,20 @@ The routes below identify the screen if you need help finding it. Entries contai
 | [Dealer network](#page-network) | `/network` |
 | [Leads for us](#page-network-incoming) | `/network/incoming` |
 | [Installed base](#page-installed-base) | `/installed-base` |
+| [New enquiry](#page-enquiries-new) | `/enquiries/new` |
+| [Quotation page](#page-quotations-new) | `/quotations/new`, `/quotations/:id/edit` |
+| [New sales order](#page-sales-orders-new) | `/sales/orders/new` |
+| [Sales order](#page-sales-orders-id) | `/sales/orders/:id` |
+| [New delivery challan](#page-sales-challans-new) | `/sales/challans/new` |
+| [Delivery challan](#page-sales-challans-id) | `/sales/challans/:id` |
+| [New invoice](#page-sales-invoices-new) | `/sales/invoices/new` |
+| [Sales invoice](#page-sales-invoices-id) | `/sales/invoices/:id` |
+| [Spare part rules](#page-spares-rules) | `/spares/rules` |
+| [Collection reminders](#page-collections-settings) | `/collections/settings` |
+| [Send a re-order link](#page-reorders-send) | `/reorders/send` |
+| [Re-order portal settings](#page-reorders-settings) | `/reorders/settings` |
+| [Dispatch an order](#page-reorders-dispatch) | `/reorders/dispatch/:quotationId` |
+| [Register a machine](#page-installed-base-new) | `/installed-base/new` |
 
 <a id="page-enquiries"></a>
 
@@ -1094,6 +1309,32 @@ The routes below identify the screen if you need help finding it. Entries contai
 [Screenshot P036: Enquiries page showing its principal sections and a suitable sample record; highlight “Enquiries” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
 **Tips and common errors:** Choose the correct pipeline before adding a deal. Marking a stage is different from issuing a quotation or receiving payment.
+
+<a id="page-enquiries-new"></a>
+
+### New enquiry
+
+**Open:** `/enquiries/new`, from **New enquiry** on Enquiries. **Who can use it:** Users who may create enquiries.
+
+**Purpose:** Put a new sales opportunity into the first stage of a pipeline.
+
+**Prerequisites:** Enquiry access; the customer as a contact, or their details to add one.
+
+**Views and sections:** Customer; pipeline; title; requirements; estimated value; lead source.
+
+**Step-by-step**
+
+1. Pick the customer contact, or add a new contact on the page.
+2. Choose the pipeline.
+3. Enter a title that names the equipment or project.
+4. Add the technical requirements, the estimated value in rupees and the lead source.
+5. Click **Create Enquiry**.
+
+**Fields:** see [New enquiry](#dialog-ar-enquiries-1).
+
+[Screenshot P128: New enquiry page with a sample customer, pipeline and value.]
+
+**Tips and common errors:** The estimated value feeds the forecast and funnel figures; leave it blank rather than guess.
 
 <a id="page-enquiries-pipelines"></a>
 
@@ -1155,160 +1396,305 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Purpose:** Prepare, issue and track customer quotations.
 
-**Prerequisites:** Quotation access; an open enquiry; products or line details; an eligible channel for customer delivery.
+**Prerequisites:** Quotation access; products or line details; an eligible channel for customer delivery.
 
-**Views and sections:** Quotation list; draft creation; line editor; issue/send window; PDF; signature; won/lost; deletion.
+**Views and sections:** Quotation list; Edit and View links; PDF; signature; won/lost; deletion.
 
 **Step-by-step**
 
-1. Click **New quotation**, select **Enquiry**, enter **Valid for (days)** and click **Create draft**.
-2. Open **Lines** to add or edit products, descriptions, quantities, prices, discounts and tax details.
-3. Review the quotation totals and terms, then save the editor.
-4. Click **Issue**, decide whether to send the PDF on WhatsApp, select an approved template if the reply window is closed, then confirm **Issue**.
-5. Use **PDF** to obtain the document and **Signature** to manage signing.
-6. Mark **Won** or **Lost** only when the outcome is known; give the requested reason when marking it lost.
+1. Click **New quotation**. The quotation opens as its own page (see [Quotation page](#page-quotations-new)).
+2. Click **Edit** on a draft or issued quotation to change its lines or issue a revision; **View** opens a won, lost or expired one read-only.
+3. Use **PDF** to download the document and **Signature** to manage signing.
+4. Mark **Won** or **Lost** only when the outcome is known; give the reason when marking it lost.
 
-**Related windows:** [New quotation](#dialog-ar-quotations-1); [Issue](#dialog-ar-quotations-2); [Create, send or withdraw a quotation-signing link](#dialog-ar-quote-signature-dialog-1).
+**Related windows:** [Create, send or withdraw a quotation-signing link](#dialog-ar-quote-signature-dialog-1).
 
-[Screenshot P039: Quotations page showing its principal sections and a suitable sample record; highlight “New quotation” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
+[Screenshot P039: Quotations list with sample rows; highlight New quotation, Edit and PDF. Use approved sample data.]
 
-**Tips and common errors:** A draft is not an issued quotation. Check tax, totals, validity and recipient before issuing. Stock or payment follow-on behaviour depends on workspace settings.
+**Tips and common errors:** A draft is not an issued quotation. Check tax, totals, validity and recipients before issuing.
+
+<a id="page-quotations-new"></a>
+
+### Quotation page
+
+**Open:** `/quotations/new`. **Other entry paths:** `/quotations/:id/edit`; `?enquiry=` starts from an enquiry, `?contact=` or `?account=` from a customer. **Who can use it:** Users who may create and issue quotations.
+
+**Purpose:** Write a quotation against an open enquiry, or by hand for any customer, and issue it on WhatsApp and/or by email with the PDF attached.
+
+**Prerequisites:** Quotation access. The catalogue and price lists price parts automatically; anything can also be typed. Email needs an email channel or the platform relay.
+
+**Views and sections:** Against an enquiry / Manual quotation; customer and Addressed to; lines; totals; issue options (Valid for, WhatsApp, Email, recipients).
+
+**Step-by-step**
+
+1. Choose **Against an enquiry** and pick it, or **Manual quotation** and pick a contact, or an account and the person there it is **Addressed to**.
+2. Search the catalogue to add parts, or click **Add a line by hand**.
+3. Check quantities, prices, discounts and GST, then the totals. On an existing quotation, **Check prices** brings list-priced lines up to today.
+4. Click **Save draft** (or **Save changes**) to keep it without sending.
+5. To issue: set **Valid for**, tick **WhatsApp** and/or **Email**, tick who at the account gets it and add other email addresses if needed, then click **Save and issue**.
+6. Click **PDF** to download it. A draft is rendered fresh; an issued quotation downloads exactly as sent.
+
+**Fields:** the line fields are described in [Quotation line editor](#window-004).
+
+[Screenshot P129: Quotation page for a manual quotation to an account, with two catalogue lines, totals and the issue options; highlight Save and issue.]
+
+**Tips and common errors:** A manual quotation opens an enquiry for the customer, so follow-ups and won/lost still work. Recipients must belong to the same account. Every send carries the PDF; outside WhatsApp's 24-hour window the PDF goes only with a template that has a document header, and the template picker says whether it attaches the PDF or sends text only. Issuing again sends a new revision and restarts the follow-ups. Won, lost and expired quotations open read-only.
 
 <a id="page-pipeline-ai-negotiator"></a>
 
-### Autonomous AI Negotiator
+### AI negotiator
 
-**Open:** `/pipeline/ai-negotiator`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
+**Open:** `/pipeline/ai-negotiator`. **Who can use it:** Signed-in users with access to this page; the workspace must include the plan feature.
 
-**Purpose:** Review assisted commercial negotiations and their price guardrails.
+**Purpose:** Work out a reply to a customer who is bargaining over an issued quotation, within your discount rules.
 
-**Prerequisites:** Negotiator access, suitable quotations and an approved business policy; AI/service availability.
+**Prerequisites:** An issued or revised quotation, and the negotiation rules set by a manager.
 
-**Views and sections:** Live sessions; status filters; policy guardrails; simulator; customer turn; manager intervention; quotation revision.
+**Views and sections:** Negotiations; outcome panel; Rules; Practice.
 
 **Step-by-step**
 
-1. Open **AI Negotiator** and review **Live Sessions**; use status filters to find the relevant negotiation.
-2. Open **Policy Guardrails** and set the policy name, strategy, target/floor margin, discount ceiling, round limit, concession step and approval threshold.
-3. Review the payment-term and volume levers and tone guidance, then click **Save Guardrails**.
-4. Use **AI Simulator**, enter the buyer persona, quotation amount, cost basis and requested discount, then click **Run AI Simulation**.
-5. For a live case review the customer turn and proposed commercial result.
-6. Use **Intervene as Sales Manager** for an authorised override and confirm the amount, terms and rationale.
-7. Use **Apply to Quotation & Issue Revision** only after the commercial result has been reviewed.
+1. Click **Start a negotiation**, pick the issued quotation and enter what the customer said.
+2. Click **Work out a reply**. The outcome panel at the top shows the suggested reply and price.
+3. Click **Copy reply** and send it to the customer yourself.
+4. Click **Apply to quotation** to put an agreed price on the quotation, or **Take over** to handle it without suggestions.
+5. Use **Rules** to set the limits, and **Practice** to try it on sample messages.
 
-**Related windows:** [Manager Commercial Intervention](#dialog-ar-ai-negotiator-1).
+[Screenshot P130: AI negotiator with a negotiation open and the outcome panel showing a suggested reply; highlight Copy reply.]
 
-[Screenshot P040: Autonomous AI Negotiator page showing its principal sections and a suitable sample record; highlight “AI Negotiator” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
-
-**Tips and common errors:** A simulation is not a customer agreement. Verify the cost basis and floor margin; never use a manager override to bypass required internal approval.
+**Tips and common errors:** It never messages the customer: you copy the reply and send it. Suggestions follow your rules; they are worked out by fixed rules, not by an AI model.
 
 <a id="page-pipeline-projection-plan"></a>
 
-### Projection Plan
+### Projection plan
 
-**Open:** `/pipeline/projection-plan`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
+**Open:** `/pipeline/projection-plan`. **Who can use it:** Signed-in users with access to this page; updating needs the update permission.
 
-**Purpose:** Build annual business plans and compare projections with available actuals.
+**Purpose:** Plan the year's sales targets from your real invoiced revenue and open pipeline, and track actuals against them.
 
-**Prerequisites:** Projection-plan access; chosen fiscal year and business assumptions; ERP connection for syncing actuals.
+**Prerequisites:** Issued sales invoices and enquiries give the plan its starting figures.
 
-**Views and sections:** Quarterly Trajectory & Realization; Industrial Business Line Contribution; AI Projection Strategic Assessment; Executive Sensitivity Narrative.
+**Views and sections:** Executive dashboard; plans; Lines; outcome panel.
 
 **Step-by-step**
 
-1. Open **Projection plan** and select the plan, quarter and business line.
-2. Use **New Plan**, enter **Plan Title**, **Fiscal Year** and strategic notes, then click **Create Plan**.
-3. Review **Executive Dashboard**, **Projection Matrix** and **All Plans**.
-4. To generate a proposed plan click **AI Auto-Generate Plan**, enter the growth target, gross margin and planning horizon, choose whether to include weighted pipeline, then click **Generate Strategic Plan**.
-5. Review the generated figures before using **Make Active**.
-6. Use **Scenario Sensitivity** to inspect the effect of assumptions and **Sync ERP Actuals** only when its connection is configured.
+1. Click **New plan**, enter the annual target, growth and gross margin, then click **Generate plan**. The plan starts from your net invoiced revenue of the last 12 months, plus open pipeline weighted by stage, and is saved as a draft.
+2. Check the steps shown in the outcome panel.
+3. On **Lines**, use **Edit targets** where needed, then sync the actuals: the outcome panel shows how many invoices and how much revenue were counted.
+4. **Activate** the plan you will work to; any other active plan becomes inactive.
 
-**Related windows:** [AI Strategic Projection Plan Generator](#dialog-ar-projection-plan-1); [Create Projection Plan](#dialog-ar-projection-plan-2).
+[Screenshot P131: Projection plan dashboard with an active plan and the outcome panel after a sync.]
 
-[Screenshot P041: Projection Plan page showing its principal sections and a suitable sample record; highlight “Projection plan” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
-
-**Tips and common errors:** Generated projections are planning estimates. A plan becoming active does not prove that its targets are achievable.
+**Tips and common errors:** If the workspace has no invoices or pipeline yet, the plan starts from a ₹10 Cr placeholder and says so; replace it with real targets. Opening the dashboard never creates a plan.
 
 <a id="page-sales-orders"></a>
 
 ### Sales orders
 
-**Open:** `/sales/orders`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
+**Open:** `/sales/orders`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action.
 
-**Purpose:** Record customer purchase orders and progress them to delivery and invoicing.
+**Purpose:** List customer orders and open each one on its own page.
 
-**Prerequisites:** Sales-order access; customer, item, quantity and agreed commercial details.
+**Prerequisites:** Sales order access.
 
-**Views and sections:** All; Draft; Confirmed; Partially dispatched; Dispatched; Completed; order detail; new order.
+**Views and sections:** Order list; customer filter; PDF and Excel registers.
 
 **Step-by-step**
 
-1. Click **New Sales order**.
-2. Select **Customer**, enter **Customer PO Number**, payment/delivery terms and shipping address.
-3. Click **Add line item** and complete each required product, quantity and price.
-4. Review totals and click **Create Sales Order**.
-5. Open **View** to inspect the order, then use **Confirm Sales Order** when approved.
-6. Use **Create Delivery Challan** or **Generate Sales Invoice** for the appropriate next business step and review the generated record.
+1. Click **New sales order** to raise one (see [New sales order](#page-sales-orders-new)).
+2. Click an order to open its page (see [Sales order](#page-sales-orders-id)).
+3. Download the list as PDF or Excel where offered.
 
-**Related windows:** [Sales Order: / ( / )](#dialog-ar-sales-orders-1); [Create New Sales Order](#dialog-ar-sales-orders-2).
+[Screenshot P040: Sales orders list with sample rows; highlight New sales order. Use approved sample data.]
 
-[Screenshot P042: Sales orders page showing its principal sections and a suitable sample record; highlight “New Sales order” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
+**Tips and common errors:** Opened from Customer 360, the list shows only that customer, with **Show all** to clear it.
 
-**Tips and common errors:** Do not confirm an order until quantities, prices and delivery terms match the customer’s agreement.
+<a id="page-sales-orders-new"></a>
+
+### New sales order
+
+**Open:** `/sales/orders/new`. **Who can use it:** Users who may create sales orders.
+
+**Purpose:** Raise a sales order for an account and its contact person, with their PO, terms and items.
+
+**Prerequisites:** The customer as an account (or a contact); products in the catalogue to pick items, which needs Products access (without it, type the lines by hand).
+
+**Views and sections:** Customer (Account or Contact); billing and site address; PO and terms; items.
+
+**Step-by-step**
+
+1. Choose the account, then the contact person who placed the order, or switch to **Contact** for a person with no account.
+2. The billing and site addresses fill in from the account; pick another shipping address if the goods go elsewhere.
+3. Enter the customer's PO and the terms.
+4. Type an item name and pick it from the catalogue: the item number, description, HSN, price and GST fill in.
+5. Click **Create Sales Order**. Its page opens.
+
+**Fields:** see [Create New Sales Order](#dialog-ar-sales-orders-2).
+
+[Screenshot P132: New sales order with an account, contact person, default shipping address and two catalogue items.]
+
+**Tips and common errors:** Opened from a customer's 360, the account and person are already chosen and you return there.
+
+<a id="page-sales-orders-id"></a>
+
+### Sales order
+
+**Open:** `/sales/orders/:id`, by opening an order. **Who can use it:** Users with access to Sales orders.
+
+**Purpose:** See one order on one page (PO, terms, site address, items, totals) and move it on.
+
+**Prerequisites:** An existing order.
+
+**Views and sections:** Order header; items with dispatched and invoiced quantities; totals; actions.
+
+**Step-by-step**
+
+1. Check the customer PO and the items.
+2. **Confirm** a draft order.
+3. From a confirmed order, click **Create delivery challan** or **Generate sales invoice**; each opens on its own page.
+4. **PDF** downloads the printed sales order; **Excel** saves it with its lines.
+5. **Back** returns to the list, or to the Customer 360 you came from.
+
+[Screenshot P133: Sales order page for a confirmed order with dispatched quantities; highlight Create delivery challan.]
+
+**Tips and common errors:** Each item shows how much has been dispatched and invoiced, so check it before raising another challan.
 
 <a id="page-sales-challans"></a>
 
 ### Delivery challans
 
-**Open:** `/sales/challans`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
+**Open:** `/sales/challans`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action.
 
-**Purpose:** Track goods leaving the business and their delivery.
+**Purpose:** List goods sent to customers and open each challan on its own page.
 
-**Prerequisites:** Delivery-challan access and a relevant order or existing challan.
+**Prerequisites:** Challan access.
 
-**Views and sections:** Draft; Dispatched; Delivered; Invoiced; detail; dispatch window.
+**Views and sections:** Challan list; customer filter; PDF and Excel registers.
 
 **Step-by-step**
 
-1. Open **Delivery challans** and filter by the required status.
-2. Click **View** for the consignment and review items and quantities.
-3. Click **Dispatch**, enter **Transporter Name**, **Vehicle Number**, optional **LR / Docket Number** and applicable **GST e-Way Bill Number**.
-4. Click **Confirm Dispatch** after checking the transport details.
-5. Use **Mark as Delivered** once delivery is confirmed.
-6. Use **Bill Delivery (Tax Invoice)** when the delivery should be invoiced.
+1. Click **New challan** to record goods sent (see [New delivery challan](#page-sales-challans-new)).
+2. Click a challan to open its page, where it is dispatched, delivered and billed (see [Delivery challan](#page-sales-challans-id)).
 
-**Related windows:** [Delivery Challan: / ( / )](#dialog-ar-delivery-challans-1); [Dispatch Challan](#dialog-ar-delivery-challans-2).
+[Screenshot P041: Delivery challans list with sample rows; highlight New challan.]
 
-[Screenshot P043: Delivery challans page showing its principal sections and a suitable sample record; highlight “Delivery challans” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
+**Tips and common errors:** Opened from Customer 360, the list shows only that account's challans, with **Show all** to clear it.
 
-**Tips and common errors:** A dispatched challan is not proof of receipt. Enter an e-way bill reference only when it applies and has been obtained.
+<a id="page-sales-challans-new"></a>
+
+### New delivery challan
+
+**Open:** `/sales/challans/new`. **Who can use it:** Users who may create challans.
+
+**Purpose:** Record goods sent to a customer, with the ship-to address and items.
+
+**Prerequisites:** The customer as an account or contact; catalogue products to pick items.
+
+**Views and sections:** Customer (Account or Contact); site address; challan type; items.
+
+**Step-by-step**
+
+1. Choose the account, then the contact person the goods go to, or switch to **Contact**.
+2. The site address fills in from the account's default shipping address; pick another if the goods go elsewhere.
+3. Set the challan type.
+4. Type an item name and pick it from the catalogue: item number, description, HSN and unit fill in.
+5. Save the draft. Its page opens, ready to dispatch.
+
+[Screenshot P134: New delivery challan with an account, site address and items.]
+
+**Tips and common errors:** From an account's Customer 360 the customer is filled in and you return there.
+
+<a id="page-sales-challans-id"></a>
+
+### Delivery challan
+
+**Open:** `/sales/challans/:id`; `?dispatch=1` opens the transport form. **Who can use it:** Users with access to Delivery challans.
+
+**Purpose:** Dispatch, deliver and bill one challan from one page.
+
+**Prerequisites:** An existing challan.
+
+**Views and sections:** Rule 55 purpose; transport; site address; goods; actions.
+
+**Step-by-step**
+
+1. Click **Dispatch consignment**, enter the transporter, vehicle number, LR and 12-digit e-Way Bill number, then **Confirm dispatch**.
+2. Click **Mark as delivered** when the goods arrive.
+3. Click **Bill delivery (tax invoice)** to raise the invoice; its page opens.
+4. **PDF** downloads the printed challan; **Excel** saves it with its items.
+
+**Fields:** see [Dispatch Challan](#dialog-ar-delivery-challans-2).
+
+[Screenshot P135: Delivery challan page after dispatch, showing transport details; highlight Mark as delivered.]
+
+**Tips and common errors:** Check the e-Way Bill number has 12 digits before confirming.
 
 <a id="page-sales-invoices"></a>
 
 ### Sales invoices
 
-**Open:** `/sales/invoices`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
+**Open:** `/sales/invoices`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action.
 
-**Purpose:** Issue customer invoices and record verified receipts.
+**Purpose:** List GST invoices to customers, their balances and payments.
 
-**Prerequisites:** Sales-invoice access; customer/item data and, for receipt entry, a verified payment.
+**Prerequisites:** Sales invoice access.
 
-**Views and sections:** Draft; Issued; Partially Paid; Paid; invoice detail; record payment.
+**Views and sections:** Invoice list; customer filter; PDF and Excel registers.
 
 **Step-by-step**
 
-1. Open **Sales invoices** and select the relevant status filter.
-2. Click **View** and review customer, invoice lines, taxes and amount.
-3. Click **Issue Tax Invoice** when the invoice is ready.
-4. To record a receipt choose **Record Payment**, enter **Payment Amount**, **Payment Mode**, **UTR / Transaction Ref #** and remarks.
-5. Click **Confirm Payment** and check the remaining balance.
-6. Open **Customer 360 Dossier** for the customer’s wider account history.
+1. Click **New sales invoice** to raise one (see [New invoice](#page-sales-invoices-new)).
+2. Click an invoice to open its page, where it is issued and paid (see [Sales invoice](#page-sales-invoices-id)).
 
-**Related windows:** [Tax Invoice: / ( / )](#dialog-ar-sales-invoices-1); [Record Payment for](#dialog-ar-sales-invoices-2).
+[Screenshot P042: Sales invoices list with sample rows; highlight New sales invoice.]
 
-[Screenshot P044: Sales invoices page showing its principal sections and a suitable sample record; highlight “Sales invoices” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
+**Tips and common errors:** Opened from Customer 360, the list shows only that account's invoices, with **Show all** to clear it.
 
-**Tips and common errors:** Manual payment entry records a receipt; it does not collect funds from a bank. Check the reference and outstanding amount before saving.
+<a id="page-sales-invoices-new"></a>
+
+### New invoice
+
+**Open:** `/sales/invoices/new`. **Who can use it:** Users who may create invoices.
+
+**Purpose:** Raise a GST invoice with the customer's GSTIN, terms and items.
+
+**Prerequisites:** The customer; their GSTIN and addresses fill in from their account.
+
+**Views and sections:** Customer and GSTIN; dates; items.
+
+**Step-by-step**
+
+1. Check the customer and their GSTIN, the dates and the items.
+2. Save it as a draft. Its page opens, where you issue it once it is checked.
+
+[Screenshot P136: New invoice page with customer GSTIN and items.]
+
+**Tips and common errors:** From an account, the customer is filled in and you return to its Customer 360.
+
+<a id="page-sales-invoices-id"></a>
+
+### Sales invoice
+
+**Open:** `/sales/invoices/:id`; `?pay=1` opens the payment form. **Who can use it:** Users with access to Sales invoices; recording payments needs its own permission.
+
+**Purpose:** Issue one tax invoice and record its payments.
+
+**Prerequisites:** An existing invoice.
+
+**Views and sections:** GSTIN; lines with CGST and SGST or IGST; totals; balance due; payments.
+
+**Step-by-step**
+
+1. Check the lines and taxes, then click **Issue tax invoice**. Issuing also enters it in the GST register.
+2. Click **Record payment**, enter the amount, mode and UTR, then **Confirm payment**.
+3. **PDF** downloads the printed invoice with its GST split; **Excel** saves it with its lines and payments.
+4. **Back** returns to the list, or to the Customer 360 you came from.
+
+**Fields:** see [Record Payment for](#dialog-ar-sales-invoices-2).
+
+[Screenshot P137: Sales invoice page with GST split and balance due; highlight Record payment.]
+
+**Tips and common errors:** Recording a payment does not move money; enter the bank's UTR so it can be reconciled. The balance and overdue mark update once the payment is confirmed.
 
 <a id="page-renewals"></a>
 
@@ -1338,6 +1724,8 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 ### Spares due
 
+**New in 1.2:** spare part rules are kept on their own page, [Spare part rules](#page-spares-rules) (`/spares/rules`).
+
 **Open:** `/spares`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
 
 **Purpose:** Review replacement parts due on installed equipment and manage reminders.
@@ -1358,6 +1746,32 @@ The routes below identify the screen if you need help finding it. Entries contai
 [Screenshot P046: Spares due page showing its principal sections and a suitable sample record; highlight “Spares due” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
 **Tips and common errors:** Replacing a rule does not physically replace a part. Repeated reminders contact customers; check follow-up count and consent first.
+
+<a id="page-spares-rules"></a>
+
+### Spare part rules
+
+**Open:** `/spares/rules`, from Spares due. **Who can use it:** Users who may manage spares rules.
+
+**Purpose:** Say which spare parts each machine model needs and how often, so spares fall due on their own.
+
+**Prerequisites:** Machines registered in the installed base, with their model.
+
+**Views and sections:** Rule list (machine model, part number, description, default quantity, interval, lead time); rule form.
+
+**Step-by-step**
+
+1. Enter the **Machine Make (optional)** and **Machine Model**.
+2. Enter the **Spare Part Number**, **Part Description** and **Default Quantity**.
+3. Enter the **Replacement Interval (Days)** and, if known, the **Procurement Lead Time (Days)**.
+4. Save the rule. Use **Edit** or **Delete** on a row to change it, and **Cancel Edit** to stop editing.
+5. Click **Back to Spares Due** when finished.
+
+**Fields:** see [Spare part rules](#dialog-ar-spares-2).
+
+[Screenshot P138: Spare part rules page with two sample rules and the rule form.]
+
+**Tips and common errors:** The model must match the model on the machine records, or the rule will not apply to them.
 
 <a id="page-collections"></a>
 
@@ -1383,33 +1797,124 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Tips and common errors:** Check that a payment is not already received before reminding a customer. A reminder being sent does not mean the balance was paid.
 
+<a id="page-collections-settings"></a>
+
+### Collection reminders
+
+**Open:** `/collections/settings`, from Collections. **Who can use it:** Users who may manage collections settings.
+
+**Purpose:** Choose the WhatsApp template payment reminders use, the credit days and the pay link.
+
+**Prerequisites:** An approved reminder template; for the pay link, a payment gateway connected in **Settings › Payments**.
+
+**Views and sections:** Template; credit days; Send reminders automatically; pay link.
+
+**Step-by-step**
+
+1. Pick the approved template and check the credit days used when the ERP gives no due date.
+2. Tick **Send reminders automatically**, and the pay link if wanted.
+3. Click **Save**.
+
+**Fields:** see [Collection reminders](#dialog-ar-collections-1).
+
+[Screenshot P139: Collection reminders page with a template chosen and automatic reminders ticked.]
+
+**Tips and common errors:** The pay link can be ticked only once a payment gateway is connected.
+
 <a id="page-reorders"></a>
 
 ### Re-orders
 
 **Open:** `/reorders`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
 
-**Purpose:** Manage the customer reorder portal, buyer companies and shipping.
+**Purpose:** See what customers have sent from their re-order portal, and dispatch won orders.
 
-**Prerequisites:** Re-order portal access; products/prices and, for immediate checkout, enabled payment links.
+**Prerequisites:** Re-order portal access; products and prices and, for immediate checkout, enabled payment links.
 
-**Views and sections:** Incoming requests; Companies/buyers/credit; Shipping/dispatch; portal settings; link sending; public catalogue and password options.
+**Views and sections:** Waiting for the customer's approver; incoming requests; won orders to dispatch; delivery status.
 
 **Step-by-step**
 
-1. Open **Re-orders** and review incoming customer requests.
-2. Open **Portal settings**, enable the portal, choose quotation or order-and-pay mode, and enter heading, introduction, link lifetime, stock visibility and any minimum order.
-3. Choose whether password sign-in and the public catalogue are enabled; choose whether public list prices are visible, then **Save**.
-4. Use **Companies** to review buyers, approval/credit settings and the relevant company record.
-5. Click **Send a re-order link**, choose the customer and complete the link action.
-6. Use **Shipping** to review eligible orders, choose **Dispatch**, enter carrier/tracking details and confirm.
-7. Update **In transit**, **Delivered** or **Problem** only when the status is known.
+1. Open **Re-orders** and review incoming requests. Each arrives as a draft quotation to check and issue.
+2. Click **Portal settings** to set how the portal works (see [Re-order portal settings](#page-reorders-settings)).
+3. Click **Send a re-order link** to give a customer their personal page (see [Send a re-order link](#page-reorders-send)).
+4. On a won order, click **Dispatch** to record how it was sent (see [Dispatch an order](#page-reorders-dispatch)).
+5. Update **In transit**, **Delivered** or **Problem** only when the status is known.
 
-**Related windows:** [Customer company: buyers and credit](#dialog-ar-reorder-buyers-1); [Dispatch](#dialog-ar-reorder-dispatch-1); [Send a re-order link](#dialog-ar-reorders-1); [Re-order portal settings](#dialog-ar-reorders-2); [Re-order link for](#dialog-ar-send-reorder-link-1).
+[Screenshot P048: Re-orders page with sample incoming requests; highlight Portal settings and Send a re-order link. Use approved sample data.]
 
-[Screenshot P048: Re-orders page showing its principal sections and a suitable sample record; highlight “Re-orders” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
+**Tips and common errors:** Buyers and credit are now set from **Accounts** ([Buyers & credit](#page-contacts-accounts-credit)), and shipping settings from **Settings › Shipping** ([Shipping](#page-settings-shipping)). If the portal is off, a banner says so; switch it on in Portal settings before sending links.
 
-**Tips and common errors:** Order-and-pay requires configured payments. Unpriced items may still need a draft quotation. Public price visibility is a separate decision from enabling the catalogue.
+<a id="page-reorders-send"></a>
+
+### Send a re-order link
+
+**Open:** `/reorders/send`; `?contact=` skips the customer picker. **Who can use it:** Users who may send re-order links.
+
+**Purpose:** Give one customer their personal re-order page on WhatsApp.
+
+**Prerequisites:** The portal switched on; the customer as a contact with a WhatsApp number.
+
+**Views and sections:** Customer; the link.
+
+**Step-by-step**
+
+1. Choose the customer, then click **Continue**. The link goes on WhatsApp.
+2. If it could not be sent, copy the link shown into an email or another chat.
+3. Click **Done** to return to Re-orders.
+
+[Screenshot P140: Send a re-order link page showing the link after sending.]
+
+**Tips and common errors:** The link is personal to that customer; do not forward it to someone else.
+
+<a id="page-reorders-settings"></a>
+
+### Re-order portal settings
+
+**Open:** `/reorders/settings`. **Who can use it:** Users with the re-order portal settings permission.
+
+**Purpose:** Decide what a customer request becomes, and how the portal looks and signs customers in.
+
+**Prerequisites:** The re-order portal add-on for the workspace.
+
+**Views and sections:** On/off; request becomes a draft quotation or an order paid by link; heading and introduction; link lifetime; minimum order; stock display; sign-in and public catalogue; WhatsApp templates.
+
+**Step-by-step**
+
+1. Switch the portal on and choose what happens when a customer sends a request.
+2. Set the heading, link days, minimum order and stock display.
+3. Choose whether password sign-in and the public catalogue are on, and whether list prices are public.
+4. Choose the WhatsApp templates, then click **Save**.
+
+**Fields:** see [Re-order portal settings](#dialog-ar-reorders-2).
+
+[Screenshot P141: Re-order portal settings with the portal on and quotation mode chosen.]
+
+**Tips and common errors:** Order-and-pay needs payments configured. Public price visibility is a separate choice from turning the catalogue on.
+
+<a id="page-reorders-dispatch"></a>
+
+### Dispatch an order
+
+**Open:** `/reorders/dispatch/:quotationId`, from **Dispatch** on a won re-order. **Who can use it:** Users who may dispatch orders.
+
+**Purpose:** Record how a won re-order was sent, and tell the customer on WhatsApp with the tracking link.
+
+**Prerequisites:** A won re-order. Shiprocket rates need Shiprocket set up in **Settings › Shipping**.
+
+**Views and sections:** Transporter and docket; Shiprocket rates; tracking link; expected date; packages; freight.
+
+**Step-by-step**
+
+1. Enter the transporter and the docket, LR or AWB number, or get Shiprocket rates and pick a courier.
+2. Add the tracking link, expected date, packages and freight if known.
+3. Click **Dispatch**.
+
+**Fields:** see [Dispatch](#dialog-ar-reorder-dispatch-1).
+
+[Screenshot P142: Dispatch an order page with transporter and docket filled in.]
+
+**Tips and common errors:** Transporters you book directly work without Shiprocket.
 
 <a id="page-network"></a>
 
@@ -1489,6 +1994,31 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Tips and common errors:** Serial numbers help distinguish identical machines. Review import matches before applying values; retiring preserves a different business meaning from deleting.
 
+<a id="page-installed-base-new"></a>
+
+### Register a machine
+
+**Open:** `/installed-base/new`. **Who can use it:** Users who may manage the installed base.
+
+**Purpose:** Add a machine so its AMC, service and spares follow it.
+
+**Prerequisites:** The owner as a contact. From an account, the owner is filled in.
+
+**Views and sections:** Owner; description; serial number; AMC end date, value and term; make; model; site.
+
+**Step-by-step**
+
+1. Choose the owner contact and describe the machine.
+2. Add its serial number, AMC end date, AMC value (before GST) and term in months (12 if left blank).
+3. Add the make, model, site name and site city.
+4. Click **Register**.
+
+**Fields:** see [Edit machine / Register a machine](#dialog-ar-installed-base-2).
+
+[Screenshot P143: Register a machine page with sample machine details.]
+
+**Tips and common errors:** Enter the model exactly as your spare part rules use it.
+
 <a id="inventory-and-purchasing"></a>
 
 ## Inventory and purchasing
@@ -1502,6 +2032,15 @@ The routes below identify the screen if you need help finding it. Entries contai
 | [Vendor bills](#page-purchasing-bills) | `/purchasing/bills` |
 | [Vendor debit notes](#page-purchasing-debit-notes) | `/purchasing/debit-notes` |
 | [Vendor 360](#page-purchasing-vendor-360) | `/purchasing/vendor-360` |
+| [New supplier / Edit supplier](#page-purchasing-suppliers-new) | `/purchasing/suppliers/new`, `/purchasing/suppliers/:id/edit` |
+| [New purchase order / Edit purchase order](#page-purchasing-orders-new) | `/purchasing/orders/new`, `/purchasing/orders/:id/edit` |
+| [Inward goods receipt](#page-purchasing-grn-new) | `/purchasing/grn/new` |
+| [Goods receipt](#page-purchasing-grn-id) | `/purchasing/grn/:id` |
+| [QC inspection](#page-purchasing-grn-inspect) | `/purchasing/grn/:id/inspect` |
+| [Record vendor bill](#page-purchasing-bills-new) | `/purchasing/bills/new` |
+| [Vendor bill](#page-purchasing-bills-id) | `/purchasing/bills/:id` |
+| [Issue debit note](#page-purchasing-debit-notes-new) | `/purchasing/debit-notes/new` |
+| [Debit note](#page-purchasing-debit-notes-id) | `/purchasing/debit-notes/:id` |
 
 <a id="page-stock"></a>
 
@@ -1554,133 +2093,313 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 <a id="page-purchasing"></a>
 
-### Purchasing
+### Purchasing (suppliers and purchase orders)
 
 **Open:** `/purchasing`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
 
-**Purpose:** Maintain suppliers and prepare stock purchase orders.
+**Purpose:** Find suppliers and prepare stock purchase orders.
 
-**Prerequisites:** Purchasing/inventory access; supplier records, products and a receiving location.
+**Prerequisites:** Purchasing/inventory access; products and a receiving location.
 
-**Views and sections:** Suppliers; draft purchase orders; expected replenishment; order lines; mark sent; receive; supplier editor.
+**Views and sections:** Supplier directory; draft purchase orders; expected replenishment; mark sent; receive.
 
 **Step-by-step**
 
-1. Use **New supplier** to enter supplier name and optional GSTIN, lead time, contact and address, then **Save**.
-2. Click **New order**, select **Supplier**, **Receive into** and expected date.
-3. Add each part, quantity and price, then click **Save draft**.
-4. Review the order and click **Mark sent** only when it has been sent to the supplier.
-5. When goods arrive choose **Receive**, enter actual arrived quantities, serial/batch/expiry details and supplier reference, then **Receive**.
-6. Review the resulting stock movement.
+1. In the supplier directory, type any word of a supplier's name, GSTIN, phone, email or contact person. Use the status chips, **Only suppliers we owe money** and the sort (name, most owed, newest) to narrow the list; 50 suppliers show per page.
+2. Click **New supplier**, or **Edit** on a supplier; each opens its own page (see [New supplier / Edit supplier](#page-purchasing-suppliers-new)).
+3. Click **New order** to raise a purchase order on its own page (see [New purchase order](#page-purchasing-orders-new)).
+4. Click **Mark sent** only when the order has gone to the supplier.
+5. When goods arrive choose **Receive**, enter the quantities that actually arrived, serial, batch or expiry details and the supplier reference, then **Receive**.
 
-**Related windows:** [Edit / New purchase order](#dialog-ar-purchasing-1); [Receive](#dialog-ar-purchasing-2); [Edit supplier / New supplier](#dialog-ar-purchasing-3).
+**Related windows:** [Receive](#dialog-ar-purchasing-2).
 
-[Screenshot P054: Purchasing page showing its principal sections and a suitable sample record; highlight “New supplier” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
+[Screenshot P054: Purchasing supplier directory with search, status chips and the We owe column; highlight New supplier. Use approved sample data.]
 
-**Tips and common errors:** This stock-order workflow is separate from the detailed GRN/vendor-bill screens. Enter actual received quantities, not just the ordered quantities.
+**Tips and common errors:** The **We owe** column shows only to users who can see vendor bills. The search, chips and sort stay in the page address, so a link shares the same view. A blacklisted supplier cannot be ordered from.
+
+<a id="page-purchasing-suppliers-new"></a>
+
+### New supplier / Edit supplier
+
+**Open:** `/purchasing/suppliers/new`. **Other entry paths:** `/purchasing/suppliers/:id/edit`. **Who can use it:** Users who may manage suppliers.
+
+**Purpose:** Keep each supplier's contact, addresses and bank account in one place, and blacklist one you no longer buy from.
+
+**Prerequisites:** Purchasing access.
+
+**Views and sections:** Name, GSTIN and lead time; primary contact and designation; billing and shipping addresses; bank (account name, bank, account number, IFSC, branch); remarks; blacklist.
+
+**Step-by-step**
+
+1. Enter the name, GSTIN and lead time.
+2. Add the primary contact, billing and shipping addresses and bank details.
+3. To stop buying from the supplier, tick **Blacklist this supplier** and give the reason.
+4. Click **Add supplier** (or **Save changes**).
+
+[Screenshot P144: New supplier page with contact, addresses and bank details; obscure the account number.]
+
+**Tips and common errors:** Blacklisting keeps the supplier's history but stops new purchase orders. Check bank details against the supplier's cancelled cheque or letter before saving.
+
+<a id="page-purchasing-orders-new"></a>
+
+### New purchase order / Edit purchase order
+
+**Open:** `/purchasing/orders/new`. **Other entry paths:** `/purchasing/orders/:id/edit` (drafts); `?supplier=` from Vendor 360 fixes the supplier. **Who can use it:** Users who may manage inventory orders.
+
+**Purpose:** Order parts from a supplier at the agreed price.
+
+**Prerequisites:** The supplier (not blacklisted); catalogue parts; a store to receive into.
+
+**Views and sections:** Supplier; delivery store; expected date; parts.
+
+**Step-by-step**
+
+1. Check the supplier, the store it is delivered to and the expected date.
+2. Search the catalogue to add parts, or add the parts below minimum stock in one click.
+3. Click **Save draft order** (or **Save changes**).
+4. Mark it sent from Purchasing once it has gone out.
+
+**Fields:** see [Edit / New purchase order](#dialog-ar-purchasing-1).
+
+[Screenshot P145: New purchase order page with a supplier and three parts.]
+
+**Tips and common errors:** From Vendor 360 the supplier is filled in and you return to their Vendor 360. A sent order can no longer be edited.
 
 <a id="page-purchasing-grn"></a>
 
 ### Goods receipt (GRN)
 
-**Open:** `/purchasing/grn`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
+**Open:** `/purchasing/grn`. **Who can use it:** Signed-in users with goods receipt access; the workspace must also include the relevant plan feature.
 
-**Purpose:** Record incoming goods and their quality inspection.
+**Purpose:** List goods received at the gate, their QC result and what follows.
 
-**Prerequisites:** Goods-receipt access; supplier, delivery reference, gate entry and received item details.
+**Prerequisites:** Purchase orders for the goods.
 
-**Views and sections:** All GRNs; Under QC; Approved; Billed; dossier; inward entry; inspection.
+**Views and sections:** Receipt list; supplier filter; bill and debit-note actions.
 
 **Step-by-step**
 
-1. Click **Inward Gate Entry (GRN)**.
-2. Enter **Supplier Name**, purchase-order reference, **Vendor Delivery Challan #**, **Gate Entry #**, vehicle and transporter details.
-3. Click **Add Item** and record each received item and quantity.
-4. Click **Save & Move to QC Inspection**.
-5. Choose **Inspect**, enter the quality inspector, summary and accepted/rejected details, then **Confirm & Approve Put-Away**.
-6. Use **Create Vendor Bill** for approved receipt billing or **Issue Debit Note for Rejections** where appropriate.
+1. Click **Inward GRN** to record goods at the gate (see [Inward goods receipt](#page-purchasing-grn-new)).
+2. Click a receipt to open it (see [Goods receipt](#page-purchasing-grn-id)).
+3. Use a receipt's bill or debit-note action to start the bill or claim from it; its accepted or rejected items fill in.
 
-**Related windows:** [GRN Dossier](#dialog-ar-goods-receipt-notes-1); [Complete Material QC Inspection](#dialog-ar-goods-receipt-notes-2); [Record Inward Gate Entry (GRN)](#dialog-ar-goods-receipt-notes-3).
+[Screenshot P055: Goods receipt list with sample receipts; highlight Inward GRN.]
 
-[Screenshot P055: Goods receipt (GRN) page showing its principal sections and a suitable sample record; highlight “Inward Gate Entry (GRN)” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
+**Tips and common errors:** From Vendor 360, the list shows only that supplier, with a bar to show all.
 
-**Tips and common errors:** Quality approval should match the actual inspection. Review rejected quantities before generating a debit note.
+<a id="page-purchasing-grn-new"></a>
+
+### Inward goods receipt
+
+**Open:** `/purchasing/grn/new`. **Who can use it:** Users who may create goods receipts.
+
+**Purpose:** Record goods at the gate against the supplier's challan and purchase order.
+
+**Prerequisites:** A sent purchase order.
+
+**Views and sections:** Supplier; purchase order; challan number; received quantities.
+
+**Step-by-step**
+
+1. Check the supplier and pick the purchase order; its open items fill in.
+2. Enter the challan number, then the quantity actually received on each line.
+3. Click **Save & send to QC**. Stock is posted once QC accepts the goods.
+
+**Fields:** see [Record Inward Gate Entry (GRN)](#dialog-ar-goods-receipt-notes-3).
+
+[Screenshot P146: Inward goods receipt with one line received short and flagged.]
+
+**Tips and common errors:** A line received short of the challan is flagged so you can raise it with the supplier.
+
+<a id="page-purchasing-grn-id"></a>
+
+### Goods receipt
+
+**Open:** `/purchasing/grn/:id`. **Who can use it:** Users with goods receipt access.
+
+**Purpose:** See one goods receipt: gate entry, QC result, bins and rejections, with the next step one click away.
+
+**Prerequisites:** An existing receipt.
+
+**Step-by-step**
+
+1. Check the received items and their QC result.
+2. Click **Record QC inspection**, **Record a bill** or **Debit note for rejections**.
+
+**Fields:** see [GRN Dossier](#dialog-ar-goods-receipt-notes-1).
+
+[Screenshot P147: Goods receipt page after QC with one rejected line.]
+
+**Tips and common errors:** Stock is posted only for the quantity QC accepted.
+
+<a id="page-purchasing-grn-inspect"></a>
+
+### QC inspection
+
+**Open:** `/purchasing/grn/:id/inspect`. **Who can use it:** Users with the goods receipt inspect permission.
+
+**Purpose:** Record what passed QC and what was rejected, line by line.
+
+**Prerequisites:** A goods receipt sent to QC.
+
+**Step-by-step**
+
+1. Enter who inspected.
+2. Enter the accepted or rejected quantity and the bin for each line, with a reason for anything rejected.
+3. Click **Confirm inspection**. Accepted quantities are received on the purchase order automatically.
+
+**Fields:** see [Complete Material QC Inspection](#dialog-ar-goods-receipt-notes-2).
+
+[Screenshot P148: QC inspection page with accepted and rejected quantities.]
+
+**Tips and common errors:** Rejected quantities can then become a vendor debit note.
 
 <a id="page-purchasing-bills"></a>
 
 ### Vendor bills
 
-**Open:** `/purchasing/bills`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
+**Open:** `/purchasing/bills`. **Who can use it:** Signed-in users with vendor bill access; approving and paying need their own permissions.
 
-**Purpose:** Record supplier invoices, approve them and track disbursements.
+**Purpose:** List supplier tax invoices, their approval and payment.
 
-**Prerequisites:** Vendor-bill access; supplier invoice and relevant order/receipt references; verified payment details when recording a disbursement.
+**Prerequisites:** Suppliers and, for matching, goods receipts.
 
-**Views and sections:** Pending Approval; Approved; Partially Paid; Fully Paid; bill detail; create bill; disbursement.
+**Views and sections:** Bill list; supplier filter; overdue bills.
 
 **Step-by-step**
 
-1. Click **Record Vendor Bill** and enter supplier, GSTIN, **Vendor Invoice Number**, PO/GRN references and the applicable TDS section.
-2. Add the invoice lines and review quantities, taxes and totals.
-3. Click **Save & Perform 3-Way Match** and inspect any mismatch before approval.
-4. Use **Approve** when the bill is authorised.
-5. Click **Disburse Payment**, enter amount, mode, **Bank UTR / Transaction Reference**, applicable TDS reference and remarks, then confirm.
-6. Use **Mark GSTR-2B Reconciled** only after the corresponding reconciliation has been performed.
+1. Click **Record a bill** to enter a supplier's invoice (see [Record vendor bill](#page-purchasing-bills-new)).
+2. Click a bill to open it, then approve, pay or cancel it there (see [Vendor bill](#page-purchasing-bills-id)).
 
-**Related windows:** [Vendor Bill: / ( / )](#dialog-ar-vendor-bills-1); [Disburse Vendor Payment](#dialog-ar-vendor-bills-2); [Record Vendor Bill (Purchase Invoice)](#dialog-ar-vendor-bills-3).
+[Screenshot P056: Vendor bills list with an overdue bill; highlight Record a bill.]
 
-[Screenshot P056: Vendor bills page showing its principal sections and a suitable sample record; highlight “Record Vendor Bill” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
+**Tips and common errors:** Draft bills can be approved from their page. MSME suppliers must be paid within 45 days of acceptance.
 
-**Tips and common errors:** Recording a disbursement is not a bank transfer. Do not mark a bill reconciled just because it was entered.
+<a id="page-purchasing-bills-new"></a>
+
+### Record vendor bill
+
+**Open:** `/purchasing/bills/new`; `?grn=` starts from a goods receipt. **Who can use it:** Users who may create vendor bills.
+
+**Purpose:** Record a supplier's tax invoice with GST and TDS worked out, matched against the order and the goods accepted.
+
+**Prerequisites:** The supplier; ideally the goods receipt.
+
+**Views and sections:** Invoice upload; supplier; invoice details; goods receipt; lines; GST (CGST and SGST, or IGST); TDS.
+
+**Step-by-step**
+
+1. Upload the supplier's invoice (PDF or photo) to fill the form, or pick the supplier and enter the invoice details.
+2. Pick the goods receipt; its accepted items and order rates fill in.
+3. Choose the supply type (CGST and SGST within the state, IGST between states).
+4. Check the rates and GST, then click **Save bill**. Approve it from its page.
+
+**Fields:** see [Record Vendor Bill (Purchase Invoice)](#dialog-ar-vendor-bills-3).
+
+[Screenshot P149: Record vendor bill page filled from an uploaded invoice; highlight the goods receipt.]
+
+**Tips and common errors:** The supply type is chosen by hand, because the workspace's own GSTIN is not used to work it out. Check the figures read from an uploaded invoice before saving.
+
+<a id="page-purchasing-bills-id"></a>
+
+### Vendor bill
+
+**Open:** `/purchasing/bills/:id`. **Who can use it:** Users with vendor bill access; approving and paying need their own permissions.
+
+**Purpose:** Everything about one supplier bill: invoice, PO and GRN links, tax, lines and payments.
+
+**Step-by-step**
+
+1. Check the 3-way match and the lines.
+2. Click **Approve**, then **Pay** to record the bank transfer against it. Each asks for confirmation first.
+3. Cancel a bill only if it was entered in error.
+
+**Fields:** see [Vendor Bill](#dialog-ar-vendor-bills-1) and [Disburse Vendor Payment](#dialog-ar-vendor-bills-2).
+
+[Screenshot P150: Vendor bill page with the 3-way match and a payment recorded.]
+
+**Tips and common errors:** A bill with payments recorded can no longer be cancelled. Recording a payment does not move money.
 
 <a id="page-purchasing-debit-notes"></a>
 
-### Vendor debit notes
+### Debit notes
 
-**Open:** `/purchasing/debit-notes`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
+**Open:** `/purchasing/debit-notes`. **Who can use it:** Signed-in users with debit note access; issuing needs its own permission.
 
-**Purpose:** Record amounts to recover or deduct from a supplier.
-
-**Prerequisites:** Debit-note access; a valid reason and supporting supplier, bill or rejected-goods references.
+**Purpose:** List claims against suppliers for rejected, short or over-charged goods.
 
 **Step-by-step**
 
-1. Click **Issue Debit Note**.
-2. Enter **Supplier Name**, relevant bill/GRN references, **GST Supply Type** and **Reason for Debit Note**.
-3. Use **Add Item** to enter the affected items, quantities and values.
-4. Review the total and click **Issue Debit Note**.
-5. Open **View** to inspect it later.
-6. Use **Mark as Settled / Deducted** only once the supplier adjustment has been confirmed.
+1. Click **New debit note** to raise a claim (see [Issue debit note](#page-purchasing-debit-notes-new)).
+2. Click a debit note to issue, settle or cancel it (see [Debit note](#page-purchasing-debit-notes-id)).
 
-**Related windows:** [Vendor Debit Note](#dialog-ar-vendor-debit-notes-1); [Create Vendor Debit Note](#dialog-ar-vendor-debit-notes-2).
+[Screenshot P057: Debit notes list with sample rows.]
 
-[Screenshot P057: Vendor debit notes page showing its principal sections and a suitable sample record; highlight “Issue Debit Note” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
+**Tips and common errors:** Draft debit notes are issued from their page.
 
-**Tips and common errors:** Issuing a debit note does not by itself prove that the supplier refunded or accepted the deduction.
+<a id="page-purchasing-debit-notes-new"></a>
+
+### Issue debit note
+
+**Open:** `/purchasing/debit-notes/new`; `?grn=` starts from a goods receipt. **Who can use it:** Users who may create debit notes.
+
+**Purpose:** Claim back rejected, short or over-charged goods from a supplier.
+
+**Step-by-step**
+
+1. Check the supplier and pick the bill or goods receipt it is against. From a receipt, the rejected items fill in, priced from the bill.
+2. Choose a reason and check the items, rates and supply type.
+3. Click **Save debit note**, then issue it from its page.
+
+**Fields:** see [Create Vendor Debit Note](#dialog-ar-vendor-debit-notes-2).
+
+[Screenshot P151: Issue debit note page started from a receipt with rejected items.]
+
+**Tips and common errors:** Saving keeps a draft; the supplier is not told until you issue it.
+
+<a id="page-purchasing-debit-notes-id"></a>
+
+### Debit note
+
+**Open:** `/purchasing/debit-notes/:id`. **Who can use it:** Users with debit note access.
+
+**Purpose:** Everything about one debit note: reason, bill and GRN, items and GST.
+
+**Step-by-step**
+
+1. Check the reason, items and total.
+2. Click **Issue to supplier**.
+3. Once the supplier adjusts or refunds it, click **Mark settled**. Each action asks for confirmation first.
+
+**Fields:** see [Vendor Debit Note](#dialog-ar-vendor-debit-notes-1).
+
+[Screenshot P152: Debit note page for an issued note; highlight Mark settled.]
+
+**Tips and common errors:** Cancel only a note raised in error.
 
 <a id="page-purchasing-vendor-360"></a>
 
 ### Vendor 360
 
-**Open:** `/purchasing/vendor-360`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
+**Open:** `/purchasing/vendor-360`. **Other entry paths:** `/purchasing/vendor-360/:id`. **Who can use it:** Signed-in users with Vendor 360 access; the workspace must also include the relevant plan feature.
 
-**Other entry paths:** `/purchasing/vendor-360/:id`. The same screen/procedure is used; a callback is entered automatically after provider authorisation.
-
-**Purpose:** Review a supplier’s purchasing and payable history.
+**Purpose:** Review a supplier's orders, receipts, bills, debit notes and payables on one screen, and open every related screen for just that supplier.
 
 **Prerequisites:** Vendor 360 access and an existing supplier.
 
+**Views and sections:** Supplier search; summary (totals, overdue bills, delivery reliability, contact, bank, blacklist); Vendor Bills; Inward GRNs; Purchase Orders; Debit Notes; Everything about this supplier.
+
 **Step-by-step**
 
-1. Open **Vendor 360** and select the supplier, or open its dossier link.
-2. Review **Vendor Bills**, **Inward GRNs**, **Purchase Orders** and **Debit Notes**.
-3. Use **View in Bills** or **Manage** to open the underlying record.
-4. Use **Inward GRN** to start a new receipt.
-5. Review overdue bills before using the corresponding bill-management action.
+1. Type part of a supplier's name, GSTIN, phone or contact person in the search box at the top, then pick them (arrow keys and Enter work too). Opening the page with no supplier shows the first match.
+2. Review **Vendor Bills**, **Inward GRNs**, **Purchase Orders** and **Debit Notes**. Totals cover all the supplier's bills.
+3. Use **Everything about this supplier** to open orders, receipts, bills, debit notes, stock or finance already narrowed to this supplier, or to start a new one with the supplier filled in.
+4. Use **+ Inward GRN** to receive goods, or **Open bill** / **Open GRN** to work one record.
+5. On the screen you opened, the breadcrumb **Purchasing & stock › Vendor 360 · *supplier*** brings you back.
 
-[Screenshot P058: Vendor 360 page showing its principal sections and a suitable sample record; highlight “Vendor 360” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
+[Screenshot P058: Vendor 360 for a sample supplier with the links panel and breadcrumb. Use approved sample data; obscure bank details.]
 
-**Tips and common errors:** A summary total is not a substitute for inspecting disputed bills or missing receipts.
+**Tips and common errors:** Links show only for screens your role can open. City, bank or MSME details show only where they were entered on the supplier; nothing is made up.
 
 <a id="manufacturing"></a>
 
@@ -1690,6 +2409,9 @@ The routes below identify the screen if you need help finding it. Entries contai
 | --- | --- |
 | [Bill of materials](#page-manufacturing-bom) | `/manufacturing/bom` |
 | [Work orders](#page-manufacturing-work-orders) | `/manufacturing/work-orders` |
+| [Create bill of materials](#page-manufacturing-bom-new) | `/manufacturing/bom/new` |
+| [BOM details](#page-manufacturing-bom-id) | `/manufacturing/bom/:id` |
+| [New work order](#page-manufacturing-work-orders-new) | `/manufacturing/work-orders/new` |
 
 <a id="page-manufacturing-bom"></a>
 
@@ -1745,6 +2467,74 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Tips and common errors:** Do not record planned quantities as actual output. Material issues and completed output affect stock and production records.
 
+<a id="page-manufacturing-bom-new"></a>
+
+### Create bill of materials
+
+**Open:** `/manufacturing/bom/new`. **Who can use it:** Users who may manage bills of materials.
+
+**Purpose:** Define a finished good's components, quantities, scrap and routing stage, and cost it.
+
+**Prerequisites:** Part numbers for the finished good and its components.
+
+**Views and sections:** BOM number and revision; finished good part number, description, unit and base quantity; classification (manufacturing, engineering/design, kit/assemblies); engineering notes; component lines.
+
+**Step-by-step**
+
+1. Enter the **BOM Number**, **Revision Code**, **Finished Good Part Number** and **Finished Good Description**.
+2. Set the unit, base quantity and **BOM Classification**, and add assembly notes.
+3. For each component click **+ Add Component Line** and enter part number, description, quantity per unit, unit, scrap %, routing stage and unit rate; tick **Sub-Assy** for a sub-assembly.
+4. Save. Click **Back to BOM Registry** to return.
+
+**Fields:** see [Create Bill of Materials (BOM)](#dialog-ar-bill-of-materials-2).
+
+[Screenshot P153: Create bill of materials page with three component lines.]
+
+**Tips and common errors:** Remove a line with ✕. Keep revision codes consistent so work orders pick the right revision.
+
+<a id="page-manufacturing-bom-id"></a>
+
+### BOM details
+
+**Open:** `/manufacturing/bom/:id`. **Who can use it:** Users with access to Bill of materials.
+
+**Purpose:** See a BOM's component explosion and cost, and move it on.
+
+**Step-by-step**
+
+1. Review the **Component Explosion Table** and the total cost.
+2. Click **Release to Production** when the BOM is approved.
+3. Click **Generate Work Order** to start production from it.
+
+**Fields:** see [BOM Structure](#dialog-ar-bill-of-materials-1).
+
+[Screenshot P154: BOM details page with the component explosion table.]
+
+**Tips and common errors:** Release a BOM only after engineering has checked it.
+
+<a id="page-manufacturing-work-orders-new"></a>
+
+### New work order
+
+**Open:** `/manufacturing/work-orders/new`. **Who can use it:** Users who may manage work orders.
+
+**Purpose:** Start production of a batch, from a BOM or by hand.
+
+**Views and sections:** Link to existing BOM; part number; batch/lot; description; quantity; supervisor; linked sales order; planned start and finish; shop floor instructions.
+
+**Step-by-step**
+
+1. Choose **Link to Existing BOM (Optional)**, or enter the part by hand.
+2. Enter the **Batch / Lot Number**, **Assembly Description** and **Quantity to Produce**.
+3. Add the supervisor, the linked sales order, the planned dates and the shop floor instructions.
+4. Save. The work order number is assigned automatically.
+
+**Fields:** see [Create Production Work Order](#dialog-app-work-orders-1).
+
+[Screenshot P155: New work order page linked to a BOM.]
+
+**Tips and common errors:** Use **Change / Unlink** to choose another BOM before saving.
+
 <a id="service-calls-and-activities"></a>
 
 ## Service, calls and activities
@@ -1762,6 +2552,20 @@ The routes below identify the screen if you need help finding it. Entries contai
 | [AI call batches](#page-calls-ai-batches) | `/calls/ai-batches` |
 | [Helpdesk](#page-helpdesk) | `/helpdesk` |
 | [Meetings](#page-meetings) | `/meetings` |
+| [New AMC contract](#page-field-service-amc-new) | `/field-service/amc/new` |
+| [Renew AMC contract](#page-field-service-amc-renew) | `/field-service/amc/renew/:id` |
+| [Record preventive visit](#page-field-service-amc-visit) | `/field-service/amc/record-visit/:contractId/:visitId` |
+| [New field service ticket](#page-field-service-tickets-new) | `/field-service/tickets/new` |
+| [Assign field engineer](#page-field-service-tickets-assign) | `/field-service/tickets/:id/assign` |
+| [Add spare parts](#page-field-service-tickets-spares) | `/field-service/tickets/:id/spares` |
+| [New diagnostic session](#page-field-service-remote-maintenance-new) | `/field-service/remote-maintenance/new` |
+| [New AI voice agent / Voice Agent Studio](#page-calls-ai-agents-new) | `/calls/ai-agents/new`, `/calls/ai-agents/:id` |
+| [New AI call batch](#page-calls-ai-batches-new) | `/calls/ai-batches/new` |
+| [AI voice conversations](#page-calls-whatsapp-conversations) | `/calls/whatsapp/conversations` |
+| [WhatsApp call menu (IVR)](#page-calls-whatsapp-ivr) | `/calls/whatsapp/ivr` |
+| [Website call button](#page-calls-web-widget) | `/calls/web-widget` |
+| [AI impact report](#page-calls-ai-impact) | `/calls/ai-impact` |
+| [New ticket / Ticket details / Helpdesk settings](#page-helpdesk-new) | `/helpdesk/new`, `/helpdesk/:id`, `/helpdesk/settings` |
 
 <a id="page-field"></a>
 
@@ -1817,6 +2621,65 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Tips and common errors:** A recorded preventive visit should describe work actually performed. Verify start/end dates before renewing an existing contract.
 
+<a id="page-field-service-amc-new"></a>
+
+### New AMC contract
+
+**Open:** `/field-service/amc/new`. **Who can use it:** Users who may manage AMC contracts.
+
+**Purpose:** Record an annual maintenance contract for one machine.
+
+**Views and sections:** Site; equipment model; serial number; annual value; response time; start and end dates; planned visits a year; spares included; scope and special terms; contract number.
+
+**Step-by-step**
+
+1. Enter the site, **Equipment model** and **Serial number**.
+2. Enter the **Annual value (₹)**, **Response time (hours)**, **Start date** and **End date**.
+3. Set **Planned visits a year** and tick whether spares and wear parts are included.
+4. Add the scope and special terms, then save. The contract number is assigned automatically if left blank.
+
+**Fields:** see [Create Equipment AMC Contract](#dialog-app-amc-contracts-1).
+
+[Screenshot P156: New AMC contract page with sample machine and dates.]
+
+**Tips and common errors:** The end date must be after the start date.
+
+<a id="page-field-service-amc-renew"></a>
+
+### Renew AMC contract
+
+**Open:** `/field-service/amc/renew/:id`, from **Renew** on a contract. **Who can use it:** Users who may manage AMC contracts.
+
+**Step-by-step**
+
+1. Enter the **New Renewal Start Date** and **New Renewal End Date**.
+2. Enter the **Renewal Contract Value (INR)** and choose the **Contract Scope** (comprehensive with spares, non-comprehensive, preventive only or on-demand SLA).
+3. Save.
+
+**Fields:** see [Renew Equipment AMC Contract](#dialog-app-amc-contracts-3).
+
+[Screenshot P157: Renew AMC contract page.]
+
+**Tips and common errors:** Check the renewal value with the customer's purchase order before saving.
+
+<a id="page-field-service-amc-visit"></a>
+
+### Record preventive visit
+
+**Open:** `/field-service/amc/record-visit/:contractId/:visitId`, from a planned visit. **Who can use it:** Users who may record AMC visits.
+
+**Step-by-step**
+
+1. Enter the **Assigned Service Engineer**.
+2. Describe the inspection and the maintenance carried out.
+3. Save the visit.
+
+**Fields:** see [Record Completed PM Visit](#dialog-app-amc-contracts-2).
+
+[Screenshot P158: Record preventive visit page with inspection notes.]
+
+**Tips and common errors:** Record only work actually done; the notes are the customer's service record.
+
 <a id="page-field-service-tickets"></a>
 
 ### Field tickets
@@ -1842,6 +2705,64 @@ The routes below identify the screen if you need help finding it. Entries contai
 [Screenshot P063: Field tickets page showing its principal sections and a suitable sample record; highlight “Raise Service Ticket” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
 **Tips and common errors:** Uncheck billable only when the spare is covered by an agreed AMC or warranty. Resolution should not be recorded before the fault is actually resolved.
+
+<a id="page-field-service-tickets-new"></a>
+
+### New field service ticket
+
+**Open:** `/field-service/tickets/new`. **Who can use it:** Users who may raise field tickets.
+
+**Purpose:** Raise a breakdown, preventive, installation or calibration job for a machine.
+
+**Views and sections:** Contact and phone; site; equipment model; serial number; type; priority; what is wrong; ticket number.
+
+**Step-by-step**
+
+1. Choose the contact; the contact phone fills in from their WhatsApp number.
+2. Enter the site, **Equipment model** and **Serial number**.
+3. Choose the **Type** and **Priority** (Critical means production has stopped).
+4. Describe **What is wrong**, with error codes and alarms, then save.
+
+**Fields:** see [Raise Field Service / Breakdown Ticket](#dialog-app-field-service-tickets-1).
+
+[Screenshot P159: New field service ticket page with a Critical breakdown.]
+
+**Tips and common errors:** The ticket number is assigned automatically if left blank.
+
+<a id="page-field-service-tickets-assign"></a>
+
+### Assign field engineer
+
+**Open:** `/field-service/tickets/:id/assign`. **Who can use it:** Users who may dispatch field engineers.
+
+**Step-by-step**
+
+1. Enter the **Field engineer name** with their designation.
+2. Save to dispatch the engineer to the ticket.
+
+**Fields:** see [Dispatch & Assign Field Service Engineer](#dialog-app-field-service-tickets-2).
+
+[Screenshot P160: Assign field engineer page.]
+
+**Tips and common errors:** Confirm the engineer's availability before dispatching.
+
+<a id="page-field-service-tickets-spares"></a>
+
+### Add spare parts
+
+**Open:** `/field-service/tickets/:id/spares`. **Who can use it:** Users who may record spares on tickets.
+
+**Step-by-step**
+
+1. Search by part number or name and pick the part.
+2. Enter the **Qty** and **Unit price (₹)**, and tick **Billable to customer** where it is charged.
+3. Remove a line with ✕, then save.
+
+**Fields:** see [Record Spare Part Replaced](#dialog-app-field-service-tickets-3).
+
+[Screenshot P161: Add spare parts page with two parts, one billable.]
+
+**Tips and common errors:** Parts under an AMC that includes spares are usually not billable; check the contract.
 
 <a id="page-field-service-remote-maintenance"></a>
 
@@ -1871,9 +2792,34 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Tips and common errors:** Do not follow unsafe machine instructions or use a simulator response as evidence of a real repair. Remote diagnosis still needs qualified judgement.
 
+<a id="page-field-service-remote-maintenance-new"></a>
+
+### New diagnostic session
+
+**Open:** `/field-service/remote-maintenance/new`. **Who can use it:** Users who may start remote maintenance sessions.
+
+**Purpose:** Start an AI-assisted remote diagnosis of a machine fault before sending an engineer.
+
+**Views and sections:** Customer company; phone; preferred channel; equipment category; machine model; serial number; fault severity; fault code; symptoms.
+
+**Step-by-step**
+
+1. Enter the **Customer Company Name**, phone and preferred channel.
+2. Enter the machine model and serial number, and choose the equipment category and fault severity.
+3. Enter the fault code from the display or HMI and describe the symptoms.
+4. Start the session.
+
+**Fields:** see [Initiate AI Remote Diagnostic Session](#dialog-ar-remote-maintenance-1).
+
+[Screenshot P162: New diagnostic session page with a sample VFD fault.]
+
+**Tips and common errors:** Use the exact fault code shown on the machine.
+
 <a id="page-tasks"></a>
 
 ### Tasks
+
+**New in 1.2:** a task can be linked to any number of records (contacts, accounts, leads, quotations, sales orders, invoices, challans, campaigns and service tickets), shared with colleagues by email, WhatsApp or SMS, and reminded on email, WhatsApp and/or SMS. In the task window, choose the **Kind of record**, search and add each link; tick the reminder channels; use the share action (**Share with colleagues**) and choose **Send by**, with an optional note. A repeating task copies its links to the next one. WhatsApp and SMS reminders need the set-up in [Tasks & meetings settings](#page-settings-tasks-meetings), and each colleague's mobile number on their profile.
 
 **Open:** `/tasks`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
 
@@ -1957,6 +2903,8 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 ### AI voice agents
 
+**New in 1.2:** **+ Add agent** opens [New AI voice agent](#page-calls-ai-agents-new), and an agent opens for editing in **Voice Agent Studio** (`/calls/ai-agents/:id`) instead of a window. The builder starts with **playbooks**, and the page has a **Custom functions** panel; see that entry for both.
+
 **Open:** `/calls/ai-agents` (menu **AI voice agents**). **Who can use it:** Signed-in users who can manage channels. The workspace must include the voice feature.
 
 **Purpose:** Build a voice agent once and let it answer and place AI calls on several WhatsApp numbers. Change it in one place: every number assigned to it uses its newly published version on the next call.
@@ -1977,6 +2925,135 @@ The routes below identify the screen if you need help finding it. Entries contai
 [Screenshot P118a: AI voice agents page with one published agent assigned to two numbers and its assignment history open; highlight “Assign to a number…”. Use approved sample data; obscure personal details, account secrets and private links.]
 
 **Tips and common errors:** A number assigned to an agent that isn’t published is **not** answered by AI — the card warns about this. A number’s own agent is kept unchanged while it is assigned; opening that number’s voice agent window says which shared agent answers its calls. AI call batches and automation **AI voice call** steps on an assigned number use the shared agent. Each AI call records the agent version (and shared agent) that handled it. A workspace can have up to 50 shared agents.
+
+<a id="page-calls-ai-agents-new"></a>
+
+### New AI voice agent / Voice Agent Studio
+
+**Open:** `/calls/ai-agents/new`. **Other entry paths:** `/calls/ai-agents/:id` (Voice Agent Studio). **Who can use it:** Users who can manage channels; the workspace must include AI voice (Pro and above).
+
+**Purpose:** Create an agent, then build, test and publish it on one page, starting from a tested playbook if you like.
+
+**Prerequisites:** As for [AI voice agents](#page-calls-ai-agents).
+
+**Views and sections:** Agent name; Voice Agent Studio (the [voice agent window](#dialog-ar-voice-agent-dialog-1) shown as a page); playbooks; custom functions; account and helpdesk tools; recording notice.
+
+**Step-by-step**
+
+1. Enter the **Agent Name** and create it. Voice Agent Studio opens.
+2. To start from a tested package, choose a playbook (qualification, support, booking, reminders or collections). Each card shows what to **Set up first** (ticked when your workspace already has it) and what to **Try in a test call**. Click **Use this playbook** to fill in the instructions, greeting, tools, goal, analysis fields and, for outbound ones, the voicemail message.
+3. Choose the acting user and team the agent works as (a playbook always leaves this to you).
+4. Choose the tools. Besides actions on your records, an agent can look up a caller's **balance**, **orders** and **service contracts**, and send a **payment link**; read and raise **helpdesk tickets** (Freshdesk or Zendesk) and read **Shopify orders**, once those are connected in **Settings › Integrations**; and check free/busy on Google Calendar for bookings.
+5. Tick any custom functions it may use (up to 10 an agent).
+6. Test it with a test call, then publish.
+7. Click **Back to Voice Agents** when finished.
+
+**Custom functions** (panel on AI voice agents): click **Add function**, give it a **Name**, the https **Address** (a parameter's name in braces is filled in), the **Parameters the agent fills in** (type, description, allowed values, required), what the agent reads back, whether to send the caller's phone number as `caller_phone`, a time limit, and an optional auth header whose value is kept in secret storage. Use **Test** to try it. A function that changes something is read back to the caller for agreement first. A workspace can have up to 50 functions.
+
+[Screenshot P163: Voice Agent Studio with the playbook cards open and the collections playbook's Set up first list; highlight Use this playbook.]
+
+**Tips and common errors:** Every AI call now carries a recording notice in its greeting (see [Compliance](#page-compliance)), and every agent can stop calling a caller who asks: that is always on. A function address must be a public https address; local and private network addresses are refused. Exported agent files leave out custom functions.
+
+<a id="page-calls-ai-batches-new"></a>
+
+### New AI call batch
+
+**Open:** `/calls/ai-batches/new`. **Who can use it:** Users who can manage channels.
+
+**Purpose:** Schedule an AI agent to call a list of people within calling hours, retrying those who do not pick up.
+
+**Views and sections:** Batch name; calling channel; line (WhatsApp, cellular/PSTN or SIP trunk); objective; calling window and schedule; concurrency and retry rules.
+
+**Step-by-step**
+
+1. Enter the **Batch Campaign Name** and choose the **Calling Channel** and **Line / Protocol**.
+2. Add the objective or context the agent should use for this batch.
+3. Set **Starts At**, **Allowed From** and **Allowed To**.
+4. Set **Max Concurrent Calls**, **Max Attempts per Contact** and **Retry After (Minutes)**.
+5. Save, then add the people to call as on [AI call batches](#page-calls-ai-batches).
+
+[Screenshot P164: New AI call batch page with calling window and retry rules.]
+
+**Tips and common errors:** AI calls are placed only within 09:00–21:00 India time, whatever window you set, and never to people who have opted out.
+
+<a id="page-calls-whatsapp-conversations"></a>
+
+### AI voice conversations
+
+**Open:** `/calls/whatsapp/conversations`, from WhatsApp calls. **Who can use it:** Users with access to WhatsApp calls.
+
+**Purpose:** Review AI call transcripts, recordings, analysis, reply times and cost.
+
+**Step-by-step**
+
+1. Open the conversation list; calls from the website call button are marked **Website**.
+2. Open a conversation to see its transcript, summary, goal result, reply times and estimated cost.
+3. Click **Back to WhatsApp calls** when finished.
+
+**Fields:** see [AI conversations](#window-011).
+
+[Screenshot P165: AI voice conversations page with one conversation open.]
+
+**Tips and common errors:** Card numbers, OTPs and similar details are masked in transcripts.
+
+<a id="page-calls-whatsapp-ivr"></a>
+
+### WhatsApp call menu (IVR)
+
+**Open:** `/calls/whatsapp/ivr`, from WhatsApp calls. **Who can use it:** Users who can manage channels.
+
+**Purpose:** Set the keypad menu callers hear on your WhatsApp number.
+
+**Fields and steps:** see [WhatsApp call menu (IVR)](#dialog-ar-whatsapp-ivr-dialog-1); the window is now shown as this page.
+
+[Screenshot P166: WhatsApp call menu page with two options and a sub-menu.]
+
+**Tips and common errors:** Add at least one option before switching the menu on, and say every option in the prompt.
+
+<a id="page-calls-web-widget"></a>
+
+### Website call button
+
+**Open:** `/calls/web-widget` (menu **Calls › Website call button**). **Who can use it:** Users who can manage channels; the workspace must include AI voice.
+
+**Purpose:** Let visitors to your website talk to your AI voice agent from the browser, with one click.
+
+**Prerequisites:** A number with a published AI agent; your website addresses (https).
+
+**Views and sections:** Call buttons; number; allowed websites; daily limit; embed code.
+
+**Step-by-step**
+
+1. Add a call button and choose the number whose published agent answers.
+2. List your websites. Only https addresses (or localhost for testing) are accepted.
+3. Set a daily limit. AI minutes cost money, and calls stop for the day at the limit.
+4. Copy the embed code and paste it before `</body>` on your website's pages.
+5. If the code was copied somewhere it should not be, make a new embed code; the old one stops at once.
+
+[Screenshot P167: Website call button page with one button, two allowed websites and the embed code; obscure the key.]
+
+**Tips and common errors:** The visitor gives their name and mobile number and agrees before the call, and becomes a contact. Each call is kept like any AI call: transcript, analysis, actions and follow-ups. A number or network can start only a few calls an hour. The button's own texts are in English. A visitor behind a strict company network may not be able to connect.
+
+<a id="page-calls-ai-impact"></a>
+
+### AI impact report
+
+**Open:** `/calls/ai-impact` (menu **Calls › AI impact report**). **Who can use it:** Users with access to AI calls.
+
+**Purpose:** See what your AI voice agents did, what it cost and the staff time it saved.
+
+**Views and sections:** Calls; goals met; meetings; leads; tickets; payment links; cost; Savings.
+
+**Step-by-step**
+
+1. Choose the period, and a number if you want just one.
+2. On the **Savings** card, enter how long a person takes per call (6 minutes unless changed) and what an hour of their time costs (₹300 unless changed).
+3. Click **Show**.
+4. Click **PDF** for a pilot review document, or **CSV** for the figures.
+
+[Screenshot P168: AI impact report for a month with the Savings card; highlight PDF.]
+
+**Tips and common errors:** Staff savings are estimates from the two figures on the Savings card. Costs are worked out from the rates in AI provider settings.
 
 <a id="page-calls-ai-batches"></a>
 
@@ -2033,9 +3110,34 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Tips and common errors:** Helpdesk tickets and equipment Field tickets have separate workflows. Choose the relevant page for the type of service request.
 
+<a id="page-helpdesk-new"></a>
+
+### New ticket / Ticket details / Helpdesk settings
+
+**Open:** `/helpdesk/new`. **Other entry paths:** `/helpdesk/:id` (Ticket details), `/helpdesk/settings`. **Who can use it:** Users with helpdesk access; settings need the manage permission.
+
+**Purpose:** Raise a support ticket, work it on its own page, and set the helpdesk rules.
+
+**Step-by-step**
+
+1. On **New Support Ticket**, enter the **Subject** and the description (symptoms, error codes, line, steps already tried), then save.
+2. On a ticket's page, set the **Ticket Status**, **Priority Level** and **Assigned Support Agent**.
+3. Write an **Internal Note** for the team, or **Reply to Customer**.
+4. Use **Delete Ticket** only for a ticket raised in error.
+5. On **Helpdesk Settings**, set the rules, public portal and sign-off template.
+6. Click **Back to Helpdesk** to return.
+
+**Fields:** see [New ticket](#dialog-ar-helpdesk-1), [Ticket](#dialog-ar-ticket-detail-dialog-1) and [Helpdesk rules, public portal and sign-off template](#dialog-ar-ticket-settings-dialog-1).
+
+[Screenshot P169: Ticket details page with status, priority and a customer reply.]
+
+**Tips and common errors:** An internal note is not sent to the customer; check which one you chose before sending.
+
 <a id="page-meetings"></a>
 
 ### Meetings
+
+**New in 1.2:** a meeting can be linked to records and shared in the same way as a task, and reminded on email, WhatsApp and/or SMS. Tick **Remind the customer too** to remind the customer as well as the team. Every occurrence of a repeating meeting keeps its links. See [Tasks & meetings settings](#page-settings-tasks-meetings).
 
 **Open:** `/meetings`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
 
@@ -2071,6 +3173,9 @@ The routes below identify the screen if you need help finding it. Entries contai
 | [Journal vouchers](#page-finance-journal-entries) | `/finance/journal-entries` |
 | [Financial statements](#page-finance-statements) | `/finance/statements` |
 | [GST compliance](#page-finance-gst-compliance) | `/finance/gst-compliance` |
+| [Add account](#page-finance-chart-of-accounts-new) | `/finance/chart-of-accounts/new` |
+| [New journal voucher / Edit journal voucher](#page-finance-journal-entries-new) | `/finance/journal-entries/new`, `/finance/journal-entries/:id/edit` |
+| [Generate e-way bill](#page-finance-gst-compliance-eway) | `/finance/gst-compliance/eway/:id` |
 
 <a id="page-finance-chart-of-accounts"></a>
 
@@ -2095,6 +3200,24 @@ The routes below identify the screen if you need help finding it. Entries contai
 [Screenshot P070: Chart of accounts page showing its principal sections and a suitable sample record; highlight “Chart of accounts” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
 **Tips and common errors:** Ask your accountant about the opening balance and normal balance nature. Bootstrapping should not be used casually on an already configured ledger.
+
+<a id="page-finance-chart-of-accounts-new"></a>
+
+### Add account
+
+**Open:** `/finance/chart-of-accounts/new`. **Who can use it:** Users who may manage the chart of accounts.
+
+**Step-by-step**
+
+1. Enter the account code and **Account Name**.
+2. Choose the **Category**: Asset (1xxx), Liability (2xxx), Equity (3xxx), Revenue (4xxx) or Expense (5/6xxx).
+3. Enter the **Opening Balance (₹)** and the account's purpose, then save.
+
+**Fields:** see [Add General Ledger Account](#dialog-app-chart-of-accounts-1).
+
+[Screenshot P170: Add account page.]
+
+**Tips and common errors:** Use a code in the range of its category.
 
 <a id="page-finance-journal-entries"></a>
 
@@ -2123,6 +3246,24 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Tips and common errors:** Use reversal for an appropriate correction rather than creating an unrelated offset without a reference. Posting changes the accounting record.
 
+<a id="page-finance-journal-entries-new"></a>
+
+### New journal voucher / Edit journal voucher
+
+**Open:** `/finance/journal-entries/new`. **Other entry paths:** `/finance/journal-entries/:id/edit`. **Who can use it:** Users who may post journal vouchers.
+
+**Step-by-step**
+
+1. Enter the **Voucher Number**, **Voucher Date**, any reference document and the **Narration & Audit Note**.
+2. For each line choose the **General Ledger Account**, add a line narration and cost centre, and enter the debit or credit. Use **+ Add Ledger Line** for more lines.
+3. Check that debits equal credits, then save.
+
+**Fields:** see [Create Double-Entry Journal Voucher](#dialog-app-journal-entries-1).
+
+[Screenshot P171: New journal voucher with two balanced lines.]
+
+**Tips and common errors:** A voucher whose debits and credits differ cannot be saved.
+
 <a id="page-finance-statements"></a>
 
 ### Financial statements
@@ -2150,6 +3291,8 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 ### GST compliance
 
+**New in 1.2:** issuing a sales invoice now enters it in the GST register; the screen offers the last 12 months (India time) as return periods and fills in invoices issued before this change. It no longer shows sample rows. **Generate E-Way** opens its own page ([Generate e-way bill](#page-finance-gst-compliance-eway)). E-way bill and IRN numbers are still generated inside MNI Assist, not by the government portal, and GSTR-3B eligible ITC is an estimate (65% of output tax); check both before filing.
+
 **Open:** `/finance/gst-compliance`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
 
 **Purpose:** Review GST report views and available invoice/transport actions.
@@ -2171,6 +3314,24 @@ The routes below identify the screen if you need help finding it. Entries contai
 [Screenshot P073: GST compliance page showing its principal sections and a suitable sample record; highlight “GST compliance” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
 **Tips and common errors:** A button being visible does not establish government acceptance. Use returned acknowledgements and the responsible accountant’s checks; do not treat a local report as a filed return.
+
+<a id="page-finance-gst-compliance-eway"></a>
+
+### Generate e-way bill
+
+**Open:** `/finance/gst-compliance/eway/:id`, from **Generate E-Way** on an invoice in GST compliance. **Who can use it:** Users with GST compliance access.
+
+**Step-by-step**
+
+1. Check the invoice shown.
+2. Enter the **Vehicle number**, the transporter's GSTIN or ID if any, and the **Distance (km)**.
+3. Generate it. The number is copied to the sales invoice and its challan.
+
+**Fields:** see [Generate Automated GST E-Way Bill](#dialog-app-gst-compliance-1).
+
+[Screenshot P172: Generate e-way bill page with vehicle number and distance.]
+
+**Tips and common errors:** The e-way bill number is generated inside MNI Assist and is not yet filed with the NIC e-way portal; do not move goods on it alone.
 
 <a id="documents-and-reporting"></a>
 
@@ -2452,6 +3613,7 @@ The routes below identify the screen if you need help finding it. Entries contai
 | [Catalogue](#page-channels-catalogue) | `/channels/catalogue` |
 | [Voice / IVR](#page-channels-voice-ivr) | `/channels/voice-ivr` |
 | [Invoices](#page-billing-invoices) | `/billing/invoices` |
+| [New IVR prompt / Edit IVR prompt](#page-channels-voice-ivr-prompts) | `/channels/voice-ivr/prompts/new`, `/channels/voice-ivr/prompts/:id` |
 
 <a id="page-billing"></a>
 
@@ -2708,6 +3870,25 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Tips and common errors:** Provider credentials are private. Exotel keypad menus, WhatsApp IVR menus and AI voice agents are separate configurations; changing one does not configure the others.
 
+<a id="page-channels-voice-ivr-prompts"></a>
+
+### New IVR prompt / Edit IVR prompt
+
+**Open:** `/channels/voice-ivr/prompts/new`. **Other entry paths:** `/channels/voice-ivr/prompts/:id`. **Who can use it:** Users who can manage channels.
+
+**Step-by-step**
+
+1. Enter the **Internal Prompt Name** and the words callers hear (for example “Press 1 for Sales, press 2 for Emergency Breakdown Support”).
+2. Set **Max Digits to Collect** (usually 1) and **Input Timeout (Seconds)**.
+3. Tick **Make this prompt the entry point** for the first message on incoming calls, then save.
+4. Click **Back to Voice / IVR** to return.
+
+**Fields:** see [Edit prompt / New prompt](#dialog-ar-voice-ivr-1).
+
+[Screenshot P173: New IVR prompt page.]
+
+**Tips and common errors:** Say every option in the prompt; callers cannot see the menu.
+
 <a id="page-billing-invoices"></a>
 
 ### Invoices
@@ -2760,6 +3941,8 @@ The routes below identify the screen if you need help finding it. Entries contai
 | [Email sending](#page-settings-email-sending) | `/settings/email-sending` |
 | [Support access](#page-settings-support-access) | `/settings/support-access` |
 | [Agency mode](#page-settings-agency) | `/settings/agency` |
+| [Tasks & meetings](#page-settings-tasks-meetings) | `/settings/tasks-meetings` |
+| [Shipping](#page-settings-shipping) | `/settings/shipping` |
 
 <a id="page-compliance-dpdp"></a>
 
@@ -2788,6 +3971,8 @@ The routes below identify the screen if you need help finding it. Entries contai
 <a id="page-compliance"></a>
 
 ### Compliance
+
+**New in 1.2:** the **AI call compliance** card sets the recording notice added to every AI call's greeting (on unless switched off, with your own wording). A caller who asks not to be called again is opted out straight away, and the request is kept in the consent ledger; the transcript is also checked for such requests after the call. Card numbers and similar details are masked in AI transcripts, and an access request's export includes AI call transcripts. Viewing the card needs compliance access; changing it needs the consent text permission.
 
 **Open:** `/compliance`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action.
 
@@ -3022,6 +4207,8 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 ### Roles & permissions
 
+**New in 1.2:** roles are edited in place on this page. Renaming a role keeps its permissions. When a member's role changes they are signed out everywhere within about a minute and see a notice that their role changed; they sign in again to get the new access.
+
 **Open:** `/admin/roles`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action.
 
 **Purpose:** Define reusable permission sets and assignable roles.
@@ -3152,6 +4339,8 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 ### Integrations
 
+**New in 1.2:** the helpdesk and shop section connects **Freshdesk**, **Zendesk** and **Shopify**, so AI voice agents can read and raise tickets and read orders. **Google Calendar** can be connected so an agent checks free/busy before booking; bookings stay on the MNI Assist calendar.
+
 **Open:** `/settings/integrations`. **Who can use it:** Signed-in users with access to this page and any additional permission required for the selected action; the workspace must also include the relevant plan feature.
 
 **Purpose:** Connect external systems and configure event notifications.
@@ -3175,6 +4364,44 @@ The routes below identify the screen if you need help finding it. Entries contai
 [Screenshot P110: Integrations page showing its principal sections and a suitable sample record; highlight “Integrations” and the result of the main workflow. Use approved sample data; obscure personal details, account secrets and private links.]
 
 **Tips and common errors:** A currency label does not convert values. Private-network integration endpoints require an administrator-configured allowance. Do not paste credentials into customer messages.
+
+<a id="page-settings-tasks-meetings"></a>
+
+### Tasks & meetings
+
+**Open:** `/settings/tasks-meetings` (menu **Settings › Tasks & meetings**). **Who can use it:** Users who can manage channels.
+
+**Purpose:** Set up task and meeting reminders and shares on WhatsApp and SMS as well as email.
+
+**Prerequisites:** WhatsApp templates `task_reminder` and `meeting_reminder` approved by Meta; for SMS, a DLT-registered template with MSG91.
+
+**Step-by-step**
+
+1. Add **task_reminder** and **meeting_reminder** from **Templates › Industrial library** and submit them to Meta. This page shows whether they are approved.
+2. Put each colleague's mobile number on their user profile.
+3. For SMS, register a reminder template with DLT and MSG91, choose it here and click **Save**.
+
+[Screenshot P174: Tasks & meetings settings showing template approval status and the SMS template choice.]
+
+**Tips and common errors:** Without an approved template, WhatsApp reminders outside the 24-hour window cannot be sent.
+
+<a id="page-settings-shipping"></a>
+
+### Shipping
+
+**Open:** `/settings/shipping` (menu **Settings › Shipping**). **Who can use it:** Users who may manage re-order settings.
+
+**Purpose:** Tell customers on WhatsApp when their order is dispatched, and optionally use Shiprocket for rates and tracking.
+
+**Step-by-step**
+
+1. Choose whether to tell customers on dispatch, and the template to use outside the 24-hour window.
+2. Optionally enter your Shiprocket API user and pickup PIN code.
+3. Save. Dispatch won orders from Re-orders or Sales; delivery status follows on its own.
+
+[Screenshot P175: Shipping settings with dispatch messages on; obscure the Shiprocket credentials.]
+
+**Tips and common errors:** This used to be on the Re-orders page. Transporters you book directly work without Shiprocket.
 
 <a id="page-settings-ai-assistant"></a>
 
@@ -3312,6 +4539,7 @@ The routes below identify the screen if you need help finding it. Entries contai
 | [Feature flags](#page-platform-feature-flags) | `/platform/feature-flags` |
 | [AI providers](#page-platform-ai-providers) | `/platform/ai-providers` |
 | [Status page](#page-platform-status) | `/platform/status` |
+| [Payment gateways](#page-platform-payment-gateways) | `/platform/payment-gateways` |
 
 <a id="page-platform"></a>
 
@@ -3393,6 +4621,29 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 **Tips and common errors:** Until a choice is saved here, the server configuration decides (the page says so). Live AI calls use OpenAI’s realtime model, chosen per agent in the [voice agent window](#dialog-ar-voice-agent-dialog-1), not this setting.
 
+<a id="page-platform-payment-gateways"></a>
+
+### Payment gateways
+
+**Open:** `/platform/payment-gateways` (menu **Platform › Payment gateways**). **Who can use it:** Host operators who may manage workspaces.
+
+**Purpose:** Set the Razorpay and PayU accounts workspaces pay the platform through when they top up their wallet or pay an invoice.
+
+**Prerequisites:** Razorpay and/or PayU merchant accounts.
+
+**Views and sections:** Razorpay (key id, key secret, webhook secret, Active); PayU (merchant key, salt, Active); Test saved keys.
+
+**Step-by-step**
+
+1. Enter the key id and key secret (Razorpay) or the merchant key and salt (PayU), then click **Save**.
+2. Click **Test saved keys** to ask the gateway whether it accepts them.
+3. For Razorpay, add the webhook URL shown here on Razorpay's dashboard, with the events payment.captured and order.paid and the same webhook secret.
+4. Switch a gateway's **Active** off to hide it at checkout without losing its keys.
+
+[Screenshot P176: Payment gateways page with Razorpay active; obscure every key.]
+
+**Tips and common errors:** Secrets and salts go to secret storage and are never shown again; leave a secret empty to keep the one already saved. A field left empty uses the server configuration if it has one. Use rzp_test_ keys or PayU's test environment to try checkout without real money. Payments already in progress still settle when a gateway is switched off.
+
 <a id="page-platform-status"></a>
 
 ### Status page
@@ -3424,7 +4675,7 @@ The routes below identify the screen if you need help finding it. Entries contai
 
 Open these windows from the relevant page or record action. The available fields depend on the chosen mode and your permission. Fill starred/required fields, review optional values and use the action named in that window. Never assume every field listed below appears in every mode. A record’s name may replace the sample title.
 
-Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follow any unsaved-change warning. Some windows can be dragged by their title bar. Do not assume closing a payment gateway cancels a payment already submitted.
+Since edition 1.2 many of these windows open as their own pages; each such entry starts with a **Now a page** line naming the page. Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follow any unsaved-change warning. Some windows can be dragged by their title bar. Do not assume closing a payment gateway cancels a payment already submitted.
 
 <a id="dialog-ar-meeting-dialog-1"></a>
 
@@ -4084,6 +5335,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D023. WhatsApp call menu (IVR)
 
+**Now a page (1.2):** this opens as its own page, `/calls/whatsapp/ivr` ([WhatsApp call menu (IVR)](#page-calls-whatsapp-ivr)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [WhatsApp calls](#page-calls-whatsapp).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -4116,6 +5369,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-campaign-builder-1"></a>
 
 ### D024. New campaign
+
+**Now a page (1.2):** this opens as its own page, `/campaigns/new` ([Campaigns](#page-campaigns)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Campaigns](#page-campaigns).
 
@@ -4352,6 +5607,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D032. Voice agent: profile, actions, analysis, testing and versions
 
+**Now a page (1.2):** this opens as its own page, `/calls/ai-agents/:id` ([Voice Agent Studio](#page-calls-ai-agents-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Channels](#page-channels).
 
 **Purpose and access:** Set up the AI voice agent that answers (and, if allowed, places) calls on one WhatsApp number: what it says, what it may do during calls, what is worked out after each call, and which saved version is live. You need permission to manage channels.
@@ -4407,6 +5664,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-voice-ivr-1"></a>
 
 ### D033. Edit prompt / New prompt
+
+**Now a page (1.2):** this opens as its own page, `/channels/voice-ivr/prompts/new` ([New IVR prompt / Edit IVR prompt](#page-channels-voice-ivr-prompts)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Voice / IVR](#page-channels-voice-ivr).
 
@@ -4524,6 +5783,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D037. Edit account / New account
 
+**Now a page (1.2):** this opens as its own page, `/contacts/accounts/new` ([New account / Edit account](#page-contacts-accounts-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Accounts](#page-contacts-accounts).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -4557,6 +5818,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-accounts-2"></a>
 
 ### D038. Account / — rollup
+
+**Now a page (1.2):** this opens as its own page, `/contacts/accounts/:accountId/rollup` ([Account roll-up](#page-contacts-accounts-rollup)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Accounts](#page-contacts-accounts).
 
@@ -4643,6 +5906,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-contacts-1"></a>
 
 ### D041. Edit contact / New contact
+
+**Now a page (1.2):** this opens as its own page, `/contacts/new` ([New contact / Edit contact](#page-contacts-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Contacts](#page-contacts).
 
@@ -4929,6 +6194,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D050. Create Equipment AMC Contract
 
+**Now a page (1.2):** this opens as its own page, `/field-service/amc/new` ([New AMC contract](#page-field-service-amc-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [AMC contracts](#page-field-service-amc).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -4969,6 +6236,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D051. Record Completed PM Visit
 
+**Now a page (1.2):** this opens as its own page, `/field-service/amc/record-visit/:contractId/:visitId` ([Record preventive visit](#page-field-service-amc-visit)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [AMC contracts](#page-field-service-amc).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -4997,6 +6266,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-app-amc-contracts-3"></a>
 
 ### D052. Renew Equipment AMC Contract
+
+**Now a page (1.2):** this opens as its own page, `/field-service/amc/renew/:id` ([Renew AMC contract](#page-field-service-amc-renew)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [AMC contracts](#page-field-service-amc).
 
@@ -5028,6 +6299,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-remote-maintenance-1"></a>
 
 ### D053. Initiate AI Remote Diagnostic Session
+
+**Now a page (1.2):** this opens as its own page, `/field-service/remote-maintenance/new` ([New diagnostic session](#page-field-service-remote-maintenance-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [AI Remote Maintenance & Diagnostics](#page-field-service-remote-maintenance).
 
@@ -5094,6 +6367,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D055. Raise Field Service / Breakdown Ticket
 
+**Now a page (1.2):** this opens as its own page, `/field-service/tickets/new` ([New field service ticket](#page-field-service-tickets-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Field tickets](#page-field-service-tickets).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -5130,6 +6405,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D056. Dispatch & Assign Field Service Engineer
 
+**Now a page (1.2):** this opens as its own page, `/field-service/tickets/:id/assign` ([Assign field engineer](#page-field-service-tickets-assign)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Field tickets](#page-field-service-tickets).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -5158,6 +6435,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-app-field-service-tickets-3"></a>
 
 ### D057. Record Spare Part Replaced
+
+**Now a page (1.2):** this opens as its own page, `/field-service/tickets/:id/spares` ([Add spare parts](#page-field-service-tickets-spares)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Field tickets](#page-field-service-tickets).
 
@@ -5246,6 +6525,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D060. Add General Ledger Account
 
+**Now a page (1.2):** this opens as its own page, `/finance/chart-of-accounts/new` ([Add account](#page-finance-chart-of-accounts-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Chart of accounts](#page-finance-chart-of-accounts).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -5280,6 +6561,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D061. Generate Automated GST E-Way Bill
 
+**Now a page (1.2):** this opens as its own page, `/finance/gst-compliance/eway/:id` ([Generate e-way bill](#page-finance-gst-compliance-eway)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [GST compliance](#page-finance-gst-compliance).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -5309,6 +6592,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-app-journal-entries-1"></a>
 
 ### D062. Create Double-Entry Journal Voucher
+
+**Now a page (1.2):** this opens as its own page, `/finance/journal-entries/new` ([New journal voucher](#page-finance-journal-entries-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Journal vouchers](#page-finance-journal-entries).
 
@@ -5394,6 +6679,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D065. New ticket
 
+**Now a page (1.2):** this opens as its own page, `/helpdesk/new` ([New ticket](#page-helpdesk-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Helpdesk](#page-helpdesk).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -5423,6 +6710,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-ticket-detail-dialog-1"></a>
 
 ### D066. Ticket
+
+**Now a page (1.2):** this opens as its own page, `/helpdesk/:id` ([Ticket details](#page-helpdesk-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Enquiries](#page-enquiries); [Helpdesk](#page-helpdesk).
 
@@ -5484,6 +6773,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-ticket-settings-dialog-1"></a>
 
 ### D068. Helpdesk rules, public portal and sign-off template
+
+**Now a page (1.2):** this opens as its own page, `/helpdesk/settings` ([Helpdesk settings](#page-helpdesk-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Helpdesk](#page-helpdesk).
 
@@ -5633,6 +6924,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D073. Edit / New purchase order
 
+**Now a page (1.2):** this opens as its own page, `/purchasing/orders/new` ([New purchase order / Edit purchase order](#page-purchasing-orders-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Purchasing](#page-purchasing).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -5698,6 +6991,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-purchasing-3"></a>
 
 ### D075. Edit supplier / New supplier
+
+**Now a page (1.2):** this opens as its own page, `/purchasing/suppliers/new` ([New supplier / Edit supplier](#page-purchasing-suppliers-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Purchasing](#page-purchasing).
 
@@ -5921,6 +7216,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D083. BOM Structure: / ( / )
 
+**Now a page (1.2):** this opens as its own page, `/manufacturing/bom/:id` ([BOM details](#page-manufacturing-bom-id)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Bill of materials](#page-manufacturing-bom).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -5944,6 +7241,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-bill-of-materials-2"></a>
 
 ### D084. Create Bill of Materials (BOM)
+
+**Now a page (1.2):** this opens as its own page, `/manufacturing/bom/new` ([Create bill of materials](#page-manufacturing-bom-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Bill of materials](#page-manufacturing-bom).
 
@@ -5976,6 +7275,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-app-work-orders-1"></a>
 
 ### D085. Create Production Work Order
+
+**Now a page (1.2):** this opens as its own page, `/manufacturing/work-orders/new` ([New work order](#page-manufacturing-work-orders-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Work orders](#page-manufacturing-work-orders).
 
@@ -6246,6 +7547,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D094. Collection reminders
 
+**Now a page (1.2):** this opens as its own page, `/collections/settings` ([Collection reminders](#page-collections-settings)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Collections](#page-collections).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -6307,6 +7610,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-enquiries-1"></a>
 
 ### D096. New enquiry
+
+**Now a page (1.2):** this opens as its own page, `/enquiries/new` ([New enquiry](#page-enquiries-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Enquiries](#page-enquiries).
 
@@ -6453,6 +7758,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D101. Edit machine / Register a machine
 
+**Now a page (1.2):** this opens as its own page, `/installed-base/new` ([Register a machine](#page-installed-base-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Installed base](#page-installed-base).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -6520,6 +7827,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D103. New quotation
 
+**Now a page (1.2):** this opens as its own page, `/quotations/new` ([Quotation page](#page-quotations-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Quotations](#page-quotations).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -6547,6 +7856,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-quotations-2"></a>
 
 ### D104. Issue
+
+**Now a page (1.2):** this opens as its own page, `/quotations/:id/edit` ([Quotation page](#page-quotations-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Quotations](#page-quotations).
 
@@ -6703,6 +8014,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-spares-2"></a>
 
 ### D109. Spare part rules
+
+**Now a page (1.2):** this opens as its own page, `/spares/rules` ([Spare part rules](#page-spares-rules)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Spares due](#page-spares).
 
@@ -6895,6 +8208,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D115. Vendor Bill: / ( / )
 
+**Now a page (1.2):** this opens as its own page, `/purchasing/bills/:id` ([Vendor bill](#page-purchasing-bills-id)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Vendor bills](#page-purchasing-bills).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -6951,6 +8266,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D117. Record Vendor Bill (Purchase Invoice)
 
+**Now a page (1.2):** this opens as its own page, `/purchasing/bills/new` ([Record vendor bill](#page-purchasing-bills-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Vendor bills](#page-purchasing-bills).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -6984,6 +8301,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D118. Vendor Debit Note
 
+**Now a page (1.2):** this opens as its own page, `/purchasing/debit-notes/:id` ([Debit note](#page-purchasing-debit-notes-id)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Vendor debit notes](#page-purchasing-debit-notes).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -7007,6 +8326,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-vendor-debit-notes-2"></a>
 
 ### D119. Create Vendor Debit Note
+
+**Now a page (1.2):** this opens as its own page, `/purchasing/debit-notes/new` ([Issue debit note](#page-purchasing-debit-notes-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Vendor debit notes](#page-purchasing-debit-notes).
 
@@ -7040,6 +8361,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D120. GRN Dossier
 
+**Now a page (1.2):** this opens as its own page, `/purchasing/grn/:id` ([Goods receipt](#page-purchasing-grn-id)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Goods receipt (GRN)](#page-purchasing-grn).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -7063,6 +8386,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-goods-receipt-notes-2"></a>
 
 ### D121. Complete Material QC Inspection
+
+**Now a page (1.2):** this opens as its own page, `/purchasing/grn/:id/inspect` ([QC inspection](#page-purchasing-grn-inspect)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Goods receipt (GRN)](#page-purchasing-grn).
 
@@ -7092,6 +8417,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-goods-receipt-notes-3"></a>
 
 ### D122. Record Inward Gate Entry (GRN)
+
+**Now a page (1.2):** this opens as its own page, `/purchasing/grn/new` ([Inward goods receipt](#page-purchasing-grn-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Goods receipt (GRN)](#page-purchasing-grn).
 
@@ -7125,6 +8452,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-reorder-buyers-1"></a>
 
 ### D123. Customer company: buyers and credit
+
+**Now a page (1.2):** this opens as its own page, `/contacts/accounts/credit` ([Buyers & credit](#page-contacts-accounts-credit)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Re-orders](#page-reorders).
 
@@ -7160,6 +8489,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-reorder-dispatch-1"></a>
 
 ### D124. Dispatch
+
+**Now a page (1.2):** this opens as its own page, `/reorders/dispatch/:quotationId` ([Dispatch an order](#page-reorders-dispatch)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Re-orders](#page-reorders).
 
@@ -7197,6 +8528,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D125. Send a re-order link
 
+**Now a page (1.2):** this opens as its own page, `/reorders/send` ([Send a re-order link](#page-reorders-send)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Re-orders](#page-reorders).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -7220,6 +8553,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-reorders-2"></a>
 
 ### D126. Re-order portal settings
+
+**Now a page (1.2):** this opens as its own page, `/reorders/settings` ([Re-order portal settings](#page-reorders-settings)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Re-orders](#page-reorders).
 
@@ -7284,6 +8619,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D128. Delivery Challan: / ( / )
 
+**Now a page (1.2):** this opens as its own page, `/sales/challans/:id` ([Delivery challan](#page-sales-challans-id)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Delivery challans](#page-sales-challans).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -7307,6 +8644,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-delivery-challans-2"></a>
 
 ### D129. Dispatch Challan
+
+**Now a page (1.2):** this opens as its own page, `/sales/challans/:id?dispatch=1` ([Delivery challan](#page-sales-challans-id)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Delivery challans](#page-sales-challans).
 
@@ -7339,6 +8678,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D130. Tax Invoice: / ( / )
 
+**Now a page (1.2):** this opens as its own page, `/sales/invoices/:id` ([Sales invoice](#page-sales-invoices-id)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Sales invoices](#page-sales-invoices).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -7362,6 +8703,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-sales-invoices-2"></a>
 
 ### D131. Record Payment for
+
+**Now a page (1.2):** this opens as its own page, `/sales/invoices/:id?pay=1` ([Sales invoice](#page-sales-invoices-id)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Sales invoices](#page-sales-invoices).
 
@@ -7394,6 +8737,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 
 ### D132. Sales Order: / ( / )
 
+**Now a page (1.2):** this opens as its own page, `/sales/orders/:id` ([Sales order](#page-sales-orders-id)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Location:** [Sales orders](#page-sales-orders).
 
 **Purpose and access:** Complete or inspect the named action for the selected record. You need access to the parent page and permission for that action. Read-only detail windows do not change the record.
@@ -7417,6 +8762,8 @@ Use **Close**, the close icon or **Cancel** to leave an unfinished change. Follo
 <a id="dialog-ar-sales-orders-2"></a>
 
 ### D133. Create New Sales Order
+
+**Now a page (1.2):** this opens as its own page, `/sales/orders/new` ([New sales order](#page-sales-orders-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Location:** [Sales orders](#page-sales-orders).
 
@@ -10159,6 +11506,8 @@ These windows appear only after you choose the corresponding action. For a quest
 
 ### W004. Quotation line editor
 
+**Now a page (1.2):** this opens as its own page, `/quotations/new` ([Quotation page](#page-quotations-new)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
+
 **Page:** [/quotations](#page-quotations). **Access:** The parent page and the selected action must be permitted.
 
 **Purpose:** Review or complete the named detail action.
@@ -10320,6 +11669,8 @@ These windows appear only after you choose the corresponding action. For a quest
 <a id="window-011"></a>
 
 ### W011. AI conversations
+
+**Now a page (1.2):** this opens as its own page, `/calls/whatsapp/conversations` ([AI voice conversations](#page-calls-whatsapp-conversations)). The fields and steps below still apply; use the page’s Back or Cancel button instead of closing a window.
 
 **Page:** [/calls/whatsapp](#page-calls-whatsapp). **Access:** Users who may open call recordings, and only calls they are allowed to see. **Suggest instruction changes** also needs permission to manage channels.
 
@@ -11003,6 +12354,10 @@ These views are part of a page or call session rather than separate URLs. They i
 | UTR / transaction reference | A payment identifier used to verify and reconcile a transaction |
 | Export | A file prepared from a report or data list |
 | Tenant | Another term for a workspace, sometimes used in administrator screens |
+| Breadcrumb | The trail at the top of a page; it names the 360 screen or campaign you came from and takes you back |
+| Playbook | A tested starting point for a voice agent (qualification, support, booking, reminders or collections) |
+| Custom function | A web address of your own that a voice agent may call during a call to look something up or do something |
+| Website call button | A button on your website that lets a visitor talk to your AI voice agent from the browser |
 | Voice agent / published version | The AI that answers or places calls on a WhatsApp number / the saved version new calls use |
 | Acting user | The staff member an AI voice agent acts as; their permissions decide what it may do |
 | Read-back | The agent repeating the details of an action and waiting for the caller to agree before doing it |
@@ -11017,6 +12372,6 @@ Use the screenshot register accompanying this manual. Capture the correct role, 
 
 ## Document scope and maintenance
 
-This edition was prepared from the application’s routes, page templates, navigation/access rules, shared UI components, localised English labels and confirmation workflows. It documents source-visible behavior; subscriptions, provider permissions, service configuration and future releases can change which actions are available. It does not certify that every external payment, message, voice call, ERP sync or statutory submission has been accepted in production. Edition 1.1 adds the AI voice agent features built on 27 October 2026 (actions during calls, knowledge and memory, outbound calls and batches, after-call analysis, AI conversations and test calls); these were checked by automated tests, not yet on live calls.
+This edition was prepared from the application’s routes, page templates, navigation/access rules, shared UI components, localised English labels and confirmation workflows. It documents source-visible behavior; subscriptions, provider permissions, service configuration and future releases can change which actions are available. It does not certify that every external payment, message, voice call, ERP sync or statutory submission has been accepted in production. Edition 1.1 adds the AI voice agent features built on 27 October 2026 (actions during calls, knowledge and memory, outbound calls and batches, after-call analysis, AI conversations and test calls); these were checked by automated tests, not yet on live calls. Edition 1.2 (6 November 2026) covers the changes from 28 October to 6 November 2026: the regrouped menu, breadcrumbs and right-hand rail; windows turned into pages; accounts, sales, purchasing and quotation changes; task and meeting links and reminders; voice compliance, functions, tools, playbooks, the website call button and the AI impact report; the public ROI and industry pages; and host payment gateways. The website call button, playbooks and helpdesk/shop tools have not yet been tried on live calls, and e-way bill and IRN numbers are still generated inside MNI Assist.
 
 When the application changes, review the relevant procedure, screenshot brief and coverage register together. Keep the manual free of live credentials and customer data.

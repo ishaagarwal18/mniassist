@@ -1,4 +1,4 @@
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -39,6 +39,7 @@ import {
   PhotoQuoteService,
   PhotoReadingDto,
 } from '../../proxy/pipeline/photo-quote.service';
+import { BoqImportService } from '../../proxy/pipeline/boq-import.service';
 import { inr } from '../../core/util/format';
 import { RouterLink } from '@angular/router';
 import { WhatsAppCallSession } from '../../core/services/whatsapp-call.session';
@@ -234,6 +235,13 @@ export class ArInbox {
     'AutoReach.Quotations.Create',
     inject(PermissionService),
   );
+  /** The longer route for a BOQ: read in the background, then every line checked on the review page before a draft is made. */
+  private readonly boqImports = inject(BoqImportService);
+  private readonly router = inject(Router);
+  protected readonly mayImport = grantedPolicy(
+    'AutoReach.Quotations.Import',
+    inject(PermissionService),
+  );
   /** Photos can be read only with an AI model set up; until then "Quote from this photo" isn't offered (it could only fail). */
   private readonly photosReadable = signal(false);
   protected readonly canQuote = computed(() => this.mayQuote() && this.photosReadable());
@@ -321,6 +329,28 @@ export class ArInbox {
       );
     } catch (e: unknown) {
       this.photoError.set(this.problem(e, 'The quotation could not be drafted.'));
+    } finally {
+      this.photoBusy.set(false);
+    }
+  }
+
+  /** Starts a BOQ import from this file (and any others ticked) and opens its review page. */
+  protected async reviewFromPhoto(): Promise<void> {
+    const p = this.photo();
+    if (!p || environment.useMockData) return;
+    this.photoBusy.set(true);
+    this.photoError.set(null);
+    try {
+      const started = await firstValueFrom(
+        this.boqImports.startFromConversation({
+          conversationId: p.conversationId,
+          messageIds: [p.messageId, ...this.photoMore()],
+        }),
+      );
+      this.photo.set(null);
+      await this.router.navigate(['/quotations/import', started.id]);
+    } catch (e: unknown) {
+      this.photoError.set(this.problem(e, 'The file could not be sent for review.'));
     } finally {
       this.photoBusy.set(false);
     }

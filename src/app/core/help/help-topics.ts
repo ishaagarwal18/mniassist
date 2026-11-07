@@ -433,6 +433,48 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'A manual quotation opens an enquiry for the customer, so follow-ups and won/lost still work.',
     ],
   },
+  'quotations/import': {
+    benefits: [
+      'Turn a customer’s BOQ, RFQ or parts list into a draft quotation without typing every line.',
+      'AI reads Excel, CSV, PDF and photos, and each line is matched to your catalogue and priced for the customer.',
+      'Nothing goes to the customer: you check every line before the draft is made.',
+    ],
+    steps: [
+      'Pick the customer.',
+      'Drop in the customer’s files (up to 12).',
+      'Click Read files. You move to the review page while the files are read.',
+    ],
+    tips: [
+      'Excel or CSV sheets read most accurately. A clear PDF works well; a photo is read too, but check it closely.',
+      'Started from an enquiry, the quotation goes on that enquiry; otherwise one is opened for the customer.',
+    ],
+  },
+  'quotations/import/:id': {
+    benefits: [
+      'Every line of the customer’s file beside the item it matched, with the price for this customer.',
+      'Exact part-number matches are accepted already, so you only check the rest.',
+    ],
+    steps: [
+      'Wait while the files are read; the page updates by itself.',
+      'Under Needs checking, Accept a suggestion, Change it to another item, Price it by hand, or Skip it.',
+      'Correct any quantity in the Qty column.',
+      'When nothing is left to decide, click Create draft quotation and finish it in the quote editor.',
+    ],
+    tips: [
+      'Accept every suggestion accepts all suggested items at once; check the list first.',
+      'Hover a match chip to see why it matched.',
+    ],
+  },
+  'quotations/imports': {
+    benefits: [
+      'Every file import in one place, with the ones still waiting for review.',
+      'See which imports became quotations, and which customer each was for.',
+    ],
+    steps: [
+      'Open an import to carry on reviewing it, or open the quotation made from it.',
+      'Click Quote from a file to read a new customer file.',
+    ],
+  },
   'quotations/:id/edit': {
     benefits: [
       'Change the lines of a draft or an issued quotation.',

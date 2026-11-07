@@ -799,6 +799,18 @@
           }
           <div dialogActions>
             <button ar-button type="button" variant="ghost" (click)="photo.set(null)">Close</button>
+            @if (photoReading()?.lines?.length && !photoDraft() && mayImport()) {
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                [disabled]="photoBusy()"
+                title="Read the whole file in the background and check every line before the draft is made"
+                (click)="reviewFromPhoto()"
+              >
+                Review line by line
+              </button>
+            }
             @if (photoReading()?.lines?.length && !photoDraft()) {
               <button
                 ar-button

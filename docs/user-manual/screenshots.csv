@@ -417,3 +417,60 @@ V027,Look up business context during a call,Look up business context during a ca
 V028,Call with AI agent,"Inbox conversation with the Call with AI agent panel open, a reason entered and the result message visible."
 V029,Test call from this browser,"Voice agent window with the test call running and a live transcript, plus a passed test under Recent tests."
 E001,Experimental local voice lab,"Local-only recorded-turn test, playback and unverified cost result."
+P120,ROI calculator,"ROI calculator with sample figures (2,000 calls a month, 4-minute calls) and the estimate panel filled in; highlight “AI call rate (₹ a minute)” and the staff cost freed figure. Use made-up figures only."
+P121,Industries,Industries page for OEMs showing “Sound familiar?” and “Ready AI agents for you”; highlight the sign-up link.
+P122,What's new,What's new page showing the newest release card; highlight an Open link.
+P123,New account / Edit account,"New account page with GSTIN, billing address and two shipping addresses, one marked default; highlight Create Account."
+P124,Buyers & credit,"Buyers & credit page for a sample company with one buyer, one approver and a credit limit."
+P125,Account roll-up,Account roll-up with Include subsidiaries ticked.
+P126,New contact / Edit contact,"New contact page with a sample number, name and account; highlight the visiting card scan and Save."
+P127,Message customer,"Message customer page with WhatsApp chosen, a template filled in and an invoice attached."
+P128,New enquiry,"New enquiry page with a sample customer, pipeline and value."
+P129,Quotation page,"Quotation page for a manual quotation to an account, with two catalogue lines, totals and the issue options; highlight Save and issue."
+P130,AI negotiator,AI negotiator with a negotiation open and the outcome panel showing a suggested reply; highlight Copy reply.
+P131,Projection plan,Projection plan dashboard with an active plan and the outcome panel after a sync.
+P132,New sales order,"New sales order with an account, contact person, default shipping address and two catalogue items."
+P133,Sales order,Sales order page for a confirmed order with dispatched quantities; highlight Create delivery challan.
+P134,New delivery challan,"New delivery challan with an account, site address and items."
+P135,Delivery challan,"Delivery challan page after dispatch, showing transport details; highlight Mark as delivered."
+P136,New invoice,New invoice page with customer GSTIN and items.
+P137,Sales invoice,Sales invoice page with GST split and balance due; highlight Record payment.
+P138,Spare part rules,Spare part rules page with two sample rules and the rule form.
+P139,Collection reminders,Collection reminders page with a template chosen and automatic reminders ticked.
+P140,Send a re-order link,Send a re-order link page showing the link after sending.
+P141,Re-order portal settings,Re-order portal settings with the portal on and quotation mode chosen.
+P142,Dispatch an order,Dispatch an order page with transporter and docket filled in.
+P143,Register a machine,Register a machine page with sample machine details.
+P144,New supplier / Edit supplier,"New supplier page with contact, addresses and bank details; obscure the account number."
+P145,New purchase order / Edit purchase order,New purchase order page with a supplier and three parts.
+P146,Inward goods receipt,Inward goods receipt with one line received short and flagged.
+P147,Goods receipt,Goods receipt page after QC with one rejected line.
+P148,QC inspection,QC inspection page with accepted and rejected quantities.
+P149,Record vendor bill,Record vendor bill page filled from an uploaded invoice; highlight the goods receipt.
+P150,Vendor bill,Vendor bill page with the 3-way match and a payment recorded.
+P151,Issue debit note,Issue debit note page started from a receipt with rejected items.
+P152,Debit note,Debit note page for an issued note; highlight Mark settled.
+P153,Create bill of materials,Create bill of materials page with three component lines.
+P154,BOM details,BOM details page with the component explosion table.
+P155,New work order,New work order page linked to a BOM.
+P156,New AMC contract,New AMC contract page with sample machine and dates.
+P157,Renew AMC contract,Renew AMC contract page.
+P158,Record preventive visit,Record preventive visit page with inspection notes.
+P159,New field service ticket,New field service ticket page with a Critical breakdown.
+P160,Assign field engineer,Assign field engineer page.
+P161,Add spare parts,"Add spare parts page with two parts, one billable."
+P162,New diagnostic session,New diagnostic session page with a sample VFD fault.
+P163,New AI voice agent / Voice Agent Studio,Voice Agent Studio with the playbook cards open and the collections playbook's Set up first list; highlight Use this playbook.
+P164,New AI call batch,New AI call batch page with calling window and retry rules.
+P165,AI voice conversations,AI voice conversations page with one conversation open.
+P166,WhatsApp call menu (IVR),WhatsApp call menu page with two options and a sub-menu.
+P167,Website call button,"Website call button page with one button, two allowed websites and the embed code; obscure the key."
+P168,AI impact report,AI impact report for a month with the Savings card; highlight PDF.
+P169,New ticket / Ticket details / Helpdesk settings,"Ticket details page with status, priority and a customer reply."
+P170,Add account,Add account page.
+P171,New journal voucher / Edit journal voucher,New journal voucher with two balanced lines.
+P172,Generate e-way bill,Generate e-way bill page with vehicle number and distance.
+P173,New IVR prompt / Edit IVR prompt,New IVR prompt page.
+P174,Tasks & meetings,Tasks & meetings settings showing template approval status and the SMS template choice.
+P175,Shipping,Shipping settings with dispatch messages on; obscure the Shiprocket credentials.
+P176,Payment gateways,Payment gateways page with Razorpay active; obscure every key.

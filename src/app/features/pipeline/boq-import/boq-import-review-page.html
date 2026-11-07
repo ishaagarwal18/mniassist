@@ -1,0 +1,402 @@
+<ar-topbar
+  [title]="item() ? 'Review ' + item()!.reference : 'Review import'"
+  [subtitle]="item()?.contactName ? 'For ' + item()!.contactName : 'Quote from a file'"
+  help="Each line of the customer's file, with the item it matched in your catalogue. Exact matches are accepted already; check the rest. Accept a suggestion, change it to another item, price the line by hand, or skip it. When no line is left to decide, create the draft quotation and finish it in the quote editor."
+>
+  <a ar-button variant="ghost" routerLink="/quotations/imports">All imports</a>
+  @if (item() && !closed()) {
+    <button ar-button type="button" variant="ghost" [disabled]="saving()" (click)="discard()">
+      Discard
+    </button>
+  }
+  @if (item()?.state === State.Review) {
+    <button
+      ar-button
+      type="button"
+      variant="primary"
+      icon="quotation"
+      [disabled]="!canDraft()"
+      [attr.title]="item()!.pendingCount ? item()!.pendingCount + ' line(s) still to decide' : null"
+      (click)="createQuotation()"
+    >
+      {{ saving() ? 'Saving…' : 'Create draft quotation' }}
+    </button>
+  }
+</ar-topbar>
+
+<div class="br ar-scroll">
+  @if (loadError(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  @if (item(); as i) {
+    <div class="br__head">
+      <ar-chip [tone]="stateTone[i.state]">{{ stateLabel[i.state] }}</ar-chip>
+      <span class="br__files" translate="no">
+        @for (f of i.files; track f.id) {
+          <span class="br__file">{{ f.fileName }}</span>
+        }
+      </span>
+    </div>
+
+    @switch (i.state) {
+      @case (State.Reading) {
+        <section class="br__card br__card--busy" role="status">
+          <span class="br__pulse" aria-hidden="true"></span>
+          <div>
+            <p class="br__strong">{{ progressText() }}</p>
+            <p class="br__muted">
+              You can leave this page; the reading carries on and the import waits in All imports.
+            </p>
+          </div>
+        </section>
+      }
+      @case (State.Uploading) {
+        <section class="br__card">
+          <p class="br__strong">This import has not been started.</p>
+          <button ar-button type="button" [disabled]="saving()" (click)="retry()">
+            Read files
+          </button>
+        </section>
+      }
+      @case (State.Failed) {
+        <section class="br__card">
+          <p class="br__strong br__bad" role="alert">{{ i.error }}</p>
+          @for (f of i.files; track f.id) {
+            @if (f.error) {
+              <p class="br__muted">
+                <span translate="no">{{ f.fileName }}</span
+                >: {{ f.error }}
+              </p>
+            }
+          }
+          <div class="br__actions">
+            <button ar-button type="button" icon="refresh" [disabled]="saving()" (click)="retry()">
+              Read again
+            </button>
+          </div>
+        </section>
+      }
+      @case (State.Drafted) {
+        <section class="br__card">
+          <p class="br__strong">
+            Draft quotation <span class="ar-mono">{{ i.quotationReference }}</span> was made from
+            this import.
+          </p>
+          <div class="br__actions">
+            <a ar-button [routerLink]="['/quotations', i.quotationId, 'edit']"
+              >Open the quotation</a
+            >
+          </div>
+        </section>
+      }
+      @case (State.Discarded) {
+        <section class="br__card">
+          <p class="br__strong">This import was discarded. No quotation was made.</p>
+        </section>
+      }
+    }
+
+    @if (i.state === State.Review || i.state === State.Drafted) {
+      @if (i.note) {
+        <ar-banner tone="ai"
+          >AI could not read everything clearly: <span translate="no">{{ i.note }}</span></ar-banner
+        >
+      }
+      @for (f of i.files; track f.id) {
+        @if (f.error) {
+          <ar-banner tone="warn"
+            ><span translate="no">{{ f.fileName }}</span
+            >: {{ f.error }}</ar-banner
+          >
+        }
+      }
+
+      <div class="br__bar">
+        <span class="br__summary">{{ summaryText() }}</span>
+        <span class="br__summary">· {{ inr(i.pricedTotalInPaise) }} priced, before GST</span>
+        @if (i.pendingCount) {
+          <ar-chip tone="amber">{{ i.pendingCount }} to decide</ar-chip>
+        } @else if (i.state === State.Review) {
+          <ar-chip tone="good">Every line decided</ar-chip>
+        }
+        <span class="br__spacer"></span>
+        @if (i.state === State.Review && suggestions().length) {
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            icon="check"
+            [disabled]="saving()"
+            (click)="acceptSuggestions()"
+          >
+            Accept every suggestion ({{ suggestions().length }})
+          </button>
+        }
+      </div>
+
+      <div class="br__tabs" role="tablist" aria-label="Which lines to show">
+        <button
+          type="button"
+          role="tab"
+          class="br__tab"
+          [class.br__tab--on]="filter() === 'check'"
+          [attr.aria-selected]="filter() === 'check'"
+          (click)="setFilter('check')"
+        >
+          Needs checking ({{ i.pendingCount }})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="br__tab"
+          [class.br__tab--on]="filter() === 'notFound'"
+          [attr.aria-selected]="filter() === 'notFound'"
+          (click)="setFilter('notFound')"
+        >
+          Not found ({{ notFoundCount() }})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="br__tab"
+          [class.br__tab--on]="filter() === 'all'"
+          [attr.aria-selected]="filter() === 'all'"
+          (click)="setFilter('all')"
+        >
+          All ({{ i.lines.length }})
+        </button>
+      </div>
+
+      @if (!lines().length) {
+        <p class="br__muted br__empty">
+          @if (filter() === 'check') {
+            Nothing left to check. Look over All lines, then create the draft quotation.
+          } @else {
+            No lines here.
+          }
+        </p>
+      } @else {
+        <ejs-grid
+          arGrid="boq-import-lines"
+          [dataSource]="lines()"
+          aria-label="Lines read from the customer's files"
+        >
+          <e-columns>
+            <e-column field="row" headerText="#" width="56" textAlign="Right"></e-column>
+            <e-column field="asDescription" headerText="As written" width="280">
+              <ng-template #template let-l>
+                <div class="br__cell" translate="no">
+                  @if (l.asPartNumber) {
+                    <span class="ar-mono br__part">{{ l.asPartNumber }}</span>
+                  }
+                  <span class="br__desc">{{ l.asDescription }}</span>
+                </div>
+              </ng-template>
+            </e-column>
+            <e-column field="quantity" headerText="Qty" width="92">
+              <ng-template #template let-l>
+                <input
+                  class="ar-field__input br__qty"
+                  type="number"
+                  min="0.0001"
+                  step="any"
+                  [value]="l.quantity"
+                  [disabled]="i.state !== State.Review || saving()"
+                  [attr.aria-label]="'Quantity of line ' + l.row"
+                  (change)="setQuantity(l, $any($event.target).value)"
+                />
+              </ng-template>
+            </e-column>
+            <e-column field="partNumber" headerText="Our item" width="260">
+              <ng-template #template let-l>
+                @if (l.partNumber) {
+                  <div class="br__cell">
+                    <span class="ar-mono br__part">{{ l.partNumber }}</span>
+                    <span class="br__desc">{{ l.itemName }}</span>
+                  </div>
+                } @else if (l.decision === Decision.ManualPrice) {
+                  <span class="br__muted">As written</span>
+                } @else {
+                  <span class="br__muted">Nothing matched</span>
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="matchKind" headerText="Match" width="150">
+              <ng-template #template let-l>
+                <ar-chip [tone]="matchLabel(l).tone" [attr.title]="l.reason">{{
+                  matchLabel(l).label
+                }}</ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column field="unitPriceInPaise" headerText="Price" width="140" textAlign="Right">
+              <ng-template #template let-l>
+                @if (lineTotal(l); as t) {
+                  <div class="br__cell br__num">
+                    <span>{{ inr(t) }}</span>
+                    <span class="br__muted"
+                      >{{ inr(l.unitPriceInPaise) }} / {{ l.unit ?? 'no' }}</span
+                    >
+                  </div>
+                } @else {
+                  <span class="br__muted">—</span>
+                }
+              </ng-template>
+            </e-column>
+            <e-column field="decision" headerText="Decision" width="300">
+              <ng-template #template let-l>
+                @if (i.state !== State.Review) {
+                  <span>{{ decisionText(l.decision) }}</span>
+                } @else if (l.decision === Decision.Pending) {
+                  <div class="br__btns">
+                    @if (l.partNumber) {
+                      <button
+                        type="button"
+                        class="br__btn br__btn--main"
+                        [disabled]="saving()"
+                        (click)="accept(l)"
+                      >
+                        Accept
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      class="br__btn"
+                      [disabled]="saving()"
+                      (click)="startChange(l)"
+                    >
+                      Change
+                    </button>
+                    <button
+                      type="button"
+                      class="br__btn"
+                      [disabled]="saving()"
+                      (click)="startPrice(l)"
+                    >
+                      Price
+                    </button>
+                    <button type="button" class="br__btn" [disabled]="saving()" (click)="skip(l)">
+                      Skip
+                    </button>
+                  </div>
+                } @else {
+                  <div class="br__btns">
+                    <span class="br__done">{{ decisionText(l.decision) }}</span>
+                    <button
+                      type="button"
+                      class="br__btn"
+                      [disabled]="saving()"
+                      (click)="startChange(l)"
+                    >
+                      Change
+                    </button>
+                    <button type="button" class="br__btn" [disabled]="saving()" (click)="reopen(l)">
+                      Undo
+                    </button>
+                  </div>
+                }
+              </ng-template>
+            </e-column>
+          </e-columns>
+        </ejs-grid>
+      }
+
+      @if (editing(); as e) {
+        <section class="br__card br__editor" aria-labelledby="br-editor">
+          <div class="br__editor-head">
+            <h2 id="br-editor" class="br__h">
+              Line {{ e.line.row }}:
+              {{ e.mode === 'change' ? 'quote another item' : 'price by hand' }}
+            </h2>
+            <button type="button" class="br__btn" (click)="closeEditor()">Close</button>
+          </div>
+          <p class="br__muted" translate="no">
+            {{ e.line.asPartNumber ? e.line.asPartNumber + ' · ' : '' }}{{ e.line.asDescription }} ·
+            qty {{ e.line.quantity }}
+          </p>
+
+          @if (e.mode === 'change') {
+            @if (e.line.alternates.length) {
+              <p class="br__label">Found by the search</p>
+              <ul class="br__options">
+                @for (a of e.line.alternates; track a.partNumber) {
+                  <li>
+                    <button
+                      type="button"
+                      class="br__option"
+                      [disabled]="saving()"
+                      (click)="choose(a.partNumber)"
+                    >
+                      <span class="ar-mono">{{ a.partNumber }}</span>
+                      <span class="br__desc">{{ a.name }}</span>
+                      <span class="br__num">{{ inr(a.unitPriceInPaise) }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+            <form class="br__search" (submit)="$event.preventDefault(); search()">
+              <input
+                class="ar-field__input"
+                type="search"
+                placeholder="Search your catalogue by part number or name"
+                aria-label="Search the catalogue"
+                [value]="searchTerm()"
+                (input)="searchTerm.set($any($event.target).value)"
+              />
+              <button
+                ar-button
+                type="submit"
+                variant="ghost"
+                icon="search"
+                [disabled]="searching()"
+              >
+                {{ searching() ? 'Searching…' : 'Search' }}
+              </button>
+            </form>
+            @if (searchResults().length) {
+              <ul class="br__options">
+                @for (r of searchResults(); track r.partNumber) {
+                  <li>
+                    <button
+                      type="button"
+                      class="br__option"
+                      [disabled]="saving()"
+                      (click)="choose(r.partNumber ?? '')"
+                    >
+                      <span class="ar-mono">{{ r.partNumber }}</span>
+                      <span class="br__desc">{{ r.name }}</span>
+                      <span class="br__num">{{ inr(r.unitPriceInPaise ?? 0) }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            } @else if (!searching() && searchTerm().trim().length > 1) {
+              <p class="br__muted">
+                Search to see matching items, or price the line by hand instead.
+              </p>
+            }
+          } @else {
+            <form class="br__search" (submit)="$event.preventDefault(); savePrice()">
+              <label class="ar-field">
+                <span class="ar-field__label">Unit price, ₹ before GST</span>
+                <input
+                  class="ar-field__input"
+                  type="text"
+                  inputmode="decimal"
+                  placeholder="e.g. 1250"
+                  [value]="priceText()"
+                  (input)="priceText.set($any($event.target).value)"
+                />
+              </label>
+              <button ar-button type="submit" [disabled]="saving()">Save price</button>
+            </form>
+            <p class="br__muted">The line is quoted as the customer wrote it, at this price.</p>
+          }
+        </section>
+      }
+    }
+  } @else if (!loadError()) {
+    <p class="br__muted br__empty">Loading…</p>
+  }
+</div>

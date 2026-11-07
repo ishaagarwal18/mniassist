@@ -360,6 +360,28 @@ export const routes: Routes = [
           import('./features/pipeline/quotation-form').then((m) => m.ArQuotationForm),
       },
       {
+        path: 'quotations/import',
+        title: 'Quote from a file · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/boq-import/new-boq-import-page').then(
+            (m) => m.ArNewBoqImportPage,
+          ),
+      },
+      {
+        path: 'quotations/import/:id',
+        title: 'Review import · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/boq-import/boq-import-review-page').then(
+            (m) => m.ArBoqImportReviewPage,
+          ),
+      },
+      {
+        path: 'quotations/imports',
+        title: 'File imports · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/boq-import/boq-imports').then((m) => m.ArBoqImports),
+      },
+      {
         path: 'pipeline/ai-negotiator',
         title: 'Autonomous AI Negotiator · MNI Assist',
         loadComponent: () =>
@@ -1284,11 +1306,17 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/settings/integrations').then((m) => m.ArIntegrations),
       },
-      formPage('settings/integrations/endpoints/new', 'Add webhook endpoint · MNI Assist', 'endpoint-new', () =>
-        import('./features/settings/integrations').then((m) => m.ArIntegrations),
+      formPage(
+        'settings/integrations/endpoints/new',
+        'Add webhook endpoint · MNI Assist',
+        'endpoint-new',
+        () => import('./features/settings/integrations').then((m) => m.ArIntegrations),
       ),
-      formPage('settings/integrations/crm/:id/mapping', 'Field mapping · MNI Assist', 'mapping', () =>
-        import('./features/settings/integrations').then((m) => m.ArIntegrations),
+      formPage(
+        'settings/integrations/crm/:id/mapping',
+        'Field mapping · MNI Assist',
+        'mapping',
+        () => import('./features/settings/integrations').then((m) => m.ArIntegrations),
       ),
       {
         path: 'settings/ai-assistant',
@@ -1296,11 +1324,17 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/settings/ai-assistant').then((m) => m.ArAiAssistant),
       },
-      formPage('settings/ai-assistant/articles/new', 'Add knowledge article · MNI Assist', 'new', () =>
-        import('./features/settings/ai-assistant').then((m) => m.ArAiAssistant),
+      formPage(
+        'settings/ai-assistant/articles/new',
+        'Add knowledge article · MNI Assist',
+        'new',
+        () => import('./features/settings/ai-assistant').then((m) => m.ArAiAssistant),
       ),
-      formPage('settings/ai-assistant/articles/:id/edit', 'Edit knowledge article · MNI Assist', 'edit', () =>
-        import('./features/settings/ai-assistant').then((m) => m.ArAiAssistant),
+      formPage(
+        'settings/ai-assistant/articles/:id/edit',
+        'Edit knowledge article · MNI Assist',
+        'edit',
+        () => import('./features/settings/ai-assistant').then((m) => m.ArAiAssistant),
       ),
       {
         path: 'settings/tasks-meetings',

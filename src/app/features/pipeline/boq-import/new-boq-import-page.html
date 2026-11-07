@@ -1,0 +1,97 @@
+<ar-topbar
+  title="Quote from a file"
+  subtitle="The customer's BOQ, RFQ or parts list, read by AI and matched to your catalogue"
+  help="Add the customer's files: an Excel or CSV sheet, a PDF, or photos. AI reads every line in the background and matches each one to your catalogue and price lists. You then check each line before a draft quotation is made. Nothing is sent to the customer from here."
+>
+  <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
+  <button
+    ar-button
+    type="button"
+    variant="ai"
+    icon="sparkle"
+    [disabled]="!canRead()"
+    (click)="read()"
+  >
+    {{ busy() ? 'Sending…' : 'Read files' }}
+  </button>
+</ar-topbar>
+
+<div class="bi ar-scroll">
+  <div class="bi__wrap">
+    @if (mock) {
+      <ar-banner tone="teal"
+        >Reading files needs the live API. In demo mode this page shows the layout only.</ar-banner
+      >
+    } @else if (!available()) {
+      <ar-banner tone="warn">
+        The AI model is not set up for this workspace, so files can't be read yet. Ask a platform
+        admin to add the AI key.
+      </ar-banner>
+    }
+
+    <section class="bi__card" aria-labelledby="bi-who">
+      <h2 id="bi-who" class="bi__h">Who it is for</h2>
+      <div class="ar-field">
+        <span class="ar-field__label">Customer <span class="bi__req">*</span></span>
+        <ar-contact-picker [initial]="initialContact" (picked)="onPicked($event)" />
+      </div>
+      @if (enquiryId) {
+        <p class="bi__muted">The draft quotation goes on the enquiry you came from.</p>
+      } @else {
+        <p class="bi__muted">
+          An enquiry is opened for the customer when the draft quotation is made.
+        </p>
+      }
+    </section>
+
+    <section class="bi__card" aria-labelledby="bi-files">
+      <h2 id="bi-files" class="bi__h">The customer's files</h2>
+      <label
+        class="bi__drop"
+        [class.bi__drop--over]="dragging()"
+        (dragover)="onDragOver($event)"
+        (dragleave)="dragging.set(false)"
+        (drop)="onDrop($event)"
+      >
+        <input type="file" multiple [accept]="accept" (change)="onChoose($event)" />
+        <span class="bi__drop-main">Drop files here, or click to choose</span>
+        <span class="bi__drop-sub">
+          Excel (.xlsx, .xls), CSV, PDF or photos · up to {{ maxFiles }} files · 10 MB each (5 MB
+          for photos)
+        </span>
+      </label>
+
+      @if (files().length) {
+        <ul class="bi__files" aria-label="Files to read">
+          @for (f of files(); track $index) {
+            <li class="bi__file">
+              <span class="bi__file-name" translate="no">{{ f.name }}</span>
+              <span class="bi__muted">{{ size(f.size) }}</span>
+              <button
+                type="button"
+                class="bi__link"
+                [disabled]="busy()"
+                [attr.aria-label]="'Remove ' + f.name"
+                (click)="remove($index)"
+              >
+                Remove
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (status(); as s) {
+        <p class="bi__status" role="status">{{ s }}</p>
+      }
+      @if (error(); as e) {
+        <p class="bi__error" role="alert">{{ e }}</p>
+      }
+    </section>
+
+    <p class="bi__muted bi__note">
+      Part numbers are copied as written. Lines found exactly in your catalogue are accepted;
+      anything less waits for you to check it on the next page.
+    </p>
+  </div>
+</div>

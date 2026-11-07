@@ -3,6 +3,12 @@
   [subtitle]="awaitingDecision() + ' awaiting a decision'"
   help="Every quotation, raised against an enquiry or by hand for a customer, with whose follow-up is due front and centre. New quotation and Edit open a page with the line items and issuing. Marking one Lost requires a reason — that feeds the loss-reason breakdown in Analytics."
 >
+  @if (canImport()) {
+    <a ar-button variant="ghost" routerLink="/quotations/imports">File imports</a>
+  }
+  @if (canImport() && canCreate()) {
+    <a ar-button variant="ai" icon="sparkle" routerLink="/quotations/import">Quote from a file</a>
+  }
   @if (canCreate()) {
     <a ar-button variant="primary" icon="plus" routerLink="/quotations/new">New quotation</a>
   }

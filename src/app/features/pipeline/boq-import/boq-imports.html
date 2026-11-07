@@ -1,0 +1,76 @@
+<ar-topbar
+  title="File imports"
+  [subtitle]="total() + ' imports'"
+  help="Customer BOQs, RFQs and parts lists read by AI into draft quotations. An import waits here until every line is checked; open one to carry on where you left off."
+>
+  <a ar-button variant="ghost" routerLink="/quotations">Quotations</a>
+  <a ar-button variant="ai" icon="sparkle" routerLink="/quotations/import">Quote from a file</a>
+</ar-topbar>
+
+<div class="bl ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal"
+      >File imports need the live API. In demo mode the list stays empty.</ar-banner
+    >
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+  @if (loading()) {
+    <p class="bl__muted">Loading…</p>
+  } @else if (!rows().length && !error()) {
+    <p class="bl__muted bl__empty">
+      No imports yet. Use Quote from a file, or Review line by line on a file in the Inbox.
+    </p>
+  } @else {
+    <ejs-grid arGrid="boq-imports" [dataSource]="rows()" aria-label="File imports">
+      <e-columns>
+        <e-column field="reference" headerText="Import" width="150">
+          <ng-template #template let-r>
+            <a class="ar-mono bl__link" [routerLink]="['/quotations/import', r.id]">{{
+              r.reference
+            }}</a>
+          </ng-template>
+        </e-column>
+        <e-column field="contactName" headerText="Customer" width="220">
+          <ng-template #template let-r>
+            <span translate="no">{{ r.contactName ?? '—' }}</span>
+          </ng-template>
+        </e-column>
+        <e-column field="state" headerText="State" width="170">
+          <ng-template #template let-r>
+            <ar-chip [tone]="tone(r.state)">{{ label(r.state) }}</ar-chip>
+          </ng-template>
+        </e-column>
+        <e-column field="lineCount" headerText="Lines" width="120" textAlign="Right">
+          <ng-template #template let-r>
+            {{ r.lineCount }}
+            @if (r.pendingCount) {
+              <span class="bl__muted">({{ r.pendingCount }} to decide)</span>
+            }
+          </ng-template>
+        </e-column>
+        <e-column field="fileCount" headerText="Files" width="80" textAlign="Right"></e-column>
+        <e-column field="source" headerText="From" width="110">
+          <ng-template #template let-r>
+            {{ r.source === Source.Inbox ? 'Inbox' : 'Upload' }}
+          </ng-template>
+        </e-column>
+        <e-column field="creationTime" headerText="Created" width="160">
+          <ng-template #template let-r>
+            {{ r.creationTime | date: 'd MMM y, HH:mm' }}
+          </ng-template>
+        </e-column>
+        <e-column field="quotationId" headerText="Quotation" width="140">
+          <ng-template #template let-r>
+            @if (r.quotationId) {
+              <a class="bl__link" [routerLink]="['/quotations', r.quotationId, 'edit']">Open</a>
+            } @else {
+              <span class="bl__muted">—</span>
+            }
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
+  }
+</div>

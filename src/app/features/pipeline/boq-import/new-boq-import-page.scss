@@ -1,0 +1,125 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.bi {
+  flex: 1;
+  min-height: 0;
+  padding: 20px 24px 28px;
+}
+.bi__wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.bi__card {
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-card);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bi__h {
+  margin: 0;
+  font: 600 14px var(--ar-font-sans);
+  color: var(--ar-ink-800);
+}
+.bi__req {
+  color: var(--ar-red-600);
+}
+.bi__muted {
+  margin: 0;
+  color: var(--ar-ink-400);
+  font: 400 12px var(--ar-font-sans);
+}
+.bi__note {
+  text-align: center;
+}
+.bi__drop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 28px 16px;
+  border: 1.5px dashed var(--ar-line-300);
+  border-radius: var(--ar-radius-card);
+  cursor: pointer;
+  text-align: center;
+}
+.bi__drop--over,
+.bi__drop:hover {
+  border-color: var(--ar-teal-600, var(--ar-ink-400));
+  background: var(--ar-line-100, transparent);
+}
+.bi__drop input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.bi__drop input:focus-visible + .bi__drop-main {
+  outline: 2px solid var(--ar-teal-600, currentColor);
+  outline-offset: 2px;
+}
+.bi__drop-main {
+  font: 600 13px var(--ar-font-sans);
+  color: var(--ar-ink-800);
+}
+.bi__drop-sub {
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+}
+.bi__files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-control);
+}
+.bi__file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ar-line-200);
+  font: 400 13px var(--ar-font-sans);
+}
+.bi__file:last-child {
+  border-bottom: 0;
+}
+.bi__file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ar-ink-800);
+}
+.bi__link {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: 500 12px var(--ar-font-sans);
+  color: var(--ar-ink-600, var(--ar-ink-800));
+  text-decoration: underline;
+}
+.bi__status {
+  margin: 0;
+  font: 500 13px var(--ar-font-sans);
+  color: var(--ar-ink-800);
+}
+.bi__error {
+  margin: 0;
+  font: 500 13px var(--ar-font-sans);
+  color: var(--ar-red-600);
+}
