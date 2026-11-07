@@ -8,6 +8,8 @@ export enum BoqImportState {
   Drafted = 3,
   Failed = 4,
   Discarded = 5,
+  /** Waiting for the engineer to say which spreadsheet column is which. */
+  Mapping = 6,
 }
 
 export enum BoqImportSource {
@@ -95,6 +97,54 @@ export interface BoqImportFileDto {
   sizeBytes: number;
   lineCount: number;
   error?: string | null;
+  /** Read by its mapped columns rather than by the AI. */
+  mapped: boolean;
+}
+
+/** Which column of a sheet is which; 0-based, null for none. */
+export interface BoqSheetMapDto {
+  sheet: string;
+  include: boolean;
+  /** The heading row among the sheet's non-empty rows; -1 for none. */
+  headerRow: number;
+  partNumber?: number | null;
+  description?: number | null;
+  quantity?: number | null;
+  unit?: number | null;
+  make?: number | null;
+}
+
+export interface BoqSheetPreviewDto {
+  sheet: string;
+  rows: string[][];
+  rowCount: number;
+  columnCount: number;
+  map: BoqSheetMapDto;
+  /** The map came from an earlier import with the same headings. */
+  remembered: boolean;
+}
+
+export interface BoqFileMappingDto {
+  fileId: string;
+  fileName: string;
+  problem?: string | null;
+  sheets: BoqSheetPreviewDto[];
+}
+
+export interface BoqMappingDto {
+  files: BoqFileMappingDto[];
+}
+
+export interface BoqFileMapInput {
+  fileId: string;
+  useAi: boolean;
+  sheets: BoqSheetMapDto[];
+}
+
+export interface SetBoqMappingInput {
+  files: BoqFileMapInput[];
+  /** Remember each sheet's columns by its headings for next time. */
+  remember: boolean;
 }
 
 export interface BoqAlternateDto {
@@ -111,6 +161,8 @@ export interface BoqImportLineDto {
   fileNumber: number;
   asPartNumber?: string | null;
   asDescription: string;
+  asMake?: string | null;
+  asUnit?: string | null;
   quantity: number;
   matchKind: BoqMatchKind;
   confidence: BoqConfidence;
@@ -239,6 +291,27 @@ export class BoqImportService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/boq-import/start-from-conversation',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getMapping = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, BoqMappingDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/boq-import/${id}/mapping`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  setMapping = (id: string, input: SetBoqMappingInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, BoqImportDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/boq-import/${id}/set-mapping`,
         body: input,
       },
       { apiName: this.apiName, ...config },

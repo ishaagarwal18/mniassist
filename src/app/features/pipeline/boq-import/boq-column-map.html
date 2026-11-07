@@ -1,0 +1,142 @@
+<section class="cm" aria-labelledby="cm-title">
+  <div class="cm__head">
+    <div>
+      <h2 id="cm-title" class="cm__h">Which column is which?</h2>
+      <p class="cm__muted">
+        Read by its columns, a sheet is copied exactly with no AI. Check the suggestions, pick the
+        heading row, and leave out sheets that aren't part of the BOQ.
+      </p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <p class="cm__muted">Opening the sheets…</p>
+  }
+  @if (error(); as e) {
+    <p class="cm__error" role="alert">{{ e }}</p>
+  }
+
+  @for (f of files(); track f.file.fileId; let fi = $index) {
+    <div class="cm__file">
+      <div class="cm__file-head">
+        <span class="cm__file-name" translate="no">{{ f.file.fileName }}</span>
+        @if (f.file.problem) {
+          <span class="cm__error">{{ f.file.problem }} AI will read it instead.</span>
+        } @else {
+          <label class="cm__check">
+            <input
+              type="checkbox"
+              [checked]="f.useAi"
+              (change)="setUseAi(fi, $any($event.target).checked)"
+            />
+            Let AI read this file instead
+          </label>
+        }
+      </div>
+
+      @if (!f.useAi) {
+        @for (s of f.file.sheets; track s.sheet; let si = $index) {
+          <div class="cm__sheet">
+            <div class="cm__sheet-head">
+              <label class="cm__check">
+                <input
+                  type="checkbox"
+                  [checked]="f.maps[si].include"
+                  (change)="setInclude(fi, si, $any($event.target).checked)"
+                />
+                <span class="cm__sheet-name" translate="no">{{ s.sheet }}</span>
+              </label>
+              <span class="cm__muted">{{ s.rowCount }} rows</span>
+              @if (s.remembered) {
+                <ar-chip tone="teal">Columns remembered</ar-chip>
+              }
+              @if (f.maps[si].include) {
+                <label class="cm__inline">
+                  Heading row
+                  <select
+                    class="ar-field__input cm__select"
+                    (change)="setHeader(fi, si, $any($event.target).value)"
+                  >
+                    <option value="-1" [selected]="f.maps[si].headerRow === -1">None</option>
+                    @for (r of headerOptions(s.rows.length); track r) {
+                      <option [value]="r" [selected]="f.maps[si].headerRow === r">
+                        Row {{ r + 1 }}
+                      </option>
+                    }
+                  </select>
+                </label>
+              }
+            </div>
+
+            @if (f.maps[si].include) {
+              <div class="cm__table-wrap">
+                <table class="cm__table">
+                  <thead>
+                    <tr>
+                      <th class="cm__rowno" scope="col"></th>
+                      @for (c of columns(s.columnCount); track c) {
+                        <th scope="col">
+                          <span class="cm__letter">{{ letter(c) }}</span>
+                          <select
+                            class="ar-field__input cm__select"
+                            [attr.aria-label]="'Column ' + letter(c) + ' of ' + s.sheet"
+                            (change)="setRole(fi, si, c, $any($event.target).value)"
+                          >
+                            <option value="" [selected]="roleOf(fi, si, c) === ''">Ignore</option>
+                            @for (r of roles; track r.role) {
+                              <option [value]="r.role" [selected]="roleOf(fi, si, c) === r.role">
+                                {{ r.label }}
+                              </option>
+                            }
+                          </select>
+                        </th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody translate="no">
+                    @for (row of s.rows; track $index; let ri = $index) {
+                      <tr
+                        [class.cm__row--head]="ri === f.maps[si].headerRow"
+                        [class.cm__row--skip]="ri < f.maps[si].headerRow"
+                      >
+                        <td class="cm__rowno">{{ ri + 1 }}</td>
+                        @for (c of columns(s.columnCount); track c) {
+                          <td [class.cm__col--on]="roleOf(fi, si, c) !== ''">{{ cell(row, c) }}</td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              @if (s.rowCount > s.rows.length) {
+                <p class="cm__muted">
+                  Showing the first {{ s.rows.length }} of {{ s.rowCount }} rows.
+                </p>
+              }
+            }
+          </div>
+        }
+      }
+    </div>
+  }
+
+  @if (!loading() && files().length) {
+    <div class="cm__foot">
+      <label class="cm__check">
+        <input
+          type="checkbox"
+          [checked]="remember()"
+          (change)="remember.set($any($event.target).checked)"
+        />
+        Remember these columns for sheets with the same headings
+      </label>
+      <span class="cm__spacer"></span>
+      @if (problem(); as p) {
+        <span class="cm__error">{{ p }}</span>
+      }
+      <button ar-button type="button" [disabled]="!!problem() || saving()" (click)="read()">
+        {{ saving() ? 'Starting…' : 'Read the lines' }}
+      </button>
+    </div>
+  }
+</section>

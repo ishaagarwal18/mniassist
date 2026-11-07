@@ -27,6 +27,7 @@ import { QuotationService } from '../../../proxy/pipeline/quotation.service';
 import type { CatalogueMatchDto } from '../../../proxy/pipeline/quote-pricing.models';
 import { ArBanner, ArButton, ArChip } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
+import { ArBoqColumnMap } from './boq-column-map';
 import {
   DECISION_LABEL,
   LineFilter,
@@ -56,7 +57,7 @@ interface Editing {
  */
 @Component({
   selector: 'ar-boq-import-review-page',
-  imports: [ArTopbar, ArButton, ArBanner, ArChip, ArGrid, GridModule, RouterLink],
+  imports: [ArTopbar, ArButton, ArBanner, ArChip, ArGrid, GridModule, RouterLink, ArBoqColumnMap],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './boq-import-review-page.html',
   styleUrl: './boq-import-review-page.scss',
@@ -266,6 +267,16 @@ export class ArBoqImportReviewPage {
     ) {
       this.editing.set(null);
     }
+  }
+
+  /** The columns are set and reading has started: follow it. */
+  protected onMapped(i: BoqImportDto): void {
+    this.item.set(i);
+    void this.load();
+  }
+
+  protected isText(v: unknown): boolean {
+    return typeof v === 'string' && v.length > 0;
   }
 
   protected async retry(): Promise<void> {

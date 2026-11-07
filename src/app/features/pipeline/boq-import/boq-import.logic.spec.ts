@@ -8,9 +8,14 @@ import {
   BoqImportState,
   BoqLineDecision,
   BoqMatchKind,
+  BoqSheetMapDto,
 } from '../../../proxy/pipeline/boq-import.service';
 import {
   acceptableSuggestions,
+  assign,
+  columnLetter,
+  mapProblem,
+  roleOf,
   filterLines,
   isReadable,
   matchLabel,
@@ -120,8 +125,24 @@ describe('BOQ import logic', () => {
     const two = importOf([line()], {
       state: BoqImportState.Reading,
       files: [
-        { id: '1', number: 1, fileName: 'a.xlsx', mediaType: 'x', sizeBytes: 1, lineCount: 0 },
-        { id: '2', number: 2, fileName: 'b.pdf', mediaType: 'x', sizeBytes: 1, lineCount: 0 },
+        {
+          id: '1',
+          number: 1,
+          fileName: 'a.xlsx',
+          mediaType: 'x',
+          sizeBytes: 1,
+          lineCount: 0,
+          mapped: false,
+        },
+        {
+          id: '2',
+          number: 2,
+          fileName: 'b.pdf',
+          mediaType: 'x',
+          sizeBytes: 1,
+          lineCount: 0,
+          mapped: false,
+        },
       ],
       filesRead: 1,
     });
@@ -131,5 +152,32 @@ describe('BOQ import logic', () => {
     );
     expect(size(2.5 * 1024 * 1024)).toBe('2.5 MB');
     expect(size(300)).toBe('1 KB');
+  });
+
+  it('names columns as a spreadsheet does', () => {
+    expect(columnLetter(0)).toBe('A');
+    expect(columnLetter(25)).toBe('Z');
+    expect(columnLetter(26)).toBe('AA');
+  });
+
+  it('gives each role to one column and each column one role', () => {
+    let map: BoqSheetMapDto = {
+      sheet: 'BOQ',
+      include: true,
+      headerRow: 1,
+      partNumber: 3,
+      description: 1,
+      quantity: 4,
+    };
+    map = assign(map, 1, 'partNumber');
+    expect(map.partNumber).toBe(1);
+    expect(map.description).toBeNull();
+    expect(roleOf(map, 1)).toBe('partNumber');
+    expect(roleOf(map, 3)).toBeNull();
+    expect(mapProblem(map)).toBeNull();
+
+    map = assign(map, 1, null);
+    expect(mapProblem(map)).toContain('part number or the description');
+    expect(mapProblem({ ...map, include: false })).toBeNull();
   });
 });

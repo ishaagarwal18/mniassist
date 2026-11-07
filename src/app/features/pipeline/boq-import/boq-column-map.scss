@@ -1,0 +1,121 @@
+:host {
+  display: block;
+}
+.cm {
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-card);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cm__h {
+  margin: 0 0 4px;
+  font: 600 14px var(--ar-font-sans);
+  color: var(--ar-ink-800);
+}
+.cm__muted {
+  margin: 0;
+  color: var(--ar-ink-400);
+  font: 400 12px var(--ar-font-sans);
+}
+.cm__error {
+  color: var(--ar-red-600);
+  font: 500 12px var(--ar-font-sans);
+}
+.cm__file {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid var(--ar-line-200);
+  padding-top: 12px;
+}
+.cm__file-head,
+.cm__sheet-head,
+.cm__foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cm__file-name {
+  font: 600 13px var(--ar-font-sans);
+  color: var(--ar-ink-800);
+}
+.cm__sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cm__sheet-name {
+  font: 600 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}
+.cm__check,
+.cm__inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}
+.cm__select {
+  padding: 3px 6px;
+  font-size: 12px;
+  min-width: 112px;
+}
+.cm__table-wrap {
+  overflow: auto;
+  max-height: 420px;
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-control);
+}
+.cm__table {
+  border-collapse: collapse;
+  font: 400 12px var(--ar-font-sans);
+  min-width: 100%;
+}
+.cm__table th {
+  position: sticky;
+  top: 0;
+  background: var(--ar-line-100);
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--ar-line-200);
+  vertical-align: top;
+}
+.cm__letter {
+  display: block;
+  font: 600 11px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+  margin-bottom: 4px;
+}
+.cm__table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--ar-line-100);
+  color: var(--ar-ink-700);
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cm__rowno {
+  color: var(--ar-ink-400);
+  text-align: right;
+  width: 36px;
+}
+.cm__col--on {
+  background: var(--ar-teal-50);
+  color: var(--ar-ink-900);
+}
+.cm__row--head td {
+  font-weight: 600;
+  background: var(--ar-amber-50);
+}
+.cm__row--skip td {
+  color: var(--ar-ink-300);
+}
+.cm__spacer {
+  flex: 1;
+}

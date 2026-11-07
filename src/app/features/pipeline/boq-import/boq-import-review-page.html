@@ -51,6 +51,9 @@
           </div>
         </section>
       }
+      @case (State.Mapping) {
+        <ar-boq-column-map [importId]="i.id" (started)="onMapped($event)" />
+      }
       @case (State.Uploading) {
         <section class="br__card">
           <p class="br__strong">This import has not been started.</p>
@@ -191,6 +194,11 @@
                     <span class="ar-mono br__part">{{ l.asPartNumber }}</span>
                   }
                   <span class="br__desc">{{ l.asDescription }}</span>
+                  @if (l.asMake || l.asUnit) {
+                    <span class="br__muted">{{
+                      [l.asMake, l.asUnit].filter(isText).join(' · ')
+                    }}</span>
+                  }
                 </div>
               </ng-template>
             </e-column>

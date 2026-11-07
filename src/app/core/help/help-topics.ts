@@ -455,6 +455,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Exact part-number matches are accepted already, so you only check the rest.',
     ],
     steps: [
+      'For a spreadsheet with a new layout, say which column is the part number, description and quantity, then click Read the lines. The same layout is remembered next time.',
       'Wait while the files are read; the page updates by itself.',
       'Under Needs checking, Accept a suggestion, Change it to another item, Price it by hand, or Skip it.',
       'Correct any quantity in the Qty column.',
