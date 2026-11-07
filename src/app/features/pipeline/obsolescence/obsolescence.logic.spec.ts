@@ -6,7 +6,14 @@ import {
   RadarRowDto,
   RiskBand,
 } from '../../../proxy/pipeline/obsolescence.service';
-import { atRiskSentence, groupRadar, LIFECYCLE_TEMPLATE, parseBand } from './obsolescence.logic';
+import {
+  atRiskSentence,
+  formatAccessories,
+  groupRadar,
+  LIFECYCLE_TEMPLATE,
+  parseAccessories,
+  parseBand,
+} from './obsolescence.logic';
 
 let next = 0;
 
@@ -91,5 +98,30 @@ describe('LIFECYCLE_TEMPLATE', () => {
     expect(header).toBe(
       'Make,Series,Part number,Stage,Effective on,Last-buy on,Replacement,Relation,Note,Source',
     );
+  });
+});
+
+describe('parseAccessories', () => {
+  it('reads part numbers with optional quantities and adds up repeats', () => {
+    expect(
+      parseAccessories('6ES7972-0BB12-0XA0 x2, CABLE-1\nkit-9 × 1.5, cable-1 x 3').items,
+    ).toEqual([
+      { partNumber: '6ES7972-0BB12-0XA0', quantityPerUnit: 2 },
+      { partNumber: 'CABLE-1', quantityPerUnit: 4 },
+      { partNumber: 'kit-9', quantityPerUnit: 1.5 },
+    ]);
+    expect(parseAccessories('  ').items).toEqual([]);
+  });
+
+  it('says what it could not read', () => {
+    expect(parseAccessories('mounting kit for rack').problem).toContain('mounting kit for rack');
+    expect(parseAccessories('KIT x 0').problem).not.toBeNull();
+  });
+
+  it('writes them back the same way', () => {
+    expect(formatAccessories([{ partNumber: 'KIT-1', quantityPerUnit: 2 }])).toBe('KIT-1 × 2');
+    expect(
+      parseAccessories(formatAccessories([{ partNumber: 'KIT-1', quantityPerUnit: 2 }])).items,
+    ).toEqual([{ partNumber: 'KIT-1', quantityPerUnit: 2 }]);
   });
 });

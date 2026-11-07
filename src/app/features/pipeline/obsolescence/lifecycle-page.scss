@@ -41,6 +41,9 @@
 .lc__wide {
   grid-column: span 2;
 }
+.lc__full {
+  grid-column: 1 / -1;
+}
 @media (max-width: 1000px) {
   .lc__form {
     grid-template-columns: 1fr 1fr;

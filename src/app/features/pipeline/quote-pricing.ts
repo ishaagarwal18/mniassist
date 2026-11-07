@@ -24,6 +24,8 @@ export interface QuoteRow {
   /** What the part listed for, in paise, so a lower price reads as a discount. */
   listPaise: number | null;
   moq: number;
+  /** Left at ₹0 for a person to price (an engineering line, a replacement to choose): issuing waits until it has a price. */
+  mustBePriced?: boolean;
 }
 
 export interface QuoteTaxLine {
@@ -112,6 +114,7 @@ export function rowFromLine(line: QuotationLineDto, key: number): QuoteRow {
     listName: null,
     listPaise: line.listPriceInPaise ?? null,
     moq: 0,
+    mustBePriced: !!line.mustBePriced,
   };
 }
 

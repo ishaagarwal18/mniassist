@@ -16,6 +16,7 @@ export enum LeadSource {
   PublicCatalogue = 12,
   LeadAd = 13,
   VoiceAgent = 14,
+  Obsolescence = 15,
 }
 
 export const leadSourceOptions = mapEnumToOptions(LeadSource);

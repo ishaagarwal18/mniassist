@@ -1,5 +1,6 @@
 import type { ChipTone } from '../../../ui';
 import {
+  LifecycleAccessoryDto,
   LifecycleStage,
   MigrationState,
   RadarRowDto,
@@ -170,4 +171,35 @@ export const LIFECYCLE_TEMPLATE = [
 /** A yyyy-MM-dd date for an <input type="date"> from an API date-time. */
 export function dateOnly(value: string | null | undefined): string {
   return value ? value.slice(0, 10) : '';
+}
+
+/** "6ES7972-0BB12-0XA0 × 2, CABLE-1" as typed: one entry per comma or line, a quantity after x or × (1 when left out). */
+export function parseAccessories(text: string): {
+  items: LifecycleAccessoryDto[];
+  problem: string | null;
+} {
+  const items: LifecycleAccessoryDto[] = [];
+  for (const raw of text.split(/[,;\n]+/)) {
+    const entry = raw.trim();
+    if (!entry) continue;
+    const m = /^(.+?)(?:\s*[x×*]\s*(\d+(?:\.\d+)?))?$/i.exec(entry);
+    const part = m?.[1]?.trim() ?? '';
+    const qty = m?.[2] === undefined ? 1 : Number(m[2]);
+    if (!part || /\s/.test(part) || !(qty > 0)) {
+      return {
+        items: [],
+        problem: `“${entry}” isn't a part number and quantity, such as 6ES7972-0BB12-0XA0 × 2.`,
+      };
+    }
+    const same = items.find((i) => i.partNumber.toUpperCase() === part.toUpperCase());
+    if (same) same.quantityPerUnit += qty;
+    else items.push({ partNumber: part, quantityPerUnit: qty });
+  }
+  return { items, problem: null };
+}
+
+export function formatAccessories(
+  items: readonly LifecycleAccessoryDto[] | null | undefined,
+): string {
+  return (items ?? []).map((a) => `${a.partNumber} × ${a.quantityPerUnit}`).join(', ');
 }

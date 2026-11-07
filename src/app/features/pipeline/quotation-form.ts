@@ -56,6 +56,7 @@ import {
   QuoteRecipient,
   canIssueState,
   isQuotationLocked,
+  isUnpriced,
   parseEmails,
   quotationPayload,
   unreachable,
@@ -497,6 +498,9 @@ export class ArQuotationForm implements OnInit {
   }
   protected lineTotal(r: QuoteRow): number {
     return lineTotalPaise(r);
+  }
+  protected unpriced(r: QuoteRow): boolean {
+    return isUnpriced(r);
   }
   protected below(r: QuoteRow): boolean {
     return belowMinimum(r);

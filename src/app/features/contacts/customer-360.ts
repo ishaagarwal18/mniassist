@@ -32,6 +32,7 @@ import { ArButton, ArChip, ArIcon, ArSearchBox, ArTabs, ChipTone } from '../../u
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../ui/grid';
 import { ArCustomerActions } from './customer-actions';
+import { ArAtRiskCard } from '../pipeline/obsolescence/at-risk-card';
 import { ArCustomer360Links } from './customer-360-links';
 import { CockpitOriginService } from '../../layout/cockpit-origin.service';
 import { scopeParams } from '../../core/util/customer-scope';
@@ -242,6 +243,7 @@ const ACCOUNT_TABS: readonly Customer360Tab[] = [
   selector: 'ar-customer-360',
   standalone: true,
   imports: [
+    ArAtRiskCard,
     CommonModule,
     FormsModule,
     RouterLink,

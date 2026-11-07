@@ -130,6 +130,11 @@
     <!-- Operational Actions Ribbon -->
     <ar-customer-actions [customer]="c" (changed)="refreshCustomer()" />
 
+    <ar-at-risk-card
+      [contactId]="c.isAccountView ? null : (c.contactId ?? c.id ?? null)"
+      [accountId]="c.isAccountView ? (c.accountId ?? null) : null"
+    />
+
     @if (isPersonView()) {
       <!-- A person: selling happens on their account -->
       <section class="c360-account-note" aria-label="Orders, invoices and service">
@@ -567,7 +572,12 @@
                 {{ o.orderDateUtc | date: 'dd MMM yyyy' }}
               </ng-template>
             </e-column>
-            <e-column field="grandTotalInPaise" headerText="Grand Total" width="140" [textAlign]="'Right'">
+            <e-column
+              field="grandTotalInPaise"
+              headerText="Grand Total"
+              width="140"
+              [textAlign]="'Right'"
+            >
               <ng-template #template let-o>
                 <span class="font-bold">₹{{ o.grandTotalInPaise / 100 | number: '1.2-2' }}</span>
               </ng-template>
@@ -671,9 +681,7 @@
             <e-column headerText="Action" width="140" freeze="Right">
               <ng-template #template let-dc>
                 <div class="actions-col">
-                  <a ar-button variant="ghost" [routerLink]="['/sales/challans', dc.id]">
-                    View
-                  </a>
+                  <a ar-button variant="ghost" [routerLink]="['/sales/challans', dc.id]"> View </a>
                   <a
                     ar-button
                     variant="ghost"
@@ -751,12 +759,22 @@
                 </div>
               </ng-template>
             </e-column>
-            <e-column field="grandTotalInPaise" headerText="Invoice Total" width="140" [textAlign]="'Right'">
+            <e-column
+              field="grandTotalInPaise"
+              headerText="Invoice Total"
+              width="140"
+              [textAlign]="'Right'"
+            >
               <ng-template #template let-inv>
                 <span class="font-bold">₹{{ inv.grandTotalInPaise / 100 | number: '1.2-2' }}</span>
               </ng-template>
             </e-column>
-            <e-column field="balanceDueInPaise" headerText="Balance Due" width="140" [textAlign]="'Right'">
+            <e-column
+              field="balanceDueInPaise"
+              headerText="Balance Due"
+              width="140"
+              [textAlign]="'Right'"
+            >
               <ng-template #template let-inv>
                 <span class="font-bold" [class.text-danger]="inv.balanceDueInPaise > 0">
                   ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
@@ -773,9 +791,7 @@
             <e-column headerText="Action" width="140" freeze="Right">
               <ng-template #template let-inv>
                 <div class="actions-col">
-                  <a ar-button variant="ghost" [routerLink]="['/sales/invoices', inv.id]">
-                    View
-                  </a>
+                  <a ar-button variant="ghost" [routerLink]="['/sales/invoices', inv.id]"> View </a>
                   <a
                     ar-button
                     variant="ghost"
@@ -905,9 +921,7 @@
             </e-column>
             <e-column headerText="Status" width="130">
               <ng-template #template let-t>
-                <ar-chip [tone]="t.status === 'Pending' ? 'warn' : 'teal'">{{
-                  t.status
-                }}</ar-chip>
+                <ar-chip [tone]="t.status === 'Pending' ? 'warn' : 'teal'">{{ t.status }}</ar-chip>
               </ng-template>
             </e-column>
             <e-column field="creationTime" headerText="Created" width="130">
@@ -917,13 +931,7 @@
             </e-column>
             <e-column headerText="Action" width="110" freeze="Right">
               <ng-template #template let-t>
-                <a
-                  ar-button
-                  variant="ghost"
-                  [routerLink]="['/helpdesk', t.id]"
-                >
-                  Desk
-                </a>
+                <a ar-button variant="ghost" [routerLink]="['/helpdesk', t.id]"> Desk </a>
               </ng-template>
             </e-column>
           </e-columns>

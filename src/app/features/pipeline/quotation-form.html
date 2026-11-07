@@ -358,6 +358,9 @@
                         </button>
                       }
                     </div>
+                    @if (unpriced(r)) {
+                      <div class="qe__warn">Price this line by hand before issuing.</div>
+                    }
                     @if (below(r)) {
                       <div class="qe__warn">
                         Under the minimum order of {{ r.moq }} for this part.

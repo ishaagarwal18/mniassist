@@ -2,6 +2,11 @@ import type { CreateUpdateQuotationDto } from '../../proxy/pipeline';
 import { QuotationState } from '../../proxy/pipeline';
 import { QuoteRow, percentToBasisPoints, rupeesToPaise, taxBasisPointsOf } from './quote-pricing';
 
+/** A line left at ₹0 for a person to price, still unpriced. */
+export function isUnpriced(row: QuoteRow): boolean {
+  return !!row.mustBePriced && rupeesToPaise(row.price) === 0;
+}
+
 /** Who a new quotation is for: an open enquiry, or a customer directly (a manual quotation). */
 export type QuoteFor = 'enquiry' | 'manual';
 
@@ -49,6 +54,8 @@ export function validateQuotation(
   if (rows.some((r) => !r.description.trim())) return 'Every line needs a description.';
   if (rows.some((r) => !(Number(r.quantity) > 0))) return 'Every line needs a quantity above zero.';
   if (issuing && rows.length === 0) return 'Add at least one line before issuing.';
+  const unpriced = issuing ? rows.find(isUnpriced) : undefined;
+  if (unpriced) return `Price the line “${unpriced.description.trim()}” before issuing.`;
   return null;
 }
 
@@ -87,6 +94,7 @@ export function quotationPayload(
       priceSource: r.source,
       priceListId: r.priceListId,
       listPriceInPaise: r.listPaise,
+      mustBePriced: !!r.mustBePriced,
     })),
   };
 }

@@ -222,6 +222,19 @@
           }
         </select>
       </label>
+      @if (form().relation === Relation.NeedsAdapter) {
+        <label class="ar-field lc__full">
+          <span class="ar-field__label"
+            >Accessories per replaced unit
+            <span class="ar-field__opt">catalogue parts, e.g. 6ES7972-0BB12-0XA0 × 2</span></span
+          >
+          <input
+            class="ar-field__input ar-mono"
+            [value]="form().accessories"
+            (input)="patch({ accessories: $any($event.target).value })"
+          />
+        </label>
+      }
       <label class="ar-field lc__wide">
         <span class="ar-field__label">Note <span class="ar-field__opt">optional</span></span>
         <input
@@ -329,6 +342,9 @@
                   r.replacementPartNumber ?? r.replacementSeries + ' series'
                 }}</span>
                 <span class="lc__muted" translate="yes">{{ relationText(r.relation) }}</span>
+                @if (r.accessories?.length) {
+                  <span class="lc__muted">+ {{ formatAccessories(r.accessories) }}</span>
+                }
               }
               @if (r.stage !== Stage.Active) {
                 @if (r.replacementProblem) {

@@ -12,8 +12,10 @@ import { ArTopbar } from '../../../layout/topbar';
 import {
   GetRadarInput,
   LifecycleStage,
+  MigrationGrouping,
   MigrationState,
   ObsolescenceService,
+  OpenMigrationEnquiriesResultDto,
   RadarPersonDto,
   RadarRowDto,
   RadarSummaryDto,
@@ -65,6 +67,21 @@ export class ArRadarPage {
   protected readonly bands = [RiskBand.High, RiskBand.Medium, RiskBand.Low];
   protected readonly reasons = DISMISS_REASONS;
   protected readonly canEditRules = grantedPolicy('AutoReach.Library.Lifecycle', this.permissions);
+  private readonly canCreateEnquiries = grantedPolicy(
+    'AutoReach.Pipeline.Create',
+    this.permissions,
+  );
+  private readonly canCreateQuotations = grantedPolicy(
+    'AutoReach.Quotations.Create',
+    this.permissions,
+  );
+  protected readonly canOpen = computed(
+    () => this.canCreateEnquiries() && this.canCreateQuotations(),
+  );
+  protected readonly Grouping = MigrationGrouping;
+  protected readonly grouping = signal(MigrationGrouping.Site);
+  /** The enquiries just opened, shown until dismissed. */
+  protected readonly opened = signal<OpenMigrationEnquiriesResultDto | null>(null);
 
   protected readonly view = signal(RadarView.Open);
   protected readonly search = signal('');
@@ -77,6 +94,7 @@ export class ArRadarPage {
   protected readonly amcOnly = signal(false);
   protected readonly notNotified = signal(false);
   private readonly contactId: string | null;
+  private readonly accountId: string | null;
 
   protected readonly rows = signal<RadarRowDto[]>([]);
   protected readonly total = signal(0);
@@ -104,6 +122,7 @@ export class ArRadarPage {
     const query = inject(ActivatedRoute).snapshot.queryParamMap;
     this.band.set(parseBand(query.get('band')));
     this.contactId = query.get('contactId');
+    this.accountId = query.get('accountId');
     void this.load();
     if (!this.mock) {
       firstValueFrom(this.api.getPeople())
@@ -134,6 +153,7 @@ export class ArRadarPage {
       city: this.city().trim() || null,
       ownerUserId: this.owner() || null,
       contactId: this.contactId,
+      accountId: this.accountId,
       amcOnly: this.amcOnly(),
       notNotified: this.notNotified(),
       skipCount: skip,
@@ -279,6 +299,31 @@ export class ArRadarPage {
       await this.load();
     } catch (e) {
       this.toasts.error(readApiError(e, 'The change could not be saved.'));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** One enquiry per site (or account) with a draft quotation of the replacements, for an engineer to check, price and issue. */
+  protected async openEnquiries(): Promise<void> {
+    if (!this.selected().size) return;
+    this.busy.set(true);
+    try {
+      const result = await firstValueFrom(
+        this.api.openEnquiries([...this.selected()], this.grouping()),
+      );
+      this.opened.set(result);
+      const n = result.enquiries.length;
+      if (n) {
+        this.toasts.success(
+          `${n} migration enquir${n === 1 ? 'y' : 'ies'} opened with draft quotations.`,
+        );
+      } else {
+        this.toasts.warning('No enquiries were opened: see why below.');
+      }
+      await this.load();
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The enquiries could not be opened.'));
     } finally {
       this.busy.set(false);
     }

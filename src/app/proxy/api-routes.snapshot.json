@@ -860,6 +860,7 @@
     "POST /api/auto-reach/number-migration/{}/verify",
     "POST /api/auto-reach/obsolescence/assign",
     "POST /api/auto-reach/obsolescence/dismiss",
+    "POST /api/auto-reach/obsolescence/open-enquiries",
     "POST /api/auto-reach/obsolescence/rescan",
     "POST /api/auto-reach/obsolescence/restore",
     "POST /api/auto-reach/onboarding-checklist/confirm-mobile-verification",

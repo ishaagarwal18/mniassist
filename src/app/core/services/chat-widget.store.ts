@@ -57,6 +57,7 @@ export const SOURCE_LABEL: Record<LeadSource, string> = {
   [LeadSource.PublicCatalogue]: 'Public catalogue',
   [LeadSource.LeadAd]: 'Facebook / Instagram lead form',
   [LeadSource.VoiceAgent]: 'AI voice agent',
+  [LeadSource.Obsolescence]: 'Obsolescence radar',
 };
 
 function toEntryPoint(dto: ChatEntryPointDto): ChatEntryPoint {

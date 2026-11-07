@@ -38,6 +38,16 @@ export enum RadarView {
   Dismissed = 2,
 }
 
+export enum MigrationGrouping {
+  Site = 0,
+  Account = 1,
+}
+
+export interface LifecycleAccessoryDto {
+  partNumber: string;
+  quantityPerUnit: number;
+}
+
 export interface LifecycleRuleDto {
   id: string;
   make: string;
@@ -50,6 +60,7 @@ export interface LifecycleRuleDto {
   replacementPartNumber?: string | null;
   replacementSeries?: string | null;
   relation: ReplacementRelation;
+  accessories: LifecycleAccessoryDto[];
   note?: string | null;
   sourceReference?: string | null;
   isAnnounced: boolean;
@@ -77,6 +88,8 @@ export interface CreateUpdateLifecycleRuleDto {
   replacementPartNumber?: string | null;
   replacementSeries?: string | null;
   relation: ReplacementRelation;
+  /** For Needs adapter; null leaves them as they are. */
+  accessories?: LifecycleAccessoryDto[] | null;
   note?: string | null;
   sourceReference?: string | null;
 }
@@ -127,6 +140,7 @@ export interface GetRadarInput {
   city?: string | null;
   ownerUserId?: string | null;
   contactId?: string | null;
+  accountId?: string | null;
   amcOnly?: boolean;
   notNotified?: boolean;
   view?: RadarView;
@@ -180,6 +194,7 @@ export interface RadarRowDto {
   state: MigrationState;
   dismissedReason?: string | null;
   enquiryId?: string | null;
+  quotationId?: string | null;
   ownerUserId?: string | null;
   ownerName?: string | null;
 }
@@ -194,6 +209,24 @@ export interface ScanResultDto {
   atRiskComponents: number;
   atRiskSites: number;
   announcedComponents: number;
+}
+
+export interface MigrationEnquiryDto {
+  enquiryId: string;
+  enquiryReference: string;
+  quotationId: string;
+  quotationReference: string;
+  accountName?: string | null;
+  siteName?: string | null;
+  components: number;
+  lines: number;
+  subtotalInPaise: number;
+  needsPricing: boolean;
+}
+
+export interface OpenMigrationEnquiriesResultDto {
+  enquiries: MigrationEnquiryDto[];
+  skipped: string[];
 }
 
 export interface RadarPersonDto {
@@ -310,6 +343,7 @@ export class ObsolescenceService {
           city: input.city,
           ownerUserId: input.ownerUserId,
           contactId: input.contactId,
+          accountId: input.accountId,
           amcOnly: input.amcOnly,
           notNotified: input.notNotified,
           view: input.view,
@@ -360,6 +394,18 @@ export class ObsolescenceService {
         method: 'POST',
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/obsolescence/rescan',
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** One enquiry per site (or account) with a draft quotation of the replacements; nothing is issued. */
+  openEnquiries = (ids: string[], groupBy: MigrationGrouping, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, OpenMigrationEnquiriesResultDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/obsolescence/open-enquiries',
+        body: { ids, groupBy },
       },
       { apiName: this.apiName, ...config },
     );

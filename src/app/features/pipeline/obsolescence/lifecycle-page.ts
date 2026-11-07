@@ -22,6 +22,8 @@ import { environment } from '../../../../environments/environment';
 import {
   atRiskSentence,
   dateOnly,
+  formatAccessories,
+  parseAccessories,
   LIFECYCLE_TEMPLATE,
   relationText,
   RELATIONS,
@@ -43,6 +45,8 @@ interface RuleForm {
   replacementPartNumber: string;
   replacementSeries: string;
   relation: ReplacementRelation;
+  /** For Needs adapter: "KIT-1 × 2, CABLE-1". */
+  accessories: string;
   note: string;
   sourceReference: string;
 }
@@ -64,6 +68,7 @@ function blank(): RuleForm {
     replacementPartNumber: '',
     replacementSeries: '',
     relation: ReplacementRelation.DirectSwap,
+    accessories: '',
     note: '',
     sourceReference: '',
   };
@@ -90,6 +95,8 @@ export class ArLifecyclePage {
   protected readonly stages = STAGES;
   protected readonly relations = RELATIONS;
   protected readonly Stage = LifecycleStage;
+  protected readonly Relation = ReplacementRelation;
+  protected formatAccessories = formatAccessories;
 
   protected readonly rows = signal<LifecycleRuleDto[]>([]);
   protected readonly total = signal(0);
@@ -180,6 +187,7 @@ export class ArLifecyclePage {
       replacementPartNumber: r.replacementPartNumber ?? '',
       replacementSeries: r.replacementSeries ?? '',
       relation: r.relation,
+      accessories: formatAccessories(r.accessories),
       note: r.note ?? '',
       sourceReference: r.sourceReference ?? '',
     });
@@ -201,6 +209,12 @@ export class ArLifecyclePage {
       this.toasts.warning('Give the date the stage starts.');
       return;
     }
+    const adapter = f.relation === ReplacementRelation.NeedsAdapter;
+    const accessories = parseAccessories(adapter ? f.accessories : '');
+    if (accessories.problem) {
+      this.toasts.warning(accessories.problem);
+      return;
+    }
     const input: CreateUpdateLifecycleRuleDto = {
       make: f.make.trim(),
       series: f.target === 'series' ? what : null,
@@ -211,6 +225,7 @@ export class ArLifecyclePage {
       replacementPartNumber: f.replacementPartNumber.trim() || null,
       replacementSeries: f.replacementPartNumber.trim() ? null : f.replacementSeries.trim() || null,
       relation: f.relation,
+      accessories: accessories.items,
       note: f.note.trim() || null,
       sourceReference: f.sourceReference.trim() || null,
     };

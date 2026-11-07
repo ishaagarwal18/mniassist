@@ -26,6 +26,58 @@
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }
 
+  @if (opened(); as o) {
+    <section class="rd__opened" aria-label="Enquiries opened">
+      <header class="rd__opened-head">
+        <strong
+          >{{ o.enquiries.length }} migration enquir{{
+            o.enquiries.length === 1 ? 'y' : 'ies'
+          }}
+          opened</strong
+        >
+        <span class="rd__muted">Each quotation is a draft: check it, price it and issue it.</span>
+        <span class="rd__spacer"></span>
+        <button type="button" class="rd__close" aria-label="Close" (click)="opened.set(null)">
+          ×
+        </button>
+      </header>
+      @if (o.enquiries.length) {
+        <ul class="rd__opened-list">
+          @for (e of o.enquiries; track e.enquiryId) {
+            <li>
+              <a [routerLink]="['/quotations', e.quotationId, 'edit']" class="ar-mono">{{
+                e.quotationReference
+              }}</a>
+              <span translate="no"
+                >{{ e.accountName ?? '' }}{{ e.siteName ? ' · ' + e.siteName : '' }}</span
+              >
+              <span class="rd__muted"
+                >{{ e.components }} component{{ e.components === 1 ? '' : 's' }} ·
+                {{ inr(e.subtotalInPaise) }}</span
+              >
+              @if (e.needsPricing) {
+                <ar-chip tone="warn">Lines to price by hand</ar-chip>
+              }
+              <a class="rd__muted" routerLink="/enquiries" [queryParams]="{ open: e.enquiryId }"
+                >Enquiry {{ e.enquiryReference }}</a
+              >
+            </li>
+          }
+        </ul>
+      }
+      @if (o.skipped.length) {
+        <div class="rd__muted">
+          Not included:
+          <ul class="rd__opened-list" translate="no">
+            @for (s of o.skipped; track $index) {
+              <li>{{ s }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </section>
+  }
+
   @if (summary(); as s) {
     <div class="rd__tiles">
       <ar-stat-tile label="Phase-out" [value]="s.phaseOut" tone="amber"></ar-stat-tile>
@@ -168,6 +220,24 @@
           Put back on the radar
         </button>
       } @else {
+        @if (canOpen() && view() === View.Open) {
+          <select
+            class="ar-field__input"
+            aria-label="One enquiry per"
+            (change)="grouping.set(+$any($event.target).value)"
+          >
+            <option [value]="Grouping.Site" [selected]="grouping() === Grouping.Site">
+              One enquiry per site
+            </option>
+            <option [value]="Grouping.Account" [selected]="grouping() === Grouping.Account">
+              One enquiry per account
+            </option>
+          </select>
+          <button ar-button type="button" [disabled]="busy()" (click)="openEnquiries()">
+            Open migration enquiry
+          </button>
+          <span class="rd__sep"></span>
+        }
         <select
           class="ar-field__input"
           aria-label="Reason for dismissing"
@@ -339,7 +409,13 @@
                     </td>
                     <td>{{ r.lastServicedOn ? (r.lastServicedOn | date: 'd MMM y') : '—' }}</td>
                     <td>
-                      {{ stateText(r.state) }}
+                      @if (r.quotationId) {
+                        <a [routerLink]="['/quotations', r.quotationId, 'edit']">{{
+                          stateText(r.state)
+                        }}</a>
+                      } @else {
+                        {{ stateText(r.state) }}
+                      }
                       @if (r.dismissedReason) {
                         <div class="rd__muted" translate="no">{{ r.dismissedReason }}</div>
                       }

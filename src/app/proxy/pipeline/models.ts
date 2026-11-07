@@ -68,6 +68,8 @@ export interface CreateUpdateQuotationLineDto {
   useCataloguePrice?: boolean;
   taxRateBasisPoints?: number | null;
   keepPricing?: boolean;
+  /** Kept from the saved line: it still has to be priced before the quotation is issued. */
+  mustBePriced?: boolean;
   priceSource?: QuotePriceSource;
   priceListId?: string | null;
   listPriceInPaise?: number | null;
@@ -273,6 +275,8 @@ export interface QuotationLineDto extends EntityDto<string> {
   priceListId?: string | null;
   listPriceInPaise?: number | null;
   taxRateBasisPoints?: number | null;
+  /** Written at ₹0 for a person to price; the quotation can't be issued until it is. */
+  mustBePriced?: boolean;
 }
 
 export interface QuotationTaxLineDto {

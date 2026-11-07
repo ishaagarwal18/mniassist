@@ -46,6 +46,22 @@ describe('quotation-form.logic', () => {
     expect(validateQuotation(null, [line('Contactor')], true)).toBeNull();
   });
 
+  it('keeps a price-by-hand line from being issued until it has a price', () => {
+    const engineering = {
+      ...line('Engineering and commissioning'),
+      price: '0',
+      mustBePriced: true,
+    };
+    expect(validateQuotation(null, [engineering], false)).toBeNull();
+    expect(validateQuotation(null, [engineering], true)).toBe(
+      'Price the line “Engineering and commissioning” before issuing.',
+    );
+    expect(validateQuotation(null, [{ ...engineering, price: '45000' }], true)).toBeNull();
+    expect(quotationPayload(null, 'e-1', '', 1800, [engineering]).lines?.[0]?.mustBePriced).toBe(
+      true,
+    );
+  });
+
   it('reads valid-for days as a whole number from 1 to 365', () => {
     expect(parseValidDays(' 30 ')).toBe(30);
     expect(parseValidDays('0')).toBeNull();
