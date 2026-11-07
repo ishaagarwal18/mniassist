@@ -1,0 +1,121 @@
+<ar-card heading="Revisions">
+  @if (loading()) {
+    <p class="rv__muted">Loading…</p>
+  } @else if (!revisions().length) {
+    <p class="rv__muted">
+      No revisions are kept for this quotation yet. Each issue from now on is kept, with its PDF.
+    </p>
+  } @else {
+    <table class="rv__table">
+      <thead>
+        <tr>
+          <th scope="col">Revision</th>
+          <th scope="col">Issued</th>
+          <th scope="col">By</th>
+          <th scope="col" class="rv__num">Lines</th>
+          <th scope="col" class="rv__num">Total</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of revisions(); track r.revisionNumber) {
+          <tr>
+            <td class="ar-mono">R{{ r.revisionNumber }}</td>
+            <td>{{ r.issuedAtUtc | date: 'd MMM y, HH:mm' }}</td>
+            <td translate="no">{{ r.issuedByName ?? '—' }}</td>
+            <td class="rv__num">{{ r.lineCount }}</td>
+            <td class="rv__num">{{ inr(r.totalInPaise) }}</td>
+            <td>
+              @if (r.hasPdf) {
+                <button type="button" class="rv__link" (click)="download(r)">PDF</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (revisions().length >= 2) {
+      <div class="rv__compare">
+        <span class="rv__label">Compare</span>
+        <select
+          class="ar-field__input rv__select"
+          aria-label="Earlier revision"
+          (change)="pick('from', $any($event.target).value)"
+        >
+          @for (r of revisions(); track r.revisionNumber) {
+            <option [value]="r.revisionNumber" [selected]="r.revisionNumber === from()">
+              R{{ r.revisionNumber }}
+            </option>
+          }
+        </select>
+        <span class="rv__label">with</span>
+        <select
+          class="ar-field__input rv__select"
+          aria-label="Later revision"
+          (change)="pick('to', $any($event.target).value)"
+        >
+          @for (r of revisions(); track r.revisionNumber) {
+            <option [value]="r.revisionNumber" [selected]="r.revisionNumber === to()">
+              R{{ r.revisionNumber }}
+            </option>
+          }
+        </select>
+        @if (diff()) {
+          <button ar-button type="button" variant="ghost" icon="copy" (click)="copyChanges()">
+            Copy changes
+          </button>
+        }
+      </div>
+
+      @if (comparing()) {
+        <p class="rv__muted">Comparing…</p>
+      } @else if (diff(); as d) {
+        <p class="rv__summary">{{ d.summary }}</p>
+        @if (d.lines.length) {
+          <table class="rv__table">
+            <thead>
+              <tr>
+                <th scope="col"></th>
+                <th scope="col">Item</th>
+                <th scope="col" class="rv__num">Qty</th>
+                <th scope="col" class="rv__num">Unit price</th>
+                <th scope="col" class="rv__num">Discount</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of d.lines; track $index) {
+                <tr>
+                  <td>
+                    <ar-chip [tone]="tone(l.change)">{{ l.change }}</ar-chip>
+                  </td>
+                  <td translate="no">
+                    @if (l.partNumber) {
+                      <span class="ar-mono">{{ l.partNumber }}</span>
+                    }
+                    {{ l.description }}
+                  </td>
+                  <td class="rv__num">{{ qty(l.fromQuantity) }} → {{ qty(l.toQuantity) }}</td>
+                  <td class="rv__num">
+                    {{ money(l.fromUnitPriceInPaise) }} → {{ money(l.toUnitPriceInPaise) }}
+                  </td>
+                  <td class="rv__num">
+                    {{
+                      l.fromDiscountBasisPoints == null
+                        ? '—'
+                        : l.fromDiscountBasisPoints / 100 + '%'
+                    }}
+                    →
+                    {{
+                      l.toDiscountBasisPoints == null ? '—' : l.toDiscountBasisPoints / 100 + '%'
+                    }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      }
+    }
+  }
+</ar-card>

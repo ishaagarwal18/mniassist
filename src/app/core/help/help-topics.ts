@@ -493,6 +493,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   },
   'quotations/:id/edit': {
     benefits: [
+      'Every issue is kept as a revision with its PDF; compare any two and copy the changes for the customer.',
       'Change the lines of a draft or an issued quotation.',
       'Issuing again sends the customer a new revision and restarts the follow-ups.',
     ],

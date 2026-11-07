@@ -9,6 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { ArQuoteRevisions } from './quote-revisions';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -85,7 +86,17 @@ const STATE_LABEL: Record<QuotationState, { label: string; tone: ChipTone }> = {
  */
 @Component({
   selector: 'ar-quotation-form',
-  imports: [ArTopbar, ArButton, ArCard, ArChip, ArBanner, ArContactPicker, ArGrid, GridModule],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArCard,
+    ArChip,
+    ArBanner,
+    ArContactPicker,
+    ArGrid,
+    GridModule,
+    ArQuoteRevisions,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quotation-form.html',
   styleUrl: './quotation-form.scss',

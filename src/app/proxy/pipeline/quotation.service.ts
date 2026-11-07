@@ -16,6 +16,43 @@ import { RestService, Rest } from '@abp/ng.core';
 import type { PagedResultDto } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
 
+/** A quotation as it was issued: R0 is the first issue, R1 the next. */
+export interface QuotationRevisionDto {
+  revisionNumber: number;
+  issuedAtUtc: string;
+  issuedByUserId?: string | null;
+  issuedByName?: string | null;
+  subtotalInPaise: number;
+  taxInPaise: number;
+  totalInPaise: number;
+  lineCount: number;
+  hasPdf: boolean;
+}
+
+export interface QuotationRevisionLineDiffDto {
+  /** Added, Removed or Changed. */
+  change: 'Added' | 'Removed' | 'Changed';
+  partNumber?: string | null;
+  description: string;
+  fromQuantity?: number | null;
+  toQuantity?: number | null;
+  fromUnitPriceInPaise?: number | null;
+  toUnitPriceInPaise?: number | null;
+  fromDiscountBasisPoints?: number | null;
+  toDiscountBasisPoints?: number | null;
+}
+
+export interface QuotationRevisionDiffDto {
+  fromRevision: number;
+  toRevision: number;
+  fromTotalInPaise: number;
+  toTotalInPaise: number;
+  summary: string;
+  /** The changes as a plain list, for the message that sends the new revision. */
+  changeNote: string;
+  lines: QuotationRevisionLineDiffDto[];
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -50,6 +87,39 @@ export class QuotationService {
         responseType: 'blob',
         headers: { Accept: 'application/octet-stream' },
         url: `/api/auto-reach/quotation/${id}/download-pdf`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getRevisions = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, QuotationRevisionDto[]>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/quotation/${id}/revisions`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  compareRevisions = (id: string, from: number, to: number, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, QuotationRevisionDiffDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/quotation/${id}/compare-revisions`,
+        body: { from, to },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  downloadRevisionPdf = (id: string, revision: number, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, Blob>(
+      {
+        method: 'POST',
+        responseType: 'blob',
+        headers: { Accept: 'application/octet-stream' },
+        url: `/api/auto-reach/quotation/${id}/download-revision-pdf`,
+        params: { revision },
       },
       { apiName: this.apiName, ...config },
     );

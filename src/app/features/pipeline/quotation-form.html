@@ -540,7 +540,9 @@
                       </e-column>
                       <e-column headerText="Would be" width="120" [textAlign]="'Right'">
                         <ng-template #template let-l>
-                          <span class="num font-mono font-bold">{{ money(l.newUnitPriceInPaise ?? 0) }}</span>
+                          <span class="num font-mono font-bold">{{
+                            money(l.newUnitPriceInPaise ?? 0)
+                          }}</span>
                         </ng-template>
                       </e-column>
                     </e-columns>
@@ -739,6 +741,10 @@
             </button>
           }
         </div>
+      }
+
+      @if (quote()?.id && quote()!.state !== 0) {
+        <ar-quote-revisions [quotationId]="quote()!.id!" [reference]="quote()!.reference ?? ''" />
       }
     }
   </div>
