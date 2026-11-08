@@ -34,6 +34,13 @@ export interface SalesInvoicePaymentDto extends EntityDto<string> {
 }
 
 export interface SalesInvoiceDto extends FullAuditedEntityDto<string> {
+  /** Milestone billing: its milestone, the advance and retention taken off, and what is payable now. */
+  billingMilestoneId?: string | null;
+  billingMilestoneName?: string | null;
+  billingPlanOrderId?: string | null;
+  advanceAdjustedInPaise?: number;
+  retentionHeldInPaise?: number;
+  netPayableInPaise?: number;
   invoiceNumber: string;
   kind: SalesInvoiceKind;
   status: SalesInvoiceStatus;
@@ -86,6 +93,9 @@ export interface CreateSalesInvoiceLineDto {
 }
 
 export interface CreateSalesInvoiceDto {
+  billingMilestoneId?: string | null;
+  advanceAdjustedInPaise?: number;
+  retentionHeldInPaise?: number;
   invoiceNumber?: string;
   kind?: SalesInvoiceKind;
   originalInvoiceId?: string;

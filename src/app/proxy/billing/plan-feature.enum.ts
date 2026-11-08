@@ -26,6 +26,7 @@ export enum PlanFeature {
   FieldService = 23,
   Partners = 24,
   OemPricing = 25,
+  ProjectBilling = 26,
 }
 
 export const planFeatureOptions = mapEnumToOptions(PlanFeature);

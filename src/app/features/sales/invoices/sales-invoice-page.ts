@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ArInvoiceSpaPanel } from '../../oem/invoice-spa-panel';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
@@ -38,6 +39,7 @@ import { ArSalesExport } from '../sales-export';
 @Component({
   selector: 'ar-sales-invoice-page',
   imports: [
+    RouterLink,
     ArTopbar,
     ArButton,
     ArChip,
@@ -233,7 +235,29 @@ import { ArSalesExport } from '../sales-export';
               }
               <dt class="pf__grand">Invoice total</dt>
               <dd class="pf__grand">{{ inr(inv.grandTotalInPaise) }}</dd>
+              @if (inv.advanceAdjustedInPaise) {
+                <dt>Less: advance received</dt>
+                <dd>−{{ inr(inv.advanceAdjustedInPaise) }}</dd>
+              }
+              @if (inv.retentionHeldInPaise) {
+                <dt>Less: retention</dt>
+                <dd>−{{ inr(inv.retentionHeldInPaise) }}</dd>
+              }
+              @if (inv.advanceAdjustedInPaise || inv.retentionHeldInPaise) {
+                <dt class="pf__grand">Payable now</dt>
+                <dd class="pf__grand">{{ inr(inv.netPayableInPaise ?? inv.grandTotalInPaise) }}</dd>
+              }
             </dl>
+            @if (inv.billingMilestoneId) {
+              <p class="si-milestone">
+                Milestone invoice: <b>{{ inv.billingMilestoneName }}</b>
+                @if (inv.billingPlanOrderId) {
+                  · <a [routerLink]="['/sales/orders', inv.billingPlanOrderId]">billing plan</a>
+                }
+                . Retention and the advance change only what is payable now, not the taxable value
+                or the GST.
+              </p>
+            }
           </section>
 
           @if (inv.id) {

@@ -41,6 +41,7 @@ export enum NotificationKind {
   SpaExpiring = 53,
   SpaClaimDue = 54,
   SpaBillOverpriced = 55,
+  BillingMilestoneReady = 56,
 }
 
 export const notificationKindOptions = mapEnumToOptions(NotificationKind);

@@ -351,6 +351,14 @@ export const routes: Routes = [
           import('./features/projects/projects-page').then((m) => m.ArProjectsPage),
       },
       {
+        path: 'billing/due',
+        title: 'Milestones due · MNI Assist',
+        loadComponent: () =>
+          import('./features/project-billing/milestones-due-page').then(
+            (m) => m.ArMilestonesDuePage,
+          ),
+      },
+      {
         path: 'oem/registrations',
         title: 'Deal registrations · MNI Assist',
         loadComponent: () =>

@@ -1,0 +1,45 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.md {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1180px;
+}
+.md__table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 13px var(--ar-font-sans);
+}
+.md__table th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ar-line-200);
+  font: 600 11px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+}
+.md__table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ar-line-100);
+}
+.md__table .md__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.md__late td {
+  background: var(--ar-amber-50, #fff7e6);
+}
+.md__muted {
+  color: var(--ar-ink-400);
+  font: 400 12px var(--ar-font-sans);
+}
+.md__actions {
+  text-align: right;
+}

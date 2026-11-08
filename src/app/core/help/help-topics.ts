@@ -507,6 +507,17 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Mark a decision maker who is against us as a Blocker: the project shows them in red.',
     ],
   },
+  'billing/due': {
+    benefits: [
+      'Every billing milestone ready to invoice, across all project orders, in one list.',
+      'A milestone left ready for two days shows amber, so no stage bill is forgotten.',
+    ],
+    steps: [
+      'Set a billing plan on the sales order: its milestones become ready as the order is confirmed, dispatched or reaches a date.',
+      'Click Prepare invoice: a draft opens with the milestone’s share of each line and the retention; check it and issue it.',
+    ],
+    tips: ['Retention comes off what is payable now, not the taxable value or the GST.'],
+  },
   'oem/registrations': {
     benefits: [
       'Every deal registered with an OEM in one list, with its OEM reference and end date.',

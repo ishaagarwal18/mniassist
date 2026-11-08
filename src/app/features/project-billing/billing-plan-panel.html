@@ -1,0 +1,282 @@
+@if (canSee() && loaded()) {
+  <section class="bp" aria-labelledby="so-billing">
+    <header class="bp__head">
+      <div>
+        <h2 id="so-billing">Billing plan</h2>
+        <p>
+          @if (plan(); as p) {
+            {{ p.milestones.length }} milestones on {{ rupees(p.orderValueInPaise) }} before GST
+            @if (p.advanceInPaise) {
+              · advance {{ p.advancePercentBp / 100 }}% ({{ rupees(p.advanceInPaise) }})
+            }
+          } @else {
+            Bill this order in milestones: advance, supply, tests and commissioning, with retention.
+          }
+        </p>
+      </div>
+      @if (canPlan() && !editing()) {
+        <button ar-button type="button" variant="ghost" (click)="startEdit()">
+          {{ plan() ? 'Change plan' : 'Set billing plan' }}
+        </button>
+      }
+    </header>
+
+    @if (plan(); as p) {
+      @if (!editing()) {
+        <dl class="bp__totals">
+          <div>
+            <dt>Order value</dt>
+            <dd>{{ rupees(p.currentOrderValueInPaise) }}</dd>
+          </div>
+          <div>
+            <dt>Billed</dt>
+            <dd>{{ rupees(p.billedInPaise) }}</dd>
+          </div>
+          <div>
+            <dt>Received</dt>
+            <dd>{{ rupees(p.receivedInPaise) }}</dd>
+          </div>
+          <div>
+            <dt>Unbilled</dt>
+            <dd>{{ rupees(p.unbilledInPaise) }}</dd>
+          </div>
+          <div>
+            <dt>Retention held</dt>
+            <dd>{{ rupees(p.retentionHeldInPaise) }}</dd>
+          </div>
+        </dl>
+        <table class="bp__table">
+          <thead>
+            <tr>
+              <th scope="col">Milestone</th>
+              <th scope="col" class="bp__num">Share</th>
+              <th scope="col" class="bp__num">Amount</th>
+              <th scope="col">Trigger</th>
+              <th scope="col" class="bp__num">Retention</th>
+              <th scope="col">Status</th>
+              <th scope="col">Invoices</th>
+              <th scope="col" aria-label="Actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of p.milestones; track m.id) {
+              <tr>
+                <td>
+                  {{ m.name }}
+                  @if (m.overrideReason) {
+                    <div class="bp__muted">Marked ready: {{ m.overrideReason }}</div>
+                  }
+                </td>
+                <td class="bp__num">{{ percentOf(m) }}</td>
+                <td class="bp__num">{{ rupees(m.amountInPaise) }}</td>
+                <td>
+                  {{ triggerText(m.trigger) }}
+                  @if (m.trigger === Trigger.Date && m.triggerDate) {
+                    · {{ m.triggerDate.slice(0, 10) }}
+                  }
+                </td>
+                <td class="bp__num">{{ m.retentionPercentBp / 100 }}%</td>
+                <td>
+                  <ar-chip [tone]="tone(m.status)">{{ statusText(m.status) }}</ar-chip>
+                  @if (m.billableInPaise > 0 && m.billableInPaise < m.amountInPaise) {
+                    <div class="bp__muted">{{ rupees(m.billableInPaise) }} ready</div>
+                  }
+                </td>
+                <td>
+                  @for (i of m.invoices; track i.id) {
+                    <a [routerLink]="['/sales/invoices', i.id]">{{ i.invoiceNumber }}</a>
+                  }
+                  @if (m.receivedInPaise) {
+                    <div class="bp__muted">{{ rupees(m.receivedInPaise) }} received</div>
+                  }
+                </td>
+                <td class="bp__actions">
+                  @if (canInvoice() && m.billableInPaise > 0) {
+                    <button
+                      ar-button
+                      type="button"
+                      variant="primary"
+                      [disabled]="busy()"
+                      (click)="prepare(m)"
+                    >
+                      Prepare invoice
+                    </button>
+                  } @else if (canPlan() && m.status === Status.Waiting) {
+                    <button type="button" class="bp__link" (click)="markReady(m)">
+                      Mark ready
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    }
+
+    @if (editing()) {
+      <div class="bp__bar">
+        <label class="ar-field">
+          <span class="ar-field__label">Start from</span>
+          <select
+            class="ar-field__input"
+            (change)="pickTemplate($any($event.target).value)"
+            [disabled]="locked()"
+          >
+            <option value="">A template…</option>
+            @for (t of templates(); track t.name) {
+              <option [value]="t.name">{{ t.name }}{{ t.isStandard ? '' : ' (yours)' }}</option>
+            }
+          </select>
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Advance %</span>
+          <input
+            class="ar-field__input bp__narrow"
+            inputmode="decimal"
+            [value]="advance()"
+            (input)="advance.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Advance is taken off</span>
+          <select class="ar-field__input" (change)="adjustMode.set(+$any($event.target).value)">
+            <option [value]="Adjust.FullFirst" [selected]="adjustMode() === Adjust.FullFirst">
+              The first bill, in full
+            </option>
+            <option [value]="Adjust.ProRata" [selected]="adjustMode() === Adjust.ProRata">
+              Each bill, pro rata
+            </option>
+          </select>
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Retention on</span>
+          <select class="ar-field__input" (change)="retentionBase.set(+$any($event.target).value)">
+            <option [value]="Base.Taxable" [selected]="retentionBase() === Base.Taxable">
+              Taxable value
+            </option>
+            <option [value]="Base.Total" [selected]="retentionBase() === Base.Total">
+              Total with GST
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <table class="bp__table">
+        <thead>
+          <tr>
+            <th scope="col">Milestone</th>
+            <th scope="col">%</th>
+            <th scope="col" class="bp__num">Amount</th>
+            <th scope="col">Trigger</th>
+            <th scope="col">Retention %</th>
+            <th scope="col">Terms (days)</th>
+            <th scope="col" aria-label="Remove"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of rows(); track $index; let i = $index) {
+            <tr>
+              <td>
+                <input
+                  class="ar-field__input"
+                  maxlength="100"
+                  aria-label="Milestone name"
+                  [disabled]="r.locked"
+                  [value]="r.name"
+                  (input)="setRow(i, { name: $any($event.target).value })"
+                />
+              </td>
+              <td>
+                <input
+                  class="ar-field__input bp__narrow"
+                  inputmode="decimal"
+                  aria-label="Share of the order"
+                  [disabled]="r.locked"
+                  [value]="r.percent"
+                  (input)="setRow(i, { percent: $any($event.target).value })"
+                />
+              </td>
+              <td class="bp__num">{{ rupees(amounts()[i]) }}</td>
+              <td>
+                <select
+                  class="ar-field__input"
+                  aria-label="Trigger"
+                  [disabled]="r.locked"
+                  (change)="setRow(i, { trigger: +$any($event.target).value })"
+                >
+                  @for (t of triggers; track t) {
+                    <option [value]="t" [selected]="t === r.trigger">{{ triggerText(t) }}</option>
+                  }
+                </select>
+                @if (r.trigger === Trigger.Date) {
+                  <input
+                    class="ar-field__input"
+                    type="date"
+                    aria-label="Billed on"
+                    [disabled]="r.locked"
+                    [value]="r.triggerDate"
+                    (change)="setRow(i, { triggerDate: $any($event.target).value })"
+                  />
+                }
+              </td>
+              <td>
+                <input
+                  class="ar-field__input bp__narrow"
+                  inputmode="decimal"
+                  aria-label="Retention"
+                  [disabled]="r.locked"
+                  [value]="r.retention"
+                  (input)="setRow(i, { retention: $any($event.target).value })"
+                />
+              </td>
+              <td>
+                <input
+                  class="ar-field__input bp__narrow"
+                  inputmode="numeric"
+                  aria-label="Payment terms"
+                  [value]="r.terms"
+                  (input)="setRow(i, { terms: $any($event.target).value })"
+                />
+              </td>
+              <td>
+                @if (!r.locked) {
+                  <button type="button" class="bp__link" (click)="removeRow(i)">Remove</button>
+                } @else {
+                  <span class="bp__muted">Invoiced</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <p class="bp__muted" [class.bp__bad]="total() !== 100">
+        {{ total() }}% of {{ rupees(value()) }} planned.
+        @if (problem(); as e) {
+          {{ e }}
+        }
+      </p>
+      @if (locked()) {
+        <label class="ar-field">
+          <span class="ar-field__label">Reason for the change (the plan has been invoiced)</span>
+          <input
+            class="ar-field__input"
+            maxlength="500"
+            [value]="reason()"
+            (input)="reason.set($any($event.target).value)"
+          />
+        </label>
+      }
+      <div class="bp__foot">
+        <button ar-button type="button" variant="ghost" (click)="addRow()">Add milestone</button>
+        <button ar-button type="button" variant="ghost" (click)="saveAsTemplate()">
+          Save as template
+        </button>
+        <button ar-button type="button" variant="ghost" (click)="editing.set(false)">Cancel</button>
+        <button ar-button type="button" [disabled]="busy() || !!problem()" (click)="save()">
+          Save plan
+        </button>
+      </div>
+    }
+  </section>
+}

@@ -20,6 +20,7 @@ import {
 } from '../sales-records.logic';
 import { MOCK_ORDERS } from './orders.mock';
 import { ArSalesExport } from '../sales-export';
+import { ArBillingPlanPanel } from '../../project-billing/billing-plan-panel';
 
 /**
  * One sales order on its own page (/sales/orders/<id>): the customer PO, terms, site address, items with what has been dispatched
@@ -28,7 +29,17 @@ import { ArSalesExport } from '../sales-export';
  */
 @Component({
   selector: 'ar-sales-order-page',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSalesExport, DatePipe, ArGrid, GridModule],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArIcon,
+    ArSalesExport,
+    DatePipe,
+    ArGrid,
+    GridModule,
+    ArBillingPlanPanel,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -115,13 +126,14 @@ import { ArSalesExport } from '../sales-export';
                 <p>{{ o.lines.length }} item(s), with what has been dispatched and invoiced.</p>
               </div>
             </header>
-            <ejs-grid
-              arGrid="sales-order-lines"
-              [dataSource]="o.lines"
-              aria-label="Order items"
-            >
+            <ejs-grid arGrid="sales-order-lines" [dataSource]="o.lines" aria-label="Order items">
               <e-columns>
-                <e-column field="lineNumber" headerText="#" width="60" [textAlign]="'Right'"></e-column>
+                <e-column
+                  field="lineNumber"
+                  headerText="#"
+                  width="60"
+                  [textAlign]="'Right'"
+                ></e-column>
                 <e-column field="partNumber" headerText="Part number & description" width="260">
                   <ng-template #template let-l>
                     <div>
@@ -140,7 +152,12 @@ import { ArSalesExport } from '../sales-export';
                     <strong>{{ l.quantity }}</strong>
                   </ng-template>
                 </e-column>
-                <e-column field="unitPriceInPaise" headerText="Unit price" width="130" [textAlign]="'Right'">
+                <e-column
+                  field="unitPriceInPaise"
+                  headerText="Unit price"
+                  width="130"
+                  [textAlign]="'Right'"
+                >
                   <ng-template #template let-l>
                     {{ inr(l.unitPriceInPaise) }}
                   </ng-template>
@@ -155,7 +172,12 @@ import { ArSalesExport } from '../sales-export';
                     {{ l.invoicedQuantity }} / {{ l.quantity }}
                   </ng-template>
                 </e-column>
-                <e-column field="lineTotalInPaise" headerText="Total" width="140" [textAlign]="'Right'">
+                <e-column
+                  field="lineTotalInPaise"
+                  headerText="Total"
+                  width="140"
+                  [textAlign]="'Right'"
+                >
                   <ng-template #template let-l>
                     <strong>{{ inr(l.lineTotalInPaise) }}</strong>
                   </ng-template>
@@ -175,6 +197,13 @@ import { ArSalesExport } from '../sales-export';
               <dd class="pf__grand">{{ inr(o.grandTotalInPaise) }}</dd>
             </dl>
           </section>
+
+          @if (o.id) {
+            <ar-billing-plan-panel
+              [orderId]="o.id"
+              [orderValue]="o.subtotalInPaise - o.discountInPaise"
+            />
+          }
 
           <footer class="pf__bar">
             <span class="pf__summary"></span>

@@ -335,6 +335,13 @@ export const NAV: readonly NavGroup[] = [
         //tenantOnly: true,
       },
       {
+        label: 'Milestones due',
+        icon: 'clock',
+        route: '/billing/due',
+        feature: 'ProjectBilling',
+        permission: 'AutoReach.ProjectBilling.Invoice',
+      },
+      {
         label: 'Re-orders',
         icon: 'send',
         route: '/reorders',
