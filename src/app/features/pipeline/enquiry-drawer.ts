@@ -760,6 +760,7 @@ export class ArEnquiryDrawer {
     { value: LostReasonCategory.TimelineTooLong, label: 'Timeline too long' },
     { value: LostReasonCategory.TechnicalFit, label: 'Technical fit' },
     { value: LostReasonCategory.NoResponse, label: 'No response' },
+    { value: LostReasonCategory.AnotherBidderWon, label: 'Another bidder won the project' },
     { value: LostReasonCategory.Other, label: 'Other' },
   ];
 

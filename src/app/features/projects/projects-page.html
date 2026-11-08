@@ -7,6 +7,9 @@
     <button type="button" [class.on]="view() === 'board'" (click)="setView('board')">Board</button>
     <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">List</button>
   </div>
+  @if (canSeeAll()) {
+    <a ar-button variant="ghost" routerLink="/projects/report">Report</a>
+  }
   @if (canManage()) {
     <a ar-button variant="ghost" routerLink="/projects/competitors">Competitor brands</a>
   }
@@ -120,6 +123,9 @@
               }
               @if (p.hasBlocker) {
                 <ar-chip tone="bad">Blocker who decides</ar-chip>
+              }
+              @if (p.goingCold) {
+                <ar-chip tone="amber">Going cold: nothing in 60 days</ar-chip>
               }
               @if (p.outcome !== Outcome.None) {
                 <ar-chip [tone]="p.outcome === Outcome.Won ? 'good' : 'neutral'">{{

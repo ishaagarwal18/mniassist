@@ -210,6 +210,8 @@ export interface ProjectListItemDto {
   /** 0 to 1. */
   specifiedInRate?: number | null;
   openEnquiries: number;
+  /** Open, with no stage change and no activity for 60 days. */
+  goingCold?: boolean;
 }
 
 export interface ProjectBoardColumnDto {

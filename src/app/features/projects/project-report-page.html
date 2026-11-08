@@ -1,0 +1,113 @@
+<ar-topbar
+  title="Project report"
+  subtitle="Funnel, specified-in win rate and losses"
+  help="Open projects by stage as they are today. Wins, losses and the brands lost to count projects closed, and enquiries lost, in the period."
+>
+  <select
+    class="ar-field__input pr__months"
+    aria-label="Period"
+    (change)="setMonths($any($event.target).value)"
+  >
+    @for (m of monthsChoices; track m) {
+      <option [value]="m" [selected]="m === months()">Last {{ m }} months</option>
+    }
+  </select>
+  <a ar-button variant="ghost" routerLink="/projects">Projects</a>
+</ar-topbar>
+
+<div class="pr ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">The project report needs the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  @if (report(); as r) {
+    <div class="pr__tiles">
+      <ar-stat-tile
+        label="Win rate when specified-in"
+        [value]="percent(r.specifiedIn.winRate)"
+        [note]="winRateNote(r.specifiedIn)"
+        tone="good"
+      />
+      <ar-stat-tile
+        label="Win rate when not specified-in"
+        [value]="percent(r.notSpecifiedIn.winRate)"
+        [note]="winRateNote(r.notSpecifiedIn)"
+      />
+    </div>
+
+    <ar-card heading="Open projects by stage">
+      <table class="pr__table">
+        <thead>
+          <tr>
+            <th scope="col">Stage</th>
+            <th scope="col" class="pr__num">Projects</th>
+            <th scope="col" class="pr__num">Our scope</th>
+            <th scope="col" aria-label="Share"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of r.funnel; track s.stage) {
+            <tr>
+              <td>{{ stageText(s.stage) }}</td>
+              <td class="pr__num">{{ s.projects }}</td>
+              <td class="pr__num">{{ rupees(s.valueInPaise) }}</td>
+              <td class="pr__barcell">
+                <span class="pr__bar" [style.width.%]="(s.projects / widest()) * 100"></span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </ar-card>
+
+    <ar-card heading="Lost to brand">
+      <table class="pr__table">
+        <thead>
+          <tr>
+            <th scope="col">Brand</th>
+            <th scope="col" class="pr__num">Projects</th>
+            <th scope="col" class="pr__num">Enquiries</th>
+            <th scope="col" class="pr__num">Value lost</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of r.lossesByBrand; track b.brandId) {
+            <tr>
+              <td translate="no">{{ b.brand }}</td>
+              <td class="pr__num">{{ b.projects }}</td>
+              <td class="pr__num">{{ b.enquiries }}</td>
+              <td class="pr__num">{{ rupees(b.valueInPaise) }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="pr__muted">Nothing lost to a named brand in the period.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </ar-card>
+
+    <ar-card heading="Lost projects by specification category">
+      <p class="pr__muted">The categories in which the specification named a competitor.</p>
+      <table class="pr__table">
+        <tbody>
+          @for (c of r.lossesByCategory; track c.category) {
+            <tr>
+              <td translate="no">{{ c.category }}</td>
+              <td class="pr__num">{{ c.projects }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="2" class="pr__muted">No lost project named a competitor.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </ar-card>
+  } @else if (loading()) {
+    <p class="pr__muted">Loading…</p>
+  }
+</div>

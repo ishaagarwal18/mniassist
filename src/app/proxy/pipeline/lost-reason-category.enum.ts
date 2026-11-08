@@ -10,6 +10,7 @@ export enum LostReasonCategory {
   TechnicalFit = 6,
   NoResponse = 7,
   Other = 8,
+  AnotherBidderWon = 9,
 }
 
 export const lostReasonCategoryOptions = mapEnumToOptions(LostReasonCategory);

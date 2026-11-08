@@ -507,6 +507,21 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Mark a decision maker who is against us as a Blocker: the project shows them in red.',
     ],
   },
+  'projects/report': {
+    benefits: [
+      'See the open projects by stage, and what our scope in each stage is worth.',
+      'Compare the win rate when the specification names our brand with the rate when it doesn’t.',
+      'Find the brands and the product categories you lose to most.',
+    ],
+    steps: [
+      'Pick the period: projects closed in it are counted for wins and losses.',
+      'Read the funnel for today, then the win rates and the losses below it.',
+    ],
+    tips: [
+      'A project counts as specified-in when at least half its specification, by value, names our brand.',
+      'Losses by brand include lost enquiries where a competitor was given as the winner.',
+    ],
+  },
   'projects/competitors': {
     benefits: [
       'One list of the brands you compete with, used in specifications, lost enquiries and reports.',

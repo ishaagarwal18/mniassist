@@ -354,6 +354,7 @@
     "GET /api/auto-reach/profile-picture",
     "GET /api/auto-reach/profile-picture/mine",
     "GET /api/auto-reach/project",
+    "GET /api/auto-reach/project-report",
     "GET /api/auto-reach/project/account-contacts/{}",
     "GET /api/auto-reach/project/board",
     "GET /api/auto-reach/project/for-account/{}",
