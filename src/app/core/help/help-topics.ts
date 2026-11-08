@@ -518,6 +518,19 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     ],
     tips: ['Retention comes off what is payable now, not the taxable value or the GST.'],
   },
+  'billing/retention': {
+    benefits: [
+      'Every rupee customers hold back as retention, with the date it is due back.',
+      'Due retention is flagged, and after 30 days unreleased it goes to collections.',
+    ],
+    steps: [
+      'When retention falls due, send the release request: download the letter, or email it with the invoice.',
+      'When the customer pays, record the release: it is paid on the invoices, oldest first.',
+    ],
+    tips: [
+      'Set when retention is due back on the order’s billing plan: a date, or months after a milestone.',
+    ],
+  },
   'oem/registrations': {
     benefits: [
       'Every deal registered with an OEM in one list, with its OEM reference and end date.',

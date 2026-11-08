@@ -2,6 +2,7 @@ import { RestService, Rest } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
 
 import { SalesInvoiceStatus } from '../sales/sales-enums';
+import { RetentionReleaseCondition } from './retention.service';
 
 export enum BillingTrigger {
   OrderConfirmed = 0,
@@ -52,6 +53,11 @@ export interface SaveBillingPlanInput {
   templateId?: string | null;
   reason?: string | null;
   milestones: SaveBillingMilestoneInput[];
+  retentionRelease: RetentionReleaseCondition;
+  retentionReleaseOn?: string | null;
+  retentionReleaseMonths?: number | null;
+  /** The milestone (1 = first) the defects period runs from; null for the last. */
+  retentionAnchorOrder?: number | null;
 }
 
 export interface MilestoneInvoiceRefDto {
@@ -99,6 +105,12 @@ export interface BillingPlanDto {
   unbilledInPaise: number;
   retentionHeldInPaise: number;
   advanceUnadjustedInPaise: number;
+  advanceReceivedInPaise: number;
+  retentionRelease: RetentionReleaseCondition;
+  retentionReleaseOn?: string | null;
+  retentionReleaseMonths?: number | null;
+  retentionAnchorOrder?: number | null;
+  retentionDueOn?: string | null;
 }
 
 export interface BillingPlanTemplateDto {

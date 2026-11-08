@@ -24,6 +24,11 @@ import {
   BillingTrigger,
   RetentionBase,
 } from '../../proxy/project-billing/billing-plan.service';
+import {
+  AdvanceReceiptService,
+  AdvanceSummaryDto,
+  RetentionReleaseCondition,
+} from '../../proxy/project-billing/retention.service';
 import { ArButton, ArChip } from '../../ui';
 import { environment } from '../../../environments/environment';
 import {
@@ -61,6 +66,7 @@ export class ArBillingPlanPanel {
   private readonly toasts = inject(ToastService);
   private readonly router = inject(Router);
   private readonly permissions = inject(PermissionService);
+  private readonly advancesApi = inject(AdvanceReceiptService);
 
   readonly orderId = input.required<string>();
   /** The order's value before GST (subtotal less discount), for a plan not saved yet. */
@@ -82,6 +88,17 @@ export class ArBillingPlanPanel {
   protected readonly adjustMode = signal(AdvanceAdjustMode.FullFirst);
   protected readonly retentionBase = signal(RetentionBase.Taxable);
   protected readonly reason = signal('');
+  protected readonly release = signal(RetentionReleaseCondition.DefectsPeriod);
+  protected readonly releaseOn = signal('');
+  protected readonly releaseMonths = signal('12');
+  protected readonly anchorOrder = signal('');
+  protected readonly advances = signal<AdvanceSummaryDto | null>(null);
+  protected readonly advanceAmount = signal('');
+  protected readonly advanceDate = signal(
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date()),
+  );
+  protected readonly advanceRef = signal('');
+  protected readonly Release = RetentionReleaseCondition;
   protected readonly busy = signal(false);
 
   protected readonly triggers = TRIGGERS;
@@ -132,6 +149,7 @@ export class ArBillingPlanPanel {
       ]);
       this.plan.set(plan ?? null);
       this.templates.set(templates);
+      if (plan) this.advances.set(await firstValueFrom(this.advancesApi.getForOrder(id)));
     } catch {
       this.plan.set(null);
     } finally {
@@ -161,6 +179,12 @@ export class ArBillingPlanPanel {
       this.advance.set(String(p.advancePercentBp / 100));
       this.adjustMode.set(p.advanceAdjustMode);
       this.retentionBase.set(p.retentionBase);
+      this.release.set(p.retentionRelease);
+      this.releaseOn.set(p.retentionReleaseOn ? p.retentionReleaseOn.slice(0, 10) : '');
+      this.releaseMonths.set(
+        p.retentionReleaseMonths != null ? String(p.retentionReleaseMonths) : '12',
+      );
+      this.anchorOrder.set(p.retentionAnchorOrder != null ? String(p.retentionAnchorOrder) : '');
     } else if (!this.rows().length) {
       const t = this.templates().find((x) => x.isStandard);
       if (t) this.applyTemplate(t);
@@ -219,6 +243,14 @@ export class ArBillingPlanPanel {
             retentionBase: this.retentionBase(),
             reason: this.reason().trim() || null,
             milestones: this.rows().map(toInput),
+            retentionRelease: this.release(),
+            retentionReleaseOn:
+              this.release() === RetentionReleaseCondition.OnDate ? this.releaseOn() || null : null,
+            retentionReleaseMonths:
+              this.release() === RetentionReleaseCondition.DefectsPeriod
+                ? Number(this.releaseMonths()) || 12
+                : null,
+            retentionAnchorOrder: this.anchorOrder() ? Number(this.anchorOrder()) : null,
           }),
         ),
       );
@@ -276,6 +308,36 @@ export class ArBillingPlanPanel {
       this.plan.set(await firstValueFrom(this.api.markReady(m.id, reason?.trim() ?? null)));
     } catch (e) {
       this.toasts.error(readApiError(e, 'It could not be marked ready.'));
+    }
+  }
+
+  protected async recordAdvance(): Promise<void> {
+    const amount = Math.round(Number(this.advanceAmount().replace(/[₹,\s]/g, '')) * 100);
+    if (!(amount > 0)) return;
+    try {
+      this.advances.set(
+        await firstValueFrom(
+          this.advancesApi.record(this.orderId(), {
+            amountInPaise: amount,
+            receivedOn: this.advanceDate(),
+            reference: this.advanceRef().trim() || null,
+          }),
+        ),
+      );
+      this.advanceAmount.set('');
+      this.advanceRef.set('');
+      this.plan.set((await firstValueFrom(this.api.getForOrder(this.orderId()))) ?? null);
+      this.toasts.success('Advance recorded: later milestone invoices take it off.');
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The advance could not be recorded.'));
+    }
+  }
+
+  protected async deleteAdvance(id: string): Promise<void> {
+    try {
+      this.advances.set(await firstValueFrom(this.advancesApi.delete(id)));
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The advance could not be removed.'));
     }
   }
 }

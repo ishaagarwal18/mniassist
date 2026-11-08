@@ -44,6 +44,14 @@
             <dt>Retention held</dt>
             <dd>{{ rupees(p.retentionHeldInPaise) }}</dd>
           </div>
+          <div>
+            <dt>Advance not yet adjusted</dt>
+            <dd>{{ rupees(p.advanceUnadjustedInPaise) }}</dd>
+          </div>
+          <div>
+            <dt>Retention due back</dt>
+            <dd>{{ p.retentionDueOn ? p.retentionDueOn.slice(0, 10) : 'When known' }}</dd>
+          </div>
         </dl>
         <table class="bp__table">
           <thead>
@@ -111,6 +119,67 @@
             }
           </tbody>
         </table>
+
+        <div class="bp__advance">
+          <h3>Advance</h3>
+          @if (advances(); as a) {
+            <p class="bp__muted">
+              {{ rupees(a.receivedInPaise) || '₹0' }} received of
+              {{ rupees(a.plannedInPaise) || '₹0' }} planned ·
+              {{ rupees(a.unadjustedInPaise) || '₹0' }} still to take off invoices.
+            </p>
+            @for (r of a.receipts; track r.id) {
+              <p class="bp__muted">
+                {{ r.receivedOn.slice(0, 10) }} · {{ rupees(r.amountInPaise) }}
+                @if (r.reference) {
+                  · {{ r.reference }}
+                }
+                @if (r.adjustedInPaise) {
+                  · {{ rupees(r.adjustedInPaise) }} taken off
+                } @else if (canInvoice()) {
+                  ·
+                  <button type="button" class="bp__link" (click)="deleteAdvance(r.id)">
+                    Remove
+                  </button>
+                }
+              </p>
+            }
+          }
+          @if (canInvoice()) {
+            <div class="bp__bar">
+              <label class="ar-field">
+                <span class="ar-field__label">Advance received (₹)</span>
+                <input
+                  class="ar-field__input"
+                  inputmode="decimal"
+                  [value]="advanceAmount()"
+                  (input)="advanceAmount.set($any($event.target).value)"
+                />
+              </label>
+              <label class="ar-field">
+                <span class="ar-field__label">On</span>
+                <input
+                  class="ar-field__input"
+                  type="date"
+                  [value]="advanceDate()"
+                  (change)="advanceDate.set($any($event.target).value)"
+                />
+              </label>
+              <label class="ar-field">
+                <span class="ar-field__label">Reference</span>
+                <input
+                  class="ar-field__input"
+                  maxlength="100"
+                  [value]="advanceRef()"
+                  (input)="advanceRef.set($any($event.target).value)"
+                />
+              </label>
+              <button ar-button type="button" variant="ghost" (click)="recordAdvance()">
+                Record advance
+              </button>
+            </div>
+          }
+        </div>
       }
     }
 
@@ -149,6 +218,56 @@
             </option>
           </select>
         </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Retention is due back</span>
+          <select class="ar-field__input" (change)="release.set(+$any($event.target).value)">
+            <option
+              [value]="Release.DefectsPeriod"
+              [selected]="release() === Release.DefectsPeriod"
+            >
+              After the defects period
+            </option>
+            <option [value]="Release.OnDate" [selected]="release() === Release.OnDate">
+              On a date
+            </option>
+            <option [value]="Release.AgainstBg" [selected]="release() === Release.AgainstBg">
+              Against a bank guarantee
+            </option>
+          </select>
+        </label>
+        @if (release() === Release.DefectsPeriod) {
+          <label class="ar-field">
+            <span class="ar-field__label">Months after</span>
+            <input
+              class="ar-field__input bp__narrow"
+              inputmode="numeric"
+              [value]="releaseMonths()"
+              (input)="releaseMonths.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Milestone</span>
+            <select class="ar-field__input" (change)="anchorOrder.set($any($event.target).value)">
+              <option value="" [selected]="!anchorOrder()">The last one</option>
+              @for (r of rows(); track $index; let i = $index) {
+                <option [value]="i + 1" [selected]="anchorOrder() === '' + (i + 1)">
+                  {{ r.name || 'Milestone ' + (i + 1) }}
+                </option>
+              }
+            </select>
+          </label>
+        }
+        @if (release() === Release.OnDate) {
+          <label class="ar-field">
+            <span class="ar-field__label">Due on</span>
+            <input
+              class="ar-field__input"
+              type="date"
+              [value]="releaseOn()"
+              (change)="releaseOn.set($any($event.target).value)"
+            />
+          </label>
+        }
         <label class="ar-field">
           <span class="ar-field__label">Retention on</span>
           <select class="ar-field__input" (change)="retentionBase.set(+$any($event.target).value)">

@@ -1,0 +1,151 @@
+<ar-topbar title="Retention" subtitle="Money held back on project invoices, and its release">
+  <label class="md__muted">
+    <input
+      type="checkbox"
+      [checked]="openOnly()"
+      (change)="openOnly.set($any($event.target).checked); load()"
+    />
+    Still owed only
+  </label>
+</ar-topbar>
+
+<div class="md ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">The retention ledger needs the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  <div class="md__tiles">
+    <ar-stat-tile label="Retention held" [value]="rupees(held())" />
+    <ar-stat-tile
+      label="Past its due date"
+      [value]="rupees(overdue())"
+      [tone]="overdue() > 0 ? 'bad' : 'neutral'"
+    />
+  </div>
+
+  @for (g of groups(); track g.salesOrderId) {
+    <ar-card [heading]="(g.customerName ?? '') + ' · ' + g.orderNumber">
+      <table class="md__table">
+        <thead>
+          <tr>
+            <th scope="col">Invoice</th>
+            <th scope="col">Milestone</th>
+            <th scope="col" class="md__num">Held</th>
+            <th scope="col" class="md__num">Released</th>
+            <th scope="col" class="md__num">Outstanding</th>
+            <th scope="col">Release</th>
+            <th scope="col">Due</th>
+            <th scope="col">Status</th>
+            <th scope="col" aria-label="Actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of g.rows; track r.id) {
+            <tr [class.md__late]="r.daysOverdue > 0">
+              <td>
+                <a [routerLink]="['/sales/invoices', r.salesInvoiceId]">{{ r.invoiceNumber }}</a>
+                <div class="md__muted">{{ r.invoiceDate | date: 'd MMM yyyy' }}</div>
+              </td>
+              <td>{{ r.milestone }}</td>
+              <td class="md__num">{{ rupees(r.heldInPaise) }}</td>
+              <td class="md__num">{{ rupees(r.releasedInPaise) }}</td>
+              <td class="md__num">{{ rupees(r.outstandingInPaise) }}</td>
+              <td>{{ conditionText(r.releaseCondition) }}</td>
+              <td>
+                @if (r.dueOn) {
+                  {{ r.dueOn | date: 'd MMM yyyy' }}
+                  @if (r.daysOverdue > 0) {
+                    <div class="md__muted">{{ r.daysOverdue }} days overdue</div>
+                  }
+                } @else {
+                  <span class="md__muted">When the milestone is invoiced</span>
+                }
+              </td>
+              <td>
+                <ar-chip [tone]="tone(r.status)">{{ statusText(r.status) }}</ar-chip>
+                @if (r.withCollections) {
+                  <div class="md__muted">With collections</div>
+                }
+              </td>
+              <td class="md__actions">
+                @if (r.status !== Status.Released && r.status !== Status.WrittenOff) {
+                  <button type="button" class="md__link" (click)="writeOff(r)">Write off</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="md__foot">
+        @if (g.due > 0) {
+          <button ar-button type="button" variant="ghost" (click)="letter(g)">
+            Release letter (PDF)
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="busy()"
+            (click)="request(g, false)"
+          >
+            Mark requested
+          </button>
+          <button ar-button type="button" [disabled]="busy()" (click)="request(g, true)">
+            Email the request
+          </button>
+        }
+        @if (g.outstanding > 0) {
+          <button ar-button type="button" variant="ghost" (click)="openRelease(g)">
+            Record release
+          </button>
+        }
+      </div>
+      @if (releaseFor() === g.salesOrderId) {
+        <div class="md__form">
+          <label class="ar-field">
+            <span class="ar-field__label">Amount received (₹)</span>
+            <input
+              class="ar-field__input"
+              inputmode="decimal"
+              [value]="releaseAmount()"
+              (input)="releaseAmount.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Received on</span>
+            <input
+              class="ar-field__input"
+              type="date"
+              [value]="releaseDate()"
+              (change)="releaseDate.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Reference (UTR)</span>
+            <input
+              class="ar-field__input"
+              maxlength="100"
+              [value]="releaseRef()"
+              (input)="releaseRef.set($any($event.target).value)"
+            />
+          </label>
+          <button ar-button type="button" [disabled]="busy()" (click)="recordRelease()">
+            Record
+          </button>
+          <button ar-button type="button" variant="ghost" (click)="releaseFor.set(null)">
+            Cancel
+          </button>
+        </div>
+      }
+    </ar-card>
+  } @empty {
+    <ar-card heading="Nothing held">
+      <p class="md__muted">
+        Retention appears here when a milestone invoice with retention is issued.
+      </p>
+    </ar-card>
+  }
+</div>

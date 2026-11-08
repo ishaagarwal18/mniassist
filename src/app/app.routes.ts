@@ -359,6 +359,12 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'billing/retention',
+        title: 'Retention · MNI Assist',
+        loadComponent: () =>
+          import('./features/project-billing/retention-page').then((m) => m.ArRetentionPage),
+      },
+      {
         path: 'oem/registrations',
         title: 'Deal registrations · MNI Assist',
         loadComponent: () =>
