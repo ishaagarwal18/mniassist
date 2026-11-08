@@ -1,0 +1,187 @@
+<ar-topbar
+  title="Radar settings"
+  subtitle="Risk points and the customer notice"
+  help="The points each factor adds to a component's risk score (capped at 100), and where the bands start. Saving re-scores the whole radar. The customer notice is a WhatsApp template with two quick replies: the first is read as Send me a quote, the second as Call me. Body values in order: customer name, the parts, the machines, the site, the last-buy date. Notices go only when a person sends them from the radar, unless automatic sending is switched on; a contact gets at most one in 30 days."
+>
+  <a ar-button variant="ghost" routerLink="/obsolescence">Radar</a>
+  <button
+    ar-button
+    type="button"
+    [disabled]="busy() || !settings() || !!problem()"
+    (click)="save()"
+  >
+    Save
+  </button>
+</ar-topbar>
+
+<div class="os ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">Radar settings need the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+  @if (problem(); as p) {
+    <ar-banner tone="warn">{{ p }}</ar-banner>
+  }
+
+  @if (settings(); as s) {
+    <ar-card heading="Risk points">
+      <table class="os__table">
+        <thead>
+          <tr>
+            <th scope="col">Factor</th>
+            <th scope="col" class="os__num">Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of fields; track f.key) {
+            <tr>
+              <td>{{ f.label }}</td>
+              <td class="os__num">
+                <input
+                  class="ar-field__input os__n"
+                  type="number"
+                  min="0"
+                  max="100"
+                  [attr.aria-label]="f.label"
+                  [value]="point(f.key)"
+                  (input)="setNumber(f.key, $any($event.target).value)"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="os__grid">
+        <label class="ar-field">
+          <span class="ar-field__label">Last-buy window, months</span>
+          <input
+            class="ar-field__input"
+            type="number"
+            min="1"
+            max="36"
+            [value]="s.lastBuySoonMonths"
+            (input)="setNumber('lastBuySoonMonths', $any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">A machine is old after, years</span>
+          <input
+            class="ar-field__input"
+            type="number"
+            min="1"
+            max="50"
+            [value]="s.oldMachineYears"
+            (input)="setNumber('oldMachineYears', $any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">High from</span>
+          <input
+            class="ar-field__input"
+            type="number"
+            min="1"
+            max="100"
+            [value]="s.highFrom"
+            (input)="setNumber('highFrom', $any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Medium from</span>
+          <input
+            class="ar-field__input"
+            type="number"
+            min="1"
+            max="100"
+            [value]="s.mediumFrom"
+            (input)="setNumber('mediumFrom', $any($event.target).value)"
+          />
+        </label>
+      </div>
+    </ar-card>
+
+    <ar-card heading="Customer notice">
+      <p class="os__muted">
+        {{ s.noticesLast30Days ?? 0 }} notice{{ s.noticesLast30Days === 1 ? '' : 's' }} sent in the
+        last 30 days. Contacts who opted out, have no WhatsApp number or were told in the last 30
+        days are skipped.
+      </p>
+      <div class="os__grid">
+        <label class="ar-field os__wide">
+          <span class="ar-field__label">Approved WhatsApp template</span>
+          <select
+            class="ar-field__input"
+            (change)="patch({ templateId: $any($event.target).value || null })"
+          >
+            <option value="" [selected]="!s.templateId">Choose a template…</option>
+            @for (t of templates(); track t.id) {
+              <option [value]="t.id" [selected]="s.templateId === t.id" translate="no">
+                {{ t.name }} ({{ t.lang }})
+              </option>
+            }
+          </select>
+        </label>
+        <label class="os__check os__wide">
+          <input
+            type="checkbox"
+            [checked]="s.autoSend"
+            (change)="patch({ autoSend: $any($event.target).checked })"
+          />
+          Send notices by themselves after the nightly scan, for rows not yet notified
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label"
+            >Follow up after, days <span class="ar-field__opt">0 = none</span></span
+          >
+          <input
+            class="ar-field__input"
+            type="number"
+            min="0"
+            max="30"
+            [value]="s.followUpAfterDays"
+            (input)="setNumber('followUpAfterDays', $any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">At most, follow-ups</span>
+          <input
+            class="ar-field__input"
+            type="number"
+            min="1"
+            max="3"
+            [value]="s.maxFollowUps"
+            (input)="setNumber('maxFollowUps', $any($event.target).value)"
+          />
+        </label>
+        @if (s.followUpAfterDays > 0) {
+          <label class="ar-field os__wide">
+            <span class="ar-field__label"
+              >Follow-up template
+              <span class="ar-field__opt">blank sends the notice again</span></span
+            >
+            <select
+              class="ar-field__input"
+              (change)="patch({ followUpTemplateId: $any($event.target).value || null })"
+            >
+              <option value="" [selected]="!s.followUpTemplateId">The notice template</option>
+              @for (t of templates(); track t.id) {
+                <option [value]="t.id" [selected]="s.followUpTemplateId === t.id" translate="no">
+                  {{ t.name }} ({{ t.lang }})
+                </option>
+              }
+            </select>
+          </label>
+        }
+      </div>
+      <p class="os__muted">
+        Suggested wording, submitted as a Utility template: “Hello &#123;&#123;1&#125;&#125;, the
+        &#123;&#123;2&#125;&#125; in your &#123;&#123;3&#125;&#125; at &#123;&#123;4&#125;&#125; is
+        being phased out by the manufacturer (last-buy date &#123;&#123;5&#125;&#125;). Spares will
+        become hard to find. We can suggest a replacement before it causes downtime.” Buttons: Send
+        me a quote · Call me. If Meta files it as Marketing, only contacts with marketing consent
+        receive it.
+      </p>
+    </ar-card>
+  }
+</div>

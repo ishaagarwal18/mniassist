@@ -6,6 +6,9 @@
   @if (canEditRules()) {
     <a ar-button variant="ghost" routerLink="/documents/lifecycle">Lifecycle rules</a>
   }
+  @if (canManage()) {
+    <a ar-button variant="ghost" routerLink="/obsolescence/settings">Settings</a>
+  }
   <button
     ar-button
     type="button"
@@ -70,6 +73,33 @@
           Not included:
           <ul class="rd__opened-list" translate="no">
             @for (s of o.skipped; track $index) {
+              <li>{{ s }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </section>
+  }
+
+  @if (noticed(); as n) {
+    <section class="rd__opened" aria-label="Notices sent">
+      <header class="rd__opened-head">
+        <strong
+          >Notice sent to {{ n.sent }} customer{{ n.sent === 1 ? '' : 's' }} ({{
+            n.rows
+          }}
+          component{{ n.rows === 1 ? '' : 's' }})</strong
+        >
+        <span class="rd__spacer"></span>
+        <button type="button" class="rd__close" aria-label="Close" (click)="noticed.set(null)">
+          ×
+        </button>
+      </header>
+      @if (n.skipped.length) {
+        <div class="rd__muted">
+          Not sent:
+          <ul class="rd__opened-list" translate="no">
+            @for (s of n.skipped; track $index) {
               <li>{{ s }}</li>
             }
           </ul>
@@ -235,6 +265,22 @@
           </select>
           <button ar-button type="button" [disabled]="busy()" (click)="openEnquiries()">
             Open migration enquiry
+          </button>
+          <span class="rd__sep"></span>
+        }
+        @if (view() === View.Open) {
+          <select
+            class="ar-field__input"
+            aria-label="Send the notice by"
+            (change)="channel.set(+$any($event.target).value)"
+          >
+            <option [value]="Channel.WhatsApp" [selected]="channel() === Channel.WhatsApp">
+              WhatsApp
+            </option>
+            <option [value]="Channel.Email" [selected]="channel() === Channel.Email">Email</option>
+          </select>
+          <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="notify()">
+            Send notice
           </button>
           <span class="rd__sep"></span>
         }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   LifecycleStage,
+  ObsolescenceSettingsDto,
   MigrationState,
   RadarRowDto,
   RiskBand,
@@ -13,6 +14,7 @@ import {
   LIFECYCLE_TEMPLATE,
   parseAccessories,
   parseBand,
+  settingsProblem,
 } from './obsolescence.logic';
 
 let next = 0;
@@ -123,5 +125,37 @@ describe('parseAccessories', () => {
     expect(
       parseAccessories(formatAccessories([{ partNumber: 'KIT-1', quantityPerUnit: 2 }])).items,
     ).toEqual([{ partNumber: 'KIT-1', quantityPerUnit: 2 }]);
+  });
+});
+
+describe('settingsProblem', () => {
+  const defaults: ObsolescenceSettingsDto = {
+    phaseOut: 30,
+    lastBuy: 50,
+    lastBuySoon: 60,
+    lastBuySoonMonths: 6,
+    discontinued: 70,
+    endOfSupport: 90,
+    oldMachine: 10,
+    oldMachineYears: 10,
+    mediumCriticality: 5,
+    highCriticality: 15,
+    noStock: 10,
+    underAmc: 10,
+    highFrom: 70,
+    mediumFrom: 40,
+    autoSend: false,
+    templateId: null,
+    followUpAfterDays: 7,
+    maxFollowUps: 1,
+  };
+
+  it('accepts the defaults and refuses what the API would', () => {
+    expect(settingsProblem(defaults)).toBeNull();
+    expect(settingsProblem({ ...defaults, discontinued: 120 })).toContain('0 to 100');
+    expect(settingsProblem({ ...defaults, mediumFrom: 70 })).toContain('below High');
+    expect(settingsProblem({ ...defaults, autoSend: true })).toContain('template');
+    expect(settingsProblem({ ...defaults, autoSend: true, templateId: 't1' })).toBeNull();
+    expect(settingsProblem({ ...defaults, maxFollowUps: 4 })).not.toBeNull();
   });
 });

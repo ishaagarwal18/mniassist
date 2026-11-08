@@ -14,6 +14,8 @@ import {
   LifecycleStage,
   MigrationGrouping,
   MigrationState,
+  NoticeChannel,
+  NoticeResultDto,
   ObsolescenceService,
   OpenMigrationEnquiriesResultDto,
   RadarPersonDto,
@@ -79,6 +81,11 @@ export class ArRadarPage {
     () => this.canCreateEnquiries() && this.canCreateQuotations(),
   );
   protected readonly Grouping = MigrationGrouping;
+  protected readonly Channel = NoticeChannel;
+  protected readonly canManage = grantedPolicy('AutoReach.Obsolescence.Manage', this.permissions);
+  protected readonly channel = signal(NoticeChannel.WhatsApp);
+  /** What the last notice run did, shown until closed. */
+  protected readonly noticed = signal<NoticeResultDto | null>(null);
   protected readonly grouping = signal(MigrationGrouping.Site);
   /** The enquiries just opened, shown until dismissed. */
   protected readonly opened = signal<OpenMigrationEnquiriesResultDto | null>(null);
@@ -324,6 +331,28 @@ export class ArRadarPage {
       await this.load();
     } catch (e) {
       this.toasts.error(readApiError(e, 'The enquiries could not be opened.'));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** Tells the customers of the ticked rows: one message per contact, at most one in 30 days. */
+  protected async notify(): Promise<void> {
+    if (!this.selected().size) return;
+    this.busy.set(true);
+    try {
+      const result = await firstValueFrom(this.api.notify([...this.selected()], this.channel()));
+      this.noticed.set(result);
+      if (result.sent) {
+        this.toasts.success(
+          `Notice sent to ${result.sent} customer${result.sent === 1 ? '' : 's'}, covering ${result.rows} component${result.rows === 1 ? '' : 's'}.`,
+        );
+      } else {
+        this.toasts.warning('No notices were sent: see why below.');
+      }
+      await this.load();
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The notices could not be sent.'));
     } finally {
       this.busy.set(false);
     }

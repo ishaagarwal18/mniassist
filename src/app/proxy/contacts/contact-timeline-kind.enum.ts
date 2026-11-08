@@ -10,6 +10,7 @@ export enum ContactTimelineKind {
   FlowSubmission = 6,
   Reminder = 7,
   AutomationStep = 8,
+  ObsolescenceNotice = 9,
 }
 
 export const contactTimelineKindOptions = mapEnumToOptions(ContactTimelineKind);

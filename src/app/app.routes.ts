@@ -890,6 +890,14 @@ export const routes: Routes = [
           import('./features/pipeline/obsolescence/radar-page').then((m) => m.ArRadarPage),
       },
       {
+        path: 'obsolescence/settings',
+        title: 'Radar settings · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/obsolescence/settings-page').then(
+            (m) => m.ArObsolescenceSettingsPage,
+          ),
+      },
+      {
         path: 'documents/lifecycle',
         title: 'Lifecycle rules · MNI Assist',
         loadComponent: () =>

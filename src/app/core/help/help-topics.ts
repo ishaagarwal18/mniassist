@@ -492,6 +492,21 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'The radar is re-scored on every save and each night at 2 am, so passing dates take effect on their own.',
     ],
   },
+  'obsolescence/settings': {
+    benefits: [
+      'Tune how risk is scored to how your customers work: the stage, the machine’s age and criticality, stock and AMC.',
+      'Customers hear about a phase-out on WhatsApp, with Send me a quote and Call me buttons, before a breakdown.',
+    ],
+    steps: [
+      'Change the points or the band limits and save: the whole radar is re-scored.',
+      'Choose the approved WhatsApp template for the notice (body values: name, parts, machines, site, last-buy date).',
+      'Set the follow-up, and switch automatic sending on only if notices should go without anyone pressing Send.',
+    ],
+    tips: [
+      'A contact gets at most one notice in 30 days, and none after opting out.',
+      'Send me a quote opens the migration enquiry with a draft quotation; Call me gives the owner a call task.',
+    ],
+  },
   'documents/lifecycle': {
     benefits: [
       'One notice from a maker (S7-300 phased out) flags every installed component in that series at once.',

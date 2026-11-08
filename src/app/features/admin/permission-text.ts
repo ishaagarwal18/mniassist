@@ -218,6 +218,11 @@ const EXACT: Record<string, PermissionText> = {
     title: 'Use the obsolescence radar',
     detail: 'See customer machines holding phased-out parts, and dismiss or assign them.',
   },
+  'AutoReach.Obsolescence.Manage': {
+    title: 'Manage the obsolescence radar',
+    detail:
+      'Change the risk points, and the customer notice: its template, automatic sending and follow-up.',
+  },
   'AutoReach.InstalledBase.ManageReminders': {
     title: 'Manage service reminders',
     detail: 'Set up the reminders sent for installed machines (service due, warranty end).',

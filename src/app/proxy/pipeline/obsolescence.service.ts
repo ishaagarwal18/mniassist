@@ -38,6 +38,40 @@ export enum RadarView {
   Dismissed = 2,
 }
 
+export enum NoticeChannel {
+  WhatsApp = 0,
+  Email = 1,
+}
+
+export interface NoticeResultDto {
+  sent: number;
+  rows: number;
+  skipped: string[];
+}
+
+export interface ObsolescenceSettingsDto {
+  phaseOut: number;
+  lastBuy: number;
+  lastBuySoon: number;
+  lastBuySoonMonths: number;
+  discontinued: number;
+  endOfSupport: number;
+  oldMachine: number;
+  oldMachineYears: number;
+  mediumCriticality: number;
+  highCriticality: number;
+  noStock: number;
+  underAmc: number;
+  highFrom: number;
+  mediumFrom: number;
+  autoSend: boolean;
+  templateId?: string | null;
+  followUpAfterDays: number;
+  followUpTemplateId?: string | null;
+  maxFollowUps: number;
+  noticesLast30Days?: number;
+}
+
 export enum MigrationGrouping {
   Site = 0,
   Account = 1,
@@ -406,6 +440,39 @@ export class ObsolescenceService {
         headers: { Accept: 'application/json' },
         url: '/api/auto-reach/obsolescence/open-enquiries',
         body: { ids, groupBy },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** One notice per contact; the 30-day limit, consent and opt-outs are checked by the API. */
+  notify = (ids: string[], channel: NoticeChannel, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, NoticeResultDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/obsolescence/notify',
+        body: { ids, channel },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  getSettings = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ObsolescenceSettingsDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/obsolescence/settings',
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  updateSettings = (input: ObsolescenceSettingsDto, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ObsolescenceSettingsDto>(
+      {
+        method: 'PUT',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/obsolescence/settings',
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );

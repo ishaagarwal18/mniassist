@@ -1,6 +1,7 @@
 import type { ChipTone } from '../../../ui';
 import {
   LifecycleAccessoryDto,
+  ObsolescenceSettingsDto,
   LifecycleStage,
   MigrationState,
   RadarRowDto,
@@ -202,4 +203,57 @@ export function formatAccessories(
   items: readonly LifecycleAccessoryDto[] | null | undefined,
 ): string {
   return (items ?? []).map((a) => `${a.partNumber} × ${a.quantityPerUnit}`).join(', ');
+}
+
+export type PointKey = keyof Pick<
+  ObsolescenceSettingsDto,
+  | 'phaseOut'
+  | 'lastBuy'
+  | 'lastBuySoon'
+  | 'discontinued'
+  | 'endOfSupport'
+  | 'oldMachine'
+  | 'mediumCriticality'
+  | 'highCriticality'
+  | 'noStock'
+  | 'underAmc'
+>;
+
+/** The risk factors in the order the spec's table lists them, with what each one means. */
+export const POINT_FIELDS: readonly { key: PointKey; label: string }[] = [
+  { key: 'phaseOut', label: 'Stage: phase-out announced' },
+  { key: 'lastBuy', label: 'Stage: last-buy' },
+  { key: 'lastBuySoon', label: 'Stage: last-buy, date within the window below' },
+  { key: 'discontinued', label: 'Stage: discontinued, spares only' },
+  { key: 'endOfSupport', label: 'Stage: end of support' },
+  { key: 'oldMachine', label: 'Machine older than the age below' },
+  { key: 'mediumCriticality', label: 'Machine criticality Medium' },
+  { key: 'highCriticality', label: 'Machine criticality High' },
+  { key: 'noStock', label: 'None of the old part in our stock' },
+  { key: 'underAmc', label: 'Machine under our AMC' },
+];
+
+/** What stops the settings being saved, or null. */
+export function settingsProblem(s: ObsolescenceSettingsDto): string | null {
+  const points = POINT_FIELDS.map((f) => s[f.key]);
+  if (points.some((p) => !Number.isInteger(p) || p < 0 || p > 100)) {
+    return 'Points are whole numbers from 0 to 100.';
+  }
+  if (!(s.mediumFrom >= 1 && s.mediumFrom < s.highFrom && s.highFrom <= 100)) {
+    return 'Medium must start below High, and both from 1 to 100.';
+  }
+  if (!(s.lastBuySoonMonths >= 1 && s.lastBuySoonMonths <= 36)) {
+    return 'The last-buy window is 1 to 36 months.';
+  }
+  if (!(s.oldMachineYears >= 1 && s.oldMachineYears <= 50)) {
+    return 'A machine counts as old after 1 to 50 years.';
+  }
+  if (!(s.followUpAfterDays >= 0 && s.followUpAfterDays <= 30)) {
+    return 'A follow-up goes 0 to 30 days after the notice.';
+  }
+  if (!(s.maxFollowUps >= 1 && s.maxFollowUps <= 3)) return 'At most 1 to 3 follow-ups.';
+  if (s.autoSend && !s.templateId) {
+    return 'Choose the WhatsApp template before switching automatic sending on.';
+  }
+  return null;
 }
