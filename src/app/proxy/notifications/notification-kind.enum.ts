@@ -38,6 +38,7 @@ export enum NotificationKind {
   BreakdownReported = 50,
   BreakdownEscalated = 51,
   ProjectKeyDate = 52,
+  SpaExpiring = 53,
 }
 
 export const notificationKindOptions = mapEnumToOptions(NotificationKind);

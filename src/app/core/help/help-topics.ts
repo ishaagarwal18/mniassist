@@ -507,6 +507,82 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Mark a decision maker who is against us as a Blocker: the project shows them in red.',
     ],
   },
+  'oem/registrations': {
+    benefits: [
+      'Every deal registered with an OEM in one list, with its OEM reference and end date.',
+      'You are reminded 30 and 7 days before a registration ends while the deal is still open.',
+    ],
+    steps: [
+      'Click Register a deal, or Register deal on an enquiry.',
+      'Record the OEM’s registration number when it approves, and Won or Lost when the deal ends.',
+    ],
+    tips: ['Request special prices from a registration: they carry its OEM and customer.'],
+  },
+  'oem/registrations/new': {
+    benefits: [
+      'The registration is kept with the enquiry, the customer and the products.',
+      'From an enquiry, the customer, project and value are filled in.',
+    ],
+    steps: [
+      'Choose the OEM and the customer, and describe the products.',
+      'Save, send it to the OEM, and record its registration number when it approves.',
+    ],
+  },
+  'oem/registrations/:id': {
+    benefits: [
+      'See whether the OEM approved the deal, and when the registration ends.',
+      'Special prices made under it are counted here.',
+    ],
+    steps: [
+      'Type the OEM’s registration number and click OEM approved, or OEM rejected.',
+      'Mark Deal won or Deal lost when it ends.',
+    ],
+  },
+  'oem/spa': {
+    benefits: [
+      'Every special price from your OEMs, with the support approved and the quantity left.',
+      'Agreements ending in the next 30 days stand out, so none expires unused.',
+    ],
+    steps: [
+      'Click Request special price, or Special price on an enquiry.',
+      'Open one to download the request, record the OEM’s decision, extend or cancel it.',
+    ],
+    tips: ['Search by part number to find every agreement that covers a part.'],
+  },
+  'oem/spa/new': {
+    benefits: [
+      'From an enquiry, the parts on its latest quotation are filled in with your buy prices.',
+      'The request goes to the OEM as an Excel or PDF made from these lines.',
+    ],
+    steps: [
+      'Choose the OEM, how it pays (claim back or billed at the special price) and the customer.',
+      'Check the parts, quantities and normal buy prices, and save the request.',
+    ],
+  },
+  'oem/spa/:id': {
+    benefits: [
+      'The OEM’s decision is kept per part: approved quantity, special price and resale rule.',
+      'Support per unit is worked out for you, ready for the claim after invoicing.',
+    ],
+    steps: [
+      'Download the request and email it to the OEM.',
+      'When it answers, paste its rows or type them, give its reference and the end date, and record the decision.',
+    ],
+    tips: [
+      'A quantity of 0 refuses a part; approving less than asked makes it partly approved.',
+      'Extend an agreement when the OEM extends it; an expired one comes back.',
+    ],
+  },
+  'oem/settings': {
+    benefits: [
+      'Only suppliers marked as OEMs are offered for deal registrations and special prices.',
+      'Each OEM’s claim period and deadline are kept for the claims.',
+    ],
+    steps: [
+      'Tick OEM against the brands you get special prices from.',
+      'Choose monthly or quarterly claims, and how many days after the invoice the OEM accepts them.',
+    ],
+  },
   'projects/tender-feed': {
     benefits: [
       'Tender alerts you already receive become suggested projects, read and matched for you.',

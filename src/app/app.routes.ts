@@ -351,6 +351,45 @@ export const routes: Routes = [
           import('./features/projects/projects-page').then((m) => m.ArProjectsPage),
       },
       {
+        path: 'oem/registrations',
+        title: 'Deal registrations · MNI Assist',
+        loadComponent: () =>
+          import('./features/oem/registrations-page').then((m) => m.ArRegistrationsPage),
+      },
+      {
+        path: 'oem/registrations/new',
+        title: 'New deal registration · MNI Assist',
+        loadComponent: () =>
+          import('./features/oem/registration-page').then((m) => m.ArRegistrationPage),
+      },
+      {
+        path: 'oem/registrations/:id',
+        title: 'Deal registration · MNI Assist',
+        loadComponent: () =>
+          import('./features/oem/registration-page').then((m) => m.ArRegistrationPage),
+      },
+      {
+        path: 'oem/spa',
+        title: 'Special prices · MNI Assist',
+        loadComponent: () => import('./features/oem/spas-page').then((m) => m.ArSpasPage),
+      },
+      {
+        path: 'oem/spa/new',
+        title: 'New special price · MNI Assist',
+        loadComponent: () => import('./features/oem/spa-page').then((m) => m.ArSpaPage),
+      },
+      {
+        path: 'oem/spa/:id',
+        title: 'Special price · MNI Assist',
+        loadComponent: () => import('./features/oem/spa-page').then((m) => m.ArSpaPage),
+      },
+      {
+        path: 'oem/settings',
+        title: 'OEM settings · MNI Assist',
+        loadComponent: () =>
+          import('./features/oem/oem-settings-page').then((m) => m.ArOemSettingsPage),
+      },
+      {
         path: 'projects/tender-feed',
         title: 'Tender feed · MNI Assist',
         loadComponent: () =>

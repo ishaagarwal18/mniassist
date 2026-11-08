@@ -353,6 +353,32 @@ export const NAV: readonly NavGroup[] = [
     ],
   },
   {
+    heading: 'OEM pricing',
+    items: [
+      {
+        label: 'Deal registrations',
+        icon: 'shield',
+        route: '/oem/registrations',
+        permission: 'AutoReach.Spa',
+        feature: 'OemPricing',
+      },
+      {
+        label: 'Special prices',
+        icon: 'billing',
+        route: '/oem/spa',
+        permission: 'AutoReach.Spa',
+        feature: 'OemPricing',
+      },
+      {
+        label: 'OEM settings',
+        icon: 'settings',
+        route: '/oem/settings',
+        permission: 'AutoReach.Spa',
+        feature: 'OemPricing',
+      },
+    ],
+  },
+  {
     heading: 'Calls',
     items: [
       {

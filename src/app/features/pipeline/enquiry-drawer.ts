@@ -82,6 +82,22 @@ import { PROFILE_FIELDS, profileFilled, profileInput } from './enquiry-profile';
             }
           </div>
           <div class="dh__ctrls">
+            @if (canSpa()) {
+              <a
+                ar-button
+                variant="ghost"
+                routerLink="/oem/registrations/new"
+                [queryParams]="{ enquiry: d.id }"
+                >Register deal</a
+              >
+              <a
+                ar-button
+                variant="ghost"
+                routerLink="/oem/spa/new"
+                [queryParams]="{ enquiry: d.id }"
+                >Special price</a
+              >
+            }
             @if (canUpdate()) {
               <button ar-button type="button" variant="ghost" (click)="openEdit(d)">Edit</button>
             }
@@ -719,6 +735,7 @@ export class ArEnquiryDrawer {
 
   protected readonly canUpdate = grantedPolicy('AutoReach.Pipeline.Update', this.permissions);
   protected readonly canDelete = grantedPolicy('AutoReach.Pipeline.Delete', this.permissions);
+  protected readonly canSpa = grantedPolicy('AutoReach.Spa.Create', this.permissions);
 
   protected readonly detail = signal<EnquiryDetail | null>(null);
   protected readonly busy = signal(false);

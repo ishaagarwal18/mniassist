@@ -37,6 +37,7 @@ export const DEFAULT_PLAN_FEATURES: Record<SubscriptionPlan, readonly string[]> 
     'Manufacturing',
     'Finance',
     'FieldService',
+    'OemPricing',
   ],
   [SubscriptionPlan.Enterprise]: [
     'AutomationBuilder',
@@ -62,6 +63,7 @@ export const DEFAULT_PLAN_FEATURES: Record<SubscriptionPlan, readonly string[]> 
     'Finance',
     'FieldService',
     'Partners',
+    'OemPricing',
   ],
 };
 

@@ -1,0 +1,457 @@
+<ar-topbar
+  [title]="saved()?.reference ?? 'Request a special price'"
+  subtitle="A special price agreement with an OEM"
+>
+  <a ar-button variant="ghost" routerLink="/oem/spa">Special prices</a>
+  @if (saved()) {
+    <button ar-button type="button" variant="ghost" (click)="download(Format.Excel)">
+      Request (Excel)
+    </button>
+    <button ar-button type="button" variant="ghost" (click)="download(Format.Pdf)">
+      Request (PDF)
+    </button>
+  }
+</ar-topbar>
+
+<div class="oe ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">Special prices need the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+  @if (!mock && oems().length === 0) {
+    <ar-banner tone="warn"
+      >No supplier is marked as an OEM yet.
+      <a routerLink="/oem/settings">Mark your OEMs in OEM settings</a>.</ar-banner
+    >
+  }
+
+  @if (saved(); as s) {
+    <ar-card heading="Status">
+      <p>
+        <ar-chip [tone]="tone(s.status)">{{ statusText(s.status) }}</ar-chip>
+        @if (s.daysToExpiry !== null && s.daysToExpiry !== undefined) {
+          <span class="oe__muted" [class.oe__warn]="s.daysToExpiry <= 30">
+            · ends in {{ s.daysToExpiry }} days</span
+          >
+        }
+        @if (s.approvedSupportInPaise) {
+          <span class="oe__muted">
+            · {{ rupees(s.approvedSupportInPaise) }} support approved, {{ s.remainingQty }} units
+            left</span
+          >
+        }
+      </p>
+      @if (s.status === Status.Requested) {
+        <p class="oe__muted">
+          Download the request, email it to the OEM, then record its answer below.
+        </p>
+      }
+      @if (
+        canApprove() &&
+        (s.status === Status.Approved ||
+          s.status === Status.PartlyApproved ||
+          s.status === Status.Expired)
+      ) {
+        <div class="oe__bar">
+          <label class="ar-field">
+            <span class="ar-field__label">Extend to</span>
+            <input
+              class="ar-field__input"
+              type="date"
+              [value]="extendTo()"
+              (change)="extendTo.set($any($event.target).value)"
+            />
+          </label>
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="busy() || !extendTo()"
+            (click)="extend()"
+          >
+            Extend
+          </button>
+        </div>
+      }
+      <div class="oe__foot">
+        @if (canCreate()) {
+          <button ar-button type="button" variant="danger" [disabled]="busy()" (click)="remove()">
+            Delete
+          </button>
+        }
+        @if (canApprove() && s.status !== Status.Cancelled) {
+          <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="cancel()">
+            Cancel it
+          </button>
+        }
+      </div>
+    </ar-card>
+  }
+
+  <ar-card heading="Agreement">
+    <div class="oe__grid">
+      <label class="ar-field">
+        <span class="ar-field__label">OEM</span>
+        <select
+          class="ar-field__input"
+          [disabled]="!canCreate()"
+          (change)="patch({ supplierId: $any($event.target).value })"
+        >
+          <option value="" [selected]="!header().supplierId">Choose the OEM</option>
+          @for (o of oems(); track o.supplierId) {
+            <option [value]="o.supplierId" [selected]="o.supplierId === header().supplierId">
+              {{ o.name }}
+            </option>
+          }
+        </select>
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">How the OEM pays</span>
+        <select
+          class="ar-field__input"
+          [disabled]="!canCreate()"
+          (change)="patch({ mode: +$any($event.target).value })"
+        >
+          <option [value]="Mode.ClaimBack" [selected]="header().mode === Mode.ClaimBack">
+            We claim it back after invoicing
+          </option>
+          <option [value]="Mode.BuySide" [selected]="header().mode === Mode.BuySide">
+            The OEM bills us the special price
+          </option>
+        </select>
+      </label>
+      <div class="ar-field">
+        <span class="ar-field__label">Customer</span>
+        @if (header().customerAccountId) {
+          <p>
+            <b translate="no">{{ customerName() }}</b>
+            @if (canCreate()) {
+              <button
+                type="button"
+                class="oe__link"
+                (click)="customerName.set(''); patch({ customerAccountId: null })"
+              >
+                Change
+              </button>
+            }
+          </p>
+        } @else {
+          @if (header().projectId) {
+            <p class="oe__muted">Any party of the project, or find one customer:</p>
+          }
+          <ar-account-search placeholder="Find the customer" (picked)="pickCustomer($event)" />
+        }
+      </div>
+      @if (projectName(); as p) {
+        <div class="ar-field">
+          <span class="ar-field__label">Project</span>
+          <p>
+            <a [routerLink]="['/projects', header().projectId]" translate="no">{{ p }}</a>
+          </p>
+        </div>
+      }
+      @if (enquiryReference(); as ref) {
+        <div class="ar-field">
+          <span class="ar-field__label">Enquiry</span>
+          <p translate="no">{{ ref }}</p>
+        </div>
+      }
+      @if (saved()?.dealRegistrationReference; as reg) {
+        <div class="ar-field">
+          <span class="ar-field__label">Deal registration</span>
+          <p>
+            <a [routerLink]="['/oem/registrations', header().dealRegistrationId]">{{ reg }}</a>
+          </p>
+        </div>
+      }
+      <label class="ar-field">
+        <span class="ar-field__label">Valid to <span class="ar-field__opt">asked for</span></span>
+        <input
+          class="ar-field__input"
+          type="date"
+          [value]="header().validTo ?? ''"
+          (change)="patch({ validTo: $any($event.target).value || null })"
+        />
+      </label>
+    </div>
+    <label class="ar-field">
+      <span class="ar-field__label">Note</span>
+      <textarea
+        class="ar-field__input"
+        rows="2"
+        maxlength="2000"
+        [value]="header().note ?? ''"
+        (input)="patch({ note: $any($event.target).value })"
+      ></textarea>
+    </label>
+  </ar-card>
+
+  @if (editingLines()) {
+    <ar-card heading="Parts asked for">
+      <table class="oe__table">
+        <thead>
+          <tr>
+            <th scope="col">Part number</th>
+            <th scope="col">Description</th>
+            <th scope="col">Qty</th>
+            <th scope="col">Normal buy (₹)</th>
+            <th scope="col">Price to ask (₹)</th>
+            <th scope="col">Resale rule</th>
+            <th scope="col">Resale (₹ or %)</th>
+            <th scope="col" aria-label="Remove"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of lines(); track $index; let i = $index) {
+            <tr>
+              <td>
+                <input
+                  class="ar-field__input"
+                  maxlength="64"
+                  aria-label="Part number"
+                  [value]="l.partNumber"
+                  (input)="setLine(i, { partNumber: $any($event.target).value })"
+                />
+              </td>
+              <td>
+                <input
+                  class="ar-field__input"
+                  maxlength="500"
+                  aria-label="Description"
+                  [value]="l.description"
+                  (input)="setLine(i, { description: $any($event.target).value })"
+                />
+              </td>
+              <td>
+                <input
+                  class="ar-field__input"
+                  inputmode="decimal"
+                  aria-label="Quantity"
+                  [value]="l.qty"
+                  (input)="setLine(i, { qty: $any($event.target).value })"
+                />
+              </td>
+              <td>
+                <input
+                  class="ar-field__input"
+                  inputmode="decimal"
+                  aria-label="Normal buy price"
+                  [value]="l.normal"
+                  (input)="setLine(i, { normal: $any($event.target).value })"
+                />
+              </td>
+              <td>
+                <input
+                  class="ar-field__input"
+                  inputmode="decimal"
+                  aria-label="Price to ask"
+                  [value]="l.target"
+                  (input)="setLine(i, { target: $any($event.target).value })"
+                />
+              </td>
+              <td>
+                <select
+                  class="ar-field__input"
+                  aria-label="Resale rule"
+                  (change)="setLine(i, { rule: +$any($event.target).value })"
+                >
+                  @for (r of rules; track r) {
+                    <option [value]="r" [selected]="r === l.rule">{{ ruleText(r) }}</option>
+                  }
+                </select>
+              </td>
+              <td>
+                <input
+                  class="ar-field__input"
+                  inputmode="decimal"
+                  aria-label="Resale value"
+                  [value]="l.resale"
+                  (input)="setLine(i, { resale: $any($event.target).value })"
+                />
+              </td>
+              <td>
+                <button type="button" class="oe__link" (click)="removeLine(i)">Remove</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="oe__foot">
+        <button ar-button type="button" variant="ghost" (click)="addLine()">Add a part</button>
+      </div>
+    </ar-card>
+  } @else if (saved(); as s) {
+    <ar-card heading="Parts">
+      <table class="oe__table">
+        <thead>
+          <tr>
+            <th scope="col">Part number</th>
+            <th scope="col">Description</th>
+            <th scope="col" class="oe__num">Asked</th>
+            <th scope="col" class="oe__num">Approved</th>
+            <th scope="col" class="oe__num">Used</th>
+            <th scope="col" class="oe__num">Left</th>
+            <th scope="col" class="oe__num">Normal buy</th>
+            <th scope="col" class="oe__num">Special buy</th>
+            <th scope="col" class="oe__num">Support / unit</th>
+            <th scope="col">Resale</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of s.lines; track l.id) {
+            <tr>
+              <td translate="no">{{ l.partNumber }}</td>
+              <td translate="no">{{ l.description }}</td>
+              <td class="oe__num">{{ l.requestedQty }}</td>
+              <td class="oe__num" [class.oe__warn]="l.approvedQty < l.requestedQty">
+                {{ l.approvedQty }}
+              </td>
+              <td class="oe__num">{{ l.usedQty }}</td>
+              <td class="oe__num">{{ l.remainingQty }}</td>
+              <td class="oe__num">{{ rupees(l.normalBuyInPaise) }}</td>
+              <td class="oe__num">{{ rupees(l.specialBuyInPaise) }}</td>
+              <td class="oe__num">{{ rupees(l.supportPerUnitInPaise) }}</td>
+              <td>{{ resaleLabel(l) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </ar-card>
+  }
+
+  @if (problem(); as p) {
+    <p class="oe__muted">{{ p }}</p>
+  }
+  @if (canCreate()) {
+    <div class="oe__foot">
+      <button ar-button type="button" [disabled]="busy() || !!problem() || mock" (click)="save()">
+        {{ saved() ? 'Save' : 'Save the request' }}
+      </button>
+    </div>
+  }
+
+  @if (saved(); as s) {
+    @if (canApprove() && s.status !== Status.Cancelled) {
+      <ar-card heading="The OEM's decision">
+        <p class="oe__muted">
+          Type the approved quantity and special price for each part (0 refuses it), or paste the
+          rows from the OEM's email or Excel: part number, quantity, special price, and the resale
+          price if it gives one.
+        </p>
+        <div class="oe__bar">
+          <textarea
+            class="ar-field__input"
+            rows="3"
+            placeholder="Paste rows here"
+            aria-label="Paste the OEM's approval"
+            [value]="pasteText()"
+            (input)="pasteText.set($any($event.target).value)"
+          ></textarea>
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="!pasteText().trim()"
+            (click)="applyPaste()"
+          >
+            Fill from paste
+          </button>
+        </div>
+        <table class="oe__table">
+          <thead>
+            <tr>
+              <th scope="col">Part number</th>
+              <th scope="col" class="oe__num">Asked</th>
+              <th scope="col">Approved qty</th>
+              <th scope="col">Special buy (₹)</th>
+              <th scope="col">Resale rule</th>
+              <th scope="col">Resale (₹ or %)</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of decisions(); track d.lineId; let i = $index) {
+              <tr>
+                <td translate="no">{{ partOf(d.lineId) }}</td>
+                <td class="oe__num">{{ requestedOf(d.lineId) }}</td>
+                <td>
+                  <input
+                    class="ar-field__input"
+                    inputmode="decimal"
+                    aria-label="Approved quantity"
+                    [value]="d.approved"
+                    (input)="setDecision(i, { approved: $any($event.target).value })"
+                  />
+                </td>
+                <td>
+                  <input
+                    class="ar-field__input"
+                    inputmode="decimal"
+                    aria-label="Special buy price"
+                    [value]="d.special"
+                    (input)="setDecision(i, { special: $any($event.target).value })"
+                  />
+                </td>
+                <td>
+                  <select
+                    class="ar-field__input"
+                    aria-label="Resale rule"
+                    (change)="setDecision(i, { rule: +$any($event.target).value })"
+                  >
+                    @for (r of rules; track r) {
+                      <option [value]="r" [selected]="r === d.rule">{{ ruleText(r) }}</option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <input
+                    class="ar-field__input"
+                    inputmode="decimal"
+                    aria-label="Resale value"
+                    [value]="d.resale"
+                    (input)="setDecision(i, { resale: $any($event.target).value })"
+                  />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <div class="oe__grid">
+          <label class="ar-field">
+            <span class="ar-field__label">OEM's approval reference</span>
+            <input
+              class="ar-field__input"
+              maxlength="100"
+              [value]="decisionRef()"
+              (input)="decisionRef.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Valid from</span>
+            <input
+              class="ar-field__input"
+              type="date"
+              [value]="decisionFrom()"
+              (change)="decisionFrom.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Valid to</span>
+            <input
+              class="ar-field__input"
+              type="date"
+              [value]="decisionTo()"
+              (change)="decisionTo.set($any($event.target).value)"
+            />
+          </label>
+        </div>
+        <div class="oe__foot">
+          <button ar-button type="button" [disabled]="busy()" (click)="recordDecision()">
+            Record the decision
+          </button>
+        </div>
+      </ar-card>
+    }
+  }
+</div>

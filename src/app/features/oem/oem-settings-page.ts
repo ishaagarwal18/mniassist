@@ -1,0 +1,156 @@
+import { PermissionService } from '@abp/ng.core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+
+import { grantedPolicy } from '../../core/auth/permission';
+import { ToastService } from '../../core/ui/toast.service';
+import { readApiError } from '../../core/util/api-error';
+import { ArTopbar } from '../../layout/topbar';
+import {
+  OemClaimPeriod,
+  OemSettingsService,
+  OemSupplierDto,
+} from '../../proxy/oem/oem-pricing.service';
+import { ArBanner, ArButton, ArCard } from '../../ui';
+import { environment } from '../../../environments/environment';
+
+/** Which suppliers are OEMs, how often claims go to each, and how long after the invoice each accepts a claim. */
+@Component({
+  selector: 'ar-oem-settings-page',
+  imports: [ArTopbar, ArBanner, ArButton, ArCard, RouterLink],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <ar-topbar title="OEM settings" subtitle="The suppliers you get special prices from">
+      <a ar-button variant="ghost" routerLink="/oem/spa">Special prices</a>
+    </ar-topbar>
+    <div class="oe ar-scroll">
+      @if (mock) {
+        <ar-banner tone="teal">OEM settings need the live API.</ar-banner>
+      }
+      @if (error(); as e) {
+        <ar-banner tone="bad">{{ e }}</ar-banner>
+      }
+      <ar-card heading="Suppliers">
+        <p class="oe__muted">
+          Mark the brands you get special prices from as OEMs. Claims are grouped by the period, and
+          you're warned before the claim deadline.
+        </p>
+        <table class="oe__table">
+          <thead>
+            <tr>
+              <th scope="col">Supplier</th>
+              <th scope="col">OEM</th>
+              <th scope="col">Claims</th>
+              <th scope="col">Claim within (days of invoice)</th>
+              <th scope="col" class="oe__num">Open special prices</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of rows(); track s.supplierId) {
+              <tr>
+                <td translate="no">{{ s.name }}</td>
+                <td>
+                  <label class="oe__check">
+                    <input
+                      type="checkbox"
+                      [checked]="s.isOem"
+                      [disabled]="!canEdit()"
+                      (change)="save(s, { isOem: $any($event.target).checked })"
+                    />
+                    {{ s.isOem ? 'Yes' : 'No' }}
+                  </label>
+                </td>
+                <td>
+                  <select
+                    class="ar-field__input"
+                    aria-label="Claim period"
+                    [disabled]="!canEdit() || !s.isOem"
+                    (change)="save(s, { claimPeriod: +$any($event.target).value })"
+                  >
+                    <option [value]="Period.Monthly" [selected]="s.claimPeriod === Period.Monthly">
+                      Monthly
+                    </option>
+                    <option
+                      [value]="Period.Quarterly"
+                      [selected]="s.claimPeriod === Period.Quarterly"
+                    >
+                      Quarterly
+                    </option>
+                  </select>
+                </td>
+                <td>
+                  <input
+                    class="ar-field__input"
+                    type="number"
+                    min="1"
+                    max="730"
+                    aria-label="Claim deadline in days"
+                    placeholder="No limit"
+                    [disabled]="!canEdit() || !s.isOem"
+                    [value]="s.claimDeadlineDays ?? ''"
+                    (change)="save(s, { claimDeadlineDays: days($any($event.target).value) })"
+                  />
+                </td>
+                <td class="oe__num">{{ s.openSpas }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="oe__muted">
+                  No suppliers yet. Add them under Purchasing & stock → Suppliers.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </ar-card>
+    </div>
+  `,
+  styleUrl: './oem-pages.scss',
+})
+export class ArOemSettingsPage {
+  private readonly api = inject(OemSettingsService);
+  private readonly toasts = inject(ToastService);
+  private readonly permissions = inject(PermissionService);
+
+  protected readonly mock = environment.useMockData;
+  protected readonly canEdit = grantedPolicy('AutoReach.Spa.Approve', this.permissions);
+  protected readonly rows = signal<OemSupplierDto[]>([]);
+  protected readonly error = signal<string | null>(null);
+  protected readonly Period = OemClaimPeriod;
+
+  constructor() {
+    void this.load();
+  }
+
+  private async load(): Promise<void> {
+    if (this.mock) return;
+    try {
+      this.rows.set(await firstValueFrom(this.api.getList()));
+    } catch (e) {
+      this.error.set(readApiError(e, 'The suppliers could not be loaded.'));
+    }
+  }
+
+  protected days(value: string): number | null {
+    const n = Number(value);
+    return value.trim() && Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+  }
+
+  protected async save(s: OemSupplierDto, change: Partial<OemSupplierDto>): Promise<void> {
+    const next = { ...s, ...change };
+    try {
+      const saved = await firstValueFrom(
+        this.api.update(s.supplierId, {
+          isOem: next.isOem,
+          claimPeriod: next.claimPeriod,
+          claimDeadlineDays: next.claimDeadlineDays ?? null,
+        }),
+      );
+      this.rows.update((list) => list.map((r) => (r.supplierId === s.supplierId ? saved : r)));
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The supplier could not be saved.'));
+      await this.load();
+    }
+  }
+}

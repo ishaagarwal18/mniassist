@@ -1,0 +1,220 @@
+<ar-topbar
+  [title]="saved()?.reference ?? 'Register a deal'"
+  subtitle="A deal registered with an OEM"
+>
+  <a ar-button variant="ghost" routerLink="/oem/registrations">Registrations</a>
+  @if (saved(); as r) {
+    <a
+      ar-button
+      variant="ghost"
+      routerLink="/oem/spa/new"
+      [queryParams]="{ registration: r.id, enquiry: r.enquiryId ?? undefined }"
+      >Request special price</a
+    >
+  }
+</ar-topbar>
+
+<div class="oe ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">Deal registrations need the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+  @if (!mock && oems().length === 0) {
+    <ar-banner tone="warn"
+      >No supplier is marked as an OEM yet.
+      <a routerLink="/oem/settings">Mark your OEMs in OEM settings</a>.</ar-banner
+    >
+  }
+
+  @if (saved(); as r) {
+    <ar-card heading="Status">
+      <p>
+        <ar-chip [tone]="tone(r.status)">{{ statusText(r.status) }}</ar-chip>
+        @if (
+          r.daysToExpiry !== null && r.daysToExpiry !== undefined && r.status === Status.Approved
+        ) {
+          <span class="oe__muted" [class.oe__warn]="r.daysToExpiry <= 30">
+            · ends in {{ r.daysToExpiry }} days</span
+          >
+        }
+        @if (r.spas) {
+          <span class="oe__muted"> · {{ r.spas }} special prices made under it</span>
+        }
+      </p>
+      <div class="oe__foot">
+        @if (canApprove() && (r.status === Status.Requested || r.status === Status.Rejected)) {
+          <button
+            ar-button
+            type="button"
+            [disabled]="busy() || !oemRefText().trim()"
+            (click)="setStatus(Status.Approved)"
+          >
+            OEM approved
+          </button>
+        }
+        @if (canApprove() && r.status === Status.Requested) {
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="busy()"
+            (click)="setStatus(Status.Rejected)"
+          >
+            OEM rejected
+          </button>
+        }
+        @if (canCreate() && (r.status === Status.Approved || r.status === Status.Requested)) {
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="busy()"
+            (click)="setStatus(Status.Won)"
+          >
+            Deal won
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="busy()"
+            (click)="setStatus(Status.Lost)"
+          >
+            Deal lost
+          </button>
+        }
+      </div>
+      @if (canApprove() && r.status === Status.Requested && !oemRefText().trim()) {
+        <p class="oe__muted">Type the OEM's registration number below to mark it approved.</p>
+      }
+    </ar-card>
+  }
+
+  <ar-card heading="Deal">
+    <div class="oe__grid">
+      <label class="ar-field">
+        <span class="ar-field__label">OEM</span>
+        <select
+          class="ar-field__input"
+          [disabled]="!canCreate()"
+          (change)="patch({ supplierId: $any($event.target).value })"
+        >
+          <option value="" [selected]="!form().supplierId">Choose the OEM</option>
+          @for (o of oems(); track o.supplierId) {
+            <option [value]="o.supplierId" [selected]="o.supplierId === form().supplierId">
+              {{ o.name }}
+            </option>
+          }
+        </select>
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label"
+          >OEM's registration number <span class="ar-field__opt">when it is approved</span></span
+        >
+        <input
+          class="ar-field__input"
+          maxlength="100"
+          [value]="oemRefText()"
+          (input)="oemRefText.set($any($event.target).value)"
+        />
+      </label>
+      <div class="ar-field">
+        <span class="ar-field__label">Customer</span>
+        @if (form().customerAccountId) {
+          <p>
+            <b translate="no">{{ customerName() }}</b>
+            @if (canCreate()) {
+              <button
+                type="button"
+                class="oe__link"
+                (click)="customerName.set(''); patch({ customerAccountId: '' })"
+              >
+                Change
+              </button>
+            }
+          </p>
+        } @else {
+          <ar-account-search placeholder="Find the customer" (picked)="pickCustomer($event)" />
+        }
+      </div>
+      @if (enquiryReference(); as ref) {
+        <div class="ar-field">
+          <span class="ar-field__label">Enquiry</span>
+          <p translate="no">{{ ref }}</p>
+        </div>
+      }
+      @if (saved()?.projectName; as project) {
+        <div class="ar-field">
+          <span class="ar-field__label">Project</span>
+          <p>
+            <a [routerLink]="['/projects', form().projectId]" translate="no">{{ project }}</a>
+          </p>
+        </div>
+      }
+      <label class="ar-field">
+        <span class="ar-field__label">Registered on</span>
+        <input
+          class="ar-field__input"
+          type="date"
+          [value]="form().registeredOn"
+          (change)="patch({ registeredOn: $any($event.target).value })"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Ends on</span>
+        <input
+          class="ar-field__input"
+          type="date"
+          [value]="form().expiresOn ?? ''"
+          (change)="patch({ expiresOn: $any($event.target).value || null })"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Estimated value (₹)</span>
+        <input
+          class="ar-field__input"
+          inputmode="decimal"
+          [value]="valueText()"
+          (input)="valueText.set($any($event.target).value)"
+        />
+      </label>
+    </div>
+    <label class="ar-field">
+      <span class="ar-field__label">Products</span>
+      <input
+        class="ar-field__input"
+        maxlength="1000"
+        placeholder="e.g. 12 × G120 drives, 2 × S7-1500 PLCs"
+        [value]="form().productsSummary ?? ''"
+        (input)="patch({ productsSummary: $any($event.target).value })"
+      />
+    </label>
+    <label class="ar-field">
+      <span class="ar-field__label">Note</span>
+      <textarea
+        class="ar-field__input"
+        rows="3"
+        maxlength="2000"
+        [value]="form().note ?? ''"
+        (input)="patch({ note: $any($event.target).value })"
+      ></textarea>
+    </label>
+    @if (problem(); as p) {
+      <p class="oe__muted">{{ p }}</p>
+    }
+    <div class="oe__foot">
+      @if (saved() && canCreate()) {
+        <button ar-button type="button" variant="danger" [disabled]="busy()" (click)="remove()">
+          Delete
+        </button>
+      }
+      @if (canCreate()) {
+        <button ar-button type="button" [disabled]="busy() || !!problem() || mock" (click)="save()">
+          Save
+        </button>
+      }
+    </div>
+  </ar-card>
+</div>
