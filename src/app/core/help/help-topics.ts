@@ -518,6 +518,20 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     ],
     tips: ['Retention comes off what is payable now, not the taxable value or the GST.'],
   },
+  'billing/tests/:id': {
+    benefits: [
+      'The FAT, SAT or commissioning checklist, its results and punch list, in one record the customer signs.',
+      'Signing makes the milestone billed on the test ready to invoice, with the certificate kept on the order.',
+    ],
+    steps: [
+      'Record each check as Pass, Fail or N/A; a failed check becomes a punch item with a due date.',
+      'Send the link to the customer’s representative: they sign on their phone, and the certificate PDF is made.',
+    ],
+    tips: [
+      'A test with open punch items can be signed only if every one is non-critical.',
+      'A signed test isn’t changed: re-issue it to correct it, and both versions are kept.',
+    ],
+  },
   'billing/retention': {
     benefits: [
       'Every rupee customers hold back as retention, with the date it is due back.',

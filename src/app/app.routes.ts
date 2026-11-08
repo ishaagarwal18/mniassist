@@ -74,6 +74,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/account/confirm-email').then((m) => m.ArConfirmEmail),
   },
   {
+    // The customer's page to sign a FAT, SAT or commissioning certificate: no login, no app shell.
+    path: 'sign/test/:token',
+    title: 'Sign the certificate · MNI Assist',
+    loadComponent: () => import('./features/signing/test-signing').then((m) => m.ArTestSigning),
+  },
+  {
     // The customer's signing page: no login, no app shell. The link is the credential.
     path: 'sign/:token',
     title: 'Review and sign · MNI Assist',
@@ -356,6 +362,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/project-billing/milestones-due-page').then(
             (m) => m.ArMilestonesDuePage,
+          ),
+      },
+      {
+        path: 'billing/tests/:id',
+        title: 'Acceptance test · MNI Assist',
+        loadComponent: () =>
+          import('./features/project-billing/acceptance-test-page').then(
+            (m) => m.ArAcceptanceTestPage,
           ),
       },
       {

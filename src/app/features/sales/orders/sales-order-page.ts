@@ -21,6 +21,7 @@ import {
 import { MOCK_ORDERS } from './orders.mock';
 import { ArSalesExport } from '../sales-export';
 import { ArBillingPlanPanel } from '../../project-billing/billing-plan-panel';
+import { ArAcceptanceTestsPanel } from '../../project-billing/acceptance-tests-panel';
 
 /**
  * One sales order on its own page (/sales/orders/<id>): the customer PO, terms, site address, items with what has been dispatched
@@ -39,6 +40,7 @@ import { ArBillingPlanPanel } from '../../project-billing/billing-plan-panel';
     ArGrid,
     GridModule,
     ArBillingPlanPanel,
+    ArAcceptanceTestsPanel,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -203,6 +205,7 @@ import { ArBillingPlanPanel } from '../../project-billing/billing-plan-panel';
               [orderId]="o.id"
               [orderValue]="o.subtotalInPaise - o.discountInPaise"
             />
+            <ar-acceptance-tests-panel [orderId]="o.id" />
           }
 
           <footer class="pf__bar">

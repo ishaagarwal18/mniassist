@@ -1,0 +1,137 @@
+<main class="ts">
+  <article class="ts__doc">
+    @if (loading()) {
+      <p class="ts__soft">Loading…</p>
+    } @else if (loadError(); as e) {
+      <h1>This link can't be opened</h1>
+      <p class="ts__soft">{{ e }}</p>
+    } @else if (view(); as v) {
+      <header class="ts__head">
+        @if (v.logoDataUrl) {
+          <img [src]="v.logoDataUrl" alt="" class="ts__logo" />
+        }
+        <div>
+          <p class="ts__soft" translate="no">{{ v.workspace }}</p>
+          <h1>{{ v.title }}{{ v.version > 1 ? ' (version ' + v.version + ')' : '' }}</h1>
+          <p class="ts__soft">
+            Order <span translate="no">{{ v.orderNumber }}</span>
+            @if (v.customerPoNumber) {
+              · PO <span translate="no">{{ v.customerPoNumber }}</span>
+            }
+            @if (v.customerName) {
+              · <span translate="no">{{ v.customerName }}</span>
+            }
+          </p>
+        </div>
+      </header>
+
+      <p>
+        {{ v.passed }} checks passed
+        @if (v.notApplicable) {
+          , {{ v.notApplicable }} not applicable
+        }
+        @if (v.openPunch.length) {
+          , {{ v.openPunch.length }} open punch items (non-critical)
+        }
+        .
+      </p>
+
+      <table class="ts__table">
+        <thead>
+          <tr>
+            <th scope="col">Check</th>
+            <th scope="col">Result</th>
+            <th scope="col">Remark</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (i of v.checklist; track $index) {
+            <tr [class.ts__fail]="i.result === Result.Fail">
+              <td>{{ i.text }}</td>
+              <td>{{ resultText(i.result) }}</td>
+              <td>{{ i.remark }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (v.openPunch.length) {
+        <section>
+          <h2>Open punch items</h2>
+          <p class="ts__soft">
+            Signing accepts these as non-critical; they are closed after signing.
+          </p>
+          <ul>
+            @for (p of v.openPunch; track $index) {
+              <li>
+                {{ p.text }}
+                @if (p.remark) {
+                  : {{ p.remark }}
+                }
+                @if (p.punchDueOn) {
+                  (due {{ p.punchDueOn | date: 'd MMM yyyy' }})
+                }
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
+      @if (v.signed) {
+        <section class="ts__done" role="status">
+          <h2>Signed</h2>
+          <p>
+            Signed by <b>{{ v.signedByName }}</b>
+            @if (v.signedAtUtc) {
+              on {{ v.signedAtUtc | date: 'd MMM yyyy, h:mm a' }}
+            }
+            . Thank you.
+          </p>
+          <a class="ts__button" [href]="certificateUrl()" target="_blank" rel="noopener"
+            >Download the certificate (PDF)</a
+          >
+        </section>
+      } @else if (v.problem) {
+        <section class="ts__done" role="alert">
+          <p>{{ v.problem }}</p>
+        </section>
+      } @else {
+        <section class="ts__sign">
+          <h2>Sign the certificate</h2>
+          <label class="ts__field">
+            <span>Your name</span>
+            <input
+              maxlength="120"
+              autocomplete="name"
+              [value]="name()"
+              (input)="name.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ts__field">
+            <span>Designation</span>
+            <input
+              maxlength="120"
+              [value]="designation()"
+              (input)="designation.set($any($event.target).value)"
+            />
+          </label>
+          <ar-signature-pad (drawn)="drawn.set($event)" />
+          <label class="ts__consent">
+            <input
+              type="checkbox"
+              [checked]="consent()"
+              (change)="consent.set($any($event.target).checked)"
+            />
+            <span>{{ v.consentText }}</span>
+          </label>
+          @if (error(); as e) {
+            <p class="ts__error" role="alert">{{ e }}</p>
+          }
+          <button type="button" class="ts__button" [disabled]="!canSign()" (click)="sign()">
+            {{ busy() ? 'Signing…' : 'Sign' }}
+          </button>
+        </section>
+      }
+    }
+  </article>
+</main>

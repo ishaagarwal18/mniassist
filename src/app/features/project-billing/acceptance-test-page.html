@@ -1,0 +1,256 @@
+<ar-topbar
+  [title]="test()?.title ?? 'Test'"
+  [subtitle]="
+    test()
+      ? 'Order ' +
+        test()!.orderNumber +
+        (test()!.version > 1 ? ' · version ' + test()!.version : '')
+      : ''
+  "
+>
+  @if (test(); as t) {
+    <a ar-button variant="ghost" [routerLink]="['/sales/orders', t.salesOrderId]">Order</a>
+    @if (t.hasCertificate) {
+      <button ar-button type="button" variant="ghost" (click)="download('certificate')">
+        Certificate (PDF)
+      </button>
+    }
+    @if (t.hasAddendum) {
+      <button ar-button type="button" variant="ghost" (click)="download('addendum')">
+        Punch closed (PDF)
+      </button>
+    }
+  }
+</ar-topbar>
+
+<div class="md ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">Tests need the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  @if (test(); as t) {
+    <ar-card heading="Status">
+      <p>
+        <ar-chip [tone]="tone(t.status)">{{ statusText(t.status) }}</ar-chip>
+        @if (t.signedAtUtc) {
+          <span class="md__muted">
+            · signed by {{ t.signedByName
+            }}{{ t.signedByDesignation ? ', ' + t.signedByDesignation : '' }} on
+            {{ t.signedAtUtc | date: 'd MMM yyyy, h:mm a' }}</span
+          >
+        }
+        @if (t.status === Status.SentForSignature && t.tokenExpiresAtUtc) {
+          <span class="md__muted">
+            · {{ t.signerName }} has the link until {{ t.tokenExpiresAtUtc | date: 'd MMM' }}</span
+          >
+        }
+      </p>
+      @if (t.status === Status.Reissued) {
+        <ar-banner tone="warn"
+          >A newer version replaced this one. It is kept as it was signed.</ar-banner
+        >
+      }
+      @if (canPlan() && t.status === Status.Signed) {
+        <div class="md__foot">
+          <button ar-button type="button" variant="ghost" (click)="reissue()">
+            Re-issue to correct it
+          </button>
+        </div>
+      }
+    </ar-card>
+
+    <ar-card [heading]="'Checklist · ' + t.passed + ' of ' + t.items + ' passed'">
+      <table class="md__table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Check</th>
+            <th scope="col">Result</th>
+            <th scope="col">Remark</th>
+            <th scope="col">Punch</th>
+            <th scope="col" aria-label="Actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of rows(); track r.itemId; let i = $index) {
+            <tr [class.md__late]="r.result === Result.Fail && !r.closedOn">
+              <td>{{ i + 1 }}</td>
+              <td>{{ r.text }}</td>
+              <td>
+                @if (locked() || !canPlan()) {
+                  {{ r.result === Result.Pending ? '—' : resultText(r.result) }}
+                } @else {
+                  <select
+                    class="ar-field__input"
+                    [attr.aria-label]="'Result for ' + r.text"
+                    (change)="setRow(i, { result: +$any($event.target).value })"
+                  >
+                    <option [value]="Result.Pending" [selected]="r.result === Result.Pending">
+                      —
+                    </option>
+                    @for (x of results; track x) {
+                      <option [value]="x" [selected]="x === r.result">{{ resultText(x) }}</option>
+                    }
+                  </select>
+                }
+              </td>
+              <td>
+                @if (locked() || !canPlan()) {
+                  {{ r.remark }}
+                } @else {
+                  <input
+                    class="ar-field__input"
+                    maxlength="500"
+                    [attr.aria-label]="'Remark for ' + r.text"
+                    [value]="r.remark"
+                    (input)="setRow(i, { remark: $any($event.target).value })"
+                  />
+                }
+              </td>
+              <td>
+                @if (r.result === Result.Fail) {
+                  @if (r.closedOn) {
+                    <span class="md__muted">Closed {{ r.closedOn | date: 'd MMM' }}</span>
+                  } @else if (locked() || !canPlan()) {
+                    {{ r.critical ? 'Critical' : 'Non-critical' }}
+                    @if (r.dueOn) {
+                      · due {{ r.dueOn }}
+                    }
+                  } @else {
+                    <label class="md__muted">
+                      <input
+                        type="checkbox"
+                        [checked]="r.critical"
+                        (change)="setRow(i, { critical: $any($event.target).checked })"
+                      />
+                      Critical
+                    </label>
+                    <input
+                      class="ar-field__input"
+                      type="date"
+                      aria-label="Punch due on"
+                      [value]="r.dueOn"
+                      (change)="setRow(i, { dueOn: $any($event.target).value })"
+                    />
+                  }
+                }
+              </td>
+              <td class="md__actions">
+                @if (
+                  canPlan() &&
+                  r.result === Result.Fail &&
+                  !r.closedOn &&
+                  !dirty() &&
+                  t.status !== Status.Reissued
+                ) {
+                  <button type="button" class="md__link" (click)="closePunch(r.itemId)">
+                    Close punch
+                  </button>
+                }
+                @if (canPlan() && !locked() && r.result === Result.Pending) {
+                  <button type="button" class="md__link" (click)="removeItem(r.itemId)">
+                    Remove
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (canPlan() && !locked()) {
+        <div class="md__form">
+          <input
+            class="ar-field__input"
+            maxlength="300"
+            placeholder="Add a check for this project"
+            aria-label="New check"
+            [value]="newItem()"
+            (input)="newItem.set($any($event.target).value)"
+          />
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="!newItem().trim()"
+            (click)="addItem()"
+          >
+            Add check
+          </button>
+          <button ar-button type="button" [disabled]="busy() || !dirty()" (click)="saveResults()">
+            Save results
+          </button>
+        </div>
+      }
+    </ar-card>
+
+    @if (canPlan() && !locked()) {
+      <ar-card heading="Customer sign-off">
+        <p class="md__muted">
+          The customer's representative gets a link to sign on their phone; it works for 14 days and
+          can be sent again. Open punch items must be non-critical.
+        </p>
+        <div class="md__form">
+          <label class="ar-field">
+            <span class="ar-field__label">Who signs</span>
+            <input
+              class="ar-field__input"
+              maxlength="120"
+              [value]="signer()"
+              (input)="signer.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Designation</span>
+            <input
+              class="ar-field__input"
+              maxlength="120"
+              [value]="designation()"
+              (input)="designation.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Email <span class="ar-field__opt">optional</span></span>
+            <input
+              class="ar-field__input"
+              type="email"
+              maxlength="256"
+              [value]="email()"
+              (input)="email.set($any($event.target).value)"
+            />
+          </label>
+        </div>
+        @if (problem(); as p) {
+          <p class="md__muted">{{ p }}</p>
+        }
+        <div class="md__foot">
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="busy() || !!problem() || !signer().trim()"
+            (click)="send(false)"
+          >
+            Get the link
+          </button>
+          <button
+            ar-button
+            type="button"
+            [disabled]="busy() || !!problem() || !signer().trim()"
+            (click)="send(true)"
+          >
+            Email the link
+          </button>
+        </div>
+        @if (link(); as l) {
+          <div class="md__form">
+            <code translate="no">{{ l.url }}</code>
+            <button ar-button type="button" variant="ghost" (click)="copyLink()">Copy</button>
+          </div>
+        }
+      </ar-card>
+    }
+  }
+</div>
