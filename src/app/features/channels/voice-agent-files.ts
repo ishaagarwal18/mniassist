@@ -297,6 +297,7 @@ const ACTIONS: [keyof NonNullable<VoiceAgentDefinition['tools']>, string][] = [
   ['lookUpBalance', 'balance'],
   ['lookUpOrders', 'orders'],
   ['lookUpContracts', 'contracts'],
+  ['lookUpFaultCodes', 'faultCodes'],
   ['sendPaymentLinks', 'paymentLinks'],
 ];
 

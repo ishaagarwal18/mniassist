@@ -100,6 +100,9 @@ export interface ServiceTicketDto {
   closedCause?: string | null;
   closedFix?: string | null;
   closedSpares?: string | null;
+  /** The code the customer reported, and the library version that answered them. */
+  reportedCode?: string | null;
+  faultCodeVersion?: number | null;
   /** How many escalation steps the ticket has passed. */
   escalationStep: number;
   /** An escalation step flagged it for the dashboard and it is still open. */

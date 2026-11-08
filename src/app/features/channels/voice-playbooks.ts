@@ -44,6 +44,7 @@ const ACTIONS: [keyof VoiceAgentTools, string][] = [
   ['transferToPeople', 'hands calls to people'],
   ['lookUpBalance', 'tells balances'],
   ['lookUpContracts', 'checks service contracts'],
+  ['lookUpFaultCodes', 'looks up alarm codes'],
   ['sendPaymentLinks', 'sends payment links'],
   ['rememberCallers', 'remembers callers'],
 ];

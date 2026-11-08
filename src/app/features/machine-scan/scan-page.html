@@ -109,6 +109,9 @@
                 <button type="button" class="ms__btn ms__btn--stop" (click)="open('breakdown')">
                   Report a breakdown
                 </button>
+                <button type="button" class="ms__btn" (click)="open('lookup')">
+                  Look up an alarm code
+                </button>
                 <button type="button" class="ms__btn" (click)="open('service')">
                   Ask for service
                 </button>
@@ -124,6 +127,105 @@
                 </button>
               }
             </nav>
+          } @else if (task() === 'lookup') {
+            <section class="ms__card">
+              <h2 class="ms__h2">Look up an alarm code</h2>
+              @if (answer(); as a) {
+                @switch (a.outcome) {
+                  @case (Outcome.Answered) {
+                    @if (a.safetyNote) {
+                      <p class="ms__safety-note" role="alert">
+                        <b>Safety first:</b> {{ a.safetyNote }}
+                      </p>
+                    }
+                    <p class="ms__answer-title">
+                      <b translate="no">{{ a.code }}</b
+                      >: {{ a.title }}
+                    </p>
+                    @if (a.causes.length) {
+                      <p class="ms__soft">Likely causes</p>
+                      <ol class="ms__list">
+                        @for (c of a.causes; track $index) {
+                          <li>{{ c }}</li>
+                        }
+                      </ol>
+                    }
+                    @if (a.checks.length) {
+                      <p class="ms__soft">What you can check safely</p>
+                      <ul class="ms__list">
+                        @for (c of a.checks; track $index) {
+                          <li>{{ c }}</li>
+                        }
+                      </ul>
+                    }
+                    @if (a.qualifiedPersonNote) {
+                      <p>{{ a.qualifiedPersonNote }}</p>
+                    }
+                    @if (a.escalateWhen) {
+                      <p><b>Call us if:</b> {{ a.escalateWhen }}</p>
+                    }
+                    @for (s of a.spares; track $index) {
+                      <p class="ms__soft">{{ s }}</p>
+                    }
+                    <p class="ms__soft">{{ a.footer }}</p>
+                    <div class="ms__row">
+                      <button type="button" class="ms__btn" (click)="fixedIt()">Fixed it</button>
+                      @if (m.canReport) {
+                        <button
+                          type="button"
+                          class="ms__btn ms__btn--stop"
+                          (click)="sendEngineer()"
+                        >
+                          Send an engineer
+                        </button>
+                      }
+                    </div>
+                  }
+                  @default {
+                    <p class="ms__answer-text">{{ a.text }}</p>
+                    @if (m.canReport && a.outcome === Outcome.NoMatch) {
+                      <button type="button" class="ms__btn ms__btn--stop" (click)="sendEngineer()">
+                        Ask an engineer to call
+                      </button>
+                    }
+                  }
+                }
+                <button type="button" class="ms__link" (click)="open('lookup')">
+                  Look up another code
+                </button>
+              } @else {
+                <form class="ms__form" (submit)="$event.preventDefault(); lookup()">
+                  <label class="ms__field">
+                    <span>Code on the screen</span>
+                    <input
+                      autocomplete="off"
+                      maxlength="40"
+                      placeholder="For example F2310"
+                      [value]="alarm()"
+                      (input)="alarm.set($any($event.target).value)"
+                    />
+                  </label>
+                  <label class="ms__field">
+                    <span>Or a photo of the screen</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      capture="environment"
+                      (change)="pickPhoto($any($event.target).files?.[0] ?? null)"
+                    />
+                  </label>
+                  @if (error(); as e) {
+                    <p class="ms__error" role="alert">{{ e }}</p>
+                  }
+                  <div class="ms__row">
+                    <button type="submit" class="ms__btn ms__btn--primary" [disabled]="busy()">
+                      {{ busy() ? 'Looking up…' : 'Look up' }}
+                    </button>
+                    <button type="button" class="ms__link" (click)="open(null)">Cancel</button>
+                  </div>
+                </form>
+              }
+            </section>
           } @else {
             <section class="ms__card">
               <h2 class="ms__h2">

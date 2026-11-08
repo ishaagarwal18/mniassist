@@ -3,7 +3,12 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { MachineScanPublicService, PublicMachineDto } from '../../proxy/support/machine-qr.service';
+import {
+  DiagnosisOutcome,
+  MachineScanPublicService,
+  PublicFaultAnswerDto,
+  PublicMachineDto,
+} from '../../proxy/support/machine-qr.service';
 import { ArCaptcha } from '../../ui/captcha';
 import { readSession, sessionKeyFor, writeSession } from '../reorder/reorder-logic';
 import {
@@ -20,7 +25,7 @@ import {
 type Step = 'loading' | 'unavailable' | 'busy' | 'page';
 
 /** What the visitor is doing: reporting a breakdown, asking for service, or proving their number to see cover and tickets. */
-type Task = 'breakdown' | 'service' | 'verify' | null;
+type Task = 'breakdown' | 'service' | 'verify' | 'lookup' | null;
 
 /**
  * The page a machine's QR sticker opens: no sign-in, no app shell, built for a phone on a slow connection. It names the machine and
@@ -52,6 +57,14 @@ export class ArMachineScanPage {
   protected readonly problem = signal('');
   protected readonly code = signal('');
   protected readonly website = signal('');
+
+  // ---- look up an alarm code ----
+  protected readonly Outcome = DiagnosisOutcome;
+  protected readonly alarm = signal('');
+  protected readonly photo = signal<string | null>(null);
+  protected readonly answer = signal<PublicFaultAnswerDto | null>(null);
+  /** The look-up the customer then asked an engineer about: its code and answer go on the ticket. */
+  private diagnosisId: string | null = null;
   /** Set once a code has been sent for the current task: the form then asks for it. */
   protected readonly awaitingCode = signal(false);
   protected readonly captchaNeeded = signal(false);
@@ -87,6 +100,12 @@ export class ArMachineScanPage {
   }
 
   protected open(task: Task): void {
+    if (task !== 'breakdown') this.diagnosisId = null;
+    if (task === 'lookup') {
+      this.answer.set(null);
+      this.alarm.set('');
+      this.photo.set(null);
+    }
     this.task.set(task);
     this.error.set(null);
     this.done.set(null);
@@ -151,6 +170,7 @@ export class ArMachineScanPage {
           isBreakdown: task === 'breakdown',
           session: this.session,
           website: this.website() || null,
+          diagnosisId: this.diagnosisId,
         }),
       );
       if (result.needsCode) {
@@ -195,6 +215,68 @@ export class ArMachineScanPage {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** A photo of the screen, read here into a data URL. Phones take large photos: anything over 5 MB is refused before sending. */
+  protected pickPhoto(file: File | null): void {
+    this.photo.set(null);
+    this.error.set(null);
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      this.error.set('Send a JPEG, PNG or WebP photo.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.error.set(
+        'That photo is over 5 MB. Take it again a little further away, or type the code.',
+      );
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => this.photo.set(typeof reader.result === 'string' ? reader.result : null);
+    reader.readAsDataURL(file);
+  }
+
+  protected async lookup(): Promise<void> {
+    if (this.busy()) return;
+    const code = this.alarm().trim();
+    if (!code && !this.photo()) {
+      this.error.set('Type the code on the screen, or add a photo of it.');
+      return;
+    }
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      this.answer.set(
+        await firstValueFrom(
+          this.api.lookup(this.token, {
+            code: code || null,
+            photoDataUrl: code ? null : this.photo(),
+          }),
+        ),
+      );
+    } catch (e) {
+      this.error.set(
+        problemOf(e) === 'busy'
+          ? 'Too many look-ups. Please wait a little, or call the helpline.'
+          : messageOf(e, 'The code could not be looked up. Please call the helpline.'),
+      );
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected fixedIt(): void {
+    this.task.set(null);
+    this.done.set("Good to hear it's running. Scan the sticker again if the code comes back.");
+  }
+
+  /** "Send an engineer" after a look-up: the breakdown form, with the code and the answer kept for the ticket. */
+  protected sendEngineer(): void {
+    const a = this.answer();
+    this.open('breakdown');
+    this.diagnosisId = a?.diagnosisId ?? null;
+    if (a?.code) this.problem.set(`Alarm ${a.code} on the screen.`);
   }
 
   protected signOut(): void {

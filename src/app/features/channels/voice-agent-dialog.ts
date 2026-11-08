@@ -501,6 +501,15 @@ import { IntegrationService } from '../../proxy/integrations/integration.service
           <label class="check"
             ><input
               type="checkbox"
+              [(ngModel)]="tools.lookUpFaultCodes"
+              (ngModelChange)="saved.set(false)"
+              [disabled]="saving()"
+            />
+            {{ 'AutoReach::VoiceAgent.Tools.faultCodes' | abpLocalization }}</label
+          >
+          <label class="check"
+            ><input
+              type="checkbox"
               [(ngModel)]="tools.sendPaymentLinks"
               (ngModelChange)="saved.set(false)"
               [disabled]="saving()"

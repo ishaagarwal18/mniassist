@@ -145,6 +145,34 @@ export interface PublicMachineReportInput {
   isBreakdown: boolean;
   session?: string | null;
   website?: string | null;
+  /** The look-up answered just before ("Send an engineer"). */
+  diagnosisId?: string | null;
+}
+
+export enum DiagnosisOutcome {
+  Answered = 0,
+  NoMatch = 1,
+  NoCode = 2,
+  WhichMachine = 3,
+  Fixed = 4,
+  Escalated = 5,
+}
+
+export interface PublicFaultAnswerDto {
+  outcome: DiagnosisOutcome;
+  code?: string | null;
+  title?: string | null;
+  /** Shown before the checks. */
+  safetyNote?: string | null;
+  causes: string[];
+  /** Only the checks an operator may do. */
+  checks: string[];
+  qualifiedPersonNote?: string | null;
+  escalateWhen?: string | null;
+  spares: string[];
+  text: string;
+  footer: string;
+  diagnosisId?: string | null;
 }
 
 export interface PublicMachineReportedDto {
@@ -196,6 +224,13 @@ export class MachineScanPublicService {
   report = (token: string, input: PublicMachineReportInput) =>
     this.restService.request<PublicMachineReportInput, PublicMachineReportedDto>(
       { method: 'POST', url: `/api/m/${token}/report`, body: input },
+      { apiName: this.apiName, ...this.own },
+    );
+
+  /** An alarm code typed, or a photo of the screen as a data: URL. Answers only from the approved library. */
+  lookup = (token: string, input: { code?: string | null; photoDataUrl?: string | null }) =>
+    this.restService.request<any, PublicFaultAnswerDto>(
+      { method: 'POST', url: `/api/m/${token}/lookup`, body: input },
       { apiName: this.apiName, ...this.own },
     );
 

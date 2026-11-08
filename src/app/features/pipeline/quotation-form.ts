@@ -280,6 +280,13 @@ export class ArQuotationForm implements OnInit {
     if (contactId) {
       this.initialContact.set({ id: contactId, label: q.get('name') || 'Selected customer' });
       this.header.set({ mode: 'manual', enquiryId: '', contactId, title: '' });
+      // "Send quote for this spare" from a ticket's diagnosis: the spare is the first line, priced when the quote is.
+      const part = q.get('part');
+      if (part) {
+        this.rows.set([
+          { ...blankRow(this.nextKey++), partNumber: part, description: q.get('partName') || '' },
+        ]);
+      }
       return;
     }
     const enquiryId = q.get('enquiry') ?? '';

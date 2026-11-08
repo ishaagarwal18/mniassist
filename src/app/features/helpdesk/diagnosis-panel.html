@@ -1,0 +1,126 @@
+<ar-card heading="Diagnosis">
+  <form class="dp__form" (submit)="$event.preventDefault(); lookup()">
+    <input
+      class="ar-field__input"
+      maxlength="40"
+      placeholder="Code, e.g. F2310"
+      aria-label="Fault code"
+      [value]="code()"
+      (input)="code.set($any($event.target).value)"
+    />
+    <button ar-button type="submit" [disabled]="busy() || mock">Look up</button>
+  </form>
+  <label class="dp__photo">
+    Or a photo of the screen
+    <input
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      (change)="pickPhoto($any($event.target).files?.[0] ?? null)"
+    />
+  </label>
+  @if (error(); as e) {
+    <p class="dp__error">{{ e }}</p>
+  }
+
+  @if (view(); as v) {
+    @if (v.note) {
+      <p class="dp__muted">{{ v.note }}</p>
+    }
+    @if (v.customerAnswer) {
+      <button type="button" class="dp__link" (click)="showAnswer.set(!showAnswer())">
+        {{ showAnswer() ? 'Hide' : 'Show' }} the customer's answer
+        @if (v.customerAnswerVersion) {
+          (version {{ v.customerAnswerVersion }})
+        }
+      </button>
+      @if (showAnswer()) {
+        <pre class="dp__answer">{{ v.customerAnswer }}</pre>
+      }
+    }
+
+    @for (e of v.entries; track e.id) {
+      <section class="dp__entry">
+        <div class="dp__head">
+          <b translate="no">{{ e.code }}</b> {{ e.title }}
+          @if (e.notReviewed) {
+            <ar-chip tone="amber">Not reviewed</ar-chip>
+          } @else {
+            <span class="dp__muted">v{{ e.version }}</span>
+          }
+        </div>
+        @if (e.safetyNote) {
+          <p class="dp__safety">{{ e.safetyNote }}</p>
+        }
+        @if (e.causes.length) {
+          <ol class="dp__list">
+            @for (c of e.causes; track $index) {
+              <li>{{ c }}</li>
+            }
+          </ol>
+        }
+        @if (e.checks.length) {
+          <ul class="dp__list">
+            @for (c of e.checks; track $index) {
+              <li>
+                {{ c.text }}
+                @if (c.role !== Role.Operator) {
+                  <ar-chip tone="warn">{{ ROLE_TEXT[c.role] }}</ar-chip>
+                }
+              </li>
+            }
+          </ul>
+        }
+        @if (e.escalateWhen) {
+          <p class="dp__muted">Engineer needed when: {{ e.escalateWhen }}</p>
+        }
+        <p class="dp__muted">
+          {{ SOURCE_TEXT[e.sourceKind] }}
+          @if (e.sourceDocument) {
+            · <span translate="no">{{ e.sourceDocument }}</span>
+            @if (e.sourcePage) {
+              , page {{ e.sourcePage }}
+            }
+          }
+        </p>
+      </section>
+    }
+
+    @if (v.spares.length) {
+      <h3 class="dp__h">Spares</h3>
+      <ul class="dp__plain">
+        @for (s of v.spares; track s.partNumber) {
+          <li>
+            <span translate="no">{{ s.partNumber }}</span> {{ s.name }}
+            <span class="dp__muted">{{ stockText(s.available) }}</span>
+            <a
+              ar-button
+              variant="ghost"
+              routerLink="/quotations/new"
+              [queryParams]="quoteParams(s.partNumber, s.name)"
+            >
+              Send quote
+            </a>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (v.pastTickets.length) {
+      <h3 class="dp__h">Same code on this machine before</h3>
+      <ul class="dp__plain">
+        @for (p of v.pastTickets; track p.id) {
+          <li>
+            <a [routerLink]="['/helpdesk', p.id]" translate="no">{{ p.reference }}</a>
+            <span class="dp__muted">{{ p.closedAtUtc | date: 'd MMM y' }}</span>
+            <div>
+              {{ p.cause }}
+              @if (p.fix) {
+                → {{ p.fix }}
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  }
+</ar-card>

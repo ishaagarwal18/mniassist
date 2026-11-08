@@ -36,6 +36,7 @@ import {
 import { ServiceTicketGateway } from './ticket-mock';
 import { ArBreakdownClockCard } from './breakdown-clock-card';
 import { ArRecordFixCard } from './record-fix-card';
+import { ArDiagnosisPanel } from './diagnosis-panel';
 import { TicketSource } from '../../proxy/support/ticket-source.enum';
 
 const STATUS_TONE: Record<TicketStatus, ChipTone> = {
@@ -63,6 +64,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
     ArChip,
     ArBreakdownClockCard,
     ArRecordFixCard,
+    ArDiagnosisPanel,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -228,6 +230,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
                 [ticketId]="t.id"
                 [version]="t.escalationStep + t.status * 100"
               />
+              <ar-diagnosis-panel [ticket]="t" />
               <ar-record-fix-card [ticket]="t" [canEdit]="canUpdate()" (saved)="fixSaved($event)" />
             }
             <ar-card heading="Ticket Settings & Assignment">

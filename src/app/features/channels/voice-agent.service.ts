@@ -180,6 +180,8 @@ export interface VoiceAgentTools {
   lookUpBalance: boolean;
   lookUpOrders: boolean;
   lookUpContracts: boolean;
+  /** Look up an alarm code the caller reads out, in the approved fault-code library. */
+  lookUpFaultCodes?: boolean;
   /** Send a WhatsApp payment reminder with its pay link, after the caller confirms (a write: needs the acting user). */
   sendPaymentLinks: boolean;
   /** A Freshdesk or Zendesk connection: look up and raise the caller's tickets there. */
@@ -207,6 +209,7 @@ export const noVoiceAgentTools = (): VoiceAgentTools => ({
   lookUpBalance: false,
   lookUpOrders: false,
   lookUpContracts: false,
+  lookUpFaultCodes: false,
   sendPaymentLinks: false,
   helpdeskConnectionId: null,
   shopConnectionId: null,
