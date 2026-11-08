@@ -1,0 +1,42 @@
+@if (clock(); as c) {
+  <ar-card heading="Downtime clock">
+    <p class="bc__time" [class.bc__time--stopped]="!c.running">
+      {{ duration(c.elapsedMinutes) }}
+      <span class="bc__muted">
+        @if (!c.running) {
+          down in total
+        } @else if (c.paused) {
+          · paused while waiting for the customer
+        } @else {
+          {{ c.alwaysOpen ? 'down, round the clock' : 'down, in office hours' }}
+        }
+      </span>
+    </p>
+    @if (c.policyName) {
+      <p class="bc__muted" translate="no">{{ c.policyName }}</p>
+    }
+    <ol class="bc__steps">
+      @for (s of c.steps; track s.number) {
+        <li [class]="'bc__step bc__step--' + s.state">
+          <span class="bc__when">{{ duration(s.minutes) }}</span>
+          <span>
+            {{ CONDITION_TEXT[s.condition] }}: {{ actionsText(s.actions) }}
+            <span class="bc__state">
+              @switch (s.state) {
+                @case ('fired') {
+                  done
+                }
+                @case ('met') {
+                  not needed
+                }
+                @default {
+                  to come
+                }
+              }
+            </span>
+          </span>
+        </li>
+      }
+    </ol>
+  </ar-card>
+}

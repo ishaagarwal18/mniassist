@@ -20,6 +20,9 @@ export interface Customer360TicketDto {
   status: string;
   priority: string;
   creationTime: string;
+  isBreakdown?: boolean;
+  /** An open breakdown past its escalation ladder's last step. */
+  escalatedToHealth?: boolean;
 }
 
 export interface Customer360AssetDto {

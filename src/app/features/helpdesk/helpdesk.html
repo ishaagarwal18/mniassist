@@ -25,6 +25,11 @@
       [value]="(summary()?.unassignedCount ?? 0) + ''"
       [tone]="(summary()?.unassignedCount ?? 0) > 0 ? 'amber' : 'neutral'"
     />
+    <ar-stat-tile
+      label="Escalated breakdowns"
+      [value]="(summary()?.escalatedCount ?? 0) + ''"
+      [tone]="(summary()?.escalatedCount ?? 0) > 0 ? 'bad' : 'neutral'"
+    />
   </div>
 
   <div class="hd__bar">
@@ -56,6 +61,15 @@
         (change)="overdueOnly.set($any($event.target).checked)"
       />
       <span>Overdue only</span>
+    </label>
+    <label class="hd__chk" for="hd-escalated">
+      <input
+        id="hd-escalated"
+        type="checkbox"
+        [checked]="escalatedOnly()"
+        (change)="escalatedOnly.set($any($event.target).checked)"
+      />
+      <span>Escalated only</span>
     </label>
     <ar-search-box placeholder="Search reference or subject" (queryChange)="filter.set($event)" />
   </div>
@@ -109,7 +123,9 @@
           <e-column field="priority" headerText="Priority" width="120">
             <ng-template #template let-t>
               <ar-chip [tone]="priorityTone(t.priority)">{{ priorityLabel(t.priority) }}</ar-chip>
-              @if (t.isBreakdown) {
+              @if (t.escalated) {
+                <ar-chip tone="bad">Escalated</ar-chip>
+              } @else if (t.isBreakdown) {
                 <ar-chip tone="bad">Breakdown</ar-chip>
               }
             </ng-template>

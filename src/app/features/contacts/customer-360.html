@@ -162,6 +162,16 @@
         }
       </section>
     } @else {
+      @for (t of c.openTickets; track t.id) {
+        @if (t.escalatedToHealth) {
+          <section class="c360-escalated" role="alert">
+            <strong>Machine still down:</strong>
+            <span translate="no">{{ t.ticketNumber }} · {{ t.subject }}</span>
+            is unresolved past its escalation time.
+            <a [routerLink]="['/helpdesk', t.id]">Open the ticket</a>
+          </section>
+        }
+      }
       <!-- Commercial Credit & Financial Health Ribbon -->
       <section class="credit-kpi-grid" aria-label="Commercial credit and KPI health">
         <!-- Credit Limit & Utilization Card -->

@@ -492,6 +492,21 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'The radar is re-scored on every save and each night at 2 am, so passing dates take effect on their own.',
     ],
   },
+  'helpdesk/escalation': {
+    benefits: [
+      'A breakdown nobody acts on reaches the right people by itself: the coordinator, then the manager, then the admins.',
+      'Every step is written on the ticket, so a breach report shows who was told and when.',
+    ],
+    steps: [
+      'Pick the coordinator and manager for each policy (blank sends to the whole helpdesk).',
+      'Set the hours the clock runs: round the clock for AMC customers, office hours for the rest.',
+      'Adjust the steps: after how long, if what is still true, do what.',
+    ],
+    tips: [
+      'The clock starts when the customer reports the breakdown and stops while the ticket waits for the customer.',
+      'Assign by rotation uses the lead rotation of your default pipeline, counting open tickets as each person’s load.',
+    ],
+  },
   'obsolescence/settings': {
     benefits: [
       'Tune how risk is scored to how your customers work: the stage, the machine’s age and criticality, stock and AMC.',

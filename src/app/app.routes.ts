@@ -1052,6 +1052,12 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'helpdesk/escalation',
+        title: 'Breakdown escalation · MNI Assist',
+        loadComponent: () =>
+          import('./features/helpdesk/escalation-page').then((m) => m.ArEscalationPage),
+      },
+      {
         path: 'helpdesk/:id',
         title: 'Ticket Details · MNI Assist',
         loadComponent: () =>

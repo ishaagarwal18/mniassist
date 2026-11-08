@@ -204,6 +204,15 @@ const EXACT: Record<string, PermissionText> = {
     title: 'See everyone’s tasks and meetings',
     detail: 'See tasks and meetings of every team member, not only their own.',
   },
+  'AutoReach.FaultCodes': {
+    title: 'Breakdown assistant',
+    detail: 'See breakdown tickets’ downtime clocks and, as the library fills, fault-code answers.',
+  },
+  'AutoReach.FaultCodes.Manage': {
+    title: 'Breakdown assistant settings',
+    detail:
+      'Set the escalation policies breakdown tickets follow (and, later, manage the fault-code library).',
+  },
   'AutoReach.InstalledBase.Qr': {
     title: 'Machine QR stickers',
     detail:

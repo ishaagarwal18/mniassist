@@ -36,6 +36,7 @@ export enum NotificationKind {
   ObsolescenceHighRisk = 48,
   ObsolescenceReplied = 49,
   BreakdownReported = 50,
+  BreakdownEscalated = 51,
 }
 
 export const notificationKindOptions = mapEnumToOptions(NotificationKind);

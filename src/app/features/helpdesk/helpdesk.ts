@@ -85,6 +85,7 @@ export class ArHelpdesk {
   protected readonly scope = signal<'mine' | 'everyone'>('mine');
   protected readonly status = signal<TicketStatus | null>(null);
   protected readonly overdueOnly = signal(false);
+  protected readonly escalatedOnly = signal(false);
   /** Starts from `?q=` (Customer 360 links here for one customer). */
   protected readonly filter = signal(initialSearch());
 
@@ -107,6 +108,7 @@ export class ArHelpdesk {
       this.scope();
       this.status();
       this.overdueOnly();
+      this.escalatedOnly();
       this.filter();
       this.limit();
       this.tick();
@@ -122,6 +124,7 @@ export class ArHelpdesk {
           mine: this.scope() === 'mine',
           status: this.status(),
           overdue: this.overdueOnly(),
+          escalated: this.escalatedOnly(),
           filter: this.filter().trim() || null,
           maxResultCount: this.limit(),
         }),

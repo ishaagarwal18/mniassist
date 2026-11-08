@@ -34,6 +34,7 @@ import {
   isFinished,
 } from './ticket-logic';
 import { ServiceTicketGateway } from './ticket-mock';
+import { ArBreakdownClockCard } from './breakdown-clock-card';
 import { TicketSource } from '../../proxy/support/ticket-source.enum';
 
 const STATUS_TONE: Record<TicketStatus, ChipTone> = {
@@ -53,7 +54,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
 @Component({
   selector: 'ar-ticket-detail-page',
   standalone: true,
-  imports: [CommonModule, ArTopbar, ArButton, ArCard, ArChip],
+  imports: [CommonModule, ArTopbar, ArButton, ArCard, ArChip, ArBreakdownClockCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -213,6 +214,12 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
 
           <!-- Right Sidebar: Properties & Controls -->
           <div class="ticket-sidebar">
+            @if (t.isBreakdown) {
+              <ar-breakdown-clock-card
+                [ticketId]="t.id"
+                [version]="t.escalationStep + t.status * 100"
+              />
+            }
             <ar-card heading="Ticket Settings & Assignment">
               @if (canUpdate()) {
                 <div class="control-group">

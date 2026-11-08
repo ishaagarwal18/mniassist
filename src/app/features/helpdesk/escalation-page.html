@@ -1,0 +1,246 @@
+<ar-topbar
+  title="Breakdown escalation"
+  subtitle="What happens when nobody acts on a breakdown"
+  help="A breakdown ticket's clock starts when the customer reports it and stops while the ticket waits for the customer. Each step fires once, when the clock reaches it, and only if its condition is still unmet; what it did is written on the ticket. Policies are tried in order and the first that covers the machine is used."
+>
+  <a ar-button variant="ghost" routerLink="/helpdesk/settings">Helpdesk settings</a>
+  <button ar-button type="button" icon="plus" [disabled]="mock" (click)="addPolicy()">
+    Add policy
+  </button>
+</ar-topbar>
+
+<div class="ep ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">Escalation policies need the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  @for (d of drafts(); track $index; let i = $index) {
+    <ar-card [heading]="d.name || 'Policy'">
+      <div class="ep__grid">
+        <label class="ar-field ep__wide">
+          <span class="ar-field__label">Name</span>
+          <input
+            class="ar-field__input"
+            maxlength="100"
+            [value]="d.name"
+            (input)="patch(i, { name: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field ep__wide">
+          <span class="ar-field__label">Covers</span>
+          <select
+            class="ar-field__input"
+            (change)="patch(i, { appliesTo: +$any($event.target).value })"
+          >
+            @for (a of appliesOptions; track a) {
+              <option [value]="a" [selected]="d.appliesTo === a">{{ APPLIES_TO_TEXT[a] }}</option>
+            }
+          </select>
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Order <span class="ar-field__opt">lower first</span></span>
+          <input
+            class="ar-field__input"
+            type="number"
+            min="1"
+            [value]="d.order"
+            (input)="patch(i, { order: +$any($event.target).value || 0 })"
+          />
+        </label>
+        <label class="ep__check">
+          <input
+            type="checkbox"
+            [checked]="d.isEnabled"
+            (change)="patch(i, { isEnabled: $any($event.target).checked })"
+          />
+          On
+        </label>
+        <label class="ar-field ep__wide">
+          <span class="ar-field__label"
+            >Service coordinator <span class="ar-field__opt">blank: the whole helpdesk</span></span
+          >
+          <select
+            class="ar-field__input"
+            (change)="patch(i, { coordinatorUserId: $any($event.target).value || null })"
+          >
+            <option value="" [selected]="!d.coordinatorUserId">Everyone on the helpdesk</option>
+            @for (p of people(); track p.userId) {
+              <option
+                [value]="p.userId"
+                [selected]="d.coordinatorUserId === p.userId"
+                translate="no"
+              >
+                {{ p.name }}
+              </option>
+            }
+          </select>
+        </label>
+        <label class="ar-field ep__wide">
+          <span class="ar-field__label"
+            >Service manager <span class="ar-field__opt">blank: the whole helpdesk</span></span
+          >
+          <select
+            class="ar-field__input"
+            (change)="patch(i, { managerUserId: $any($event.target).value || null })"
+          >
+            <option value="" [selected]="!d.managerUserId">Everyone on the helpdesk</option>
+            @for (p of people(); track p.userId) {
+              <option [value]="p.userId" [selected]="d.managerUserId === p.userId" translate="no">
+                {{ p.name }}
+              </option>
+            }
+          </select>
+        </label>
+      </div>
+
+      <fieldset class="ep__hours">
+        <legend>Clock runs</legend>
+        <label class="ep__check">
+          <input
+            type="radio"
+            [name]="'hours-' + i"
+            [checked]="d.hours.alwaysOpen"
+            (change)="setHours(i, { alwaysOpen: true })"
+          />
+          Round the clock, every day
+        </label>
+        <label class="ep__check">
+          <input
+            type="radio"
+            [name]="'hours-' + i"
+            [checked]="!d.hours.alwaysOpen"
+            (change)="setHours(i, { alwaysOpen: false })"
+          />
+          Office hours (India time)
+        </label>
+        @if (!d.hours.alwaysOpen) {
+          <div class="ep__days">
+            @for (name of DAY_NAMES; track $index; let day = $index) {
+              <label class="ep__check">
+                <input
+                  type="checkbox"
+                  [checked]="d.hours.days.includes(day)"
+                  (change)="toggleDay(i, day, $any($event.target).checked)"
+                />
+                {{ name }}
+              </label>
+            }
+            <label class="ar-field ep__time">
+              <span class="ar-field__label">From</span>
+              <input
+                class="ar-field__input"
+                type="time"
+                [value]="clockText(d.hours.opensAtMinute)"
+                (change)="setTime(i, 'opensAtMinute', $any($event.target).value)"
+              />
+            </label>
+            <label class="ar-field ep__time">
+              <span class="ar-field__label">To</span>
+              <input
+                class="ar-field__input"
+                type="time"
+                [value]="clockText(d.hours.closesAtMinute)"
+                (change)="setTime(i, 'closesAtMinute', $any($event.target).value)"
+              />
+            </label>
+          </div>
+        }
+      </fieldset>
+
+      <table class="ep__steps">
+        <thead>
+          <tr>
+            <th scope="col">After, minutes</th>
+            <th scope="col">If still</th>
+            <th scope="col">Then</th>
+            <th scope="col" aria-label="Remove"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of d.steps; track $index; let k = $index) {
+            <tr>
+              <td>
+                <input
+                  class="ar-field__input ep__min"
+                  type="number"
+                  min="1"
+                  max="43200"
+                  [attr.aria-label]="'Step ' + (k + 1) + ' minutes'"
+                  [value]="s.minutes"
+                  (input)="setStep(i, k, { minutes: +$any($event.target).value || 0 })"
+                />
+                <span class="ep__muted">{{ s.minutes > 0 ? duration(s.minutes) : '' }}</span>
+              </td>
+              <td>
+                <select
+                  class="ar-field__input"
+                  [attr.aria-label]="'Step ' + (k + 1) + ' condition'"
+                  (change)="setStep(i, k, { condition: +$any($event.target).value })"
+                >
+                  @for (c of conditions; track c) {
+                    <option [value]="c" [selected]="s.condition === c">
+                      {{ CONDITION_TEXT[c] }}
+                    </option>
+                  }
+                </select>
+              </td>
+              <td class="ep__actions">
+                @for (a of ACTION_FIELDS; track a.flag) {
+                  <label class="ep__check">
+                    <input
+                      type="checkbox"
+                      [checked]="hasAction(s.actions, a.flag)"
+                      (change)="setAction(i, k, a.flag, $any($event.target).checked)"
+                    />
+                    {{ a.label }}
+                  </label>
+                }
+              </td>
+              <td>
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [attr.aria-label]="'Remove step ' + (k + 1)"
+                  (click)="removeStep(i, k)"
+                >
+                  Remove
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (problem(d); as p) {
+        <p class="ep__problem">{{ p }}</p>
+      }
+      <div class="ep__foot">
+        <span class="ep__muted">
+          {{ d.openTickets }} open breakdown{{ d.openTickets === 1 ? '' : 's' }} on this policy.
+          "Update the customer" goes only inside WhatsApp's 24-hour window.
+        </span>
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="d.steps.length >= 8"
+          (click)="addStep(i)"
+        >
+          Add step
+        </button>
+        <button
+          ar-button
+          type="button"
+          [disabled]="!d.dirty || busy() === i || !!problem(d)"
+          (click)="save(i)"
+        >
+          Save
+        </button>
+      </div>
+    </ar-card>
+  }
+</div>

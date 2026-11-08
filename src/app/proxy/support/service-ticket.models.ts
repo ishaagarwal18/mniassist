@@ -59,6 +59,8 @@ export interface GetServiceTicketsInput {
   mine?: boolean;
   unassigned?: boolean;
   overdue?: boolean;
+  /** Only open breakdowns an escalation step has flagged. */
+  escalated?: boolean;
   filter?: string | null;
   skipCount?: number;
   maxResultCount?: number;
@@ -93,6 +95,10 @@ export interface ServiceTicketDto {
   breakdownReportedAtUtc?: string | null;
   /** Reported from a machine sticker by a number that isn't on the machine's account. */
   reportedByUnknownNumber: boolean;
+  /** How many escalation steps the ticket has passed. */
+  escalationStep: number;
+  /** An escalation step flagged it for the dashboard and it is still open. */
+  escalated: boolean;
   creationTime: string;
 }
 
@@ -116,6 +122,8 @@ export interface ServiceTicketSummaryDto {
   pendingCount: number;
   overdueCount: number;
   unassignedCount: number;
+  /** Open breakdowns an escalation step has flagged. */
+  escalatedCount: number;
 }
 
 export interface ServiceTicketSettingsDto {

@@ -397,9 +397,11 @@ const BAND_LABEL: Record<HealthBand, string> = {
                       [class.reason-pill--neg]="r.points < 0"
                       [title]="reasonTooltip(r)"
                     >
-                      <strong class="ar-mono">{{
-                        r.points > 0 ? '+' + r.points : r.points
-                      }}</strong>
+                      @if (r.points !== 0) {
+                        <strong class="ar-mono">{{
+                          r.points > 0 ? '+' + r.points : r.points
+                        }}</strong>
+                      }
                       {{ formatReason(r.text) }}
                     </span>
                   }
@@ -967,6 +969,7 @@ export class ArAccountHealth {
     if (t.includes('overdue') && (t.includes('Invoice') || t.includes('invoice'))) {
       return 'Customer has pending invoice payments that are more than 30 days past their due date';
     }
+    if (r.points === 0) return this.formatReason(r.text);
     return `${this.formatReason(r.text)} (${r.points > 0 ? '+' : ''}${r.points} pts)`;
   }
 }

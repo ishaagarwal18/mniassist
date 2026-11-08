@@ -155,6 +155,8 @@ export class TicketMockStore {
       isBreakdown: false,
       breakdownReportedAtUtc: null,
       reportedByUnknownNumber: false,
+      escalationStep: 0,
+      escalated: false,
       creationTime: created,
       ...p,
     };
@@ -217,6 +219,7 @@ export class MockServiceTicketApi {
       .filter((t) => !input.unassigned || !t.assignedUserId)
       .filter((t) => !input.mine || t.assignedUserId === 'mock-me')
       .filter((t) => !input.overdue || t.isOverdue)
+      .filter((t) => !input.escalated || t.escalated)
       .filter(
         (t) =>
           !input.filter ||
@@ -236,6 +239,7 @@ export class MockServiceTicketApi {
       openCount: this.s.tickets.filter((t) => t.status === TicketStatus.Open).length,
       pendingCount: this.s.tickets.filter((t) => t.status === TicketStatus.Pending).length,
       overdueCount: this.s.tickets.filter((t) => t.isOverdue).length,
+      escalatedCount: this.s.tickets.filter((t) => t.escalated).length,
       unassignedCount: this.s.tickets.filter((t) => !t.assignedUserId).length,
     });
   };
