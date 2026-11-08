@@ -4,14 +4,10 @@
   help="Every service ticket raised for a customer, whatever raised it — a WhatsApp Flow submission, a call written up, or by hand from a deal or contact. Reply to the customer from here and it goes out through whichever channel the ticket started on."
 >
   @if (canManageSettings()) {
-    <a ar-button variant="ghost" routerLink="/helpdesk/settings">
-      Settings
-    </a>
+    <a ar-button variant="ghost" routerLink="/helpdesk/settings"> Settings </a>
   }
   @if (canCreate()) {
-    <a ar-button variant="primary" icon="plus" routerLink="/helpdesk/new">
-      New ticket
-    </a>
+    <a ar-button variant="primary" icon="plus" routerLink="/helpdesk/new"> New ticket </a>
   }
 </ar-topbar>
 
@@ -113,6 +109,9 @@
           <e-column field="priority" headerText="Priority" width="120">
             <ng-template #template let-t>
               <ar-chip [tone]="priorityTone(t.priority)">{{ priorityLabel(t.priority) }}</ar-chip>
+              @if (t.isBreakdown) {
+                <ar-chip tone="bad">Breakdown</ar-chip>
+              }
             </ng-template>
           </e-column>
 

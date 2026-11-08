@@ -155,6 +155,32 @@ import { ServiceTicketGateway } from './ticket-mock';
           }
         </section>
 
+        <section class="ts__section">
+          <h2 class="ts__h">Breakdown confirmation</h2>
+          <p class="ts__hint">
+            When a customer reports a breakdown from a machine's QR sticker, they get the ticket
+            reference on WhatsApp. Outside the 24-hour window that needs an approved utility
+            template with three body values: the customer's name, the ticket reference and the
+            machine.
+          </p>
+          <label class="ar-field" for="ts-breakdown">
+            <span class="ar-field__label"
+              >Utility template <span class="ar-field__opt">optional</span></span
+            >
+            <select
+              id="ts-breakdown"
+              class="ar-field__input"
+              [value]="breakdownTemplateId()"
+              (change)="breakdownTemplateId.set($any($event.target).value)"
+            >
+              <option value="">None: only inside the 24-hour window</option>
+              @for (t of utilityTemplates(); track t.id) {
+                <option [value]="t.id" translate="no">{{ t.name }} ({{ t.lang }})</option>
+              }
+            </select>
+          </label>
+        </section>
+
         @if (notice(); as msg) {
           <p class="ts__ok" role="status">{{ msg }}</p>
         }
@@ -264,6 +290,8 @@ export class ArTicketSettingsDialog {
   protected readonly portalEnabled = signal(false);
   protected readonly portalUrl = signal<string | null>(null);
   protected readonly signOffTemplateId = signal('');
+  protected readonly breakdownTemplateId = signal('');
+  protected readonly utilityTemplates = signal<{ id: string; name: string; lang: string }[]>([]);
   protected readonly authTemplates = signal<{ id: string; name: string; lang: string }[]>([]);
   private readonly templatesApi = inject(TemplateService);
 
@@ -294,6 +322,20 @@ export class ArTicketSettingsDialog {
           lang: t.languageCode ?? '',
         })),
       );
+      const utility = await firstValueFrom(
+        this.templatesApi.getList({
+          status: TemplateStatus.Approved,
+          category: TemplateCategory.Utility,
+          maxResultCount: 200,
+        }),
+      );
+      this.utilityTemplates.set(
+        (utility.items ?? []).map((t) => ({
+          id: t.id!,
+          name: t.name ?? 'Template',
+          lang: t.languageCode ?? '',
+        })),
+      );
     } catch {
       // The picker stays empty; the rest of the settings still work.
     }
@@ -319,6 +361,7 @@ export class ArTicketSettingsDialog {
     this.portalEnabled.set(s.portalEnabled);
     this.portalUrl.set(s.portalUrl ?? null);
     this.signOffTemplateId.set(s.signOffTemplateId ?? '');
+    this.breakdownTemplateId.set(s.breakdownTemplateId ?? '');
   }
 
   protected async save(): Promise<void> {
@@ -336,6 +379,7 @@ export class ArTicketSettingsDialog {
             lowHours: this.lowHours(),
             portalEnabled: this.portalEnabled(),
             signOffTemplateId: this.signOffTemplateId() || null,
+            breakdownTemplateId: this.breakdownTemplateId() || null,
           }),
         ),
       );

@@ -531,6 +531,7 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Set how critical the machine is to the customer.',
       'Add components by hand, read a nameplate photo, import a CSV (download the template), or copy a bill of materials.',
       'After a site visit, click Mark list checked.',
+      'Under QR sticker, click Print sticker and fix it on the machine panel. A scan opens a page where the operator reports a breakdown with this machine already filled in.',
     ],
     tips: [
       'A part from your catalogue takes its name, make and series from it; leave those fields blank.',

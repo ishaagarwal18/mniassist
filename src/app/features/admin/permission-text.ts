@@ -204,6 +204,11 @@ const EXACT: Record<string, PermissionText> = {
     title: 'See everyone’s tasks and meetings',
     detail: 'See tasks and meetings of every team member, not only their own.',
   },
+  'AutoReach.InstalledBase.Qr': {
+    title: 'Machine QR stickers',
+    detail:
+      'Make, print, replace and switch off the QR stickers customers scan to report a breakdown or ask for service.',
+  },
   'AutoReach.InstalledBase.Components': {
     title: 'Record machine components',
     detail:

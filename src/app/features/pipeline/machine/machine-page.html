@@ -74,6 +74,10 @@
       </dl>
     </ar-card>
 
+    @if (canQr()) {
+      <ar-machine-qr-card [assetId]="m.id ?? id" [serial]="m.serialNumber" />
+    }
+
     <ar-card heading="Components">
       @if (canEdit()) {
         <div class="mp__actions">

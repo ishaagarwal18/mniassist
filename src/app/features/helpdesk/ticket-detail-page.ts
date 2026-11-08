@@ -34,6 +34,7 @@ import {
   isFinished,
 } from './ticket-logic';
 import { ServiceTicketGateway } from './ticket-mock';
+import { TicketSource } from '../../proxy/support/ticket-source.enum';
 
 const STATUS_TONE: Record<TicketStatus, ChipTone> = {
   [TicketStatus.Open]: 'amber',
@@ -56,12 +57,13 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
-      [title]="(loaded()?.reference ? loaded()!.reference + ' — ' : '') + (loaded()?.subject || 'Ticket Details')"
+      [title]="
+        (loaded()?.reference ? loaded()!.reference + ' — ' : '') +
+        (loaded()?.subject || 'Ticket Details')
+      "
       subtitle="Service Ticket Overview, Activity & Customer Support Thread"
     >
-      <button ar-button type="button" variant="ghost" (click)="back()">
-        Back to Helpdesk
-      </button>
+      <button ar-button type="button" variant="ghost" (click)="back()">Back to Helpdesk</button>
       @if (canDelete() && loaded(); as t) {
         <button ar-button type="button" variant="danger" (click)="deleteTicket(t)">
           Delete Ticket
@@ -83,7 +85,18 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
                 <div class="ticket-badges">
                   <span class="ticket-ref ar-mono">{{ t.reference }}</span>
                   <ar-chip [tone]="STATUS_TONE[t.status]">{{ STATUS_LABEL[t.status] }}</ar-chip>
-                  <ar-chip [tone]="PRIORITY_TONE[t.priority]">{{ PRIORITY_LABEL[t.priority] }}</ar-chip>
+                  <ar-chip [tone]="PRIORITY_TONE[t.priority]">{{
+                    PRIORITY_LABEL[t.priority]
+                  }}</ar-chip>
+                  @if (t.isBreakdown) {
+                    <ar-chip tone="bad">Breakdown</ar-chip>
+                  }
+                  @if (t.source === TicketSource.QrScan) {
+                    <ar-chip tone="neutral">From machine sticker</ar-chip>
+                  }
+                  @if (t.reportedByUnknownNumber) {
+                    <ar-chip tone="warn">Number not on the account</ar-chip>
+                  }
                   @if (due(); as d) {
                     <span class="ticket-due" [class.ticket-due--bad]="t.isOverdue">{{ d }}</span>
                   }
@@ -162,14 +175,19 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
                   </div>
                   @if (!isInternal() && !t.conversationId) {
                     <p class="composer-hint">
-                      This ticket has no connected customer conversation channel to send a reply through.
+                      This ticket has no connected customer conversation channel to send a reply
+                      through.
                     </p>
                   }
                   <textarea
                     class="ar-field__input composer-textarea"
                     rows="4"
                     maxlength="4000"
-                    [placeholder]="isInternal() ? 'Add private notes for the support team…' : 'Type reply to be sent to the customer…'"
+                    [placeholder]="
+                      isInternal()
+                        ? 'Add private notes for the support team…'
+                        : 'Type reply to be sent to the customer…'
+                    "
                     [value]="body()"
                     (input)="body.set($any($event.target).value)"
                   ></textarea>
@@ -178,10 +196,14 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
                       ar-button
                       type="button"
                       variant="primary"
-                      [disabled]="sending() || !body().trim() || (!isInternal() && !t.conversationId)"
+                      [disabled]="
+                        sending() || !body().trim() || (!isInternal() && !t.conversationId)
+                      "
                       (click)="send(t.id)"
                     >
-                      {{ sending() ? 'Posting…' : isInternal() ? 'Add Internal Note' : 'Send Reply' }}
+                      {{
+                        sending() ? 'Posting…' : isInternal() ? 'Add Internal Note' : 'Send Reply'
+                      }}
                     </button>
                   </div>
                 </div>
@@ -202,7 +224,9 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
                       (change)="setStatus(+$any($event.target).value)"
                     >
                       @for (s of statusChoices; track s) {
-                        <option [value]="s" [selected]="s === t.status">{{ STATUS_LABEL[s] }}</option>
+                        <option [value]="s" [selected]="s === t.status">
+                          {{ STATUS_LABEL[s] }}
+                        </option>
                       }
                     </select>
                   </label>
@@ -215,7 +239,9 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
                       (change)="setPriority(+$any($event.target).value)"
                     >
                       @for (p of priorityChoices; track p) {
-                        <option [value]="p" [selected]="p === t.priority">{{ PRIORITY_LABEL[p] }}</option>
+                        <option [value]="p" [selected]="p === t.priority">
+                          {{ PRIORITY_LABEL[p] }}
+                        </option>
                       }
                     </select>
                   </label>
@@ -509,6 +535,7 @@ export class ArTicketDetailPage implements OnInit {
   protected readonly PRIORITY_LABEL = PRIORITY_LABEL;
   protected readonly STATUS_TONE = STATUS_TONE;
   protected readonly PRIORITY_TONE = PRIORITY_TONE;
+  protected readonly TicketSource = TicketSource;
   protected readonly statusChoices = STATUS_CHOICES;
   protected readonly priorityChoices = PRIORITY_CHOICES;
   protected readonly isFinished = isFinished;

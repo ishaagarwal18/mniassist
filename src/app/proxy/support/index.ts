@@ -6,3 +6,4 @@ export * from './ticket-priority.enum';
 export * from './ticket-source.enum';
 export * from './ticket-status.enum';
 export * from './field-service.service';
+export * from './machine-qr.service';

@@ -23,6 +23,7 @@ import type { InstalledAssetDto } from '../../../proxy/pipeline/models';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../../ui';
 import { bandText, stageText, stageTone } from '../obsolescence/obsolescence.logic';
 import { environment } from '../../../../environments/environment';
+import { ArMachineQrCard } from './machine-qr-card';
 
 const SOURCE_LABEL: Record<ComponentSource, string> = {
   [ComponentSource.Typed]: 'Typed',
@@ -52,7 +53,7 @@ function blank(): CreateUpdateInstalledComponentDto {
  */
 @Component({
   selector: 'ar-machine-page',
-  imports: [ArTopbar, ArButton, ArBanner, ArCard, ArChip, RouterLink, DatePipe],
+  imports: [ArTopbar, ArButton, ArBanner, ArCard, ArChip, RouterLink, DatePipe, ArMachineQrCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './machine-page.html',
   styleUrl: './machine-page.scss',
@@ -72,8 +73,9 @@ export class ArMachinePage {
     this.permissions,
   );
   protected readonly canUseBoms = grantedPolicy('AutoReach.BillOfMaterials', this.permissions);
+  protected readonly canQr = grantedPolicy('AutoReach.InstalledBase.Qr', this.permissions);
 
-  private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id')!;
+  protected readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id')!;
 
   protected readonly machine = signal<InstalledAssetDto | null>(null);
   protected readonly components = signal<InstalledComponentDto[]>([]);

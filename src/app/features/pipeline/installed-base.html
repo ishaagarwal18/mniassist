@@ -11,6 +11,19 @@
     />
     Show retired
   </label>
+  @if (canQr() && assets().length) {
+    <button
+      ar-button
+      type="button"
+      variant="ghost"
+      icon="download"
+      [disabled]="busy() === 'stickers'"
+      [title]="'Stickers for the ' + stickerCount() + ' machines shown, 24 to an A4 sheet'"
+      (click)="printStickers()"
+    >
+      Print QR stickers
+    </button>
+  }
   @if (canCreate()) {
     <button ar-button type="button" variant="ghost" icon="download" (click)="openImport()">
       Import AMC values

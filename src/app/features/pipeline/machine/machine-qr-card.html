@@ -1,0 +1,78 @@
+<ar-card heading="QR sticker">
+  @if (error(); as e) {
+    <p class="mq__error">{{ e }}</p>
+  }
+  @if (qr(); as q) {
+    @if (q.active && q.url) {
+      <div class="mq">
+        @if (image(); as src) {
+          <img class="mq__code" [src]="src" alt="QR code for this machine's service page" />
+        }
+        <div class="mq__body">
+          <p class="mq__muted">
+            Customers scan it to report a breakdown or ask for service. {{ lastScanned() }}
+            @if (q.scanCount) {
+              · {{ q.scanCount }} scan{{ q.scanCount === 1 ? '' : 's' }}
+            }
+          </p>
+          <div class="mq__link">
+            <input
+              class="ar-field__input"
+              readonly
+              aria-label="Sticker link"
+              translate="no"
+              [value]="q.url"
+            />
+            <button ar-button type="button" variant="ghost" (click)="copy(q.url)">Copy</button>
+          </div>
+          <div class="mq__actions">
+            <button ar-button type="button" icon="download" [disabled]="busy()" (click)="print()">
+              Print sticker
+            </button>
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="busy()"
+              (click)="regenerate()"
+            >
+              New sticker
+            </button>
+            <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="revoke()">
+              Switch off
+            </button>
+          </div>
+        </div>
+      </div>
+      @if (q.recentScans.length) {
+        <ul class="mq__scans">
+          @for (s of q.recentScans; track $index) {
+            <li>
+              <span>{{ s.scannedAtUtc | date: 'd MMM, HH:mm' }}</span>
+              <span>{{ actionText(s.action) }}</span>
+              <span class="mq__muted">{{ s.result }}</span>
+            </li>
+          }
+        </ul>
+      }
+    } @else {
+      <p class="mq__muted">
+        @if (q.revokedAtUtc) {
+          The last sticker was switched off on {{ q.revokedAtUtc | date: 'd MMM y' }}.
+        } @else {
+          No sticker yet.
+        }
+        A sticker on the panel lets the customer's operator report a breakdown with this machine
+        already identified.
+      </p>
+      <div class="mq__actions">
+        <button ar-button type="button" icon="plus" [disabled]="busy()" (click)="create()">
+          Make a sticker
+        </button>
+        <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="print()">
+          Make and print
+        </button>
+      </div>
+    }
+  }
+</ar-card>

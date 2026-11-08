@@ -152,6 +152,9 @@ export class TicketMockStore {
       closedAtUtc: null,
       reopenCount: 0,
       satisfactionRating: null,
+      isBreakdown: false,
+      breakdownReportedAtUtc: null,
+      reportedByUnknownNumber: false,
       creationTime: created,
       ...p,
     };
@@ -369,6 +372,7 @@ export class MockServiceTicketApi {
       portalEnabled: input.portalEnabled,
       portalUrl,
       signOffTemplateId: input.signOffTemplateId ?? null,
+      breakdownTemplateId: input.breakdownTemplateId ?? null,
     };
     return of({ ...this.s.settings });
   };

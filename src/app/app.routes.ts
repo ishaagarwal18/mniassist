@@ -98,6 +98,13 @@ export const routes: Routes = [
     loadComponent: () => import('./features/helpdesk/ticket-portal').then((m) => m.ArTicketPortal),
   },
   {
+    // The page a machine's QR sticker opens: no login, no app shell. Report a breakdown, ask for service, see cover after a WhatsApp code.
+    path: 'm/:token',
+    title: 'Machine service',
+    loadComponent: () =>
+      import('./features/machine-scan/scan-page').then((m) => m.ArMachineScanPage),
+  },
+  {
     // A customer's spares re-order page, from their personal WhatsApp link: no login, no app shell. A code to their WhatsApp opens it.
     path: 'r/:token',
     title: 'Re-order spares',

@@ -1,0 +1,250 @@
+<main class="ms">
+  @switch (step()) {
+    @case ('loading') {
+      <p class="ms__note">Opening…</p>
+    }
+    @case ('busy') {
+      <section class="ms__card">
+        <h1 class="ms__title">Please try again in a few minutes</h1>
+        <p class="ms__soft">This sticker has been scanned many times in the last hour.</p>
+      </section>
+    }
+    @case ('unavailable') {
+      <section class="ms__card">
+        <h1 class="ms__title">This sticker is not recognised</h1>
+        <p class="ms__soft">
+          Check that the whole code was scanned, or call your service provider.
+        </p>
+      </section>
+    }
+    @case ('page') {
+      @if (machine(); as m) {
+        <header class="ms__brand">
+          @if (m.logoDataUrl) {
+            <img class="ms__logo" [src]="m.logoDataUrl" alt="" />
+          }
+          <span class="ms__brand-name" translate="no">{{ m.workspaceName }}</span>
+        </header>
+
+        @if (m.revoked) {
+          <section class="ms__card">
+            <h1 class="ms__title">This sticker is no longer active</h1>
+            <p class="ms__soft">
+              It was replaced or switched off. Please call the helpline for help with this machine.
+            </p>
+          </section>
+        } @else {
+          <section class="ms__card">
+            <p class="ms__eyebrow">Machine</p>
+            <h1 class="ms__title" translate="no">{{ m.description }}</h1>
+            <dl class="ms__facts">
+              @if (m.make || m.model) {
+                <div>
+                  <dt>Make and model</dt>
+                  <dd translate="no">{{ m.make }} {{ m.model }}</dd>
+                </div>
+              }
+              @if (m.serialNumber) {
+                <div>
+                  <dt>Serial</dt>
+                  <dd translate="no">{{ m.serialNumber }}</dd>
+                </div>
+              }
+              @if (m.siteName) {
+                <div>
+                  <dt>Site</dt>
+                  <dd translate="no">{{ m.siteName }}</dd>
+                </div>
+              }
+            </dl>
+          </section>
+
+          @if (done(); as d) {
+            <section class="ms__card ms__card--done" role="status">
+              <p class="ms__done">{{ d }}</p>
+              @if (reference(); as r) {
+                <p class="ms__ref">
+                  Reference <b translate="no">{{ r }}</b>
+                </p>
+              }
+            </section>
+          }
+
+          @if (m.verified && m.private; as p) {
+            <section class="ms__card">
+              <p class="ms__eyebrow">Your machine</p>
+              <p class="ms__cover" [class.ms__cover--ok]="p.covered">
+                {{ p.coverText }}
+                @if (p.coverEndsOn) {
+                  <span class="ms__soft">
+                    {{ p.covered ? 'until' : 'on' }} {{ p.coverEndsOn | date: 'd MMM yyyy' }}</span
+                  >
+                }
+              </p>
+              @if (p.openTickets.length) {
+                <ul class="ms__tickets">
+                  @for (t of p.openTickets; track t.reference) {
+                    <li>
+                      <b translate="no">{{ t.reference }}</b>
+                      <span translate="no">{{ t.subject }}</span>
+                      <span class="ms__soft">
+                        {{ statusText(t.status) }}
+                        @if (t.engineerFirstName) {
+                          · Engineer <span translate="no">{{ t.engineerFirstName }}</span>
+                        }
+                      </span>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="ms__soft">No open tickets for this machine.</p>
+              }
+              <button type="button" class="ms__link" (click)="signOut()">This isn't me</button>
+            </section>
+          }
+
+          @if (!task()) {
+            <nav class="ms__actions" aria-label="What do you need?">
+              @if (m.canReport) {
+                <button type="button" class="ms__btn ms__btn--stop" (click)="open('breakdown')">
+                  Report a breakdown
+                </button>
+                <button type="button" class="ms__btn" (click)="open('service')">
+                  Ask for service
+                </button>
+              }
+              @if (m.canOrderSpares && m.verified) {
+                <button type="button" class="ms__btn" [disabled]="busy()" (click)="orderSpares()">
+                  Order a spare
+                </button>
+              }
+              @if (!m.verified) {
+                <button type="button" class="ms__btn ms__btn--quiet" (click)="open('verify')">
+                  {{ m.canOrderSpares ? 'See cover, tickets and spares' : 'See cover and tickets' }}
+                </button>
+              }
+            </nav>
+          } @else {
+            <section class="ms__card">
+              <h2 class="ms__h2">
+                @switch (task()) {
+                  @case ('breakdown') {
+                    The machine has stopped
+                  }
+                  @case ('service') {
+                    Ask for a service visit
+                  }
+                  @default {
+                    Confirm your number
+                  }
+                }
+              </h2>
+              @if (task() === 'verify') {
+                <p class="ms__soft">
+                  We'll send a 6-digit code to your WhatsApp. A number on this machine's account
+                  then sees its cover and tickets.
+                </p>
+              }
+              <form class="ms__form" (submit)="$event.preventDefault(); submit()">
+                @if (task() !== 'verify') {
+                  <label class="ms__field">
+                    <span>Your name</span>
+                    <input
+                      autocomplete="name"
+                      maxlength="100"
+                      [value]="name()"
+                      (input)="name.set($any($event.target).value)"
+                    />
+                  </label>
+                }
+                <label class="ms__field">
+                  <span>Mobile number</span>
+                  <input
+                    type="tel"
+                    inputmode="tel"
+                    autocomplete="tel"
+                    maxlength="20"
+                    [disabled]="awaitingCode()"
+                    [value]="phone()"
+                    (input)="phone.set($any($event.target).value)"
+                  />
+                </label>
+                @if (task() !== 'verify') {
+                  <label class="ms__field">
+                    <span>
+                      What is wrong?
+                      @if (task() === 'breakdown') {
+                        <span class="ms__soft">An alarm code on the screen helps</span>
+                      }
+                    </span>
+                    <textarea
+                      rows="3"
+                      maxlength="1000"
+                      [value]="problem()"
+                      (input)="problem.set($any($event.target).value)"
+                    ></textarea>
+                  </label>
+                }
+                <label class="ms__hp" aria-hidden="true">
+                  Website
+                  <input
+                    tabindex="-1"
+                    autocomplete="off"
+                    [value]="website()"
+                    (input)="website.set($any($event.target).value)"
+                  />
+                </label>
+                @if (awaitingCode()) {
+                  <label class="ms__field">
+                    <span>Code from WhatsApp</span>
+                    <input
+                      inputmode="numeric"
+                      autocomplete="one-time-code"
+                      maxlength="7"
+                      [value]="code()"
+                      (input)="code.set($any($event.target).value)"
+                    />
+                  </label>
+                }
+                @if (captchaNeeded()) {
+                  <ar-captcha (token)="captchaToken.set($event)" />
+                }
+                @if (error(); as e) {
+                  <p class="ms__error" role="alert">{{ e }}</p>
+                }
+                <div class="ms__row">
+                  <button type="submit" class="ms__btn ms__btn--primary" [disabled]="busy()">
+                    @if (busy()) {
+                      Sending…
+                    } @else if (awaitingCode()) {
+                      Confirm
+                    } @else if (task() === 'verify') {
+                      Send me the code
+                    } @else {
+                      Send
+                    }
+                  </button>
+                  <button type="button" class="ms__link" (click)="open(null)">Cancel</button>
+                </div>
+              </form>
+            </section>
+          }
+        }
+
+        <footer class="ms__help">
+          @if (call(); as tel) {
+            <a class="ms__btn ms__btn--call" [href]="tel"
+              >Call the helpline <span translate="no">{{ m.helpline }}</span></a
+            >
+          }
+          @if (whatsApp(); as wa) {
+            <a class="ms__btn" [href]="wa" target="_blank" rel="noopener">Message us on WhatsApp</a>
+          }
+          <p class="ms__safety">
+            If anyone is in danger, stop the machine and isolate it before anything else.
+          </p>
+        </footer>
+      }
+    }
+  }
+</main>

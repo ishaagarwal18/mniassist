@@ -11,12 +11,16 @@ export interface CreateServiceTicketInput {
   enquiryId?: string | null;
   installedAssetId?: string | null;
   conversationId?: string | null;
+  /** A machine has stopped: starts the downtime clock now. */
+  isBreakdown?: boolean;
 }
 
 export interface UpdateServiceTicketDetailsInput {
   subject: string;
   description?: string | null;
   category?: string | null;
+  /** Turns the breakdown flag on or off. Left out: unchanged. */
+  isBreakdown?: boolean | null;
 }
 
 export interface SetTicketPriorityInput {
@@ -85,6 +89,10 @@ export interface ServiceTicketDto {
   closedAtUtc?: string | null;
   reopenCount: number;
   satisfactionRating?: number | null;
+  isBreakdown: boolean;
+  breakdownReportedAtUtc?: string | null;
+  /** Reported from a machine sticker by a number that isn't on the machine's account. */
+  reportedByUnknownNumber: boolean;
   creationTime: string;
 }
 
@@ -120,6 +128,8 @@ export interface ServiceTicketSettingsDto {
   portalUrl?: string | null;
   /** The approved authentication template for sign-off codes outside the 24-hour window. */
   signOffTemplateId?: string | null;
+  /** The approved template confirming a breakdown report from a machine sticker outside the window: name, reference, machine. */
+  breakdownTemplateId?: string | null;
 }
 
 export interface SetServiceTicketSettingsInput {
@@ -129,4 +139,5 @@ export interface SetServiceTicketSettingsInput {
   lowHours: number;
   portalEnabled: boolean;
   signOffTemplateId?: string | null;
+  breakdownTemplateId?: string | null;
 }

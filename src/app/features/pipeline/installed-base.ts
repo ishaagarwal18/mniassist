@@ -23,6 +23,13 @@ import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../ui/grid';
+import { firstValueFrom } from 'rxjs';
+import { readApiError } from '../../core/util/api-error';
+import { MachineQrService } from '../../proxy/support/machine-qr.service';
+import { environment } from '../../../environments/environment';
+import { savePdf } from './machine/machine-qr.logic';
+
+const MAX_STICKERS = 240;
 
 /**
  * Installed base (M10). Every machine with its AMC / calibration / warranty dates —
@@ -49,7 +56,40 @@ export class ArInstalledBase {
     this.permissions,
   );
 
+  protected readonly canQr = grantedPolicy('AutoReach.InstalledBase.Qr', this.permissions);
+  private readonly qrApi = inject(MachineQrService);
+
   protected readonly assets = this.store.assets;
+  /** The machines a sticker sheet is printed for: those shown and in service, at most ten sheets. */
+  protected readonly stickerCount = computed(() =>
+    Math.min(this.assets().filter((a) => !a.retired).length, MAX_STICKERS),
+  );
+
+  protected async printStickers(): Promise<void> {
+    if (environment.useMockData) {
+      this.toasts.warning('Stickers need the live API.');
+      return;
+    }
+    const ids = this.assets()
+      .filter((a) => !a.retired)
+      .slice(0, MAX_STICKERS)
+      .map((a) => a.id);
+    if (!ids.length) return;
+    this.busy.set('stickers');
+    try {
+      const blob = await firstValueFrom(this.qrApi.printStickers({ assetIds: ids }));
+      savePdf(blob, `machine-stickers-${ids.length}.pdf`);
+      if (this.assets().filter((a) => !a.retired).length > MAX_STICKERS) {
+        this.toasts.warning(
+          `Printed the first ${MAX_STICKERS}. Filter the list to print the rest.`,
+        );
+      }
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The sticker sheet could not be made.'));
+    } finally {
+      this.busy.set(null);
+    }
+  }
   protected readonly loading = this.store.loading;
   protected readonly includeRetired = this.store.includeRetired;
   protected readonly busy = signal<string | null>(null);

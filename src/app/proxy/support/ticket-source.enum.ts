@@ -6,6 +6,7 @@ export enum TicketSource {
   Email = 2,
   WebForm = 3,
   Voice = 4,
+  QrScan = 5,
 }
 
 export const ticketSourceOptions = mapEnumToOptions(TicketSource);

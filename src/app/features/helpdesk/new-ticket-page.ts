@@ -6,10 +6,7 @@ import { PickerOption } from '../../core/services/pipeline.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { ArTopbar } from '../../layout/topbar';
 import { ArContactPicker } from '../pipeline/contact-picker';
-import {
-  ServiceTicketService,
-  TicketPriority,
-} from '../../proxy/support';
+import { ServiceTicketService, TicketPriority } from '../../proxy/support';
 import { ArButton, ArCard } from '../../ui';
 import { errorMessage } from '../activities/activity-logic';
 
@@ -22,9 +19,7 @@ import { errorMessage } from '../activities/activity-logic';
       title="New Support Ticket"
       subtitle="Log customer incident, plant technical issue or automation service request"
     >
-      <button ar-button type="button" variant="ghost" (click)="cancel()">
-        Back to Helpdesk
-      </button>
+      <button ar-button type="button" variant="ghost" (click)="cancel()">Back to Helpdesk</button>
     </ar-topbar>
 
     <div class="page-container ar-scroll">
@@ -56,7 +51,14 @@ import { errorMessage } from '../activities/activity-logic';
               <option [value]="TicketPriority.Normal">Normal</option>
               <option [value]="TicketPriority.Low">Low</option>
             </select>
-            <span class="ar-field__hint">Priority determines the promised SLA response countdown.</span>
+            <span class="ar-field__hint"
+              >Priority determines the promised SLA response countdown.</span
+            >
+          </label>
+
+          <label class="breakdown-toggle">
+            <input type="checkbox" [(ngModel)]="isBreakdown" name="isBreakdown" />
+            Breakdown: the machine has stopped (starts the downtime clock now)
           </label>
 
           <label class="ar-field">
@@ -75,9 +77,7 @@ import { errorMessage } from '../activities/activity-logic';
           }
 
           <div class="form-actions">
-            <button ar-button type="button" variant="ghost" (click)="cancel()">
-              Cancel
-            </button>
+            <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
             <button
               ar-button
               type="submit"
@@ -96,6 +96,13 @@ import { errorMessage } from '../activities/activity-logic';
       .page-container {
         padding: 1.5rem 2rem 3rem;
         max-width: 760px;
+      }
+      .breakdown-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font: 400 13px var(--ar-font-sans);
+        color: var(--ar-ink-700);
       }
       .ticket-form {
         display: flex;
@@ -133,6 +140,7 @@ export class ArNewTicketPage {
   protected readonly subject = signal('');
   protected readonly priority = signal<TicketPriority>(TicketPriority.Normal);
   protected readonly description = signal('');
+  protected readonly isBreakdown = signal(false);
 
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -162,6 +170,7 @@ export class ArNewTicketPage {
           subject: subj,
           description: this.description().trim() || undefined,
           priority: this.priority(),
+          isBreakdown: this.isBreakdown(),
         }),
       );
       this.toasts.success(`Ticket "${subj}" raised.`);

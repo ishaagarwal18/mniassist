@@ -1,0 +1,232 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--ar-bg-100);
+}
+
+.ms {
+  --ms-line: var(--ar-line-300);
+  --ms-ink: var(--ar-ink-900);
+  --ms-soft: var(--ar-ink-500);
+  --ms-accent: var(--ar-blue-600);
+  --ms-stop: var(--ar-red-600);
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 16px 14px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font:
+    400 15px/1.5 system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: var(--ms-ink);
+}
+
+.ms__note {
+  margin: 48px 0;
+  text-align: center;
+  color: var(--ms-soft);
+}
+
+.ms__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+}
+.ms__logo {
+  max-height: 32px;
+  max-width: 140px;
+  object-fit: contain;
+}
+.ms__brand-name {
+  font-weight: 600;
+}
+
+.ms__card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid var(--ms-line);
+  border-radius: 10px;
+}
+.ms__card--done {
+  background: var(--ar-green-100);
+  border-color: var(--ar-green-200);
+}
+
+.ms__eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ms-soft);
+}
+.ms__title {
+  margin: 0;
+  font-size: 21px;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+.ms__h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.ms__soft {
+  margin: 0;
+  color: var(--ms-soft);
+  font-size: 14px;
+}
+.ms__done,
+.ms__ref {
+  margin: 0;
+}
+
+.ms__facts {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+.ms__facts div {
+  display: flex;
+  gap: 8px;
+}
+.ms__facts dt {
+  min-width: 112px;
+  color: var(--ms-soft);
+}
+.ms__facts dd {
+  margin: 0;
+}
+
+.ms__cover {
+  margin: 0;
+  font-weight: 600;
+  color: var(--ar-amber-700);
+}
+.ms__cover--ok {
+  color: var(--ar-green-600);
+}
+
+.ms__tickets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ms__tickets li {
+  display: flex;
+  flex-direction: column;
+  padding-top: 8px;
+  border-top: 1px solid var(--ar-line-100);
+}
+
+.ms__actions,
+.ms__help {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ms__btn {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid var(--ms-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ms-ink);
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ms__btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.ms__btn--stop {
+  background: var(--ms-stop);
+  border-color: var(--ms-stop);
+  color: #fff;
+}
+.ms__btn--primary,
+.ms__btn--call {
+  background: var(--ms-accent);
+  border-color: var(--ms-accent);
+  color: #fff;
+}
+.ms__btn--quiet {
+  font-weight: 500;
+  color: var(--ms-accent);
+}
+
+.ms__form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ms__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.ms__field input,
+.ms__field textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--ms-line);
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 400;
+}
+.ms__field input:disabled {
+  background: var(--ar-bg-100);
+}
+.ms__hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.ms__error {
+  margin: 0;
+  color: var(--ms-stop);
+}
+.ms__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ms__row .ms__btn {
+  flex: 1;
+}
+
+.ms__link {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--ms-accent);
+  font: inherit;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.ms__safety {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--ms-soft);
+  text-align: center;
+}
