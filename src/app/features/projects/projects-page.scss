@@ -117,3 +117,23 @@
   font-weight: 600;
   text-decoration: none;
 }
+.pj__col--suggested {
+  background: var(--ar-blue-50, #eef6fb);
+}
+.pj__card--tender {
+  cursor: default;
+}
+.pj__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.pj__card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.pj__link {
+  color: var(--ar-blue-600);
+  font: 500 12px var(--ar-font-sans);
+}

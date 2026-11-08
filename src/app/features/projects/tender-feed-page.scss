@@ -1,0 +1,76 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.tf {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 960px;
+}
+.tf .ar-field {
+  display: block;
+  margin-bottom: 10px;
+}
+.tf__check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+  font: 500 13px var(--ar-font-sans);
+}
+.tf__muted {
+  margin: 0 0 8px;
+  color: var(--ar-ink-400);
+  font: 400 12px var(--ar-font-sans);
+}
+.tf__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.tf__foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.tf__gap {
+  margin-bottom: 8px;
+}
+.tf__address {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.tf__address code {
+  flex: 1;
+  overflow-wrap: anywhere;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--ar-line-100);
+  font: 400 12px var(--ar-font-mono, monospace);
+}
+.tf__table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 13px var(--ar-font-sans);
+}
+.tf__table th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ar-line-200);
+  font: 600 11px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+}
+.tf__table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ar-line-100);
+  vertical-align: top;
+}

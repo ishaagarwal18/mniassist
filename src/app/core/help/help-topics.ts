@@ -507,6 +507,22 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Mark a decision maker who is against us as a Blocker: the project shows them in red.',
     ],
   },
+  'projects/tender-feed': {
+    benefits: [
+      'Tender alerts you already receive become suggested projects, read and matched for you.',
+      'The same tender from two alert services shows once.',
+      'Nothing becomes a project until someone chooses Create project.',
+    ],
+    steps: [
+      'Switch the feed on and list the words to look for, such as VFD, PLC or MCC panel.',
+      'List the addresses your alerts come from, or make an inbound address and forward alerts to it.',
+      'Choose Create project or Not relevant on each suggestion on the projects board.',
+    ],
+    tips: [
+      'Not relevant lowers the words it matched; Create project raises them.',
+      'You can paste an alert here to try the feed before connecting anything.',
+    ],
+  },
   'projects/report': {
     benefits: [
       'See the open projects by stage, and what our scope in each stage is worth.',

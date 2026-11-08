@@ -11,6 +11,7 @@
     <a ar-button variant="ghost" routerLink="/projects/report">Report</a>
   }
   @if (canManage()) {
+    <a ar-button variant="ghost" routerLink="/projects/tender-feed">Tender feed</a>
     <a ar-button variant="ghost" routerLink="/projects/competitors">Competitor brands</a>
   }
   @if (canCreate()) {
@@ -83,6 +84,69 @@
 
   @if (view() === 'board') {
     <div class="pj__board">
+      @if (suggestions().length) {
+        <section class="pj__col pj__col--suggested" aria-label="Suggested from tenders">
+          <header class="pj__col-head">
+            <b>Suggested</b>
+            <span class="pj__muted">{{ suggestions().length }} from the tender feed</span>
+            <span class="pj__muted pj__decider">Choose: make a project, or not relevant</span>
+          </header>
+          @for (t of suggestions(); track t.id) {
+            <div class="pj__card pj__card--tender">
+              <span class="pj__card-name" translate="no">{{ t.title || t.subject }}</span>
+              <span class="pj__muted" translate="no"
+                >{{ t.buyer }}{{ t.location ? ' · ' + t.location : '' }}</span
+              >
+              <span class="pj__card-row">
+                <b>{{ t.estimatedValueInPaise ? rupees(t.estimatedValueInPaise) : '' }}</b>
+                @if (t.closingOn) {
+                  <span class="pj__muted">Closes {{ t.closingOn | date: 'd MMM' }}</span>
+                }
+              </span>
+              <span class="pj__chips">
+                <ar-chip tone="teal">Score {{ t.score }}</ar-chip>
+                @for (w of t.matchedWords; track w) {
+                  <ar-chip tone="neutral"
+                    ><span translate="no">{{ w }}</span></ar-chip
+                  >
+                }
+                @if (t.seenCount > 1) {
+                  <ar-chip tone="neutral">In {{ t.seenCount }} alerts</ar-chip>
+                }
+              </span>
+              @if (t.documentsUrl) {
+                <a class="pj__link" [href]="t.documentsUrl" target="_blank" rel="noopener"
+                  >Tender documents</a
+                >
+              }
+              <span class="pj__card-actions">
+                @if (canCreate()) {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="primary"
+                    [disabled]="deciding() === t.id"
+                    (click)="createFromTender(t)"
+                  >
+                    Create project
+                  </button>
+                }
+                @if (canUpdate()) {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="deciding() === t.id"
+                    (click)="notRelevant(t)"
+                  >
+                    Not relevant
+                  </button>
+                }
+              </span>
+            </div>
+          }
+        </section>
+      }
       @for (c of board(); track c.stage) {
         <section
           class="pj__col"

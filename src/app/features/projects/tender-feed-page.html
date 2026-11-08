@@ -1,0 +1,176 @@
+<ar-topbar title="Tender feed" subtitle="Tender alerts read and matched into suggested projects">
+  <a ar-button variant="ghost" routerLink="/projects">Projects</a>
+</ar-topbar>
+
+<div class="tf ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">The tender feed needs the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+  @if (settings(); as s) {
+    @if (!s.aiConfigured) {
+      <ar-banner tone="warn"
+        >The AI model isn't set up for this workspace, so alerts can't be read yet. Ask your MNI
+        Assist contact to switch it on.</ar-banner
+      >
+    }
+
+    <ar-card heading="Feed">
+      <label class="tf__check">
+        <input
+          type="checkbox"
+          [checked]="enabled()"
+          (change)="enabled.set($any($event.target).checked)"
+        />
+        Read tender alerts and suggest projects
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label"
+          >Words to look for <span class="ar-field__opt">comma between</span></span
+        >
+        <input
+          class="ar-field__input"
+          [value]="keywordsText()"
+          (input)="keywordsText.set($any($event.target).value)"
+        />
+      </label>
+      @if (s.keywords.length) {
+        <p class="tf__muted">
+          What each word counts for now (Not relevant lowers it, Create project raises it):
+        </p>
+        <div class="tf__chips">
+          @for (k of s.keywords; track k.word) {
+            <ar-chip [tone]="k.weight >= 1 ? 'teal' : 'neutral'"
+              ><span translate="no">{{ k.word }}</span> {{ k.weight }}</ar-chip
+            >
+          }
+        </div>
+      }
+      <label class="ar-field">
+        <span class="ar-field__label"
+          >Alerts come from
+          <span class="ar-field__opt"
+            >addresses or domains in your connected mailbox, e.g. gem.gov.in</span
+          ></span
+        >
+        <input
+          class="ar-field__input"
+          [value]="sendersText()"
+          (input)="sendersText.set($any($event.target).value)"
+        />
+      </label>
+      <p class="tf__muted">
+        {{ s.alertsToday }} of {{ s.dailyLimit }} alerts taken in the last 24 hours. Alerts older
+        than 30 days are left out.
+      </p>
+      <div class="tf__foot">
+        <button ar-button type="button" [disabled]="busy() || mock" (click)="save()">Save</button>
+      </div>
+    </ar-card>
+
+    <ar-card heading="Inbound address">
+      <p class="tf__muted">
+        For alerts that don't reach your connected mailbox: point a forwarding address on your mail
+        service (or a script) at this address. It takes the email as it is.
+      </p>
+      @if (inboundUrl(); as url) {
+        <ar-banner tone="warn">Copy it now: it is shown only this once.</ar-banner>
+        <div class="tf__address">
+          <code translate="no">{{ url }}</code>
+          <button ar-button type="button" variant="ghost" (click)="copyAddress()">Copy</button>
+        </div>
+      } @else if (s.hasInboundAddress) {
+        <p class="tf__muted">
+          An address ending …<span translate="no">{{ s.inboundAddressHint }}</span> was made
+          {{ s.inboundAddressSetAtUtc | date: 'd MMM yyyy' }}.
+        </p>
+      }
+      <div class="tf__foot">
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="busy() || mock"
+          (click)="newAddress()"
+        >
+          {{ s.hasInboundAddress ? 'Make a new address (the old one stops)' : 'Make an address' }}
+        </button>
+      </div>
+    </ar-card>
+
+    <ar-card heading="Paste an alert">
+      <input
+        class="ar-field__input tf__gap"
+        maxlength="500"
+        placeholder="Subject (optional)"
+        aria-label="Alert subject"
+        [value]="pasteSubject()"
+        (input)="pasteSubject.set($any($event.target).value)"
+      />
+      <textarea
+        class="ar-field__input"
+        rows="6"
+        maxlength="12000"
+        placeholder="Paste the alert email's text"
+        aria-label="Alert text"
+        [value]="pasteText()"
+        (input)="pasteText.set($any($event.target).value)"
+      ></textarea>
+      <div class="tf__foot">
+        <button
+          ar-button
+          type="button"
+          [disabled]="busy() || mock || !s.enabled || pasteText().trim().length < 20"
+          (click)="paste()"
+        >
+          Take the alert
+        </button>
+      </div>
+    </ar-card>
+
+    <ar-card heading="Recent alerts">
+      <table class="tf__table">
+        <thead>
+          <tr>
+            <th scope="col">Received</th>
+            <th scope="col">Tender</th>
+            <th scope="col">Closes</th>
+            <th scope="col">Score</th>
+            <th scope="col">What happened</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of alerts(); track a.id) {
+            <tr>
+              <td>{{ a.receivedAtUtc | date: 'd MMM, h:mm a' }}</td>
+              <td>
+                <span translate="no">{{ a.title || a.subject }}</span>
+                @if (a.buyer) {
+                  <span class="tf__muted" translate="no"> · {{ a.buyer }}</span>
+                }
+              </td>
+              <td>{{ a.closingOn ? (a.closingOn | date: 'd MMM') : '' }}</td>
+              <td>{{ a.status === Status.Queued || a.status === Status.Failed ? '' : a.score }}</td>
+              <td>
+                @if (a.projectId) {
+                  <a [routerLink]="['/projects', a.projectId]">{{ statusText(a.status) }}</a>
+                } @else {
+                  {{ statusText(a.status) }}
+                }
+                @if (a.problem) {
+                  <span class="tf__muted"> · {{ a.problem }}</span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="tf__muted">No alerts yet.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </ar-card>
+  }
+</div>

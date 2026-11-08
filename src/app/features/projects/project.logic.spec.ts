@@ -14,12 +14,22 @@ import {
   parseRupees,
   percent,
   specProblem,
+  splitList,
   rolesText,
   rupeesShort,
   toggleRole,
 } from './project.logic';
 
 describe('project logic', () => {
+  it('splits a typed list on commas, semicolons and lines', () => {
+    expect(splitList('VFD, PLC; MCC panel\n\n SCADA ,')).toEqual([
+      'VFD',
+      'PLC',
+      'MCC panel',
+      'SCADA',
+    ]);
+  });
+
   it('keeps several roles on one account', () => {
     let roles = toggleRole(ProjectRole.None, ProjectRole.EpcContractor, true);
     roles = toggleRole(roles, ProjectRole.PanelBuilder, true);

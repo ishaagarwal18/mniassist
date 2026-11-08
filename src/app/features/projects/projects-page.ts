@@ -17,6 +17,7 @@ import {
   ProjectService,
   ProjectStage,
 } from '../../proxy/projects/project.service';
+import { TenderAlertDto, TenderFeedService } from '../../proxy/projects/tender-feed.service';
 import { ArBanner, ArButton, ArChip } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { environment } from '../../../environments/environment';
@@ -48,6 +49,7 @@ export class ArProjectsPage {
   private readonly toasts = inject(ToastService);
   private readonly router = inject(Router);
   private readonly permissions = inject(PermissionService);
+  private readonly tenders = inject(TenderFeedService);
 
   protected readonly mock = environment.useMockData;
   protected readonly canCreate = grantedPolicy('AutoReach.Projects.Create', this.permissions);
@@ -69,6 +71,9 @@ export class ArProjectsPage {
   protected readonly sector = signal('');
   protected readonly soon = signal(false);
   protected readonly openOnly = signal(true);
+  /** Tender alerts that match the keywords, shown as the board's first lane. */
+  protected readonly suggestions = signal<TenderAlertDto[]>([]);
+  protected readonly deciding = signal<string | null>(null);
 
   protected readonly STAGES = STAGES;
   protected readonly STAGE_TEXT = STAGE_TEXT;
@@ -114,6 +119,7 @@ export class ArProjectsPage {
     this.loading.set(true);
     try {
       if (this.view() === 'board') {
+        void this.loadSuggestions();
         const columns = await firstValueFrom(this.api.getBoard(this.input()));
         this.board.set(columns);
         this.total.set(columns.reduce((n, c) => n + c.items.length, 0));
@@ -171,6 +177,44 @@ export class ArProjectsPage {
     } catch (e) {
       this.board.set(before);
       this.toasts.error(readApiError(e, 'The project could not be moved.'));
+    }
+  }
+
+  private async loadSuggestions(): Promise<void> {
+    try {
+      this.suggestions.set(await firstValueFrom(this.tenders.getSuggestions()));
+    } catch {
+      // The feed is optional: without it (or without the right) the lane just stays away.
+      this.suggestions.set([]);
+    }
+  }
+
+  protected async createFromTender(t: TenderAlertDto): Promise<void> {
+    this.deciding.set(t.id);
+    try {
+      const made = await firstValueFrom(this.tenders.createProject(t.id, {}));
+      this.toasts.success(
+        made.accountAdded
+          ? `${made.reference} made, and ${t.buyer} added as an account.`
+          : `${made.reference} made.`,
+      );
+      await this.router.navigate(['/projects', made.projectId]);
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The project could not be made.'));
+    } finally {
+      this.deciding.set(null);
+    }
+  }
+
+  protected async notRelevant(t: TenderAlertDto): Promise<void> {
+    this.deciding.set(t.id);
+    try {
+      await firstValueFrom(this.tenders.notRelevant(t.id));
+      this.suggestions.update((list) => list.filter((x) => x.id !== t.id));
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'That could not be saved.'));
+    } finally {
+      this.deciding.set(null);
     }
   }
 }

@@ -213,6 +213,25 @@ export function specProblem(
 }
 
 /** "60%" for 0.6; "—" before anything is known. */
+/** What happened to a tender alert, for the alerts table. */
+export const TENDER_STATUS_TEXT: Record<number, string> = {
+  0: 'Being read',
+  1: 'Suggested',
+  2: 'Under the match line',
+  3: 'Project made',
+  4: 'Not relevant',
+  5: 'Same tender as an earlier alert',
+  6: 'Could not be read',
+};
+
+/** "a, b; c" or one per line → the list, blanks dropped. */
+export function splitList(text: string): string[] {
+  return text
+    .split(/[;,\n]/)
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0);
+}
+
 export function percent(rate: number | null | undefined): string {
   return rate === null || rate === undefined ? '—' : `${Math.round(rate * 100)}%`;
 }
