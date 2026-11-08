@@ -1,0 +1,184 @@
+<ar-topbar title="OEM pricing reports" subtitle="Claims, margin recovered and special prices">
+  <select
+    class="ar-field__input"
+    aria-label="Period for margin recovered"
+    (change)="setMonths($any($event.target).value)"
+  >
+    @for (m of monthChoices; track m) {
+      <option [value]="m" [selected]="m === months()">Last {{ m }} months</option>
+    }
+  </select>
+  <a ar-button variant="ghost" routerLink="/oem/claims">Claims</a>
+</ar-topbar>
+
+<div class="oe ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">The OEM pricing reports need the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  @if (report(); as r) {
+    <div class="oe__grid">
+      <ar-stat-tile label="Claims outstanding" [value]="rupees(outstanding()) || '₹0'" />
+      <ar-stat-tile
+        label="Outstanding over 90 days"
+        [value]="rupees(over90()) || '₹0'"
+        [tone]="over90() > 0 ? 'bad' : 'neutral'"
+      />
+      <ar-stat-tile
+        label="Margin recovered in the period"
+        [value]="rupees(recovered()) || '₹0'"
+        tone="good"
+      />
+    </div>
+
+    <ar-card heading="Claim ageing by OEM">
+      <table class="oe__table">
+        <thead>
+          <tr>
+            <th scope="col">OEM</th>
+            <th scope="col" class="oe__num">0–30 days</th>
+            <th scope="col" class="oe__num">31–60</th>
+            <th scope="col" class="oe__num">61–90</th>
+            <th scope="col" class="oe__num">Over 90</th>
+            <th scope="col" class="oe__num">Total</th>
+            <th scope="col" class="oe__num">Not yet submitted</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of r.ageing; track a.supplierId) {
+            <tr>
+              <td translate="no">{{ a.supplierName }}</td>
+              <td class="oe__num">{{ rupees(a.upTo30InPaise) }}</td>
+              <td class="oe__num">{{ rupees(a.upTo60InPaise) }}</td>
+              <td class="oe__num">{{ rupees(a.upTo90InPaise) }}</td>
+              <td class="oe__num" [class.oe__bad]="a.over90InPaise > 0">
+                {{ rupees(a.over90InPaise) }}
+              </td>
+              <td class="oe__num">
+                <b>{{ rupees(a.totalInPaise) }}</b>
+              </td>
+              <td class="oe__num">{{ rupees(a.notSubmittedInPaise) }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="oe__muted">Nothing outstanding.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </ar-card>
+
+    <ar-card heading="Margin recovered">
+      <p class="oe__muted">
+        Claim lines invoiced {{ r.fromUtc | date: 'd MMM yyyy' }} to
+        {{ r.toUtc | date: 'd MMM yyyy' }}, and what the OEM has paid of them.
+      </p>
+      <table class="oe__table">
+        <thead>
+          <tr>
+            <th scope="col">OEM</th>
+            <th scope="col" class="oe__num">Claimed</th>
+            <th scope="col" class="oe__num">Settled</th>
+            <th scope="col" class="oe__num">Rejected</th>
+            <th scope="col" class="oe__num">Written off</th>
+            <th scope="col" class="oe__num">Recovered</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of r.recovered; track m.supplierId) {
+            <tr>
+              <td translate="no">{{ m.supplierName }}</td>
+              <td class="oe__num">{{ rupees(m.claimedInPaise) }}</td>
+              <td class="oe__num">{{ rupees(m.settledInPaise) }}</td>
+              <td class="oe__num">{{ rupees(m.rejectedInPaise) }}</td>
+              <td class="oe__num">{{ rupees(m.writtenOffInPaise) }}</td>
+              <td class="oe__num">{{ rate(m.recoveryRate) }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="oe__muted">No claims in the period.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </ar-card>
+
+    <ar-card heading="Special prices ending in 30 days">
+      <table class="oe__table">
+        <thead>
+          <tr>
+            <th scope="col">Special price</th>
+            <th scope="col">OEM</th>
+            <th scope="col">Customer</th>
+            <th scope="col">Ends</th>
+            <th scope="col" class="oe__num">Units left</th>
+            <th scope="col" class="oe__num">Support left</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (x of r.expiring; track x.spaId) {
+            <tr>
+              <td>
+                <a [routerLink]="['/oem/spa', x.spaId]">{{ x.reference }}</a>
+              </td>
+              <td translate="no">{{ x.supplierName }}</td>
+              <td translate="no">{{ x.customerName ?? 'Any party of the project' }}</td>
+              <td [class.oe__warn]="x.daysLeft <= 7">
+                {{ x.validTo | date: 'd MMM yyyy' }} · {{ x.daysLeft }} d
+              </td>
+              <td class="oe__num">{{ x.remainingQty }}</td>
+              <td class="oe__num">{{ rupees(x.remainingSupportInPaise) }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="oe__muted">None end in the next 30 days with units left.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </ar-card>
+
+    <ar-card heading="Usage against the approved quantity">
+      <table class="oe__table">
+        <thead>
+          <tr>
+            <th scope="col">Special price</th>
+            <th scope="col">Part</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="oe__num">Approved</th>
+            <th scope="col" class="oe__num">Used</th>
+            <th scope="col" class="oe__num">Left</th>
+            <th scope="col" class="oe__num">On open quotes</th>
+            <th scope="col" class="oe__num">Used %</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of r.usage; track u.spaId + u.partNumber) {
+            <tr>
+              <td>
+                <a [routerLink]="['/oem/spa', u.spaId]">{{ u.reference }}</a>
+                <div class="oe__muted" translate="no">{{ u.supplierName }}</div>
+              </td>
+              <td translate="no">{{ u.partNumber }}</td>
+              <td>{{ statusText(u.status) }}</td>
+              <td class="oe__num">{{ u.approvedQty }}</td>
+              <td class="oe__num">{{ u.usedQty }}</td>
+              <td class="oe__num">{{ u.remainingQty }}</td>
+              <td class="oe__num" [class.oe__warn]="u.quotedQty > u.remainingQty">
+                {{ u.quotedQty }}
+              </td>
+              <td class="oe__num">{{ rate(u.usedRate) }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="8" class="oe__muted">No approved special prices yet.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </ar-card>
+  }
+</div>

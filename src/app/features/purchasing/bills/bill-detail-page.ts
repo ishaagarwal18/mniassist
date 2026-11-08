@@ -1,4 +1,5 @@
 import { PermissionService } from '@abp/ng.core';
+import { ArBillSpaPanel } from '../../oem/bill-spa-panel';
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -45,7 +46,19 @@ import {
  */
 @Component({
   selector: 'ar-bill-detail-page',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, DatePipe, RouterLink, ArGrid, GridModule, ArDateInput, ArSelect],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArIcon,
+    DatePipe,
+    RouterLink,
+    ArGrid,
+    GridModule,
+    ArDateInput,
+    ArSelect,
+    ArBillSpaPanel,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -153,11 +166,7 @@ import {
                 <p>{{ b.lines.length }} item(s), HSN and GST per line.</p>
               </div>
             </header>
-            <ejs-grid
-              arGrid="vendor-bill-lines"
-              [dataSource]="b.lines"
-              aria-label="Billed items"
-            >
+            <ejs-grid arGrid="vendor-bill-lines" [dataSource]="b.lines" aria-label="Billed items">
               <e-columns>
                 <e-column field="partNumber" headerText="Part no." width="150">
                   <ng-template #template let-l>
@@ -170,23 +179,46 @@ import {
                     <span class="ar-mono">{{ l.hsnCode || '—' }}</span>
                   </ng-template>
                 </e-column>
-                <e-column field="billedQuantity" headerText="Qty" width="90" [textAlign]="'Right'"></e-column>
-                <e-column field="unitPriceInPaise" headerText="Rate" width="120" [textAlign]="'Right'">
+                <e-column
+                  field="billedQuantity"
+                  headerText="Qty"
+                  width="90"
+                  [textAlign]="'Right'"
+                ></e-column>
+                <e-column
+                  field="unitPriceInPaise"
+                  headerText="Rate"
+                  width="120"
+                  [textAlign]="'Right'"
+                >
                   <ng-template #template let-l>
                     {{ inr(l.unitPriceInPaise) }}
                   </ng-template>
                 </e-column>
-                <e-column field="taxableAmountInPaise" headerText="Taxable" width="120" [textAlign]="'Right'">
+                <e-column
+                  field="taxableAmountInPaise"
+                  headerText="Taxable"
+                  width="120"
+                  [textAlign]="'Right'"
+                >
                   <ng-template #template let-l>
                     {{ inr(l.taxableAmountInPaise) }}
                   </ng-template>
                 </e-column>
-                <e-column field="taxRateBasisPoints" headerText="GST" width="100" [textAlign]="'Right'">
-                  <ng-template #template let-l>
-                    {{ l.taxRateBasisPoints / 100 }}%
-                  </ng-template>
+                <e-column
+                  field="taxRateBasisPoints"
+                  headerText="GST"
+                  width="100"
+                  [textAlign]="'Right'"
+                >
+                  <ng-template #template let-l> {{ l.taxRateBasisPoints / 100 }}% </ng-template>
                 </e-column>
-                <e-column field="lineTotalInPaise" headerText="Total" width="130" [textAlign]="'Right'">
+                <e-column
+                  field="lineTotalInPaise"
+                  headerText="Total"
+                  width="130"
+                  [textAlign]="'Right'"
+                >
                   <ng-template #template let-l>
                     <strong>{{ inr(l.lineTotalInPaise) }}</strong>
                   </ng-template>
@@ -194,6 +226,10 @@ import {
               </e-columns>
             </ejs-grid>
           </section>
+
+          @if (b.id) {
+            <ar-bill-spa-panel [billId]="b.id" />
+          }
 
           @if (b.payments.length) {
             <section class="pf__card" aria-labelledby="bd-pay">
@@ -229,7 +265,12 @@ import {
                       <span>{{ p.tdsCertificateNumber || '—' }}</span>
                     </ng-template>
                   </e-column>
-                  <e-column field="amountInPaise" headerText="Amount" width="130" [textAlign]="'Right'">
+                  <e-column
+                    field="amountInPaise"
+                    headerText="Amount"
+                    width="130"
+                    [textAlign]="'Right'"
+                  >
                     <ng-template #template let-p>
                       <strong class="bd-good">{{ inr(p.amountInPaise) }}</strong>
                     </ng-template>

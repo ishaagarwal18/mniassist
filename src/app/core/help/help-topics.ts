@@ -595,6 +595,17 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     ],
     tips: ['Leave the line amounts blank to spread a credit note over the oldest invoices first.'],
   },
+  'oem/reports': {
+    benefits: [
+      'Claim ageing by OEM, so the oldest money is chased first.',
+      'Margin recovered: what was claimed and what the OEM actually paid.',
+      'Special prices ending in 30 days with units still left, and usage against every approval.',
+    ],
+    steps: [
+      'Pick the period for margin recovered; the ageing and expiry are as of today.',
+      'Open a special price or a claim from its row to act on it.',
+    ],
+  },
   'oem/settings': {
     benefits: [
       'Only suppliers marked as OEMs are offered for deal registrations and special prices.',

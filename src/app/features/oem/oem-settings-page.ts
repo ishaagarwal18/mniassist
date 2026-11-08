@@ -12,6 +12,11 @@ import {
   OemSettingsService,
   OemSupplierDto,
 } from '../../proxy/oem/oem-pricing.service';
+import {
+  OemPostingSettingsDto,
+  SpaReportService,
+  UpdateOemPostingSettingsInput,
+} from '../../proxy/oem/spa-report.service';
 import { ArBanner, ArButton, ArCard } from '../../ui';
 import { environment } from '../../../environments/environment';
 
@@ -31,6 +36,50 @@ import { environment } from '../../../environments/environment';
       @if (error(); as e) {
         <ar-banner tone="bad">{{ e }}</ar-banner>
       }
+      @if (posting(); as ps) {
+        <ar-card heading="Journal posting">
+          <p class="oe__muted">
+            Off by default. On, every claim posts to the accounts below: claim lines debit claims
+            receivable and credit OEM support income; the OEM's credit note debits its payable;
+            write-offs and rejected lines debit the write-off account. Have your accountant check
+            the accounts first.
+          </p>
+          <label class="oe__check">
+            <input
+              type="checkbox"
+              [checked]="postForm().postJournals"
+              [disabled]="!canPost()"
+              (change)="patchPosting({ postJournals: $any($event.target).checked })"
+            />
+            Post journal entries for special-price claims
+          </label>
+          <div class="oe__grid">
+            @for (f of postingFields; track f.key) {
+              <label class="ar-field">
+                <span class="ar-field__label">{{ f.label }}</span>
+                <select
+                  class="ar-field__input"
+                  [disabled]="!canPost()"
+                  (change)="setAccount(f.key, $any($event.target).value)"
+                >
+                  <option value="" [selected]="!postForm()[f.key]">Choose an account</option>
+                  @for (a of ps.accounts; track a.id) {
+                    <option [value]="a.id" [selected]="a.id === postForm()[f.key]">
+                      {{ a.code }} · {{ a.name }}
+                    </option>
+                  }
+                </select>
+              </label>
+            }
+          </div>
+          @if (canPost()) {
+            <div class="oe__foot">
+              <button ar-button type="button" (click)="savePosting()">Save posting</button>
+            </div>
+          }
+        </ar-card>
+      }
+
       <ar-card heading="Suppliers">
         <p class="oe__muted">
           Mark the brands you get special prices from as OEMs. Claims are grouped by the period, and
@@ -119,6 +168,49 @@ export class ArOemSettingsPage {
   protected readonly error = signal<string | null>(null);
   protected readonly Period = OemClaimPeriod;
 
+  private readonly postingApi = inject(SpaReportService);
+  protected readonly canPost = grantedPolicy('AutoReach.Spa.Claims', this.permissions);
+  protected readonly posting = signal<OemPostingSettingsDto | null>(null);
+  protected readonly postForm = signal<UpdateOemPostingSettingsInput>({ postJournals: false });
+  protected readonly postingFields: {
+    key: Exclude<keyof UpdateOemPostingSettingsInput, 'postJournals'>;
+    label: string;
+  }[] = [
+    { key: 'claimsReceivableAccountId', label: 'OEM claims receivable' },
+    { key: 'supportIncomeAccountId', label: 'OEM support income' },
+    { key: 'oemPayableAccountId', label: 'OEM payable' },
+    { key: 'writeOffAccountId', label: 'Write-offs (support reversal or bad debts)' },
+  ];
+
+  protected setAccount(
+    key: Exclude<keyof UpdateOemPostingSettingsInput, 'postJournals'>,
+    value: string,
+  ): void {
+    this.postForm.update((f) => ({ ...f, [key]: value || null }));
+  }
+
+  protected patchPosting(change: Partial<UpdateOemPostingSettingsInput>): void {
+    this.postForm.update((f) => ({ ...f, ...change }));
+  }
+
+  private fillPosting(p: OemPostingSettingsDto): void {
+    this.posting.set(p);
+    const { accounts: _accounts, ...form } = p;
+    void _accounts;
+    this.postForm.set(form);
+  }
+
+  protected async savePosting(): Promise<void> {
+    try {
+      this.fillPosting(await firstValueFrom(this.postingApi.updatePosting(this.postForm())));
+      this.toasts.success(
+        this.postForm().postJournals ? 'Journal posting is on.' : 'Journal posting is off.',
+      );
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The posting settings could not be saved.'));
+    }
+  }
+
   constructor() {
     void this.load();
   }
@@ -127,6 +219,7 @@ export class ArOemSettingsPage {
     if (this.mock) return;
     try {
       this.rows.set(await firstValueFrom(this.api.getList()));
+      this.fillPosting(await firstValueFrom(this.postingApi.getPosting()));
     } catch (e) {
       this.error.set(readApiError(e, 'The suppliers could not be loaded.'));
     }

@@ -40,6 +40,7 @@ export enum NotificationKind {
   ProjectKeyDate = 52,
   SpaExpiring = 53,
   SpaClaimDue = 54,
+  SpaBillOverpriced = 55,
 }
 
 export const notificationKindOptions = mapEnumToOptions(NotificationKind);
