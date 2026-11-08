@@ -441,3 +441,28 @@
   color: var(--ar-ink-400);
   font-style: italic;
 }
+
+.qe__spa-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.qe__spa-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--ar-line-200);
+  border-radius: 6px;
+  background: var(--ar-surface, #fff);
+  font: 400 12px var(--ar-font-sans);
+  text-align: left;
+  cursor: pointer;
+}
+.qe__spa-pick:hover {
+  border-color: var(--ar-blue-600);
+}

@@ -1,3 +1,4 @@
+import type { SpaOptionDto } from '../../proxy/oem/oem-pricing.service';
 import type { CatalogueMatchDto, QuotationLineDto } from '../../proxy/pipeline';
 import { QuotePriceSource } from '../../proxy/pipeline';
 
@@ -26,6 +27,10 @@ export interface QuoteRow {
   moq: number;
   /** Left at ₹0 for a person to price (an engineering line, a replacement to choose): issuing waits until it has a price. */
   mustBePriced?: boolean;
+  /** The special price agreement line the price came from. */
+  spaLineId?: string | null;
+  /** That agreement line, as the SPA picker offered it: for the chip, checks and margin. */
+  spa?: SpaOptionDto | null;
 }
 
 export interface QuoteTaxLine {
@@ -115,6 +120,7 @@ export function rowFromLine(line: QuotationLineDto, key: number): QuoteRow {
     listPaise: line.listPriceInPaise ?? null,
     moq: 0,
     mustBePriced: !!line.mustBePriced,
+    spaLineId: line.spaLineId ?? null,
   };
 }
 

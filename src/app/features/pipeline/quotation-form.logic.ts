@@ -95,6 +95,7 @@ export function quotationPayload(
       priceListId: r.priceListId,
       listPriceInPaise: r.listPaise,
       mustBePriced: !!r.mustBePriced,
+      spaLineId: r.spaLineId ?? null,
     })),
   };
 }

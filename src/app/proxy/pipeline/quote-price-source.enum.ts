@@ -4,6 +4,7 @@ export enum QuotePriceSource {
   Manual = 0,
   PriceList = 1,
   Catalogue = 2,
+  Spa = 3,
 }
 
 export const quotePriceSourceOptions = mapEnumToOptions(QuotePriceSource);

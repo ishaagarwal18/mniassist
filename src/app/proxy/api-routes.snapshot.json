@@ -1074,6 +1074,8 @@
     "POST /api/auto-reach/sms-channel/set-sender",
     "POST /api/auto-reach/sms-channel/template",
     "POST /api/auto-reach/spa",
+    "POST /api/auto-reach/spa/check-quotation/{}",
+    "POST /api/auto-reach/spa/find-for-line",
     "POST /api/auto-reach/spa/{}/cancel",
     "POST /api/auto-reach/spa/{}/extend",
     "POST /api/auto-reach/spa/{}/record-decision",

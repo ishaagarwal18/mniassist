@@ -209,6 +209,44 @@ export interface SpaDto extends SpaListItemDto {
   lines: SpaLineDto[];
 }
 
+export interface FindSpaForLineInput {
+  quotationId?: string | null;
+  contactId?: string | null;
+  partNumber: string;
+  quantity: number;
+  listPriceInPaise?: number | null;
+  onDate?: string | null;
+}
+
+export interface SpaOptionDto {
+  spaId: string;
+  spaLineId: string;
+  reference: string;
+  supplierName: string;
+  oemReference?: string | null;
+  mode: SpaMode;
+  validTo?: string | null;
+  approvedQty: number;
+  remainingQty: number;
+  /** On other open quotes: shown, not reserved. */
+  quotedElsewhereQty: number;
+  normalBuyInPaise: number;
+  specialBuyInPaise?: number | null;
+  supportPerUnitInPaise: number;
+  resaleRule: SpaResaleRule;
+  resaleValue?: number | null;
+  suggestedUnitPriceInPaise?: number | null;
+}
+
+export interface SpaLineCheckDto {
+  quotationLineId: string;
+  partNumber?: string | null;
+  spaLineId: string;
+  spaReference?: string | null;
+  blocks: boolean;
+  message: string;
+}
+
 /** Deals registered with an OEM. */
 @Injectable({ providedIn: 'root' })
 export class DealRegistrationService {
@@ -360,6 +398,26 @@ export class SpaService {
   delete = (id: string, config?: Partial<Rest.Config>) =>
     this.rest.request<void, void>(
       { method: 'DELETE', url: `/api/auto-reach/spa/${id}` },
+      { apiName: this.apiName, ...config },
+    );
+
+  findForLine = (input: FindSpaForLineInput, config?: Partial<Rest.Config>) =>
+    this.rest.request<FindSpaForLineInput, SpaOptionDto[]>(
+      { method: 'POST', url: '/api/auto-reach/spa/find-for-line', body: input },
+      { apiName: this.apiName, ...config },
+    );
+
+  checkQuotation = (
+    quotationId: string,
+    validUntilUtc?: string | null,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.rest.request<void, SpaLineCheckDto[]>(
+      {
+        method: 'POST',
+        url: `/api/auto-reach/spa/check-quotation/${quotationId}`,
+        params: { validUntilUtc: validUntilUtc ?? undefined },
+      },
       { apiName: this.apiName, ...config },
     );
 }

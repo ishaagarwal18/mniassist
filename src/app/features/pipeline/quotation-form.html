@@ -358,6 +358,56 @@
                         </button>
                       }
                     </div>
+                    @if (canSpa() && r.partNumber.trim() && !readOnly()) {
+                      <div class="qe__src">
+                        <button type="button" class="qe__link" (click)="openSpa(r)">
+                          {{ r.spaLineId ? 'change special price' : 'special price' }}
+                        </button>
+                        @if (r.spaLineId) {
+                          ·
+                          <button type="button" class="qe__link" (click)="clearSpa(r)">
+                            stop using it
+                          </button>
+                        }
+                      </div>
+                    }
+                    @if (spaPickerFor() === r.key) {
+                      <ul class="qe__spa-list" aria-label="Special prices for this part">
+                        @for (o of spaOptions(); track o.spaLineId) {
+                          <li>
+                            <button type="button" class="qe__spa-pick" (click)="pickSpa(r, o)">
+                              <b>{{ o.reference }}</b>
+                              <span translate="no">{{ o.supplierName }}</span>
+                              <span
+                                >{{ o.remainingQty }} left{{
+                                  o.quotedElsewhereQty
+                                    ? ', ' + o.quotedElsewhereQty + ' on other quotes'
+                                    : ''
+                                }}</span
+                              >
+                              <span>to {{ spaDay(o.validTo) }}</span>
+                              @if (o.suggestedUnitPriceInPaise != null) {
+                                <span>{{ money(o.suggestedUnitPriceInPaise) }}</span>
+                              }
+                            </button>
+                          </li>
+                        }
+                      </ul>
+                    }
+                    @if (spaIssues(r); as f) {
+                      @for (b of f.blocks; track b) {
+                        <div class="qe__warn">{{ b }} It can't be issued like this.</div>
+                      }
+                      @for (w of f.warnings; track w) {
+                        <div class="qe__hint">{{ w }}</div>
+                      }
+                    }
+                    @if (spaMargin(r); as m) {
+                      <div class="qe__hint">
+                        Margin {{ m.before }}% on the normal buy price, {{ m.after }}% with the
+                        OEM's support.
+                      </div>
+                    }
                     @if (unpriced(r)) {
                       <div class="qe__warn">Price this line by hand before issuing.</div>
                     }

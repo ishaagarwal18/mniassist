@@ -10,6 +10,8 @@ import {
   untracked,
 } from '@angular/core';
 import { ArQuoteRevisions } from './quote-revisions';
+import { SpaOptionDto, SpaService } from '../../proxy/oem/oem-pricing.service';
+import { SpaLineFindings, spaFindings, spaMargins } from './spa-line.logic';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -109,6 +111,7 @@ export class ArQuotationForm implements OnInit {
   private readonly permissions = inject(PermissionService);
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
+  private readonly spaApi = inject(SpaService);
   private readonly store = inject(PipelineStore);
   private readonly api = inject(QuoteEditorApi);
   private readonly contactsApi = inject(ContactApi);
@@ -118,6 +121,11 @@ export class ArQuotationForm implements OnInit {
   protected readonly canCreate = grantedPolicy('AutoReach.Quotations.Create', this.permissions);
   protected readonly canUpdate = grantedPolicy('AutoReach.Quotations.Update', this.permissions);
   protected readonly canIssuePolicy = grantedPolicy('AutoReach.Quotations.Issue', this.permissions);
+  /** May use special prices from OEMs on lines. */
+  protected readonly canSpa = grantedPolicy('AutoReach.Spa', this.permissions);
+  /** The line whose SPA picker is open, and what it offers. */
+  protected readonly spaPickerFor = signal<number | null>(null);
+  protected readonly spaOptions = signal<SpaOptionDto[]>([]);
 
   /** Null on the new page; the saved quotation on the edit page. */
   protected readonly quote = signal<QuotationDto | null>(null);
@@ -305,6 +313,111 @@ export class ArQuotationForm implements OnInit {
     );
     this.dirty.set(false);
     this.reprice.set(null);
+    void this.attachSpas();
+  }
+
+  // ---- Special prices ------------------------------------------------------------
+
+  /** Saved lines priced from a special price: fetch the agreement line for the chip, checks and margin. */
+  private async attachSpas(): Promise<void> {
+    if (environment.useMockData || !this.canSpa()) return;
+    for (const r of this.rows().filter((x) => x.spaLineId && !x.spa)) {
+      try {
+        const options = await firstValueFrom(
+          this.spaApi.findForLine({
+            ...this.context(),
+            partNumber: r.partNumber,
+            quantity: Number(r.quantity) || 1,
+            listPriceInPaise: r.listPaise,
+          }),
+        );
+        const spa = options.find((o) => o.spaLineId === r.spaLineId) ?? null;
+        this.rows.update((rows) => rows.map((x) => (x.key === r.key ? { ...x, spa } : x)));
+      } catch {
+        // The line still shows it is on a special price; issuing checks it.
+      }
+    }
+  }
+
+  protected async openSpa(r: QuoteRow): Promise<void> {
+    if (this.spaPickerFor() === r.key) {
+      this.spaPickerFor.set(null);
+      return;
+    }
+    try {
+      const options = await firstValueFrom(
+        this.spaApi.findForLine({
+          ...this.context(),
+          partNumber: r.partNumber.trim(),
+          quantity: Number(r.quantity) || 1,
+          listPriceInPaise: r.listPaise,
+        }),
+      );
+      if (!options.length) {
+        this.toasts.info(
+          `No approved special price covers ${r.partNumber.trim()} for this customer.`,
+        );
+        return;
+      }
+      this.spaOptions.set(options);
+      this.spaPickerFor.set(r.key);
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The special prices could not be looked up.'));
+    }
+  }
+
+  protected pickSpa(r: QuoteRow, o: SpaOptionDto): void {
+    this.rows.update((rows) =>
+      rows.map((x) =>
+        x.key !== r.key
+          ? x
+          : {
+              ...x,
+              spaLineId: o.spaLineId,
+              spa: o,
+              price:
+                o.suggestedUnitPriceInPaise != null
+                  ? String(o.suggestedUnitPriceInPaise / 100)
+                  : x.price,
+              discount: o.suggestedUnitPriceInPaise != null ? '0' : x.discount,
+              fromList: false,
+              keep: false,
+              source: QuotePriceSource.Spa,
+              priceListId: null,
+              listName: null,
+            },
+      ),
+    );
+    this.spaPickerFor.set(null);
+    this.dirty.set(true);
+  }
+
+  protected clearSpa(r: QuoteRow): void {
+    this.rows.update((rows) =>
+      rows.map((x) =>
+        x.key === r.key ? { ...x, spaLineId: null, spa: null, source: QuotePriceSource.Manual } : x,
+      ),
+    );
+    this.dirty.set(true);
+  }
+
+  protected spaIssues(r: QuoteRow): SpaLineFindings | null {
+    return r.spa ? spaFindings(r, r.spa, Number(this.validDays()) || null) : null;
+  }
+
+  protected spaMargin(r: QuoteRow): { before: number; after: number } | null {
+    return r.spa ? spaMargins(r, r.spa) : null;
+  }
+
+  protected spaDay(iso: string | null | undefined): string {
+    return iso
+      ? new Intl.DateTimeFormat('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+          timeZone: 'Asia/Kolkata',
+        }).format(new Date(iso))
+      : '';
   }
 
   private async loadCustomerLabel(): Promise<void> {
@@ -525,6 +638,7 @@ export class ArQuotationForm implements OnInit {
   }
 
   protected sourceLabel(r: QuoteRow): string {
+    if (r.spaLineId) return `Special price${r.spa ? ' · ' + r.spa.reference : ''}`;
     if (!r.fromList) return 'Typed';
     return r.source === QuotePriceSource.PriceList
       ? `Price list${r.listName ? ' · ' + r.listName : ''}`
@@ -560,6 +674,9 @@ export class ArQuotationForm implements OnInit {
           if (field === 'partNumber') {
             next.listPaise = null;
             next.moq = 0;
+            // A special price is for one part: another part drops it.
+            next.spaLineId = null;
+            next.spa = null;
           }
         }
         return next;
@@ -710,14 +827,36 @@ export class ArQuotationForm implements OnInit {
 
     try {
       const days = Number(this.validDays().trim());
-      const result = await this.store.issueQuote(saved!.id!, {
+      const issueInput = {
         validUntilUtc: new Date(Date.now() + days * 86_400_000).toISOString(),
         sendOnWhatsApp: this.issueSendWa(),
         templateId: this.issueSendWa() && this.issueTemplateId() ? this.issueTemplateId() : null,
         sendByEmail: this.issueSendEmail(),
         recipientContactIds: this.sendTo().length ? this.sendTo() : null,
         extraEmails: this.issueSendEmail() ? parseEmails(this.extraEmails()) : null,
-      });
+      };
+      let result;
+      try {
+        result = await this.store.issueQuote(saved!.id!, issueInput);
+      } catch (e: unknown) {
+        // A special price that ends before the quote, or more than is left on it: the issuer decides.
+        const code = (e as { error?: { error?: { code?: string } } })?.error?.error?.code;
+        if (code !== 'AutoReach:SpaQuoteWarnings') throw e;
+        const ok = await this.dialogs.confirm({
+          title: 'Issue with these special-price warnings?',
+          message: readApiError(e, ''),
+          confirmText: 'Issue anyway',
+        });
+        if (!ok) {
+          this.isNew.set(false);
+          this.saving.set(false);
+          return;
+        }
+        result = await this.store.issueQuote(saved!.id!, {
+          ...issueInput,
+          acceptSpaWarnings: true,
+        });
+      }
       const notes = [result.note, result.emailNote].filter((n): n is string => !!n);
       const text = [`${saved!.reference} issued.`, ...notes].join(' ');
       const allWent =

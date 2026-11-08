@@ -72,6 +72,8 @@ export interface CreateUpdateQuotationLineDto {
   keepPricing?: boolean;
   /** Kept from the saved line: it still has to be priced before the quotation is issued. */
   mustBePriced?: boolean;
+  /** The special price agreement line the price came from. */
+  spaLineId?: string | null;
   priceSource?: QuotePriceSource;
   priceListId?: string | null;
   listPriceInPaise?: number | null;
@@ -216,6 +218,8 @@ export interface InstalledAssetDto extends FullAuditedEntityDto<string> {
 
 export interface IssueQuotationInput {
   validUntilUtc?: string;
+  /** Issue although a special price ends before the quote, or its quantity is over what is left. */
+  acceptSpaWarnings?: boolean;
   sendOnWhatsApp?: boolean;
   templateId?: string | null;
   /** Email the PDF to each recipient's address and to `extraEmails`. */
@@ -285,6 +289,8 @@ export interface QuotationLineDto extends EntityDto<string> {
   taxRateBasisPoints?: number | null;
   /** Written at ₹0 for a person to price; the quotation can't be issued until it is. */
   mustBePriced?: boolean;
+  /** The special price agreement line the price came from. */
+  spaLineId?: string | null;
 }
 
 export interface QuotationTaxLineDto {

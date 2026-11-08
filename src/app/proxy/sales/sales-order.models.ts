@@ -2,6 +2,8 @@ import { PagedAndSortedResultRequestDto, FullAuditedEntityDto, EntityDto } from 
 import { SalesOrderStatus } from './sales-enums';
 
 export interface SalesOrderLineDto extends EntityDto<string> {
+  /** The special price agreement line it is sold under, from the quote. */
+  spaLineId?: string | null;
   salesOrderId: string;
   lineNumber: number;
   productId?: string;
@@ -48,6 +50,8 @@ export interface SalesOrderDto extends FullAuditedEntityDto<string> {
 }
 
 export interface CreateSalesOrderLineDto {
+  /** The special price agreement line it is sold under, from the quote. */
+  spaLineId?: string | null;
   productId?: string;
   partNumber: string;
   description: string;
