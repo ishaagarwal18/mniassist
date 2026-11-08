@@ -1,0 +1,112 @@
+<ar-topbar title="Competitor brands" subtitle="And the brands we sell, for project specifications">
+  <a ar-button variant="ghost" routerLink="/projects">Projects</a>
+  <button ar-button type="button" variant="ghost" [disabled]="busy() || mock" (click)="addCommon()">
+    Add common brands
+  </button>
+</ar-topbar>
+
+<div class="cb ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">Competitor brands need the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  <ar-card heading="Project settings">
+    <label class="ar-field">
+      <span class="ar-field__label"
+        >Our brands <span class="ar-field__opt">the makes we sell, comma between</span></span
+      >
+      <input
+        class="ar-field__input"
+        [value]="ourBrandsText()"
+        (input)="ourBrandsText.set($any($event.target).value)"
+      />
+    </label>
+    @if (settings()?.catalogueMakes?.length) {
+      <p class="cb__muted">
+        Blank uses the makes in your product list:
+        <span translate="no">{{ settings()!.catalogueMakes!.join(', ') }}</span
+        >.
+        <button type="button" class="cb__link" (click)="useCatalogue()">Copy them here</button>
+      </p>
+    }
+    <label class="ar-field">
+      <span class="ar-field__label"
+        >Specification categories <span class="ar-field__opt">comma between</span></span
+      >
+      <input
+        class="ar-field__input"
+        [value]="categoriesText()"
+        (input)="categoriesText.set($any($event.target).value)"
+      />
+    </label>
+    <div class="cb__foot">
+      <button ar-button type="button" [disabled]="busy() || mock" (click)="saveSettings()">
+        Save settings
+      </button>
+    </div>
+  </ar-card>
+
+  <ar-card heading="Competitor brands">
+    <table class="cb__table">
+      <thead>
+        <tr>
+          <th scope="col">Brand</th>
+          <th scope="col">Also sold as <span class="cb__muted">comma between</span></th>
+          <th scope="col">In pickers</th>
+          <th scope="col" aria-label="Actions"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (b of brands(); track b.id) {
+          <tr [class.cb__off]="!b.isActive">
+            <td translate="no">{{ b.name }}</td>
+            <td>
+              <input
+                class="ar-field__input"
+                [attr.aria-label]="'Makes of ' + b.name"
+                [value]="b.makes.join(', ')"
+                (change)="setMakes(b, $any($event.target).value)"
+              />
+            </td>
+            <td>
+              <label class="cb__check">
+                <input type="checkbox" [checked]="b.isActive" (change)="toggle(b)" />
+                {{ b.isActive ? 'On' : 'Off' }}
+              </label>
+            </td>
+            <td>
+              <button ar-button type="button" variant="ghost" (click)="remove(b)">Remove</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" class="cb__muted">
+              No brands yet. Click Add common brands, or add one below.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <form class="cb__add" (submit)="$event.preventDefault(); add()">
+      <input
+        class="ar-field__input"
+        maxlength="100"
+        placeholder="Brand, e.g. Rockwell Automation"
+        aria-label="New brand"
+        [value]="newName()"
+        (input)="newName.set($any($event.target).value)"
+      />
+      <input
+        class="ar-field__input"
+        placeholder="Also sold as, e.g. Allen-Bradley"
+        aria-label="New brand's makes"
+        [value]="newMakes()"
+        (input)="newMakes.set($any($event.target).value)"
+      />
+      <button ar-button type="submit" [disabled]="!newName().trim() || mock">Add</button>
+    </form>
+  </ar-card>
+</div>

@@ -245,3 +245,25 @@
   color: var(--ar-ink-400);
   font-size: 12px;
 }
+
+.pp__spec th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ar-line-200);
+  font: 600 11px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+  text-transform: uppercase;
+}
+.pp__clause {
+  margin-top: 4px;
+  font-style: italic;
+}
+.pp__spec-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.pp__warn {
+  color: var(--ar-amber-700);
+}

@@ -107,6 +107,20 @@
       >
         Parties <span class="pp__count">{{ p.partyList.length }}</span>
       </button>
+      <button type="button" role="tab" [class.on]="tab() === 'spec'" (click)="tab.set('spec')">
+        Specification
+        @if (p.specifiedInRate !== null && p.specifiedInRate !== undefined) {
+          <span class="pp__count">{{ percent(p.specifiedInRate) }}</span>
+        }
+      </button>
+      <button
+        type="button"
+        role="tab"
+        [class.on]="tab() === 'enquiries'"
+        (click)="tab.set('enquiries')"
+      >
+        Enquiries <span class="pp__count">{{ p.enquiries.length }}</span>
+      </button>
       <button
         type="button"
         role="tab"
@@ -377,6 +391,306 @@
           }
         </ar-card>
       }
+      @case ('spec') {
+        <ar-card heading="Specification">
+          <p class="pp__muted">
+            Is our brand written into the specification? One row per product category. We are
+            specified-in for {{ percent(p.specifiedInRate) }} of the specification by value
+            {{ p.specSummary ? '(' + p.specSummary + ')' : '' }}; unknown categories aren't counted.
+          </p>
+          <table class="pp__table pp__spec">
+            <thead>
+              <tr>
+                <th scope="col">Category</th>
+                <th scope="col">Status</th>
+                <th scope="col">Brands named</th>
+                <th scope="col">Value</th>
+                <th scope="col" aria-label="Actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of specRows(); track r.category) {
+                <tr>
+                  <td class="pp__name">{{ r.category }}</td>
+                  <td>
+                    @if (r.item) {
+                      <ar-chip [tone]="SPEC_TONE[r.item.status]">{{
+                        SPEC_TEXT[r.item.status]
+                      }}</ar-chip>
+                    } @else {
+                      <span class="pp__muted">Not recorded</span>
+                    }
+                  </td>
+                  <td>
+                    @if (r.item) {
+                      <span translate="no">{{ r.item.ourMakes.join(', ') }}</span>
+                      @for (b of r.item.competitorBrands; track b.id) {
+                        <ar-chip tone="bad">{{ b.name }}</ar-chip>
+                      }
+                      @if (r.item.clauseText) {
+                        <div class="pp__muted pp__clause">“{{ r.item.clauseText }}”</div>
+                      }
+                      @if (r.item.confirmedByName) {
+                        <div class="pp__muted">
+                          {{ r.item.confirmedByName }},
+                          {{ r.item.confirmedAtUtc | date: 'd MMM y' }}
+                        </div>
+                      }
+                    }
+                  </td>
+                  <td>{{ r.item ? rupees(r.item.estimatedValueInPaise) : '' }}</td>
+                  <td>
+                    @if (p.canEdit) {
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        (click)="editSpec(r.category)"
+                      >
+                        {{ r.item ? 'Change' : 'Record' }}
+                      </button>
+                      @if (r.item) {
+                        <button
+                          ar-button
+                          type="button"
+                          variant="ghost"
+                          (click)="removeSpec(r.category)"
+                        >
+                          Remove
+                        </button>
+                      }
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (p.canEdit) {
+            <div class="pp__add">
+              <input
+                class="ar-field__input"
+                maxlength="64"
+                placeholder="Another category, e.g. Cables"
+                aria-label="New category"
+                [value]="newCategory()"
+                (input)="newCategory.set($any($event.target).value)"
+              />
+              <button ar-button type="button" variant="ghost" (click)="addCategory()">
+                Add category
+              </button>
+            </div>
+          }
+        </ar-card>
+
+        @if (specDraft(); as d) {
+          <ar-card [heading]="d.category">
+            <div class="pp__spec-form">
+              <label class="ar-field">
+                <span class="ar-field__label">Status</span>
+                <select
+                  class="ar-field__input"
+                  (change)="patchSpec({ status: +$any($event.target).value })"
+                >
+                  @for (s of SPEC_STATUSES; track s) {
+                    <option [value]="s" [selected]="d.status === s">{{ SPEC_TEXT[s] }}</option>
+                  }
+                </select>
+              </label>
+              <label class="ar-field">
+                <span class="ar-field__label"
+                  >Value of this category <span class="ar-field__opt">weights the rate</span></span
+                >
+                <input
+                  class="ar-field__input"
+                  inputmode="decimal"
+                  [value]="d.value"
+                  (input)="patchSpec({ value: $any($event.target).value })"
+                />
+              </label>
+            </div>
+            @if (d.status === Spec.Named || d.status === Spec.NamedOrEquivalent) {
+              <p class="pp__h">Our brands named</p>
+              <div class="pp__roles">
+                @for (b of picks().ourBrands; track b) {
+                  <label class="pp__check">
+                    <input
+                      type="checkbox"
+                      [checked]="d.ourMakes.includes(b)"
+                      (change)="toggleIn('ourMakes', b, $any($event.target).checked)"
+                    />
+                    <span translate="no">{{ b }}</span>
+                  </label>
+                } @empty {
+                  <span class="pp__muted">Set our brands under Projects → Competitor brands.</span>
+                }
+              </div>
+            }
+            @if (d.status !== Spec.Unknown && d.status !== Spec.Open) {
+              <p class="pp__h">Competitor brands named</p>
+              <div class="pp__roles">
+                @for (b of picks().competitorBrands; track b.id) {
+                  <label class="pp__check">
+                    <input
+                      type="checkbox"
+                      [checked]="d.competitorBrandIds.includes(b.id)"
+                      (change)="toggleIn('competitorBrandIds', b.id, $any($event.target).checked)"
+                    />
+                    <span translate="no">{{ b.name }}</span>
+                  </label>
+                } @empty {
+                  <span class="pp__muted"
+                    >No competitor brands yet. Add them under Projects → Competitor brands.</span
+                  >
+                }
+              </div>
+            }
+            <label class="ar-field">
+              <span class="ar-field__label"
+                >Clause text <span class="ar-field__opt">as written in the spec</span></span
+              >
+              <textarea
+                class="ar-field__input"
+                rows="3"
+                maxlength="2000"
+                [value]="d.clauseText"
+                (input)="patchSpec({ clauseText: $any($event.target).value })"
+              ></textarea>
+            </label>
+            @if (specDraftProblem(); as prob) {
+              <p class="pp__muted pp__warn">{{ prob }}</p>
+            }
+            <div class="pp__add">
+              <span class="pp__grow"></span>
+              <button ar-button type="button" variant="ghost" (click)="specDraft.set(null)">
+                Cancel
+              </button>
+              <button
+                ar-button
+                type="button"
+                [disabled]="busy() || !!specDraftProblem()"
+                (click)="saveSpec()"
+              >
+                Save
+              </button>
+            </div>
+          </ar-card>
+        }
+      }
+      @case ('enquiries') {
+        <ar-card heading="Enquiries">
+          <p class="pp__muted">
+            One enquiry per bidder or package. Until the project is awarded several bidders quote
+            the same scope, so the forecast will count only the highest of them.
+          </p>
+          <table class="pp__table">
+            <thead>
+              <tr>
+                <th scope="col">Enquiry</th>
+                <th scope="col">Company</th>
+                <th scope="col">Stage</th>
+                <th scope="col">Value</th>
+                <th scope="col">Quotes</th>
+                <th scope="col" aria-label="Actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of p.enquiries; track e.id) {
+                <tr>
+                  <td>
+                    <a
+                      [routerLink]="['/enquiries']"
+                      [queryParams]="{ open: e.id }"
+                      translate="no"
+                      >{{ e.reference }}</a
+                    >
+                    <div class="pp__muted" translate="no">{{ e.title }}</div>
+                  </td>
+                  <td>
+                    <span translate="no">{{ e.accountName || e.contactName }}</span>
+                    @for (t of rolesText(e.roles); track t) {
+                      <ar-chip tone="neutral">{{ t }}</ar-chip>
+                    }
+                  </td>
+                  <td>{{ stageText(e.stage) }}</td>
+                  <td>{{ rupees(e.estimatedValueInPaise) }}</td>
+                  <td>{{ e.quotations }}</td>
+                  <td>
+                    @if (p.canEdit) {
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        (click)="unlink(e.id, e.reference)"
+                      >
+                        Unlink
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="pp__muted">No enquiries yet.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </ar-card>
+        @if (p.canEdit) {
+          <ar-card heading="Open an enquiry for a bidder">
+            <div class="pp__move">
+              <label class="ar-field">
+                <span class="ar-field__label">Company</span>
+                <select class="ar-field__input" (change)="pickBidder($any($event.target).value)">
+                  <option value="">Choose…</option>
+                  @for (b of bidders(); track b.accountId) {
+                    <option [value]="b.accountId" translate="no">
+                      {{ b.accountName }} ({{ rolesText(b.roles).join(', ') }})
+                    </option>
+                  }
+                </select>
+              </label>
+              <label class="ar-field">
+                <span class="ar-field__label">Their contact</span>
+                <select
+                  class="ar-field__input"
+                  [disabled]="!bidder()"
+                  (change)="bidderContact.set($any($event.target).value)"
+                >
+                  <option value="">Choose…</option>
+                  @for (c of bidderContacts(); track c.contactId) {
+                    <option [value]="c.contactId" translate="no">{{ c.name }}</option>
+                  }
+                </select>
+              </label>
+              <button
+                ar-button
+                type="button"
+                [disabled]="busy() || !bidder() || !bidderContact()"
+                (click)="openEnquiry()"
+              >
+                Open enquiry
+              </button>
+            </div>
+            @if (!bidders().length) {
+              <p class="pp__muted">
+                Add an EPC contractor, panel builder or system integrator under Parties first.
+              </p>
+            }
+            <div class="pp__add">
+              <input
+                class="ar-field__input"
+                placeholder="Or link an existing enquiry by its reference, e.g. ENQ-2026-0042"
+                aria-label="Enquiry reference"
+                [value]="linkRef()"
+                (input)="linkRef.set($any($event.target).value)"
+              />
+              <button ar-button type="button" variant="ghost" (click)="linkByReference()">
+                Link
+              </button>
+            </div>
+          </ar-card>
+        }
+      }
       @case ('timeline') {
         <ar-card heading="Timeline">
           @if (p.canEdit) {
@@ -398,7 +712,12 @@
             @for (e of p.events; track $index) {
               <li>
                 <span class="pp__when">{{ e.atUtc | date: 'd MMM y, HH:mm' }}</span>
-                <span>{{ eventText(e) }}</span>
+                <span>
+                  @if (e.enquiryReference) {
+                    <b translate="no">{{ e.enquiryReference }}</b> ·
+                  }
+                  {{ eventText(e) }}
+                </span>
                 @if (e.userName) {
                   <span class="pp__muted" translate="no">{{ e.userName }}</span>
                 }

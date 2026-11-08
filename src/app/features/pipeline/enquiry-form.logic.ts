@@ -27,6 +27,7 @@ export const LEAD_SOURCES = [
   { value: LeadSource.Exhibition, label: 'Exhibition' },
   { value: LeadSource.Referral, label: 'Referral' },
   { value: LeadSource.Dealer, label: 'Dealer' },
+  { value: LeadSource.Project, label: 'Project' },
 ] as const;
 
 export function validateEnquiryDraft(draft: EnquiryDraft): string | null {

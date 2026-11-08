@@ -16,8 +16,12 @@ import {
   ProjectPersonInput,
   ProjectRole,
   ProjectService,
+  ProjectPickListsDto,
   ProjectStage,
+  SpecStatus,
 } from '../../proxy/projects/project.service';
+import { EnquiryService } from '../../proxy/pipeline/enquiry.service';
+import { EnquiryStage } from '../../proxy/pipeline';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
 import { environment } from '../../../environments/environment';
 import { ArAccountSearch, PickedAccount } from './account-search';
@@ -29,14 +33,29 @@ import {
   ROLES,
   STAGE_TEXT,
   STAGES,
+  SPEC_STATUSES,
+  SPEC_TEXT,
+  SPEC_TONE,
   eventText,
   hasRole,
+  parseRupees,
+  percent,
+  specProblem,
   rolesText,
   rupeesShort,
   toggleRole,
 } from './project.logic';
 
-type Tab = 'overview' | 'parties' | 'timeline';
+type Tab = 'overview' | 'parties' | 'spec' | 'enquiries' | 'timeline';
+
+interface SpecDraft {
+  category: string;
+  status: SpecStatus;
+  ourMakes: string[];
+  competitorBrandIds: string[];
+  clauseText: string;
+  value: string;
+}
 
 interface PartyDraft {
   accountId: string;
@@ -87,6 +106,46 @@ export class ArProjectPage {
   protected readonly contactOptions = signal<ProjectContactOptionDto[]>([]);
 
   protected readonly note = signal('');
+
+  // specification
+  protected readonly picks = signal<ProjectPickListsDto>({
+    categories: [],
+    ourBrands: [],
+    competitorBrands: [],
+  });
+  protected readonly specDraft = signal<SpecDraft | null>(null);
+  protected readonly newCategory = signal('');
+
+  // enquiries
+  protected readonly bidder = signal('');
+  protected readonly bidderContacts = signal<ProjectContactOptionDto[]>([]);
+  protected readonly bidderContact = signal('');
+  protected readonly linkRef = signal('');
+  private readonly enquiriesApi = inject(EnquiryService);
+
+  protected readonly SPEC_STATUSES = SPEC_STATUSES;
+  protected readonly SPEC_TEXT = SPEC_TEXT;
+  protected readonly SPEC_TONE = SPEC_TONE;
+  protected readonly Spec = SpecStatus;
+  protected readonly percent = percent;
+
+  /** One row per category: the settings' categories, plus any the project already has. */
+  protected readonly specRows = computed(() => {
+    const p = this.project();
+    const items = p?.specItems ?? [];
+    const names = [...this.picks().categories];
+    for (const i of items)
+      if (!names.some((n) => n.toLowerCase() === i.category.toLowerCase())) names.push(i.category);
+    return names.map((category) => ({
+      category,
+      item: items.find((i) => i.category.toLowerCase() === category.toLowerCase()) ?? null,
+    }));
+  });
+
+  protected readonly specDraftProblem = computed(() => {
+    const d = this.specDraft();
+    return d ? specProblem(d.status, d.ourMakes, d.competitorBrandIds) : null;
+  });
 
   protected readonly STAGES = STAGES;
   protected readonly STAGE_TEXT = STAGE_TEXT;
@@ -148,6 +207,10 @@ export class ArProjectPage {
     if (this.mock) return;
     try {
       this.apply(await firstValueFrom(this.api.get(this.id)));
+      void firstValueFrom(this.api.getPickLists()).then(
+        (picks) => this.picks.set(picks),
+        () => undefined,
+      );
       const move = this.route.snapshot.queryParamMap.get('move');
       if (move !== null && !Number.isNaN(+move)) this.moveTo.set(+move as ProjectStage);
     } catch (e) {
@@ -312,6 +375,133 @@ export class ArProjectPage {
       'People saved.',
     );
     if (ok) this.peopleFor.set(null);
+  }
+
+  // ---- specification ----
+
+  protected editSpec(category: string): void {
+    const item = this.project()?.specItems.find(
+      (i) => i.category.toLowerCase() === category.toLowerCase(),
+    );
+    this.specDraft.set({
+      category: item?.category ?? category,
+      status: item?.status ?? SpecStatus.Unknown,
+      ourMakes: [...(item?.ourMakes ?? [])],
+      competitorBrandIds: (item?.competitorBrands ?? []).map((b) => b.id),
+      clauseText: item?.clauseText ?? '',
+      value: item?.estimatedValueInPaise ? String(item.estimatedValueInPaise / 100) : '',
+    });
+  }
+
+  protected addCategory(): void {
+    const name = this.newCategory().trim();
+    if (!name) return;
+    this.newCategory.set('');
+    this.editSpec(name);
+  }
+
+  protected patchSpec(change: Partial<SpecDraft>): void {
+    this.specDraft.update((d) => (d ? { ...d, ...change } : d));
+  }
+
+  protected toggleIn(list: 'ourMakes' | 'competitorBrandIds', value: string, on: boolean): void {
+    const d = this.specDraft();
+    if (!d) return;
+    const set = new Set(d[list]);
+    if (on) set.add(value);
+    else set.delete(value);
+    this.patchSpec({ [list]: [...set] });
+  }
+
+  protected async saveSpec(): Promise<void> {
+    const d = this.specDraft();
+    if (!d || this.specDraftProblem()) return;
+    const value = d.value.trim() ? parseRupees(d.value) : null;
+    if (d.value.trim() && value === null) {
+      this.toasts.warning('Type the value as a number, for example 45,00,000 or 4.5 Cr.');
+      return;
+    }
+    const ok = await this.run(
+      () =>
+        this.api.setSpecItem(this.id, {
+          category: d.category,
+          status: +d.status,
+          ourMakes: d.ourMakes,
+          competitorBrandIds: d.competitorBrandIds,
+          clauseText: d.clauseText.trim() || null,
+          estimatedValueInPaise: value,
+        }),
+      `${d.category} saved.`,
+    );
+    if (ok) this.specDraft.set(null);
+  }
+
+  protected async removeSpec(category: string): Promise<void> {
+    await this.run(() => this.api.removeSpecItem(this.id, category), `${category} removed.`);
+  }
+
+  // ---- enquiries ----
+
+  protected async pickBidder(accountId: string): Promise<void> {
+    this.bidder.set(accountId);
+    this.bidderContact.set('');
+    this.bidderContacts.set([]);
+    if (!accountId) return;
+    try {
+      this.bidderContacts.set(await firstValueFrom(this.api.getAccountContacts(accountId)));
+    } catch {
+      this.bidderContacts.set([]);
+    }
+  }
+
+  protected async openEnquiry(): Promise<void> {
+    if (!this.bidder() || !this.bidderContact()) return;
+    this.busy.set(true);
+    try {
+      const made = await firstValueFrom(
+        this.api.openEnquiry(this.id, this.bidder(), this.bidderContact()),
+      );
+      this.toasts.success(`Enquiry ${made.reference} opened.`);
+      void this.router.navigate(['/enquiries'], { queryParams: { open: made.enquiryId } });
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The enquiry could not be opened.'));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** Links an existing enquiry by its reference (ENQ-2026-0042). */
+  protected async linkByReference(): Promise<void> {
+    const ref = this.linkRef().trim().toUpperCase();
+    if (!ref) return;
+    try {
+      const page = await firstValueFrom(
+        this.enquiriesApi.getList({ filter: ref, maxResultCount: 10 } as never),
+      );
+      const match = (page.items ?? []).find((e) => (e.reference ?? '').toUpperCase() === ref);
+      if (!match?.id) {
+        this.toasts.warning(`No enquiry ${ref} found.`);
+        return;
+      }
+      if (await this.run(() => this.api.linkEnquiry(this.id, match.id!), `${ref} linked.`))
+        this.linkRef.set('');
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The enquiry could not be linked.'));
+    }
+  }
+
+  protected async unlink(enquiryId: string, reference: string): Promise<void> {
+    const ok = await this.dialogs.confirm({
+      title: `Unlink ${reference}?`,
+      message: 'The enquiry stays as it is; it is no longer part of this project.',
+      confirmText: 'Unlink',
+    });
+    if (ok)
+      await this.run(() => this.api.unlinkEnquiry(this.id, enquiryId), `${reference} unlinked.`);
+  }
+
+  protected stageText(stage: number): string {
+    return EnquiryStage[stage] ?? String(stage);
   }
 
   // ---- notes and delete ----

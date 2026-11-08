@@ -116,6 +116,75 @@ export interface ProjectPersonInput {
   note?: string | null;
 }
 
+export enum SpecStatus {
+  Unknown = 0,
+  Named = 1,
+  NamedOrEquivalent = 2,
+  CompetitorNamed = 3,
+  Open = 4,
+}
+
+export interface BrandRefDto {
+  id: string;
+  name: string;
+  makes: string[];
+  notes?: string | null;
+  isActive: boolean;
+}
+
+export interface SetProjectSpecItemInput {
+  category: string;
+  status: SpecStatus;
+  ourMakes: string[];
+  competitorBrandIds: string[];
+  clauseText?: string | null;
+  libraryDocumentId?: string | null;
+  estimatedValueInPaise?: number | null;
+}
+
+export interface ProjectSpecItemDto {
+  category: string;
+  status: SpecStatus;
+  isSpecifiedIn: boolean;
+  ourMakes: string[];
+  competitorBrands: BrandRefDto[];
+  clauseText?: string | null;
+  libraryDocumentId?: string | null;
+  documentTitle?: string | null;
+  estimatedValueInPaise?: number | null;
+  confirmedByName?: string | null;
+  confirmedAtUtc?: string | null;
+}
+
+export interface ProjectEnquiryDto {
+  id: string;
+  reference: string;
+  title?: string | null;
+  contactId: string;
+  contactName?: string | null;
+  accountId?: string | null;
+  accountName?: string | null;
+  roles: ProjectRole;
+  stage: number;
+  estimatedValueInPaise?: number | null;
+  ownerName?: string | null;
+  quotations: number;
+  isOpen: boolean;
+}
+
+export interface ProjectPickListsDto {
+  categories: string[];
+  ourBrands: string[];
+  competitorBrands: BrandRefDto[];
+}
+
+export interface ProjectOptionDto {
+  id: string;
+  reference: string;
+  name: string;
+  stage: ProjectStage;
+}
+
 export interface ProjectListItemDto {
   id: string;
   reference: string;
@@ -136,6 +205,11 @@ export interface ProjectListItemDto {
   needsSpecWriter: boolean;
   hasBlocker: boolean;
   parties: number;
+  /** "2 of 3 categories named". */
+  specSummary?: string | null;
+  /** 0 to 1. */
+  specifiedInRate?: number | null;
+  openEnquiries: number;
 }
 
 export interface ProjectBoardColumnDto {
@@ -172,6 +246,8 @@ export interface ProjectEventDto {
   toValue?: string | null;
   note?: string | null;
   userName?: string | null;
+  /** Set for an event of a linked enquiry, rolled up. */
+  enquiryReference?: string | null;
 }
 
 export interface ProjectUserDto {
@@ -198,6 +274,8 @@ export interface ProjectDetailDto extends ProjectListItemDto {
   team: ProjectUserDto[];
   partyList: ProjectPartyDto[];
   events: ProjectEventDto[];
+  specItems: ProjectSpecItemDto[];
+  enquiries: ProjectEnquiryDto[];
   blockers: string[];
   canEdit: boolean;
   creationTime: string;
@@ -322,6 +400,48 @@ export class ProjectService {
   getUsers = (config?: Partial<Rest.Config>) =>
     this.restService.request<any, ProjectUserDto[]>(
       { method: 'GET', url: `${this.base}/users` },
+      { apiName: this.apiName, ...config },
+    );
+
+  setSpecItem = (id: string, input: SetProjectSpecItemInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<SetProjectSpecItemInput, ProjectDetailDto>(
+      { method: 'POST', url: `${this.base}/${id}/set-spec-item`, body: input },
+      { apiName: this.apiName, ...config },
+    );
+
+  removeSpecItem = (id: string, category: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ProjectDetailDto>(
+      { method: 'DELETE', url: `${this.base}/${id}/spec-item`, params: { category } },
+      { apiName: this.apiName, ...config },
+    );
+
+  openEnquiry = (id: string, accountId: string, contactId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, { enquiryId: string; reference: string }>(
+      { method: 'POST', url: `${this.base}/${id}/open-enquiry`, body: { accountId, contactId } },
+      { apiName: this.apiName, ...config },
+    );
+
+  linkEnquiry = (id: string, enquiryId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ProjectDetailDto>(
+      { method: 'POST', url: `${this.base}/${id}/link-enquiry`, body: { enquiryId } },
+      { apiName: this.apiName, ...config },
+    );
+
+  unlinkEnquiry = (id: string, enquiryId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ProjectDetailDto>(
+      { method: 'POST', url: `${this.base}/${id}/unlink-enquiry`, body: { enquiryId } },
+      { apiName: this.apiName, ...config },
+    );
+
+  getPickLists = (config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ProjectPickListsDto>(
+      { method: 'GET', url: `${this.base}/pick-lists` },
+      { apiName: this.apiName, ...config },
+    );
+
+  search = (filter: string | null, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ProjectOptionDto[]>(
+      { method: 'POST', url: `${this.base}/search`, params: { filter: filter ?? undefined } },
       { apiName: this.apiName, ...config },
     );
 }

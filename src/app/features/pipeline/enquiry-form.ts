@@ -19,6 +19,8 @@ import { ArBanner } from '../../ui/banner';
 import { ArButton } from '../../ui/button';
 import { ArCard } from '../../ui/card';
 import { ArContactPicker } from './contact-picker';
+import { ProjectOptionDto, ProjectService } from '../../proxy/projects/project.service';
+import { environment } from '../../../environments/environment';
 import {
   BLANK_ENQUIRY_DRAFT,
   EnquiryDraft,
@@ -52,6 +54,11 @@ export class ArEnquiryForm implements OnInit {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  private readonly projectsApi = inject(ProjectService);
+  protected readonly canSeeProjects = grantedPolicy('AutoReach.Projects', this.permissions);
+  protected readonly projects = signal<ProjectOptionDto[]>([]);
+  protected readonly projectId = signal('');
+
   protected readonly selectedPipeline = computed(() => {
     const id = this.draft().pipelineId;
     return this.pipelines().find((p) => p.id === id) ?? this.currentPipeline();
@@ -62,11 +69,18 @@ export class ArEnquiryForm implements OnInit {
     const activePipeId =
       queryPipe || this.pipelineStore.pipelineId() || this.pipelines()[0]?.id || '';
 
+    const project = this.route.snapshot.queryParamMap.get('project');
     this.draft.update((d) => ({
       ...d,
       pipelineId: activePipeId,
-      source: LeadSource.Manual,
+      source: project ? LeadSource.Project : LeadSource.Manual,
     }));
+    if (project) this.projectId.set(project);
+    if (this.canSeeProjects() && !environment.useMockData) {
+      this.projectsApi
+        .search(null)
+        .subscribe({ next: (list) => this.projects.set(list), error: () => undefined });
+    }
   }
 
   protected onContactPicked(option: PickerOption | null): void {
@@ -114,6 +128,7 @@ export class ArEnquiryForm implements OnInit {
         title: currentDraft.title.trim(),
         requirement: currentDraft.requirement.trim() || undefined,
         estimatedValueInPaise,
+        ...(this.projectId() ? { projectId: this.projectId() } : {}),
       });
 
       this.toasts.success(`Enquiry “${currentDraft.title.trim()}” created successfully.`);

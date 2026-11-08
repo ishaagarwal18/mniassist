@@ -10,6 +10,7 @@ import { ToastService } from '../../core/ui/toast.service';
 import { ArTopbar } from '../../layout/topbar';
 import { ContactService as ContactApi } from '../../proxy/contacts/contact.service';
 import { LeadSource } from '../../proxy/pipeline';
+import { ProjectService } from '../../proxy/projects/project.service';
 import { ArEnquiryForm } from './enquiry-form';
 
 @Component({ selector: 'ar-topbar', template: '<ng-content />' })
@@ -83,6 +84,7 @@ describe('ArEnquiryForm (New Enquiry Page)', () => {
             getGrantedPolicy$: () => of(true),
           },
         },
+        { provide: ProjectService, useValue: { search: () => of([]) } },
       ],
     }).overrideComponent(ArEnquiryForm, {
       remove: { imports: [ArTopbar] },

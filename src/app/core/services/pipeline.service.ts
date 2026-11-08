@@ -708,9 +708,15 @@ export class PipelineStore {
     stage: EnquiryStage,
     note?: string,
     lostCategory?: LostReasonCategory,
+    competitorBrandId?: string | null,
   ): Promise<void> {
     await firstValueFrom(
-      this.enquiryApi.move(id, { stage, note: note?.trim() || undefined, lostCategory }),
+      this.enquiryApi.move(id, {
+        stage,
+        note: note?.trim() || undefined,
+        lostCategory,
+        competitorBrandId: competitorBrandId || null,
+      }),
     );
     this.reload();
   }

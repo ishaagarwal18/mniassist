@@ -7,6 +7,9 @@
     <button type="button" [class.on]="view() === 'board'" (click)="setView('board')">Board</button>
     <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">List</button>
   </div>
+  @if (canManage()) {
+    <a ar-button variant="ghost" routerLink="/projects/competitors">Competitor brands</a>
+  }
   @if (canCreate()) {
     <a ar-button variant="primary" icon="plus" routerLink="/projects/new">New project</a>
   }
@@ -107,6 +110,11 @@
               @if (p.consultantName) {
                 <span class="pj__muted" translate="no">Consultant: {{ p.consultantName }}</span>
               }
+              @if (p.specSummary) {
+                <ar-chip [tone]="(p.specifiedInRate ?? 0) >= 0.5 ? 'good' : 'amber'">{{
+                  p.specSummary
+                }}</ar-chip>
+              }
               @if (p.needsSpecWriter) {
                 <ar-chip tone="warn">Who is writing the spec?</ar-chip>
               }
@@ -164,6 +172,12 @@
             }
           </ng-template>
         </e-column>
+        <e-column field="specifiedInRate" headerText="Specified-in" width="150">
+          <ng-template #template let-p>
+            {{ p.specSummary || '—' }}
+          </ng-template>
+        </e-column>
+        <e-column field="openEnquiries" headerText="Open enquiries" width="110" textAlign="Right" />
         <e-column field="ownerName" headerText="Owner" width="130" />
         <e-column headerText="Watch" width="170">
           <ng-template #template let-p>

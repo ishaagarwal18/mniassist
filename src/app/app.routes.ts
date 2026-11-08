@@ -351,6 +351,12 @@ export const routes: Routes = [
           import('./features/projects/projects-page').then((m) => m.ArProjectsPage),
       },
       {
+        path: 'projects/competitors',
+        title: 'Competitor brands · MNI Assist',
+        loadComponent: () =>
+          import('./features/projects/competitors-page').then((m) => m.ArCompetitorsPage),
+      },
+      {
         path: 'projects/new',
         title: 'New project · MNI Assist',
         loadComponent: () =>

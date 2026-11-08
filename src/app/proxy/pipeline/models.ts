@@ -24,6 +24,8 @@ export interface CreateUpdateEnquiryDto {
   estimatedValueInPaise?: number | null;
   expectedCloseDate?: string | null;
   attributes?: Record<string, string>;
+  /** Links the enquiry to a project. Empty never unlinks one. */
+  projectId?: string | null;
 }
 
 export interface CreateUpdateInstalledAssetDto {
@@ -134,6 +136,10 @@ export interface EnquiryDto extends FullAuditedEntityDto<string> {
   lostCategory?: LostReasonCategory;
   wonReason?: string | null;
   attributes?: Record<string, string>;
+  projectId?: string | null;
+  projectName?: string | null;
+  lostToCompetitorBrandId?: string | null;
+  lostToCompetitorBrandName?: string | null;
 }
 
 export interface EnquiryEventDto extends EntityDto<string> {
@@ -224,6 +230,8 @@ export interface MoveEnquiryInput {
   stage?: EnquiryStage;
   note?: string | null;
   lostCategory?: LostReasonCategory | null;
+  /** When lost to a competitor: the brand that won. */
+  competitorBrandId?: string | null;
 }
 
 export interface PlanRemindersInput {

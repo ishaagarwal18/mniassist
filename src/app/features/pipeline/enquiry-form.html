@@ -135,6 +135,29 @@
               />
             </div>
 
+            @if (canSeeProjects() && projects().length) {
+              <div class="ar-field">
+                <label for="enquiry-project" class="ar-field__label">
+                  Project <span class="ar-field__opt">optional</span>
+                </label>
+                <span class="ar-field__hint"
+                  >The plant or line this enquiry is one bidder's part of</span
+                >
+                <select
+                  id="enquiry-project"
+                  class="ar-field__input"
+                  (change)="projectId.set($any($event.target).value)"
+                >
+                  <option value="" [selected]="!projectId()">None</option>
+                  @for (p of projects(); track p.id) {
+                    <option [value]="p.id" [selected]="projectId() === p.id" translate="no">
+                      {{ p.reference }} · {{ p.name }}
+                    </option>
+                  }
+                </select>
+              </div>
+            }
+
             <!-- Lead Source -->
             <div class="ar-field">
               <label for="enquiry-source" class="ar-field__label">

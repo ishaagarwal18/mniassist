@@ -507,6 +507,17 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Mark a decision maker who is against us as a Blocker: the project shows them in red.',
     ],
   },
+  'projects/competitors': {
+    benefits: [
+      'One list of the brands you compete with, used in specifications, lost enquiries and reports.',
+      'Our brands and the specification categories are set once for every project.',
+    ],
+    steps: [
+      'Click Add common brands, then remove or rename any you don’t meet.',
+      'List the makes we sell under Our brands, and the product categories a specification is read by.',
+    ],
+    tips: ['Our own brands are left out when common brands are added.'],
+  },
   'projects/new': {
     benefits: [
       'A project record takes a few minutes and saves retyping on every enquiry it produces.',

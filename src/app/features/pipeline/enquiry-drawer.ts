@@ -1,3 +1,8 @@
+import { environment } from '../../../environments/environment';
+import {
+  CompetitorBrandDto,
+  CompetitorBrandService,
+} from '../../proxy/projects/competitor-brand.service';
 import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
@@ -275,7 +280,7 @@ import { PROFILE_FIELDS, profileFilled, profileInput } from './enquiry-profile';
                 type="button"
                 variant="ghost"
                 [disabled]="busy()"
-                (click)="losing.set(!losing())"
+                (click)="toggleLosing()"
               >
                 Mark lost
               </button>
@@ -295,6 +300,22 @@ import { PROFILE_FIELDS, profileFilled, profileInput } from './enquiry-profile';
                     }
                   </select>
                 </label>
+                @if (lostCat() === LostCategory.LostToCompetitor && brands().length) {
+                  <label class="ar-field">
+                    <span class="ar-field__label"
+                      >Which brand won? <span class="ar-field__opt">optional</span></span
+                    >
+                    <select
+                      class="ar-field__input"
+                      (change)="lostBrand.set($any($event.target).value)"
+                    >
+                      <option value="">Not known</option>
+                      @for (b of brands(); track b.id) {
+                        <option [value]="b.id" translate="no">{{ b.name }}</option>
+                      }
+                    </select>
+                  </label>
+                }
                 <textarea
                   class="note"
                   rows="2"
@@ -726,6 +747,10 @@ export class ArEnquiryDrawer {
 
   protected readonly losing = signal(false);
   protected readonly lostCat = signal<LostReasonCategory>(LostReasonCategory.LostToCompetitor);
+  protected readonly LostCategory = LostReasonCategory;
+  protected readonly lostBrand = signal('');
+  protected readonly brands = signal<CompetitorBrandDto[]>([]);
+  private readonly brandsApi = inject(CompetitorBrandService);
   protected readonly lostNote = signal('');
   protected readonly lostCategories: { value: LostReasonCategory; label: string }[] = [
     { value: LostReasonCategory.PriceTooHigh, label: 'Price too high' },
@@ -775,12 +800,28 @@ export class ArEnquiryDrawer {
     }
   }
 
+  /** Opens the lost box; the competitor brands are fetched the first time it opens. */
+  protected toggleLosing(): void {
+    this.losing.set(!this.losing());
+    if (this.losing() && !this.brands().length && !environment.useMockData) {
+      this.brandsApi
+        .getActive()
+        .subscribe({ next: (b) => this.brands.set(b), error: () => undefined });
+    }
+  }
+
   protected async confirmLost(d: EnquiryDetail): Promise<void> {
     const reason = this.lostNote().trim();
     if (!reason) return;
     this.busy.set(true);
     try {
-      await this.store.moveEnquiry(d.id, EnquiryStage.Lost, reason, this.lostCat());
+      await this.store.moveEnquiry(
+        d.id,
+        EnquiryStage.Lost,
+        reason,
+        this.lostCat(),
+        this.lostCat() === LostReasonCategory.LostToCompetitor ? this.lostBrand() || null : null,
+      );
       this.changed.emit();
       this.close.emit();
     } finally {

@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { ProjectEventKind, ProjectRole, ProjectStage } from '../../proxy/projects/project.service';
+import {
+  ProjectEventKind,
+  ProjectRole,
+  ProjectStage,
+  SpecStatus,
+} from '../../proxy/projects/project.service';
 import {
   eventText,
   formProblem,
   hasRole,
   needsDetails,
   parseRupees,
+  percent,
+  specProblem,
   rolesText,
   rupeesShort,
   toggleRole,
@@ -59,5 +66,14 @@ describe('project logic', () => {
     expect(needsDetails(ProjectStage.Tender)).toBe(false);
     expect(needsDetails(ProjectStage.Awarded)).toBe(true);
     expect(needsDetails(ProjectStage.Closed)).toBe(true);
+  });
+
+  it('asks for the brands a spec row names, and writes the rate as a percentage', () => {
+    expect(specProblem(SpecStatus.Named, [], [])).toContain('our brands');
+    expect(specProblem(SpecStatus.CompetitorNamed, [], [])).toContain('competitor');
+    expect(specProblem(SpecStatus.Named, ['Siemens'], [])).toBeNull();
+    expect(specProblem(SpecStatus.Open, [], [])).toBeNull();
+    expect(percent(0.6)).toBe('60%');
+    expect(percent(null)).toBe('—');
   });
 });

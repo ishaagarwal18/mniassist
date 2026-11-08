@@ -7,6 +7,7 @@ import {
   ProjectRole,
   ProjectStage,
   SaveProjectInput,
+  SpecStatus,
 } from '../../proxy/projects/project.service';
 import type { ChipTone } from '../../ui/chip';
 
@@ -172,4 +173,46 @@ export function formProblem(f: SaveProjectInput): string | null {
 /** A stage the board can move a card to without asking anything: Awarded needs the winner, Closed the outcome. */
 export function needsDetails(stage: ProjectStage): boolean {
   return stage === ProjectStage.Awarded || stage === ProjectStage.Closed;
+}
+
+export const SPEC_STATUSES: SpecStatus[] = [
+  SpecStatus.Unknown,
+  SpecStatus.Named,
+  SpecStatus.NamedOrEquivalent,
+  SpecStatus.CompetitorNamed,
+  SpecStatus.Open,
+];
+
+export const SPEC_TEXT: Record<SpecStatus, string> = {
+  [SpecStatus.Unknown]: 'Unknown: not seen yet',
+  [SpecStatus.Named]: 'Named: only our brand',
+  [SpecStatus.NamedOrEquivalent]: 'Named or equivalent',
+  [SpecStatus.CompetitorNamed]: 'Competitor named',
+  [SpecStatus.Open]: 'Open: no brand named',
+};
+
+export const SPEC_TONE: Record<SpecStatus, ChipTone> = {
+  [SpecStatus.Unknown]: 'neutral',
+  [SpecStatus.Named]: 'good',
+  [SpecStatus.NamedOrEquivalent]: 'good',
+  [SpecStatus.CompetitorNamed]: 'bad',
+  [SpecStatus.Open]: 'amber',
+};
+
+/** What a spec row needs before it can be saved, in the words the server uses. */
+export function specProblem(
+  status: SpecStatus,
+  ourMakes: string[],
+  competitorIds: string[],
+): string | null {
+  if (status === SpecStatus.Named && ourMakes.length === 0)
+    return 'Tick which of our brands the spec names.';
+  if (status === SpecStatus.CompetitorNamed && competitorIds.length === 0)
+    return 'Tick which competitor brands the spec names.';
+  return null;
+}
+
+/** "60%" for 0.6; "—" before anything is known. */
+export function percent(rate: number | null | undefined): string {
+  return rate === null || rate === undefined ? '—' : `${Math.round(rate * 100)}%`;
 }

@@ -52,6 +52,7 @@ export class ArProjectsPage {
   protected readonly mock = environment.useMockData;
   protected readonly canCreate = grantedPolicy('AutoReach.Projects.Create', this.permissions);
   protected readonly canUpdate = grantedPolicy('AutoReach.Projects.Update', this.permissions);
+  protected readonly canManage = grantedPolicy('AutoReach.Projects.Manage', this.permissions);
 
   protected readonly view = signal<View>(
     (localStorage.getItem('ar.projects.view') as View | null) === 'list' ? 'list' : 'board',
