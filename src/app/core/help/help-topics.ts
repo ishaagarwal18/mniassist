@@ -492,6 +492,21 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'The radar is re-scored on every save and each night at 2 am, so passing dates take effect on their own.',
     ],
   },
+  'documents/fault-codes': {
+    benefits: [
+      'A customer with an alarm on the screen gets your approved answer, not a guess: causes, safe first checks, and when to call.',
+      'What your engineers learn on site stays with the company: repeated fixes become library entries.',
+    ],
+    steps: [
+      'Import a fault table (download the template), read the fault chapter of an OEM manual from the Library, or add codes by hand.',
+      'Check each draft against its source page, add a safety note to codes that stop the machine, and approve it.',
+      'Review what closed tickets have learned under Learned from tickets.',
+    ],
+    tips: [
+      'Only checks marked Operator are ever sent to a customer; electrician and engineer checks stay with your team.',
+      'Changing an approved entry makes a new version, so any advice given can be traced to what it said then.',
+    ],
+  },
   'helpdesk/escalation': {
     benefits: [
       'A breakdown nobody acts on reaches the right people by itself: the coordinator, then the manager, then the admins.',

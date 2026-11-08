@@ -94,6 +94,22 @@ export class ServiceTicketService {
       { apiName: this.apiName, ...config },
     );
 
+  /** The engineer's account of a breakdown's fix: code, real cause, fix, spares. Feeds the fault-code library. */
+  recordFix = (
+    id: string,
+    input: {
+      code?: string | null;
+      cause?: string | null;
+      fix?: string | null;
+      spares?: string | null;
+    },
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<any, ServiceTicketDto>(
+      { method: 'POST', url: `/api/auto-reach/service-ticket/${id}/record-fix`, body: input },
+      { apiName: this.apiName, ...config },
+    );
+
   assign = (id: string, input: AssignTicketInput, config?: Partial<Rest.Config>) =>
     this.restService.request<AssignTicketInput, ServiceTicketDto>(
       { method: 'POST', url: `/api/auto-reach/service-ticket/${id}/assign`, body: input },

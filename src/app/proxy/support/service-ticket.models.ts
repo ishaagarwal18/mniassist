@@ -95,6 +95,11 @@ export interface ServiceTicketDto {
   breakdownReportedAtUtc?: string | null;
   /** Reported from a machine sticker by a number that isn't on the machine's account. */
   reportedByUnknownNumber: boolean;
+  /** The engineer's account of the fix (breakdowns). */
+  closedCode?: string | null;
+  closedCause?: string | null;
+  closedFix?: string | null;
+  closedSpares?: string | null;
   /** How many escalation steps the ticket has passed. */
   escalationStep: number;
   /** An escalation step flagged it for the dashboard and it is still open. */

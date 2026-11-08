@@ -35,6 +35,7 @@ import {
 } from './ticket-logic';
 import { ServiceTicketGateway } from './ticket-mock';
 import { ArBreakdownClockCard } from './breakdown-clock-card';
+import { ArRecordFixCard } from './record-fix-card';
 import { TicketSource } from '../../proxy/support/ticket-source.enum';
 
 const STATUS_TONE: Record<TicketStatus, ChipTone> = {
@@ -54,7 +55,15 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
 @Component({
   selector: 'ar-ticket-detail-page',
   standalone: true,
-  imports: [CommonModule, ArTopbar, ArButton, ArCard, ArChip, ArBreakdownClockCard],
+  imports: [
+    CommonModule,
+    ArTopbar,
+    ArButton,
+    ArCard,
+    ArChip,
+    ArBreakdownClockCard,
+    ArRecordFixCard,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -219,6 +228,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
                 [ticketId]="t.id"
                 [version]="t.escalationStep + t.status * 100"
               />
+              <ar-record-fix-card [ticket]="t" [canEdit]="canUpdate()" (saved)="fixSaved($event)" />
             }
             <ar-card heading="Ticket Settings & Assignment">
               @if (canUpdate()) {
@@ -552,6 +562,11 @@ export class ArTicketDetailPage implements OnInit {
   protected readonly canDelete = grantedPolicy('AutoReach.Helpdesk.Delete', this.permissions);
 
   protected readonly loaded = signal<ServiceTicketDetailDto | null>(null);
+
+  /** The fix card saved: keep the comments, take the rest from the server. */
+  protected fixSaved(t: ServiceTicketDto): void {
+    this.loaded.update((d) => (d ? { ...d, ...t, comments: d.comments } : d));
+  }
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly savingField = signal<'status' | 'priority' | 'assign' | 'rate' | null>(null);

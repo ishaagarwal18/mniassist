@@ -1,0 +1,540 @@
+<ar-topbar
+  title="Fault codes"
+  [subtitle]="total() + ' entries'"
+  help="One entry per make, series and code: what it means, its likely causes in order, the first checks with who may do each, and a safety note. Only approved entries are used to answer customers; drafts are for review. A code that stops the machine needs a safety note before it can be approved."
+>
+  @if (canManage()) {
+    <button ar-button type="button" icon="plus" [disabled]="mock" (click)="openNew()">
+      New code
+    </button>
+  }
+</ar-topbar>
+
+<div class="fc ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">The fault-code library needs the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  <div class="fc__tabs" role="tablist">
+    <button type="button" role="tab" [class.on]="tab() === 'library'" (click)="show('library')">
+      Library
+    </button>
+    @if (canManage()) {
+      <button
+        type="button"
+        role="tab"
+        [class.on]="tab() === 'proposals'"
+        (click)="show('proposals')"
+      >
+        Learned from tickets
+      </button>
+      <button type="button" role="tab" [class.on]="tab() === 'manual'" (click)="show('manual')">
+        Read a manual
+      </button>
+      <button type="button" role="tab" [class.on]="tab() === 'import'" (click)="show('import')">
+        Import CSV
+      </button>
+    }
+  </div>
+
+  @if (form(); as f) {
+    <ar-card [heading]="editingId() ? 'Edit ' + f.code : 'New code'">
+      @if (editing(); as e) {
+        <p class="fc__muted">
+          {{ STATE_TEXT[e.state] }}{{ e.version ? ' · version ' + e.version : '' }} ·
+          {{ SOURCE_TEXT[e.sourceKind] }}
+          @if (e.libraryDocumentTitle) {
+            · <span translate="no">{{ e.libraryDocumentTitle }}</span
+            >{{ e.sourcePage ? ', page ' + e.sourcePage : '' }}
+          }
+          @if (e.sourceTickets.length) {
+            · tickets <span translate="no">{{ e.sourceTickets.join(', ') }}</span>
+          }
+          @if (e.state === State.Approved) {
+            · saving makes a new version
+          }
+        </p>
+      }
+      <div class="fc__grid">
+        <label class="ar-field">
+          <span class="ar-field__label">Make</span>
+          <input
+            class="ar-field__input"
+            maxlength="64"
+            [value]="f.make"
+            (input)="patch({ make: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Series <span class="ar-field__opt">blank: any</span></span>
+          <input
+            class="ar-field__input"
+            maxlength="64"
+            [value]="f.series ?? ''"
+            (input)="patch({ series: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Code</span>
+          <input
+            class="ar-field__input"
+            maxlength="32"
+            [value]="f.code"
+            (input)="patch({ code: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label"
+            >Also shown as <span class="ar-field__opt">; between</span></span
+          >
+          <input
+            class="ar-field__input"
+            [value]="f.aliases.join('; ')"
+            (change)="setList('aliases', $any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field fc__wide">
+          <span class="ar-field__label">Title</span>
+          <input
+            class="ar-field__input"
+            maxlength="200"
+            [value]="f.title"
+            (input)="patch({ title: $any($event.target).value })"
+          />
+        </label>
+        <label class="ar-field fc__wide">
+          <span class="ar-field__label">Severity</span>
+          <select
+            class="ar-field__input"
+            (change)="patch({ severity: +$any($event.target).value })"
+          >
+            <option
+              [value]="Severity.StopsMachine"
+              [selected]="f.severity === Severity.StopsMachine"
+            >
+              Stops the machine
+            </option>
+            <option [value]="Severity.WarningOnly" [selected]="f.severity === Severity.WarningOnly">
+              Warning only
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <h3 class="fc__h">Likely causes, likeliest first</h3>
+      @for (c of f.causes; track $index; let i = $index) {
+        <div class="fc__row">
+          <span class="fc__n">{{ i + 1 }}.</span>
+          <input
+            class="ar-field__input"
+            maxlength="300"
+            [attr.aria-label]="'Cause ' + (i + 1)"
+            [value]="c"
+            (input)="setCause(i, $any($event.target).value)"
+          />
+          <button ar-button type="button" variant="ghost" (click)="removeCause(i)">Remove</button>
+        </div>
+      }
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        [disabled]="f.causes.length >= 8"
+        (click)="addCause()"
+      >
+        Add cause
+      </button>
+
+      <h3 class="fc__h">First checks</h3>
+      <p class="fc__muted">
+        Only operator checks are ever sent to a customer. A check that needs the panel opened or a
+        meter is for an electrician.
+      </p>
+      @for (c of f.checks; track $index; let i = $index) {
+        <div class="fc__row">
+          <input
+            class="ar-field__input"
+            maxlength="300"
+            [attr.aria-label]="'Check ' + (i + 1)"
+            [value]="c.text"
+            (input)="setCheck(i, { text: $any($event.target).value })"
+          />
+          <select
+            class="ar-field__input fc__role"
+            [attr.aria-label]="'Who may do check ' + (i + 1)"
+            (change)="setCheck(i, { role: +$any($event.target).value })"
+          >
+            @for (r of roles; track r) {
+              <option [value]="r" [selected]="c.role === r">{{ ROLE_TEXT[r] }}</option>
+            }
+          </select>
+          <button ar-button type="button" variant="ghost" (click)="removeCheck(i)">Remove</button>
+        </div>
+      }
+      <button
+        ar-button
+        type="button"
+        variant="ghost"
+        [disabled]="f.checks.length >= 10"
+        (click)="addCheck()"
+      >
+        Add check
+      </button>
+
+      <div class="fc__grid">
+        <label class="ar-field fc__full">
+          <span class="ar-field__label"
+            >Safety note <span class="ar-field__opt">sent before the checks</span></span
+          >
+          <textarea
+            class="ar-field__input"
+            rows="2"
+            maxlength="1000"
+            [value]="f.safetyNote ?? ''"
+            (input)="patch({ safetyNote: $any($event.target).value })"
+          ></textarea>
+        </label>
+        <label class="ar-field fc__wide">
+          <span class="ar-field__label"
+            >Related spares <span class="ar-field__opt">part numbers, ; between</span></span
+          >
+          <input
+            class="ar-field__input"
+            [value]="f.sparePartNumbers.join('; ')"
+            (change)="setList('sparePartNumbers', $any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field fc__wide">
+          <span class="ar-field__label">Call an engineer when</span>
+          <input
+            class="ar-field__input"
+            maxlength="1000"
+            [value]="f.escalateWhen ?? ''"
+            (input)="patch({ escalateWhen: $any($event.target).value })"
+          />
+        </label>
+      </div>
+
+      @if (formProblem(); as p) {
+        <p class="fc__problem">{{ p }}</p>
+      } @else if (formWarning(); as w) {
+        <p class="fc__problem">{{ w }}</p>
+      }
+      <div class="fc__foot">
+        @if (editing(); as e) {
+          @if (e.state === State.Retired) {
+            <button ar-button type="button" variant="ghost" (click)="reopen(e)">
+              Back to draft
+            </button>
+          } @else {
+            <button ar-button type="button" variant="ghost" (click)="remove(e)">
+              {{ e.version > 0 ? 'Retire' : 'Delete' }}
+            </button>
+          }
+        }
+        <span class="fc__spacer"></span>
+        <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
+        <button
+          ar-button
+          type="button"
+          variant="ghost"
+          [disabled]="busy() || !!formProblem()"
+          (click)="save()"
+        >
+          Save
+        </button>
+        @if (editing()?.state !== State.Approved) {
+          <button
+            ar-button
+            type="button"
+            [disabled]="busy() || !!formProblem() || !!formWarning()"
+            (click)="save(true)"
+          >
+            Save and approve
+          </button>
+        }
+      </div>
+    </ar-card>
+  }
+
+  @switch (tab()) {
+    @case ('library') {
+      <div class="fc__bar">
+        <input
+          class="ar-field__input fc__search"
+          type="search"
+          placeholder="Code, alias, title, make or series"
+          aria-label="Search the library"
+          [value]="filter()"
+          (input)="filter.set($any($event.target).value)"
+          (keyup.enter)="load()"
+        />
+        <select
+          class="ar-field__input fc__state"
+          aria-label="State"
+          (change)="
+            stateFilter.set($any($event.target).value === '' ? null : +$any($event.target).value);
+            load()
+          "
+        >
+          <option value="">Any state</option>
+          <option [value]="State.Draft">Drafts</option>
+          <option [value]="State.Approved">Approved</option>
+          <option [value]="State.Retired">Retired</option>
+        </select>
+        <button ar-button type="button" variant="ghost" (click)="load()">Search</button>
+        @if (canManage() && selected().size) {
+          <button ar-button type="button" [disabled]="busy()" (click)="approve([...selected()])">
+            Approve {{ selected().size }}
+          </button>
+        }
+      </div>
+      <table class="fc__table">
+        <thead>
+          <tr>
+            @if (canManage()) {
+              <th scope="col" aria-label="Select"></th>
+            }
+            <th scope="col">Code</th>
+            <th scope="col">Make / series</th>
+            <th scope="col">Title</th>
+            <th scope="col">Source</th>
+            <th scope="col">State</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of entries(); track e.id) {
+            <tr>
+              @if (canManage()) {
+                <td>
+                  @if (e.state === State.Draft) {
+                    <input
+                      type="checkbox"
+                      [attr.aria-label]="'Select ' + e.code"
+                      [checked]="selected().has(e.id)"
+                      (change)="toggle(e.id, $any($event.target).checked)"
+                    />
+                  }
+                </td>
+              }
+              <td>
+                <button type="button" class="fc__link" translate="no" (click)="openEdit(e)">
+                  {{ e.code }}
+                </button>
+                @if (e.aliases.length) {
+                  <span class="fc__muted" translate="no">{{ e.aliases.join(', ') }}</span>
+                }
+              </td>
+              <td translate="no">{{ e.make }} {{ e.series }}</td>
+              <td>
+                {{ e.title }}
+                @if (e.approvalProblem && e.state === State.Draft) {
+                  <span class="fc__muted">{{ e.approvalProblem }}</span>
+                }
+              </td>
+              <td>
+                {{ SOURCE_TEXT[e.sourceKind] }}
+                @if (e.sourcePage) {
+                  <span class="fc__muted">page {{ e.sourcePage }}</span>
+                }
+              </td>
+              <td>
+                <ar-chip [tone]="STATE_TONE[e.state]">{{ STATE_TEXT[e.state] }}</ar-chip>
+                @if (e.version) {
+                  <span class="fc__muted">v{{ e.version }}</span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="fc__empty">
+                No codes yet. Add one, import a CSV, or read an OEM manual from the Library.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+    @case ('proposals') {
+      <ar-card heading="Learned from closed tickets">
+        <p class="fc__muted">
+          When three or more breakdowns on the same make and series are closed with the same code
+          and cause, the library gets a draft for it. A new cause for a code already in the library
+          shows here: accepting adds it (an approved entry gets a new version).
+        </p>
+        @for (p of proposals(); track $index) {
+          <div class="fc__proposal">
+            <div>
+              <b translate="no">{{ p.code }}</b> ·
+              <span translate="no">{{ p.make }} {{ p.series }}</span>
+              <p class="fc__cause">{{ p.cause }}</p>
+              @if (p.fix) {
+                <p class="fc__muted">Fixed by: {{ p.fix }}</p>
+              }
+              <p class="fc__muted" translate="no">{{ p.ticketReferences.join(', ') }}</p>
+            </div>
+            <button ar-button type="button" (click)="accept(p)">
+              {{ p.faultCodeId ? 'Add this cause' : 'Make a draft' }}
+            </button>
+          </div>
+        } @empty {
+          <p class="fc__empty">Nothing to review.</p>
+        }
+      </ar-card>
+    }
+    @case ('manual') {
+      <ar-card heading="Read an OEM manual">
+        <p class="fc__muted">
+          Pick a PDF manual from the Library. The fault-code pages are read into drafts, each with
+          its page, for you to check against the manual before approving. Codes already in the
+          library are left alone. Use the manual for your own customers only, as its copyright
+          allows.
+        </p>
+        <div class="fc__grid">
+          <label class="ar-field fc__wide">
+            <span class="ar-field__label">Manual</span>
+            <select
+              class="ar-field__input"
+              (change)="patchExtract({ documentId: $any($event.target).value })"
+            >
+              <option value="">Choose a PDF…</option>
+              @for (m of manuals(); track m.id) {
+                <option [value]="m.id" [selected]="extract().documentId === m.id" translate="no">
+                  {{ m.title }}
+                </option>
+              }
+            </select>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Make</span>
+            <input
+              class="ar-field__input"
+              maxlength="64"
+              [value]="extract().make"
+              (input)="patchExtract({ make: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Series <span class="ar-field__opt">optional</span></span>
+            <input
+              class="ar-field__input"
+              maxlength="64"
+              [value]="extract().series"
+              (input)="patchExtract({ series: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label"
+              >From page <span class="ar-field__opt">optional</span></span
+            >
+            <input
+              class="ar-field__input"
+              type="number"
+              min="1"
+              [value]="extract().fromPage"
+              (input)="patchExtract({ fromPage: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">To page</span>
+            <input
+              class="ar-field__input"
+              type="number"
+              min="1"
+              [value]="extract().toPage"
+              (input)="patchExtract({ toPage: $any($event.target).value })"
+            />
+          </label>
+        </div>
+        <div class="fc__foot">
+          <span class="fc__spacer"></span>
+          <button ar-button type="button" [disabled]="busy()" (click)="startExtraction()">
+            Read the manual
+          </button>
+        </div>
+      </ar-card>
+      <ar-card heading="Recent reads">
+        <button ar-button type="button" variant="ghost" (click)="show('manual')">Refresh</button>
+        <ul class="fc__runs">
+          @for (r of extractions(); track r.id) {
+            <li>
+              <span translate="no">{{ r.documentTitle }}</span>
+              <span class="fc__muted">
+                {{ r.creationTime | date: 'd MMM, HH:mm' }} · {{ EXTRACTION_TEXT[r.state] }}
+                @if (r.state === ExtractionState.Done) {
+                  · {{ r.pagesRead }} pages, {{ r.drafted }} drafted, {{ r.skipped }} already in the
+                  library
+                }
+                @if (r.error) {
+                  · {{ r.error }}
+                }
+              </span>
+            </li>
+          } @empty {
+            <li class="fc__muted">No manuals read yet.</li>
+          }
+        </ul>
+      </ar-card>
+    }
+    @case ('import') {
+      <ar-card heading="Import a fault table">
+        <p class="fc__muted">
+          Columns: make, series, code, aliases (; between), title, severity (stop or warning),
+          causes (| between, likeliest first), checks (| between; end a check with [electrician] or
+          [engineer] when it isn't for the operator), safety note, spares (; between), call an
+          engineer when. New codes are drafts until approved.
+        </p>
+        <div class="fc__foot">
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            icon="download"
+            (click)="downloadTemplate()"
+          >
+            Template
+          </button>
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            aria-label="CSV file"
+            (change)="pick($any($event.target).files?.[0] ?? null)"
+          />
+        </div>
+        @if (preview(); as p) {
+          @if (p.problems.length) {
+            <ul class="fc__problems">
+              @for (x of p.problems; track $index) {
+                <li>{{ x }}</li>
+              }
+            </ul>
+          }
+          @if (previewCounts(); as c) {
+            <p>
+              {{ c.adds }} new code{{ c.adds === 1 ? '' : 's' }} (as drafts),
+              {{ c.updates }} update{{ c.updates === 1 ? '' : 's' }}
+              @if (c.approved) {
+                , of which {{ c.approved }} approved (they get a new version)
+              }
+              .
+            </p>
+          }
+          <div class="fc__foot">
+            <span class="fc__spacer"></span>
+            <button
+              ar-button
+              type="button"
+              [disabled]="busy() || !p.rows.length"
+              (click)="runImport()"
+            >
+              Import {{ p.rows.length }}
+            </button>
+          </div>
+        }
+      </ar-card>
+    }
+  }
+</div>

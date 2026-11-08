@@ -562,6 +562,13 @@ export const NAV: readonly NavGroup[] = [
         //tenantOnly: true,
       },
       {
+        label: 'Fault codes',
+        icon: 'alert',
+        route: '/documents/fault-codes',
+        permission: 'AutoReach.FaultCodes',
+        feature: 'DocumentLibrary',
+      },
+      {
         label: 'Price lists',
         icon: 'billing',
         route: '/documents/price-lists',

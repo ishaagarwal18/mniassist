@@ -905,6 +905,12 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'documents/fault-codes',
+        title: 'Fault codes · MNI Assist',
+        loadComponent: () =>
+          import('./features/helpdesk/fault-codes-page').then((m) => m.ArFaultCodesPage),
+      },
+      {
         path: 'documents/lifecycle',
         title: 'Lifecycle rules · MNI Assist',
         loadComponent: () =>
