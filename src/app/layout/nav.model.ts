@@ -274,6 +274,13 @@ export const NAV: readonly NavGroup[] = [
         //tenantOnly: true,
       },
       {
+        label: 'Projects',
+        icon: 'tower',
+        route: '/projects',
+        permission: 'AutoReach.Projects',
+        feature: 'PipelineCrm',
+      },
+      {
         label: 'Forecast',
         icon: 'analytics',
         route: '/forecast',

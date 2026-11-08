@@ -1,0 +1,119 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.pj {
+  flex: 1;
+  min-height: 0;
+  padding: 14px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pj__toggle {
+  display: inline-flex;
+  border: 1px solid var(--ar-line-200);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.pj__toggle button {
+  padding: 6px 12px;
+  border: 0;
+  background: #fff;
+  font: 500 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+  cursor: pointer;
+}
+.pj__toggle button.on {
+  background: var(--ar-bg-100);
+  color: var(--ar-ink-900);
+}
+.pj__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.pj__search {
+  flex: 1;
+  min-width: 220px;
+  max-width: 380px;
+}
+.pj__select {
+  width: 150px;
+}
+.pj__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 400 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}
+.pj__board {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(210px, 1fr));
+  gap: 10px;
+  overflow-x: auto;
+  align-items: start;
+  min-height: 300px;
+}
+.pj__col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  min-height: 200px;
+  background: var(--ar-bg-100);
+  border-radius: 10px;
+}
+.pj__col-head {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 2px 4px 6px;
+  font: 600 13px var(--ar-font-sans);
+}
+.pj__decider {
+  font-style: italic;
+}
+.pj__card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid var(--ar-line-200);
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+  font: 400 12.5px var(--ar-font-sans);
+  cursor: grab;
+}
+.pj__card:hover {
+  border-color: var(--ar-blue-600);
+}
+.pj__card-name {
+  font: 600 13px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+}
+.pj__card-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+.pj__muted {
+  color: var(--ar-ink-400);
+  font: 400 12px var(--ar-font-sans);
+}
+.pj__empty {
+  margin: 4px;
+  color: var(--ar-ink-400);
+  font: 400 12px var(--ar-font-sans);
+}
+.pj__link {
+  color: var(--ar-blue-600);
+  font-weight: 600;
+  text-decoration: none;
+}

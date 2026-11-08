@@ -1,0 +1,181 @@
+<ar-topbar
+  title="Projects"
+  [subtitle]="total() + ' projects'"
+  help="A plant or line followed from first news to the order: every company with a say in it, the people at each, the stage and the key dates. Drag a card to move its stage. Without 'see all projects' you see the projects you own or are on the team of."
+>
+  <div class="pj__toggle" role="group" aria-label="View">
+    <button type="button" [class.on]="view() === 'board'" (click)="setView('board')">Board</button>
+    <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">List</button>
+  </div>
+  @if (canCreate()) {
+    <a ar-button variant="primary" icon="plus" routerLink="/projects/new">New project</a>
+  }
+</ar-topbar>
+
+<div class="pj ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">Projects need the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  <div class="pj__bar">
+    <input
+      class="ar-field__input pj__search"
+      type="search"
+      placeholder="Search name, reference, site or city"
+      aria-label="Search projects"
+      [value]="filter()"
+      (input)="filter.set($any($event.target).value)"
+      (keyup.enter)="load()"
+    />
+    @if (view() === 'list') {
+      <select
+        class="ar-field__input pj__select"
+        aria-label="Stage"
+        (change)="
+          stage.set($any($event.target).value === '' ? null : +$any($event.target).value); load()
+        "
+      >
+        <option value="">Any stage</option>
+        @for (s of STAGES; track s) {
+          <option [value]="s">{{ STAGE_TEXT[s] }}</option>
+        }
+      </select>
+    }
+    <select
+      class="ar-field__input pj__select"
+      aria-label="Sector"
+      (change)="sector.set($any($event.target).value); load()"
+    >
+      <option value="">Any sector</option>
+      @for (s of SECTORS; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+    <label class="pj__check">
+      <input
+        type="checkbox"
+        [checked]="soon()"
+        (change)="soon.set($any($event.target).checked); load()"
+      />
+      Key date in the next 30 days
+    </label>
+    @if (view() === 'list') {
+      <label class="pj__check">
+        <input
+          type="checkbox"
+          [checked]="openOnly()"
+          (change)="openOnly.set($any($event.target).checked); load()"
+        />
+        Open only
+      </label>
+    }
+    <button ar-button type="button" variant="ghost" (click)="load()">Search</button>
+  </div>
+
+  @if (view() === 'board') {
+    <div class="pj__board">
+      @for (c of board(); track c.stage) {
+        <section
+          class="pj__col"
+          [attr.aria-label]="STAGE_TEXT[c.stage]"
+          (dragover)="allowDrop($event)"
+          (drop)="drop($event, c.stage)"
+        >
+          <header class="pj__col-head">
+            <b>{{ STAGE_TEXT[c.stage] }}</b>
+            <span class="pj__muted">{{ c.items.length }} · {{ rupees(c.totalValueInPaise) }}</span>
+            <span class="pj__muted pj__decider">{{ STAGE_DECIDER[c.stage] }}</span>
+          </header>
+          @for (p of c.items; track p.id) {
+            <a
+              class="pj__card"
+              [routerLink]="['/projects', p.id]"
+              [attr.draggable]="canUpdate()"
+              (dragstart)="dragStart($event, p)"
+            >
+              <span class="pj__card-name" translate="no">{{ p.name }}</span>
+              <span class="pj__muted" translate="no"
+                >{{ p.endUserName }}{{ p.siteCity ? ' · ' + p.siteCity : '' }}</span
+              >
+              <span class="pj__card-row">
+                <b>{{ rupees(p.ourScopeValueInPaise) }}</b>
+                <span class="pj__muted">{{ p.daysInStage }} d in stage</span>
+              </span>
+              @if (p.consultantName) {
+                <span class="pj__muted" translate="no">Consultant: {{ p.consultantName }}</span>
+              }
+              @if (p.needsSpecWriter) {
+                <ar-chip tone="warn">Who is writing the spec?</ar-chip>
+              }
+              @if (p.hasBlocker) {
+                <ar-chip tone="bad">Blocker who decides</ar-chip>
+              }
+              @if (p.outcome !== Outcome.None) {
+                <ar-chip [tone]="p.outcome === Outcome.Won ? 'good' : 'neutral'">{{
+                  OUTCOME_TEXT[p.outcome]
+                }}</ar-chip>
+              }
+              @if (p.nextKeyDate) {
+                <span class="pj__muted"
+                  >{{ p.nextKeyDateWhat }}: {{ p.nextKeyDate | date: 'd MMM' }}</span
+                >
+              }
+            </a>
+          } @empty {
+            <p class="pj__empty">Nothing here.</p>
+          }
+        </section>
+      }
+    </div>
+  } @else {
+    <ejs-grid arGrid="projects" [dataSource]="items()" aria-label="Projects">
+      <e-columns>
+        <e-column field="name" headerText="Project" width="240">
+          <ng-template #template let-p>
+            <a class="pj__link" [routerLink]="['/projects', p.id]" translate="no">{{ p.name }}</a>
+            <div class="pj__muted" translate="no">{{ p.reference }}</div>
+          </ng-template>
+        </e-column>
+        <e-column field="endUserName" headerText="End-user" width="170">
+          <ng-template #template let-p
+            ><span translate="no">{{ p.endUserName }}</span></ng-template
+          >
+        </e-column>
+        <e-column field="siteCity" headerText="Site city" width="120" />
+        <e-column field="stage" headerText="Stage" width="120">
+          <ng-template #template let-p>
+            {{ stageText(p.stage) }}
+            @if (p.outcome) {
+              <span class="pj__muted">· {{ outcomeText(p.outcome) }}</span>
+            }
+          </ng-template>
+        </e-column>
+        <e-column field="ourScopeValueInPaise" headerText="Our scope" width="110" textAlign="Right">
+          <ng-template #template let-p>{{ rupees(p.ourScopeValueInPaise) }}</ng-template>
+        </e-column>
+        <e-column field="nextKeyDate" headerText="Next key date" width="150">
+          <ng-template #template let-p>
+            @if (p.nextKeyDate) {
+              {{ p.nextKeyDate | date: 'd MMM y' }}
+              <div class="pj__muted">{{ p.nextKeyDateWhat }}</div>
+            }
+          </ng-template>
+        </e-column>
+        <e-column field="ownerName" headerText="Owner" width="130" />
+        <e-column headerText="Watch" width="170">
+          <ng-template #template let-p>
+            @if (p.needsSpecWriter) {
+              <ar-chip tone="warn">No spec writer</ar-chip>
+            }
+            @if (p.hasBlocker) {
+              <ar-chip tone="bad">Blocker</ar-chip>
+            }
+          </ng-template>
+        </e-column>
+      </e-columns>
+    </ejs-grid>
+  }
+</div>

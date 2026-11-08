@@ -204,6 +204,31 @@ const EXACT: Record<string, PermissionText> = {
     title: 'See everyone’s tasks and meetings',
     detail: 'See tasks and meetings of every team member, not only their own.',
   },
+  'AutoReach.Projects': {
+    title: 'Projects',
+    detail:
+      'See projects they own or are on the team of: the companies, people, stage and timeline.',
+  },
+  'AutoReach.Projects.Create': {
+    title: 'Create projects',
+    detail: 'Start a project record for a plant or line.',
+  },
+  'AutoReach.Projects.Update': {
+    title: 'Edit projects',
+    detail: 'Change details, parties and people, move the stage and add notes.',
+  },
+  'AutoReach.Projects.Delete': {
+    title: 'Delete projects',
+    detail: 'Remove a project. Its enquiries stay.',
+  },
+  'AutoReach.Projects.ViewAll': {
+    title: 'See all projects',
+    detail: 'See every project in the workspace, not only their own and their team’s.',
+  },
+  'AutoReach.Projects.Manage': {
+    title: 'Project settings',
+    detail: 'Keep the competitor brand list and project settings.',
+  },
   'AutoReach.FaultCodes': {
     title: 'Breakdown assistant',
     detail: 'See breakdown tickets’ downtime clocks and, as the library fills, fault-code answers.',

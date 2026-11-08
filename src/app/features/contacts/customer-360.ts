@@ -1,3 +1,4 @@
+import { ArAccountProjects } from '../projects/account-projects';
 import { PermissionService } from '@abp/ng.core';
 import { CommonModule } from '@angular/common';
 import {
@@ -228,7 +229,8 @@ const MOCK_CUSTOMER_360: Customer360Dto = {
 const PICKER_PAGE_SIZE = 10;
 type PickerTab = 'Accounts' | 'Contacts';
 
-export type Customer360Tab = 'overview' | 'orders' | 'challans' | 'invoices' | 'assets' | 'tickets';
+export type Customer360Tab =
+  'overview' | 'orders' | 'challans' | 'invoices' | 'assets' | 'tickets' | 'projects';
 
 /** The tabs about the company (selling, machines, service): only on an account's view. */
 const ACCOUNT_TABS: readonly Customer360Tab[] = [
@@ -237,6 +239,7 @@ const ACCOUNT_TABS: readonly Customer360Tab[] = [
   'invoices',
   'assets',
   'tickets',
+  'projects',
 ];
 
 @Component({
@@ -257,6 +260,7 @@ const ACCOUNT_TABS: readonly Customer360Tab[] = [
     ArCustomer360Links,
     ArGrid,
     GridModule,
+    ArAccountProjects,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './customer-360.html',

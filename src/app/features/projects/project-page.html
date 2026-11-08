@@ -1,0 +1,412 @@
+@let p = project();
+<ar-topbar
+  [title]="p?.name ?? 'Project'"
+  [subtitle]="p ? p.reference + ' · ' + STAGE_TEXT[p.stage] : ''"
+>
+  @if (p?.canEdit) {
+    <a ar-button variant="ghost" [routerLink]="['/projects', p!.id, 'edit']">Edit details</a>
+    <button ar-button type="button" variant="ghost" (click)="remove()">Delete</button>
+  }
+</ar-topbar>
+
+<div class="pp ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">Projects need the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  @if (p) {
+    @if (p.needsSpecWriter) {
+      <ar-banner tone="warn"
+        >Who is writing the spec? Add the consultant or EPC contractor under Parties.</ar-banner
+      >
+    }
+    @if (p.blockers.length) {
+      <ar-banner tone="bad">Decides and is against us: {{ p.blockers.join(', ') }}</ar-banner>
+    }
+
+    <ol class="pp__stages" aria-label="Stage">
+      @for (s of STAGES; track s) {
+        <li [class.done]="s < p.stage" [class.now]="s === p.stage">
+          @if (p.canEdit && s !== p.stage) {
+            <button type="button" (click)="moveTo.set(s)">{{ STAGE_TEXT[s] }}</button>
+          } @else {
+            <span>{{ STAGE_TEXT[s] }}</span>
+          }
+        </li>
+      }
+    </ol>
+
+    @if (moveTo() !== null) {
+      <ar-card [heading]="'Move to ' + STAGE_TEXT[moveTo()!]">
+        <div class="pp__move">
+          @if (moveTo() === Stage.Awarded) {
+            <label class="ar-field">
+              <span class="ar-field__label">Who won?</span>
+              <select class="ar-field__input" (change)="winner.set($any($event.target).value)">
+                <option value="">Choose the party…</option>
+                @for (b of p.partyList; track b.accountId) {
+                  <option [value]="b.accountId" translate="no">{{ b.accountName }}</option>
+                }
+              </select>
+            </label>
+          }
+          @if (moveTo() === Stage.Closed) {
+            <label class="ar-field">
+              <span class="ar-field__label">How did it end?</span>
+              <select class="ar-field__input" (change)="outcome.set(+$any($event.target).value)">
+                <option [value]="Outcome.None">Choose…</option>
+                <option [value]="Outcome.Won">Won: ordered from us</option>
+                <option [value]="Outcome.Lost">Lost</option>
+                <option [value]="Outcome.Dropped">Dropped</option>
+              </select>
+            </label>
+          }
+          <label class="ar-field pp__grow">
+            <span class="ar-field__label">Note <span class="ar-field__opt">optional</span></span>
+            <input
+              class="ar-field__input"
+              maxlength="500"
+              [value]="moveNote()"
+              (input)="moveNote.set($any($event.target).value)"
+            />
+          </label>
+          <button ar-button type="button" variant="ghost" (click)="moveTo.set(null)">Cancel</button>
+          <button
+            ar-button
+            type="button"
+            [disabled]="
+              busy() ||
+              (moveTo() === Stage.Awarded && !winner()) ||
+              (moveTo() === Stage.Closed && outcome() === Outcome.None)
+            "
+            (click)="move()"
+          >
+            Move
+          </button>
+        </div>
+      </ar-card>
+    }
+
+    <div class="pp__tabs" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        [class.on]="tab() === 'overview'"
+        (click)="tab.set('overview')"
+      >
+        Overview
+      </button>
+      <button
+        type="button"
+        role="tab"
+        [class.on]="tab() === 'parties'"
+        (click)="tab.set('parties')"
+      >
+        Parties <span class="pp__count">{{ p.partyList.length }}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        [class.on]="tab() === 'timeline'"
+        (click)="tab.set('timeline')"
+      >
+        Timeline
+      </button>
+    </div>
+
+    @switch (tab()) {
+      @case ('overview') {
+        <div class="pp__cols">
+          <ar-card heading="Overview">
+            <dl class="pp__facts">
+              <div>
+                <dt>Stage</dt>
+                <dd>{{ STAGE_TEXT[p.stage] }} · {{ p.daysInStage }} days</dd>
+              </div>
+              @if (p.outcome) {
+                <div>
+                  <dt>Outcome</dt>
+                  <dd>
+                    {{ OUTCOME_TEXT[p.outcome] }}{{ p.outcomeNote ? ' · ' + p.outcomeNote : '' }}
+                  </dd>
+                </div>
+              }
+              @if (p.awardedToName) {
+                <div>
+                  <dt>Awarded to</dt>
+                  <dd translate="no">{{ p.awardedToName }}</dd>
+                </div>
+              }
+              <div>
+                <dt>End-user</dt>
+                <dd translate="no">{{ p.endUserName }}</dd>
+              </div>
+              <div>
+                <dt>Site</dt>
+                <dd translate="no">{{ site(p) }}</dd>
+              </div>
+              <div>
+                <dt>Sector</dt>
+                <dd>{{ p.sector || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Our scope</dt>
+                <dd>{{ rupees(p.ourScopeValueInPaise) }}</dd>
+              </div>
+              <div>
+                <dt>Owner</dt>
+                <dd translate="no">{{ p.ownerName }}</dd>
+              </div>
+              @if (p.team.length) {
+                <div>
+                  <dt>Team</dt>
+                  <dd translate="no">
+                    @for (t of p.team; track t.userId; let last = $last) {
+                      {{ t.name }}{{ last ? '' : ', ' }}
+                    }
+                  </dd>
+                </div>
+              }
+            </dl>
+          </ar-card>
+          <ar-card heading="Key dates">
+            <dl class="pp__facts">
+              <div>
+                <dt>Identified</dt>
+                <dd>{{ (p.identifiedOn | date: 'd MMM y') || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Spec issue</dt>
+                <dd>{{ (p.specIssueOn | date: 'd MMM y') || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Tender closes</dt>
+                <dd>{{ (p.tenderCloseOn | date: 'd MMM y') || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Award expected</dt>
+                <dd>{{ (p.awardExpectedOn | date: 'd MMM y') || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Commissioning</dt>
+                <dd>{{ (p.commissioningOn | date: 'd MMM y') || '—' }}</dd>
+              </div>
+            </dl>
+            @if (p.nextStep) {
+              <p class="pp__next">
+                <b>Next:</b> {{ p.nextStep }}
+                @if (p.nextStepDueOn) {
+                  <span class="pp__muted">by {{ p.nextStepDueOn | date: 'd MMM' }}</span>
+                }
+              </p>
+            }
+            @if (p.statusNote) {
+              <p class="pp__muted">{{ p.statusNote }}</p>
+            }
+          </ar-card>
+        </div>
+      }
+      @case ('parties') {
+        @if (p.canEdit) {
+          <ar-card heading="Companies on the project">
+            <p class="pp__muted">
+              One end-user; any number of others. A company with two roles (an EPC contractor that
+              is also the panel builder) is added once, with both ticked.
+            </p>
+            <table class="pp__table">
+              <tbody>
+                @for (x of parties(); track x.accountId; let i = $index) {
+                  <tr>
+                    <td class="pp__name" translate="no">{{ x.accountName }}</td>
+                    <td>
+                      <div class="pp__roles">
+                        @for (r of ROLES; track r.role) {
+                          <label class="pp__check">
+                            <input
+                              type="checkbox"
+                              [checked]="hasRole(x.roles, r.role)"
+                              (change)="setRole(i, r.role, $any($event.target).checked)"
+                            />
+                            {{ r.text }}
+                          </label>
+                        }
+                      </div>
+                    </td>
+                    <td>
+                      <button ar-button type="button" variant="ghost" (click)="removeParty(i)">
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <div class="pp__add">
+              <ar-account-search
+                placeholder="Add a company: consultant, EPC contractor, panel builder…"
+                (picked)="addParty($event)"
+              />
+              <button
+                ar-button
+                type="button"
+                [disabled]="!partiesDirty() || busy()"
+                (click)="saveParties()"
+              >
+                Save parties
+              </button>
+            </div>
+          </ar-card>
+        }
+
+        <ar-card heading="Influence map">
+          @for (g of map(); track g.role.role) {
+            <section class="pp__group">
+              <h3 class="pp__h">{{ g.role.text }}</h3>
+              @for (x of g.parties; track x.accountId) {
+                <div class="pp__party">
+                  <div class="pp__party-head">
+                    <b translate="no">{{ x.accountName }}</b>
+                    @for (t of rolesText(x.roles); track t) {
+                      <ar-chip tone="neutral">{{ t }}</ar-chip>
+                    }
+                    @if (p.canEdit) {
+                      <button type="button" class="pp__link" (click)="editPeople(x.accountId)">
+                        {{ x.people.length ? 'Edit people' : 'Add people' }}
+                      </button>
+                    }
+                  </div>
+                  @if (peopleFor() === x.accountId) {
+                    <div class="pp__people-edit">
+                      @for (person of peopleDraft(); track person.contactId; let i = $index) {
+                        <div class="pp__person-row">
+                          <span class="pp__name" translate="no">{{
+                            contactName(person.contactId)
+                          }}</span>
+                          <select
+                            class="ar-field__input"
+                            [attr.aria-label]="'Influence of ' + contactName(person.contactId)"
+                            (change)="setPerson(i, { influence: +$any($event.target).value })"
+                          >
+                            @for (f of influences; track f) {
+                              <option [value]="f" [selected]="person.influence === f">
+                                {{ INFLUENCE_TEXT[f] }}
+                              </option>
+                            }
+                          </select>
+                          <select
+                            class="ar-field__input"
+                            [attr.aria-label]="'Attitude of ' + contactName(person.contactId)"
+                            (change)="setPerson(i, { attitude: +$any($event.target).value })"
+                          >
+                            @for (a of attitudes; track a) {
+                              <option [value]="a" [selected]="person.attitude === a">
+                                {{ ATTITUDE_TEXT[a] }}
+                              </option>
+                            }
+                          </select>
+                          <button ar-button type="button" variant="ghost" (click)="removePerson(i)">
+                            Remove
+                          </button>
+                        </div>
+                      }
+                      <div class="pp__person-row">
+                        <select
+                          class="ar-field__input"
+                          aria-label="Add a person"
+                          (change)="
+                            addPerson($any($event.target).value); $any($event.target).value = ''
+                          "
+                        >
+                          <option value="">Add a contact of this company…</option>
+                          @for (c of contactOptions(); track c.contactId) {
+                            <option [value]="c.contactId" translate="no">
+                              {{ c.name }}{{ c.designation ? ' · ' + c.designation : '' }}
+                            </option>
+                          }
+                        </select>
+                        <button
+                          ar-button
+                          type="button"
+                          variant="ghost"
+                          (click)="peopleFor.set(null)"
+                        >
+                          Cancel
+                        </button>
+                        <button ar-button type="button" [disabled]="busy()" (click)="savePeople()">
+                          Save people
+                        </button>
+                      </div>
+                      @if (!contactOptions().length) {
+                        <p class="pp__muted">
+                          This company has no contacts yet. Add them under Contacts, linked to the
+                          account.
+                        </p>
+                      }
+                    </div>
+                  } @else {
+                    <ul class="pp__people">
+                      @for (person of x.people; track person.contactId) {
+                        <li [class.pp__blocker]="person.isBlocker">
+                          <span translate="no">{{ person.name }}</span>
+                          @if (person.designation) {
+                            <span class="pp__muted" translate="no">{{ person.designation }}</span>
+                          }
+                          <ar-chip tone="neutral">{{ INFLUENCE_TEXT[person.influence] }}</ar-chip>
+                          <ar-chip [tone]="ATTITUDE_TONE[person.attitude]">{{
+                            ATTITUDE_TEXT[person.attitude]
+                          }}</ar-chip>
+                          <span class="pp__muted">
+                            {{
+                              person.lastContactUtc
+                                ? 'last wrote ' + (person.lastContactUtc | date: 'd MMM y')
+                                : 'never wrote in'
+                            }}
+                          </span>
+                        </li>
+                      } @empty {
+                        <li class="pp__muted">No people recorded.</li>
+                      }
+                    </ul>
+                  }
+                </div>
+              }
+            </section>
+          }
+        </ar-card>
+      }
+      @case ('timeline') {
+        <ar-card heading="Timeline">
+          @if (p.canEdit) {
+            <form class="pp__note" (submit)="$event.preventDefault(); addNote()">
+              <input
+                class="ar-field__input"
+                maxlength="1000"
+                placeholder="Add a note: a meeting, a call, what the consultant said"
+                aria-label="Note"
+                [value]="note()"
+                (input)="note.set($any($event.target).value)"
+              />
+              <button ar-button type="submit" [disabled]="busy() || !note().trim()">
+                Add note
+              </button>
+            </form>
+          }
+          <ul class="pp__events">
+            @for (e of p.events; track $index) {
+              <li>
+                <span class="pp__when">{{ e.atUtc | date: 'd MMM y, HH:mm' }}</span>
+                <span>{{ eventText(e) }}</span>
+                @if (e.userName) {
+                  <span class="pp__muted" translate="no">{{ e.userName }}</span>
+                }
+              </li>
+            }
+          </ul>
+        </ar-card>
+      }
+    }
+  }
+</div>

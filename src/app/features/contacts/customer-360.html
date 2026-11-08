@@ -364,6 +364,16 @@
           <span>Service Tickets</span>
           <span class="tab-badge">{{ c.openTicketsCount }}</span>
         </button>
+        @if (c.isAccountView && c.accountId) {
+          <button
+            type="button"
+            class="nav-tab"
+            [class.active]="activeTab() === 'projects'"
+            (click)="activeTab.set('projects')"
+          >
+            <span>Projects</span>
+          </button>
+        }
       </nav>
     }
 
@@ -894,6 +904,13 @@
           </e-columns>
         </ejs-grid>
       </div>
+    }
+
+    <!-- TAB 7: PROJECTS (accounts only) -->
+    @if (activeTab() === 'projects' && c.accountId) {
+      <section class="c360-panel">
+        <ar-account-projects [accountId]="c.accountId" />
+      </section>
     }
 
     <!-- TAB 6: SERVICE TICKETS -->

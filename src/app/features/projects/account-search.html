@@ -1,0 +1,27 @@
+<div class="as">
+  <input
+    class="ar-field__input"
+    type="search"
+    autocomplete="off"
+    [placeholder]="placeholder()"
+    [attr.aria-label]="placeholder()"
+    [value]="term()"
+    (input)="type($any($event.target).value)"
+  />
+  @if (results().length) {
+    <ul class="as__list" role="listbox">
+      @for (a of results(); track a.id) {
+        <li>
+          <button type="button" class="as__item" (click)="pick(a)">
+            <span translate="no">{{ a.name }}</span>
+            @if (a.place) {
+              <span class="as__muted" translate="no">{{ a.place }}</span>
+            }
+          </button>
+        </li>
+      }
+    </ul>
+  } @else if (term().trim().length > 1 && !searching()) {
+    <p class="as__muted as__none">No account by that name. Add it under Accounts first.</p>
+  }
+</div>

@@ -492,6 +492,55 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'The radar is re-scored on every save and each night at 2 am, so passing dates take effect on their own.',
     ],
   },
+  projects: {
+    benefits: [
+      'Work a deal where it is really decided: with the consultant writing the spec, months before an enquiry arrives.',
+      'Every company with a say in it in one place: end-user, consultant, EPC contractor, panel builders, OEM.',
+    ],
+    steps: [
+      'Create the project with its end-user, site, value and key dates.',
+      'Add the consultant, the EPC contractor and the panel builders under Parties, and the people at each.',
+      'Drag the card along the board as the project moves; Awarded asks who won, Closed asks how it ended.',
+    ],
+    tips: [
+      'A card that says "Who is writing the spec?" is past Identified with no consultant or EPC contractor recorded.',
+      'Mark a decision maker who is against us as a Blocker: the project shows them in red.',
+    ],
+  },
+  'projects/new': {
+    benefits: [
+      'A project record takes a few minutes and saves retyping on every enquiry it produces.',
+      'The end-user, site, value and key dates are kept once, for everyone on the team.',
+    ],
+    steps: [
+      'Name the project and find the end-user’s account.',
+      'Add the site, sector, our scope and the key dates, then save and add the parties.',
+    ],
+    tips: ['Type values as 45,00,000 or 4.5 Cr.'],
+  },
+  'projects/:id': {
+    benefits: [
+      'See who decides, who supports us and who blocks us, on one page.',
+      'Everything that happened to the project, newest first.',
+    ],
+    steps: [
+      'Overview: the stage, dates, value and next step.',
+      'Parties: tick each company’s roles, then add its people with their influence and attitude.',
+      'Timeline: every stage move and change, and your notes.',
+    ],
+    tips: ['A person is added through their company: link the contact to the account first.'],
+  },
+  'projects/:id/edit': {
+    benefits: [
+      'Keep the dates and next step current so the board stays right.',
+      'Hand a project to another owner, or add people to its team.',
+    ],
+    steps: [
+      'Change the details and save.',
+      'Changing the end-user moves the End-user role to the new account.',
+    ],
+    tips: ['The owner and team see the project; managers with "see all projects" see every one.'],
+  },
   'documents/fault-codes': {
     benefits: [
       'A customer with an alarm on the screen gets your approved answer, not a guess: causes, safe first checks, and when to call.',

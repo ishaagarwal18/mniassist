@@ -1,0 +1,247 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.pp {
+  flex: 1;
+  min-height: 0;
+  padding: 14px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 1150px;
+}
+.pp__stages {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--ar-line-200);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+.pp__stages li {
+  flex: 1;
+  text-align: center;
+  border-right: 1px solid var(--ar-line-100);
+  font: 500 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+.pp__stages li:last-child {
+  border-right: 0;
+}
+.pp__stages li > * {
+  display: block;
+  width: 100%;
+  padding: 9px 4px;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+}
+.pp__stages li button {
+  cursor: pointer;
+}
+.pp__stages li button:hover {
+  background: var(--ar-bg-100);
+}
+.pp__stages li.done {
+  color: var(--ar-ink-800);
+  background: var(--ar-bg-100);
+}
+.pp__stages li.now {
+  color: #fff;
+  background: var(--ar-blue-600);
+  font-weight: 600;
+}
+.pp__move {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.pp__grow {
+  flex: 1;
+  min-width: 200px;
+}
+.pp__tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--ar-line-200);
+}
+.pp__tabs button {
+  padding: 8px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font: 500 13px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+  cursor: pointer;
+}
+.pp__tabs button.on {
+  border-bottom-color: var(--ar-blue-600);
+  color: var(--ar-ink-900);
+}
+.pp__count {
+  margin-left: 4px;
+  color: var(--ar-ink-400);
+}
+.pp__cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .pp__cols {
+    grid-template-columns: 1fr;
+  }
+}
+.pp__facts {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+  font: 400 13px var(--ar-font-sans);
+}
+.pp__facts div {
+  display: flex;
+  gap: 10px;
+}
+.pp__facts dt {
+  min-width: 120px;
+  color: var(--ar-ink-400);
+}
+.pp__facts dd {
+  margin: 0;
+}
+.pp__next {
+  margin: 12px 0 4px;
+  font: 400 13px var(--ar-font-sans);
+}
+.pp__muted {
+  margin: 0;
+  color: var(--ar-ink-400);
+  font: 400 12px var(--ar-font-sans);
+}
+.pp__table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 13px var(--ar-font-sans);
+}
+.pp__table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ar-line-100);
+  vertical-align: top;
+}
+.pp__name {
+  font-weight: 600;
+  min-width: 160px;
+}
+.pp__roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.pp__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 400 12.5px var(--ar-font-sans);
+}
+.pp__add {
+  display: flex;
+  gap: 10px;
+  align-items: start;
+  margin-top: 10px;
+}
+.pp__add ar-account-search {
+  flex: 1;
+}
+.pp__group {
+  margin-bottom: 14px;
+}
+.pp__h {
+  margin: 0 0 6px;
+  font: 600 11.5px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pp__party {
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border: 1px solid var(--ar-line-200);
+  border-radius: 8px;
+  font: 400 13px var(--ar-font-sans);
+}
+.pp__party-head {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.pp__link {
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ar-blue-600);
+  font: 500 12.5px var(--ar-font-sans);
+  cursor: pointer;
+}
+.pp__people {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pp__people li {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 3px 0;
+}
+.pp__blocker {
+  color: var(--ar-red-600);
+}
+.pp__people-edit {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pp__person-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.pp__person-row select {
+  max-width: 220px;
+}
+.pp__note {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.pp__note input {
+  flex: 1;
+}
+.pp__events {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 400 13px var(--ar-font-sans);
+}
+.pp__events li {
+  display: grid;
+  grid-template-columns: 150px 1fr auto;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--ar-line-100);
+}
+.pp__when {
+  color: var(--ar-ink-400);
+  font-size: 12px;
+}

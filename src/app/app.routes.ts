@@ -345,6 +345,30 @@ export const routes: Routes = [
           import('./features/pipeline/pipeline-stages').then((m) => m.ArPipelineStages),
       },
       {
+        path: 'projects',
+        title: 'Projects · MNI Assist',
+        loadComponent: () =>
+          import('./features/projects/projects-page').then((m) => m.ArProjectsPage),
+      },
+      {
+        path: 'projects/new',
+        title: 'New project · MNI Assist',
+        loadComponent: () =>
+          import('./features/projects/project-form-page').then((m) => m.ArProjectFormPage),
+      },
+      {
+        path: 'projects/:id/edit',
+        title: 'Edit project · MNI Assist',
+        loadComponent: () =>
+          import('./features/projects/project-form-page').then((m) => m.ArProjectFormPage),
+      },
+      {
+        path: 'projects/:id',
+        title: 'Project · MNI Assist',
+        loadComponent: () =>
+          import('./features/projects/project-page').then((m) => m.ArProjectPage),
+      },
+      {
         path: 'forecast',
         title: 'Forecast · MNI Assist',
         loadComponent: () => import('./features/pipeline/forecast').then((m) => m.ArForecast),
