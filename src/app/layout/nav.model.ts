@@ -370,6 +370,13 @@ export const NAV: readonly NavGroup[] = [
         feature: 'OemPricing',
       },
       {
+        label: 'OEM claims',
+        icon: 'analytics',
+        route: '/oem/claims',
+        permission: 'AutoReach.Spa.Claims',
+        feature: 'OemPricing',
+      },
+      {
         label: 'OEM settings',
         icon: 'settings',
         route: '/oem/settings',

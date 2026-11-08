@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { ArInvoiceSpaPanel } from '../../oem/invoice-spa-panel';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { inr } from '../../../core/util/format';
@@ -36,7 +37,17 @@ import { ArSalesExport } from '../sales-export';
  */
 @Component({
   selector: 'ar-sales-invoice-page',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, ArSalesExport, DatePipe, ArGrid, GridModule],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArIcon,
+    ArSalesExport,
+    DatePipe,
+    ArGrid,
+    GridModule,
+    ArInvoiceSpaPanel,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -141,7 +152,12 @@ import { ArSalesExport } from '../sales-export';
               aria-label="Line items & GST"
             >
               <e-columns>
-                <e-column field="lineNumber" headerText="#" width="60" [textAlign]="'Right'"></e-column>
+                <e-column
+                  field="lineNumber"
+                  headerText="#"
+                  width="60"
+                  [textAlign]="'Right'"
+                ></e-column>
                 <e-column field="partNumber" headerText="Part number & description" width="260">
                   <ng-template #template let-l>
                     <div>
@@ -160,12 +176,22 @@ import { ArSalesExport } from '../sales-export';
                     <strong>{{ l.quantity }}</strong>
                   </ng-template>
                 </e-column>
-                <e-column field="unitPriceInPaise" headerText="Rate" width="130" [textAlign]="'Right'">
+                <e-column
+                  field="unitPriceInPaise"
+                  headerText="Rate"
+                  width="130"
+                  [textAlign]="'Right'"
+                >
                   <ng-template #template let-l>
                     {{ inr(l.unitPriceInPaise) }}
                   </ng-template>
                 </e-column>
-                <e-column field="taxableAmountInPaise" headerText="Taxable" width="130" [textAlign]="'Right'">
+                <e-column
+                  field="taxableAmountInPaise"
+                  headerText="Taxable"
+                  width="130"
+                  [textAlign]="'Right'"
+                >
                   <ng-template #template let-l>
                     {{ inr(l.taxableAmountInPaise) }}
                   </ng-template>
@@ -175,12 +201,18 @@ import { ArSalesExport } from '../sales-export';
                     @if (inv.isInterState) {
                       IGST {{ l.igstRateBasisPoints / 100 }}%: {{ inr(l.igstAmountInPaise) }}
                     } @else {
-                      CGST {{ l.cgstRateBasisPoints / 100 }}% + SGST {{ l.sgstRateBasisPoints / 100 }}%:
+                      CGST {{ l.cgstRateBasisPoints / 100 }}% + SGST
+                      {{ l.sgstRateBasisPoints / 100 }}%:
                       {{ inr(l.cgstAmountInPaise + l.sgstAmountInPaise) }}
                     }
                   </ng-template>
                 </e-column>
-                <e-column field="lineTotalInPaise" headerText="Total" width="140" [textAlign]="'Right'">
+                <e-column
+                  field="lineTotalInPaise"
+                  headerText="Total"
+                  width="140"
+                  [textAlign]="'Right'"
+                >
                   <ng-template #template let-l>
                     <strong>{{ inr(l.lineTotalInPaise) }}</strong>
                   </ng-template>
@@ -203,6 +235,10 @@ import { ArSalesExport } from '../sales-export';
               <dd class="pf__grand">{{ inr(inv.grandTotalInPaise) }}</dd>
             </dl>
           </section>
+
+          @if (inv.id) {
+            <ar-invoice-spa-panel [invoiceId]="inv.id" [version]="inv.status" />
+          }
 
           @if (inv.payments.length) {
             <section class="pf__card" aria-labelledby="si-pay">
@@ -233,7 +269,12 @@ import { ArSalesExport } from '../sales-export';
                       <span class="ar-mono">{{ p.referenceNumber || '—' }}</span>
                     </ng-template>
                   </e-column>
-                  <e-column field="amountInPaise" headerText="Amount" width="140" [textAlign]="'Right'">
+                  <e-column
+                    field="amountInPaise"
+                    headerText="Amount"
+                    width="140"
+                    [textAlign]="'Right'"
+                  >
                     <ng-template #template let-p>
                       <strong class="sr-good">{{ inr(p.amountInPaise) }}</strong>
                     </ng-template>

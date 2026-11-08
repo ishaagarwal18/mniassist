@@ -1,0 +1,263 @@
+<ar-topbar [title]="claim()?.reference ?? 'OEM claim'" [subtitle]="claim()?.supplierName ?? ''">
+  <a ar-button variant="ghost" routerLink="/oem/claims">Claims</a>
+  @if (claim()) {
+    <button ar-button type="button" variant="ghost" (click)="download()">Export for the OEM</button>
+  }
+</ar-topbar>
+
+<div class="oe ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">OEM claims need the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  @if (claim(); as c) {
+    <ar-card heading="Claim">
+      <dl class="oe__facts">
+        <dt>Status</dt>
+        <dd>
+          <ar-chip [tone]="tone(c.status)">{{ statusText(c.status) }}</ar-chip>
+        </dd>
+        <dt>Period</dt>
+        <dd>{{ c.periodFrom | date: 'd MMM' }} – {{ c.periodTo | date: 'd MMM yyyy' }}</dd>
+        @if (c.submittedOn) {
+          <dt>Submitted</dt>
+          <dd>
+            {{ c.submittedOn | date: 'd MMM yyyy' }}
+            @if (c.oemAckNumber) {
+              · acknowledgement <span translate="no">{{ c.oemAckNumber }}</span>
+            }
+          </dd>
+        }
+        <dt>Claimed</dt>
+        <dd>{{ rupees(c.claimedInPaise) || '₹0' }}</dd>
+        <dt>Settled</dt>
+        <dd>{{ rupees(c.settledInPaise) || '₹0' }}</dd>
+        @if (c.rejectedInPaise) {
+          <dt>Rejected</dt>
+          <dd>{{ rupees(c.rejectedInPaise) }}</dd>
+        }
+        @if (c.writtenOffInPaise) {
+          <dt>Written off</dt>
+          <dd>{{ rupees(c.writtenOffInPaise) }}</dd>
+        }
+        <dt>Outstanding</dt>
+        <dd>
+          <b>{{ rupees(c.outstandingInPaise) || '₹0' }}</b> · {{ c.ageDays }} days old
+        </dd>
+        @if (c.deadlineOn) {
+          <dt>OEM deadline</dt>
+          <dd>{{ c.deadlineOn | date: 'd MMM yyyy' }}</dd>
+        }
+      </dl>
+      @if (c.status === Status.Draft) {
+        <div class="oe__bar">
+          <label class="ar-field">
+            <span class="ar-field__label">Submitted on</span>
+            <input
+              class="ar-field__input"
+              type="date"
+              [value]="submittedOn()"
+              (change)="submittedOn.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label"
+              >OEM's acknowledgement <span class="ar-field__opt">optional</span></span
+            >
+            <input
+              class="ar-field__input"
+              maxlength="100"
+              [value]="ackNumber()"
+              (input)="ackNumber.set($any($event.target).value)"
+            />
+          </label>
+        </div>
+        <div class="oe__foot">
+          <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="addLines()">
+            Add unclaimed lines
+          </button>
+          <button
+            ar-button
+            type="button"
+            [disabled]="busy() || !c.lines.length || !submittedOn()"
+            (click)="submit()"
+          >
+            Mark submitted
+          </button>
+        </div>
+      }
+    </ar-card>
+
+    <ar-card [heading]="c.lines.length + ' lines'">
+      <table class="oe__table">
+        <thead>
+          <tr>
+            @if (open()) {
+              <th scope="col" aria-label="Pick"></th>
+            }
+            <th scope="col">Invoice</th>
+            <th scope="col">Customer</th>
+            <th scope="col">Part</th>
+            <th scope="col" class="oe__num">Qty</th>
+            <th scope="col" class="oe__num">Support / unit</th>
+            <th scope="col" class="oe__num">Amount</th>
+            <th scope="col" class="oe__num">Settled</th>
+            <th scope="col">State</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of c.lines; track l.id) {
+            <tr>
+              @if (open()) {
+                <td>
+                  @if (l.state === State.Open && l.amountInPaise > 0) {
+                    <input
+                      type="checkbox"
+                      [attr.aria-label]="'Pick ' + l.invoiceNumber"
+                      [checked]="isPicked(l)"
+                      (change)="togglePick(l, $any($event.target).checked)"
+                    />
+                  }
+                </td>
+              }
+              <td [class.oe__bad]="l.late">
+                <a [routerLink]="['/sales/invoices', l.salesInvoiceId]">{{ l.invoiceNumber }}</a>
+                <div class="oe__muted">{{ l.invoiceDate | date: 'd MMM yyyy' }}</div>
+              </td>
+              <td translate="no">{{ l.customerName }}</td>
+              <td translate="no">
+                {{ l.partNumber }}
+                <div class="oe__muted">
+                  <a [routerLink]="['/oem/spa', l.spaId]">{{ l.spaReference }}</a>
+                </div>
+              </td>
+              <td class="oe__num">{{ l.quantity }}</td>
+              <td class="oe__num">{{ rupees(l.supportPerUnitInPaise) }}</td>
+              <td class="oe__num">{{ rupees(l.amountInPaise) }}</td>
+              <td class="oe__num">{{ rupees(l.settledInPaise) }}</td>
+              <td>
+                {{ stateText(l.state) }}
+                @if (l.rejectReason) {
+                  <div class="oe__muted">{{ l.rejectReason }}</div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (open() && picked().length) {
+        <div class="oe__bar">
+          <input
+            class="ar-field__input"
+            maxlength="500"
+            placeholder="The OEM's reason"
+            aria-label="Reason the OEM rejected them"
+            [value]="rejectReason()"
+            (input)="rejectReason.set($any($event.target).value)"
+          />
+          <button
+            ar-button
+            type="button"
+            variant="ghost"
+            [disabled]="busy() || !rejectReason().trim()"
+            (click)="reject()"
+          >
+            Mark {{ picked().length }} rejected
+          </button>
+        </div>
+      }
+    </ar-card>
+
+    @if (open()) {
+      <ar-card heading="Record the OEM's credit note">
+        <div class="oe__grid">
+          <label class="ar-field">
+            <span class="ar-field__label">Credit note number</span>
+            <input
+              class="ar-field__input"
+              maxlength="100"
+              [value]="cnNumber()"
+              (input)="cnNumber.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Date</span>
+            <input
+              class="ar-field__input"
+              type="date"
+              [value]="cnDate()"
+              (change)="cnDate.set($any($event.target).value)"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Amount (₹)</span>
+            <input
+              class="ar-field__input"
+              inputmode="decimal"
+              [value]="cnAmount()"
+              (input)="cnAmount.set($any($event.target).value)"
+            />
+          </label>
+        </div>
+        <p class="oe__muted">
+          Leave the lines below blank to spread it over the open lines, oldest invoice first, or
+          type what it pays on each.
+        </p>
+        <table class="oe__table">
+          <tbody>
+            @for (l of settleable(); track l.id) {
+              <tr>
+                <td translate="no">{{ l.invoiceNumber }} · {{ l.partNumber }}</td>
+                <td class="oe__num">{{ rupees(l.outstandingInPaise) }} open</td>
+                <td>
+                  <input
+                    class="ar-field__input"
+                    inputmode="decimal"
+                    [attr.aria-label]="'Amount on ' + l.invoiceNumber"
+                    [value]="cnLines()[l.id] || ''"
+                    (input)="setLineAmount(l.id, $any($event.target).value)"
+                  />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        @if (allocated()) {
+          <p class="oe__muted">{{ rupees(allocated()) }} matched to lines.</p>
+        }
+        <div class="oe__foot">
+          <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="writeOff()">
+            Write off the rest
+          </button>
+          <button
+            ar-button
+            type="button"
+            [disabled]="busy() || !cnNumber().trim() || !cnAmount().trim()"
+            (click)="settle()"
+          >
+            Record credit note
+          </button>
+        </div>
+      </ar-card>
+    }
+
+    @if (c.settlements.length) {
+      <ar-card heading="Credit notes">
+        <table class="oe__table">
+          <tbody>
+            @for (s of c.settlements; track s.id) {
+              <tr>
+                <td translate="no">{{ s.oemCreditNoteNumber }}</td>
+                <td>{{ s.creditNoteDate | date: 'd MMM yyyy' }}</td>
+                <td class="oe__num">{{ rupees(s.amountInPaise) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </ar-card>
+    }
+  }
+</div>

@@ -384,6 +384,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/oem/spa-page').then((m) => m.ArSpaPage),
       },
       {
+        path: 'oem/claims',
+        title: 'OEM claims · MNI Assist',
+        loadComponent: () => import('./features/oem/claims-page').then((m) => m.ArClaimsPage),
+      },
+      {
+        path: 'oem/claims/:id',
+        title: 'OEM claim · MNI Assist',
+        loadComponent: () => import('./features/oem/claim-page').then((m) => m.ArClaimPage),
+      },
+      {
         path: 'oem/settings',
         title: 'OEM settings · MNI Assist',
         loadComponent: () =>

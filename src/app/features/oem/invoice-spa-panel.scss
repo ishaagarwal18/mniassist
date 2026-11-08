@@ -1,0 +1,49 @@
+.spa__card {
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-card);
+  box-shadow: var(--ar-shadow-card);
+  padding: 1.1rem 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.spa__head h2 {
+  margin: 0;
+  font: 600 14px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+}
+.spa__head p {
+  margin: 2px 0 0;
+  font: 400 12.5px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+.spa__table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 13px var(--ar-font-sans);
+}
+.spa__table th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ar-line-200);
+  font: 600 11px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+}
+.spa__table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ar-line-100);
+  vertical-align: top;
+}
+.spa__table .spa__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.spa__muted {
+  color: var(--ar-ink-400);
+  font: 400 12px var(--ar-font-sans);
+}
+.spa__bad {
+  color: var(--ar-red-600);
+  font: 400 12px var(--ar-font-sans);
+}

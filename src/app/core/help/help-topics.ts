@@ -573,6 +573,28 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Extend an agreement when the OEM extends it; an expired one comes back.',
     ],
   },
+  'oem/claims': {
+    benefits: [
+      'Every claim to an OEM with what was claimed, settled and is still outstanding.',
+      'Claims are aged by band, and lines not submitted after 7 days stand out in red.',
+    ],
+    steps: [
+      'Issue invoices with claim-back special prices: their lines go on the OEM’s draft claim the same day.',
+      'Open a claim to export it, submit it and record the OEM’s credit notes.',
+    ],
+    tips: ['Filter by age band to chase the claims over 90 days first.'],
+  },
+  'oem/claims/:id': {
+    benefits: [
+      'One row per invoice line, with the customer, part, quantity and support, ready for the OEM.',
+      'A part payment leaves the rest outstanding and aged.',
+    ],
+    steps: [
+      'Export it for the OEM (Excel and the invoice PDFs), send it, and mark it submitted.',
+      'When the OEM pays, record its credit note; mark refused lines rejected, or write off what it won’t pay.',
+    ],
+    tips: ['Leave the line amounts blank to spread a credit note over the oldest invoices first.'],
+  },
   'oem/settings': {
     benefits: [
       'Only suppliers marked as OEMs are offered for deal registrations and special prices.',
