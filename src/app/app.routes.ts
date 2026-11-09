@@ -1063,6 +1063,9 @@ export const routes: Routes = [
       formPage('compliance/requests/new', 'Log a DPDP request · MNI Assist', 'new', () =>
         import('./features/compliance/compliance').then((m) => m.ArCompliance),
       ),
+      formPage('compliance/breaches/new', 'Log a data breach', 'breach', () =>
+        import('./features/compliance/compliance').then((m) => m.ArCompliance),
+      ),
       {
         path: 'automations',
         title: 'Automations · MNI Assist',

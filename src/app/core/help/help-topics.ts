@@ -156,13 +156,13 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
     benefits: [
       'A clear order for setting up the workspace, so nothing important is missed.',
       'Steps you have already done tick themselves off.',
-      'Dismissing it only hides the list. Nothing is lost.',
+      'It leaves the menu by itself once every step is done.',
     ],
     steps: [
       'The rail at the top shows every step; ticked ones are done. It opens on the next one to do.',
-      'Use Go and do it to open the screen that completes the step, or verify your number right here.',
+      'Start with your business profile. Go and do it opens each step right here, under its card, so you never leave this page; verify your email and number here too.',
       'Click I’ve done this for steps you finished outside MNI Assist; it moves on to the next one.',
-      'Use Back, Skip for now or the rail to move between steps. Dismiss hides the whole checklist.',
+      'Use Back, Skip for now or the rail to move between steps.',
     ],
   },
   inbox: {
@@ -1596,14 +1596,20 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
   },
   compliance: {
     benefits: [
-      'Handle data protection (DPDP) requests on time.',
-      'Each request shows its 30-day deadline.',
-      'Keep a record of retention settings and any breaches.',
+      'Customers have a legal right to see, correct or delete their data, or to stop your messages. This is where you answer them, within 30 days.',
+      'Keeps the proof of when each request came in and how it was handled, in case a customer complains or a regulator asks.',
+      'Old chats, recordings and exports are cleared on a schedule, so there is less data that could leak.',
+      'Messaging only people who agreed protects your WhatsApp number’s quality rating.',
     ],
     steps: [
-      'Click Log a request and choose its type: Access, Correction, Erasure or Consent withdrawal.',
-      'Work on it before the deadline, then click Fulfil, or Reject with a reason.',
-      'Check retention settings and log any breach as soon as it is known.',
+      'When a customer asks about their data by email, phone or in person, click Log a request straight away. The 30-day clock starts then. Opt-outs sent on WhatsApp are logged for you.',
+      'Fulfil or Reject each request before its deadline. If it shows No match, check the phone or email for a typo; if you hold no data on them, reject it as no data held.',
+      'Under Retention policies, set how many days each kind of data is kept and switch Enforced on. Consent records are never deleted, because they are your proof.',
+      'If personal data gets out, click Log an incident at once. Then mark it Contained, record when the Board and the people affected were told, and Close it with what was done.',
+    ],
+    tips: [
+      'Check Open requests every week. Amber means one is due within 7 days, red means one is past its deadline.',
+      'Before a big campaign or a contact import, look at Suppressed and Consent records.',
     ],
   },
   'compliance/dpdp': {

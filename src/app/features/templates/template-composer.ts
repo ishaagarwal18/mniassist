@@ -20,6 +20,7 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArIcon } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { IconName } from '../../ui/icon';
+import { AR_EMBEDDED_PAGE } from '../../core/ui/embedded-page';
 
 interface BodySegment {
   readonly text: string;
@@ -75,6 +76,8 @@ export class ArTemplateComposer {
   private readonly store = inject(TemplateService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  /** Shown inside Get started: a save closes the popup instead of going to the template list. */
+  protected readonly embedded = inject(AR_EMBEDDED_PAGE, { optional: true });
 
   protected readonly headerKinds = HEADER_KINDS;
   protected readonly categories = CATEGORIES;
@@ -295,7 +298,8 @@ export class ArTemplateComposer {
       if (alsoSubmit) {
         await this.store.submit(saved.id);
       }
-      await this.router.navigate(['/templates']);
+      if (this.embedded) this.embedded.finished();
+      else await this.router.navigate(['/templates']);
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'Could not save the template.');
     } finally {

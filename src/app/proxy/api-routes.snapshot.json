@@ -959,6 +959,7 @@
     "POST /api/auto-reach/obsolescence/open-enquiries",
     "POST /api/auto-reach/obsolescence/rescan",
     "POST /api/auto-reach/obsolescence/restore",
+    "POST /api/auto-reach/onboarding-checklist/accept-consent-rules",
     "POST /api/auto-reach/onboarding-checklist/confirm-mobile-verification",
     "POST /api/auto-reach/onboarding-checklist/dismiss",
     "POST /api/auto-reach/onboarding-checklist/mark-step",

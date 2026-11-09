@@ -15,6 +15,13 @@ export interface ChecklistItem {
   readonly route?: string;
 }
 
+/** Who accepted the consent rules on Get started, when, and which version of them. */
+export interface ConsentRulesAcceptance {
+  readonly by: string;
+  readonly at: string;
+  readonly version: string;
+}
+
 export interface Checklist {
   readonly items: readonly ChecklistItem[];
   readonly completedCount: number;
@@ -24,6 +31,8 @@ export interface Checklist {
   readonly nextStep?: OnboardingChecklistStep;
   readonly mobileVerified: boolean;
   readonly verifiedMobile?: string;
+  /** Absent until someone accepts the rules (a step ticked by hand before this existed has none). */
+  readonly consentRules?: ConsentRulesAcceptance;
 }
 
 const STEP_META: Record<
@@ -49,7 +58,7 @@ const STEP_META: Record<
     route: '/channels',
   },
   [OnboardingChecklistStep.ReviewConsentPolicy]: {
-    label: 'Review the consent policy',
+    label: 'Review the consent rules',
     description: 'How opt-in is captured and honoured. Required before the first campaign.',
     route: '/compliance',
   },
@@ -64,21 +73,28 @@ const STEP_META: Record<
     route: '/templates',
   },
   [OnboardingChecklistStep.FundWallet]: {
-    label: 'Fund your wallet',
-    description: 'A prepaid balance. Messages are billed against it at Meta’s rates.',
+    label: 'Add funds',
+    description:
+      'Top up the prepaid wallet that pays for WhatsApp messages. A campaign waits at its pre-flight check until the wallet can cover it.',
     route: '/billing',
   },
   [OnboardingChecklistStep.InviteTeam]: {
     label: 'Invite your team',
-    description: 'Add the people who will handle the inbox and the pipeline.',
+    description:
+      'Invite the people who will work with you: agents for the inbox, a manager for campaigns. Each gets an email with a link to join.',
     route: '/settings/members',
   },
 };
 
-const ORDER: OnboardingChecklistStep[] = [
+/**
+ * The order Get started shows the steps in. The business profile comes first: legal name, GSTIN and address are what
+ * quotations, invoices and the WhatsApp profile are built from. The API lists steps in its own order; the screen
+ * re-sorts them by this one (see {@link sortSteps}).
+ */
+export const ORDER: readonly OnboardingChecklistStep[] = [
+  OnboardingChecklistStep.CompleteProfile,
   OnboardingChecklistStep.VerifyEmail,
   OnboardingChecklistStep.VerifyMobile,
-  OnboardingChecklistStep.CompleteProfile,
   OnboardingChecklistStep.ConnectChannel,
   OnboardingChecklistStep.ReviewConsentPolicy,
   OnboardingChecklistStep.ImportContacts,
@@ -86,6 +102,18 @@ const ORDER: OnboardingChecklistStep[] = [
   OnboardingChecklistStep.FundWallet,
   OnboardingChecklistStep.InviteTeam,
 ];
+
+/** Steps in {@link ORDER}; a step the order doesn't know keeps its place after the known ones. */
+export function sortSteps<T extends { step: OnboardingChecklistStep }>(items: readonly T[]): T[] {
+  const rank = (s: OnboardingChecklistStep) => {
+    const i = ORDER.indexOf(s);
+    return i < 0 ? ORDER.length : i;
+  };
+  return items
+    .map((item, i) => ({ item, i }))
+    .sort((a, b) => rank(a.item.step) - rank(b.item.step) || a.i - b.i)
+    .map((x) => x.item);
+}
 
 const SEED: Checklist = {
   items: ORDER.map((step, i) => ({
@@ -174,26 +202,40 @@ export class OnboardingStore {
     nextStep?: OnboardingChecklistStep | null;
     mobileVerified?: boolean;
     verifiedMobile?: string | null;
+    consentRulesAcceptedBy?: string | null;
+    consentRulesAcceptedAtUtc?: string | null;
+    consentRulesVersion?: string | null;
   }): Checklist {
-    const items = (dto.items ?? []).map((it) => {
-      const step = it.step ?? OnboardingChecklistStep.VerifyEmail;
-      return {
-        step,
-        label: it.label || STEP_META[step].label,
-        description: it.description || STEP_META[step].description,
-        route: it.route || STEP_META[step].route,
-        done: it.done ?? false,
-      };
-    });
+    const items = sortSteps(
+      (dto.items ?? []).map((it) => {
+        const step = it.step ?? OnboardingChecklistStep.VerifyEmail;
+        return {
+          step,
+          label: it.label || STEP_META[step].label,
+          description: it.description || STEP_META[step].description,
+          route: it.route || STEP_META[step].route,
+          done: it.done ?? false,
+        };
+      }),
+    );
     return {
       items,
       completedCount: dto.completedCount ?? items.filter((i) => i.done).length,
       totalCount: dto.totalCount ?? items.length,
       isComplete: dto.isComplete ?? false,
       dismissed: dto.dismissed ?? false,
-      nextStep: dto.nextStep ?? undefined,
+      // The first step still to do in this screen's order (the API's own pick follows its order).
+      nextStep: items.find((i) => !i.done)?.step ?? dto.nextStep ?? undefined,
       mobileVerified: dto.mobileVerified ?? false,
       verifiedMobile: dto.verifiedMobile ?? undefined,
+      consentRules:
+        dto.consentRulesAcceptedBy && dto.consentRulesAcceptedAtUtc
+          ? {
+              by: dto.consentRulesAcceptedBy,
+              at: dto.consentRulesAcceptedAtUtc,
+              version: dto.consentRulesVersion ?? '',
+            }
+          : undefined,
     };
   }
 
@@ -236,21 +278,32 @@ export class OnboardingStore {
     this.local.set(this.normalise(dto));
   }
 
+  /** The signed-in person accepts this version of the consent rules: ticks the step and records who and when. */
+  async acceptConsentRules(version: string): Promise<void> {
+    if (environment.useMockData) {
+      await this.markStep(OnboardingChecklistStep.ReviewConsentPolicy);
+      this.local.update((c) =>
+        c ? { ...c, consentRules: { by: 'You', at: new Date().toISOString(), version } } : c,
+      );
+      return;
+    }
+    const dto = await firstValueFrom(this.api.acceptConsentRules({ version }));
+    this.local.set(this.normalise(dto));
+  }
+
+  /** Reads the checklist again after a step was worked on in another screen (Get started's popups). */
+  async reread(): Promise<void> {
+    if (environment.useMockData) return;
+    const dto = await firstValueFrom(this.api.get());
+    this.local.set(this.normalise(dto));
+  }
+
   async confirmMobile(code: string): Promise<void> {
     if (environment.useMockData) {
       await this.markStep(OnboardingChecklistStep.VerifyMobile);
       return;
     }
     const dto = await firstValueFrom(this.api.confirmMobileVerification({ code: code.trim() }));
-    this.local.set(this.normalise(dto));
-  }
-
-  async dismiss(): Promise<void> {
-    if (environment.useMockData) {
-      this.local.set({ ...this.checklist(), dismissed: true });
-      return;
-    }
-    const dto = await firstValueFrom(this.api.dismiss());
     this.local.set(this.normalise(dto));
   }
 }

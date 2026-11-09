@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Subject, of } from 'rxjs';
 import { ArOnboardingWizard } from './wizard';
+import { opensInline } from './step-panel';
 import { OnboardingStore } from '../../core/services/onboarding.store';
 import { OnboardingChecklistService } from '../../proxy/identity';
 import { AccountRecoveryService } from '../../proxy/identity/account-recovery.service';
@@ -50,12 +51,13 @@ describe('onboarding first incomplete step', () => {
     );
   });
 
-  it('does not display demo completion while loading and opens on unverified email', async () => {
+  it('does not display demo completion while loading and opens on the business profile first', async () => {
     const fixture = TestBed.createComponent(ArOnboardingWizard);
     fixture.detectChanges();
     TestBed.tick();
     const store = TestBed.inject(OnboardingStore);
     expect(store.checklist().items).toEqual([]);
+    // The API's own order: verification first. The screen puts the business profile ahead of it.
     response.next({
       items: [
         { step: Step.VerifyEmail, done: false },
@@ -63,11 +65,37 @@ describe('onboarding first incomplete step', () => {
         { step: Step.CompleteProfile, done: false },
         { step: Step.ConnectChannel, done: false },
       ],
+      nextStep: Step.VerifyEmail,
     });
     await vi.waitFor(() => {
       TestBed.tick();
       fixture.detectChanges();
-      expect(fixture.nativeElement.textContent).toContain('0:Verify your email');
+      expect(fixture.nativeElement.textContent).toContain('0:Complete your business profile');
+    });
+    expect(store.checklist().items.map((i) => i.step)).toEqual([
+      Step.CompleteProfile,
+      Step.VerifyEmail,
+      Step.VerifyMobile,
+      Step.ConnectChannel,
+    ]);
+    expect(store.checklist().nextStep).toBe(Step.CompleteProfile);
+  });
+
+  it('opens on unverified email once the business profile is done', async () => {
+    const fixture = TestBed.createComponent(ArOnboardingWizard);
+    fixture.detectChanges();
+    TestBed.tick();
+    response.next({
+      items: [
+        { step: Step.VerifyEmail, done: false },
+        { step: Step.VerifyMobile, done: false },
+        { step: Step.CompleteProfile, done: true },
+      ],
+    });
+    await vi.waitFor(() => {
+      TestBed.tick();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('1:Verify your email');
     });
   });
 
@@ -184,5 +212,98 @@ describe('mobile verification resend and change mobile', () => {
     expect(comp.otpCode()).toBe('');
     expect(comp.mobile()).toBe('+91 9876543210');
     expect(comp.resendCountdown()).toBe(0);
+  });
+});
+
+describe('steps done on the Get started page', () => {
+  let checklist: { items: { step: Step; done: boolean }[] };
+  let get: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    checklist = {
+      items: [
+        { step: Step.CompleteProfile, done: false },
+        { step: Step.VerifyEmail, done: false },
+      ],
+    };
+    get = vi.fn(() => of(structuredClone(checklist)));
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: OnboardingChecklistService, useValue: { get } },
+        { provide: AccountRecoveryService, useValue: {} },
+        { provide: ToastService, useValue: {} },
+      ],
+    });
+    TestBed.overrideComponent(ArOnboardingWizard, {
+      set: { imports: [], template: '{{ current() }}:{{ item()?.label }}' },
+    });
+  });
+
+  it('opens a screen only for the profile, number, contacts and template steps', () => {
+    for (const step of [
+      Step.CompleteProfile,
+      Step.ConnectChannel,
+      Step.ImportContacts,
+      Step.SubmitTemplate,
+    ]) {
+      expect(opensInline(step)).toBe(true);
+    }
+    expect(opensInline(Step.VerifyEmail)).toBe(false);
+    expect(opensInline(Step.VerifyMobile)).toBe(false);
+    // The rules and the acceptance are on the card itself.
+    expect(opensInline(Step.ReviewConsentPolicy)).toBe(false);
+    // The balance and a top-up are on the card itself.
+    expect(opensInline(Step.FundWallet)).toBe(false);
+    // Who is in, an invite form and the invitations waiting are on the card itself.
+    expect(opensInline(Step.InviteTeam)).toBe(false);
+  });
+
+  it('re-reads the checklist when the step screen closes and moves on once the step is done', async () => {
+    const fixture = TestBed.createComponent(ArOnboardingWizard);
+    const comp = fixture.componentInstance as any;
+    await vi.waitFor(() => {
+      TestBed.tick();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('0:Complete your business profile');
+    });
+
+    comp.openStep(comp.item());
+    expect(comp.openStepId()).toBe(Step.CompleteProfile);
+
+    // Saving the profile ticks the step on the server.
+    checklist.items[0].done = true;
+    await comp.closeStep(comp.item());
+    fixture.detectChanges();
+
+    expect(comp.openStepId()).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('1:Verify your email');
+  });
+
+  it('stays on the step when its screen is closed without finishing it', async () => {
+    const fixture = TestBed.createComponent(ArOnboardingWizard);
+    const comp = fixture.componentInstance as any;
+    await vi.waitFor(() => {
+      TestBed.tick();
+      fixture.detectChanges();
+      expect(comp.item()?.step).toBe(Step.CompleteProfile);
+    });
+    comp.openStep(comp.item());
+    await comp.closeStep(comp.item());
+    fixture.detectChanges();
+    expect(comp.current()).toBe(0);
+  });
+
+  it('folds the open screen away when another step is picked', async () => {
+    const fixture = TestBed.createComponent(ArOnboardingWizard);
+    const comp = fixture.componentInstance as any;
+    await vi.waitFor(() => {
+      TestBed.tick();
+      fixture.detectChanges();
+      expect(comp.item()?.step).toBe(Step.CompleteProfile);
+    });
+    comp.openStep(comp.item());
+    comp.show(1);
+    expect(comp.openStepId()).toBeNull();
+    expect(comp.current()).toBe(1);
   });
 });

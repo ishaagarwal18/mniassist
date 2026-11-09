@@ -1,9 +1,17 @@
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { PermissionService } from '@abp/ng.core';
 
-import { ComplianceStore, DpdpRequest, ReqKind } from '../../core/services/compliance.service';
-import { DataRequestKind } from '../../proxy/compliance';
+import {
+  Breach,
+  ComplianceStore,
+  DpdpRequest,
+  ReqKind,
+} from '../../core/services/compliance.service';
+import { BreachSeverity, DataRequestKind } from '../../proxy/compliance';
+import { ArDateInput } from '../../ui/date-input';
+import { boardStatus, breachProblem, peopleStatus, toLocalInput } from './breach.logic';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog, ArStatTile } from '../../ui';
 import { ArSelect } from '../../ui/select';
@@ -37,6 +45,7 @@ const KIND_LABEL: Record<ReqKind, string> = {
     ArStatTile,
     DecimalPipe,
     ArSelect,
+    ArDateInput,
     ArAiCallCompliance,
     ArGrid,
     GridModule,
@@ -57,7 +66,11 @@ export class ArCompliance {
   protected readonly isPage = this.mode !== 'list';
 
   protected readonly pageTitle = computed(() =>
-    this.mode === 'new' ? 'Log a DPDP request' : 'Compliance',
+    this.mode === 'new'
+      ? 'Log a DPDP request'
+      : this.mode === 'breach'
+        ? 'Log a data breach'
+        : 'Compliance',
   );
 
   protected readonly loading = this.store.loading;
@@ -70,6 +83,8 @@ export class ArCompliance {
   constructor() {
     if (this.mode === 'new') {
       this.openDialog();
+    } else if (this.mode === 'breach') {
+      this.openBreachDialog();
     }
   }
 
@@ -80,8 +95,137 @@ export class ArCompliance {
 
   protected close(): void {
     this.dialogOpen.set(false);
+    this.breachOpen.set(false);
     if (this.isPage && this.router) {
       void this.router.navigate(['/compliance']);
+    }
+  }
+
+  // ---- Breach log ------------------------------------------------------
+
+  /** Recording and working breaches is its own permission (AutoReach.Compliance.ManageBreaches). */
+  protected readonly canManageBreaches = inject(PermissionService).getGrantedPolicy(
+    'AutoReach.Compliance.ManageBreaches',
+  );
+  protected readonly severities = [
+    { value: BreachSeverity.Low, label: 'Low — little or no harm likely' },
+    { value: BreachSeverity.Medium, label: 'Medium' },
+    { value: BreachSeverity.High, label: 'High — people could be harmed' },
+    { value: BreachSeverity.Critical, label: 'Critical — sensitive data or many people' },
+  ];
+  protected readonly breachOpen = signal(false);
+  protected readonly breachTitle = signal('');
+  protected readonly breachSeverity = signal<BreachSeverity>(BreachSeverity.Medium);
+  protected readonly breachDetected = signal('');
+  protected readonly breachAffected = signal(0);
+  protected readonly breachDescription = signal('');
+  protected readonly breachMax = signal(toLocalInput(new Date()));
+  protected readonly boardStatus = boardStatus;
+  protected readonly peopleStatus = peopleStatus;
+
+  protected goNewBreach(): void {
+    if (this.router) void this.router.navigate(['/compliance/breaches/new']);
+    else this.openBreachDialog();
+  }
+
+  protected openBreachDialog(): void {
+    const now = toLocalInput(new Date());
+    this.breachTitle.set('');
+    this.breachSeverity.set(BreachSeverity.Medium);
+    this.breachDetected.set(now);
+    this.breachMax.set(now);
+    this.breachAffected.set(0);
+    this.breachDescription.set('');
+    this.breachOpen.set(true);
+  }
+
+  protected async saveBreach(): Promise<void> {
+    const problem = breachProblem(
+      this.breachTitle(),
+      this.breachDetected(),
+      Number(this.breachAffected()),
+    );
+    if (problem) {
+      this.toasts.warning(problem, 'Breach');
+      return;
+    }
+    this.saving.set(true);
+    try {
+      await this.store.logBreach({
+        title: this.breachTitle(),
+        severity: this.breachSeverity(),
+        detectedAt: new Date(this.breachDetected()).toISOString(),
+        affected: Number(this.breachAffected()),
+        description: this.breachDescription(),
+      });
+      this.toasts.success(
+        'Incident logged. The 72-hour clock for telling the Data Protection Board has started.',
+        'Breach',
+      );
+      this.close();
+    } catch {
+      this.toasts.error('The incident could not be logged. Try again.', 'Breach');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected async containBreach(b: Breach): Promise<void> {
+    const ok = await this.dialogs.confirm({
+      title: 'Mark this incident contained?',
+      message: `Use this once the leak in “${b.title}” has been stopped — for example a password changed, access removed or a lost device wiped.`,
+      confirmText: 'Mark contained',
+    });
+    if (!ok) return;
+    await this.runBreach(b.id, () => this.store.containBreach(b.id));
+  }
+
+  protected async boardTold(b: Breach): Promise<void> {
+    const ok = await this.dialogs.confirm({
+      title: 'Record that the Board was told?',
+      message:
+        'Use this once you have reported the incident to the Data Protection Board of India. Today’s date is recorded.',
+      confirmText: 'Record it',
+    });
+    if (!ok) return;
+    await this.runBreach(b.id, () => this.store.recordBreachNotification(b.id, { board: true }));
+  }
+
+  protected async peopleTold(b: Breach): Promise<void> {
+    const ok = await this.dialogs.confirm({
+      title: 'Record that the affected people were told?',
+      message: `Use this once the ${b.affected} people whose data was involved have been told what happened and what they can do. Today’s date is recorded.`,
+      confirmText: 'Record it',
+    });
+    if (!ok) return;
+    await this.runBreach(b.id, () =>
+      this.store.recordBreachNotification(b.id, { principals: true }),
+    );
+  }
+
+  protected async closeBreach(b: Breach): Promise<void> {
+    const notes = await this.dialogs.ask(
+      'Close this incident?',
+      {
+        label: 'What was done, and what stops it happening again',
+        multiline: true,
+        required: true,
+        maxLength: 2000,
+      },
+      'Kept with the incident as its record.',
+    );
+    if (!notes) return;
+    await this.runBreach(b.id, () => this.store.closeBreach(b.id, notes));
+  }
+
+  private async runBreach(id: string, work: () => Promise<void>): Promise<void> {
+    this.busy.set(id);
+    try {
+      await work();
+    } catch {
+      this.toasts.error('That could not be saved. Try again.', 'Breach');
+    } finally {
+      this.busy.set(null);
     }
   }
 

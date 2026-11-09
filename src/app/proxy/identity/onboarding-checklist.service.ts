@@ -1,4 +1,5 @@
 import type {
+  AcceptConsentRulesDto,
   ConfirmMobileVerificationDto,
   OnboardingChecklistDto,
   StartMobileVerificationDto,
@@ -13,6 +14,17 @@ import { Injectable, inject } from '@angular/core';
 export class OnboardingChecklistService {
   private restService = inject(RestService);
   apiName = 'AutoReach';
+
+  acceptConsentRules = (input: AcceptConsentRulesDto, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, OnboardingChecklistDto>(
+      {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        url: '/api/auto-reach/onboarding-checklist/accept-consent-rules',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
 
   confirmMobileVerification = (
     input: ConfirmMobileVerificationDto,

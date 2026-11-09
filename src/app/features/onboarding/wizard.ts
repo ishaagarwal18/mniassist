@@ -21,6 +21,10 @@ import { ToastService } from '../../core/ui/toast.service';
 import { AccountRecoveryService } from '../../proxy/identity/account-recovery.service';
 import { environment } from '../../../environments/environment';
 import { errorMessage } from '../activities/activity-logic';
+import { ArOnboardingStepPanel, opensInline } from './step-panel';
+import { ArOnboardingConsentRules } from './consent-rules';
+import { ArOnboardingAddFunds } from './add-funds';
+import { ArOnboardingInviteTeam } from './invite-team';
 
 /**
  * Get started (M07-1). The nine things a new tenant does before the product is
@@ -30,26 +34,34 @@ import { errorMessage } from '../activities/activity-logic';
  *
  * It is a checklist, not a gate: someone who connected a number during signup sees
  * that step already done rather than being marched through embedded signup again,
- * and any step can be skipped or picked from the rail. Mobile verification is the
- * one step handled inline — the OTP round-trip is short enough that bouncing to
- * another screen for it would be the slower path.
+ * and any step can be skipped or picked from the rail. Email and mobile
+ * verification, and accepting the consent rules (consent-rules.ts), are handled on
+ * the card itself; every other step opens on this page,
+ * under its card (step-panel.ts), so the person never leaves Get started. The
+ * business profile comes first (see ORDER in onboarding.store.ts).
  */
 @Component({
   selector: 'ar-onboarding-wizard',
-  imports: [RouterLink, ArTopbar, ArButton, ArChip, ArMeter],
+  imports: [
+    RouterLink,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArMeter,
+    ArOnboardingStepPanel,
+    ArOnboardingConsentRules,
+    ArOnboardingAddFunds,
+    ArOnboardingInviteTeam,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
       title="Get started"
       [subtitle]="checklist().completedCount + ' of ' + checklist().totalCount + ' done'"
-      help="A running checklist, not a gate — steps you've already finished show as done automatically. Dismissing it just hides the checklist; nothing here is lost."
-    >
-      @if (!checklist().isComplete) {
-        <button ar-button type="button" variant="ghost" (click)="store.dismiss()">Dismiss</button>
-      }
-    </ar-topbar>
+      help="A running checklist, not a gate — steps you've already finished show as done automatically. It leaves the menu by itself once every step is done."
+    />
 
-    <div class="ob ar-scroll">
+    <div class="ob ar-scroll" [class.ob--wide]="openStepId() !== null">
       <!-- The rail: every step at a glance; click one to go to it. -->
       <nav class="rail" aria-label="Setup steps">
         <ol class="rail__list">
@@ -205,7 +217,32 @@ import { errorMessage } from '../activities/activity-logic';
               }
             }
             <div class="row">
-              @if (step.route && !isVerifyStep(step)) {
+              @if (inline(step)) {
+                @if (isOpen(step)) {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="busy()"
+                    (click)="closeStep(step)"
+                  >
+                    Close
+                  </button>
+                } @else {
+                  <button
+                    ar-button
+                    type="button"
+                    variant="primary"
+                    icon="link"
+                    [disabled]="busy()"
+                    (click)="openStep(step)"
+                  >
+                    Go and do it
+                  </button>
+                }
+              } @else if (
+                step.route && !isVerifyStep(step) && !isFundStep(step) && !isTeamStep(step)
+              ) {
                 <a ar-button variant="primary" icon="link" [routerLink]="step.route"
                   >Go and do it</a
                 >
@@ -223,6 +260,25 @@ import { errorMessage } from '../activities/activity-logic';
                 </button>
               }
             </div>
+          }
+
+          @if (isConsentStep(step)) {
+            <ar-onboarding-consent-rules
+              [acceptance]="checklist().consentRules"
+              (accepted)="advance()"
+            />
+          }
+
+          @if (isFundStep(step)) {
+            <ar-onboarding-add-funds (funded)="onFunded(step)" />
+          }
+
+          @if (isTeamStep(step)) {
+            <ar-onboarding-invite-team (invited)="onInvited()" />
+          }
+
+          @if (isOpen(step)) {
+            <ar-onboarding-step-panel [step]="step.step" (closed)="closeStep(step)" />
           }
 
           <footer class="card__foot">
@@ -277,6 +333,10 @@ import { errorMessage } from '../activities/activity-logic';
       flex-direction: column;
       gap: 18px;
       max-width: 920px;
+    }
+    /* A step's screen is open under its card: give it the room it has on its own page. */
+    .ob--wide {
+      max-width: 1240px;
     }
 
     /* The rail */
@@ -530,6 +590,37 @@ export class ArOnboardingWizard {
     });
   }
 
+  /** The step whose screen is open under its card, if any. */
+  protected readonly openStepId = signal<OnboardingChecklistStep | null>(null);
+
+  protected inline(item: ChecklistItem): boolean {
+    return opensInline(item.step);
+  }
+
+  protected isOpen(item: ChecklistItem): boolean {
+    return this.openStepId() === item.step;
+  }
+
+  protected openStep(item: ChecklistItem): void {
+    this.openStepId.set(item.step);
+  }
+
+  /**
+   * The step's screen closed: read the checklist again, since saving the profile, connecting a number and the rest
+   * tick their step on the server, and move on when this one is now done.
+   */
+  protected async closeStep(item: ChecklistItem): Promise<void> {
+    if (this.openStepId() !== item.step) return;
+    this.openStepId.set(null);
+    try {
+      await this.store.reread();
+    } catch {
+      return; // The card still offers "I've done this".
+    }
+    const now = this.checklist().items.find((i) => i.step === item.step);
+    if (now?.done && this.item()?.step === item.step) this.advance();
+  }
+
   protected isNext(item: ChecklistItem): boolean {
     return !item.done && item.step === this.nextStep();
   }
@@ -538,9 +629,56 @@ export class ArOnboardingWizard {
     return item.step === OnboardingChecklistStep.VerifyEmail;
   }
 
-  /** Steps proven by a flow (email link, mobile code), never ticked by hand. */
+  /**
+   * Steps proven by a flow on the card (email link, mobile code, accepting the consent rules), never ticked by hand
+   * and with no other screen to go to.
+   */
   protected isVerifyStep(item: ChecklistItem): boolean {
-    return this.isEmailStep(item) || this.isMobileStep(item);
+    return this.isEmailStep(item) || this.isMobileStep(item) || this.isConsentStep(item);
+  }
+
+  /**
+   * "Add funds": the balance and a top-up on the card itself. A top-up ticks the step on the server; "I've done
+   * this" stays for a wallet funded before that, or by the platform team.
+   */
+  protected isFundStep(item: ChecklistItem): boolean {
+    return item.step === OnboardingChecklistStep.FundWallet;
+  }
+
+  /** The wallet was credited from the card: pick up the step the server ticked, and move on. */
+  protected async onFunded(item: ChecklistItem): Promise<void> {
+    try {
+      await this.store.reread();
+    } catch {
+      return;
+    }
+    const now = this.checklist().items.find((i) => i.step === item.step);
+    if (now?.done && this.item()?.step === item.step) this.advance();
+  }
+
+  /**
+   * "Invite your team": who is in, an invite form and the invitations waiting, on the card itself. The first
+   * invitation ticks the step on the server; "I've done this" stays for a team invited before that.
+   */
+  protected isTeamStep(item: ChecklistItem): boolean {
+    return item.step === OnboardingChecklistStep.InviteTeam;
+  }
+
+  /**
+   * An invitation went out: pick up the step the server ticked. No moving on — someone inviting their team usually
+   * sends several, and this is the last step anyway.
+   */
+  protected async onInvited(): Promise<void> {
+    try {
+      await this.store.reread();
+    } catch {
+      // The card still offers "I've done this".
+    }
+  }
+
+  /** "Review the consent rules": the rules and a named acceptance, on the card itself. */
+  protected isConsentStep(item: ChecklistItem): boolean {
+    return item.step === OnboardingChecklistStep.ReviewConsentPolicy;
   }
 
   protected async sendEmailLink(): Promise<void> {
@@ -607,6 +745,9 @@ export class ArOnboardingWizard {
   }
 
   protected show(index: number): void {
+    // Leaving a step with its screen open folds it away (and picks up anything it saved).
+    const open = this.checklist().items.find((i) => i.step === this.openStepId());
+    if (open && this.checklist().items[index]?.step !== open.step) void this.closeStep(open);
     this.summary.set(false);
     this.current.set(index);
   }

@@ -103,6 +103,13 @@ export interface OnboardingChecklistDto extends EntityDto<string> {
   nextStep?: OnboardingChecklistStep | null;
   mobileVerified?: boolean;
   verifiedMobile?: string | null;
+  consentRulesAcceptedBy?: string | null;
+  consentRulesAcceptedAtUtc?: string | null;
+  consentRulesVersion?: string | null;
+}
+
+export interface AcceptConsentRulesDto {
+  version: string;
 }
 
 export interface OnboardingChecklistItemDto {

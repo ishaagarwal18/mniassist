@@ -34,13 +34,36 @@ export interface RetentionPolicy {
   lastRun?: string;
   lastRows: number;
 }
+export type BreachStage = 'detected' | 'contained' | 'notified' | 'closed';
 export interface Breach {
   id: string;
   title: string;
   severity: string;
-  state: string;
+  state: BreachStage;
   detectedAt: string;
   affected: number;
+  description?: string;
+  containedAt?: string;
+  boardNotifiedAt?: string;
+  principalsNotifiedAt?: string;
+  closedAt?: string;
+  remediationNotes?: string;
+  /** 72 hours from detection: when the Data Protection Board should have been told. */
+  boardDeadline?: string;
+  boardOutstanding: boolean;
+  principalsOutstanding: boolean;
+  /** Negative once the Board deadline has passed. */
+  hoursToBoardDeadline: number;
+}
+
+/** What "Log an incident" sends. */
+export interface NewBreach {
+  title: string;
+  severity: BreachSeverity;
+  /** ISO time it was found. Required: the API has no default, and the Board's 72-hour clock starts here. */
+  detectedAt: string;
+  affected: number;
+  description?: string;
 }
 export interface Overview {
   openRequests: number;
@@ -81,7 +104,7 @@ const SEV: Record<BreachSeverity, string> = {
   [BreachSeverity.High]: 'high',
   [BreachSeverity.Critical]: 'critical',
 };
-const BSTATE: Record<BreachState, string> = {
+const BSTATE: Record<BreachState, BreachStage> = {
   [BreachState.Detected]: 'detected',
   [BreachState.Contained]: 'contained',
   [BreachState.Notified]: 'notified',
@@ -219,7 +242,17 @@ export class ComplianceStore {
                 severity: b.severity != null ? SEV[b.severity] : SEV[0],
                 state: b.state != null ? BSTATE[b.state] : BSTATE[0],
                 detectedAt: b.detectedAtUtc,
-                affected: b.affectedPrincipalCount,
+                affected: b.affectedPrincipalCount ?? 0,
+                description: b.description ?? undefined,
+                containedAt: b.containedAtUtc ?? undefined,
+                boardNotifiedAt: b.boardNotifiedAtUtc ?? undefined,
+                principalsNotifiedAt: b.principalsNotifiedAtUtc ?? undefined,
+                closedAt: b.closedAtUtc ?? undefined,
+                remediationNotes: b.remediationNotes ?? undefined,
+                boardDeadline: b.boardNotificationDeadlineUtc,
+                boardOutstanding: b.boardNotificationOutstanding ?? false,
+                principalsOutstanding: b.principalsNotificationOutstanding ?? false,
+                hoursToBoardDeadline: b.hoursToBoardDeadline ?? 0,
               }) as Breach,
           ),
         })),
@@ -270,6 +303,43 @@ export class ComplianceStore {
     await firstValueFrom(
       this.api.updateRetentionPolicy(id, { retentionDays: days, isEnabled: enabled }),
     );
+    this.reload();
+  }
+
+  /** Records a personal-data breach; the 72-hour clock for telling the Board starts at its detection time. */
+  async logBreach(input: NewBreach): Promise<void> {
+    if (environment.useMockData) return;
+    await firstValueFrom(
+      this.api.createBreach({
+        title: input.title.trim(),
+        severity: input.severity,
+        detectedAtUtc: input.detectedAt,
+        affectedPrincipalCount: Math.max(0, Math.floor(input.affected || 0)),
+        description: input.description?.trim() || null,
+      }),
+    );
+    this.reload();
+  }
+  /** The leak is stopped (password changed, access removed, device wiped…). */
+  async containBreach(id: string): Promise<void> {
+    await firstValueFrom(this.api.containBreach(id));
+    this.reload();
+  }
+  /** The Data Protection Board and/or the affected people have been told. */
+  async recordBreachNotification(
+    id: string,
+    who: { board?: boolean; principals?: boolean },
+  ): Promise<void> {
+    await firstValueFrom(
+      this.api.recordBreachNotification(id, {
+        boardNotified: !!who.board,
+        principalsNotified: !!who.principals,
+      }),
+    );
+    this.reload();
+  }
+  async closeBreach(id: string, remediationNotes: string): Promise<void> {
+    await firstValueFrom(this.api.closeBreach(id, remediationNotes.trim()));
     this.reload();
   }
 

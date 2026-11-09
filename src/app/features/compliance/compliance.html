@@ -9,191 +9,275 @@
   <ar-topbar
     title="Compliance"
     subtitle="DPDP requests, retention and breach log"
-    help="DPDP data-principal requests, retention settings and the breach log. Every rights request runs on a 30-day SLA clock, shown right on its row."
+    help="Where you look after your customers’ personal data under India’s DPDP Act, 2023. Answer requests to see, correct or delete data within 30 days, set how long data is kept, check the rules AI calls follow, and record any data breach."
   >
+    @if (canManageBreaches) {
+      <button ar-button type="button" variant="ghost" icon="plus" (click)="goNewBreach()">
+        Log an incident
+      </button>
+    }
     <button ar-button type="button" variant="primary" icon="plus" (click)="goNew()">
       Log a request
     </button>
   </ar-topbar>
 
   <div class="cx ar-scroll">
-  <div class="cx__stats">
-    <ar-stat-tile
-      label="Open requests"
-      [value]="overview().openRequests + ''"
-      [tone]="
-        overview().breachingSla > 0 ? 'bad' : overview().dueThisWeek > 0 ? 'amber' : 'neutral'
-      "
-      [note]="
-        overview().breachingSla > 0
-          ? overview().breachingSla + ' past SLA'
-          : overview().dueThisWeek + ' due this week'
-      "
-    />
-    <ar-stat-tile
-      label="Open breaches"
-      [value]="overview().openBreaches + ''"
-      [tone]="overview().openBreaches > 0 ? 'bad' : 'good'"
-    />
-    <ar-stat-tile
-      label="Consent records"
-      [value]="(overview().consentRecords | number: '1.0-0') ?? '0'"
-    />
-    <ar-stat-tile
-      label="Suppressed"
-      [value]="overview().suppressed + ''"
-      note="opt-out / invalid / blocked"
-    />
-  </div>
+    <div class="cx__stats">
+      <ar-stat-tile
+        label="Open requests"
+        [value]="overview().openRequests + ''"
+        [tone]="
+          overview().breachingSla > 0 ? 'bad' : overview().dueThisWeek > 0 ? 'amber' : 'neutral'
+        "
+        [note]="
+          overview().breachingSla > 0
+            ? overview().breachingSla + ' past SLA'
+            : overview().dueThisWeek + ' due this week'
+        "
+      />
+      <ar-stat-tile
+        label="Open breaches"
+        [value]="overview().openBreaches + ''"
+        [tone]="overview().openBreaches > 0 ? 'bad' : 'good'"
+      />
+      <ar-stat-tile
+        label="Consent records"
+        [value]="(overview().consentRecords | number: '1.0-0') ?? '0'"
+      />
+      <ar-stat-tile
+        label="Suppressed"
+        [value]="overview().suppressed + ''"
+        note="opt-out / invalid / blocked"
+      />
+    </div>
 
-  <ar-ai-call-compliance />
+    <ar-ai-call-compliance />
 
-  <section class="card">
-    <h2 class="card__h">Data-principal requests</h2>
-    <ejs-grid
-      arGrid="compliance-requests"
-      [dataSource]="requests()"
-      aria-label="Data-principal requests"
-    >
-      <e-columns>
-        <e-column headerText="Kind" width="160">
-          <ng-template #template let-r>
-            {{ kindLabel(r.kind) }}
-          </ng-template>
-        </e-column>
-        <e-column field="requester" headerText="Requester" width="160">
-          <ng-template #template let-r>
-            <span class="ar-mono">{{ r.requester }}</span>
-          </ng-template>
-        </e-column>
-        <e-column headerText="Contact" width="160">
-          <ng-template #template let-r>
-            @if (r.contact) {
-              {{ r.contact }}
-            } @else {
-              <ar-chip tone="warn" title="No contact matches the requester">No match</ar-chip>
-            }
-          </ng-template>
-        </e-column>
-        <e-column field="receivedAt" headerText="Received" width="130">
-          <ng-template #template let-r>
-            {{ when(r.receivedAt) }}
-          </ng-template>
-        </e-column>
-        <e-column headerText="SLA" width="130">
-          <ng-template #template let-r>
-            <ar-chip [tone]="slaTone(r)">{{ slaLabel(r) }}</ar-chip>
-          </ng-template>
-        </e-column>
-        <e-column headerText="Actions" width="150" freeze="Right">
-          <ng-template #template let-r>
-            <div class="actions">
-              @if (r.state === 'received' || r.state === 'inProgress') {
-                <button ar-button variant="ghost" [disabled]="!!busy()" (click)="fulfil(r)">
-                  Fulfil
-                </button>
-                <button ar-button variant="ghost" [disabled]="!!busy()" (click)="reject(r)">
-                  Reject
-                </button>
-              }
-            </div>
-          </ng-template>
-        </e-column>
-      </e-columns>
-    </ejs-grid>
-  </section>
-
-  <section class="card">
-    <h2 class="card__h">Retention policies</h2>
-    <ejs-grid
-      arGrid="compliance-retention-policies"
-      [dataSource]="policies()"
-      aria-label="Retention policies"
-    >
-      <e-columns>
-        <e-column field="dataClass" headerText="Data class" width="180"></e-column>
-        <e-column headerText="Keep for" width="160">
-          <ng-template #template let-p>
-            <div class="days-cell">
-              <input
-                class="days"
-                type="number"
-                min="1"
-                max="3650"
-                [attr.aria-label]="'Retention days for ' + p.dataClass"
-                [value]="p.days"
-                [disabled]="isConsentClass(p.dataClass) || !!busy()"
-                (change)="onDaysChange(p.id, p.enabled, $event)"
-              />
-              <span>days</span>
-            </div>
-          </ng-template>
-        </e-column>
-        <e-column headerText="Enforced" width="140">
-          <ng-template #template let-p>
-            @if (isConsentClass(p.dataClass)) {
-              <ar-chip tone="neutral">never — evidence</ar-chip>
-            } @else {
-              <label class="sw">
-                <input
-                  type="checkbox"
-                  [checked]="p.enabled"
-                  [disabled]="!!busy()"
-                  (change)="togglePolicy(p.id, p.days, $any($event.target).checked)"
-                />
-                {{ p.enabled ? 'on' : 'off' }}
-              </label>
-            }
-          </ng-template>
-        </e-column>
-        <e-column headerText="Last purge" width="180">
-          <ng-template #template let-p>
-            <span class="muted">
-              {{ when(p.lastRun) }}
-              @if (p.lastRows > 0) {
-                , {{ p.lastRows | number: '1.0-0' }} rows
-              }
-            </span>
-          </ng-template>
-        </e-column>
-      </e-columns>
-    </ejs-grid>
-  </section>
-
-  @if (breaches().length > 0) {
     <section class="card">
-      <h2 class="card__h">Breach log</h2>
+      <h2 class="card__h">Data-principal requests</h2>
       <ejs-grid
-        arGrid="compliance-breach-log"
-        [dataSource]="breaches()"
-        aria-label="Breach log"
+        arGrid="compliance-requests"
+        [dataSource]="requests()"
+        aria-label="Data-principal requests"
       >
         <e-columns>
-          <e-column field="title" headerText="Incident" width="200"></e-column>
-          <e-column field="severity" headerText="Severity" width="120">
-            <ng-template #template let-b>
-              <span class="cap">{{ b.severity }}</span>
+          <e-column headerText="Kind" width="160">
+            <ng-template #template let-r>
+              {{ kindLabel(r.kind) }}
             </ng-template>
           </e-column>
-          <e-column field="state" headerText="State" width="120">
-            <ng-template #template let-b>
-              <span class="cap">{{ b.state }}</span>
+          <e-column field="requester" headerText="Requester" width="160">
+            <ng-template #template let-r>
+              <span class="ar-mono">{{ r.requester }}</span>
             </ng-template>
           </e-column>
-          <e-column field="detectedAt" headerText="Detected" width="140">
-            <ng-template #template let-b>
-              {{ when(b.detectedAt) }}
+          <e-column headerText="Contact" width="160">
+            <ng-template #template let-r>
+              @if (r.contact) {
+                {{ r.contact }}
+              } @else {
+                <ar-chip tone="warn" title="No contact matches the requester">No match</ar-chip>
+              }
             </ng-template>
           </e-column>
-          <e-column field="affected" headerText="Affected" width="110" [textAlign]="'Right'">
-            <ng-template #template let-b>
-              {{ b.affected | number: '1.0-0' }}
+          <e-column field="receivedAt" headerText="Received" width="130">
+            <ng-template #template let-r>
+              {{ when(r.receivedAt) }}
+            </ng-template>
+          </e-column>
+          <e-column headerText="SLA" width="130">
+            <ng-template #template let-r>
+              <ar-chip [tone]="slaTone(r)">{{ slaLabel(r) }}</ar-chip>
+            </ng-template>
+          </e-column>
+          <e-column headerText="Actions" width="150" freeze="Right">
+            <ng-template #template let-r>
+              <div class="actions">
+                @if (r.state === 'received' || r.state === 'inProgress') {
+                  <button ar-button variant="ghost" [disabled]="!!busy()" (click)="fulfil(r)">
+                    Fulfil
+                  </button>
+                  <button ar-button variant="ghost" [disabled]="!!busy()" (click)="reject(r)">
+                    Reject
+                  </button>
+                }
+              </div>
             </ng-template>
           </e-column>
         </e-columns>
       </ejs-grid>
     </section>
-  }
+
+    <section class="card">
+      <h2 class="card__h">Retention policies</h2>
+      <ejs-grid
+        arGrid="compliance-retention-policies"
+        [dataSource]="policies()"
+        aria-label="Retention policies"
+      >
+        <e-columns>
+          <e-column field="dataClass" headerText="Data class" width="180"></e-column>
+          <e-column headerText="Keep for" width="160">
+            <ng-template #template let-p>
+              <div class="days-cell">
+                <input
+                  class="days"
+                  type="number"
+                  min="1"
+                  max="3650"
+                  [attr.aria-label]="'Retention days for ' + p.dataClass"
+                  [value]="p.days"
+                  [disabled]="isConsentClass(p.dataClass) || !!busy()"
+                  (change)="onDaysChange(p.id, p.enabled, $event)"
+                />
+                <span>days</span>
+              </div>
+            </ng-template>
+          </e-column>
+          <e-column headerText="Enforced" width="140">
+            <ng-template #template let-p>
+              @if (isConsentClass(p.dataClass)) {
+                <ar-chip tone="neutral">never — evidence</ar-chip>
+              } @else {
+                <label class="sw">
+                  <input
+                    type="checkbox"
+                    [checked]="p.enabled"
+                    [disabled]="!!busy()"
+                    (change)="togglePolicy(p.id, p.days, $any($event.target).checked)"
+                  />
+                  {{ p.enabled ? 'on' : 'off' }}
+                </label>
+              }
+            </ng-template>
+          </e-column>
+          <e-column headerText="Last purge" width="180">
+            <ng-template #template let-p>
+              <span class="muted">
+                {{ when(p.lastRun) }}
+                @if (p.lastRows > 0) {
+                  , {{ p.lastRows | number: '1.0-0' }} rows
+                }
+              </span>
+            </ng-template>
+          </e-column>
+        </e-columns>
+      </ejs-grid>
+    </section>
+
+    <section class="card">
+      <div class="card__row">
+        <h2 class="card__h">Breach log</h2>
+        @if (canManageBreaches) {
+          <button ar-button type="button" variant="ghost" icon="plus" (click)="goNewBreach()">
+            Log an incident
+          </button>
+        }
+      </div>
+      <p class="card__p">
+        A breach is personal data getting out or being seen by someone who should not see it — a
+        lost phone with customer chats, a contact list sent to the wrong person, a hacked account.
+        Log it as soon as you know: the Data Protection Board should be told within 72 hours, and so
+        should the people affected.
+      </p>
+      @if (breaches().length === 0) {
+        <p class="muted">No incidents recorded.</p>
+      } @else {
+        <ejs-grid arGrid="compliance-breach-log" [dataSource]="breaches()" aria-label="Breach log">
+          <e-columns>
+            <e-column field="title" headerText="Incident" width="200">
+              <ng-template #template let-b>
+                <span [title]="b.description || ''">{{ b.title }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="severity" headerText="Severity" width="110">
+              <ng-template #template let-b>
+                <span class="cap">{{ b.severity }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="state" headerText="State" width="110">
+              <ng-template #template let-b>
+                <span class="cap">{{ b.state }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="detectedAt" headerText="Found" width="120">
+              <ng-template #template let-b>
+                {{ when(b.detectedAt) }}
+              </ng-template>
+            </e-column>
+            <e-column field="affected" headerText="Affected" width="100" [textAlign]="'Right'">
+              <ng-template #template let-b>
+                {{ b.affected | number: '1.0-0' }}
+              </ng-template>
+            </e-column>
+            <e-column headerText="Board" width="130">
+              <ng-template #template let-b>
+                @let bs = boardStatus(b);
+                <ar-chip [tone]="bs.tone">{{ bs.label }}</ar-chip>
+              </ng-template>
+            </e-column>
+            <e-column headerText="People" width="140">
+              <ng-template #template let-b>
+                @let ps = peopleStatus(b);
+                <ar-chip [tone]="ps.tone">{{ ps.label }}</ar-chip>
+              </ng-template>
+            </e-column>
+            @if (canManageBreaches) {
+              <e-column headerText="Actions" width="300" freeze="Right">
+                <ng-template #template let-b>
+                  <div class="actions">
+                    @if (b.state !== 'closed') {
+                      @if (!b.containedAt) {
+                        <button
+                          ar-button
+                          variant="ghost"
+                          [disabled]="!!busy()"
+                          (click)="containBreach(b)"
+                        >
+                          Contained
+                        </button>
+                      }
+                      @if (b.boardOutstanding) {
+                        <button
+                          ar-button
+                          variant="ghost"
+                          [disabled]="!!busy()"
+                          (click)="boardTold(b)"
+                        >
+                          Board told
+                        </button>
+                      }
+                      @if (b.principalsOutstanding) {
+                        <button
+                          ar-button
+                          variant="ghost"
+                          [disabled]="!!busy()"
+                          (click)="peopleTold(b)"
+                        >
+                          People told
+                        </button>
+                      }
+                      <button
+                        ar-button
+                        variant="ghost"
+                        [disabled]="!!busy()"
+                        (click)="closeBreach(b)"
+                      >
+                        Close
+                      </button>
+                    } @else {
+                      <span class="muted" [title]="b.remediationNotes || ''"
+                        >Closed {{ when(b.closedAt) }}</span
+                      >
+                    }
+                  </div>
+                </ng-template>
+              </e-column>
+            }
+          </e-columns>
+        </ejs-grid>
+      }
+    </section>
   </div>
 }
 
@@ -223,9 +307,7 @@
         />
       </label>
       <div dialogActions>
-        <button ar-button type="button" variant="ghost" (click)="close()">
-          Cancel
-        </button>
+        <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
         <button
           ar-button
           type="button"
@@ -234,6 +316,88 @@
           (click)="saveRequest()"
         >
           {{ saving() ? 'Logging…' : 'Log request' }}
+        </button>
+      </div>
+    </ar-dialog>
+  }
+  @if (breachOpen()) {
+    <ar-dialog title="Log a data breach" width="min(560px, calc(100vw - 32px))" (dismiss)="close()">
+      <p class="cx__dialog-note">
+        Record it as soon as you know, even before every detail is clear — the 72-hour clock for
+        telling the Data Protection Board runs from when it was found. You can mark it contained,
+        record who was told and close it from the breach log.
+      </p>
+      <label class="ar-field">
+        <span class="ar-field__label">What happened</span>
+        <input
+          required
+          maxlength="256"
+          class="ar-field__input"
+          placeholder="e.g. Sales phone with customer chats lost"
+          data-autofocus
+          [value]="breachTitle()"
+          (input)="breachTitle.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Severity</span>
+        <select
+          required
+          class="ar-field__input"
+          (change)="breachSeverity.set(+$any($event.target).value)"
+        >
+          @for (o of severities; track o.value) {
+            <option [value]="o.value" [selected]="o.value === breachSeverity()">
+              {{ o.label }}
+            </option>
+          }
+        </select>
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">When it was found</span>
+        <input
+          required
+          class="ar-field__input"
+          type="datetime-local"
+          [max]="breachMax()"
+          [value]="breachDetected()"
+          (input)="breachDetected.set($any($event.target).value)"
+        />
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">People affected</span>
+        <input
+          required
+          class="ar-field__input"
+          type="number"
+          min="0"
+          step="1"
+          [value]="breachAffected()"
+          (input)="breachAffected.set(+$any($event.target).value)"
+        />
+        <span class="cx__hint">How many people’s data was involved. 0 if none.</span>
+      </label>
+      <label class="ar-field">
+        <span class="ar-field__label">Details (optional)</span>
+        <textarea
+          class="ar-field__input"
+          rows="4"
+          maxlength="4000"
+          placeholder="What data, how it got out, what you have done so far"
+          [value]="breachDescription()"
+          (input)="breachDescription.set($any($event.target).value)"
+        ></textarea>
+      </label>
+      <div dialogActions>
+        <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
+        <button
+          ar-button
+          type="button"
+          variant="primary"
+          [disabled]="saving()"
+          (click)="saveBreach()"
+        >
+          {{ saving() ? 'Logging…' : 'Log incident' }}
         </button>
       </div>
     </ar-dialog>

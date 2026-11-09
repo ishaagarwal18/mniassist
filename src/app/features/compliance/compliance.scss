@@ -100,3 +100,30 @@
   font: 400 12px var(--ar-font-sans);
   color: var(--ar-ink-600);
 }
+
+/* Breach log: heading with its action, and the line saying what counts as a breach. */
+.card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.card__row .card__h {
+  margin: 0;
+}
+.card__p {
+  margin: 0 0 12px;
+  max-width: 760px;
+  font: 400 13px/1.55 var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+.cx__dialog-note {
+  margin: 0;
+  font: 400 13px/1.5 var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+.cx__hint {
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-400);
+}

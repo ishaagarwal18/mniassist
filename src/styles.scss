@@ -220,6 +220,37 @@ textarea.ar-field__input {
   max-height: calc(100dvh - 32px) !important;
 }
 
+/* Get started's step screens (features/onboarding/step-panel.ts): a whole page shown under its step card. The page
+   keeps its own header (title, help and actions) and scrolls inside a fixed frame; what only makes sense on a full
+   screen — the menu button, the breadcrumb trail and the utilities button — is hidden. */
+.ar-step-frame {
+  display: flex;
+  flex-direction: column;
+  height: min(72vh, 820px);
+  height: min(72dvh, 820px);
+  min-height: 420px;
+  overflow: hidden;
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-card);
+  background: var(--ar-bg-100);
+
+  > :not(.wait) {
+    flex: 1;
+    min-height: 0;
+  }
+  ar-topbar {
+    z-index: auto;
+    padding: 0 18px;
+  }
+  ar-topbar .tb__menu,
+  ar-topbar .tb__util-btn,
+  ar-topbar .tb__crumb-group-wrap,
+  ar-topbar .tb__crumb-sep,
+  ar-topbar .tb__crumb-link {
+    display: none !important;
+  }
+}
+
 .e-dialog.ar-dialog {
   max-height: calc(100vh - 64px);
   border: 1px solid var(--ar-line-200);

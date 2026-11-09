@@ -3,7 +3,9 @@
   [subtitle]="draft().name || 'Draft'"
   help="Draft your message, then Check for issues Meta would reject before you submit. Filing a promotional message as Utility to save cost is the fastest way to get a template restricted."
 >
-  <a class="tc__back" routerLink="/templates">← All templates</a>
+  @if (!embedded) {
+    <a class="tc__back" routerLink="/templates">← All templates</a>
+  }
   <button ar-button variant="ghost" [disabled]="busy()" (click)="runLint()">Check</button>
   <button ar-button variant="ghost" [disabled]="!canSave()" (click)="save(false)">
     Save draft
