@@ -81,6 +81,8 @@ const QUIET_ACTIONS = new Set([
   'place-call',
   'start-session',
   'end-session',
+  // the contact import screen shows the queued import's progress itself
+  'start-import',
   'start-softphone-call',
   'enter-client',
   'leave-client',

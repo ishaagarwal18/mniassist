@@ -7,6 +7,7 @@ import type { ContactLifecycle } from './contact-lifecycle.enum';
 import type { QuotationState } from '../pipeline/quotation-state.enum';
 import type { CampaignResponse } from './campaign-response.enum';
 import type { ContactExportStatus } from './contact-export-status.enum';
+import type { ContactImportStatus } from './contact-import-status.enum';
 import type { ContactTimelineKind } from './contact-timeline-kind.enum';
 import type { ChannelKind } from '../channels/channel-kind.enum';
 import type { ChannelMergeMode } from './channel-merge-mode.enum';
@@ -374,6 +375,27 @@ export interface RunImportDto {
   evidenceReference?: string | null;
   consentTextRef?: string | null;
   defaultCountryCode?: string;
+}
+
+export interface StartImportDto extends RunImportDto {
+  fileName?: string | null;
+}
+
+export interface ContactImportJobDto extends EntityDto<string> {
+  status?: ContactImportStatus;
+  fileName?: string | null;
+  totalRows?: number;
+  processedRows?: number;
+  created?: number;
+  updated?: number;
+  skipped?: number;
+  consentScopeApplied?: ConsentScope;
+  consentScopeDowngraded?: boolean;
+  requestedAtUtc?: string;
+  startedAtUtc?: string | null;
+  completedAtUtc?: string | null;
+  /** Why it failed, in words. Nothing was saved when this is set. */
+  error?: string | null;
 }
 
 export interface SegmentCostLineDto {

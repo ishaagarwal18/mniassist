@@ -4,6 +4,7 @@ export * from './consent-scope.enum';
 export * from './consent-source.enum';
 export * from './contact-export-status.enum';
 export * from './contact-export.service';
+export * from './contact-import-status.enum';
 export * from './contact-import.service';
 export * from './contact-lifecycle.enum';
 export * from './contact-merge.service';

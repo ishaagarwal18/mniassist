@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   inject,
   output,
@@ -13,16 +14,20 @@ import { ToastService } from '../../core/ui/toast.service';
 import {
   ConsentScope,
   ConsentSource,
+  ContactImportJobDto,
   ContactImportService,
+  ContactImportStatus,
   ImportDryRunDto,
   ImportPreviewDto,
-  ImportResultDto,
 } from '../../proxy/contacts';
 import { ArButton, ArDialog, ArIcon } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { cardsToCsv, parseVCards } from './vcard';
 
-type Step = 'file' | 'map' | 'check' | 'done';
+type Step = 'file' | 'map' | 'check' | 'running' | 'done';
+
+/** How often the progress screen asks how the background import is doing. */
+const POLL_MS = 1500;
 
 const SOURCES: { value: ConsentSource; label: string }[] = [
   {
@@ -44,7 +49,8 @@ const MAX_BYTES = 8 * 1024 * 1024;
  * or a vCard file (.vcf — a phone's "share contact", Google/Outlook/iCloud
  * exports). Four steps, as the import API intends: read the file and match its
  * columns; say where consent came from; check (a dry run that writes nothing and
- * lists every rejected row); import.
+ * lists every rejected row); import. The import runs as a background job: this shows its
+ * progress, and the person can close the window — a notification says when it is done.
  */
 @Component({
   selector: 'ar-contact-import',
@@ -272,25 +278,68 @@ const MAX_BYTES = 8 * 1024 * 1024;
           }
         }
 
-        @case ('done') {
-          @if (result(); as r) {
-            <div class="im__done">
-              <ar-icon name="check" [size]="28" />
-              <p>
-                <strong>{{ r.created ?? 0 }}</strong> created,
-                <strong>{{ r.updated ?? 0 }}</strong> updated,
-                <strong>{{ r.skipped ?? 0 }}</strong> skipped.
+        @case ('running') {
+          @if (job(); as j) {
+            <div class="im__running" role="status" aria-live="polite">
+              <p class="im__lead">
+                @if (j.status === Status.Pending) {
+                  Waiting to start{{ j.fileName ? ' — ' + j.fileName : '' }}…
+                } @else {
+                  Importing {{ j.fileName || 'contacts' }}:
+                  <strong>{{ (j.processedRows ?? 0).toLocaleString() }}</strong> of
+                  {{ (j.totalRows ?? 0).toLocaleString() }} rows
+                }
               </p>
-              @if (r.consentScopeDowngraded) {
-                <p class="im__muted">
-                  They were kept to service messages: this consent source is not an opt-in to
-                  marketing.
+              <div
+                class="im__bar"
+                role="progressbar"
+                aria-label="Import progress"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                [attr.aria-valuenow]="percent()"
+              >
+                <span [style.width.%]="percent()"></span>
+              </div>
+              <p class="im__muted">
+                You can close this window and carry on working. The import continues, and you'll get
+                a notification when it finishes. Contacts appear once the whole file is in.
+              </p>
+              @if (pollLost()) {
+                <p class="im__warn" role="alert">
+                  Couldn't check on the import just now. It is still running.
+                  <button ar-button type="button" variant="ghost" (click)="checkAgain()">
+                    Check again
+                  </button>
                 </p>
               }
-              @for (e of r.errors ?? []; track $index) {
-                <p class="im__warn">{{ e }}</p>
-              }
             </div>
+          }
+        }
+
+        @case ('done') {
+          @if (job(); as r) {
+            @if (r.status === Status.Failed) {
+              <div class="im__done im__done--failed">
+                <ar-icon name="alert" [size]="28" />
+                <p><strong>The import didn't finish, so nothing was imported.</strong></p>
+                <p class="im__warn">{{ r.error }}</p>
+              </div>
+            } @else {
+              <div class="im__done">
+                <ar-icon name="check" [size]="28" />
+                <p>
+                  <strong>{{ (r.created ?? 0).toLocaleString() }}</strong> created,
+                  <strong>{{ (r.updated ?? 0).toLocaleString() }}</strong> updated,
+                  <strong>{{ (r.skipped ?? 0).toLocaleString() }}</strong> skipped.
+                </p>
+                @if (r.consentScopeDowngraded) {
+                  <p class="im__muted">
+                    They were kept to service messages: this consent source is not an opt-in to
+                    marketing.
+                  </p>
+                }
+              </div>
+            }
           }
         }
       }
@@ -301,7 +350,9 @@ const MAX_BYTES = 8 * 1024 * 1024;
             Back
           </button>
         }
-        @if (step() !== 'done') {
+        @if (step() === 'running') {
+          <button ar-button type="button" variant="primary" (click)="closed.emit()">Close</button>
+        } @else if (step() !== 'done') {
           <button ar-button type="button" variant="ghost" (click)="closed.emit()">Cancel</button>
         }
         @switch (step()) {
@@ -332,6 +383,11 @@ const MAX_BYTES = 8 * 1024 * 1024;
             </button>
           }
           @case ('done') {
+            @if (job()?.status === Status.Failed && content) {
+              <button ar-button type="button" variant="ghost" (click)="step.set('check')">
+                Back to the check
+              </button>
+            }
             <button ar-button type="button" variant="primary" (click)="imported.emit()">
               Done
             </button>
@@ -506,6 +562,29 @@ const MAX_BYTES = 8 * 1024 * 1024;
       font: 400 13.5px var(--ar-font-sans);
       color: var(--ar-ink-700);
     }
+    .im__done--failed {
+      color: var(--ar-red-600);
+    }
+    .im__running {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 6px 0;
+    }
+    .im__bar {
+      height: 8px;
+      border-radius: 999px;
+      background: var(--ar-bg-100);
+      overflow: hidden;
+    }
+    .im__bar span {
+      display: block;
+      height: 100%;
+      min-width: 4px;
+      border-radius: inherit;
+      background: var(--ar-primary);
+      transition: width 0.4s ease;
+    }
   `,
 })
 export class ArContactImport {
@@ -526,14 +605,17 @@ export class ArContactImport {
   ];
 
   protected readonly step = signal<Step>('file');
-  protected readonly stepIndex = computed(() => this.steps.findIndex((s) => s.key === this.step()));
+  protected readonly stepIndex = computed(() =>
+    this.steps.findIndex((s) => s.key === (this.step() === 'running' ? 'done' : this.step())),
+  );
   protected readonly busy = signal(false);
   protected readonly reading = signal(false);
   protected readonly dragOver = signal(false);
 
   protected readonly fileName = signal('');
   protected readonly fromVcard = signal(false);
-  private content = '';
+  /** The file as CSV text; empty when this window resumed an import started elsewhere. */
+  protected content = '';
   protected readonly preview = signal<ImportPreviewDto | null>(null);
   protected readonly mapping = signal<Record<string, string>>({});
   protected readonly source = signal<ConsentSource>(ConsentSource.Manual);
@@ -557,7 +639,65 @@ export class ArContactImport {
       (!!this.evidence().trim() && !!this.consentTextRef().trim()),
   );
   protected readonly dryRun = signal<ImportDryRunDto | null>(null);
-  protected readonly result = signal<ImportResultDto | null>(null);
+  protected readonly Status = ContactImportStatus;
+  /** The background import being watched (or the finished one). */
+  protected readonly job = signal<ContactImportJobDto | null>(null);
+  protected readonly pollLost = signal(false);
+  protected readonly percent = computed(() => {
+    const j = this.job();
+    const total = j?.totalRows ?? 0;
+    return total > 0 ? Math.min(100, Math.round(((j?.processedRows ?? 0) * 100) / total)) : 0;
+  });
+  private pollTimer: ReturnType<typeof setTimeout> | undefined;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.pollTimer));
+    // An import already running in this workspace (started here earlier, or by a colleague):
+    // show its progress instead of a fresh file picker.
+    if (!environment.useMockData) void this.resume();
+  }
+
+  private async resume(): Promise<void> {
+    try {
+      const latest = (await firstValueFrom(this.api.getImportJobs())).items?.[0];
+      if (latest && this.isActive(latest) && this.step() === 'file') this.track(latest);
+    } catch {
+      /* the file picker stays; a failed look-up is shown as a toast */
+    }
+  }
+
+  private isActive(j: ContactImportJobDto): boolean {
+    return j.status === ContactImportStatus.Pending || j.status === ContactImportStatus.Running;
+  }
+
+  /** Show this import and keep polling it until it finishes. */
+  private track(j: ContactImportJobDto): void {
+    this.job.set(j);
+    if (this.isActive(j) && j.id) {
+      this.step.set('running');
+      this.schedulePoll(j.id);
+    } else {
+      this.step.set('done');
+    }
+  }
+
+  private schedulePoll(id: string): void {
+    clearTimeout(this.pollTimer);
+    this.pollTimer = setTimeout(async () => {
+      try {
+        this.pollLost.set(false);
+        this.track(await firstValueFrom(this.api.getImportJob(id)));
+      } catch {
+        // Stop asking; the import carries on server-side. The person can ask again.
+        this.pollLost.set(true);
+      }
+    }, POLL_MS);
+  }
+
+  protected checkAgain(): void {
+    const id = this.job()?.id;
+    if (id) this.schedulePoll(id);
+  }
 
   protected readonly phoneMapped = computed(() => Object.values(this.mapping()).includes('waId'));
   protected readonly importable = computed(
@@ -674,16 +814,27 @@ export class ArContactImport {
     }
   }
 
+  /** Queues the import and switches to its progress; nobody waits on the request itself. */
   protected async run(): Promise<void> {
     this.busy.set(true);
     try {
-      const result = environment.useMockData
-        ? { created: this.importable(), updated: 0, skipped: 0 }
-        : await firstValueFrom(this.api.import(this.request()));
-      this.result.set(result);
-      this.step.set('done');
+      if (environment.useMockData) {
+        this.track({
+          id: 'mock',
+          status: ContactImportStatus.Completed,
+          created: this.importable(),
+          updated: 0,
+          skipped: 0,
+        });
+        return;
+      }
+      this.track(
+        await firstValueFrom(
+          this.api.startImport({ ...this.request(), fileName: this.fileName() || null }),
+        ),
+      );
     } catch {
-      /* shown as a toast */
+      /* shown as a toast (e.g. another import is still running) */
     } finally {
       this.busy.set(false);
     }
