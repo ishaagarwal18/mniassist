@@ -353,6 +353,68 @@
   color: #fff;
 }
 
+/* A row is the link plus its star. The star sits over the link's right edge and only shows
+   on hover or keyboard focus, or once the page is starred. */
+.sb__row {
+  position: relative;
+}
+.sb__row:hover .sb__item,
+.sb__row:focus-within .sb__item {
+  padding-right: 32px;
+}
+.sb__star {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ar-nav-dim);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--ar-ease),
+    color var(--ar-ease),
+    background var(--ar-ease);
+}
+.sb__row:hover .sb__star,
+.sb__star:focus-visible {
+  opacity: 1;
+}
+.sb__star:hover {
+  color: var(--sb-strong);
+  background: rgba(255, 255, 255, 0.08);
+}
+.sb__star:focus-visible {
+  outline: 2px solid var(--ar-blue-500);
+  outline-offset: -2px;
+}
+/* A starred page keeps its star showing, so it is clear which pages are in Favourites. */
+.sb__row:has(.sb__star--on) .sb__item {
+  padding-right: 32px;
+}
+.sb__star--on,
+.sb__star--on:hover {
+  opacity: 1;
+  color: var(--ar-amber-500);
+}
+.sb__star--on ::ng-deep svg {
+  fill: currentColor;
+}
+/* Touch screens have no hover: keep the star faintly visible. */
+@media (hover: none) {
+  .sb__star {
+    opacity: 0.6;
+  }
+}
+
 .sb__foot {
   position: relative;
   border-top: 1px solid var(--ar-nav-line);

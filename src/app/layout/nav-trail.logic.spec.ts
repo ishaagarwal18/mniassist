@@ -88,6 +88,22 @@ describe('resolveNavTrail breadcrumb logic', () => {
     expect(homeTrail.groupHeading).toBeNull();
   });
 
+  it('puts Tasks and Meetings at the top of the menu, under Home', () => {
+    for (const path of ['/tasks', '/meetings']) {
+      const trail = resolveNavTrail(path, '');
+      expect(trail.groupHeading).toBeNull();
+      expect(trail.groupPrimaryRoute).toBe('/home');
+    }
+  });
+
+  it('keeps the group breadcrumb for pages moved off the sidebar to a hub', () => {
+    const leadForms = resolveNavTrail('/channels/lead-forms', 'Lead forms');
+    expect(leadForms.groupHeading).toBe('Marketing');
+    expect(leadForms.activeItem?.menu).toBe('settings');
+    expect(resolveNavTrail('/calls/ai-impact', '').groupHeading).toBe('Calls');
+    expect(resolveNavTrail('/calls/ai-impact', '').activeItem?.menu).toBe('reports');
+  });
+
   it('respects explicit custom group when provided', () => {
     const trail = resolveNavTrail('/contacts', 'Custom Contacts', 'Customers');
     expect(trail.groupHeading).toBe('Customers');

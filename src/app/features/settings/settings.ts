@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -14,7 +8,7 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArCard, ArChip, ArIcon, ArTabs } from '../../ui';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { PermissionService } from '@abp/ng.core';
-import { canOpenUrl } from '../../core/auth/nav-access.guard';
+import { showsInMenu } from '../../core/auth/nav-access.guard';
 import { PlanService } from '../../core/services/plan.service';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import type { IconName } from '../../ui/icon';
@@ -43,6 +37,9 @@ export const SETTINGS_CATEGORIES = [
   'Security & Access',
   'Workspace & Identity',
   'Channels & Messaging',
+  'Lead capture',
+  'Calls & voice',
+  'Sales & products',
   'Integrations & Ops',
   'Compliance & Billing',
 ] as const;
@@ -138,7 +135,8 @@ export class ArSettings {
     {
       id: 'sso',
       title: 'Single Sign-On (SSO)',
-      description: 'Configure OpenID Connect / SAML identity provider, mapped domains, and role provisioning.',
+      description:
+        'Configure OpenID Connect / SAML identity provider, mapped domains, and role provisioning.',
       category: 'Security & Access',
       icon: 'shield',
       tab: 'Single Sign-On',
@@ -150,32 +148,65 @@ export class ArSettings {
             : 'Not set up',
       badgeTone: () =>
         this.sso().isEnabled ? 'good' : this.sso().isConfigured ? 'amber' : 'neutral',
-      keywords: ['sso', 'saml', 'oidc', 'identity', 'login', 'single sign-on', 'provider', 'okta', 'azure', 'google'],
+      keywords: [
+        'sso',
+        'saml',
+        'oidc',
+        'identity',
+        'login',
+        'single sign-on',
+        'provider',
+        'okta',
+        'azure',
+        'google',
+      ],
     },
     {
       id: 'two-factor',
       title: 'Two-Factor Authentication',
-      description: 'Protect accounts with Google or Microsoft Authenticator OTPs and emergency backup recovery codes.',
+      description:
+        'Protect accounts with Google or Microsoft Authenticator OTPs and emergency backup recovery codes.',
       category: 'Security & Access',
       icon: 'shield',
       tab: 'Two-Factor Auth',
-      keywords: ['2fa', 'two-factor', 'mfa', 'authenticator', 'security', 'otp', 'recovery code', 'totp'],
+      keywords: [
+        '2fa',
+        'two-factor',
+        'mfa',
+        'authenticator',
+        'security',
+        'otp',
+        'recovery code',
+        'totp',
+      ],
     },
     {
       id: 'sessions',
       title: 'Signed-in Devices & Sessions',
-      description: 'Review active browser and mobile sessions, view client details, and sign out unused devices.',
+      description:
+        'Review active browser and mobile sessions, view client details, and sign out unused devices.',
       category: 'Security & Access',
       icon: 'user',
       tab: 'Sessions & Devices',
       badge: () => `${this.sessions().length} active`,
       badgeTone: () => 'neutral',
-      keywords: ['sessions', 'devices', 'login', 'device', 'phone', 'sign out', 'ip', 'revoke', 'active devices'],
+      keywords: [
+        'sessions',
+        'devices',
+        'login',
+        'device',
+        'phone',
+        'sign out',
+        'ip',
+        'revoke',
+        'active devices',
+      ],
     },
     {
       id: 'sign-in-history',
       title: 'Sign-in Audit History',
-      description: 'Audit log of recent user logins with timestamps, client IP addresses, and authentication outcomes.',
+      description:
+        'Audit log of recent user logins with timestamps, client IP addresses, and authentication outcomes.',
       category: 'Security & Access',
       icon: 'clock',
       tab: 'Sign-In History',
@@ -184,34 +215,63 @@ export class ArSettings {
     {
       id: 'connected-accounts',
       title: 'Connected Accounts & Logins',
-      description: 'Manage external identities (Google, Microsoft), linked workspace accounts, and user delegations.',
+      description:
+        'Manage external identities (Google, Microsoft), linked workspace accounts, and user delegations.',
       category: 'Security & Access',
       icon: 'link',
       tab: 'Connected Accounts',
-      keywords: ['google', 'microsoft', 'external logins', 'linked accounts', 'delegations', 'oauth', 'social login'],
+      keywords: [
+        'google',
+        'microsoft',
+        'external logins',
+        'linked accounts',
+        'delegations',
+        'oauth',
+        'social login',
+      ],
     },
     {
       id: 'notifications',
       title: 'Browser Notifications',
-      description: 'Configure real-time web push notifications for incoming customer messages, assignments, and mentions.',
+      description:
+        'Configure real-time web push notifications for incoming customer messages, assignments, and mentions.',
       category: 'Security & Access',
       icon: 'bell',
       tab: 'Notifications',
-      keywords: ['notifications', 'push', 'alerts', 'browser', 'pwa', 'web push', 'sound', 'messages'],
+      keywords: [
+        'notifications',
+        'push',
+        'alerts',
+        'browser',
+        'pwa',
+        'web push',
+        'sound',
+        'messages',
+      ],
     },
     {
       id: 'security-policy',
       title: 'Sign-in & Password Rules',
-      description: 'Enforce workspace-wide password complexity, lockout limits, and idle session duration policies.',
+      description:
+        'Enforce workspace-wide password complexity, lockout limits, and idle session duration policies.',
       category: 'Security & Access',
       icon: 'shield',
       route: '/settings/security-policy',
-      keywords: ['password', 'lockout', 'policy', 'rules', 'complexity', 'security policy', 'sign-in rules'],
+      keywords: [
+        'password',
+        'lockout',
+        'policy',
+        'rules',
+        'complexity',
+        'security policy',
+        'sign-in rules',
+      ],
     },
     {
       id: 'profile',
       title: 'Your Profile & Password',
-      description: 'Update your display name, personal email address, avatar, and account password.',
+      description:
+        'Update your display name, personal email address, avatar, and account password.',
       category: 'Security & Access',
       icon: 'user',
       route: '/settings/profile',
@@ -222,16 +282,28 @@ export class ArSettings {
     {
       id: 'business-profile',
       title: 'Business Profile',
-      description: 'Legal company name, GSTIN identification, registered business address, and billing particulars.',
+      description:
+        'Legal company name, GSTIN identification, registered business address, and billing particulars.',
       category: 'Workspace & Identity',
       icon: 'document',
       route: '/settings/business-profile',
-      keywords: ['business', 'gst', 'gstin', 'company', 'address', 'invoice', 'legal', 'tax', 'entity'],
+      keywords: [
+        'business',
+        'gst',
+        'gstin',
+        'company',
+        'address',
+        'invoice',
+        'legal',
+        'tax',
+        'entity',
+      ],
     },
     {
       id: 'branding',
       title: 'Branding & Visuals',
-      description: 'Upload your company logo and customize theme accent colors across the navigation chrome.',
+      description:
+        'Upload your company logo and customize theme accent colors across the navigation chrome.',
       category: 'Workspace & Identity',
       icon: 'settings',
       route: '/settings/branding',
@@ -240,7 +312,8 @@ export class ArSettings {
     {
       id: 'members',
       title: 'Members & Invites',
-      description: 'Invite team members to your workspace, assign user roles, and manage active pending invites.',
+      description:
+        'Invite team members to your workspace, assign user roles, and manage active pending invites.',
       category: 'Workspace & Identity',
       icon: 'user',
       route: '/settings/members',
@@ -249,7 +322,8 @@ export class ArSettings {
     {
       id: 'teams',
       title: 'Teams Management',
-      description: 'Organize members into functional teams for intelligent lead distribution and ticket routing.',
+      description:
+        'Organize members into functional teams for intelligent lead distribution and ticket routing.',
       category: 'Workspace & Identity',
       icon: 'contacts',
       route: '/settings/teams',
@@ -267,7 +341,8 @@ export class ArSettings {
     {
       id: 'users',
       title: 'Users Administration',
-      description: 'Administer all registered user accounts, passwords, activation status, and lockout overrides.',
+      description:
+        'Administer all registered user accounts, passwords, activation status, and lockout overrides.',
       category: 'Workspace & Identity',
       icon: 'user',
       route: '/admin/users',
@@ -276,18 +351,29 @@ export class ArSettings {
     {
       id: 'support-access',
       title: 'Support Access',
-      description: 'Grant temporary, audited troubleshooting access to MNI Assist technical engineers.',
+      description:
+        'Grant temporary, audited troubleshooting access to MNI Assist technical engineers.',
       category: 'Workspace & Identity',
       icon: 'help',
       route: '/settings/support-access',
       keywords: ['support', 'access', 'grant', 'troubleshooting', 'helpdesk', 'mni assist'],
+    },
+    {
+      id: 'agency',
+      title: 'Agency mode',
+      description: 'Run client workspaces from this one, for agencies and resellers.',
+      category: 'Workspace & Identity',
+      icon: 'segment',
+      route: '/settings/agency',
+      keywords: ['agency', 'clients', 'reseller', 'sub-accounts', 'white label'],
     },
 
     // Channels & Messaging
     {
       id: 'channels',
       title: 'WhatsApp Channels',
-      description: 'Connect and manage WhatsApp Cloud API numbers, messaging limits, and health status.',
+      description:
+        'Connect and manage WhatsApp Cloud API numbers, messaging limits, and health status.',
       category: 'Channels & Messaging',
       icon: 'channel',
       route: '/channels',
@@ -296,16 +382,27 @@ export class ArSettings {
     {
       id: 'channel-numbers',
       title: 'Display Name & PIN',
-      description: 'Configure WhatsApp profile display name, about description, and two-step verification PIN.',
+      description:
+        'Configure WhatsApp profile display name, about description, and two-step verification PIN.',
       category: 'Channels & Messaging',
       icon: 'phone',
       route: '/channels/numbers',
       keywords: ['display name', 'pin', 'whatsapp name', 'bio', 'profile', 'two-step pin'],
     },
     {
+      id: 'migrate-number',
+      title: 'Migrate a number',
+      description: 'Move a WhatsApp number here from another provider without losing it.',
+      category: 'Channels & Messaging',
+      icon: 'refresh',
+      route: '/channels/migrate',
+      keywords: ['migrate', 'move number', 'port', 'bsp', 'provider', 'whatsapp'],
+    },
+    {
       id: 'email-sending',
       title: 'Email Sending (SMTP)',
-      description: 'Set up outbound SMTP mail servers, sender addresses, and domain SPF/DKIM verification.',
+      description:
+        'Set up outbound SMTP mail servers, sender addresses, and domain SPF/DKIM verification.',
       category: 'Channels & Messaging',
       icon: 'send',
       route: '/settings/email-sending',
@@ -314,65 +411,208 @@ export class ArSettings {
     {
       id: 'email-templates',
       title: 'Email Templates',
-      description: 'Design and customize transactional email templates with dynamic tokens and brand styling.',
+      description:
+        'Design and customize transactional email templates with dynamic tokens and brand styling.',
       category: 'Channels & Messaging',
       icon: 'template',
       route: '/settings/email-templates',
-      keywords: ['templates', 'email templates', 'transactional', 'notifications', 'layout', 'design'],
+      keywords: [
+        'templates',
+        'email templates',
+        'transactional',
+        'notifications',
+        'layout',
+        'design',
+      ],
     },
     {
       id: 'tasks-meetings',
       title: 'Task & Meeting Messages',
-      description: 'Automate WhatsApp and email notification reminders for scheduled tasks and customer meetings.',
+      description:
+        'Automate WhatsApp and email notification reminders for scheduled tasks and customer meetings.',
       category: 'Channels & Messaging',
       icon: 'bell',
       route: '/settings/tasks-meetings',
-      keywords: ['tasks', 'meetings', 'reminders', 'schedule', 'automated messages', 'followup', 'calendar'],
+      keywords: [
+        'tasks',
+        'meetings',
+        'reminders',
+        'schedule',
+        'automated messages',
+        'followup',
+        'calendar',
+      ],
+    },
+
+    // Lead capture: set up once, then enquiries arrive in the Inbox and Enquiries.
+    {
+      id: 'lead-forms',
+      title: 'Lead forms',
+      description: 'Bring in leads from Facebook and Instagram lead ads as contacts and enquiries.',
+      category: 'Lead capture',
+      icon: 'campaign',
+      route: '/channels/lead-forms',
+      keywords: ['lead ads', 'facebook', 'instagram', 'meta', 'leads', 'forms'],
+    },
+    {
+      id: 'web-forms',
+      title: 'Web forms',
+      description: 'Enquiry forms for your website that create contacts and enquiries.',
+      category: 'Lead capture',
+      icon: 'template',
+      route: '/forms',
+      keywords: ['website', 'form', 'enquiry form', 'contact form', 'embed'],
+    },
+    {
+      id: 'chat-links',
+      title: 'Chat links & QR',
+      description: 'WhatsApp chat links, QR codes and the website chat button.',
+      category: 'Lead capture',
+      icon: 'link',
+      route: '/channels/widget',
+      keywords: ['qr', 'link', 'wa.me', 'chat button', 'widget', 'website'],
+    },
+    {
+      id: 'auto-replies',
+      title: 'Auto-replies',
+      description: 'Away messages, greetings and keyword replies sent without anyone typing.',
+      category: 'Lead capture',
+      icon: 'clock',
+      route: '/auto-replies',
+      keywords: ['away', 'out of office', 'greeting', 'keyword', 'auto reply', 'business hours'],
+    },
+
+    // Calls & voice
+    {
+      id: 'voice-ivr',
+      title: 'Voice / IVR',
+      description: 'The phone menu callers hear, business hours and where calls ring.',
+      category: 'Calls & voice',
+      icon: 'phone',
+      route: '/channels/voice-ivr',
+      keywords: ['ivr', 'phone menu', 'call routing', 'exotel', 'voice', 'press 1'],
+    },
+    {
+      id: 'web-call-button',
+      title: 'Website call button',
+      description: 'A button on your website that starts a call with your AI voice agent.',
+      category: 'Calls & voice',
+      icon: 'phone',
+      route: '/calls/web-widget',
+      keywords: ['website', 'call button', 'web call', 'widget', 'voice agent'],
+    },
+    {
+      id: 'telecom',
+      title: 'Telecom & numbers',
+      description: 'Phone numbers, the telephony provider and SIP trunk.',
+      category: 'Calls & voice',
+      icon: 'tower',
+      route: '/channels/telecom',
+      keywords: ['telecom', 'phone number', 'sip', 'trunk', 'exotel', 'provider', 'did'],
+    },
+
+    // Sales & products
+    {
+      id: 'oem-settings',
+      title: 'OEM settings',
+      description: 'The OEMs you buy from, their claim rules and journal posting.',
+      category: 'Sales & products',
+      icon: 'settings',
+      route: '/oem/settings',
+      keywords: ['oem', 'spa', 'special price', 'claims', 'journal', 'manufacturer'],
+    },
+    {
+      id: 'lifecycle-rules',
+      title: 'Lifecycle rules',
+      description: 'When a product counts as ageing, end-of-sale or obsolete.',
+      category: 'Sales & products',
+      icon: 'refresh',
+      route: '/documents/lifecycle',
+      keywords: ['lifecycle', 'obsolete', 'end of life', 'eol', 'product', 'radar'],
     },
 
     // Integrations & Ops
     {
       id: 'integrations',
       title: 'Integrations & Webhooks',
-      description: 'Set up outbound event webhooks, REST API keys, and third-party CRM or ERP sync pipelines.',
+      description:
+        'Set up outbound event webhooks, REST API keys, and third-party CRM or ERP sync pipelines.',
       category: 'Integrations & Ops',
       icon: 'link',
       route: '/settings/integrations',
-      keywords: ['integrations', 'api keys', 'webhooks', 'endpoints', 'crm', 'erp', 'sync', 'rest api'],
+      keywords: [
+        'integrations',
+        'api keys',
+        'webhooks',
+        'endpoints',
+        'crm',
+        'erp',
+        'sync',
+        'rest api',
+      ],
     },
     {
       id: 'ai-assistant',
       title: 'AI Assistant & Copilot',
-      description: 'Configure AI prompt guidelines, knowledge base instructions, tone of voice, and model settings.',
+      description:
+        'Configure AI prompt guidelines, knowledge base instructions, tone of voice, and model settings.',
       category: 'Integrations & Ops',
       icon: 'sparkle',
       route: '/settings/ai-assistant',
-      keywords: ['ai', 'assistant', 'copilot', 'gemini', 'prompts', 'intelligence', 'bot', 'knowledge'],
+      keywords: [
+        'ai',
+        'assistant',
+        'copilot',
+        'gemini',
+        'prompts',
+        'intelligence',
+        'bot',
+        'knowledge',
+      ],
     },
     {
       id: 'shipping',
       title: 'Shipping & Shiprocket',
-      description: 'Connect Shiprocket courier logistics, live rate calculation, and automatic dispatch tracking.',
+      description:
+        'Connect Shiprocket courier logistics, live rate calculation, and automatic dispatch tracking.',
       category: 'Integrations & Ops',
       icon: 'send',
       route: '/settings/shipping',
-      keywords: ['shipping', 'shiprocket', 'courier', 'logistics', 'delivery', 'dispatch', 'tracking'],
+      keywords: [
+        'shipping',
+        'shiprocket',
+        'courier',
+        'logistics',
+        'delivery',
+        'dispatch',
+        'tracking',
+      ],
     },
     {
       id: 'payments',
       title: 'Payments & Gateways',
-      description: 'Configure Razorpay, UPI payment links, transaction webhooks, and automated collection receipts.',
+      description:
+        'Configure Razorpay, UPI payment links, transaction webhooks, and automated collection receipts.',
       category: 'Integrations & Ops',
       icon: 'billing',
       route: '/settings/payments',
-      keywords: ['payments', 'razorpay', 'upi', 'gateway', 'payment links', 'collections', 'invoicing'],
+      keywords: [
+        'payments',
+        'razorpay',
+        'upi',
+        'gateway',
+        'payment links',
+        'collections',
+        'invoicing',
+      ],
     },
 
     // Compliance & Billing
     {
       id: 'compliance',
       title: 'Compliance & Data Retention',
-      description: 'Manage conversation retention lifecycles, message redaction policies, and audit data export.',
+      description:
+        'Manage conversation retention lifecycles, message redaction policies, and audit data export.',
       category: 'Compliance & Billing',
       icon: 'shield',
       route: '/compliance',
@@ -381,25 +621,54 @@ export class ArSettings {
     {
       id: 'dpdp',
       title: 'DPDP Act Readiness',
-      description: 'Verify readiness for India’s Digital Personal Data Protection Act, consent logs, and audit registries.',
+      description:
+        'Verify readiness for India’s Digital Personal Data Protection Act, consent logs, and audit registries.',
       category: 'Compliance & Billing',
       icon: 'shield',
       route: '/compliance/dpdp',
-      keywords: ['dpdp', 'data protection', 'privacy', 'consent', 'india dpdp', 'readiness', 'compliance'],
+      keywords: [
+        'dpdp',
+        'data protection',
+        'privacy',
+        'consent',
+        'india dpdp',
+        'readiness',
+        'compliance',
+      ],
     },
     {
       id: 'billing',
       title: 'Billing & Wallet',
-      description: 'Manage subscription plan, recharge WhatsApp conversation credits, and download GST invoices.',
+      description:
+        'Manage subscription plan, recharge WhatsApp conversation credits, and download GST invoices.',
       category: 'Compliance & Billing',
       icon: 'billing',
       route: '/billing',
-      keywords: ['billing', 'wallet', 'subscription', 'plan', 'invoice', 'credits', 'recharge', 'gst'],
+      keywords: [
+        'billing',
+        'wallet',
+        'subscription',
+        'plan',
+        'invoice',
+        'credits',
+        'recharge',
+        'gst',
+      ],
+    },
+    {
+      id: 'billing-invoices',
+      title: 'Subscription invoices',
+      description: 'GST invoices for your plan and wallet top-ups, to download or print.',
+      category: 'Compliance & Billing',
+      icon: 'document',
+      route: '/billing/invoices',
+      keywords: ['invoices', 'gst invoice', 'receipt', 'download', 'subscription'],
     },
     {
       id: 'audit-logs',
       title: 'Audit Logs',
-      description: 'Review tamper-evident audit trails of user logins, administrative changes, and system API calls.',
+      description:
+        'Review tamper-evident audit trails of user logins, administrative changes, and system API calls.',
       category: 'Compliance & Billing',
       icon: 'clock',
       route: '/admin/audit-logs',
@@ -407,12 +676,14 @@ export class ArSettings {
     },
   ];
 
-  // Visible settings filtered by permissions and plan
+  // Visible settings: the same rule as the menu (role, plan and feature), as these stand in for menu items.
   protected readonly authorizedSettings = computed(() => {
     this.account.isHost();
+    this.account.permissionState();
+    this.plans.features();
     return this.directoryItems.filter((item) => {
       if (!item.route) return true;
-      return canOpenUrl(item.route, this.permissions, this.plans, this.account);
+      return showsInMenu(item.route, this.permissions, this.plans, this.account);
     });
   });
 
@@ -438,12 +709,16 @@ export class ArSettings {
   // Settings grouped by category for structured overview
   protected readonly groupedSettings = computed(() => {
     const filtered = this.filteredSettings();
-    const groups: { category: Exclude<SettingsCategory, 'All'>; items: SettingDirectoryItem[] }[] = [];
+    const groups: { category: Exclude<SettingsCategory, 'All'>; items: SettingDirectoryItem[] }[] =
+      [];
 
     const order: Exclude<SettingsCategory, 'All'>[] = [
       'Security & Access',
       'Workspace & Identity',
       'Channels & Messaging',
+      'Lead capture',
+      'Calls & voice',
+      'Sales & products',
       'Integrations & Ops',
       'Compliance & Billing',
     ];

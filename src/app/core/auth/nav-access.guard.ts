@@ -48,6 +48,21 @@ export function canOpenUrl(
 }
 
 /**
+ * Whether a link to this screen belongs on a hub page (Settings, All reports) for this account:
+ * the full menu rule, plan and feature gates included, since those pages stand in for menu items.
+ * True for a screen with no menu item.
+ */
+export function showsInMenu(
+  url: string,
+  permissions: PermissionService,
+  plan: PlanService,
+  account: CurrentUserService,
+): boolean {
+  const item = navItemForUrl(url);
+  return !item || canAccessNavItem(item, permissions, plan, account);
+}
+
+/**
  * Keeps typed-in URLs in line with the menu: a screen whose menu item is hidden for this
  * account (permission, host/tenant side) can't be opened by URL either. The host's built-in
  * admin passes everything, as in the menu. Plan and feature gates are left to the screens

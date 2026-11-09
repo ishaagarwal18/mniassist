@@ -99,12 +99,12 @@ export function resolveNavTrail(
       if (path === '/getting-started') {
         heading = 'Home';
         primaryRoute = '/home';
-      } else if (path === '/home') {
-        heading = null;
-        primaryRoute = '/home';
       } else if (path === '/inbox') {
         heading = 'Customers';
         primaryRoute = '/contacts';
+      } else {
+        // Home, Tasks, Meetings: the top of the menu, which Home heads.
+        primaryRoute = '/home';
       }
     }
 

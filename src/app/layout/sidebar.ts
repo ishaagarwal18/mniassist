@@ -4,15 +4,17 @@ import {
   ElementRef,
   HostListener,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { PermissionService } from '@abp/ng.core';
-import { NAV, NavGroup, visibleForSetup } from './nav.model';
+import { HUB_ROUTE, NAV, NavGroup, NavItem, visibleForSetup } from './nav.model';
 import { OnboardingStore } from '../core/services/onboarding.store';
 import { ArAvatar } from '../ui/avatar';
 import { ArIcon } from '../ui/icon';
@@ -31,6 +33,24 @@ import { canAccessNavItem } from '../core/auth/permission';
 const COLLAPSED_KEY = 'ar.sidebar.collapsed';
 // v3: the groups were renamed (Nov 2026); folds saved under the old names would leave every group open.
 const FOLDED_KEY = 'ar.sidebar.foldedGroups.v3';
+
+/** The group of starred pages. Not in NAV, so it starts open: see {@link readFolded}. */
+const FAVOURITES = 'Favourites';
+
+/** Favourites are per person: two people sharing a browser keep their own. */
+function favouritesKey(userId: string | null): string {
+  return `ar.sidebar.favourites.${userId ?? 'me'}`;
+}
+
+function readFavourites(userId: string | null): readonly string[] {
+  try {
+    const raw = localStorage.getItem(favouritesKey(userId));
+    const list: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list.filter((r): r is string => typeof r === 'string') : [];
+  } catch {
+    return [];
+  }
+}
 
 function allGroupHeadings(): Set<string> {
   return new Set(NAV.map((g) => g.heading).filter((h): h is string => Boolean(h)));
@@ -164,22 +184,46 @@ function readCollapsed(): boolean {
                 <!-- One item is lit: the one whose route is the longest match for the page,
                      so /settings/support-access lights Support access, not Settings too,
                      and a sub-page (/enquiries/pipelines, /inbox?c=…) keeps its parent lit. -->
-                <a
-                  class="sb__item"
-                  [class.sb__item--ai]="item.ai"
-                  [class.sb__item--on]="item.route === active()"
-                  [attr.aria-current]="item.route === active() ? 'page' : null"
-                  [routerLink]="item.route"
-                  [attr.title]="collapsed() ? i18n.t(item.label) : null"
-                  (click)="clearSearch(); drawer.close()"
-                >
-                  <span class="sb__bar" aria-hidden="true"></span>
-                  <ar-icon [name]="item.icon" [size]="16" />
-                  <span class="sb__label">{{ i18n.t(item.label) }}</span>
-                  @if (badgeFor(item.badge); as n) {
-                    <span class="sb__badge">{{ n }}</span>
+                <div class="sb__row">
+                  <a
+                    class="sb__item"
+                    [class.sb__item--ai]="item.ai"
+                    [class.sb__item--on]="item.route === active()"
+                    [attr.aria-current]="item.route === active() ? 'page' : null"
+                    [routerLink]="item.route"
+                    [attr.title]="collapsed() ? i18n.t(item.label) : null"
+                    (click)="clearSearch(); drawer.close()"
+                  >
+                    <span class="sb__bar" aria-hidden="true"></span>
+                    <ar-icon [name]="item.icon" [size]="16" />
+                    <span class="sb__label">{{ i18n.t(item.label) }}</span>
+                    @if (badgeFor(item.badge); as n) {
+                      <span class="sb__badge">{{ n }}</span>
+                    }
+                  </a>
+                  @if (!collapsed() && item.route !== '/getting-started') {
+                    <button
+                      type="button"
+                      class="sb__star"
+                      [class.sb__star--on]="isFavourite(item)"
+                      [attr.aria-pressed]="isFavourite(item)"
+                      [attr.aria-label]="
+                        i18n.t(
+                          isFavourite(item)
+                            ? 'Remove {0} from favourites'
+                            : 'Add {0} to favourites',
+                          i18n.t(item.label)
+                        )
+                      "
+                      [title]="
+                        i18n.t(isFavourite(item) ? 'Remove from favourites' : 'Add to favourites')
+                      "
+                      (click)="toggleFavourite(item)"
+                    >
+                      <ar-icon name="star" [size]="13" />
+                    </button>
                   }
-                </a>
+                </div>
               }
             </div>
           }
@@ -256,6 +300,12 @@ export class ArSidebar {
   }
 
   constructor() {
+    // The user id arrives after sign-in config loads; read that person's stars when it does.
+    effect(() => {
+      const id = this.account.id();
+      untracked(() => this.favouriteRoutes.set(readFavourites(id)));
+    });
+
     // When navigating to a page, ensure its parent group is unfolded so the selection is in view.
     this.router.events
       .pipe(
@@ -330,8 +380,12 @@ export class ArSidebar {
     if (this.menuOpen()) this.menuOpen.set(false);
   }
 
-  /** NAV with items filtered reactively by role permissions, workspace plan, and features. */
-  protected readonly nav = computed<readonly NavGroup[]>(() => {
+  /**
+   * Every page this person may open, by group, filtered reactively by role permissions,
+   * workspace plan and features. Includes the pages kept out of the sidebar (set-up, reports),
+   * which menu search and favourites still reach.
+   */
+  private readonly allowed = computed<readonly NavGroup[]>(() => {
     this.account.permissionState();
     this.plan.plan();
     this.plan.features();
@@ -350,6 +404,42 @@ export class ArSidebar {
     })).filter((group) => group.items.length > 0);
   });
 
+  /** Starred pages, in the order they were starred; per user and per browser. */
+  private readonly favouriteRoutes = signal<readonly string[]>([]);
+
+  /** The sidebar: favourites first, then day-to-day work. Set-up and report pages live on their hubs. */
+  protected readonly nav = computed<readonly NavGroup[]>(() => {
+    const allowed = this.allowed();
+    const byRoute = new Map(allowed.flatMap((g) => g.items).map((i) => [i.route, i] as const));
+    const favourites = this.favouriteRoutes()
+      .map((r) => byRoute.get(r))
+      .filter((i): i is NavItem => Boolean(i));
+    const daily = allowed
+      .map((group) => ({ ...group, items: group.items.filter((i) => !i.menu) }))
+      .filter((group) => group.items.length > 0);
+    if (favourites.length === 0) return daily;
+    const fav: NavGroup = { heading: FAVOURITES, items: favourites };
+    // After the heading-less top (Home, Tasks…), before the departments.
+    return daily[0] && !daily[0].heading ? [daily[0], fav, ...daily.slice(1)] : [fav, ...daily];
+  });
+
+  protected isFavourite(item: NavItem): boolean {
+    return this.favouriteRoutes().includes(item.route);
+  }
+
+  protected toggleFavourite(item: NavItem): void {
+    const now = this.favouriteRoutes();
+    const next = now.includes(item.route)
+      ? now.filter((r) => r !== item.route)
+      : [...now, item.route];
+    this.favouriteRoutes.set(next);
+    try {
+      localStorage.setItem(favouritesKey(this.account.id()), JSON.stringify(next));
+    } catch {
+      /* storage blocked: the star just won't be remembered */
+    }
+  }
+
   /** Filters the menu by item label, or by group heading to show a whole group. */
   protected readonly menuQuery = signal('');
   protected readonly searching = computed(() => this.menuQuery().trim().length > 0);
@@ -359,7 +449,8 @@ export class ArSidebar {
     const terms = this.menuQuery().trim().toLowerCase().split(/\s+/).filter(Boolean);
     if (terms.length === 0) return this.nav();
     const hits = (text: string) => terms.every((t) => text.includes(t));
-    return this.nav()
+    // Search reaches every page, including the set-up and report pages kept off the sidebar.
+    return this.allowed()
       .map((group) => {
         // The English and the shown language both match, so either can be typed.
         const heading = `${group.heading ?? ''} ${group.heading ? this.i18n.t(group.heading) : ''}`
@@ -402,18 +493,27 @@ export class ArSidebar {
     { initialValue: this.router.url },
   );
 
-  /** The route of the item to light: the longest nav route the current path starts with. */
+  /**
+   * The route of the item to light: the longest nav route the current path starts with. A page
+   * kept off the sidebar lights its hub (Settings, All reports), unless it is starred.
+   */
   protected readonly active = computed(() => {
     const path = (this.url() ?? '').split(/[?#;]/)[0];
-    let best = '';
-    for (const group of this.nav()) {
-      for (const { route } of group.items) {
-        if ((path === route || path.startsWith(route + '/')) && route.length > best.length) {
-          best = route;
+    let best: NavItem | null = null;
+    for (const group of this.allowed()) {
+      for (const item of group.items) {
+        const { route } = item;
+        if (
+          (path === route || path.startsWith(route + '/')) &&
+          route.length > (best?.route.length ?? -1)
+        ) {
+          best = item;
         }
       }
     }
-    return best;
+    if (!best) return '';
+    if (best.menu && !this.favouriteRoutes().includes(best.route)) return HUB_ROUTE[best.menu];
+    return best.route;
   });
 
   protected badgeFor(kind: 'inbox' | 'enquiries' | 'alerts' | undefined): number | null {

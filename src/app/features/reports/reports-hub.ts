@@ -3,10 +3,13 @@ import { RouterLink } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
 
 import { checkPolicy } from '../../core/auth/permission';
+import { showsInMenu } from '../../core/auth/nav-access.guard';
+import { CurrentUserService } from '../../core/services/current-user.service';
+import { PlanService } from '../../core/services/plan.service';
 import { ArTopbar } from '../../layout/topbar';
 import { ArIcon, IconName } from '../../ui';
 
-interface ReportLink {
+export interface ReportLink {
   readonly title: string;
   readonly route: string;
   readonly icon: IconName;
@@ -14,12 +17,12 @@ interface ReportLink {
   readonly permission?: string;
 }
 
-interface ReportGroup {
+export interface ReportGroup {
   readonly heading: string;
   readonly reports: readonly ReportLink[];
 }
 
-const GROUPS: readonly ReportGroup[] = [
+export const REPORT_GROUPS: readonly ReportGroup[] = [
   {
     heading: 'Sales and marketing',
     reports: [
@@ -53,6 +56,20 @@ const GROUPS: readonly ReportGroup[] = [
         description: 'Expected sales for the coming months from the open pipeline, against target.',
         permission: 'AutoReach.Pipeline',
       },
+      {
+        title: 'OEM pricing reports',
+        route: '/oem/reports',
+        icon: 'analytics',
+        description: 'Claims, margin recovered and special prices, by OEM.',
+        permission: 'AutoReach.Spa.Reports',
+      },
+      {
+        title: 'AI impact report',
+        route: '/calls/ai-impact',
+        icon: 'phone',
+        description: 'What your AI voice agents did, what it cost and the staff time it saved.',
+        permission: 'AutoReach.Analytics',
+      },
     ],
   },
   {
@@ -79,6 +96,13 @@ const GROUPS: readonly ReportGroup[] = [
         icon: 'refresh',
         description: 'Contracts coming up for renewal and the revenue at stake.',
         permission: 'AutoReach.Renewals',
+      },
+      {
+        title: 'Billing reports',
+        route: '/billing/reports',
+        icon: 'analytics',
+        description: 'Project orders: billed, unbilled, retention and guarantees.',
+        permission: 'AutoReach.ProjectBilling.Reports',
       },
     ],
   },
@@ -227,11 +251,20 @@ const GROUPS: readonly ReportGroup[] = [
 })
 export class ArReportsHub {
   private readonly permissions = inject(PermissionService);
+  private readonly plans = inject(PlanService);
+  private readonly account = inject(CurrentUserService);
 
-  protected readonly groups = computed(() =>
-    GROUPS.map((g) => ({
+  /** Only reports this person may open, by the same rule as the menu (role, plan and feature). */
+  protected readonly groups = computed(() => {
+    this.account.permissionState();
+    this.plans.features();
+    return REPORT_GROUPS.map((g) => ({
       heading: g.heading,
-      reports: g.reports.filter((r) => checkPolicy(r.permission, this.permissions)),
-    })).filter((g) => g.reports.length > 0),
-  );
+      reports: g.reports.filter(
+        (r) =>
+          checkPolicy(r.permission, this.permissions) &&
+          showsInMenu(r.route, this.permissions, this.plans, this.account),
+      ),
+    })).filter((g) => g.reports.length > 0);
+  });
 }
