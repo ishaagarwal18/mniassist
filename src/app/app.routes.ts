@@ -373,6 +373,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'billing/reports',
+        title: 'Billing reports · MNI Assist',
+        loadComponent: () =>
+          import('./features/project-billing/billing-reports-page').then(
+            (m) => m.ArBillingReportsPage,
+          ),
+      },
+      {
         path: 'billing/retention',
         title: 'Retention · MNI Assist',
         loadComponent: () =>

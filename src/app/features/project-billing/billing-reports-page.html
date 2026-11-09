@@ -1,0 +1,146 @@
+<ar-topbar
+  title="Billing reports"
+  subtitle="Project orders: billed, unbilled, retention and guarantees"
+>
+  <select
+    class="ar-field__input"
+    aria-label="Looking ahead"
+    (change)="setWithin($any($event.target).value)"
+  >
+    @for (d of [30, 60, 90, 180]; track d) {
+      <option [value]="d" [selected]="d === within()">Next {{ d }} days</option>
+    }
+  </select>
+</ar-topbar>
+
+<div class="md ar-scroll">
+  @if (mock) {
+    <ar-banner tone="teal">The billing reports need the live API.</ar-banner>
+  }
+  @if (error(); as e) {
+    <ar-banner tone="bad">{{ e }}</ar-banner>
+  }
+
+  @if (report(); as r) {
+    <div class="md__tiles">
+      <ar-stat-tile label="Billed" [value]="rupees(r.billedInPaise)" />
+      <ar-stat-tile label="Unbilled" [value]="rupees(r.unbilledInPaise)" />
+      <ar-stat-tile label="Retention held" [value]="rupees(r.retentionHeldInPaise)" />
+      <ar-stat-tile
+        label="Retention past its due date"
+        [value]="rupees(r.retentionOverdueInPaise)"
+        [tone]="r.retentionOverdueInPaise > 0 ? 'bad' : 'neutral'"
+      />
+    </div>
+
+    <ar-card heading="Billing status by order">
+      <table class="md__table">
+        <thead>
+          <tr>
+            <th scope="col">Order</th>
+            <th scope="col">Customer</th>
+            <th scope="col" class="md__num">Value</th>
+            <th scope="col" class="md__num">Billed</th>
+            <th scope="col" class="md__num">Received</th>
+            <th scope="col" class="md__num">Unbilled</th>
+            <th scope="col" class="md__num">Retention held</th>
+            <th scope="col" class="md__num">Overdue</th>
+            <th scope="col" class="md__num">Ready to bill</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (o of r.orders; track o.salesOrderId) {
+            <tr [class.md__late]="o.retentionOverdueInPaise > 0">
+              <td>
+                <a [routerLink]="['/sales/orders', o.salesOrderId]">{{ o.orderNumber }}</a>
+              </td>
+              <td translate="no">{{ o.customerName }}</td>
+              <td class="md__num">{{ rupees(o.orderValueInPaise) }}</td>
+              <td class="md__num">{{ rupees(o.billedInPaise) }}</td>
+              <td class="md__num">{{ rupees(o.receivedInPaise) }}</td>
+              <td class="md__num">{{ rupees(o.unbilledInPaise) }}</td>
+              <td class="md__num">{{ rupees(o.retentionHeldInPaise) }}</td>
+              <td class="md__num">{{ rupees(o.retentionOverdueInPaise) }}</td>
+              <td class="md__num">{{ o.milestonesReady }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="9" class="md__muted">No orders have a billing plan yet.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </ar-card>
+
+    <ar-card [heading]="'Retention due in the next ' + within() + ' days, and overdue'">
+      <table class="md__table">
+        <thead>
+          <tr>
+            <th scope="col">Customer</th>
+            <th scope="col">Order</th>
+            <th scope="col">Invoice</th>
+            <th scope="col" class="md__num">Outstanding</th>
+            <th scope="col">Due</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (x of r.retentionDue; track x.id) {
+            <tr [class.md__late]="x.daysOverdue > 0">
+              <td translate="no">{{ x.customerName }}</td>
+              <td>
+                <a [routerLink]="['/sales/orders', x.salesOrderId]">{{ x.orderNumber }}</a>
+              </td>
+              <td>{{ x.invoiceNumber }}</td>
+              <td class="md__num">{{ rupees(x.outstandingInPaise) }}</td>
+              <td>
+                {{ x.dueOn | date: 'd MMM yyyy' }}
+                @if (x.daysOverdue > 0) {
+                  · {{ x.daysOverdue }} days overdue
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="md__muted">Nothing due in the period.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <p class="md__muted"><a routerLink="/billing/retention">Open the retention ledger</a></p>
+    </ar-card>
+
+    <ar-card [heading]="'Bank guarantees ending in the next ' + within() + ' days'">
+      <table class="md__table">
+        <thead>
+          <tr>
+            <th scope="col">Customer</th>
+            <th scope="col">Order</th>
+            <th scope="col">Guarantee</th>
+            <th scope="col" class="md__num">Amount</th>
+            <th scope="col">Valid to</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (g of r.guaranteesEnding; track g.id) {
+            <tr [class.md__late]="expiryTone(g.daysToExpiry) !== null">
+              <td translate="no">{{ g.customerName }}</td>
+              <td>
+                <a [routerLink]="['/sales/orders', g.salesOrderId]">{{ g.orderNumber }}</a>
+              </td>
+              <td>
+                {{ kindText(g.kind) }} · <span translate="no">{{ g.number }}</span>
+                <div class="md__muted" translate="no">{{ g.bank }}</div>
+              </td>
+              <td class="md__num">{{ rupees(g.amountInPaise) }}</td>
+              <td>{{ g.validTo | date: 'd MMM yyyy' }} · {{ g.daysToExpiry }} days</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="md__muted">No guarantee ends in the period.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </ar-card>
+  }
+</div>

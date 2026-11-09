@@ -532,6 +532,16 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'A signed test isn’t changed: re-issue it to correct it, and both versions are kept.',
     ],
   },
+  'billing/reports': {
+    benefits: [
+      'Every project order’s billing at a glance: billed, received, unbilled and retention held.',
+      'Retention coming due and bank guarantees ending soon, so neither is missed.',
+    ],
+    steps: [
+      'Pick how far ahead to look: 30 to 180 days.',
+      'Open an order from its row to bill a ready milestone or chase retention.',
+    ],
+  },
   'billing/retention': {
     benefits: [
       'Every rupee customers hold back as retention, with the date it is due back.',

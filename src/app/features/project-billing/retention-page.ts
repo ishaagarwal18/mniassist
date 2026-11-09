@@ -14,6 +14,11 @@ import {
   RetentionStatus,
 } from '../../proxy/project-billing/retention.service';
 import { SalesPaymentMode } from '../../proxy/sales/sales-enums';
+import {
+  BankGuaranteeDto,
+  BankGuaranteeService,
+} from '../../proxy/project-billing/bank-guarantee.service';
+import { BG_KIND_TEXT, BG_STATUS_TEXT, BG_STATUS_TONE, expiryTone } from './guarantees.logic';
 import { ArBanner, ArButton, ArCard, ArChip, ArStatTile } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
 import { environment } from '../../../environments/environment';
@@ -73,6 +78,12 @@ export class ArRetentionPage {
   private readonly api = inject(RetentionService);
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
+  private readonly guaranteesApi = inject(BankGuaranteeService);
+  protected readonly guarantees = signal<BankGuaranteeDto[]>([]);
+  protected readonly bgKind = BG_KIND_TEXT;
+  protected readonly bgStatus = BG_STATUS_TEXT;
+  protected readonly bgTone = BG_STATUS_TONE;
+  protected readonly expiryTone = expiryTone;
 
   protected readonly mock = environment.useMockData;
   protected readonly rows = signal<RetentionRowDto[]>([]);
@@ -139,6 +150,7 @@ export class ArRetentionPage {
         this.api.getLedger({ openOnly: this.openOnly(), maxResultCount: 200 }),
       );
       this.rows.set(page.items ?? []);
+      this.guarantees.set(await firstValueFrom(this.guaranteesApi.getList({ heldOnly: true })));
     } catch (e) {
       this.error.set(readApiError(e, 'The retention ledger could not be loaded.'));
     }

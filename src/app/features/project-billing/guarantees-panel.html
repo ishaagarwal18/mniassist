@@ -1,0 +1,155 @@
+@if (canSee() && loaded()) {
+  <section class="bp" aria-labelledby="so-bg">
+    <header class="bp__head">
+      <div>
+        <h2 id="so-bg">Bank guarantees</h2>
+        <p>
+          Advance and performance guarantees given on this order. You're reminded 30 and 7 days
+          before one ends, and when it can come back.
+        </p>
+      </div>
+      @if (!adding()) {
+        <button ar-button type="button" variant="ghost" (click)="adding.set(true)">
+          Record a guarantee
+        </button>
+      }
+    </header>
+
+    @if (list().length) {
+      <table class="bp__table">
+        <thead>
+          <tr>
+            <th scope="col">Guarantee</th>
+            <th scope="col" class="bp__num">Amount</th>
+            <th scope="col">Valid to</th>
+            <th scope="col">Back</th>
+            <th scope="col">Status</th>
+            <th scope="col" aria-label="Actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (g of list(); track g.id) {
+            <tr>
+              <td>
+                {{ kindText(g.kind) }} · <span translate="no">{{ g.number }}</span>
+                <div class="bp__muted" translate="no">{{ g.bank }}</div>
+              </td>
+              <td class="bp__num">{{ rupees(g.amountInPaise) }}</td>
+              <td [class.bp__bad]="expiry(g) === 'bad'">
+                {{ g.validTo | date: 'd MMM yyyy' }}
+                @if (expiry(g)) {
+                  <div class="bp__muted">{{ g.daysToExpiry }} days left</div>
+                }
+              </td>
+              <td>{{ returnText(g.returnCondition) }}</td>
+              <td>
+                <ar-chip [tone]="tone(g.status)">{{ statusText(g.status) }}</ar-chip>
+              </td>
+              <td class="bp__actions">
+                @if (g.status === Status.Active || g.status === Status.DueForReturn) {
+                  <button type="button" class="bp__link" (click)="returned(g)">Returned</button>
+                  ·
+                  <button type="button" class="bp__link" (click)="invoked(g)">Invoked</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+
+    @if (adding()) {
+      <div class="bp__bar">
+        <label class="ar-field">
+          <span class="ar-field__label">Kind</span>
+          <select class="ar-field__input" (change)="setKind(+$any($event.target).value)">
+            <option [value]="Kind.Performance" [selected]="kind() === Kind.Performance">
+              Performance
+            </option>
+            <option [value]="Kind.Advance" [selected]="kind() === Kind.Advance">Advance</option>
+          </select>
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Number</span>
+          <input
+            class="ar-field__input"
+            maxlength="64"
+            [value]="number()"
+            (input)="number.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Bank</span>
+          <input
+            class="ar-field__input"
+            maxlength="128"
+            [value]="bank()"
+            (input)="bank.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Amount (₹)</span>
+          <input
+            class="ar-field__input"
+            inputmode="decimal"
+            [value]="amount()"
+            (input)="amount.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Issued on</span>
+          <input
+            class="ar-field__input"
+            type="date"
+            [value]="issuedOn()"
+            (change)="issuedOn.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Valid to</span>
+          <input
+            class="ar-field__input"
+            type="date"
+            [value]="validTo()"
+            (change)="validTo.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Claim period (days)</span>
+          <input
+            class="ar-field__input bp__narrow"
+            inputmode="numeric"
+            [value]="claimDays()"
+            (input)="claimDays.set($any($event.target).value)"
+          />
+        </label>
+        <label class="ar-field">
+          <span class="ar-field__label">Comes back</span>
+          <select
+            class="ar-field__input"
+            (change)="returnCondition.set(+$any($event.target).value)"
+          >
+            @for (r of returns; track r) {
+              <option [value]="r" [selected]="r === returnCondition()">{{ returnText(r) }}</option>
+            }
+          </select>
+        </label>
+        @if (returnCondition() === Back.OnDate) {
+          <label class="ar-field">
+            <span class="ar-field__label">Return on</span>
+            <input
+              class="ar-field__input"
+              type="date"
+              [value]="returnOn()"
+              (change)="returnOn.set($any($event.target).value)"
+            />
+          </label>
+        }
+      </div>
+      <div class="bp__foot">
+        <button ar-button type="button" variant="ghost" (click)="adding.set(false)">Cancel</button>
+        <button ar-button type="button" [disabled]="busy()" (click)="add()">Save guarantee</button>
+      </div>
+    }
+  </section>
+}

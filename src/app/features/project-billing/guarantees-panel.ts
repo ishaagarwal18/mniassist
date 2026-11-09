@@ -1,0 +1,170 @@
+import { PermissionService } from '@abp/ng.core';
+import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+
+import { grantedPolicy } from '../../core/auth/permission';
+import { ToastService } from '../../core/ui/toast.service';
+import { readApiError } from '../../core/util/api-error';
+import {
+  BankGuaranteeDto,
+  BankGuaranteeKind,
+  BankGuaranteeReturnCondition,
+  BankGuaranteeService,
+  BankGuaranteeStatus,
+} from '../../proxy/project-billing/bank-guarantee.service';
+import { ArButton, ArChip } from '../../ui';
+import { environment } from '../../../environments/environment';
+import {
+  BG_KIND_TEXT,
+  BG_RETURN_TEXT,
+  BG_STATUS_TEXT,
+  BG_STATUS_TONE,
+  defaultReturn,
+  expiryTone,
+} from './guarantees.logic';
+
+function today(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+}
+
+function rupees(paise: number): string {
+  return '₹' + (paise / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+
+/** The order's bank guarantees: record one, and mark it returned or invoked. A performance guarantee can release the retention. */
+@Component({
+  selector: 'ar-guarantees-panel',
+  imports: [ArButton, ArChip, DatePipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './guarantees-panel.html',
+  styleUrl: './billing-plan-panel.scss',
+})
+export class ArGuaranteesPanel {
+  private readonly api = inject(BankGuaranteeService);
+  private readonly toasts = inject(ToastService);
+  private readonly permissions = inject(PermissionService);
+
+  readonly orderId = input.required<string>();
+
+  protected readonly canSee = grantedPolicy('AutoReach.ProjectBilling.Invoice', this.permissions);
+  protected readonly list = signal<BankGuaranteeDto[]>([]);
+  protected readonly loaded = signal(false);
+  protected readonly adding = signal(false);
+  protected readonly kind = signal(BankGuaranteeKind.Performance);
+  protected readonly number = signal('');
+  protected readonly bank = signal('');
+  protected readonly amount = signal('');
+  protected readonly issuedOn = signal(today());
+  protected readonly validTo = signal('');
+  protected readonly claimDays = signal('30');
+  protected readonly returnCondition = signal(BankGuaranteeReturnCondition.RetentionReleased);
+  protected readonly returnOn = signal('');
+  protected readonly busy = signal(false);
+
+  protected readonly Kind = BankGuaranteeKind;
+  protected readonly Back = BankGuaranteeReturnCondition;
+  protected readonly Status = BankGuaranteeStatus;
+  protected readonly rupees = rupees;
+  protected readonly returns = [
+    BankGuaranteeReturnCondition.AdvanceAdjusted,
+    BankGuaranteeReturnCondition.RetentionReleased,
+    BankGuaranteeReturnCondition.OnDate,
+  ];
+
+  constructor() {
+    effect(() => {
+      const id = this.orderId();
+      if (!environment.useMockData && this.canSee()) void this.load(id);
+    });
+  }
+
+  protected kindText(k: BankGuaranteeKind): string {
+    return BG_KIND_TEXT[k];
+  }
+
+  protected statusText(s: BankGuaranteeStatus): string {
+    return BG_STATUS_TEXT[s];
+  }
+
+  protected tone(s: BankGuaranteeStatus) {
+    return BG_STATUS_TONE[s];
+  }
+
+  protected returnText(r: BankGuaranteeReturnCondition): string {
+    return BG_RETURN_TEXT[r];
+  }
+
+  protected expiry(g: BankGuaranteeDto): string | null {
+    return g.status === BankGuaranteeStatus.Active || g.status === BankGuaranteeStatus.DueForReturn
+      ? expiryTone(g.daysToExpiry)
+      : null;
+  }
+
+  protected setKind(k: BankGuaranteeKind): void {
+    this.kind.set(k);
+    this.returnCondition.set(defaultReturn(k));
+  }
+
+  private async load(id: string): Promise<void> {
+    try {
+      this.list.set(await firstValueFrom(this.api.getList({ salesOrderId: id })));
+    } catch {
+      this.list.set([]);
+    } finally {
+      this.loaded.set(true);
+    }
+  }
+
+  protected async add(): Promise<void> {
+    const amount = Math.round(Number(this.amount().replace(/[₹,\s]/g, '')) * 100);
+    if (!this.number().trim() || !this.bank().trim() || !(amount > 0) || !this.validTo()) return;
+    this.busy.set(true);
+    try {
+      await firstValueFrom(
+        this.api.create(this.orderId(), {
+          kind: this.kind(),
+          number: this.number().trim(),
+          bank: this.bank().trim(),
+          amountInPaise: amount,
+          issuedOn: this.issuedOn(),
+          validTo: this.validTo(),
+          claimPeriodDays: this.claimDays() ? Number(this.claimDays()) : null,
+          returnCondition: this.returnCondition(),
+          returnOn:
+            this.returnCondition() === BankGuaranteeReturnCondition.OnDate
+              ? this.returnOn() || null
+              : null,
+        }),
+      );
+      this.adding.set(false);
+      this.number.set('');
+      this.amount.set('');
+      this.toasts.success('Bank guarantee recorded.');
+      await this.load(this.orderId());
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'The guarantee could not be recorded.'));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async returned(g: BankGuaranteeDto): Promise<void> {
+    try {
+      await firstValueFrom(this.api.markReturned(g.id, today()));
+      await this.load(this.orderId());
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'It could not be marked returned.'));
+    }
+  }
+
+  protected async invoked(g: BankGuaranteeDto): Promise<void> {
+    if (!window.confirm(`Mark ${g.number} invoked by the customer?`)) return;
+    try {
+      await firstValueFrom(this.api.markInvoked(g.id));
+      await this.load(this.orderId());
+    } catch (e) {
+      this.toasts.error(readApiError(e, 'It could not be marked invoked.'));
+    }
+  }
+}

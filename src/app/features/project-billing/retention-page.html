@@ -148,4 +148,43 @@
       </p>
     </ar-card>
   }
+  <ar-card [heading]="'Bank guarantees held · ' + guarantees().length">
+    <table class="md__table">
+      <thead>
+        <tr>
+          <th scope="col">Customer</th>
+          <th scope="col">Order</th>
+          <th scope="col">Guarantee</th>
+          <th scope="col" class="md__num">Amount</th>
+          <th scope="col">Valid to</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (g of guarantees(); track g.id) {
+          <tr [class.md__late]="expiryTone(g.daysToExpiry) !== null">
+            <td translate="no">{{ g.customerName }}</td>
+            <td>
+              <a [routerLink]="['/sales/orders', g.salesOrderId]">{{ g.orderNumber }}</a>
+            </td>
+            <td>
+              {{ bgKind[g.kind] }} · <span translate="no">{{ g.number }}</span>
+              <div class="md__muted" translate="no">{{ g.bank }}</div>
+            </td>
+            <td class="md__num">{{ rupees(g.amountInPaise) }}</td>
+            <td>{{ g.validTo | date: 'd MMM yyyy' }} · {{ g.daysToExpiry }} days</td>
+            <td>
+              <ar-chip [tone]="bgTone[g.status]">{{ bgStatus[g.status] }}</ar-chip>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="md__muted">
+              No bank guarantees held. Record them on the sales order.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </ar-card>
 </div>

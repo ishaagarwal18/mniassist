@@ -349,6 +349,13 @@ export const NAV: readonly NavGroup[] = [
         permission: 'AutoReach.ProjectBilling.Invoice',
       },
       {
+        label: 'Billing reports',
+        icon: 'analytics',
+        route: '/billing/reports',
+        feature: 'ProjectBilling',
+        permission: 'AutoReach.ProjectBilling.Reports',
+      },
+      {
         label: 'Re-orders',
         icon: 'send',
         route: '/reorders',
