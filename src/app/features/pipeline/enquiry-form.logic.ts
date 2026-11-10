@@ -1,4 +1,5 @@
 import { LeadSource } from '../../proxy/pipeline';
+import { withOptionNames } from '../../core/pick-lists/option-names';
 
 export interface EnquiryDraft {
   contactId: string;
@@ -20,7 +21,7 @@ export const BLANK_ENQUIRY_DRAFT: EnquiryDraft = {
   source: LeadSource.Manual,
 };
 
-export const LEAD_SOURCES = [
+export const LEAD_SOURCES = withOptionNames('lead.source', [
   { value: LeadSource.Manual, label: 'Entered manually' },
   { value: LeadSource.Website, label: 'Website' },
   { value: LeadSource.ClickToWhatsApp, label: 'Click-to-WhatsApp ad' },
@@ -28,7 +29,7 @@ export const LEAD_SOURCES = [
   { value: LeadSource.Referral, label: 'Referral' },
   { value: LeadSource.Dealer, label: 'Dealer' },
   { value: LeadSource.Project, label: 'Project' },
-] as const;
+] as const);
 
 export function validateEnquiryDraft(draft: EnquiryDraft): string | null {
   if (!draft.contactId) {

@@ -1406,6 +1406,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/settings/members').then((m) => m.ArMembers),
       },
       {
+        path: 'settings/pick-lists',
+        title: 'Pick lists · MNI Assist',
+        loadComponent: () => import('./features/settings/pick-lists').then((m) => m.ArPickLists),
+      },
+      {
         path: 'settings/teams',
         title: 'Teams · MNI Assist',
         loadComponent: () => import('./features/settings/teams').then((m) => m.ArTeams),

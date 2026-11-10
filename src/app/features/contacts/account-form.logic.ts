@@ -1,10 +1,3 @@
-import {
-  getCitiesForState,
-  getMasterIndustries,
-  getMasterStateNames,
-  getStateForCity,
-} from '../../core/models/account-master-data';
-
 /** One shipping address as typed on the form. */
 export interface ShippingDraft {
   label: string;
@@ -101,11 +94,12 @@ export function getHierarchyPlacementInfo(
   };
 }
 
+/** A new state: the cities offered are the state's (from the database); a city not in it is cleared. */
 export function handleStateChange(
   newState: string,
   currentCity: string,
+  cities: readonly string[],
 ): { state: string; city: string; availableCities: readonly string[] } {
-  const cities = getCitiesForState(newState);
   const cityStillValid =
     !currentCity || cities.some((c) => c.toLowerCase() === currentCity.toLowerCase());
   return {
@@ -115,12 +109,14 @@ export function handleStateChange(
   };
 }
 
+/** A city picked before a state: the state it is in, when the database knows it. */
 export function handleCityChange(
   newCity: string,
   currentState: string,
+  stateForCity: (city: string) => string | null,
 ): { state: string; city: string } {
   if (!currentState && newCity) {
-    const inferredState = getStateForCity(newCity);
+    const inferredState = stateForCity(newCity);
     if (inferredState) {
       return { state: inferredState, city: newCity };
     }

@@ -30,8 +30,10 @@ describe('new delivery challan', () => {
       unitOfMeasure: 'Pcs',
       productId: 'p1',
     });
-    expect(unitsFor(line)).toContain('Pcs');
-    expect(unitsFor(blankChallanLine())).not.toContain('Pcs');
+    const units = ['Nos', 'Set', 'Kg'];
+    expect(unitsFor(line, units)).toContain('Pcs');
+    expect(unitsFor(blankChallanLine(), units)).not.toContain('Pcs');
+    expect(unitsFor(blankChallanLine(), units)).toEqual(units);
   });
 
   it('keeps the unit typed when the catalogue has none, and unlinks a retyped item', () => {

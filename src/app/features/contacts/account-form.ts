@@ -275,7 +275,11 @@ export class ArAccountForm {
 
   protected onStateSelect(newState: string): void {
     const currentCity = this.draft().city;
-    const res = handleStateChange(newState, currentCity);
+    const res = handleStateChange(
+      newState,
+      currentCity,
+      this.masterData.getCitiesForState(newState),
+    );
     this.draft.update((d) => ({
       ...d,
       state: res.state,
@@ -285,7 +289,7 @@ export class ArAccountForm {
 
   protected onCitySelect(newCity: string): void {
     const currentState = this.draft().state;
-    const res = handleCityChange(newCity, currentState);
+    const res = handleCityChange(newCity, currentState, (c) => this.masterData.stateForCity(c));
     this.draft.update((d) => ({
       ...d,
       state: res.state,

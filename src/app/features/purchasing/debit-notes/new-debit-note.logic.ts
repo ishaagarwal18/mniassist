@@ -26,15 +26,6 @@ export interface DebitForm {
   lines: DebitFormLine[];
 }
 
-/** The usual reasons, offered as one-click starts for the reason field. */
-export const DEBIT_REASONS: readonly string[] = [
-  'QC rejection',
-  'Short supply',
-  'Rate difference',
-  'Damaged in transit',
-  'Purchase return',
-];
-
 export function blankDebitLine(): DebitFormLine {
   return { partNumber: '', description: '', quantity: 1, rate: 0, taxRateBasisPoints: 1800 };
 }

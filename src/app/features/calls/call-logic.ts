@@ -5,6 +5,7 @@ import {
   VoiceCallMode,
   VoiceCallStatus,
 } from '../../proxy/voice';
+import { optionNames } from '../../core/pick-lists/option-names';
 
 /** What a rep can say came of a call, in the order the form offers them. */
 export const OUTCOME_CHOICES: readonly CallOutcome[] = [
@@ -16,15 +17,18 @@ export const OUTCOME_CHOICES: readonly CallOutcome[] = [
   CallOutcome.NotInterested,
 ];
 
-export const OUTCOME_LABEL: Record<CallOutcome, string> = {
-  [CallOutcome.None]: 'Not recorded',
-  [CallOutcome.Connected]: 'Spoke to them',
-  [CallOutcome.NoAnswer]: 'No answer',
-  [CallOutcome.LeftMessage]: 'Left a message',
-  [CallOutcome.CallBackLater]: 'Asked to call back',
-  [CallOutcome.WrongNumber]: 'Wrong number',
-  [CallOutcome.NotInterested]: 'Not interested',
-};
+export const OUTCOME_LABEL: Readonly<Record<CallOutcome, string>> = optionNames<CallOutcome>(
+  'call.outcome',
+  {
+    [CallOutcome.None]: 'Not recorded',
+    [CallOutcome.Connected]: 'Spoke to them',
+    [CallOutcome.NoAnswer]: 'No answer',
+    [CallOutcome.LeftMessage]: 'Left a message',
+    [CallOutcome.CallBackLater]: 'Asked to call back',
+    [CallOutcome.WrongNumber]: 'Wrong number',
+    [CallOutcome.NotInterested]: 'Not interested',
+  },
+);
 
 export const STATUS_LABEL: Record<VoiceCallStatus, string> = {
   [VoiceCallStatus.Queued]: 'Starting',

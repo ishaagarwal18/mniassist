@@ -8,33 +8,18 @@ export interface ProfileField {
   label: string;
   kind: 'text' | 'number' | 'select';
   options?: readonly string[];
+  /** The options come from the database: the account form's industry list (Settings → Pick lists keeps the others). */
+  optionsFrom?: 'industries';
   /** Suggestions for a free-text field. */
   suggestions?: readonly string[];
   placeholder?: string;
 }
 
-export const INDUSTRIES = [
-  'Food & beverage',
-  'Pharmaceutical',
-  'Automotive',
-  'Textiles',
-  'Packaging',
-  'Cement',
-  'Steel & metals',
-  'Chemicals',
-  'Water treatment',
-  'Machine tools',
-  'Plastics & polymers',
-  'Power & energy',
-  'Panel building',
-  'Other',
-] as const;
-
 export const BUDGET_BANDS = ['Under ₹5L', '₹5–10L', '₹10–50L', '₹50L–1Cr', 'Over ₹1Cr'] as const;
 
 export const PROFILE_FIELDS: readonly ProfileField[] = [
   { key: 'application', label: 'Application', kind: 'text', placeholder: 'e.g. Bottling line' },
-  { key: 'industry', label: 'Industry', kind: 'select', options: INDUSTRIES },
+  { key: 'industry', label: 'Industry', kind: 'select', optionsFrom: 'industries' },
   {
     key: 'machine_process',
     label: 'Machine or process',

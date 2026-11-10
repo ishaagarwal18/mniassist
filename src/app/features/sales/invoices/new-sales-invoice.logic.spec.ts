@@ -38,10 +38,12 @@ describe('new sales invoice lines', () => {
   });
 
   it('maps unusual catalogue GST to 18% and keeps the offered rates', () => {
-    expect(gstPercentFrom(500)).toBe(5);
-    expect(gstPercentFrom(2800)).toBe(28);
-    expect(gstPercentFrom(1234)).toBe(18);
-    expect(gstPercentFrom(undefined)).toBe(18);
+    const offered = [0, 5, 12, 18, 28];
+    expect(gstPercentFrom(500, offered)).toBe(5);
+    expect(gstPercentFrom(2800, offered)).toBe(28);
+    expect(gstPercentFrom(1234, offered)).toBe(18);
+    expect(gstPercentFrom(undefined, offered)).toBe(18);
+    expect(gstPercentFrom(25, [0.25, 18])).toBe(0.25);
   });
 
   it('unlinks the product when its name or item number is typed over', () => {

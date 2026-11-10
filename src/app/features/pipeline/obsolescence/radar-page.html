@@ -286,7 +286,7 @@
           aria-label="Reason for dismissing"
           (change)="reason.set($any($event.target).value)"
         >
-          @for (r of reasons; track r) {
+          @for (r of reasons(); track r) {
             <option [value]="r" [selected]="reason() === r">{{ r }}</option>
           }
           <option value="other" [selected]="reason() === 'other'">Another reason…</option>

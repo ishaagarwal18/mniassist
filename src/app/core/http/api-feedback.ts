@@ -196,6 +196,7 @@ const PAST: Record<string, string> = {
   withdraw: 'Withdrawn',
   'set-default': 'Made default',
   'clear-password': 'Password cleared',
+  reset: 'Reset to defaults',
 };
 
 const isId = (s: string) =>

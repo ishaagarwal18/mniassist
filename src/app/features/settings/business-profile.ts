@@ -9,47 +9,9 @@ import { ArTopbar } from '../../layout/topbar';
 import { WorkspaceProfileService } from '../../proxy/business/workspace-profile.service';
 import type { UpdateWorkspaceProfileInput } from '../../proxy/business/models';
 import { ArBanner, ArButton } from '../../ui';
+import { AccountMasterDataService } from '../../core/services/account-master-data.service';
 
 /** GST state codes, as the first two digits of a GSTIN carry them. */
-const GST_STATES: readonly { code: string; name: string }[] = [
-  { code: '01', name: 'Jammu and Kashmir' },
-  { code: '02', name: 'Himachal Pradesh' },
-  { code: '03', name: 'Punjab' },
-  { code: '04', name: 'Chandigarh' },
-  { code: '05', name: 'Uttarakhand' },
-  { code: '06', name: 'Haryana' },
-  { code: '07', name: 'Delhi' },
-  { code: '08', name: 'Rajasthan' },
-  { code: '09', name: 'Uttar Pradesh' },
-  { code: '10', name: 'Bihar' },
-  { code: '11', name: 'Sikkim' },
-  { code: '12', name: 'Arunachal Pradesh' },
-  { code: '13', name: 'Nagaland' },
-  { code: '14', name: 'Manipur' },
-  { code: '15', name: 'Mizoram' },
-  { code: '16', name: 'Tripura' },
-  { code: '17', name: 'Meghalaya' },
-  { code: '18', name: 'Assam' },
-  { code: '19', name: 'West Bengal' },
-  { code: '20', name: 'Jharkhand' },
-  { code: '21', name: 'Odisha' },
-  { code: '22', name: 'Chhattisgarh' },
-  { code: '23', name: 'Madhya Pradesh' },
-  { code: '24', name: 'Gujarat' },
-  { code: '26', name: 'Dadra and Nagar Haveli and Daman and Diu' },
-  { code: '27', name: 'Maharashtra' },
-  { code: '29', name: 'Karnataka' },
-  { code: '30', name: 'Goa' },
-  { code: '31', name: 'Lakshadweep' },
-  { code: '32', name: 'Kerala' },
-  { code: '33', name: 'Tamil Nadu' },
-  { code: '34', name: 'Puducherry' },
-  { code: '35', name: 'Andaman and Nicobar Islands' },
-  { code: '36', name: 'Telangana' },
-  { code: '37', name: 'Andhra Pradesh' },
-  { code: '38', name: 'Ladakh' },
-];
-
 const GSTIN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 const PAN = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 
@@ -244,7 +206,7 @@ const EMPTY: UpdateWorkspaceProfileInput = {
               (change)="set('state', $any($event.target).value); touch('state')"
             >
               <option value="" [selected]="!f().state">Choose the state</option>
-              @for (s of states; track s.code) {
+              @for (s of states(); track s.name) {
                 <option [value]="s.name" [selected]="s.name === f().state">{{ s.name }}</option>
               }
             </select>
@@ -423,7 +385,9 @@ export class ArBusinessProfile {
     'AutoReach.Branding.Manage || AutoReach.Administration.ManageTenants',
     this.permissions,
   );
-  protected readonly states = GST_STATES;
+  private readonly masterData = inject(AccountMasterDataService);
+  /** The states and their GST codes, from the database (the same list the account form uses). */
+  protected readonly states = this.masterData.stateList;
 
   protected readonly f = signal<UpdateWorkspaceProfileInput>({ ...EMPTY });
   protected readonly loading = signal(true);
@@ -473,8 +437,8 @@ export class ArBusinessProfile {
     this.f.update((f) => {
       const next = { ...f, gstin };
       if (GSTIN.test(gstin)) {
-        const state = GST_STATES.find((s) => s.code === gstin.slice(0, 2));
-        if (state && !f.state) next.state = state.name;
+        const state = this.masterData.stateForCode(gstin.slice(0, 2));
+        if (state && !f.state) next.state = state;
         if (!f.pan) next.pan = gstin.slice(2, 12);
       }
       return next;
@@ -483,9 +447,10 @@ export class ArBusinessProfile {
 
   protected readonly gstState = computed(() => {
     const gstin = (this.f().gstin ?? '').trim();
-    return GSTIN.test(gstin)
-      ? (GST_STATES.find((s) => s.code === gstin.slice(0, 2)) ?? null)
-      : null;
+    if (!GSTIN.test(gstin)) return null;
+    const code = gstin.slice(0, 2);
+    const name = this.masterData.stateForCode(code);
+    return name ? { code, name } : null;
   });
 
   private readonly problems = computed<Partial<Record<Field, string>>>(() => {

@@ -42,7 +42,7 @@ describe('sales records', () => {
     expect(orderStatusLabel(SalesOrderStatus.PartiallyDispatched)).toBe('Partially Dispatched');
     expect(challanStatusLabel(DeliveryChallanStatus.Dispatched)).toBe('In Transit');
     expect(invoiceStatusTone(SalesInvoiceStatus.PartiallyPaid)).toBe('amber');
-    expect(paymentModeLabel(SalesPaymentMode.Card)).toBe('Card');
+    expect(paymentModeLabel(SalesPaymentMode.Card)).toBe('Credit/Debit Card');
     expect(paymentModeLabel(SalesPaymentMode.Other)).toBe('Other');
   });
 

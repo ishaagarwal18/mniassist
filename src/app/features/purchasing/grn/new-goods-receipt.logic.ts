@@ -37,8 +37,6 @@ export interface GrnForm {
 /** What is wrong with the form, by field (`line.<i>.<field>` for lines). Empty when it can be saved. */
 export type GrnFormErrors = Record<string, string>;
 
-export const GRN_UNITS = ['NOS', 'SET', 'KG', 'MTR', 'LTR', 'BOX', 'PAIR', 'LOT'] as const;
-
 export function blankGrnLine(): GrnFormLine {
   return {
     partNumber: '',

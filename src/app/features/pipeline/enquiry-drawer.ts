@@ -25,7 +25,8 @@ import { ArEnquiryTickets } from '../helpdesk/enquiry-tickets';
 import { ArEnquiryNetwork } from '../network/enquiry-network';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
-import { PROFILE_FIELDS, profileFilled, profileInput } from './enquiry-profile';
+import { PROFILE_FIELDS, ProfileField, profileFilled, profileInput } from './enquiry-profile';
+import { AccountMasterDataService } from '../../core/services/account-master-data.service';
 
 /**
  * The enquiry card, opened. A slide-over rather than a route because the board is
@@ -156,7 +157,7 @@ import { PROFILE_FIELDS, profileFilled, profileInput } from './enquiry-profile';
                       (change)="setProfile(f.key, $any($event.target).value)"
                     >
                       <option value="">—</option>
-                      @for (o of f.options; track o) {
+                      @for (o of optionsOf(f); track o) {
                         <option [value]="o">{{ o }}</option>
                       }
                     </select>
@@ -752,6 +753,11 @@ export class ArEnquiryDrawer {
   }
   protected readonly editOrderDate = signal('');
   protected readonly profileFields = PROFILE_FIELDS;
+  private readonly masterData = inject(AccountMasterDataService);
+  /** A select's options: its own fixed ones, or the database list it names. */
+  protected optionsOf(f: ProfileField): readonly string[] {
+    return f.optionsFrom === 'industries' ? this.masterData.industries() : (f.options ?? []);
+  }
 
   protected filled(d: EnquiryDetail): number {
     return profileFilled(d.attributes, d.expectedCloseDate);

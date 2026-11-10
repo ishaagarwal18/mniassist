@@ -1461,6 +1461,18 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Click Deactivate when someone leaves. You will choose who inherits their open conversations.',
     ],
   },
+  'settings/pick-lists': {
+    benefits: [
+      'The drop-down lists on your forms (units, reasons, GST rates, payment terms, project sectors) are your own.',
+      'Fixed options such as ticket statuses and lead sources can be called what your team calls them.',
+      'Records that already use an option keep it when you hide or remove it.',
+    ],
+    steps: [
+      'Pick a list on the left.',
+      'Rename, reorder, add or hide options; for statuses and other fixed options, change the names only.',
+      'Click Save. Reset to defaults brings back the standard list.',
+    ],
+  },
   'settings/teams': {
     benefits: [
       'Agents who share a desk (a language, a product line) share its conversations.',

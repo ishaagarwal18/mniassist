@@ -1,6 +1,6 @@
 import { PermissionService } from '@abp/ng.core';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
@@ -22,13 +22,13 @@ import { ArBanner, ArButton, ArChip } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import {
   OUTCOME_TEXT,
-  SECTORS,
   STAGE_DECIDER,
   STAGE_TEXT,
   STAGES,
   needsDetails,
   rupeesShort,
 } from './project.logic';
+import { PickListStore } from '../../core/pick-lists/pick-list.store';
 
 type View = 'list' | 'board';
 
@@ -78,7 +78,8 @@ export class ArProjectsPage {
   protected readonly STAGE_DECIDER = STAGE_DECIDER;
   protected readonly OUTCOME_TEXT = OUTCOME_TEXT;
   protected readonly Outcome = ProjectOutcome;
-  protected readonly SECTORS = SECTORS;
+  private readonly pickLists = inject(PickListStore);
+  protected readonly SECTORS = computed(() => this.pickLists.texts('project.sector'));
   protected readonly rupees = rupeesShort;
 
   private dragged: ProjectListItemDto | null = null;

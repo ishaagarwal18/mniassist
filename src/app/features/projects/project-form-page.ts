@@ -12,7 +12,8 @@ import {
 } from '../../proxy/projects/project.service';
 import { ArBanner, ArButton, ArCard } from '../../ui';
 import { ArAccountSearch, PickedAccount } from './account-search';
-import { SECTORS, formProblem, parseRupees } from './project.logic';
+import { formProblem, parseRupees } from './project.logic';
+import { PickListStore } from '../../core/pick-lists/pick-list.store';
 
 type DateKey =
   | 'identifiedOn'
@@ -41,7 +42,8 @@ export class ArProjectFormPage {
   private readonly router = inject(Router);
 
   protected readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id');
-  protected readonly SECTORS = SECTORS;
+  private readonly pickLists = inject(PickListStore);
+  protected readonly SECTORS = computed(() => this.pickLists.texts('project.sector'));
   protected readonly dates: { key: DateKey; label: string }[] = [
     { key: 'identifiedOn', label: 'Identified' },
     { key: 'specIssueOn', label: 'Spec issue' },

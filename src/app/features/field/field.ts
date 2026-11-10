@@ -15,6 +15,7 @@ import { ArBrand } from '../../layout/brand';
 import { ArButton, ArChip, ArDialog, ArIcon, ArMeter } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { helpTopicFor } from '../../core/help/help-topics';
+import { PickListStore } from '../../core/pick-lists/pick-list.store';
 
 /** Compresses a camera photo to JPEG within 1600 px. */
 async function shrink(file: File): Promise<Blob> {
@@ -859,6 +860,8 @@ async function shrink(file: File): Promise<Blob> {
 })
 export class ArField {
   protected readonly store = inject(FieldStore);
+  /** The visit checklist; the last copy is kept on the phone, so a visit starts offline too. */
+  private readonly pickLists = inject(PickListStore);
   private readonly api = inject(FieldServiceService);
   private readonly doc = inject(DOCUMENT);
 
@@ -980,7 +983,14 @@ export class ArField {
   }
 
   protected async arrive(j: FieldJobDto): Promise<void> {
-    await this.store.saveVisit(startVisit(j.ticketId, crypto.randomUUID(), new Date()));
+    await this.store.saveVisit(
+      startVisit(
+        j.ticketId,
+        crypto.randomUUID(),
+        new Date(),
+        this.pickLists.texts('field.visit-checklist'),
+      ),
+    );
   }
 
   protected async setNotes(v: LocalVisit, notes: string): Promise<void> {

@@ -67,13 +67,6 @@ const STATE_LABEL: Record<MigrationState, string> = {
   [MigrationState.Dismissed]: 'Dismissed',
 };
 
-/** The reasons offered when a row is taken off the radar (spec); any other can be typed. */
-export const DISMISS_REASONS: readonly string[] = [
-  'Customer already migrating',
-  'Machine to be scrapped',
-  'Not our customer any more',
-];
-
 export const stageText = (s: LifecycleStage): string => STAGE_LABEL[s] ?? String(s);
 export const stageTone = (s: LifecycleStage): ChipTone => STAGE_TONE[s] ?? 'neutral';
 export const relationText = (r: ReplacementRelation): string => RELATION_LABEL[r] ?? String(r);

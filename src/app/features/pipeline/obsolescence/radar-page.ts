@@ -29,13 +29,13 @@ import {
   atRiskSentence,
   bandText,
   bandTone,
-  DISMISS_REASONS,
   groupRadar,
   parseBand,
   stageText,
   stageTone,
   stateText,
 } from './obsolescence.logic';
+import { PickListStore } from '../../../core/pick-lists/pick-list.store';
 
 const PAGE = 500;
 
@@ -65,7 +65,8 @@ export class ArRadarPage {
     LifecycleStage.EndOfSupport,
   ];
   protected readonly bands = [RiskBand.High, RiskBand.Medium, RiskBand.Low];
-  protected readonly reasons = DISMISS_REASONS;
+  private readonly pickLists = inject(PickListStore);
+  protected readonly reasons = computed(() => this.pickLists.texts('obsolescence.dismiss-reason'));
   protected readonly canEditRules = grantedPolicy('AutoReach.Library.Lifecycle', this.permissions);
   private readonly canCreateEnquiries = grantedPolicy(
     'AutoReach.Pipeline.Create',
@@ -109,7 +110,8 @@ export class ArRadarPage {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly selected = signal<ReadonlySet<string>>(new Set());
-  protected readonly reason = signal(DISMISS_REASONS[0]);
+  /** Empty: the first reason in the list, as the select shows it. */
+  protected readonly reason = signal('');
   protected readonly otherReason = signal('');
   protected readonly assignTo = signal('');
 
@@ -260,7 +262,9 @@ export class ArRadarPage {
   }
 
   protected async dismiss(): Promise<void> {
-    const reason = (this.reason() === 'other' ? this.otherReason() : this.reason()).trim();
+    const reason = (
+      this.reason() === 'other' ? this.otherReason() : this.reason() || this.reasons()[0] || ''
+    ).trim();
     if (!reason) {
       this.toasts.warning('Say why these rows are being dismissed.');
       return;

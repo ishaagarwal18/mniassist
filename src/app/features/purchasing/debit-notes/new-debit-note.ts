@@ -26,14 +26,13 @@ import {
 import { ArButton, ArIcon, ArSelect } from '../../../ui';
 import {
   ArPfSupplier,
-  GST_RATES,
+  gstRateOptions,
   PURCHASE_FORM_STYLES,
   SupplierOption,
   SupplierOptionsService,
 } from '../purchase-form';
 import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
 import {
-  DEBIT_REASONS,
   DebitForm,
   DebitFormLine,
   blankDebitLine,
@@ -44,6 +43,7 @@ import {
   toCreateDebitDto,
   validateDebitForm,
 } from './new-debit-note.logic';
+import { PickListStore } from '../../../core/pick-lists/pick-list.store';
 
 /**
  * Issue a vendor debit note on its own page (/purchasing/debit-notes/new). `?supplier=<id>&name=` picks the supplier (from Vendor
@@ -180,7 +180,7 @@ import {
                   >Reason <span class="pf__req">*</span></label
                 >
                 <div class="pf__chips" role="group" aria-label="Common reasons">
-                  @for (r of reasons; track r) {
+                  @for (r of reasons(); track r) {
                     <button type="button" class="pf__chip" (click)="useReason(r)">{{ r }}</button>
                   }
                 </div>
@@ -266,7 +266,7 @@ import {
                       [attr.aria-label]="'GST rate, line ' + (i + 1)"
                       (change)="patchLine(i, { taxRateBasisPoints: +$any($event.target).value })"
                     >
-                      @for (r of gstRates; track r.bps) {
+                      @for (r of gstRates(); track r.bps) {
                         <option [value]="r.bps" [selected]="r.bps === l.taxRateBasisPoints">
                           {{ r.label }}
                         </option>
@@ -363,8 +363,9 @@ export class ArNewDebitNotePage {
 
   protected readonly inr = inr;
   protected readonly lineTaxable = debitLineTaxable;
-  protected readonly gstRates = GST_RATES;
-  protected readonly reasons = DEBIT_REASONS;
+  private readonly pickLists = inject(PickListStore);
+  protected readonly gstRates = computed(() => gstRateOptions(this.pickLists));
+  protected readonly reasons = computed(() => this.pickLists.texts('purchasing.debit-reason'));
   protected readonly canCreate = checkPolicy(
     PURCHASING_PERMISSIONS.createDebitNote,
     inject(PermissionService),

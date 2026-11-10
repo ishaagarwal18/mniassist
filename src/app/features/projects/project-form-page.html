@@ -76,7 +76,7 @@
         <span class="ar-field__label">Sector</span>
         <select class="ar-field__input" (change)="patch({ sector: $any($event.target).value })">
           <option value="" [selected]="!form().sector">Choose…</option>
-          @for (s of SECTORS; track s) {
+          @for (s of SECTORS(); track s) {
             <option [value]="s" [selected]="form().sector === s">{{ s }}</option>
           }
         </select>

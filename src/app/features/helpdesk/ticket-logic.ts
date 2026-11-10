@@ -4,20 +4,27 @@ import {
   TicketPriority,
   TicketStatus,
 } from '../../proxy/support';
+import { optionNames } from '../../core/pick-lists/option-names';
 
-export const STATUS_LABEL: Record<TicketStatus, string> = {
-  [TicketStatus.Open]: 'Open',
-  [TicketStatus.Pending]: 'Pending',
-  [TicketStatus.Resolved]: 'Resolved',
-  [TicketStatus.Closed]: 'Closed',
-};
+export const STATUS_LABEL: Readonly<Record<TicketStatus, string>> = optionNames<TicketStatus>(
+  'ticket.status',
+  {
+    [TicketStatus.Open]: 'Open',
+    [TicketStatus.Pending]: 'Pending',
+    [TicketStatus.Resolved]: 'Resolved',
+    [TicketStatus.Closed]: 'Closed',
+  },
+);
 
-export const PRIORITY_LABEL: Record<TicketPriority, string> = {
-  [TicketPriority.Low]: 'Low',
-  [TicketPriority.Normal]: 'Normal',
-  [TicketPriority.High]: 'High',
-  [TicketPriority.Urgent]: 'Urgent',
-};
+export const PRIORITY_LABEL: Readonly<Record<TicketPriority, string>> = optionNames<TicketPriority>(
+  'ticket.priority',
+  {
+    [TicketPriority.Low]: 'Low',
+    [TicketPriority.Normal]: 'Normal',
+    [TicketPriority.High]: 'High',
+    [TicketPriority.Urgent]: 'Urgent',
+  },
+);
 
 /** The order a "raise a ticket" form offers priorities in, and the SLA hours each one promises — the same table the server's
  *  ServiceTicketRules uses, kept here only so the form can show the promise before it saves. */

@@ -17,6 +17,7 @@ import {
 } from '../../proxy/pipeline';
 import { ArButton, ArChip } from '../../ui';
 import { ArSelect } from '../../ui/select';
+import { withOptionNames } from '../../core/pick-lists/option-names';
 
 interface Row {
   userId: string;
@@ -26,7 +27,7 @@ interface Row {
   cap: string;
 }
 
-const SOURCES: { value: LeadSource; label: string }[] = [
+const SOURCES = withOptionNames('lead.source', [
   { value: LeadSource.Manual, label: 'Entered manually' },
   { value: LeadSource.Website, label: 'Website' },
   { value: LeadSource.ClickToWhatsApp, label: 'Click-to-WhatsApp ad' },
@@ -35,7 +36,7 @@ const SOURCES: { value: LeadSource; label: string }[] = [
   { value: LeadSource.Referral, label: 'Referral' },
   { value: LeadSource.Import, label: 'Import' },
   { value: LeadSource.Dealer, label: 'Dealer' },
-];
+]);
 
 /**
  * Lead rotation for one pipeline: new enquiries are shared out to a team in turn, or to whoever has the

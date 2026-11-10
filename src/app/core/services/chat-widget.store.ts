@@ -9,6 +9,7 @@ import {
 import { LeadSource } from '../../proxy/pipeline/lead-source.enum';
 import { ChannelService } from './channel.service';
 import { settled } from '../util/resource';
+import { optionNames, withOptionNames } from '../pick-lists/option-names';
 
 export interface ChatEntryPoint {
   readonly id: string;
@@ -31,33 +32,36 @@ export interface ChatEntryPointAssets {
 }
 
 /** The sources that make sense for a hand-made link — CTWA and Import come from elsewhere. */
-export const ENTRY_POINT_SOURCES: { value: LeadSource; label: string }[] = [
+export const ENTRY_POINT_SOURCES = withOptionNames('lead.source', [
   { value: LeadSource.Website, label: 'Website' },
   { value: LeadSource.QrCode, label: 'QR code' },
   { value: LeadSource.Exhibition, label: 'Exhibition / stall' },
   { value: LeadSource.Referral, label: 'Referral' },
   { value: LeadSource.Dealer, label: 'Dealer' },
-];
+]);
 
-export const SOURCE_LABEL: Record<LeadSource, string> = {
-  [LeadSource.Manual]: 'Manual',
-  [LeadSource.Website]: 'Website',
-  [LeadSource.ClickToWhatsApp]: 'Click-to-WhatsApp ad',
-  [LeadSource.Exhibition]: 'Exhibition / stall',
-  [LeadSource.QrCode]: 'QR code',
-  [LeadSource.Referral]: 'Referral',
-  [LeadSource.Import]: 'Import',
-  [LeadSource.Dealer]: 'Dealer',
-  [LeadSource.Renewal]: 'AMC renewal',
-  [LeadSource.Spares]: 'Spares due',
-  [LeadSource.OemNetwork]: 'OEM network',
-  [LeadSource.ReorderPortal]: 'Re-order portal',
-  [LeadSource.PublicCatalogue]: 'Public catalogue',
-  [LeadSource.LeadAd]: 'Facebook / Instagram lead form',
-  [LeadSource.VoiceAgent]: 'AI voice agent',
-  [LeadSource.Obsolescence]: 'Obsolescence radar',
-  [LeadSource.Project]: 'Project',
-};
+export const SOURCE_LABEL: Readonly<Record<LeadSource, string>> = optionNames<LeadSource>(
+  'lead.source',
+  {
+    [LeadSource.Manual]: 'Manual',
+    [LeadSource.Website]: 'Website',
+    [LeadSource.ClickToWhatsApp]: 'Click-to-WhatsApp ad',
+    [LeadSource.Exhibition]: 'Exhibition / stall',
+    [LeadSource.QrCode]: 'QR code',
+    [LeadSource.Referral]: 'Referral',
+    [LeadSource.Import]: 'Import',
+    [LeadSource.Dealer]: 'Dealer',
+    [LeadSource.Renewal]: 'AMC renewal',
+    [LeadSource.Spares]: 'Spares due',
+    [LeadSource.OemNetwork]: 'OEM network',
+    [LeadSource.ReorderPortal]: 'Re-order portal',
+    [LeadSource.PublicCatalogue]: 'Public catalogue',
+    [LeadSource.LeadAd]: 'Facebook / Instagram lead form',
+    [LeadSource.VoiceAgent]: 'AI voice agent',
+    [LeadSource.Obsolescence]: 'Obsolescence radar',
+    [LeadSource.Project]: 'Project',
+  },
+);
 
 function toEntryPoint(dto: ChatEntryPointDto): ChatEntryPoint {
   return {

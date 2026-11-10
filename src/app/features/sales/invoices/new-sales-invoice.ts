@@ -21,9 +21,7 @@ import { ArCatalogueItem, CatalogueSearch } from '../catalogue-item';
 import { ArSalesCustomer, SalesCustomerChoice } from '../sales-customer';
 import { EMPTY_PARTY, SalesParty, defaultShipIndex, shipToText } from '../sales-party';
 import {
-  GST_RATES,
   InvoiceLine,
-  PAYMENT_TERMS,
   blankInvoiceLine,
   editInvoiceLine,
   invoiceLineFromProduct,
@@ -33,6 +31,7 @@ import {
   plusDays,
   toInvoiceLines,
 } from './new-sales-invoice.logic';
+import { PickListStore } from '../../../core/pick-lists/pick-list.store';
 
 /** Today in the browser's time zone (yyyy-mm-dd); toISOString would give yesterday before 05:30 IST. */
 const localToday = () => plusDays(new Date().toLocaleDateString('en-CA'), 0);
@@ -119,9 +118,9 @@ const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
             <label class="ar-field">
               <span class="ar-field__label">Payment terms</span>
               <select class="ar-field__input" (change)="setTerms($any($event.target).value)">
-                @for (d of paymentTerms; track d) {
-                  <option [value]="d" [selected]="terms() === d">
-                    {{ d === 0 ? 'Due on receipt' : 'Net ' + d + ' days' }}
+                @for (d of paymentTerms(); track d.value) {
+                  <option [value]="d.value" [selected]="terms() === d.value">
+                    {{ d.label }}
                   </option>
                 }
                 <option value="custom" [selected]="terms() === null">Custom date</option>
@@ -312,8 +311,10 @@ const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
                       [disabled]="kind() === Kind.BillOfSupply"
                       (change)="patchLine(i, { gstPercent: +$any($event.target).value })"
                     >
-                      @for (r of gstRates; track r) {
-                        <option [value]="r" [selected]="r === l.gstPercent">{{ r }}%</option>
+                      @for (r of gstRates(); track r.value) {
+                        <option [value]="r.value" [selected]="r.value === l.gstPercent">
+                          {{ r.label }}
+                        </option>
                       }
                     </select>
                   </label>
@@ -698,8 +699,16 @@ export class ArNewSalesInvoice {
   readonly initialCustomer = input<PickerOption | null>(null);
 
   protected readonly Kind = SalesInvoiceKind;
-  protected readonly gstRates = GST_RATES;
-  protected readonly paymentTerms = PAYMENT_TERMS;
+  private readonly pickLists = inject(PickListStore);
+  /** GST rates and payment terms come from the database (Settings → Pick lists). */
+  protected readonly gstRates = computed(() =>
+    this.pickLists.options('tax.gst-rate').map((o) => ({ value: Number(o.value), label: o.label })),
+  );
+  protected readonly paymentTerms = computed(() =>
+    this.pickLists
+      .options('sales.payment-term')
+      .map((o) => ({ value: Number(o.value), label: o.label })),
+  );
 
   protected readonly choice = signal<SalesCustomerChoice | null>(null);
   protected readonly party = signal<SalesParty>(EMPTY_PARTY);
@@ -812,8 +821,8 @@ export class ArNewSalesInvoice {
   protected setDueDate(value: string): void {
     if (!value) return;
     this.dueDate.set(value);
-    const match = PAYMENT_TERMS.find((d) => plusDays(this.issueDate(), d) === value);
-    this.terms.set(match ?? null);
+    const match = this.paymentTerms().find((d) => plusDays(this.issueDate(), d.value) === value);
+    this.terms.set(match?.value ?? null);
   }
 
   // ---- Items ---------------------------------------------------------------------
@@ -831,7 +840,17 @@ export class ArNewSalesInvoice {
   }
 
   protected pickItem(index: number, p: ProductDto): void {
-    this.lines.update((ls) => ls.map((l, i) => (i === index ? invoiceLineFromProduct(p, l) : l)));
+    this.lines.update((ls) =>
+      ls.map((l, i) =>
+        i === index
+          ? invoiceLineFromProduct(
+              p,
+              l,
+              this.gstRates().map((r) => r.value),
+            )
+          : l,
+      ),
+    );
   }
 
   protected taxable(l: InvoiceLine): number {

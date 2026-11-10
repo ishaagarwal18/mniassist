@@ -27,7 +27,7 @@ import { VendorBillReaderService } from '../../../proxy/purchasing';
 import { ArButton, ArIcon, ArDateInput, ArSelect } from '../../../ui';
 import {
   ArPfSupplier,
-  GST_RATES,
+  gstRateOptions,
   PURCHASE_FORM_STYLES,
   SupplierOption,
   SupplierOptionsService,
@@ -47,6 +47,7 @@ import {
   toCreateBillDto,
   validateBillForm,
 } from './new-vendor-bill.logic';
+import { PickListStore } from '../../../core/pick-lists/pick-list.store';
 
 /**
  * Record a vendor bill (purchase invoice) on its own page (/purchasing/bills/new). `?supplier=<id>&name=` picks the supplier (from
@@ -418,7 +419,7 @@ import {
                       [attr.aria-label]="'GST rate, line ' + (i + 1)"
                       (change)="patchLine(i, { taxRateBasisPoints: +$any($event.target).value })"
                     >
-                      @for (r of gstRates; track r.bps) {
+                      @for (r of gstRates(); track r.bps) {
                         <option [value]="r.bps" [selected]="r.bps === l.taxRateBasisPoints">
                           {{ r.label }}
                         </option>
@@ -582,7 +583,8 @@ export class ArNewVendorBillPage {
 
   protected readonly inr = inr;
   protected readonly lineTaxable = lineTaxable;
-  protected readonly gstRates = GST_RATES;
+  private readonly pickLists = inject(PickListStore);
+  protected readonly gstRates = computed(() => gstRateOptions(this.pickLists));
   protected readonly tdsOptions = TDS_OPTIONS;
   protected readonly canCreate = checkPolicy(
     PURCHASING_PERMISSIONS.createBill,

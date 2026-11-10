@@ -7,6 +7,7 @@ import {
   VendorPaymentMode,
 } from '../../../proxy/purchasing';
 import type { ChipTone } from '../../../ui';
+import { withOptionNames } from '../../../core/pick-lists/option-names';
 
 type Chip = { label: string; tone: ChipTone };
 
@@ -55,12 +56,12 @@ export function itcChip(s: Gstr2bMatchStatus): Chip {
   }
 }
 
-export const PAYMENT_MODES: readonly { value: VendorPaymentMode; label: string }[] = [
+export const PAYMENT_MODES = withOptionNames('purchasing.payment-mode', [
   { value: VendorPaymentMode.NeftRtgs, label: 'NEFT / RTGS' },
   { value: VendorPaymentMode.Upi, label: 'UPI' },
   { value: VendorPaymentMode.Cheque, label: 'Cheque' },
   { value: VendorPaymentMode.Cash, label: 'Cash' },
-];
+]);
 
 export function paymentModeLabel(m: VendorPaymentMode): string {
   return PAYMENT_MODES.find((x) => x.value === m)?.label ?? 'Bank';

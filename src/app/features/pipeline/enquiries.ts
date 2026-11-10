@@ -23,6 +23,7 @@ import { ArSelect } from '../../ui/select';
 import { ArEnquiryDrawer } from './enquiry-drawer';
 import { ArContactPicker } from './contact-picker';
 import { ToastService } from '../../core/ui/toast.service';
+import { withOptionNames } from '../../core/pick-lists/option-names';
 
 // Syncfusion checks the licence in each component's constructor, before ours runs.
 registerSyncfusionLicense();
@@ -129,14 +130,14 @@ export class ArEnquiries {
   );
 
   // ---- New enquiry dialog ---------------------------------------------
-  protected readonly sources = [
+  protected readonly sources = withOptionNames('lead.source', [
     { value: LeadSource.Manual, label: 'Entered manually' },
     { value: LeadSource.Website, label: 'Website' },
     { value: LeadSource.ClickToWhatsApp, label: 'Click-to-WhatsApp ad' },
     { value: LeadSource.Exhibition, label: 'Exhibition' },
     { value: LeadSource.Referral, label: 'Referral' },
     { value: LeadSource.Dealer, label: 'Dealer' },
-  ];
+  ]);
   protected readonly dialogOpen = signal(false);
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);

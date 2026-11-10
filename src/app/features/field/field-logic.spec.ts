@@ -1,6 +1,5 @@
 import type { FieldJobDto, FieldVisitDto } from '../../proxy/support/field-service.service';
 import {
-  DEFAULT_CHECKLIST,
   FieldOp,
   daySummary,
   enqueue,
@@ -9,6 +8,8 @@ import {
   startVisit,
   visitFor,
 } from './field-logic';
+
+const CHECKLIST = ['Checked the fault', 'Tested under load'];
 
 const NOW = new Date('2026-10-01T09:00:00Z');
 
@@ -50,9 +51,9 @@ function job(visit?: Partial<FieldVisitDto>): FieldJobDto {
 
 describe('field logic', () => {
   it('starts a visit with the default checklist, nothing ticked', () => {
-    const v = startVisit('t1', 'v1', NOW);
+    const v = startVisit('t1', 'v1', NOW, CHECKLIST);
     expect(v.arrivedAtUtc).toBe(NOW.toISOString());
-    expect(v.checklist.length).toBe(DEFAULT_CHECKLIST.length);
+    expect(v.checklist.map((c) => c.label)).toEqual(CHECKLIST);
     expect(v.checklist.every((c) => !c.done)).toBe(true);
   });
 
@@ -78,7 +79,7 @@ describe('field logic', () => {
   });
 
   it('prefers the phone’s copy until the visit is signed off', () => {
-    const local = { ...startVisit('t1', 'v1', NOW), notes: 'on the phone' };
+    const local = { ...startVisit('t1', 'v1', NOW, CHECKLIST), notes: 'on the phone' };
     expect(visitFor(job({ notes: 'server' }), local)?.notes).toBe('on the phone');
     expect(visitFor(job({ notes: 'signed', state: 'SignedOff' }), local)?.notes).toBe('signed');
     expect(visitFor(job({ notes: 'server' }), undefined)?.notes).toBe('server');

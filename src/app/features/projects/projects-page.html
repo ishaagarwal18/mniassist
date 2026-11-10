@@ -54,7 +54,7 @@
       (change)="sector.set($any($event.target).value); load()"
     >
       <option value="">Any sector</option>
-      @for (s of SECTORS; track s) {
+      @for (s of SECTORS(); track s) {
         <option [value]="s">{{ s }}</option>
       }
     </select>

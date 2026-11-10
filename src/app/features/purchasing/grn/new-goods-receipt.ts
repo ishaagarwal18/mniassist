@@ -28,7 +28,6 @@ import {
 } from '../purchase-form';
 import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
 import {
-  GRN_UNITS,
   GrnForm,
   GrnFormErrors,
   GrnFormLine,
@@ -39,6 +38,7 @@ import {
   toCreateGrnDto,
   validateGrnForm,
 } from './new-goods-receipt.logic';
+import { PickListStore } from '../../../core/pick-lists/pick-list.store';
 
 /**
  * Inward gate entry (GRN) as its own page (/purchasing/grn/new), opened from Vendor 360 and the Goods receipt list. `?supplier=<id>
@@ -331,7 +331,7 @@ import {
                       [attr.aria-label]="'Unit, line ' + (i + 1)"
                       (change)="patchLine(i, { unitOfMeasure: $any($event.target).value })"
                     >
-                      @for (u of units; track u) {
+                      @for (u of units(); track u) {
                         <option [value]="u" [selected]="u === l.unitOfMeasure">{{ u }}</option>
                       }
                     </select>
@@ -430,7 +430,8 @@ export class ArNewGoodsReceiptPage {
   private readonly stockApi = inject(InventoryService);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly units = GRN_UNITS;
+  private readonly pickLists = inject(PickListStore);
+  protected readonly units = computed(() => this.pickLists.texts('purchasing.grn-unit'));
   protected readonly shortBy = shortBy;
   protected readonly canCreate = checkPolicy(
     PURCHASING_PERMISSIONS.createGrn,

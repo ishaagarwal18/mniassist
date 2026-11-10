@@ -851,6 +851,12 @@ export const NAV: readonly NavGroup[] = [
         //tenantOnly: true,
       },
       {
+        label: 'Pick lists',
+        icon: 'filter',
+        route: '/settings/pick-lists',
+        menu: 'settings',
+      },
+      {
         label: 'Roles & permissions',
         icon: 'shield',
         route: '/admin/roles',

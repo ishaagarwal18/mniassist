@@ -1,5 +1,6 @@
 import { DecisionRole } from '../../proxy/contacts';
 import type { CreateUpdateContactDto } from '../../proxy/contacts/models';
+import { withOptionNames } from '../../core/pick-lists/option-names';
 
 export interface ContactDraft {
   waId: string;
@@ -27,13 +28,13 @@ export const BLANK_CONTACT_DRAFT: ContactDraft = {
   role: DecisionRole.Maintenance,
 };
 
-export const DECISION_ROLES = [
+export const DECISION_ROLES = withOptionNames('contact.decision-role', [
   { value: DecisionRole.Maintenance, label: 'Maintenance' },
   { value: DecisionRole.Purchase, label: 'Purchase' },
   { value: DecisionRole.Engineering, label: 'Engineering' },
   { value: DecisionRole.PlantHead, label: 'Plant head' },
   { value: DecisionRole.Dealer, label: 'Dealer' },
-] as const;
+] as const);
 
 export function cleanWhatsAppNumber(raw: string): string {
   return (raw || '').replace(/[^\d]/g, '');

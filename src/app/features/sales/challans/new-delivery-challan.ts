@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+  output,
+  signal,
+  computed,
+} from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PickerOption } from '../../../core/services/pipeline.service';
 import type { ProductDto } from '../../../proxy/library/product.service';
@@ -24,15 +32,17 @@ import {
   toChallanLines,
   unitsFor,
 } from './new-delivery-challan.logic';
+import { withOptionNames } from '../../../core/pick-lists/option-names';
+import { PickListStore } from '../../../core/pick-lists/pick-list.store';
 
 /** Why goods move on a challan — the GST reasons a challan is used instead of an invoice. */
-export const CHALLAN_TYPES: readonly { value: DeliveryChallanType; label: string }[] = [
+export const CHALLAN_TYPES = withOptionNames('sales.challan-type', [
   { value: DeliveryChallanType.SupplyAgainstOrder, label: 'Supply against order' },
   { value: DeliveryChallanType.JobWork, label: 'Job work' },
   { value: DeliveryChallanType.SupplyOnApproval, label: 'Supply on approval' },
   { value: DeliveryChallanType.MaterialReturn, label: 'Material return' },
   { value: DeliveryChallanType.Other, label: 'Other' },
-];
+]);
 
 /**
  * A new delivery challan raised directly — job work, supply on approval, returns, or goods sent before the order is in the system.
@@ -332,7 +342,11 @@ export class ArNewDeliveryChallan {
   readonly initialCustomer = input<PickerOption | null>(null);
 
   protected readonly types = CHALLAN_TYPES;
-  protected readonly units = unitsFor;
+  private readonly pickLists = inject(PickListStore);
+  private readonly challanUnits = computed(() => this.pickLists.texts('sales.challan-unit'));
+  protected units(line: ChallanLine): readonly string[] {
+    return unitsFor(line, this.challanUnits());
+  }
 
   protected readonly choice = signal<SalesCustomerChoice | null>(null);
   protected readonly party = signal<SalesParty>(EMPTY_PARTY);

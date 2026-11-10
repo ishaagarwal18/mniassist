@@ -24,23 +24,19 @@ export interface LocalVisit {
   signedByName?: string | null;
 }
 
-/** The checklist every visit starts with. The engineer can add to it. */
-export const DEFAULT_CHECKLIST: readonly string[] = [
-  'Checked the fault the customer reported',
-  'Inspected wiring, terminals and earthing',
-  'Cleaned filters and fans',
-  'Tested the machine running under load',
-  'Explained the work and advice to the customer',
-];
-
-/** A new visit on arrival. */
-export function startVisit(ticketId: string, id: string, now: Date): LocalVisit {
+/** A new visit on arrival, starting with the workspace's checklist (Settings → Pick lists). The engineer can add to it. */
+export function startVisit(
+  ticketId: string,
+  id: string,
+  now: Date,
+  checklist: readonly string[],
+): LocalVisit {
   return {
     clientVisitId: id,
     ticketId,
     arrivedAtUtc: now.toISOString(),
     notes: '',
-    checklist: DEFAULT_CHECKLIST.map((label) => ({ label, done: false })),
+    checklist: checklist.map((label) => ({ label, done: false })),
     photoIds: [],
     state: 'Open',
   };

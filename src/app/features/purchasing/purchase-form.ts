@@ -133,13 +133,15 @@ export function isoDay(days = 0): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-export const GST_RATES: readonly { bps: number; label: string }[] = [
-  { bps: 1800, label: '18%' },
-  { bps: 1200, label: '12%' },
-  { bps: 2800, label: '28%' },
-  { bps: 500, label: '5%' },
-  { bps: 0, label: '0%' },
-];
+/** The GST rates a purchase line offers, from Settings → Pick lists, in basis points (18% = 1800). */
+export function gstRateOptions(lists: {
+  options(key: string): readonly { value: string; label: string }[];
+}): { bps: number; label: string }[] {
+  return lists
+    .options('tax.gst-rate')
+    .map((o) => ({ bps: Math.round(Number(o.value) * 100), label: o.label }))
+    .filter((r) => Number.isFinite(r.bps));
+}
 
 /**
  * The page layout the "new" pages share: the topbar stays put and the form scrolls under it in the app's thin scroll area (no

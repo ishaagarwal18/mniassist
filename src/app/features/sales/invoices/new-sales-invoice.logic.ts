@@ -17,13 +17,8 @@ export interface InvoiceLine {
   productId: string | null;
 }
 
-export const GST_RATES = [0, 5, 12, 18, 28] as const;
-
 /** GST when the catalogue gives none. */
 export const DEFAULT_GST_PERCENT = 18;
-
-/** Payment terms offered for the due date, in days after the invoice date. */
-export const PAYMENT_TERMS = [0, 7, 15, 30, 45, 60, 90] as const;
 
 export const blankInvoiceLine = (): InvoiceLine => ({
   itemName: '',
@@ -37,18 +32,28 @@ export const blankInvoiceLine = (): InvoiceLine => ({
   productId: null,
 });
 
-/** The catalogue's GST (basis points) as one of the rates the form offers; 18% when missing or unusual. */
-export function gstPercentFrom(basisPoints: number | null | undefined): number {
+/**
+ * The catalogue's GST (basis points) as one of the rates the form offers (Settings → Pick lists); 18% when missing or not offered.
+ * With no list given, any rate the catalogue has is kept.
+ */
+export function gstPercentFrom(
+  basisPoints: number | null | undefined,
+  rates?: readonly number[],
+): number {
   if (basisPoints === null || basisPoints === undefined) return DEFAULT_GST_PERCENT;
   const percent = basisPoints / 100;
-  return (GST_RATES as readonly number[]).includes(percent) ? percent : DEFAULT_GST_PERCENT;
+  return !rates || rates.includes(percent) ? percent : DEFAULT_GST_PERCENT;
 }
 
 /**
  * A line filled from a catalogue product: its name, item number, description (the name when it has none), HSN, list price
  * and GST. The quantity and discount already typed are kept.
  */
-export function invoiceLineFromProduct(p: ProductDto, current: InvoiceLine): InvoiceLine {
+export function invoiceLineFromProduct(
+  p: ProductDto,
+  current: InvoiceLine,
+  rates?: readonly number[],
+): InvoiceLine {
   const name = p.name?.trim() ?? '';
   return {
     ...current,
@@ -57,7 +62,7 @@ export function invoiceLineFromProduct(p: ProductDto, current: InvoiceLine): Inv
     description: p.description?.trim() || name,
     hsnCode: p.hsnCode?.trim() ?? '',
     unitPrice: (p.listPriceInPaise ?? 0) / 100,
-    gstPercent: gstPercentFrom(p.taxRateBasisPoints),
+    gstPercent: gstPercentFrom(p.taxRateBasisPoints, rates),
     productId: p.id ?? null,
   };
 }

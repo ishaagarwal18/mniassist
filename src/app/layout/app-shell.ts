@@ -1,3 +1,4 @@
+import { PickListStore } from '../core/pick-lists/pick-list.store';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -218,6 +219,8 @@ export class ArAppShell {
   protected readonly pwa = inject(PwaService);
   protected readonly switcher = inject(AccountSwitcher);
   protected readonly user = inject(CurrentUserService);
+  /** Loads the drop-down lists once per sign-in, so every form has them. */
+  private readonly pickLists = inject(PickListStore);
   protected readonly toasts = inject(ToastService);
   protected readonly returning = signal(false);
 

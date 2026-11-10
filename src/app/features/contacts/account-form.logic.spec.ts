@@ -45,8 +45,15 @@ describe('account-form.logic', () => {
   });
 
   describe('handleStateChange & handleCityChange', () => {
+    const CITIES: Record<string, string[]> = {
+      Gujarat: ['Ahmedabad', 'Vadodara'],
+      Maharashtra: ['Mumbai', 'Pune'],
+    };
+    const stateForCity = (c: string) =>
+      Object.keys(CITIES).find((s) => CITIES[s].includes(c)) ?? null;
+
     it('updates available cities when state changes and resets invalid city', () => {
-      const res = handleStateChange('Gujarat', 'Pune');
+      const res = handleStateChange('Gujarat', 'Pune', CITIES['Gujarat']);
       expect(res.state).toBe('Gujarat');
       expect(res.city).toBe('');
       expect(res.availableCities).toContain('Ahmedabad');
@@ -54,20 +61,20 @@ describe('account-form.logic', () => {
     });
 
     it('retains city if it belongs to the new state', () => {
-      const res = handleStateChange('Maharashtra', 'Pune');
+      const res = handleStateChange('Maharashtra', 'Pune', CITIES['Maharashtra']);
       expect(res.state).toBe('Maharashtra');
       expect(res.city).toBe('Pune');
       expect(res.availableCities).toContain('Pune');
     });
 
     it('infers state when a known city is selected without prior state', () => {
-      const res = handleCityChange('Vadodara', '');
+      const res = handleCityChange('Vadodara', '', stateForCity);
       expect(res.state).toBe('Gujarat');
       expect(res.city).toBe('Vadodara');
     });
 
     it('keeps existing state when city is selected', () => {
-      const res = handleCityChange('Pune', 'Maharashtra');
+      const res = handleCityChange('Pune', 'Maharashtra', stateForCity);
       expect(res.state).toBe('Maharashtra');
       expect(res.city).toBe('Pune');
     });

@@ -13,8 +13,6 @@ export interface ChallanLine {
   productId: string | null;
 }
 
-export const CHALLAN_UNITS = ['Nos', 'Set', 'Kg', 'Mtr', 'Ltr', 'Box', 'Pair', 'Lot'] as const;
-
 export const blankChallanLine = (): ChallanLine => ({
   itemName: '',
   partNumber: '',
@@ -45,12 +43,12 @@ export function editChallanLine(line: ChallanLine, patch: Partial<ChallanLine>):
   return { ...line, ...patch, ...(unlinks && line.productId ? { productId: null } : {}) };
 }
 
-/** The units a line's select offers: the usual ones, plus the catalogue's own unit when it is another. */
-export function unitsFor(line: ChallanLine): readonly string[] {
+/**
+ * The units a line's select offers: the workspace's list (Settings → Pick lists), plus the catalogue's own unit when it is another.
+ */
+export function unitsFor(line: ChallanLine, units: readonly string[]): readonly string[] {
   const u = line.unitOfMeasure;
-  return u && !(CHALLAN_UNITS as readonly string[]).includes(u)
-    ? [...CHALLAN_UNITS, u]
-    : CHALLAN_UNITS;
+  return u && !units.includes(u) ? [...units, u] : units;
 }
 
 /** The lines worth sending: those with a name, number or description. */

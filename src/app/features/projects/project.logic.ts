@@ -10,6 +10,7 @@ import {
   SpecStatus,
 } from '../../proxy/projects/project.service';
 import type { ChipTone } from '../../ui/chip';
+import { optionName, optionNames } from '../../core/pick-lists/option-names';
 
 export const STAGES: ProjectStage[] = [
   ProjectStage.Identified,
@@ -20,14 +21,17 @@ export const STAGES: ProjectStage[] = [
   ProjectStage.Closed,
 ];
 
-export const STAGE_TEXT: Record<ProjectStage, string> = {
-  [ProjectStage.Identified]: 'Identified',
-  [ProjectStage.Design]: 'Design',
-  [ProjectStage.Specified]: 'Specified',
-  [ProjectStage.Tender]: 'Tender',
-  [ProjectStage.Awarded]: 'Awarded',
-  [ProjectStage.Closed]: 'Closed',
-};
+export const STAGE_TEXT: Readonly<Record<ProjectStage, string>> = optionNames<ProjectStage>(
+  'project.stage',
+  {
+    [ProjectStage.Identified]: 'Identified',
+    [ProjectStage.Design]: 'Design',
+    [ProjectStage.Specified]: 'Specified',
+    [ProjectStage.Tender]: 'Tender',
+    [ProjectStage.Awarded]: 'Awarded',
+    [ProjectStage.Closed]: 'Closed',
+  },
+);
 
 /** Who decides at each stage, as the board's column hint. */
 export const STAGE_DECIDER: Record<ProjectStage, string> = {
@@ -46,15 +50,22 @@ export const OUTCOME_TEXT: Record<ProjectOutcome, string> = {
   [ProjectOutcome.Dropped]: 'Dropped',
 };
 
-export const ROLES: { role: ProjectRole; text: string }[] = [
-  { role: ProjectRole.EndUser, text: 'End-user' },
-  { role: ProjectRole.Consultant, text: 'Consultant' },
-  { role: ProjectRole.EpcContractor, text: 'EPC contractor' },
-  { role: ProjectRole.PanelBuilder, text: 'Panel builder' },
-  { role: ProjectRole.SystemIntegrator, text: 'System integrator' },
-  { role: ProjectRole.Oem, text: 'OEM' },
-  { role: ProjectRole.CompetitorDistributor, text: 'Competitor distributor' },
-];
+export const ROLES: readonly { readonly role: ProjectRole; readonly text: string }[] = (
+  [
+    { role: ProjectRole.EndUser, text: 'End-user' },
+    { role: ProjectRole.Consultant, text: 'Consultant' },
+    { role: ProjectRole.EpcContractor, text: 'EPC contractor' },
+    { role: ProjectRole.PanelBuilder, text: 'Panel builder' },
+    { role: ProjectRole.SystemIntegrator, text: 'System integrator' },
+    { role: ProjectRole.Oem, text: 'OEM' },
+    { role: ProjectRole.CompetitorDistributor, text: 'Competitor distributor' },
+  ] as const
+).map((r) => ({
+  role: r.role,
+  get text() {
+    return optionName('project.role', r.role, r.text);
+  },
+}));
 
 export const INFLUENCE_TEXT: Record<PersonInfluence, string> = {
   [PersonInfluence.DecisionMaker]: 'Decision maker',
@@ -76,21 +87,6 @@ export const ATTITUDE_TONE: Record<PersonAttitude, ChipTone> = {
   [PersonAttitude.Neutral]: 'neutral',
   [PersonAttitude.Blocker]: 'bad',
 };
-
-export const SECTORS = [
-  'Steel',
-  'Cement',
-  'Pharma',
-  'Water',
-  'Auto',
-  'Food & beverage',
-  'Power',
-  'Oil & gas',
-  'Chemicals',
-  'Paper',
-  'Textiles',
-  'Infrastructure',
-];
 
 export function hasRole(roles: ProjectRole, role: ProjectRole): boolean {
   return (roles & role) === role;
@@ -183,13 +179,16 @@ export const SPEC_STATUSES: SpecStatus[] = [
   SpecStatus.Open,
 ];
 
-export const SPEC_TEXT: Record<SpecStatus, string> = {
-  [SpecStatus.Unknown]: 'Unknown: not seen yet',
-  [SpecStatus.Named]: 'Named: only our brand',
-  [SpecStatus.NamedOrEquivalent]: 'Named or equivalent',
-  [SpecStatus.CompetitorNamed]: 'Competitor named',
-  [SpecStatus.Open]: 'Open: no brand named',
-};
+export const SPEC_TEXT: Readonly<Record<SpecStatus, string>> = optionNames<SpecStatus>(
+  'project.spec-status',
+  {
+    [SpecStatus.Unknown]: 'Unknown: not seen yet',
+    [SpecStatus.Named]: 'Named: only our brand',
+    [SpecStatus.NamedOrEquivalent]: 'Named or equivalent',
+    [SpecStatus.CompetitorNamed]: 'Competitor named',
+    [SpecStatus.Open]: 'Open: no brand named',
+  },
+);
 
 export const SPEC_TONE: Record<SpecStatus, ChipTone> = {
   [SpecStatus.Unknown]: 'neutral',

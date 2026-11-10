@@ -18,6 +18,7 @@ import {
 } from '../../proxy/sales/sales-invoice.models';
 import { SalesOrderDto } from '../../proxy/sales/sales-order.models';
 import type { ChipTone } from '../../ui';
+import { optionName, withOptionNames } from '../../core/pick-lists/option-names';
 
 /**
  * What the sales order, delivery challan and invoice screens share: status labels and tones, which actions a record allows, and the
@@ -71,18 +72,14 @@ export const canFulfilOrder = (o: SalesOrderDto) =>
   o.status === SalesOrderStatus.Confirmed || o.status === SalesOrderStatus.PartiallyDispatched;
 
 export function challanTypeLabel(type: DeliveryChallanType): string {
-  switch (type) {
-    case DeliveryChallanType.SupplyAgainstOrder:
-      return 'Supply against Order';
-    case DeliveryChallanType.JobWork:
-      return 'Job Work (Rule 55(1)(b))';
-    case DeliveryChallanType.SupplyOnApproval:
-      return 'Supply on Approval';
-    case DeliveryChallanType.MaterialReturn:
-      return 'Material Return';
-    default:
-      return 'Other Supply';
-  }
+  const fallback: Record<DeliveryChallanType, string> = {
+    [DeliveryChallanType.SupplyAgainstOrder]: 'Supply against order',
+    [DeliveryChallanType.JobWork]: 'Job work (Rule 55(1)(b))',
+    [DeliveryChallanType.SupplyOnApproval]: 'Supply on approval',
+    [DeliveryChallanType.MaterialReturn]: 'Material return',
+    [DeliveryChallanType.Other]: 'Other',
+  };
+  return optionName('sales.challan-type', type, fallback[type] ?? 'Other');
 }
 
 export function challanStatusLabel(status: DeliveryChallanStatus): string {
@@ -198,17 +195,20 @@ export const canPayInvoice = (i: SalesInvoiceDto) =>
 export const isInvoiceOverdue = (i: SalesInvoiceDto, now = new Date()) =>
   i.balanceDueInPaise > 0 && new Date(i.dueDateUtc) < now;
 
-export const SALES_PAYMENT_MODES: readonly { value: SalesPaymentMode; label: string }[] = [
+export const SALES_PAYMENT_MODES = withOptionNames('sales.payment-mode', [
   { value: SalesPaymentMode.NeftRtgs, label: 'NEFT / RTGS' },
   { value: SalesPaymentMode.Upi, label: 'UPI' },
   { value: SalesPaymentMode.Cheque, label: 'Cheque' },
   { value: SalesPaymentMode.Cash, label: 'Cash' },
   { value: SalesPaymentMode.Card, label: 'Credit/Debit Card' },
-];
+]);
 
 export function paymentModeLabel(mode: SalesPaymentMode): string {
-  if (mode === SalesPaymentMode.Card) return 'Card';
-  return SALES_PAYMENT_MODES.find((m) => m.value === mode)?.label ?? 'Other';
+  return optionName(
+    'sales.payment-mode',
+    mode,
+    SALES_PAYMENT_MODES.find((m) => m.value === mode)?.label ?? 'Other',
+  );
 }
 
 export interface SalesPaymentForm {
