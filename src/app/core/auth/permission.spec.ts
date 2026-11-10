@@ -156,21 +156,27 @@ describe('canAccessNavItem - Plan and Permission gating', () => {
     expect(canAccessNavItem(networkItem, permissions, entPlan, account)).toBe(true);
   });
 
-  it('keeps ordinary host and tenant navigation separate', () => {
-    const hostPermissions = createMockPermissions({
+  it('lets permissions, not the host or workspace side, decide what an ordinary user sees', () => {
+    // Since 6 Nov the menu no longer splits host and workspace items: a host user with the grant sees a
+    // workspace screen, and the server's host-side permissions keep platform screens away from workspaces.
+    const hostWithQuotes = createMockPermissions({
       'AutoReach.Administration.ViewPlatformMetrics': true,
       'AutoReach.Quotations': true,
     });
+    const hostWithout = createMockPermissions({
+      'AutoReach.Administration.ViewPlatformMetrics': true,
+    });
+    const tenantPermissions = createMockPermissions({ 'AutoReach.Quotations': true });
     const entPlan = createMockPlanService(SubscriptionPlan.Enterprise, ['PipelineCrm']);
     const hostAccount = createMockAccount(true);
     const tenantAccount = createMockAccount(false);
 
-    // An ordinary host user still needs explicit platform permissions.
-    expect(canAccessNavItem(platformConsoleItem, hostPermissions, entPlan, hostAccount)).toBe(true);
-    expect(canAccessNavItem(quotationsItem, hostPermissions, entPlan, hostAccount)).toBe(false);
+    expect(canAccessNavItem(platformConsoleItem, hostWithQuotes, entPlan, hostAccount)).toBe(true);
+    expect(canAccessNavItem(quotationsItem, hostWithQuotes, entPlan, hostAccount)).toBe(true);
+    expect(canAccessNavItem(quotationsItem, hostWithout, entPlan, hostAccount)).toBe(false);
 
-    // Tenant user NEVER sees host-only platform console
-    expect(canAccessNavItem(platformConsoleItem, hostPermissions, entPlan, tenantAccount)).toBe(
+    // A workspace user never holds the platform permission, so never sees the platform console.
+    expect(canAccessNavItem(platformConsoleItem, tenantPermissions, entPlan, tenantAccount)).toBe(
       false,
     );
   });

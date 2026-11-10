@@ -27,7 +27,7 @@ export function isStaleChunkError(e: unknown): boolean {
 export function isMixedDevBuildError(e: unknown, devMode: boolean): boolean {
   if (!devMode) return false;
   const message = String((e as { message?: unknown } | null)?.message ?? e ?? '');
-  return /NG0203/.test(message);
+  return /NG0203\b/.test(message);
 }
 
 /** Reloads the page once per 30 seconds; false when it already tried just now. */

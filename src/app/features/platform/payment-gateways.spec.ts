@@ -8,6 +8,7 @@ import {
   PaymentGatewayConfigDto,
   PaymentGatewayConfigService,
 } from '../../proxy/billing/payment-gateway-config.service';
+import { BillDeskEnvironment, PaymentService } from '../../proxy/payments/payment.service';
 import { ArPaymentGateways } from './payment-gateways';
 
 @Component({ selector: 'ar-topbar', template: '<ng-content />' })
@@ -59,6 +60,23 @@ describe('Payment gateways', () => {
       providers: [
         { provide: PaymentGatewayConfigService, useValue: api },
         { provide: ConfirmService, useValue: dialogs },
+        {
+          provide: PaymentService,
+          useValue: {
+            getGateway: () =>
+              of({
+                merchantId: '',
+                clientId: '',
+                hasSecret: false,
+                environment: BillDeskEnvironment.Uat,
+                enabled: false,
+                webhookUrl: '',
+              }),
+            getList: () => of({ totalCount: 0, items: [] }),
+            setGateway: vi.fn(),
+            cancel: vi.fn(),
+          },
+        },
       ],
     }).overrideComponent(ArPaymentGateways, {
       remove: { imports: [ArTopbar] },
@@ -150,7 +168,7 @@ describe('Payment gateways', () => {
     );
     const { fixture, root } = await create();
     [...root.querySelectorAll('button')]
-      .filter((b) => b.textContent?.includes('Test saved keys'))[1]
+      .find((b) => b.textContent?.includes('Test PayU keys'))!
       .click();
     await fixture.whenStable();
     fixture.detectChanges();

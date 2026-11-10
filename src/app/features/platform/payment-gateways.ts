@@ -218,7 +218,14 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
               </div>
             </form>
             @if (rzpTest(); as t) {
-              <p class="test" [class.test--ok]="t.ok" [class.test--bad]="!t.ok">{{ t.message }}</p>
+              <p
+                class="test"
+                [class.test--ok]="t.ok"
+                [class.test--bad]="!t.ok"
+                [attr.role]="t.ok ? 'status' : 'alert'"
+              >
+                {{ t.message }}
+              </p>
             }
           </section>
 
@@ -314,7 +321,14 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
               </div>
             </form>
             @if (payuTest(); as t) {
-              <p class="test" [class.test--ok]="t.ok" [class.test--bad]="!t.ok">{{ t.message }}</p>
+              <p
+                class="test"
+                [class.test--ok]="t.ok"
+                [class.test--bad]="!t.ok"
+                [attr.role]="t.ok ? 'status' : 'alert'"
+              >
+                {{ t.message }}
+              </p>
             }
           </section>
 

@@ -1,6 +1,7 @@
 import { LocalizationPipe } from '@abp/ng.core';
 import { Component, Pipe, input, output } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ArTopbar } from '../../layout/topbar';
@@ -99,7 +100,7 @@ describe('AI voice agents', () => {
     );
     TestBed.configureTestingModule({
       imports: [ArVoiceAgents],
-      providers: [{ provide: SharedVoiceAgentService, useValue: api }],
+      providers: [provideRouter([]), { provide: SharedVoiceAgentService, useValue: api }],
     }).overrideComponent(ArVoiceAgents, {
       remove: { imports: [ArTopbar, LocalizationPipe, ArVoiceAgentDialog, ArVoiceFunctions] },
       add: { imports: [TestTopbar, TestLocalization, TestAgentDialog, TestFunctions] },
@@ -144,10 +145,12 @@ describe('AI voice agents', () => {
     from.value = 'ch2';
     from.dispatchEvent(new Event('change'));
     fixture.detectChanges();
+    // The new agent opens on its own page.
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     button(root, 'SharedAgents.Create').click();
     await settle(fixture);
     expect(api.create).toHaveBeenCalledWith('Spares', 'ch2');
-    expect(root.querySelector('.editing')!.textContent).toBe('a2');
+    expect(navigate).toHaveBeenCalledWith(['/calls/ai-agents', 'a2']);
   });
 
   it('assigns, unassigns, shows history and deletes only after confirmation', async () => {

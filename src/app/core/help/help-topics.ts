@@ -2294,7 +2294,17 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
 };
 
 /** The topic for a route path as `app.routes.ts` declares it, or null. */
+/**
+ * The help for a screen: its own topic, else the nearest screen above it that has one. A form page such as
+ * `settings/teams/new` or `field-service/tickets/:id/assign` is part of its list's job, so it shares that help.
+ */
 export function helpTopicFor(routePath: string | null | undefined): HelpTopic | null {
   if (!routePath) return null;
-  return HELP_TOPICS[routePath] ?? null;
+  const parts = routePath.split('/');
+  while (parts.length) {
+    const topic = HELP_TOPICS[parts.join('/')];
+    if (topic) return topic;
+    parts.pop();
+  }
+  return null;
 }

@@ -1,6 +1,7 @@
 import { LocalizationPipe, PermissionService } from '@abp/ng.core';
 import { Component, Pipe, input, output } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ArTopbar } from '../../layout/topbar';
@@ -94,6 +95,7 @@ describe('AI call batches', () => {
     TestBed.configureTestingModule({
       imports: [ArVoiceCallBatches],
       providers: [
+        provideRouter([]),
         { provide: VoiceCallBatchService, useValue: api },
         {
           provide: ChannelService,
@@ -117,11 +119,19 @@ describe('AI call batches', () => {
   });
   afterEach(() => TestBed.resetTestingModule());
 
+  /** Lets the page's loads and their follow-ups finish: under a full test run one stable check is not always enough. */
+  async function settle(fixture: { whenStable(): Promise<unknown>; detectChanges(): void }) {
+    for (let i = 0; i < 3; i++) {
+      await fixture.whenStable();
+      await new Promise((resolve) => setTimeout(resolve));
+      fixture.detectChanges();
+    }
+  }
+
   async function create() {
     const fixture = TestBed.createComponent(ArVoiceCallBatches);
     fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await settle(fixture);
     return fixture;
   }
   const button = (root: HTMLElement, text: string) =>
@@ -130,72 +140,27 @@ describe('AI call batches', () => {
   it('lists batches and starts a selected draft', async () => {
     const fixture = await create();
     button(fixture.nativeElement, 'AMC renewals').click();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await settle(fixture);
     expect(api.getRecipients).toHaveBeenCalledWith('b1', { maxResultCount: 200 });
     expect(fixture.nativeElement.textContent).toContain('Asha');
     button(fixture.nativeElement, 'VoiceBatch.Start').click();
-    await fixture.whenStable();
+    await settle(fixture);
     expect(api.start).toHaveBeenCalledWith('b1');
   });
 
   it('uploads a CSV and shows what could not be added', async () => {
     const fixture = await create();
     button(fixture.nativeElement, 'AMC renewals').click();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await settle(fixture);
     const file = new File(['phone,plan\n9876543210,Gold\n'], 'people.csv', { type: 'text/csv' });
     const upload: HTMLInputElement = fixture.nativeElement.querySelector('input[type="file"]');
     Object.defineProperty(upload, 'files', { value: [file] });
     upload.dispatchEvent(new Event('change'));
     await new Promise((r) => setTimeout(r, 0));
-    await fixture.whenStable();
-    fixture.detectChanges();
+    await settle(fixture);
     expect(api.importRecipients).toHaveBeenCalledWith('b1', 'phone,plan\n9876543210,Gold\n');
     expect(fixture.nativeElement.textContent).toContain('Line 3: no valid phone number.');
   });
 
-  it('offers only Meta-direct numbers and refuses a window outside 09:00–21:00 before calling the API', async () => {
-    const fixture = await create();
-    button(fixture.nativeElement, 'VoiceBatch.New').click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    const select: HTMLSelectElement = fixture.nativeElement.querySelector('select');
-    expect(select.options.length).toBe(1);
-    const name: HTMLInputElement = fixture.nativeElement.querySelector('ar-dialog input');
-    name.value = 'Late calls';
-    name.dispatchEvent(new Event('input'));
-    const to: HTMLInputElement = fixture.nativeElement.querySelectorAll(
-      'ar-dialog input[type="time"]',
-    )[1];
-    to.value = '22:00';
-    to.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    await fixture.whenStable();
-    button(fixture.nativeElement, 'VoiceBatch.Create').click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    expect(api.create).not.toHaveBeenCalled();
-    expect(fixture.nativeElement.textContent).toContain('AutoReach:VoiceCallBatchInvalid');
-  });
-
-  it('creates a batch that calls on the phone line', async () => {
-    const fixture = await create();
-    button(fixture.nativeElement, 'VoiceBatch.New').click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    const name: HTMLInputElement = fixture.nativeElement.querySelector('ar-dialog input');
-    name.value = 'Renewals by phone';
-    name.dispatchEvent(new Event('input'));
-    const line = fixture.nativeElement.querySelector('option[value="phone"]')
-      .parentElement as HTMLSelectElement;
-    line.value = 'phone';
-    line.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
-    await fixture.whenStable();
-    button(fixture.nativeElement, 'VoiceBatch.Create').click();
-    await fixture.whenStable();
-    expect(api.create).toHaveBeenCalled();
-    expect(api.create.mock.calls[0][0].line).toBe('phone');
-  });
+  // Creating a batch is on its own page now: see new-voice-batch-page.spec.ts.
 });

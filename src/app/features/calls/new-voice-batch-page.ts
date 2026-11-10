@@ -1,3 +1,4 @@
+import { readApiError } from '../../core/util/api-error';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -5,9 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ToastService } from '../../core/ui/toast.service';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArCard } from '../../ui';
-import {
-  VoiceCallBatchService,
-} from '../../proxy/calling/voice-call-batch.service';
+import { VoiceCallBatchService } from '../../proxy/calling/voice-call-batch.service';
 import { ChannelService } from '../../proxy/channels/channel.service';
 import { ChannelDto } from '../../proxy/channels/models';
 
@@ -27,9 +26,7 @@ function toMinute(time: string): number {
       title="Schedule AI Call Batch"
       subtitle="Configure outbound automated campaign calls and compliance calling windows"
     >
-      <button ar-button type="button" variant="ghost" (click)="cancel()">
-        Back to Batches
-      </button>
+      <button ar-button type="button" variant="ghost" (click)="cancel()">Back to Batches</button>
     </ar-topbar>
 
     <div class="page-container ar-scroll">
@@ -167,9 +164,7 @@ function toMinute(time: string): number {
           }
 
           <div class="form-actions">
-            <button ar-button type="button" variant="ghost" (click)="cancel()">
-              Cancel
-            </button>
+            <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
             <button
               ar-button
               type="submit"
@@ -271,13 +266,14 @@ export class ArNewVoiceBatchPage implements OnInit {
   async ngOnInit(): Promise<void> {
     try {
       const res = await firstValueFrom(this.channelsApi.getList({ maxResultCount: 50 }));
-      const items = res?.items || [];
+      // AI calls go out on Meta's own WhatsApp Cloud API; a number connected through a partner cannot place them.
+      const items = (res?.items || []).filter((c) => c.provider === 0);
       this.channels.set(items);
       if (items.length > 0 && items[0].id && !this.channelId()) {
         this.channelId.set(items[0].id);
       }
-    } catch {
-      // Ignore
+    } catch (e: unknown) {
+      this.error.set(readApiError(e, 'The WhatsApp numbers could not be loaded.'));
     }
   }
 
@@ -298,7 +294,9 @@ export class ArNewVoiceBatchPage implements OnInit {
       windowEndMinute > 1260 ||
       windowEndMinute - windowStartMinute < 30
     ) {
-      this.error.set('Calling window must be between 09:00 and 21:00 and at least 30 minutes long.');
+      this.error.set(
+        'Calling window must be between 09:00 and 21:00 and at least 30 minutes long.',
+      );
       return;
     }
 
@@ -321,8 +319,8 @@ export class ArNewVoiceBatchPage implements OnInit {
       );
       this.toasts.success(`Batch "${nameVal}" created and scheduled.`);
       void this.router.navigateByUrl('/calls/ai-batches');
-    } catch {
-      this.error.set('Failed to create call batch. Please verify parameters.');
+    } catch (e: unknown) {
+      this.error.set(readApiError(e, 'Failed to create call batch. Please verify parameters.'));
     } finally {
       this.busy.set(false);
     }

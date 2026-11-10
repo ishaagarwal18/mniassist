@@ -9,6 +9,7 @@ import { ArVoiceImpact, VoiceImpactReport, VoiceImpactService } from './voice-im
 @Component({ selector: 'ar-topbar', template: '' })
 class TestTopbar {
   readonly title = input<string>();
+  readonly subtitle = input<string>();
   readonly help = input<string>();
 }
 
@@ -90,8 +91,11 @@ describe('AI impact report', () => {
     expect(asked.handlingMinutesPerCall).toBe(6);
     expect(asked.staffCostPerHourRupees).toBe(300);
     expect(asked.toDate >= asked.fromDate).toBe(true);
+    // "<label> <value>" for each tile (the tile renders them as separate elements).
     const tiles = Array.from(root.querySelectorAll('ar-stat-tile')).map((t) =>
-      t.textContent!.replace(/s+/g, ' ').trim(),
+      [t.querySelector('.ar-label'), t.querySelector('.ar-stat__value')]
+        .map((e) => (e?.textContent ?? '').trim())
+        .join(' '),
     );
     expect(tiles.some((t) => t.startsWith('AI calls 120'))).toBe(true);
     expect(tiles.some((t) => t.startsWith('Goal met 70%'))).toBe(true);
