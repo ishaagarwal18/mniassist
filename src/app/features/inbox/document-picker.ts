@@ -8,8 +8,6 @@ import {
 } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { LibraryService } from '../../proxy/library';
 import { ArDraggable, ArIcon } from '../../ui';
 
@@ -26,41 +24,6 @@ interface Row {
   parts: string[];
   sendCount: number;
 }
-
-const SEED: Row[] = [
-  {
-    id: 'd-1',
-    title: 'S7-1200 CPU 1214C datasheet',
-    category: 'datasheet',
-    sizeLabel: '1.8 MB',
-    parts: ['6ES7214-1AG40-0XB0'],
-    sendCount: 214,
-  },
-  {
-    id: 'd-2',
-    title: 'FC-302 wiring diagram (frame B)',
-    category: 'drawing',
-    sizeLabel: '620 KB',
-    parts: ['131B0080'],
-    sendCount: 88,
-  },
-  {
-    id: 'd-3',
-    title: 'AMC scope & SLA — standard',
-    category: 'contract',
-    sizeLabel: '210 KB',
-    parts: [],
-    sendCount: 46,
-  },
-  {
-    id: 'd-4',
-    title: 'Palletiser GA drawing rev C',
-    category: 'drawing',
-    sizeLabel: '3.1 MB',
-    parts: ['VX-PL-44'],
-    sendCount: 12,
-  },
-];
 
 /**
  * The library-document picker for the inbox composer. A popover, not a route: the
@@ -211,7 +174,7 @@ export class ArDocumentPicker {
   protected readonly query = signal('');
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { q: this.query() }),
+    params: () => ({ q: this.query() }),
     stream: ({ params }) =>
       this.api.getList({ filter: params.q || undefined, skipCount: 0, maxResultCount: 100 }).pipe(
         map((page) =>
@@ -228,11 +191,11 @@ export class ArDocumentPicker {
           }),
         ),
       ),
-    defaultValue: SEED,
+    defaultValue: [] as Row[],
   });
 
   protected readonly results = computed<Row[]>(() => {
-    const list = environment.useMockData ? SEED : this.resource.value();
+    const list = this.resource.error() ? [] : this.resource.value();
     const q = this.query().trim().toLowerCase();
     const filtered = q
       ? list.filter(

@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { settled } from '../../core/util/resource';
 import { AccountRecoveryService } from '../../proxy/identity/account-recovery.service';
 import { ArBanner, ArButton } from '../../ui';
@@ -37,10 +35,9 @@ import { ArBanner, ArButton } from '../../ui';
 })
 export class ArEmailConfirmationBanner {
   private readonly api = inject(AccountRecoveryService);
-  private readonly mock = environment.useMockData;
 
   private readonly status = rxResource({
-    params: () => (this.mock ? undefined : {}),
+    params: () => ({}),
     stream: () => this.api.getMyEmailStatus(),
     defaultValue: { emailConfirmed: true },
   });

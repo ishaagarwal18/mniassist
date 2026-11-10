@@ -4,8 +4,6 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, map } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import {
@@ -34,48 +32,6 @@ interface Doc {
   lastSentAt?: string;
   version: number;
 }
-
-const SEED: Doc[] = [
-  {
-    id: 'd-1',
-    title: 'S7-1200 CPU 1214C datasheet',
-    category: 'datasheet',
-    sizeLabel: '1.8 MB',
-    parts: ['6ES7214-1AG40-0XB0'],
-    sendCount: 214,
-    version: 1,
-    lastSentAt: '2026-09-04',
-  },
-  {
-    id: 'd-2',
-    title: 'FC-302 wiring diagram (frame B)',
-    category: 'drawing',
-    sizeLabel: '620 KB',
-    parts: ['131B0080'],
-    sendCount: 88,
-    version: 1,
-    lastSentAt: '2026-09-01',
-  },
-  {
-    id: 'd-3',
-    title: 'AMC scope & SLA — standard',
-    category: 'contract',
-    sizeLabel: '210 KB',
-    parts: [],
-    sendCount: 46,
-    version: 1,
-  },
-  {
-    id: 'd-4',
-    title: 'Palletiser GA drawing rev C',
-    category: 'drawing',
-    sizeLabel: '3.1 MB',
-    parts: ['VX-PL-44'],
-    sendCount: 12,
-    version: 1,
-    lastSentAt: '2026-08-19',
-  },
-];
 
 function toDoc(d: LibraryDocumentDto): Doc {
   const kb = (d.sizeBytes ?? 0) / 1024;
@@ -135,12 +91,7 @@ export class ArDocuments {
   /** The document with its access settings, which the list does not carry. */
   private async loadForEdit(id: string | null): Promise<void> {
     if (!id) return;
-    if (environment.useMockData) {
-      const d = this.mockDocs().find((x) => x.id === id);
-      if (d) this.openEdit(d);
-      else this.loadError.set('This document could not be found.');
-      return;
-    }
+
     try {
       const dto = await firstValueFrom(this.api.get(id, { skipHandleError: true }));
       this.openEdit(toDoc(dto));
@@ -169,7 +120,6 @@ export class ArDocuments {
 
   /** Starts from `?q=` (Customer 360 links here for one customer). */
   protected readonly query = signal(initialSearch());
-  private readonly mockDocs = signal<Doc[]>([...SEED]);
 
   // ---- Upload / Edit dialog ---------------------------------------------
   protected readonly dialogOpen = signal(false);
@@ -243,68 +193,42 @@ export class ArDocuments {
     this.error.set(null);
     try {
       if (editing) {
-        if (!environment.useMockData) {
-          await firstValueFrom(
-            this.api.update(editing.id, {
-              title,
-              category: category || null,
-              partNumbers: partsList,
-              visibility: this.visibility(),
-              allowedAccountIds:
-                this.visibility() === DocumentVisibility.NamedAccounts
-                  ? this.allowedAccounts()
-                      .split(',')
-                      .map((s) => s.trim())
-                      .filter(Boolean)
-                  : [],
-            }),
-          );
-        } else {
-          this.mockDocs.update((docs) =>
-            docs.map((x) =>
-              x.id === editing.id
-                ? { ...x, title, category: category || undefined, parts: partsList }
-                : x,
-            ),
-          );
-        }
+        await firstValueFrom(
+          this.api.update(editing.id, {
+            title,
+            category: category || null,
+            partNumbers: partsList,
+            visibility: this.visibility(),
+            allowedAccountIds:
+              this.visibility() === DocumentVisibility.NamedAccounts
+                ? this.allowedAccounts()
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                : [],
+          }),
+        );
         this.toasts.success('Document updated.');
       } else {
         const f = this.file()!;
-        if (!environment.useMockData) {
-          const body = new FormData();
-          body.append('title', title);
-          if (category) body.append('category', category);
-          body.append('visibility', String(this.visibility()));
-          if (this.visibility() === DocumentVisibility.NamedAccounts) {
-            for (const a of this.allowedAccounts()
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean)) {
-              body.append('allowedAccountIds', a);
-            }
+
+        const body = new FormData();
+        body.append('title', title);
+        if (category) body.append('category', category);
+        body.append('visibility', String(this.visibility()));
+        if (this.visibility() === DocumentVisibility.NamedAccounts) {
+          for (const a of this.allowedAccounts()
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)) {
+            body.append('allowedAccountIds', a);
           }
-          for (const p of partsList) {
-            body.append('partNumbers', p);
-          }
-          body.append('file', f, f.name);
-          await firstValueFrom(this.api.create(body as unknown as CreateLibraryDocumentDto));
-        } else {
-          const kb = f.size / 1024;
-          const sizeLabel = kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`;
-          this.mockDocs.update((docs) => [
-            {
-              id: 'd-' + Date.now(),
-              title,
-              category: category || undefined,
-              sizeLabel,
-              parts: partsList,
-              sendCount: 0,
-              version: 1,
-            },
-            ...docs,
-          ]);
         }
+        for (const p of partsList) {
+          body.append('partNumbers', p);
+        }
+        body.append('file', f, f.name);
+        await firstValueFrom(this.api.create(body as unknown as CreateLibraryDocumentDto));
         this.toasts.success('Document uploaded.');
       }
       this.resource.reload();
@@ -327,12 +251,8 @@ export class ArDocuments {
       return;
     }
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(this.api.delete(d.id));
-        this.resource.reload();
-      } else {
-        this.mockDocs.update((docs) => docs.filter((x) => x.id !== d.id));
-      }
+      await firstValueFrom(this.api.delete(d.id));
+      this.resource.reload();
       this.toasts.success(`“${d.title}” deleted.`);
     } catch {
       this.toasts.error(`Could not delete “${d.title}”.`);
@@ -347,7 +267,7 @@ export class ArDocuments {
   protected async showDeliveries(d: Doc): Promise<void> {
     this.deliveriesFor.set(d);
     this.deliveries.set([]);
-    if (environment.useMockData) return;
+
     try {
       this.deliveries.set((await firstValueFrom(this.api.getDeliveries(d.id))).items ?? []);
     } catch (e) {
@@ -383,44 +303,30 @@ export class ArDocuments {
 
   protected async downloadDoc(d: Doc): Promise<void> {
     try {
-      if (!environment.useMockData) {
-        const blob = await firstValueFrom(this.api.download(d.id));
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = d.title;
-        a.click();
-        URL.revokeObjectURL(url);
-      } else {
-        const blob = new Blob([`Datasheet: ${d.title}\nPart numbers: ${d.parts.join(', ')}`], {
-          type: 'text/plain',
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${d.title}.txt`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
+      const blob = await firstValueFrom(this.api.download(d.id));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = d.title;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch {
       this.toasts.error(`Could not download “${d.title}”.`);
     }
   }
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData || this.isPage ? undefined : { q: this.query() }),
+    params: () => (this.isPage ? undefined : { q: this.query() }),
     stream: ({ params }) =>
       this.api
         .getList({ filter: params.q, skipCount: 0, maxResultCount: 200 })
         .pipe(map((p) => (p.items ?? []).map(toDoc))),
-    defaultValue: SEED,
+    defaultValue: [] as Doc[],
   });
 
-  protected readonly loading = computed(
-    () => !environment.useMockData && this.resource.isLoading(),
-  );
+  protected readonly loading = computed(() => this.resource.isLoading());
   protected readonly documents = computed<Doc[]>(() => {
-    const list = environment.useMockData ? this.mockDocs() : (this.resource.value() ?? []);
+    const list = this.resource.error() ? [] : (this.resource.value() ?? []);
     const q = this.query().trim().toLowerCase();
     return q
       ? list.filter(

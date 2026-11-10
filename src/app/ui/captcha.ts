@@ -10,8 +10,6 @@ import {
   viewChild,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../environments/environment';
 import { CaptchaService } from '../proxy/security/captcha.service';
 
 const TURNSTILE_SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
@@ -89,10 +87,6 @@ export class ArCaptcha implements OnInit, OnDestroy {
   private widgetId: string | null = null;
 
   async ngOnInit(): Promise<void> {
-    if (environment.useMockData) {
-      this.required.emit(false);
-      return;
-    }
     let config;
     try {
       config = await firstValueFrom(this.api.getConfig());

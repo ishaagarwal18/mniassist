@@ -14,8 +14,6 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { readApiError } from '../../core/util/api-error';
 import { settled } from '../../core/util/resource';
@@ -45,7 +43,9 @@ const PREVIEW_DELAY_MS = 600;
   template: `
     @if (isPage) {
       <ar-topbar [title]="pageTitle()">
-        <button ar-button type="button" variant="ghost" (click)="close()">Back to Email templates</button>
+        <button ar-button type="button" variant="ghost" (click)="close()">
+          Back to Email templates
+        </button>
       </ar-topbar>
       <div class="ar-form-page ar-scroll">
         <ng-container *ngTemplateOutlet="formsTpl" />
@@ -63,152 +63,156 @@ const PREVIEW_DELAY_MS = 600;
         }
       </ar-topbar>
 
-    <div class="et ar-scroll">
-      <nav class="et__list" aria-label="Email templates">
-        @for (t of templates(); track t.key) {
-          <button
-            type="button"
-            class="et__item"
-            [class.et__item--on]="t.key === selectedKey()"
-            (click)="select(t.key)"
-          >
-            <span class="et__item-name">{{ t.displayName }}</span>
-            <span class="et__item-desc">{{ t.description }}</span>
-            @if (isCustom(t.key)) {
-              <ar-chip tone="teal">Custom</ar-chip>
-            } @else if (t.isCustomized) {
-              <ar-chip tone="teal">Customised</ar-chip>
-            } @else if (t.usesHostWording) {
-              <ar-chip tone="neutral">Platform wording</ar-chip>
-            }
-          </button>
-        }
-      </nav>
+      <div class="et ar-scroll">
+        <nav class="et__list" aria-label="Email templates">
+          @for (t of templates(); track t.key) {
+            <button
+              type="button"
+              class="et__item"
+              [class.et__item--on]="t.key === selectedKey()"
+              (click)="select(t.key)"
+            >
+              <span class="et__item-name">{{ t.displayName }}</span>
+              <span class="et__item-desc">{{ t.description }}</span>
+              @if (isCustom(t.key)) {
+                <ar-chip tone="teal">Custom</ar-chip>
+              } @else if (t.isCustomized) {
+                <ar-chip tone="teal">Customised</ar-chip>
+              } @else if (t.usesHostWording) {
+                <ar-chip tone="neutral">Platform wording</ar-chip>
+              }
+            </button>
+          }
+        </nav>
 
-      <div class="et__main">
-        @if (error(); as e) {
-          <ar-banner tone="bad">{{ e }}</ar-banner>
-        }
+        <div class="et__main">
+          @if (error(); as e) {
+            <ar-banner tone="bad">{{ e }}</ar-banner>
+          }
 
-        @if (template(); as t) {
-          <ar-card [heading]="t.displayName">
-            <p class="et__muted">{{ t.description }}</p>
+          @if (template(); as t) {
+            <ar-card [heading]="t.displayName">
+              <p class="et__muted">{{ t.description }}</p>
 
-            @if (t.hasSubject) {
+              @if (t.hasSubject) {
+                <label class="fld">
+                  <span class="fld__k">Subject</span>
+                  <input
+                    #subjectInput
+                    class="ar-field__input"
+                    maxlength="512"
+                    [readOnly]="!canEdit()"
+                    [value]="subject()"
+                    (input)="subject.set($any($event.target).value)"
+                    (focus)="lastField.set('subject')"
+                  />
+                </label>
+              }
+
               <label class="fld">
-                <span class="fld__k">Subject</span>
-                <input
-                  #subjectInput
-                  class="ar-field__input"
-                  maxlength="512"
+                <span class="fld__k">{{
+                  t.key === 'Layout' ? 'Layout (HTML)' : 'Body (HTML)'
+                }}</span>
+                <textarea
+                  #bodyInput
+                  class="ar-field__input et__code"
+                  rows="16"
+                  spellcheck="false"
                   [readOnly]="!canEdit()"
-                  [value]="subject()"
-                  (input)="subject.set($any($event.target).value)"
-                  (focus)="lastField.set('subject')"
-                />
+                  [value]="body()"
+                  (input)="body.set($any($event.target).value)"
+                  (focus)="lastField.set('body')"
+                ></textarea>
               </label>
-            }
 
-            <label class="fld">
-              <span class="fld__k">{{ t.key === 'Layout' ? 'Layout (HTML)' : 'Body (HTML)' }}</span>
-              <textarea
-                #bodyInput
-                class="ar-field__input et__code"
-                rows="16"
-                spellcheck="false"
-                [readOnly]="!canEdit()"
-                [value]="body()"
-                (input)="body.set($any($event.target).value)"
-                (focus)="lastField.set('body')"
-              ></textarea>
-            </label>
+              <div class="et__vars">
+                <span class="fld__k">Variables {{ canEdit() ? '— click to insert' : '' }}</span>
+                <div class="et__var-list">
+                  @for (v of t.variables; track v.name) {
+                    <button
+                      type="button"
+                      class="et__var"
+                      [disabled]="!canEdit()"
+                      [title]="v.description + ' — e.g. ' + v.sample"
+                      (click)="insert(v)"
+                    >
+                      {{ v.name }}
+                    </button>
+                  }
+                </div>
+              </div>
 
-            <div class="et__vars">
-              <span class="fld__k">Variables {{ canEdit() ? '— click to insert' : '' }}</span>
-              <div class="et__var-list">
-                @for (v of t.variables; track v.name) {
+              <div class="et__actions">
+                @if (canEdit()) {
                   <button
+                    ar-button
                     type="button"
-                    class="et__var"
-                    [disabled]="!canEdit()"
-                    [title]="v.description + ' — e.g. ' + v.sample"
-                    (click)="insert(v)"
+                    variant="primary"
+                    [disabled]="busy() || !dirty()"
+                    (click)="save()"
                   >
-                    {{ v.name }}
+                    {{ busy() ? 'Saving…' : 'Save' }}
                   </button>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="busy() || !dirty()"
+                    (click)="discard()"
+                  >
+                    Discard changes
+                  </button>
+                  @if (isCustom(t.key)) {
+                    <button
+                      ar-button
+                      type="button"
+                      variant="ghost"
+                      [disabled]="busy()"
+                      (click)="deleteCustom()"
+                    >
+                      Delete template
+                    </button>
+                  } @else if (t.isCustomized) {
+                    <button
+                      ar-button
+                      type="button"
+                      variant="ghost"
+                      [disabled]="busy()"
+                      (click)="restore()"
+                    >
+                      Restore default
+                    </button>
+                  }
+                } @else {
+                  <span class="et__muted">You can read these templates but not change them.</span>
                 }
               </div>
-            </div>
+            </ar-card>
 
-            <div class="et__actions">
-              @if (canEdit()) {
-                <button
-                  ar-button
-                  type="button"
-                  variant="primary"
-                  [disabled]="busy() || !dirty()"
-                  (click)="save()"
-                >
-                  {{ busy() ? 'Saving…' : 'Save' }}
-                </button>
-                <button
-                  ar-button
-                  type="button"
-                  variant="ghost"
-                  [disabled]="busy() || !dirty()"
-                  (click)="discard()"
-                >
-                  Discard changes
-                </button>
-                @if (isCustom(t.key)) {
-                  <button
-                    ar-button
-                    type="button"
-                    variant="ghost"
-                    [disabled]="busy()"
-                    (click)="deleteCustom()"
-                  >
-                    Delete template
-                  </button>
-                } @else if (t.isCustomized) {
-                  <button
-                    ar-button
-                    type="button"
-                    variant="ghost"
-                    [disabled]="busy()"
-                    (click)="restore()"
-                  >
-                    Restore default
-                  </button>
-                }
-              } @else {
-                <span class="et__muted">You can read these templates but not change them.</span>
+            <ar-card heading="Preview">
+              @if (previewError(); as e) {
+                <ar-banner tone="warn">{{ e }}</ar-banner>
               }
-            </div>
-          </ar-card>
-
-          <ar-card heading="Preview">
-            @if (previewError(); as e) {
-              <ar-banner tone="warn">{{ e }}</ar-banner>
-            }
-            @if (previewSubject(); as s) {
-              <p class="et__subject"><span>Subject</span> {{ s }}</p>
-            }
-            <iframe
-              class="et__frame"
-              title="Email preview"
-              sandbox=""
-              referrerpolicy="no-referrer"
-              [srcdoc]="previewHtml()"
-            ></iframe>
-            <p class="et__muted">Sample values are filled in. Links in the preview do not open.</p>
-          </ar-card>
-        } @else if (!error()) {
-          <p class="et__muted">Loading…</p>
-        }
+              @if (previewSubject(); as s) {
+                <p class="et__subject"><span>Subject</span> {{ s }}</p>
+              }
+              <iframe
+                class="et__frame"
+                title="Email preview"
+                sandbox=""
+                referrerpolicy="no-referrer"
+                [srcdoc]="previewHtml()"
+              ></iframe>
+              <p class="et__muted">
+                Sample values are filled in. Links in the preview do not open.
+              </p>
+            </ar-card>
+          } @else if (!error()) {
+            <p class="et__muted">Loading…</p>
+          }
+        </div>
       </div>
-    </div>
-  }
+    }
 
     <ng-template #formsTpl>
       @if (createDialog()) {
@@ -269,9 +273,7 @@ const PREVIEW_DELAY_MS = 600;
             ></textarea>
           </label>
           <div dialogActions>
-            <button ar-button type="button" variant="ghost" (click)="close()">
-              Cancel
-            </button>
+            <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
             <button
               ar-button
               type="button"
@@ -426,7 +428,6 @@ export class ArEmailTemplates {
   private readonly toast = inject(ToastService);
   private readonly route = inject(ActivatedRoute, { optional: true });
   private readonly router = inject(Router, { optional: true });
-  private readonly mock = environment.useMockData;
 
   protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
   protected readonly isPage = this.mode !== 'list';
@@ -442,12 +443,12 @@ export class ArEmailTemplates {
 
   private readonly listTick = signal(0);
   private readonly listResource = rxResource({
-    params: () => (this.mock ? undefined : { t: this.listTick() }),
+    params: () => ({ t: this.listTick() }),
     stream: () => this.api.getList(),
     defaultValue: { items: [] as EmailTemplateSummaryDto[] },
   });
-  protected readonly templates = computed<EmailTemplateSummaryDto[]>(() =>
-    this.mock ? [] : (settled(this.listResource, { items: [] }).items ?? []),
+  protected readonly templates = computed<EmailTemplateSummaryDto[]>(
+    () => settled(this.listResource, { items: [] }).items ?? [],
   );
 
   protected readonly selectedKey = signal<string | null>(null);

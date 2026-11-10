@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { ToastService } from '../../core/ui/toast.service';
 import { CockpitOriginService } from '../../layout/cockpit-origin.service';
 import { ArTopbar } from '../../layout/topbar';
@@ -48,16 +46,15 @@ export class ArReorderDispatchPage {
   protected readonly quotationId = this.route.paramMap.get('quotationId') ?? '';
   protected readonly reference = this.route.queryParamMap.get('ref') || 'the order';
   protected readonly shiprocket = signal(false);
-  protected readonly ready = signal(environment.useMockData);
+  protected readonly ready = signal(false);
 
   constructor() {
-    if (!environment.useMockData)
-      firstValueFrom(this.shippingApi.getSettings())
-        .then((s) => this.shiprocket.set(!!s.shiprocketConnected))
-        .catch(() => {
-          // Without the shipping settings the transporter can still be entered by hand.
-        })
-        .finally(() => this.ready.set(true));
+    firstValueFrom(this.shippingApi.getSettings())
+      .then((s) => this.shiprocket.set(!!s.shiprocketConnected))
+      .catch(() => {
+        // Without the shipping settings the transporter can still be entered by hand.
+      })
+      .finally(() => this.ready.set(true));
   }
 
   protected done(s: ShipmentDto | null): void {

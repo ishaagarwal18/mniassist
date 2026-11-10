@@ -8,8 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../../environments/environment';
 import { grantedPolicy } from '../../../core/auth/permission';
 import { ConfirmService } from '../../../core/ui/confirm.service';
 import { ToastService } from '../../../core/ui/toast.service';
@@ -99,7 +97,6 @@ export class ArProjectionPlan implements OnInit {
     this.permissions,
   );
 
-  protected readonly demo = environment.useMockData;
   protected readonly tab = signal<Tab>('overview');
   protected readonly loading = signal(true);
   /** Which action is running, so its button can say so. */
@@ -150,10 +147,6 @@ export class ArProjectionPlan implements OnInit {
   protected readonly hasActuals = computed(() => (this.plan()?.actualRevenueInPaise ?? 0) > 0);
 
   async ngOnInit(): Promise<void> {
-    if (this.demo) {
-      this.loading.set(false);
-      return;
-    }
     await this.load();
   }
 

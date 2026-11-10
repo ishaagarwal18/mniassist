@@ -21,11 +21,6 @@
 </ar-topbar>
 
 <div class="xr ar-scroll">
-  @if (mock) {
-    <ar-banner tone="teal"
-      >Cross-references need the live API. In demo mode the list stays empty.</ar-banner
-    >
-  }
   @if (error(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }
@@ -197,9 +192,23 @@
             @if (canApprove()) {
               <div class="xr__btns">
                 @if (!r.isApproved) {
-                  <button ar-button type="button" variant="primary" icon="check" title="Approve cross-reference" (click)="approve([r.id])"></button>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="primary"
+                    icon="check"
+                    title="Approve cross-reference"
+                    (click)="approve([r.id])"
+                  ></button>
                 }
-                <button ar-button type="button" variant="ghost" icon="trash" title="Delete cross-reference" (click)="remove(r)"></button>
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  icon="trash"
+                  title="Delete cross-reference"
+                  (click)="remove(r)"
+                ></button>
               </div>
             }
           </ng-template>

@@ -7,7 +7,6 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
 import { SessionService } from '../../proxy/identity/session.service';
 import type { UserSessionDto } from '../../proxy/identity/models';
-import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
 import { ArHasPermissionDirective } from '../../core/auth/permission';
 import { ArGrid } from '../../ui/grid';
@@ -271,9 +270,7 @@ export class ArMembers {
 
   private async loadDevices(member: Member): Promise<void> {
     try {
-      const r = environment.useMockData
-        ? { items: [] as UserSessionDto[] }
-        : await firstValueFrom(this.sessionApi.getUserSessions(member.userId));
+      const r = await firstValueFrom(this.sessionApi.getUserSessions(member.userId));
       if (this.devicesOf() === member) this.devices.set(r.items ?? []);
     } catch (e) {
       this.devicesError.set(readApiError(e));

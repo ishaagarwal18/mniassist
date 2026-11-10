@@ -1,8 +1,6 @@
 import { inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
 import { readCustomerScope } from '../../core/util/customer-scope';
@@ -11,8 +9,7 @@ import { PURCHASE_FORM_STYLES } from '../purchasing/purchase-form';
 import { listQuery } from './sales-records.logic';
 
 /**
- * What a sales order's, challan's or invoice's own page (/sales/orders/<id> and the rest) has in common: it loads the record (the
- * demo rows in mock mode), runs an action and shows the record the API returns, and Back returns to the Customer 360 it was opened
+ * What a sales order's, challan's or invoice's own page (/sales/orders/<id> and the rest) has in common: it loads the record, runs an action and shows the record the API returns, and Back returns to the Customer 360 it was opened
  * from, else to the list with the customer it was showing.
  */
 export abstract class SalesRecordPage<T extends { id?: string }> {
@@ -33,14 +30,11 @@ export abstract class SalesRecordPage<T extends { id?: string }> {
   /** e.g. 'This sales order'. */
   protected abstract readonly noun: string;
   protected abstract fetch(id: string): Observable<T>;
-  protected abstract readonly mockRecords: readonly T[];
 
   /** Call from the subclass constructor, once its fields exist. */
   protected async load(): Promise<void> {
     try {
-      const record = environment.useMockData
-        ? (this.mockRecords.find((r) => r.id === this.id) ?? null)
-        : await firstValueFrom(this.fetch(this.id));
+      const record = await firstValueFrom(this.fetch(this.id));
       if (!record) throw new Error('not found');
       this.record.set(record);
       this.loaded(record);
@@ -55,12 +49,11 @@ export abstract class SalesRecordPage<T extends { id?: string }> {
   protected loaded(_record: T): void {}
 
   /**
-   * Calls the API (or applies `mock` in mock mode); on success shows the returned record and `done(record)` as a toast. A failure
+   * Calls the API; on success shows the returned record and `done(record)` as a toast. A failure
    * is a toast too, and the record stays as it was.
    */
   protected async run(
     call: () => Observable<T>,
-    mock: (current: T) => T,
     done: (saved: T) => string,
     failed: string,
   ): Promise<T | null> {
@@ -68,7 +61,7 @@ export abstract class SalesRecordPage<T extends { id?: string }> {
     if (!current) return null;
     this.busy.set(true);
     try {
-      const saved = environment.useMockData ? mock(current) : await firstValueFrom(call());
+      const saved = await firstValueFrom(call());
       this.record.set(saved);
       this.toasts.success(done(saved));
       return saved;
@@ -86,10 +79,6 @@ export abstract class SalesRecordPage<T extends { id?: string }> {
     path: string,
     failed: string,
   ): Promise<void> {
-    if (environment.useMockData) {
-      void this.router.navigate([path]);
-      return;
-    }
     this.busy.set(true);
     try {
       const created = await firstValueFrom(call());

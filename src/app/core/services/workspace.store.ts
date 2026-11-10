@@ -1,8 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, forkJoin, map } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { WorkspaceMemberService } from '../../proxy/identity';
 import { TwoFactorService } from '../../proxy/identity/two-factor.service';
 import { InvitationState } from '../../proxy/identity/invitation-state.enum';
@@ -50,72 +48,6 @@ const INVITE_STATE: Record<InvitationState, Invitation['state']> = {
   [InvitationState.Expired]: 'expired',
 };
 
-const SEED_MEMBERS: readonly Member[] = [
-  {
-    userId: 'u-1',
-    userName: 'rahul.k',
-    name: 'Rahul Kanade',
-    email: 'rahul@Sun Energyautomation.in',
-    isActive: true,
-    roles: ['Owner'],
-    teamNames: ['Sales'],
-    openConversationCount: 3,
-  },
-  {
-    userId: 'u-2',
-    userName: 'sneha.p',
-    name: 'Sneha Patil',
-    email: 'sneha@Sun Energyautomation.in',
-    isActive: true,
-    roles: ['Manager'],
-    teamNames: ['Sales', 'Service'],
-    openConversationCount: 7,
-  },
-  {
-    userId: 'u-3',
-    userName: 'imtiaz.a',
-    name: 'Imtiaz Ahmed',
-    email: 'imtiaz@Sun Energyautomation.in',
-    isActive: true,
-    roles: ['Agent'],
-    teamNames: ['Service'],
-    openConversationCount: 12,
-  },
-  {
-    userId: 'u-4',
-    userName: 'deepa.r',
-    name: 'Deepa Rao',
-    email: 'deepa@Sun Energyautomation.in',
-    isActive: false,
-    roles: ['Agent'],
-    teamNames: [],
-    openConversationCount: 0,
-    sessionsRevokedAt: new Date(Date.now() - 40 * 86_400_000).toISOString(),
-  },
-];
-
-const SEED_INVITES: readonly Invitation[] = [
-  {
-    id: 'i-1',
-    email: 'ravi@Sun Energyautomation.in',
-    roleName: 'Agent',
-    teamName: 'Service',
-    state: 'pending',
-    expiresAt: new Date(Date.now() + 5 * 86_400_000).toISOString(),
-    invitedAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    isExpired: false,
-  },
-  {
-    id: 'i-2',
-    email: 'priya@Sun Energyautomation.in',
-    roleName: 'Analyst',
-    state: 'expired',
-    expiresAt: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-    invitedAt: new Date(Date.now() - 12 * 86_400_000).toISOString(),
-    isExpired: true,
-  },
-];
-
 /**
  * The workspace's people: who is in it, what they can do, and who has been invited
  * but not joined. Deactivating a member is the sharp edge here — it hands their open
@@ -130,7 +62,7 @@ export class WorkspaceStore {
   private readonly reloadTick = signal(0);
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.reloadTick() }),
+    params: () => ({ tick: this.reloadTick() }),
     stream: () =>
       forkJoin({
         members: this.api.getList(),
@@ -174,20 +106,17 @@ export class WorkspaceStore {
     defaultValue: { members: [] as Member[], invitations: [] as Invitation[] },
   });
 
-  readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
+  readonly loading = computed(() => this.resource.isLoading());
 
-  readonly members = computed<readonly Member[]>(() =>
-    environment.useMockData
-      ? SEED_MEMBERS
-      : settled(this.resource, { members: [] as Member[], invitations: [] as Invitation[] })
-          .members,
+  readonly members = computed<readonly Member[]>(
+    () =>
+      settled(this.resource, { members: [] as Member[], invitations: [] as Invitation[] }).members,
   );
 
-  readonly invitations = computed<readonly Invitation[]>(() =>
-    environment.useMockData
-      ? SEED_INVITES
-      : settled(this.resource, { members: [] as Member[], invitations: [] as Invitation[] })
-          .invitations,
+  readonly invitations = computed<readonly Invitation[]>(
+    () =>
+      settled(this.resource, { members: [] as Member[], invitations: [] as Invitation[] })
+        .invitations,
   );
 
   private reload(): void {
@@ -195,7 +124,6 @@ export class WorkspaceStore {
   }
 
   async invite(email: string, roleName: string, note?: string): Promise<string | null> {
-    if (environment.useMockData) return null;
     const created = await firstValueFrom(
       this.api.invite({ email: email.trim(), roleName, note: note?.trim() || undefined }),
     );
@@ -204,17 +132,13 @@ export class WorkspaceStore {
   }
 
   async resendInvitation(id: string): Promise<void> {
-    if (!environment.useMockData) {
-      await firstValueFrom(this.api.resendInvitation(id));
-      this.reload();
-    }
+    await firstValueFrom(this.api.resendInvitation(id));
+    this.reload();
   }
 
   async revokeInvitation(id: string): Promise<void> {
-    if (!environment.useMockData) {
-      await firstValueFrom(this.api.revokeInvitation(id));
-      this.reload();
-    }
+    await firstValueFrom(this.api.revokeInvitation(id));
+    this.reload();
   }
 
   /** Returns the number of conversations handed over. */
@@ -223,7 +147,6 @@ export class WorkspaceStore {
     handoverToUserId: string | undefined,
     reason: string | undefined,
   ): Promise<number> {
-    if (environment.useMockData) return 0;
     const result = await firstValueFrom(
       this.api.deactivate({ userId, handoverToUserId: handoverToUserId || undefined, reason }),
     );
@@ -232,24 +155,18 @@ export class WorkspaceStore {
   }
 
   async reactivate(userId: string): Promise<void> {
-    if (!environment.useMockData) {
-      await firstValueFrom(this.api.reactivate(userId));
-      this.reload();
-    }
+    await firstValueFrom(this.api.reactivate(userId));
+    this.reload();
   }
 
   /** Turns off a member's two-step sign-in, for the lost-phone case. */
   async resetTwoFactor(userId: string): Promise<void> {
-    if (!environment.useMockData) {
-      await firstValueFrom(this.twoFactor.resetForUser(userId));
-      this.reload();
-    }
+    await firstValueFrom(this.twoFactor.resetForUser(userId));
+    this.reload();
   }
 
   async revokeSessions(userId: string, reason: string | undefined): Promise<void> {
-    if (!environment.useMockData) {
-      await firstValueFrom(this.api.revokeSessions({ userId, reason }));
-      this.reload();
-    }
+    await firstValueFrom(this.api.revokeSessions({ userId, reason }));
+    this.reload();
   }
 }

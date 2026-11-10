@@ -2,17 +2,13 @@ import { CommonModule, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
-  BillOfMaterialDto,
-  BillOfMaterialItemDto,
   BillOfMaterialService,
   BomStatus,
   BomType,
   CreateBillOfMaterialDto,
-  CreateBillOfMaterialItemDto,
   RoutingStage,
 } from '../../../proxy/manufacturing';
 import { ArButton, ArCard } from '../../../ui';
@@ -26,9 +22,7 @@ import { ArButton, ArCard } from '../../../ui';
       title="Create Bill of Materials (Multi-Level BOM)"
       subtitle="Define assembly header, multi-level component explosion, scrap allowances and routing stages"
     >
-      <button ar-button variant="ghost" (click)="cancel()">
-        Back to BOM Registry
-      </button>
+      <button ar-button variant="ghost" (click)="cancel()">Back to BOM Registry</button>
     </ar-topbar>
 
     <div class="page-container ar-scroll">
@@ -59,7 +53,9 @@ import { ArButton, ArCard } from '../../../ui';
             </div>
 
             <div class="form-group">
-              <label class="form-label">Finished Good Part Number <span class="required">*</span></label>
+              <label class="form-label"
+                >Finished Good Part Number <span class="required">*</span></label
+              >
               <input
                 type="text"
                 class="ar-field__input"
@@ -71,7 +67,9 @@ import { ArButton, ArCard } from '../../../ui';
             </div>
 
             <div class="form-group">
-              <label class="form-label">Finished Good Description <span class="required">*</span></label>
+              <label class="form-label"
+                >Finished Good Description <span class="required">*</span></label
+              >
               <input
                 type="text"
                 class="ar-field__input"
@@ -214,7 +212,9 @@ import { ArButton, ArCard } from '../../../ui';
                           <option [ngValue]="RoutingStage.HeatTreatment">Heat Treatment</option>
                           <option [ngValue]="RoutingStage.Assembly">Assembly</option>
                           <option [ngValue]="RoutingStage.FinalTesting">Final Testing</option>
-                          <option [ngValue]="RoutingStage.FinishedGoodsReceipt">Finished Goods</option>
+                          <option [ngValue]="RoutingStage.FinishedGoodsReceipt">
+                            Finished Goods
+                          </option>
                         </select>
                       </td>
                       <td>
@@ -268,14 +268,14 @@ import { ArButton, ArCard } from '../../../ui';
         }
 
         <div class="page-footer-actions">
-          <button ar-button variant="ghost" type="button" (click)="cancel()">
-            Cancel
-          </button>
+          <button ar-button variant="ghost" type="button" (click)="cancel()">Cancel</button>
           <button
             ar-button
             variant="primary"
             type="submit"
-            [disabled]="busy() || !newBom.bomNumber?.trim() || !newBom.finishedGoodPartNumber.trim()"
+            [disabled]="
+              busy() || !newBom.bomNumber?.trim() || !newBom.finishedGoodPartNumber.trim()
+            "
           >
             {{ busy() ? 'Saving BOM…' : 'Save & Register BOM' }}
           </button>
@@ -468,31 +468,27 @@ export class ArNewBomPage {
   }
 
   submit(): void {
-    if (!this.newBom.bomNumber?.trim() || !this.newBom.finishedGoodPartNumber.trim() || this.busy()) {
+    if (
+      !this.newBom.bomNumber?.trim() ||
+      !this.newBom.finishedGoodPartNumber.trim() ||
+      this.busy()
+    ) {
       return;
     }
 
     this.busy.set(true);
     this.error.set(null);
 
-    if (!environment.useMockData) {
-      this.bomService.create(this.newBom).subscribe({
-        next: () => {
-          this.busy.set(false);
-          this.toasts.success(`BOM ${this.newBom.bomNumber} created.`);
-          void this.router.navigateByUrl('/manufacturing/bom');
-        },
-        error: (err) => {
-          this.busy.set(false);
-          this.error.set(err?.message || 'Failed to save BOM.');
-        },
-      });
-    } else {
-      setTimeout(() => {
+    this.bomService.create(this.newBom).subscribe({
+      next: () => {
         this.busy.set(false);
         this.toasts.success(`BOM ${this.newBom.bomNumber} created.`);
         void this.router.navigateByUrl('/manufacturing/bom');
-      }, 300);
-    }
+      },
+      error: (err) => {
+        this.busy.set(false);
+        this.error.set(err?.message || 'Failed to save BOM.');
+      },
+    });
   }
 }

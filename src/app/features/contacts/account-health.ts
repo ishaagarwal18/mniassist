@@ -2,8 +2,6 @@ import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
@@ -94,74 +92,6 @@ const WEIGHT_GROUPS: {
     ],
   },
 ];
-
-const now = new Date().toISOString();
-const month = (offset: number) => {
-  const d = new Date();
-  d.setMonth(d.getMonth() + offset);
-  return d.toISOString().slice(0, 7);
-};
-
-const SEED: AccountHealthDto[] = [
-  {
-    customerId: 'a1',
-    isAccount: true,
-    name: 'Kalyani Forge',
-    score: 30,
-    band: 'AtRisk',
-    machines: 6,
-    openRenewalValueInPaise: 1_62_000_00,
-    computedAtUtc: now,
-    reasons: [
-      { text: 'No customer message in 190 days', points: -20 },
-      { text: '2 overdue tickets past promised SLA resolution', points: -20 },
-      { text: 'Unpaid invoices overdue by 30+ days', points: -15 },
-      { text: '1 quotation won this year', points: 5 },
-    ],
-  },
-  {
-    customerId: 'a2',
-    isAccount: true,
-    name: 'Precision Pumps',
-    score: 60,
-    band: 'Watch',
-    machines: 3,
-    openRenewalValueInPaise: 28_500_00,
-    computedAtUtc: now,
-    reasons: [
-      { text: '1 open service ticket', points: -5 },
-      { text: 'No customer message in 120 days', points: -10 },
-    ],
-  },
-  {
-    customerId: 'a3',
-    isAccount: true,
-    name: 'Godavari Cement',
-    score: 95,
-    band: 'Healthy',
-    machines: 11,
-    openRenewalValueInPaise: 65_000_00,
-    computedAtUtc: now,
-    reasons: [
-      { text: 'Inbound message received this month', points: 5 },
-      { text: '2 AMC renewals won this year', points: 10 },
-      { text: '1 quotation won this year', points: 5 },
-    ],
-  },
-];
-
-const SEED_FORECAST: RenewalForecastDto = {
-  months: 3,
-  openValueInPaise: 2_55_500_00,
-  expectedValueInPaise: 1_49_000_00,
-  withoutValue: 1,
-  byMonth: [
-    { month: month(0), count: 2, openValueInPaise: 70_500_00, expectedValueInPaise: 30_000_00 },
-    { month: month(1), count: 1, openValueInPaise: 65_000_00, expectedValueInPaise: 56_000_00 },
-    { month: month(2), count: 2, openValueInPaise: 1_20_000_00, expectedValueInPaise: 63_000_00 },
-  ],
-  renewals: [],
-};
 
 const BAND_LABEL: Record<HealthBand, string> = {
   Healthy: 'Healthy',
@@ -815,11 +745,6 @@ export class ArAccountHealth {
     this.loading.set(true);
     this.error.set(null);
     try {
-      if (environment.useMockData) {
-        this.rows.set(SEED);
-        this.forecast.set(SEED_FORECAST);
-        return;
-      }
       const [rows, forecast] = await Promise.all([
         firstValueFrom(this.api.getList()),
         firstValueFrom(this.api.getRenewalForecast(3)),
@@ -846,7 +771,7 @@ export class ArAccountHealth {
   protected async openTune(): Promise<void> {
     this.tuneError.set(null);
     this.tuneOpen.set(true);
-    if (environment.useMockData) return;
+
     try {
       this.weights.set(await firstValueFrom(this.api.getWeights()));
     } catch (e: unknown) {
@@ -871,8 +796,7 @@ export class ArAccountHealth {
     this.busy.set(true);
     this.tuneError.set(null);
     try {
-      if (!environment.useMockData)
-        this.weights.set(await firstValueFrom(this.api.updateWeights(w)));
+      this.weights.set(await firstValueFrom(this.api.updateWeights(w)));
       this.tuneOpen.set(false);
       await this.load();
     } catch (e: unknown) {
@@ -889,7 +813,7 @@ export class ArAccountHealth {
   protected async recompute(): Promise<void> {
     this.busy.set(true);
     try {
-      if (!environment.useMockData) await firstValueFrom(this.api.recompute());
+      await firstValueFrom(this.api.recompute());
       await this.load();
     } finally {
       this.busy.set(false);

@@ -4,7 +4,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
-import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import { checkPolicy } from '../../../core/auth/permission';
 import {
@@ -19,140 +18,9 @@ import {
   GrnStatus,
   QcInspectionStatus,
   GoodsReceiptNoteService,
-  VendorBillService,
-  VendorDebitNoteService,
 } from '../../../proxy/purchasing';
 import { ArButton, ArChip, ChipTone } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
-
-const MOCK_GRNS: GoodsReceiptNoteDto[] = [
-  {
-    id: 'grn-1',
-    grnNumber: 'GRN-2026-0104',
-    purchaseOrderId: 'po-101',
-    purchaseOrderReference: 'PO-2026-089',
-    supplierId: 'sup-1',
-    supplierName: 'Bharat Precision Gears Pvt Ltd',
-    challanNumber: 'DC-BPG-4402',
-    challanDateUtc: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    vehicleNumber: 'MH 14 HG 8921',
-    transporterName: 'VRL Logistics',
-    gateEntryNumber: 'GE-2026-0412',
-    gateInTimeUtc: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    status: GrnStatus.Approved,
-    qcStatus: QcInspectionStatus.Passed,
-    inspectedAtUtc: new Date(Date.now() - 1 * 86_400_000).toISOString(),
-    inspectorNotes:
-      '100% dimensions checked per drawing Rev C. No burrs or surface defects detected.',
-    remarks: 'Gate verified with security seal intact.',
-    creationTime: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    lines: [
-      {
-        id: 'grnl-1',
-        goodsReceiptNoteId: 'grn-1',
-        lineNumber: 1,
-        purchaseOrderLineId: 'pol-1',
-        partNumber: 'GR-HEL-120',
-        description: 'Hardened Helical Gear 120mm OD Module 3',
-        orderedQuantity: 50,
-        challanQuantity: 50,
-        receivedQuantity: 50,
-        acceptedQuantity: 50,
-        rejectedQuantity: 0,
-        unitOfMeasure: 'NOS',
-        storageBin: 'BIN-RACK-A3',
-      },
-      {
-        id: 'grnl-2',
-        goodsReceiptNoteId: 'grn-1',
-        lineNumber: 2,
-        purchaseOrderLineId: 'pol-2',
-        partNumber: 'PN-SH-040',
-        description: 'EN24 Pinion Shaft Induction Hardened',
-        orderedQuantity: 25,
-        challanQuantity: 25,
-        receivedQuantity: 25,
-        acceptedQuantity: 25,
-        rejectedQuantity: 0,
-        unitOfMeasure: 'NOS',
-        storageBin: 'BIN-RACK-A4',
-      },
-    ],
-  },
-  {
-    id: 'grn-2',
-    grnNumber: 'GRN-2026-0105',
-    purchaseOrderId: 'po-102',
-    purchaseOrderReference: 'PO-2026-092',
-    supplierId: 'sup-2',
-    supplierName: 'Kirloskar Pneumatics Ltd',
-    challanNumber: 'KPL-CH-778',
-    challanDateUtc: new Date(Date.now() - 1 * 86_400_000).toISOString(),
-    vehicleNumber: 'MH 12 RN 4501',
-    transporterName: 'GATI KWE',
-    gateEntryNumber: 'GE-2026-0418',
-    gateInTimeUtc: new Date(Date.now() - 1 * 86_400_000).toISOString(),
-    status: GrnStatus.UnderInspection,
-    qcStatus: QcInspectionStatus.Pending,
-    remarks: 'Unloaded at Bay 2. Awaiting visual and hardness check.',
-    creationTime: new Date(Date.now() - 1 * 86_400_000).toISOString(),
-    lines: [
-      {
-        id: 'grnl-3',
-        goodsReceiptNoteId: 'grn-2',
-        lineNumber: 1,
-        purchaseOrderLineId: 'pol-3',
-        partNumber: 'VLV-SOL-24',
-        description: 'High Pressure 24V DC Hydraulic Solenoid Valve',
-        orderedQuantity: 30,
-        challanQuantity: 30,
-        receivedQuantity: 30,
-        acceptedQuantity: 0,
-        rejectedQuantity: 0,
-        unitOfMeasure: 'NOS',
-        storageBin: 'QC-STAGE-BAY2',
-      },
-    ],
-  },
-  {
-    id: 'grn-3',
-    grnNumber: 'GRN-2026-0103',
-    purchaseOrderId: 'po-099',
-    purchaseOrderReference: 'PO-2026-081',
-    supplierId: 'sup-3',
-    supplierName: 'Sundram Fasteners Automotive',
-    challanNumber: 'SF-INV-00912',
-    challanDateUtc: new Date(Date.now() - 6 * 86_400_000).toISOString(),
-    vehicleNumber: 'TN 09 BX 2209',
-    transporterName: 'TCI Freight',
-    gateEntryNumber: 'GE-2026-0399',
-    gateInTimeUtc: new Date(Date.now() - 6 * 86_400_000).toISOString(),
-    status: GrnStatus.Approved,
-    qcStatus: QcInspectionStatus.PartiallyPassed,
-    inspectedAtUtc: new Date(Date.now() - 5 * 86_400_000).toISOString(),
-    inspectorNotes: '15 pieces failed pitch gauge thread inspection. Raised rejection report.',
-    remarks: 'Fastener crates received.',
-    creationTime: new Date(Date.now() - 6 * 86_400_000).toISOString(),
-    lines: [
-      {
-        id: 'grnl-4',
-        goodsReceiptNoteId: 'grn-3',
-        lineNumber: 1,
-        purchaseOrderLineId: 'pol-4',
-        partNumber: 'BLT-M16-109',
-        description: 'Grade 10.9 Flange Head Bolt M16x90mm Zn-Ni Coated',
-        orderedQuantity: 200,
-        challanQuantity: 200,
-        receivedQuantity: 200,
-        acceptedQuantity: 185,
-        rejectedQuantity: 15,
-        unitOfMeasure: 'NOS',
-        storageBin: 'BIN-FAST-B1',
-        rejectionReason: 'Thread diameter out of tolerance (0.15mm pitch mismatch)',
-      },
-    ],
-  },
-];
 
 @Component({
   standalone: true,
@@ -730,8 +598,6 @@ export class GoodsReceiptNotesComponent {
   private readonly permissions = inject(PermissionService);
   private readonly route = inject(ActivatedRoute);
   private readonly grnService = inject(GoodsReceiptNoteService);
-  private readonly billService = inject(VendorBillService);
-  private readonly debitNoteService = inject(VendorDebitNoteService);
 
   /** What this role may do here besides reading (each action's API permission). */
   protected readonly can = computed(() => {
@@ -750,7 +616,7 @@ export class GoodsReceiptNotesComponent {
   /** Opened from Vendor 360 for one supplier: only theirs, and new records are for them. */
   protected readonly scope = signal<SupplierScope | null>(readSupplierScope());
   protected readonly loadError = signal<string | null>(null);
-  readonly allGrns = signal<GoodsReceiptNoteDto[]>(environment.useMockData ? MOCK_GRNS : []);
+  readonly allGrns = signal<GoodsReceiptNoteDto[]>([]);
   readonly filterQuery = signal<string>('');
   readonly selectedStatus = signal<GrnStatus | null>(null);
 
@@ -828,17 +694,15 @@ export class GoodsReceiptNotesComponent {
   }
 
   loadData() {
-    if (!environment.useMockData) {
-      this.grnService
-        .getList({ maxResultCount: 50, supplierId: this.scope()?.supplierId ?? undefined })
-        .subscribe({
-          next: (res) => {
-            this.allGrns.set(res?.items ?? []);
-            this.loadError.set(null);
-          },
-          error: () => this.loadError.set('Goods receipts could not be loaded.'),
-        });
-    }
+    this.grnService
+      .getList({ maxResultCount: 50, supplierId: this.scope()?.supplierId ?? undefined })
+      .subscribe({
+        next: (res) => {
+          this.allGrns.set(res?.items ?? []);
+          this.loadError.set(null);
+        },
+        error: () => this.loadError.set('Goods receipts could not be loaded.'),
+      });
   }
 
   /** QC inspection has its own page. */

@@ -2,8 +2,6 @@ import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
@@ -18,78 +16,6 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
 import type { ChipTone } from '../../ui/chip';
 
 const day = 86_400_000;
-const iso = (days: number) => new Date(Date.now() + days * day).toISOString();
-
-/** Sample board for reviewing the screen without an API. */
-const SEED: CollectionBoardDto = {
-  outstandingInPaise: 9_84_500_00,
-  overdueInPaise: 4_12_000_00,
-  overdueCount: 3,
-  collectedThisMonthInPaise: 2_75_000_00,
-  notChaseableCount: 0,
-  invoices: [
-    {
-      id: 'i1',
-      number: 'SI/2026/1184',
-      customerId: 'c1',
-      customerName: 'Kalyani Forge',
-      invoiceDateUtc: iso(-48),
-      dueDateUtc: iso(-18),
-      dueDateAssumed: false,
-      daysOverdue: 18,
-      totalInPaise: 2_36_000_00,
-      outstandingInPaise: 2_36_000_00,
-      remindersSent: 2,
-      lastReminderAtUtc: iso(-3),
-      paidByLink: false,
-    },
-    {
-      id: 'i2',
-      number: 'SI/2026/1201',
-      customerId: 'c2',
-      customerName: 'Precision Pumps',
-      invoiceDateUtc: iso(-39),
-      dueDateUtc: iso(-9),
-      dueDateAssumed: true,
-      daysOverdue: 9,
-      totalInPaise: 1_18_000_00,
-      outstandingInPaise: 1_18_000_00,
-      remindersSent: 1,
-      lastReminderAtUtc: iso(-2),
-      paidByLink: false,
-    },
-    {
-      id: 'i3',
-      number: 'SI/2026/1233',
-      customerId: 'c3',
-      customerName: 'Godavari Cement',
-      invoiceDateUtc: iso(-32),
-      dueDateUtc: iso(-2),
-      dueDateAssumed: false,
-      daysOverdue: 2,
-      totalInPaise: 58_000_00,
-      outstandingInPaise: 58_000_00,
-      remindersSent: 1,
-      lastReminderAtUtc: iso(-5),
-      paidByLink: false,
-    },
-    {
-      id: 'i4',
-      number: 'SI/2026/1260',
-      customerId: 'c4',
-      customerName: 'Shree Textiles',
-      invoiceDateUtc: iso(-12),
-      dueDateUtc: iso(18),
-      dueDateAssumed: false,
-      daysOverdue: 0,
-      totalInPaise: 5_72_500_00,
-      outstandingInPaise: 5_72_500_00,
-      remindersSent: 0,
-      lastReminderAtUtc: null,
-      paidByLink: false,
-    },
-  ],
-};
 
 /**
  * Q4: unpaid ERP invoices, chased on WhatsApp. Reminders go out 3 days before the due date and at 7 and 15 days overdue with the
@@ -187,7 +113,12 @@ const SEED: CollectionBoardDto = {
                 }
               </ng-template>
             </e-column>
-            <e-column field="outstandingInPaise" headerText="Outstanding" textAlign="Right" width="140">
+            <e-column
+              field="outstandingInPaise"
+              headerText="Outstanding"
+              textAlign="Right"
+              width="140"
+            >
               <ng-template #template let-r>
                 {{ money(r.outstandingInPaise) }}
               </ng-template>
@@ -369,7 +300,7 @@ export class ArCollections {
     this.loading.set(true);
     this.error.set(null);
     try {
-      this.board.set(environment.useMockData ? SEED : await firstValueFrom(this.api.getBoard()));
+      this.board.set(await firstValueFrom(this.api.getBoard()));
     } catch (e: unknown) {
       this.error.set(this.problem(e, 'Could not load the collections board.'));
     } finally {
@@ -401,10 +332,6 @@ export class ArCollections {
     this.error.set(null);
     this.notice.set(null);
     try {
-      if (environment.useMockData) {
-        this.notice.set(`Reminder for ${r.number} sent.`);
-        return;
-      }
       const result = await firstValueFrom(this.api.sendNow(r.id));
       if (result.sent) {
         this.notice.set(`Reminder for ${r.number} sent.`);
@@ -423,7 +350,7 @@ export class ArCollections {
     this.busy.set('run');
     this.error.set(null);
     try {
-      const sent = environment.useMockData ? 0 : (await firstValueFrom(this.api.run())).sent;
+      const sent = (await firstValueFrom(this.api.run())).sent;
       this.notice.set(
         sent
           ? `${sent} reminder${sent === 1 ? '' : 's'} sent.`

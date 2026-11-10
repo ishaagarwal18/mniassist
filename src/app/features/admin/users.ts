@@ -3,8 +3,6 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { PermissionDirective } from '@abp/ng.core';
-
-import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
 import { IdentityRoleDto, IdentityUserDto, IdentityUserService } from '../../proxy/identity';
 import { ArTopbar } from '../../layout/topbar';
@@ -13,20 +11,6 @@ import { ArGrid } from '../../ui/grid';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ArUserSecurityDialog } from './user-security-dialog';
 import { ArPermissionDialog } from './permission-dialog';
-
-const SEED: IdentityUserDto[] = [
-  {
-    id: 'u-1',
-    userName: 'admin',
-    name: 'Rahul',
-    surname: 'Kanade',
-    email: 'admin@sun-energy-automation.test',
-    phoneNumber: '+91 98765 43210',
-    isActive: true,
-    lockoutEnabled: true,
-    roleNames: ['admin'],
-  },
-];
 
 interface Row extends IdentityUserDto {
   roleNames: string[];
@@ -394,29 +378,26 @@ interface Row extends IdentityUserDto {
 export class ArAdminUsers {
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(IdentityUserService);
-  private readonly mock = environment.useMockData;
 
   private readonly tick = signal(0);
   private readonly resource = rxResource({
-    params: () => (this.mock ? undefined : { t: this.tick() }),
+    params: () => ({ t: this.tick() }),
     stream: () => this.api.getList({ maxResultCount: 200, sorting: 'userName' }),
     defaultValue: { totalCount: 0, items: [] as IdentityUserDto[] },
   });
 
   private readonly rolesResource = rxResource({
-    params: () => (this.mock ? undefined : {}),
+    params: () => ({}),
     stream: () => this.api.getAssignableRoles(),
     defaultValue: { items: [] as IdentityRoleDto[] },
   });
 
-  protected readonly assignableRoles = computed<readonly IdentityRoleDto[]>(() =>
-    this.mock
-      ? [{ id: 'r', name: 'admin', isDefault: false, isStatic: true, isPublic: true }]
-      : this.rolesResource.value().items,
+  protected readonly assignableRoles = computed<readonly IdentityRoleDto[]>(
+    () => this.rolesResource.value().items,
   );
 
   protected readonly users = computed<readonly Row[]>(() =>
-    (this.mock ? SEED : this.resource.value().items).map((u) => ({
+    this.resource.value().items.map((u) => ({
       ...u,
       roleNames: u.roleNames ?? u.extraProperties?.RoleNames ?? [],
     })),
@@ -512,7 +493,7 @@ export class ArAdminUsers {
     this.savedRoles = [...u.roleNames];
     this.error.set(null);
     this.dialog.set('edit');
-    if (!this.mock) void this.loadRoles(u.id);
+    void this.loadRoles(u.id);
   }
 
   /** The roles the edited user held when the dialog opened: changing them signs the user out (said in the notice). */

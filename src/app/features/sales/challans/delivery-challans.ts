@@ -6,7 +6,6 @@ import { GridModule, RecordClickEventArgs } from '@syncfusion/ej2-angular-grids'
 import { ToastService } from '../../../core/ui/toast.service';
 import { CustomerScope, readCustomerScope } from '../../../core/util/customer-scope';
 import { errorMessage } from '../../activities/activity-logic';
-import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import { DeliveryChallanDto } from '../../../proxy/sales/delivery-challan.models';
 import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.service';
@@ -26,13 +25,21 @@ import {
   listQuery,
   newRecordQuery,
 } from '../sales-records.logic';
-import { MOCK_CHALLANS } from './delivery-challans.mock';
 import { ArSalesExport } from '../sales-export';
 
 @Component({
   selector: 'ar-delivery-challans',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArSalesExport, ArGrid, GridModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArSalesExport,
+    ArGrid,
+    GridModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -379,8 +386,7 @@ export class ArDeliveryChallans {
     this.permissions,
   );
 
-  /** Demo rows only in mock mode; a real workspace sees its own challans or none. */
-  challans = signal<DeliveryChallanDto[]>(environment.useMockData ? MOCK_CHALLANS : []);
+  challans = signal<DeliveryChallanDto[]>([]);
   loadError = signal<string | null>(null);
   searchQuery = signal<string>('');
   selectedStatus = signal<DeliveryChallanStatus | null>(null);
@@ -462,35 +468,26 @@ export class ArDeliveryChallans {
   }
 
   loadChallans() {
-    if (!environment.useMockData) {
-      this.challanService
-        .getList({
-          maxResultCount: 100,
-          customerId: this.scope()?.customerId ?? undefined,
-          customerAccountId: this.scope()?.accountId ?? undefined,
-        })
-        .subscribe({
-          next: (res) => {
-            this.challans.set(res?.items ?? []);
-            this.loadError.set(null);
-          },
-          error: (e: unknown) => {
-            this.loadError.set(errorMessage(e, 'Delivery challans could not be loaded.'));
-          },
-        });
-    }
+    this.challanService
+      .getList({
+        maxResultCount: 100,
+        customerId: this.scope()?.customerId ?? undefined,
+        customerAccountId: this.scope()?.accountId ?? undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          this.challans.set(res?.items ?? []);
+          this.loadError.set(null);
+        },
+        error: (e: unknown) => {
+          this.loadError.set(errorMessage(e, 'Delivery challans could not be loaded.'));
+        },
+      });
   }
 
   markDelivered(dc: DeliveryChallanDto) {
     if (!dc.id) return;
-    if (environment.useMockData) {
-      this.updateChallanInList({
-        ...dc,
-        status: DeliveryChallanStatus.Delivered,
-        deliveredAtUtc: new Date().toISOString(),
-      });
-      return;
-    }
+
     this.challanService.markDelivered(dc.id).subscribe({
       next: (updated) => {
         this.updateChallanInList(updated);
@@ -502,10 +499,7 @@ export class ArDeliveryChallans {
 
   createInvoiceFromChallan(dc: DeliveryChallanDto) {
     if (!dc.id) return;
-    if (environment.useMockData) {
-      this.router.navigate(['/sales/invoices']);
-      return;
-    }
+
     this.invoiceService.createFromChallan(dc.id).subscribe({
       next: (invoice) => {
         this.router.navigate(['/sales/invoices', invoice.id]);

@@ -1,14 +1,11 @@
 <ar-topbar title="Competitor brands" subtitle="And the brands we sell, for project specifications">
   <a ar-button variant="ghost" routerLink="/projects">Projects</a>
-  <button ar-button type="button" variant="ghost" [disabled]="busy() || mock" (click)="addCommon()">
+  <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="addCommon()">
     Add common brands
   </button>
 </ar-topbar>
 
 <div class="cb ar-scroll">
-  @if (mock) {
-    <ar-banner tone="teal">Competitor brands need the live API.</ar-banner>
-  }
   @if (error(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }
@@ -43,7 +40,7 @@
       />
     </label>
     <div class="cb__foot">
-      <button ar-button type="button" [disabled]="busy() || mock" (click)="saveSettings()">
+      <button ar-button type="button" [disabled]="busy()" (click)="saveSettings()">
         Save settings
       </button>
     </div>
@@ -106,7 +103,7 @@
         [value]="newMakes()"
         (input)="newMakes.set($any($event.target).value)"
       />
-      <button ar-button type="submit" [disabled]="!newName().trim() || mock">Add</button>
+      <button ar-button type="submit" [disabled]="!newName().trim()">Add</button>
     </form>
   </ar-card>
 </div>

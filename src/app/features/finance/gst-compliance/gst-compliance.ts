@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -18,107 +17,6 @@ import {
 } from '../../../proxy/finance';
 import { ArButton, ArChip, ChipTone } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
-
-const MOCK_GST_RECORDS: GstAuditRegisterDto[] = [
-  {
-    id: 'gst-1',
-    documentNumber: 'INV-2026-0082',
-    documentDateUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-    returnPeriod: '042026',
-    section: Gstr1Section.B2B_4A,
-    counterpartyGstin: '27AABCT2345A1Z2',
-    counterpartyLegalName: 'Tata Motors Powertrain Ltd',
-    placeOfSupplyStateCode: '27',
-    isReverseChargeApplicable: false,
-    taxableAmountInPaise: 35_00_000_00,
-    gstRatePercent: 18,
-    igstAmountInPaise: 0,
-    cgstAmountInPaise: 3_15_000_00,
-    sgstAmountInPaise: 3_15_000_00,
-    cessAmountInPaise: 0,
-    totalInvoiceValueInPaise: 41_30_000_00,
-    eInvoiceStatus: EInvoiceStatus.Generated,
-    irnHash: '8b4d1b823e59bcf7e1d5204859a0fbc5928d3ef71829e0839218d6e7f8a920b1',
-    eInvoiceAckNo: '1120260400821',
-    eInvoiceAckDateUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-    signedQrCode:
-      'https://einvoice1.gst.gov.in/verify?irn=8b4d1b823e59bcf7e1d5204859a0fbc5928d3ef71829e0839218d6e7f8a920b1',
-    eWayBillStatus: EWayBillStatus.Active,
-    eWayBillNumber: '271049283719',
-    eWayBillValidUntilUtc: new Date(Date.now() + 2 * 86_400_000).toISOString(),
-    transporterGstin: '27AAACG1234A1Z5',
-    vehicleNumber: 'MH-14-BT-4590',
-    distanceInKm: 140,
-  },
-  {
-    id: 'gst-2',
-    documentNumber: 'INV-2026-0083',
-    documentDateUtc: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    returnPeriod: '042026',
-    section: Gstr1Section.B2B_4A,
-    counterpartyGstin: '22AAACJ5432B1Z8',
-    counterpartyLegalName: 'Jindal Steel & Power Ltd',
-    placeOfSupplyStateCode: '22',
-    isReverseChargeApplicable: false,
-    taxableAmountInPaise: 58_00_000_00,
-    gstRatePercent: 18,
-    igstAmountInPaise: 10_44_000_00,
-    cgstAmountInPaise: 0,
-    sgstAmountInPaise: 0,
-    cessAmountInPaise: 0,
-    totalInvoiceValueInPaise: 68_44_000_00,
-    eInvoiceStatus: EInvoiceStatus.Generated,
-    irnHash: '7a3c9e12089fba71823d018276f5a3b90284e7f8190283b749201948271a9c3d',
-    eInvoiceAckNo: '1120260400832',
-    eInvoiceAckDateUtc: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    eWayBillStatus: EWayBillStatus.Active,
-    eWayBillNumber: '221049284820',
-    eWayBillValidUntilUtc: new Date(Date.now() + 4 * 86_400_000).toISOString(),
-    transporterGstin: '22AAACT9988C1Z1',
-    vehicleNumber: 'CG-04-ME-1122',
-    distanceInKm: 850,
-  },
-  {
-    id: 'gst-3',
-    documentNumber: 'INV-2026-0084',
-    documentDateUtc: new Date(Date.now() - 1 * 86_400_000).toISOString(),
-    returnPeriod: '042026',
-    section: Gstr1Section.B2B_4A,
-    counterpartyGstin: '27AAACB9876C1Z4',
-    counterpartyLegalName: 'Bharat Forge Industrial',
-    placeOfSupplyStateCode: '27',
-    isReverseChargeApplicable: false,
-    taxableAmountInPaise: 22_50_000_00,
-    gstRatePercent: 18,
-    igstAmountInPaise: 0,
-    cgstAmountInPaise: 2_02_500_00,
-    sgstAmountInPaise: 2_02_500_00,
-    cessAmountInPaise: 0,
-    totalInvoiceValueInPaise: 26_55_000_00,
-    eInvoiceStatus: EInvoiceStatus.PendingGeneration,
-    eWayBillStatus: EWayBillStatus.PendingGeneration,
-  },
-  {
-    id: 'gst-4',
-    documentNumber: 'CDN-2026-0004',
-    documentDateUtc: new Date().toISOString(),
-    returnPeriod: '042026',
-    section: Gstr1Section.CDNR_9B,
-    counterpartyGstin: '27AABCT2345A1Z2',
-    counterpartyLegalName: 'Tata Motors Powertrain Ltd',
-    placeOfSupplyStateCode: '27',
-    isReverseChargeApplicable: false,
-    taxableAmountInPaise: -2_00_000_00,
-    gstRatePercent: 18,
-    igstAmountInPaise: 0,
-    cgstAmountInPaise: -18_000_00,
-    sgstAmountInPaise: -18_000_00,
-    cessAmountInPaise: 0,
-    totalInvoiceValueInPaise: -2_36_000_00,
-    eInvoiceStatus: EInvoiceStatus.NotApplicable,
-    eWayBillStatus: EWayBillStatus.NotApplicable,
-  },
-];
 
 /** GST return periods (MMYYYY) for the last `count` months by the Indian calendar, newest first. */
 export function recentReturnPeriods(
@@ -844,7 +742,7 @@ export class GstComplianceComponent {
   readonly loadError = signal<string | null>(null);
   readonly activeTab = signal<'register' | 'gstr1' | 'gstr3b'>('register');
 
-  readonly records = signal<GstAuditRegisterDto[]>(environment.useMockData ? MOCK_GST_RECORDS : []);
+  readonly records = signal<GstAuditRegisterDto[]>([]);
 
   readonly gstr1 = computed<Gstr1SummaryDto>(() => {
     const list = this.records();
@@ -934,7 +832,6 @@ export class GstComplianceComponent {
    * in first, so every issued invoice can have its e-invoice and e-way bill generated.
    */
   async loadGstRecords(): Promise<void> {
-    if (environment.useMockData) return;
     const period = this.selectedPeriod();
     this.loading.set(true);
     this.loadError.set(null);
@@ -1045,7 +942,7 @@ export class GstComplianceComponent {
   }
 
   generateEInvoice(doc: GstAuditRegisterDto): void {
-    if (!environment.useMockData && doc.id) {
+    if (doc.id) {
       this.gstService.generateEInvoice(doc.id).subscribe({
         next: (updated) => {
           this.updateRecordInState(updated);

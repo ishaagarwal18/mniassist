@@ -12,8 +12,6 @@ import {
 import { PermissionService } from '@abp/ng.core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { of, switchMap } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import type { NavItem } from '../../layout/nav.model';
 import type { PlanService } from '../services/plan.service';
 import type { CurrentUserService } from '../services/current-user.service';
@@ -21,10 +19,7 @@ import type { CurrentUserService } from '../services/current-user.service';
 /**
  * Checks if a policy is granted synchronously as a boolean.
  *
- * Has two escape hatches so the app never hides everything by accident:
- *  - on seeded data there is no application configuration to read grants from, so
- *    every policy reads as granted;
- *  - an empty or missing name is always granted (a nav item with no `permission`).
+ * An empty or missing name is always granted (a nav item with no `permission`).
  *
  * The name may be an OR list — `"AutoReach.Billing || AutoReach.Analytics"` — which
  * matches ABP's own `getGrantedPolicy` behaviour.
@@ -33,7 +28,7 @@ export function checkPolicy(
   name: string | undefined | null,
   permissions: PermissionService,
 ): boolean {
-  if (!name || environment.useMockData) {
+  if (!name) {
     return true;
   }
   return permissions.getGrantedPolicy(name);
@@ -46,7 +41,7 @@ export function grantedPolicy(
   name: string | undefined | null,
   permissions: PermissionService,
 ): Signal<boolean> {
-  if (!name || environment.useMockData) {
+  if (!name) {
     return computed(() => true);
   }
   return toSignal(permissions.getGrantedPolicy$(name), {
@@ -70,9 +65,6 @@ export function canAccessNavItem(
   if (account.isHostAdmin()) {
     return true;
   }
-
-  // 1. Host vs Tenant role segregation for ordinary accounts
-   const isHost = account.isHost();
   // if (isHost) {
   //   if (item.tenantOnly) {
   //     return false;
@@ -119,9 +111,7 @@ export class ArHasPermissionDirective {
 
   private readonly granted = toSignal(
     toObservable(this.name).pipe(
-      switchMap((name) =>
-        !name || environment.useMockData ? of(true) : this.permissions.getGrantedPolicy$(name),
-      ),
+      switchMap((name) => (!name ? of(true) : this.permissions.getGrantedPolicy$(name))),
     ),
     { initialValue: false },
   );

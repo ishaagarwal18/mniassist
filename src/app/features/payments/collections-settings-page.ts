@@ -2,8 +2,6 @@ import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ToastService } from '../../core/ui/toast.service';
 import { CockpitOriginService } from '../../layout/cockpit-origin.service';
@@ -194,7 +192,6 @@ export class ArCollectionsSettingsPage {
 
   private async load(): Promise<void> {
     try {
-      if (environment.useMockData) return;
       const [s, list] = await Promise.all([
         firstValueFrom(this.api.getSettings()),
         firstValueFrom(
@@ -233,16 +230,14 @@ export class ArCollectionsSettingsPage {
     this.busy.set('settings');
     this.settingsError.set(null);
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(
-          this.api.updateSettings({
-            enabled: this.enabled(),
-            templateId: this.templateId() || null,
-            creditDays: days,
-            includePayLink: this.payLink(),
-          }),
-        );
-      }
+      await firstValueFrom(
+        this.api.updateSettings({
+          enabled: this.enabled(),
+          templateId: this.templateId() || null,
+          creditDays: days,
+          includePayLink: this.payLink(),
+        }),
+      );
       this.toasts.success(
         this.enabled()
           ? 'Reminders are on. The next pass runs within 6 hours.'

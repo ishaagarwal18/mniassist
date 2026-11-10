@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { ArTopbar } from '../../layout/topbar';
@@ -12,72 +11,25 @@ import {
   SaveConsumableRuleInput,
   SparesService,
 } from '../../proxy/pipeline/spares.service';
-import { ArButton, ArCard, ArChip, ArIcon } from '../../ui';
-import { ArGrid } from '../../ui/grid';
-import { GridModule } from '@syncfusion/ej2-angular-grids';
-
-const SEED_RULES: ConsumableRuleDto[] = [
-  {
-    id: 'r1',
-    assetLabel: 'Atlas Copco GA 37',
-    partNumber: 'AF-2901',
-    description: 'Heavy duty air filter cartridge',
-    quantityPerMachine: 2,
-    intervalDays: 120,
-    leadDays: 14,
-    isActive: true,
-    machineCount: 4,
-  },
-  {
-    id: 'r2',
-    assetLabel: 'Atlas Copco GA 37',
-    partNumber: 'OF-1104',
-    description: 'Spin-on oil separator element',
-    quantityPerMachine: 1,
-    intervalDays: 180,
-    leadDays: 21,
-    isActive: true,
-    machineCount: 4,
-  },
-  {
-    id: 'r3',
-    assetLabel: 'Forbes Marshall Spirax 500',
-    partNumber: 'GK-882',
-    description: 'PTFE valve seat & gasket kit',
-    quantityPerMachine: 1,
-    intervalDays: 90,
-    leadDays: 7,
-    isActive: true,
-    machineCount: 2,
-  },
-  {
-    id: 'r4',
-    assetLabel: 'Siemens Sinamics G120',
-    partNumber: 'FAN-G120-7KW',
-    description: 'Cooling fan assembly 230V',
-    quantityPerMachine: 1,
-    intervalDays: 365,
-    leadDays: 30,
-    isActive: true,
-    machineCount: 7,
-  },
-];
+import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
+import { readApiError } from '../../core/util/api-error';
 
 @Component({
   selector: 'ar-spares-rules-page',
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArCard, ArChip],
+  imports: [CommonModule, FormsModule, ArTopbar, ArBanner, ArButton, ArCard, ArChip],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
       title="Spare Part Replacement Rules"
       subtitle="Scheduled consumable wear-part intervals by machinery make and model"
     >
-      <button ar-button type="button" variant="ghost" (click)="back()">
-        Back to Spares Due
-      </button>
+      <button ar-button type="button" variant="ghost" (click)="back()">Back to Spares Due</button>
     </ar-topbar>
 
     <div class="page-container ar-scroll">
+      @if (loadError(); as e) {
+        <ar-banner tone="bad">{{ e }}</ar-banner>
+      }
       <!-- Overview KPI Cards -->
       <section class="kpi-grid">
         <ar-card>
@@ -110,7 +62,10 @@ const SEED_RULES: ConsumableRuleDto[] = [
         } @else if (rules().length === 0) {
           <div class="empty-state">
             <p>No replacement rules defined yet.</p>
-            <span class="empty-hint">Add a rule below to match machines on the installed base to required spare parts.</span>
+            <span class="empty-hint"
+              >Add a rule below to match machines on the installed base to required spare
+              parts.</span
+            >
           </div>
         } @else {
           <div class="table-responsive">
@@ -174,11 +129,16 @@ const SEED_RULES: ConsumableRuleDto[] = [
       </ar-card>
 
       <!-- Add / Edit Rule Card -->
-      <ar-card [heading]="editingRuleId() ? 'Edit Spare Part Replacement Rule' : 'Add New Spare Part Rule'" id="rule-form-card">
+      <ar-card
+        [heading]="editingRuleId() ? 'Edit Spare Part Replacement Rule' : 'Add New Spare Part Rule'"
+        id="rule-form-card"
+      >
         <form class="rule-form" (submit)="$event.preventDefault(); saveRule()">
           <div class="form-grid">
             <label class="ar-field">
-              <span class="ar-field__label">Machine Make <span class="ar-field__opt">(optional)</span></span>
+              <span class="ar-field__label"
+                >Machine Make <span class="ar-field__opt">(optional)</span></span
+              >
               <input
                 class="ar-field__input"
                 placeholder="e.g. Atlas Copco"
@@ -232,7 +192,9 @@ const SEED_RULES: ConsumableRuleDto[] = [
             </label>
 
             <label class="ar-field">
-              <span class="ar-field__label">Replacement Interval (Days) <span class="required">*</span></span>
+              <span class="ar-field__label"
+                >Replacement Interval (Days) <span class="required">*</span></span
+              >
               <input
                 type="number"
                 min="1"
@@ -261,12 +223,7 @@ const SEED_RULES: ConsumableRuleDto[] = [
 
           <div class="form-actions">
             @if (editingRuleId()) {
-              <button
-                ar-button
-                type="button"
-                variant="ghost"
-                (click)="cancelEdit()"
-              >
+              <button ar-button type="button" variant="ghost" (click)="cancelEdit()">
                 Cancel Edit
               </button>
             }
@@ -274,9 +231,17 @@ const SEED_RULES: ConsumableRuleDto[] = [
               ar-button
               type="submit"
               variant="primary"
-              [disabled]="busy() || !draftModel.trim() || !draftPartNumber.trim() || !draftDescription.trim()"
+              [disabled]="
+                busy() || !draftModel.trim() || !draftPartNumber.trim() || !draftDescription.trim()
+              "
             >
-              {{ busy() ? 'Saving…' : (editingRuleId() ? 'Update Replacement Rule' : 'Add Replacement Rule') }}
+              {{
+                busy()
+                  ? 'Saving…'
+                  : editingRuleId()
+                    ? 'Update Replacement Rule'
+                    : 'Add Replacement Rule'
+              }}
             </button>
           </div>
         </form>
@@ -407,6 +372,7 @@ export class ArSparesRulesPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly loadError = signal<string | null>(null);
   protected readonly editingRuleId = signal<string | null>(null);
 
   protected draftMake = '';
@@ -429,14 +395,11 @@ export class ArSparesRulesPage implements OnInit {
   async load(): Promise<void> {
     this.loading.set(true);
     try {
-      if (environment.useMockData) {
-        this.rules.set(SEED_RULES);
-      } else {
-        const res = await firstValueFrom(this.api.getRules());
-        this.rules.set(res || []);
-      }
-    } catch {
-      this.rules.set(SEED_RULES);
+      const res = await firstValueFrom(this.api.getRules());
+      this.rules.set(res || []);
+    } catch (e: unknown) {
+      this.rules.set([]);
+      this.loadError.set(readApiError(e, 'The replacement rules could not be loaded.'));
     } finally {
       this.loading.set(false);
     }
@@ -467,7 +430,9 @@ export class ArSparesRulesPage implements OnInit {
     this.draftLeadTime = rule.leadDays;
 
     setTimeout(() => {
-      document.getElementById('rule-form-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document
+        .getElementById('rule-form-card')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 
@@ -486,7 +451,12 @@ export class ArSparesRulesPage implements OnInit {
   }
 
   async saveRule(): Promise<void> {
-    if (!this.draftModel.trim() || !this.draftPartNumber.trim() || !this.draftDescription.trim() || this.busy()) {
+    if (
+      !this.draftModel.trim() ||
+      !this.draftPartNumber.trim() ||
+      !this.draftDescription.trim() ||
+      this.busy()
+    ) {
       return;
     }
 
@@ -512,57 +482,28 @@ export class ArSparesRulesPage implements OnInit {
     try {
       if (editId) {
         // Updating existing rule
-        if (environment.useMockData) {
-          this.rules.update((list) =>
-            list.map((r) =>
-              r.id === editId
-                ? {
-                    ...r,
-                    assetLabel: input.assetLabel,
-                    partNumber: input.partNumber,
-                    description: input.description ?? '',
-                    quantityPerMachine: input.quantityPerMachine,
-                    intervalDays: input.intervalDays,
-                    leadDays: input.leadDays,
-                  }
-                : r,
-            ),
-          );
-        } else {
-          const updated = await firstValueFrom(this.api.updateRule(editId, input));
-          if (updated) {
-            this.rules.update((list) => list.map((r) => (r.id === editId ? updated : r)));
-          }
+
+        const updated = await firstValueFrom(this.api.updateRule(editId, input));
+        if (updated) {
+          this.rules.update((list) => list.map((r) => (r.id === editId ? updated : r)));
         }
         this.toasts.success(`Rule for ${input.partNumber} updated.`);
         this.editingRuleId.set(null);
         this.resetForm();
       } else {
         // Creating new rule
-        if (environment.useMockData) {
-          const created: ConsumableRuleDto = {
-            id: 'r-' + Date.now(),
-            assetLabel: input.assetLabel,
-            partNumber: input.partNumber,
-            description: input.description ?? '',
-            quantityPerMachine: input.quantityPerMachine,
-            intervalDays: input.intervalDays,
-            leadDays: input.leadDays,
-            isActive: true,
-            machineCount: 1,
-          };
+
+        const created = await firstValueFrom(this.api.createRule(input));
+        if (created) {
           this.rules.update((list) => [...list, created]);
-        } else {
-          const created = await firstValueFrom(this.api.createRule(input));
-          if (created) {
-            this.rules.update((list) => [...list, created]);
-          }
         }
         this.toasts.success(`Rule for ${input.partNumber} added.`);
         this.resetForm();
       }
     } catch {
-      this.error.set(editId ? 'Failed to update replacement rule.' : 'Failed to add replacement rule.');
+      this.error.set(
+        editId ? 'Failed to update replacement rule.' : 'Failed to add replacement rule.',
+      );
     } finally {
       this.busy.set(false);
     }
@@ -576,9 +517,7 @@ export class ArSparesRulesPage implements OnInit {
     if (!ok) return;
 
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(this.api.deleteRule(rule.id));
-      }
+      await firstValueFrom(this.api.deleteRule(rule.id));
       this.rules.update((list) => list.filter((r) => r.id !== rule.id));
       this.toasts.success('Rule deleted.');
     } catch {

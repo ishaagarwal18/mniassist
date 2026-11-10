@@ -20,7 +20,6 @@ import {
 import { TenderAlertDto, TenderFeedService } from '../../proxy/projects/tender-feed.service';
 import { ArBanner, ArButton, ArChip } from '../../ui';
 import { ArGrid } from '../../ui/grid';
-import { environment } from '../../../environments/environment';
 import {
   OUTCOME_TEXT,
   SECTORS,
@@ -51,7 +50,6 @@ export class ArProjectsPage {
   private readonly permissions = inject(PermissionService);
   private readonly tenders = inject(TenderFeedService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly canCreate = grantedPolicy('AutoReach.Projects.Create', this.permissions);
   protected readonly canUpdate = grantedPolicy('AutoReach.Projects.Update', this.permissions);
   protected readonly canManage = grantedPolicy('AutoReach.Projects.Manage', this.permissions);
@@ -115,7 +113,6 @@ export class ArProjectsPage {
   }
 
   protected async load(): Promise<void> {
-    if (this.mock) return;
     this.loading.set(true);
     try {
       if (this.view() === 'board') {

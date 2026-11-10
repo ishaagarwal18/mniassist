@@ -38,7 +38,9 @@ export function pageCount(total: number): number {
 }
 
 /** The query kept in the address (`sq`, `ss`, `sd`, `so`, `sp`), so coming back from editing a supplier finds the same page. */
-export function readSupplierQuery(params: Record<string, string | null | undefined>): SupplierQuery {
+export function readSupplierQuery(
+  params: Record<string, string | null | undefined>,
+): SupplierQuery {
   const int = (v: string | null | undefined, max: number) => {
     const n = Number(v);
     return Number.isInteger(n) && n >= 0 && n <= max ? n : 0;
@@ -62,7 +64,7 @@ export function supplierQueryParams(q: SupplierQuery): Record<string, string | n
   };
 }
 
-/** The server's rules, for sample data: search, status, dues, order and paging. */
+/** The server's rules, applied to a list in the browser: search, status, dues, order and paging. */
 export function localSupplierPage(all: SupplierListItemDto[], q: SupplierQuery): SupplierListDto {
   const words = q.filter.toLowerCase().split(/\s+/).filter(Boolean);
   const searched = all.filter((s) => {

@@ -8,7 +8,7 @@ import { CurrentUserService } from '../services/current-user.service';
  *
  * Sign-in is the resource-owner password grant driven by the in-app `/login`
  * screen (the API host issues its own tokens), not an external redirect flow — so
- * both mock and real mode gate on the same thing: is there a signed-in user? An
+ * the gate is one question: is there a signed-in user? An
  * unauthenticated visitor is sent to `/login` rather than shown the app chrome.
  */
 export const appAuthGuard: CanActivateFn = () => {

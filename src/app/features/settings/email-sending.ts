@@ -1,7 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import {
   EmailChannelDto,
@@ -12,36 +10,6 @@ import { EmailOAuthProvider, EmailOAuthService } from '../../proxy/email/email-o
 import { ArBanner, ArButton } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ConfirmService } from '../../core/ui/confirm.service';
-
-const SEED: EmailChannelDto = {
-  id: 'demo',
-  fromName: 'Meridian Automation',
-  fromAddress: 'sales@meridian.example',
-  replyToAddress: null,
-  isSenderConfigured: true,
-  usesCustomSmtp: false,
-  smtpHost: null,
-  smtpPort: null,
-  smtpImplicitTls: false,
-  smtpUsername: null,
-  smtpHasPassword: false,
-  unsubscribeProblem: null,
-  trackOpens: true,
-  trackingProblem: null,
-  hasImap: false,
-  imapHost: null,
-  imapPort: null,
-  imapImplicitTls: true,
-  imapUsername: null,
-  imapHasPassword: false,
-  imapFolder: null,
-  imapOAuthProvider: EmailOAuthProvider.None,
-  googleOAuthAvailable: true,
-  microsoftOAuthAvailable: true,
-  syncEnabled: false,
-  lastSyncedAtUtc: null,
-  lastSyncError: null,
-};
 
 type Route = 'shared' | 'own';
 
@@ -61,7 +29,6 @@ export class ArEmailSending {
   private readonly dialogs = inject(ConfirmService);
   private readonly api = inject(EmailChannelService);
   private readonly oauth = inject(EmailOAuthService);
-  private readonly mock = environment.useMockData;
 
   protected readonly OAuth = EmailOAuthProvider;
   protected readonly connectingOAuth = signal<EmailOAuthProvider | null>(null);
@@ -172,26 +139,6 @@ export class ArEmailSending {
     this.error.set(null);
     this.notice.set(null);
     try {
-      if (this.mock) {
-        await new Promise((r) => setTimeout(r, 600));
-        this.notice.set(
-          provider === EmailOAuthProvider.Google
-            ? 'Connected to Gmail (mock mode).'
-            : 'Connected to Microsoft 365 (mock mode).',
-        );
-        this.channel.update((c) =>
-          c
-            ? {
-                ...c,
-                hasImap: true,
-                imapOAuthProvider: provider,
-                syncEnabled: true,
-                lastSyncedAtUtc: new Date().toISOString(),
-              }
-            : c,
-        );
-        return;
-      }
       const result = await firstValueFrom(this.oauth.start(provider));
       window.location.href = result.authorizeUrl;
     } catch (e) {
@@ -209,7 +156,7 @@ export class ArEmailSending {
   private async load(): Promise<void> {
     this.loading.set(true);
     try {
-      this.apply(this.mock ? SEED : await firstValueFrom(this.api.getOrCreate()));
+      this.apply(await firstValueFrom(this.api.getOrCreate()));
     } catch (e) {
       this.error.set(this.message(e, 'The email settings could not be loaded.'));
     } finally {
@@ -247,11 +194,7 @@ export class ArEmailSending {
     if (this.savingTracking()) return;
     this.begin(this.savingTracking);
     try {
-      this.apply(
-        this.mock
-          ? { ...(this.channel() ?? SEED), trackOpens: on }
-          : await firstValueFrom(this.api.setOpenTracking(on)),
-      );
+      this.apply(await firstValueFrom(this.api.setOpenTracking(on)));
       this.notice.set(
         on
           ? 'Open tracking is on for new emails.'
@@ -277,22 +220,7 @@ export class ArEmailSending {
         password: this.imapPassword() || null,
         folder: this.imapFolder().trim() || null,
       };
-      this.apply(
-        this.mock
-          ? {
-              ...(this.channel() ?? SEED),
-              hasImap: true,
-              syncEnabled: true,
-              imapHost: input.host,
-              imapPort: input.port,
-              imapImplicitTls: input.implicitTls,
-              imapUsername: input.username,
-              imapHasPassword: true,
-              imapFolder: input.folder ?? 'INBOX',
-              imapOAuthProvider: EmailOAuthProvider.None,
-            }
-          : await firstValueFrom(this.api.useImapSync(input)),
-      );
+      this.apply(await firstValueFrom(this.api.useImapSync(input)));
       this.notice.set('Connected. Replies that arrive from now on are added to your inbox.');
     } catch (e) {
       this.error.set(this.message(e, 'The mailbox could not be connected.'));
@@ -315,26 +243,12 @@ export class ArEmailSending {
       return;
     this.begin(this.savingImap);
     try {
-      const base = this.channel() ?? SEED;
       const next =
         action === 'pause'
-          ? this.mock
-            ? { ...base, syncEnabled: false }
-            : await firstValueFrom(this.api.pauseSync())
+          ? await firstValueFrom(this.api.pauseSync())
           : action === 'resume'
-            ? this.mock
-              ? { ...base, syncEnabled: true, lastSyncError: null }
-              : await firstValueFrom(this.api.resumeSync())
-            : this.mock
-              ? {
-                  ...base,
-                  hasImap: false,
-                  syncEnabled: false,
-                  imapHost: null,
-                  imapHasPassword: false,
-                  imapOAuthProvider: EmailOAuthProvider.None,
-                }
-              : await firstValueFrom(this.api.removeImap());
+            ? await firstValueFrom(this.api.resumeSync())
+            : await firstValueFrom(this.api.removeImap());
       this.apply(next);
       this.notice.set(
         action === 'pause'
@@ -355,18 +269,9 @@ export class ArEmailSending {
     this.begin(this.syncing);
     this.syncResult.set(null);
     try {
-      const result = this.mock
-        ? {
-            succeeded: true,
-            imported: 0,
-            skipped: 0,
-            bounces: 0,
-            complaints: 0,
-            moreWaiting: false,
-          }
-        : await firstValueFrom(this.api.syncNow());
+      const result = await firstValueFrom(this.api.syncNow());
       this.syncResult.set(result);
-      if (!this.mock) this.apply(await firstValueFrom(this.api.getOrCreate()));
+      this.apply(await firstValueFrom(this.api.getOrCreate()));
     } catch (e) {
       this.error.set(this.message(e, 'The mailbox could not be read.'));
     } finally {
@@ -401,11 +306,7 @@ export class ArEmailSending {
         fromAddress: this.fromAddress().trim(),
         replyToAddress: this.replyTo().trim() || null,
       };
-      this.apply(
-        this.mock
-          ? { ...(this.channel() ?? SEED), ...input, isSenderConfigured: true }
-          : await firstValueFrom(this.api.updateSenderProfile(input)),
-      );
+      this.apply(await firstValueFrom(this.api.updateSenderProfile(input)));
       this.notice.set('Sender saved.');
     } catch (e) {
       this.error.set(this.message(e, 'The sender could not be saved.'));
@@ -420,14 +321,7 @@ export class ArEmailSending {
     try {
       let next: EmailChannelDto;
       if (this.route() === 'shared') {
-        next = this.mock
-          ? {
-              ...(this.channel() ?? SEED),
-              usesCustomSmtp: false,
-              smtpHost: null,
-              smtpHasPassword: false,
-            }
-          : await firstValueFrom(this.api.useSharedRelay());
+        next = await firstValueFrom(this.api.useSharedRelay());
       } else {
         const input = {
           host: this.host().trim(),
@@ -436,15 +330,7 @@ export class ArEmailSending {
           username: this.username().trim() || null,
           password: this.password() || null,
         };
-        next = this.mock
-          ? {
-              ...(this.channel() ?? SEED),
-              usesCustomSmtp: true,
-              smtpHost: input.host,
-              smtpPort: input.port,
-              smtpHasPassword: !!input.password,
-            }
-          : await firstValueFrom(this.api.useCustomSmtp(input));
+        next = await firstValueFrom(this.api.useCustomSmtp(input));
       }
       this.apply(next);
       this.notice.set(
@@ -463,7 +349,7 @@ export class ArEmailSending {
     if (!this.canTest() || this.testing()) return;
     this.begin(this.testing);
     try {
-      if (!this.mock) await firstValueFrom(this.api.sendTestEmail(this.testTo().trim()));
+      await firstValueFrom(this.api.sendTestEmail(this.testTo().trim()));
       this.notice.set(`Test email sent to ${this.testTo().trim()}.`);
     } catch (e) {
       this.error.set(this.message(e, 'The test email could not be sent.'));

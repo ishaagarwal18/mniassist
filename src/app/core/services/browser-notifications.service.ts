@@ -1,7 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { WebPushScope } from '../../proxy/notifications/web-push-scope.enum';
 import { WebPushService } from '../../proxy/notifications/web-push.service';
 
@@ -68,7 +66,7 @@ export class BrowserNotifications {
   readonly serverEnabled = signal(true);
 
   async refresh(): Promise<void> {
-    if (!this.supported || environment.useMockData) return;
+    if (!this.supported) return;
     this.permission.set(Notification.permission);
     const config = await firstValueFrom(this.api.getConfig());
     this.serverEnabled.set(config.enabled);

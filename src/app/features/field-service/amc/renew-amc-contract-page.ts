@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -20,11 +19,13 @@ import { ArButton, ArCard } from '../../../ui';
   template: `
     <ar-topbar
       title="Renew Equipment AMC Contract"
-      [subtitle]="contract() ? (contract()!.contractNumber + ' · ' + contract()!.customerName) : 'Contract Renewal'"
+      [subtitle]="
+        contract()
+          ? contract()!.contractNumber + ' · ' + contract()!.customerName
+          : 'Contract Renewal'
+      "
     >
-      <button ar-button="ghost" (click)="cancel()">
-        Back to AMC Contracts
-      </button>
+      <button ar-button="ghost" (click)="cancel()">Back to AMC Contracts</button>
     </ar-topbar>
 
     <div class="page-container ar-scroll">
@@ -49,7 +50,9 @@ import { ArButton, ArCard } from '../../../ui';
         <form class="renew-form" (submit)="$event.preventDefault(); submit()">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">New Renewal Start Date <span class="required">*</span></label>
+              <label class="form-label"
+                >New Renewal Start Date <span class="required">*</span></label
+              >
               <input
                 type="date"
                 class="ar-field__input"
@@ -69,7 +72,9 @@ import { ArButton, ArCard } from '../../../ui';
               />
             </div>
             <div class="form-group">
-              <label class="form-label">Renewal Contract Value (INR) <span class="required">*</span></label>
+              <label class="form-label"
+                >Renewal Contract Value (INR) <span class="required">*</span></label
+              >
               <input
                 type="number"
                 min="0"
@@ -82,8 +87,14 @@ import { ArButton, ArCard } from '../../../ui';
             </div>
             <div class="form-group">
               <label class="form-label">Contract Scope</label>
-              <select class="ar-field__input" [(ngModel)]="renewForm.newContractType" name="contractType">
-                <option [ngValue]="AmcContractType.Comprehensive">Comprehensive (With Spares)</option>
+              <select
+                class="ar-field__input"
+                [(ngModel)]="renewForm.newContractType"
+                name="contractType"
+              >
+                <option [ngValue]="AmcContractType.Comprehensive">
+                  Comprehensive (With Spares)
+                </option>
                 <option [ngValue]="AmcContractType.NonComprehensive">Non-Comprehensive</option>
                 <option [ngValue]="AmcContractType.PreventiveOnly">Preventive Only</option>
                 <option [ngValue]="AmcContractType.OnDemand">On Demand SLA</option>
@@ -96,9 +107,7 @@ import { ArButton, ArCard } from '../../../ui';
           }
 
           <div class="form-actions">
-            <button ar-button="ghost" type="button" (click)="cancel()">
-              Cancel
-            </button>
+            <button ar-button="ghost" type="button" (click)="cancel()">Cancel</button>
             <button
               ar-button="primary"
               type="submit"
@@ -198,7 +207,7 @@ export class ArRenewAmcContractPage implements OnInit {
     const id = this.route.snapshot.paramMap.get('id') || '';
     this.contractId.set(id);
 
-    if (id && !environment.useMockData) {
+    if (id) {
       this.amcService.get(id).subscribe({
         next: (c) => {
           this.contract.set(c);
@@ -214,17 +223,6 @@ export class ArRenewAmcContractPage implements OnInit {
         error: () => {},
       });
     } else {
-      // Mock contract header
-      this.contract.set({
-        id,
-        contractNumber: 'AMC-2026-0041',
-        customerName: 'Tata Motors Powertrain Ltd',
-        equipmentSerialNumber: 'PR-400T-2024-09',
-        equipmentModel: 'Hydraulic Stamping Press 400 Ton',
-        endDateUtc: new Date(Date.now() + 185 * 86_400_000).toISOString(),
-        contractValueInPaise: 450_000_00,
-        contractType: AmcContractType.Comprehensive,
-      } as AmcContractDto);
     }
   }
 
@@ -238,24 +236,16 @@ export class ArRenewAmcContractPage implements OnInit {
     this.busy.set(true);
     this.error.set(null);
 
-    if (!environment.useMockData) {
-      this.amcService.renew(id, this.renewForm).subscribe({
-        next: () => {
-          this.busy.set(false);
-          this.toasts.success('Contract renewed successfully.');
-          void this.router.navigateByUrl('/field-service/amc');
-        },
-        error: (err: any) => {
-          this.busy.set(false);
-          this.error.set(err?.message || 'Failed to renew contract.');
-        },
-      });
-    } else {
-      setTimeout(() => {
+    this.amcService.renew(id, this.renewForm).subscribe({
+      next: () => {
         this.busy.set(false);
         this.toasts.success('Contract renewed successfully.');
         void this.router.navigateByUrl('/field-service/amc');
-      }, 300);
-    }
+      },
+      error: (err: any) => {
+        this.busy.set(false);
+        this.error.set(err?.message || 'Failed to renew contract.');
+      },
+    });
   }
 }

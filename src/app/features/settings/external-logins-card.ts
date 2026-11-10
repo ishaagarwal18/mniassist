@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { AccountSwitcher } from '../../core/auth/account-switch';
 import { beginExternalLogin } from '../../core/auth/external-login';
 import { ConfirmService } from '../../core/ui/confirm.service';
@@ -121,10 +119,9 @@ export class ArExternalLoginsCard {
   private readonly dialogs = inject(ConfirmService);
   private readonly toasts = inject(ToastService);
   protected readonly switcher = inject(AccountSwitcher);
-  private readonly mock = environment.useMockData;
 
   private readonly providersResource = rxResource({
-    params: () => (this.mock ? undefined : {}),
+    params: () => ({}),
     stream: () => this.api.getProviders(),
     defaultValue: { items: [] as ExternalLoginProviderDto[] },
   });
@@ -134,7 +131,7 @@ export class ArExternalLoginsCard {
 
   private readonly tick = signal(0);
   private readonly linksResource = rxResource({
-    params: () => (this.mock || !this.providers().length ? undefined : { t: this.tick() }),
+    params: () => (!this.providers().length ? undefined : { t: this.tick() }),
     stream: () => this.api.getMyLinks(),
     defaultValue: { items: [] as ExternalLoginLinkDto[] },
   });

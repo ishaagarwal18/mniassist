@@ -2,8 +2,6 @@ import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ToastService } from '../../core/ui/toast.service';
 import { CockpitOriginService } from '../../layout/cockpit-origin.service';
@@ -333,15 +331,7 @@ export class ArReorderSettingsPage {
 
   private async load(): Promise<void> {
     try {
-      const s = environment.useMockData
-        ? {
-            enabled: true,
-            linkLifetimeDays: 7,
-            limitedStockBelow: 5,
-            included: true,
-            showsStock: true,
-          }
-        : await firstValueFrom(this.api.getSettings());
+      const s = await firstValueFrom(this.api.getSettings());
       this.settings.set(s);
       this.form.set({ ...s });
       this.minRupees.set(s.minimumOrderInPaise ? String(s.minimumOrderInPaise / 100) : '');
@@ -350,7 +340,7 @@ export class ArReorderSettingsPage {
     } finally {
       this.loading.set(false);
     }
-    if (environment.useMockData) return;
+
     try {
       const all = await firstValueFrom(
         this.templatesApi.getList({ status: TemplateStatus.Approved, maxResultCount: 200 }),
@@ -396,7 +386,7 @@ export class ArReorderSettingsPage {
     this.error.set(null);
     try {
       const input = { ...f, minimumOrderInPaise: min };
-      if (!environment.useMockData) await firstValueFrom(this.api.updateSettings(input));
+      await firstValueFrom(this.api.updateSettings(input));
       this.toasts.success('Re-order portal settings saved.');
       this.back();
     } catch (e: unknown) {

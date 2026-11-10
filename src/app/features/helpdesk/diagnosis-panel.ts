@@ -11,7 +11,6 @@ import {
 import { FaultCheckRole } from '../../proxy/support/fault-code.service';
 import type { ServiceTicketDto } from '../../proxy/support/service-ticket.models';
 import { ArButton, ArCard, ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { ROLE_TEXT, SOURCE_TEXT } from './fault-code.logic';
 
 /**
@@ -31,7 +30,6 @@ export class ArDiagnosisPanel implements OnInit {
 
   private readonly api = inject(FaultDiagnosisService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly view = signal<EngineerDiagnosisDto | null>(null);
   protected readonly code = signal('');
   protected readonly photo = signal<string | null>(null);
@@ -43,7 +41,6 @@ export class ArDiagnosisPanel implements OnInit {
   protected readonly Role = FaultCheckRole;
 
   ngOnInit(): void {
-    if (this.mock) return;
     void this.run(() => this.api.get(this.ticket().id));
   }
 

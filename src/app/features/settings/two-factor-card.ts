@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
 import { settled } from '../../core/util/resource';
 import { ToastService } from '../../core/ui/toast.service';
@@ -331,19 +329,15 @@ const LOW_RECOVERY_CODES = 3;
 export class ArTwoFactorCard {
   private readonly api = inject(TwoFactorService);
   private readonly toast = inject(ToastService);
-  private readonly mock = environment.useMockData;
 
   private readonly tick = signal(0);
   private readonly resource = rxResource({
-    params: () => (this.mock ? undefined : { t: this.tick() }),
+    params: () => ({ t: this.tick() }),
     stream: () => this.api.getStatus(),
     defaultValue: OFF,
   });
 
-  private readonly mockStatus = signal<TwoFactorStatusDto>(OFF);
-  protected readonly status = computed(() =>
-    this.mock ? this.mockStatus() : settled(this.resource, OFF),
-  );
+  protected readonly status = computed(() => settled(this.resource, OFF));
   protected readonly lowOnCodes = computed(
     () => this.status().isEnabled && this.status().recoveryCodesLeft <= LOW_RECOVERY_CODES,
   );
@@ -377,13 +371,7 @@ export class ArTwoFactorCard {
     if (this.busy()) return;
     this.busy.set(true);
     try {
-      const s = this.mock
-        ? {
-            sharedKey: 'jbsw y3dp ehpk 3pxp',
-            authenticatorUri:
-              'otpauth://totp/MNI%20Assist:demo%40example.com?secret=JBSWY3DPEHPK3PXP&issuer=MNI%20Assist&digits=6',
-          }
-        : await firstValueFrom(this.api.startAuthenticatorSetup());
+      const s = await firstValueFrom(this.api.startAuthenticatorSetup());
       this.setup.set(s);
       this.open('setup');
     } catch (e) {
@@ -395,10 +383,7 @@ export class ArTwoFactorCard {
 
   protected async enable(): Promise<void> {
     await this.run(async () => {
-      const r = this.mock
-        ? { codes: Array.from({ length: 10 }, (_, i) => `demo${i}-code${i}`) }
-        : await firstValueFrom(this.api.enableAuthenticator({ code: this.code() }));
-      this.mockStatus.set({ isEnabled: true, recoveryCodesLeft: 10, hasPassword: true });
+      const r = await firstValueFrom(this.api.enableAuthenticator({ code: this.code() }));
       this.showCodes(r.codes);
       this.toast.success('Two-step verification is on.');
     });
@@ -406,9 +391,7 @@ export class ArTwoFactorCard {
 
   protected async regenerate(): Promise<void> {
     await this.run(async () => {
-      const r = this.mock
-        ? { codes: Array.from({ length: 10 }, (_, i) => `new${i}-code${i}`) }
-        : await firstValueFrom(this.api.regenerateRecoveryCodes({ code: this.code() }));
+      const r = await firstValueFrom(this.api.regenerateRecoveryCodes({ code: this.code() }));
       this.showCodes(r.codes);
       this.toast.success('New recovery codes made. The old ones no longer work.');
     });
@@ -416,14 +399,11 @@ export class ArTwoFactorCard {
 
   protected async disable(): Promise<void> {
     await this.run(async () => {
-      if (!this.mock) {
-        await firstValueFrom(
-          this.api.disable(
-            this.status().hasPassword ? { password: this.password() } : { code: this.code() },
-          ),
-        );
-      }
-      this.mockStatus.set(OFF);
+      await firstValueFrom(
+        this.api.disable(
+          this.status().hasPassword ? { password: this.password() } : { code: this.code() },
+        ),
+      );
       this.close();
       this.toast.success('Two-step verification is off.');
     });

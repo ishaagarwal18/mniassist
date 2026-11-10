@@ -12,8 +12,6 @@ import {
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { AccountSwitcher } from '../../core/auth/account-switch';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
@@ -56,7 +54,19 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
  */
 @Component({
   selector: 'ar-workspace-manage-dialog',
-  imports: [ArDialog, ArButton, ArBanner, ArChip, ArTabs, DatePipe, RouterLink, ArGrid, GridModule, ArDateInput, ArSelect],
+  imports: [
+    ArDialog,
+    ArButton,
+    ArBanner,
+    ArChip,
+    ArTabs,
+    DatePipe,
+    RouterLink,
+    ArGrid,
+    GridModule,
+    ArDateInput,
+    ArSelect,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-dialog
@@ -321,11 +331,7 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
               asked to choose their own at the next sign-in unless you untick that.
             </p>
             @if (users(); as list) {
-              <ejs-grid
-                arGrid="workspace-users"
-                [dataSource]="list"
-                aria-label="Workspace Users"
-              >
+              <ejs-grid arGrid="workspace-users" [dataSource]="list" aria-label="Workspace Users">
                 <e-columns>
                   <e-column field="userName" headerText="User" width="220">
                     <ng-template #template let-u>
@@ -349,7 +355,11 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
                       </div>
                     </ng-template>
                   </e-column>
-                  <e-column field="lastPasswordChangeTime" headerText="Password last changed" width="180">
+                  <e-column
+                    field="lastPasswordChangeTime"
+                    headerText="Password last changed"
+                    width="180"
+                  >
                     <ng-template #template let-u>
                       <span>
                         {{
@@ -379,14 +389,16 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
               @if (pwFor(); as u) {
                 <div class="wm__pw-card">
                   <div class="wm__pw-head">
-                    <h4 style="margin: 0; font-size: 14px;">Set new password for <strong>{{ u.name || u.userName }}</strong></h4>
-                    <button ar-button type="button" variant="ghost" (click)="pwFor.set(null)">Cancel</button>
+                    <h4 style="margin: 0; font-size: 14px;">
+                      Set new password for <strong>{{ u.name || u.userName }}</strong>
+                    </h4>
+                    <button ar-button type="button" variant="ghost" (click)="pwFor.set(null)">
+                      Cancel
+                    </button>
                   </div>
                   <div class="wm__pw">
                     <label class="fld">
-                      <span class="fld__k"
-                        >New password for {{ u.name || u.userName }}</span
-                      >
+                      <span class="fld__k">New password for {{ u.name || u.userName }}</span>
                       <input
                         class="ar-field__input"
                         type="password"
@@ -423,12 +435,7 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
                       >
                         {{ busy() ? 'Saving…' : 'Set password' }}
                       </button>
-                      <button
-                        ar-button
-                        type="button"
-                        variant="ghost"
-                        (click)="pwFor.set(null)"
-                      >
+                      <button ar-button type="button" variant="ghost" (click)="pwFor.set(null)">
                         Cancel
                       </button>
                     </div>
@@ -509,9 +516,13 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
                       <div>
                         <div class="wm__user ar-mono font-semibold">{{ i.number || 'Draft' }}</div>
                         @if (i.dueAtUtc && i.state === State.Issued) {
-                          <div class="wm__sub text-xs text-muted">Due {{ i.dueAtUtc | date: 'dd MMM yyyy' }}</div>
+                          <div class="wm__sub text-xs text-muted">
+                            Due {{ i.dueAtUtc | date: 'dd MMM yyyy' }}
+                          </div>
                         } @else if (i.paidAtUtc) {
-                          <div class="wm__sub text-xs text-muted">Paid {{ i.paidAtUtc | date: 'dd MMM yyyy' }}</div>
+                          <div class="wm__sub text-xs text-muted">
+                            Paid {{ i.paidAtUtc | date: 'dd MMM yyyy' }}
+                          </div>
                         }
                       </div>
                     </ng-template>
@@ -838,12 +849,12 @@ export class ArWorkspaceManageDialog {
     });
     // The users list loads the first time its tab is opened.
     effect(() => {
-      if (this.tab() !== 'Users' || this.users() !== null || environment.useMockData) return;
+      if (this.tab() !== 'Users' || this.users() !== null) return;
       untracked(() => void this.loadUsers());
     });
     // So do the invoices.
     effect(() => {
-      if (this.tab() !== 'Invoices' || this.invoices() !== null || environment.useMockData) return;
+      if (this.tab() !== 'Invoices' || this.invoices() !== null) return;
       untracked(() => void this.loadInvoices());
     });
   }
@@ -1004,12 +1015,6 @@ export class ArWorkspaceManageDialog {
   }
 
   private async load(id: string): Promise<void> {
-    if (environment.useMockData) {
-      this.error.set(
-        'Workspace management needs the API — it is not available in the standalone build.',
-      );
-      return;
-    }
     try {
       this.show(await firstValueFrom(this.api.get(id)));
     } catch (e) {

@@ -14,7 +14,7 @@
     type="button"
     variant="ghost"
     icon="refresh"
-    [disabled]="busy() || mock"
+    [disabled]="busy()"
     (click)="rescan()"
   >
     Scan now
@@ -22,9 +22,6 @@
 </ar-topbar>
 
 <div class="rd ar-scroll">
-  @if (mock) {
-    <ar-banner tone="teal">The radar needs the live API. In demo mode it stays empty.</ar-banner>
-  }
   @if (error(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }

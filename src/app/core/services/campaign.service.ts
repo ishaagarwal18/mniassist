@@ -1,8 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import {
   CampaignDto,
   CampaignPreflightDto,
@@ -174,65 +172,13 @@ function toReport(r: CampaignReportDto): Report {
   };
 }
 
-const SEED: Campaign[] = [
-  {
-    id: 'c-1',
-    name: 'September AMC renewal',
-    templateName: 'amc_renewal_30d',
-    segmentName: 'AMC expiring ≤ 60 days',
-    state: 'running',
-    dispatched: 940,
-    estimatedRecipients: 1_347,
-    estimatedCostInPaise: 3_780_00,
-    optOutRate: 0.002,
-    optimiseSendTime: false,
-  },
-  {
-    id: 'c-2',
-    name: 'August technical bulletin',
-    templateName: 'vfd_retrofit_bulletin',
-    segmentName: 'Exhibition 2026 leads',
-    state: 'completed',
-    dispatched: 612,
-    estimatedRecipients: 612,
-    estimatedCostInPaise: 5_282_00,
-    optOutRate: 0.004,
-    optimiseSendTime: false,
-  },
-  {
-    id: 'c-3',
-    name: 'Q4 dealer price revision',
-    templateName: 'dealer_price_list_v2',
-    segmentName: 'Dealers — West',
-    state: 'scheduled',
-    scheduledAt: '2026-09-08T04:30:00Z',
-    dispatched: 0,
-    estimatedRecipients: 196,
-    estimatedCostInPaise: 1_690_00,
-    optOutRate: 0,
-    optimiseSendTime: false,
-  },
-  {
-    id: 'c-4',
-    name: 'Calibration due — Sept batch',
-    templateName: 'calibration_due_v1',
-    segmentName: 'Instrumentation contacts',
-    state: 'draft',
-    dispatched: 0,
-    estimatedRecipients: 284,
-    estimatedCostInPaise: 0,
-    optOutRate: 0,
-    optimiseSendTime: false,
-  },
-];
-
 @Injectable({ providedIn: 'root' })
 export class CampaignStore {
   private readonly api = inject(CampaignApi);
   private readonly tick = signal(0);
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.tick() }),
+    params: () => ({ tick: this.tick() }),
     stream: () =>
       this.api
         .getList({ skipCount: 0, maxResultCount: 100 })
@@ -240,19 +186,9 @@ export class CampaignStore {
     defaultValue: [],
   });
 
-  readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
-  // Mock mode has no server to hold the toggle, so it lives here for the session.
-  private readonly mockOptimise = signal<Record<string, boolean>>({});
-  private readonly mockCampaigns = signal<Campaign[]>([...SEED]);
+  readonly loading = computed(() => this.resource.isLoading());
 
-  readonly campaigns = computed(() =>
-    environment.useMockData
-      ? this.mockCampaigns().map((c) => ({
-          ...c,
-          optimiseSendTime: this.mockOptimise()[c.id] ?? c.optimiseSendTime,
-        }))
-      : settled(this.resource, []),
-  );
+  readonly campaigns = computed(() => settled(this.resource, []));
 
   private reload(): void {
     this.tick.update((n) => n + 1);
@@ -269,50 +205,22 @@ export class CampaignStore {
     return toReport(await firstValueFrom(this.api.getReport(id)));
   }
   async sendNow(id: string): Promise<void> {
-    if (environment.useMockData) {
-      this.mockCampaigns.update((list) =>
-        list.map((c) => (c.id === id ? { ...c, state: 'running' as CState } : c)),
-      );
-      return;
-    }
     await firstValueFrom(this.api.sendNow(id));
     this.reload();
   }
   async pause(id: string): Promise<void> {
-    if (environment.useMockData) {
-      this.mockCampaigns.update((list) =>
-        list.map((c) => (c.id === id ? { ...c, state: 'paused' as CState } : c)),
-      );
-      return;
-    }
     await firstValueFrom(this.api.pause(id));
     this.reload();
   }
   async resume(id: string): Promise<void> {
-    if (environment.useMockData) {
-      this.mockCampaigns.update((list) =>
-        list.map((c) => (c.id === id ? { ...c, state: 'running' as CState } : c)),
-      );
-      return;
-    }
     await firstValueFrom(this.api.resume(id));
     this.reload();
   }
   async cancel(id: string): Promise<void> {
-    if (environment.useMockData) {
-      this.mockCampaigns.update((list) =>
-        list.map((c) => (c.id === id ? { ...c, state: 'cancelled' as CState } : c)),
-      );
-      return;
-    }
     await firstValueFrom(this.api.cancel(id));
     this.reload();
   }
   async delete(id: string): Promise<void> {
-    if (environment.useMockData) {
-      this.mockCampaigns.update((list) => list.filter((c) => c.id !== id));
-      return;
-    }
     await firstValueFrom(this.api.delete(id));
     this.reload();
   }
@@ -323,33 +231,12 @@ export class CampaignStore {
    * Only draft and scheduled campaigns accept it.
    */
   async setOptimiseSendTime(id: string, optimise: boolean): Promise<void> {
-    if (environment.useMockData) {
-      this.mockOptimise.update((m) => ({ ...m, [id]: optimise }));
-      return;
-    }
     await firstValueFrom(this.api.configureSendTime(id, { optimise }));
     this.reload();
   }
 
   /** Creates a draft campaign. Template, segment and schedule are set later. */
   async create(name: string, channelId: string, templateId: string): Promise<string> {
-    if (environment.useMockData) {
-      const id = 'c-' + Date.now();
-      this.mockCampaigns.update((list) => [
-        {
-          id,
-          name: name.trim(),
-          state: 'draft',
-          dispatched: 0,
-          estimatedRecipients: 0,
-          estimatedCostInPaise: 0,
-          optOutRate: 0,
-          optimiseSendTime: false,
-        },
-        ...list,
-      ]);
-      return id;
-    }
     const created = await firstValueFrom(
       this.api.create({ name: name.trim(), channelId, templateId }),
     );

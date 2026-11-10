@@ -5,7 +5,6 @@ import { firstValueFrom } from 'rxjs';
 
 import { grantedPolicy } from '../../core/auth/permission';
 import { SpaBillCheckDto, SpaReportService } from '../../proxy/oem/spa-report.service';
-import { environment } from '../../../environments/environment';
 import { rupees } from './oem.logic';
 
 /**
@@ -73,7 +72,7 @@ export class ArBillSpaPanel {
   constructor() {
     effect(() => {
       const id = this.billId();
-      if (!environment.useMockData && this.canSee()) void this.load(id);
+      if (this.canSee()) void this.load(id);
     });
   }
 

@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { inr } from '../../../core/util/format';
 import { ArTopbar } from '../../../layout/topbar';
 import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.service';
-import { SalesExportFormat, SalesOrderStatus } from '../../../proxy/sales/sales-enums';
+import { SalesExportFormat } from '../../../proxy/sales/sales-enums';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { SalesOrderDto } from '../../../proxy/sales/sales-order.models';
 import { SalesOrderService } from '../../../proxy/sales/sales-order.service';
@@ -18,7 +18,6 @@ import {
   orderStatusLabel,
   orderStatusTone,
 } from '../sales-records.logic';
-import { MOCK_ORDERS } from './orders.mock';
 import { ArSalesExport } from '../sales-export';
 import { ArBillingPlanPanel } from '../../project-billing/billing-plan-panel';
 import { ArAcceptanceTestsPanel } from '../../project-billing/acceptance-tests-panel';
@@ -272,7 +271,6 @@ export class ArSalesOrderPage extends SalesRecordPage<SalesOrderDto> {
 
   protected readonly list = '/sales/orders';
   protected readonly noun = 'This sales order';
-  protected readonly mockRecords = MOCK_ORDERS;
 
   protected readonly inr = inr;
   protected readonly label = orderStatusLabel;
@@ -292,11 +290,6 @@ export class ArSalesOrderPage extends SalesRecordPage<SalesOrderDto> {
   protected confirm(o: SalesOrderDto): void {
     void this.run(
       () => this.api.confirm(o.id!, { skipHandleError: true }),
-      (cur) => ({
-        ...cur,
-        status: SalesOrderStatus.Confirmed,
-        confirmedAtUtc: new Date().toISOString(),
-      }),
       (saved) => `Sales order ${saved.orderNumber} confirmed.`,
       `${o.orderNumber} could not be confirmed.`,
     );

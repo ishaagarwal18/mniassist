@@ -2,8 +2,6 @@ import { ChangeDetectionStrategy, Component, effect, inject, input, signal } fro
 import { firstValueFrom } from 'rxjs';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../ui/grid';
-
-import { environment } from '../../../environments/environment';
 import { ErpCustomerLedgerDto, ErpSyncService } from '../../proxy/integrations/erp-sync.service';
 import { rupees } from '../payments/payment-logic';
 
@@ -52,7 +50,12 @@ import { rupees } from '../payments/payment-logic';
                     {{ money(i.totalInPaise) }}
                   </ng-template>
                 </e-column>
-                <e-column field="outstandingInPaise" headerText="Unpaid" width="120" [textAlign]="'Right'">
+                <e-column
+                  field="outstandingInPaise"
+                  headerText="Unpaid"
+                  width="120"
+                  [textAlign]="'Right'"
+                >
                   <ng-template #template let-i>
                     <span [class.led__bad]="i.isOverdue">
                       {{ i.outstandingInPaise != null ? money(i.outstandingInPaise) : '—' }}
@@ -137,7 +140,7 @@ export class ArErpLedger {
     effect(() => {
       const id = this.customerId();
       this.ledger.set(null);
-      if (environment.useMockData) return;
+
       firstValueFrom(this.erp.getLedger(id))
         .then((l) => {
           if (this.customerId() === id) this.ledger.set(l);

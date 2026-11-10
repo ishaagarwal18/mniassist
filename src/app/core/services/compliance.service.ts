@@ -1,8 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, forkJoin, map } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import {
   BreachSeverity,
   BreachState,
@@ -111,78 +109,22 @@ const BSTATE: Record<BreachState, BreachStage> = {
   [BreachState.Closed]: 'closed',
 };
 
-const SEED_OVERVIEW: Overview = {
-  openRequests: 3,
-  breachingSla: 0,
-  dueThisWeek: 1,
-  openBreaches: 0,
-  consentRecords: 12_486,
-  marketingConsent: 9_140,
-  utilityOnly: 2_930,
-  suppressed: 584,
-  lastRetentionRun: '2026-09-05T02:00:00Z',
+/** What a workspace sees while its figures load, or if they cannot be read: zeros, not samples. */
+const EMPTY_DATA = {
+  overview: {
+    openRequests: 0,
+    breachingSla: 0,
+    dueThisWeek: 0,
+    openBreaches: 0,
+    consentRecords: 0,
+    marketingConsent: 0,
+    utilityOnly: 0,
+    suppressed: 0,
+  } as Overview,
+  requests: [] as DpdpRequest[],
+  policies: [] as RetentionPolicy[],
+  breaches: [] as Breach[],
 };
-const SEED_REQUESTS: DpdpRequest[] = [
-  {
-    id: 'r-1',
-    kind: 'access',
-    state: 'inProgress',
-    requester: '+91 98220 11xxx',
-    contact: 'Sandeep Rao',
-    receivedAt: '2026-08-30',
-    daysRemaining: 22,
-    breached: false,
-  },
-  {
-    id: 'r-2',
-    kind: 'erasure',
-    state: 'received',
-    requester: 'devendra@sanandpress.in',
-    contact: 'Devendra Joshi',
-    receivedAt: '2026-09-01',
-    daysRemaining: 24,
-    breached: false,
-  },
-  {
-    id: 'r-3',
-    kind: 'consentWithdrawal',
-    state: 'fulfilled',
-    requester: '+91 94440 55xxx',
-    contact: 'Anitha Menon',
-    receivedAt: '2026-08-18',
-    daysRemaining: 11,
-    breached: false,
-  },
-];
-const SEED_POLICIES: RetentionPolicy[] = [
-  {
-    id: 'p-0',
-    dataClass: 'Conversations & messages',
-    days: 730,
-    enabled: true,
-    lastRun: '2026-09-05T02:00:00Z',
-    lastRows: 0,
-  },
-  {
-    id: 'p-1',
-    dataClass: 'Media',
-    days: 365,
-    enabled: true,
-    lastRun: '2026-09-05T02:00:00Z',
-    lastRows: 412,
-  },
-  {
-    id: 'p-2',
-    dataClass: 'Raw webhook payloads',
-    days: 30,
-    enabled: true,
-    lastRun: '2026-09-05T02:00:00Z',
-    lastRows: 18_240,
-  },
-  { id: 'p-3', dataClass: 'Exports', days: 30, enabled: true, lastRows: 0 },
-  { id: 'p-4', dataClass: 'Audit log', days: 2555, enabled: false, lastRows: 0 },
-  { id: 'p-5', dataClass: 'Consent records', days: 2555, enabled: false, lastRows: 0 },
-];
 
 @Injectable({ providedIn: 'root' })
 export class ComplianceStore {
@@ -190,7 +132,7 @@ export class ComplianceStore {
   private readonly tick = signal(0);
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.tick() }),
+    params: () => ({ tick: this.tick() }),
     stream: () =>
       forkJoin({
         overview: this.api.getOverview(),
@@ -257,31 +199,14 @@ export class ComplianceStore {
           ),
         })),
       ),
-    defaultValue: {
-      overview: SEED_OVERVIEW,
-      requests: SEED_REQUESTS,
-      policies: SEED_POLICIES,
-      breaches: [] as Breach[],
-    },
+    defaultValue: EMPTY_DATA,
   });
 
-  private readonly data = computed(() =>
-    environment.useMockData
-      ? {
-          overview: SEED_OVERVIEW,
-          requests: SEED_REQUESTS,
-          policies: SEED_POLICIES,
-          breaches: [] as Breach[],
-        }
-      : settled(this.resource, {
-          overview: SEED_OVERVIEW,
-          requests: SEED_REQUESTS,
-          policies: SEED_POLICIES,
-          breaches: [] as Breach[],
-        }),
-  );
+  private readonly data = computed(() => settled(this.resource, EMPTY_DATA));
 
-  readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
+  readonly loading = computed(() => this.resource.isLoading());
+  /** The register could not be read; the page says so rather than showing zeros as fact. */
+  readonly failed = computed(() => this.resource.error() != null);
   readonly overview = computed(() => this.data().overview);
   readonly requests = computed(() => this.data().requests);
   readonly policies = computed(() => this.data().policies);
@@ -308,7 +233,6 @@ export class ComplianceStore {
 
   /** Records a personal-data breach; the 72-hour clock for telling the Board starts at its detection time. */
   async logBreach(input: NewBreach): Promise<void> {
-    if (environment.useMockData) return;
     await firstValueFrom(
       this.api.createBreach({
         title: input.title.trim(),
@@ -344,11 +268,9 @@ export class ComplianceStore {
   }
 
   async logRequest(kind: DataRequestKind, requesterIdentifier: string): Promise<void> {
-    if (!environment.useMockData) {
-      await firstValueFrom(
-        this.api.createRequest({ kind, requesterIdentifier: requesterIdentifier.trim() }),
-      );
-      this.reload();
-    }
+    await firstValueFrom(
+      this.api.createRequest({ kind, requesterIdentifier: requesterIdentifier.trim() }),
+    );
+    this.reload();
   }
 }

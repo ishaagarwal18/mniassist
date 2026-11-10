@@ -11,12 +11,9 @@ export function supplierMatchDetail(s: Vendor360SupplierDto): string {
   return parts.join(' · ') || 'No GSTIN or contact recorded';
 }
 
-/** The server's rule, for sample data: every word of the search is in the name, GSTIN, phone or contact person. */
+/** The server's rule, applied in the browser: every word of the search is in the name, GSTIN, phone or contact person. */
 export function matchesEveryWord(s: Vendor360SupplierDto, term: string): boolean {
-  const hay = [s.name, s.gstin, s.phone, s.contactName]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
+  const hay = [s.name, s.gstin, s.phone, s.contactName].filter(Boolean).join(' ').toLowerCase();
   return term
     .toLowerCase()
     .split(/\s+/)

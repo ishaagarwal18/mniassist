@@ -2,10 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { GridModule, RecordClickEventArgs } from '@syncfusion/ej2-angular-grids';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { firstValueFrom, of } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import type { PagedResultDto } from '@abp/ng.core';
-
-import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
 import { settled } from '../../core/util/resource';
 import { AuditLogService } from '../../proxy/auditing/audit-log.service';
@@ -81,31 +79,6 @@ interface SignInFilters {
 const NO_SIGN_IN_FILTERS: SignInFilters = { userName: '', action: '', ip: '' };
 
 const NO_CHANGE_FILTERS: ChangeFilters = { entityTypeFullName: '', entityId: '', changeType: '' };
-
-const SEED_REQUESTS: AuditLogListItemDto[] = [
-  {
-    id: 'a-1',
-    executionTime: new Date(Date.now() - 4 * 60_000).toISOString(),
-    executionDuration: 84,
-    userName: 'admin',
-    httpMethod: 'POST',
-    url: '/api/auto-reach/campaign/send',
-    httpStatusCode: 200,
-    hasException: false,
-    clientIpAddress: '10.0.0.7',
-  },
-  {
-    id: 'a-2',
-    executionTime: new Date(Date.now() - 40 * 60_000).toISOString(),
-    executionDuration: 2310,
-    userName: 'ravi',
-    httpMethod: 'DELETE',
-    url: '/api/auto-reach/contact/5c1e',
-    httpStatusCode: 500,
-    hasException: true,
-    clientIpAddress: '10.0.0.9',
-  },
-];
 
 const NO_SUMMARY: AuditLogSummaryDto = {
   startTime: '',
@@ -827,7 +800,6 @@ export class ArAdminAuditLogs {
   private readonly exports = inject(ReportExportService);
   private readonly toasts = inject(ToastService);
   private readonly securityLogs = inject(SecurityLogService);
-  private readonly mock = environment.useMockData;
 
   protected readonly tabs = TABS;
   protected readonly windows = AUDIT_WINDOWS;
@@ -863,10 +835,6 @@ export class ArAdminAuditLogs {
   }
 
   protected async exportExcel(): Promise<void> {
-    if (this.mock) {
-      this.exportError.set('Export needs the API — it is not available in the standalone build.');
-      return;
-    }
     this.exporting.set(true);
     this.exportError.set(null);
     try {
@@ -884,8 +852,7 @@ export class ArAdminAuditLogs {
   }
 
   private readonly requestsResource = rxResource({
-    params: () =>
-      this.mock ? undefined : { filters: this.rApplied(), page: this.rPage(), range: this.range() },
+    params: () => ({ filters: this.rApplied(), page: this.rPage(), range: this.range() }),
     stream: ({ params }) => {
       const f = params.filters;
       return this.api.getList({
@@ -904,9 +871,7 @@ export class ArAdminAuditLogs {
   });
 
   private readonly requests = computed(() =>
-    this.mock
-      ? page(SEED_REQUESTS.length, SEED_REQUESTS)
-      : paged(settled(this.requestsResource, { totalCount: 0, items: [] })),
+    paged(settled(this.requestsResource, { totalCount: 0, items: [] })),
   );
 
   protected readonly requestRows = computed(() =>
@@ -954,7 +919,7 @@ export class ArAdminAuditLogs {
 
   private readonly changesResource = rxResource({
     params: () =>
-      this.mock || this.tab() !== 'Changes'
+      this.tab() !== 'Changes'
         ? undefined
         : { filters: this.cApplied(), page: this.cPage(), range: this.range() },
     stream: ({ params }) => {
@@ -1018,7 +983,7 @@ export class ArAdminAuditLogs {
 
   private readonly signInsResource = rxResource({
     params: () =>
-      this.mock || this.tab() !== 'Sign-ins'
+      this.tab() !== 'Sign-ins'
         ? undefined
         : { filters: this.sApplied(), page: this.sPage(), range: this.range() },
     stream: ({ params }) =>
@@ -1074,20 +1039,13 @@ export class ArAdminAuditLogs {
   // ---- summary --------------------------------------------------------------------------------
 
   private readonly summaryResource = rxResource({
-    params: () => (this.mock ? undefined : this.range()),
+    params: () => this.range(),
     stream: ({ params }) => this.api.getSummary(params),
     defaultValue: NO_SUMMARY,
   });
 
   protected readonly tiles = computed(() => {
-    const s = this.mock
-      ? {
-          ...NO_SUMMARY,
-          totalRequests: 1284,
-          failedRequests: 3,
-          dailyAverageDuration: [{ day: '', averageDurationMs: 96 }],
-        }
-      : settled(this.summaryResource, NO_SUMMARY);
+    const s = settled(this.summaryResource, NO_SUMMARY);
     const failRate = s.totalRequests ? (s.failedRequests / s.totalRequests) * 100 : 0;
     const days = s.dailyAverageDuration;
     const avg = days.length
@@ -1145,9 +1103,7 @@ export class ArAdminAuditLogs {
     this.detailError.set(null);
     this.detailOpen.set(true);
     try {
-      const d = this.mock
-        ? { ...row.log, actions: [], entityChanges: [] }
-        : await firstValueFrom(this.api.get(row.log.id));
+      const d = await firstValueFrom(this.api.get(row.log.id));
       this.detail.set(d);
     } catch (err) {
       this.detailError.set(readApiError(err));
@@ -1179,11 +1135,7 @@ export class ArAdminAuditLogs {
     this.historyBusy.set(true);
     this.historyError.set(null);
     try {
-      const r = await firstValueFrom(
-        this.mock
-          ? of({ items: [c] })
-          : this.api.getEntityHistory(c.entityTypeFullName, c.entityId),
-      );
+      const r = await firstValueFrom(this.api.getEntityHistory(c.entityTypeFullName, c.entityId));
       this.history.set(r.items ?? []);
     } catch (err) {
       this.historyError.set(readApiError(err));

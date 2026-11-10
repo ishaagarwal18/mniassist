@@ -1,16 +1,7 @@
 import { PermissionService } from '@abp/ng.core';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  signal,
-  untracked,
-} from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
 import { TemplateService as TemplateApi } from '../../proxy/messaging/template.service';
 import { TemplateStatus } from '../../proxy/messaging/template-status.enum';
@@ -101,7 +92,7 @@ export class ArCampaignBuilder {
   private async loadTemplates(channelId: string): Promise<void> {
     this.approvedTemplates.set([]);
     this.newTemplate.set('');
-    if (!channelId || environment.useMockData) return;
+    if (!channelId) return;
     this.templatesLoading.set(true);
     try {
       const page = await firstValueFrom(
@@ -147,7 +138,7 @@ export class ArCampaignBuilder {
       this.dialogError.set('Pick the WhatsApp number to send from.');
       return;
     }
-    if (!this.newTemplate() && !environment.useMockData) {
+    if (!this.newTemplate()) {
       this.dialogError.set('Pick an approved template to send.');
       return;
     }
@@ -185,16 +176,6 @@ export class ArCampaignBuilder {
     const ch = this.channels().find((x) => x.id === c.channelId);
     return ch ? `${ch.displayName} · ${ch.displayPhone}` : null;
   }
-
-  /** A link can open one campaign straight away: /campaigns?open={id} (Campaign results uses it). */
-  private pendingOpen: string | null = inject(ActivatedRoute).snapshot.queryParamMap.get('open');
-  private readonly openFromLink = effect(() => {
-    const id = this.pendingOpen;
-    const match = id ? this.campaigns().find((c) => c.id === id) : undefined;
-    if (!match) return;
-    this.pendingOpen = null;
-    untracked(() => void this.toggle(match));
-  });
 
   protected readonly preflight = signal<Preflight | null>(null);
   protected readonly report = signal<Report | null>(null);

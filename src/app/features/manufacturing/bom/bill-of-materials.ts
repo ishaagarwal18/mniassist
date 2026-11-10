@@ -2,11 +2,9 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import {
   BillOfMaterialDto,
-  BillOfMaterialItemDto,
   BillOfMaterialService,
   BomStatus,
   BomType,
@@ -14,151 +12,12 @@ import {
   RoutingStage,
 } from '../../../proxy/manufacturing';
 import { ArButton } from '../../../ui/button';
+import { ArBanner } from '../../../ui/banner';
+import { readApiError } from '../../../core/util/api-error';
 import { ArChip, ChipTone } from '../../../ui/chip';
 import { ArStatTile } from '../../../ui/stat-tile';
 import { ArGrid } from '../../../ui/grid';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
-
-const MOCK_BOMS: BillOfMaterialDto[] = [
-  {
-    id: 'bom-1',
-    bomNumber: 'BOM-2026-0001',
-    revisionCode: 'Rev C',
-    finishedGoodPartNumber: 'HV-400-P',
-    finishedGoodDescription: 'Proportional Directional Hydraulic Valve 350 Bar',
-    finishedGoodUom: 'NOS',
-    baseQuantity: 1,
-    bomType: BomType.Manufacturing,
-    status: BomStatus.Active,
-    totalEstimatedCostInPaise: 42_500_00,
-    remarks: 'Approved for automated assembly line 3. High-precision spool tolerances.',
-    creationTime: new Date(Date.now() - 30 * 86_400_000).toISOString(),
-    items: [
-      {
-        id: 'bomi-1',
-        billOfMaterialId: 'bom-1',
-        itemSequence: 10,
-        componentPartNumber: 'VB-BODY-400',
-        componentDescription: 'Ductile Iron Valve Body Casting GGG40',
-        quantityPerUnit: 1,
-        unitOfMeasure: 'NOS',
-        scrapPercentage: 2.0,
-        unitCostInPaise: 16_000_00,
-        routingStage: RoutingStage.Machining,
-        isSubAssembly: false,
-      },
-      {
-        id: 'bomi-2',
-        billOfMaterialId: 'bom-1',
-        itemSequence: 20,
-        componentPartNumber: 'SPL-EN36-04',
-        componentDescription: 'Ground & Lapped Spool EN36 Case Hardened',
-        quantityPerUnit: 1,
-        unitOfMeasure: 'NOS',
-        scrapPercentage: 3.5,
-        unitCostInPaise: 9_500_00,
-        routingStage: RoutingStage.HeatTreatment,
-        isSubAssembly: false,
-      },
-      {
-        id: 'bomi-3',
-        billOfMaterialId: 'bom-1',
-        itemSequence: 30,
-        componentPartNumber: 'SOL-COIL-24V',
-        componentDescription: 'Proportional Solenoid Coil 24V DC IP67',
-        quantityPerUnit: 2,
-        unitOfMeasure: 'NOS',
-        scrapPercentage: 0.5,
-        unitCostInPaise: 6_200_00,
-        routingStage: RoutingStage.Assembly,
-        isSubAssembly: true,
-      },
-      {
-        id: 'bomi-4',
-        billOfMaterialId: 'bom-1',
-        itemSequence: 40,
-        componentPartNumber: 'SK-FKM-90',
-        componentDescription: 'Viton FKM O-Ring & Backup Ring Seal Kit',
-        quantityPerUnit: 1,
-        unitOfMeasure: 'SET',
-        scrapPercentage: 1.0,
-        unitCostInPaise: 4_600_00,
-        routingStage: RoutingStage.Assembly,
-        isSubAssembly: false,
-      },
-    ],
-  },
-  {
-    id: 'bom-2',
-    bomNumber: 'BOM-2026-0002',
-    revisionCode: 'Rev A',
-    finishedGoodPartNumber: 'CYL-HD-250',
-    finishedGoodDescription: 'Heavy-Duty Tie-Rod Hydraulic Cylinder 250mm Stroke',
-    finishedGoodUom: 'NOS',
-    baseQuantity: 1,
-    bomType: BomType.Manufacturing,
-    status: BomStatus.Active,
-    totalEstimatedCostInPaise: 68_000_00,
-    remarks: 'Standard catalogue item for press machines.',
-    creationTime: new Date(Date.now() - 45 * 86_400_000).toISOString(),
-    items: [
-      {
-        id: 'bomi-5',
-        billOfMaterialId: 'bom-2',
-        itemSequence: 10,
-        componentPartNumber: 'TB-ST52-BRL',
-        componentDescription: 'Seamless Honed Steel Cylinder Barrel ST52 ID 100mm',
-        quantityPerUnit: 0.65,
-        unitOfMeasure: 'MTR',
-        scrapPercentage: 2.0,
-        unitCostInPaise: 24_000_00,
-        routingStage: RoutingStage.Machining,
-        isSubAssembly: false,
-      },
-      {
-        id: 'bomi-6',
-        billOfMaterialId: 'bom-2',
-        itemSequence: 20,
-        componentPartNumber: 'ROD-CK45-CR',
-        componentDescription: 'Hard Chrome Plated Piston Rod CK45 Dia 50mm',
-        quantityPerUnit: 0.7,
-        unitOfMeasure: 'MTR',
-        scrapPercentage: 1.5,
-        unitCostInPaise: 22_000_00,
-        routingStage: RoutingStage.Machining,
-        isSubAssembly: false,
-      },
-      {
-        id: 'bomi-7',
-        billOfMaterialId: 'bom-2',
-        itemSequence: 30,
-        componentPartNumber: 'PST-CI-100',
-        componentDescription: 'Cast Iron Piston Head 100mm with Wear Rings',
-        quantityPerUnit: 1,
-        unitOfMeasure: 'NOS',
-        scrapPercentage: 1.0,
-        unitCostInPaise: 12_500_00,
-        routingStage: RoutingStage.Assembly,
-        isSubAssembly: false,
-      },
-    ],
-  },
-  {
-    id: 'bom-3',
-    bomNumber: 'BOM-2026-0003',
-    revisionCode: 'Rev A',
-    finishedGoodPartNumber: 'PMP-VAR-PST',
-    finishedGoodDescription: 'Variable Displacement Axial Piston Pump 71cc',
-    finishedGoodUom: 'NOS',
-    baseQuantity: 1,
-    bomType: BomType.Engineering,
-    status: BomStatus.Draft,
-    totalEstimatedCostInPaise: 145_000_00,
-    remarks: 'Prototype R&D build for OEM customer testing.',
-    creationTime: new Date(Date.now() - 10 * 86_400_000).toISOString(),
-    items: [],
-  },
-];
 
 @Component({
   standalone: true,
@@ -168,6 +27,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
     CommonModule,
     FormsModule,
     ArTopbar,
+    ArBanner,
     ArButton,
     ArChip,
     ArStatTile,
@@ -184,6 +44,9 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
     </ar-topbar>
 
     <div class="page-content">
+      @if (loadError(); as e) {
+        <ar-banner tone="bad">{{ e }}</ar-banner>
+      }
       <!-- Executive KPI Strip -->
       <section class="kpi-grid" aria-label="BOM Executive Overview">
         <ar-stat-tile
@@ -260,17 +123,27 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
 
       <!-- BOM Table adhering to modern-web-guidance responsive-table -->
       <section class="table-card">
-        <ejs-grid arGrid="bill-of-materials" [dataSource]="filteredBoms()" aria-label="Bill of Materials Catalog">
+        <ejs-grid
+          arGrid="bill-of-materials"
+          [dataSource]="filteredBoms()"
+          aria-label="Bill of Materials Catalog"
+        >
           <e-columns>
             <e-column field="bomNumber" headerText="BOM Number" width="160">
               <ng-template #template let-b>
                 <div class="cell-main">
-                  <a class="code-link" [routerLink]="['/manufacturing/bom', b.id]">{{ b.bomNumber }}</a>
+                  <a class="code-link" [routerLink]="['/manufacturing/bom', b.id]">{{
+                    b.bomNumber
+                  }}</a>
                   <span class="sub-text">{{ b.creationTime | date: 'mediumDate' }}</span>
                 </div>
               </ng-template>
             </e-column>
-            <e-column field="finishedGoodPartNumber" headerText="Finished Good & Description" width="260">
+            <e-column
+              field="finishedGoodPartNumber"
+              headerText="Finished Good & Description"
+              width="260"
+            >
               <ng-template #template let-b>
                 <div class="cell-main">
                   <strong class="font-medium">{{ b.finishedGoodPartNumber }}</strong>
@@ -295,7 +168,12 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
                 <span class="font-mono">{{ b.items.length }} parts</span>
               </ng-template>
             </e-column>
-            <e-column field="totalEstimatedCostInPaise" headerText="Est. Cost / Unit" textAlign="Right" width="160">
+            <e-column
+              field="totalEstimatedCostInPaise"
+              headerText="Est. Cost / Unit"
+              textAlign="Right"
+              width="160"
+            >
               <ng-template #template let-b>
                 <div class="font-mono">
                   <strong>₹{{ b.totalEstimatedCostInPaise / 100 | number: '1.2-2' }}</strong>
@@ -651,7 +529,8 @@ export class BillOfMaterialsComponent {
   readonly BomStatus = BomStatus;
   readonly RoutingStage = RoutingStage;
 
-  readonly allBoms = signal<BillOfMaterialDto[]>(MOCK_BOMS);
+  readonly allBoms = signal<BillOfMaterialDto[]>([]);
+  readonly loadError = signal<string | null>(null);
   readonly filterQuery = signal<string>('');
   readonly selectedStatus = signal<BomStatus | null>(null);
 
@@ -735,16 +614,11 @@ export class BillOfMaterialsComponent {
   }
 
   loadData() {
-    if (!environment.useMockData) {
-      this.bomService.getList({ maxResultCount: 50 }).subscribe({
-        next: (res) => {
-          if (res && res.items && res.items.length > 0) {
-            this.allBoms.set(res.items);
-          }
-        },
-        error: (err) => console.warn('Could not load live BOMs, using mock data:', err),
-      });
-    }
+    this.bomService.getList({ maxResultCount: 500 }).subscribe({
+      next: (res) => this.allBoms.set(res?.items ?? []),
+      error: (e: unknown) =>
+        this.loadError.set(readApiError(e, 'The bills of materials could not be loaded.')),
+    });
   }
 
   viewBom(b: BillOfMaterialDto) {
@@ -753,11 +627,15 @@ export class BillOfMaterialsComponent {
 
   activateBom(b: BillOfMaterialDto) {
     const updated: BillOfMaterialDto = { ...b, status: BomStatus.Active };
-    if (!environment.useMockData && b.id) {
+    if (b.id) {
+      // Shown as active once the server agrees; the app-wide toast shows a refusal.
       this.bomService.activate(b.id).subscribe({
-        next: (saved) => this.updateInState(saved),
-        error: (err) => console.error(err),
+        next: (saved) => {
+          this.updateInState(saved);
+          if (this.selectedBom()?.id === b.id) this.selectedBom.set(saved);
+        },
       });
+      return;
     }
     this.updateInState(updated);
     if (this.selectedBom()?.id === b.id) {
@@ -829,71 +707,33 @@ export class BillOfMaterialsComponent {
       return;
     }
 
-    let estimatedTotalPaise = 0;
-    const mappedItems: BillOfMaterialItemDto[] = this.newBom.items.map((item, idx) => {
-      const lineCost = Math.round(
-        item.quantityPerUnit * (1 + item.scrapPercentage / 100) * (item.unitCostRupees * 100),
-      );
-      estimatedTotalPaise += lineCost;
-
-      return {
-        id: `bomi-${Date.now()}-${idx}`,
-        billOfMaterialId: `bom-${Date.now()}`,
-        itemSequence: (idx + 1) * 10,
-        componentPartNumber: item.componentPartNumber || `COMP-${idx + 1}`,
-        componentDescription: item.componentDescription || 'Raw material',
-        quantityPerUnit: item.quantityPerUnit,
-        unitOfMeasure: item.unitOfMeasure,
-        scrapPercentage: item.scrapPercentage,
-        unitCostInPaise: Math.round(item.unitCostRupees * 100),
-        routingStage: item.routingStage,
-        isSubAssembly: false,
-      };
-    });
-
-    const created: BillOfMaterialDto = {
-      id: `bom-${Date.now()}`,
-      bomNumber: `BOM-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      revisionCode: this.newBom.revisionCode,
+    const dto: CreateBillOfMaterialDto = {
       finishedGoodPartNumber: this.newBom.finishedGoodPartNumber,
       finishedGoodDescription: this.newBom.finishedGoodDescription,
+      revisionCode: this.newBom.revisionCode,
       finishedGoodUom: this.newBom.finishedGoodUom,
       baseQuantity: this.newBom.baseQuantity,
       bomType: this.newBom.bomType,
-      status: BomStatus.Active,
-      totalEstimatedCostInPaise: estimatedTotalPaise,
-      creationTime: new Date().toISOString(),
-      items: mappedItems,
+      items: this.newBom.items.map((it, idx) => ({
+        itemSequence: (idx + 1) * 10,
+        componentPartNumber: it.componentPartNumber,
+        componentDescription: it.componentDescription,
+        quantityPerUnit: it.quantityPerUnit,
+        unitOfMeasure: it.unitOfMeasure,
+        scrapPercentage: it.scrapPercentage,
+        unitCostInPaise: Math.round(it.unitCostRupees * 100),
+        routingStage: it.routingStage,
+        isSubAssembly: false,
+      })),
     };
-
-    if (!environment.useMockData) {
-      const dto: CreateBillOfMaterialDto = {
-        finishedGoodPartNumber: this.newBom.finishedGoodPartNumber,
-        finishedGoodDescription: this.newBom.finishedGoodDescription,
-        revisionCode: this.newBom.revisionCode,
-        finishedGoodUom: this.newBom.finishedGoodUom,
-        baseQuantity: this.newBom.baseQuantity,
-        bomType: this.newBom.bomType,
-        items: this.newBom.items.map((it, idx) => ({
-          itemSequence: (idx + 1) * 10,
-          componentPartNumber: it.componentPartNumber,
-          componentDescription: it.componentDescription,
-          quantityPerUnit: it.quantityPerUnit,
-          unitOfMeasure: it.unitOfMeasure,
-          scrapPercentage: it.scrapPercentage,
-          unitCostInPaise: Math.round(it.unitCostRupees * 100),
-          routingStage: it.routingStage,
-          isSubAssembly: false,
-        })),
-      };
-      this.bomService.create(dto).subscribe({
-        next: (saved) => this.allBoms.update((list) => [saved, ...list]),
-        error: (err) => console.error(err),
-      });
-    }
-
-    this.allBoms.update((list) => [created, ...list]);
-    this.showCreateModal.set(false);
+    // The form stays open with what was typed if the server refuses it (the toast says why).
+    this.bomService.create(dto).subscribe({
+      next: (saved) => {
+        this.allBoms.update((list) => [saved, ...list]);
+        this.showCreateModal.set(false);
+      },
+    });
+    return;
   }
 
   private updateInState(updated: BillOfMaterialDto) {

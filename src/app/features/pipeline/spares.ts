@@ -2,8 +2,6 @@ import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
@@ -21,85 +19,6 @@ import { ArSelect } from '../../ui/select';
 import type { ChipTone } from '../../ui/chip';
 import { ArSendReorderLink } from '../reorder/send-reorder-link';
 import { ConfirmService } from '../../core/ui/confirm.service';
-
-const day = 86_400_000;
-const iso = (days: number) => new Date(Date.now() + days * day).toISOString();
-
-const SEED_DUE: SpareReorderDto[] = [
-  {
-    id: 'r1',
-    assetId: 'a1',
-    machine: 'Atlas Copco GA 37',
-    serialNumber: 'API-44120',
-    site: 'Plant 2, Nashik',
-    contactId: 'c1',
-    contactName: 'Kalyani Forge',
-    partNumber: 'AF-2901',
-    description: 'Air filter element',
-    quantity: 2,
-    dueOn: iso(-6),
-    daysToDue: -6,
-    state: 'Due',
-    followUpCount: 0,
-  },
-  {
-    id: 'r2',
-    assetId: 'a1',
-    machine: 'Atlas Copco GA 37',
-    serialNumber: 'API-44120',
-    site: 'Plant 2, Nashik',
-    contactId: 'c1',
-    contactName: 'Kalyani Forge',
-    partNumber: 'OF-1613',
-    description: 'Oil filter',
-    quantity: 1,
-    dueOn: iso(4),
-    daysToDue: 4,
-    state: 'Due',
-    followUpCount: 0,
-  },
-  {
-    id: 'r3',
-    assetId: 'a2',
-    machine: 'ABB ACS580',
-    serialNumber: 'VP-2291',
-    site: 'Chakan',
-    contactId: 'c2',
-    contactName: 'Precision Pumps',
-    partNumber: 'FAN-KIT-R3',
-    description: 'Cooling fan kit',
-    quantity: 1,
-    dueOn: iso(21),
-    daysToDue: 21,
-    state: 'Quoted',
-    quotationId: 'q1',
-    followUpCount: 0,
-  },
-];
-const SEED_RULES: ConsumableRuleDto[] = [
-  {
-    id: 'u1',
-    assetLabel: 'Atlas Copco GA 37',
-    partNumber: 'AF-2901',
-    description: 'Air filter element',
-    quantityPerMachine: 2,
-    intervalDays: 120,
-    leadDays: 14,
-    isActive: true,
-    machineCount: 6,
-  },
-  {
-    id: 'u2',
-    assetLabel: 'ABB ACS580',
-    partNumber: 'FAN-KIT-R3',
-    description: 'Cooling fan kit',
-    quantityPerMachine: 1,
-    intervalDays: 1095,
-    leadDays: 45,
-    isActive: true,
-    machineCount: 14,
-  },
-];
 
 const EMPTY_RULE: SaveConsumableRuleInput = {
   assetLabel: '',
@@ -136,12 +55,7 @@ const EMPTY_RULE: SaveConsumableRuleInput = {
         >
           {{ busy() === 'scan' ? 'Checking…' : 'Check now' }}
         </button>
-        <a
-          ar-button
-          variant="ghost"
-          icon="settings"
-          routerLink="/spares/rules"
-        >
+        <a ar-button variant="ghost" icon="settings" routerLink="/spares/rules">
           Rules ({{ rules().length }})
         </a>
         <button ar-button type="button" variant="ghost" icon="send" (click)="openReminders()">
@@ -588,7 +502,7 @@ export class ArSpares {
     this.remFollowUpTemplateId.set(this.reminders().followUpTemplateId ?? '');
     this.remMaxFollowUps.set(String(this.reminders().maxFollowUps ?? 1));
     this.remindersOpen.set(true);
-    if (environment.useMockData || this.templates().length) return;
+    if (this.templates().length) return;
     try {
       const list = await firstValueFrom(
         this.templatesApi.getList({ status: TemplateStatus.Approved, maxResultCount: 200 }),
@@ -625,11 +539,7 @@ export class ArSpares {
         followUpTemplateId: days > 0 ? this.remFollowUpTemplateId() || null : null,
         maxFollowUps: days > 0 ? Number(this.remMaxFollowUps()) || 1 : 1,
       };
-      this.reminders.set(
-        environment.useMockData
-          ? input
-          : await firstValueFrom(this.api.updateReminderSettings(input)),
-      );
+      this.reminders.set(await firstValueFrom(this.api.updateReminderSettings(input)));
       this.notice.set(
         input.enabled
           ? 'Customer reminders are on. They go out with the daily check.'
@@ -647,7 +557,7 @@ export class ArSpares {
     this.busy.set('remind');
     this.remError.set(null);
     try {
-      const n = environment.useMockData ? 0 : await firstValueFrom(this.api.remind());
+      const n = await firstValueFrom(this.api.remind());
       this.notice.set(
         n ? `${n} customer${n === 1 ? '' : 's'} reminded.` : 'Nobody is due a reminder right now.',
       );
@@ -691,11 +601,6 @@ export class ArSpares {
   private async load(): Promise<void> {
     this.loading.set(true);
     try {
-      if (environment.useMockData) {
-        this.due.set(SEED_DUE);
-        this.rules.set(SEED_RULES);
-        return;
-      }
       if (this.canManage()) {
         firstValueFrom(this.api.getReminderSettings())
           .then((r) => this.reminders.set(r))
@@ -740,7 +645,7 @@ export class ArSpares {
 
   protected async scan(): Promise<void> {
     await this.act('scan', async () => {
-      const n = environment.useMockData ? 0 : await firstValueFrom(this.api.scan());
+      const n = await firstValueFrom(this.api.scan());
       this.notice.set(n ? `${n} part${n === 1 ? '' : 's'} newly due.` : 'Nothing new is due.');
       await this.load();
     });
@@ -749,14 +654,7 @@ export class ArSpares {
   protected async quote(contactId: string, rows: SpareReorderDto[]): Promise<void> {
     await this.act(contactId, async () => {
       const ids = this.dueIds(rows);
-      if (environment.useMockData) {
-        this.due.update((list) =>
-          list.map((r) => (ids.includes(r.id) ? { ...r, state: 'Quoted' as const } : r)),
-        );
-        this.quotedRef.set('QT-DRAFT');
-        this.notice.set('Draft QT-DRAFT created.');
-        return;
-      }
+
       const result = await firstValueFrom(this.api.quote(ids));
       this.quotedRef.set(result.reference);
       this.notice.set(
@@ -769,9 +667,7 @@ export class ArSpares {
 
   protected async replaced(r: SpareReorderDto): Promise<void> {
     await this.act(r.id, async () => {
-      if (!environment.useMockData) {
-        await firstValueFrom(this.api.markReplaced(r.id, new Date().toISOString().slice(0, 10)));
-      }
+      await firstValueFrom(this.api.markReplaced(r.id, new Date().toISOString().slice(0, 10)));
       this.due.update((list) => list.filter((x) => x.id !== r.id));
       this.notice.set(
         `${r.description} recorded as changed. The next one falls due in the rule's interval.`,
@@ -781,7 +677,7 @@ export class ArSpares {
 
   protected async dismiss(r: SpareReorderDto): Promise<void> {
     await this.act(r.id, async () => {
-      if (!environment.useMockData) await firstValueFrom(this.api.dismiss(r.id));
+      await firstValueFrom(this.api.dismiss(r.id));
       this.due.update((list) => list.filter((x) => x.id !== r.id));
     });
   }
@@ -817,14 +713,7 @@ export class ArSpares {
     this.busy.set('rule');
     this.ruleError.set(null);
     try {
-      const created = environment.useMockData
-        ? ({
-            ...input,
-            id: crypto.randomUUID(),
-            description: input.description ?? input.partNumber,
-            machineCount: 0,
-          } as ConsumableRuleDto)
-        : await firstValueFrom(this.api.createRule(input));
+      const created = await firstValueFrom(this.api.createRule(input));
       this.rules.update((list) => [...list, created]);
       this.draft.set({ ...EMPTY_RULE });
     } catch (e: unknown) {
@@ -844,7 +733,7 @@ export class ArSpares {
     )
       return;
     try {
-      if (!environment.useMockData) await firstValueFrom(this.api.deleteRule(u.id));
+      await firstValueFrom(this.api.deleteRule(u.id));
       this.rules.update((list) => list.filter((x) => x.id !== u.id));
       await this.load();
     } catch (e: unknown) {

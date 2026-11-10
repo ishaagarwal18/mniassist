@@ -25,7 +25,7 @@ import { ArGrid } from '../../ui/grid';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { errorMessage } from '../activities/activity-logic';
 import { PRIORITY_LABEL, STATUS_LABEL, dueLabel } from './ticket-logic';
-import { ServiceTicketGateway } from './ticket-mock';
+import { ServiceTicketGateway } from './ticket-gateway';
 import { initialSearch } from '../../core/util/customer-scope';
 
 const STATUS_TONE: Record<TicketStatus, ChipTone> = {

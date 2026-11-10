@@ -3,9 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { rxResource } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
-import { firstValueFrom, map, of } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
+import { firstValueFrom, map } from 'rxjs';
 import { grantedPolicy } from '../../core/auth/permission';
 import { isPlanRefusal } from '../../core/http/api-feedback';
 import { ChannelService } from '../../core/services/channel.service';
@@ -26,69 +24,6 @@ import { ArGrid } from '../../ui/grid';
 import { ArPeriodPicker } from '../../ui/period-picker';
 import { readCallback } from '../channels/lead-forms.logic';
 import { accountWarning, money, rememberAdsState, takeAdsState } from './ad-spend.logic';
-
-const SEED: AdAttributionDto[] = [
-  {
-    sourceId: '120210000000001',
-    sourceType: 'ad',
-    headline: 'ABB ACS580 drives — ex-stock Pune',
-    sourceUrl: 'https://fb.me/example-ad',
-    adName: 'ACS580 ex-stock · CTWA',
-    campaignName: 'Q3 drives',
-    conversations: 64,
-    contacts: 61,
-    replied: 52,
-    leadFormLeads: 0,
-    enquiriesCreated: 14,
-    won: 5,
-    wonValueInPaise: 38_00_000,
-    spendMinor: 18_400_00,
-    spendCurrency: 'INR',
-    impressions: 182_000,
-    clicks: 2_310,
-    costPerResultMinor: 287_50,
-    costPerEnquiryMinor: 1_314_29,
-    firstSeenUtc: '2026-09-02T04:00:00Z',
-    lastSeenUtc: '2026-09-29T12:00:00Z',
-  },
-  {
-    sourceId: '120210000000003',
-    sourceType: 'ad',
-    headline: null,
-    sourceUrl: null,
-    adName: 'Panel retrofit lead form',
-    campaignName: 'Q3 panels',
-    conversations: 0,
-    contacts: 0,
-    replied: 0,
-    leadFormLeads: 38,
-    enquiriesCreated: 9,
-    won: 2,
-    wonValueInPaise: 11_20_000,
-    spendMinor: 9_120_00,
-    spendCurrency: 'INR',
-    impressions: 96_400,
-    clicks: 1_120,
-    costPerResultMinor: 240_00,
-    costPerEnquiryMinor: 1_013_33,
-    firstSeenUtc: '2026-09-01T00:00:00Z',
-    lastSeenUtc: '2026-09-28T18:30:00Z',
-  },
-  {
-    sourceId: '120210000000002',
-    sourceType: 'post',
-    headline: 'Panel retrofit case study',
-    sourceUrl: null,
-    conversations: 21,
-    contacts: 21,
-    replied: 15,
-    enquiriesCreated: 3,
-    won: 1,
-    wonValueInPaise: 6_50_000,
-    firstSeenUtc: '2026-09-11T04:00:00Z',
-    lastSeenUtc: '2026-09-27T12:00:00Z',
-  },
-];
 
 function when(utc: string | null | undefined): string {
   return utc
@@ -448,10 +383,7 @@ export class ArAdAttribution {
       channelId: this.channels.active()?.id,
       n: this.refresh(),
     }),
-    stream: ({ params }) =>
-      environment.useMockData
-        ? of(SEED)
-        : this.api.getAdAttribution(params).pipe(map((r) => r.items ?? [])),
+    stream: ({ params }) => this.api.getAdAttribution(params).pipe(map((r) => r.items ?? [])),
   });
 
   private readonly previous = rxResource({
@@ -459,14 +391,10 @@ export class ArAdAttribution {
       this.period.compare()
         ? { ...this.period.previousRange(), channelId: this.channels.active()?.id }
         : undefined,
-    stream: ({ params }) =>
-      environment.useMockData
-        ? of([])
-        : this.api.getAdAttribution(params).pipe(map((r) => r.items ?? [])),
+    stream: ({ params }) => this.api.getAdAttribution(params).pipe(map((r) => r.items ?? [])),
   });
 
   constructor() {
-    if (environment.useMockData) return;
     void this.reloadAccounts();
     if (this.route.snapshot.url.some((s) => s.path === 'callback')) void this.finishSignIn();
   }

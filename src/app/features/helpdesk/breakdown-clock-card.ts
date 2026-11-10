@@ -11,7 +11,6 @@ import { firstValueFrom } from 'rxjs';
 
 import { BreakdownClockDto, BreakdownClockService } from '../../proxy/support/escalation.service';
 import { ArCard } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { ACTION_FIELDS, CONDITION_TEXT, duration, hasAction } from './escalation.logic';
 
 /**
@@ -39,7 +38,7 @@ export class ArBreakdownClockCard {
     effect(() => {
       const id = this.ticketId();
       this.version();
-      if (environment.useMockData) return;
+
       untracked(() => void this.load(id));
     });
   }

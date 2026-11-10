@@ -13,7 +13,6 @@ import {
   TenderFeedSettingsDto,
 } from '../../proxy/projects/tender-feed.service';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { TENDER_STATUS_TEXT, splitList } from './project.logic';
 
 /**
@@ -31,7 +30,6 @@ export class ArTenderFeedPage {
   private readonly api = inject(TenderFeedService);
   private readonly toasts = inject(ToastService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly settings = signal<TenderFeedSettingsDto | null>(null);
   protected readonly enabled = signal(false);
   protected readonly keywordsText = signal('');
@@ -53,7 +51,6 @@ export class ArTenderFeedPage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       const [settings, alerts] = await Promise.all([
         firstValueFrom(this.api.getSettings()),

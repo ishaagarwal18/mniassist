@@ -2,240 +2,30 @@ import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { GridModule, RecordClickEventArgs, RowSelectEventArgs } from '@syncfusion/ej2-angular-grids';
-import { environment } from '../../../../environments/environment';
+import {
+  GridModule,
+  RecordClickEventArgs,
+  RowSelectEventArgs,
+} from '@syncfusion/ej2-angular-grids';
+import { readApiError } from '../../../core/util/api-error';
 import { ConfirmService } from '../../../core/ui/confirm.service';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
   JournalEntryDto,
-  JournalEntryLineDto,
   JournalEntryService,
   JournalVoucherStatus,
   JournalVoucherType,
 } from '../../../proxy/finance';
-import { ArButton, ArChip, ChipTone } from '../../../ui';
+import { ArBanner, ArButton, ArChip, ChipTone } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
-import { deleteStoredJournalEntry, getStoredJournalEntries } from './journal-entry-storage';
-
-const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
-  {
-    id: 'jv-1',
-    entryNumber: 'JV-2026-0041',
-    entryDateUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-    voucherType: JournalVoucherType.SalesVoucher,
-    status: JournalVoucherStatus.Posted,
-    referenceDocumentType: 'SalesInvoice',
-    referenceDocumentId: 'inv-1',
-    referenceDocumentNumber: 'INV-2026-0082',
-    narration:
-      'Commercial sales dispatch to Tata Motors Powertrain Ltd for 50x Proportional Valves HV-400-P under GST Rule 55.',
-    totalDebitInPaise: 41_30_000_00,
-    totalCreditInPaise: 41_30_000_00,
-    postedAtUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-    postedBy: 'Chief Accountant Rajesh Iyer',
-    lines: [
-      {
-        id: 'jvl-1',
-        journalEntryId: 'jv-1',
-        accountId: 'coa-1200',
-        accountCode: '1200',
-        accountName: 'Accounts Receivable (Sundry Debtors)',
-        debitAmountInPaise: 41_30_000_00,
-        creditAmountInPaise: 0,
-        lineNarration: 'Receivable from Tata Motors for Invoice INV-2026-0082',
-        costCenter: 'CC-SALES-OEM',
-      },
-      {
-        id: 'jvl-2',
-        journalEntryId: 'jv-1',
-        accountId: 'coa-4010',
-        accountCode: '4010',
-        accountName: 'Sales Revenue - Manufactured Systems',
-        debitAmountInPaise: 0,
-        creditAmountInPaise: 35_00_000_00,
-        lineNarration: 'Taxable value of 50 units Proportional Directional Valves',
-        costCenter: 'CC-MFG-VALVES',
-      },
-      {
-        id: 'jvl-3',
-        journalEntryId: 'jv-1',
-        accountId: 'coa-2020',
-        accountCode: '2020',
-        accountName: 'Output GST Payable - CGST',
-        debitAmountInPaise: 0,
-        creditAmountInPaise: 3_15_000_00,
-        lineNarration: '9% Central GST output liability',
-      },
-      {
-        id: 'jvl-4',
-        journalEntryId: 'jv-1',
-        accountId: 'coa-2021',
-        accountCode: '2021',
-        accountName: 'Output GST Payable - SGST',
-        debitAmountInPaise: 0,
-        creditAmountInPaise: 3_15_000_00,
-        lineNarration: '9% State GST output liability',
-      },
-    ],
-  },
-  {
-    id: 'jv-2',
-    entryNumber: 'JV-2026-0042',
-    entryDateUtc: new Date(Date.now() - 5 * 86_400_000).toISOString(),
-    voucherType: JournalVoucherType.PurchaseVoucher,
-    status: JournalVoucherStatus.Posted,
-    referenceDocumentType: 'GoodsReceiptNote',
-    referenceDocumentId: 'grn-1',
-    referenceDocumentNumber: 'GRN-2026-0019',
-    narration:
-      'Procurement of ductile iron castings from Jindal Steel & Power with 3-way matching and GSTR-2B ITC claim.',
-    totalDebitInPaise: 28_32_000_00,
-    totalCreditInPaise: 28_32_000_00,
-    postedAtUtc: new Date(Date.now() - 5 * 86_400_000).toISOString(),
-    postedBy: 'Chief Accountant Rajesh Iyer',
-    lines: [
-      {
-        id: 'jvl-5',
-        journalEntryId: 'jv-2',
-        accountId: 'coa-1300',
-        accountCode: '1300',
-        accountName: 'Raw Material Inventory',
-        debitAmountInPaise: 24_00_000_00,
-        creditAmountInPaise: 0,
-        lineNarration: 'Accepted QC castings received into WH-MAIN-RAW',
-        costCenter: 'CC-PURCHASING',
-      },
-      {
-        id: 'jvl-6',
-        journalEntryId: 'jv-2',
-        accountId: 'coa-1500',
-        accountCode: '1500',
-        accountName: 'Input Tax Credit (ITC) - CGST',
-        debitAmountInPaise: 2_16_000_00,
-        creditAmountInPaise: 0,
-        lineNarration: '9% CGST Input Tax Credit',
-      },
-      {
-        id: 'jvl-7',
-        journalEntryId: 'jv-2',
-        accountId: 'coa-1510',
-        accountCode: '1510',
-        accountName: 'Input Tax Credit (ITC) - SGST',
-        debitAmountInPaise: 2_16_000_00,
-        creditAmountInPaise: 0,
-        lineNarration: '9% SGST Input Tax Credit',
-      },
-      {
-        id: 'jvl-8',
-        journalEntryId: 'jv-2',
-        accountId: 'coa-2010',
-        accountCode: '2010',
-        accountName: 'Accounts Payable (Sundry Creditors)',
-        debitAmountInPaise: 0,
-        creditAmountInPaise: 28_32_000_00,
-        lineNarration: 'Credit balance payable to Jindal Steel within 45 days (MSME Sec 15)',
-        costCenter: 'CC-SUPPLIERS',
-      },
-    ],
-  },
-  {
-    id: 'jv-3',
-    entryNumber: 'JV-2026-0043',
-    entryDateUtc: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    voucherType: JournalVoucherType.ReceiptVoucher,
-    status: JournalVoucherStatus.Posted,
-    referenceDocumentType: 'BankCollection',
-    referenceDocumentNumber: 'RTGS-HDFC-9912',
-    narration: 'Customer RTGS remittance from Tata Motors against invoice settlement.',
-    totalDebitInPaise: 41_30_000_00,
-    totalCreditInPaise: 41_30_000_00,
-    postedAtUtc: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    postedBy: 'Chief Accountant Rajesh Iyer',
-    lines: [
-      {
-        id: 'jvl-9',
-        journalEntryId: 'jv-3',
-        accountId: 'coa-1010',
-        accountCode: '1010',
-        accountName: 'HDFC Bank Current Account',
-        debitAmountInPaise: 41_30_000_00,
-        creditAmountInPaise: 0,
-        lineNarration: 'RTGS inward credit received into HDFC bank',
-      },
-      {
-        id: 'jvl-10',
-        journalEntryId: 'jv-3',
-        accountId: 'coa-1200',
-        accountCode: '1200',
-        accountName: 'Accounts Receivable (Sundry Debtors)',
-        debitAmountInPaise: 0,
-        creditAmountInPaise: 41_30_000_00,
-        lineNarration: 'Clearance of customer outstanding balance',
-      },
-    ],
-  },
-  {
-    id: 'jv-4',
-    entryNumber: 'JV-2026-0044',
-    entryDateUtc: new Date().toISOString(),
-    voucherType: JournalVoucherType.GeneralJournal,
-    status: JournalVoucherStatus.Draft,
-    narration:
-      'Provision for monthly factory 3-phase high-tension power bill and industrial argon welding gas consumption.',
-    totalDebitInPaise: 17_11_000_00,
-    totalCreditInPaise: 17_11_000_00,
-    lines: [
-      {
-        id: 'jvl-11',
-        journalEntryId: 'jv-4',
-        accountId: 'coa-6010',
-        accountCode: '6010',
-        accountName: 'Factory Power, Fuel & Industrial Gases',
-        debitAmountInPaise: 14_50_000_00,
-        creditAmountInPaise: 0,
-        lineNarration: 'HT electrical power billing for machining shop',
-        costCenter: 'CC-FACTORY-POWER',
-      },
-      {
-        id: 'jvl-12',
-        journalEntryId: 'jv-4',
-        accountId: 'coa-1500',
-        accountCode: '1500',
-        accountName: 'Input Tax Credit (ITC) - CGST',
-        debitAmountInPaise: 1_30_500_00,
-        creditAmountInPaise: 0,
-        lineNarration: '9% CGST ITC on utility supply',
-      },
-      {
-        id: 'jvl-13',
-        journalEntryId: 'jv-4',
-        accountId: 'coa-1510',
-        accountCode: '1510',
-        accountName: 'Input Tax Credit (ITC) - SGST',
-        debitAmountInPaise: 1_30_500_00,
-        creditAmountInPaise: 0,
-        lineNarration: '9% SGST ITC on utility supply',
-      },
-      {
-        id: 'jvl-14',
-        journalEntryId: 'jv-4',
-        accountId: 'coa-2010',
-        accountCode: '2010',
-        accountName: 'Accounts Payable (Sundry Creditors)',
-        debitAmountInPaise: 0,
-        creditAmountInPaise: 17_11_000_00,
-        lineNarration: 'Liability provision for State Electricity Board',
-      },
-    ],
-  },
-];
 
 @Component({
   selector: 'app-journal-entries',
   standalone: true,
   imports: [
     CommonModule,
+    ArBanner,
     FormsModule,
     DatePipe,
     DecimalPipe,
@@ -315,6 +105,10 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
       </section>
 
       <!-- Split Layout: Vouchers Table on Left, Selected Voucher on Right -->
+      @if (loadError(); as e) {
+        <ar-banner tone="bad">{{ e }}</ar-banner>
+      }
+
       <div class="journal-layout">
         <!-- Vouchers Table -->
         <section class="table-card">
@@ -348,7 +142,12 @@ const MOCK_JOURNAL_ENTRIES: JournalEntryDto[] = [
                   <span class="narration-snippet">{{ j.narration }}</span>
                 </ng-template>
               </e-column>
-              <e-column field="totalDebitInPaise" headerText="Total Amount (₹)" textAlign="Right" width="160">
+              <e-column
+                field="totalDebitInPaise"
+                headerText="Total Amount (₹)"
+                textAlign="Right"
+                width="160"
+              >
                 <ng-template #template let-j>
                   <span class="fw-bold">₹{{ j.totalDebitInPaise / 100 | number: '1.2-2' }}</span>
                 </ng-template>
@@ -914,9 +713,10 @@ export class JournalEntriesComponent {
   private readonly confirmService = inject(ConfirmService);
   private readonly toasts = inject(ToastService);
 
-  readonly journalEntries = signal<JournalEntryDto[]>(MOCK_JOURNAL_ENTRIES);
-  readonly selectedEntry = signal<JournalEntryDto | null>(MOCK_JOURNAL_ENTRIES[0]);
+  readonly journalEntries = signal<JournalEntryDto[]>([]);
+  readonly selectedEntry = signal<JournalEntryDto | null>(null);
   readonly isLoading = signal<boolean>(false);
+  readonly loadError = signal<string | null>(null);
 
   // Filters
   readonly searchQuery = signal<string>('');
@@ -961,36 +761,19 @@ export class JournalEntriesComponent {
   }
 
   loadEntries(): void {
-    const stored = getStoredJournalEntries();
-    if (environment.useMockData) {
-      const merged =
-        stored.length > 0
-          ? [...stored, ...MOCK_JOURNAL_ENTRIES.filter((m) => !stored.some((s) => s.id === m.id))]
-          : MOCK_JOURNAL_ENTRIES;
-      this.journalEntries.set(merged);
-      this.selectedEntry.set(merged[0] ?? null);
-      return;
-    }
-
     this.isLoading.set(true);
+    this.loadError.set(null);
     this.journalService.getList({ maxResultCount: 100 }).subscribe({
       next: (res) => {
-        const items = res.items && res.items.length > 0 ? res.items : MOCK_JOURNAL_ENTRIES;
-        const merged =
-          stored.length > 0
-            ? [...stored, ...items.filter((m) => !stored.some((s) => s.id === m.id))]
-            : items;
-        this.journalEntries.set(merged);
-        this.selectedEntry.set(merged[0] ?? null);
+        const items = res.items ?? [];
+        this.journalEntries.set(items);
+        this.selectedEntry.set(items[0] ?? null);
         this.isLoading.set(false);
       },
-      error: () => {
-        const merged =
-          stored.length > 0
-            ? [...stored, ...MOCK_JOURNAL_ENTRIES.filter((m) => !stored.some((s) => s.id === m.id))]
-            : MOCK_JOURNAL_ENTRIES;
-        this.journalEntries.set(merged);
-        this.selectedEntry.set(merged[0] ?? null);
+      error: (e: unknown) => {
+        this.journalEntries.set([]);
+        this.selectedEntry.set(null);
+        this.loadError.set(readApiError(e, 'The journal vouchers could not be loaded.'));
         this.isLoading.set(false);
       },
     });
@@ -1002,8 +785,7 @@ export class JournalEntriesComponent {
 
   onEntrySelected(args: RowSelectEventArgs): void {
     const row = (Array.isArray(args.data) ? args.data[0] : args.data) as
-      | JournalEntryDto
-      | undefined;
+      JournalEntryDto | undefined;
     if (row) this.selectEntry(row);
   }
 
@@ -1068,32 +850,24 @@ export class JournalEntriesComponent {
 
     if (!confirmed) return;
 
-    if (!environment.useMockData && entry.id && !entry.id.startsWith('jv-')) {
+    if (entry.id) {
       this.journalService.delete(entry.id).subscribe({
-        next: () => {
-          if (entry.id) deleteStoredJournalEntry(entry.id);
-          this.journalEntries.update((list) => list.filter((j) => j.id !== entry.id));
-          const remaining = this.journalEntries();
-          this.selectedEntry.set(remaining[0] ?? null);
-          this.toasts.success(`Voucher ${entry.entryNumber} deleted.`);
-        },
-        error: (err) => {
-          this.toasts.error(err?.error?.error?.message ?? 'Failed to delete voucher');
-        },
+        // The app-wide toasts say "deleted", or show the API's reason it was refused.
+        next: () => this.removeFromState(entry, false),
       });
       return;
     }
+    this.removeFromState(entry);
+  }
 
-    // Local / fallback mode
-    if (entry.id) deleteStoredJournalEntry(entry.id);
+  private removeFromState(entry: JournalEntryDto, announce = true): void {
     this.journalEntries.update((list) => list.filter((j) => j.id !== entry.id));
-    const remaining = this.journalEntries();
-    this.selectedEntry.set(remaining[0] ?? null);
-    this.toasts.success(`Voucher ${entry.entryNumber} deleted.`);
+    this.selectedEntry.set(this.journalEntries()[0] ?? null);
+    if (announce) this.toasts.success(`Voucher ${entry.entryNumber} deleted.`);
   }
 
   postEntry(entry: JournalEntryDto): void {
-    if (!environment.useMockData && entry.id) {
+    if (entry.id) {
       this.journalService.post(entry.id).subscribe({
         next: (updated) => {
           this.updateEntryInState(updated);
@@ -1112,7 +886,7 @@ export class JournalEntriesComponent {
   }
 
   cancelEntry(entry: JournalEntryDto): void {
-    if (!environment.useMockData && entry.id) {
+    if (entry.id) {
       this.journalService.cancel(entry.id).subscribe({
         next: (updated) => {
           this.updateEntryInState(updated);

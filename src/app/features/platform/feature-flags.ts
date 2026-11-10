@@ -11,7 +11,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
-import { catchError, firstValueFrom, of } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
+import { readApiError } from '../../core/util/api-error';
 
 import { FeatureFlagDto, FeatureFlagService, SetFeatureFlagInput } from '../../proxy/platform';
 import { PlatformAdminService } from '../../proxy/administration';
@@ -38,28 +39,32 @@ export const FEATURE_DEFINITIONS: readonly FeatureDef[] = [
     value: 'mm-lite',
     label: 'Marketing Messages Lite',
     category: 'Messaging',
-    description: 'High-throughput transactional & marketing WhatsApp send path bypassing heavy legacy queuing.',
+    description:
+      'High-throughput transactional & marketing WhatsApp send path bypassing heavy legacy queuing.',
     badge: 'Core Pipeline',
   },
   {
     value: 'voice-agent-ai',
     label: 'Autonomous Voice Agent',
     category: 'Voice AI',
-    description: 'Bilingual Hindi/English IVR with sub-second speech pipeline and live CRM lookups.',
+    description:
+      'Bilingual Hindi/English IVR with sub-second speech pipeline and live CRM lookups.',
     badge: 'AI Telephony',
   },
   {
     value: 'auto-reorder-portal',
     label: 'WhatsApp Quick Reorder & Commerce',
     category: 'Commerce',
-    description: 'Self-service spare parts catalog & instant quote-to-order flow for end customers.',
+    description:
+      'Self-service spare parts catalog & instant quote-to-order flow for end customers.',
     badge: 'Commerce',
   },
   {
     value: 'smart-amc-dispatch',
     label: 'AMC Automatic Ticket Dispatch',
     category: 'Field Service',
-    description: 'Autonomous service ticket creation and engineer routing from machine telemetry triggers.',
+    description:
+      'Autonomous service ticket creation and engineer routing from machine telemetry triggers.',
     badge: 'Automation',
   },
 ];
@@ -75,45 +80,6 @@ const DEFAULT_TENANTS: readonly WorkspaceOption[] = [
   { id: 't-3', name: 'Vanguard Robotics & IoT' },
   { id: 't-4', name: 'Metro Fasteners & Supplies' },
   { id: 't-5', name: 'Bharat Precision Hydraulics' },
-];
-
-const INITIAL_SEED_FLAGS: FeatureFlagDto[] = [
-  {
-    id: 'ff-1',
-    key: 'mm-lite',
-    enabled: true,
-    rolloutPercent: 100,
-    note: 'Active globally in production across all workspaces',
-    lastModified: '2026-11-01T10:30:00Z',
-  },
-  {
-    id: 'ff-2',
-    key: 'voice-agent-ai',
-    enabled: false,
-    rolloutPercent: 25,
-    note: 'Staged 25% canary rollout for high-volume accounts',
-    lastModified: '2026-11-03T14:15:00Z',
-  },
-  {
-    id: 'ff-3',
-    key: 'auto-reorder-portal',
-    tenantId: 't-1',
-    tenantName: 'Sun Energy Automation',
-    enabled: true,
-    rolloutPercent: 100,
-    note: 'Dedicated early access workspace override',
-    lastModified: '2026-11-04T09:00:00Z',
-  },
-  {
-    id: 'ff-4',
-    key: 'smart-amc-dispatch',
-    tenantId: 't-2',
-    tenantName: 'Apex Precision Tooling',
-    enabled: false,
-    rolloutPercent: 0,
-    note: 'Explicit opt-out override pending ERP migration',
-    lastModified: '2026-11-05T16:45:00Z',
-  },
 ];
 
 export interface EvaluationResult {
@@ -239,10 +205,10 @@ export class ArFeatureFlags implements OnInit {
 
   protected readonly definitions = FEATURE_DEFINITIONS;
   protected readonly defaultTenants = DEFAULT_TENANTS;
-  protected readonly tenants = signal<WorkspaceOption[]>([...DEFAULT_TENANTS]);
+  /** The platform's own workspaces, for the pickers. */
+  protected readonly tenants = signal<WorkspaceOption[]>([]);
 
   private readonly tick = signal(0);
-  private readonly localFlags = signal<FeatureFlagDto[]>(INITIAL_SEED_FLAGS);
 
   // Search & Filtering
   protected readonly searchQuery = signal('');
@@ -253,24 +219,29 @@ export class ArFeatureFlags implements OnInit {
 
   // Simulator / Evaluator
   protected readonly simulatorOpen = signal(false);
-  protected readonly simTenantId = signal('t-1');
+  protected readonly simTenantId = signal('');
   protected readonly simFeatureKey = signal('mm-lite');
 
   // Backend query
   private readonly resource = rxResource({
     params: () => ({ tick: this.tick() }),
-    stream: () =>
-      this.api.getAll().pipe(catchError(() => of({ items: [] as FeatureFlagDto[] }))),
+    stream: () => this.api.getAll(),
     defaultValue: { items: [] as FeatureFlagDto[] },
   });
 
+  /** The rules in the database. */
   protected readonly flags = computed<FeatureFlagDto[]>(() => {
+    if (this.resource.error()) return [];
     const val = this.resource.value();
-    const items = (val as { items?: FeatureFlagDto[] } | undefined)?.items ?? [];
-    return items.length > 0 ? items : this.localFlags();
+    return (val as { items?: FeatureFlagDto[] } | undefined)?.items ?? [];
   });
 
   protected readonly loading = computed(() => this.resource.isLoading());
+  protected readonly loadError = computed(() =>
+    this.resource.error()
+      ? readApiError(this.resource.error(), 'The feature flag rules could not be loaded.')
+      : null,
+  );
 
   // Metrics
   protected readonly metrics = computed(() => {
@@ -381,14 +352,13 @@ export class ArFeatureFlags implements OnInit {
         const page = await firstValueFrom(
           this.admin.getTenants({ skipCount: 0, maxResultCount: 200 }),
         );
-        if (page?.items?.length) {
-          const list = page.items
-            .filter((t) => t.id)
-            .map((t) => ({ id: t.id!, name: t.name ?? t.id! }));
-          this.tenants.set(list);
-        }
+        const list = (page?.items ?? [])
+          .filter((t) => t.id)
+          .map((t) => ({ id: t.id!, name: t.name ?? t.id! }));
+        this.tenants.set(list);
+        if (!this.simTenantId() && list.length) this.simTenantId.set(list[0].id);
       } catch {
-        // Fallback to sample tenants
+        // The workspace list only fills the pickers; a Workspace ID can still be typed in.
       }
     }
   }
@@ -513,20 +483,6 @@ export class ArFeatureFlags implements OnInit {
     const nextEnabled = !f.enabled;
     const nextRollout = nextEnabled ? 100 : 0;
 
-    // Optimistically update local state
-    this.localFlags.update((list) =>
-      list.map((item) =>
-        item.id === f.id
-          ? {
-              ...item,
-              enabled: nextEnabled,
-              rolloutPercent: nextRollout,
-              lastModified: new Date().toISOString(),
-            }
-          : item,
-      ),
-    );
-
     try {
       await firstValueFrom(
         this.api.set({
@@ -536,13 +492,13 @@ export class ArFeatureFlags implements OnInit {
           rolloutPercent: nextRollout,
           note: f.note ?? null,
         }),
-      ).catch(() => {});
+      );
       this.toast.success(
         `Rule for ${this.keyLabel(f.key)} is now ${nextEnabled ? 'enabled (100%)' : 'disabled (0%)'}.`,
       );
       this.tick.update((n) => n + 1);
-    } catch {
-      this.toast.error('Failed to update feature flag rule.');
+    } catch (e: unknown) {
+      this.toast.error(readApiError(e, 'Failed to update feature flag rule.'));
     }
   }
 
@@ -553,9 +509,6 @@ export class ArFeatureFlags implements OnInit {
 
     const isOverride = f.scopeType === 'override';
     const tenantId = isOverride ? f.tenantId.trim() || null : null;
-    const tenantName = isOverride
-      ? this.resolveTenantName(f.tenantId, f.tenantName) || null
-      : null;
     const enabled = f.strategy === 'on';
     const rolloutPercent =
       f.strategy === 'staged'
@@ -580,32 +533,7 @@ export class ArFeatureFlags implements OnInit {
     };
 
     try {
-      await firstValueFrom(this.api.set(payload)).catch(() => {});
-
-      // Update local state store
-      this.localFlags.update((list) => {
-        const existingIdx = list.findIndex(
-          (x) =>
-            x.id === this.editingId() ||
-            (x.key === payload.key && (x.tenantId || null) === (payload.tenantId || null)),
-        );
-        const updatedItem: FeatureFlagDto = {
-          id: this.editingId() || `ff-${Date.now()}`,
-          key: payload.key,
-          tenantId: payload.tenantId,
-          tenantName,
-          enabled: payload.enabled,
-          rolloutPercent: payload.rolloutPercent,
-          note: payload.note,
-          lastModified: new Date().toISOString(),
-        };
-        if (existingIdx >= 0) {
-          const next = [...list];
-          next[existingIdx] = updatedItem;
-          return next;
-        }
-        return [updatedItem, ...list];
-      });
+      await firstValueFrom(this.api.set(payload));
 
       this.toast.success(
         this.editingId() ? 'Feature flag rule updated.' : 'New feature flag rule created.',
@@ -613,7 +541,7 @@ export class ArFeatureFlags implements OnInit {
       this.close();
       this.tick.update((n) => n + 1);
     } catch (e: unknown) {
-      this.error.set(e instanceof Error ? e.message : 'Could not save the feature flag rule.');
+      this.error.set(readApiError(e, 'Could not save the feature flag rule.'));
     } finally {
       this.busy.set(false);
     }
@@ -630,15 +558,12 @@ export class ArFeatureFlags implements OnInit {
     )
       return;
 
-    // Optimistically remove from local state
-    this.localFlags.update((list) => list.filter((item) => item.id !== f.id));
-
     try {
-      await firstValueFrom(this.api.delete(f.id)).catch(() => {});
+      await firstValueFrom(this.api.delete(f.id));
       this.toast.success('Feature flag rule deleted.');
       this.tick.update((n) => n + 1);
-    } catch {
-      this.toast.error('Could not delete rule from server.');
+    } catch (e: unknown) {
+      this.toast.error(readApiError(e, 'Could not delete the rule.'));
     }
   }
 

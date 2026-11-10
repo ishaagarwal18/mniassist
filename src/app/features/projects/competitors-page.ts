@@ -12,7 +12,6 @@ import {
   ProjectSettingsDto,
 } from '../../proxy/projects/competitor-brand.service';
 import { ArBanner, ArButton, ArCard } from '../../ui';
-import { environment } from '../../../environments/environment';
 
 /** "a; b , c" → ["a", "b", "c"]. */
 function list(text: string): string[] {
@@ -38,7 +37,6 @@ export class ArCompetitorsPage {
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly brands = signal<CompetitorBrandDto[]>([]);
   protected readonly settings = signal<ProjectSettingsDto | null>(null);
   protected readonly ourBrandsText = signal('');
@@ -53,7 +51,6 @@ export class ArCompetitorsPage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       const [brands, settings] = await Promise.all([
         firstValueFrom(this.api.getList()),

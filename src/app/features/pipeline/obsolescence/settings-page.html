@@ -15,9 +15,6 @@
 </ar-topbar>
 
 <div class="os ar-scroll">
-  @if (mock) {
-    <ar-banner tone="teal">Radar settings need the live API.</ar-banner>
-  }
   @if (error(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }

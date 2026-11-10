@@ -8,8 +8,6 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
 import { workspaceNameProblem, workspaceSlug } from '../../core/util/workspace-slug';
 import { CurrentUserService } from '../../core/services/current-user.service';
@@ -529,11 +527,10 @@ export class ArSignup {
     if (this.account.isAuthenticated()) {
       void this.router.navigateByUrl('/home');
     }
-    if (!environment.useMockData) {
-      firstValueFrom(this.api.getMobileVerification())
-        .then((r) => this.mobileRequired.set(r.required))
-        .catch(() => undefined);
-    }
+
+    firstValueFrom(this.api.getMobileVerification())
+      .then((r) => this.mobileRequired.set(r.required))
+      .catch(() => undefined);
   }
 
   protected async submit(event: Event): Promise<void> {

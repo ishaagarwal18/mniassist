@@ -3,8 +3,6 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { ChannelService } from '../../proxy/channels/channel.service';
 import {
   INVOICE_CATEGORIES,
@@ -59,7 +57,17 @@ const STATE_TONE: Record<InvoiceState, ChipTone> = {
  */
 @Component({
   selector: 'ar-invoices',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect, ArDateInput, ArGrid, GridModule, NgTemplateOutlet],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArSelect,
+    ArDateInput,
+    ArGrid,
+    GridModule,
+    NgTemplateOutlet,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './invoices.html',
   styleUrl: './invoices.scss',
@@ -86,7 +94,7 @@ export class ArInvoices {
   protected readonly paying = signal(false);
 
   constructor() {
-    if (!environment.useMockData) void this.checkout.gateways().then((g) => this.gateways.set(g));
+    void this.checkout.gateways().then((g) => this.gateways.set(g));
 
     if (this.mode === 'generate') {
       this.openDialog();
@@ -174,11 +182,7 @@ export class ArInvoices {
     this.recSource.set('');
     this.recLines.set({});
     this.recOpen.set(true);
-    if (environment.useMockData) {
-      this.recChannels.set([{ id: 'ch-1', number: '+91 90210 44xxx' }]);
-      this.recChannel.set('ch-1');
-      return;
-    }
+
     try {
       const page = await firstValueFrom(this.channelsApi.getList({ maxResultCount: 50 }));
       const list = (page.items ?? []).map((c) => ({

@@ -7,46 +7,12 @@ import { grantedPolicy } from '../../core/auth/permission';
 import { FState, Flow, WorkflowStore } from '../../core/services/workflow.service';
 import { ChannelService } from '../../core/services/channel.service';
 import { FlowFunnelDto, FlowService } from '../../proxy/flows';
-import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ChipTone } from '../../ui/chip';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
-
-const SEED_FUNNEL: FlowFunnelDto = {
-  flowName: 'RFQ intake',
-  started: 214,
-  completed: 138,
-  completionRate: 0.645,
-  screens: [
-    {
-      screenId: 'APPLICATION',
-      title: 'Application',
-      order: 0,
-      enteredCount: 214,
-      completedCount: 190,
-      dropOffRate: 0.112,
-    },
-    {
-      screenId: 'COMMERCIAL',
-      title: 'Commercial',
-      order: 1,
-      enteredCount: 190,
-      completedCount: 150,
-      dropOffRate: 0.211,
-    },
-    {
-      screenId: 'SUMMARY',
-      title: 'Summary',
-      order: 2,
-      enteredCount: 150,
-      completedCount: 138,
-      dropOffRate: 0.08,
-    },
-  ],
-};
 
 const STATE_TONE: Record<FState, ChipTone> = {
   draft: 'neutral',
@@ -90,9 +56,7 @@ export class ArFlows {
     this.funnelName.set(f.name);
     this.funnel.set(null);
     this.funnelOpen.set(true);
-    this.funnel.set(
-      environment.useMockData ? SEED_FUNNEL : await firstValueFrom(this.flowApi.getFunnel(f.id)),
-    );
+    this.funnel.set(await firstValueFrom(this.flowApi.getFunnel(f.id)));
   }
 
   protected pct(fraction?: number): string {

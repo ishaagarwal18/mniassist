@@ -2,15 +2,11 @@ import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { rxResource, toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map, bufferTime, filter } from 'rxjs';
 import { NavigationEnd, Router } from '@angular/router';
-
-import { environment } from '../../../environments/environment';
 import { InboxService as InboxApi } from '../../proxy/messaging';
 import { toConversation, toMessage } from '../api/mapping';
 import { Conversation } from '../models/conversation.model';
 import { InboxRealtimeService } from '../realtime/inbox-realtime.service';
 import { settled } from '../util/resource';
-
-const inHours = (h: number) => new Date(Date.now() + h * 3_600_000);
 
 /**
  * Team inbox store.
@@ -44,10 +40,6 @@ export class InboxService {
   readonly assignee = signal<{ id: string; name: string } | null>(null);
 
   constructor() {
-    if (environment.useMockData) {
-      return;
-    }
-
     void this.realtime.connect();
 
     // Keep the hub subscribed to whichever thread is open.
@@ -78,85 +70,11 @@ export class InboxService {
       });
   }
 
-  private readonly seed: readonly Conversation[] = [
-    {
-      id: 'c-1',
-      contactName: 'Sandeep Rao',
-      company: 'Meridian Foods · Pune',
-      phoneE164: '+91 98220 11xxx',
-      snippet: 'Can you share the wiring drawing for the…',
-      at: '11:04',
-      unread: 1,
-      window: { expiresAt: inHours(3.8) },
-      messages: [
-        {
-          id: 'm1',
-          direction: 'out',
-          at: '09:12',
-          status: 'read',
-          body: 'Good morning Sandeep — your AMC for the palletiser line (VX-PL-4417) is due for renewal on 30 September. Shall I send the renewal quote?',
-        },
-        {
-          id: 'm2',
-          direction: 'in',
-          at: '10:48',
-          body: 'Yes please. Also the line 3 drive is tripping on overload once a shift.',
-        },
-        {
-          id: 'm3',
-          direction: 'out',
-          at: '10:52',
-          status: 'read',
-          body: 'Noted. I have raised service ticket SR-1184 for the line 3 drive — an engineer will call today.',
-        },
-        {
-          id: 'm4',
-          direction: 'in',
-          at: '11:04',
-          body: 'Can you share the wiring drawing for the drive panel as well? We changed the motor last year.',
-        },
-      ],
-    },
-    {
-      id: 'c-2',
-      contactName: 'Priya Nambiar',
-      company: 'Kanpur Polymers · Maintenance',
-      phoneE164: '+91 99360 22xxx',
-      snippet: 'The AMC quote looks fine. Sending the PO…',
-      at: '10:37',
-      unread: 0,
-      window: { expiresAt: inHours(2.1) },
-      messages: [],
-    },
-    {
-      id: 'c-3',
-      contactName: 'Devendra Joshi',
-      company: 'Sanand Press Works',
-      phoneE164: '+91 90990 33xxx',
-      snippet: 'Calibration certificate please',
-      at: 'Yesterday',
-      unread: 0,
-      window: { expiresAt: null },
-      messages: [],
-    },
-    {
-      id: 'c-4',
-      contactName: 'Anitha Menon',
-      company: 'Hosur Machine Tools',
-      phoneE164: '+91 94440 55xxx',
-      snippet: 'What is the lead time on the servo pack?',
-      at: 'Yesterday',
-      unread: 0,
-      window: { expiresAt: inHours(0.4) },
-      messages: [],
-    },
-  ];
-
   private readonly _selectedId = signal<string | null>(null);
 
   private readonly listResource = rxResource({
     params: () =>
-      environment.useMockData || !this.viewingInbox()
+      !this.viewingInbox()
         ? undefined
         : {
             filter: this.filter(),
@@ -175,7 +93,7 @@ export class InboxService {
   });
 
   private readonly countsResource = rxResource({
-    params: () => (environment.useMockData ? undefined : {}),
+    params: () => ({}),
     stream: () => this.api.getCounts(),
     defaultValue: { all: 0, unassigned: 0, mine: 0, unread: 0, windowClosingSoon: 0, snoozed: 0 },
   });
@@ -183,7 +101,7 @@ export class InboxService {
   private readonly messagesResource = rxResource({
     params: () => {
       const id = this.selectedId();
-      return environment.useMockData || !this.viewingInbox() || !id ? undefined : id;
+      return !this.viewingInbox() || !id ? undefined : id;
     },
     stream: ({ params: conversationId }) =>
       this.api.getMessages(conversationId as string, { skipCount: 0, maxResultCount: 100 }).pipe(
@@ -196,7 +114,7 @@ export class InboxService {
   });
 
   readonly conversations = computed<readonly Conversation[]>(() =>
-    environment.useMockData ? this.seed : settled(this.listResource, [] as Conversation[]),
+    settled(this.listResource, [] as Conversation[]),
   );
 
   readonly selectedId = computed(() => this._selectedId() ?? this.conversations()[0]?.id ?? null);
@@ -205,60 +123,52 @@ export class InboxService {
     const conversation = this.conversations().find((c) => c.id === this.selectedId());
     if (!conversation) return undefined;
 
-    return environment.useMockData
-      ? conversation
-      : {
-          ...conversation,
-          messages: settled(this.messagesResource, [] as ReturnType<typeof toMessage>[]),
-        };
+    return {
+      ...conversation,
+      messages: settled(this.messagesResource, [] as ReturnType<typeof toMessage>[]),
+    };
   });
 
   /** How many conversations each filter would show, for the filter panel. */
   readonly counts = computed(() =>
-    environment.useMockData
-      ? { all: 4, unassigned: 12, mine: 2, unread: 3, windowClosingSoon: 1, snoozed: 0 }
-      : settled(this.countsResource, {
-          all: 0,
-          unassigned: 0,
-          mine: 0,
-          unread: 0,
-          windowClosingSoon: 0,
-          snoozed: 0,
-        }),
+    settled(this.countsResource, {
+      all: 0,
+      unassigned: 0,
+      mine: 0,
+      unread: 0,
+      windowClosingSoon: 0,
+      snoozed: 0,
+    }),
   );
 
   /** True once the list has answered, so "empty" means empty and not "still loading". */
-  readonly listLoaded = computed(
-    () => environment.useMockData || this.listResource.status() !== 'loading',
+  readonly listLoaded = computed(() => this.listResource.status() !== 'loading');
+
+  readonly unassignedCount = computed(
+    () =>
+      settled(this.countsResource, {
+        all: 0,
+        unassigned: 0,
+        mine: 0,
+        unread: 0,
+        windowClosingSoon: 0,
+        snoozed: 0,
+      }).unassigned,
   );
 
-  readonly unassignedCount = computed(() =>
-    environment.useMockData
-      ? 12
-      : settled(this.countsResource, {
-          all: 0,
-          unassigned: 0,
-          mine: 0,
-          unread: 0,
-          windowClosingSoon: 0,
-          snoozed: 0,
-        }).unassigned,
+  readonly unreadTotal = computed(
+    () =>
+      settled(this.countsResource, {
+        all: 0,
+        unassigned: 0,
+        mine: 0,
+        unread: 0,
+        windowClosingSoon: 0,
+        snoozed: 0,
+      }).unread,
   );
 
-  readonly unreadTotal = computed(() =>
-    environment.useMockData
-      ? this.conversations().reduce((n, c) => n + c.unread, 0)
-      : settled(this.countsResource, {
-          all: 0,
-          unassigned: 0,
-          mine: 0,
-          unread: 0,
-          windowClosingSoon: 0,
-          snoozed: 0,
-        }).unread,
-  );
-
-  readonly loading = computed(() => !environment.useMockData && this.listResource.isLoading());
+  readonly loading = computed(() => this.listResource.isLoading());
 
   select(id: string): void {
     this._selectedId.set(id);
@@ -276,26 +186,7 @@ export class InboxService {
   async suggestReplies(): Promise<string[]> {
     const id = this.selectedId();
     if (!id) return [];
-    if (environment.useMockData) {
-      const last = (this.selected()?.snippet ?? '').toLowerCase();
-      const hi = 'Hi,';
-      const picks: string[] = [];
-      if (/price|quote|cost|rate/.test(last))
-        picks.push(
-          `${hi} thanks for your interest. I'll prepare a quotation and send it across shortly — could you confirm the quantity and the delivery location?`,
-        );
-      if (/delivery|lead time|when|how long/.test(last))
-        picks.push(
-          `${hi} current lead time is about 2–3 weeks from order confirmation. I'll confirm the exact date once the order is placed.`,
-        );
-      if (picks.length === 0)
-        picks.push(
-          `${hi} thanks for your message — noted. Let me check the details and get back to you today.`,
-          `${hi} could you share a little more detail so I can point you to the right person?`,
-        );
-      picks.push(`${hi} happy to jump on a quick call if that's easier — what time works for you?`);
-      return picks;
-    }
+
     const result = await firstValueFrom(this.api.suggestReplies(id));
     return result.suggestions ?? [];
   }
@@ -316,7 +207,7 @@ export class InboxService {
   /** Send an ad-hoc file the agent picked (not from the library). M06-6. */
   async sendMedia(file: File, caption?: string): Promise<void> {
     const id = this.selectedId();
-    if (!id || environment.useMockData) return;
+    if (!id) return;
     const body = new FormData();
     body.append('file', file, file.name);
     if (caption?.trim()) body.append('caption', caption.trim());
@@ -332,7 +223,7 @@ export class InboxService {
     address?: string,
   ): Promise<void> {
     const id = this.selectedId();
-    if (!id || environment.useMockData) return;
+    if (!id) return;
     await firstValueFrom(
       this.api.sendLocation(id, {
         latitude,
@@ -351,7 +242,7 @@ export class InboxService {
     buttons: { title: string }[],
   ): Promise<void> {
     const id = this.selectedId();
-    if (!id || environment.useMockData) return;
+    if (!id) return;
     await firstValueFrom(
       this.api.sendInteractive(id, {
         bodyText: bodyText.trim(),
@@ -366,9 +257,6 @@ export class InboxService {
     conversationId: string,
     input: { text?: string; libraryDocumentId?: string },
   ): Promise<void> {
-    if (environment.useMockData) {
-      return;
-    }
     await firstValueFrom(this.api.send(conversationId, input));
     this.afterSend();
   }

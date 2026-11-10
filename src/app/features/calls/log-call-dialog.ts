@@ -6,7 +6,7 @@ import { ArButton, ArDialog } from '../../ui';
 import { ArDateInput } from '../../ui/date-input';
 import { ArSelect } from '../../ui/select';
 import { errorMessage, fromLocalInput, toLocalInput } from '../activities/activity-logic';
-import { CallGateway } from './call-mock';
+import { CallGateway } from './call-gateway';
 import { OUTCOME_CHOICES, OUTCOME_LABEL } from './call-logic';
 
 /** Writing up a call made or taken on the rep's own phone, so the contact's and the deal's history is complete. */

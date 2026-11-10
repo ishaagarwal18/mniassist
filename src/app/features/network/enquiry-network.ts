@@ -2,8 +2,6 @@ import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { NetworkLeadDto, NetworkService } from '../../proxy/network/network.service';
 import { ArButton, ArChip } from '../../ui';
@@ -102,18 +100,17 @@ export class ArEnquiryNetwork {
     this.canSee() && (!!this.lead() || (this.canRoute() && this.runsNetwork() && this.open()));
 
   constructor() {
-    if (this.canRoute() && !environment.useMockData) {
+    if (this.canRoute()) {
       firstValueFrom(this.api.getSettings())
         .then((s) => this.runsNetwork.set(s.canRunNetwork !== false))
         .catch(() => undefined);
-    } else if (environment.useMockData) {
-      this.runsNetwork.set(true);
+    } else {
     }
 
     effect(() => {
       const id = this.enquiryId();
       this.lead.set(null);
-      if (!this.canSee() || environment.useMockData) return;
+      if (!this.canSee()) return;
       firstValueFrom(this.api.getForEnquiry(id))
         .then((l) => this.lead.set(l ?? null))
         .catch(() => undefined);

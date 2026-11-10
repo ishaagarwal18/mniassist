@@ -11,7 +11,6 @@ import {
   BillingReportService,
 } from '../../proxy/project-billing/bank-guarantee.service';
 import { ArBanner, ArCard, ArStatTile } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { BG_KIND_TEXT, expiryTone } from './guarantees.logic';
 
 function rupees(paise: number): string {
@@ -29,7 +28,6 @@ function rupees(paise: number): string {
 export class ArBillingReportsPage {
   private readonly api = inject(BillingReportService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly within = signal(60);
   protected readonly report = signal<BillingReportDto | null>(null);
   protected readonly error = signal<string | null>(null);
@@ -50,7 +48,6 @@ export class ArBillingReportsPage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       this.report.set(await firstValueFrom(this.api.get(this.within())));
     } catch (e) {

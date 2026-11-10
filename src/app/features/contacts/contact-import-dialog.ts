@@ -8,8 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { ToastService } from '../../core/ui/toast.service';
 import {
   ConsentScope,
@@ -654,7 +652,7 @@ export class ArContactImport {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.pollTimer));
     // An import already running in this workspace (started here earlier, or by a colleague):
     // show its progress instead of a fresh file picker.
-    if (!environment.useMockData) void this.resume();
+    void this.resume();
   }
 
   private async resume(): Promise<void> {
@@ -749,9 +747,7 @@ export class ArContactImport {
       } else {
         this.content = text.replace(/^﻿/, '');
       }
-      const preview = environment.useMockData
-        ? localPreview(this.content)
-        : await firstValueFrom(this.api.inspect({ content: this.content }));
+      const preview = await firstValueFrom(this.api.inspect({ content: this.content }));
       this.preview.set(preview);
       this.mapping.set({ ...(preview.suggestedMapping ?? {}) });
       this.step.set('map');
@@ -797,15 +793,7 @@ export class ArContactImport {
     if (!this.consentEvidenceValid()) return;
     this.busy.set(true);
     try {
-      this.dryRun.set(
-        environment.useMockData
-          ? {
-              totalRows: this.preview()?.rowCount,
-              willCreate: this.preview()?.rowCount,
-              rejected: [],
-            }
-          : await firstValueFrom(this.api.dryRun(this.request())),
-      );
+      this.dryRun.set(await firstValueFrom(this.api.dryRun(this.request())));
       this.step.set('check');
     } catch {
       /* shown as a toast */
@@ -818,16 +806,6 @@ export class ArContactImport {
   protected async run(): Promise<void> {
     this.busy.set(true);
     try {
-      if (environment.useMockData) {
-        this.track({
-          id: 'mock',
-          status: ContactImportStatus.Completed,
-          created: this.importable(),
-          updated: 0,
-          skipped: 0,
-        });
-        return;
-      }
       this.track(
         await firstValueFrom(
           this.api.startImport({ ...this.request(), fileName: this.fileName() || null }),
@@ -843,25 +821,4 @@ export class ArContactImport {
   protected back(): void {
     this.step.set(this.step() === 'check' ? 'map' : 'file');
   }
-}
-
-/** Mock mode: the header row and a guess at the phone column, without the API. */
-function localPreview(csv: string): ImportPreviewDto {
-  const lines = csv.split(/\r?\n/).filter((l) => l.trim());
-  const headers = (lines[0] ?? '').split(',').map((h) => h.replace(/^"|"$/g, '').trim());
-  const phone = headers.find((h) => /phone|mobile|whatsapp|number/i.test(h));
-  return {
-    headers,
-    rowCount: Math.max(0, lines.length - 1),
-    suggestedMapping: phone ? { [phone]: 'waId' } : {},
-    sampleRows: lines.slice(1, 6).map((l) => l.split(',')) as unknown as [string][],
-    availableFields: [
-      { value: 'waId', label: 'Phone number', isRequired: true },
-      { value: 'displayName', label: 'Contact name' },
-      { value: 'companyName', label: 'Company' },
-      { value: 'designation', label: 'Designation' },
-      { value: 'city', label: 'City' },
-      { value: 'state', label: 'State' },
-    ],
-  };
 }

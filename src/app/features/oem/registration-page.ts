@@ -20,7 +20,6 @@ import {
 import { CustomerAccountService } from '../../proxy/contacts/customer-account.service';
 import { EnquiryService } from '../../proxy/pipeline/enquiry.service';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { ArAccountSearch, PickedAccount } from '../projects/account-search';
 import { REG_STATUS_TEXT, REG_STATUS_TONE, indiaDay, rupees, toPaise } from './oem.logic';
 
@@ -48,7 +47,6 @@ export class ArRegistrationPage {
   private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly canCreate = grantedPolicy('AutoReach.Spa.Create', this.permissions);
   protected readonly canApprove = grantedPolicy('AutoReach.Spa.Approve', this.permissions);
 
@@ -101,7 +99,6 @@ export class ArRegistrationPage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       this.oems.set((await firstValueFrom(this.oemsApi.getList())).filter((o) => o.isOem));
       const id = this.route.snapshot.paramMap.get('id');

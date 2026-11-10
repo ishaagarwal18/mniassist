@@ -7,7 +7,7 @@ import {
   DispatchDeliveryChallanDto,
 } from '../../../proxy/sales/delivery-challan.models';
 import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.service';
-import { DeliveryChallanStatus, SalesExportFormat } from '../../../proxy/sales/sales-enums';
+import { SalesExportFormat } from '../../../proxy/sales/sales-enums';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { ArButton, ArChip, ArIcon } from '../../../ui';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
@@ -24,7 +24,6 @@ import {
   toDispatchDto,
   validateDispatch,
 } from '../sales-records.logic';
-import { MOCK_CHALLANS } from './delivery-challans.mock';
 import { ArSalesExport } from '../sales-export';
 
 /**
@@ -127,7 +126,12 @@ import { ArSalesExport } from '../sales-export';
               aria-label="Consigned items"
             >
               <e-columns>
-                <e-column field="lineNumber" headerText="#" width="60" [textAlign]="'Right'"></e-column>
+                <e-column
+                  field="lineNumber"
+                  headerText="#"
+                  width="60"
+                  [textAlign]="'Right'"
+                ></e-column>
                 <e-column field="partNumber" headerText="Part number & description" width="280">
                   <ng-template #template let-l>
                     <div>
@@ -304,7 +308,6 @@ export class ArDeliveryChallanPage extends SalesRecordPage<DeliveryChallanDto> {
 
   protected readonly list = '/sales/challans';
   protected readonly noun = 'This delivery challan';
-  protected readonly mockRecords = MOCK_CHALLANS;
 
   protected readonly label = challanStatusLabel;
   protected readonly tone = challanStatusTone;
@@ -355,12 +358,6 @@ export class ArDeliveryChallanPage extends SalesRecordPage<DeliveryChallanDto> {
     const input = toDispatchDto(this.dispatch());
     const saved = await this.run(
       () => this.api.dispatch(dc.id!, input, { skipHandleError: true }),
-      (cur) => ({
-        ...cur,
-        ...input,
-        status: DeliveryChallanStatus.Dispatched,
-        dispatchedAtUtc: new Date().toISOString(),
-      }),
       (s) => `Challan ${s.challanNumber} dispatched.`,
       `${dc.challanNumber} could not be dispatched.`,
     );
@@ -370,11 +367,6 @@ export class ArDeliveryChallanPage extends SalesRecordPage<DeliveryChallanDto> {
   protected markDelivered(dc: DeliveryChallanDto): void {
     void this.run(
       () => this.api.markDelivered(dc.id!, { skipHandleError: true }),
-      (cur) => ({
-        ...cur,
-        status: DeliveryChallanStatus.Delivered,
-        deliveredAtUtc: new Date().toISOString(),
-      }),
       (s) => `Challan ${s.challanNumber} marked delivered.`,
       `${dc.challanNumber} could not be marked delivered.`,
     );

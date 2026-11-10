@@ -2,8 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { DatePipe } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
 import { settled } from '../../core/util/resource';
 import { ToastService } from '../../core/ui/toast.service';
@@ -129,7 +127,7 @@ export class ArMyExports {
 
   private readonly tick = signal(0);
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { t: this.tick() }),
+    params: () => ({ t: this.tick() }),
     stream: () => this.api.getMyList(),
     defaultValue: { items: [] as ReportExportDto[] },
   });

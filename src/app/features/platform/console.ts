@@ -3,8 +3,6 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, forkJoin, map } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { PlatformAdminService } from '../../proxy/administration';
 import { AtRiskStore } from '../../core/services/at-risk.store';
 import { RateCardDto } from '../../proxy/billing';
@@ -13,7 +11,7 @@ import { MessagingTier } from '../../proxy/channels/messaging-tier.enum';
 import { QualityRating } from '../../proxy/channels/quality-rating.enum';
 import { PricingCategory } from '../../proxy/messaging/pricing-category.enum';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip, ArDialog, ArStatTile } from '../../ui';
+import { ArBanner, ArButton, ArChip, ArDialog, ArStatTile } from '../../ui';
 import { ArDateInput } from '../../ui/date-input';
 import { ArSelect } from '../../ui/select';
 import { ConfirmService } from '../../core/ui/confirm.service';
@@ -95,122 +93,19 @@ const CATEGORY: Record<PricingCategory, string> = {
   [PricingCategory.UtilityInWindow]: 'Utility, in service window',
 };
 
-const SEED_METRICS: PlatformMetrics = {
-  totalTenants: 34,
-  activeTenants: 27,
-  trialTenants: 9,
-  tenantsAtRisk: 4,
-  mrrInPaise: 4_86_000_00,
-  messageMarginMonthInPaise: 1_92_450_00,
-  messagesMonth: 486_210,
-  averageDeliveryRate: 0.9642,
-  openComplianceRequests: 3,
-  tenantsToBreakEven: 6,
+/** While the figures load, or if they cannot be read: zeros, never sample figures. */
+const EMPTY_METRICS: PlatformMetrics = {
+  totalTenants: 0,
+  activeTenants: 0,
+  trialTenants: 0,
+  tenantsAtRisk: 0,
+  mrrInPaise: 0,
+  messageMarginMonthInPaise: 0,
+  messagesMonth: 0,
+  averageDeliveryRate: 0,
+  openComplianceRequests: 0,
+  tenantsToBreakEven: 0,
 };
-
-const SEED_TENANTS: TenantOverview[] = [
-  {
-    id: 't1',
-    name: 'Meridian Automation',
-    plan: 'Growth',
-    isTrial: false,
-    channelCount: 3,
-    worstQuality: 'yellow',
-    tier: '10K / 24h',
-    messages30d: 84_120,
-    spend30dInPaise: 72_18_400,
-    walletBalanceInPaise: 3_41_000,
-    activeUsers: 11,
-    lastActivityAt: new Date().toISOString(),
-  },
-  {
-    id: 't2',
-    name: 'Sanghvi Controls',
-    plan: 'Starter',
-    isTrial: false,
-    channelCount: 1,
-    worstQuality: 'green',
-    tier: '1K / 24h',
-    messages30d: 12_480,
-    spend30dInPaise: 10_92_300,
-    walletBalanceInPaise: 84_000,
-    activeUsers: 4,
-    lastActivityAt: new Date().toISOString(),
-  },
-  {
-    id: 't4',
-    name: 'Kohinoor Instruments',
-    plan: 'Starter',
-    isTrial: true,
-    channelCount: 1,
-    worstQuality: 'unknown',
-    tier: '250 / 24h',
-    messages30d: 0,
-    spend30dInPaise: 0,
-    walletBalanceInPaise: 0,
-    activeUsers: 2,
-    lastActivityAt: new Date(Date.now() - 9 * 86_400_000).toISOString(),
-  },
-  {
-    id: 't5',
-    name: 'Deccan Valves',
-    plan: 'Growth',
-    isTrial: false,
-    channelCount: 2,
-    worstQuality: 'red',
-    tier: '10K / 24h',
-    messages30d: 41_200,
-    spend30dInPaise: 34_86_000,
-    walletBalanceInPaise: 12_400,
-    activeUsers: 7,
-    lastActivityAt: new Date(Date.now() - 86_400_000).toISOString(),
-  },
-];
-
-const SEED_RATES: RateHistory[] = [
-  {
-    category: 'Marketing',
-    currentRateInPaise: 86.31,
-    points: [
-      {
-        effectiveFrom: '2024-06-01T00:00:00Z',
-        rateInPaise: 78.46,
-        changeInPaise: 0,
-        changePercent: 0,
-        isCurrent: false,
-      },
-      {
-        effectiveFrom: '2026-01-01T00:00:00Z',
-        rateInPaise: 86.31,
-        changeInPaise: 7.85,
-        changePercent: 10.01,
-        isCurrent: true,
-      },
-    ],
-  },
-  {
-    category: 'Utility',
-    currentRateInPaise: 11.5,
-    nextChangeFrom: new Date(Date.now() + 43 * 86_400_000).toISOString(),
-    nextRateInPaise: 12.2,
-    points: [
-      {
-        effectiveFrom: '2024-06-01T00:00:00Z',
-        rateInPaise: 11.0,
-        changeInPaise: 0,
-        changePercent: 0,
-        isCurrent: false,
-      },
-      {
-        effectiveFrom: '2026-01-01T00:00:00Z',
-        rateInPaise: 11.5,
-        changeInPaise: 0.5,
-        changePercent: 4.55,
-        isCurrent: true,
-      },
-    ],
-  },
-];
 
 function toRateHistory(cards: RateCardDto[]): RateHistory[] {
   const now = Date.now();
@@ -264,9 +159,26 @@ function toRateHistory(cards: RateCardDto[]): RateHistory[] {
  *
  * Every figure here comes from a nightly rollup, not a live scan across tenants.
  */
+const EMPTY_CONSOLE = {
+  metrics: EMPTY_METRICS,
+  tenants: [] as TenantOverview[],
+  rates: [] as RateHistory[],
+  cards: [] as RateCardDto[],
+};
+
 @Component({
   selector: 'ar-platform-console',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArStatTile, ArSelect, ArDateInput, NgTemplateOutlet],
+  imports: [
+    ArTopbar,
+    ArBanner,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArStatTile,
+    ArSelect,
+    ArDateInput,
+    NgTemplateOutlet,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './console.html',
   styleUrl: './console.scss',
@@ -401,7 +313,7 @@ export class ArPlatformConsole {
   }
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { atRisk: this.atRiskOnly() }),
+    params: () => ({ atRisk: this.atRiskOnly() }),
     stream: ({ params }) =>
       forkJoin({
         metrics: this.api.getMetrics(),
@@ -443,23 +355,19 @@ export class ArPlatformConsole {
           cards: r.rates.items ?? [],
         })),
       ),
-    defaultValue: {
-      metrics: SEED_METRICS,
-      tenants: SEED_TENANTS,
-      rates: SEED_RATES,
-      cards: [] as RateCardDto[],
-    },
+    defaultValue: EMPTY_CONSOLE,
   });
+  /** The figures; zeros if the request failed (resource.value() throws then). */
+  private readonly data = computed(() =>
+    this.resource.error() ? EMPTY_CONSOLE : this.resource.value(),
+  );
+  protected readonly failed = computed(() => this.resource.error() != null);
 
-  protected readonly metrics = computed(() =>
-    environment.useMockData ? SEED_METRICS : this.resource.value().metrics,
-  );
-  protected readonly rates = computed(() =>
-    environment.useMockData ? SEED_RATES : this.resource.value().rates,
-  );
+  protected readonly metrics = computed(() => this.data().metrics);
+  protected readonly rates = computed(() => this.data().rates);
 
   protected readonly tenants = computed(() => {
-    const all = environment.useMockData ? SEED_TENANTS : this.resource.value().tenants;
+    const all = this.data().tenants;
     const rows = this.atRiskOnly() ? all.filter((t) => this.isAtRisk(t)) : [...all];
 
     return rows.sort((a, b) => {

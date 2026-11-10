@@ -1,10 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
@@ -53,7 +58,9 @@ function localInput(utc?: string | null): string {
   template: `
     @if (isPage) {
       <ar-topbar [title]="pageTitle()">
-        <button ar-button type="button" variant="ghost" (click)="close()">Back to Status page</button>
+        <button ar-button type="button" variant="ghost" (click)="close()">
+          Back to Status page
+        </button>
       </ar-topbar>
       <div class="ar-form-page ar-scroll">
         <ng-container *ngTemplateOutlet="formsTpl" />
@@ -296,7 +303,7 @@ export class ArStatusIncidents {
 
   private readonly tick = signal(0);
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { t: this.tick() }),
+    params: () => ({ t: this.tick() }),
     stream: () => this.api.getIncidents({ skipCount: 0, maxResultCount: 100 }),
     defaultValue: { items: [] as StatusIncidentDto[], totalCount: 0 },
   });

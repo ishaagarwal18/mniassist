@@ -10,7 +10,7 @@ import { ArGoogleCalendarCard } from './google-calendar-card';
 
 /**
  * The signed-in user's own profile — name, contact details and password. Backed by
- * ABP's Account module (`/api/account/my-profile`); seeded in mock mode.
+ * ABP's Account module (`/api/account/my-profile`).
  */
 @Component({
   selector: 'ar-profile',

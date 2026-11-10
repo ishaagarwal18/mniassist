@@ -15,7 +15,6 @@ import {
   SpaClaimStatus,
 } from '../../proxy/oem/spa-claim.service';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import {
   CLAIM_STATUS_TEXT,
   CLAIM_STATUS_TONE,
@@ -46,7 +45,6 @@ export class ArClaimPage {
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly claim = signal<SpaClaimDto | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly busy = signal(false);
@@ -105,7 +103,6 @@ export class ArClaimPage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       this.claim.set(await firstValueFrom(this.api.get(this.route.snapshot.paramMap.get('id')!)));
     } catch (e) {

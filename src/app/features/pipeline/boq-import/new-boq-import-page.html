@@ -18,11 +18,7 @@
 
 <div class="bi ar-scroll">
   <div class="bi__wrap">
-    @if (mock) {
-      <ar-banner tone="teal"
-        >Reading files needs the live API. In demo mode this page shows the layout only.</ar-banner
-      >
-    } @else if (!available()) {
+    @if (!available()) {
       <ar-banner tone="warn">
         The AI model is not set up for this workspace, so files can't be read yet. Ask a platform
         admin to add the AI key.

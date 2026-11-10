@@ -1,8 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import {
   ChatEntryPointAssetsDto,
   ChatEntryPointDto,
@@ -81,33 +79,9 @@ export class ChatWidgetStore {
   private readonly channels = inject(ChannelService);
 
   private readonly reloadTick = signal(0);
-  private seed: ChatEntryPoint[] = [
-    {
-      id: 'cep-1',
-      channelId: 'ch-1',
-      name: 'Website — contact page',
-      slug: 'web7k2m',
-      source: LeadSource.Website,
-      prefilledMessage: 'Hi, I have a question about your drives.',
-      isActive: true,
-      clickCount: 42,
-      lastClickAt: new Date(Date.now() - 3 * 3_600_000).toISOString(),
-    },
-    {
-      id: 'cep-2',
-      channelId: 'ch-1',
-      name: 'IMTEX 2026 — stall H-14',
-      slug: 'imtx14b',
-      source: LeadSource.Exhibition,
-      prefilledMessage: 'Saw you at IMTEX — please send the retrofit datasheet.',
-      isActive: true,
-      clickCount: 118,
-      lastClickAt: new Date(Date.now() - 26 * 3_600_000).toISOString(),
-    },
-  ];
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.reloadTick() }),
+    params: () => ({ tick: this.reloadTick() }),
     stream: () =>
       this.api
         .getList({ skipCount: 0, maxResultCount: 200 })
@@ -115,13 +89,9 @@ export class ChatWidgetStore {
     defaultValue: [] as ChatEntryPoint[],
   });
 
-  readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
+  readonly loading = computed(() => this.resource.isLoading());
 
   readonly entryPoints = computed<readonly ChatEntryPoint[]>(() => {
-    if (environment.useMockData) {
-      this.reloadTick();
-      return this.seed;
-    }
     return settled(this.resource, [] as ChatEntryPoint[]);
   });
 
@@ -136,23 +106,6 @@ export class ChatWidgetStore {
     prefilledMessage: string;
     isActive: boolean;
   }): Promise<void> {
-    if (environment.useMockData) {
-      this.seed = [
-        {
-          id: `cep-${crypto.randomUUID().slice(0, 6)}`,
-          channelId: input.channelId,
-          name: input.name,
-          slug: Math.random().toString(36).slice(2, 9),
-          source: input.source,
-          prefilledMessage: input.prefilledMessage,
-          isActive: input.isActive,
-          clickCount: 0,
-        },
-        ...this.seed,
-      ];
-      this.reloadTick.update((n) => n + 1);
-      return;
-    }
     await firstValueFrom(
       this.api.create({
         channelId: input.channelId,
@@ -169,11 +122,6 @@ export class ChatWidgetStore {
     id: string,
     input: { name: string; source: LeadSource; prefilledMessage: string; isActive: boolean },
   ): Promise<void> {
-    if (environment.useMockData) {
-      this.seed = this.seed.map((e) => (e.id === id ? { ...e, ...input } : e));
-      this.reloadTick.update((n) => n + 1);
-      return;
-    }
     const existing = this.entryPoints().find((e) => e.id === id);
     await firstValueFrom(
       this.api.update(id, {
@@ -188,39 +136,13 @@ export class ChatWidgetStore {
   }
 
   async remove(id: string): Promise<void> {
-    if (environment.useMockData) {
-      this.seed = this.seed.filter((e) => e.id !== id);
-      this.reloadTick.update((n) => n + 1);
-      return;
-    }
     await firstValueFrom(this.api.delete(id));
     this.reload();
   }
 
   async assets(id: string): Promise<ChatEntryPointAssets> {
-    if (environment.useMockData) {
-      return this.mockAssets(this.seed.find((e) => e.id === id));
-    }
     const dto = await firstValueFrom(this.api.getAssets(id));
     return normaliseAssets(dto);
-  }
-
-  private mockAssets(entry?: ChatEntryPoint): ChatEntryPointAssets {
-    const phone =
-      this.channels.channels().find((c) => c.id === entry?.channelId)?.displayPhone ??
-      '+919021044000';
-    const digits = phone.replace(/\D/g, '');
-    const text = entry?.prefilledMessage
-      ? `${entry.prefilledMessage}\n\n[${entry.slug}]`
-      : `[${entry?.slug ?? 'preview'}]`;
-    const waLink = `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
-    return {
-      waLink,
-      prefilledText: text,
-      widgetSnippet: mockWidget(waLink, entry?.name ?? 'Chat with us'),
-      qrSvg: '',
-      qrPngDataUri: '',
-    };
   }
 }
 
@@ -232,16 +154,4 @@ function normaliseAssets(dto: ChatEntryPointAssetsDto): ChatEntryPointAssets {
     qrSvg: dto.qrSvg ?? '',
     qrPngDataUri: dto.qrPngDataUri ?? '',
   };
-}
-
-function mockWidget(waLink: string, label: string): string {
-  return (
-    '<!-- MNI Assist WhatsApp button -->\n' +
-    "<script>(function(){var a=document.createElement('a');" +
-    `a.href='${waLink}';a.target='_blank';a.rel='noopener';` +
-    `a.setAttribute('aria-label','${label.replace(/'/g, '')}');` +
-    "a.style.cssText='position:fixed;right:20px;bottom:20px;z-index:2147483000;" +
-    "width:56px;height:56px;border-radius:50%;background:#25D366;';" +
-    'document.body.appendChild(a);})();</script>'
-  );
 }

@@ -1,171 +1,41 @@
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
   BillOfMaterialDto,
   BillOfMaterialService,
   BomStatus,
-  BomType,
   RoutingStage,
 } from '../../../proxy/manufacturing';
-import { ArButton, ArCard, ArChip, ChipTone } from '../../../ui';
+import { ArBanner, ArButton, ArCard, ArChip, ChipTone } from '../../../ui';
+import { readApiError } from '../../../core/util/api-error';
 import { ArGrid } from '../../../ui/grid';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 
-const MOCK_BOM_DETAILS: BillOfMaterialDto[] = [
-  {
-    id: 'bom-1',
-    bomNumber: 'BOM-2026-0001',
-    revisionCode: 'Rev C',
-    finishedGoodPartNumber: 'HV-400-P',
-    finishedGoodDescription: 'Proportional Directional Hydraulic Valve 350 Bar',
-    finishedGoodUom: 'NOS',
-    baseQuantity: 1,
-    bomType: BomType.Manufacturing,
-    status: BomStatus.Active,
-    totalEstimatedCostInPaise: 42_500_00,
-    remarks: 'Approved for automated assembly line 3. High-precision spool tolerances.',
-    creationTime: new Date(Date.now() - 30 * 86_400_000).toISOString(),
-    items: [
-      {
-        id: 'bomi-1',
-        billOfMaterialId: 'bom-1',
-        itemSequence: 10,
-        componentPartNumber: 'VB-BODY-400',
-        componentDescription: 'Ductile Iron Valve Body Casting GGG40',
-        quantityPerUnit: 1,
-        unitOfMeasure: 'NOS',
-        scrapPercentage: 2.0,
-        unitCostInPaise: 16_000_00,
-        routingStage: RoutingStage.Machining,
-        isSubAssembly: false,
-      },
-      {
-        id: 'bomi-2',
-        billOfMaterialId: 'bom-1',
-        itemSequence: 20,
-        componentPartNumber: 'SPL-EN36-04',
-        componentDescription: 'Ground & Lapped Spool EN36 Case Hardened',
-        quantityPerUnit: 1,
-        unitOfMeasure: 'NOS',
-        scrapPercentage: 3.5,
-        unitCostInPaise: 9_500_00,
-        routingStage: RoutingStage.Machining,
-        isSubAssembly: false,
-      },
-      {
-        id: 'bomi-3',
-        billOfMaterialId: 'bom-1',
-        itemSequence: 30,
-        componentPartNumber: 'SOL-PROP-24V',
-        componentDescription: 'Proportional Solenoid Coil 24VDC with Hirschmann Plug',
-        quantityPerUnit: 2,
-        unitOfMeasure: 'NOS',
-        scrapPercentage: 0.5,
-        unitCostInPaise: 5_200_00,
-        routingStage: RoutingStage.Assembly,
-        isSubAssembly: true,
-      },
-      {
-        id: 'bomi-4',
-        billOfMaterialId: 'bom-1',
-        itemSequence: 40,
-        componentPartNumber: 'FKM-SEAL-KIT-04',
-        componentDescription: 'Viton FKM Seal & O-Ring Kit 90 Shore A',
-        quantityPerUnit: 1,
-        unitOfMeasure: 'SET',
-        scrapPercentage: 1.0,
-        unitCostInPaise: 1_800_00,
-        routingStage: RoutingStage.Assembly,
-        isSubAssembly: false,
-      },
-      {
-        id: 'bomi-5',
-        billOfMaterialId: 'bom-1',
-        itemSequence: 50,
-        componentPartNumber: 'TEST-CALIB-HV',
-        componentDescription: 'Automated Hydraulic Test Bench Calibration & Inspection Report',
-        quantityPerUnit: 1,
-        unitOfMeasure: 'SRV',
-        scrapPercentage: 0.0,
-        unitCostInPaise: 4_800_00,
-        routingStage: RoutingStage.FinalTesting,
-        isSubAssembly: false,
-      },
-    ],
-  },
-  {
-    id: 'bom-2',
-    bomNumber: 'BOM-2026-0002',
-    revisionCode: 'Rev A',
-    finishedGoodPartNumber: 'PLC-PNL-400A',
-    finishedGoodDescription: 'Main Automation PLC & VFD Control Panel 400A',
-    finishedGoodUom: 'NOS',
-    baseQuantity: 1,
-    bomType: BomType.Manufacturing,
-    status: BomStatus.Active,
-    totalEstimatedCostInPaise: 245_000_00,
-    remarks: 'CE certified panel fabrication for packaging line. IP54 Rittal enclosure.',
-    creationTime: new Date(Date.now() - 15 * 86_400_000).toISOString(),
-    items: [
-      {
-        id: 'bomi-6',
-        billOfMaterialId: 'bom-2',
-        itemSequence: 10,
-        componentPartNumber: 'RIT-ENC-2000',
-        componentDescription: 'Rittal TS8 Modular Enclosure 2000x800x600 IP55',
-        quantityPerUnit: 1,
-        unitOfMeasure: 'NOS',
-        scrapPercentage: 0.0,
-        unitCostInPaise: 65_000_00,
-        routingStage: RoutingStage.Fabrication,
-        isSubAssembly: false,
-      },
-      {
-        id: 'bomi-7',
-        billOfMaterialId: 'bom-2',
-        itemSequence: 20,
-        componentPartNumber: 'SIEM-S7-1515',
-        componentDescription: 'Siemens S7-1500 CPU 1515-2 PN + 32 DI / 32 DO / 16 AI',
-        quantityPerUnit: 1,
-        unitOfMeasure: 'NOS',
-        scrapPercentage: 0.0,
-        unitCostInPaise: 110_000_00,
-        routingStage: RoutingStage.Assembly,
-        isSubAssembly: true,
-      },
-      {
-        id: 'bomi-8',
-        billOfMaterialId: 'bom-2',
-        itemSequence: 30,
-        componentPartNumber: 'DANF-VLT-15KW',
-        componentDescription: 'Danfoss FC302 AutomationDrive 15 kW with Profinet',
-        quantityPerUnit: 2,
-        unitOfMeasure: 'NOS',
-        scrapPercentage: 0.0,
-        unitCostInPaise: 35_000_00,
-        routingStage: RoutingStage.Assembly,
-        isSubAssembly: true,
-      },
-    ],
-  },
-];
-
 @Component({
   selector: 'ar-bom-detail-page',
-  imports: [CommonModule, DecimalPipe, ArTopbar, ArButton, ArCard, ArChip, ArGrid, GridModule],
+  imports: [
+    CommonModule,
+    DecimalPipe,
+    ArTopbar,
+    ArBanner,
+    ArButton,
+    ArCard,
+    ArChip,
+    ArGrid,
+    GridModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
-      [title]="bom() ? ('BOM: ' + bom()!.bomNumber + ' (' + bom()!.revisionCode + ')') : 'Bill of Materials'"
+      [title]="
+        bom() ? 'BOM: ' + bom()!.bomNumber + ' (' + bom()!.revisionCode + ')' : 'Bill of Materials'
+      "
       subtitle="Assembly breakdown, multi-level component explosion, cost roll-up and routing stages"
     >
-      <button ar-button variant="ghost" (click)="back()">
-        Back to BOM Registry
-      </button>
+      <button ar-button variant="ghost" (click)="back()">Back to BOM Registry</button>
     </ar-topbar>
 
     <div class="page-container ar-scroll">
@@ -231,14 +101,28 @@ const MOCK_BOM_DETAILS: BillOfMaterialDto[] = [
                     </span>
                   </ng-template>
                 </e-column>
-                <e-column field="componentDescription" headerText="Description" width="240"></e-column>
-                <e-column field="quantityPerUnit" headerText="Qty/Unit" width="100" [textAlign]="'Right'">
+                <e-column
+                  field="componentDescription"
+                  headerText="Description"
+                  width="240"
+                ></e-column>
+                <e-column
+                  field="quantityPerUnit"
+                  headerText="Qty/Unit"
+                  width="100"
+                  [textAlign]="'Right'"
+                >
                   <ng-template #template let-item>
                     <span class="font-mono">{{ item.quantityPerUnit }}</span>
                   </ng-template>
                 </e-column>
                 <e-column field="unitOfMeasure" headerText="UOM" width="80"></e-column>
-                <e-column field="scrapPercentage" headerText="Scrap %" width="100" [textAlign]="'Right'">
+                <e-column
+                  field="scrapPercentage"
+                  headerText="Scrap %"
+                  width="100"
+                  [textAlign]="'Right'"
+                >
                   <ng-template #template let-item>
                     <span class="font-mono text-muted">{{ item.scrapPercentage }}%</span>
                   </ng-template>
@@ -274,9 +158,7 @@ const MOCK_BOM_DETAILS: BillOfMaterialDto[] = [
 
         <!-- Footer Actions -->
         <div class="footer-actions">
-          <button ar-button variant="ghost" (click)="back()">
-            Back to BOM Registry
-          </button>
+          <button ar-button variant="ghost" (click)="back()">Back to BOM Registry</button>
           <button
             ar-button
             variant="primary"
@@ -294,6 +176,10 @@ const MOCK_BOM_DETAILS: BillOfMaterialDto[] = [
             Release to Production
           </button>
         </div>
+      } @else {
+        <ar-banner tone="bad">{{
+          loadError() || 'This bill of materials was not found.'
+        }}</ar-banner>
       }
     </div>
   `,
@@ -412,23 +298,23 @@ export class ArBomDetailPage implements OnInit {
   protected readonly BomStatus = BomStatus;
   protected readonly bom = signal<BillOfMaterialDto | null>(null);
   protected readonly loading = signal(true);
+  protected readonly loadError = signal<string | null>(null);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') || '';
-    if (!environment.useMockData && id) {
+    if (id) {
       this.bomService.get(id).subscribe({
         next: (res) => {
           this.bom.set(res);
           this.loading.set(false);
         },
-        error: () => {
-          this.bom.set(MOCK_BOM_DETAILS[0]);
+        error: (e: unknown) => {
+          this.loadError.set(readApiError(e, 'This bill of materials could not be loaded.'));
           this.loading.set(false);
         },
       });
     } else {
-      const found = MOCK_BOM_DETAILS.find((b) => b.id === id) || MOCK_BOM_DETAILS[0];
-      this.bom.set(found);
+      this.loadError.set('No bill of materials was given.');
       this.loading.set(false);
     }
   }
@@ -484,14 +370,24 @@ export class ArBomDetailPage implements OnInit {
     }
   }
 
+  /** Opens the new work order form filled in from this BOM; nothing is saved until it is submitted. */
   generateWorkOrder(bom: BillOfMaterialDto): void {
-    this.toasts.success(`Work order generated from BOM ${bom.bomNumber}.`);
-    void this.router.navigateByUrl('/manufacturing/work-orders');
+    void this.router.navigate(['/manufacturing/work-orders/new'], {
+      queryParams: {
+        bomId: bom.id,
+        partNumber: bom.finishedGoodPartNumber,
+        description: bom.finishedGoodDescription,
+      },
+    });
   }
 
   releaseToProduction(bom: BillOfMaterialDto): void {
-    bom.status = BomStatus.Active;
-    this.bom.set({ ...bom });
+    if (bom.id) {
+      // The app-wide toasts confirm the change, or show why it was refused.
+      this.bomService.activate(bom.id).subscribe({ next: (saved) => this.bom.set(saved) });
+      return;
+    }
+    this.bom.set({ ...bom, status: BomStatus.Active });
     this.toasts.success(`BOM ${bom.bomNumber} released to production.`);
   }
 }

@@ -14,7 +14,6 @@ import {
   BankGuaranteeStatus,
 } from '../../proxy/project-billing/bank-guarantee.service';
 import { ArButton, ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import {
   BG_KIND_TEXT,
   BG_RETURN_TEXT,
@@ -75,7 +74,7 @@ export class ArGuaranteesPanel {
   constructor() {
     effect(() => {
       const id = this.orderId();
-      if (!environment.useMockData && this.canSee()) void this.load(id);
+      if (this.canSee()) void this.load(id);
     });
   }
 

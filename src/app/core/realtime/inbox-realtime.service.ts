@@ -24,7 +24,7 @@ export interface InboxEvent {
  * Connects to the `inbox` SignalR hub, joins the tenant group automatically and the
  * open conversation on request. Every server push is a "refetch this" signal — the
  * payload never carries a rendered message — so the consumer just reloads whatever
- * the event names. In mock mode the connection is never opened.
+ * the event names.
  */
 @Injectable({ providedIn: 'root' })
 export class InboxRealtimeService {
@@ -45,7 +45,7 @@ export class InboxRealtimeService {
   readonly connected = signal(false);
 
   async connect(): Promise<void> {
-    if (environment.useMockData || this.connection) {
+    if (this.connection) {
       return;
     }
 

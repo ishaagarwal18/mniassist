@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { AccountSwitcher } from '../../core/auth/account-switch';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
@@ -214,11 +212,10 @@ export class ArLinkedAccountsCard {
   private readonly dialogs = inject(ConfirmService);
   private readonly toasts = inject(ToastService);
   protected readonly switcher = inject(AccountSwitcher);
-  private readonly mock = environment.useMockData;
 
   private readonly tick = signal(0);
   private readonly resource = rxResource({
-    params: () => (this.mock ? undefined : { t: this.tick() }),
+    params: () => ({ t: this.tick() }),
     stream: () => this.api.getList(),
     defaultValue: { items: [] as LinkedAccountDto[] },
   });

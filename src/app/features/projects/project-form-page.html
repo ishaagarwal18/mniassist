@@ -3,15 +3,12 @@
   subtitle="The plant or line, who the end-user is, and when things happen"
 >
   <a ar-button variant="ghost" [routerLink]="id ? ['/projects', id] : ['/projects']">Cancel</a>
-  <button ar-button type="button" [disabled]="busy() || !!problem() || mock" (click)="save()">
+  <button ar-button type="button" [disabled]="busy() || !!problem()" (click)="save()">
     {{ id ? 'Save' : 'Create project' }}
   </button>
 </ar-topbar>
 
 <div class="pf ar-scroll">
-  @if (mock) {
-    <ar-banner tone="teal">Projects need the live API.</ar-banner>
-  }
   @if (error(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }

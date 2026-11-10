@@ -8,7 +8,7 @@
       [value]="code()"
       (input)="code.set($any($event.target).value)"
     />
-    <button ar-button type="submit" [disabled]="busy() || mock">Look up</button>
+    <button ar-button type="submit" [disabled]="busy()">Look up</button>
   </form>
   <label class="dp__photo">
     Or a photo of the screen

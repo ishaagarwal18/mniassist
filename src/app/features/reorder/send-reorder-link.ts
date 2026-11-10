@@ -8,8 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import {
   ReorderPortalService,
   SentReorderLinkDto,
@@ -115,15 +113,7 @@ export class ArSendReorderLink {
     this.busy.set(true);
     this.error.set(null);
     try {
-      this.result.set(
-        environment.useMockData
-          ? {
-              url: 'https://mniassist.com/r/host.mockToken',
-              expiresAtUtc: new Date(Date.now() + 7 * 86_400_000).toISOString(),
-              sent: true,
-            }
-          : await firstValueFrom(this.api.sendLink(contactId)),
-      );
+      this.result.set(await firstValueFrom(this.api.sendLink(contactId)));
     } catch (e: unknown) {
       this.error.set(
         (e as { error?: { error?: { message?: string } } })?.error?.error?.message ??

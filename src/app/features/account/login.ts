@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { TwoFactorRequiredError } from '../../core/auth/two-factor';
 import {
@@ -25,8 +23,7 @@ import { ArBrand } from '../../layout/brand';
 import { workspaceSlug } from '../../core/util/workspace-slug';
 
 /**
- * The sign-in screen. Username + password (ABP's password grant in real mode; any
- * non-empty credentials in the demo build). Rendered outside the app shell, so a
+ * The sign-in screen. Username + password (ABP's password grant). Rendered outside the app shell, so a
  * signed-out visitor never sees the navigation.
  */
 @Component({
@@ -202,24 +199,22 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
             <p class="lg__error">{{ e }}</p>
           }
 
-          @if (!mock) {
-            <label class="lg__field">
-              <span
-                >{{ i18n.t('Workspace') }}
-                <em class="lg__opt">{{ i18n.t('— leave blank for the host') }}</em></span
-              >
-              <input
-                class="ar-field__input"
-                name="tenant"
-                autocapitalize="none"
-                autocomplete="organization"
-                placeholder="e.g. Sun Energy Automation"
-                [value]="tenant()"
-                (input)="tenant.set($any($event.target).value)"
-                (blur)="previewWorkspaceBranding()"
-              />
-            </label>
-          }
+          <label class="lg__field">
+            <span
+              >{{ i18n.t('Workspace') }}
+              <em class="lg__opt">{{ i18n.t('— leave blank for the host') }}</em></span
+            >
+            <input
+              class="ar-field__input"
+              name="tenant"
+              autocapitalize="none"
+              autocomplete="organization"
+              placeholder="e.g. Sun Energy Automation"
+              [value]="tenant()"
+              (input)="tenant.set($any($event.target).value)"
+              (blur)="previewWorkspaceBranding()"
+            />
+          </label>
 
           <label class="lg__field">
             <span>{{ i18n.t('Username, email or phone number') }}</span>
@@ -275,19 +270,13 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
             </div>
           }
 
-          @if (mock) {
-            <p class="lg__hint">
-              {{ i18n.t('Demo build — any username and password will sign you in.') }}
-            </p>
-          } @else {
-            <a class="lg__link lg__link--forgot" routerLink="/forgot-password">{{
-              i18n.t('Forgot password?')
-            }}</a>
-            <p class="lg__new">
-              {{ i18n.t('New to MNI Assist?') }}
-              <a class="lg__link" routerLink="/signup">{{ i18n.t('Create a workspace') }}</a>
-            </p>
-          }
+          <a class="lg__link lg__link--forgot" routerLink="/forgot-password">{{
+            i18n.t('Forgot password?')
+          }}</a>
+          <p class="lg__new">
+            {{ i18n.t('New to MNI Assist?') }}
+            <a class="lg__link" routerLink="/signup">{{ i18n.t('Create a workspace') }}</a>
+          </p>
         }
       </form>
       <ul class="lg__trust" aria-label="Security">
@@ -499,7 +488,6 @@ export class ArLogin {
   private readonly router = inject(Router);
   private readonly branding = inject(BrandingService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly tenant = signal('');
   protected readonly username = signal('');
   protected readonly password = signal('');
@@ -556,12 +544,11 @@ export class ArLogin {
     if (this.account.isAuthenticated()) {
       void this.router.navigateByUrl('/home');
     }
-    if (!this.mock) {
-      this.externalLogin.getProviders({ skipHandleError: true }).subscribe({
-        next: (r) => this.externalProviders.set(r.items ?? []),
-        error: () => this.externalProviders.set([]),
-      });
-    }
+
+    this.externalLogin.getProviders({ skipHandleError: true }).subscribe({
+      next: (r) => this.externalProviders.set(r.items ?? []),
+      error: () => this.externalProviders.set([]),
+    });
   }
 
   protected continueWith(p: ExternalLoginProviderDto): void {
@@ -573,7 +560,6 @@ export class ArLogin {
   }
 
   protected async previewWorkspaceBranding(): Promise<void> {
-    if (this.mock) return;
     const name = workspaceSlug(this.tenant());
     if (!name || name === this.lastPreviewedWorkspace) return;
     this.lastPreviewedWorkspace = name;

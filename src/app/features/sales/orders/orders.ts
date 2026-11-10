@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GridModule, RecordClickEventArgs } from '@syncfusion/ej2-angular-grids';
-import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import { SalesOrderDto } from '../../../proxy/sales/sales-order.models';
 import { SalesOrderService } from '../../../proxy/sales/sales-order.service';
@@ -23,13 +22,21 @@ import {
   orderStatusLabel,
   orderStatusTone,
 } from '../sales-records.logic';
-import { MOCK_ORDERS } from './orders.mock';
 import { ArSalesExport } from '../sales-export';
 
 @Component({
   selector: 'ar-sales-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArSalesExport, ArGrid, GridModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArSalesExport,
+    ArGrid,
+    GridModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -164,7 +171,12 @@ import { ArSalesExport } from '../sales-export';
                 {{ order.deliveryTerms || 'Standard' }}
               </ng-template>
             </e-column>
-            <e-column field="grandTotalInPaise" headerText="Grand total" textAlign="Right" width="140">
+            <e-column
+              field="grandTotalInPaise"
+              headerText="Grand total"
+              textAlign="Right"
+              width="140"
+            >
               <ng-template #template let-order>
                 <span class="num-col font-bold">
                   ₹{{ order.grandTotalInPaise / 100 | number: '1.2-2' }}
@@ -396,8 +408,7 @@ export class ArSalesOrders {
 
   private readonly toasts = inject(ToastService);
 
-  /** Demo rows only in mock mode; a real workspace sees its own orders or none. */
-  orders = signal<SalesOrderDto[]>(environment.useMockData ? MOCK_ORDERS : []);
+  orders = signal<SalesOrderDto[]>([]);
   loadError = signal<string | null>(null);
   searchQuery = signal<string>('');
   selectedStatus = signal<SalesOrderStatus | null>(null);
@@ -466,23 +477,21 @@ export class ArSalesOrders {
   }
 
   loadOrders() {
-    if (!environment.useMockData) {
-      this.orderService
-        .getList({
-          maxResultCount: 100,
-          customerId: this.scope()?.customerId ?? undefined,
-          customerAccountId: this.scope()?.accountId ?? undefined,
-        })
-        .subscribe({
-          next: (res) => {
-            this.orders.set(res?.items ?? []);
-            this.loadError.set(null);
-          },
-          error: (e: unknown) => {
-            this.loadError.set(errorMessage(e, 'Sales orders could not be loaded.'));
-          },
-        });
-    }
+    this.orderService
+      .getList({
+        maxResultCount: 100,
+        customerId: this.scope()?.customerId ?? undefined,
+        customerAccountId: this.scope()?.accountId ?? undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          this.orders.set(res?.items ?? []);
+          this.loadError.set(null);
+        },
+        error: (e: unknown) => {
+          this.loadError.set(errorMessage(e, 'Sales orders could not be loaded.'));
+        },
+      });
   }
 
   onOrderClick(e: RecordClickEventArgs): void {
@@ -508,14 +517,7 @@ export class ArSalesOrders {
 
   confirmOrder(order: SalesOrderDto) {
     if (!order.id) return;
-    if (environment.useMockData) {
-      this.updateOrderInList({
-        ...order,
-        status: SalesOrderStatus.Confirmed,
-        confirmedAtUtc: new Date().toISOString(),
-      });
-      return;
-    }
+
     this.orderService.confirm(order.id).subscribe({
       next: (updated) => {
         this.updateOrderInList(updated);
@@ -527,10 +529,7 @@ export class ArSalesOrders {
 
   createChallan(order: SalesOrderDto) {
     if (!order.id) return;
-    if (environment.useMockData) {
-      this.router.navigate(['/sales/challans']);
-      return;
-    }
+
     this.challanService.createFromSalesOrder(order.id).subscribe({
       next: (challan) => {
         this.router.navigate(['/sales/challans', challan.id]);
@@ -544,10 +543,7 @@ export class ArSalesOrders {
 
   createInvoice(order: SalesOrderDto) {
     if (!order.id) return;
-    if (environment.useMockData) {
-      this.router.navigate(['/sales/invoices']);
-      return;
-    }
+
     this.invoiceService.createFromSalesOrder(order.id).subscribe({
       next: (invoice) => {
         this.router.navigate(['/sales/invoices', invoice.id]);

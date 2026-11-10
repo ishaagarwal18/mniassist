@@ -11,8 +11,6 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { ConfirmService } from '../../core/ui/confirm.service';
@@ -87,7 +85,9 @@ const PAGE = { maxResultCount: 200 };
   template: `
     @if (isPage) {
       <ar-topbar [title]="pageTitle()">
-        <button ar-button type="button" variant="ghost" (click)="close()">Back to Reseller programme</button>
+        <button ar-button type="button" variant="ghost" (click)="close()">
+          Back to Reseller programme
+        </button>
       </ar-topbar>
       <div class="ar-form-page ar-scroll">
         <ng-container *ngTemplateOutlet="formsTpl" />
@@ -106,784 +106,846 @@ const PAGE = { maxResultCount: 200 };
       </ar-topbar>
 
       <div class="page ar-scroll">
-      <div class="page__col">
-        @if (mock) {
-          <ar-banner tone="teal"
-            >The reseller programme needs the API; it isn't available in demo mode.</ar-banner
-          >
-        }
-        @if (error(); as e) {
-          <ar-banner tone="bad">{{ e }}</ar-banner>
-        }
+        <div class="page__col">
+          @if (error(); as e) {
+            <ar-banner tone="bad">{{ e }}</ar-banner>
+          }
 
-        @if (hostView()) {
-          <ar-card heading="Partners">
-            @if (partners().length === 0) {
-              <p class="empty">
-                No partners yet. Workspaces register from their own Reseller programme page, or add
-                one here.
+          @if (hostView()) {
+            <ar-card heading="Partners">
+              @if (partners().length === 0) {
+                <p class="empty">
+                  No partners yet. Workspaces register from their own Reseller programme page, or
+                  add one here.
+                </p>
+              } @else {
+                <ejs-grid
+                  arGrid="reseller-partners"
+                  [dataSource]="partners()"
+                  aria-label="Partners"
+                >
+                  <e-columns>
+                    <e-column field="companyName" headerText="Partner" width="220">
+                      <ng-template #template let-p>
+                        <strong>{{ p.companyName }}</strong>
+                        <span class="sub ar-mono">{{ p.partnerCode }}</span>
+                      </ng-template>
+                    </e-column>
+                    <e-column field="status" headerText="Status" width="140">
+                      <ng-template #template let-p>
+                        <ar-chip [tone]="partnerStatus(p.status).tone">{{
+                          partnerStatus(p.status).label
+                        }}</ar-chip>
+                      </ng-template>
+                    </e-column>
+                    <e-column field="tier" headerText="Tier" width="130">
+                      <ng-template #template let-p>
+                        {{ tierLabel(p.tier) }}
+                      </ng-template>
+                    </e-column>
+                    <e-column
+                      field="commissionRateBps"
+                      headerText="Commission"
+                      textAlign="Right"
+                      width="130"
+                    >
+                      <ng-template #template let-p>
+                        {{ bps(p.commissionRateBps) }}
+                      </ng-template>
+                    </e-column>
+                    <e-column
+                      field="accruedCommissionPaise"
+                      headerText="Accrued"
+                      textAlign="Right"
+                      width="140"
+                    >
+                      <ng-template #template let-p>
+                        {{ money(p.accruedCommissionPaise) }}
+                      </ng-template>
+                    </e-column>
+                    <e-column headerText="" width="90">
+                      <ng-template #template let-p>
+                        <button type="button" class="link" (click)="select(p.id)">Open</button>
+                      </ng-template>
+                    </e-column>
+                  </e-columns>
+                </ejs-grid>
+              }
+            </ar-card>
+          } @else if (loaded() && !partner()) {
+            <ar-card heading="Become a reseller partner">
+              <p class="lead">
+                Sell AutoReach to your own clients under your brand. You register once; the platform
+                team reviews and approves you, then you can set up your branding and domain, add
+                client workspaces and earn commission on what they pay.
               </p>
-            } @else {
-              <ejs-grid arGrid="reseller-partners" [dataSource]="partners()" aria-label="Partners">
-                <e-columns>
-                  <e-column field="companyName" headerText="Partner" width="220">
-                    <ng-template #template let-p>
-                      <strong>{{ p.companyName }}</strong>
-                      <span class="sub ar-mono">{{ p.partnerCode }}</span>
-                    </ng-template>
-                  </e-column>
-                  <e-column field="status" headerText="Status" width="140">
-                    <ng-template #template let-p>
-                      <ar-chip [tone]="partnerStatus(p.status).tone">{{
-                        partnerStatus(p.status).label
-                      }}</ar-chip>
-                    </ng-template>
-                  </e-column>
-                  <e-column field="tier" headerText="Tier" width="130">
-                    <ng-template #template let-p>
-                      {{ tierLabel(p.tier) }}
-                    </ng-template>
-                  </e-column>
-                  <e-column field="commissionRateBps" headerText="Commission" textAlign="Right" width="130">
-                    <ng-template #template let-p>
-                      {{ bps(p.commissionRateBps) }}
-                    </ng-template>
-                  </e-column>
-                  <e-column field="accruedCommissionPaise" headerText="Accrued" textAlign="Right" width="140">
-                    <ng-template #template let-p>
-                      {{ money(p.accruedCommissionPaise) }}
-                    </ng-template>
-                  </e-column>
-                  <e-column headerText="" width="90">
-                    <ng-template #template let-p>
-                      <button type="button" class="link" (click)="select(p.id)">Open</button>
-                    </ng-template>
-                  </e-column>
-                </e-columns>
-              </ejs-grid>
-            }
-          </ar-card>
-        } @else if (!mock && loaded() && !partner()) {
-          <ar-card heading="Become a reseller partner">
-            <p class="lead">
-              Sell AutoReach to your own clients under your brand. You register once; the platform
-              team reviews and approves you, then you can set up your branding and domain, add
-              client workspaces and earn commission on what they pay.
-            </p>
-            @if (canRegister()) {
-              <button ar-button type="button" variant="primary" (click)="register()">
-                Register as a partner
-              </button>
-            } @else {
-              <p class="empty">
-                Ask a workspace owner to register; it needs the Reseller programme permission.
-              </p>
-            }
-          </ar-card>
-        }
-
-        @if (partner(); as p) {
-          <ar-card [heading]="p.companyName">
-            <div class="head-row">
-              <ar-chip [tone]="partnerStatus(p.status).tone">{{
-                partnerStatus(p.status).label
-              }}</ar-chip>
-              <span class="ar-mono sub">{{ p.partnerCode }}</span>
-              <span class="spacer"></span>
-              @if (hostView()) {
-                @if (p.status === S.PendingApproval) {
-                  <button ar-button type="button" variant="primary" (click)="approve(p)">
-                    Approve
-                  </button>
-                }
-                @if (p.status === S.Active) {
-                  <button ar-button type="button" variant="ghost" (click)="suspend(p)">
-                    Suspend
-                  </button>
-                }
-                @if (p.status === S.Suspended) {
-                  <button ar-button type="button" variant="ghost" (click)="reactivate(p)">
-                    Reactivate
-                  </button>
-                }
-                <button ar-button type="button" variant="ghost" (click)="goChangeTier(p)">
-                  Change tier
+              @if (canRegister()) {
+                <button ar-button type="button" variant="primary" (click)="register()">
+                  Register as a partner
                 </button>
+              } @else {
+                <p class="empty">
+                  Ask a workspace owner to register; it needs the Reseller programme permission.
+                </p>
               }
-            </div>
-            @if (p.status === S.PendingApproval && !hostView()) {
-              <ar-banner tone="warn"
-                >Your registration is waiting for the platform team to approve it. Clients and
-                payouts open once it's approved.</ar-banner
-              >
-            }
-            @if (p.status === S.Suspended) {
-              <ar-banner tone="bad"
-                >This partner is suspended: no new clients or payouts until it's
-                reactivated.</ar-banner
-              >
-            }
+            </ar-card>
+          }
 
-            <ar-tabs [tabs]="tabs" [(active)]="tab" />
-
-            @switch (tab()) {
-              @case ('Overview') {
-                @if (dashboard(); as d) {
-                  <div class="tiles">
-                    <ar-stat-tile
-                      label="Active clients"
-                      [value]="d.activeClientsCount + ' of ' + d.maxManagedTenants"
-                    />
-                    <ar-stat-tile
-                      label="Commission to pay out"
-                      [value]="money(d.accruedCommissionPaise)"
-                    />
-                    <ar-stat-tile
-                      label="Paid out to date"
-                      [value]="money(d.lifetimePaidOutPaise)"
-                    />
-                    <ar-stat-tile label="Tier" [value]="tierLabel(d.tier)" />
-                  </div>
-                }
-                <dl class="facts">
-                  <div>
-                    <dt>Billing model</dt>
-                    <dd>{{ billingLabel(p.billingModel) }}</dd>
-                  </div>
-                  <div>
-                    <dt>Commission rate</dt>
-                    <dd>{{ bps(p.commissionRateBps) }}</dd>
-                  </div>
-                  <div>
-                    <dt>Wholesale discount</dt>
-                    <dd>{{ bps(p.wholesaleDiscountBps) }}</dd>
-                  </div>
-                  <div>
-                    <dt>Contact</dt>
-                    <dd>{{ p.contactName }} · {{ p.contactEmail }} · {{ p.contactPhone }}</dd>
-                  </div>
-                  <div>
-                    <dt>Website</dt>
-                    <dd>{{ p.websiteUrl || '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt>GSTIN / tax ID</dt>
-                    <dd class="ar-mono">{{ p.taxId || '—' }}</dd>
-                  </div>
-                </dl>
-                <div class="row-actions">
-                  <button ar-button type="button" variant="ghost" (click)="goEditDetails(p)">
-                    Edit contact details
+          @if (partner(); as p) {
+            <ar-card [heading]="p.companyName">
+              <div class="head-row">
+                <ar-chip [tone]="partnerStatus(p.status).tone">{{
+                  partnerStatus(p.status).label
+                }}</ar-chip>
+                <span class="ar-mono sub">{{ p.partnerCode }}</span>
+                <span class="spacer"></span>
+                @if (hostView()) {
+                  @if (p.status === S.PendingApproval) {
+                    <button ar-button type="button" variant="primary" (click)="approve(p)">
+                      Approve
+                    </button>
+                  }
+                  @if (p.status === S.Active) {
+                    <button ar-button type="button" variant="ghost" (click)="suspend(p)">
+                      Suspend
+                    </button>
+                  }
+                  @if (p.status === S.Suspended) {
+                    <button ar-button type="button" variant="ghost" (click)="reactivate(p)">
+                      Reactivate
+                    </button>
+                  }
+                  <button ar-button type="button" variant="ghost" (click)="goChangeTier(p)">
+                    Change tier
                   </button>
-                </div>
+                }
+              </div>
+              @if (p.status === S.PendingApproval && !hostView()) {
+                <ar-banner tone="warn"
+                  >Your registration is waiting for the platform team to approve it. Clients and
+                  payouts open once it's approved.</ar-banner
+                >
+              }
+              @if (p.status === S.Suspended) {
+                <ar-banner tone="bad"
+                  >This partner is suspended: no new clients or payouts until it's
+                  reactivated.</ar-banner
+                >
               }
 
-              @case ('Branding & domain') {
-                @if (profile(); as b) {
-                  <div class="brand">
-                    <span class="swatch" [style.background]="b.primaryColorHex"></span>
-                    <span class="swatch" [style.background]="b.secondaryColorHex"></span>
-                    <strong>{{ b.brandName }}</strong>
-                    <span class="sub">{{
-                      b.hidePlatformBranding
-                        ? 'AutoReach branding hidden'
-                        : 'Shows "Powered by AutoReach"'
-                    }}</span>
-                  </div>
+              <ar-tabs [tabs]="tabs" [(active)]="tab" />
+
+              @switch (tab()) {
+                @case ('Overview') {
+                  @if (dashboard(); as d) {
+                    <div class="tiles">
+                      <ar-stat-tile
+                        label="Active clients"
+                        [value]="d.activeClientsCount + ' of ' + d.maxManagedTenants"
+                      />
+                      <ar-stat-tile
+                        label="Commission to pay out"
+                        [value]="money(d.accruedCommissionPaise)"
+                      />
+                      <ar-stat-tile
+                        label="Paid out to date"
+                        [value]="money(d.lifetimePaidOutPaise)"
+                      />
+                      <ar-stat-tile label="Tier" [value]="tierLabel(d.tier)" />
+                    </div>
+                  }
                   <dl class="facts">
                     <div>
-                      <dt>Support email</dt>
-                      <dd>{{ b.supportEmail || '—' }}</dd>
+                      <dt>Billing model</dt>
+                      <dd>{{ billingLabel(p.billingModel) }}</dd>
                     </div>
                     <div>
-                      <dt>Help desk</dt>
-                      <dd>{{ b.helpDeskUrl || '—' }}</dd>
+                      <dt>Commission rate</dt>
+                      <dd>{{ bps(p.commissionRateBps) }}</dd>
                     </div>
                     <div>
-                      <dt>Email sender</dt>
-                      <dd>
-                        {{ b.emailSenderName || '—' }}
-                        {{ b.emailSenderAddress ? '<' + b.emailSenderAddress + '>' : '' }}
-                      </dd>
+                      <dt>Wholesale discount</dt>
+                      <dd>{{ bps(p.wholesaleDiscountBps) }}</dd>
                     </div>
                     <div>
-                      <dt>Logo (light / dark)</dt>
-                      <dd>{{ b.logoUrlLight || '—' }} / {{ b.logoUrlDark || '—' }}</dd>
+                      <dt>Contact</dt>
+                      <dd>{{ p.contactName }} · {{ p.contactEmail }} · {{ p.contactPhone }}</dd>
+                    </div>
+                    <div>
+                      <dt>Website</dt>
+                      <dd>{{ p.websiteUrl || '—' }}</dd>
+                    </div>
+                    <div>
+                      <dt>GSTIN / tax ID</dt>
+                      <dd class="ar-mono">{{ p.taxId || '—' }}</dd>
                     </div>
                   </dl>
-                  @if (canBrand()) {
-                    <div class="row-actions">
-                      <button ar-button type="button" variant="ghost" (click)="goEditBranding(b)">
-                        Edit branding
-                      </button>
-                    </div>
-                  }
+                  <div class="row-actions">
+                    <button ar-button type="button" variant="ghost" (click)="goEditDetails(p)">
+                      Edit contact details
+                    </button>
+                  </div>
+                }
 
-                  <h3 class="h3">Custom domain</h3>
-                  @if (b.customDomain) {
-                    <p>
-                      <strong class="ar-mono">{{ b.customDomain }}</strong>
-                      <ar-chip [tone]="domainStatus(b.domainStatus).tone">{{
-                        domainStatus(b.domainStatus).label
-                      }}</ar-chip>
-                    </p>
-                    @if (b.domainStatus !== D.Active) {
-                      <p class="sub">
-                        Add a CNAME record pointing
-                        <span class="ar-mono">{{ b.customDomain }}</span> at
-                        <span class="ar-mono">{{ b.dnsVerificationTarget }}</span
-                        >, and a TXT record with
-                        <span class="ar-mono">{{ b.domainVerificationToken }}</span
-                        >. The platform team then confirms it.
+                @case ('Branding & domain') {
+                  @if (profile(); as b) {
+                    <div class="brand">
+                      <span class="swatch" [style.background]="b.primaryColorHex"></span>
+                      <span class="swatch" [style.background]="b.secondaryColorHex"></span>
+                      <strong>{{ b.brandName }}</strong>
+                      <span class="sub">{{
+                        b.hidePlatformBranding
+                          ? 'AutoReach branding hidden'
+                          : 'Shows "Powered by AutoReach"'
+                      }}</span>
+                    </div>
+                    <dl class="facts">
+                      <div>
+                        <dt>Support email</dt>
+                        <dd>{{ b.supportEmail || '—' }}</dd>
+                      </div>
+                      <div>
+                        <dt>Help desk</dt>
+                        <dd>{{ b.helpDeskUrl || '—' }}</dd>
+                      </div>
+                      <div>
+                        <dt>Email sender</dt>
+                        <dd>
+                          {{ b.emailSenderName || '—' }}
+                          {{ b.emailSenderAddress ? '<' + b.emailSenderAddress + '>' : '' }}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Logo (light / dark)</dt>
+                        <dd>{{ b.logoUrlLight || '—' }} / {{ b.logoUrlDark || '—' }}</dd>
+                      </div>
+                    </dl>
+                    @if (canBrand()) {
+                      <div class="row-actions">
+                        <button ar-button type="button" variant="ghost" (click)="goEditBranding(b)">
+                          Edit branding
+                        </button>
+                      </div>
+                    }
+
+                    <h3 class="h3">Custom domain</h3>
+                    @if (b.customDomain) {
+                      <p>
+                        <strong class="ar-mono">{{ b.customDomain }}</strong>
+                        <ar-chip [tone]="domainStatus(b.domainStatus).tone">{{
+                          domainStatus(b.domainStatus).label
+                        }}</ar-chip>
+                      </p>
+                      @if (b.domainStatus !== D.Active) {
+                        <p class="sub">
+                          Add a CNAME record pointing
+                          <span class="ar-mono">{{ b.customDomain }}</span> at
+                          <span class="ar-mono">{{ b.dnsVerificationTarget }}</span
+                          >, and a TXT record with
+                          <span class="ar-mono">{{ b.domainVerificationToken }}</span
+                          >. The platform team then confirms it.
+                        </p>
+                      }
+                    } @else {
+                      <p class="empty">
+                        No custom domain yet; clients use the standard AutoReach address.
                       </p>
                     }
-                  } @else {
-                    <p class="empty">
-                      No custom domain yet; clients use the standard AutoReach address.
-                    </p>
-                  }
-                  <div class="row-actions">
-                    @if (canBrand()) {
-                      <button ar-button type="button" variant="ghost" (click)="setDomain(b)">
-                        {{ b.customDomain ? 'Change domain' : 'Set up a domain' }}
-                      </button>
-                    }
+                    <div class="row-actions">
+                      @if (canBrand()) {
+                        <button ar-button type="button" variant="ghost" (click)="setDomain(b)">
+                          {{ b.customDomain ? 'Change domain' : 'Set up a domain' }}
+                        </button>
+                      }
+                      @if (hostView() && b.customDomain && b.domainStatus !== D.Active) {
+                        <button
+                          ar-button
+                          type="button"
+                          variant="primary"
+                          (click)="verifyDomain(true)"
+                        >
+                          Mark as verified
+                        </button>
+                        <button
+                          ar-button
+                          type="button"
+                          variant="ghost"
+                          (click)="verifyDomain(false)"
+                        >
+                          Mark as failed
+                        </button>
+                      }
+                    </div>
                     @if (hostView() && b.customDomain && b.domainStatus !== D.Active) {
+                      <p class="sub">
+                        DNS isn't checked automatically yet: confirm both records by hand before
+                        marking the domain verified.
+                      </p>
+                    }
+                  }
+                }
+
+                @case ('Client workspaces') {
+                  @if (canClients() && p.status === S.Active) {
+                    <div class="row-actions">
                       <button
                         ar-button
                         type="button"
                         variant="primary"
-                        (click)="verifyDomain(true)"
+                        icon="plus"
+                        (click)="goAddClient(p)"
                       >
-                        Mark as verified
+                        Add client workspace
                       </button>
-                      <button ar-button type="button" variant="ghost" (click)="verifyDomain(false)">
-                        Mark as failed
+                    </div>
+                  }
+                  @if (clients().length === 0) {
+                    <p class="empty">No client workspaces yet.</p>
+                  } @else {
+                    <ejs-grid
+                      arGrid="reseller-clients"
+                      [dataSource]="clients()"
+                      aria-label="Client workspaces"
+                    >
+                      <e-columns>
+                        <e-column field="clientTenantName" headerText="Client" width="200" />
+                        <e-column headerText="Plan" width="180">
+                          <ng-template #template let-c>
+                            {{ c.subscribedPlanCode }} · {{ c.billingCycle }}
+                          </ng-template>
+                        </e-column>
+                        <e-column
+                          field="wholesaleRatePaise"
+                          headerText="Wholesale / month"
+                          textAlign="Right"
+                          width="160"
+                        >
+                          <ng-template #template let-c>
+                            {{ money(c.wholesaleRatePaise) }}
+                          </ng-template>
+                        </e-column>
+                        <e-column
+                          field="commissionRateBps"
+                          headerText="Commission"
+                          textAlign="Right"
+                          width="130"
+                        >
+                          <ng-template #template let-c>
+                            {{ bps(c.commissionRateBps) }}
+                          </ng-template>
+                        </e-column>
+                        <e-column field="isActive" headerText="Status" width="130">
+                          <ng-template #template let-c>
+                            <ar-chip [tone]="c.isActive ? 'good' : 'neutral'">{{
+                              c.isActive ? 'Active' : 'Inactive'
+                            }}</ar-chip>
+                          </ng-template>
+                        </e-column>
+                        <e-column headerText="" width="180">
+                          <ng-template #template let-c>
+                            @if (canClients()) {
+                              <div class="act">
+                                <button type="button" class="link" (click)="changePlan(p, c)">
+                                  Change plan
+                                </button>
+                                @if (c.isActive) {
+                                  <button
+                                    type="button"
+                                    class="link link--danger"
+                                    (click)="deactivateClient(p, c)"
+                                  >
+                                    Deactivate
+                                  </button>
+                                } @else {
+                                  <button
+                                    type="button"
+                                    class="link"
+                                    (click)="reactivateClient(p, c)"
+                                  >
+                                    Reactivate
+                                  </button>
+                                }
+                              </div>
+                            }
+                          </ng-template>
+                        </e-column>
+                      </e-columns>
+                    </ejs-grid>
+                  }
+                }
+
+                @case ('Commissions') {
+                  @if (hostView() && canProcessPayouts()) {
+                    <div class="row-actions">
+                      <button
+                        ar-button
+                        type="button"
+                        variant="primary"
+                        icon="plus"
+                        (click)="recordCommission(p)"
+                      >
+                        Record commission
                       </button>
-                    }
-                  </div>
-                  @if (hostView() && b.customDomain && b.domainStatus !== D.Active) {
-                    <p class="sub">
-                      DNS isn't checked automatically yet: confirm both records by hand before
-                      marking the domain verified.
-                    </p>
+                    </div>
+                  }
+                  @if (commissions().length === 0) {
+                    <p class="empty">No commission earned yet.</p>
+                  } @else {
+                    <ejs-grid
+                      arGrid="reseller-commissions"
+                      [dataSource]="commissions()"
+                      aria-label="Commissions"
+                    >
+                      <e-columns>
+                        <e-column field="invoiceReference" headerText="Invoice" width="150">
+                          <ng-template #template let-c>
+                            <span class="ar-mono">{{ c.invoiceReference }}</span>
+                          </ng-template>
+                        </e-column>
+                        <e-column headerText="Client" width="180">
+                          <ng-template #template let-c>
+                            {{ clientName(c.clientTenantId) }}
+                          </ng-template>
+                        </e-column>
+                        <e-column
+                          field="grossAmountPaise"
+                          headerText="Invoice amount"
+                          textAlign="Right"
+                          width="140"
+                        >
+                          <ng-template #template let-c>
+                            {{ money(c.grossAmountPaise) }}
+                          </ng-template>
+                        </e-column>
+                        <e-column
+                          field="commissionBasisPoints"
+                          headerText="Rate"
+                          textAlign="Right"
+                          width="110"
+                        >
+                          <ng-template #template let-c>
+                            {{ bps(c.commissionBasisPoints) }}
+                          </ng-template>
+                        </e-column>
+                        <e-column
+                          field="earnedCommissionPaise"
+                          headerText="Earned"
+                          textAlign="Right"
+                          width="140"
+                        >
+                          <ng-template #template let-c>
+                            {{ money(c.earnedCommissionPaise) }}
+                          </ng-template>
+                        </e-column>
+                        <e-column field="occurredAtUtc" headerText="Date" width="130">
+                          <ng-template #template let-c>
+                            {{ date(c.occurredAtUtc) }}
+                          </ng-template>
+                        </e-column>
+                      </e-columns>
+                    </ejs-grid>
+                  }
+                }
+
+                @case ('Payouts') {
+                  @if (!hostView() && canFinancials() && p.status === S.Active) {
+                    <div class="row-actions">
+                      <button
+                        ar-button
+                        type="button"
+                        variant="primary"
+                        [disabled]="p.accruedCommissionPaise <= 0"
+                        (click)="requestPayout(p)"
+                      >
+                        Request payout
+                      </button>
+                      <span class="sub">{{ money(p.accruedCommissionPaise) }} available</span>
+                    </div>
+                  }
+                  @if (payouts().length === 0) {
+                    <p class="empty">No payouts yet.</p>
+                  } @else {
+                    <ejs-grid
+                      arGrid="reseller-payouts"
+                      [dataSource]="payouts()"
+                      aria-label="Payouts"
+                    >
+                      <e-columns>
+                        <e-column field="payoutNumber" headerText="Payout" width="150">
+                          <ng-template #template let-o>
+                            <span class="ar-mono">{{ o.payoutNumber }}</span>
+                          </ng-template>
+                        </e-column>
+                        <e-column
+                          field="amountPaise"
+                          headerText="Amount"
+                          textAlign="Right"
+                          width="140"
+                        >
+                          <ng-template #template let-o>
+                            {{ money(o.amountPaise) }}
+                          </ng-template>
+                        </e-column>
+                        <e-column field="status" headerText="Status" width="140">
+                          <ng-template #template let-o>
+                            <ar-chip [tone]="payoutStatus(o.status).tone">{{
+                              payoutStatus(o.status).label
+                            }}</ar-chip>
+                          </ng-template>
+                        </e-column>
+                        <e-column field="requestedAtUtc" headerText="Requested" width="130">
+                          <ng-template #template let-o>
+                            {{ date(o.requestedAtUtc) }}
+                          </ng-template>
+                        </e-column>
+                        <e-column headerText="Reference / reason" width="200">
+                          <ng-template #template let-o>
+                            {{ o.paymentReference || o.rejectionReason || '—' }}
+                          </ng-template>
+                        </e-column>
+                        <e-column headerText="" width="200">
+                          <ng-template #template let-o>
+                            @if (hostView() && canProcessPayouts()) {
+                              <div class="act">
+                                @if (o.status === P.Requested) {
+                                  <button type="button" class="link" (click)="approvePayout(o)">
+                                    Approve
+                                  </button>
+                                }
+                                @if (o.status === P.Requested || o.status === P.Approved) {
+                                  <button type="button" class="link" (click)="settlePayout(o)">
+                                    Mark paid
+                                  </button>
+                                  <button
+                                    type="button"
+                                    class="link link--danger"
+                                    (click)="rejectPayout(o)"
+                                  >
+                                    Reject
+                                  </button>
+                                }
+                              </div>
+                            }
+                          </ng-template>
+                        </e-column>
+                      </e-columns>
+                    </ejs-grid>
                   }
                 }
               }
-
-              @case ('Client workspaces') {
-                @if (canClients() && p.status === S.Active) {
-                  <div class="row-actions">
-                    <button
-                      ar-button
-                      type="button"
-                      variant="primary"
-                      icon="plus"
-                      (click)="goAddClient(p)"
-                    >
-                      Add client workspace
-                    </button>
-                  </div>
-                }
-                @if (clients().length === 0) {
-                  <p class="empty">No client workspaces yet.</p>
-                } @else {
-                  <ejs-grid arGrid="reseller-clients" [dataSource]="clients()" aria-label="Client workspaces">
-                    <e-columns>
-                      <e-column field="clientTenantName" headerText="Client" width="200" />
-                      <e-column headerText="Plan" width="180">
-                        <ng-template #template let-c>
-                          {{ c.subscribedPlanCode }} · {{ c.billingCycle }}
-                        </ng-template>
-                      </e-column>
-                      <e-column field="wholesaleRatePaise" headerText="Wholesale / month" textAlign="Right" width="160">
-                        <ng-template #template let-c>
-                          {{ money(c.wholesaleRatePaise) }}
-                        </ng-template>
-                      </e-column>
-                      <e-column field="commissionRateBps" headerText="Commission" textAlign="Right" width="130">
-                        <ng-template #template let-c>
-                          {{ bps(c.commissionRateBps) }}
-                        </ng-template>
-                      </e-column>
-                      <e-column field="isActive" headerText="Status" width="130">
-                        <ng-template #template let-c>
-                          <ar-chip [tone]="c.isActive ? 'good' : 'neutral'">{{
-                            c.isActive ? 'Active' : 'Inactive'
-                          }}</ar-chip>
-                        </ng-template>
-                      </e-column>
-                      <e-column headerText="" width="180">
-                        <ng-template #template let-c>
-                          @if (canClients()) {
-                            <div class="act">
-                              <button type="button" class="link" (click)="changePlan(p, c)">
-                                Change plan
-                              </button>
-                              @if (c.isActive) {
-                                <button
-                                  type="button"
-                                  class="link link--danger"
-                                  (click)="deactivateClient(p, c)"
-                                >
-                                  Deactivate
-                                </button>
-                              } @else {
-                                <button
-                                  type="button"
-                                  class="link"
-                                  (click)="reactivateClient(p, c)"
-                                >
-                                  Reactivate
-                                </button>
-                              }
-                            </div>
-                          }
-                        </ng-template>
-                      </e-column>
-                    </e-columns>
-                  </ejs-grid>
-                }
-              }
-
-              @case ('Commissions') {
-                @if (hostView() && canProcessPayouts()) {
-                  <div class="row-actions">
-                    <button
-                      ar-button
-                      type="button"
-                      variant="primary"
-                      icon="plus"
-                      (click)="recordCommission(p)"
-                    >
-                      Record commission
-                    </button>
-                  </div>
-                }
-                @if (commissions().length === 0) {
-                  <p class="empty">No commission earned yet.</p>
-                } @else {
-                  <ejs-grid arGrid="reseller-commissions" [dataSource]="commissions()" aria-label="Commissions">
-                    <e-columns>
-                      <e-column field="invoiceReference" headerText="Invoice" width="150">
-                        <ng-template #template let-c>
-                          <span class="ar-mono">{{ c.invoiceReference }}</span>
-                        </ng-template>
-                      </e-column>
-                      <e-column headerText="Client" width="180">
-                        <ng-template #template let-c>
-                          {{ clientName(c.clientTenantId) }}
-                        </ng-template>
-                      </e-column>
-                      <e-column field="grossAmountPaise" headerText="Invoice amount" textAlign="Right" width="140">
-                        <ng-template #template let-c>
-                          {{ money(c.grossAmountPaise) }}
-                        </ng-template>
-                      </e-column>
-                      <e-column field="commissionBasisPoints" headerText="Rate" textAlign="Right" width="110">
-                        <ng-template #template let-c>
-                          {{ bps(c.commissionBasisPoints) }}
-                        </ng-template>
-                      </e-column>
-                      <e-column field="earnedCommissionPaise" headerText="Earned" textAlign="Right" width="140">
-                        <ng-template #template let-c>
-                          {{ money(c.earnedCommissionPaise) }}
-                        </ng-template>
-                      </e-column>
-                      <e-column field="occurredAtUtc" headerText="Date" width="130">
-                        <ng-template #template let-c>
-                          {{ date(c.occurredAtUtc) }}
-                        </ng-template>
-                      </e-column>
-                    </e-columns>
-                  </ejs-grid>
-                }
-              }
-
-              @case ('Payouts') {
-                @if (!hostView() && canFinancials() && p.status === S.Active) {
-                  <div class="row-actions">
-                    <button
-                      ar-button
-                      type="button"
-                      variant="primary"
-                      [disabled]="p.accruedCommissionPaise <= 0"
-                      (click)="requestPayout(p)"
-                    >
-                      Request payout
-                    </button>
-                    <span class="sub">{{ money(p.accruedCommissionPaise) }} available</span>
-                  </div>
-                }
-                @if (payouts().length === 0) {
-                  <p class="empty">No payouts yet.</p>
-                } @else {
-                  <ejs-grid arGrid="reseller-payouts" [dataSource]="payouts()" aria-label="Payouts">
-                    <e-columns>
-                      <e-column field="payoutNumber" headerText="Payout" width="150">
-                        <ng-template #template let-o>
-                          <span class="ar-mono">{{ o.payoutNumber }}</span>
-                        </ng-template>
-                      </e-column>
-                      <e-column field="amountPaise" headerText="Amount" textAlign="Right" width="140">
-                        <ng-template #template let-o>
-                          {{ money(o.amountPaise) }}
-                        </ng-template>
-                      </e-column>
-                      <e-column field="status" headerText="Status" width="140">
-                        <ng-template #template let-o>
-                          <ar-chip [tone]="payoutStatus(o.status).tone">{{
-                            payoutStatus(o.status).label
-                          }}</ar-chip>
-                        </ng-template>
-                      </e-column>
-                      <e-column field="requestedAtUtc" headerText="Requested" width="130">
-                        <ng-template #template let-o>
-                          {{ date(o.requestedAtUtc) }}
-                        </ng-template>
-                      </e-column>
-                      <e-column headerText="Reference / reason" width="200">
-                        <ng-template #template let-o>
-                          {{ o.paymentReference || o.rejectionReason || '—' }}
-                        </ng-template>
-                      </e-column>
-                      <e-column headerText="" width="200">
-                        <ng-template #template let-o>
-                          @if (hostView() && canProcessPayouts()) {
-                            <div class="act">
-                              @if (o.status === P.Requested) {
-                                <button type="button" class="link" (click)="approvePayout(o)">
-                                  Approve
-                                </button>
-                              }
-                              @if (o.status === P.Requested || o.status === P.Approved) {
-                                <button type="button" class="link" (click)="settlePayout(o)">
-                                  Mark paid
-                                </button>
-                                <button
-                                  type="button"
-                                  class="link link--danger"
-                                  (click)="rejectPayout(o)"
-                                >
-                                  Reject
-                                </button>
-                              }
-                            </div>
-                          }
-                        </ng-template>
-                      </e-column>
-                    </e-columns>
-                  </ejs-grid>
-                }
-              }
-            }
-          </ar-card>
-        }
+            </ar-card>
+          }
+        </div>
       </div>
-    </div>
-  }
-
-  <ng-template #formsTpl>
-    @if (registerOpen()) {
-      <ar-dialog
-        [title]="hostView() ? 'Add a partner' : 'Register as a reseller partner'"
-        (dismiss)="close()"
-      >
-        <label class="ar-field">
-          <span class="ar-field__label">Partner code</span>
-          <input
-            class="ar-field__input"
-            placeholder="e.g. CLOUDREACH"
-            [value]="registerDraft().partnerCode"
-            (input)="patchRegisterDraft({ partnerCode: $any($event.target).value })"
-          />
-          <span class="ar-field__hint">Letters, numbers or hyphens; shown on invoices and payouts.</span>
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Company name</span>
-          <input
-            class="ar-field__input"
-            [value]="registerDraft().companyName"
-            (input)="patchRegisterDraft({ companyName: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Contact name</span>
-          <input
-            class="ar-field__input"
-            [value]="registerDraft().contactName"
-            (input)="patchRegisterDraft({ contactName: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Contact email</span>
-          <input
-            type="email"
-            class="ar-field__input"
-            [value]="registerDraft().contactEmail"
-            (input)="patchRegisterDraft({ contactEmail: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Contact phone</span>
-          <input
-            type="tel"
-            class="ar-field__input"
-            [value]="registerDraft().contactPhone"
-            (input)="patchRegisterDraft({ contactPhone: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Website <span class="ar-field__opt">(optional)</span></span>
-          <input
-            type="url"
-            class="ar-field__input"
-            [value]="registerDraft().websiteUrl"
-            (input)="patchRegisterDraft({ websiteUrl: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">GSTIN or tax ID <span class="ar-field__opt">(optional)</span></span>
-          <input
-            class="ar-field__input"
-            [value]="registerDraft().taxId"
-            (input)="patchRegisterDraft({ taxId: $any($event.target).value })"
-          />
-        </label>
-        <div dialogActions>
-          <button ar-button variant="ghost" (click)="close()">Cancel</button>
-          <button ar-button variant="primary" (click)="saveRegister()">
-            {{ hostView() ? 'Add partner' : 'Register' }}
-          </button>
-        </div>
-      </ar-dialog>
     }
 
-    @if (editDetailsOpen() && editingPartner(); as p) {
-      <ar-dialog title="Edit contact details" (dismiss)="close()">
-        <label class="ar-field">
-          <span class="ar-field__label">Company name</span>
-          <input
-            class="ar-field__input"
-            [value]="editDraft().companyName"
-            (input)="patchEditDraft({ companyName: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Contact name</span>
-          <input
-            class="ar-field__input"
-            [value]="editDraft().contactName"
-            (input)="patchEditDraft({ contactName: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Contact email</span>
-          <input
-            type="email"
-            class="ar-field__input"
-            [value]="editDraft().contactEmail"
-            (input)="patchEditDraft({ contactEmail: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Contact phone</span>
-          <input
-            type="tel"
-            class="ar-field__input"
-            [value]="editDraft().contactPhone"
-            (input)="patchEditDraft({ contactPhone: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Website</span>
-          <input
-            type="url"
-            class="ar-field__input"
-            [value]="editDraft().websiteUrl"
-            (input)="patchEditDraft({ websiteUrl: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">GSTIN or tax ID</span>
-          <input
-            class="ar-field__input"
-            [value]="editDraft().taxId"
-            (input)="patchEditDraft({ taxId: $any($event.target).value })"
-          />
-        </label>
-        <div dialogActions>
-          <button ar-button variant="ghost" (click)="close()">Cancel</button>
-          <button ar-button variant="primary" (click)="saveEditDetails()">Save</button>
-        </div>
-      </ar-dialog>
-    }
+    <ng-template #formsTpl>
+      @if (registerOpen()) {
+        <ar-dialog
+          [title]="hostView() ? 'Add a partner' : 'Register as a reseller partner'"
+          (dismiss)="close()"
+        >
+          <label class="ar-field">
+            <span class="ar-field__label">Partner code</span>
+            <input
+              class="ar-field__input"
+              placeholder="e.g. CLOUDREACH"
+              [value]="registerDraft().partnerCode"
+              (input)="patchRegisterDraft({ partnerCode: $any($event.target).value })"
+            />
+            <span class="ar-field__hint"
+              >Letters, numbers or hyphens; shown on invoices and payouts.</span
+            >
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Company name</span>
+            <input
+              class="ar-field__input"
+              [value]="registerDraft().companyName"
+              (input)="patchRegisterDraft({ companyName: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Contact name</span>
+            <input
+              class="ar-field__input"
+              [value]="registerDraft().contactName"
+              (input)="patchRegisterDraft({ contactName: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Contact email</span>
+            <input
+              type="email"
+              class="ar-field__input"
+              [value]="registerDraft().contactEmail"
+              (input)="patchRegisterDraft({ contactEmail: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Contact phone</span>
+            <input
+              type="tel"
+              class="ar-field__input"
+              [value]="registerDraft().contactPhone"
+              (input)="patchRegisterDraft({ contactPhone: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label"
+              >Website <span class="ar-field__opt">(optional)</span></span
+            >
+            <input
+              type="url"
+              class="ar-field__input"
+              [value]="registerDraft().websiteUrl"
+              (input)="patchRegisterDraft({ websiteUrl: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label"
+              >GSTIN or tax ID <span class="ar-field__opt">(optional)</span></span
+            >
+            <input
+              class="ar-field__input"
+              [value]="registerDraft().taxId"
+              (input)="patchRegisterDraft({ taxId: $any($event.target).value })"
+            />
+          </label>
+          <div dialogActions>
+            <button ar-button variant="ghost" (click)="close()">Cancel</button>
+            <button ar-button variant="primary" (click)="saveRegister()">
+              {{ hostView() ? 'Add partner' : 'Register' }}
+            </button>
+          </div>
+        </ar-dialog>
+      }
 
-    @if (tierOpen() && editingPartner(); as p) {
-      <ar-dialog [title]="'Tier for ' + p.companyName" (dismiss)="close()">
-        <label class="ar-field">
-          <span class="ar-field__label">Tier</span>
-          <select
-            class="ar-field__input"
-            [value]="tierDraft().tier"
-            (change)="patchTierDraft({ tier: +$any($event.target).value })"
-          >
-            @for (t of tiers; track t) {
-              <option [value]="t">{{ tierLabel(t) }}</option>
-            }
-          </select>
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Billing model</span>
-          <select
-            class="ar-field__input"
-            [value]="tierDraft().billingModel"
-            (change)="patchTierDraft({ billingModel: +$any($event.target).value })"
-          >
-            @for (m of models; track m) {
-              <option [value]="m">{{ billingLabel(m) }}</option>
-            }
-          </select>
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Commission rate (%)</span>
-          <input
-            class="ar-field__input"
-            placeholder="0"
-            [value]="tierDraft().commissionRatePercent"
-            (input)="patchTierDraft({ commissionRatePercent: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Wholesale discount (%)</span>
-          <input
-            class="ar-field__input"
-            placeholder="0"
-            [value]="tierDraft().wholesaleDiscountPercent"
-            (input)="patchTierDraft({ wholesaleDiscountPercent: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Most client workspaces</span>
-          <input
-            type="number"
-            class="ar-field__input"
-            [value]="tierDraft().maxManagedTenants"
-            (input)="patchTierDraft({ maxManagedTenants: +$any($event.target).value })"
-          />
-        </label>
-        <div dialogActions>
-          <button ar-button variant="ghost" (click)="close()">Cancel</button>
-          <button ar-button variant="primary" (click)="saveTier()">Save tier</button>
-        </div>
-      </ar-dialog>
-    }
+      @if (editDetailsOpen() && editingPartner(); as p) {
+        <ar-dialog title="Edit contact details" (dismiss)="close()">
+          <label class="ar-field">
+            <span class="ar-field__label">Company name</span>
+            <input
+              class="ar-field__input"
+              [value]="editDraft().companyName"
+              (input)="patchEditDraft({ companyName: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Contact name</span>
+            <input
+              class="ar-field__input"
+              [value]="editDraft().contactName"
+              (input)="patchEditDraft({ contactName: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Contact email</span>
+            <input
+              type="email"
+              class="ar-field__input"
+              [value]="editDraft().contactEmail"
+              (input)="patchEditDraft({ contactEmail: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Contact phone</span>
+            <input
+              type="tel"
+              class="ar-field__input"
+              [value]="editDraft().contactPhone"
+              (input)="patchEditDraft({ contactPhone: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Website</span>
+            <input
+              type="url"
+              class="ar-field__input"
+              [value]="editDraft().websiteUrl"
+              (input)="patchEditDraft({ websiteUrl: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">GSTIN or tax ID</span>
+            <input
+              class="ar-field__input"
+              [value]="editDraft().taxId"
+              (input)="patchEditDraft({ taxId: $any($event.target).value })"
+            />
+          </label>
+          <div dialogActions>
+            <button ar-button variant="ghost" (click)="close()">Cancel</button>
+            <button ar-button variant="primary" (click)="saveEditDetails()">Save</button>
+          </div>
+        </ar-dialog>
+      }
 
-    @if (brandingOpen()) {
-      <ar-dialog title="Branding & white-label" (dismiss)="close()">
-        <label class="ar-field">
-          <span class="ar-field__label">Brand name</span>
-          <input
-            class="ar-field__input"
-            [value]="brandingDraft().brandName"
-            (input)="patchBrandingDraft({ brandName: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Primary colour (Hex e.g. #1769FF)</span>
-          <input
-            class="ar-field__input"
-            [value]="brandingDraft().primaryColorHex"
-            (input)="patchBrandingDraft({ primaryColorHex: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Secondary colour</span>
-          <input
-            class="ar-field__input"
-            [value]="brandingDraft().secondaryColorHex"
-            (input)="patchBrandingDraft({ secondaryColorHex: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Logo URL (light backgrounds)</span>
-          <input
-            type="url"
-            class="ar-field__input"
-            [value]="brandingDraft().logoUrlLight"
-            (input)="patchBrandingDraft({ logoUrlLight: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Logo URL (dark backgrounds)</span>
-          <input
-            type="url"
-            class="ar-field__input"
-            [value]="brandingDraft().logoUrlDark"
-            (input)="patchBrandingDraft({ logoUrlDark: $any($event.target).value })"
-          />
-        </label>
-        <div dialogActions>
-          <button ar-button variant="ghost" (click)="close()">Cancel</button>
-          <button ar-button variant="primary" (click)="saveBranding()">Save branding</button>
-        </div>
-      </ar-dialog>
-    }
+      @if (tierOpen() && editingPartner(); as p) {
+        <ar-dialog [title]="'Tier for ' + p.companyName" (dismiss)="close()">
+          <label class="ar-field">
+            <span class="ar-field__label">Tier</span>
+            <select
+              class="ar-field__input"
+              [value]="tierDraft().tier"
+              (change)="patchTierDraft({ tier: +$any($event.target).value })"
+            >
+              @for (t of tiers; track t) {
+                <option [value]="t">{{ tierLabel(t) }}</option>
+              }
+            </select>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Billing model</span>
+            <select
+              class="ar-field__input"
+              [value]="tierDraft().billingModel"
+              (change)="patchTierDraft({ billingModel: +$any($event.target).value })"
+            >
+              @for (m of models; track m) {
+                <option [value]="m">{{ billingLabel(m) }}</option>
+              }
+            </select>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Commission rate (%)</span>
+            <input
+              class="ar-field__input"
+              placeholder="0"
+              [value]="tierDraft().commissionRatePercent"
+              (input)="patchTierDraft({ commissionRatePercent: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Wholesale discount (%)</span>
+            <input
+              class="ar-field__input"
+              placeholder="0"
+              [value]="tierDraft().wholesaleDiscountPercent"
+              (input)="patchTierDraft({ wholesaleDiscountPercent: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Most client workspaces</span>
+            <input
+              type="number"
+              class="ar-field__input"
+              [value]="tierDraft().maxManagedTenants"
+              (input)="patchTierDraft({ maxManagedTenants: +$any($event.target).value })"
+            />
+          </label>
+          <div dialogActions>
+            <button ar-button variant="ghost" (click)="close()">Cancel</button>
+            <button ar-button variant="primary" (click)="saveTier()">Save tier</button>
+          </div>
+        </ar-dialog>
+      }
 
-    @if (addClientOpen() && editingPartner(); as p) {
-      <ar-dialog title="Add a client workspace" (dismiss)="close()">
-        <label class="ar-field">
-          <span class="ar-field__label">Client name</span>
-          <input
-            class="ar-field__input"
-            [value]="clientDraft().name"
-            (input)="patchClientDraft({ name: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Plan</span>
-          <input
-            class="ar-field__input"
-            [value]="clientDraft().plan"
-            (input)="patchClientDraft({ plan: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Billing cycle</span>
-          <select
-            class="ar-field__input"
-            [value]="clientDraft().billingCycle"
-            (change)="patchClientDraft({ billingCycle: $any($event.target).value })"
-          >
-            <option value="Monthly">Monthly</option>
-            <option value="Annual">Annual</option>
-          </select>
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Wholesale rate per month (₹)</span>
-          <input
-            type="number"
-            class="ar-field__input"
-            [value]="clientDraft().wholesaleRupees"
-            (input)="patchClientDraft({ wholesaleRupees: $any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field">
-          <span class="ar-field__label">Your price to the client per month (₹, optional)</span>
-          <input
-            type="number"
-            class="ar-field__input"
-            [value]="clientDraft().clientPriceRupees"
-            (input)="patchClientDraft({ clientPriceRupees: $any($event.target).value })"
-          />
-        </label>
-        <div dialogActions>
-          <button ar-button variant="ghost" (click)="close()">Cancel</button>
-          <button ar-button variant="primary" (click)="saveClient()">Add client</button>
-        </div>
-      </ar-dialog>
-    }
-  </ng-template>
+      @if (brandingOpen()) {
+        <ar-dialog title="Branding & white-label" (dismiss)="close()">
+          <label class="ar-field">
+            <span class="ar-field__label">Brand name</span>
+            <input
+              class="ar-field__input"
+              [value]="brandingDraft().brandName"
+              (input)="patchBrandingDraft({ brandName: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Primary colour (Hex e.g. #1769FF)</span>
+            <input
+              class="ar-field__input"
+              [value]="brandingDraft().primaryColorHex"
+              (input)="patchBrandingDraft({ primaryColorHex: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Secondary colour</span>
+            <input
+              class="ar-field__input"
+              [value]="brandingDraft().secondaryColorHex"
+              (input)="patchBrandingDraft({ secondaryColorHex: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Logo URL (light backgrounds)</span>
+            <input
+              type="url"
+              class="ar-field__input"
+              [value]="brandingDraft().logoUrlLight"
+              (input)="patchBrandingDraft({ logoUrlLight: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Logo URL (dark backgrounds)</span>
+            <input
+              type="url"
+              class="ar-field__input"
+              [value]="brandingDraft().logoUrlDark"
+              (input)="patchBrandingDraft({ logoUrlDark: $any($event.target).value })"
+            />
+          </label>
+          <div dialogActions>
+            <button ar-button variant="ghost" (click)="close()">Cancel</button>
+            <button ar-button variant="primary" (click)="saveBranding()">Save branding</button>
+          </div>
+        </ar-dialog>
+      }
+
+      @if (addClientOpen() && editingPartner(); as p) {
+        <ar-dialog title="Add a client workspace" (dismiss)="close()">
+          <label class="ar-field">
+            <span class="ar-field__label">Client name</span>
+            <input
+              class="ar-field__input"
+              [value]="clientDraft().name"
+              (input)="patchClientDraft({ name: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Plan</span>
+            <input
+              class="ar-field__input"
+              [value]="clientDraft().plan"
+              (input)="patchClientDraft({ plan: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Billing cycle</span>
+            <select
+              class="ar-field__input"
+              [value]="clientDraft().billingCycle"
+              (change)="patchClientDraft({ billingCycle: $any($event.target).value })"
+            >
+              <option value="Monthly">Monthly</option>
+              <option value="Annual">Annual</option>
+            </select>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Wholesale rate per month (₹)</span>
+            <input
+              type="number"
+              class="ar-field__input"
+              [value]="clientDraft().wholesaleRupees"
+              (input)="patchClientDraft({ wholesaleRupees: $any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Your price to the client per month (₹, optional)</span>
+            <input
+              type="number"
+              class="ar-field__input"
+              [value]="clientDraft().clientPriceRupees"
+              (input)="patchClientDraft({ clientPriceRupees: $any($event.target).value })"
+            />
+          </label>
+          <div dialogActions>
+            <button ar-button variant="ghost" (click)="close()">Cancel</button>
+            <button ar-button variant="primary" (click)="saveClient()">Add client</button>
+          </div>
+        </ar-dialog>
+      }
+    </ng-template>
   `,
   styles: `
     .page {
@@ -1090,7 +1152,6 @@ export class ArResellers {
     }
   });
 
-  protected readonly mock = environment.useMockData;
   protected readonly tabs = TABS as unknown as readonly string[];
   protected readonly S = ResellerPartnerStatus;
   protected readonly P = ResellerPayoutStatus;
@@ -1145,7 +1206,6 @@ export class ArResellers {
   });
 
   constructor() {
-    if (this.mock) return;
     // Permissions decide which view this is and may arrive after the page; reload when they do.
     effect(() => {
       const host = this.hostView();
@@ -1407,49 +1467,47 @@ export class ArResellers {
     const p = this.editingPartner();
     if (!p) return;
     const v = this.editDraft();
-    await this.act(
-      async () => {
-        await firstValueFrom(
-          this.api.updatePartner(p.id, {
-            companyName: v.companyName.trim(),
-            contactName: v.contactName.trim(),
-            contactEmail: v.contactEmail.trim(),
-            contactPhone: v.contactPhone.trim(),
-            websiteUrl: v.websiteUrl.trim() || undefined,
-            taxId: v.taxId.trim() || undefined,
-          }),
-        );
-        this.close();
-      },
-      'Contact details saved.',
-    );
+    await this.act(async () => {
+      await firstValueFrom(
+        this.api.updatePartner(p.id, {
+          companyName: v.companyName.trim(),
+          contactName: v.contactName.trim(),
+          contactEmail: v.contactEmail.trim(),
+          contactPhone: v.contactPhone.trim(),
+          websiteUrl: v.websiteUrl.trim() || undefined,
+          taxId: v.taxId.trim() || undefined,
+        }),
+      );
+      this.close();
+    }, 'Contact details saved.');
   }
 
   protected async saveTier(): Promise<void> {
     const p = this.editingPartner();
     if (!p) return;
     const v = this.tierDraft();
-    const commission = v.commissionRatePercent.trim() ? percentToBps(v.commissionRatePercent) : undefined;
-    const discount = v.wholesaleDiscountPercent.trim() ? percentToBps(v.wholesaleDiscountPercent) : undefined;
+    const commission = v.commissionRatePercent.trim()
+      ? percentToBps(v.commissionRatePercent)
+      : undefined;
+    const discount = v.wholesaleDiscountPercent.trim()
+      ? percentToBps(v.wholesaleDiscountPercent)
+      : undefined;
     if (commission === null || discount === null) {
       this.toasts.warning('Enter rates as a percentage between 0 and 100.');
       return;
     }
-    await this.act(
-      async () => {
-        await firstValueFrom(
-          this.api.updateTier(p.id, {
-            tier: v.tier,
-            billingModel: v.billingModel,
-            commissionRateBps: commission,
-            wholesaleDiscountBps: discount,
-            maxManagedTenants: v.maxManagedTenants || undefined,
-          }),
-        );
-        this.close();
-      },
-      'Tier saved.',
-    );
+    await this.act(async () => {
+      await firstValueFrom(
+        this.api.updateTier(p.id, {
+          tier: v.tier,
+          billingModel: v.billingModel,
+          commissionRateBps: commission,
+          wholesaleDiscountBps: discount,
+          maxManagedTenants: v.maxManagedTenants || undefined,
+        }),
+      );
+      this.close();
+    }, 'Tier saved.');
   }
 
   protected async saveBranding(): Promise<void> {
@@ -1460,22 +1518,19 @@ export class ArResellers {
       this.toasts.warning('Enter colours as a six-digit hex, e.g. #1769FF.');
       return;
     }
-    await this.act(
-      async () => {
-        await firstValueFrom(
-          this.api.updateWhiteLabelBranding(pid, {
-            brandName: v.brandName.trim(),
-            primaryColorHex: v.primaryColorHex.trim(),
-            secondaryColorHex: v.secondaryColorHex.trim(),
-            logoUrlLight: v.logoUrlLight.trim() || undefined,
-            logoUrlDark: v.logoUrlDark.trim() || undefined,
-            hidePlatformBranding: false,
-          }),
-        );
-        this.close();
-      },
-      'Branding saved.',
-    );
+    await this.act(async () => {
+      await firstValueFrom(
+        this.api.updateWhiteLabelBranding(pid, {
+          brandName: v.brandName.trim(),
+          primaryColorHex: v.primaryColorHex.trim(),
+          secondaryColorHex: v.secondaryColorHex.trim(),
+          logoUrlLight: v.logoUrlLight.trim() || undefined,
+          logoUrlDark: v.logoUrlDark.trim() || undefined,
+          hidePlatformBranding: false,
+        }),
+      );
+      this.close();
+    }, 'Branding saved.');
   }
 
   protected async saveClient(): Promise<void> {
@@ -1486,26 +1541,25 @@ export class ArResellers {
     const price = v.clientPriceRupees.trim() ? rupeesToPaise(v.clientPriceRupees) : undefined;
     const commission = v.commissionPercent.trim() ? percentToBps(v.commissionPercent) : undefined;
     if (wholesale === null || price === null || commission === null) {
-      this.toasts.warning('Enter amounts in rupees and the rate as a percentage between 0 and 100.');
+      this.toasts.warning(
+        'Enter amounts in rupees and the rate as a percentage between 0 and 100.',
+      );
       return;
     }
-    await this.act(
-      async () => {
-        await firstValueFrom(
-          this.api.provisionClientTenant(p.id, {
-            clientTenantName: v.name.trim(),
-            subscribedPlanCode: v.plan.trim(),
-            billingCycle: v.billingCycle || 'Monthly',
-            wholesaleRatePaise: wholesale,
-            customMonthlyPricePaise: price ?? undefined,
-            customCommissionRateBps: commission ?? undefined,
-            notes: v.notes.trim() || undefined,
-          }),
-        );
-        this.close();
-      },
-      'Client workspace added.',
-    );
+    await this.act(async () => {
+      await firstValueFrom(
+        this.api.provisionClientTenant(p.id, {
+          clientTenantName: v.name.trim(),
+          subscribedPlanCode: v.plan.trim(),
+          billingCycle: v.billingCycle || 'Monthly',
+          wholesaleRatePaise: wholesale,
+          customMonthlyPricePaise: price ?? undefined,
+          customCommissionRateBps: commission ?? undefined,
+          notes: v.notes.trim() || undefined,
+        }),
+      );
+      this.close();
+    }, 'Client workspace added.');
   }
 
   // ---- partners ----

@@ -1,8 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { SaveSsoConfigurationInput, TenantSsoConfigurationDto } from '../../proxy/identity';
 import { SsoService } from '../../proxy/controllers';
 import { settled } from '../util/resource';
@@ -21,28 +19,22 @@ export class SettingsStore {
   private readonly tick = signal(0);
 
   private readonly ssoResource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.tick() }),
+    params: () => ({ tick: this.tick() }),
     stream: () => this.ssoApi.get(),
     defaultValue: SSO_SEED,
   });
 
-  readonly ssoLoading = computed(() => !environment.useMockData && this.ssoResource.isLoading());
-  readonly sso = computed<TenantSsoConfigurationDto>(() =>
-    environment.useMockData ? SSO_SEED : (settled(this.ssoResource, SSO_SEED) ?? SSO_SEED),
+  readonly ssoLoading = computed(() => this.ssoResource.isLoading());
+  readonly sso = computed<TenantSsoConfigurationDto>(
+    () => settled(this.ssoResource, SSO_SEED) ?? SSO_SEED,
   );
 
   async saveSso(input: SaveSsoConfigurationInput): Promise<void> {
-    if (environment.useMockData) {
-      return;
-    }
     await firstValueFrom(this.ssoApi.save(input));
     this.tick.update((n) => n + 1);
   }
 
   async disableSso(): Promise<void> {
-    if (environment.useMockData) {
-      return;
-    }
     await firstValueFrom(this.ssoApi.disable());
     this.tick.update((n) => n + 1);
   }

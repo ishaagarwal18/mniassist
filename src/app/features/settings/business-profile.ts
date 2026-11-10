@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { readApiError } from '../../core/util/api-error';
@@ -439,10 +437,6 @@ export class ArBusinessProfile {
   }
 
   private async load(): Promise<void> {
-    if (environment.useMockData) {
-      this.loading.set(false);
-      return;
-    }
     try {
       const p = await firstValueFrom(this.api.get());
       this.f.set({
@@ -557,23 +551,22 @@ export class ArBusinessProfile {
     try {
       const f = this.f();
       const clean = (v: string | null | undefined) => (v ?? '').trim() || null;
-      if (!environment.useMockData) {
-        await firstValueFrom(
-          this.api.update({
-            legalName: f.legalName.trim(),
-            tradeName: clean(f.tradeName),
-            gstin: clean(f.gstin),
-            pan: clean(f.pan),
-            addressLine1: f.addressLine1.trim(),
-            addressLine2: clean(f.addressLine2),
-            city: f.city.trim(),
-            state: f.state,
-            pincode: f.pincode.trim(),
-            phone: clean(f.phone),
-            email: clean(f.email),
-          }),
-        );
-      }
+
+      await firstValueFrom(
+        this.api.update({
+          legalName: f.legalName.trim(),
+          tradeName: clean(f.tradeName),
+          gstin: clean(f.gstin),
+          pan: clean(f.pan),
+          addressLine1: f.addressLine1.trim(),
+          addressLine2: clean(f.addressLine2),
+          city: f.city.trim(),
+          state: f.state,
+          pincode: f.pincode.trim(),
+          phone: clean(f.phone),
+          email: clean(f.email),
+        }),
+      );
       this.toasts.success(
         this.isHost()
           ? 'Business profile saved. New subscription invoices print these details.'

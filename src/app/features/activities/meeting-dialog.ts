@@ -31,7 +31,7 @@ import {
 import { ArDateInput } from '../../ui/date-input';
 import { ArSelect } from '../../ui/select';
 import { ActivityDirectory } from './activity-directory';
-import { ActivityGateway } from './activity-mock';
+import { ActivityGateway } from './activity-gateway';
 import { ArActivityLinks } from './activity-links-editor';
 import { linksOf, toLinkInputs } from './activity-links.logic';
 import { ArRecurrencePicker } from './recurrence-picker';

@@ -10,8 +10,6 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, firstValueFrom, of } from 'rxjs';
-
-import { environment } from '../../../../environments/environment';
 import { checkPolicy } from '../../../core/auth/permission';
 import { ToastService } from '../../../core/ui/toast.service';
 import { readApiError } from '../../../core/util/api-error';
@@ -20,12 +18,7 @@ import { CockpitOriginService } from '../../../layout/cockpit-origin.service';
 import { ArTopbar } from '../../../layout/topbar';
 import { InventoryService, StockLocationDto } from '../../../proxy/inventory/inventory.service';
 import { PurchaseOrderDto, PurchasingService } from '../../../proxy/inventory/purchasing.service';
-import {
-  GoodsReceiptNoteDto,
-  GoodsReceiptNoteService,
-  GrnStatus,
-  QcInspectionStatus,
-} from '../../../proxy/purchasing';
+import { GoodsReceiptNoteService } from '../../../proxy/purchasing';
 import { ArButton, ArIcon, ArDateInput, ArSelect } from '../../../ui';
 import {
   ArPfSupplier,
@@ -400,7 +393,7 @@ import {
           </footer>
         </form>
       }
-      @if (canCreate && !environmentMock) {
+      @if (canCreate) {
         <p class="pf-foot">
           Looking for an earlier receipt?
           <a routerLink="/purchasing/grn" [queryParams]="listParams()">Open Goods receipts</a>.
@@ -437,7 +430,6 @@ export class ArNewGoodsReceiptPage {
   private readonly stockApi = inject(InventoryService);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly environmentMock = environment.useMockData;
   protected readonly units = GRN_UNITS;
   protected readonly shortBy = shortBy;
   protected readonly canCreate = checkPolicy(
@@ -582,9 +574,7 @@ export class ArNewGoodsReceiptPage {
     const dto = toCreateGrnDto(this.form());
     this.busy.set(true);
     try {
-      const saved = environment.useMockData
-        ? this.mockSaved()
-        : await firstValueFrom(this.grnApi.create(dto, { skipHandleError: true }));
+      const saved = await firstValueFrom(this.grnApi.create(dto, { skipHandleError: true }));
       this.toasts.success(
         `${saved.grnNumber} recorded with ${saved.lines.length} item(s). It is waiting for QC inspection.`,
         'Goods received',
@@ -619,7 +609,7 @@ export class ArNewGoodsReceiptPage {
           this.suppliersError.set(true);
         },
       });
-    if (environment.useMockData) return;
+
     const quiet = { skipHandleError: true };
     this.purchasingApi
       .getOrders(true, quiet)
@@ -637,35 +627,5 @@ export class ArNewGoodsReceiptPage {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((list) => this.locations.set(list.filter((l) => l.isActive)));
-  }
-
-  private mockSaved(): GoodsReceiptNoteDto {
-    const f = this.form();
-    const dto = toCreateGrnDto(f);
-    const id = `grn-${Date.now()}`;
-    return {
-      id,
-      grnNumber: `GRN-2026-${String(Date.now()).slice(-4)}`,
-      supplierId: dto.supplierId,
-      supplierName: dto.supplierName,
-      purchaseOrderReference: dto.purchaseOrderReference,
-      challanNumber: dto.challanNumber,
-      challanDateUtc: dto.challanDateUtc ?? new Date().toISOString(),
-      vehicleNumber: dto.vehicleNumber,
-      transporterName: dto.transporterName,
-      gateEntryNumber: dto.gateEntryNumber,
-      gateInTimeUtc: dto.gateInTimeUtc,
-      status: GrnStatus.UnderInspection,
-      qcStatus: QcInspectionStatus.Pending,
-      creationTime: new Date().toISOString(),
-      lines: dto.lines.map((l, i) => ({
-        ...l,
-        id: `${id}-${i}`,
-        goodsReceiptNoteId: id,
-        lineNumber: i + 1,
-        acceptedQuantity: 0,
-        rejectedQuantity: 0,
-      })),
-    };
   }
 }

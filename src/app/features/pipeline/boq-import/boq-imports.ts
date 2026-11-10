@@ -15,7 +15,6 @@ import {
 import type { ChipTone } from '../../../ui/chip';
 import { ArBanner, ArButton, ArChip } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
-import { environment } from '../../../../environments/environment';
 import { STATE_LABEL, STATE_TONE } from './boq-import.logic';
 
 /** Every file import, newest first: the ones still reading, the ones waiting for review, and those already drafted. */
@@ -30,7 +29,6 @@ export class ArBoqImports {
   private readonly api = inject(BoqImportService);
 
   protected readonly Source = BoqImportSource;
-  protected readonly mock = environment.useMockData;
 
   protected readonly rows = signal<BoqImportListItemDto[]>([]);
   protected readonly total = signal(0);
@@ -50,10 +48,6 @@ export class ArBoqImports {
   }
 
   protected async load(): Promise<void> {
-    if (this.mock) {
-      this.loading.set(false);
-      return;
-    }
     this.loading.set(true);
     try {
       const page = await firstValueFrom(this.api.getList({ maxResultCount: 200 }));

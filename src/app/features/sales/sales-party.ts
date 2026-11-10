@@ -1,7 +1,5 @@
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { AccountMasterDataService } from '../../core/services/account-master-data.service';
 import { AccountStore } from '../../core/services/account.store';
 import { ContactService } from '../../proxy/contacts/contact.service';
@@ -80,9 +78,9 @@ export class SalesPartyService {
 
   async forContact(contactId: string): Promise<SalesParty> {
     try {
-      const accountId = environment.useMockData
-        ? null
-        : (await firstValueFrom(this.contacts.get(contactId, { skipHandleError: true }))).accountId;
+      const accountId = (
+        await firstValueFrom(this.contacts.get(contactId, { skipHandleError: true }))
+      ).accountId;
       return accountId ? await this.forAccount(accountId) : EMPTY_PARTY;
     } catch {
       return EMPTY_PARTY;

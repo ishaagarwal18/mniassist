@@ -8,8 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { AccountStore } from '../../core/services/account.store';
 import {
   CustomerCreditDto,
@@ -29,18 +27,6 @@ interface CreditForm {
   onHold: boolean;
   reason: string;
 }
-
-const MOCK_BUYERS: ReorderBuyerDto[] = [
-  {
-    contactId: 'b1',
-    name: 'Sanjay Kulkarni',
-    waId: '919800000101',
-    role: 'NeedsApproval',
-    approvalAboveInPaise: 10_000_00,
-  },
-  { contactId: 'b2', name: 'Anita Deshpande', waId: '919800000102', role: 'Approver' },
-  { contactId: 'b3', name: 'Ravi Pawar', waId: '919800000103', role: 'Orders' },
-];
 
 /**
  * Who may do what on the re-order portal at one customer company: order directly, need approval above an amount, or approve the
@@ -377,11 +363,7 @@ export class ArReorderBuyers implements OnInit {
         onHold: f.onHold,
         holdReason: f.onHold ? f.reason.trim() || null : null,
       };
-      this.showCredit(
-        environment.useMockData
-          ? { ...this.credit()!, ...input, problems: [] }
-          : await firstValueFrom(this.api.setCredit(input)),
-      );
+      this.showCredit(await firstValueFrom(this.api.setCredit(input)));
       this.creditSaved.set(true);
     } catch {
       this.error.set("The terms couldn't be saved.");
@@ -394,9 +376,7 @@ export class ArReorderBuyers implements OnInit {
   protected async clearPassword(b: ReorderBuyerDto): Promise<void> {
     this.error.set(null);
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(this.api.clearPassword(b.contactId));
-      }
+      await firstValueFrom(this.api.clearPassword(b.contactId));
       this.buyers.update((list) =>
         list.map((x) => (x.contactId === b.contactId ? { ...x, hasPassword: false } : x)),
       );
@@ -413,28 +393,12 @@ export class ArReorderBuyers implements OnInit {
     if (!accountId) return;
     this.loading.set(true);
     try {
-      if (environment.useMockData) {
-        this.buyers.set(MOCK_BUYERS);
-        this.showCredit({
-          customerId: accountId,
-          creditLimitInPaise: 5_00_000_00,
-          paymentTermsDays: 30,
-          holdWhenOverdueDays: 45,
-          onHold: false,
-          owedInPaise: 3_12_400_00,
-          onOrderInPaise: 48_200_00,
-          overdueDays: 12,
-          availableInPaise: 1_39_400_00,
-          problems: [],
-        });
-      } else {
-        const [buyers, credit] = await Promise.all([
-          firstValueFrom(this.api.getBuyers(accountId)),
-          firstValueFrom(this.api.getCredit(accountId)),
-        ]);
-        this.buyers.set(buyers);
-        this.showCredit(credit);
-      }
+      const [buyers, credit] = await Promise.all([
+        firstValueFrom(this.api.getBuyers(accountId)),
+        firstValueFrom(this.api.getCredit(accountId)),
+      ]);
+      this.buyers.set(buyers);
+      this.showCredit(credit);
     } catch {
       this.error.set("The company's buyers couldn't be loaded.");
     } finally {
@@ -462,15 +426,13 @@ export class ArReorderBuyers implements OnInit {
     }
     this.saving.set(b.contactId);
     try {
-      const updated = environment.useMockData
-        ? { ...b, approvalAboveInPaise: b.role === 'NeedsApproval' ? limit : null }
-        : await firstValueFrom(
-            this.api.setBuyer({
-              contactId: b.contactId,
-              role: b.role,
-              approvalAboveInPaise: limit,
-            }),
-          );
+      const updated = await firstValueFrom(
+        this.api.setBuyer({
+          contactId: b.contactId,
+          role: b.role,
+          approvalAboveInPaise: limit,
+        }),
+      );
       this.buyers.update((list) => list.map((x) => (x.contactId === b.contactId ? updated : x)));
       this.limits.delete(b.contactId);
       this.saved.set(b.contactId);

@@ -1,7 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import {
   ShipmentDto,
   ShippingRateDto,
@@ -250,14 +248,7 @@ export class ArReorderDispatch {
     this.busy.set(true);
     this.error.set(null);
     try {
-      this.rates.set(
-        environment.useMockData
-          ? [
-              { courier: 'Xpressbees', rateInPaise: 172_50, deliveryDays: 5 },
-              { courier: 'Delhivery Surface', rateInPaise: 186_00, deliveryDays: 4 },
-            ]
-          : await firstValueFrom(this.api.getRates(this.pincode().trim(), kg)),
-      );
+      this.rates.set(await firstValueFrom(this.api.getRates(this.pincode().trim(), kg)));
       if (this.rates().length === 0)
         this.error.set('No courier serves that PIN code for this weight.');
     } catch (e: unknown) {
@@ -304,18 +295,7 @@ export class ArReorderDispatch {
         weightKg: parseKg(this.weight()),
         freightInPaise: freight,
       };
-      this.closed.emit(
-        environment.useMockData
-          ? ({
-              ...input,
-              id: 'sh1',
-              status: 'Dispatched',
-              dispatchedAtUtc: new Date().toISOString(),
-              customerNotified: true,
-              events: [],
-            } as unknown as ShipmentDto)
-          : await firstValueFrom(this.api.dispatch(input)),
-      );
+      this.closed.emit(await firstValueFrom(this.api.dispatch(input)));
     } catch (e: unknown) {
       this.error.set(problem(e, 'The dispatch could not be saved.'));
     } finally {

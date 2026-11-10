@@ -5,7 +5,6 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import { checkPolicy } from '../../../core/auth/permission';
 import { ConfirmService } from '../../../core/ui/confirm.service';
@@ -20,7 +19,6 @@ import {
 import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
 import { ArSupplierScopeBar } from '../supplier-scope-bar';
 import {
-  CreateVendorBillLineDto,
   Gstr2bMatchStatus,
   ThreeWayMatchStatus,
   VendorBillDto,
@@ -30,143 +28,6 @@ import {
 } from '../../../proxy/purchasing';
 import { ArButton, ArChip, ChipTone } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
-
-const MOCK_BILLS: VendorBillDto[] = [
-  {
-    id: 'vb-1',
-    billNumber: 'VB-2026-0089',
-    vendorInvoiceNumber: 'INV-BPG-8912',
-    vendorInvoiceDateUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-    supplierId: 'sup-1',
-    supplierName: 'Bharat Precision Gears Pvt Ltd',
-    supplierGstin: '27AABCB1234F1Z5',
-    purchaseOrderId: 'po-101',
-    purchaseOrderReference: 'PO-2026-089',
-    goodsReceiptNoteId: 'grn-1',
-    goodsReceiptNoteNumber: 'GRN-2026-0104',
-    status: VendorBillStatus.Approved,
-    threeWayMatchStatus: ThreeWayMatchStatus.Matched,
-    dueDateUtc: new Date(Date.now() + 27 * 86_400_000).toISOString(),
-    subtotalInPaise: 305_000_00,
-    discountInPaise: 0,
-    cgstInPaise: 27_450_00,
-    sgstInPaise: 27_450_00,
-    igstInPaise: 0,
-    totalTaxInPaise: 54_900_00,
-    tdsSection: '194Q',
-    tdsRateBasisPoints: 10, // 0.1% TDS
-    tdsDeductedInPaise: 305_00,
-    grandTotalInPaise: 359_900_00,
-    netPayableInPaise: 359_595_00,
-    paidAmountInPaise: 0,
-    balanceDueInPaise: 359_595_00,
-    gstr2bMatchStatus: Gstr2bMatchStatus.MatchedIn2B,
-    isReverseCharge: false,
-    remarks: 'P2P 3-way matched against GRN-2026-0104 and PO-2026-089.',
-    creationTime: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-    lines: [
-      {
-        id: 'vbl-1',
-        vendorBillId: 'vb-1',
-        lineNumber: 1,
-        partNumber: 'GR-HEL-120',
-        description: 'Hardened Helical Gear 120mm OD Module 3',
-        hsnCode: '84834000',
-        billedQuantity: 50,
-        unitPriceInPaise: 4200_00,
-        discountPercent: 0,
-        taxableAmountInPaise: 210_000_00,
-        taxRateBasisPoints: 1800,
-        cgstAmountInPaise: 18_900_00,
-        sgstAmountInPaise: 18_900_00,
-        igstAmountInPaise: 0,
-        lineTotalInPaise: 247_800_00,
-      },
-      {
-        id: 'vbl-2',
-        vendorBillId: 'vb-1',
-        lineNumber: 2,
-        partNumber: 'PN-SH-040',
-        description: 'EN24 Pinion Shaft Induction Hardened',
-        hsnCode: '84831099',
-        billedQuantity: 25,
-        unitPriceInPaise: 3800_00,
-        discountPercent: 0,
-        taxableAmountInPaise: 95_000_00,
-        taxRateBasisPoints: 1800,
-        cgstAmountInPaise: 8_550_00,
-        sgstAmountInPaise: 8_550_00,
-        igstAmountInPaise: 0,
-        lineTotalInPaise: 112_100_00,
-      },
-    ],
-    payments: [],
-  },
-  {
-    id: 'vb-2',
-    billNumber: 'VB-2026-0082',
-    vendorInvoiceNumber: 'INV-SF-2026-77',
-    vendorInvoiceDateUtc: new Date(Date.now() - 12 * 86_400_000).toISOString(),
-    supplierId: 'sup-3',
-    supplierName: 'Sundram Fasteners Automotive',
-    supplierGstin: '33AABCS9821L1ZM',
-    purchaseOrderId: 'po-099',
-    purchaseOrderReference: 'PO-2026-081',
-    goodsReceiptNoteId: 'grn-3',
-    goodsReceiptNoteNumber: 'GRN-2026-0103',
-    status: VendorBillStatus.PartiallyPaid,
-    threeWayMatchStatus: ThreeWayMatchStatus.PriceVariance,
-    dueDateUtc: new Date(Date.now() + 18 * 86_400_000).toISOString(),
-    subtotalInPaise: 44_400_00,
-    discountInPaise: 0,
-    cgstInPaise: 0,
-    sgstInPaise: 0,
-    igstInPaise: 7_992_00,
-    totalTaxInPaise: 7_992_00,
-    tdsSection: '194Q',
-    tdsRateBasisPoints: 10,
-    tdsDeductedInPaise: 44_40,
-    grandTotalInPaise: 52_392_00,
-    netPayableInPaise: 52_347_60,
-    paidAmountInPaise: 30_000_00,
-    balanceDueInPaise: 22_347_60,
-    gstr2bMatchStatus: Gstr2bMatchStatus.MatchedIn2B,
-    isReverseCharge: false,
-    remarks: 'Discrepancy: PO unit rate was Rs.235, invoice billed at Rs.240. Debit note pending.',
-    creationTime: new Date(Date.now() - 12 * 86_400_000).toISOString(),
-    lines: [
-      {
-        id: 'vbl-3',
-        vendorBillId: 'vb-2',
-        lineNumber: 1,
-        partNumber: 'BLT-M16-109',
-        description: 'Grade 10.9 Flange Head Bolt M16x90mm Zn-Ni Coated',
-        hsnCode: '73181500',
-        billedQuantity: 185,
-        unitPriceInPaise: 240_00,
-        discountPercent: 0,
-        taxableAmountInPaise: 44_400_00,
-        taxRateBasisPoints: 1800,
-        cgstAmountInPaise: 0,
-        sgstAmountInPaise: 0,
-        igstAmountInPaise: 7_992_00,
-        lineTotalInPaise: 52_392_00,
-      },
-    ],
-    payments: [
-      {
-        id: 'vbp-1',
-        vendorBillId: 'vb-2',
-        paymentDateUtc: new Date(Date.now() - 4 * 86_400_000).toISOString(),
-        amountInPaise: 30_000_00,
-        paymentMode: VendorPaymentMode.NeftRtgs,
-        referenceNumber: 'CMS/RTGS/HDFC998231',
-        tdsCertificateNumber: 'TDS-Q4-2026-99',
-        remarks: 'Part payment released on approval.',
-      },
-    ],
-  },
-];
 
 @Component({
   standalone: true,
@@ -286,11 +147,7 @@ const MOCK_BILLS: VendorBillDto[] = [
 
       <!-- Bills Table -->
       <section class="table-card">
-        <ejs-grid
-          arGrid="vendor-bills"
-          [dataSource]="filteredBills()"
-          aria-label="Vendor Bills"
-        >
+        <ejs-grid arGrid="vendor-bills" [dataSource]="filteredBills()" aria-label="Vendor Bills">
           <e-columns>
             <e-column field="billNumber" headerText="Bill & Invoice #" width="180">
               <ng-template #template let-b>
@@ -341,7 +198,12 @@ const MOCK_BILLS: VendorBillDto[] = [
                 </ar-chip>
               </ng-template>
             </e-column>
-            <e-column field="grandTotalInPaise" headerText="Total (Inc Tax)" textAlign="Right" width="160">
+            <e-column
+              field="grandTotalInPaise"
+              headerText="Total (Inc Tax)"
+              textAlign="Right"
+              width="160"
+            >
               <ng-template #template let-b>
                 <div class="font-mono">
                   <strong>₹{{ b.grandTotalInPaise / 100 | number: '1.2-2' }}</strong>
@@ -354,7 +216,12 @@ const MOCK_BILLS: VendorBillDto[] = [
                 </div>
               </ng-template>
             </e-column>
-            <e-column field="balanceDueInPaise" headerText="Balance Due" textAlign="Right" width="150">
+            <e-column
+              field="balanceDueInPaise"
+              headerText="Balance Due"
+              textAlign="Right"
+              width="150"
+            >
               <ng-template #template let-b>
                 <span
                   class="font-mono"
@@ -785,7 +652,7 @@ export class VendorBillsComponent {
   /** Opened from Vendor 360 for one supplier: only theirs, and new records are for them. */
   protected readonly scope = signal<SupplierScope | null>(readSupplierScope());
   protected readonly loadError = signal<string | null>(null);
-  readonly allBills = signal<VendorBillDto[]>(environment.useMockData ? MOCK_BILLS : []);
+  readonly allBills = signal<VendorBillDto[]>([]);
   readonly filterQuery = signal<string>('');
   readonly selectedStatus = signal<VendorBillStatus | null>(null);
 
@@ -863,17 +730,15 @@ export class VendorBillsComponent {
   }
 
   loadData() {
-    if (!environment.useMockData) {
-      this.billService
-        .getList({ maxResultCount: 50, supplierId: this.scope()?.supplierId ?? undefined })
-        .subscribe({
-          next: (res) => {
-            this.allBills.set(res?.items ?? []);
-            this.loadError.set(null);
-          },
-          error: () => this.loadError.set('Vendor bills could not be loaded.'),
-        });
-    }
+    this.billService
+      .getList({ maxResultCount: 50, supplierId: this.scope()?.supplierId ?? undefined })
+      .subscribe({
+        next: (res) => {
+          this.allBills.set(res?.items ?? []);
+          this.loadError.set(null);
+        },
+        error: () => this.loadError.set('Vendor bills could not be loaded.'),
+      });
   }
 
   /** Older links (`?new=1`, `?grnId=`) open the Record vendor bill page. */
@@ -898,10 +763,7 @@ export class VendorBillsComponent {
       tone: 'primary',
     });
     if (!ok) return;
-    if (environment.useMockData) {
-      this.updateBillInState({ ...b, status: VendorBillStatus.Approved });
-      return;
-    }
+
     try {
       const saved = await firstValueFrom(this.billService.approve(b.id, { skipHandleError: true }));
       this.updateBillInState(saved);

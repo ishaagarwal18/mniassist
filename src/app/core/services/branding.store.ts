@@ -1,8 +1,6 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import {
   BrandingService,
   TenantBrandingDto,
@@ -23,17 +21,14 @@ export class BrandingStore {
   private readonly reloadTick = signal(0);
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.reloadTick() }),
+    params: () => ({ tick: this.reloadTick() }),
     stream: () => this.api.get(),
     defaultValue: undefined as TenantBrandingDto | undefined,
   });
 
-  readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
+  readonly loading = computed(() => this.resource.isLoading());
 
-  /** Mock mode has no server-side branding to fetch — showing AutoReach's own
-   *  defaults there (rather than a fabricated tenant colour) is the honest choice. */
   readonly branding = computed<TenantBrandingDto | null>(() => {
-    if (environment.useMockData) return null;
     // A failed load (e.g. 403 for the host, which has no tenant branding) must
     // fall back to the defaults. Reading value() of an errored resource throws,
     // and that would abort change detection for every view showing branding.
@@ -65,13 +60,11 @@ export class BrandingStore {
   }
 
   async updateColors(input: UpdateTenantBrandingInput): Promise<void> {
-    if (environment.useMockData) return;
     await firstValueFrom(this.api.updateColors(input));
     this.reload();
   }
 
   async uploadLogo(file: File): Promise<void> {
-    if (environment.useMockData) return;
     const body = new FormData();
     body.append('file', file, file.name);
     // Same trick the document library upload uses: the generated proxy types this as
@@ -82,7 +75,6 @@ export class BrandingStore {
   }
 
   async removeLogo(): Promise<void> {
-    if (environment.useMockData) return;
     await firstValueFrom(this.api.removeLogo());
     this.reload();
   }

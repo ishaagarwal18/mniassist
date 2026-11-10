@@ -12,8 +12,6 @@ import {
   TelecomKycStatus,
 } from '../../proxy/channels';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { of } from 'rxjs';
-import { environment } from '../../../environments/environment';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { TelecomStore } from '../../core/services/telecom.store';
 import { TenantDto, TenantService } from '../../proxy/tenant-management';
@@ -27,7 +25,16 @@ type ActiveTab = 'inventory' | 'telecom-entity';
 @Component({
   selector: 'ar-telecom',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArBanner, ArButton, ArChip, ArIcon, NgTemplateOutlet],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ArTopbar,
+    ArBanner,
+    ArButton,
+    ArChip,
+    ArIcon,
+    NgTemplateOutlet,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './telecom.html',
   styleUrl: './telecom.scss',
@@ -46,19 +53,25 @@ export class ArTelecom {
 
   protected readonly pageTitle = computed(() => {
     switch (this.mode) {
-      case 'new': return 'Add number to inventory';
-      case 'settings': return 'Telecom settings';
-      case 'allocate': return 'Allocate number';
-      case 'release': return 'Release number';
-      case 'audit': return 'Compliance audit report';
-      default: return 'Telecom & Reseller Numbers';
+      case 'new':
+        return 'Add number to inventory';
+      case 'settings':
+        return 'Telecom settings';
+      case 'allocate':
+        return 'Allocate number';
+      case 'release':
+        return 'Release number';
+      case 'audit':
+        return 'Compliance audit report';
+      default:
+        return 'Telecom & Reseller Numbers';
     }
   });
 
   /** Only the host chooses which workspace gets a number; a workspace allocates to itself. */
   protected readonly isHost = computed(() => this.currentUser.isHost());
   private readonly tenantsResource = rxResource({
-    params: () => (this.isHost() && !environment.useMockData ? { host: true } : undefined),
+    params: () => (this.isHost() ? { host: true } : undefined),
     stream: () => this.tenantApi.getList({ maxResultCount: 1000, sorting: 'name' }),
     defaultValue: { totalCount: 0, items: [] as TenantDto[] },
   });
@@ -237,7 +250,7 @@ export class ArTelecom {
     const tenant = host
       ? (this.tenants().find((t) => t.id === tenantId)?.name ?? this.draftTenantName().trim())
       : 'your workspace';
-    if (host && !tenantId && !environment.useMockData) {
+    if (host && !tenantId) {
       this.toasts.warning(
         'Choose the workspace this number is allocated to.',
         'Workspace required',

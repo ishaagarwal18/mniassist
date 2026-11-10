@@ -14,13 +14,10 @@
 </ar-topbar>
 
 <div class="oe ar-scroll">
-  @if (mock) {
-    <ar-banner tone="teal">Special prices need the live API.</ar-banner>
-  }
   @if (error(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }
-  @if (!mock && oems().length === 0) {
+  @if (oems().length === 0) {
     <ar-banner tone="warn"
       >No supplier is marked as an OEM yet.
       <a routerLink="/oem/settings">Mark your OEMs in OEM settings</a>.</ar-banner
@@ -326,7 +323,7 @@
   }
   @if (canCreate()) {
     <div class="oe__foot">
-      <button ar-button type="button" [disabled]="busy() || !!problem() || mock" (click)="save()">
+      <button ar-button type="button" [disabled]="busy() || !!problem()" (click)="save()">
         {{ saved() ? 'Save' : 'Save the request' }}
       </button>
     </div>

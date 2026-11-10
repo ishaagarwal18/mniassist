@@ -8,8 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { inr } from '../../core/util/format';
 import { ProductDto, ProductService } from '../../proxy/library/product.service';
 
@@ -22,7 +20,7 @@ export class CatalogueSearch {
   readonly blocked = signal(false);
 
   async search(term: string): Promise<ProductDto[]> {
-    if (this.blocked() || environment.useMockData) return [];
+    if (this.blocked()) return [];
     try {
       const page = await firstValueFrom(
         this.api.getList(

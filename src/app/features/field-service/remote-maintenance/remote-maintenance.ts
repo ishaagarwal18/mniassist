@@ -9,7 +9,6 @@ import {
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../../environments/environment';
 import { PickerOption } from '../../../core/services/pipeline.service';
 import { inrCompact } from '../../../core/util/format';
 import { ToastService } from '../../../core/ui/toast.service';
@@ -21,7 +20,6 @@ import {
   InitiateRemoteMaintenanceInput,
   MaintenanceChannel,
   maintenanceChannelOptions,
-  MaintenanceDiagnosticTurnDto,
   MaintenanceSessionStatus,
   MaintenanceSeverity,
   maintenanceSeverityOptions,
@@ -42,7 +40,6 @@ import {
   ChipTone,
   MeterTone,
 } from '../../../ui';
-import { ArContactPicker } from '../../pipeline/contact-picker';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../../ui/grid';
 
@@ -76,237 +73,6 @@ const SEVERITY_LABELS: Record<MaintenanceSeverity, string> = {
   [MaintenanceSeverity.Medium]: 'Medium',
   [MaintenanceSeverity.High]: 'High',
   [MaintenanceSeverity.CriticalEmergency]: 'Critical',
-};
-
-const MOCK_TURNS_WHATSAPP: MaintenanceDiagnosticTurnDto[] = [
-  {
-    id: 't-1',
-    sessionId: 's-1',
-    turnNumber: 1,
-    turnType: DiagnosticTurnType.UserPrompt,
-    channel: MaintenanceChannel.WhatsApp,
-    inputOrPrompt:
-      'Line 2 Extruder drive tripped with error F0002. Motor stopped abruptly during batch run. Smells warm.',
-    aiResponseOrGuidance:
-      'Fault telemetry logged. Commencing autonomous diagnostic inference on Siemens Sinamics G120 (S/N: SN-G120-88412).',
-    actionTaken: 'SessionInitiated',
-    createdAtUtc: new Date(Date.now() - 45 * 60_000).toISOString(),
-  },
-  {
-    id: 't-2',
-    sessionId: 's-1',
-    turnNumber: 2,
-    turnType: DiagnosticTurnType.RemediationGuidance,
-    channel: MaintenanceChannel.WhatsApp,
-    inputOrPrompt: 'Autonomous diagnostic inference complete. Transmitting WhatsApp action guide.',
-    aiResponseOrGuidance:
-      "🤖 *AutoReach AI Remote Maintenance Assistant*\n━━━━━━━━━━━━━━━━━━━━━\n📍 *Equipment:* Siemens Sinamics G120 (S/N: SN-G120-88412)\n⚠️ *Identified Fault:* F0002 (IGBT Phase Overcurrent)\n🔍 *Root Cause (94.5% match):*\nPhase overcurrent triggered by steep acceleration or motor winding degradation.\n\n🛠️ *Step-by-Step Remediation Guide:*\n*1.* Isolate 415V 3-phase supply and wait for DC bus discharge (<24V).\n*2.* Disconnect motor leads (U,V,W) and test insulation using 500V Megger (>10 MΩ).\n*3.* Inspect mechanical gearbox for rotor binding or bearing freeze.\n*4.* Increase acceleration ramp time parameter P1120 from 2.0s to 5.0s.\n\n📦 *Recommended Spare (In Stock):*\n• 6SL3210-1KE21-3AF1 (Siemens G120 Power Module)\n\n⏱️ *Estimated Downtime:* ~35 mins\n━━━━━━━━━━━━━━━━━━━━━\n👉 *Reply:* 'FIXED' if resolved | 'STEP [N]' for guidance | 'ESCALATE' for field engineer.",
-    actionTaken: 'InitialGuidanceSent',
-    createdAtUtc: new Date(Date.now() - 40 * 60_000).toISOString(),
-  },
-  {
-    id: 't-3',
-    sessionId: 's-1',
-    turnNumber: 3,
-    turnType: DiagnosticTurnType.UserPrompt,
-    channel: MaintenanceChannel.WhatsApp,
-    inputOrPrompt:
-      'Checked motor leads with Megger: insulation resistance is 28 Mega-Ohms. Motor spins freely by hand.',
-    aiResponseOrGuidance:
-      'Telemetry reading verified: 28 MΩ is healthy (>10 MΩ threshold) and no mechanical jamming exists. Root cause is confirmed as acceleration overload (P1120) under cold batch viscosity.\n\nPlease navigate to BOP-2 keypad: Set Parameter P1120 = 5.5s and enable Flying Start (P1200 = 1). Then restart line at 25% speed.',
-    actionTaken: 'FollowUpGuidance',
-    createdAtUtc: new Date(Date.now() - 25 * 60_000).toISOString(),
-  },
-  {
-    id: 't-4',
-    sessionId: 's-1',
-    turnNumber: 4,
-    turnType: DiagnosticTurnType.UserPrompt,
-    channel: MaintenanceChannel.WhatsApp,
-    inputOrPrompt:
-      'Set P1120 to 5.5s and started at 25% speed. Extruder is running smooth now! Current is 14.2A.',
-    aiResponseOrGuidance:
-      'Great news! Current of 14.2A is well below 18.0A rated capacity. Fault F0002 cleared. Machine marked operational. No on-site visit is needed! Thank you for using MNI 24/7 AI Remote Support! 🚀',
-    actionTaken: 'CustomerConfirmedResolution',
-    createdAtUtc: new Date(Date.now() - 10 * 60_000).toISOString(),
-  },
-];
-
-const MOCK_TURNS_IVR: MaintenanceDiagnosticTurnDto[] = [
-  {
-    id: 't-11',
-    sessionId: 's-2',
-    turnNumber: 1,
-    turnType: DiagnosticTurnType.UserPrompt,
-    channel: MaintenanceChannel.IvrPhone,
-    inputOrPrompt:
-      '[Inbound Voice Call] Plant Technician called +91 80 6912 4000 regarding ABB ACS880 Drive.',
-    aiResponseOrGuidance:
-      '[IVR Automated Voice Script]\n"Welcome to MNI Industrial Automation 24/7 AI Remote Diagnostics. For your ABB ACS880 Drive, we have identified fault Over-Temperature (F0004) with root cause: Heatsink thermal limit breached (>85°C).\n\nPlease select an option:\nPress 1 to hear step-by-step heatsink and cooling fan check instructions.\nPress 2 to listen to parameter reset guidance.\nPress 9 if the fault is cleared and the machine is running.\nPress 0 to transfer directly to an on-call senior field service engineer."',
-    actionTaken: 'IvrWelcomeMenu',
-    createdAtUtc: new Date(Date.now() - 30 * 60_000).toISOString(),
-  },
-  {
-    id: 't-12',
-    sessionId: 's-2',
-    turnNumber: 2,
-    turnType: DiagnosticTurnType.IvrMenuChoice,
-    channel: MaintenanceChannel.IvrPhone,
-    inputOrPrompt: '1',
-    aiResponseOrGuidance:
-      'IVR Spoken: Step 1 active. Ensure control cabinet cooling fan is rotating. Inspect external heatsink filter for lint or dust blockage. Use dry compressed air below 2 bar to clear fins. Press 9 when complete, or 0 for an engineer.',
-    actionTaken: 'IVR_Step1_Selected',
-    createdAtUtc: new Date(Date.now() - 22 * 60_000).toISOString(),
-  },
-  {
-    id: 't-13',
-    sessionId: 's-2',
-    turnNumber: 3,
-    turnType: DiagnosticTurnType.IvrMenuChoice,
-    channel: MaintenanceChannel.IvrPhone,
-    inputOrPrompt: '9',
-    aiResponseOrGuidance:
-      'IVR Spoken: Excellent! Verification acknowledged. Fan was clogged and has been cleared. Heatsink temperature dropped to 48°C. Session logged as resolved. Have a productive shift!',
-    actionTaken: 'IVR_Verified',
-    createdAtUtc: new Date(Date.now() - 15 * 60_000).toISOString(),
-  },
-];
-
-const MOCK_SESSIONS: RemoteMaintenanceSessionDto[] = [
-  {
-    id: 's-1',
-    sessionCode: 'RMS-2026-0041',
-    customerId: 'c-101',
-    customerName: 'Tata Motors Powertrain Division (Pune)',
-    customerContactPhone: '+91 98220 54321',
-    equipmentCategory: EquipmentCategory.VfdAndDrive,
-    equipmentModel: 'Siemens Sinamics G120 (7.5 kW)',
-    equipmentSerialNumber: 'SN-G120-88412',
-    preferredChannel: MaintenanceChannel.WhatsApp,
-    status: MaintenanceSessionStatus.ResolvedRemotely,
-    severity: MaintenanceSeverity.High,
-    faultCode: 'F0002',
-    reportedSymptoms:
-      'Extruder motor stopped abruptly with IGBT overcurrent trip during batch run.',
-    telemetrySnapshotJson: JSON.stringify({ temp_c: 62, bus_voltage: 580, motor_current: 24.5 }),
-    rootCauseDiagnosis:
-      'IGBT phase overcurrent trigger caused by steep acceleration ramp (parameter P1120) under high polymer batch viscosity.',
-    confidencePercent: 94.5,
-    remediationStepsJson: JSON.stringify([
-      'Isolate 415V supply and verify DC bus discharge (<24V).',
-      'Perform 500V Megger insulation test on motor leads (>10 MΩ).',
-      'Increase acceleration ramp time parameter P1120 from 2.0s to 5.5s.',
-      'Enable Flying Start (P1200=1) to prevent shock starting.',
-    ]),
-    recommendedSparePartsJson: JSON.stringify([
-      '6SL3210-1KE21-3AF1 (Siemens G120 Power Module 7.5kW)',
-      '3AUA0000058186 (ABB ACS880 Cooling Fan Kit)',
-    ]),
-    estimatedDowntimeMinutes: 35,
-    resolvedRemotely: true,
-    resolutionNotes:
-      'Customer confirmed line operational after P1120 acceleration ramp adjustment via WhatsApp.',
-    fieldVisitRequired: false,
-    diagnosticTurns: MOCK_TURNS_WHATSAPP,
-    creationTime: new Date(Date.now() - 45 * 60_000).toISOString(),
-  },
-  {
-    id: 's-2',
-    sessionCode: 'RMS-2026-0042',
-    customerId: 'c-102',
-    customerName: 'JSW Steel Rolling Mill (Vijayanagar)',
-    customerContactPhone: '+91 94480 12345',
-    equipmentCategory: EquipmentCategory.VfdAndDrive,
-    equipmentModel: 'ABB ACS880 Heavy Industrial Drive (45 kW)',
-    equipmentSerialNumber: 'SN-ACS880-9921',
-    preferredChannel: MaintenanceChannel.IvrPhone,
-    status: MaintenanceSessionStatus.ResolvedRemotely,
-    severity: MaintenanceSeverity.Medium,
-    faultCode: 'F0004',
-    reportedSymptoms: 'Heatsink over-temperature alarm sounded on rolling stand drive.',
-    telemetrySnapshotJson: JSON.stringify({ temp_c: 84, bus_voltage: 565, fan_rpm: 1200 }),
-    rootCauseDiagnosis:
-      'Inverter heatsink over-temperature limit breached (>85°C) due to clogged cabinet air filter mesh.',
-    confidencePercent: 92.0,
-    remediationStepsJson: JSON.stringify([
-      'Inspect cabinet cooling fan rotation and air filter mesh.',
-      'Clear dust accumulated on heat exchanger fins with compressed air.',
-      'Verify panel AC ambient temperature is below 40°C.',
-    ]),
-    recommendedSparePartsJson: JSON.stringify([
-      'R2E190-AO26-05 (Ebm-Papst Inverter Cooling Fan 230V)',
-    ]),
-    estimatedDowntimeMinutes: 20,
-    resolvedRemotely: true,
-    resolutionNotes: 'Resolved over IVR phone menu: technician cleared clogged cabinet fan filter.',
-    fieldVisitRequired: false,
-    diagnosticTurns: MOCK_TURNS_IVR,
-    creationTime: new Date(Date.now() - 30 * 60_000).toISOString(),
-  },
-  {
-    id: 's-3',
-    sessionCode: 'RMS-2026-0043',
-    customerId: 'c-103',
-    customerName: 'Thermax Boilers & Heating (Chinchwad)',
-    customerContactPhone: '+91 97650 99881',
-    equipmentCategory: EquipmentCategory.PlcAndController,
-    equipmentModel: 'Siemens SIMATIC S7-1500 Controller',
-    equipmentSerialNumber: 'SN-S71500-4412',
-    preferredChannel: MaintenanceChannel.WhatsApp,
-    status: MaintenanceSessionStatus.Diagnosing,
-    severity: MaintenanceSeverity.High,
-    faultCode: 'ERR_PROFINET_TIMEOUT',
-    reportedSymptoms:
-      'Flashing red BF (Bus Fault) LED on remote ET200SP IO island. Deaerator pump stopped.',
-    telemetrySnapshotJson: JSON.stringify({
-      temp_c: 38,
-      bus_voltage: 24.1,
-      ping_loss_percent: 100,
-    }),
-    rootCauseDiagnosis:
-      'Profinet IO fieldbus cycle communication timeout between central CPU 1515 and distributed IO rack.',
-    confidencePercent: 89.5,
-    remediationStepsJson: JSON.stringify([
-      'Inspect green RJ45 Profinet cable and shielded grounding clamp.',
-      'Check link LED on unmanaged switch port 4.',
-      'Verify 24V DC auxiliary power supply on remote rack terminal X1.',
-    ]),
-    recommendedSparePartsJson: JSON.stringify([
-      '6GK1901-1BB10-2AA0 (FastConnect RJ45 Plug)',
-      '6XV1840-2AH10 (Profinet Type A 4-core Cable)',
-    ]),
-    estimatedDowntimeMinutes: 25,
-    resolvedRemotely: false,
-    fieldVisitRequired: false,
-    diagnosticTurns: [
-      {
-        id: 't-21',
-        sessionId: 's-3',
-        turnNumber: 1,
-        turnType: DiagnosticTurnType.UserPrompt,
-        channel: MaintenanceChannel.WhatsApp,
-        inputOrPrompt: 'Red BF LED flashing on Siemens S7-1500 rack. Remote IO lost.',
-        aiResponseOrGuidance:
-          'Profinet bus fault diagnosed. Check link LED on Ethernet port and measure 24V supply on terminal X1.',
-        actionTaken: 'SessionInitiated',
-        createdAtUtc: new Date(Date.now() - 8 * 60_000).toISOString(),
-      },
-    ],
-    creationTime: new Date(Date.now() - 8 * 60_000).toISOString(),
-  },
-];
-
-const MOCK_STATS: RemoteMaintenanceStatsDto = {
-  totalSessions: 38,
-  resolvedRemotelyCount: 29,
-  remoteResolutionRatePercent: 76.3,
-  escalatedToFieldCount: 9,
-  fieldDeflectionRatePercent: 76.3,
-  whatsAppSessionCount: 24,
-  ivrSessionCount: 14,
-  averageResolutionTimeMinutes: 26.5,
-  estimatedCostSavingsInPaise: 435_000_00,
-  estimatedCostSavingsInRupees: 435_000,
 };
 
 /** Sensor names and units the AI sends in a session's telemetry snapshot; anything else is shown by its own name. */
@@ -489,10 +255,9 @@ type Tab = (typeof TABS)[number];
                   >{{ getSeverityLabel(s.severity) }} severity</ar-chip
                 >
               </div>
-
             </div>
             <div class="rm__bar">
-               <div class="rm__seg" role="radiogroup" aria-label="Channel for this session">
+              <div class="rm__seg" role="radiogroup" aria-label="Channel for this session">
                 <button
                   type="button"
                   role="radio"
@@ -792,7 +557,12 @@ type Tab = (typeof TABS)[number];
                 Start one when a customer reports a breakdown. The AI diagnoses it and guides their
                 technician over WhatsApp or the IVR line.
               </p>
-              <a ar-button variant="ai" icon="sparkle" routerLink="/field-service/remote-maintenance/new">
+              <a
+                ar-button
+                variant="ai"
+                icon="sparkle"
+                routerLink="/field-service/remote-maintenance/new"
+              >
                 New session
               </a>
             </div>
@@ -1549,12 +1319,6 @@ export class ArRemoteMaintenance implements OnInit {
   }
 
   loadData(): void {
-    if (environment.useMockData) {
-      this.setSessions(MOCK_SESSIONS);
-      this.stats.set(MOCK_STATS);
-      return;
-    }
-
     this.isLoading.set(true);
     this.loadError.set(null);
     this.service.getList({ maxResultCount: 50 }).subscribe({
@@ -1613,14 +1377,6 @@ export class ArRemoteMaintenance implements OnInit {
     const cur = this.currentSession();
     if (!cur?.id || cur.preferredChannel === newChannel) return;
 
-    if (environment.useMockData) {
-      this.updateSession({ ...cur, preferredChannel: newChannel });
-      this.toasts.info(
-        `Channel switched to ${newChannel === MaintenanceChannel.WhatsApp ? 'WhatsApp' : 'IVR phone'}.`,
-      );
-      return;
-    }
-
     this.service.switchChannel({ sessionId: cur.id, newChannel }).subscribe({
       next: (res) => {
         this.updateSession(res);
@@ -1635,31 +1391,6 @@ export class ArRemoteMaintenance implements OnInit {
     const text = this.waMessageInput.trim();
     const cur = this.currentSession();
     if (!text || !cur?.id) return;
-
-    if (environment.useMockData) {
-      const fixed = /fixed|running/i.test(text);
-      const newTurn: MaintenanceDiagnosticTurnDto = {
-        id: 't-' + Date.now(),
-        sessionId: cur.id,
-        turnNumber: cur.diagnosticTurns.length + 1,
-        turnType: DiagnosticTurnType.UserPrompt,
-        channel: MaintenanceChannel.WhatsApp,
-        inputOrPrompt: text,
-        aiResponseOrGuidance: fixed
-          ? 'Great news: the fault is cleared and the machine is running. Session resolved remotely.'
-          : `Received: "${text}". Readings are within range. Next, check the 24V supply on terminal block X12.`,
-        actionTaken: fixed ? 'CustomerConfirmedResolution' : 'StepFollowup',
-        createdAtUtc: new Date().toISOString(),
-      };
-      this.updateSession({
-        ...cur,
-        resolvedRemotely: fixed || cur.resolvedRemotely,
-        status: fixed ? MaintenanceSessionStatus.ResolvedRemotely : cur.status,
-        diagnosticTurns: [...cur.diagnosticTurns, newTurn],
-      });
-      this.waMessageInput = '';
-      return;
-    }
 
     this.service
       .sendChannelTurn({
@@ -1681,32 +1412,6 @@ export class ArRemoteMaintenance implements OnInit {
   sendIvrDigit(digit: string): void {
     const cur = this.currentSession();
     if (!cur?.id) return;
-
-    if (environment.useMockData) {
-      const spoken: Record<string, string> = {
-        '1': 'Step 1: isolate the motor power, then check resistance across the U-V-W phases. Press 9 when done, or 0 for an engineer.',
-        '2': 'Step 2: hold Stop/Reset for 3 seconds until the fault LED clears. Press 9 if it worked, or 0 to escalate.',
-        '9': 'Thank you. The fault is logged as cleared and the session is resolved.',
-        '0': 'Connecting you to the on-call field engineer. Please hold.',
-      };
-      const newTurn: MaintenanceDiagnosticTurnDto = {
-        id: 't-' + Date.now(),
-        sessionId: cur.id,
-        turnNumber: cur.diagnosticTurns.length + 1,
-        turnType: DiagnosticTurnType.IvrMenuChoice,
-        channel: MaintenanceChannel.IvrPhone,
-        inputOrPrompt: digit,
-        aiResponseOrGuidance: spoken[digit] ?? `Key ${digit} received.`,
-        actionTaken: 'IVR_Key_' + digit,
-        createdAtUtc: new Date().toISOString(),
-      };
-      this.updateSession({
-        ...cur,
-        status: digit === '9' ? MaintenanceSessionStatus.ResolvedRemotely : cur.status,
-        diagnosticTurns: [...cur.diagnosticTurns, newTurn],
-      });
-      return;
-    }
 
     this.service
       .sendChannelTurn({
@@ -1732,17 +1437,6 @@ export class ArRemoteMaintenance implements OnInit {
     if (!cur?.id) return;
     const notes = 'Operator confirmed the equipment is running normally after the remote fix.';
 
-    if (environment.useMockData) {
-      this.updateSession({
-        ...cur,
-        status: MaintenanceSessionStatus.ResolvedRemotely,
-        resolvedRemotely: true,
-        resolutionNotes: notes,
-      });
-      this.toasts.success('Session resolved remotely.');
-      return;
-    }
-
     this.service.resolveRemotely({ sessionId: cur.id, resolutionNotes: notes }).subscribe({
       next: (res) => {
         this.updateSession(res);
@@ -1767,18 +1461,6 @@ export class ArRemoteMaintenance implements OnInit {
     const cur = this.currentSession();
     if (!cur?.id || !this.escalateReason.trim()) return;
 
-    if (environment.useMockData) {
-      this.updateSession({
-        ...cur,
-        status: MaintenanceSessionStatus.EscalatedToFieldTicket,
-        fieldVisitRequired: true,
-        resolutionNotes: `Escalated to a field visit: ${this.escalateReason}`,
-      });
-      this.showEscalateModal.set(false);
-      this.toasts.info('Escalated to a field visit.');
-      return;
-    }
-
     this.service
       .escalateToFieldTicket({
         sessionId: cur.id,
@@ -1798,7 +1480,6 @@ export class ArRemoteMaintenance implements OnInit {
   }
 
   private refreshStats(): void {
-    if (environment.useMockData) return;
     this.service.getStats().subscribe({ next: (s) => this.stats.set(s), error: () => undefined });
   }
 
@@ -1819,7 +1500,7 @@ export class ArRemoteMaintenance implements OnInit {
   /** The contact reporting the fault; their WhatsApp number fills the phone. */
   async pickInitContact(option: PickerOption | null): Promise<void> {
     this.initContact.set(option);
-    if (!option || environment.useMockData) return;
+    if (!option) return;
     try {
       const c = await firstValueFrom(this.contacts.get(option.id, { skipHandleError: true }));
       if (this.initContact()?.id === option.id && c.waId && !this.initCustomerPhone.trim()) {
@@ -1858,24 +1539,6 @@ export class ArRemoteMaintenance implements OnInit {
       reportedSymptoms: this.initSymptoms.trim(),
       severity: this.initSeverity,
     };
-
-    if (environment.useMockData) {
-      const id = 's-' + Date.now();
-      const created: RemoteMaintenanceSessionDto = {
-        id,
-        sessionCode: 'RMS-' + String(this.sessions().length + 1).padStart(4, '0'),
-        ...input,
-        status: MaintenanceSessionStatus.Diagnosing,
-        confidencePercent: 0,
-        estimatedDowntimeMinutes: 0,
-        resolvedRemotely: false,
-        fieldVisitRequired: false,
-        diagnosticTurns: [],
-        creationTime: new Date().toISOString(),
-      } as RemoteMaintenanceSessionDto;
-      this.afterCreated(created);
-      return;
-    }
 
     this.initBusy.set(true);
     this.initError.set(null);

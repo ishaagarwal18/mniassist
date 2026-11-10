@@ -3,20 +3,13 @@
   subtitle="Answers price push-back on a quotation within your margin rules, round by round"
   help="When a customer asks for a lower price, type what they said into their negotiation. The negotiator answers within your rules (target margin, the lowest margin you accept, the largest discount, how many rounds) and passes anything outside them to you. It does not message the customer itself: copy its reply into their chat."
 >
-  @if (!demo) {
-    <button ar-button type="button" variant="primary" icon="plus" (click)="openStart()">
-      Start a negotiation
-    </button>
-  }
+  <button ar-button type="button" variant="primary" icon="plus" (click)="openStart()">
+    Start a negotiation
+  </button>
 </ar-topbar>
 
 <div class="ng ar-scroll">
-  @if (demo) {
-    <ar-banner tone="warn">
-      The negotiator works on your own quotations, so it needs the live API. This demo-data build
-      has none.
-    </ar-banner>
-  } @else if (loading()) {
+  @if (loading()) {
     <p class="ng__note">Loading…</p>
   } @else if (loadError(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>

@@ -11,7 +11,7 @@ import {
   PRIORITY_SLA_HOURS,
   hoursByPriority,
 } from './ticket-logic';
-import { ServiceTicketGateway } from './ticket-mock';
+import { ServiceTicketGateway } from './ticket-gateway';
 
 /** Raising a ticket for a customer's problem: what it is, how urgent, and — when raised from a deal or an installed machine —
  *  linked straight to it. */

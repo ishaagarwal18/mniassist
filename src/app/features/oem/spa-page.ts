@@ -23,7 +23,6 @@ import {
   SpaStatus,
 } from '../../proxy/oem/oem-pricing.service';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { ArAccountSearch, PickedAccount } from '../projects/account-search';
 import {
   RESALE_TEXT,
@@ -109,7 +108,6 @@ export class ArSpaPage {
   private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly canCreate = grantedPolicy('AutoReach.Spa.Create', this.permissions);
   protected readonly canApprove = grantedPolicy('AutoReach.Spa.Approve', this.permissions);
 
@@ -214,7 +212,6 @@ export class ArSpaPage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       this.oems.set((await firstValueFrom(this.oemsApi.getList())).filter((o) => o.isOem));
       const id = this.route.snapshot.paramMap.get('id');

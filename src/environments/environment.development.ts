@@ -3,10 +3,8 @@ import { Environment } from '@abp/ng.core';
 /**
  * Development environment.
  * <p>
- * `useMockData` is false: the screens bind to the real API on 44320, which also
- * issues its own tokens (OpenIddict password grant) — sign-in on `/login` goes
- * through that. Set it back to true to review the UI against the seeded signal
- * stores without a database.
+ * The screens bind to the real API on 44320, which also issues its own tokens
+ * (OpenIddict password grant) — sign-in on `/login` goes through that.
  * </p>
  */
 export const environment = {
@@ -15,8 +13,6 @@ export const environment = {
   /** Syncfusion licence key (paste yours here). Empty shows Syncfusion's licence notice. */
   syncfusionLicenseKey:
     'Ngo9BigBOggjHTQxAR8/V1JBaF5cXmRCd1p/TH5YfUNzdUVEY1ZUTXxaS1ZhSXxVd0VjXX9ecXJUQmJVVkF9XEc=',
-
-  useMockData: false,
 
   application: {
     baseUrl: 'http://localhost:4200',
@@ -49,4 +45,4 @@ export const environment = {
       rootNamespace: 'Mni.AutoReach',
     },
   },
-} as Environment & { useMockData: boolean; syncfusionLicenseKey: string };
+} as Environment & { syncfusionLicenseKey: string };

@@ -14,8 +14,6 @@ import { SpaOptionDto, SpaService } from '../../proxy/oem/oem-pricing.service';
 import { SpaLineFindings, spaFindings, spaMargins } from './spa-line.logic';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { PickerOption, PipelineStore } from '../../core/services/pipeline.service';
 import { TemplateService } from '../../core/services/template.service';
@@ -320,7 +318,7 @@ export class ArQuotationForm implements OnInit {
 
   /** Saved lines priced from a special price: fetch the agreement line for the chip, checks and margin. */
   private async attachSpas(): Promise<void> {
-    if (environment.useMockData || !this.canSpa()) return;
+    if (!this.canSpa()) return;
     for (const r of this.rows().filter((x) => x.spaLineId && !x.spa)) {
       try {
         const options = await firstValueFrom(
@@ -424,7 +422,7 @@ export class ArQuotationForm implements OnInit {
     const q = this.quote();
     const enquiry = this.store.openEnquiryOptions().find((o) => o.id === q?.enquiryId);
     if (enquiry) this.customerLabel.set(enquiry.label);
-    if (!q?.contactId || environment.useMockData) return;
+    if (!q?.contactId) return;
     try {
       const c = await firstValueFrom(this.contactsApi.get(q.contactId));
       const who = [c.displayName ?? c.waId, c.companyName].filter(Boolean).join(' — ');
@@ -556,7 +554,6 @@ export class ArQuotationForm implements OnInit {
   }
 
   private async peopleOf(accountId: string): Promise<ContactDto[]> {
-    if (environment.useMockData) return [];
     const page = await firstValueFrom(
       this.contactsApi.getList({ accountId, skipCount: 0, maxResultCount: 100 }),
     );
@@ -566,7 +563,7 @@ export class ArQuotationForm implements OnInit {
   /** The quotation's contact, then everyone else on their account, each ticked or not to receive it. */
   private async loadRecipients(contactId: string): Promise<void> {
     const seq = ++this.recipientsSeq;
-    if (!contactId || environment.useMockData) {
+    if (!contactId) {
       this.recipients.set([]);
       this.sendTo.set(contactId ? [contactId] : []);
       return;

@@ -1,7 +1,7 @@
 @if (isPage) {
   <ar-topbar [title]="editingId() ? 'Edit feature flag rule' : 'New feature flag rule'">
     <button ar-button type="button" variant="ghost" (click)="close()">
-      <ar-icon name="chevron" [size]="14" style="transform: rotate(180deg);" />
+      <ar-icon name="chevron" [size]="14" style="transform: rotate(180deg)" />
       Back to feature flags
     </button>
   </ar-topbar>
@@ -64,8 +64,8 @@
     <ar-banner tone="teal">
       <span>
         <strong>Rule Evaluation Precedence:</strong> Workspace overrides take absolute precedence.
-        For un-overridden workspaces, percentage rollout uses a deterministic hash on the Workspace ID.
-        All others follow the global default rule.
+        For un-overridden workspaces, percentage rollout uses a deterministic hash on the Workspace
+        ID. All others follow the global default rule.
       </span>
       <div banner-actions>
         <button ar-button variant="quiet" type="button" (click)="toggleSimulator()">
@@ -85,7 +85,8 @@
             </span>
             <h3 class="ff-sim-card__title">Workspace Feature Resolution Sandbox</h3>
             <p class="ff-sim-card__sub">
-              Test how any workspace evaluates against configured rules without affecting production traffic.
+              Test how any workspace evaluates against configured rules without affecting production
+              traffic.
             </p>
           </div>
           <button
@@ -157,8 +158,22 @@
                   </span>
                 </div>
                 <div class="ff-sim-result__tags">
-                  <ar-chip [tone]="res.source === 'override' ? 'amber' : res.source === 'canary' ? 'teal' : 'neutral'">
-                    {{ res.source === 'override' ? 'Workspace Override' : res.source === 'canary' ? 'Canary Rollout' : 'Global Default' }}
+                  <ar-chip
+                    [tone]="
+                      res.source === 'override'
+                        ? 'amber'
+                        : res.source === 'canary'
+                          ? 'teal'
+                          : 'neutral'
+                    "
+                  >
+                    {{
+                      res.source === 'override'
+                        ? 'Workspace Override'
+                        : res.source === 'canary'
+                          ? 'Canary Rollout'
+                          : 'Global Default'
+                    }}
                   </ar-chip>
                   <span class="ff-sim-result__bucket ar-mono">
                     Bucket #{{ res.bucket }} / 100
@@ -170,7 +185,9 @@
 
               <div class="ff-sim-result__footer">
                 <span class="ff-sim-result__meta">
-                  Workspace: <strong>{{ resolveTenantName(simTenantId()) || simTenantId() }}</strong> · Feature: <strong>{{ simFeatureKey() }}</strong>
+                  Workspace:
+                  <strong>{{ resolveTenantName(simTenantId()) || simTenantId() }}</strong> ·
+                  Feature: <strong>{{ simFeatureKey() }}</strong>
                 </span>
               </div>
             </div>
@@ -254,6 +271,10 @@
       </div>
     </section>
 
+    @if (loadError(); as e) {
+      <ar-banner tone="bad">{{ e }}</ar-banner>
+    }
+
     <!-- Rules Data Table -->
     <div class="ff-grid-card">
       @if (loading()) {
@@ -303,7 +324,9 @@
                   @if (f.tenantId) {
                     <div class="ff-scope-target">
                       <ar-chip tone="amber">Workspace Override</ar-chip>
-                      <strong class="ff-scope-tenant">{{ f.tenantName || resolveTenantName(f.tenantId) }}</strong>
+                      <strong class="ff-scope-tenant">{{
+                        f.tenantName || resolveTenantName(f.tenantId)
+                      }}</strong>
                       <span class="ff-scope-tenant-id ar-mono">ID: {{ f.tenantId }}</span>
                     </div>
                   } @else {
@@ -330,18 +353,20 @@
                     @if (f.enabled) {
                       <ar-chip tone="good" [dot]="true">On for all (100%)</ar-chip>
                     } @else if ((f.rolloutPercent ?? 0) > 0) {
-                      <ar-chip tone="amber" [dot]="true">{{ f.rolloutPercent }}% Canary Staged</ar-chip>
+                      <ar-chip tone="amber" [dot]="true"
+                        >{{ f.rolloutPercent }}% Canary Staged</ar-chip
+                      >
                     } @else {
                       <ar-chip tone="neutral" [dot]="true">Disabled (0%)</ar-chip>
                     }
                   </div>
 
                   @if (!f.enabled && (f.rolloutPercent ?? 0) > 0) {
-                    <div class="ff-mini-progress" title="{{ f.rolloutPercent }}% workspaces covered">
-                      <div
-                        class="ff-mini-progress__bar"
-                        [style.width.%]="f.rolloutPercent"
-                      ></div>
+                    <div
+                      class="ff-mini-progress"
+                      title="{{ f.rolloutPercent }}% workspaces covered"
+                    >
+                      <div class="ff-mini-progress__bar" [style.width.%]="f.rolloutPercent"></div>
                     </div>
                   }
                 </div>
@@ -360,7 +385,9 @@
                   (click)="quickToggle(f, $event)"
                 >
                   <span class="ff-toggle-slider"></span>
-                  <span class="ff-toggle-text">{{ f.enabled ? 'Enabled' : ((f.rolloutPercent ?? 0) > 0 ? 'Staged' : 'Off') }}</span>
+                  <span class="ff-toggle-text">{{
+                    f.enabled ? 'Enabled' : (f.rolloutPercent ?? 0) > 0 ? 'Staged' : 'Off'
+                  }}</span>
                 </button>
               </ng-template>
             </e-column>
@@ -426,7 +453,9 @@
       <div class="ff-dialog-content">
         <!-- Feature Picker -->
         <label class="ar-field">
-          <span class="ar-field__label">Target Feature <span class="ar-field__opt">required</span></span>
+          <span class="ar-field__label"
+            >Target Feature <span class="ar-field__opt">required</span></span
+          >
           <select
             required
             class="ar-field__input"
@@ -439,7 +468,8 @@
           </select>
           @if (featureDef(form().key); as currentDef) {
             <span class="ff-field-hint">
-              <strong>{{ currentDef.category }}</strong>: {{ currentDef.description }}
+              <strong>{{ currentDef.category }}</strong
+              >: {{ currentDef.description }}
             </span>
           }
         </label>
@@ -493,7 +523,7 @@
             </label>
 
             <div class="ff-id-row">
-              <label class="ar-field" style="flex: 1;">
+              <label class="ar-field" style="flex: 1">
                 <span class="ar-field__label">Workspace ID</span>
                 <input
                   required
@@ -504,8 +534,10 @@
                 />
               </label>
 
-              <label class="ar-field" style="flex: 1;">
-                <span class="ar-field__label">Workspace Name <span class="ar-field__opt">optional</span></span>
+              <label class="ar-field" style="flex: 1">
+                <span class="ar-field__label"
+                  >Workspace Name <span class="ar-field__opt">optional</span></span
+                >
                 <input
                   class="ar-field__input"
                   placeholder="e.g. Sun Energy Automation"
@@ -516,7 +548,8 @@
             </div>
 
             <div class="ff-callout-tip">
-              💡 <strong>Workspace Override Rule:</strong> Overrides take 100% precedence over any global staged rollout percentages.
+              💡 <strong>Workspace Override Rule:</strong> Overrides take 100% precedence over any
+              global staged rollout percentages.
             </div>
           </div>
         }
@@ -619,14 +652,17 @@
               </button>
             </div>
             <p class="ff-canary-desc">
-              Workspaces are deterministically partitioned by a stable hash on their ID. The same workspaces always receive the feature reliably.
+              Workspaces are deterministically partitioned by a stable hash on their ID. The same
+              workspaces always receive the feature reliably.
             </p>
           </div>
         }
 
         <!-- Internal Audit Note -->
         <label class="ar-field">
-          <span class="ar-field__label">Audit Note <span class="ar-field__opt">optional</span></span>
+          <span class="ar-field__label"
+            >Audit Note <span class="ar-field__opt">optional</span></span
+          >
           <input
             class="ar-field__input"
             placeholder="e.g. Early access pilot for partner accounts or Meta migration safety"
@@ -652,7 +688,7 @@
       <div dialogActions>
         <button ar-button variant="ghost" type="button" (click)="close()">Cancel</button>
         <button ar-button variant="primary" type="button" [disabled]="busy()" (click)="save()">
-          {{ busy() ? 'Saving…' : (editingId() ? 'Update Rule' : 'Create Rule') }}
+          {{ busy() ? 'Saving…' : editingId() ? 'Update Rule' : 'Create Rule' }}
         </button>
       </div>
     </ar-dialog>

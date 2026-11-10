@@ -12,8 +12,6 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../../environments/environment';
 import { canOpenUrl } from '../../../core/auth/nav-access.guard';
 import { CurrentUserService } from '../../../core/services/current-user.service';
 import { PlanService } from '../../../core/services/plan.service';
@@ -31,7 +29,6 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
 import {
   SupplierQuery,
   SUPPLIER_PAGE_SIZE,
-  localSupplierPage,
   pageCount,
   pageLabel,
   readSupplierQuery,
@@ -360,8 +357,6 @@ export class ArSupplierDirectory implements OnInit {
   private readonly account = inject(CurrentUserService);
 
   readonly canManage = input(false);
-  /** Sample suppliers, filtered and paged in the browser instead of the server (mock data). */
-  readonly local = input<SupplierListItemDto[] | null>(null);
   readonly edit = output<string>();
 
   protected readonly Sort = SupplierListSort;
@@ -388,7 +383,11 @@ export class ArSupplierDirectory implements OnInit {
       { status: SupplierListStatus.All, label: 'All', count: n(r?.allCount) },
       { status: SupplierListStatus.Active, label: 'Active', count: n(r?.activeCount) },
       { status: SupplierListStatus.NotInUse, label: 'Not in use', count: n(r?.notInUseCount) },
-      { status: SupplierListStatus.Blacklisted, label: 'Blacklisted', count: n(r?.blacklistedCount) },
+      {
+        status: SupplierListStatus.Blacklisted,
+        label: 'Blacklisted',
+        count: n(r?.blacklistedCount),
+      },
     ];
   });
 
@@ -438,23 +437,19 @@ export class ArSupplierDirectory implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const local = this.local();
-      const page =
-        local || environment.useMockData
-          ? localSupplierPage(local ?? [], q)
-          : await firstValueFrom(
-              this.api.getSupplierList(
-                {
-                  filter: q.filter.trim() || undefined,
-                  status: q.status,
-                  withDuesOnly: q.withDuesOnly,
-                  sort: q.sort,
-                  skipCount: q.page * SUPPLIER_PAGE_SIZE,
-                  maxResultCount: SUPPLIER_PAGE_SIZE,
-                },
-                { skipHandleError: true },
-              ),
-            );
+      const page = await firstValueFrom(
+        this.api.getSupplierList(
+          {
+            filter: q.filter.trim() || undefined,
+            status: q.status,
+            withDuesOnly: q.withDuesOnly,
+            sort: q.sort,
+            skipCount: q.page * SUPPLIER_PAGE_SIZE,
+            maxResultCount: SUPPLIER_PAGE_SIZE,
+          },
+          { skipHandleError: true },
+        ),
+      );
       if (seq !== this.seq) return;
       // A page past the end (suppliers removed, or an old link) falls back to the last one.
       if (!page.items.length && page.totalCount && q.page > 0) {

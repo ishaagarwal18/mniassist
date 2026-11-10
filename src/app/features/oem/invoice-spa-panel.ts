@@ -6,7 +6,6 @@ import { firstValueFrom } from 'rxjs';
 import { grantedPolicy } from '../../core/auth/permission';
 import { SpaMode } from '../../proxy/oem/oem-pricing.service';
 import { InvoiceSpaLineDto, SpaClaimService } from '../../proxy/oem/spa-claim.service';
-import { environment } from '../../../environments/environment';
 import { LINE_STATE_TEXT } from './claims.logic';
 import { rupees } from './oem.logic';
 
@@ -91,7 +90,7 @@ export class ArInvoiceSpaPanel {
     effect(() => {
       const id = this.invoiceId();
       this.version();
-      if (!environment.useMockData && this.canSee()) void this.load(id);
+      if (this.canSee()) void this.load(id);
     });
   }
 

@@ -13,8 +13,6 @@ export const environment = {
   syncfusionLicenseKey:
     'Ngo9BigBOggjHTQxAR8/V1JBaF5cXmRCd1p/TH5YfUNzdUVEY1ZUTXxaS1ZhSXxVd0VjXX9ecXJUQmJVVkF9XEc=',
 
-  useMockData: false,
-
   application: {
     baseUrl: 'https://staging.mniassist.com',
     name: 'MNI Assist',
@@ -45,4 +43,4 @@ export const environment = {
       rootNamespace: 'Mni.AutoReach',
     },
   },
-} as Environment & { useMockData: boolean; syncfusionLicenseKey: string };
+} as Environment & { syncfusionLicenseKey: string };

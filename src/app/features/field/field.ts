@@ -8,8 +8,6 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { FieldJobDto, FieldServiceService } from '../../proxy/support/field-service.service';
 import { LocalVisit, fitWithin, startVisit, visitFor } from './field-logic';
 import { FieldStore } from './field-store';
@@ -17,36 +15,6 @@ import { ArBrand } from '../../layout/brand';
 import { ArButton, ArChip, ArDialog, ArIcon, ArMeter } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { helpTopicFor } from '../../core/help/help-topics';
-
-const SEED_DAY = {
-  generatedAtUtc: new Date().toISOString(),
-  jobs: [
-    {
-      ticketId: 't1',
-      reference: 'TKT-2026-0142',
-      subject: 'ACS580 drive tripping on overcurrent',
-      description: 'Trips 2–3 times a shift since Monday.',
-      priority: 'High',
-      status: 'Open',
-      dueAtUtc: new Date(Date.now() + 4 * 3_600_000).toISOString(),
-      contactId: 'c1',
-      customerName: 'R. Kulkarni',
-      companyName: 'Kalyani Forge',
-      phone: '+919812345678',
-      asset: {
-        id: 'a1',
-        description: 'ACS580 drive, Line 2',
-        make: 'ABB',
-        model: 'ACS580-01-017A-4',
-        serialNumber: 'VP-2291',
-        site: 'Plant 2, Nashik',
-        amcEndsOn: new Date(Date.now() + 40 * 86_400_000).toISOString(),
-        lastServicedOn: new Date(Date.now() - 200 * 86_400_000).toISOString(),
-      },
-      visit: null,
-    },
-  ],
-};
 
 /** Compresses a camera photo to JPEG within 1600 px. */
 async function shrink(file: File): Promise<Blob> {
@@ -915,9 +883,7 @@ export class ArField {
 
   constructor() {
     this.installable();
-    if (environment.useMockData) {
-      this.store.day.set(SEED_DAY);
-    }
+
     void this.store.start().then(() => this.loadThumbs());
   }
 

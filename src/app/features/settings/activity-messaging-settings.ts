@@ -2,8 +2,6 @@ import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
@@ -168,7 +166,6 @@ export class ArActivityMessagingSettings {
   }
 
   private async load(): Promise<void> {
-    if (environment.useMockData) return;
     try {
       const s = await firstValueFrom(this.api.getMessagingSettings());
       this.taskOk.set(!!s.taskTemplateApproved);

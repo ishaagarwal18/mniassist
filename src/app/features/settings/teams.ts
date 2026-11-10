@@ -4,8 +4,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ChannelService } from '../../core/services/channel.service';
 import { ConfirmService } from '../../core/ui/confirm.service';
@@ -55,63 +53,9 @@ const EMPTY: Draft = {
   channelIds: new Set(),
 };
 
-const SEED_TEAMS: TeamDto[] = [
-  {
-    id: 'team-1',
-    name: 'Sales & Inquiries Desk',
-    description: 'Handles new customer inquiries and high-priority quotes',
-    assignmentStrategy: TeamAssignmentStrategy.RoundRobin,
-    leadUserName: 'Priya Sharma',
-    leadUserId: 'u-1',
-    openConversationCount: 14,
-    isActive: true,
-    members: [
-      { userId: 'u-1', userName: 'psharma', name: 'Priya Sharma' },
-      { userId: 'u-2', userName: 'rverma', name: 'Rahul Verma' },
-      { userId: 'u-3', userName: 'akhan', name: 'Arif Khan' },
-    ],
-  },
-  {
-    id: 'team-2',
-    name: 'Technical Support & AMC',
-    description: 'Preventive service, AMC contracts and machine breakdown diagnostics',
-    assignmentStrategy: TeamAssignmentStrategy.LeastBusy,
-    leadUserName: 'Amit Joshi',
-    leadUserId: 'u-4',
-    openConversationCount: 8,
-    isActive: true,
-    members: [
-      { userId: 'u-4', userName: 'ajoshi', name: 'Amit Joshi' },
-      { userId: 'u-5', userName: 'vpatel', name: 'Vikram Patel' },
-    ],
-  },
-  {
-    id: 'team-3',
-    name: 'Billing & Collections',
-    description: 'Payment reminders, GST invoice reconciliations and receivables',
-    assignmentStrategy: TeamAssignmentStrategy.Manual,
-    leadUserName: 'Sunita Rao',
-    leadUserId: 'u-6',
-    openConversationCount: 3,
-    isActive: true,
-    members: [
-      { userId: 'u-6', userName: 'srao', name: 'Sunita Rao' },
-    ],
-  },
-];
-
 @Component({
   selector: 'ar-teams',
-  imports: [
-    NgTemplateOutlet,
-    ArTopbar,
-    ArButton,
-    ArBanner,
-    ArChip,
-    ArDialog,
-    ArGrid,
-    GridModule,
-  ],
+  imports: [NgTemplateOutlet, ArTopbar, ArButton, ArBanner, ArChip, ArDialog, ArGrid, GridModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isPage) {
@@ -139,11 +83,7 @@ const SEED_TEAMS: TeamDto[] = [
         @if (loading()) {
           <p class="tm__note">Loading teams…</p>
         } @else {
-          <ejs-grid
-            arGrid="teams-grid"
-            [dataSource]="teams()"
-            aria-label="Teams"
-          >
+          <ejs-grid arGrid="teams-grid" [dataSource]="teams()" aria-label="Teams">
             <e-columns>
               <e-column field="name" headerText="Team" width="220">
                 <ng-template #template let-t>
@@ -169,11 +109,18 @@ const SEED_TEAMS: TeamDto[] = [
               <e-column headerText="Members" width="160">
                 <ng-template #template let-t>
                   <span class="ar-chip-sub">
-                    {{ (t.members ?? []).length }} member{{ (t.members ?? []).length === 1 ? '' : 's' }}
+                    {{ (t.members ?? []).length }} member{{
+                      (t.members ?? []).length === 1 ? '' : 's'
+                    }}
                   </span>
                 </ng-template>
               </e-column>
-              <e-column field="openConversationCount" headerText="Open Chats" width="120" textAlign="Right">
+              <e-column
+                field="openConversationCount"
+                headerText="Open Chats"
+                width="120"
+                textAlign="Right"
+              >
                 <ng-template #template let-t>
                   <span class="ar-mono">{{ t.openConversationCount ?? 0 }}</span>
                 </ng-template>
@@ -216,7 +163,9 @@ const SEED_TEAMS: TeamDto[] = [
             />
           </label>
           <label class="ar-field">
-            <span class="ar-field__label">What this team handles <span class="ar-field__opt">(optional)</span></span>
+            <span class="ar-field__label"
+              >What this team handles <span class="ar-field__opt">(optional)</span></span
+            >
             <textarea
               class="ar-field__input"
               rows="2"
@@ -265,7 +214,9 @@ const SEED_TEAMS: TeamDto[] = [
           </div>
           @if (chosenMembers().length > 0) {
             <label class="ar-field">
-              <span class="ar-field__label">Team lead <span class="ar-field__opt">(optional)</span></span>
+              <span class="ar-field__label"
+                >Team lead <span class="ar-field__opt">(optional)</span></span
+              >
               <select
                 class="ar-field__input"
                 (change)="patch({ leadUserId: $any($event.target).value })"
@@ -281,7 +232,9 @@ const SEED_TEAMS: TeamDto[] = [
           }
           @if (channels().length > 0) {
             <div class="ar-field">
-              <span class="ar-field__label">Numbers routed to this team <span class="ar-field__opt">(optional)</span></span>
+              <span class="ar-field__label"
+                >Numbers routed to this team <span class="ar-field__opt">(optional)</span></span
+              >
               <div class="tm__people-picker">
                 @for (c of channels(); track c.id) {
                   <label class="tm__pick">
@@ -392,7 +345,7 @@ export class ArTeams {
   private readonly allMembers = signal<WorkspaceMemberDto[]>([]);
   protected readonly members = computed(() => {
     const list = this.allMembers().filter((m) => m.isActive !== false && m.userId);
-    return list.length ? list : (SEED_TEAMS.flatMap((t) => t.members ?? []) as WorkspaceMemberDto[]);
+    return list;
   });
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -412,21 +365,17 @@ export class ArTeams {
 
   private async load(): Promise<void> {
     try {
-      if (environment.useMockData) {
-        this.teams.set(SEED_TEAMS);
-        this.checkRouteParam();
-        return;
-      }
       const [teamsRes, membersRes] = await Promise.all([
-        firstValueFrom(this.api.getList({ maxResultCount: 200, skipCount: 0 })).catch(() => null),
-        firstValueFrom(this.memberApi.getList()).catch(() => null),
+        firstValueFrom(this.api.getList({ maxResultCount: 200, skipCount: 0 })),
+        firstValueFrom(this.memberApi.getList()),
       ]);
-      const list = teamsRes?.items?.length ? teamsRes.items : SEED_TEAMS;
-      this.teams.set([...list].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')));
-      this.allMembers.set(membersRes?.items ?? []);
+      this.teams.set(
+        [...(teamsRes.items ?? [])].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '')),
+      );
+      this.allMembers.set([...(membersRes?.items ?? [])]);
       this.error.set(null);
-    } catch {
-      this.teams.set(SEED_TEAMS);
+    } catch (e: unknown) {
+      this.error.set(readApiError(e, 'The teams could not be loaded.'));
     } finally {
       this.loading.set(false);
       this.checkRouteParam();
@@ -527,9 +476,10 @@ export class ArTeams {
         channelIds: [...d.channelIds],
       };
       const t = this.editing();
-      if (!environment.useMockData) {
-        await firstValueFrom(t?.id ? this.api.update(t.id, input) : this.api.create(input)).catch(() => {});
-      }
+
+      await firstValueFrom(t?.id ? this.api.update(t.id, input) : this.api.create(input)).catch(
+        () => {},
+      );
       this.toasts.success(t?.id ? `"${input.name}" saved.` : `Team "${input.name}" created.`);
       this.close();
       await this.load();
@@ -551,9 +501,7 @@ export class ArTeams {
       return;
     }
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(this.api.delete(t.id!)).catch(() => {});
-      }
+      await firstValueFrom(this.api.delete(t.id!)).catch(() => {});
       this.teams.update((list) => list.filter((x) => x.id !== t.id));
       this.toasts.info(`Team "${t.name}" deleted.`);
     } catch (e: unknown) {

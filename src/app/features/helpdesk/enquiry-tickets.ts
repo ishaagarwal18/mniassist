@@ -11,14 +11,14 @@ import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
 
 import { grantedPolicy } from '../../core/auth/permission';
-import { ServiceTicketDto, TicketPriority, TicketStatus } from '../../proxy/support';
+import { ServiceTicketDto, TicketStatus } from '../../proxy/support';
 import { ArButton, ArChip } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { errorMessage } from '../activities/activity-logic';
 import { ArTicketDetailDialog } from './ticket-detail-dialog';
 import { ArTicketDialog } from './ticket-dialog';
 import { STATUS_LABEL, dueLabel } from './ticket-logic';
-import { ServiceTicketGateway } from './ticket-mock';
+import { ServiceTicketGateway } from './ticket-gateway';
 
 const STATUS_TONE: Record<TicketStatus, ChipTone> = {
   [TicketStatus.Open]: 'amber',

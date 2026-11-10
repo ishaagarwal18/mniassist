@@ -15,221 +15,226 @@
   </ar-topbar>
 
   <div class="pc ar-scroll">
-  <section class="tiles">
-    <ar-stat-tile
-      label="Monthly recurring"
-      [value]="lakhs(metrics().mrrInPaise)"
-      [note]="metrics().trialTenants + ' on trial, not counted'"
-    />
-    <ar-stat-tile
-      label="Message margin this month"
-      [value]="lakhs(metrics().messageMarginMonthInPaise)"
-      [note]="count(metrics().messagesMonth) + ' messages'"
-      tone="good"
-    />
-    <ar-stat-tile
-      label="Average delivery rate"
-      [value]="percent(metrics().averageDeliveryRate)"
-      note="Withheld messages excluded, as Meta counts it"
-    />
-    <ar-stat-tile
-      label="Tenants needing attention"
-      [value]="count(metrics().tenantsAtRisk)"
-      note="Degraded number, or stopped sending"
-      [tone]="metrics().tenantsAtRisk > 0 ? 'bad' : 'good'"
-    />
-    <ar-stat-tile
-      label="To break even"
-      [value]="count(metrics().tenantsToBreakEven) + ' more'"
-      note="At the current average revenue per paying tenant"
-    />
-    <ar-stat-tile
-      label="Open DPDP requests"
-      [value]="count(metrics().openComplianceRequests)"
-      note="30-day statutory clock on each"
-      [tone]="metrics().openComplianceRequests > 0 ? 'warn' : 'neutral'"
-    />
-  </section>
+    @if (failed()) {
+      <ar-banner tone="bad"
+        >The platform figures could not be loaded. Try again in a moment.</ar-banner
+      >
+    }
+    <section class="tiles">
+      <ar-stat-tile
+        label="Monthly recurring"
+        [value]="lakhs(metrics().mrrInPaise)"
+        [note]="metrics().trialTenants + ' on trial, not counted'"
+      />
+      <ar-stat-tile
+        label="Message margin this month"
+        [value]="lakhs(metrics().messageMarginMonthInPaise)"
+        [note]="count(metrics().messagesMonth) + ' messages'"
+        tone="good"
+      />
+      <ar-stat-tile
+        label="Average delivery rate"
+        [value]="percent(metrics().averageDeliveryRate)"
+        note="Withheld messages excluded, as Meta counts it"
+      />
+      <ar-stat-tile
+        label="Tenants needing attention"
+        [value]="count(metrics().tenantsAtRisk)"
+        note="Degraded number, or stopped sending"
+        [tone]="metrics().tenantsAtRisk > 0 ? 'bad' : 'good'"
+      />
+      <ar-stat-tile
+        label="To break even"
+        [value]="count(metrics().tenantsToBreakEven) + ' more'"
+        note="At the current average revenue per paying tenant"
+      />
+      <ar-stat-tile
+        label="Open DPDP requests"
+        [value]="count(metrics().openComplianceRequests)"
+        note="30-day statutory clock on each"
+        [tone]="metrics().openComplianceRequests > 0 ? 'warn' : 'neutral'"
+      />
+    </section>
 
-  <section class="block">
-    <header class="block__head">
-      <div>
-        <h2 class="block__title">At-risk queue</h2>
-        <p class="block__sub">
-          Opened by the nightly sweep. The tenant owner is notified in-app and by email at the same
-          time; this is the internal ticket.
-        </p>
-      </div>
-      <label class="toggle">
-        <input
-          type="checkbox"
-          [checked]="showResolvedAlerts()"
-          (change)="showResolvedAlerts.set($any($event.target).checked)"
-        />
-        <span>Show resolved</span>
-      </label>
-    </header>
+    <section class="block">
+      <header class="block__head">
+        <div>
+          <h2 class="block__title">At-risk queue</h2>
+          <p class="block__sub">
+            Opened by the nightly sweep. The tenant owner is notified in-app and by email at the
+            same time; this is the internal ticket.
+          </p>
+        </div>
+        <label class="toggle">
+          <input
+            type="checkbox"
+            [checked]="showResolvedAlerts()"
+            (change)="showResolvedAlerts.set($any($event.target).checked)"
+          />
+          <span>Show resolved</span>
+        </label>
+      </header>
 
-    <ul class="alerts">
-      @for (a of alerts(); track a.id) {
-        <li class="alert" [class.alert--resolved]="a.status === 'resolved'">
-          <div class="alert__body">
-            <div class="alert__head">
-              <span class="alert__tenant">{{ a.tenantName }}</span>
-              <ar-chip [tone]="alertTone(a.status)">{{ a.reason }}</ar-chip>
-              @if (a.assignedTo) {
-                <span class="alert__owner">· {{ a.assignedTo }}</span>
+      <ul class="alerts">
+        @for (a of alerts(); track a.id) {
+          <li class="alert" [class.alert--resolved]="a.status === 'resolved'">
+            <div class="alert__body">
+              <div class="alert__head">
+                <span class="alert__tenant">{{ a.tenantName }}</span>
+                <ar-chip [tone]="alertTone(a.status)">{{ a.reason }}</ar-chip>
+                @if (a.assignedTo) {
+                  <span class="alert__owner">· {{ a.assignedTo }}</span>
+                }
+              </div>
+              <p class="alert__detail">{{ a.detail }}</p>
+              @if (a.notes) {
+                <p class="alert__notes">{{ a.notes }}</p>
               }
             </div>
-            <p class="alert__detail">{{ a.detail }}</p>
-            @if (a.notes) {
-              <p class="alert__notes">{{ a.notes }}</p>
-            }
-          </div>
-          <div class="alert__actions">
-            @if (a.status === 'open') {
-              <button ar-button type="button" variant="ghost" (click)="ackAlert(a.id)">
-                Take it
-              </button>
-            }
-            @if (a.status !== 'resolved') {
-              <button ar-button type="button" variant="ghost" (click)="resolveAlert(a.id)">
-                Resolve
-              </button>
-            } @else if (a.resolvedByRecovery) {
-              <ar-chip tone="good">Recovered</ar-chip>
-            }
-          </div>
-        </li>
-      } @empty {
-        <li class="alerts__none">Nothing at risk right now.</li>
-      }
-    </ul>
-  </section>
-
-  <section class="block">
-    <header class="block__head">
-      <div>
-        <h2 class="block__title">Tenants</h2>
-        <p class="block__sub">
-          Figures are from the nightly rollup, so they are as of the last run rather than to the
-          second. Anything needing attention sorts to the top.
-        </p>
-      </div>
-      <label class="toggle">
-        <input
-          type="checkbox"
-          [checked]="atRiskOnly()"
-          (change)="atRiskOnly.set($any($event.target).checked)"
-        />
-        <span>Only those needing attention</span>
-      </label>
-    </header>
-
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th scope="col">Tenant</th>
-          <th scope="col">Plan</th>
-          <th scope="col">Quality</th>
-          <th scope="col" class="num">Messages 30d</th>
-          <th scope="col" class="num">Spend 30d</th>
-          <th scope="col" class="num">Wallet</th>
-          <th scope="col" class="num">Users</th>
-          <th scope="col">Last active</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (t of tenants(); track t.id) {
-          <tr [class.tbl--risk]="isAtRisk(t)">
-            <th scope="row">
-              <span class="tname">{{ t.name }}</span>
-              @if (riskReason(t); as reason) {
-                <span class="treason">{{ reason }}</span>
+            <div class="alert__actions">
+              @if (a.status === 'open') {
+                <button ar-button type="button" variant="ghost" (click)="ackAlert(a.id)">
+                  Take it
+                </button>
               }
-            </th>
-            <td>
-              @if (t.isTrial) {
-                <ar-chip tone="amber">Trial</ar-chip>
-              } @else {
-                <ar-chip tone="neutral">{{ t.plan }}</ar-chip>
+              @if (a.status !== 'resolved') {
+                <button ar-button type="button" variant="ghost" (click)="resolveAlert(a.id)">
+                  Resolve
+                </button>
+              } @else if (a.resolvedByRecovery) {
+                <ar-chip tone="good">Recovered</ar-chip>
               }
-            </td>
-            <td>
-              <ar-chip [tone]="qualityTone(t.worstQuality)" [dot]="true">
-                {{ t.worstQuality === 'unknown' ? 'none yet' : t.worstQuality }}
-              </ar-chip>
-              <span class="ttier ar-mono">{{ t.tier }}</span>
-            </td>
-            <td class="num ar-mono">{{ count(t.messages30d) }}</td>
-            <td class="num ar-mono">{{ lakhs(t.spend30dInPaise) }}</td>
-            <td class="num ar-mono" [class.tlow]="t.walletBalanceInPaise < 50_000">
-              {{ lakhs(t.walletBalanceInPaise) }}
-            </td>
-            <td class="num ar-mono">{{ t.activeUsers }}</td>
-            <td class="tseen">{{ lastSeen(t.lastActivityAt) }}</td>
-          </tr>
+            </div>
+          </li>
         } @empty {
-          <tr>
-            <td colspan="8" class="tbl__empty">Nothing needs attention right now.</td>
-          </tr>
+          <li class="alerts__none">Nothing at risk right now.</li>
         }
-      </tbody>
-    </table>
-  </section>
+      </ul>
+    </section>
 
-  <section class="block">
-    <h2 class="block__title">Rate history</h2>
-    <p class="block__sub">
-      What tenants pay per message, and when it changed. Meta announces rate changes weeks ahead, so
-      a scheduled one appears here before it bills. Superseded rates are kept rather than
-      overwritten — a campaign report from December has to keep costing what it cost.
-    </p>
-    <p class="block__sub">
-      Service messages and utility templates sent inside the 24-hour window cost nothing until a
-      rate exists for them. Add one here only once Meta confirms it charges; service messages then
-      have a free allowance per number per month (<span class="ar-mono"
-        >Billing:ServiceMessages:FreePerChannelPerMonth</span
-      >).
-    </p>
-    <button ar-button type="button" variant="ghost" icon="plus" (click)="goNewRate()">
-      Schedule a rate
-    </button>
+    <section class="block">
+      <header class="block__head">
+        <div>
+          <h2 class="block__title">Tenants</h2>
+          <p class="block__sub">
+            Figures are from the nightly rollup, so they are as of the last run rather than to the
+            second. Anything needing attention sorts to the top.
+          </p>
+        </div>
+        <label class="toggle">
+          <input
+            type="checkbox"
+            [checked]="atRiskOnly()"
+            (change)="atRiskOnly.set($any($event.target).checked)"
+          />
+          <span>Only those needing attention</span>
+        </label>
+      </header>
 
-    <div class="rates">
-      @for (r of rates(); track r.category) {
-        <article class="rate">
-          <header class="rate__head">
-            <h3 class="rate__cat">{{ r.category }}</h3>
-            <span class="rate__now ar-mono">{{ rupees(r.currentRateInPaise, true) }}</span>
-          </header>
-
-          @if (r.nextChangeFrom && r.nextRateInPaise) {
-            <p class="rate__next">
-              <ar-chip tone="amber">Scheduled</ar-chip>
-              {{ rupees(r.nextRateInPaise, true) }} from {{ month(r.nextChangeFrom) }}
-            </p>
-          }
-
-          <ol class="rate__list">
-            @for (p of r.points; track p.effectiveFrom) {
-              <li class="rate__pt" [class.rate__pt--now]="p.isCurrent">
-                <span class="rate__from">{{ month(p.effectiveFrom) }}</span>
-                <span class="rate__val ar-mono">{{ rupees(p.rateInPaise, true) }}</span>
-                @if (p.changePercent !== 0) {
-                  <span class="rate__delta" [class.rate__delta--up]="p.changeInPaise > 0">
-                    {{ p.changeInPaise > 0 ? '+' : '' }}{{ p.changePercent }}%
-                  </span>
-                } @else {
-                  <span class="rate__delta rate__delta--flat">—</span>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th scope="col">Tenant</th>
+            <th scope="col">Plan</th>
+            <th scope="col">Quality</th>
+            <th scope="col" class="num">Messages 30d</th>
+            <th scope="col" class="num">Spend 30d</th>
+            <th scope="col" class="num">Wallet</th>
+            <th scope="col" class="num">Users</th>
+            <th scope="col">Last active</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of tenants(); track t.id) {
+            <tr [class.tbl--risk]="isAtRisk(t)">
+              <th scope="row">
+                <span class="tname">{{ t.name }}</span>
+                @if (riskReason(t); as reason) {
+                  <span class="treason">{{ reason }}</span>
                 }
-              </li>
+              </th>
+              <td>
+                @if (t.isTrial) {
+                  <ar-chip tone="amber">Trial</ar-chip>
+                } @else {
+                  <ar-chip tone="neutral">{{ t.plan }}</ar-chip>
+                }
+              </td>
+              <td>
+                <ar-chip [tone]="qualityTone(t.worstQuality)" [dot]="true">
+                  {{ t.worstQuality === 'unknown' ? 'none yet' : t.worstQuality }}
+                </ar-chip>
+                <span class="ttier ar-mono">{{ t.tier }}</span>
+              </td>
+              <td class="num ar-mono">{{ count(t.messages30d) }}</td>
+              <td class="num ar-mono">{{ lakhs(t.spend30dInPaise) }}</td>
+              <td class="num ar-mono" [class.tlow]="t.walletBalanceInPaise < 50_000">
+                {{ lakhs(t.walletBalanceInPaise) }}
+              </td>
+              <td class="num ar-mono">{{ t.activeUsers }}</td>
+              <td class="tseen">{{ lastSeen(t.lastActivityAt) }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="8" class="tbl__empty">Nothing needs attention right now.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <section class="block">
+      <h2 class="block__title">Rate history</h2>
+      <p class="block__sub">
+        What tenants pay per message, and when it changed. Meta announces rate changes weeks ahead,
+        so a scheduled one appears here before it bills. Superseded rates are kept rather than
+        overwritten — a campaign report from December has to keep costing what it cost.
+      </p>
+      <p class="block__sub">
+        Service messages and utility templates sent inside the 24-hour window cost nothing until a
+        rate exists for them. Add one here only once Meta confirms it charges; service messages then
+        have a free allowance per number per month (<span class="ar-mono"
+          >Billing:ServiceMessages:FreePerChannelPerMonth</span
+        >).
+      </p>
+      <button ar-button type="button" variant="ghost" icon="plus" (click)="goNewRate()">
+        Schedule a rate
+      </button>
+
+      <div class="rates">
+        @for (r of rates(); track r.category) {
+          <article class="rate">
+            <header class="rate__head">
+              <h3 class="rate__cat">{{ r.category }}</h3>
+              <span class="rate__now ar-mono">{{ rupees(r.currentRateInPaise, true) }}</span>
+            </header>
+
+            @if (r.nextChangeFrom && r.nextRateInPaise) {
+              <p class="rate__next">
+                <ar-chip tone="amber">Scheduled</ar-chip>
+                {{ rupees(r.nextRateInPaise, true) }} from {{ month(r.nextChangeFrom) }}
+              </p>
             }
-          </ol>
-        </article>
-      }
-    </div>
-  </section>
+
+            <ol class="rate__list">
+              @for (p of r.points; track p.effectiveFrom) {
+                <li class="rate__pt" [class.rate__pt--now]="p.isCurrent">
+                  <span class="rate__from">{{ month(p.effectiveFrom) }}</span>
+                  <span class="rate__val ar-mono">{{ rupees(p.rateInPaise, true) }}</span>
+                  @if (p.changePercent !== 0) {
+                    <span class="rate__delta" [class.rate__delta--up]="p.changeInPaise > 0">
+                      {{ p.changeInPaise > 0 ? '+' : '' }}{{ p.changePercent }}%
+                    </span>
+                  } @else {
+                    <span class="rate__delta rate__delta--flat">—</span>
+                  }
+                </li>
+              }
+            </ol>
+          </article>
+        }
+      </div>
+    </section>
   </div>
 }
 
@@ -290,9 +295,7 @@
         <p class="rate__err" role="alert">{{ e }}</p>
       }
       <div dialogActions>
-        <button ar-button type="button" variant="ghost" (click)="close()">
-          Cancel
-        </button>
+        <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
         <button
           ar-button
           type="button"

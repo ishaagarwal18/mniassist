@@ -2,8 +2,6 @@ import { Injectable, DestroyRef, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PermissionService } from '@abp/ng.core';
 import type { SimpleUser as SimpleUserType, SimpleUserDelegate } from 'sip.js/lib/platform/web';
-
-import { environment } from '../../../environments/environment';
 import {
   CallLogDto,
   CallService,
@@ -27,12 +25,9 @@ export interface SoftphoneCall {
   enquiryId: string | null;
 }
 
-const MOCK_DOMAIN = 'voice.mock.local';
-
 /**
  * The in-browser phone: registers a WebRTC/SIP session against the workspace's shared softphone line and drives calls through it.
- * A real SIP.js `SimpleUser` does the actual signalling and media in normal use; on sample data there is nothing to register
- * against, so every call is simulated locally with the same state machine and timings a real one would show.
+ * A real SIP.js `SimpleUser` does the actual signalling and media.
  *
  * The browser is the source of truth for a softphone call's live state — there is no server webhook the way Exotel's own
  * click-to-call has. Every state change (answered, ended) is reported to the server as it happens, the same log entry a
@@ -50,7 +45,6 @@ export class SoftphoneService {
   private wasAnswered = false;
   private pendingInboundLog: Promise<CallLogDto | null> | null = null;
   private durationTimer: ReturnType<typeof setInterval> | null = null;
-  private mockTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** True once the workspace is known to have the softphone turned on and ready — the signal a shell-level widget uses to decide
    *  whether to show itself at all. A workspace that has never touched this feature should see nothing, not a broken bar. */
@@ -66,17 +60,13 @@ export class SoftphoneService {
   constructor() {
     inject(DestroyRef).onDestroy(() => {
       this.stopDurationTimer();
-      if (this.mockTimer) clearTimeout(this.mockTimer);
     });
   }
 
   /** Registers the softphone if it is not already registered or registering. Safe to call repeatedly — a component mounting
    *  does not need to know whether another one already connected it. */
   async ensureConnected(): Promise<boolean> {
-    if (
-      !environment.useMockData &&
-      (!checkPolicy('AutoReach.Inbox.Reply', this.permissions) || !this.plan.hasFeature('Voice'))
-    ) {
+    if (!checkPolicy('AutoReach.Inbox.Reply', this.permissions) || !this.plan.hasFeature('Voice')) {
       return false;
     }
     if (this.connection() === 'registered') return true;
@@ -91,19 +81,6 @@ export class SoftphoneService {
   private async connect(): Promise<boolean> {
     this.error.set(null);
     this.connection.set('connecting');
-
-    if (environment.useMockData) {
-      this.credentials = {
-        ready: true,
-        wsServer: `wss://${MOCK_DOMAIN}/ws`,
-        sipUri: `sip:you@${MOCK_DOMAIN}`,
-        password: 'mock',
-        displayName: 'You',
-      };
-      this.configured.set(true);
-      this.connection.set('registered');
-      return true;
-    }
 
     try {
       const creds = await firstValueFrom(this.api.getSoftphoneCredentials());
@@ -232,8 +209,6 @@ export class SoftphoneService {
     }
     if (!id) return;
 
-    if (environment.useMockData) return;
-
     try {
       await firstValueFrom(
         this.api.reportSoftphoneEvent(id, { status, durationSeconds: this.durationSeconds() }),
@@ -285,14 +260,6 @@ export class SoftphoneService {
       enquiryId: target.enquiryId ?? null,
     });
 
-    if (environment.useMockData) {
-      this.call.update((c) =>
-        c ? { ...c, callLogId: `mock-softphone-${Date.now().toString(36)}` } : c,
-      );
-      this.mockTimer = setTimeout(() => this.delegate().onCallAnswered?.(), 2500);
-      return;
-    }
-
     try {
       const logged = await firstValueFrom(
         this.api.startSoftphoneCall({
@@ -331,12 +298,6 @@ export class SoftphoneService {
   }
 
   async hangup(): Promise<void> {
-    if (environment.useMockData) {
-      if (this.mockTimer) clearTimeout(this.mockTimer);
-      this.delegate().onCallHangup?.();
-      return;
-    }
-
     if (this.callState() === 'ringing-in') {
       await this.simpleUser?.decline();
     } else {
@@ -345,33 +306,22 @@ export class SoftphoneService {
   }
 
   async answer(): Promise<void> {
-    if (environment.useMockData) {
-      this.delegate().onCallAnswered?.();
-      return;
-    }
     await this.simpleUser?.answer();
   }
 
   async decline(): Promise<void> {
-    if (environment.useMockData) {
-      this.delegate().onCallHangup?.();
-      return;
-    }
     await this.simpleUser?.decline();
   }
 
   toggleMute(): void {
     const next = !this.muted();
     this.muted.set(next);
-    if (!environment.useMockData) {
-      if (next) this.simpleUser?.mute();
-      else this.simpleUser?.unmute();
-    }
+
+    if (next) this.simpleUser?.mute();
+    else this.simpleUser?.unmute();
   }
 
   sendDigit(digit: string): void {
-    if (!environment.useMockData) {
-      void this.simpleUser?.sendDTMF(digit);
-    }
+    void this.simpleUser?.sendDTMF(digit);
   }
 }

@@ -12,9 +12,6 @@
 </ar-topbar>
 
 <div class="oe ar-scroll">
-  @if (mock) {
-    <ar-banner tone="teal">The OEM pricing reports need the live API.</ar-banner>
-  }
   @if (error(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }

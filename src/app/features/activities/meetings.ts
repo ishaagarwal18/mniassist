@@ -36,7 +36,6 @@ import { RouterLink } from '@angular/router';
 import { ArButton, ArChip, ArDraggable } from '../../ui';
 import { ToastService } from '../../core/ui/toast.service';
 import {
-  GOOGLE_MEET_NEW_URL,
   ZOOM_SCHEDULE_URL,
   googleCalendarUrl,
   mailtoUrl,
@@ -47,7 +46,7 @@ import {
 } from './meeting-share';
 import { ChipTone } from '../../ui/chip';
 import { ActivityDirectory } from './activity-directory';
-import { ActivityGateway } from './activity-mock';
+import { ActivityGateway } from './activity-gateway';
 import {
   KIND_LABEL,
   RESPONSE_LABEL,

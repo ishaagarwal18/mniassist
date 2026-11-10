@@ -9,11 +9,6 @@
 </ar-topbar>
 
 <div class="bl ar-scroll">
-  @if (mock) {
-    <ar-banner tone="teal"
-      >File imports need the live API. In demo mode the list stays empty.</ar-banner
-    >
-  }
   @if (error(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }
@@ -65,7 +60,13 @@
         <e-column field="quotationId" headerText="Quotation" width="70" textAlign="Right">
           <ng-template #template let-r>
             @if (r.quotationId) {
-              <a ar-button variant="ghost" icon="link" title="Open quotation" [routerLink]="['/quotations', r.quotationId, 'edit']"></a>
+              <a
+                ar-button
+                variant="ghost"
+                icon="link"
+                title="Open quotation"
+                [routerLink]="['/quotations', r.quotationId, 'edit']"
+              ></a>
             } @else {
               <span class="bl__muted">—</span>
             }

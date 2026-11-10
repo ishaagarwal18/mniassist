@@ -16,9 +16,6 @@
 </ar-topbar>
 
 <div class="pr ar-scroll">
-  @if (mock) {
-    <ar-banner tone="teal">The project report needs the live API.</ar-banner>
-  }
   @if (error(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }

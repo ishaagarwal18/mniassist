@@ -4,7 +4,6 @@ import { firstValueFrom } from 'rxjs';
 
 import { AccountProjectDto, ProjectService } from '../../proxy/projects/project.service';
 import { ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { OUTCOME_TEXT, STAGE_TEXT, rolesText, rupeesShort } from './project.logic';
 
 /** Customer 360's Projects tab: every project the account is a party to, with its role there. */
@@ -67,7 +66,6 @@ export class ArAccountProjects implements OnInit {
   protected readonly rupees = rupeesShort;
 
   async ngOnInit(): Promise<void> {
-    if (environment.useMockData) return;
     try {
       this.projects.set(await firstValueFrom(this.api.getForAccount(this.accountId())));
     } catch {

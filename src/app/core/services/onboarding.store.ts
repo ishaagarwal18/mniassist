@@ -1,8 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { OnboardingChecklistService } from '../../proxy/identity';
 import { OnboardingChecklistStep } from '../../proxy/identity/onboarding-checklist-step.enum';
 import { settled } from '../util/resource';
@@ -115,23 +113,6 @@ export function sortSteps<T extends { step: OnboardingChecklistStep }>(items: re
     .map((x) => x.item);
 }
 
-const SEED: Checklist = {
-  items: ORDER.map((step, i) => ({
-    step,
-    label: STEP_META[step].label,
-    description: STEP_META[step].description,
-    route: STEP_META[step].route,
-    done: i < 3,
-  })),
-  completedCount: 3,
-  totalCount: ORDER.length,
-  isComplete: false,
-  dismissed: false,
-  nextStep: OnboardingChecklistStep.ConnectChannel,
-  mobileVerified: true,
-  verifiedMobile: '+91 90210 44xxx',
-};
-
 const EMPTY: Checklist = {
   items: [],
   completedCount: 0,
@@ -155,17 +136,17 @@ export class OnboardingStore {
   private readonly local = signal<Checklist | null>(null);
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.reloadTick() }),
+    params: () => ({ tick: this.reloadTick() }),
     stream: () => this.api.get().pipe(map((dto) => this.normalise(dto))),
-    defaultValue: environment.useMockData ? SEED : EMPTY,
+    defaultValue: EMPTY,
   });
 
   readonly checklist = computed<Checklist>(() => {
     if (this.local()) return this.local()!;
-    return environment.useMockData ? SEED : settled(this.resource, EMPTY);
+    return settled(this.resource, EMPTY);
   });
 
-  readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
+  readonly loading = computed(() => this.resource.isLoading());
 
   /**
    * Every step is done, as far as is known: false until the checklist has loaded, so Get started stays in the menu
@@ -175,7 +156,6 @@ export class OnboardingStore {
 
   /** The checklist as it stands, reading it first if it hasn't loaded yet (the Get started route's guard). */
   async current(): Promise<Checklist> {
-    if (environment.useMockData) return this.checklist();
     if (this.local() || this.resource.status() === 'resolved') return this.checklist();
     const fresh = this.normalise(await firstValueFrom(this.api.get()));
     this.local.set(fresh);
@@ -239,70 +219,36 @@ export class OnboardingStore {
     };
   }
 
-  private reload(): void {
-    this.reloadTick.update((n) => n + 1);
-  }
-
   async markStep(step: OnboardingChecklistStep): Promise<void> {
-    if (environment.useMockData) {
-      const c = this.checklist();
-      const items = c.items.map((i) => (i.step === step ? { ...i, done: true } : i));
-      this.local.set({
-        ...c,
-        items,
-        completedCount: items.filter((i) => i.done).length,
-        nextStep: items.find((i) => !i.done)?.step,
-        isComplete: items.every((i) => i.done),
-      });
-      return;
-    }
     const dto = await firstValueFrom(this.api.markStep(step));
     this.local.set(this.normalise(dto));
   }
 
   async startMobileVerification(mobile: string): Promise<void> {
-    if (!environment.useMockData) {
-      await firstValueFrom(
-        this.api.startMobileVerification({ mobile: mobile.trim().replace(/[+\s()-]/g, '') }),
-      );
-    }
+    await firstValueFrom(
+      this.api.startMobileVerification({ mobile: mobile.trim().replace(/[+\s()-]/g, '') }),
+    );
   }
 
   /** Reads the checklist again, e.g. after the email link was opened in another tab. */
   async refresh(): Promise<void> {
-    if (environment.useMockData) {
-      await this.markStep(OnboardingChecklistStep.VerifyEmail);
-      return;
-    }
     const dto = await firstValueFrom(this.api.get());
     this.local.set(this.normalise(dto));
   }
 
   /** The signed-in person accepts this version of the consent rules: ticks the step and records who and when. */
   async acceptConsentRules(version: string): Promise<void> {
-    if (environment.useMockData) {
-      await this.markStep(OnboardingChecklistStep.ReviewConsentPolicy);
-      this.local.update((c) =>
-        c ? { ...c, consentRules: { by: 'You', at: new Date().toISOString(), version } } : c,
-      );
-      return;
-    }
     const dto = await firstValueFrom(this.api.acceptConsentRules({ version }));
     this.local.set(this.normalise(dto));
   }
 
   /** Reads the checklist again after a step was worked on in another screen (Get started's popups). */
   async reread(): Promise<void> {
-    if (environment.useMockData) return;
     const dto = await firstValueFrom(this.api.get());
     this.local.set(this.normalise(dto));
   }
 
   async confirmMobile(code: string): Promise<void> {
-    if (environment.useMockData) {
-      await this.markStep(OnboardingChecklistStep.VerifyMobile);
-      return;
-    }
     const dto = await firstValueFrom(this.api.confirmMobileVerification({ code: code.trim() }));
     this.local.set(this.normalise(dto));
   }

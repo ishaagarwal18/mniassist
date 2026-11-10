@@ -1,8 +1,6 @@
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
 import {
@@ -25,60 +23,6 @@ import { ArDateInput } from '../../ui/date-input';
 import { ArSelect } from '../../ui/select';
 import { parseRupees, rupees } from '../reorder/reorder-logic';
 import { MOVE_LABEL, MoveKind, parseLots, parseMove, qty } from './stock-logic';
-
-const SEED_ITEMS: StockItemDto[] = [
-  {
-    productId: 'p1',
-    partNumber: 'AF-2901',
-    name: 'Air filter element',
-    unit: 'no',
-    onHand: 3,
-    reserved: 2,
-    available: 1,
-    isLow: true,
-    locations: [
-      {
-        locationId: 'l1',
-        locationName: 'Main store',
-        onHand: 3,
-        reserved: 2,
-        available: 1,
-        minLevel: 4,
-        isLow: true,
-      },
-    ],
-  },
-  {
-    productId: 'p2',
-    partNumber: 'OF-1613',
-    name: 'Oil filter',
-    unit: 'no',
-    onHand: 18,
-    reserved: 0,
-    available: 18,
-    isLow: false,
-    locations: [
-      {
-        locationId: 'l1',
-        locationName: 'Main store',
-        onHand: 12,
-        reserved: 0,
-        available: 12,
-        minLevel: 5,
-        isLow: false,
-      },
-      {
-        locationId: 'l2',
-        locationName: 'Service van 1',
-        onHand: 6,
-        reserved: 0,
-        available: 6,
-        minLevel: null,
-        isLow: false,
-      },
-    ],
-  },
-];
 
 interface MoveTarget {
   productId: string;
@@ -186,9 +130,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
                   <ng-template #template let-r>
                     <b class="ar-mono">{{ r.itemCode }}</b>
                     <span class="sub">{{
-                      r.productId
-                        ? r.productName
-                        : 'Not in the catalogue: not shown to customers'
+                      r.productId ? r.productName : 'Not in the catalogue: not shown to customers'
                     }}</span>
                   </ng-template>
                 </e-column>
@@ -335,9 +277,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
                       <button type="button" class="act" (click)="openMove(i, 'min')">
                         Minimum
                       </button>
-                      <button type="button" class="act" (click)="openNumbering(i)">
-                        Tracking
-                      </button>
+                      <button type="button" class="act" (click)="openNumbering(i)">Tracking</button>
                     }
                     @if (i.tracking && i.tracking !== 'None') {
                       <button type="button" class="act" (click)="openLots(i)">
@@ -574,7 +514,10 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
             aria-label="Stock Batches or Serials"
           >
             <e-columns>
-              <e-column [headerText]="lv.item.tracking === 'Serial' ? 'Serial' : 'Batch'" width="160">
+              <e-column
+                [headerText]="lv.item.tracking === 'Serial' ? 'Serial' : 'Batch'"
+                width="160"
+              >
                 <ng-template #template let-l>
                   <button type="button" class="act font-mono" (click)="trace(l.number)">
                     {{ l.number }}
@@ -590,7 +533,13 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
                   }
                 </ng-template>
               </e-column>
-              <e-column field="onHand" headerText="On hand" width="100" [textAlign]="'Right'" [visible]="lv.item.tracking === 'Batch'">
+              <e-column
+                field="onHand"
+                headerText="On hand"
+                width="100"
+                [textAlign]="'Right'"
+                [visible]="lv.item.tracking === 'Batch'"
+              >
                 <ng-template #template let-l>
                   {{ n(l.onHand) }}
                 </ng-template>
@@ -712,7 +661,12 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
                   </span>
                 </ng-template>
               </e-column>
-              <e-column field="onHandAfter" headerText="On hand after" width="130" [textAlign]="'Right'">
+              <e-column
+                field="onHandAfter"
+                headerText="On hand after"
+                width="130"
+                [textAlign]="'Right'"
+              >
                 <ng-template #template let-r>
                   {{ n(r.onHandAfter) }}
                 </ng-template>
@@ -1235,20 +1189,7 @@ export class ArStock {
 
   private async load(): Promise<void> {
     this.error.set(null);
-    if (environment.useMockData) {
-      this.settings.set({
-        keptIn: 'AutoReach',
-        issueOnWin: true,
-        included: true,
-        erpSyncOn: false,
-      });
-      this.locations.set([
-        { id: 'l1', name: 'Main store', isActive: true },
-        { id: 'l2', name: 'Service van 1', isActive: true },
-      ]);
-      this.items.set(SEED_ITEMS);
-      return;
-    }
+
     try {
       const [settings, locations, items] = await Promise.all([
         firstValueFrom(this.api.getSettings()),
@@ -1343,18 +1284,10 @@ export class ArStock {
     this.busy.set(true);
     this.dialogError.set(null);
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(
-          this.api.setTracking({ productId: item.productId, tracking: this.numberingChoice() }),
-        );
-        this.items.set(await firstValueFrom(this.api.getLevels()));
-      } else {
-        this.items.update((list) =>
-          list.map((i) =>
-            i.productId === item.productId ? { ...i, tracking: this.numberingChoice() } : i,
-          ),
-        );
-      }
+      await firstValueFrom(
+        this.api.setTracking({ productId: item.productId, tracking: this.numberingChoice() }),
+      );
+      this.items.set(await firstValueFrom(this.api.getLevels()));
       this.notice.set(`${item.partNumber}: ${this.numberingLabel(this.numberingChoice())}.`);
       this.numberingFor.set(null);
     } catch (e: unknown) {
@@ -1365,10 +1298,6 @@ export class ArStock {
   }
 
   protected async openLots(item: StockItemDto): Promise<void> {
-    if (environment.useMockData) {
-      this.lots.set({ item, rows: [] });
-      return;
-    }
     try {
       this.lots.set({ item, rows: await firstValueFrom(this.api.getLots(item.productId)) });
     } catch (e: unknown) {
@@ -1391,7 +1320,7 @@ export class ArStock {
     this.dialogError.set(null);
     this.busy.set(true);
     try {
-      this.traceRows.set(environment.useMockData ? [] : await firstValueFrom(this.api.getTrace(n)));
+      this.traceRows.set(await firstValueFrom(this.api.getTrace(n)));
     } catch (e: unknown) {
       this.dialogError.set(problem(e, 'That number could not be traced.'));
     } finally {
@@ -1441,16 +1370,6 @@ export class ArStock {
       return;
     }
     this.productTimer = setTimeout(async () => {
-      if (environment.useMockData) {
-        this.products.set(
-          SEED_ITEMS.map((i) => ({
-            productId: i.productId,
-            partNumber: i.partNumber,
-            name: i.name,
-          })),
-        );
-        return;
-      }
       try {
         const page = await firstValueFrom(
           this.productsApi.getList({ filter: text.trim(), activeOnly: true, maxResultCount: 10 }),
@@ -1504,40 +1423,38 @@ export class ArStock {
     this.busy.set(true);
     this.dialogError.set(null);
     try {
-      if (!environment.useMockData) {
-        const input = {
-          productId: m.target.productId,
-          locationId: this.moveLocation(),
-          quantity: parsed.quantity ?? 0,
-          reason: this.moveReason().trim() || null,
-          lots: lots.lots,
-          unitCostInPaise: m.kind === 'receive' ? cost : null,
-        };
-        switch (m.kind) {
-          case 'receive':
-            await firstValueFrom(this.api.receive(input));
-            break;
-          case 'issue':
-            await firstValueFrom(this.api.issue(input));
-            break;
-          case 'adjust':
-            await firstValueFrom(this.api.adjust(input));
-            break;
-          case 'count':
-            await firstValueFrom(this.api.count(input));
-            break;
-          case 'min':
-            await firstValueFrom(
-              this.api.setMinLevel({
-                productId: input.productId,
-                locationId: input.locationId,
-                minLevel: parsed.quantity,
-              }),
-            );
-            break;
-        }
-        this.items.set(await firstValueFrom(this.api.getLevels()));
+      const input = {
+        productId: m.target.productId,
+        locationId: this.moveLocation(),
+        quantity: parsed.quantity ?? 0,
+        reason: this.moveReason().trim() || null,
+        lots: lots.lots,
+        unitCostInPaise: m.kind === 'receive' ? cost : null,
+      };
+      switch (m.kind) {
+        case 'receive':
+          await firstValueFrom(this.api.receive(input));
+          break;
+        case 'issue':
+          await firstValueFrom(this.api.issue(input));
+          break;
+        case 'adjust':
+          await firstValueFrom(this.api.adjust(input));
+          break;
+        case 'count':
+          await firstValueFrom(this.api.count(input));
+          break;
+        case 'min':
+          await firstValueFrom(
+            this.api.setMinLevel({
+              productId: input.productId,
+              locationId: input.locationId,
+              minLevel: parsed.quantity,
+            }),
+          );
+          break;
       }
+      this.items.set(await firstValueFrom(this.api.getLevels()));
       this.notice.set(`${MOVE_LABEL[m.kind].done} ${m.target.partNumber}.`);
       this.move.set(null);
     } catch (e: unknown) {
@@ -1548,10 +1465,6 @@ export class ArStock {
   }
 
   protected async openHistory(item: StockItemDto): Promise<void> {
-    if (environment.useMockData) {
-      this.history.set({ item, rows: [] });
-      return;
-    }
     try {
       this.history.set({ item, rows: await firstValueFrom(this.api.getMovements(item.productId)) });
     } catch (e: unknown) {
@@ -1580,11 +1493,9 @@ export class ArStock {
     this.dialogError.set(null);
     try {
       this.check.set(
-        environment.useMockData
-          ? { usable: 0, problems: 0, lines: [] }
-          : await firstValueFrom(
-              this.api.checkImport({ csv: this.csv(), setToCount: this.setToCount() }),
-            ),
+        await firstValueFrom(
+          this.api.checkImport({ csv: this.csv(), setToCount: this.setToCount() }),
+        ),
       );
     } catch (e: unknown) {
       this.check.set(null);
@@ -1597,11 +1508,9 @@ export class ArStock {
   protected async applyImport(): Promise<void> {
     this.busy.set(true);
     try {
-      const n = environment.useMockData
-        ? 0
-        : await firstValueFrom(
-            this.api.applyImport({ csv: this.csv(), setToCount: this.setToCount() }),
-          );
+      const n = await firstValueFrom(
+        this.api.applyImport({ csv: this.csv(), setToCount: this.setToCount() }),
+      );
       this.notice.set(`${n} row${n === 1 ? '' : 's'} applied.`);
       this.importOpen.set(false);
       await this.load();
@@ -1627,11 +1536,9 @@ export class ArStock {
   protected async addLocation(): Promise<void> {
     this.busy.set(true);
     try {
-      const made = environment.useMockData
-        ? { id: crypto.randomUUID(), name: this.newLocation().trim(), isActive: true }
-        : await firstValueFrom(
-            this.api.createLocation({ name: this.newLocation().trim(), isActive: true }),
-          );
+      const made = await firstValueFrom(
+        this.api.createLocation({ name: this.newLocation().trim(), isActive: true }),
+      );
       this.locations.update((list) => [...list, made]);
       this.newLocation.set('');
       // The first place stock can go is the obvious default.
@@ -1647,20 +1554,16 @@ export class ArStock {
     this.busy.set(true);
     this.dialogError.set(null);
     try {
-      if (!environment.useMockData) {
-        this.settings.set(
-          await firstValueFrom(
-            this.api.updateSettings({
-              keptIn: this.kept(),
-              defaultLocationId: this.defaultLocation() || null,
-              issueOnWin: this.issueOnWin(),
-            }),
-          ),
-        );
-        await this.load();
-      } else {
-        this.settings.update((s) => (s ? { ...s, keptIn: this.kept() } : s));
-      }
+      this.settings.set(
+        await firstValueFrom(
+          this.api.updateSettings({
+            keptIn: this.kept(),
+            defaultLocationId: this.defaultLocation() || null,
+            issueOnWin: this.issueOnWin(),
+          }),
+        ),
+      );
+      await this.load();
       this.settingsOpen.set(false);
       this.notice.set('Stock settings saved.');
     } catch (e: unknown) {

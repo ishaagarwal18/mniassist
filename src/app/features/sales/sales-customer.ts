@@ -2,16 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
   input,
   output,
   signal,
-  untracked,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { PickerOption } from '../../core/services/pipeline.service';
 import { ContactService } from '../../proxy/contacts/contact.service';
 import { CustomerAccountService } from '../../proxy/contacts/customer-account.service';
@@ -286,33 +282,6 @@ export class ArSalesCustomer {
   private accountSeq = 0;
   private partySeq = 0;
 
-  private readonly applyInitialCustomer = effect(() => {
-    const c = this.initialCustomer();
-    untracked(() => {
-      if (c) void this.startWith(c);
-    });
-  });
-
-  /** A contact passed in: their account and them on it when they have one, else the contact itself. */
-  private async startWith(c: PickerOption): Promise<void> {
-    let accountId: string | null = null;
-    try {
-      if (!environment.useMockData)
-        accountId =
-          (await firstValueFrom(this.contactsApi.get(c.id, { skipHandleError: true }))).accountId ??
-          null;
-    } catch {
-      // Unknown here: start from the contact.
-    }
-    if (accountId) {
-      this.mode.set('account');
-      await this.chooseAccount({ id: accountId, name: '' }, c.id);
-    } else {
-      this.mode.set('contact');
-      await this.pickContact(c);
-    }
-  }
-
   protected setMode(mode: SalesCustomerMode): void {
     if (mode === this.mode()) return;
     this.partySeq++;
@@ -340,14 +309,12 @@ export class ArSalesCustomer {
     const seq = ++this.accountSeq;
     this.accountSearching.set(true);
     try {
-      const page = environment.useMockData
-        ? { items: [] }
-        : await firstValueFrom(
-            this.accountsApi.getList(
-              { filter: term, skipCount: 0, maxResultCount: 8 },
-              { skipHandleError: true },
-            ),
-          );
+      const page = await firstValueFrom(
+        this.accountsApi.getList(
+          { filter: term, skipCount: 0, maxResultCount: 8 },
+          { skipHandleError: true },
+        ),
+      );
       if (seq !== this.accountSeq) return;
       this.accountResults.set(
         (page.items ?? []).map((a) => ({
@@ -378,14 +345,12 @@ export class ArSalesCustomer {
     try {
       const [party, page] = await Promise.all([
         this.parties.forAccount(a.id),
-        environment.useMockData
-          ? Promise.resolve({ items: [] as ContactDto[] })
-          : firstValueFrom(
-              this.contactsApi.getList(
-                { accountId: a.id, skipCount: 0, maxResultCount: 100 },
-                { skipHandleError: true },
-              ),
-            ),
+        firstValueFrom(
+          this.contactsApi.getList(
+            { accountId: a.id, skipCount: 0, maxResultCount: 100 },
+            { skipHandleError: true },
+          ),
+        ),
       ]);
       if (seq !== this.partySeq) return;
       if (!a.name && party.accountName) this.account.set({ ...a, name: party.accountName });

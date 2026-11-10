@@ -8,8 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { WorkspaceStore } from '../../core/services/workspace.store';
 import {
   LeadRotationDto,
@@ -182,10 +180,6 @@ export class ArLeadRotationPanel {
   }
 
   private async fetch(id: string): Promise<void> {
-    if (environment.useMockData) {
-      this.loaded.set(true);
-      return;
-    }
     try {
       this.apply(await firstValueFrom(this.api.get(id)));
     } catch {

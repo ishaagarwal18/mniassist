@@ -2,8 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Location } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { AccountRecoveryService } from '../../proxy/identity/account-recovery.service';
 import { ArButton } from '../../ui';
 
@@ -127,11 +125,7 @@ export class ArResetPassword {
       );
       return;
     }
-    if (environment.useMockData) {
-      this.session = 'demo';
-      this.state.set('ready');
-      return;
-    }
+
     try {
       const opened = await firstValueFrom(this.recovery.openResetLink({ link: this.link }));
       if (!opened.succeeded || !opened.session) {
@@ -165,10 +159,6 @@ export class ArResetPassword {
     this.error.set(null);
     this.messages.set([]);
     try {
-      if (environment.useMockData) {
-        this.state.set('done');
-        return;
-      }
       const result = await firstValueFrom(
         this.recovery.resetPassword({ session: this.session, newPassword: this.password() }),
       );

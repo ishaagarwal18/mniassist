@@ -13,7 +13,6 @@ import {
   DealRegistrationStatus,
 } from '../../proxy/oem/oem-pricing.service';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { REG_STATUS_TEXT, REG_STATUS_TONE, rupees } from './oem.logic';
 
 /** Deals registered with OEMs: who for, with which OEM, its reference and when it ends. */
@@ -34,9 +33,6 @@ import { REG_STATUS_TEXT, REG_STATUS_TONE, rupees } from './oem.logic';
       }
     </ar-topbar>
     <div class="oe ar-scroll">
-      @if (mock) {
-        <ar-banner tone="teal">Deal registrations need the live API.</ar-banner>
-      }
       @if (error(); as e) {
         <ar-banner tone="bad">{{ e }}</ar-banner>
       }
@@ -120,7 +116,6 @@ export class ArRegistrationsPage {
   private readonly api = inject(DealRegistrationService);
   private readonly permissions = inject(PermissionService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly canCreate = grantedPolicy('AutoReach.Spa.Create', this.permissions);
   protected readonly rows = signal<DealRegistrationDto[]>([]);
   protected readonly total = signal(0);
@@ -154,7 +149,6 @@ export class ArRegistrationsPage {
   }
 
   protected async load(): Promise<void> {
-    if (this.mock) return;
     try {
       const page = await firstValueFrom(
         this.api.getList({

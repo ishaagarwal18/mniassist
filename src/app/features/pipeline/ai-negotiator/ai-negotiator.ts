@@ -9,8 +9,6 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../../environments/environment';
 import { grantedPolicy } from '../../../core/auth/permission';
 import { ToastService } from '../../../core/ui/toast.service';
 import { readApiError } from '../../../core/util/api-error';
@@ -105,7 +103,6 @@ export class ArAiNegotiator implements OnInit {
     this.permissions,
   );
 
-  protected readonly demo = environment.useMockData;
   protected readonly tab = signal<Tab>('negotiations');
   protected readonly loading = signal(true);
   protected readonly loadError = signal<string | null>(null);
@@ -163,10 +160,6 @@ export class ArAiNegotiator implements OnInit {
   protected readonly sim = signal<SimulateNegotiationResultDto | null>(null);
 
   async ngOnInit(): Promise<void> {
-    if (this.demo) {
-      this.loading.set(false);
-      return;
-    }
     await this.load();
   }
 

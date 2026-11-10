@@ -17,7 +17,6 @@ import {
   TestSigningLinkDto,
 } from '../../proxy/project-billing/acceptance-test.service';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import {
   ResultRow,
   TEST_STATUS_TEXT,
@@ -45,7 +44,6 @@ export class ArAcceptanceTestPage {
   private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly canPlan = grantedPolicy('AutoReach.ProjectBilling.Plans', this.permissions);
   protected readonly test = signal<AcceptanceTestDto | null>(null);
   protected readonly rows = signal<ResultRow[]>([]);
@@ -98,7 +96,6 @@ export class ArAcceptanceTestPage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       this.fill(await firstValueFrom(this.api.get(this.route.snapshot.paramMap.get('id')!)));
     } catch (e) {

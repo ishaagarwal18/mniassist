@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -31,14 +29,15 @@ import { ArButton, ArCard } from '../../../ui';
 
     <div class="ae ar-scroll">
       <form class="ae__form" (submit)="$event.preventDefault(); submit()">
-
         @if (ticket(); as t) {
           <div class="ae__context-banner">
             <span class="ae__ticket-no">{{ t.ticketNumber }}</span>
             <span class="ae__separator">·</span>
             <span>{{ t.customerName }}</span>
             <span class="ae__separator">·</span>
-            <span class="ae__equipment">{{ t.equipmentModel }} ({{ t.equipmentSerialNumber }})</span>
+            <span class="ae__equipment"
+              >{{ t.equipmentModel }} ({{ t.equipmentSerialNumber }})</span
+            >
           </div>
         }
 
@@ -55,7 +54,9 @@ import { ArButton, ArCard } from '../../../ui';
                 [(ngModel)]="engineerName"
                 required
               />
-              <span class="ar-field__hint">Full name and designation of the dispatched engineer.</span>
+              <span class="ar-field__hint"
+                >Full name and designation of the dispatched engineer.</span
+              >
             </label>
 
             <label class="ar-field">
@@ -69,7 +70,9 @@ import { ArButton, ArCard } from '../../../ui';
                 [(ngModel)]="scheduledVisitDate"
                 required
               />
-              <span class="ar-field__hint">When the engineer is scheduled to arrive at the plant.</span>
+              <span class="ar-field__hint"
+                >When the engineer is scheduled to arrive at the plant.</span
+              >
             </label>
           </div>
         </ar-card>
@@ -178,12 +181,10 @@ export class ArAssignEngineerPage {
 
   /** Default to now + 4 h in datetime-local format */
   protected engineerName = '';
-  protected scheduledVisitDate = new Date(Date.now() + 4 * 3600_000)
-    .toISOString()
-    .substring(0, 16);
+  protected scheduledVisitDate = new Date(Date.now() + 4 * 3600_000).toISOString().substring(0, 16);
 
   constructor() {
-    if (!environment.useMockData && this.ticketId) {
+    if (this.ticketId) {
       this.ticketService.get(this.ticketId).subscribe({
         next: (t) => {
           this.ticket.set(t);
@@ -219,18 +220,14 @@ export class ArAssignEngineerPage {
       scheduledVisitDateUtc: new Date(this.scheduledVisitDate).toISOString(),
     };
 
-    if (environment.useMockData) {
-      this.toasts.success('Engineer dispatched (mock).');
-      void this.router.navigateByUrl('/field-service/tickets');
-      return;
-    }
-
     this.busy.set(true);
     this.error.set(null);
     this.ticketService.assign(this.ticketId, dto).subscribe({
       next: (t) => {
         this.busy.set(false);
-        this.toasts.success(`Engineer ${dto.assignedFieldEngineer} dispatched for ${t.ticketNumber}.`);
+        this.toasts.success(
+          `Engineer ${dto.assignedFieldEngineer} dispatched for ${t.ticketNumber}.`,
+        );
         void this.router.navigateByUrl('/field-service/tickets');
       },
       error: (err) => {

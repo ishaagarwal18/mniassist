@@ -3,9 +3,6 @@ import { HttpHeaders } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ConfigStateService, SessionStateService, TENANT_KEY } from '@abp/ng.core';
 import { OAuthService } from 'angular-oauth2-oidc';
-import { of } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 
 /**
  * The ways one signed-in person can become another account. The names are what the
@@ -68,20 +65,14 @@ export class AccountSwitcher {
   private readonly config = inject(ConfigStateService);
   private readonly session = inject(SessionStateService);
 
-  private readonly currentUser = toSignal(
-    environment.useMockData ? of(undefined) : this.config.getOne$('currentUser'),
-    { initialValue: undefined },
-  );
+  private readonly currentUser = toSignal(this.config.getOne$('currentUser'), {
+    initialValue: undefined,
+  });
 
   /** Set while acting as someone else; null on one's own account. */
   readonly actingAs = computed(() => actingAsFrom(this.currentUser()));
 
   async switchTo(request: AccountSwitchRequest, landOn = '/home'): Promise<void> {
-    if (environment.useMockData) {
-      throw new Error(
-        'Switching accounts needs the API — it is not available in the standalone build.',
-      );
-    }
     const oauth = this.injector.get(OAuthService);
     let headers = new HttpHeaders({ Authorization: `Bearer ${oauth.getAccessToken()}` });
     const current = this.session.getTenant();

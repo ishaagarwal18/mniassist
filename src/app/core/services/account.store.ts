@@ -1,10 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import {
-  AccountShippingAddressDto,
   AccountTreeNodeDto,
   CreateUpdateCustomerAccountDto,
   CustomerAccountDto,
@@ -110,7 +107,7 @@ function depthOf(id: string, accounts: readonly CustomerAccount[]): number {
 
 /**
  * The reason `id` cannot go under `parentId`, or null when it can. The server enforces the same rules — this
- * only lets the picker and the demo build say so before asking.
+ * only lets the picker say so before asking.
  */
 export function moveProblem(
   id: string | null,
@@ -129,73 +126,15 @@ export function moveProblem(
   return null;
 }
 
-const SEED: CustomerAccount[] = [
-  {
-    id: 'acc-1',
-    name: 'Deccan Valves',
-    industry: 'Valves & Actuators',
-    address: 'Plot 42, MIDC Bhosari Industrial Area',
-    city: 'Pune',
-    state: 'Maharashtra',
-    contactCount: 1,
-    childCount: 2,
-  },
-  {
-    id: 'acc-4',
-    name: 'Deccan Valves — Pune plant',
-    industry: 'Valves & Actuators',
-    address: 'Gate 2, Chakan Industrial Phase II',
-    city: 'Pune',
-    state: 'Maharashtra',
-    contactCount: 4,
-    parentId: 'acc-1',
-    childCount: 0,
-  },
-  {
-    id: 'acc-5',
-    name: 'Deccan Valves — Nashik plant',
-    industry: 'Valves & Actuators',
-    address: 'Plot 18, Ambad MIDC',
-    city: 'Nashik',
-    state: 'Maharashtra',
-    contactCount: 2,
-    parentId: 'acc-1',
-    childCount: 0,
-  },
-  {
-    id: 'acc-2',
-    name: 'Kohinoor Instruments',
-    industry: 'Process Instrumentation & Automation',
-    address: 'Sector 5, Satpur Industrial Estate',
-    city: 'Nashik',
-    state: 'Maharashtra',
-    contactCount: 2,
-    childCount: 0,
-  },
-  {
-    id: 'acc-3',
-    name: 'Sanand Press Works',
-    industry: 'Sheet Metal & Heavy Forging',
-    address: 'GIDC Industrial Estate, Phase 2',
-    city: 'Ahmedabad',
-    state: 'Gujarat',
-    contactCount: 3,
-    childCount: 0,
-  },
-];
-
 @Injectable({ providedIn: 'root' })
 export class AccountStore {
   private readonly api = inject(CustomerAccountService);
 
   readonly filter = signal('');
   private readonly reloadTick = signal(0);
-  private seed = [...SEED];
-  /** Demo build only: shipping addresses per account id. */
-  private readonly mockShipping = new Map<string, AccountShippingAddressDto[]>();
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.reloadTick() }),
+    params: () => ({ tick: this.reloadTick() }),
     stream: () =>
       this.api
         .getList({ skipCount: 0, maxResultCount: 1000 })
@@ -204,21 +143,15 @@ export class AccountStore {
   });
 
   private readonly treeResource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.reloadTick() }),
+    params: () => ({ tick: this.reloadTick() }),
     stream: () => this.api.getTree(),
     defaultValue: [] as AccountTreeNodeDto[],
   });
 
-  readonly loading = computed(
-    () => !environment.useMockData && (this.resource.isLoading() || this.treeResource.isLoading()),
-  );
+  readonly loading = computed(() => this.resource.isLoading() || this.treeResource.isLoading());
 
   /** Every account, unfiltered — what the parent picker and the tree are built from. */
   readonly all = computed<readonly CustomerAccount[]>(() => {
-    if (environment.useMockData) {
-      this.reloadTick();
-      return this.recount(this.seed);
-    }
     return settled(this.resource, [] as CustomerAccount[]);
   });
 
@@ -249,10 +182,6 @@ export class AccountStore {
 
     const byId = new Map(all.map((a) => [a.id, a]));
 
-    if (environment.useMockData) {
-      return this.mockTree(all);
-    }
-
     return this.treeResource
       .value()
       .filter((n) => byId.has(n.id))
@@ -267,42 +196,7 @@ export class AccountStore {
     this.reloadTick.update((n) => n + 1);
   }
 
-  /** Adjusts an account's contact count (used when assigning/unlinking contacts in mock/demo mode). */
-  adjustContactCount(accountId: string, delta: number): void {
-    if (environment.useMockData) {
-      this.seed = this.seed.map((a) =>
-        a.id === accountId ? { ...a, contactCount: Math.max(0, a.contactCount + delta) } : a,
-      );
-      this.reloadTick.update((n) => n + 1);
-    }
-  }
-
   async save(id: string | null, input: CreateUpdateCustomerAccountDto): Promise<void> {
-    if (environment.useMockData) {
-      const problem = moveProblem(id, input.parentAccountId, this.recount(this.seed));
-      if (problem) throw new Error(problem);
-
-      const previous = id ? this.seed.find((a) => a.id === id) : undefined;
-      const patch: CustomerAccount = {
-        id: id ?? `acc-${crypto.randomUUID().slice(0, 6)}`,
-        name: input.name,
-        industry: input.industry ?? undefined,
-        gstin: input.gstin ?? undefined,
-        address: input.billingAddress ?? undefined,
-        billingPincode: input.billingPincode ?? undefined,
-        city: input.city ?? undefined,
-        state: input.state ?? undefined,
-        website: input.website ?? undefined,
-        notes: input.notes ?? undefined,
-        contactCount: previous?.contactCount ?? 0,
-        parentId: input.parentAccountId ?? undefined,
-        childCount: 0,
-      };
-      this.seed = id ? this.seed.map((a) => (a.id === id ? patch : a)) : [patch, ...this.seed];
-      if (input.shippingAddresses) this.mockShipping.set(patch.id, input.shippingAddresses);
-      this.reloadTick.update((n) => n + 1);
-      return;
-    }
     try {
       if (id) {
         await firstValueFrom(this.api.update(id, input));
@@ -318,99 +212,15 @@ export class AccountStore {
 
   /** One account in full, with its shipping addresses (the list leaves those out). */
   async details(id: string): Promise<CustomerAccountDto | null> {
-    if (environment.useMockData) {
-      const a = this.seed.find((x) => x.id === id);
-      return a
-        ? {
-            id: a.id,
-            name: a.name,
-            industry: a.industry,
-            gstin: a.gstin,
-            billingAddress: a.address,
-            billingPincode: a.billingPincode,
-            city: a.city,
-            state: a.state,
-            website: a.website,
-            notes: a.notes,
-            parentAccountId: a.parentId,
-            shippingAddresses: this.mockShipping.get(id) ?? [],
-          }
-        : null;
-    }
     return firstValueFrom(this.api.get(id));
   }
 
   async remove(id: string): Promise<void> {
-    if (environment.useMockData) {
-      const gone = this.seed.find((a) => a.id === id);
-      // Subsidiaries move up to the deleted account's own parent, as on the server.
-      this.seed = this.seed
-        .filter((a) => a.id !== id)
-        .map((a) => (a.parentId === id ? { ...a, parentId: gone?.parentId } : a));
-      this.reloadTick.update((n) => n + 1);
-      return;
-    }
     await firstValueFrom(this.api.delete(id));
     this.reload();
   }
 
   async rollup(id: string, includeSubsidiaries = false): Promise<CustomerAccountRollupDto> {
-    if (environment.useMockData) {
-      const list = this.recount(this.seed);
-      const below = descendantIds(id, list);
-      const scope = includeSubsidiaries ? [id, ...below] : [id];
-      const members = list.filter((a) => scope.includes(a.id));
-      return {
-        accountId: id,
-        includesSubsidiaries: includeSubsidiaries,
-        subsidiaryCount: below.length,
-        contactCount: members.reduce((n, a) => n + a.contactCount, 0),
-        openEnquiryCount: 2,
-        wonEnquiryCount: 1,
-        lostEnquiryCount: 0,
-        pipelineValueInPaise: 145_00_000,
-        lastActivityUtc: new Date(Date.now() - 4 * 3_600_000).toISOString(),
-        lifecycleBreakdown: { Engaged: 2, Quoted: 1, Customer: 1 },
-        contacts: [],
-      };
-    }
     return firstValueFrom(this.api.getRollup(id, includeSubsidiaries));
-  }
-
-  // ---- demo-build helpers ---------------------------------------------------------------------
-
-  /** Child counts follow the parent links, so an edit in the demo build cannot leave them stale. */
-  private recount(list: readonly CustomerAccount[]): CustomerAccount[] {
-    return list.map((a) => ({ ...a, childCount: list.filter((c) => c.parentId === a.id).length }));
-  }
-
-  private mockTree(all: readonly CustomerAccount[]): AccountRow[] {
-    const rows: AccountRow[] = [];
-    const seen = new Set<string>();
-    const ids = new Set(all.map((a) => a.id));
-
-    const subtree = (a: CustomerAccount) =>
-      a.contactCount +
-      descendantIds(a.id, all).reduce(
-        (n, d) => n + (all.find((x) => x.id === d)?.contactCount ?? 0),
-        0,
-      );
-
-    const walk = (a: CustomerAccount, depth: number): void => {
-      if (seen.has(a.id)) return;
-      seen.add(a.id);
-      rows.push({ account: a, depth, subtreeContacts: subtree(a) });
-      all
-        .filter((c) => c.parentId === a.id)
-        .sort((x, y) => x.name.localeCompare(y.name))
-        .forEach((c) => walk(c, depth + 1));
-    };
-
-    all
-      .filter((a) => !a.parentId || !ids.has(a.parentId))
-      .sort((x, y) => x.name.localeCompare(y.name))
-      .forEach((a) => walk(a, 1));
-
-    return rows;
   }
 }

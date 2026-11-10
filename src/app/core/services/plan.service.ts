@@ -1,7 +1,5 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, effect, inject, signal } from '@angular/core';
 import { catchError, of } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { BillingService, PlanUsageDto, SubscriptionPlan } from '../../proxy/billing';
 import { CurrentUserService } from './current-user.service';
 
@@ -75,18 +73,11 @@ export class PlanService {
   private readonly account = inject(CurrentUserService);
 
   /** Active plan for the workspace */
-  readonly plan = signal<SubscriptionPlan>(
-    environment.useMockData ? SubscriptionPlan.Growth : SubscriptionPlan.Starter,
-  );
+  readonly plan = signal<SubscriptionPlan>(SubscriptionPlan.Starter);
 
   /** Normalized set of unlocked feature names (lowercase) */
   readonly features = signal<ReadonlySet<string>>(
-    new Set(
-      (environment.useMockData
-        ? DEFAULT_PLAN_FEATURES[SubscriptionPlan.Growth]
-        : DEFAULT_PLAN_FEATURES[SubscriptionPlan.Starter]
-      ).map((f) => f.toLowerCase()),
-    ),
+    new Set(DEFAULT_PLAN_FEATURES[SubscriptionPlan.Starter].map((f) => f.toLowerCase())),
   );
 
   readonly loading = signal<boolean>(false);
@@ -96,7 +87,6 @@ export class PlanService {
     effect(() => {
       const isAuth = this.account.isAuthenticated();
       const isHostAdmin = this.account.isHostAdmin();
-      const tenant = this.account.tenantName();
 
       if (isAuth) {
         if (isHostAdmin) {
@@ -116,10 +106,6 @@ export class PlanService {
 
   /** Reloads plan limits and unlocked features from the server */
   async refresh(): Promise<void> {
-    if (environment.useMockData) {
-      return;
-    }
-
     if (this.account.isHostAdmin()) {
       this.setHostPlan();
       return;
@@ -153,13 +139,6 @@ export class PlanService {
     } catch {
       this.loading.set(false);
     }
-  }
-
-  /** Sets the plan in mock mode (e.g., when testing different tiers) */
-  setMockPlan(newPlan: SubscriptionPlan): void {
-    this.plan.set(newPlan);
-    const featureList = DEFAULT_PLAN_FEATURES[newPlan] ?? [];
-    this.features.set(new Set(featureList.map((f) => f.toLowerCase())));
   }
 
   /**

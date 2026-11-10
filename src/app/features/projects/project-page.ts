@@ -23,7 +23,6 @@ import {
 import { EnquiryService } from '../../proxy/pipeline/enquiry.service';
 import { EnquiryStage } from '../../proxy/pipeline';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { ArAccountSearch, PickedAccount } from './account-search';
 import {
   ATTITUDE_TEXT,
@@ -83,7 +82,6 @@ export class ArProjectPage {
   private readonly route = inject(ActivatedRoute);
 
   private readonly id = this.route.snapshot.paramMap.get('id')!;
-  protected readonly mock = environment.useMockData;
 
   protected readonly tab = signal<Tab>('overview');
   protected readonly project = signal<ProjectDetailDto | null>(null);
@@ -204,7 +202,6 @@ export class ArProjectPage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       this.apply(await firstValueFrom(this.api.get(this.id)));
       void firstValueFrom(this.api.getPickLists()).then(

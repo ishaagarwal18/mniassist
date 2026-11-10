@@ -2,96 +2,15 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
-  EInvoiceStatus,
   EWayBillStatus,
   GenerateEWayBillInput,
   GstAuditRegisterDto,
   GstComplianceService,
-  Gstr1Section,
 } from '../../../proxy/finance';
 import { ArButton, ArCard, ArChip } from '../../../ui';
-
-/** Sample register rows, for the demo build only. */
-const MOCK_GST_RECORDS: Record<string, GstAuditRegisterDto> = {
-  'gst-1': {
-    id: 'gst-1',
-    documentNumber: 'INV-2026-0082',
-    documentDateUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-    returnPeriod: '042026',
-    section: Gstr1Section.B2B_4A,
-    counterpartyGstin: '27AABCT2345A1Z2',
-    counterpartyLegalName: 'Tata Motors Powertrain Ltd',
-    placeOfSupplyStateCode: '27',
-    isReverseChargeApplicable: false,
-    taxableAmountInPaise: 35_00_000_00,
-    gstRatePercent: 18,
-    igstAmountInPaise: 0,
-    cgstAmountInPaise: 3_15_000_00,
-    sgstAmountInPaise: 3_15_000_00,
-    cessAmountInPaise: 0,
-    totalInvoiceValueInPaise: 41_30_000_00,
-    eInvoiceStatus: EInvoiceStatus.Generated,
-    irnHash: '8b4d1b823e59bcf7e1d5204859a0fbc5928d3ef71829e0839218d6e7f8a920b1',
-    eInvoiceAckNo: '1120260400821',
-    eInvoiceAckDateUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-    eWayBillStatus: EWayBillStatus.Active,
-    eWayBillNumber: '271049283719',
-    transporterGstin: '27AAACG1234A1Z5',
-    vehicleNumber: 'MH-14-BT-4590',
-    distanceInKm: 140,
-  },
-  'gst-2': {
-    id: 'gst-2',
-    documentNumber: 'INV-2026-0083',
-    documentDateUtc: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    returnPeriod: '042026',
-    section: Gstr1Section.B2B_4A,
-    counterpartyGstin: '22AAACJ5432B1Z8',
-    counterpartyLegalName: 'Jindal Steel & Power Ltd',
-    placeOfSupplyStateCode: '22',
-    isReverseChargeApplicable: false,
-    taxableAmountInPaise: 58_00_000_00,
-    gstRatePercent: 18,
-    igstAmountInPaise: 10_44_000_00,
-    cgstAmountInPaise: 0,
-    sgstAmountInPaise: 0,
-    cessAmountInPaise: 0,
-    totalInvoiceValueInPaise: 68_44_000_00,
-    eInvoiceStatus: EInvoiceStatus.Generated,
-    irnHash: '7a3c9e12089fba71823d018276f5a3b90284e7f8190283b749201948271a9c3d',
-    eInvoiceAckNo: '1120260400832',
-    eWayBillStatus: EWayBillStatus.Active,
-    eWayBillNumber: '221049284820',
-    transporterGstin: '22AAACT9988C1Z1',
-    vehicleNumber: 'CG-04-ME-1122',
-    distanceInKm: 850,
-  },
-  'gst-3': {
-    id: 'gst-3',
-    documentNumber: 'INV-2026-0084',
-    documentDateUtc: new Date(Date.now() - 1 * 86_400_000).toISOString(),
-    returnPeriod: '042026',
-    section: Gstr1Section.B2B_4A,
-    counterpartyGstin: '27AAACB9876C1Z4',
-    counterpartyLegalName: 'Bharat Forge Industrial',
-    placeOfSupplyStateCode: '27',
-    isReverseChargeApplicable: false,
-    taxableAmountInPaise: 22_50_000_00,
-    gstRatePercent: 18,
-    igstAmountInPaise: 0,
-    cgstAmountInPaise: 2_02_500_00,
-    sgstAmountInPaise: 2_02_500_00,
-    cessAmountInPaise: 0,
-    totalInvoiceValueInPaise: 26_55_000_00,
-    eInvoiceStatus: EInvoiceStatus.PendingGeneration,
-    eWayBillStatus: EWayBillStatus.PendingGeneration,
-  },
-};
 
 const GSTIN_OR_TRANSPORTER_ID = /^[0-9]{2}[A-Z0-9]{13}$/;
 /** Indian vehicle registration, e.g. MH14BT4590 or MH-14-BT-4590 (separators ignored). */
@@ -362,12 +281,7 @@ export class ArGenerateEWayPage implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
-    if (environment.useMockData) {
-      this.record.set(MOCK_GST_RECORDS[id] ?? null);
-      if (!this.record()) this.loadError.set('This invoice is not in the GST register.');
-      this.loading.set(false);
-      return;
-    }
+
     this.gstService.get(id, { skipHandleError: true }).subscribe({
       next: (doc) => {
         this.record.set(doc);
@@ -410,12 +324,6 @@ export class ArGenerateEWayPage implements OnInit {
       transporterGstin: transporter || undefined,
       distanceInKm: Math.round(distance),
     };
-
-    if (environment.useMockData) {
-      this.toasts.success(`E-way bill generated for ${rec.documentNumber}.`);
-      void this.router.navigate(['/finance/gst-compliance']);
-      return;
-    }
 
     this.isSubmitting.set(true);
     this.gstService.generateEWayBill(rec.id, input).subscribe({

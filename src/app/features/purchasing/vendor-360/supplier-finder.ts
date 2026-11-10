@@ -9,10 +9,8 @@ import {
   signal,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../../environments/environment';
 import { Vendor360Service, Vendor360SupplierDto } from '../../../proxy/purchasing';
-import { matchesEveryWord, supplierMatchDetail } from './supplier-finder.logic';
+import { supplierMatchDetail } from './supplier-finder.logic';
 
 /**
  * Vendor 360's supplier finder: a search box rather than one long list, for workspaces with thousands of suppliers. Typing
@@ -61,7 +59,12 @@ import { matchesEveryWord, supplierMatchDetail } from './supplier-finder.logic';
         } @empty {
           @if (!searching()) {
             <p class="sf__note">
-              {{ error() ?? (term().trim() ? 'No supplier matches "' + term().trim() + '".' : 'No suppliers yet.') }}
+              {{
+                error() ??
+                  (term().trim()
+                    ? 'No supplier matches "' + term().trim() + '".'
+                    : 'No suppliers yet.')
+              }}
             </p>
           }
         }
@@ -140,8 +143,6 @@ export class ArSupplierFinder {
 
   /** The supplier on screen, shown in the box while it is not being searched. */
   readonly currentName = input<string | null>(null);
-  /** Sample suppliers, searched in the browser instead of the server (mock data). */
-  readonly local = input<Vendor360SupplierDto[] | null>(null);
   readonly picked = output<string>();
 
   protected readonly limit = 20;
@@ -223,15 +224,11 @@ export class ArSupplierFinder {
     this.error.set(null);
     let found: Vendor360SupplierDto[] = [];
     try {
-      const local = this.local();
-      found =
-        local || environment.useMockData
-          ? (local ?? []).filter((s) => matchesEveryWord(s, term)).slice(0, this.limit)
-          : await firstValueFrom(
-              this.api.getSupplierMatches(term.trim() || null, this.limit, {
-                skipHandleError: true,
-              }),
-            );
+      found = await firstValueFrom(
+        this.api.getSupplierMatches(term.trim() || null, this.limit, {
+          skipHandleError: true,
+        }),
+      );
     } catch {
       if (seq === this.seq) this.error.set('Suppliers could not be searched. Try again.');
     }

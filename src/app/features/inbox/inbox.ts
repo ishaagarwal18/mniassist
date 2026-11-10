@@ -9,8 +9,6 @@ import {
   untracked,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { SmsChannelService, SmsTemplateDto } from '../../proxy/sms/sms-channel.service';
 import { InboxService } from '../../core/services/inbox.service';
 import { previewSms, sendableSmsTemplates, smsVariablesComplete } from './sms-logic';
@@ -198,14 +196,6 @@ export class ArInbox {
   protected async summarise(conversationId: string): Promise<void> {
     this.summaryBusy.set(true);
     try {
-      if (environment.useMockData) {
-        this.summary.set({
-          conversationId,
-          text: 'Wants a quote for 2 × ACS580 drives (7.5 kW). Asked about lead time; nothing promised yet. Waiting on quantity confirmation.',
-          by: 'sample',
-        });
-        return;
-      }
       const r = await firstValueFrom(this.inboxApi.summarise(conversationId));
       this.summary.set({ conversationId, text: r.summary ?? null, by: r.providerName });
     } catch (e: unknown) {
@@ -284,31 +274,7 @@ export class ArInbox {
     this.photoError.set(null);
     this.photoBusy.set(true);
     try {
-      this.photoReading.set(
-        environment.useMockData
-          ? {
-              kind: 'nameplate',
-              manufacturer: 'ABB',
-              model: 'ACS580-01-017A-4',
-              serialNumber: '3G1234567',
-              ratings: '7.5 kW, 415 V, 50 Hz',
-              note: null,
-              lines: [
-                {
-                  description: 'ABB ACS580 drive 7.5 kW',
-                  partNumber: 'ACS580-01-017A-4',
-                  quantity: 1,
-                  match: 'exact',
-                  catalogue: {
-                    partNumber: 'ACS580-01-017A-4',
-                    name: 'ACS580 7.5 kW drive',
-                    unitPriceInPaise: 86_500_00,
-                  },
-                },
-              ],
-            }
-          : await firstValueFrom(this.photos.read({ conversationId, messageId })),
-      );
+      this.photoReading.set(await firstValueFrom(this.photos.read({ conversationId, messageId })));
     } catch (e: unknown) {
       this.photoError.set(this.problem(e, 'The file could not be read.'));
     } finally {
@@ -318,7 +284,7 @@ export class ArInbox {
 
   protected async draftFromPhoto(): Promise<void> {
     const p = this.photo();
-    if (!p || environment.useMockData) return;
+    if (!p) return;
     this.photoBusy.set(true);
     this.photoError.set(null);
     try {
@@ -337,7 +303,7 @@ export class ArInbox {
   /** Starts a BOQ import from this file (and any others ticked) and opens its review page. */
   protected async reviewFromPhoto(): Promise<void> {
     const p = this.photo();
-    if (!p || environment.useMockData) return;
+    if (!p) return;
     this.photoBusy.set(true);
     this.photoError.set(null);
     try {
@@ -393,14 +359,7 @@ export class ArInbox {
 
   protected async askToCall(conversationId: string): Promise<void> {
     try {
-      const value = environment.useMockData
-        ? ({
-            state: 'Requested',
-            canCall: false,
-            requestedAtUtc: new Date().toISOString(),
-            isPermanent: false,
-          } as CallPermissionDto)
-        : await firstValueFrom(this.callsApi.requestPermission(conversationId));
+      const value = await firstValueFrom(this.callsApi.requestPermission(conversationId));
       this.callPermission.set({
         conversationId,
         value,
@@ -504,7 +463,7 @@ export class ArInbox {
   protected readonly assignee = this.inbox.assignee;
 
   constructor() {
-    if (this.mayQuote() && !environment.useMockData) {
+    if (this.mayQuote()) {
       firstValueFrom(this.photos.getAvailable())
         .then((available) => this.photosReadable.set(available === true))
         .catch(() => this.photosReadable.set(false));
@@ -522,7 +481,7 @@ export class ArInbox {
 
     // Templates are fetched the first time an SMS conversation is opened, not for every inbox visit.
     effect(() => {
-      if (!this.selected()?.sms || this.smsTemplatesLoaded || environment.useMockData) return;
+      if (!this.selected()?.sms || this.smsTemplatesLoaded) return;
       this.smsTemplatesLoaded = true;
       untracked(() => {
         firstValueFrom(this.sms.getTemplates())

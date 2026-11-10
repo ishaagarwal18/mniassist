@@ -9,8 +9,6 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { CampaignStore } from '../../core/services/campaign.service';
 import { ChannelService } from '../../core/services/channel.service';
@@ -82,7 +80,7 @@ export class ArCampaignForm implements OnInit {
 
   private async loadTemplates(channelId: string): Promise<void> {
     this.approvedTemplates.set([]);
-    if (!channelId || environment.useMockData) return;
+    if (!channelId) return;
 
     this.templatesLoading.set(true);
     try {
@@ -118,11 +116,7 @@ export class ArCampaignForm implements OnInit {
   protected async save(): Promise<void> {
     const currentDraft = this.draft();
     const hasTemplates = this.approvedTemplates().length > 0;
-    const validationError = validateCampaignDraft(
-      currentDraft,
-      hasTemplates,
-      environment.useMockData,
-    );
+    const validationError = validateCampaignDraft(currentDraft, hasTemplates);
 
     if (validationError) {
       this.error.set(validationError);

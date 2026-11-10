@@ -1,7 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { TemplateStatus } from '../../proxy/messaging/template-status.enum';
 import { TemplateService } from '../../proxy/messaging/template.service';
@@ -202,10 +200,6 @@ export class ArShippingSettings {
   }
 
   private async load(): Promise<void> {
-    if (environment.useMockData) {
-      this.show({ notifyCustomer: true, pickupPincode: '411019' });
-      return;
-    }
     try {
       const [settings, templates] = await Promise.all([
         firstValueFrom(this.api.getSettings()),
@@ -241,19 +235,17 @@ export class ArShippingSettings {
     this.busy.set(true);
     this.error.set(null);
     try {
-      if (!environment.useMockData) {
-        this.show(
-          await firstValueFrom(
-            this.api.updateSettings({
-              shiprocketEmail: this.email().trim() || null,
-              shiprocketPassword: this.password() || null,
-              pickupPincode: this.pickup().trim() || null,
-              notifyCustomer: this.notify(),
-              dispatchTemplateId: this.templateId() || null,
-            }),
-          ),
-        );
-      }
+      this.show(
+        await firstValueFrom(
+          this.api.updateSettings({
+            shiprocketEmail: this.email().trim() || null,
+            shiprocketPassword: this.password() || null,
+            pickupPincode: this.pickup().trim() || null,
+            notifyCustomer: this.notify(),
+            dispatchTemplateId: this.templateId() || null,
+          }),
+        ),
+      );
       this.password.set('');
       this.saved.set(true);
     } catch (e: unknown) {

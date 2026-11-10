@@ -1,12 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { PermissionDirective } from '@abp/ng.core';
-
-import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
 import { workspaceNameProblem, workspaceSlug } from '../../core/util/workspace-slug';
 import { TenantDto, TenantService } from '../../proxy/tenant-management';
@@ -16,11 +21,6 @@ import { ArGrid } from '../../ui/grid';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ArTenantFeaturesDialog } from './tenant-features-dialog';
 import { ArWorkspaceManageDialog } from './workspace-manage-dialog';
-
-const SEED: TenantDto[] = [
-  { id: 't-1', name: 'sun-energy-automation' },
-  { id: 't-2', name: 'meridian-foods' },
-];
 
 /**
  * Host-only workspace management using Syncfusion Grid:
@@ -47,7 +47,9 @@ const SEED: TenantDto[] = [
   template: `
     @if (isPage) {
       <ar-topbar [title]="pageTitle()">
-        <button ar-button type="button" variant="ghost" (click)="close()">Back to Workspaces</button>
+        <button ar-button type="button" variant="ghost" (click)="close()">
+          Back to Workspaces
+        </button>
       </ar-topbar>
       <div class="ar-form-page ar-scroll">
         <ng-container *ngTemplateOutlet="formsTpl" />
@@ -71,154 +73,150 @@ const SEED: TenantDto[] = [
       </ar-topbar>
 
       <div class="page ar-scroll">
-      <div class="page__col">
-        @if (error(); as e) {
-          <ar-banner tone="bad">{{ e }}</ar-banner>
-        }
-        @if (notice(); as n) {
-          <ar-banner tone="good">{{ n }}</ar-banner>
-        }
-
-        <ar-card heading="All workspaces">
-          <ejs-grid arGrid="workspaces" [dataSource]="tenants()" aria-label="All workspaces">
-            <e-columns>
-              <e-column field="name" headerText="Name">
-                <ng-template #template let-t>
-                  <span class="ar-mono">{{ t.name }}</span>
-                </ng-template>
-              </e-column>
-              <e-column
-                headerText="Actions"
-                width="140"
-                textAlign="Right"
-                [allowSorting]="false"
-                [allowFiltering]="false"
-                [showInColumnChooser]="false"
-              >
-                <ng-template #template let-t>
-                  <span class="ta-actions">
-                    <button
-                      ar-button
-                      type="button"
-                      variant="ghost"
-                      icon="settings"
-                      title="Manage workspace"
-                      *abpPermission="'AutoReach.Administration.ManageTenants'"
-                      (click)="goManage(t)"
-                    ></button>
-                    <button
-                      ar-button
-                      type="button"
-                      variant="ghost"
-                      icon="bolt"
-                      title="Features"
-                      *abpPermission="'AbpTenantManagement.Tenants.ManageFeatures'"
-                      (click)="goFeatures(t)"
-                    ></button>
-                    <button
-                      ar-button
-                      type="button"
-                      variant="ghost"
-                      icon="edit"
-                      title="Rename workspace"
-                      *abpPermission="'AbpTenantManagement.Tenants.Update'"
-                      (click)="goRename(t)"
-                    ></button>
-                    <button
-                      ar-button
-                      type="button"
-                      variant="ghost"
-                      icon="trash"
-                      title="Delete workspace"
-                      *abpPermission="'AbpTenantManagement.Tenants.Delete'"
-                      (click)="remove(t)"
-                    ></button>
-                  </span>
-                </ng-template>
-              </e-column>
-            </e-columns>
-            <ng-template #emptyRecordTemplate>No workspaces yet.</ng-template>
-          </ejs-grid>
-        </ar-card>
-      </div>
-    </div>
-  }
-
-  <ng-template #formsTpl>
-    @if (featuresTenant(); as ft) {
-      <ar-tenant-features-dialog
-        [tenantId]="ft.id"
-        [tenantName]="ft.name"
-        (closed)="close()"
-      />
-    }
-
-    @if (manageTenant(); as mt) {
-      <ar-workspace-manage-dialog
-        [tenantId]="mt.id"
-        [tenantName]="mt.name"
-        (closed)="manageClosed($event)"
-      />
-    }
-
-    @if (dialog(); as mode) {
-      <ar-dialog
-        [title]="mode === 'create' ? 'New workspace' : 'Rename workspace'"
-        (dismiss)="close()"
-      >
-        <label class="fld">
-          <span class="fld__k">Workspace name</span>
-          <input
-            required
-            maxlength="64"
-            class="ar-field__input"
-            autocapitalize="none"
-            placeholder="e.g. Sun Energy Automation"
-            [value]="fName()"
-            (input)="fName.set($any($event.target).value)"
-          />
-          @if (fName().trim() && nameProblem(); as e) {
-            <span class="fld__bad">{{ e }}</span>
-          } @else if (fSlug()) {
-            <span class="fld__hint"
-              >Signs in as <strong>{{ fSlug() }}</strong></span
-            >
+        <div class="page__col">
+          @if (error(); as e) {
+            <ar-banner tone="bad">{{ e }}</ar-banner>
           }
-        </label>
+          @if (notice(); as n) {
+            <ar-banner tone="good">{{ n }}</ar-banner>
+          }
 
-        @if (mode === 'create') {
-          <label class="fld">
-            <span class="fld__k">Admin email</span>
-            <input
-              required
-              class="ar-field__input"
-              type="email"
-              [value]="fEmail()"
-              (input)="fEmail.set($any($event.target).value)"
-            />
-          </label>
-          <label class="fld">
-            <span class="fld__k">Admin password</span>
-            <input
-              required
-              minlength="6"
-              class="ar-field__input"
-              type="password"
-              [value]="fPassword()"
-              (input)="fPassword.set($any($event.target).value)"
-            />
-          </label>
-        }
-
-        <div dialogActions>
-          <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
-          <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
-            {{ busy() ? 'Saving…' : mode === 'create' ? 'Create workspace' : 'Save' }}
-          </button>
+          <ar-card heading="All workspaces">
+            <ejs-grid arGrid="workspaces" [dataSource]="tenants()" aria-label="All workspaces">
+              <e-columns>
+                <e-column field="name" headerText="Name">
+                  <ng-template #template let-t>
+                    <span class="ar-mono">{{ t.name }}</span>
+                  </ng-template>
+                </e-column>
+                <e-column
+                  headerText="Actions"
+                  width="140"
+                  textAlign="Right"
+                  [allowSorting]="false"
+                  [allowFiltering]="false"
+                  [showInColumnChooser]="false"
+                >
+                  <ng-template #template let-t>
+                    <span class="ta-actions">
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        icon="settings"
+                        title="Manage workspace"
+                        *abpPermission="'AutoReach.Administration.ManageTenants'"
+                        (click)="goManage(t)"
+                      ></button>
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        icon="bolt"
+                        title="Features"
+                        *abpPermission="'AbpTenantManagement.Tenants.ManageFeatures'"
+                        (click)="goFeatures(t)"
+                      ></button>
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        icon="edit"
+                        title="Rename workspace"
+                        *abpPermission="'AbpTenantManagement.Tenants.Update'"
+                        (click)="goRename(t)"
+                      ></button>
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        icon="trash"
+                        title="Delete workspace"
+                        *abpPermission="'AbpTenantManagement.Tenants.Delete'"
+                        (click)="remove(t)"
+                      ></button>
+                    </span>
+                  </ng-template>
+                </e-column>
+              </e-columns>
+              <ng-template #emptyRecordTemplate>No workspaces yet.</ng-template>
+            </ejs-grid>
+          </ar-card>
         </div>
-      </ar-dialog>
+      </div>
     }
-  </ng-template>
+
+    <ng-template #formsTpl>
+      @if (featuresTenant(); as ft) {
+        <ar-tenant-features-dialog [tenantId]="ft.id" [tenantName]="ft.name" (closed)="close()" />
+      }
+
+      @if (manageTenant(); as mt) {
+        <ar-workspace-manage-dialog
+          [tenantId]="mt.id"
+          [tenantName]="mt.name"
+          (closed)="manageClosed($event)"
+        />
+      }
+
+      @if (dialog(); as mode) {
+        <ar-dialog
+          [title]="mode === 'create' ? 'New workspace' : 'Rename workspace'"
+          (dismiss)="close()"
+        >
+          <label class="fld">
+            <span class="fld__k">Workspace name</span>
+            <input
+              required
+              maxlength="64"
+              class="ar-field__input"
+              autocapitalize="none"
+              placeholder="e.g. Sun Energy Automation"
+              [value]="fName()"
+              (input)="fName.set($any($event.target).value)"
+            />
+            @if (fName().trim() && nameProblem(); as e) {
+              <span class="fld__bad">{{ e }}</span>
+            } @else if (fSlug()) {
+              <span class="fld__hint"
+                >Signs in as <strong>{{ fSlug() }}</strong></span
+              >
+            }
+          </label>
+
+          @if (mode === 'create') {
+            <label class="fld">
+              <span class="fld__k">Admin email</span>
+              <input
+                required
+                class="ar-field__input"
+                type="email"
+                [value]="fEmail()"
+                (input)="fEmail.set($any($event.target).value)"
+              />
+            </label>
+            <label class="fld">
+              <span class="fld__k">Admin password</span>
+              <input
+                required
+                minlength="6"
+                class="ar-field__input"
+                type="password"
+                [value]="fPassword()"
+                (input)="fPassword.set($any($event.target).value)"
+              />
+            </label>
+          }
+
+          <div dialogActions>
+            <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
+            <button ar-button type="button" variant="primary" [disabled]="busy()" (click)="save()">
+              {{ busy() ? 'Saving…' : mode === 'create' ? 'Create workspace' : 'Save' }}
+            </button>
+          </div>
+        </ar-dialog>
+      }
+    </ng-template>
   `,
   styles: `
     .page {
@@ -281,11 +279,16 @@ export class ArAdminTenants {
 
   protected readonly pageTitle = computed(() => {
     switch (this.mode) {
-      case 'new': return 'New workspace';
-      case 'rename': return 'Rename workspace';
-      case 'features': return 'Workspace features';
-      case 'manage': return 'Manage workspace';
-      default: return 'Workspaces';
+      case 'new':
+        return 'New workspace';
+      case 'rename':
+        return 'Rename workspace';
+      case 'features':
+        return 'Workspace features';
+      case 'manage':
+        return 'Manage workspace';
+      default:
+        return 'Workspaces';
     }
   });
 
@@ -348,18 +351,14 @@ export class ArAdminTenants {
     }
   }
 
-  private readonly mock = environment.useMockData;
-
   private readonly tick = signal(0);
   private readonly resource = rxResource({
-    params: () => (this.mock ? undefined : { t: this.tick() }),
+    params: () => ({ t: this.tick() }),
     stream: () => this.api.getList({ maxResultCount: 200, sorting: 'name' }),
     defaultValue: { totalCount: 0, items: [] as TenantDto[] },
   });
 
-  protected readonly tenants = computed<readonly TenantDto[]>(() =>
-    this.mock ? SEED : this.resource.value().items,
-  );
+  protected readonly tenants = computed<readonly TenantDto[]>(() => this.resource.value().items);
   protected readonly subtitle = computed(() => {
     const n = this.tenants().length;
     return `${n} workspace${n === 1 ? '' : 's'}`;

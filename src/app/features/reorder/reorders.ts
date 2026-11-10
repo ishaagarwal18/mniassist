@@ -2,8 +2,6 @@ import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
 import {
@@ -24,37 +22,6 @@ import {
   ShipmentStatus,
   ShippingService,
 } from '../../proxy/shipping/shipping.service';
-
-const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
-
-const SEED: ReorderRequestDto[] = [
-  {
-    id: 'r1',
-    contactId: 'c1',
-    contactName: 'Kalyani Forge',
-    enquiryId: 'e1',
-    quotationId: 'q1',
-    quotationReference: 'QT-2026-0418',
-    state: 'Draft',
-    lineCount: 3,
-    subtotalInPaise: 18_450_00,
-    poNumber: 'KF/PO/7781',
-    deliverySite: 'Plant 2, Nashik',
-    creationTime: hoursAgo(2),
-  },
-  {
-    id: 'r2',
-    contactId: 'c2',
-    contactName: 'Precision Pumps',
-    enquiryId: 'e2',
-    quotationId: 'q2',
-    quotationReference: 'QT-2026-0402',
-    state: 'Won',
-    lineCount: 1,
-    subtotalInPaise: 4_200_00,
-    creationTime: hoursAgo(50),
-  },
-];
 
 const STATE: Record<string, { label: string; tone: ChipTone }> = {
   Draft: { label: 'To check and issue', tone: 'amber' },
@@ -115,7 +82,11 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
 
       @if (approvals().length) {
         <h2 class="ro__h">Waiting for the customer's approver</h2>
-        <ejs-grid arGrid="reorder-approvals" [dataSource]="approvals()" aria-label="Waiting for approvals">
+        <ejs-grid
+          arGrid="reorder-approvals"
+          [dataSource]="approvals()"
+          aria-label="Waiting for approvals"
+        >
           <e-columns>
             <e-column field="creationTime" headerText="Received" width="130">
               <ng-template #template let-a>{{ when(a.creationTime) }}</ng-template>
@@ -141,7 +112,11 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
           inbox.
         </p>
       } @else {
-        <ejs-grid arGrid="reorder-requests" [dataSource]="requests()" aria-label="Re-order requests">
+        <ejs-grid
+          arGrid="reorder-requests"
+          [dataSource]="requests()"
+          aria-label="Re-order requests"
+        >
           <e-columns>
             <e-column field="creationTime" headerText="Received" width="130">
               <ng-template #template let-r>{{ when(r.creationTime) }}</ng-template>
@@ -194,26 +169,14 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
                   @if (s.status !== 'Delivered') {
                     <span class="ro__acts">
                       @if (s.status === 'Dispatched') {
-                        <button
-                          type="button"
-                          class="ro__act"
-                          (click)="setShipment(s, 'InTransit')"
-                        >
+                        <button type="button" class="ro__act" (click)="setShipment(s, 'InTransit')">
                           In transit
                         </button>
                       }
-                      <button
-                        type="button"
-                        class="ro__act"
-                        (click)="setShipment(s, 'Delivered')"
-                      >
+                      <button type="button" class="ro__act" (click)="setShipment(s, 'Delivered')">
                         Delivered
                       </button>
-                      <button
-                        type="button"
-                        class="ro__act"
-                        (click)="setShipment(s, 'Exception')"
-                      >
+                      <button type="button" class="ro__act" (click)="setShipment(s, 'Exception')">
                         Problem
                       </button>
                     </span>
@@ -367,17 +330,6 @@ export class ArReorders {
   }
 
   private async load(): Promise<void> {
-    if (environment.useMockData) {
-      this.settings.set({
-        enabled: true,
-        linkLifetimeDays: 7,
-        limitedStockBelow: 5,
-        included: true,
-        showsStock: true,
-      });
-      this.requests.set(SEED);
-      return;
-    }
     try {
       const [settings, requests, approvals] = await Promise.all([
         firstValueFrom(this.api.getSettings()),
@@ -394,7 +346,6 @@ export class ArReorders {
   }
 
   protected async loadShipping(): Promise<void> {
-    if (environment.useMockData) return;
     try {
       this.shipments.set(await firstValueFrom(this.shippingApi.getShipments()));
     } catch {
@@ -413,9 +364,7 @@ export class ArReorders {
   protected async setShipment(s: ShipmentDto, status: ShipmentStatus): Promise<void> {
     this.error.set(null);
     try {
-      const updated = environment.useMockData
-        ? { ...s, status }
-        : await firstValueFrom(this.shippingApi.updateStatus(s.id, status));
+      const updated = await firstValueFrom(this.shippingApi.updateStatus(s.id, status));
       this.shipments.update((list) => list.map((x) => (x.id === s.id ? updated : x)));
     } catch (e: unknown) {
       this.error.set(problem(e, 'The delivery status could not be saved.'));

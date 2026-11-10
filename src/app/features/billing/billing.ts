@@ -3,8 +3,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, forkJoin, map } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import {
   BillingService,
   PlanUsageDto,
@@ -49,63 +47,25 @@ interface Txn {
   at?: string;
 }
 
-const SEED = {
-  balanceInPaise: 18_420_00,
+/** While the wallet loads, or if it cannot be read: zeros and no plan, never sample figures. */
+const EMPTY = {
+  balanceInPaise: 0,
   graceInPaise: 0,
   isLow: false,
-  daysRemaining: 21,
+  daysRemaining: 0,
   chargesStartOn: null as string | null,
-  autoTopUp: true,
-  autoAmountInPaise: 20_000_00,
-  plan: SubscriptionPlan.Growth,
-  feeInPaise: 49_99_00,
-  seats: 10,
-  periodEnd: '2026-09-30',
-  billed: 8_640_00,
-  tax: 1_555_00,
-  free: 3_240,
-  avoided: 372_600,
-  usage: {
-    channelLimit: 2,
-    channelsUsed: 1,
-    seatLimit: 10,
-    seatsUsed: 6,
-    contactLimit: 25_000,
-    contactsUsed: 12_486,
-    features: [
-      'AutomationBuilder',
-      'Flows',
-      'DocumentLibrary',
-      'FullAnalytics',
-      'ClickToWhatsAppAttribution',
-    ],
-  } as PlanUsageDto,
-  transactions: [
-    {
-      id: 't-1',
-      kind: 'Top-up',
-      amountInPaise: 20_000_00,
-      balanceAfterInPaise: 32_800_00,
-      description: 'Razorpay pay_Nx…',
-      at: '2026-08-28',
-    },
-    {
-      id: 't-2',
-      kind: 'Message charge',
-      amountInPaise: -4_380_00,
-      balanceAfterInPaise: 28_420_00,
-      description: 'August newsletter',
-      at: '2026-08-29',
-    },
-    {
-      id: 't-3',
-      kind: 'Message charge',
-      amountInPaise: -10_000_00,
-      balanceAfterInPaise: 18_420_00,
-      description: 'AMC + quotation cadence',
-      at: '2026-09-04',
-    },
-  ] as Txn[],
+  autoTopUp: false,
+  autoAmountInPaise: 0,
+  plan: undefined as unknown as SubscriptionPlan,
+  feeInPaise: 0,
+  seats: 0,
+  periodEnd: '',
+  billed: 0,
+  tax: 0,
+  free: 0,
+  avoided: 0,
+  usage: {} as PlanUsageDto,
+  transactions: [] as Txn[],
 };
 
 /**
@@ -169,7 +129,7 @@ export class ArBilling {
 
   private async loadGateways(): Promise<void> {
     try {
-      const g = environment.useMockData ? [] : await this.checkout.gateways();
+      const g = await this.checkout.gateways();
       this.availableGateways.set(g);
       if (g.length > 0) this.topUpGateway.set(g[0].name);
     } catch {
@@ -215,9 +175,7 @@ export class ArBilling {
         }
       } else {
         const ref = this.topUpReference().trim() || `MANUAL-${Date.now()}`;
-        await firstValueFrom(
-          this.walletApi.topUp({ amountInPaise, reference: ref }),
-        );
+        await firstValueFrom(this.walletApi.topUp({ amountInPaise, reference: ref }));
         this.toasts.success(`${inr(amountInPaise)} added to the wallet.`, 'Top-up');
         this.tick.update((n) => n + 1);
         this.close();
@@ -248,7 +206,7 @@ export class ArBilling {
   private readonly tick = signal(0);
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.tick() }),
+    params: () => ({ tick: this.tick() }),
     stream: () =>
       forkJoin({
         wallet: this.walletApi.get(),
@@ -287,17 +245,16 @@ export class ArBilling {
           ),
         })),
       ),
-    defaultValue: { ...SEED, daysRemaining: SEED.daysRemaining as number | null },
+    defaultValue: { ...EMPTY, daysRemaining: null as number | null },
   });
 
-  protected readonly loading = computed(
-    () => !environment.useMockData && this.resource.isLoading(),
-  );
+  protected readonly loading = computed(() => this.resource.isLoading());
   protected readonly d = computed(() =>
-    environment.useMockData
-      ? { ...SEED, daysRemaining: SEED.daysRemaining as number | null }
+    this.resource.error()
+      ? { ...EMPTY, daysRemaining: null as number | null }
       : this.resource.value(),
   );
+  protected readonly failed = computed(() => this.resource.error() != null);
 
   /** "15 October 2026": the day per-message charges start. */
   protected chargeDay(iso: string): string {
@@ -359,7 +316,7 @@ export class ArBilling {
 
   protected async topUp(): Promise<void> {
     // Razorpay / PayU, when the platform has either: the payment happens on the gateway's page.
-    const gateways = environment.useMockData ? [] : await this.checkout.gateways();
+    const gateways = await this.checkout.gateways();
     if (gateways.length > 0) {
       await this.topUpByGateway(gateways);
       return;

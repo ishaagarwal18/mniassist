@@ -10,8 +10,6 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, firstValueFrom, of } from 'rxjs';
-
-import { environment } from '../../../../environments/environment';
 import { checkPolicy } from '../../../core/auth/permission';
 import { ToastService } from '../../../core/ui/toast.service';
 import { readApiError } from '../../../core/util/api-error';
@@ -326,7 +324,7 @@ export class ArNewPurchaseOrderPage {
   protected readonly id = this.route.snapshot.paramMap.get('id');
   /** The edited order's reference, once loaded. */
   protected readonly editing = signal<string | null>(null);
-  protected readonly loading = signal(!!this.id && !environment.useMockData);
+  protected readonly loading = signal(!!this.id);
   protected readonly loadProblem = signal<string | null>(null);
   protected readonly supplierLocked = signal(!!this.scope);
   protected readonly supplierId = signal(this.scope?.supplierId ?? '');
@@ -375,7 +373,7 @@ export class ArNewPurchaseOrderPage {
           this.suppliersError.set(true);
         },
       });
-    if (environment.useMockData) return;
+
     const quiet = { skipHandleError: true };
     if (this.id) void this.loadOrder(this.id);
     this.stockApi
@@ -478,10 +476,6 @@ export class ArNewPurchaseOrderPage {
     this.searching.set(true);
     this.findTimer = setTimeout(async () => {
       try {
-        if (environment.useMockData) {
-          this.hits.set([{ productId: 'p3', partNumber: 'OS-4410', name: 'Oil separator' }]);
-          return;
-        }
         const page = await firstValueFrom(
           this.productsApi.getList(
             { filter: text.trim(), activeOnly: true, maxResultCount: 10 },
@@ -529,13 +523,11 @@ export class ArNewPurchaseOrderPage {
         lines: read.lines,
       };
       const quiet = { skipHandleError: true };
-      const reference = environment.useMockData
-        ? `PO-2026-${String(Date.now()).slice(-4)}`
-        : (
-            await firstValueFrom(
-              this.id ? this.api.update(this.id, input, quiet) : this.api.create(input, quiet),
-            )
-          ).reference;
+      const reference = (
+        await firstValueFrom(
+          this.id ? this.api.update(this.id, input, quiet) : this.api.create(input, quiet),
+        )
+      ).reference;
       this.toasts.success(
         this.id
           ? `${reference} saved.`

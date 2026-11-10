@@ -45,8 +45,6 @@
     />
   </label>
   @if (canEdit()) {
-    <button ar-button type="button" [disabled]="busy() || mock" (click)="save()">
-      Save the fix
-    </button>
+    <button ar-button type="button" [disabled]="busy()" (click)="save()">Save the fix</button>
   }
 </ar-card>

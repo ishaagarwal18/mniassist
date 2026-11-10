@@ -22,7 +22,6 @@ import {
 import type { InstalledAssetDto } from '../../../proxy/pipeline/models';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../../ui';
 import { bandText, stageText, stageTone } from '../obsolescence/obsolescence.logic';
-import { environment } from '../../../../environments/environment';
 import { ArMachineQrCard } from './machine-qr-card';
 
 const SOURCE_LABEL: Record<ComponentSource, string> = {
@@ -66,7 +65,6 @@ export class ArMachinePage {
   private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly Criticality = MachineCriticality;
   protected readonly canEdit = grantedPolicy(
     'AutoReach.InstalledBase.Components',
@@ -101,7 +99,6 @@ export class ArMachinePage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       const [machine, components] = await Promise.all([
         firstValueFrom(this.assetsApi.get(this.id)),

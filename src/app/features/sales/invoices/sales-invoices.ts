@@ -6,7 +6,6 @@ import { GridModule, RecordClickEventArgs } from '@syncfusion/ej2-angular-grids'
 import { ToastService } from '../../../core/ui/toast.service';
 import { CustomerScope, readCustomerScope } from '../../../core/util/customer-scope';
 import { errorMessage } from '../../activities/activity-logic';
-import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import { SalesInvoiceDto } from '../../../proxy/sales/sales-invoice.models';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
@@ -24,13 +23,21 @@ import {
   listQuery,
   newRecordQuery,
 } from '../sales-records.logic';
-import { MOCK_INVOICES } from './sales-invoices.mock';
 import { ArSalesExport } from '../sales-export';
 
 @Component({
   selector: 'ar-sales-invoices',
   standalone: true,
-  imports: [CommonModule, FormsModule, ArTopbar, ArButton, ArChip, ArSalesExport, ArGrid, GridModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArSalesExport,
+    ArGrid,
+    GridModule,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -176,14 +183,24 @@ import { ArSalesExport } from '../sales-export';
                 <span class="num-col">₹{{ inv.totalTaxInPaise / 100 | number: '1.2-2' }}</span>
               </ng-template>
             </e-column>
-            <e-column field="grandTotalInPaise" headerText="Grand Total" textAlign="Right" width="140">
+            <e-column
+              field="grandTotalInPaise"
+              headerText="Grand Total"
+              textAlign="Right"
+              width="140"
+            >
               <ng-template #template let-inv>
                 <span class="num-col font-bold">
                   ₹{{ inv.grandTotalInPaise / 100 | number: '1.2-2' }}
                 </span>
               </ng-template>
             </e-column>
-            <e-column field="balanceDueInPaise" headerText="Balance Due" textAlign="Right" width="140">
+            <e-column
+              field="balanceDueInPaise"
+              headerText="Balance Due"
+              textAlign="Right"
+              width="140"
+            >
               <ng-template #template let-inv>
                 <span class="num-col font-bold" [class.text-danger]="inv.balanceDueInPaise > 0">
                   ₹{{ inv.balanceDueInPaise / 100 | number: '1.2-2' }}
@@ -205,9 +222,7 @@ import { ArSalesExport } from '../sales-export';
                     <button class="action-btn primary" (click)="issueInvoice(inv)">Issue</button>
                   }
                   @if (canPay(inv)) {
-                    <button class="action-btn success" (click)="openInvoice(inv, true)">
-                      Pay
-                    </button>
+                    <button class="action-btn success" (click)="openInvoice(inv, true)">Pay</button>
                   }
                 </div>
               </ng-template>
@@ -410,8 +425,7 @@ export class ArSalesInvoices {
 
   protected readonly canCreate = grantedPolicy('AutoReach.SalesInvoices.Create', this.permissions);
 
-  /** Demo rows only in mock mode; a real workspace sees its own invoices or none. */
-  invoices = signal<SalesInvoiceDto[]>(environment.useMockData ? MOCK_INVOICES : []);
+  invoices = signal<SalesInvoiceDto[]>([]);
   loadError = signal<string | null>(null);
   searchQuery = signal<string>('');
   selectedStatus = signal<SalesInvoiceStatus | null>(null);
@@ -498,37 +512,31 @@ export class ArSalesInvoices {
   }
 
   loadInvoices() {
-    if (!environment.useMockData) {
-      this.invoiceService
-        .getList({
-          maxResultCount: 100,
-          customerId: this.scope()?.customerId ?? undefined,
-          customerAccountId: this.scope()?.accountId ?? undefined,
-        })
-        .subscribe({
-          next: (res) => {
-            this.invoices.set(res?.items ?? []);
-            this.loadError.set(null);
-          },
-          error: (e: unknown) => {
-            this.loadError.set(errorMessage(e, 'Invoices could not be loaded.'));
-          },
-        });
-    }
+    this.invoiceService
+      .getList({
+        maxResultCount: 100,
+        customerId: this.scope()?.customerId ?? undefined,
+        customerAccountId: this.scope()?.accountId ?? undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          this.invoices.set(res?.items ?? []);
+          this.loadError.set(null);
+        },
+        error: (e: unknown) => {
+          this.loadError.set(errorMessage(e, 'Invoices could not be loaded.'));
+        },
+      });
   }
 
   issueInvoice(inv: SalesInvoiceDto) {
     if (!inv.id) return;
-    if (!environment.useMockData) {
-      this.invoiceService.issue(inv.id).subscribe({
-        next: (updated) => this.updateInvoiceInList(updated),
-        error: (e: unknown) =>
-          this.toasts.error(errorMessage(e, `${inv.invoiceNumber} could not be issued.`)),
-      });
-    } else {
-      const updated = { ...inv, status: SalesInvoiceStatus.Issued };
-      this.updateInvoiceInList(updated);
-    }
+
+    this.invoiceService.issue(inv.id).subscribe({
+      next: (updated) => this.updateInvoiceInList(updated),
+      error: (e: unknown) =>
+        this.toasts.error(errorMessage(e, `${inv.invoiceNumber} could not be issued.`)),
+    });
   }
 
   private updateInvoiceInList(updated: SalesInvoiceDto) {

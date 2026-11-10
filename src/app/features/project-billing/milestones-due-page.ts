@@ -12,7 +12,6 @@ import {
   DueMilestoneDto,
 } from '../../proxy/project-billing/billing-plan.service';
 import { ArBanner, ArButton, ArCard } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { TRIGGER_TEXT } from './billing.logic';
 
 /** Every billing milestone ready to invoice, across orders: accounts' daily list. Ready two days or more shows amber. */
@@ -23,9 +22,6 @@ import { TRIGGER_TEXT } from './billing.logic';
   template: `
     <ar-topbar title="Milestones due" subtitle="Billing milestones ready to invoice" />
     <div class="md ar-scroll">
-      @if (mock) {
-        <ar-banner tone="teal">Milestones due need the live API.</ar-banner>
-      }
       @if (error(); as e) {
         <ar-banner tone="bad">{{ e }}</ar-banner>
       }
@@ -94,7 +90,6 @@ export class ArMilestonesDuePage {
   private readonly toasts = inject(ToastService);
   private readonly router = inject(Router);
 
-  protected readonly mock = environment.useMockData;
   protected readonly rows = signal<DueMilestoneDto[]>([]);
   protected readonly error = signal<string | null>(null);
   protected readonly busy = signal(false);
@@ -113,7 +108,6 @@ export class ArMilestonesDuePage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       this.rows.set(await firstValueFrom(this.api.getDue()));
     } catch (e) {

@@ -2,12 +2,9 @@ import { ReportExportService } from '../../proxy/reports/report-export.service';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, forkJoin, map } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import {
   AnalyticsSummaryDto,
   AnalyticsExportFormat,
-  KpiUnit,
   AnalyticsService as AnalyticsApi,
   ConversionReportDto,
   MarketingLiteComparisonDto,
@@ -64,250 +61,10 @@ interface Bundle {
 
 export type ConversionDimension = 'source' | 'owner' | 'stage' | 'pipeline';
 
-const SEED_SUMMARY: AnalyticsSummaryDto = {
-  fromUtc: '',
-  toUtc: '',
-  previousFromUtc: '',
-  previousToUtc: '',
-  kpis: [
-    {
-      key: 'messages',
-      label: 'Messages',
-      unit: KpiUnit.Count,
-      current: 6230,
-      previous: 5480,
-      higherIsBetter: true,
-      scope: 'channel',
-    },
-    {
-      key: 'spend',
-      label: 'Spend',
-      unit: KpiUnit.Rupees,
-      current: 22_54_158,
-      previous: 19_80_000,
-      higherIsBetter: null,
-      scope: 'channel',
-    },
-    {
-      key: 'free',
-      label: 'Free of charge',
-      unit: KpiUnit.Count,
-      current: 2140,
-      previous: 1900,
-      higherIsBetter: true,
-      scope: 'channel',
-    },
-    {
-      key: 'delivery_rate',
-      label: 'Delivered',
-      unit: KpiUnit.Rate,
-      current: 0.968,
-      previous: 0.951,
-      higherIsBetter: true,
-      scope: 'channel',
-    },
-    {
-      key: 'first_reply',
-      label: 'Median first reply',
-      unit: KpiUnit.Minutes,
-      current: 11,
-      previous: 16,
-      higherIsBetter: false,
-      scope: 'channel',
-    },
-    {
-      key: 'new_enquiries',
-      label: 'New enquiries',
-      unit: KpiUnit.Count,
-      current: 48,
-      previous: 41,
-      higherIsBetter: true,
-      scope: 'workspace',
-    },
-    {
-      key: 'won',
-      label: 'Deals won',
-      unit: KpiUnit.Count,
-      current: 24,
-      previous: 19,
-      higherIsBetter: true,
-      scope: 'workspace',
-    },
-    {
-      key: 'won_value',
-      label: 'Won value',
-      unit: KpiUnit.Rupees,
-      current: 4_27_00_000,
-      previous: 3_60_00_000,
-      higherIsBetter: true,
-      scope: 'workspace',
-    },
-    {
-      key: 'win_rate',
-      label: 'Win rate',
-      unit: KpiUnit.Rate,
-      current: 0.571,
-      previous: 0.528,
-      higherIsBetter: true,
-      scope: 'workspace',
-    },
-  ],
-};
-
 const EMPTY_TABLES: Omit<Bundle, 'trend'> = {
   categories: [],
   templates: [],
   agents: [],
-  teams: [],
-};
-
-const SEED_CONVERSION: ConversionReportDto = {
-  dimension: 'source',
-  rows: [
-    {
-      key: 'Exhibition',
-      label: 'Exhibition / stall',
-      won: 9,
-      lost: 6,
-      open: 4,
-      wonValueInPaise: 182_00_000,
-      winRate: 0.6,
-    },
-    {
-      key: 'Website',
-      label: 'Website',
-      won: 5,
-      lost: 8,
-      open: 7,
-      wonValueInPaise: 71_00_000,
-      winRate: 0.385,
-    },
-    {
-      key: 'ClickToWhatsApp',
-      label: 'Click-to-WhatsApp ad',
-      won: 4,
-      lost: 3,
-      open: 2,
-      wonValueInPaise: 54_00_000,
-      winRate: 0.571,
-    },
-    {
-      key: 'Referral',
-      label: 'Referral',
-      won: 6,
-      lost: 1,
-      open: 1,
-      wonValueInPaise: 120_00_000,
-      winRate: 0.857,
-    },
-  ],
-  lostReasonBreakdown: {
-    'Price too high': 7,
-    'Lost to competitor': 5,
-    'No budget': 4,
-    'Project cancelled / deferred': 2,
-  },
-};
-
-const SEED_MM_LITE: MarketingLiteComparisonDto = {
-  viaMarketingLite: {
-    path: 'MM Lite',
-    sent: 4200,
-    delivered: 4100,
-    read: 2700,
-    replied: 540,
-    spendInPaise: 273_00_000,
-    deliveryRate: 0.976,
-    readRate: 0.643,
-    replyRate: 0.129,
-  },
-  standard: {
-    path: 'Standard',
-    sent: 3800,
-    delivered: 3660,
-    read: 2200,
-    replied: 410,
-    spendInPaise: 361_00_000,
-    deliveryRate: 0.963,
-    readRate: 0.579,
-    replyRate: 0.108,
-  },
-};
-
-const SEED: Bundle = {
-  trend: Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(Date.now() - (13 - i) * 86_400_000);
-    return {
-      date: d.toISOString().slice(0, 10),
-      marketing: 120 + Math.round(Math.sin(i / 2) * 60) + i * 4,
-      utility: 200 + Math.round(Math.cos(i / 3) * 40),
-      service: 90 + (i % 5) * 12,
-      spendInPaise: (140 + i * 6) * 8631,
-    };
-  }),
-  categories: [
-    { category: 'utility', count: 3_240, spendInPaise: 372_600, shareOfVolume: 0.52 },
-    { category: 'marketing', count: 2_180, spendInPaise: 1_881_558, shareOfVolume: 0.35 },
-    { category: 'service', count: 810, spendInPaise: 0, shareOfVolume: 0.13 },
-  ],
-  templates: [
-    {
-      templateId: 't-1',
-      name: 'amc_renewal_30d',
-      category: 'utility',
-      quality: 'high',
-      sent: 1_204,
-      deliveryRate: 0.982,
-      readRate: 0.741,
-      replyRate: 0.38,
-    },
-    {
-      templateId: 't-2',
-      name: 'quotation_followup_d5',
-      category: 'marketing',
-      quality: 'medium',
-      sent: 880,
-      deliveryRate: 0.955,
-      readRate: 0.62,
-      replyRate: 0.29,
-    },
-    {
-      templateId: 't-3',
-      name: 'vfd_retrofit_bulletin',
-      category: 'marketing',
-      quality: 'high',
-      sent: 2_000,
-      deliveryRate: 0.968,
-      readRate: 0.54,
-      replyRate: 0.11,
-    },
-  ],
-  agents: [
-    {
-      userId: 'u-1',
-      userName: 'ravi.k',
-      conversationsHandled: 148,
-      messagesSent: 612,
-      medianFirstResponseMinutes: 7,
-      enquiriesCreated: 22,
-    },
-    {
-      userId: 'u-2',
-      userName: 'sneha.p',
-      conversationsHandled: 121,
-      messagesSent: 503,
-      medianFirstResponseMinutes: 11,
-      enquiriesCreated: 14,
-    },
-    {
-      userId: 'u-3',
-      userName: 'imtiaz.a',
-      conversationsHandled: 96,
-      messagesSent: 388,
-      medianFirstResponseMinutes: 19,
-      enquiriesCreated: 9,
-    },
-  ],
   teams: [],
 };
 
@@ -321,9 +78,7 @@ export class AnalyticsStore {
   private readonly period = inject(ReportPeriodStore);
 
   private params() {
-    return environment.useMockData
-      ? undefined
-      : { ...this.period.range(), channelId: this.channels.active()?.id };
+    return { ...this.period.range(), channelId: this.channels.active()?.id };
   }
 
   /** The daily trend is in every plan; it loads on its own so a plan without full
@@ -342,7 +97,7 @@ export class AnalyticsStore {
           })),
         ),
       ),
-    defaultValue: SEED.trend,
+    defaultValue: [] as TrendPoint[],
   });
 
   /** The tables need the full-analytics plan feature. */
@@ -400,29 +155,21 @@ export class AnalyticsStore {
           })),
         })),
       ),
-    defaultValue: SEED,
+    defaultValue: EMPTY_TABLES,
   });
 
-  readonly loading = computed(
-    () => !environment.useMockData && (this.resource.isLoading() || this.trendResource.isLoading()),
-  );
+  readonly loading = computed(() => this.resource.isLoading() || this.trendResource.isLoading());
 
   /** The workspace's plan leaves out full analytics: the tables answer 403 with
    *  PlanFeatureNotIncluded, quietly, so the page says why they are empty. */
-  readonly notInPlan = computed(
-    () => !environment.useMockData && isPlanRefusal(this.resource.error()),
-  );
+  readonly notInPlan = computed(() => isPlanRefusal(this.resource.error()));
 
   /** A failed request (a 403 without the permission, say) reads as no data: Angular's
    *  resource.value() throws once a request has failed, which would freeze the screen. */
-  private readonly data = computed<Bundle>(() =>
-    environment.useMockData
-      ? SEED
-      : {
-          trend: this.trendResource.hasValue() ? settled(this.trendResource, []) : [],
-          ...(this.resource.hasValue() ? settled(this.resource, EMPTY_TABLES) : EMPTY_TABLES),
-        },
-  );
+  private readonly data = computed<Bundle>(() => ({
+    trend: this.trendResource.hasValue() ? settled(this.trendResource, []) : [],
+    ...(this.resource.hasValue() ? settled(this.resource, EMPTY_TABLES) : EMPTY_TABLES),
+  }));
 
   readonly trend = computed(() => this.data().trend);
   readonly categories = computed(() => this.data().categories);
@@ -447,7 +194,6 @@ export class AnalyticsStore {
 
   /** Null until the first answer, and after a failure (shown as a toast). */
   readonly summary = computed<AnalyticsSummaryDto | null>(() => {
-    if (environment.useMockData) return SEED_SUMMARY;
     if (this.summaryResource.error() || !this.summaryResource.hasValue()) return null;
     return this.summaryResource.value() ?? null;
   });
@@ -458,26 +204,21 @@ export class AnalyticsStore {
   readonly conversionPipelineId = signal<string | null>(null);
 
   private readonly conversionResource = rxResource({
-    params: () =>
-      environment.useMockData
-        ? undefined
-        : {
-            dimension: this.conversionDimension(),
-            pipelineId: this.conversionPipelineId(),
-            // Conversion is a pipeline report and covers every channel: many
-            // enquiries (exhibition, import, dealer) never touched a WhatsApp number.
-            ...this.period.range(),
-          },
+    params: () => ({
+      dimension: this.conversionDimension(),
+      pipelineId: this.conversionPipelineId(),
+      // Conversion is a pipeline report and covers every channel: many
+      // enquiries (exhibition, import, dealer) never touched a WhatsApp number.
+      ...this.period.range(),
+    }),
     stream: ({ params }) => this.api.getConversionReport(params),
-    defaultValue: SEED_CONVERSION,
+    defaultValue: undefined,
   });
 
   readonly conversion = computed<ConversionReportDto>(() =>
-    environment.useMockData
-      ? SEED_CONVERSION
-      : this.conversionResource.hasValue()
-        ? settled(this.conversionResource, SEED_CONVERSION)
-        : { dimension: this.conversionDimension(), rows: [] },
+    this.conversionResource.hasValue()
+      ? settled(this.conversionResource, { dimension: this.conversionDimension(), rows: [] })
+      : { dimension: this.conversionDimension(), rows: [] },
   );
 
   setConversionDimension(d: ConversionDimension): void {
@@ -492,23 +233,17 @@ export class AnalyticsStore {
   private readonly mmLiteResource = rxResource({
     params: () => this.params(),
     stream: ({ params }) => this.api.getMarketingLiteComparison(params),
-    defaultValue: SEED_MM_LITE,
+    defaultValue: undefined,
   });
 
   readonly mmLite = computed<MarketingLiteComparisonDto>(() =>
-    environment.useMockData
-      ? SEED_MM_LITE
-      : this.mmLiteResource.hasValue()
-        ? settled(this.mmLiteResource, SEED_MM_LITE)
-        : {},
+    this.mmLiteResource.hasValue()
+      ? settled(this.mmLiteResource, {} as MarketingLiteComparisonDto)
+      : {},
   );
 
   /** Downloads the category / template / agent tables in the chosen format. M12-6. */
   async export(format: AnalyticsExportFormat): Promise<void> {
-    if (environment.useMockData) {
-      this.toasts.info('Export needs the API — it is disabled in the standalone build.', 'Export');
-      return;
-    }
     // M12-6: built in the background; the person is told when it is ready and fetches it from
     // My exports or the emailed link, instead of waiting on the page.
     await firstValueFrom(

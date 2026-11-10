@@ -5,7 +5,6 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
-import { environment } from '../../../../environments/environment';
 import { ArTopbar } from '../../../layout/topbar';
 import { checkPolicy } from '../../../core/auth/permission';
 import { ConfirmService } from '../../../core/ui/confirm.service';
@@ -20,92 +19,12 @@ import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
 import { issueConfirm, settleConfirm } from './debit-note-detail-page';
 import { ArSupplierScopeBar } from '../supplier-scope-bar';
 import {
-  CreateVendorDebitNoteLineDto,
   VendorDebitNoteDto,
   VendorDebitNoteStatus,
   VendorDebitNoteService,
 } from '../../../proxy/purchasing';
 import { ArButton, ArChip, ChipTone } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
-
-const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
-  {
-    id: 'vdn-1',
-    debitNoteNumber: 'DN-2026-0012',
-    supplierId: 'sup-3',
-    supplierName: 'Sundram Fasteners Automotive',
-    vendorBillId: 'vb-2',
-    vendorBillNumber: 'VB-2026-0082',
-    goodsReceiptNoteId: 'grn-3',
-    goodsReceiptNoteNumber: 'GRN-2026-0103',
-    status: VendorDebitNoteStatus.Issued,
-    issueDateUtc: new Date(Date.now() - 4 * 86_400_000).toISOString(),
-    reason: 'QC Rejection: 15 PCS flange bolts failed pitch gauge thread tolerance (GRN-2026-0103)',
-    isInterState: true,
-    taxableAmountInPaise: 3600_00,
-    cgstInPaise: 0,
-    sgstInPaise: 0,
-    igstInPaise: 648_00,
-    grandTotalInPaise: 4248_00,
-    remarks: 'Dispatched rejection report to supplier QA desk.',
-    creationTime: new Date(Date.now() - 4 * 86_400_000).toISOString(),
-    lines: [
-      {
-        id: 'vdnl-1',
-        vendorDebitNoteId: 'vdn-1',
-        lineNumber: 1,
-        partNumber: 'BLT-M16-109',
-        description: 'Grade 10.9 Flange Head Bolt M16x90mm Zn-Ni Coated',
-        quantity: 15,
-        unitPriceInPaise: 240_00,
-        taxableAmountInPaise: 3600_00,
-        taxRateBasisPoints: 1800,
-        cgstAmountInPaise: 0,
-        sgstAmountInPaise: 0,
-        igstAmountInPaise: 648_00,
-        lineTotalInPaise: 4248_00,
-      },
-    ],
-  },
-  {
-    id: 'vdn-2',
-    debitNoteNumber: 'DN-2026-0009',
-    supplierId: 'sup-1',
-    supplierName: 'Bharat Precision Gears Pvt Ltd',
-    vendorBillId: 'vb-prev',
-    vendorBillNumber: 'VB-2026-0044',
-    goodsReceiptNoteId: 'grn-prev',
-    goodsReceiptNoteNumber: 'GRN-2026-0051',
-    status: VendorDebitNoteStatus.Settled,
-    issueDateUtc: new Date(Date.now() - 25 * 86_400_000).toISOString(),
-    reason: 'Rate revision adjustment per Master Service Agreement price indexation clause.',
-    isInterState: false,
-    taxableAmountInPaise: 12_000_00,
-    cgstInPaise: 1080_00,
-    sgstInPaise: 1080_00,
-    igstInPaise: 0,
-    grandTotalInPaise: 14_160_00,
-    remarks: 'Settled against payment voucher CMS-HDFC-8819.',
-    creationTime: new Date(Date.now() - 25 * 86_400_000).toISOString(),
-    lines: [
-      {
-        id: 'vdnl-2',
-        vendorDebitNoteId: 'vdn-2',
-        lineNumber: 1,
-        partNumber: 'GR-HEL-120',
-        description: 'Helical Gear Volume Discount / Rate Correction',
-        quantity: 1,
-        unitPriceInPaise: 12_000_00,
-        taxableAmountInPaise: 12_000_00,
-        taxRateBasisPoints: 1800,
-        cgstAmountInPaise: 1080_00,
-        sgstAmountInPaise: 1080_00,
-        igstAmountInPaise: 0,
-        lineTotalInPaise: 14_160_00,
-      },
-    ],
-  },
-];
 
 @Component({
   standalone: true,
@@ -244,9 +163,16 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
                 <span class="reason-text" [title]="dn.reason">{{ dn.reason }}</span>
               </ng-template>
             </e-column>
-            <e-column field="taxableAmountInPaise" headerText="Taxable" textAlign="Right" width="130">
+            <e-column
+              field="taxableAmountInPaise"
+              headerText="Taxable"
+              textAlign="Right"
+              width="130"
+            >
               <ng-template #template let-dn>
-                <span class="font-mono">₹{{ dn.taxableAmountInPaise / 100 | number: '1.2-2' }}</span>
+                <span class="font-mono"
+                  >₹{{ dn.taxableAmountInPaise / 100 | number: '1.2-2' }}</span
+                >
               </ng-template>
             </e-column>
             <e-column headerText="GST Total" textAlign="Right" width="130">
@@ -256,7 +182,12 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
                 </span>
               </ng-template>
             </e-column>
-            <e-column field="grandTotalInPaise" headerText="Grand Total" textAlign="Right" width="140">
+            <e-column
+              field="grandTotalInPaise"
+              headerText="Grand Total"
+              textAlign="Right"
+              width="140"
+            >
               <ng-template #template let-dn>
                 <strong class="text-good font-mono"
                   >₹{{ dn.grandTotalInPaise / 100 | number: '1.2-2' }}</strong
@@ -661,9 +592,7 @@ export class VendorDebitNotesComponent {
   /** Opened from Vendor 360 for one supplier: only theirs, and new records are for them. */
   protected readonly scope = signal<SupplierScope | null>(readSupplierScope());
   protected readonly loadError = signal<string | null>(null);
-  readonly allDebitNotes = signal<VendorDebitNoteDto[]>(
-    environment.useMockData ? MOCK_DEBIT_NOTES : [],
-  );
+  readonly allDebitNotes = signal<VendorDebitNoteDto[]>([]);
   readonly filterQuery = signal<string>('');
   readonly selectedStatus = signal<VendorDebitNoteStatus | null>(null);
 
@@ -739,17 +668,15 @@ export class VendorDebitNotesComponent {
   }
 
   loadData() {
-    if (!environment.useMockData) {
-      this.debitNoteService
-        .getList({ maxResultCount: 50, supplierId: this.scope()?.supplierId ?? undefined })
-        .subscribe({
-          next: (res) => {
-            this.allDebitNotes.set(res?.items ?? []);
-            this.loadError.set(null);
-          },
-          error: () => this.loadError.set('Debit notes could not be loaded.'),
-        });
-    }
+    this.debitNoteService
+      .getList({ maxResultCount: 50, supplierId: this.scope()?.supplierId ?? undefined })
+      .subscribe({
+        next: (res) => {
+          this.allDebitNotes.set(res?.items ?? []);
+          this.loadError.set(null);
+        },
+        error: () => this.loadError.set('Debit notes could not be loaded.'),
+      });
   }
 
   /** Older links (`?new=1`, `?grnId=`) open the Issue debit note page. */
@@ -767,10 +694,7 @@ export class VendorDebitNotesComponent {
   /** Settling closes an issued note: asked first, shown only once the API agrees. */
   async settleDebitNote(dn: VendorDebitNoteDto) {
     if (!dn.id || !(await this.confirm.confirm(settleConfirm(dn)))) return;
-    if (environment.useMockData) {
-      this.updateInState({ ...dn, status: VendorDebitNoteStatus.Settled });
-      return;
-    }
+
     this.issuing.set(dn.id);
     try {
       const saved = await firstValueFrom(
@@ -796,10 +720,7 @@ export class VendorDebitNotesComponent {
   /** Issues a draft to the supplier: shown as issued only once the API agrees. */
   async issueDebitNote(dn: VendorDebitNoteDto) {
     if (!dn.id || !(await this.confirm.confirm(issueConfirm(dn)))) return;
-    if (environment.useMockData) {
-      this.updateInState({ ...dn, status: VendorDebitNoteStatus.Issued });
-      return;
-    }
+
     this.issuing.set(dn.id);
     try {
       const saved = await firstValueFrom(

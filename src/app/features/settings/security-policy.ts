@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { readApiError } from '../../core/util/api-error';
 import { ConfirmService } from '../../core/ui/confirm.service';
@@ -256,7 +254,6 @@ export class ArSecurityPolicy {
   private readonly api = inject(SecurityPolicyService);
   private readonly permissions = inject(PermissionService);
   private readonly dialogs = inject(ConfirmService);
-  private readonly mock = environment.useMockData;
 
   protected readonly passwordChecks: readonly { key: Flag; label: string }[] = [
     { key: 'passwordRequireDigit', label: 'A digit (0–9)' },
@@ -282,7 +279,7 @@ export class ArSecurityPolicy {
   protected readonly example = computed(() => examplePassword(this.form()));
 
   constructor() {
-    if (!this.mock) void this.load();
+    void this.load();
   }
 
   private async load(): Promise<void> {

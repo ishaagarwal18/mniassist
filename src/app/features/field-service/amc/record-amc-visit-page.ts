@@ -2,13 +2,9 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
-import {
-  AmcContractService,
-  CompleteAmcVisitDto,
-} from '../../../proxy/field-service';
+import { AmcContractService, CompleteAmcVisitDto } from '../../../proxy/field-service';
 import { ArButton, ArCard } from '../../../ui';
 
 @Component({
@@ -20,9 +16,7 @@ import { ArButton, ArCard } from '../../../ui';
       title="Record Completed PM Visit"
       subtitle="Sign off scheduled preventive maintenance visit and log field engineer findings"
     >
-      <button ar-button="ghost" (click)="cancel()">
-        Back to AMC Contracts
-      </button>
+      <button ar-button="ghost" (click)="cancel()">Back to AMC Contracts</button>
     </ar-topbar>
 
     <div class="page-container ar-scroll">
@@ -30,7 +24,9 @@ import { ArButton, ArCard } from '../../../ui';
         <form class="visit-form" (submit)="$event.preventDefault(); submit()">
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Assigned Service Engineer <span class="required">*</span></label>
+              <label class="form-label"
+                >Assigned Service Engineer <span class="required">*</span></label
+              >
               <input
                 type="text"
                 class="ar-field__input"
@@ -43,7 +39,9 @@ import { ArButton, ArCard } from '../../../ui';
           </div>
 
           <div class="form-group full-width mt-3">
-            <label class="form-label">Inspection Notes & Maintenance Carried Out <span class="required">*</span></label>
+            <label class="form-label"
+              >Inspection Notes & Maintenance Carried Out <span class="required">*</span></label
+            >
             <textarea
               class="ar-field__input"
               rows="5"
@@ -53,7 +51,8 @@ import { ArButton, ArCard } from '../../../ui';
               name="visitNotes"
             ></textarea>
             <span class="ar-field__hint">
-              This log is saved to the machine's maintenance history and attached to the customer service report.
+              This log is saved to the machine's maintenance history and attached to the customer
+              service report.
             </span>
           </div>
 
@@ -62,13 +61,15 @@ import { ArButton, ArCard } from '../../../ui';
           }
 
           <div class="form-actions">
-            <button ar-button="ghost" type="button" (click)="cancel()">
-              Cancel
-            </button>
+            <button ar-button="ghost" type="button" (click)="cancel()">Cancel</button>
             <button
               ar-button="primary"
               type="submit"
-              [disabled]="busy() || !visitCompletion.assignedEngineer?.trim() || !visitCompletion.visitNotes?.trim()"
+              [disabled]="
+                busy() ||
+                !visitCompletion.assignedEngineer?.trim() ||
+                !visitCompletion.visitNotes?.trim()
+              "
             >
               {{ busy() ? 'Recording visit…' : 'Confirm & Close PM Visit' }}
             </button>
@@ -155,14 +156,18 @@ export class ArRecordAmcVisitPage implements OnInit {
   submit(): void {
     const cId = this.contractId();
     const vId = this.visitId();
-    if (!this.visitCompletion.assignedEngineer?.trim() || !this.visitCompletion.visitNotes?.trim() || this.busy()) {
+    if (
+      !this.visitCompletion.assignedEngineer?.trim() ||
+      !this.visitCompletion.visitNotes?.trim() ||
+      this.busy()
+    ) {
       return;
     }
     this.visitCompletion.scheduleId = vId;
     this.busy.set(true);
     this.error.set(null);
 
-    if (!environment.useMockData && cId && vId) {
+    if (cId && vId) {
       this.amcService.completeVisit(cId, this.visitCompletion).subscribe({
         next: () => {
           this.busy.set(false);

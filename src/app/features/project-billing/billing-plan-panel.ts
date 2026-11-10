@@ -30,7 +30,6 @@ import {
   RetentionReleaseCondition,
 } from '../../proxy/project-billing/retention.service';
 import { ArButton, ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import {
   MilestoneRow,
   STATUS_TEXT,
@@ -121,7 +120,7 @@ export class ArBillingPlanPanel {
   constructor() {
     effect(() => {
       const id = this.orderId();
-      if (!environment.useMockData && this.canSee()) void this.load(id);
+      if (this.canSee()) void this.load(id);
     });
   }
 

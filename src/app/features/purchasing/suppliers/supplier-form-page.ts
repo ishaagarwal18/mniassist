@@ -2,8 +2,6 @@ import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../../environments/environment';
 import { checkPolicy } from '../../../core/auth/permission';
 import { ToastService } from '../../../core/ui/toast.service';
 import { readApiError } from '../../../core/util/api-error';
@@ -445,7 +443,7 @@ export class ArSupplierFormPage {
   protected readonly id = this.route.snapshot.paramMap.get('id');
 
   protected readonly form = signal<SupplierForm>(supplierForm());
-  protected readonly loading = signal(!!this.id && !environment.useMockData);
+  protected readonly loading = signal(!!this.id);
   protected readonly notFound = signal(false);
   private readonly submitted = signal(false);
   protected readonly errors = computed(() =>
@@ -455,7 +453,7 @@ export class ArSupplierFormPage {
   protected readonly saveError = signal<string | null>(null);
 
   constructor() {
-    if (this.id && this.canManage && !environment.useMockData) void this.load(this.id);
+    if (this.id && this.canManage) void this.load(this.id);
   }
 
   private async load(id: string): Promise<void> {
@@ -502,14 +500,12 @@ export class ArSupplierFormPage {
     const input = toSaveSupplierInput(this.form());
     this.busy.set(true);
     try {
-      if (!environment.useMockData) {
-        const quiet = { skipHandleError: true };
-        await firstValueFrom(
-          this.id
-            ? this.api.updateSupplier(this.id, input, quiet)
-            : this.api.createSupplier(input, quiet),
-        );
-      }
+      const quiet = { skipHandleError: true };
+      await firstValueFrom(
+        this.id
+          ? this.api.updateSupplier(this.id, input, quiet)
+          : this.api.createSupplier(input, quiet),
+      );
       this.toasts.success(
         input.isBlacklisted
           ? `${input.name} saved and blacklisted.`

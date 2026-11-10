@@ -1,8 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { FieldDayDto, FieldServiceService } from '../../proxy/support/field-service.service';
 import { FieldOp, LocalVisit, daySummary, enqueue, retryable } from './field-logic';
 
@@ -125,7 +123,7 @@ export class FieldStore {
 
   /** Sends the outbox in order, then refreshes today's jobs. Safe to call any time. */
   async sync(): Promise<void> {
-    if (this.syncing() || environment.useMockData) return;
+    if (this.syncing()) return;
     this.syncing.set(true);
     try {
       while (this.outbox().length > 0 && navigator.onLine) {

@@ -4,16 +4,11 @@
   help="One entry per make, series and code: what it means, its likely causes in order, the first checks with who may do each, and a safety note. Only approved entries are used to answer customers; drafts are for review. A code that stops the machine needs a safety note before it can be approved."
 >
   @if (canManage()) {
-    <button ar-button type="button" icon="plus" [disabled]="mock" (click)="openNew()">
-      New code
-    </button>
+    <button ar-button type="button" icon="plus" (click)="openNew()">New code</button>
   }
 </ar-topbar>
 
 <div class="fc ar-scroll">
-  @if (mock) {
-    <ar-banner tone="teal">The fault-code library needs the live API.</ar-banner>
-  }
   @if (error(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }

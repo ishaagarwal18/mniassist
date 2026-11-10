@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -46,7 +45,10 @@ import { ArButton, ArCard } from '../../../ui';
                 [(ngModel)]="accountCode"
                 name="accountCode"
               />
-              <span class="ar-field__hint">Unique 4-digit numeric ledger code (1xxx Asset, 2xxx Liability, 3xxx Equity, 4xxx Revenue, 5/6xxx Expense).</span>
+              <span class="ar-field__hint"
+                >Unique 4-digit numeric ledger code (1xxx Asset, 2xxx Liability, 3xxx Equity, 4xxx
+                Revenue, 5/6xxx Expense).</span
+              >
             </label>
 
             <label class="ar-field">
@@ -59,7 +61,9 @@ import { ArButton, ArCard } from '../../../ui';
                 [(ngModel)]="accountName"
                 name="accountName"
               />
-              <span class="ar-field__hint">Full ledger title as shown in financial statements and audit trail.</span>
+              <span class="ar-field__hint"
+                >Full ledger title as shown in financial statements and audit trail.</span
+              >
             </label>
 
             <label class="ar-field">
@@ -82,30 +86,52 @@ import { ArButton, ArCard } from '../../../ui';
               <span class="ar-field__label">Sub-Category <span class="required">*</span></span>
               <select class="ar-field__input" [(ngModel)]="subCategory" name="subCategory">
                 <option [ngValue]="AccountSubCategory.BankAndCash">Bank and Cash</option>
-                <option [ngValue]="AccountSubCategory.AccountsReceivable">Accounts Receivable (Sundry Debtors)</option>
-                <option [ngValue]="AccountSubCategory.Inventory">Inventory (Raw, WIP, Finished)</option>
+                <option [ngValue]="AccountSubCategory.AccountsReceivable">
+                  Accounts Receivable (Sundry Debtors)
+                </option>
+                <option [ngValue]="AccountSubCategory.Inventory">
+                  Inventory (Raw, WIP, Finished)
+                </option>
                 <option [ngValue]="AccountSubCategory.CurrentAsset">Current Asset</option>
-                <option [ngValue]="AccountSubCategory.NonCurrentAsset">Non-Current / Fixed Plant Asset</option>
-                <option [ngValue]="AccountSubCategory.AccountsPayable">Accounts Payable (Sundry Creditors)</option>
-                <option [ngValue]="AccountSubCategory.DutiesAndTaxes">Duties and Taxes (GST / TDS)</option>
+                <option [ngValue]="AccountSubCategory.NonCurrentAsset">
+                  Non-Current / Fixed Plant Asset
+                </option>
+                <option [ngValue]="AccountSubCategory.AccountsPayable">
+                  Accounts Payable (Sundry Creditors)
+                </option>
+                <option [ngValue]="AccountSubCategory.DutiesAndTaxes">
+                  Duties and Taxes (GST / TDS)
+                </option>
                 <option [ngValue]="AccountSubCategory.CurrentLiability">Current Liability</option>
-                <option [ngValue]="AccountSubCategory.NonCurrentLiability">Term Borrowing / Loan</option>
+                <option [ngValue]="AccountSubCategory.NonCurrentLiability">
+                  Term Borrowing / Loan
+                </option>
                 <option [ngValue]="AccountSubCategory.ShareCapital">Share Capital</option>
-                <option [ngValue]="AccountSubCategory.RetainedEarnings">Retained Earnings & Reserves</option>
+                <option [ngValue]="AccountSubCategory.RetainedEarnings">
+                  Retained Earnings & Reserves
+                </option>
                 <option [ngValue]="AccountSubCategory.OperatingRevenue">Operating Revenue</option>
                 <option [ngValue]="AccountSubCategory.OtherIncome">Other Income</option>
-                <option [ngValue]="AccountSubCategory.CostOfGoodsSold">Cost of Goods Sold (COGS)</option>
+                <option [ngValue]="AccountSubCategory.CostOfGoodsSold">
+                  Cost of Goods Sold (COGS)
+                </option>
                 <option [ngValue]="AccountSubCategory.OperatingExpense">Operating Expense</option>
-                <option [ngValue]="AccountSubCategory.DepreciationAndAmortization">Depreciation & Amortization</option>
+                <option [ngValue]="AccountSubCategory.DepreciationAndAmortization">
+                  Depreciation & Amortization
+                </option>
                 <option [ngValue]="AccountSubCategory.TaxExpense">Tax Expense</option>
               </select>
             </label>
 
             <label class="ar-field">
-              <span class="ar-field__label">Normal Balance Nature <span class="required">*</span></span>
+              <span class="ar-field__label"
+                >Normal Balance Nature <span class="required">*</span></span
+              >
               <select class="ar-field__input" [(ngModel)]="normalBalance" name="normalBalance">
                 <option [ngValue]="BalanceNature.Debit">Debit (Dr) — Increases with debits</option>
-                <option [ngValue]="BalanceNature.Credit">Credit (Cr) — Increases with credits</option>
+                <option [ngValue]="BalanceNature.Credit">
+                  Credit (Cr) — Increases with credits
+                </option>
               </select>
             </label>
 
@@ -118,7 +144,9 @@ import { ArButton, ArCard } from '../../../ui';
                 [(ngModel)]="openingBalanceInRupees"
                 name="openingBalance"
               />
-              <span class="ar-field__hint">Carried-forward opening ledger balance at fiscal year start.</span>
+              <span class="ar-field__hint"
+                >Carried-forward opening ledger balance at fiscal year start.</span
+              >
             </label>
 
             <label class="ar-field full-width">
@@ -219,10 +247,7 @@ export class ArNewAccountPage {
   protected readonly error = signal<string | null>(null);
 
   onCategoryChange(): void {
-    if (
-      this.category === AccountCategory.Asset ||
-      this.category === AccountCategory.Expense
-    ) {
+    if (this.category === AccountCategory.Asset || this.category === AccountCategory.Expense) {
       this.normalBalance = BalanceNature.Debit;
     } else {
       this.normalBalance = BalanceNature.Credit;
@@ -248,13 +273,6 @@ export class ArNewAccountPage {
       openingBalanceInPaise: Math.round((Number(this.openingBalanceInRupees) || 0) * 100),
       description: this.description.trim() || undefined,
     };
-
-    if (environment.useMockData) {
-      this.busy.set(false);
-      this.toasts.success(`Account ${input.accountCode} (${input.accountName}) added.`);
-      void this.router.navigateByUrl('/finance/chart-of-accounts');
-      return;
-    }
 
     this.coaService.create(input).subscribe({
       next: (created) => {

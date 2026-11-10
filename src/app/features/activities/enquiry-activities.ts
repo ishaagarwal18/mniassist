@@ -13,7 +13,7 @@ import { CrmTaskDto, CrmTaskStatus, MeetingDto, MeetingStatus } from '../../prox
 import { ArButton } from '../../ui';
 import { ActivityDirectory } from './activity-directory';
 import { addDays, dueLabel, errorMessage, timeRange } from './activity-logic';
-import { ActivityGateway } from './activity-mock';
+import { ActivityGateway } from './activity-gateway';
 import { ArMeetingDialog } from './meeting-dialog';
 import { ArTaskDialog } from './task-dialog';
 

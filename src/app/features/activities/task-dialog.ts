@@ -23,7 +23,7 @@ import { ArButton, ArDialog } from '../../ui';
 import { ArDateInput } from '../../ui/date-input';
 import { ArSelect } from '../../ui/select';
 import { ActivityDirectory } from './activity-directory';
-import { ActivityGateway } from './activity-mock';
+import { ActivityGateway } from './activity-gateway';
 import {
   PRIORITY_LABEL,
   errorMessage,

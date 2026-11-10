@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { PermissionService } from '@abp/ng.core';
-import { environment } from '../../../environments/environment';
 import { isHostAdministrator } from './host-access';
 
 /**
@@ -16,7 +15,7 @@ export class AutoReachPermissionService extends PermissionService {
     name: string | undefined,
     grants: Record<string, boolean>,
   ): boolean {
-    if (!name || environment.useMockData) {
+    if (!name) {
       return true;
     }
     if (isHostAdministrator(this.configState.getAll())) {

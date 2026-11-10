@@ -22,7 +22,6 @@ import {
   SaveFaultCodeInput,
 } from '../../proxy/support/fault-code.service';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { savePdf } from '../pipeline/machine/machine-qr.logic';
 import {
   CSV_TEMPLATE,
@@ -66,7 +65,6 @@ export class ArFaultCodesPage {
   private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly canManage = grantedPolicy('AutoReach.FaultCodes.Manage', this.permissions);
 
   protected readonly tab = signal<Tab>('library');
@@ -133,7 +131,6 @@ export class ArFaultCodesPage {
   }
 
   protected async load(): Promise<void> {
-    if (this.mock) return;
     try {
       const page = await firstValueFrom(
         this.api.getList({
@@ -152,7 +149,7 @@ export class ArFaultCodesPage {
 
   protected async show(tab: Tab): Promise<void> {
     this.tab.set(tab);
-    if (this.mock) return;
+
     try {
       if (tab === 'proposals') this.proposals.set(await firstValueFrom(this.api.getProposals()));
       if (tab === 'manual') {

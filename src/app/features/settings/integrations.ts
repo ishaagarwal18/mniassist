@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
@@ -13,7 +20,6 @@ import {
   CrmSyncService,
   IntegrationService,
 } from '../../proxy/integrations';
-import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
 import { ArTabs } from '../../ui/tabs';
@@ -100,29 +106,6 @@ const CONTACT_FIELDS: MappableField[] = [
   },
 ];
 
-const SEED_CRM: CrmSyncConnectionStatusDto[] = [
-  {
-    connectionId: 'crm-zoho',
-    kind: 2,
-    name: 'Zoho CRM — Sales',
-    state: 1,
-    supportsDealSync: true,
-    supportsContactSync: true,
-    linkedEnquiries: 34,
-    linkedQuotations: 12,
-    linkedContacts: 29,
-    supportsTimelineSync: true,
-    timelineEnabled: true,
-    supportsAccountSync: true,
-    accountsEnabled: true,
-    linkedAccounts: 8,
-    loggedMessages: 212,
-    lastOutboundAtUtc: new Date(Date.now() - 26 * 60_000).toISOString(),
-    lastInboundAtUtc: new Date(Date.now() - 3 * 3_600_000).toISOString(),
-    inboundWebhookPath: '/api/webhooks/crm/crm-zoho?secret=••••••',
-  },
-];
-
 const DELIVERY_TONE: Record<string, ChipTone> = {
   delivered: 'good',
   pending: 'neutral',
@@ -169,7 +152,12 @@ export class ArIntegrations {
   protected readonly mode = (this.route?.snapshot?.data?.['mode'] as string | undefined) ?? 'list';
   protected readonly isPage = this.mode !== 'list';
 
-  protected readonly tabs = ['Webhooks', 'CRM sync', 'ERP (Tally / SAP)', 'Helpdesk & store'] as const;
+  protected readonly tabs = [
+    'Webhooks',
+    'CRM sync',
+    'ERP (Tally / SAP)',
+    'Helpdesk & store',
+  ] as const;
   protected readonly activeTab = signal<string>('Webhooks');
 
   protected readonly pageTitle = computed(() => {
@@ -183,19 +171,12 @@ export class ArIntegrations {
 
   protected readonly webhooks = this.ops.webhooks;
   protected readonly deliveries = this.ops.deliveries;
-  protected readonly selectedId = signal<string | null>('wh-1');
+  protected readonly selectedId = signal<string | null>(null);
 
   // ---- CRM two-way sync (M10-9) -----------------------------------
   protected readonly crm = signal<CrmSyncConnectionStatusDto[]>([]);
   protected readonly crmError = signal<string | null>(null);
   protected readonly resyncing = signal<string | null>(null);
-
-  // ---- Field mapping / currency dialog ------------------------------
-  // configJson already carries "fieldMapping"/"currency" on the real API (see
-  // CrmFieldMapping.cs) — this just gives a tenant a form instead of hand-editing
-  // JSON. Mock mode has no backing connection row, so edits there live only in
-  // this in-memory map for the length of the session.
-  private readonly mockConfig = new Map<string, Record<string, unknown>>();
   protected readonly mappingConnection = signal<CrmSyncConnectionStatusDto | null>(null);
   protected readonly mappingLoading = signal(false);
   protected readonly mappingSaving = signal(false);
@@ -243,7 +224,11 @@ export class ArIntegrations {
       if (this.mode === 'mapping') {
         const id = this.route?.snapshot?.paramMap?.get('id');
         const conn = this.crm().find((c) => c.connectionId === id);
-        if (conn && (!this.mappingConnection() || this.mappingConnection()?.connectionId !== conn.connectionId)) {
+        if (
+          conn &&
+          (!this.mappingConnection() ||
+            this.mappingConnection()?.connectionId !== conn.connectionId)
+        ) {
           void this.openMapping(conn);
         }
       }
@@ -256,7 +241,8 @@ export class ArIntegrations {
   }
 
   protected goMapping(c: CrmSyncConnectionStatusDto): void {
-    if (this.router) void this.router.navigate(['/settings/integrations/crm', c.connectionId, 'mapping']);
+    if (this.router)
+      void this.router.navigate(['/settings/integrations/crm', c.connectionId, 'mapping']);
     else void this.openMapping(c);
   }
 
@@ -304,14 +290,6 @@ export class ArIntegrations {
    * whose refresh token has died; omitted, this creates a new one.
    */
   protected async startOAuth(kind: SyncableKind, connectionId?: string): Promise<void> {
-    if (environment.useMockData) {
-      this.oAuthBanner.set({
-        tone: 'bad',
-        message: 'The OAuth connect flow needs the real API — not available against mock data.',
-      });
-      return;
-    }
-
     this.oAuthStarting.set(kind);
     this.crmError.set(null);
     try {
@@ -327,15 +305,11 @@ export class ArIntegrations {
   }
 
   private async loadCrm(): Promise<void> {
-    if (environment.useMockData) {
-      this.crm.set(SEED_CRM);
-      return;
-    }
     try {
       const status = await firstValueFrom(this.crmSync.getStatus());
-      this.crm.set(status.connections && status.connections.length > 0 ? status.connections : SEED_CRM);
+      this.crm.set(status.connections ?? []);
     } catch {
-      this.crm.set(SEED_CRM);
+      this.crmError.set('Could not load CRM sync status.');
     }
   }
 
@@ -372,11 +346,9 @@ export class ArIntegrations {
     this.mappingLoading.set(true);
 
     try {
-      const config = environment.useMockData
-        ? (this.mockConfig.get(connection.connectionId) ?? {})
-        : this.parseConfig(
-            (await firstValueFrom(this.integrations.get(connection.connectionId))).configJson,
-          );
+      const config = this.parseConfig(
+        (await firstValueFrom(this.integrations.get(connection.connectionId))).configJson,
+      );
 
       this.mappingCurrency.set(
         typeof config['currency'] === 'string' ? (config['currency'] as string) : '',
@@ -420,11 +392,9 @@ export class ArIntegrations {
     this.mappingError.set(null);
 
     try {
-      const config = environment.useMockData
-        ? { ...(this.mockConfig.get(connection.connectionId) ?? {}) }
-        : this.parseConfig(
-            (await firstValueFrom(this.integrations.get(connection.connectionId))).configJson,
-          );
+      const config = this.parseConfig(
+        (await firstValueFrom(this.integrations.get(connection.connectionId))).configJson,
+      );
 
       const currency = this.mappingCurrency().trim();
       if (currency) {
@@ -456,21 +426,17 @@ export class ArIntegrations {
         delete config['fieldMapping'];
       }
 
-      if (environment.useMockData) {
-        this.mockConfig.set(connection.connectionId, config);
-      } else {
-        const current = await firstValueFrom(this.integrations.get(connection.connectionId));
-        await firstValueFrom(
-          this.integrations.update(connection.connectionId, {
-            kind: current.kind,
-            name: current.name ?? connection.name,
-            configJson: JSON.stringify(config),
-            // A blank credential tells the API "leave the stored one alone" — see
-            // IntegrationAppService.UpdateAsync.
-            credential: null,
-          }),
-        );
-      }
+      const current = await firstValueFrom(this.integrations.get(connection.connectionId));
+      await firstValueFrom(
+        this.integrations.update(connection.connectionId, {
+          kind: current.kind,
+          name: current.name ?? connection.name,
+          configJson: JSON.stringify(config),
+          // A blank credential tells the API "leave the stored one alone" — see
+          // IntegrationAppService.UpdateAsync.
+          credential: null,
+        }),
+      );
 
       this.closeMapping();
     } catch (e: unknown) {
@@ -571,14 +537,11 @@ export class ArIntegrations {
     return off === 0 ? `${label} · all healthy` : `${label} · ${off} disabled`;
   });
 
-  protected readonly relevantDeliveries = computed(() => {
-    const id = this.selected()?.id;
-    // The seeded deliveries are per-endpoint in the real API; in mock mode the
-    // abandoned ones belong to the failing endpoint and the delivered ones do not.
-    return id === 'wh-1'
-      ? this.deliveries().filter((d) => d.state === 'abandoned')
-      : this.deliveries().filter((d) => d.state !== 'abandoned');
-  });
+  /** The selected endpoint's recent deliveries, read from the server. */
+  protected readonly relevantDeliveries = this.deliveries;
+  private readonly followSelection = effect(() =>
+    this.ops.deliveryEndpoint.set(this.selected()?.id ?? null),
+  );
 
   /** Grid rows: plain values to sort, filter and export by. */
   protected readonly deliveryRows = computed(() =>

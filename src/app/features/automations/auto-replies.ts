@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { readApiError } from '../../core/util/api-error';
 import { AutoReplyService } from '../../proxy/messaging/auto-reply.service';
@@ -471,7 +469,6 @@ export class ArAutoReplies {
   private readonly api = inject(AutoReplyService);
   private readonly csatApi = inject(CsatService);
   private readonly permissions = inject(PermissionService);
-  private readonly mock = environment.useMockData;
 
   protected readonly week = WEEK;
   protected readonly canManage = grantedPolicy('AutoReach.Automations.Update', this.permissions);
@@ -499,7 +496,7 @@ export class ArAutoReplies {
   });
 
   constructor() {
-    if (!this.mock) void this.load();
+    void this.load();
   }
 
   private async load(): Promise<void> {

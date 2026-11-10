@@ -1,8 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, map } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { ContactDto } from '../../proxy/contacts';
 import { SegmentDto, SegmentPreviewDto, SegmentService } from '../../proxy/contacts';
 import { ContactLifecycle } from '../../proxy/contacts/contact-lifecycle.enum';
@@ -19,8 +17,6 @@ import {
   addClauseAt,
   addGroupAt,
   removeNodeAt,
-  ruleFromJson,
-  ruleToJson,
   audienceFromJson,
   audienceToJson,
   PickedContact,
@@ -52,132 +48,6 @@ const EMPTY_PREVIEW: SegmentPreview = {
   cost: [],
   sample: [],
 };
-
-/**
- * A worked example so the builder is reviewable with `useMockData` on: quoted-and-
- * lapsed AMC accounts, roughly the "chase the expired quotes" list. The numbers are a
- * fixed snapshot — the live recount runs server-side once the API is bound.
- */
-const SEED_RULE: SegmentGroup = {
-  mode: 'all',
-  children: [
-    { field: 'tag', op: 'eq', value: 'amc' },
-    {
-      mode: 'any',
-      children: [
-        { field: 'quotationState', op: 'eq', value: 'Expired' },
-        { field: 'campaignResponse', op: 'lte', value: 'Delivered' },
-      ],
-    },
-  ],
-};
-
-const SEED_PREVIEW: SegmentPreview = {
-  totalMatching: 6,
-  marketingEligible: 4,
-  utilityEligible: 6,
-  optedOut: 1,
-  suppressed: 2,
-  insideServiceWindow: 1,
-  matchesEveryone: false,
-  problems: [],
-  cost: [
-    {
-      category: 'Marketing',
-      recipients: 4,
-      rateInPaise: 86.31,
-      estimatedTotalInPaise: 345,
-      exceedsWalletBalance: false,
-    },
-    {
-      category: 'Utility',
-      recipients: 6,
-      rateInPaise: 11.5,
-      estimatedTotalInPaise: 69,
-      exceedsWalletBalance: false,
-    },
-    {
-      category: 'Authentication',
-      recipients: 6,
-      rateInPaise: 12.8,
-      estimatedTotalInPaise: 77,
-      exceedsWalletBalance: false,
-    },
-  ],
-  sample: [
-    {
-      id: 'c1',
-      name: 'Rakesh Mehta',
-      company: 'Aurus Pharma',
-      designation: 'Sr. Manager, Projects',
-      city: 'Vapi',
-      lifecycle: 'Quoted',
-      quotationState: 'Expired',
-      lastCampaignResponse: 'Read',
-      canReceiveMarketing: true,
-      suppression: 'None',
-    },
-    {
-      id: 'c4',
-      name: 'Imran Shaikh',
-      company: 'Kohinoor Textiles',
-      designation: 'Maintenance In-charge',
-      city: 'Bhiwandi',
-      lifecycle: 'Quoted',
-      quotationState: 'Issued',
-      lastCampaignResponse: 'Delivered',
-      canReceiveMarketing: true,
-      suppression: 'None',
-    },
-    {
-      id: 'c7',
-      name: 'Deepa Rao',
-      company: 'Nutriva Foods',
-      designation: 'QA Manager',
-      city: 'Hubli',
-      lifecycle: 'Dormant',
-      quotationState: 'Lost',
-      lastCampaignResponse: 'Delivered',
-      canReceiveMarketing: false,
-      suppression: 'OptedOut',
-    },
-  ],
-};
-
-let SEED_SAVED: SavedSegment[] = [
-  {
-    id: 's1',
-    name: 'Lapsed quotes — AMC accounts',
-    description: 'Quoted, past validity, no decision. The follow-up list.',
-    rule: SEED_RULE,
-    cachedMemberCount: 6,
-    isCountStale: false,
-    lastEvaluatedAt: new Date().toISOString(),
-  },
-  {
-    id: 's2',
-    name: 'Siemens plants in Gujarat',
-    rule: {
-      mode: 'all',
-      children: [
-        { field: 'state', op: 'eq', value: 'Gujarat' },
-        { field: 'attr:plc_platform', op: 'eq', value: 'Siemens' },
-      ],
-    },
-    cachedMemberCount: 2,
-    isCountStale: true,
-    lastEvaluatedAt: new Date(Date.now() - 6 * 86_400_000).toISOString(),
-  },
-  {
-    id: 's3',
-    name: 'Never replied, not over-messaged',
-    description: 'Delivered but never engaged.',
-    rule: { mode: 'all', children: [{ field: 'campaignResponse', op: 'lte', value: 'Delivered' }] },
-    cachedMemberCount: 4,
-    isCountStale: true,
-    lastEvaluatedAt: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-  },
-];
 
 function enumName(map: Record<number, string>, value: number | undefined): string {
   return value != null ? (map[value] ?? 'Unknown') : 'Unknown';
@@ -241,9 +111,6 @@ function toSaved(dto: SegmentDto): SavedSegment {
  * The audience-builder store. Holds the rule the editor is working on, and keeps a
  * live preview beside it — every edit re-serialises the tree and re-asks the server
  * for the counts and the cost, which is the point of the screen.
- *
- * With `useMockData` on the preview is a fixed snapshot: the recount is a server job
- * and cannot be faked honestly in the browser.
  */
 @Injectable({ providedIn: 'root' })
 export class SegmentStore {
@@ -251,13 +118,13 @@ export class SegmentStore {
   private readonly walletApi = inject(WalletService);
 
   readonly fields = SEGMENT_FIELDS;
-  readonly rule = signal<SegmentGroup>(environment.useMockData ? SEED_RULE : EMPTY_RULE);
+  readonly rule = signal<SegmentGroup>(EMPTY_RULE);
   /** Contacts added by hand: in the audience whatever the rule says. */
   readonly picked = signal<readonly PickedContact[]>([]);
   private readonly ruleJson = computed(() => audienceToJson(this.rule(), this.picked()));
 
   private readonly previewResource = rxResource({
-    params: () => (environment.useMockData ? undefined : { ruleJson: this.ruleJson() }),
+    params: () => ({ ruleJson: this.ruleJson() }),
     stream: ({ params }) =>
       this.api
         .preview({ name: '__preview__', ruleJson: params.ruleJson, isDynamic: true })
@@ -266,7 +133,7 @@ export class SegmentStore {
   });
 
   private readonly savedResource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.reloadTick() }),
+    params: () => ({ tick: this.reloadTick() }),
     stream: () =>
       this.api
         .getList({ skipCount: 0, maxResultCount: 100 })
@@ -275,26 +142,22 @@ export class SegmentStore {
   });
 
   private readonly walletResource = rxResource({
-    params: () => (environment.useMockData ? undefined : {}),
+    params: () => ({}),
     stream: () => this.walletApi.get().pipe(map((w) => w.balanceInPaise ?? 0)),
     defaultValue: 3_41_000,
   });
 
   private readonly reloadTick = signal(0);
 
-  readonly loading = computed(() => !environment.useMockData && this.previewResource.isLoading());
+  readonly loading = computed(() => this.previewResource.isLoading());
 
-  readonly preview = computed<SegmentPreview>(() =>
-    environment.useMockData ? SEED_PREVIEW : settled(this.previewResource, EMPTY_PREVIEW),
-  );
+  readonly preview = computed<SegmentPreview>(() => settled(this.previewResource, EMPTY_PREVIEW));
 
   readonly savedSegments = computed<readonly SavedSegment[]>(() =>
-    environment.useMockData ? SEED_SAVED : settled(this.savedResource, [] as SavedSegment[]),
+    settled(this.savedResource, [] as SavedSegment[]),
   );
 
-  readonly walletBalanceInPaise = computed(() =>
-    environment.useMockData ? 3_41_000 : settled(this.walletResource, 3_41_000),
-  );
+  readonly walletBalanceInPaise = computed(() => settled(this.walletResource, 3_41_000));
 
   // ---- Rule editing -------------------------------------------------------
 
@@ -336,20 +199,6 @@ export class SegmentStore {
   // ---- Persistence -------------------------------------------------------
 
   async save(name: string, description: string | undefined): Promise<void> {
-    if (environment.useMockData) {
-      const newSeg: SavedSegment = {
-        id: `s-${Date.now()}`,
-        name: name.trim(),
-        description: description?.trim(),
-        rule: this.rule(),
-        picked: this.picked(),
-        cachedMemberCount: this.preview().totalMatching,
-        isCountStale: false,
-      };
-      SEED_SAVED.unshift(newSeg);
-      this.reloadTick.update((n) => n + 1);
-      return;
-    }
     await firstValueFrom(
       this.api.create({
         name: name.trim(),
@@ -362,20 +211,6 @@ export class SegmentStore {
   }
 
   async update(id: string, name: string, description: string | undefined): Promise<void> {
-    if (environment.useMockData) {
-      const idx = SEED_SAVED.findIndex((s) => s.id === id);
-      if (idx !== -1) {
-        SEED_SAVED[idx] = {
-          ...SEED_SAVED[idx],
-          name: name.trim(),
-          description: description?.trim(),
-          rule: this.rule(),
-          cachedMemberCount: this.preview().totalMatching,
-        };
-      }
-      this.reloadTick.update((n) => n + 1);
-      return;
-    }
     await firstValueFrom(
       this.api.update(id, {
         name: name.trim(),
@@ -388,12 +223,6 @@ export class SegmentStore {
   }
 
   async remove(id: string): Promise<void> {
-    if (environment.useMockData) {
-      const idx = SEED_SAVED.findIndex((s) => s.id === id);
-      if (idx !== -1) SEED_SAVED.splice(idx, 1);
-      this.reloadTick.update((n) => n + 1);
-      return;
-    }
     await firstValueFrom(this.api.delete(id));
     this.reloadTick.update((n) => n + 1);
   }

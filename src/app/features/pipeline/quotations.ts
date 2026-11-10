@@ -19,7 +19,6 @@ import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
-import { environment } from '../../../environments/environment';
 import {
   QuotationSignatureService,
   QuotationSignatureSummaryDto,
@@ -75,7 +74,7 @@ export class ArQuotations {
 
   // ---- Signatures ------------------------------------------------------
   /** Signing needs the live API: a link has to be something a customer can open. */
-  protected readonly signingAvailable = !environment.useMockData;
+  protected readonly signingAvailable = true;
   protected readonly signatureStatus = signal<ReadonlyMap<string, QuotationSignatureSummaryDto>>(
     new Map(),
   );

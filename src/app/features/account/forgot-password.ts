@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { AccountRecoveryService } from '../../proxy/identity/account-recovery.service';
 import { ArButton } from '../../ui';
 
@@ -48,7 +46,7 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
             >, an email is on its way. It can take a minute — check your spam folder too.
           </p>
         } @else {
-          @if (mode() === 'password' && !mock) {
+          @if (mode() === 'password') {
             <label class="rc__field">
               <span>Workspace <em class="rc__opt">— leave blank for the host</em></span>
               <input
@@ -86,11 +84,10 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
 
         <div class="rc__links">
           <a routerLink="/login">Back to sign in</a>
-          @if (!mock) {
-            <button type="button" class="rc__linkbtn" (click)="switchMode()">
-              {{ mode() === 'password' ? 'Forgot your workspace?' : 'Reset a password instead' }}
-            </button>
-          }
+
+          <button type="button" class="rc__linkbtn" (click)="switchMode()">
+            {{ mode() === 'password' ? 'Forgot your workspace?' : 'Reset a password instead' }}
+          </button>
         </div>
       </form>
     </div>
@@ -99,7 +96,6 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
 export class ArForgotPassword {
   private readonly recovery = inject(AccountRecoveryService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly mode = signal<Mode>('password');
   protected readonly workspace = signal('');
   protected readonly email = signal('');
@@ -121,17 +117,15 @@ export class ArForgotPassword {
     this.busy.set(true);
     this.error.set(null);
     try {
-      if (!this.mock) {
-        const email = this.email().trim();
-        await firstValueFrom(
-          this.mode() === 'password'
-            ? this.recovery.forgotPassword({
-                workspace: workspaceSlug(this.workspace()) || null,
-                email,
-              })
-            : this.recovery.forgotWorkspace({ email }),
-        );
-      }
+      const email = this.email().trim();
+      await firstValueFrom(
+        this.mode() === 'password'
+          ? this.recovery.forgotPassword({
+              workspace: workspaceSlug(this.workspace()) || null,
+              email,
+            })
+          : this.recovery.forgotWorkspace({ email }),
+      );
       this.sent.set(true);
     } catch (e: unknown) {
       this.error.set(

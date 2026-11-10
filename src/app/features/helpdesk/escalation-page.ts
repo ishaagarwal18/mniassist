@@ -16,7 +16,6 @@ import {
   SaveEscalationPolicyInput,
 } from '../../proxy/support/escalation.service';
 import { ArBanner, ArButton, ArCard } from '../../ui';
-import { environment } from '../../../environments/environment';
 import {
   ACTION_FIELDS,
   APPLIES_TO_TEXT,
@@ -69,7 +68,6 @@ export class ArEscalationPage {
   private readonly api = inject(EscalationPolicyService);
   private readonly toasts = inject(ToastService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly drafts = signal<Draft[]>([]);
   protected readonly people = signal<EscalationPersonDto[]>([]);
   protected readonly error = signal<string | null>(null);
@@ -100,7 +98,6 @@ export class ArEscalationPage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       const [list, people] = await Promise.all([
         firstValueFrom(this.api.getList()),

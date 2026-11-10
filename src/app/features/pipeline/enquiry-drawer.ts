@@ -1,4 +1,3 @@
-import { environment } from '../../../environments/environment';
 import {
   CompetitorBrandDto,
   CompetitorBrandService,
@@ -821,7 +820,7 @@ export class ArEnquiryDrawer {
   /** Opens the lost box; the competitor brands are fetched the first time it opens. */
   protected toggleLosing(): void {
     this.losing.set(!this.losing());
-    if (this.losing() && !this.brands().length && !environment.useMockData) {
+    if (this.losing() && !this.brands().length) {
       this.brandsApi
         .getActive()
         .subscribe({ next: (b) => this.brands.set(b), error: () => undefined });

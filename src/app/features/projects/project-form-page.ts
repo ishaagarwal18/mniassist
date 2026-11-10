@@ -11,7 +11,6 @@ import {
   SaveProjectInput,
 } from '../../proxy/projects/project.service';
 import { ArBanner, ArButton, ArCard } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { ArAccountSearch, PickedAccount } from './account-search';
 import { SECTORS, formProblem, parseRupees } from './project.logic';
 
@@ -42,7 +41,6 @@ export class ArProjectFormPage {
   private readonly router = inject(Router);
 
   protected readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id');
-  protected readonly mock = environment.useMockData;
   protected readonly SECTORS = SECTORS;
   protected readonly dates: { key: DateKey; label: string }[] = [
     { key: 'identifiedOn', label: 'Identified' },
@@ -69,7 +67,6 @@ export class ArProjectFormPage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       this.users.set(await firstValueFrom(this.api.getUsers()));
       if (!this.id) return;

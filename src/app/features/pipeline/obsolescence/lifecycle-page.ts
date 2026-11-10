@@ -18,7 +18,6 @@ import {
 } from '../../../proxy/pipeline/obsolescence.service';
 import { ArBanner, ArButton, ArChip } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
-import { environment } from '../../../../environments/environment';
 import {
   atRiskSentence,
   dateOnly,
@@ -91,7 +90,6 @@ export class ArLifecyclePage {
   private readonly toasts = inject(ToastService);
   private readonly dialogs = inject(ConfirmService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly stages = STAGES;
   protected readonly relations = RELATIONS;
   protected readonly Stage = LifecycleStage;
@@ -130,10 +128,6 @@ export class ArLifecyclePage {
   protected relationText = relationText;
 
   protected async load(): Promise<void> {
-    if (this.mock) {
-      this.loading.set(false);
-      return;
-    }
     this.loading.set(true);
     try {
       const page = await firstValueFrom(

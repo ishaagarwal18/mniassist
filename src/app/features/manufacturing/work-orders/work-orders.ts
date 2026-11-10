@@ -1,17 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
   CompleteRoutingStepDto,
   CompleteWorkOrderDto,
-  CreateWorkOrderDto,
   IssueMaterialToWorkOrderDto,
   RoutingStage,
   WorkOrderDto,
-  WorkOrderMaterialIssueDto,
   WorkOrderRoutingStepDto,
   WorkOrderService,
   WorkOrderStatus,
@@ -29,243 +26,6 @@ import {
   ChipTone,
 } from '../../../ui';
 import { GridModule, RecordClickEventArgs } from '@syncfusion/ej2-angular-grids';
-
-const MOCK_WORK_ORDERS: WorkOrderDto[] = [
-  {
-    id: 'wo-1',
-    workOrderNumber: 'WO-2026-0081',
-    billOfMaterialId: 'bom-1',
-    bomNumber: 'BOM-2026-0001',
-    salesOrderId: 'so-1',
-    salesOrderNumber: 'SO-2026-0012',
-    customerName: 'Tata Motors Powertrain Ltd',
-    partNumber: 'HV-400-P',
-    description: 'Proportional Directional Hydraulic Valve 350 Bar',
-    batchNumber: 'BAT-2026-041',
-    plannedQuantity: 50,
-    producedQuantity: 30,
-    scrappedQuantity: 2,
-    status: WorkOrderStatus.InProgress,
-    currentStage: RoutingStage.FinalTesting,
-    plannedStartDateUtc: new Date(Date.now() - 5 * 86_400_000).toISOString(),
-    plannedEndDateUtc: new Date(Date.now() + 4 * 86_400_000).toISOString(),
-    actualStartDateUtc: new Date(Date.now() - 5 * 86_400_000).toISOString(),
-    assignedSupervisor: 'Rameshwar Patil (Production Lead)',
-    remarks:
-      'High priority order for Pune transmission test rigs. Hydraulic calibration required at 350 bar.',
-    creationTime: new Date(Date.now() - 7 * 86_400_000).toISOString(),
-    materialIssues: [
-      {
-        id: 'womi-1',
-        workOrderId: 'wo-1',
-        componentPartNumber: 'VB-BODY-400',
-        componentDescription: 'Ductile Iron Valve Body Casting GGG40',
-        requiredQuantity: 50,
-        issuedQuantity: 50,
-        wastedQuantity: 2,
-        unitOfMeasure: 'NOS',
-        issuedFromWarehouse: 'WH-MAIN-RAW',
-        issueDateUtc: new Date(Date.now() - 5 * 86_400_000).toISOString(),
-      },
-      {
-        id: 'womi-2',
-        workOrderId: 'wo-1',
-        componentPartNumber: 'SPL-EN36-04',
-        componentDescription: 'Ground & Lapped Spool EN36 Case Hardened',
-        requiredQuantity: 50,
-        issuedQuantity: 50,
-        wastedQuantity: 1,
-        unitOfMeasure: 'NOS',
-        issuedFromWarehouse: 'WH-PRECISION-STORE',
-        issueDateUtc: new Date(Date.now() - 4 * 86_400_000).toISOString(),
-      },
-      {
-        id: 'womi-3',
-        workOrderId: 'wo-1',
-        componentPartNumber: 'SOL-COIL-24V',
-        componentDescription: 'Proportional Solenoid Coil 24V DC IP67',
-        requiredQuantity: 100,
-        issuedQuantity: 80,
-        wastedQuantity: 0,
-        unitOfMeasure: 'NOS',
-        issuedFromWarehouse: 'WH-ELEC-BAY',
-        issueDateUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-      },
-      {
-        id: 'womi-4',
-        workOrderId: 'wo-1',
-        componentPartNumber: 'SK-FKM-90',
-        componentDescription: 'Viton FKM O-Ring & Backup Ring Seal Kit',
-        requiredQuantity: 50,
-        issuedQuantity: 50,
-        wastedQuantity: 1,
-        unitOfMeasure: 'SET',
-        issuedFromWarehouse: 'WH-SEAL-RACK',
-        issueDateUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-      },
-    ],
-    routingSteps: [
-      {
-        id: 'wors-1',
-        workOrderId: 'wo-1',
-        stepSequence: 10,
-        stage: RoutingStage.Machining,
-        workCenterName: 'CNC 5-Axis Milling Cell #2',
-        estimatedHours: 24,
-        actualHours: 22.5,
-        isCompleted: true,
-        completedAtUtc: new Date(Date.now() - 4 * 86_400_000).toISOString(),
-        inspectedBy: 'QA-Eng. Rajesh Kulkarni',
-        qcPassed: true,
-      },
-      {
-        id: 'wors-2',
-        workOrderId: 'wo-1',
-        stepSequence: 20,
-        stage: RoutingStage.Assembly,
-        workCenterName: 'Precision Hydraulic Assembly Bench A4',
-        estimatedHours: 18,
-        actualHours: 19.0,
-        isCompleted: true,
-        completedAtUtc: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-        inspectedBy: 'QA-Eng. Rajesh Kulkarni',
-        qcPassed: true,
-      },
-      {
-        id: 'wors-3',
-        workOrderId: 'wo-1',
-        stepSequence: 30,
-        stage: RoutingStage.FinalTesting,
-        workCenterName: 'Automated Hydraulic Test Rig 400 Bar',
-        estimatedHours: 16,
-        actualHours: 10.0,
-        isCompleted: false,
-        qcPassed: false,
-      },
-      {
-        id: 'wors-4',
-        workOrderId: 'wo-1',
-        stepSequence: 40,
-        stage: RoutingStage.FinishedGoodsReceipt,
-        workCenterName: 'VCI Packing & Laser Marking Bay',
-        estimatedHours: 6,
-        actualHours: 0,
-        isCompleted: false,
-        qcPassed: false,
-      },
-    ],
-  },
-  {
-    id: 'wo-2',
-    workOrderNumber: 'WO-2026-0082',
-    billOfMaterialId: 'bom-2',
-    bomNumber: 'BOM-2026-0002',
-    salesOrderId: 'so-2',
-    salesOrderNumber: 'SO-2026-0015',
-    customerName: 'Jindal Steel & Power Ltd',
-    partNumber: 'CYL-HD-250',
-    description: 'Heavy-Duty Tie-Rod Hydraulic Cylinder 250mm Stroke',
-    batchNumber: 'BAT-2026-042',
-    plannedQuantity: 20,
-    producedQuantity: 0,
-    scrappedQuantity: 0,
-    status: WorkOrderStatus.Scheduled,
-    currentStage: RoutingStage.MaterialKitting,
-    plannedStartDateUtc: new Date(Date.now() + 1 * 86_400_000).toISOString(),
-    plannedEndDateUtc: new Date(Date.now() + 12 * 86_400_000).toISOString(),
-    assignedSupervisor: 'Sukhvinder Singh',
-    remarks:
-      'Pre-machining forged rod blanks staged at Bay 1. Strict ultrasonic crack check needed.',
-    creationTime: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    materialIssues: [],
-    routingSteps: [
-      {
-        id: 'wors-5',
-        workOrderId: 'wo-2',
-        stepSequence: 10,
-        stage: RoutingStage.Machining,
-        workCenterName: 'Heavy CNC Lathe Bay #1',
-        estimatedHours: 40,
-        actualHours: 0,
-        isCompleted: false,
-        qcPassed: false,
-      },
-      {
-        id: 'wors-6',
-        workOrderId: 'wo-2',
-        stepSequence: 20,
-        stage: RoutingStage.Fabrication,
-        workCenterName: 'Submerged Arc Welding Cell',
-        estimatedHours: 25,
-        actualHours: 0,
-        isCompleted: false,
-        qcPassed: false,
-      },
-      {
-        id: 'wors-7',
-        workOrderId: 'wo-2',
-        stepSequence: 30,
-        stage: RoutingStage.FinalTesting,
-        workCenterName: 'Hydrostatic Pressure Test Pit (500 Bar)',
-        estimatedHours: 15,
-        actualHours: 0,
-        isCompleted: false,
-        qcPassed: false,
-      },
-    ],
-  },
-  {
-    id: 'wo-3',
-    workOrderNumber: 'WO-2026-0080',
-    billOfMaterialId: 'bom-3',
-    bomNumber: 'BOM-2026-0003',
-    customerName: 'Bharat Forge Industrial',
-    partNumber: 'SDP-440',
-    description: 'Servo Drive Automation Control Panel 440V 45kW',
-    batchNumber: 'BAT-2026-039',
-    plannedQuantity: 10,
-    producedQuantity: 10,
-    scrappedQuantity: 0,
-    status: WorkOrderStatus.Completed,
-    currentStage: RoutingStage.FinishedGoodsReceipt,
-    plannedStartDateUtc: new Date(Date.now() - 20 * 86_400_000).toISOString(),
-    plannedEndDateUtc: new Date(Date.now() - 5 * 86_400_000).toISOString(),
-    actualStartDateUtc: new Date(Date.now() - 20 * 86_400_000).toISOString(),
-    actualCompletionDateUtc: new Date(Date.now() - 5 * 86_400_000).toISOString(),
-    assignedSupervisor: 'Anoop Sharma',
-    remarks: 'Dispatched to customer central warehouse after 72-hour burn-in trial.',
-    creationTime: new Date(Date.now() - 25 * 86_400_000).toISOString(),
-    materialIssues: [],
-    routingSteps: [
-      {
-        id: 'wors-8',
-        workOrderId: 'wo-3',
-        stepSequence: 10,
-        stage: RoutingStage.Assembly,
-        workCenterName: 'Electrical Panel Assembly Line 1',
-        estimatedHours: 50,
-        actualHours: 48,
-        isCompleted: true,
-        completedAtUtc: new Date(Date.now() - 10 * 86_400_000).toISOString(),
-        inspectedBy: 'QA-Eng. Rajesh Kulkarni',
-        qcPassed: true,
-      },
-      {
-        id: 'wors-9',
-        workOrderId: 'wo-3',
-        stepSequence: 20,
-        stage: RoutingStage.FinalTesting,
-        workCenterName: 'FAT & Dielectric Testing Laboratory',
-        estimatedHours: 20,
-        actualHours: 21,
-        isCompleted: true,
-        completedAtUtc: new Date(Date.now() - 5 * 86_400_000).toISOString(),
-        inspectedBy: 'Chief QC Anand Verma',
-        qcPassed: true,
-      },
-    ],
-  },
-];
 
 const STATUS_FILTERS: { value: WorkOrderStatus | null; label: string }[] = [
   { value: null, label: 'All' },
@@ -286,10 +46,6 @@ export function progressPercent(
     ? Math.min(100, Math.round((100 * wo.producedQuantity) / wo.plannedQuantity))
     : 0;
 }
-
-const todayLocal = () => new Date().toLocaleDateString('en-CA');
-const plusDaysLocal = (days: number) =>
-  new Date(Date.now() + days * 86_400_000).toLocaleDateString('en-CA');
 
 /**
  * Work orders: production batches on the shop floor. The list shows every order with its progress; choosing one opens it below,
@@ -1413,10 +1169,6 @@ export class WorkOrdersComponent {
   }
 
   loadWorkOrders(): void {
-    if (environment.useMockData) {
-      this.workOrders.set(MOCK_WORK_ORDERS);
-      return;
-    }
     this.isLoading.set(true);
     this.loadError.set(null);
     this.workOrderService.getList({ maxResultCount: 100 }).subscribe({
@@ -1566,14 +1318,7 @@ export class WorkOrdersComponent {
   releaseToShopFloor(): void {
     const sel = this.selectedWo();
     if (!sel?.id) return;
-    if (environment.useMockData) {
-      this.updateWoInState({
-        ...sel,
-        status: WorkOrderStatus.InProgress,
-        actualStartDateUtc: new Date().toISOString(),
-      });
-      return;
-    }
+
     this.busy.set(true);
     this.workOrderService.release(sel.id).subscribe({
       next: (updated) => {
@@ -1611,17 +1356,6 @@ export class WorkOrdersComponent {
       issuedFromWarehouse: m.issuedFromWarehouse?.trim() || undefined,
     };
 
-    if (environment.useMockData) {
-      const issue: WorkOrderMaterialIssueDto = {
-        id: `womi-${Date.now()}`,
-        workOrderId: sel.id,
-        ...input,
-        issueDateUtc: new Date().toISOString(),
-      } as WorkOrderMaterialIssueDto;
-      this.updateWoInState({ ...sel, materialIssues: [...sel.materialIssues, issue] });
-      this.isIssueMaterialOpen.set(false);
-      return;
-    }
     this.busy.set(true);
     this.workOrderService.issueMaterial(sel.id, input).subscribe({
       next: (updated) => {
@@ -1655,30 +1389,6 @@ export class WorkOrdersComponent {
       inspectedBy: this.stepCompletion.inspectedBy?.trim() || undefined,
     };
 
-    if (environment.useMockData) {
-      const steps = sel.routingSteps.map((s) =>
-        s.id === step.id
-          ? {
-              ...s,
-              isCompleted: true,
-              completedAtUtc: new Date().toISOString(),
-              actualHours: input.actualHours,
-              inspectedBy: input.inspectedBy,
-              qcPassed: input.qcPassed,
-            }
-          : s,
-      );
-      const next = [...steps]
-        .sort((a, b) => a.stepSequence - b.stepSequence)
-        .find((s) => !s.isCompleted);
-      this.updateWoInState({
-        ...sel,
-        routingSteps: steps,
-        currentStage: next ? next.stage : RoutingStage.FinishedGoodsReceipt,
-      });
-      this.isCompleteStepOpen.set(false);
-      return;
-    }
     this.busy.set(true);
     this.workOrderService.completeStep(sel.id, input).subscribe({
       next: (updated) => {
@@ -1713,18 +1423,6 @@ export class WorkOrdersComponent {
       remarks: this.woCompletion.remarks?.trim() || undefined,
     };
 
-    if (environment.useMockData) {
-      this.updateWoInState({
-        ...sel,
-        producedQuantity: input.producedQuantity,
-        scrappedQuantity: input.scrappedQuantity,
-        status: WorkOrderStatus.Completed,
-        currentStage: RoutingStage.FinishedGoodsReceipt,
-        actualCompletionDateUtc: new Date().toISOString(),
-      });
-      this.isCompleteWoOpen.set(false);
-      return;
-    }
     this.busy.set(true);
     this.workOrderService.completeWorkOrder(sel.id, input).subscribe({
       next: (updated) => {

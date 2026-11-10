@@ -16,7 +16,7 @@ import { ArButton } from '../../ui';
 import { errorMessage } from '../activities/activity-logic';
 import { ArCallDialog } from './call-dialog';
 import { ArCallOutcomeDialog } from './call-outcome-dialog';
-import { CallGateway } from './call-mock';
+import { CallGateway } from './call-gateway';
 import { OUTCOME_LABEL, callHeadline, needsOutcome } from './call-logic';
 import { ArLogCallDialog } from './log-call-dialog';
 

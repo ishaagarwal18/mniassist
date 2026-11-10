@@ -2,8 +2,6 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../../environments/environment';
 import { PickerOption } from '../../../core/services/pipeline.service';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
@@ -280,7 +278,7 @@ export class ArNewFieldTicketPage {
   }
 
   private async fillPhone(contactId: string | null): Promise<void> {
-    if (!contactId || environment.useMockData) return;
+    if (!contactId) return;
     try {
       const c = await firstValueFrom(this.contacts.get(contactId, { skipHandleError: true }));
       if (this.lastContactId === contactId && c.waId) {
@@ -333,12 +331,7 @@ export class ArNewFieldTicketPage {
 
     this.busy.set(true);
     this.error.set(null);
-    if (environment.useMockData) {
-      this.busy.set(false);
-      this.toasts.success('Ticket raised.');
-      void this.router.navigateByUrl('/field-service/tickets');
-      return;
-    }
+
     this.ticketService.create(input).subscribe({
       next: (t) => {
         this.busy.set(false);

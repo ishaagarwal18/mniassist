@@ -3,7 +3,7 @@
   subtitle="The year's revenue and margin targets by quarter and business line, against what you actually invoiced"
   help="Generate a plan from the last 12 months of invoices (and the open pipeline), or set one by hand. Sync actuals reads your issued sales invoices into each quarter. Scenarios show the year 15% worse and 15% better than plan."
 >
-  @if (canCreate() && !demo) {
+  @if (canCreate()) {
     <button ar-button type="button" variant="ghost" icon="plus" (click)="openNew()">
       New plan
     </button>
@@ -14,12 +14,7 @@
 </ar-topbar>
 
 <div class="pp ar-scroll">
-  @if (demo) {
-    <ar-banner tone="warn">
-      Projection plans work on your own invoices and pipeline, so they need the live API. This
-      demo-data build has none.
-    </ar-banner>
-  } @else if (loading()) {
+  @if (loading()) {
     <p class="pp__note">Loading…</p>
   } @else if (loadError(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>

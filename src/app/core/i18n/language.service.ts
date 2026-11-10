@@ -9,8 +9,6 @@ import {
   SessionStateService,
 } from '@abp/ng.core';
 import { distinctUntilChanged, filter } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { QUIET_REQUEST } from '../http/api-feedback.interceptor';
 import { ScreenTranslator } from './screen-translator';
 
@@ -77,16 +75,15 @@ export class LanguageService {
     destroyRef.onDestroy(() => this.translator?.stop());
 
     // Signed in: the saved choice wins, unless one was just picked on the sign-in page.
-    if (!environment.useMockData) {
-      this.config
-        .getSetting$(LANGUAGE_SETTING)
-        .pipe(
-          filter(() => !!this.config.getOne('currentUser')?.isAuthenticated),
-          distinctUntilChanged(),
-          takeUntilDestroyed(destroyRef),
-        )
-        .subscribe((saved) => this.reconcile(saved));
-    }
+
+    this.config
+      .getSetting$(LANGUAGE_SETTING)
+      .pipe(
+        filter(() => !!this.config.getOne('currentUser')?.isAuthenticated),
+        distinctUntilChanged(),
+        takeUntilDestroyed(destroyRef),
+      )
+      .subscribe((saved) => this.reconcile(saved));
   }
 
   /** Frame text in the current language. Reads the language signal, so templates follow a change. */
@@ -210,7 +207,6 @@ export class LanguageService {
 
   // Best effort: the switch has already happened here; failing to remember it is not worth an error.
   private save(code: AppLanguage): void {
-    if (environment.useMockData) return;
     this.rest
       .request<{ language: string }, void>(
         {

@@ -25,7 +25,7 @@ import { ChipTone } from '../../ui/chip';
 import { errorMessage } from '../activities/activity-logic';
 import { ArCallOutcomeDialog } from './call-outcome-dialog';
 import { VoiceConversationSnapshotDto } from '../../proxy/messaging/whats-app-call.service';
-import { CallGateway } from './call-mock';
+import { CallGateway } from './call-gateway';
 import {
   OUTCOME_LABEL,
   STATUS_LABEL,

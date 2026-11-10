@@ -8,8 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import {
   NetworkLeadDto,
   NetworkService,
@@ -17,19 +15,6 @@ import {
 } from '../../proxy/network/network.service';
 import { ArButton, ArDialog } from '../../ui';
 import { place, title } from './network-logic';
-
-const MOCK_SUGGESTION: RoutingSuggestionDto = {
-  state: 'Maharashtra',
-  city: 'Pune',
-  pin: '411045',
-  productLine: 'Drives',
-  candidates: [
-    { linkId: 'l2', dealerName: 'Pune Automation', score: 304, reason: 'covers PIN 4110…' },
-    { linkId: 'l1', dealerName: 'Northern Drives', score: 100, reason: 'covers MAHARASHTRA' },
-  ],
-  consentNote:
-    'Customers are told on our enquiry form and privacy notice that an authorised dealer may contact them.',
-};
 
 /**
  * S3: send one of the OEM's enquiries to a dealer. Shows what it will be routed on and the dealers that cover it, best first;
@@ -192,10 +177,7 @@ export class ArRouteLeadDialog {
       const id = this.enquiryId();
       this.s.set(null);
       this.error.set(null);
-      if (environment.useMockData) {
-        this.s.set(MOCK_SUGGESTION);
-        return;
-      }
+
       firstValueFrom(this.api.suggest(id))
         .then((sg) => this.s.set(sg))
         .catch((e: unknown) =>
@@ -216,19 +198,6 @@ export class ArRouteLeadDialog {
     this.busy.set(true);
     this.error.set(null);
     try {
-      if (environment.useMockData) {
-        const c =
-          this.s()!.candidates.find((x) => x.linkId === this.choice()) ?? this.s()!.candidates[0];
-        this.closed.emit({
-          id: 'mock-lead',
-          oemEnquiryId: this.enquiryId(),
-          oemEnquiryReference: 'ENQ-MOCK',
-          state: c ? 'Offered' : 'Unrouted',
-          dealerName: c?.dealerName,
-          creationTime: new Date().toISOString(),
-        });
-        return;
-      }
       this.closed.emit(
         await firstValueFrom(
           this.api.route({

@@ -21,7 +21,6 @@ import {
 import { BG_KIND_TEXT, BG_STATUS_TEXT, BG_STATUS_TONE, expiryTone } from './guarantees.logic';
 import { ArBanner, ArButton, ArCard, ArChip, ArStatTile } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
-import { environment } from '../../../environments/environment';
 
 const STATUS_TEXT: Record<RetentionStatus, string> = {
   [RetentionStatus.NotDue]: 'Not due',
@@ -85,7 +84,6 @@ export class ArRetentionPage {
   protected readonly bgTone = BG_STATUS_TONE;
   protected readonly expiryTone = expiryTone;
 
-  protected readonly mock = environment.useMockData;
   protected readonly rows = signal<RetentionRowDto[]>([]);
   protected readonly openOnly = signal(true);
   protected readonly error = signal<string | null>(null);
@@ -144,7 +142,6 @@ export class ArRetentionPage {
   }
 
   protected async load(): Promise<void> {
-    if (this.mock) return;
     try {
       const page = await firstValueFrom(
         this.api.getLedger({ openOnly: this.openOnly(), maxResultCount: 200 }),

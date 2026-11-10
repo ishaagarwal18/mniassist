@@ -22,8 +22,6 @@ import {
   pairwise,
   timeout,
 } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { ProfileDto, ProfileService, UpdateProfileDto } from '../../proxy/account';
 import { SessionService } from '../../proxy/identity/session.service';
 import { initials } from '../util/format';
@@ -38,10 +36,6 @@ import { EXTERNAL_LOGIN_GRANT } from '../auth/external-login';
 import { isHostAdministrator, isHostContext } from '../auth/host-access';
 import { ToastService } from '../ui/toast.service';
 import { LanguageService } from '../i18n/language.service';
-
-const MOCK = environment.useMockData;
-/** Mock mode has no auth server, so "signed in" is this local flag. Absent = signed out. */
-const MOCK_SIGNED_IN_KEY = 'ar.mock.signedIn';
 /** The page a session ended on, to return to after signing in again. */
 const RETURN_URL_KEY = 'ar.returnUrl';
 
@@ -56,37 +50,9 @@ export interface CurrentUser {
   roles: string[];
 }
 
-const SEED_USER: CurrentUser = {
-  isAuthenticated: true,
-  userName: 'rahul.kanade',
-  name: 'Rahul',
-  surname: 'Kanade',
-  email: 'rahul.kanade@sunenergyautomation.in',
-  phoneNumber: '+91 98200 11234',
-  roles: ['admin'],
-};
-
-/** A mock user derived from what was typed into the login form. */
-function mockIdentityFrom(login: string): CurrentUser {
-  const raw = login.trim();
-  if (!raw) return { ...SEED_USER };
-  const local = raw.includes('@') ? raw.slice(0, raw.indexOf('@')) : raw;
-  const parts = local.split(/[._-]+/).filter(Boolean);
-  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-  return {
-    ...SEED_USER,
-    userName: raw.includes('@') ? local : raw,
-    name: parts[0] ? cap(parts[0]) : local,
-    surname: parts[1] ? cap(parts[1]) : '',
-    email: raw.includes('@') ? raw : SEED_USER.email,
-  };
-}
-
 /**
  * The signed-in user: identity for the shell (name, role, avatar), sign-out, and
- * profile read/update against ABP's Account module. In mock mode a seeded user
- * stands in and edits update the local copy so the screen is reviewable without an
- * auth server. Login itself is handled by ABP's route guard + OAuth flow.
+ * profile read/update against ABP's Account module. Login itself is handled by ABP's route guard + OAuth flow.
  */
 @Injectable({ providedIn: 'root' })
 export class CurrentUserService {
@@ -101,33 +67,17 @@ export class CurrentUserService {
   private readonly session = inject(SessionStateService);
   private readonly injector = inject(Injector);
 
-  /** Multi-tenancy is on outside mock mode — the login form offers a workspace field. */
-  readonly tenancyEnabled = !MOCK;
+  /** Multi-tenancy is on — the login form offers a workspace field. */
+  readonly tenancyEnabled = true;
 
   /** The workspace the sign-in form last resolved (for the shell to show). */
   readonly currentTenantName = signal<string>(this.session.getTenant()?.name ?? '');
 
-  /** Mock-mode only: whether the local sign-in flag is set, and who as. */
-  private readonly mockSignedIn = signal(this.readMockState() !== null);
-  private readonly mockUser = signal<CurrentUser>(
-    this.readMockState() ? mockIdentityFrom(this.readMockState()!) : { ...SEED_USER },
-  );
-
-  private readMockState(): string | null {
-    try {
-      return localStorage.getItem(MOCK_SIGNED_IN_KEY);
-    } catch {
-      return null;
-    }
-  }
-
-  private readonly configUser = toSignal(
-    MOCK ? of(undefined) : this.config.getOne$('currentUser'),
-    { initialValue: undefined },
-  );
+  private readonly configUser = toSignal(this.config.getOne$('currentUser'), {
+    initialValue: undefined,
+  });
 
   readonly user = computed<CurrentUser>(() => {
-    if (MOCK) return this.mockUser();
     const u = (this.configUser() ?? {}) as Record<string, unknown>;
     return {
       isAuthenticated: Boolean(u['isAuthenticated']),
@@ -141,72 +91,60 @@ export class CurrentUserService {
   });
 
   /** The signed-in user's id; null in the standalone build and before sign-in. */
-  readonly id = computed<string | null>(() =>
-    MOCK
-      ? null
-      : ((((this.configUser() ?? {}) as Record<string, unknown>)['id'] as string) ?? null),
+  readonly id = computed<string | null>(
+    () => (((this.configUser() ?? {}) as Record<string, unknown>)['id'] as string) ?? null,
   );
 
-  private readonly configTenant = toSignal(
-    MOCK ? of(undefined) : this.config.getOne$('currentTenant'),
-    { initialValue: undefined },
-  );
+  private readonly configTenant = toSignal(this.config.getOne$('currentTenant'), {
+    initialValue: undefined,
+  });
 
   /** Invalidates menu checks when grants change without an identity or plan change. */
-  readonly permissionState = toSignal(MOCK ? of(undefined) : this.config.getOne$('auth'), {
+  readonly permissionState = toSignal(this.config.getOne$('auth'), {
     initialValue: undefined,
   });
 
   /**
    * The workspace the signed-in user belongs to, from the server's view of the
-   * session; empty for a host (platform) user, who belongs to none. Mock mode
-   * shows the seeded workspace.
+   * session; empty for a host (platform) user, who belongs to none.
    */
   readonly tenantName = computed(() => {
-    if (MOCK) return 'Sun Energy Automation';
     const t = (this.configTenant() ?? {}) as { isAvailable?: boolean; name?: string };
     return t.isAvailable ? (t.name ?? this.currentTenantName()) : '';
   });
 
   /** Signed in on the host side (platform administration), not in a workspace. */
-  readonly isHost = computed(
-    () =>
-      !MOCK &&
-      isHostContext({
-        currentUser: this.configUser(),
-        currentTenant: this.configTenant(),
-      }),
+  readonly isHost = computed(() =>
+    isHostContext({
+      currentUser: this.configUser(),
+      currentTenant: this.configTenant(),
+    }),
   );
 
   /** Full platform access belongs only to the host's built-in admin role. */
-  readonly isHostAdmin = computed(
-    () =>
-      !MOCK &&
-      isHostAdministrator({
-        currentUser: this.configUser(),
-        currentTenant: this.configTenant(),
-      }),
+  readonly isHostAdmin = computed(() =>
+    isHostAdministrator({
+      currentUser: this.configUser(),
+      currentTenant: this.configTenant(),
+    }),
   );
 
-  readonly isAuthenticated = computed(() =>
-    MOCK ? this.mockSignedIn() : this.user().isAuthenticated,
-  );
+  readonly isAuthenticated = computed(() => this.user().isAuthenticated);
 
   constructor() {
     // ABP ends a sign-in by itself when the token expires and cannot be refreshed, or the
     // auth server refuses it: it clears the stored tokens and reloads the app state, but
     // leaves the page up. Treat that like any other ended session and go to sign-in.
-    if (!MOCK) {
-      this.config
-        .getOne$('currentUser')
-        .pipe(
-          map((u) => Boolean((u as { isAuthenticated?: boolean } | undefined)?.isAuthenticated)),
-          distinctUntilChanged(),
-          pairwise(),
-          filter(([was, now]) => was && !now),
-        )
-        .subscribe(() => this.sessionEnded());
-    }
+
+    this.config
+      .getOne$('currentUser')
+      .pipe(
+        map((u) => Boolean((u as { isAuthenticated?: boolean } | undefined)?.isAuthenticated)),
+        distinctUntilChanged(),
+        pairwise(),
+        filter(([was, now]) => was && !now),
+      )
+      .subscribe(() => this.sessionEnded());
   }
 
   /**
@@ -214,7 +152,7 @@ export class CurrentUserService {
    * ended, even when the stored token was already cleared before the request went out.
    */
   wasSignedIn(): boolean {
-    return !MOCK && (this.isAuthenticated() || this.endingSession);
+    return this.isAuthenticated() || this.endingSession;
   }
 
   readonly fullName = computed(() => {
@@ -233,10 +171,8 @@ export class CurrentUserService {
    * Resolves a workspace (tenant) name to an id and pins it on the session, so the
    * token request and every later API call carry the `__tenant` header. A blank
    * name clears it (host login). Throws if the name does not match a live tenant.
-   * No-ops in mock mode.
    */
   async selectTenant(name: string): Promise<void> {
-    if (MOCK) return;
     const wanted = name.trim();
     if (!wanted) {
       this.session.setTenant(null);
@@ -285,9 +221,7 @@ export class CurrentUserService {
   }
 
   /**
-   * Signs in with a username and password, optionally scoped to a workspace. In
-   * mock mode there is no auth server, so any non-empty credentials are accepted
-   * and the local session flag is flipped. In real mode this resolves the tenant
+   * Signs in with a username and password, optionally scoped to a workspace. This resolves the tenant
    * then runs ABP's password grant against the OpenIddict token endpoint.
    */
   async signIn(
@@ -299,17 +233,7 @@ export class CurrentUserService {
     landOn?: string,
   ): Promise<void> {
     this.endingSession = false;
-    if (MOCK) {
-      this.mockUser.set(mockIdentityFrom(username));
-      try {
-        localStorage.setItem(MOCK_SIGNED_IN_KEY, username.trim() || 'demo');
-      } catch {
-        /* ignore */
-      }
-      this.mockSignedIn.set(true);
-      await this.router.navigateByUrl(landOn ?? '/home');
-      return;
-    }
+
     await this.selectTenant(tenant);
     try {
       await firstValueFrom(
@@ -368,10 +292,6 @@ export class CurrentUserService {
     rememberMe: boolean,
     extra: Record<string, string>,
   ): Promise<void> {
-    if (MOCK) {
-      await this.signIn(username, password, rememberMe);
-      return;
-    }
     const tenant = this.session.getTenant();
     const headers = new HttpHeaders(
       tenant?.id ? { [this.injector.get(TENANT_KEY)]: tenant.id } : {},
@@ -400,7 +320,7 @@ export class CurrentUserService {
     proof?: SecondFactor,
   ): Promise<void> {
     this.endingSession = false;
-    if (MOCK) throw new Error('Signing in with Google or Microsoft needs the API.');
+
     await this.selectTenant(workspace);
     const tenant = this.session.getTenant();
     const headers = new HttpHeaders(
@@ -448,7 +368,7 @@ export class CurrentUserService {
    * runs once.
    */
   sessionEnded(why: 'ended' | 'role-changed' = 'ended'): void {
-    if (MOCK || this.endingSession) return;
+    if (this.endingSession) return;
     this.endingSession = true;
     const here = this.router.url;
     try {
@@ -500,18 +420,6 @@ export class CurrentUserService {
   }
 
   logout(): void {
-    if (MOCK) {
-      try {
-        localStorage.removeItem(MOCK_SIGNED_IN_KEY);
-        localStorage.removeItem('ar.agency.acting');
-      } catch {
-        /* ignore */
-      }
-      this.mockSignedIn.set(false);
-      this.mockUser.set({ ...SEED_USER });
-      void this.router.navigateByUrl('/login');
-      return;
-    }
     // End this device's session on the server first, so it leaves the device list and
     // its tokens stop working even if a copy of them survives. Best effort: a failure
     // here must never keep someone signed in.
@@ -535,33 +443,10 @@ export class CurrentUserService {
   // ---- profile ------------------------------------------------------
 
   async loadProfile(): Promise<ProfileDto> {
-    if (MOCK) {
-      const u = this.user();
-      return {
-        userName: u.userName,
-        email: u.email,
-        name: u.name,
-        surname: u.surname,
-        phoneNumber: u.phoneNumber,
-        hasPassword: true,
-        isExternal: false,
-      };
-    }
     return firstValueFrom(this.api.get());
   }
 
   async saveProfile(input: UpdateProfileDto): Promise<void> {
-    if (MOCK) {
-      this.mockUser.update((u) => ({
-        ...u,
-        userName: input.userName,
-        email: input.email,
-        name: input.name ?? '',
-        surname: input.surname ?? '',
-        phoneNumber: input.phoneNumber ?? '',
-      }));
-      return;
-    }
     await firstValueFrom(this.api.update(input));
     await firstValueFrom(this.config.refreshAppState());
   }
@@ -572,23 +457,18 @@ export class CurrentUserService {
    * A refused change throws before anything is signed out.
    */
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    if (!MOCK) {
-      await firstValueFrom(
-        this.api.changePassword({ currentPassword: currentPassword || null, newPassword }),
-      );
-      // Requests already in flight now come back 401; don't let them show "session ended" too.
-      this.endingSession = true;
-    }
+    await firstValueFrom(
+      this.api.changePassword({ currentPassword: currentPassword || null, newPassword }),
+    );
+    // Requests already in flight now come back 401; don't let them show "session ended" too.
+    this.endingSession = true;
     this.toasts.success(
       this.i18n.t(
         'Password changed. You have been signed out on all your devices — sign in again with your new password.',
       ),
       this.i18n.t('Signed out'),
     );
-    if (MOCK) {
-      this.logout();
-      return;
-    }
+
     this.finishLogout(() => (this.endingSession = false));
   }
 }

@@ -9,8 +9,6 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
@@ -22,67 +20,13 @@ import type { ChipTone } from '../../ui/chip';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArGrid } from '../../ui/grid';
 
-const ago = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
-
-const SEED: WhatsAppCallDto[] = [
-  {
-    id: 'w1',
-    contactId: 'c1',
-    contactName: 'R. Kulkarni',
-    contactWaId: '919812345678',
-    status: 'Ended',
-    direction: 'Inbound',
-    rangAtUtc: ago(35),
-    answeredAtUtc: ago(35),
-    endedAtUtc: ago(31),
-    durationSeconds: 242,
-    hasRecording: true,
-    transferCount: 1,
-  },
-  {
-    id: 'w2',
-    contactId: 'c2',
-    contactName: 'Precision Pumps',
-    contactWaId: '919876500011',
-    status: 'Missed',
-    direction: 'Inbound',
-    rangAtUtc: ago(90),
-    endedAtUtc: ago(89),
-    durationSeconds: 0,
-    hasRecording: false,
-    transferCount: 0,
-  },
-  {
-    id: 'w3',
-    contactId: 'c3',
-    contactName: 'Godavari Cement',
-    contactWaId: '919900011122',
-    status: 'Rejected',
-    direction: 'Outbound',
-    rangAtUtc: ago(180),
-    endedAtUtc: ago(179),
-    durationSeconds: 0,
-    hasRecording: false,
-    transferCount: 0,
-  },
-];
-
 /**
  * M3: every WhatsApp call, both directions: who, when, how long, whether it was handed on, and its recording where one was kept.
  * Missed calls first when filtered, so they get called back.
  */
 @Component({
   selector: 'ar-whatsapp-calls',
-  imports: [
-    ArTopbar,
-    ArButton,
-    ArChip,
-    ArDialog,
-    LocalizationPipe,
-    ArGrid,
-    GridModule,
-    RouterLink,
-  ],
+  imports: [ArTopbar, ArButton, ArChip, ArDialog, LocalizationPipe, ArGrid, GridModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -111,9 +55,7 @@ const SEED: WhatsAppCallDto[] = [
         }
       }
       @if (canMenu()) {
-        <a ar-button variant="ghost" routerLink="/calls/whatsapp/ivr">
-          Call menu (IVR)
-        </a>
+        <a ar-button variant="ghost" routerLink="/calls/whatsapp/ivr"> Call menu (IVR) </a>
       }
       <label class="wa__toggle" for="wa-missed">
         <input
@@ -224,11 +166,7 @@ const SEED: WhatsAppCallDto[] = [
             </button>
           </div>
         }
-        <ejs-grid
-          arGrid="whatsapp-calls"
-          [dataSource]="rows()"
-          aria-label="WhatsApp Calls Log"
-        >
+        <ejs-grid arGrid="whatsapp-calls" [dataSource]="rows()" aria-label="WhatsApp Calls Log">
           <e-columns>
             <e-column width="50" textAlign="Center" [visible]="canRecordings()">
               <ng-template #headerTemplate>
@@ -290,16 +228,19 @@ const SEED: WhatsAppCallDto[] = [
                   @if (audio()[c.id]; as src) {
                     <audio [src]="src" controls loading="lazy" preload="metadata"></audio>
                   } @else {
-                    <button ar-button type="button" variant="ghost" (click)="play(c)">
-                      Play
-                    </button>
+                    <button ar-button type="button" variant="ghost" (click)="play(c)">Play</button>
                   }
                 } @else {
                   <span class="wa__muted">{{ c.hasRecording ? 'Kept' : '—' }}</span>
                 }
               </ng-template>
             </e-column>
-            <e-column headerText="Actions" width="100" [textAlign]="'Right'" [visible]="canRecordings()">
+            <e-column
+              headerText="Actions"
+              width="100"
+              [textAlign]="'Right'"
+              [visible]="canRecordings()"
+            >
               <ng-template #template let-c>
                 @if (!inProgress(c)) {
                   <button
@@ -632,7 +573,7 @@ export class ArWhatsAppCalls {
     try {
       for (const id of ids) {
         try {
-          if (!environment.useMockData) await firstValueFrom(this.api.delete(id));
+          await firstValueFrom(this.api.delete(id));
           done.add(id);
         } catch {
           refused++;
@@ -659,14 +600,13 @@ export class ArWhatsAppCalls {
 
   constructor() {
     void this.load();
-    if (!environment.useMockData) {
-      firstValueFrom(this.api.getSettings())
-        .then((s) => {
-          this.recordCalls.set(s.recordCalls);
-          this.hasNotice.set(!!s.hasAnnouncement);
-        })
-        .catch(() => undefined);
-    }
+
+    firstValueFrom(this.api.getSettings())
+      .then((s) => {
+        this.recordCalls.set(s.recordCalls);
+        this.hasNotice.set(!!s.hasAnnouncement);
+      })
+      .catch(() => undefined);
     inject(DestroyRef).onDestroy(() =>
       Object.values(this.audio()).forEach((u) => URL.revokeObjectURL(u)),
     );
@@ -676,12 +616,6 @@ export class ArWhatsAppCalls {
     this.loading.set(true);
     this.error.set(null);
     try {
-      if (environment.useMockData) {
-        const list = this.missedOnly() ? SEED.filter((c) => c.status === 'Missed') : SEED;
-        this.rows.set(list);
-        this.total.set(list.length);
-        return;
-      }
       const page = await firstValueFrom(
         this.api.getLog({ missedOnly: this.missedOnly(), skipCount: skip, maxResultCount: 50 }),
       );
@@ -704,13 +638,9 @@ export class ArWhatsAppCalls {
   protected async setRecording(on: boolean): Promise<void> {
     this.saving.set(true);
     try {
-      if (!environment.useMockData) {
-        this.recordCalls.set(
-          (await firstValueFrom(this.api.updateSettings({ recordCalls: on }))).recordCalls,
-        );
-      } else {
-        this.recordCalls.set(on);
-      }
+      this.recordCalls.set(
+        (await firstValueFrom(this.api.updateSettings({ recordCalls: on }))).recordCalls,
+      );
     } catch {
       this.error.set('The recording setting could not be changed.');
     } finally {
@@ -754,15 +684,11 @@ export class ArWhatsAppCalls {
     this.saving.set(true);
     this.noticeError.set(null);
     try {
-      if (environment.useMockData) {
-        this.hasNotice.set(true);
-      } else {
-        const form = new FormData();
-        form.append('file', file, file.name);
-        this.hasNotice.set(
-          !!(await firstValueFrom(this.api.uploadAnnouncement(form))).hasAnnouncement,
-        );
-      }
+      const form = new FormData();
+      form.append('file', file, file.name);
+      this.hasNotice.set(
+        !!(await firstValueFrom(this.api.uploadAnnouncement(form))).hasAnnouncement,
+      );
       const old = this.noticeUrl();
       if (old) URL.revokeObjectURL(old);
       this.noticeUrl.set(URL.createObjectURL(file));
@@ -779,7 +705,7 @@ export class ArWhatsAppCalls {
   protected async removeNotice(): Promise<void> {
     this.saving.set(true);
     try {
-      if (!environment.useMockData) await firstValueFrom(this.api.deleteAnnouncement());
+      await firstValueFrom(this.api.deleteAnnouncement());
       this.hasNotice.set(false);
       const url = this.noticeUrl();
       if (url) URL.revokeObjectURL(url);

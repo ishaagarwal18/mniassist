@@ -32,7 +32,7 @@ import {
   isFinished,
 } from './ticket-logic';
 import { ConfirmService } from '../../core/ui/confirm.service';
-import { ServiceTicketGateway } from './ticket-mock';
+import { ServiceTicketGateway } from './ticket-gateway';
 
 const STATUS_TONE: Record<TicketStatus, ChipTone> = {
   [TicketStatus.Open]: 'amber',

@@ -14,7 +14,7 @@ import { CrmTaskDto, CrmTaskStatus, CrmTaskSummaryDto, TaskPriority } from '../.
 import { ArButton, ArChip, ArIcon, ArSearchBox } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { ActivityDirectory } from './activity-directory';
-import { ActivityGateway } from './activity-mock';
+import { ActivityGateway } from './activity-gateway';
 import {
   DueBucket,
   dueBucket,

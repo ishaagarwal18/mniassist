@@ -8,13 +8,11 @@ import {
   signal,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../../environments/environment';
 import { AccountMasterDataService } from '../../../core/services/account-master-data.service';
 import { PickerOption } from '../../../core/services/pipeline.service';
 import type { ProductDto } from '../../../proxy/library/product.service';
 import { WorkspaceProfileService } from '../../../proxy/business/workspace-profile.service';
-import { SalesInvoiceKind, SalesInvoiceStatus } from '../../../proxy/sales/sales-enums';
+import { SalesInvoiceKind } from '../../../proxy/sales/sales-enums';
 import { CreateSalesInvoiceDto, SalesInvoiceDto } from '../../../proxy/sales/sales-invoice.models';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { ArButton, ArDialog } from '../../../ui';
@@ -743,14 +741,12 @@ export class ArNewSalesInvoice {
   });
 
   constructor() {
-    if (!environment.useMockData) {
-      firstValueFrom(this.workspace.get({ skipHandleError: true }))
-        .then((p) => {
-          this.ownStateCode = p?.stateCode ?? null;
-          if (this.placeCode()) this.setPlaceOfSupply(this.placeCode());
-        })
-        .catch(() => undefined);
-    }
+    firstValueFrom(this.workspace.get({ skipHandleError: true }))
+      .then((p) => {
+        this.ownStateCode = p?.stateCode ?? null;
+        if (this.placeCode()) this.setPlaceOfSupply(this.placeCode());
+      })
+      .catch(() => undefined);
   }
 
   // ---- Customer ------------------------------------------------------------------
@@ -901,46 +897,12 @@ export class ArNewSalesInvoice {
     this.busy.set(true);
     this.error.set(null);
     try {
-      const created = environment.useMockData
-        ? this.mockCreated(input, customer.label)
-        : await firstValueFrom(this.api.create(input));
+      const created = await firstValueFrom(this.api.create(input));
       this.closed.emit(created);
     } catch (e: unknown) {
       this.error.set(errorMessage(e, 'The invoice could not be saved.'));
     } finally {
       this.busy.set(false);
     }
-  }
-
-  private mockCreated(input: CreateSalesInvoiceDto, customerName: string): SalesInvoiceDto {
-    const { taxable, tax } = this.totals();
-    const half = Math.round(tax / 2);
-    return {
-      id: `inv-${Date.now()}`,
-      invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
-      kind: input.kind ?? SalesInvoiceKind.TaxInvoice,
-      status: SalesInvoiceStatus.Draft,
-      customerId: input.customerId,
-      customerName,
-      customerGstin: input.customerGstin,
-      billingAddress: input.billingAddress,
-      shippingAddress: input.shippingAddress,
-      placeOfSupplyStateCode: input.placeOfSupplyStateCode,
-      issueDateUtc: input.issueDateUtc!,
-      dueDateUtc: input.dueDateUtc!,
-      subtotalInPaise: taxable,
-      discountInPaise: 0,
-      cgstInPaise: input.isInterState ? 0 : half,
-      sgstInPaise: input.isInterState ? 0 : tax - half,
-      igstInPaise: input.isInterState ? tax : 0,
-      totalTaxInPaise: tax,
-      grandTotalInPaise: taxable + tax,
-      paidAmountInPaise: 0,
-      balanceDueInPaise: taxable + tax,
-      isInterState: input.isInterState,
-      creationTime: new Date().toISOString(),
-      lines: [],
-      payments: [],
-    };
   }
 }

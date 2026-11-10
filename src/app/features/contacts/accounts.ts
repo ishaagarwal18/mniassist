@@ -26,7 +26,6 @@ import {
   AccountRow,
   AccountStore,
   CustomerAccount,
-  descendantIds,
   MAX_ACCOUNT_DEPTH,
   moveProblem,
 } from '../../core/services/account.store';
@@ -44,8 +43,7 @@ import { ToastService } from '../../core/ui/toast.service';
 import { grantedPolicy } from '../../core/auth/permission';
 import { registerSyncfusionLicense } from '../../core/ui/syncfusion-license';
 import { ensureSyncfusionTheme } from '../../core/ui/syncfusion-theme';
-import { environment } from '../../../environments/environment';
-import { filterAssignableContacts, INITIAL_MOCK_PEOPLE } from './account-contacts.logic';
+import { filterAssignableContacts } from './account-contacts.logic';
 import {
   buildAccountTreeRows,
   computeAccountStats,
@@ -138,7 +136,6 @@ export class ArAccounts {
   private readonly contactStore = inject(ContactService);
   private readonly customerAccountApi = inject(CustomerAccountService);
   private readonly toast = inject(ToastService);
-  private static mockPeopleList: ContactDto[] = [...INITIAL_MOCK_PEOPLE];
 
   protected readonly peopleFor = signal<CustomerAccount | null>(null);
   protected readonly people = signal<ContactDto[]>([]);
@@ -237,17 +234,6 @@ export class ArAccounts {
     this.peopleLoading.set(true);
     this.peopleError.set(null);
     try {
-      if (environment.useMockData) {
-        const belowIds = descendantIds(account.id, this.store.all());
-        const allowedAccountIds = this.peopleSubs() ? [account.id, ...belowIds] : [account.id];
-        const filtered = ArAccounts.mockPeopleList.filter((c) =>
-          c.accountId ? allowedAccountIds.includes(c.accountId) : false,
-        );
-        this.people.set([...filtered]);
-        this.peopleTotal.set(filtered.length);
-        return;
-      }
-
       const page = await firstValueFrom(
         this.contactApi.getList({
           accountId: account.id,
@@ -286,11 +272,6 @@ export class ArAccounts {
     if (!account) return;
     this.assignSearching.set(true);
     try {
-      if (environment.useMockData) {
-        const matches = filterAssignableContacts(ArAccounts.mockPeopleList, account.id, query);
-        this.allAssignableCandidates.set(matches);
-        return;
-      }
       const page = await firstValueFrom(
         this.contactApi.getList({
           filter: query.trim() || undefined,
@@ -311,15 +292,8 @@ export class ArAccounts {
     const account = this.peopleFor();
     if (!account || !contact.id) return;
     try {
-      if (environment.useMockData) {
-        ArAccounts.mockPeopleList = ArAccounts.mockPeopleList.map((c) =>
-          c.id === contact.id ? { ...c, accountId: account.id, companyName: account.name } : c,
-        );
-        this.store.adjustContactCount(account.id, 1);
-      } else {
-        await firstValueFrom(this.customerAccountApi.setContactAccount([contact.id], account.id));
-        this.store.reload();
-      }
+      await firstValueFrom(this.customerAccountApi.setContactAccount([contact.id], account.id));
+      this.store.reload();
       this.toast.success(`Assigned ${contact.displayName || contact.waId} to ${account.name}.`);
       await this.loadPeople();
       this.contactModalMode.set('list');
@@ -336,11 +310,7 @@ export class ArAccounts {
   protected async onContactCreated(): Promise<void> {
     const account = this.peopleFor();
     if (account) {
-      if (environment.useMockData) {
-        this.store.adjustContactCount(account.id, 1);
-      } else {
-        this.store.reload();
-      }
+      this.store.reload();
       await this.loadPeople();
     }
   }
@@ -349,15 +319,8 @@ export class ArAccounts {
     const account = this.peopleFor();
     if (!account || !contact.id) return;
     try {
-      if (environment.useMockData) {
-        ArAccounts.mockPeopleList = ArAccounts.mockPeopleList.map((c) =>
-          c.id === contact.id ? { ...c, accountId: null, companyName: null } : c,
-        );
-        this.store.adjustContactCount(account.id, -1);
-      } else {
-        await firstValueFrom(this.customerAccountApi.setContactAccount([contact.id], ''));
-        this.store.reload();
-      }
+      await firstValueFrom(this.customerAccountApi.setContactAccount([contact.id], ''));
+      this.store.reload();
       this.toast.info(`Unlinked ${contact.displayName || contact.waId} from ${account.name}.`);
       await this.loadPeople();
     } catch (e) {

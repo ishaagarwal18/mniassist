@@ -4,9 +4,8 @@ import { firstValueFrom } from 'rxjs';
 
 import { checkPolicy } from '../../core/auth/permission';
 import { PipelineStore } from '../../core/services/pipeline.service';
-import { environment } from '../../../environments/environment';
 import { ActivityUserDto } from '../../proxy/activities';
-import { ActivityGateway, MOCK_ME } from './activity-mock';
+import { ActivityGateway } from './activity-gateway';
 
 /**
  * What tasks and meetings share: who can be picked, who "I" am, what I am allowed to do, and the open enquiries a task or meeting
@@ -24,7 +23,6 @@ export class ActivityDirectory {
 
   /** The signed-in user's id, as the server knows them. Undefined until the session has loaded. */
   get meId(): string | undefined {
-    if (environment.useMockData) return MOCK_ME;
     return (this.config.getDeep('currentUser.id') as string | undefined) ?? undefined;
   }
 

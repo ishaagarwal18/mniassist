@@ -11,8 +11,6 @@ import {
   signal,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { TeamService } from '../../proxy/identity/team.service';
 import type { TeamDto } from '../../proxy/identity/models';
 import {
@@ -36,20 +34,6 @@ import {
   toIvrRows,
   updateIvrRow,
 } from './ivr-menu';
-
-const MOCK: WhatsAppIvrSettingsDto = {
-  enabled: false,
-  options: [],
-  inputSeconds: 6,
-  attempts: 3,
-  hasPrompt: false,
-  canSpeakPrompt: false,
-  active: false,
-  problems: ['Upload the menu prompt.', 'Add the menu options.', 'The menu is switched off.'],
-  queueMinutes: 3,
-  maxLevels: MAX_IVR_LEVELS,
-  stepPrompts: {},
-};
 
 const KINDS: { value: WhatsAppIvrOptionKind; label: string }[] = [
   { value: 'RingTeam', label: 'Rings a team' },
@@ -607,10 +591,6 @@ export class ArWhatsAppIvrDialog {
   }
 
   private async load(): Promise<void> {
-    if (environment.useMockData) {
-      this.apply(MOCK);
-      return;
-    }
     try {
       const [settings, teams] = await Promise.all([
         firstValueFrom(this.api.getIvr()),
@@ -688,7 +668,6 @@ export class ArWhatsAppIvrDialog {
     this.saving.set(true);
     this.error.set(null);
     try {
-      if (environment.useMockData) return;
       this.apply(
         await firstValueFrom(
           this.api.updateIvr({
@@ -721,7 +700,7 @@ export class ArWhatsAppIvrDialog {
     try {
       // Whatever was picked becomes the 16-bit mono 48 kHz WAV the server takes, in the browser.
       const { wav } = await toPromptWav(file);
-      if (environment.useMockData) return;
+
       const form = new FormData();
       form.append('file', wav, file.name.replace(/\.[^.]+$/, '') + '.wav');
       const s = await firstValueFrom(this.api.uploadIvrPrompt(form));
@@ -742,7 +721,6 @@ export class ArWhatsAppIvrDialog {
     this.saving.set(true);
     this.error.set(null);
     try {
-      if (environment.useMockData) return;
       this.apply(await firstValueFrom(this.api.deleteIvrPrompt()));
       this.clearPreview();
     } catch (e) {
@@ -756,7 +734,6 @@ export class ArWhatsAppIvrDialog {
     this.saving.set(true);
     this.error.set(null);
     try {
-      if (environment.useMockData) return;
       this.apply(await firstValueFrom(this.api.speakIvrPrompt()));
       this.clearPreview();
     } catch (e) {

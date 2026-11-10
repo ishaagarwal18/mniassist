@@ -19,7 +19,6 @@ import { ArChip } from '../../ui/chip';
 import { ArMeter } from '../../ui/meter';
 import { ToastService } from '../../core/ui/toast.service';
 import { AccountRecoveryService } from '../../proxy/identity/account-recovery.service';
-import { environment } from '../../../environments/environment';
 import { errorMessage } from '../activities/activity-logic';
 import { ArOnboardingStepPanel, opensInline } from './step-panel';
 import { ArOnboardingConsentRules } from './consent-rules';
@@ -684,10 +683,6 @@ export class ArOnboardingWizard {
   protected async sendEmailLink(): Promise<void> {
     this.busy.set(true);
     try {
-      if (environment.useMockData) {
-        this.emailSentTo.set('you@example.com');
-        return;
-      }
       const status = await firstValueFrom(this.account.getMyEmailStatus());
       if (status.emailConfirmed) {
         // Already confirmed (e.g. in another tab): the checklist just hasn't caught up.

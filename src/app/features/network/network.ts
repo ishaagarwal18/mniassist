@@ -3,8 +3,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
@@ -44,111 +42,6 @@ const TAB_LEADS = 'Routed leads';
 const TAB_DEALERS = 'Dealers';
 const TAB_INCOMING = 'Leads for us';
 
-const hoursFromNow = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString();
-
-const MOCK_DEALERS: DealerLinkDto[] = [
-  {
-    id: 'l2',
-    dealerName: 'Pune Automation',
-    state: 'Active',
-    joinedAtUtc: hoursFromNow(-900),
-    lastRoutedAtUtc: hoursFromNow(-5),
-    territory: { states: [], cities: [], pinPrefixes: ['4110', '4111'], productLines: ['DRIVES'] },
-    openLeads: 3,
-    wonLeads: 7,
-    lostLeads: 2,
-  },
-  {
-    id: 'l1',
-    dealerName: 'Northern Drives',
-    state: 'Active',
-    joinedAtUtc: hoursFromNow(-2000),
-    territory: { states: ['MAHARASHTRA'], cities: [], pinPrefixes: [], productLines: [] },
-    openLeads: 1,
-    wonLeads: 12,
-    lostLeads: 5,
-  },
-  {
-    id: 'l3',
-    dealerName: 'Konkan Electricals',
-    state: 'Invited',
-    inviteCode: 'K7PX3MRT2A',
-    inviteExpiresAtUtc: hoursFromNow(240),
-    territory: { states: ['GOA'], cities: ['RATNAGIRI'], pinPrefixes: [], productLines: [] },
-    openLeads: 0,
-    wonLeads: 0,
-    lostLeads: 0,
-  },
-];
-
-const MOCK_LEADS: NetworkLeadDto[] = [
-  {
-    id: 'n1',
-    oemEnquiryId: 'e1',
-    oemEnquiryReference: 'ENQ-2026-0412',
-    state: 'Offered',
-    linkId: 'l2',
-    dealerName: 'Pune Automation',
-    offeredAtUtc: hoursFromNow(-3),
-    answerByUtc: hoursFromNow(21),
-    customerCity: 'Pune',
-    customerState: 'Maharashtra',
-    customerPin: '411045',
-    productLine: 'Drives',
-    title: 'VFD for borewell pump, 15 kW',
-    estimatedValueInPaise: 1_20_000_00,
-    creationTime: hoursFromNow(-3),
-  },
-  {
-    id: 'n2',
-    oemEnquiryId: 'e2',
-    oemEnquiryReference: 'ENQ-2026-0398',
-    state: 'Accepted',
-    linkId: 'l1',
-    dealerName: 'Northern Drives',
-    acceptedAtUtc: hoursFromNow(-50),
-    customerCity: 'Nashik',
-    customerState: 'Maharashtra',
-    title: 'Soft starters for chiller plant',
-    estimatedValueInPaise: 4_80_000_00,
-    dealerStage: 'Quoted',
-    quotedInPaise: 5_12_300_00,
-    snapshotAtUtc: hoursFromNow(-0.5),
-    creationTime: hoursFromNow(-60),
-  },
-  {
-    id: 'n3',
-    oemEnquiryId: 'e3',
-    oemEnquiryReference: 'ENQ-2026-0377',
-    state: 'Unrouted',
-    note: 'Northern Drives declined: No stock',
-    customerCity: 'Indore',
-    customerState: 'Madhya Pradesh',
-    title: 'PLC retrofit',
-    creationTime: hoursFromNow(-80),
-  },
-];
-
-const MOCK_OFFERS: NetworkOfferDto[] = [
-  {
-    id: 'o1',
-    oemName: 'Acme Drives India',
-    oemEnquiryReference: 'ENQ-2026-0431',
-    state: 'Offered',
-    offeredAtUtc: hoursFromNow(-2),
-    answerByUtc: hoursFromNow(22),
-    customerCity: 'Pimpri',
-    customerState: 'Maharashtra',
-    customerPin: '411018',
-    productLine: 'Drives',
-    title: 'Two 7.5 kW drives for conveyor line',
-    requirement: 'ACS580 or equivalent, 415 V; delivery within 3 weeks.',
-    estimatedValueInPaise: 1_65_000_00,
-    consentNote:
-      'Customers are told on our enquiry form and privacy notice that an authorised dealer may contact them.',
-  },
-];
-
 interface TerritoryDraft {
   states: string;
   cities: string;
@@ -170,12 +63,25 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
  */
 @Component({
   selector: 'ar-network',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArTabs, ArRouteLeadDialog, RouterLink, ArGrid, GridModule, NgTemplateOutlet],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArTabs,
+    ArRouteLeadDialog,
+    RouterLink,
+    ArGrid,
+    GridModule,
+    NgTemplateOutlet,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isPage) {
       <ar-topbar [title]="pageTitle()">
-        <button ar-button type="button" variant="ghost" (click)="close()">Back to Dealer network</button>
+        <button ar-button type="button" variant="ghost" (click)="close()">
+          Back to Dealer network
+        </button>
       </ar-topbar>
       <div class="ar-form-page ar-scroll">
         <ng-container *ngTemplateOutlet="formsTpl" />
@@ -197,672 +103,680 @@ const toDraft = (t?: TerritoryDto): TerritoryDraft => ({
       </ar-topbar>
 
       <div class="nw">
-      <ar-tabs [tabs]="tabs()" [(active)]="tab" />
+        <ar-tabs [tabs]="tabs()" [(active)]="tab" />
 
-      <div class="nw__body ar-scroll">
-        @if (error(); as e) {
-          <p class="nw__err" role="alert">{{ e }}</p>
-        }
-        @if (notice(); as n) {
-          <p class="nw__ok" role="status">{{ n }}</p>
-        }
+        <div class="nw__body ar-scroll">
+          @if (error(); as e) {
+            <p class="nw__err" role="alert">{{ e }}</p>
+          }
+          @if (notice(); as n) {
+            <p class="nw__ok" role="status">{{ n }}</p>
+          }
 
-        @switch (tab()) {
-          @case (leadsTab) {
-            <div class="filters" role="group" aria-label="Filter leads">
-              @for (f of leadFilters; track f.label) {
-                <button
-                  type="button"
-                  class="filters__f"
-                  [attr.aria-pressed]="leadFilter() === f.value"
-                  (click)="leadFilter.set(f.value)"
-                >
-                  {{ f.label }} <span class="ar-mono">{{ countLeads(f.value) }}</span>
-                </button>
-              }
-            </div>
-            @if (visibleLeads().length === 0) {
-              <p class="nw__hint">
-                @if (leads().length === 0) {
-                  No leads routed yet. Open an enquiry on the board and choose “Route to a dealer”.
-                } @else {
-                  Nothing here.
+          @switch (tab()) {
+            @case (leadsTab) {
+              <div class="filters" role="group" aria-label="Filter leads">
+                @for (f of leadFilters; track f.label) {
+                  <button
+                    type="button"
+                    class="filters__f"
+                    [attr.aria-pressed]="leadFilter() === f.value"
+                    (click)="leadFilter.set(f.value)"
+                  >
+                    {{ f.label }} <span class="ar-mono">{{ countLeads(f.value) }}</span>
+                  </button>
                 }
-              </p>
-            }
-            <ul class="list">
-              @for (l of visibleLeads(); track l.id) {
-                <li>
-                  <button type="button" class="lead" (click)="goLead(l)">
-                    <span class="lead__main">
-                      <span class="ar-mono lead__ref">{{ l.oemEnquiryReference }}</span>
-                      <b>{{ l.title || 'Enquiry' }}</b>
-                      <span class="lead__meta"
-                        >{{ where(l) }}{{ l.productLine ? ' · ' + l.productLine : '' }}
-                        @if (l.estimatedValueInPaise) {
-                          · est. {{ money(l.estimatedValueInPaise) }}
+              </div>
+              @if (visibleLeads().length === 0) {
+                <p class="nw__hint">
+                  @if (leads().length === 0) {
+                    No leads routed yet. Open an enquiry on the board and choose “Route to a
+                    dealer”.
+                  } @else {
+                    Nothing here.
+                  }
+                </p>
+              }
+              <ul class="list">
+                @for (l of visibleLeads(); track l.id) {
+                  <li>
+                    <button type="button" class="lead" (click)="goLead(l)">
+                      <span class="lead__main">
+                        <span class="ar-mono lead__ref">{{ l.oemEnquiryReference }}</span>
+                        <b>{{ l.title || 'Enquiry' }}</b>
+                        <span class="lead__meta"
+                          >{{ where(l) }}{{ l.productLine ? ' · ' + l.productLine : '' }}
+                          @if (l.estimatedValueInPaise) {
+                            · est. {{ money(l.estimatedValueInPaise) }}
+                          }
+                        </span>
+                        @if (l.note && l.state === 'Unrouted') {
+                          <span class="lead__note" translate="no">{{ l.note }}</span>
                         }
                       </span>
-                      @if (l.note && l.state === 'Unrouted') {
-                        <span class="lead__note" translate="no">{{ l.note }}</span>
-                      }
-                    </span>
-                    <span class="lead__side">
-                      <ar-chip [tone]="tone(l.state)" [dot]="true">{{
-                        stateLabel(l.state)
-                      }}</ar-chip>
-                      @if (l.dealerName) {
-                        <span class="lead__dealer">{{ l.dealerName }}</span>
-                      }
-                      @if (l.state === 'Offered') {
-                        <small>{{ left(l.answerByUtc) }}</small>
-                      } @else if (l.dealerStage && l.state === 'Accepted') {
-                        <small
-                          >{{ l.dealerStage
-                          }}{{
-                            l.quotedInPaise ? ' · quoted ' + money(l.quotedInPaise) : ''
-                          }}</small
-                        >
-                      }
-                    </span>
-                  </button>
-                </li>
-              }
-            </ul>
-          }
-
-          @case (dealersTab) {
-            @if (dealers().length === 0) {
-              <p class="nw__hint">
-                No dealers yet. Invite one: they get a code to enter in their own MNI Assist
-                workspace, and from then on you can send them leads in their territory.
-              </p>
-            }
-            <ul class="list">
-              @for (d of dealers(); track d.id) {
-                <li class="dealer" [class.dealer--ended]="d.state === 'Ended'">
-                  <div class="dealer__head">
-                    <b>{{ d.dealerName }}</b>
-                    <ar-chip [tone]="linkTone(d.state)">{{ d.state }}</ar-chip>
-                    <span class="dealer__counts ar-mono"
-                      >{{ d.openLeads }} open · {{ d.wonLeads }} won · {{ d.lostLeads }} lost</span
-                    >
-                  </div>
-                  <p class="dealer__terr">{{ territory(d.territory) }}</p>
-                  @if (d.inviteCode) {
-                    <p class="dealer__code">
-                      Invite code <span class="ar-mono">{{ d.inviteCode }}</span>
-                      <small>· valid until {{ date(d.inviteExpiresAtUtc) }}</small>
-                    </p>
-                  }
-                  @if (canManage() && d.state !== 'Ended') {
-                    <div class="dealer__acts">
-                      @if (d.inviteCode) {
-                        <button ar-button type="button" variant="ghost" (click)="copyCode(d)">
-                          Copy code
-                        </button>
-                        <button
-                          ar-button
-                          type="button"
-                          variant="ghost"
-                          [disabled]="busy() === d.id"
-                          (click)="linkAction(d, 'renew')"
-                        >
-                          New code
-                        </button>
-                      }
-                      <button ar-button type="button" variant="ghost" (click)="goTerritory(d)">
-                        Edit territory
-                      </button>
-                      @if (d.state === 'Active') {
-                        <button
-                          ar-button
-                          type="button"
-                          variant="ghost"
-                          [disabled]="busy() === d.id"
-                          (click)="linkAction(d, 'suspend')"
-                        >
-                          Pause new leads
-                        </button>
-                      } @else if (d.state === 'Suspended') {
-                        <button
-                          ar-button
-                          type="button"
-                          variant="ghost"
-                          [disabled]="busy() === d.id"
-                          (click)="linkAction(d, 'resume')"
-                        >
-                          Resume
-                        </button>
-                      }
-                      <button
-                        ar-button
-                        type="button"
-                        variant="ghost"
-                        [disabled]="busy() === d.id"
-                        (click)="linkAction(d, 'end')"
-                      >
-                        End link
-                      </button>
-                    </div>
-                  }
-                </li>
-              }
-            </ul>
-          }
-
-          @case (incomingTab) {
-            @if (!runsNetwork()) {
-              <p class="nw__hint">
-                Joining an OEM's dealer network and receiving its leads is free on every plan.
-                Running your own dealer network (inviting dealers and routing leads to them) is part
-                of Enterprise.
-              </p>
-            }
-            @if (canManage()) {
-              <form class="join" (submit)="$event.preventDefault(); join()">
-                <label class="ar-field" for="nw-code">
-                  <span class="ar-field__label">Join an OEM's network with its invite code</span>
-                  <input
-                    id="nw-code"
-                    class="ar-field__input ar-mono"
-                    autocomplete="off"
-                    placeholder="K7PX3MRT2A"
-                    [value]="code()"
-                    (input)="code.set($any($event.target).value)"
-                  />
-                </label>
-                <button
-                  ar-button
-                  type="submit"
-                  variant="primary"
-                  [disabled]="!code().trim() || busy() === 'join'"
-                >
-                  {{ busy() === 'join' ? 'Joining…' : 'Join' }}
-                </button>
-              </form>
-            }
-            @if (memberships().length) {
-              <section class="members" aria-label="Networks you belong to">
-                @for (m of memberships(); track m.id) {
-                  <div class="members__m">
-                    <b>{{ m.oemName }}</b>
-                    <ar-chip [tone]="linkTone(m.state)">{{ m.state }}</ar-chip>
-                    <span class="members__t">Your territory: {{ territory(m.territory) }}</span>
-                    @if (canManage() && m.state !== 'Ended') {
-                      <button
-                        ar-button
-                        type="button"
-                        variant="ghost"
-                        [disabled]="busy() === m.id"
-                        (click)="leave(m)"
-                      >
-                        Leave
-                      </button>
-                    }
-                  </div>
+                      <span class="lead__side">
+                        <ar-chip [tone]="tone(l.state)" [dot]="true">{{
+                          stateLabel(l.state)
+                        }}</ar-chip>
+                        @if (l.dealerName) {
+                          <span class="lead__dealer">{{ l.dealerName }}</span>
+                        }
+                        @if (l.state === 'Offered') {
+                          <small>{{ left(l.answerByUtc) }}</small>
+                        } @else if (l.dealerStage && l.state === 'Accepted') {
+                          <small
+                            >{{ l.dealerStage
+                            }}{{
+                              l.quotedInPaise ? ' · quoted ' + money(l.quotedInPaise) : ''
+                            }}</small
+                          >
+                        }
+                      </span>
+                    </button>
+                  </li>
                 }
-              </section>
+              </ul>
             }
-            @if (offers().length === 0) {
-              <p class="nw__hint">
-                No leads offered to you right now. When an OEM you work with sends one, it shows
-                here and in your notifications.
-              </p>
-            }
-            <ul class="list">
-              @for (o of offers(); track o.id) {
-                <li class="offer">
-                  <div class="offer__head">
-                    <b>{{ o.title || 'Enquiry' }}</b>
-                    <ar-chip [tone]="o.state === 'Offered' ? 'warn' : tone(o.state)" [dot]="true">{{
-                      o.state === 'Offered' ? left(o.answerByUtc) : o.state
-                    }}</ar-chip>
-                  </div>
-                  <p class="offer__meta">
-                    From {{ o.oemName }} · {{ where(o)
-                    }}{{ o.productLine ? ' · ' + o.productLine : '' }}
-                    @if (o.estimatedValueInPaise) {
-                      · est. {{ money(o.estimatedValueInPaise) }}
-                    }
-                  </p>
-                  @if (o.requirement) {
-                    <p class="offer__req">{{ o.requirement }}</p>
-                  }
-                  @if (o.state === 'Offered') {
-                    <p class="offer__consent">
-                      The customer's name and number are shared once you accept.
-                      <small>{{ o.consentNote }}</small>
-                    </p>
-                    <div class="offer__acts">
-                      <button
-                        ar-button
-                        type="button"
-                        variant="ghost"
-                        [disabled]="busy() === o.id"
-                        (click)="decline(o)"
-                      >
-                        Decline
-                      </button>
-                      <button
-                        ar-button
-                        type="button"
-                        variant="primary"
-                        [disabled]="busy() === o.id"
-                        (click)="accept(o)"
-                      >
-                        {{ busy() === o.id ? 'Accepting…' : 'Accept lead' }}
-                      </button>
-                    </div>
-                  } @else if (o.dealerEnquiryId) {
-                    <div class="offer__acts">
-                      @if (o.hasConversation) {
-                        <button
-                          ar-button
-                          type="button"
-                          variant="ghost"
-                          [disabled]="busy() === o.id"
-                          (click)="goConversation(o)"
-                        >
-                          Conversation
-                        </button>
-                      }
-                      @if (o.state === 'Accepted') {
-                        <button
-                          ar-button
-                          type="button"
-                          variant="ghost"
-                          [disabled]="busy() === o.id"
-                          (click)="handBack(o)"
-                        >
-                          Hand back
-                        </button>
-                      }
-                      <a
-                        class="offer__link"
-                        routerLink="/enquiries"
-                        [queryParams]="{ open: o.dealerEnquiryId }"
-                        >Open the enquiry →</a
-                      >
-                    </div>
-                  }
-                </li>
-              }
-            </ul>
-          }
-        }
-      </div>
-    </div>
-  }
 
-  <ng-template #formsTpl>
-    @if (inviteOpen()) {
-      <ar-dialog
-        [title]="editing() ? 'Territory · ' + editing()!.dealerName : 'Invite a dealer'"
-        (dismiss)="close()"
-      >
-        @if (created(); as c) {
-          <p class="nw__hint">
-            Send <b>{{ c.dealerName }}</b> this code. They enter it under Dealer network → Leads for
-            us in their own MNI Assist workspace. It works once, for 14 days.
-          </p>
-          <p class="bigcode ar-mono">{{ c.inviteCode }}</p>
-        } @else {
-          @if (!editing()) {
-            <label class="ar-field" for="nw-name">
-              <span class="ar-field__label">Dealer's name</span>
+            @case (dealersTab) {
+              @if (dealers().length === 0) {
+                <p class="nw__hint">
+                  No dealers yet. Invite one: they get a code to enter in their own MNI Assist
+                  workspace, and from then on you can send them leads in their territory.
+                </p>
+              }
+              <ul class="list">
+                @for (d of dealers(); track d.id) {
+                  <li class="dealer" [class.dealer--ended]="d.state === 'Ended'">
+                    <div class="dealer__head">
+                      <b>{{ d.dealerName }}</b>
+                      <ar-chip [tone]="linkTone(d.state)">{{ d.state }}</ar-chip>
+                      <span class="dealer__counts ar-mono"
+                        >{{ d.openLeads }} open · {{ d.wonLeads }} won ·
+                        {{ d.lostLeads }} lost</span
+                      >
+                    </div>
+                    <p class="dealer__terr">{{ territory(d.territory) }}</p>
+                    @if (d.inviteCode) {
+                      <p class="dealer__code">
+                        Invite code <span class="ar-mono">{{ d.inviteCode }}</span>
+                        <small>· valid until {{ date(d.inviteExpiresAtUtc) }}</small>
+                      </p>
+                    }
+                    @if (canManage() && d.state !== 'Ended') {
+                      <div class="dealer__acts">
+                        @if (d.inviteCode) {
+                          <button ar-button type="button" variant="ghost" (click)="copyCode(d)">
+                            Copy code
+                          </button>
+                          <button
+                            ar-button
+                            type="button"
+                            variant="ghost"
+                            [disabled]="busy() === d.id"
+                            (click)="linkAction(d, 'renew')"
+                          >
+                            New code
+                          </button>
+                        }
+                        <button ar-button type="button" variant="ghost" (click)="goTerritory(d)">
+                          Edit territory
+                        </button>
+                        @if (d.state === 'Active') {
+                          <button
+                            ar-button
+                            type="button"
+                            variant="ghost"
+                            [disabled]="busy() === d.id"
+                            (click)="linkAction(d, 'suspend')"
+                          >
+                            Pause new leads
+                          </button>
+                        } @else if (d.state === 'Suspended') {
+                          <button
+                            ar-button
+                            type="button"
+                            variant="ghost"
+                            [disabled]="busy() === d.id"
+                            (click)="linkAction(d, 'resume')"
+                          >
+                            Resume
+                          </button>
+                        }
+                        <button
+                          ar-button
+                          type="button"
+                          variant="ghost"
+                          [disabled]="busy() === d.id"
+                          (click)="linkAction(d, 'end')"
+                        >
+                          End link
+                        </button>
+                      </div>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+
+            @case (incomingTab) {
+              @if (!runsNetwork()) {
+                <p class="nw__hint">
+                  Joining an OEM's dealer network and receiving its leads is free on every plan.
+                  Running your own dealer network (inviting dealers and routing leads to them) is
+                  part of Enterprise.
+                </p>
+              }
+              @if (canManage()) {
+                <form class="join" (submit)="$event.preventDefault(); join()">
+                  <label class="ar-field" for="nw-code">
+                    <span class="ar-field__label">Join an OEM's network with its invite code</span>
+                    <input
+                      id="nw-code"
+                      class="ar-field__input ar-mono"
+                      autocomplete="off"
+                      placeholder="K7PX3MRT2A"
+                      [value]="code()"
+                      (input)="code.set($any($event.target).value)"
+                    />
+                  </label>
+                  <button
+                    ar-button
+                    type="submit"
+                    variant="primary"
+                    [disabled]="!code().trim() || busy() === 'join'"
+                  >
+                    {{ busy() === 'join' ? 'Joining…' : 'Join' }}
+                  </button>
+                </form>
+              }
+              @if (memberships().length) {
+                <section class="members" aria-label="Networks you belong to">
+                  @for (m of memberships(); track m.id) {
+                    <div class="members__m">
+                      <b>{{ m.oemName }}</b>
+                      <ar-chip [tone]="linkTone(m.state)">{{ m.state }}</ar-chip>
+                      <span class="members__t">Your territory: {{ territory(m.territory) }}</span>
+                      @if (canManage() && m.state !== 'Ended') {
+                        <button
+                          ar-button
+                          type="button"
+                          variant="ghost"
+                          [disabled]="busy() === m.id"
+                          (click)="leave(m)"
+                        >
+                          Leave
+                        </button>
+                      }
+                    </div>
+                  }
+                </section>
+              }
+              @if (offers().length === 0) {
+                <p class="nw__hint">
+                  No leads offered to you right now. When an OEM you work with sends one, it shows
+                  here and in your notifications.
+                </p>
+              }
+              <ul class="list">
+                @for (o of offers(); track o.id) {
+                  <li class="offer">
+                    <div class="offer__head">
+                      <b>{{ o.title || 'Enquiry' }}</b>
+                      <ar-chip
+                        [tone]="o.state === 'Offered' ? 'warn' : tone(o.state)"
+                        [dot]="true"
+                        >{{ o.state === 'Offered' ? left(o.answerByUtc) : o.state }}</ar-chip
+                      >
+                    </div>
+                    <p class="offer__meta">
+                      From {{ o.oemName }} · {{ where(o)
+                      }}{{ o.productLine ? ' · ' + o.productLine : '' }}
+                      @if (o.estimatedValueInPaise) {
+                        · est. {{ money(o.estimatedValueInPaise) }}
+                      }
+                    </p>
+                    @if (o.requirement) {
+                      <p class="offer__req">{{ o.requirement }}</p>
+                    }
+                    @if (o.state === 'Offered') {
+                      <p class="offer__consent">
+                        The customer's name and number are shared once you accept.
+                        <small>{{ o.consentNote }}</small>
+                      </p>
+                      <div class="offer__acts">
+                        <button
+                          ar-button
+                          type="button"
+                          variant="ghost"
+                          [disabled]="busy() === o.id"
+                          (click)="decline(o)"
+                        >
+                          Decline
+                        </button>
+                        <button
+                          ar-button
+                          type="button"
+                          variant="primary"
+                          [disabled]="busy() === o.id"
+                          (click)="accept(o)"
+                        >
+                          {{ busy() === o.id ? 'Accepting…' : 'Accept lead' }}
+                        </button>
+                      </div>
+                    } @else if (o.dealerEnquiryId) {
+                      <div class="offer__acts">
+                        @if (o.hasConversation) {
+                          <button
+                            ar-button
+                            type="button"
+                            variant="ghost"
+                            [disabled]="busy() === o.id"
+                            (click)="goConversation(o)"
+                          >
+                            Conversation
+                          </button>
+                        }
+                        @if (o.state === 'Accepted') {
+                          <button
+                            ar-button
+                            type="button"
+                            variant="ghost"
+                            [disabled]="busy() === o.id"
+                            (click)="handBack(o)"
+                          >
+                            Hand back
+                          </button>
+                        }
+                        <a
+                          class="offer__link"
+                          routerLink="/enquiries"
+                          [queryParams]="{ open: o.dealerEnquiryId }"
+                          >Open the enquiry →</a
+                        >
+                      </div>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          }
+        </div>
+      </div>
+    }
+
+    <ng-template #formsTpl>
+      @if (inviteOpen()) {
+        <ar-dialog
+          [title]="editing() ? 'Territory · ' + editing()!.dealerName : 'Invite a dealer'"
+          (dismiss)="close()"
+        >
+          @if (created(); as c) {
+            <p class="nw__hint">
+              Send <b>{{ c.dealerName }}</b> this code. They enter it under Dealer network → Leads
+              for us in their own MNI Assist workspace. It works once, for 14 days.
+            </p>
+            <p class="bigcode ar-mono">{{ c.inviteCode }}</p>
+          } @else {
+            @if (!editing()) {
+              <label class="ar-field" for="nw-name">
+                <span class="ar-field__label">Dealer's name</span>
+                <input
+                  required
+                  maxlength="128"
+                  id="nw-name"
+                  class="ar-field__input"
+                  placeholder="Pune Automation Pvt Ltd"
+                  [value]="dealerName()"
+                  (input)="dealerName.set($any($event.target).value)"
+                />
+              </label>
+            }
+            <p class="nw__hint">
+              The most specific match wins: a PIN prefix beats a city, a city beats a state. Dealers
+              matching equally take turns. Separate entries with commas.
+            </p>
+            <label class="ar-field" for="nw-pins">
+              <span class="ar-field__label"
+                >PIN code prefixes <span class="ar-field__opt">(e.g. 4110, 41102)</span></span
+              >
               <input
-                required
-                maxlength="128"
-                id="nw-name"
+                id="nw-pins"
+                class="ar-field__input ar-mono"
+                inputmode="numeric"
+                [value]="terr().pins"
+                (input)="setTerr('pins', $any($event.target).value)"
+              />
+            </label>
+            <label class="ar-field" for="nw-cities">
+              <span class="ar-field__label"
+                >Cities <span class="ar-field__opt">optional</span></span
+              >
+              <input
+                id="nw-cities"
                 class="ar-field__input"
-                placeholder="Pune Automation Pvt Ltd"
-                [value]="dealerName()"
-                (input)="dealerName.set($any($event.target).value)"
+                placeholder="Pune, Pimpri-Chinchwad"
+                [value]="terr().cities"
+                (input)="setTerr('cities', $any($event.target).value)"
+              />
+            </label>
+            <label class="ar-field" for="nw-states">
+              <span class="ar-field__label"
+                >States <span class="ar-field__opt">optional</span></span
+              >
+              <input
+                id="nw-states"
+                class="ar-field__input"
+                placeholder="Maharashtra"
+                [value]="terr().states"
+                (input)="setTerr('states', $any($event.target).value)"
+              />
+            </label>
+            <label class="ar-field" for="nw-lines">
+              <span class="ar-field__label"
+                >Product lines
+                <span class="ar-field__opt"
+                  >(optional; blank = everything. Matched with the enquiry's “product_line”)</span
+                ></span
+              >
+              <input
+                id="nw-lines"
+                class="ar-field__input"
+                placeholder="Drives, Soft starters"
+                [value]="terr().lines"
+                (input)="setTerr('lines', $any($event.target).value)"
               />
             </label>
           }
-          <p class="nw__hint">
-            The most specific match wins: a PIN prefix beats a city, a city beats a state. Dealers
-            matching equally take turns. Separate entries with commas.
-          </p>
-          <label class="ar-field" for="nw-pins">
-            <span class="ar-field__label"
-              >PIN code prefixes <span class="ar-field__opt">(e.g. 4110, 41102)</span></span
-            >
-            <input
-              id="nw-pins"
-              class="ar-field__input ar-mono"
-              inputmode="numeric"
-              [value]="terr().pins"
-              (input)="setTerr('pins', $any($event.target).value)"
-            />
-          </label>
-          <label class="ar-field" for="nw-cities">
-            <span class="ar-field__label">Cities <span class="ar-field__opt">optional</span></span>
-            <input
-              id="nw-cities"
-              class="ar-field__input"
-              placeholder="Pune, Pimpri-Chinchwad"
-              [value]="terr().cities"
-              (input)="setTerr('cities', $any($event.target).value)"
-            />
-          </label>
-          <label class="ar-field" for="nw-states">
-            <span class="ar-field__label">States <span class="ar-field__opt">optional</span></span>
-            <input
-              id="nw-states"
-              class="ar-field__input"
-              placeholder="Maharashtra"
-              [value]="terr().states"
-              (input)="setTerr('states', $any($event.target).value)"
-            />
-          </label>
-          <label class="ar-field" for="nw-lines">
-            <span class="ar-field__label"
-              >Product lines
-              <span class="ar-field__opt"
-                >(optional; blank = everything. Matched with the enquiry's “product_line”)</span
-              ></span
-            >
-            <input
-              id="nw-lines"
-              class="ar-field__input"
-              placeholder="Drives, Soft starters"
-              [value]="terr().lines"
-              (input)="setTerr('lines', $any($event.target).value)"
-            />
-          </label>
-        }
-        @if (dialogError(); as e) {
-          <p class="nw__err" role="alert">{{ e }}</p>
-        }
-        <div dialogActions>
-          @if (created()) {
-            <button ar-button type="button" variant="ghost" (click)="copyCode(created()!)">
-              Copy code
-            </button>
-            <button ar-button type="button" variant="primary" (click)="close()">
-              Done
-            </button>
-          } @else {
-            <button ar-button type="button" variant="ghost" (click)="close()">
-              Cancel
-            </button>
-            <button
-              ar-button
-              type="button"
-              variant="primary"
-              [disabled]="busy() === 'invite'"
-              (click)="saveDealer()"
-            >
-              {{ editing() ? 'Save territory' : 'Create invite' }}
-            </button>
+          @if (dialogError(); as e) {
+            <p class="nw__err" role="alert">{{ e }}</p>
           }
-        </div>
-      </ar-dialog>
-    }
-
-    @if (conversation(); as c) {
-      <ar-dialog
-        [title]="'Conversation with ' + c.offer.oemName"
-        (dismiss)="close()"
-      >
-        <p class="nw__hint">
-          {{ c.offer.oemName }}'s WhatsApp conversation with the customer before the lead came to
-          you ({{ c.offer.oemEnquiryReference }}). A copy: reply from your own inbox.
-        </p>
-        <ol class="chat" aria-label="Messages">
-          @for (m of c.lines; track $index) {
-            <li class="chat__m" [class.chat__m--them]="!m.fromCustomer">
-              <small
-                >{{ m.fromCustomer ? 'Customer' : c.offer.oemName }} · {{ date(m.atUtc) }}</small
-              >
-              <span translate="no">{{ m.text }}</span>
-            </li>
-          } @empty {
-            <li class="nw__hint">No messages were shared.</li>
-          }
-        </ol>
-      </ar-dialog>
-    }
-
-    @if (settingsOpen()) {
-      <ar-dialog title="Network settings" (dismiss)="close()">
-        <label class="check" for="nw-reroute">
-          <input
-            id="nw-reroute"
-            type="checkbox"
-            [checked]="settings().rerouteAutomatically"
-            (change)="patchSettings({ rerouteAutomatically: $any($event.target).checked })"
-          />
-          <span
-            >When a dealer declines or doesn't answer in time, offer the lead to the next match
-            <small>Off: it comes back to your queue for you to decide.</small></span
-          >
-        </label>
-        <label class="ar-field" for="nw-hours">
-          <span class="ar-field__label">Hours a dealer has to accept (1–168)</span>
-          <input
-            required
-            id="nw-hours"
-            class="ar-field__input"
-            inputmode="numeric"
-            [value]="settings().answerWithinHours"
-            (input)="patchSettings({ answerWithinHours: +$any($event.target).value })"
-          />
-        </label>
-        <label class="ar-field" for="nw-consent">
-          <span class="ar-field__label"
-            >Consent wording: how your customers learn a dealer may contact them
-            <span class="ar-field__opt"
-              >(your team confirms it before routing; recorded on every lead and shown to the
-              dealer; leave blank for the standard wording)</span
-            ></span
-          >
-          <textarea
-            id="nw-consent"
-            class="ar-field__input"
-            rows="3"
-            maxlength="512"
-            [value]="settings().consentNote ?? ''"
-            (input)="patchSettings({ consentNote: $any($event.target).value })"
-          ></textarea>
-        </label>
-        <label class="check" for="nw-share">
-          <input
-            id="nw-share"
-            type="checkbox"
-            [checked]="!!settings().shareConversation"
-            (change)="patchSettings({ shareConversation: $any($event.target).checked })"
-          />
-          <span
-            >Give the dealer who accepts the customer's WhatsApp conversation with you
-            <small
-              >The last 100 messages, as a read-only copy; photos and documents are named, not sent.
-              Only switch this on if your consent wording tells customers their conversation may be
-              shared with the dealer.</small
-            ></span
-          >
-        </label>
-        @if (dialogError(); as e) {
-          <p class="nw__err" role="alert">{{ e }}</p>
-        }
-        <div dialogActions>
-          <button ar-button type="button" variant="ghost" (click)="close()">
-            Cancel
-          </button>
-          <button
-            ar-button
-            type="button"
-            variant="primary"
-            [disabled]="busy() === 'settings'"
-            (click)="saveSettings()"
-          >
-            Save
-          </button>
-        </div>
-      </ar-dialog>
-    }
-
-    @if (lead(); as d) {
-      <ar-dialog
-        [title]="d.oemEnquiryReference + ' · ' + stateLabel(d.state)"
-        (dismiss)="close()"
-      >
-        <p class="nw__hint">
-          <b>{{ d.title || 'Enquiry' }}</b> · {{ where(d)
-          }}{{ d.productLine ? ' · ' + d.productLine : '' }}
-          @if (d.dealerName) {
-            · {{ d.dealerName }}
-          }
-        </p>
-        @if (d.note) {
-          <p class="nw__hint">{{ d.note }}</p>
-        }
-        @if (d.skippedDealers.length) {
-          <p class="nw__hint">Won't be offered again to: {{ d.skippedDealers.join(', ') }}</p>
-        }
-        @if (d.snapshot; as s) {
-          <div class="snap">
-            <div class="snap__facts">
-              <span
-                ><small>Dealer's ref.</small
-                ><b class="ar-mono">{{ s.dealerEnquiryReference }}</b></span
-              >
-              <span
-                ><small>Stage</small><b>{{ s.stage }}</b></span
-              >
-              <span
-                ><small>Owner</small><b>{{ s.ownerName || 'Unassigned' }}</b></span
-              >
-              <span
-                ><small>First response</small
-                ><b>{{
-                  s.firstResponseMinutes == null ? '—' : minutes(s.firstResponseMinutes)
-                }}</b></span
-              >
-            </div>
-            @if (s.lostReason) {
-              <p class="nw__err">Lost: {{ s.lostReason }}</p>
-            }
-            @for (q of s.quotations; track q.reference) {
-              <section class="quote">
-                <h3>
-                  <span class="ar-mono">{{ q.reference }}</span> · {{ q.state }} ·
-                  {{ money(q.subtotalInPaise + q.taxInPaise) }}
-                  @if (q.issuedAtUtc) {
-                    <small>sent {{ date(q.issuedAtUtc) }}</small>
-                  }
-                </h3>
-                <div class="quote__wrap">
-                  <ejs-grid
-                    arGrid="network-quote-lines"
-                    [dataSource]="q.lines"
-                    aria-label="Quote items"
-                  >
-                    <e-columns>
-                      <e-column field="partNumber" headerText="Part" width="150">
-                        <ng-template #template let-ln>
-                          <span class="ar-mono">{{ ln.partNumber || '—' }}</span>
-                        </ng-template>
-                      </e-column>
-                      <e-column field="description" headerText="Description" width="220"></e-column>
-                      <e-column headerText="Qty" width="110" [textAlign]="'Right'">
-                        <ng-template #template let-ln>
-                          {{ ln.quantity }} {{ ln.unit }}
-                        </ng-template>
-                      </e-column>
-                      <e-column field="unitPriceInPaise" headerText="Unit price" width="130" [textAlign]="'Right'">
-                        <ng-template #template let-ln>
-                          {{ money(ln.unitPriceInPaise) }}
-                        </ng-template>
-                      </e-column>
-                      <e-column headerText="Disc." width="100" [textAlign]="'Right'">
-                        <ng-template #template let-ln>
-                          {{ ln.discountBasisPoints ? ln.discountBasisPoints / 100 + '%' : '—' }}
-                        </ng-template>
-                      </e-column>
-                    </e-columns>
-                  </ejs-grid>
-                </div>
-              </section>
-            }
-            @if (s.activity.length) {
-              <ol class="act">
-                @for (e of s.activity; track $index) {
-                  <li>
-                    <small>{{ date(e.atUtc) }}</small> {{ e.summary || e.kind }}
-                  </li>
-                }
-              </ol>
-            }
-            <p class="nw__hint">Updated {{ date(d.snapshotAtUtc) }}; refreshed hourly.</p>
-          </div>
-        } @else if (d.state === 'Offered') {
-          <p class="nw__hint">
-            Waiting for {{ d.dealerName }} to accept · {{ left(d.answerByUtc) }}.
-          </p>
-        }
-        <p class="nw__hint">
-          <small>Consent: {{ d.consentNote }}</small>
-        </p>
-        @if (dialogError(); as e) {
-          <p class="nw__err" role="alert">{{ e }}</p>
-        }
-        <div dialogActions>
-          @if (canRoute()) {
-            @if (d.state === 'Accepted' || d.state === 'Won' || d.state === 'Lost') {
-              <button
-                ar-button
-                type="button"
-                variant="ghost"
-                icon="refresh"
-                [disabled]="busy() === d.id"
-                (click)="refresh(d)"
-              >
-                Refresh now
+          <div dialogActions>
+            @if (created()) {
+              <button ar-button type="button" variant="ghost" (click)="copyCode(created()!)">
+                Copy code
               </button>
-            }
-            @if (d.state === 'Offered' || d.state === 'Accepted') {
-              <button
-                ar-button
-                type="button"
-                variant="ghost"
-                [disabled]="busy() === d.id"
-                (click)="recall(d)"
-              >
-                Take back
-              </button>
-            }
-            @if (d.state === 'Unrouted') {
-              <button
-                ar-button
-                type="button"
-                variant="ghost"
-                [disabled]="busy() === d.id"
-                (click)="closeLead(d)"
-              >
-                Close without a dealer
-              </button>
+              <button ar-button type="button" variant="primary" (click)="close()">Done</button>
+            } @else {
+              <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
               <button
                 ar-button
                 type="button"
                 variant="primary"
-                (click)="routing.set(d.oemEnquiryId); lead.set(null)"
+                [disabled]="busy() === 'invite'"
+                (click)="saveDealer()"
               >
-                Route again
+                {{ editing() ? 'Save territory' : 'Create invite' }}
               </button>
             }
-          }
-        </div>
-      </ar-dialog>
-    }
+          </div>
+        </ar-dialog>
+      }
 
-    @if (routing(); as enquiryId) {
-      <ar-route-lead-dialog [enquiryId]="enquiryId" (closed)="routed($event); close()" />
-    }
-  </ng-template>
+      @if (conversation(); as c) {
+        <ar-dialog [title]="'Conversation with ' + c.offer.oemName" (dismiss)="close()">
+          <p class="nw__hint">
+            {{ c.offer.oemName }}'s WhatsApp conversation with the customer before the lead came to
+            you ({{ c.offer.oemEnquiryReference }}). A copy: reply from your own inbox.
+          </p>
+          <ol class="chat" aria-label="Messages">
+            @for (m of c.lines; track $index) {
+              <li class="chat__m" [class.chat__m--them]="!m.fromCustomer">
+                <small
+                  >{{ m.fromCustomer ? 'Customer' : c.offer.oemName }} · {{ date(m.atUtc) }}</small
+                >
+                <span translate="no">{{ m.text }}</span>
+              </li>
+            } @empty {
+              <li class="nw__hint">No messages were shared.</li>
+            }
+          </ol>
+        </ar-dialog>
+      }
+
+      @if (settingsOpen()) {
+        <ar-dialog title="Network settings" (dismiss)="close()">
+          <label class="check" for="nw-reroute">
+            <input
+              id="nw-reroute"
+              type="checkbox"
+              [checked]="settings().rerouteAutomatically"
+              (change)="patchSettings({ rerouteAutomatically: $any($event.target).checked })"
+            />
+            <span
+              >When a dealer declines or doesn't answer in time, offer the lead to the next match
+              <small>Off: it comes back to your queue for you to decide.</small></span
+            >
+          </label>
+          <label class="ar-field" for="nw-hours">
+            <span class="ar-field__label">Hours a dealer has to accept (1–168)</span>
+            <input
+              required
+              id="nw-hours"
+              class="ar-field__input"
+              inputmode="numeric"
+              [value]="settings().answerWithinHours"
+              (input)="patchSettings({ answerWithinHours: +$any($event.target).value })"
+            />
+          </label>
+          <label class="ar-field" for="nw-consent">
+            <span class="ar-field__label"
+              >Consent wording: how your customers learn a dealer may contact them
+              <span class="ar-field__opt"
+                >(your team confirms it before routing; recorded on every lead and shown to the
+                dealer; leave blank for the standard wording)</span
+              ></span
+            >
+            <textarea
+              id="nw-consent"
+              class="ar-field__input"
+              rows="3"
+              maxlength="512"
+              [value]="settings().consentNote ?? ''"
+              (input)="patchSettings({ consentNote: $any($event.target).value })"
+            ></textarea>
+          </label>
+          <label class="check" for="nw-share">
+            <input
+              id="nw-share"
+              type="checkbox"
+              [checked]="!!settings().shareConversation"
+              (change)="patchSettings({ shareConversation: $any($event.target).checked })"
+            />
+            <span
+              >Give the dealer who accepts the customer's WhatsApp conversation with you
+              <small
+                >The last 100 messages, as a read-only copy; photos and documents are named, not
+                sent. Only switch this on if your consent wording tells customers their conversation
+                may be shared with the dealer.</small
+              ></span
+            >
+          </label>
+          @if (dialogError(); as e) {
+            <p class="nw__err" role="alert">{{ e }}</p>
+          }
+          <div dialogActions>
+            <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
+            <button
+              ar-button
+              type="button"
+              variant="primary"
+              [disabled]="busy() === 'settings'"
+              (click)="saveSettings()"
+            >
+              Save
+            </button>
+          </div>
+        </ar-dialog>
+      }
+
+      @if (lead(); as d) {
+        <ar-dialog
+          [title]="d.oemEnquiryReference + ' · ' + stateLabel(d.state)"
+          (dismiss)="close()"
+        >
+          <p class="nw__hint">
+            <b>{{ d.title || 'Enquiry' }}</b> · {{ where(d)
+            }}{{ d.productLine ? ' · ' + d.productLine : '' }}
+            @if (d.dealerName) {
+              · {{ d.dealerName }}
+            }
+          </p>
+          @if (d.note) {
+            <p class="nw__hint">{{ d.note }}</p>
+          }
+          @if (d.skippedDealers.length) {
+            <p class="nw__hint">Won't be offered again to: {{ d.skippedDealers.join(', ') }}</p>
+          }
+          @if (d.snapshot; as s) {
+            <div class="snap">
+              <div class="snap__facts">
+                <span
+                  ><small>Dealer's ref.</small
+                  ><b class="ar-mono">{{ s.dealerEnquiryReference }}</b></span
+                >
+                <span
+                  ><small>Stage</small><b>{{ s.stage }}</b></span
+                >
+                <span
+                  ><small>Owner</small><b>{{ s.ownerName || 'Unassigned' }}</b></span
+                >
+                <span
+                  ><small>First response</small
+                  ><b>{{
+                    s.firstResponseMinutes == null ? '—' : minutes(s.firstResponseMinutes)
+                  }}</b></span
+                >
+              </div>
+              @if (s.lostReason) {
+                <p class="nw__err">Lost: {{ s.lostReason }}</p>
+              }
+              @for (q of s.quotations; track q.reference) {
+                <section class="quote">
+                  <h3>
+                    <span class="ar-mono">{{ q.reference }}</span> · {{ q.state }} ·
+                    {{ money(q.subtotalInPaise + q.taxInPaise) }}
+                    @if (q.issuedAtUtc) {
+                      <small>sent {{ date(q.issuedAtUtc) }}</small>
+                    }
+                  </h3>
+                  <div class="quote__wrap">
+                    <ejs-grid
+                      arGrid="network-quote-lines"
+                      [dataSource]="q.lines"
+                      aria-label="Quote items"
+                    >
+                      <e-columns>
+                        <e-column field="partNumber" headerText="Part" width="150">
+                          <ng-template #template let-ln>
+                            <span class="ar-mono">{{ ln.partNumber || '—' }}</span>
+                          </ng-template>
+                        </e-column>
+                        <e-column
+                          field="description"
+                          headerText="Description"
+                          width="220"
+                        ></e-column>
+                        <e-column headerText="Qty" width="110" [textAlign]="'Right'">
+                          <ng-template #template let-ln>
+                            {{ ln.quantity }} {{ ln.unit }}
+                          </ng-template>
+                        </e-column>
+                        <e-column
+                          field="unitPriceInPaise"
+                          headerText="Unit price"
+                          width="130"
+                          [textAlign]="'Right'"
+                        >
+                          <ng-template #template let-ln>
+                            {{ money(ln.unitPriceInPaise) }}
+                          </ng-template>
+                        </e-column>
+                        <e-column headerText="Disc." width="100" [textAlign]="'Right'">
+                          <ng-template #template let-ln>
+                            {{ ln.discountBasisPoints ? ln.discountBasisPoints / 100 + '%' : '—' }}
+                          </ng-template>
+                        </e-column>
+                      </e-columns>
+                    </ejs-grid>
+                  </div>
+                </section>
+              }
+              @if (s.activity.length) {
+                <ol class="act">
+                  @for (e of s.activity; track $index) {
+                    <li>
+                      <small>{{ date(e.atUtc) }}</small> {{ e.summary || e.kind }}
+                    </li>
+                  }
+                </ol>
+              }
+              <p class="nw__hint">Updated {{ date(d.snapshotAtUtc) }}; refreshed hourly.</p>
+            </div>
+          } @else if (d.state === 'Offered') {
+            <p class="nw__hint">
+              Waiting for {{ d.dealerName }} to accept · {{ left(d.answerByUtc) }}.
+            </p>
+          }
+          <p class="nw__hint">
+            <small>Consent: {{ d.consentNote }}</small>
+          </p>
+          @if (dialogError(); as e) {
+            <p class="nw__err" role="alert">{{ e }}</p>
+          }
+          <div dialogActions>
+            @if (canRoute()) {
+              @if (d.state === 'Accepted' || d.state === 'Won' || d.state === 'Lost') {
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  icon="refresh"
+                  [disabled]="busy() === d.id"
+                  (click)="refresh(d)"
+                >
+                  Refresh now
+                </button>
+              }
+              @if (d.state === 'Offered' || d.state === 'Accepted') {
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="busy() === d.id"
+                  (click)="recall(d)"
+                >
+                  Take back
+                </button>
+              }
+              @if (d.state === 'Unrouted') {
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="busy() === d.id"
+                  (click)="closeLead(d)"
+                >
+                  Close without a dealer
+                </button>
+                <button
+                  ar-button
+                  type="button"
+                  variant="primary"
+                  (click)="routing.set(d.oemEnquiryId); lead.set(null)"
+                >
+                  Route again
+                </button>
+              }
+            }
+          </div>
+        </ar-dialog>
+      }
+
+      @if (routing(); as enquiryId) {
+        <ar-route-lead-dialog [enquiryId]="enquiryId" (closed)="routed($event); close()" />
+      }
+    </ng-template>
   `,
   styles: `
     :host {
@@ -1226,9 +1140,13 @@ export class ArNetwork {
       case 'settings':
         return 'Network settings';
       case 'lead':
-        return this.lead() ? `${this.lead()!.oemEnquiryReference} · ${this.stateLabel(this.lead()!.state)}` : 'Lead details';
+        return this.lead()
+          ? `${this.lead()!.oemEnquiryReference} · ${this.stateLabel(this.lead()!.state)}`
+          : 'Lead details';
       case 'conversation':
-        return this.conversation() ? `Conversation with ${this.conversation()!.offer.oemName}` : 'Customer conversation';
+        return this.conversation()
+          ? `Conversation with ${this.conversation()!.offer.oemName}`
+          : 'Customer conversation';
       default:
         return 'Dealer network';
     }
@@ -1288,21 +1206,7 @@ export class ArNetwork {
 
   private async load(): Promise<void> {
     this.error.set(null);
-    if (environment.useMockData) {
-      this.dealers.set(MOCK_DEALERS);
-      this.leads.set(MOCK_LEADS);
-      this.offers.set(MOCK_OFFERS);
-      this.memberships.set([
-        {
-          id: 'm1',
-          oemName: 'Acme Drives India',
-          state: 'Active',
-          territory: { states: [], cities: [], pinPrefixes: ['4110', '4111'], productLines: [] },
-        },
-      ]);
-      this.checkRouteParam();
-      return;
-    }
+
     // Each side loads on its own: a dealer's workspace has no dealers of its own, and an OEM's may never have joined anyone.
     const settle = <T>(p: Promise<T>, set: (v: T) => void) =>
       p
@@ -1486,28 +1390,14 @@ export class ArNetwork {
     this.dialogError.set(null);
     try {
       if (editing) {
-        const saved = environment.useMockData
-          ? { ...editing, territory }
-          : await firstValueFrom(this.api.updateTerritory(editing.id, territory));
+        const saved = await firstValueFrom(this.api.updateTerritory(editing.id, territory));
         this.dealers.update((list) => list.map((d) => (d.id === saved.id ? saved : d)));
         this.inviteOpen.set(false);
         this.notice.set(`${saved.dealerName}'s territory saved.`);
       } else {
-        const made = environment.useMockData
-          ? ({
-              id: crypto.randomUUID(),
-              dealerName: this.dealerName().trim(),
-              state: 'Invited',
-              inviteCode: 'M0CK7CODE2',
-              inviteExpiresAtUtc: hoursFromNow(336),
-              territory,
-              openLeads: 0,
-              wonLeads: 0,
-              lostLeads: 0,
-            } as DealerLinkDto)
-          : await firstValueFrom(
-              this.api.invite({ dealerName: this.dealerName().trim(), territory }),
-            );
+        const made = await firstValueFrom(
+          this.api.invite({ dealerName: this.dealerName().trim(), territory }),
+        );
         this.dealers.update((list) => [made, ...list]);
         this.created.set(made);
         this.tab.set(TAB_DEALERS);
@@ -1551,22 +1441,9 @@ export class ArNetwork {
         resume: this.api.resume,
         end: this.api.end,
       }[action];
-      const next = environment.useMockData
-        ? ({
-            ...d,
-            state:
-              action === 'suspend'
-                ? 'Suspended'
-                : action === 'end'
-                  ? 'Ended'
-                  : action === 'resume'
-                    ? 'Active'
-                    : d.state,
-          } as DealerLinkDto)
-        : await firstValueFrom(call(d.id));
+      const next = await firstValueFrom(call(d.id));
       this.dealers.update((list) => list.map((x) => (x.id === d.id ? next : x)));
-      if (action === 'end' && !environment.useMockData)
-        this.leads.set(await firstValueFrom(this.api.getLeads()));
+      if (action === 'end') this.leads.set(await firstValueFrom(this.api.getLeads()));
     } catch (e: unknown) {
       this.error.set(problem(e, 'That did not work. Try again.'));
     } finally {
@@ -1579,7 +1456,7 @@ export class ArNetwork {
   protected async openSettings(): Promise<void> {
     this.dialogError.set(null);
     this.settingsOpen.set(true);
-    if (environment.useMockData) return;
+
     try {
       this.settings.set(await firstValueFrom(this.api.getSettings()));
     } catch (e: unknown) {
@@ -1603,8 +1480,7 @@ export class ArNetwork {
     }
     this.busy.set('settings');
     try {
-      if (!environment.useMockData)
-        this.settings.set(await firstValueFrom(this.api.updateSettings(s)));
+      this.settings.set(await firstValueFrom(this.api.updateSettings(s)));
       this.settingsOpen.set(false);
       this.notice.set('Network settings saved.');
     } catch (e: unknown) {
@@ -1618,55 +1494,7 @@ export class ArNetwork {
 
   protected async openLead(l: NetworkLeadDto): Promise<void> {
     this.dialogError.set(null);
-    if (environment.useMockData) {
-      this.lead.set({
-        ...l,
-        consentNote:
-          'Customers are told on our enquiry form that an authorised dealer may contact them.',
-        skippedDealers: [],
-        snapshot:
-          l.state === 'Accepted'
-            ? {
-                dealerEnquiryReference: 'ND-ENQ-0088',
-                stage: 'Quoted',
-                ownerName: 'R. Deshmukh',
-                firstResponseMinutes: 42,
-                quotations: [
-                  {
-                    reference: 'ND-QT-0142',
-                    state: 'Issued',
-                    subtotalInPaise: 4_34_150_00,
-                    taxInPaise: 78_147_00,
-                    issuedAtUtc: hoursFromNow(-20),
-                    lines: [
-                      {
-                        partNumber: 'PSTX170-600-70',
-                        description: 'Softstarter 170 A',
-                        quantity: 2,
-                        unit: 'no',
-                        unitPriceInPaise: 2_17_075_00,
-                        discountBasisPoints: 500,
-                      },
-                    ],
-                  },
-                ],
-                activity: [
-                  {
-                    atUtc: hoursFromNow(-20),
-                    kind: 'QuotationIssued',
-                    summary: 'Quotation ND-QT-0142 sent',
-                  },
-                  {
-                    atUtc: hoursFromNow(-49),
-                    kind: 'CallLogged',
-                    summary: 'Site survey booked for Thursday',
-                  },
-                ],
-              }
-            : null,
-      });
-      return;
-    }
+
     try {
       this.lead.set(await firstValueFrom(this.api.getLead(l.id)));
     } catch (e: unknown) {
@@ -1679,11 +1507,10 @@ export class ArNetwork {
     this.dialogError.set(null);
     try {
       await work();
-      if (!environment.useMockData) {
-        this.leads.set(await firstValueFrom(this.api.getLeads()));
-        const fresh = this.leads().find((x) => x.id === d.id);
-        if (fresh) this.lead.set(await firstValueFrom(this.api.getLead(d.id)));
-      }
+
+      this.leads.set(await firstValueFrom(this.api.getLeads()));
+      const fresh = this.leads().find((x) => x.id === d.id);
+      if (fresh) this.lead.set(await firstValueFrom(this.api.getLead(d.id)));
     } catch (e: unknown) {
       this.dialogError.set(problem(e, 'That did not work. Try again.'));
     } finally {
@@ -1693,7 +1520,7 @@ export class ArNetwork {
 
   protected refresh(d: NetworkLeadDetailDto): Promise<void> {
     return this.leadAction(d, async () => {
-      if (!environment.useMockData) this.lead.set(await firstValueFrom(this.api.refresh(d.id)));
+      this.lead.set(await firstValueFrom(this.api.refresh(d.id)));
     });
   }
 
@@ -1731,7 +1558,7 @@ export class ArNetwork {
         ? `${result.oemEnquiryReference} offered to ${result.dealerName}.`
         : `${result.oemEnquiryReference} is in your queue: no dealer covers it yet.`,
     );
-    if (!environment.useMockData) this.leads.set(await firstValueFrom(this.api.getLeads()));
+    this.leads.set(await firstValueFrom(this.api.getLeads()));
   }
 
   // ---- The dealer's side -----------------------------------------------------------------------------------------------------
@@ -1740,14 +1567,7 @@ export class ArNetwork {
     this.busy.set('join');
     this.error.set(null);
     try {
-      const m = environment.useMockData
-        ? ({
-            id: crypto.randomUUID(),
-            oemName: 'Acme Drives India',
-            state: 'Active',
-            territory: toTerritory(),
-          } as NetworkMembershipDto)
-        : await firstValueFrom(this.dealerApi.join(this.code().trim()));
+      const m = await firstValueFrom(this.dealerApi.join(this.code().trim()));
       this.memberships.update((list) => [m, ...list]);
       this.code.set('');
       this.notice.set(`You're in ${m.oemName}'s network. Leads they send you show here.`);
@@ -1770,12 +1590,10 @@ export class ArNetwork {
       return;
     this.busy.set(m.id);
     try {
-      const next = environment.useMockData
-        ? ({ ...m, state: 'Ended' } as NetworkMembershipDto)
-        : await firstValueFrom(this.dealerApi.leave(m.id));
+      const next = await firstValueFrom(this.dealerApi.leave(m.id));
       this.memberships.update((list) => list.map((x) => (x.id === m.id ? next : x)));
-      if (!environment.useMockData)
-        this.offers.set(await firstValueFrom(this.dealerApi.getOffers()));
+
+      this.offers.set(await firstValueFrom(this.dealerApi.getOffers()));
     } catch (e: unknown) {
       this.error.set(problem(e, 'That did not work. Try again.'));
     } finally {
@@ -1787,15 +1605,13 @@ export class ArNetwork {
     this.busy.set(o.id);
     this.error.set(null);
     try {
-      const done = environment.useMockData
-        ? ({ ...o, state: 'Accepted', dealerEnquiryId: 'mock-enquiry' } as NetworkOfferDto)
-        : await firstValueFrom(this.dealerApi.accept(o.id));
+      const done = await firstValueFrom(this.dealerApi.accept(o.id));
       this.offers.update((list) => list.map((x) => (x.id === o.id ? done : x)));
       this.notice.set('Accepted. The customer and the enquiry are in your pipeline now.');
     } catch (e: unknown) {
       this.error.set(problem(e, 'The lead could not be accepted.'));
-      if (!environment.useMockData)
-        this.offers.set(await firstValueFrom(this.dealerApi.getOffers()));
+
+      this.offers.set(await firstValueFrom(this.dealerApi.getOffers()));
     } finally {
       this.busy.set(null);
     }
@@ -1811,15 +1627,7 @@ export class ArNetwork {
     this.busy.set(o.id);
     this.error.set(null);
     try {
-      const lines = environment.useMockData
-        ? [
-            {
-              atUtc: new Date().toISOString(),
-              fromCustomer: true,
-              text: 'Need a 15 kW drive for a borewell pump',
-            },
-          ]
-        : await firstValueFrom(this.dealerApi.getConversation(o.id));
+      const lines = await firstValueFrom(this.dealerApi.getConversation(o.id));
       this.conversation.set({ offer: o, lines });
     } catch (e: unknown) {
       this.error.set(problem(e, 'The conversation could not be loaded.'));
@@ -1839,7 +1647,7 @@ export class ArNetwork {
     const reason = answer['reason'];
     this.busy.set(o.id);
     try {
-      if (!environment.useMockData) await firstValueFrom(this.dealerApi.decline(o.id, { reason }));
+      await firstValueFrom(this.dealerApi.decline(o.id, { reason }));
       this.offers.update((list) => list.filter((x) => x.id !== o.id));
       this.notice.set('Declined. It goes back to the OEM.');
     } catch (e: unknown) {
@@ -1864,7 +1672,7 @@ export class ArNetwork {
     this.busy.set(o.id);
     this.error.set(null);
     try {
-      if (!environment.useMockData) await firstValueFrom(this.dealerApi.handBack(o.id, { reason }));
+      await firstValueFrom(this.dealerApi.handBack(o.id, { reason }));
       this.offers.update((list) => list.filter((x) => x.id !== o.id));
       this.notice.set(`Handed back to ${o.oemName}. Your enquiry for it is closed as lost.`);
     } catch (e: unknown) {
@@ -1873,8 +1681,4 @@ export class ArNetwork {
       this.busy.set(null);
     }
   }
-}
-
-function toTerritory(): TerritoryDto {
-  return { states: [], cities: [], pinPrefixes: [], productLines: [] };
 }

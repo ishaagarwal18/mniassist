@@ -1,8 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
@@ -102,11 +100,7 @@ function when(utc: string | null | undefined): string {
       </ar-card>
 
       <ar-card heading="Recent leads">
-        <ejs-grid
-          arGrid="lead-forms-leads"
-          [dataSource]="leads()"
-          aria-label="Recent leads"
-        >
+        <ejs-grid arGrid="lead-forms-leads" [dataSource]="leads()" aria-label="Recent leads">
           <e-columns>
             <e-column headerText="Received" width="140">
               <ng-template #template let-l>
@@ -116,9 +110,7 @@ function when(utc: string | null | undefined): string {
             <e-column headerText="Person" width="160">
               <ng-template #template let-l>
                 @if (l.contactId) {
-                  <a [routerLink]="['/contacts', l.contactId]">{{
-                    l.contactName || 'Contact'
-                  }}</a>
+                  <a [routerLink]="['/contacts', l.contactId]">{{ l.contactName || 'Contact' }}</a>
                 } @else {
                   —
                 }
@@ -322,7 +314,6 @@ export class ArLeadForms {
   protected readonly platform = platformLabel;
 
   constructor() {
-    if (environment.useMockData) return;
     void this.reload();
     if (this.route.snapshot.url.some((s) => s.path === 'callback')) void this.finishSignIn();
   }

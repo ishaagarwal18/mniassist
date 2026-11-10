@@ -2,8 +2,6 @@ import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { inr } from '../../core/util/format';
 import { ArTopbar } from '../../layout/topbar';
@@ -25,85 +23,6 @@ import {
   upliftPercent,
 } from './renewal-logic';
 import { initialSearch } from '../../core/util/customer-scope';
-
-const day = 86_400_000;
-const iso = (days: number) => new Date(Date.now() + days * day).toISOString();
-
-/** Sample rows for reviewing the screen without an API. */
-const SEED: AmcRenewalDto[] = [
-  {
-    id: 's1',
-    installedAssetId: 'a1',
-    assetDescription: 'ACS580 drive, Line 2',
-    serialNumber: 'VP-2291',
-    siteName: 'Plant 2, Nashik',
-    contactId: 'c1',
-    contactName: 'Kalyani Forge',
-    currentEndsOn: iso(9),
-    proposedEndsOn: iso(374),
-    valueInPaise: 42_000_00,
-    status: RenewalStatus.Contacted,
-    lastContactedAtUtc: iso(-21),
-  },
-  {
-    id: 's2',
-    installedAssetId: 'a2',
-    assetDescription: 'S7-1200 control panel',
-    serialNumber: 'PNL-118',
-    siteName: 'Chakan',
-    contactId: 'c2',
-    contactName: 'Precision Pumps',
-    currentEndsOn: iso(24),
-    proposedEndsOn: iso(389),
-    valueInPaise: 28_500_00,
-    status: RenewalStatus.Interested,
-    interestedAtUtc: iso(-1),
-    callRequestedAtUtc: iso(-1),
-  },
-  {
-    id: 's3',
-    installedAssetId: 'a3',
-    assetDescription: 'Screw compressor 37 kW',
-    serialNumber: 'SC-4410',
-    siteName: 'Ambad MIDC',
-    contactId: 'c3',
-    contactName: 'Godavari Cement',
-    currentEndsOn: iso(33),
-    proposedEndsOn: iso(398),
-    valueInPaise: 65_000_00,
-    status: RenewalStatus.Quoted,
-    quotationId: 'q1',
-    quotationReference: 'QT-2041',
-    enquiryReference: 'ENQ-3310',
-  },
-  {
-    id: 's4',
-    installedAssetId: 'a4',
-    assetDescription: 'UPS 20 kVA',
-    serialNumber: 'UPS-771',
-    siteName: 'Sinnar',
-    contactId: 'c4',
-    contactName: 'Shree Textiles',
-    currentEndsOn: iso(71),
-    proposedEndsOn: iso(436),
-    valueInPaise: 18_000_00,
-    status: RenewalStatus.Due,
-  },
-];
-
-const SEED_SUMMARY: RenewalSummaryDto = {
-  dueIn30Count: 2,
-  dueIn30InPaise: 70_500_00,
-  dueIn60Count: 3,
-  dueIn60InPaise: 1_35_500_00,
-  dueIn90Count: 4,
-  dueIn90InPaise: 1_53_500_00,
-  atRiskCount: 1,
-  atRiskInPaise: 42_000_00,
-  renewedThisQuarterCount: 11,
-  renewedThisQuarterInPaise: 4_62_000_00,
-  renewalRatePercent: 78,
-};
 
 /**
  * The AMC Renewal Desk. Every AMC ending in the next 90 days, from the first reminder to the renewed contract. A customer's tap on
@@ -639,11 +558,6 @@ export class ArRenewals {
     this.loading.set(true);
     this.error.set(null);
     try {
-      if (environment.useMockData) {
-        this.rows.set(SEED);
-        this.summary.set(SEED_SUMMARY);
-        return;
-      }
       const [list, summary] = await Promise.all([
         firstValueFrom(this.api.getList({ openOnly: true, endingWithinDays: 90 })),
         firstValueFrom(this.api.getSummary()),
@@ -691,14 +605,12 @@ export class ArRenewals {
     this.busy.set('refresh');
     this.notice.set(null);
     try {
-      if (!environment.useMockData) {
-        const r = await firstValueFrom(this.api.refresh());
-        this.notice.set(
-          r.added
-            ? `${r.added} new renewal${r.added === 1 ? '' : 's'} added.`
-            : 'The board is up to date.',
-        );
-      }
+      const r = await firstValueFrom(this.api.refresh());
+      this.notice.set(
+        r.added
+          ? `${r.added} new renewal${r.added === 1 ? '' : 's'} added.`
+          : 'The board is up to date.',
+      );
       await this.load();
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'Could not refresh.');
@@ -712,14 +624,7 @@ export class ArRenewals {
     this.error.set(null);
     this.notice.set(null);
     try {
-      const updated = environment.useMockData
-        ? {
-            ...r,
-            status: RenewalStatus.Quoted,
-            quotationId: 'q-new',
-            quotationReference: 'QT-DRAFT',
-          }
-        : await firstValueFrom(this.api.draftQuote(r.id));
+      const updated = await firstValueFrom(this.api.draftQuote(r.id));
       this.rows.update((list) => list.map((x) => (x.id === r.id ? updated : x)));
       this.notice.set(
         `Draft ${updated.quotationReference} created. Review and issue it from Quotations.`,
@@ -740,15 +645,12 @@ export class ArRenewals {
     this.busy.set(r.id);
     this.error.set(null);
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(this.api.markLost(r.id, this.reason().trim() || null));
-      }
+      await firstValueFrom(this.api.markLost(r.id, this.reason().trim() || null));
       this.rows.update((list) => list.filter((x) => x.id !== r.id));
       this.losing.set(null);
       this.notice.set(`${r.assetDescription} marked lost.`);
-      if (!environment.useMockData) {
-        this.summary.set(await firstValueFrom(this.api.getSummary()));
-      }
+
+      this.summary.set(await firstValueFrom(this.api.getSummary()));
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'Could not mark the renewal lost.');
     } finally {
@@ -759,7 +661,7 @@ export class ArRenewals {
   protected async openSettings(): Promise<void> {
     this.settingsError.set(null);
     this.settingsOpen.set(true);
-    if (environment.useMockData) return;
+
     try {
       const [settings, pipelines] = await Promise.all([
         firstValueFrom(this.api.getSettings()),
@@ -785,15 +687,13 @@ export class ArRenewals {
     this.busy.set('settings');
     this.settingsError.set(null);
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(
-          this.api.updateSettings({
-            upliftBasisPoints: bp,
-            serviceItemCode: this.itemCode().trim() || 'AMC',
-            pipelineId: this.pipelineId() || null,
-          }),
-        );
-      }
+      await firstValueFrom(
+        this.api.updateSettings({
+          upliftBasisPoints: bp,
+          serviceItemCode: this.itemCode().trim() || 'AMC',
+          pipelineId: this.pipelineId() || null,
+        }),
+      );
       this.settingsOpen.set(false);
       this.notice.set('Renewal settings saved. They apply to the next quote drafted.');
     } catch (e: unknown) {

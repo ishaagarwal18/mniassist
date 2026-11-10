@@ -9,7 +9,6 @@ import { readApiError } from '../../core/util/api-error';
 import { ArTopbar } from '../../layout/topbar';
 import { SpaListItemDto, SpaService, SpaStatus } from '../../proxy/oem/oem-pricing.service';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { SPA_STATUS_TEXT, SPA_STATUS_TONE, rupees } from './oem.logic';
 
 /** Special price agreements: OEM, customer, status, validity, the support approved and what is left. */
@@ -30,9 +29,6 @@ import { SPA_STATUS_TEXT, SPA_STATUS_TONE, rupees } from './oem.logic';
       }
     </ar-topbar>
     <div class="oe ar-scroll">
-      @if (mock) {
-        <ar-banner tone="teal">Special prices need the live API.</ar-banner>
-      }
       @if (error(); as e) {
         <ar-banner tone="bad">{{ e }}</ar-banner>
       }
@@ -129,7 +125,6 @@ export class ArSpasPage {
   private readonly api = inject(SpaService);
   private readonly permissions = inject(PermissionService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly canCreate = grantedPolicy('AutoReach.Spa.Create', this.permissions);
   protected readonly rows = signal<SpaListItemDto[]>([]);
   protected readonly total = signal(0);
@@ -159,7 +154,6 @@ export class ArSpasPage {
   }
 
   protected async load(): Promise<void> {
-    if (this.mock) return;
     try {
       const page = await firstValueFrom(
         this.api.getList({

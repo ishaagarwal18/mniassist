@@ -74,18 +74,12 @@ export const appConfig: ApplicationConfig = {
           }
         },
 
-        // While the UI runs on seeded data there is no API to ask for the
-        // application configuration, and firing that request would leave the app
-        // stuck on a failed boot. Both flip automatically once the API is wired.
-        skipGetAppConfiguration: environment.useMockData,
-        skipInitAuthService: environment.useMockData,
+        skipGetAppConfiguration: false,
+        skipInitAuthService: false,
       }),
     ),
 
     // Authorization-code flow with PKCE against the issuer in the environment.
-    // Registered even in mock mode so the two builds differ only in data source,
-    // not in which providers exist — a provider that appears only in production
-    // is a provider nobody has ever exercised.
     provideAbpOAuth(),
   ],
 };

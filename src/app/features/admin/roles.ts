@@ -18,8 +18,6 @@ import {
 } from '@syncfusion/ej2-angular-treegrid';
 import { ActionEventArgs, InPlaceEditorModule } from '@syncfusion/ej2-angular-inplace-editor';
 import { PermissionDirective, PermissionService } from '@abp/ng.core';
-
-import { environment } from '../../../environments/environment';
 import { readApiError } from '../../core/util/api-error';
 import { IdentityRoleDto, IdentityRoleService } from '../../proxy/identity';
 import {
@@ -36,12 +34,6 @@ import { describeGroup, describePermission } from './permission-text';
 
 // Syncfusion checks the licence in each component's constructor, before ours runs.
 registerSyncfusionLicense();
-
-const SEED: IdentityRoleDto[] = [
-  { id: 'r-1', name: 'admin', isDefault: false, isStatic: true, isPublic: true },
-  { id: 'r-2', name: 'Manager', isDefault: false, isStatic: false, isPublic: true },
-  { id: 'r-3', name: 'Agent', isDefault: true, isStatic: false, isPublic: true },
-];
 
 interface RolePermData {
   groups: PermissionGroup[];
@@ -492,17 +484,16 @@ export class ArAdminRoles {
   protected readonly flagBusy = signal<string | null>(null);
   private readonly roleApi = inject(IdentityRoleService);
   private readonly permApi = inject(PermissionsService);
-  private readonly mock = environment.useMockData;
 
   protected readonly tick = signal(0);
   private readonly rolesResource = rxResource({
-    params: () => (this.mock ? undefined : { t: this.tick() }),
+    params: () => ({ t: this.tick() }),
     stream: () => this.roleApi.getList(),
     defaultValue: { totalCount: 0, items: [] as IdentityRoleDto[] },
   });
 
-  protected readonly roles = computed<readonly IdentityRoleDto[]>(() =>
-    this.mock ? SEED : this.rolesResource.value().items,
+  protected readonly roles = computed<readonly IdentityRoleDto[]>(
+    () => this.rolesResource.value().items,
   );
 
   protected readonly subtitle = computed(() => {
@@ -536,11 +527,8 @@ export class ArAdminRoles {
   protected async loadRolePermissions(roleName: string): Promise<void> {
     try {
       let res: GetPermissionListResultDto;
-      if (this.mock) {
-        res = this.getMockPermissions(roleName);
-      } else {
-        res = await firstValueFrom(this.permApi.get('R', roleName));
-      }
+
+      res = await firstValueFrom(this.permApi.get('R', roleName));
       const initial = new Set<string>();
       for (const g of res.groups ?? []) {
         for (const p of g.permissions) {
@@ -904,153 +892,5 @@ export class ArAdminRoles {
     } catch (e) {
       this.error.set(readApiError(e));
     }
-  }
-
-  private getMockPermissions(roleName: string): GetPermissionListResultDto {
-    const isAdmin = roleName.toLowerCase() === 'admin';
-    const isManager = roleName.toLowerCase() === 'manager';
-    return {
-      entityDisplayName: roleName,
-      groups: [
-        {
-          name: 'AutoReach',
-          displayName: 'AutoReach',
-          permissions: [
-            {
-              name: 'AutoReach.Channels',
-              displayName: 'Channels',
-              isGranted: true,
-              parentName: undefined,
-            },
-            {
-              name: 'AutoReach.Channels.Manage',
-              displayName: 'Manage channels',
-              isGranted: isAdmin || isManager,
-              parentName: 'AutoReach.Channels',
-            },
-            {
-              name: 'AutoReach.Contacts',
-              displayName: 'Contacts',
-              isGranted: true,
-              parentName: undefined,
-            },
-            {
-              name: 'AutoReach.Contacts.Create',
-              displayName: 'Create contacts',
-              isGranted: true,
-              parentName: 'AutoReach.Contacts',
-            },
-            {
-              name: 'AutoReach.Contacts.Update',
-              displayName: 'Update contacts',
-              isGranted: true,
-              parentName: 'AutoReach.Contacts',
-            },
-            {
-              name: 'AutoReach.Contacts.Delete',
-              displayName: 'Delete contacts',
-              isGranted: isAdmin,
-              parentName: 'AutoReach.Contacts',
-            },
-            {
-              name: 'AutoReach.Campaigns',
-              displayName: 'Campaigns',
-              isGranted: true,
-              parentName: undefined,
-            },
-            {
-              name: 'AutoReach.Campaigns.Create',
-              displayName: 'Create campaigns',
-              isGranted: isAdmin || isManager,
-              parentName: 'AutoReach.Campaigns',
-            },
-            {
-              name: 'AutoReach.Campaigns.Send',
-              displayName: 'Send campaigns',
-              isGranted: isAdmin,
-              parentName: 'AutoReach.Campaigns',
-            },
-            {
-              name: 'AutoReach.Inbox',
-              displayName: 'Inbox',
-              isGranted: true,
-              parentName: undefined,
-            },
-            {
-              name: 'AutoReach.Inbox.Reply',
-              displayName: 'Reply to chats',
-              isGranted: true,
-              parentName: 'AutoReach.Inbox',
-            },
-          ],
-        },
-        {
-          name: 'AbpIdentity',
-          displayName: 'Identity Management',
-          permissions: [
-            {
-              name: 'AbpIdentity.Roles',
-              displayName: 'Roles',
-              isGranted: isAdmin,
-              parentName: undefined,
-            },
-            {
-              name: 'AbpIdentity.Roles.Create',
-              displayName: 'Create roles',
-              isGranted: isAdmin,
-              parentName: 'AbpIdentity.Roles',
-            },
-            {
-              name: 'AbpIdentity.Roles.Update',
-              displayName: 'Update roles',
-              isGranted: isAdmin,
-              parentName: 'AbpIdentity.Roles',
-            },
-            {
-              name: 'AbpIdentity.Roles.Delete',
-              displayName: 'Delete roles',
-              isGranted: isAdmin,
-              parentName: 'AbpIdentity.Roles',
-            },
-            {
-              name: 'AbpIdentity.Roles.ManagePermissions',
-              displayName: 'Manage permissions',
-              isGranted: isAdmin,
-              parentName: 'AbpIdentity.Roles',
-            },
-            {
-              name: 'AbpIdentity.Users',
-              displayName: 'Users',
-              isGranted: isAdmin || isManager,
-              parentName: undefined,
-            },
-            {
-              name: 'AbpIdentity.Users.Create',
-              displayName: 'Create users',
-              isGranted: isAdmin || isManager,
-              parentName: 'AbpIdentity.Users',
-            },
-            {
-              name: 'AbpIdentity.Users.Update',
-              displayName: 'Update users',
-              isGranted: isAdmin || isManager,
-              parentName: 'AbpIdentity.Users',
-            },
-            {
-              name: 'AbpIdentity.Users.Delete',
-              displayName: 'Delete users',
-              isGranted: isAdmin,
-              parentName: 'AbpIdentity.Users',
-            },
-            {
-              name: 'AbpIdentity.Users.ManagePermissions',
-              displayName: 'Manage user permissions',
-              isGranted: isAdmin,
-              parentName: 'AbpIdentity.Users',
-            },
-          ],
-        },
-      ],
-    } as unknown as GetPermissionListResultDto;
   }
 }

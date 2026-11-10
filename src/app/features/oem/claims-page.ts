@@ -13,7 +13,6 @@ import {
   SpaClaimStatus,
 } from '../../proxy/oem/spa-claim.service';
 import { ArBanner, ArButton, ArCard, ArChip, ArStatTile } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { AGE_BAND_TEXT, CLAIM_STATUS_TEXT, CLAIM_STATUS_TONE } from './claims.logic';
 import { rupees } from './oem.logic';
 
@@ -27,9 +26,6 @@ import { rupees } from './oem.logic';
       <a ar-button variant="ghost" routerLink="/oem/spa">Special prices</a>
     </ar-topbar>
     <div class="oe ar-scroll">
-      @if (mock) {
-        <ar-banner tone="teal">OEM claims need the live API.</ar-banner>
-      }
       @if (error(); as e) {
         <ar-banner tone="bad">{{ e }}</ar-banner>
       }
@@ -151,7 +147,6 @@ export class ArClaimsPage {
   private readonly api = inject(SpaClaimService);
   private readonly oemsApi = inject(OemSettingsService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly rows = signal<SpaClaimListItemDto[]>([]);
   protected readonly oems = signal<OemSupplierDto[]>([]);
   protected readonly supplierId = signal<string | null>(null);
@@ -183,7 +178,6 @@ export class ArClaimsPage {
   }
 
   private async init(): Promise<void> {
-    if (this.mock) return;
     try {
       this.oems.set((await firstValueFrom(this.oemsApi.getList())).filter((o) => o.isOem));
     } catch {
@@ -205,7 +199,6 @@ export class ArClaimsPage {
   }
 
   protected async load(): Promise<void> {
-    if (this.mock) return;
     try {
       const page = await firstValueFrom(
         this.api.getList({

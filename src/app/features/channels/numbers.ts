@@ -1,12 +1,18 @@
 import { PermissionService } from '@abp/ng.core';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom, forkJoin, map, of, switchMap } from 'rxjs';
 
 import { grantedPolicy } from '../../core/auth/permission';
-import { environment } from '../../../environments/environment';
 import { ChannelService as ChannelApi } from '../../proxy/channels';
 import { DisplayNameStatus } from '../../proxy/channels/display-name-status.enum';
 import { MessagingTier } from '../../proxy/channels/messaging-tier.enum';
@@ -56,45 +62,6 @@ const REVIEW: Record<DisplayNameStatus, NameReviewState> = {
   [DisplayNameStatus.Rejected]: 'rejected',
 };
 
-const SEED: readonly ManagedNumber[] = [
-  {
-    channelId: 'ch-1',
-    displayPhoneNumber: '+91 90210 44872',
-    verifiedName: 'Meridian Automation',
-    nameReviewState: 'approved',
-    hasTwoStepPin: true,
-    pinUpdatedAt: new Date(Date.now() - 112 * 86_400_000).toISOString(),
-    isRegistered: true,
-    quality: 'green',
-    tier: '10K / 24h',
-  },
-  {
-    channelId: 'ch-2',
-    displayPhoneNumber: '+91 90210 44873',
-    verifiedName: 'Meridian Automation Service',
-    nameReviewState: 'pending',
-    requestedName: 'Meridian Service & Support',
-    nameRequestedAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-    hasTwoStepPin: true,
-    pinUpdatedAt: new Date(Date.now() - 9 * 86_400_000).toISOString(),
-    isRegistered: true,
-    quality: 'yellow',
-    tier: '1K / 24h',
-  },
-  {
-    channelId: 'ch-3',
-    displayPhoneNumber: '+91 90210 44874',
-    verifiedName: 'Meridian Spares',
-    nameReviewState: 'rejected',
-    nameRejectionReason:
-      'The requested name did not match the business name on the verified Meta Business Portfolio.',
-    hasTwoStepPin: false,
-    isRegistered: false,
-    quality: 'unknown',
-    tier: '250 / 24h',
-  },
-];
-
 /**
  * Number registration, two-step PIN and display name.
  *
@@ -107,7 +74,16 @@ const SEED: readonly ManagedNumber[] = [
 
 @Component({
   selector: 'ar-numbers',
-  imports: [RouterLink, ArTopbar, ArBanner, ArButton, ArChip, ArConnectNumberDialog, ArDialog, NgTemplateOutlet],
+  imports: [
+    RouterLink,
+    ArTopbar,
+    ArBanner,
+    ArButton,
+    ArChip,
+    ArConnectNumberDialog,
+    ArDialog,
+    NgTemplateOutlet,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './numbers.html',
   styleUrl: './numbers.scss',
@@ -136,7 +112,7 @@ export class ArNumbers {
   private readonly reloadTick = signal(0);
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : { tick: this.reloadTick() }),
+    params: () => ({ tick: this.reloadTick() }),
     stream: () =>
       this.api.getList({ skipCount: 0, maxResultCount: 50 }).pipe(
         switchMap((page) => {
@@ -171,9 +147,7 @@ export class ArNumbers {
     defaultValue: [] as ManagedNumber[],
   });
 
-  protected readonly numbers = computed<readonly ManagedNumber[]>(() =>
-    environment.useMockData ? SEED : this.resource.value(),
-  );
+  protected readonly numbers = computed<readonly ManagedNumber[]>(() => this.resource.value());
 
   /** Which card has its name editor open. One at a time — this is not a bulk edit. */
   protected readonly editingName = signal<string | null>(null);
@@ -211,7 +185,8 @@ export class ArNumbers {
   }
 
   protected goRelease(n: ManagedNumber): void {
-    if (this.router && n.channelId) void this.router.navigate(['/channels/numbers', n.channelId, 'release']);
+    if (this.router && n.channelId)
+      void this.router.navigate(['/channels/numbers', n.channelId, 'release']);
     else this.openRelease(n);
   }
 
@@ -242,9 +217,7 @@ export class ArNumbers {
     if (name.length < 2) return;
     this.busy.set(true);
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(this.api.requestDisplayName(channelId, { displayName: name }));
-      }
+      await firstValueFrom(this.api.requestDisplayName(channelId, { displayName: name }));
       this.reloadTick.update((n) => n + 1);
     } finally {
       this.busy.set(false);
@@ -260,14 +233,12 @@ export class ArNumbers {
     }
     this.busy.set(true);
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(
-          this.api.setTwoStepPin(channelId, {
-            pin,
-            currentPin: this.draftCurrentPin().trim() || undefined,
-          }),
-        );
-      }
+      await firstValueFrom(
+        this.api.setTwoStepPin(channelId, {
+          pin,
+          currentPin: this.draftCurrentPin().trim() || undefined,
+        }),
+      );
       this.reloadTick.update((n) => n + 1);
     } finally {
       this.busy.set(false);
@@ -307,14 +278,12 @@ export class ArNumbers {
     this.busy.set(true);
     this.releaseError.set(null);
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(
-          this.api.release(n.channelId, {
-            confirmPhoneNumber: this.releaseConfirm().trim(),
-            deregisterAtMeta: this.releaseDeregister(),
-          }),
-        );
-      }
+      await firstValueFrom(
+        this.api.release(n.channelId, {
+          confirmPhoneNumber: this.releaseConfirm().trim(),
+          deregisterAtMeta: this.releaseDeregister(),
+        }),
+      );
       this.close();
       this.toasts.success(
         this.releaseDeregister()

@@ -2,8 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { DatePipe } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { AccountSwitcher } from '../../core/auth/account-switch';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
@@ -159,17 +157,16 @@ export class ArDelegationsCard {
   private readonly dialogs = inject(ConfirmService);
   private readonly toasts = inject(ToastService);
   protected readonly switcher = inject(AccountSwitcher);
-  private readonly mock = environment.useMockData;
   protected readonly maxDays = MAX_DELEGATION_DAYS;
 
   private readonly tick = signal(0);
   private readonly givenResource = rxResource({
-    params: () => (this.mock ? undefined : { t: this.tick() }),
+    params: () => ({ t: this.tick() }),
     stream: () => this.api.getMyDelegations(),
     defaultValue: { items: [] as DelegationDto[] },
   });
   private readonly receivedResource = rxResource({
-    params: () => (this.mock ? undefined : { t: this.tick() }),
+    params: () => ({ t: this.tick() }),
     stream: () => this.api.getDelegatedToMe(),
     defaultValue: { items: [] as DelegationDto[] },
   });
@@ -184,10 +181,7 @@ export class ArDelegationsCard {
 
   protected async delegate(): Promise<void> {
     this.error.set(null);
-    if (this.mock) {
-      this.toasts.info('Delegation needs the API — it is not available in the standalone build.');
-      return;
-    }
+
     let candidates;
     try {
       candidates = (await firstValueFrom(this.api.getCandidates())).items ?? [];

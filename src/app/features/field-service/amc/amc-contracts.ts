@@ -2,172 +2,28 @@ import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { GridModule, RecordClickEventArgs, RowSelectEventArgs } from '@syncfusion/ej2-angular-grids';
-import { environment } from '../../../../environments/environment';
+import {
+  GridModule,
+  RecordClickEventArgs,
+  RowSelectEventArgs,
+} from '@syncfusion/ej2-angular-grids';
 import { ArTopbar } from '../../../layout/topbar';
 import {
   AmcContractDto,
   AmcContractService,
   AmcContractType,
   AmcStatus,
-  AmcVisitScheduleDto,
 } from '../../../proxy/field-service';
-import { ArButton, ArChip, ChipTone } from '../../../ui';
+import { ArBanner, ArButton, ArChip, ChipTone } from '../../../ui';
+import { readApiError } from '../../../core/util/api-error';
 import { ArGrid } from '../../../ui/grid';
 import { initialSearch } from '../../../core/util/customer-scope';
-
-const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
-  {
-    id: 'amc-1',
-    contractNumber: 'AMC-2026-0041',
-    customerId: 'cust-1',
-    customerName: 'Tata Motors Powertrain Ltd',
-    customerSiteAddress: 'Block C, Powertrain Shop, Chakan Industrial Area, Pune 410501',
-    equipmentSerialNumber: 'PR-400T-2024-09',
-    equipmentModel: 'Hydraulic Stamping Press 400 Ton',
-    contractType: AmcContractType.Comprehensive,
-    status: AmcStatus.Active,
-    startDateUtc: new Date(Date.now() - 180 * 86_400_000).toISOString(),
-    endDateUtc: new Date(Date.now() + 185 * 86_400_000).toISOString(),
-    slaResponseHours: 4,
-    contractValueInPaise: 450_000_00,
-    scheduledVisitsPerYear: 4,
-    visitsCompleted: 2,
-    sparesIncluded: true,
-    remarks:
-      'Critical line equipment. 24x7 helpline with 4-hr on-site SLA for unplanned breakdown.',
-    creationTime: new Date(Date.now() - 180 * 86_400_000).toISOString(),
-    schedules: [
-      {
-        id: 'vs-1',
-        amcContractId: 'amc-1',
-        visitNumber: 1,
-        scheduledDateUtc: new Date(Date.now() - 150 * 86_400_000).toISOString(),
-        completedDateUtc: new Date(Date.now() - 149 * 86_400_000).toISOString(),
-        assignedEngineer: 'Sunil Deshmukh (Sr Service Eng)',
-        isCompleted: true,
-        visitNotes:
-          'Q1 PM completed. Hydraulic fluid contamination check normal (NAS 6). Proportional valves recalibrated.',
-      },
-      {
-        id: 'vs-2',
-        amcContractId: 'amc-1',
-        visitNumber: 2,
-        scheduledDateUtc: new Date(Date.now() - 60 * 86_400_000).toISOString(),
-        completedDateUtc: new Date(Date.now() - 58 * 86_400_000).toISOString(),
-        assignedEngineer: 'Sunil Deshmukh (Sr Service Eng)',
-        isCompleted: true,
-        visitNotes:
-          'Q2 PM completed. Main cylinder seal gland tightened. Pressure transducers zero-drift verified.',
-      },
-      {
-        id: 'vs-3',
-        amcContractId: 'amc-1',
-        visitNumber: 3,
-        scheduledDateUtc: new Date(Date.now() + 30 * 86_400_000).toISOString(),
-        assignedEngineer: 'Sunil Deshmukh (Sr Service Eng)',
-        isCompleted: false,
-        visitNotes: 'Scheduled Q3 comprehensive overhaul and accumulator nitrogen recharging.',
-      },
-      {
-        id: 'vs-4',
-        amcContractId: 'amc-1',
-        visitNumber: 4,
-        scheduledDateUtc: new Date(Date.now() + 120 * 86_400_000).toISOString(),
-        isCompleted: false,
-      },
-    ],
-  },
-  {
-    id: 'amc-2',
-    contractNumber: 'AMC-2026-0042',
-    customerId: 'cust-2',
-    customerName: 'Jindal Steel & Power Ltd',
-    customerSiteAddress: 'Rolling Mill Division, Raigarh Plant, Chhattisgarh 496001',
-    equipmentSerialNumber: 'GAN-25T-2023-11',
-    equipmentModel: 'Automated Heavy Billet Handling Gantry 25 Ton',
-    contractType: AmcContractType.NonComprehensive,
-    status: AmcStatus.Active,
-    startDateUtc: new Date(Date.now() - 100 * 86_400_000).toISOString(),
-    endDateUtc: new Date(Date.now() + 265 * 86_400_000).toISOString(),
-    slaResponseHours: 8,
-    contractValueInPaise: 280_000_00,
-    scheduledVisitsPerYear: 6,
-    visitsCompleted: 2,
-    sparesIncluded: false,
-    remarks: 'Labor & PM visits covered. Spares billed separately on customer PO.',
-    creationTime: new Date(Date.now() - 100 * 86_400_000).toISOString(),
-    schedules: [
-      {
-        id: 'vs-5',
-        amcContractId: 'amc-2',
-        visitNumber: 1,
-        scheduledDateUtc: new Date(Date.now() - 80 * 86_400_000).toISOString(),
-        completedDateUtc: new Date(Date.now() - 79 * 86_400_000).toISOString(),
-        assignedEngineer: 'Prakash Rao (Field Lead)',
-        isCompleted: true,
-        visitNotes:
-          'Bi-monthly inspection. Hoist wire rope inspected for wire breaks. Lubricated planetary reducer.',
-      },
-      {
-        id: 'vs-6',
-        amcContractId: 'amc-2',
-        visitNumber: 2,
-        scheduledDateUtc: new Date(Date.now() - 20 * 86_400_000).toISOString(),
-        completedDateUtc: new Date(Date.now() - 19 * 86_400_000).toISOString(),
-        assignedEngineer: 'Prakash Rao (Field Lead)',
-        isCompleted: true,
-        visitNotes:
-          'Drive motor inverter firmware updated. Brake pads replaced via billable spare requisition.',
-      },
-      {
-        id: 'vs-7',
-        amcContractId: 'amc-2',
-        visitNumber: 3,
-        scheduledDateUtc: new Date(Date.now() + 40 * 86_400_000).toISOString(),
-        isCompleted: false,
-      },
-    ],
-  },
-  {
-    id: 'amc-3',
-    contractNumber: 'AMC-2026-0038',
-    customerId: 'cust-3',
-    customerName: 'L&T Heavy Engineering Ltd',
-    customerSiteAddress: 'Hazira Manufacturing Complex, Surat, Gujarat 394510',
-    equipmentSerialNumber: 'SKV-300-2021-02',
-    equipmentModel: 'CNC Cylinder Skiving & Roller Burnishing Machine',
-    contractType: AmcContractType.Comprehensive,
-    status: AmcStatus.ExpiringSoon,
-    startDateUtc: new Date(Date.now() - 345 * 86_400_000).toISOString(),
-    endDateUtc: new Date(Date.now() + 20 * 86_400_000).toISOString(),
-    slaResponseHours: 4,
-    contractValueInPaise: 600_000_00,
-    scheduledVisitsPerYear: 4,
-    visitsCompleted: 4,
-    sparesIncluded: true,
-    remarks: 'Contract expires in 20 days. Renewal proposal sent to Head of Maintenance.',
-    creationTime: new Date(Date.now() - 345 * 86_400_000).toISOString(),
-    schedules: [
-      {
-        id: 'vs-8',
-        amcContractId: 'amc-3',
-        visitNumber: 4,
-        scheduledDateUtc: new Date(Date.now() - 10 * 86_400_000).toISOString(),
-        completedDateUtc: new Date(Date.now() - 9 * 86_400_000).toISOString(),
-        assignedEngineer: 'Aman Deep (Specialist)',
-        isCompleted: true,
-        visitNotes:
-          'Final scheduled inspection under current AMC. Spindle runout 0.003mm (within tolerance).',
-      },
-    ],
-  },
-];
 
 @Component({
   selector: 'app-amc-contracts',
   standalone: true,
   imports: [
+    ArBanner,
     CommonModule,
     FormsModule,
     DatePipe,
@@ -190,6 +46,9 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
     </ar-topbar>
 
     <div class="page-content">
+      @if (loadError(); as e) {
+        <ar-banner tone="bad">{{ e }}</ar-banner>
+      }
       <!-- KPI Stats Summary Row -->
       <section class="kpi-grid">
         <div class="kpi-card">
@@ -286,7 +145,11 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
                 <ng-template #template let-c>
                   <div class="client-info">
                     <span class="client-name">{{ c.customerName }}</span>
-                    <span class="client-addr" *ngIf="c.customerSiteAddress" [title]="c.customerSiteAddress">
+                    <span
+                      class="client-addr"
+                      *ngIf="c.customerSiteAddress"
+                      [title]="c.customerSiteAddress"
+                    >
                       {{ c.customerSiteAddress }}
                     </span>
                   </div>
@@ -296,7 +159,9 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
                 <ng-template #template let-c>
                   <div class="equip-info">
                     <span class="serial-badge">{{ c.equipmentSerialNumber }}</span>
-                    <span class="model-name" [title]="c.equipmentModel">{{ c.equipmentModel }}</span>
+                    <span class="model-name" [title]="c.equipmentModel">{{
+                      c.equipmentModel
+                    }}</span>
                   </div>
                 </ng-template>
               </e-column>
@@ -308,14 +173,23 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
               <e-column field="visitsCompleted" headerText="Visits / SLA" width="115">
                 <ng-template #template let-c>
                   <div class="visit-metric">
-                    <span class="fw-semibold">{{ c.visitsCompleted }}/{{ c.scheduledVisitsPerYear }} PMs</span>
+                    <span class="fw-semibold"
+                      >{{ c.visitsCompleted }}/{{ c.scheduledVisitsPerYear }} PMs</span
+                    >
                     <span class="text-sub">SLA {{ c.slaResponseHours }}h</span>
                   </div>
                 </ng-template>
               </e-column>
-              <e-column field="contractValueInPaise" headerText="ACV (₹)" textAlign="Right" width="115">
+              <e-column
+                field="contractValueInPaise"
+                headerText="ACV (₹)"
+                textAlign="Right"
+                width="115"
+              >
                 <ng-template #template let-c>
-                  <span class="fw-bold text-success">₹{{ c.contractValueInPaise / 100 | number: '1.2-2' }}</span>
+                  <span class="fw-bold text-success"
+                    >₹{{ c.contractValueInPaise / 100 | number: '1.2-2' }}</span
+                  >
                 </ng-template>
               </e-column>
               <e-column field="status" headerText="Status" width="115">
@@ -342,7 +216,11 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
               <p class="cockpit-sub">
                 Customer: <strong>{{ contract.customerName }}</strong>
               </p>
-              <p class="cockpit-site" *ngIf="contract.customerSiteAddress" [title]="contract.customerSiteAddress">
+              <p
+                class="cockpit-site"
+                *ngIf="contract.customerSiteAddress"
+                [title]="contract.customerSiteAddress"
+              >
                 <span class="site-icon">📍</span> {{ contract.customerSiteAddress }}
               </p>
             </div>
@@ -364,19 +242,26 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
             <div class="ov-item">
               <span class="lbl">Equipment Serial & Model</span>
               <strong class="val val-serial">{{ contract.equipmentSerialNumber }}</strong>
-              <span class="sub-desc" [title]="contract.equipmentModel">{{ contract.equipmentModel }}</span>
+              <span class="sub-desc" [title]="contract.equipmentModel">{{
+                contract.equipmentModel
+              }}</span>
             </div>
             <div class="ov-item">
               <span class="lbl">SLA & Coverage</span>
-              <strong class="val text-primary-dark">{{ contract.slaResponseHours }}h On-Site SLA</strong>
+              <strong class="val text-primary-dark"
+                >{{ contract.slaResponseHours }}h On-Site SLA</strong
+              >
               <span class="sub-desc">{{
-                contract.sparesIncluded ? 'Spares Included (Comprehensive)' : 'Spares Billed Separately'
+                contract.sparesIncluded
+                  ? 'Spares Included (Comprehensive)'
+                  : 'Spares Billed Separately'
               }}</span>
             </div>
             <div class="ov-item">
               <span class="lbl">Contract Period</span>
               <span class="val-date">
-                {{ contract.startDateUtc | date: 'dd MMM yyyy' }} – {{ contract.endDateUtc | date: 'dd MMM yyyy' }}
+                {{ contract.startDateUtc | date: 'dd MMM yyyy' }} –
+                {{ contract.endDateUtc | date: 'dd MMM yyyy' }}
               </span>
               <span class="sub-desc">Annual Service Agreement</span>
             </div>
@@ -385,7 +270,9 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
               <strong class="val text-success">
                 ₹{{ contract.contractValueInPaise / 100 | number: '1.2-2' }}
               </strong>
-              <span class="sub-desc">{{ contract.scheduledVisitsPerYear }} Scheduled PM Visits / Yr</span>
+              <span class="sub-desc"
+                >{{ contract.scheduledVisitsPerYear }} Scheduled PM Visits / Yr</span
+              >
             </div>
           </div>
 
@@ -400,7 +287,9 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
             <div class="schedules-header">
               <div class="schedules-title-group">
                 <h4>Preventive Maintenance (PM) Visits Calendar</h4>
-                <span class="badge-count">{{ contract.visitsCompleted }} of {{ contract.schedules.length }} Completed</span>
+                <span class="badge-count"
+                  >{{ contract.visitsCompleted }} of {{ contract.schedules.length }} Completed</span
+                >
               </div>
             </div>
 
@@ -435,7 +324,9 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
                       <span *ngIf="!s.completedDateUtc" class="text-muted">–</span>
                     </td>
                     <td>
-                      <span class="eng-badge" *ngIf="s.assignedEngineer">{{ s.assignedEngineer }}</span>
+                      <span class="eng-badge" *ngIf="s.assignedEngineer">{{
+                        s.assignedEngineer
+                      }}</span>
                       <span class="text-muted" *ngIf="!s.assignedEngineer">Unassigned</span>
                     </td>
                     <td>
@@ -443,7 +334,9 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
                         <ar-chip [tone]="s.isCompleted ? 'good' : 'amber'">
                           {{ s.isCompleted ? 'Completed' : 'Pending' }}
                         </ar-chip>
-                        <p class="visit-note" *ngIf="s.visitNotes" [title]="s.visitNotes">{{ s.visitNotes }}</p>
+                        <p class="visit-note" *ngIf="s.visitNotes" [title]="s.visitNotes">
+                          {{ s.visitNotes }}
+                        </p>
                       </div>
                     </td>
                     <td class="text-right">
@@ -455,9 +348,7 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
                       >
                         Record Visit
                       </a>
-                      <span *ngIf="s.isCompleted" class="done-check">
-                        ✓ Done
-                      </span>
+                      <span *ngIf="s.isCompleted" class="done-check"> ✓ Done </span>
                     </td>
                   </tr>
                   <tr *ngIf="!contract.schedules || contract.schedules.length === 0">
@@ -1110,8 +1001,9 @@ const MOCK_AMC_CONTRACTS: AmcContractDto[] = [
 export class AmcContractsComponent {
   private readonly amcService = inject(AmcContractService);
 
-  readonly contracts = signal<AmcContractDto[]>(MOCK_AMC_CONTRACTS);
-  readonly selectedContract = signal<AmcContractDto | null>(MOCK_AMC_CONTRACTS[0]);
+  readonly contracts = signal<AmcContractDto[]>([]);
+  readonly selectedContract = signal<AmcContractDto | null>(null);
+  readonly loadError = signal<string | null>(null);
   readonly isLoading = signal<boolean>(false);
 
   // Filters
@@ -1164,8 +1056,6 @@ export class AmcContractsComponent {
   }
 
   loadContracts(): void {
-    if (environment.useMockData) return;
-
     this.isLoading.set(true);
     this.amcService.getList({ maxResultCount: 100 }).subscribe({
       next: (res) => {
@@ -1175,7 +1065,10 @@ export class AmcContractsComponent {
         }
         this.isLoading.set(false);
       },
-      error: () => this.isLoading.set(false),
+      error: (e: unknown) => {
+        this.loadError.set(readApiError(e, 'The AMC contracts could not be loaded.'));
+        this.isLoading.set(false);
+      },
     });
   }
 

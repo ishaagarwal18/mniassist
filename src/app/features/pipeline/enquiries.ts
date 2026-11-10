@@ -27,7 +27,7 @@ import { ToastService } from '../../core/ui/toast.service';
 // Syncfusion checks the licence in each component's constructor, before ours runs.
 registerSyncfusionLicense();
 
-/** A board column's key: the stage's id, or the built-in bucket where there is none (mock data). */
+/** A board column's key: the stage's id, or the built-in bucket where there is none. */
 const columnKey = (stageId: string | undefined, stage: string) => stageId ?? stage;
 
 /**

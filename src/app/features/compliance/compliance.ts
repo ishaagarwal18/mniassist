@@ -13,7 +13,7 @@ import { BreachSeverity, DataRequestKind } from '../../proxy/compliance';
 import { ArDateInput } from '../../ui/date-input';
 import { boardStatus, breachProblem, peopleStatus, toLocalInput } from './breach.logic';
 import { ArTopbar } from '../../layout/topbar';
-import { ArButton, ArChip, ArDialog, ArStatTile } from '../../ui';
+import { ArBanner, ArButton, ArChip, ArDialog, ArStatTile } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { ArAiCallCompliance } from './ai-calls';
 import { ChipTone } from '../../ui/chip';
@@ -39,6 +39,7 @@ const KIND_LABEL: Record<ReqKind, string> = {
   selector: 'ar-compliance',
   imports: [
     ArTopbar,
+    ArBanner,
     ArButton,
     ArChip,
     ArDialog,
@@ -74,6 +75,7 @@ export class ArCompliance {
   );
 
   protected readonly loading = this.store.loading;
+  protected readonly failed = this.store.failed;
   protected readonly overview = this.store.overview;
   protected readonly requests = this.store.requests;
   protected readonly policies = this.store.policies;

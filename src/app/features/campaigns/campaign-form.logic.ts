@@ -13,7 +13,6 @@ export const BLANK_CAMPAIGN_DRAFT: CampaignDraft = {
 export function validateCampaignDraft(
   draft: CampaignDraft,
   hasApprovedTemplates: boolean,
-  isMockData: boolean = false,
 ): string | null {
   if (!draft.name || !draft.name.trim()) {
     return 'Give the campaign a name.';
@@ -24,7 +23,7 @@ export function validateCampaignDraft(
   if (!draft.channelId) {
     return 'Pick the WhatsApp number to send from.';
   }
-  if (!isMockData && hasApprovedTemplates && !draft.templateId) {
+  if (hasApprovedTemplates && !draft.templateId) {
     return 'Pick an approved template to send.';
   }
   return null;

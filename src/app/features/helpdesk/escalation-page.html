@@ -4,15 +4,10 @@
   help="A breakdown ticket's clock starts when the customer reports it and stops while the ticket waits for the customer. Each step fires once, when the clock reaches it, and only if its condition is still unmet; what it did is written on the ticket. Policies are tried in order and the first that covers the machine is used."
 >
   <a ar-button variant="ghost" routerLink="/helpdesk/settings">Helpdesk settings</a>
-  <button ar-button type="button" icon="plus" [disabled]="mock" (click)="addPolicy()">
-    Add policy
-  </button>
+  <button ar-button type="button" icon="plus" (click)="addPolicy()">Add policy</button>
 </ar-topbar>
 
 <div class="ep ar-scroll">
-  @if (mock) {
-    <ar-banner tone="teal">Escalation policies need the live API.</ar-banner>
-  }
   @if (error(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }

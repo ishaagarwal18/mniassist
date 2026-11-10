@@ -2,9 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
-import { of } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { isPlanRefusal } from '../../core/http/api-feedback';
 import { ChannelService } from '../../core/services/channel.service';
 import { ReportPeriodStore, changeOf } from '../../core/services/report-period.store';
@@ -14,50 +11,6 @@ import { AnalyticsService, CampaignResultDto, CampaignResultsDto } from '../../p
 import { ArBanner, ArCard, ArStatTile, StatTone } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { ArPeriodPicker } from '../../ui/period-picker';
-
-const SEED: CampaignResultsDto = {
-  attributionDays: 14,
-  items: [
-    {
-      campaignId: 'c-1',
-      name: 'AMC renewal reminders · Q3',
-      state: 3,
-      startedAtUtc: '2026-09-12T04:30:00Z',
-      sent: 1204,
-      delivered: 1182,
-      read: 892,
-      failed: 22,
-      replied: 311,
-      enquiries: 38,
-      won: 21,
-      wonValueInPaise: 1_86_00_000,
-      spendInPaise: 1_38_460,
-      deliveryRate: 0.982,
-      readRate: 0.741,
-      replyRate: 0.263,
-      costPerEnquiryInPaise: 3_644,
-    },
-    {
-      campaignId: 'c-2',
-      name: 'VFD retrofit bulletin',
-      state: 3,
-      startedAtUtc: '2026-09-20T05:00:00Z',
-      sent: 2000,
-      delivered: 1936,
-      read: 1080,
-      failed: 64,
-      replied: 142,
-      enquiries: 17,
-      won: 4,
-      wonValueInPaise: 62_00_000,
-      spendInPaise: 17_26_200,
-      deliveryRate: 0.968,
-      readRate: 0.54,
-      replyRate: 0.073,
-      costPerEnquiryInPaise: 1_01_541,
-    },
-  ],
-};
 
 interface Totals {
   sent: number;
@@ -310,8 +263,7 @@ export class ArCampaignResults {
 
   private readonly current = rxResource({
     params: () => ({ ...this.period.range(), channelId: this.channels.active()?.id }),
-    stream: ({ params }) =>
-      environment.useMockData ? of(SEED) : this.api.getCampaignResults(params),
+    stream: ({ params }) => this.api.getCampaignResults(params),
   });
 
   private readonly previous = rxResource({
@@ -319,10 +271,7 @@ export class ArCampaignResults {
       this.period.compare()
         ? { ...this.period.previousRange(), channelId: this.channels.active()?.id }
         : undefined,
-    stream: ({ params }) =>
-      environment.useMockData
-        ? of({ attributionDays: 14, items: [] })
-        : this.api.getCampaignResults(params),
+    stream: ({ params }) => this.api.getCampaignResults(params),
   });
 
   private readonly data = computed<CampaignResultsDto | null>(() =>

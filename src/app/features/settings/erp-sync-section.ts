@@ -1,9 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import {
-  ErpRecordType,
   ErpSyncConnectionStatusDto,
   ErpSyncService,
 } from '../../proxy/integrations/erp-sync.service';
@@ -11,33 +8,6 @@ import { IntegrationKind } from '../../proxy/integrations/integration-kind.enum'
 import { IntegrationService } from '../../proxy/integrations/integration.service';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ErpForm, applyErpForm, describeRun, erpFormProblem, readErpForm } from './erp-sync-logic';
-
-const SEED: ErpSyncConnectionStatusDto[] = [
-  {
-    connectionId: 'erp-tally',
-    kind: IntegrationKind.Tally,
-    name: 'Tally Prime — head office',
-    state: 1,
-    customersEnabled: true,
-    salesOrdersEnabled: true,
-    invoicesEnabled: true,
-    customersSynced: 41,
-    salesOrdersCreated: 9,
-    invoicesHeld: 128,
-    lastSyncedAtUtc: new Date(Date.now() - 50 * 60_000).toISOString(),
-    failureCount: 1,
-    failures: [
-      {
-        recordType: ErpRecordType.SalesOrder,
-        localId: 'q-1',
-        label: 'QT-2041',
-        error:
-          'Line 2 ("Commissioning visit") has no part number, so the ERP cannot tell which item it is. Add the item code to the quotation line.',
-        attemptedAtUtc: new Date(Date.now() - 50 * 60_000).toISOString(),
-      },
-    ],
-  },
-];
 
 /**
  * Tally and SAP Business One: customers and accepted quotations go in, invoices and what each customer owes come back.
@@ -355,7 +325,6 @@ const SEED: ErpSyncConnectionStatusDto[] = [
 export class ArErpSyncSection {
   private readonly erp = inject(ErpSyncService);
   private readonly integrations = inject(IntegrationService);
-  private readonly mockConfig = new Map<string, Record<string, unknown>>();
 
   protected readonly connections = signal<ErpSyncConnectionStatusDto[]>([]);
   protected readonly error = signal<string | null>(null);
@@ -372,15 +341,10 @@ export class ArErpSyncSection {
   }
 
   private async load(): Promise<void> {
-    if (environment.useMockData) {
-      this.connections.set(SEED);
-      return;
-    }
     try {
-      const res = await firstValueFrom(this.erp.getStatus());
-      this.connections.set(res.connections && res.connections.length > 0 ? res.connections : SEED);
+      this.connections.set((await firstValueFrom(this.erp.getStatus())).connections ?? []);
     } catch {
-      this.connections.set(SEED);
+      this.error.set('Could not load Tally / SAP sync status.');
     }
   }
 
@@ -408,21 +372,10 @@ export class ArErpSyncSection {
     this.error.set(null);
     this.notice.set(null);
     try {
-      if (environment.useMockData) {
-        this.notice.set(
-          describeRun({
-            retried: c.failureCount,
-            recovered: 0,
-            stillFailing: c.failureCount,
-            invoices: 0,
-          }),
-        );
-      } else {
-        this.notice.set(
-          `${c.name}: ${describeRun(await firstValueFrom(this.erp.run(c.connectionId)))}`,
-        );
-        await this.load();
-      }
+      this.notice.set(
+        `${c.name}: ${describeRun(await firstValueFrom(this.erp.run(c.connectionId)))}`,
+      );
+      await this.load();
     } catch (e: unknown) {
       this.error.set(e instanceof Error ? e.message : 'The sync could not be run.');
     } finally {
@@ -459,33 +412,18 @@ export class ArErpSyncSection {
     this.formError.set(null);
     try {
       const next = applyErpForm(await this.configOf(c.connectionId), f, c.kind);
-      if (environment.useMockData) {
-        this.mockConfig.set(c.connectionId, next);
-        this.connections.update((list) =>
-          list.map((x) =>
-            x.connectionId === c.connectionId
-              ? {
-                  ...x,
-                  customersEnabled: f.customers,
-                  salesOrdersEnabled: f.salesOrders,
-                  invoicesEnabled: f.invoices,
-                }
-              : x,
-          ),
-        );
-      } else {
-        const current = await firstValueFrom(this.integrations.get(c.connectionId));
-        await firstValueFrom(
-          this.integrations.update(c.connectionId, {
-            kind: current.kind,
-            name: current.name ?? c.name,
-            configJson: JSON.stringify(next),
-            // Blank keeps the stored credential — see IntegrationAppService.UpdateAsync.
-            credential: null,
-          }),
-        );
-        await this.load();
-      }
+
+      const current = await firstValueFrom(this.integrations.get(c.connectionId));
+      await firstValueFrom(
+        this.integrations.update(c.connectionId, {
+          kind: current.kind,
+          name: current.name ?? c.name,
+          configJson: JSON.stringify(next),
+          // Blank keeps the stored credential — see IntegrationAppService.UpdateAsync.
+          credential: null,
+        }),
+      );
+      await this.load();
       this.editing.set(null);
     } catch (e: unknown) {
       this.formError.set(e instanceof Error ? e.message : 'The settings could not be saved.');
@@ -495,13 +433,6 @@ export class ArErpSyncSection {
   }
 
   private async configOf(connectionId: string): Promise<Record<string, unknown>> {
-    if (environment.useMockData) {
-      return {
-        ...(this.mockConfig.get(connectionId) ?? {
-          erp: { customers: true, salesOrders: true, invoices: true },
-        }),
-      };
-    }
     try {
       const parsed = JSON.parse(
         (await firstValueFrom(this.integrations.get(connectionId))).configJson ?? '{}',

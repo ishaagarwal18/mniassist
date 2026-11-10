@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { environment } from '../../../../environments/environment';
 import { PickerOption } from '../../../core/services/pipeline.service';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
@@ -29,9 +28,7 @@ import { ArContactPicker } from '../../pipeline/contact-picker';
       title="Initiate AI Remote Diagnostic Session"
       subtitle="Engage customer plant engineer via WhatsApp or Voice IVR for real-time guided fault diagnosis"
     >
-      <button ar-button variant="ghost" (click)="cancel()">
-        Back to Diagnostics
-      </button>
+      <button ar-button variant="ghost" (click)="cancel()">Back to Diagnostics</button>
     </ar-topbar>
 
     <div class="page-container ar-scroll">
@@ -40,12 +37,17 @@ import { ArContactPicker } from '../../pipeline/contact-picker';
           <div class="ar-field full-width">
             <span class="ar-field__label">Customer Contact <span class="required">*</span></span>
             <ar-contact-picker [initial]="contact()" (picked)="pickContact($event)" />
-            <span class="ar-field__hint">The plant engineer or technician reporting the fault; the AI communicates with them.</span>
+            <span class="ar-field__hint"
+              >The plant engineer or technician reporting the fault; the AI communicates with
+              them.</span
+            >
           </div>
 
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Customer Company Name <span class="required">*</span></label>
+              <label class="form-label"
+                >Customer Company Name <span class="required">*</span></label
+              >
               <input
                 type="text"
                 class="ar-field__input"
@@ -57,7 +59,9 @@ import { ArContactPicker } from '../../pipeline/contact-picker';
             </div>
 
             <div class="form-group">
-              <label class="form-label">Phone (WhatsApp / Call) <span class="required">*</span></label>
+              <label class="form-label"
+                >Phone (WhatsApp / Call) <span class="required">*</span></label
+              >
               <input
                 type="text"
                 class="ar-field__input"
@@ -70,7 +74,11 @@ import { ArContactPicker } from '../../pipeline/contact-picker';
 
             <div class="form-group">
               <label class="form-label">Preferred Channel</label>
-              <select class="ar-field__input" [(ngModel)]="sessionInput.preferredChannel" name="channel">
+              <select
+                class="ar-field__input"
+                [(ngModel)]="sessionInput.preferredChannel"
+                name="channel"
+              >
                 @for (opt of channelOptions; track opt.value) {
                   <option [ngValue]="opt.value">{{ opt.label }}</option>
                 }
@@ -79,7 +87,11 @@ import { ArContactPicker } from '../../pipeline/contact-picker';
 
             <div class="form-group">
               <label class="form-label">Equipment Category</label>
-              <select class="ar-field__input" [(ngModel)]="sessionInput.equipmentCategory" name="category">
+              <select
+                class="ar-field__input"
+                [(ngModel)]="sessionInput.equipmentCategory"
+                name="category"
+              >
                 @for (opt of categoryOptions; track opt.value) {
                   <option [ngValue]="opt.value">{{ opt.label }}</option>
                 }
@@ -99,7 +111,9 @@ import { ArContactPicker } from '../../pipeline/contact-picker';
             </div>
 
             <div class="form-group">
-              <label class="form-label">Equipment Serial Number <span class="required">*</span></label>
+              <label class="form-label"
+                >Equipment Serial Number <span class="required">*</span></label
+              >
               <input
                 type="text"
                 class="ar-field__input"
@@ -132,7 +146,9 @@ import { ArContactPicker } from '../../pipeline/contact-picker';
           </div>
 
           <div class="form-group full-width mt-3">
-            <label class="form-label">Reported Fault Symptoms & Error Description <span class="required">*</span></label>
+            <label class="form-label"
+              >Reported Fault Symptoms & Error Description <span class="required">*</span></label
+            >
             <textarea
               class="ar-field__input"
               rows="4"
@@ -142,7 +158,8 @@ import { ArContactPicker } from '../../pipeline/contact-picker';
               name="reportedSymptoms"
             ></textarea>
             <span class="ar-field__hint">
-              The AI Diagnostic Assistant uses these symptoms to initiate guided troubleshooting with the plant engineer.
+              The AI Diagnostic Assistant uses these symptoms to initiate guided troubleshooting
+              with the plant engineer.
             </span>
           </div>
 
@@ -151,15 +168,18 @@ import { ArContactPicker } from '../../pipeline/contact-picker';
           }
 
           <div class="form-actions">
-            <button ar-button variant="ghost" type="button" (click)="cancel()">
-              Cancel
-            </button>
+            <button ar-button variant="ghost" type="button" (click)="cancel()">Cancel</button>
             <button
               ar-button
               variant="ai"
               icon="sparkle"
               type="submit"
-              [disabled]="busy() || !sessionInput.customerName.trim() || !sessionInput.customerContactPhone.trim() || !sessionInput.reportedSymptoms.trim()"
+              [disabled]="
+                busy() ||
+                !sessionInput.customerName.trim() ||
+                !sessionInput.customerContactPhone.trim() ||
+                !sessionInput.reportedSymptoms.trim()
+              "
             >
               {{ busy() ? 'Initiating session…' : 'Initiate AI Diagnostic Session' }}
             </button>
@@ -283,9 +303,7 @@ export class ArNewDiagnosticSessionPage {
     this.error.set(null);
 
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(this.service.initiateSession(this.sessionInput));
-      }
+      await firstValueFrom(this.service.initiateSession(this.sessionInput));
       this.toasts.success(
         `Diagnostic session ${this.sessionCode} initiated via ${
           this.sessionInput.preferredChannel === MaintenanceChannel.WhatsApp ? 'WhatsApp' : 'Voice'
@@ -293,7 +311,9 @@ export class ArNewDiagnosticSessionPage {
       );
       void this.router.navigateByUrl('/field-service/remote-maintenance');
     } catch (err: unknown) {
-      this.error.set((err as { message?: string })?.message || 'Failed to initiate diagnostic session.');
+      this.error.set(
+        (err as { message?: string })?.message || 'Failed to initiate diagnostic session.',
+      );
     } finally {
       this.busy.set(false);
     }

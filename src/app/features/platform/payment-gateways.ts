@@ -1,3 +1,4 @@
+import { readApiError } from '../../core/util/api-error';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -77,8 +78,8 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
           <p class="intro">
             Workspaces choose one of the gateways switched on here when they top up their wallet or
             pay an invoice. Key secrets and salts are stored in the server's secret storage and are
-            never shown again after you save them. A field left empty uses the server configuration's
-            value, if there is one.
+            never shown again after you save them. A field left empty uses the server
+            configuration's value, if there is one.
           </p>
 
           <section class="card" aria-labelledby="pg-razorpay">
@@ -328,7 +329,8 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
               </ar-chip>
             </header>
             <p>
-              Collect payments from customer conversations in WhatsApp inbox via BillDesk's secure checkout.
+              Collect payments from customer conversations in WhatsApp inbox via BillDesk's secure
+              checkout.
             </p>
 
             <div class="fields">
@@ -349,7 +351,10 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
                   <option [value]="Env.Uat" [selected]="billDeskEnvironment() === Env.Uat">
                     Test (UAT) - Sandbox
                   </option>
-                  <option [value]="Env.Production" [selected]="billDeskEnvironment() === Env.Production">
+                  <option
+                    [value]="Env.Production"
+                    [selected]="billDeskEnvironment() === Env.Production"
+                  >
                     Live Production
                   </option>
                 </select>
@@ -373,12 +378,19 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
                 />
               </label>
               <label class="ar-field">
-                <span>Signing secret @if (billDeskHasSecret()) { <small>(Stored - leave blank to keep)</small> }</span>
+                <span
+                  >Signing secret
+                  @if (billDeskHasSecret()) {
+                    <small>(Stored - leave blank to keep)</small>
+                  }
+                </span>
                 <input
                   type="password"
                   autocomplete="off"
                   class="ar-field__input"
-                  [placeholder]="billDeskHasSecret() ? 'Saved. Leave empty to keep it' : 'Enter signing secret'"
+                  [placeholder]="
+                    billDeskHasSecret() ? 'Saved. Leave empty to keep it' : 'Enter signing secret'
+                  "
                   [value]="billDeskSecret()"
                   (input)="billDeskSecret.set($any($event.target).value)"
                 />
@@ -387,7 +399,14 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
                 <p class="hook">
                   BillDesk Webhook URL:
                   <code>{{ billDeskWebhookUrl() }}</code>
-                  <button ar-button variant="quiet" type="button" (click)="copy(billDeskWebhookUrl()!)">Copy</button>
+                  <button
+                    ar-button
+                    variant="quiet"
+                    type="button"
+                    (click)="copy(billDeskWebhookUrl()!)"
+                  >
+                    Copy
+                  </button>
                 </p>
               }
               <div class="actions">
@@ -414,7 +433,11 @@ type SecretField = 'keySecret' | 'webhookSecret' | 'merchantSalt';
         <section class="card card--full">
           <header class="head">
             <h2>Payment Requests</h2>
-            <span class="muted">{{ paymentRequests().length }} request{{ paymentRequests().length === 1 ? '' : 's' }}</span>
+            <span class="muted"
+              >{{ paymentRequests().length }} request{{
+                paymentRequests().length === 1 ? '' : 's'
+              }}</span
+            >
           </header>
           <ejs-grid
             arGrid="payment-requests"
@@ -578,7 +601,9 @@ export class ArPaymentGateways implements OnInit {
   private readonly toasts = inject(ToastService);
 
   readonly tabs = ['Platform gateways', 'Payment requests'] as const;
-  protected readonly activeTab = signal<'Platform gateways' | 'Payment requests'>('Platform gateways');
+  protected readonly activeTab = signal<'Platform gateways' | 'Payment requests'>(
+    'Platform gateways',
+  );
 
   protected readonly config = signal<PaymentGatewayConfigDto | null>(null);
   protected readonly busy = signal(false);
@@ -626,7 +651,12 @@ export class ArPaymentGateways implements OnInit {
   }
   protected formatWhen(iso?: string | null): string {
     if (!iso) return '-';
-    return new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return new Date(iso).toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 
   async ngOnInit(): Promise<void> {
@@ -653,9 +683,9 @@ export class ArPaymentGateways implements OnInit {
 
       const page = await firstValueFrom(this.paymentService.getList({ maxResultCount: 100 }));
       this.paymentRequests.set(page.items ?? []);
-    } catch {
-      // In offline / mock mode provide seed requests
+    } catch (e: unknown) {
       this.paymentRequests.set([]);
+      this.billDeskError.set(readApiError(e, 'The BillDesk settings could not be loaded.'));
     }
   }
 

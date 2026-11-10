@@ -7,9 +7,7 @@ import {
   model,
   output,
 } from '@angular/core';
-import { Observable, catchError, map, of } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
+import { Observable, catchError, map } from 'rxjs';
 import { PurchasingService } from '../../proxy/inventory/purchasing.service';
 import { Vendor360Service } from '../../proxy/purchasing';
 
@@ -25,11 +23,6 @@ export interface SupplierOption {
   gstin?: string | null;
 }
 
-const MOCK_SUPPLIERS: SupplierOption[] = [
-  { id: 'sup-1', name: 'Bharat Precision Gears Pvt Ltd', gstin: '27AABCB1234F1Z5' },
-  { id: 'sup-3', name: 'Sundram Fasteners Automotive', gstin: '33AABCS9821L1ZM' },
-];
-
 @Injectable({ providedIn: 'root' })
 export class SupplierOptionsService {
   private readonly purchasing = inject(PurchasingService);
@@ -37,7 +30,6 @@ export class SupplierOptionsService {
 
   /** Active, not blacklisted suppliers, by name: Purchasing's list, else Vendor 360's (a role may hold either). Errors quietly. */
   load(): Observable<SupplierOption[]> {
-    if (environment.useMockData) return of(MOCK_SUPPLIERS);
     const quiet = { skipHandleError: true };
     return this.purchasing.getSuppliers(true, quiet).pipe(
       // Blacklisted suppliers are not offered for new records.

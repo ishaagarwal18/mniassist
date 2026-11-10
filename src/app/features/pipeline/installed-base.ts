@@ -12,9 +12,7 @@ import { grantedPolicy } from '../../core/auth/permission';
 import { Asset, PickerOption, PipelineStore } from '../../core/services/pipeline.service';
 import { ArTopbar } from '../../layout/topbar';
 import { ArButton, ArChip, ArDialog } from '../../ui';
-import { ArDateInput } from '../../ui/date-input';
 import { ChipTone } from '../../ui/chip';
-import { ArContactPicker } from './contact-picker';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RenewalStatus } from '../../proxy/pipeline/amc-renewal.service';
 import { amcCommercials, renewalChip } from './renewal-logic';
@@ -26,7 +24,6 @@ import { ArGrid } from '../../ui/grid';
 import { firstValueFrom } from 'rxjs';
 import { readApiError } from '../../core/util/api-error';
 import { MachineQrService } from '../../proxy/support/machine-qr.service';
-import { environment } from '../../../environments/environment';
 import { savePdf } from './machine/machine-qr.logic';
 
 const MAX_STICKERS = 240;
@@ -66,10 +63,6 @@ export class ArInstalledBase {
   );
 
   protected async printStickers(): Promise<void> {
-    if (environment.useMockData) {
-      this.toasts.warning('Stickers need the live API.');
-      return;
-    }
     const ids = this.assets()
       .filter((a) => !a.retired)
       .slice(0, MAX_STICKERS)

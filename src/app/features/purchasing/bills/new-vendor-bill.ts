@@ -4,16 +4,12 @@ import {
   Component,
   DestroyRef,
   computed,
-  effect,
   inject,
   signal,
-  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, firstValueFrom, map, of } from 'rxjs';
-
-import { environment } from '../../../../environments/environment';
+import { catchError, firstValueFrom, of } from 'rxjs';
 import { checkPolicy } from '../../../core/auth/permission';
 import { ToastService } from '../../../core/ui/toast.service';
 import { readApiError } from '../../../core/util/api-error';
@@ -23,14 +19,9 @@ import { CockpitOriginService } from '../../../layout/cockpit-origin.service';
 import { ArTopbar } from '../../../layout/topbar';
 import { PurchasingService } from '../../../proxy/inventory/purchasing.service';
 import {
-  Gstr2bMatchStatus,
   GoodsReceiptNoteDto,
   GoodsReceiptNoteService,
-  GrnStatus,
-  ThreeWayMatchStatus,
-  VendorBillDto,
   VendorBillService,
-  VendorBillStatus,
 } from '../../../proxy/purchasing';
 import { VendorBillReaderService } from '../../../proxy/purchasing';
 import { ArButton, ArIcon, ArDateInput, ArSelect } from '../../../ui';
@@ -668,30 +659,6 @@ export class ArNewVendorBillPage {
     if (this.grnRequest) void this.billReceipt(this.grnRequest);
   }
 
-  /** The supplier's billable goods receipts, whenever the supplier changes. */
-  private readonly loadReceipts = effect(() => {
-    const supplierId = this.form().supplierId;
-    untracked(() => {
-      if (!supplierId || !this.canCreate) {
-        this.receipts.set([]);
-        return;
-      }
-      if (environment.useMockData) return;
-      this.grnApi
-        .getList({ supplierId, maxResultCount: 50 }, { skipHandleError: true })
-        .pipe(
-          map((page) =>
-            (page.items ?? []).filter(
-              (g) => g.status !== GrnStatus.Billed && g.status !== GrnStatus.Cancelled,
-            ),
-          ),
-          catchError(() => of(null)),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe((list) => this.receipts.set(list));
-    });
-  });
-
   protected onDrop(event: DragEvent): void {
     event.preventDefault();
     this.dragOver.set(false);
@@ -804,7 +771,6 @@ export class ArNewVendorBillPage {
 
   /** `?grn=` from the GRN list: that receipt's supplier and accepted items. */
   private async billReceipt(id: string): Promise<void> {
-    if (environment.useMockData) return;
     try {
       const g = await firstValueFrom(this.grnApi.get(id, { skipHandleError: true }));
       this.patch({ supplierId: g.supplierId, supplierName: g.supplierName });
@@ -848,9 +814,7 @@ export class ArNewVendorBillPage {
     const dto = toCreateBillDto(this.form());
     this.busy.set(true);
     try {
-      const saved = environment.useMockData
-        ? this.mockSaved()
-        : await firstValueFrom(this.billApi.create(dto, { skipHandleError: true }));
+      const saved = await firstValueFrom(this.billApi.create(dto, { skipHandleError: true }));
       this.toasts.success(
         `${saved.billNumber} saved as a draft for ${inr(saved.netPayableInPaise)} net payable. Approve it from Vendor bills.`,
         'Bill recorded',
@@ -871,39 +835,5 @@ export class ArNewVendorBillPage {
       ...(openId ? { open: openId } : {}),
     };
     return this.router.createUrlTree(['/purchasing/bills'], { queryParams: params }).toString();
-  }
-
-  private mockSaved(): VendorBillDto {
-    const f = this.form();
-    const t = billTotals(f);
-    return {
-      id: `vb-${Date.now()}`,
-      billNumber: `BILL-2026-${String(Date.now()).slice(-4)}`,
-      vendorInvoiceNumber: f.vendorInvoiceNumber,
-      vendorInvoiceDateUtc: new Date(f.invoiceDate).toISOString(),
-      supplierId: f.supplierId,
-      supplierName: f.supplierName,
-      supplierGstin: f.supplierGstin,
-      status: VendorBillStatus.Draft,
-      threeWayMatchStatus: ThreeWayMatchStatus.Pending,
-      dueDateUtc: new Date(f.dueDate).toISOString(),
-      subtotalInPaise: t.taxable,
-      discountInPaise: 0,
-      cgstInPaise: t.cgst,
-      sgstInPaise: t.sgst,
-      igstInPaise: t.igst,
-      totalTaxInPaise: t.cgst + t.sgst + t.igst,
-      tdsRateBasisPoints: 0,
-      tdsDeductedInPaise: t.tds,
-      grandTotalInPaise: t.grand,
-      netPayableInPaise: t.net,
-      paidAmountInPaise: 0,
-      balanceDueInPaise: t.net,
-      gstr2bMatchStatus: Gstr2bMatchStatus.Pending,
-      isReverseCharge: f.isReverseCharge,
-      creationTime: new Date().toISOString(),
-      lines: [],
-      payments: [],
-    };
   }
 }

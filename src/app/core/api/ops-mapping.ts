@@ -4,7 +4,12 @@ import {
   InvoiceState as InvoiceStateDto,
   ReconciliationRunDto,
 } from '../../proxy/billing';
-import { WebhookSubscriptionDto, WebhookEvent } from '../../proxy/integrations';
+import {
+  WebhookDeliveryDto,
+  WebhookDeliveryState,
+  WebhookEvent,
+  WebhookSubscriptionDto,
+} from '../../proxy/integrations';
 import {
   NotificationDto,
   NotificationDeliveryState,
@@ -21,6 +26,7 @@ import {
   SupportGrant,
   SupportSession,
   WebhookSubscription,
+  WebhookDelivery,
 } from '../models/ops.model';
 
 /**
@@ -135,6 +141,25 @@ export function toWebhookSubscription(dto: WebhookSubscriptionDto): WebhookSubsc
     lastFailureAt: dto.lastFailureAtUtc ?? undefined,
     consecutiveFailures: dto.consecutiveFailureCount ?? 0,
     lastError: dto.lastError ?? undefined,
+  };
+}
+
+const DELIVERY_STATE: Record<WebhookDeliveryState, WebhookDelivery['state']> = {
+  [WebhookDeliveryState.Pending]: 'pending',
+  [WebhookDeliveryState.Delivered]: 'delivered',
+  [WebhookDeliveryState.Failed]: 'failed',
+  [WebhookDeliveryState.Abandoned]: 'abandoned',
+};
+
+export function toWebhookDelivery(dto: WebhookDeliveryDto): WebhookDelivery {
+  return {
+    id: dto.id!,
+    event: dto.event != null ? (WebhookEvent[dto.event] ?? String(dto.event)) : '',
+    state: dto.state != null ? DELIVERY_STATE[dto.state] : 'pending',
+    attempts: dto.attemptCount ?? 0,
+    createdAt: dto.createdAtUtc ?? '',
+    statusCode: dto.responseStatusCode ?? undefined,
+    error: dto.lastError ?? undefined,
   };
 }
 

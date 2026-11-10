@@ -1,10 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-
-import { environment } from '../../../../environments/environment';
 import { PickerOption } from '../../../core/services/pipeline.service';
 import type { ProductDto } from '../../../proxy/library/product.service';
-import { SalesOrderStatus } from '../../../proxy/sales/sales-enums';
 import { CreateSalesOrderDto, SalesOrderDto } from '../../../proxy/sales/sales-order.models';
 import { SalesOrderService } from '../../../proxy/sales/sales-order.service';
 import { ArButton, ArDialog } from '../../../ui';
@@ -382,10 +379,6 @@ export class ArNewSalesOrder {
       lines,
     };
 
-    if (environment.useMockData) {
-      this.closed.emit(mockOrder(input, customer.label));
-      return;
-    }
     this.creating.set(true);
     this.error.set(null);
     this.orderService.create(input).subscribe({
@@ -399,46 +392,4 @@ export class ArNewSalesOrder {
       },
     });
   }
-}
-
-/** What the API would return, for the demo build. */
-function mockOrder(input: CreateSalesOrderDto, customerName: string): SalesOrderDto {
-  const subtotal = input.lines.reduce((acc, l) => acc + l.quantity * l.unitPriceInPaise, 0);
-  const tax = Math.round(subtotal * 0.18);
-  const id = `so-${Date.now()}`;
-  return {
-    id,
-    orderNumber: `SO-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-    customerId: input.customerId,
-    customerName,
-    customerPoNumber: input.customerPoNumber,
-    status: SalesOrderStatus.Draft,
-    paymentTermsDays: input.paymentTermsDays,
-    deliveryTerms: input.deliveryTerms,
-    billingAddress: input.billingAddress,
-    shippingAddress: input.shippingAddress,
-    orderDateUtc: new Date().toISOString(),
-    subtotalInPaise: subtotal,
-    discountInPaise: 0,
-    taxInPaise: tax,
-    grandTotalInPaise: subtotal + tax,
-    creationTime: new Date().toISOString(),
-    lines: input.lines.map((l, i) => ({
-      id: `sol-${i + 1}`,
-      salesOrderId: id,
-      lineNumber: i + 1,
-      partNumber: l.partNumber,
-      description: l.description,
-      hsnCode: l.hsnCode,
-      quantity: l.quantity,
-      unitPriceInPaise: l.unitPriceInPaise,
-      discountPercent: 0,
-      taxRateBasisPoints: l.taxRateBasisPoints,
-      lineTotalInPaise: l.quantity * l.unitPriceInPaise,
-      dispatchedQuantity: 0,
-      invoicedQuantity: 0,
-      outstandingDispatch: l.quantity,
-      outstandingInvoice: l.quantity,
-    })),
-  };
 }

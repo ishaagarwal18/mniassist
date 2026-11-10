@@ -1,12 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  OnInit,
-  inject,
-  signal,
-  untracked,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -33,7 +26,7 @@ import {
   dueLabel,
   isFinished,
 } from './ticket-logic';
-import { ServiceTicketGateway } from './ticket-mock';
+import { ServiceTicketGateway } from './ticket-gateway';
 import { ArBreakdownClockCard } from './breakdown-clock-card';
 import { ArRecordFixCard } from './record-fix-card';
 import { ArDiagnosisPanel } from './diagnosis-panel';

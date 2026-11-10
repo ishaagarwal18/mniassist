@@ -1,12 +1,9 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { ArBrand } from '../../layout/brand';
 import { ArThemeToggle } from '../../layout/theme-toggle';
 import {
-  ComponentState,
   PlatformStatusService,
   type PlatformStatusDto,
   type StatusIncidentDto,
@@ -272,17 +269,6 @@ export class ArStatusPage {
   }
 
   private async load(): Promise<void> {
-    if (environment.useMockData) {
-      this.status.set({
-        overall: ComponentState.Operational,
-        components: [],
-        active: [],
-        upcoming: [],
-        recent: [],
-        checkedAtUtc: new Date().toISOString(),
-      });
-      return;
-    }
     try {
       this.status.set(await firstValueFrom(this.api.get()));
       this.unreachable.set(false);

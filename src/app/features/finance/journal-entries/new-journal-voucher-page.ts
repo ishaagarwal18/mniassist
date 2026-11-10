@@ -2,21 +2,18 @@ import { CommonModule, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { environment } from '../../../../environments/environment';
+import { readApiError } from '../../../core/util/api-error';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
-  ChartOfAccountDto,
   ChartOfAccountService,
   CreateJournalEntryDto,
   CreateJournalEntryLineDto,
   JournalEntryDto,
   JournalEntryService,
-  JournalVoucherStatus,
   JournalVoucherType,
 } from '../../../proxy/finance';
 import { ArButton, ArCard } from '../../../ui';
-import { getStoredJournalEntries, saveStoredJournalEntry } from './journal-entry-storage';
 
 interface VoucherLineVM {
   accountId: string;
@@ -28,35 +25,15 @@ interface VoucherLineVM {
   costCenter: string;
 }
 
-const DEFAULT_COA_OPTIONS: { id: string; code: string; name: string }[] = [
-  { id: '10100000-0000-0000-0000-000000001010', code: '1010', name: 'HDFC Bank Current Account' },
-  { id: '10200000-0000-0000-0000-000000001020', code: '1020', name: 'Petty Cash Account' },
-  { id: '12000000-0000-0000-0000-000000001200', code: '1200', name: 'Accounts Receivable (Sundry Debtors)' },
-  { id: '13000000-0000-0000-0000-000000001300', code: '1300', name: 'Raw Material Inventory' },
-  { id: '13100000-0000-0000-0000-000000001310', code: '1310', name: 'Work-in-Progress (WIP) Inventory' },
-  { id: '13200000-0000-0000-0000-000000001320', code: '1320', name: 'Finished Goods Inventory' },
-  { id: '14000000-0000-0000-0000-000000001400', code: '1400', name: 'Plant & Heavy Machinery' },
-  { id: '15000000-0000-0000-0000-000000001500', code: '1500', name: 'Input Tax Credit (ITC) - CGST' },
-  { id: '15100000-0000-0000-0000-000000001510', code: '1510', name: 'Input Tax Credit (ITC) - SGST' },
-  { id: '15200000-0000-0000-0000-000000001520', code: '1520', name: 'Input Tax Credit (ITC) - IGST' },
-  { id: '20100000-0000-0000-0000-000000002010', code: '2010', name: 'Accounts Payable (Sundry Creditors)' },
-  { id: '20200000-0000-0000-0000-000000002020', code: '2020', name: 'Output GST Payable - CGST' },
-  { id: '20210000-0000-0000-0000-000000002021', code: '2021', name: 'Output GST Payable - SGST' },
-  { id: '20220000-0000-0000-0000-000000002022', code: '2022', name: 'Output GST Payable - IGST' },
-  { id: '20300000-0000-0000-0000-000000002030', code: '2030', name: 'TDS Payable u/s 194Q & 194C' },
-  { id: '21000000-0000-0000-0000-000000002100', code: '2100', name: 'Working Capital Bank Loan' },
-  { id: '30100000-0000-0000-0000-000000003010', code: '3010', name: 'Paid-Up Share Capital' },
-  { id: '30200000-0000-0000-0000-000000003020', code: '3020', name: 'Retained Earnings & Reserves' },
-  { id: '40100000-0000-0000-0000-000000004010', code: '4010', name: 'Sales Revenue - Manufactured Systems' },
-  { id: '40200000-0000-0000-0000-000000004020', code: '4020', name: 'Service Revenue - AMC Contracts' },
-  { id: '40300000-0000-0000-0000-000000004030', code: '4030', name: 'Service Revenue - Field Breakdown & Spares' },
-  { id: '41000000-0000-0000-0000-000000004100', code: '4100', name: 'Other Income & Metal Scrap Sales' },
-  { id: '50100000-0000-0000-0000-000000005010', code: '5010', name: 'Cost of Goods Sold - Raw Materials' },
-  { id: '50200000-0000-0000-0000-000000005020', code: '5020', name: 'Direct Shop Floor Machinist Wages' },
-  { id: '60100000-0000-0000-0000-000000006010', code: '6010', name: 'Factory Power, Fuel & Industrial Gases' },
-  { id: '60200000-0000-0000-0000-000000006020', code: '6020', name: 'Machine Tooling & Plant Maintenance' },
-  { id: '60300000-0000-0000-0000-000000006030', code: '6030', name: 'Field Service Travel & Site Expenses' },
-];
+const BLANK_LINE: VoucherLineVM = {
+  accountId: '',
+  accountCode: '',
+  accountName: '',
+  debitRupees: 0,
+  creditRupees: 0,
+  lineNarration: '',
+  costCenter: '',
+};
 
 /**
  * Create or Edit a Double-Entry Journal Voucher.
@@ -83,12 +60,11 @@ const DEFAULT_COA_OPTIONS: { id: string; code: string; name: string }[] = [
         <ar-card heading="Voucher Details">
           <div class="form-grid">
             <label class="ar-field">
-              <span class="ar-field__label">Voucher Number <span class="required">*</span></span>
+              <span class="ar-field__label">Voucher Number</span>
               <input
                 type="text"
                 class="ar-field__input ar-mono"
-                required
-                placeholder="e.g. JV-2026-0045"
+                placeholder="Blank: numbered automatically on save"
                 [(ngModel)]="entryNumber"
                 name="entryNumber"
               />
@@ -118,7 +94,9 @@ const DEFAULT_COA_OPTIONS: { id: string; code: string; name: string }[] = [
             </label>
 
             <label class="ar-field">
-              <span class="ar-field__label">Reference Document # <span class="ar-field__opt">(optional)</span></span>
+              <span class="ar-field__label"
+                >Reference Document # <span class="ar-field__opt">(optional)</span></span
+              >
               <input
                 type="text"
                 class="ar-field__input"
@@ -129,7 +107,9 @@ const DEFAULT_COA_OPTIONS: { id: string; code: string; name: string }[] = [
             </label>
 
             <label class="ar-field full-width">
-              <span class="ar-field__label">Narration & Audit Note <span class="required">*</span></span>
+              <span class="ar-field__label"
+                >Narration & Audit Note <span class="required">*</span></span
+              >
               <textarea
                 class="ar-field__input"
                 rows="2"
@@ -168,9 +148,7 @@ const DEFAULT_COA_OPTIONS: { id: string; code: string; name: string }[] = [
                       >
                         <option value="" disabled>Select General Ledger Account...</option>
                         @for (acc of accountOptions(); track acc.id) {
-                          <option [value]="acc.id">
-                            {{ acc.code }} - {{ acc.name }}
-                          </option>
+                          <option [value]="acc.id">{{ acc.code }} - {{ acc.name }}</option>
                         }
                       </select>
                     </td>
@@ -234,7 +212,13 @@ const DEFAULT_COA_OPTIONS: { id: string; code: string; name: string }[] = [
               <tfoot>
                 <tr class="totals-row">
                   <td colspan="3" class="totals-label">
-                    <button ar-button type="button" variant="ghost" class="btn-add-line" (click)="addLine()">
+                    <button
+                      ar-button
+                      type="button"
+                      variant="ghost"
+                      class="btn-add-line"
+                      (click)="addLine()"
+                    >
                       + Add Ledger Line
                     </button>
                   </td>
@@ -251,15 +235,24 @@ const DEFAULT_COA_OPTIONS: { id: string; code: string; name: string }[] = [
           </div>
 
           <!-- Real-time Balance Validator Bar -->
-          <div class="balance-bar" [class.balance-bar--valid]="isBalanced()" [class.balance-bar--invalid]="!isBalanced()">
+          <div
+            class="balance-bar"
+            [class.balance-bar--valid]="isBalanced()"
+            [class.balance-bar--invalid]="!isBalanced()"
+          >
             @if (isBalanced()) {
               <span class="status-indicator success">
-                &#10003; <strong>Balanced:</strong> Total Debits (₹{{ totalDebit() | number: '1.2-2' }}) equal Total Credits.
+                &#10003; <strong>Balanced:</strong> Total Debits (₹{{
+                  totalDebit() | number: '1.2-2'
+                }}) equal Total Credits.
               </span>
             } @else {
               <span class="status-indicator danger">
-                &#9888; <strong>Out of balance by ₹{{ balanceDifference() | number: '1.2-2' }}:</strong>
-                Debits (₹{{ totalDebit() | number: '1.2-2' }}) ≠ Credits (₹{{ totalCredit() | number: '1.2-2' }}).
+                &#9888;
+                <strong>Out of balance by ₹{{ balanceDifference() | number: '1.2-2' }}:</strong>
+                Debits (₹{{ totalDebit() | number: '1.2-2' }}) ≠ Credits (₹{{
+                  totalCredit() | number: '1.2-2'
+                }}).
               </span>
             }
           </div>
@@ -271,13 +264,8 @@ const DEFAULT_COA_OPTIONS: { id: string; code: string; name: string }[] = [
 
         <div class="form-actions">
           <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>
-          <button
-            ar-button
-            type="submit"
-            variant="primary"
-            [disabled]="busy()"
-          >
-            {{ busy() ? 'Saving…' : (isEditing() ? 'Update Voucher' : 'Save Journal Voucher') }}
+          <button ar-button type="submit" variant="primary" [disabled]="busy()">
+            {{ busy() ? 'Saving…' : isEditing() ? 'Update Voucher' : 'Save Journal Voucher' }}
           </button>
         </div>
       </form>
@@ -332,7 +320,9 @@ const DEFAULT_COA_OPTIONS: { id: string; code: string; name: string }[] = [
       font-size: 0.875rem;
       background: #ffffff;
       color: #0f172a;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
 
       &:focus {
         outline: none;
@@ -463,34 +453,16 @@ export class ArNewJournalVoucherPage {
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  protected entryNumber = `JV-2026-${String(Math.floor(Math.random() * 900 + 100))}`;
+  /** Blank: the server numbers the voucher (JV-yyyy-nnnn) when it is saved. */
+  protected entryNumber = '';
   protected entryDateUtc = new Date().toISOString().substring(0, 10);
   protected voucherType = JournalVoucherType.GeneralJournal;
   protected referenceDocumentNumber = '';
-  protected narration = 'Adjustment journal voucher for inter-account reconciliation.';
+  protected narration = '';
 
-  protected readonly accountOptions = signal(DEFAULT_COA_OPTIONS);
+  protected readonly accountOptions = signal<{ id: string; code: string; name: string }[]>([]);
 
-  protected readonly lines = signal<VoucherLineVM[]>([
-    {
-      accountId: '10100000-0000-0000-0000-000000001010',
-      accountCode: '1010',
-      accountName: 'HDFC Bank Current Account',
-      debitRupees: 50000,
-      creditRupees: 0,
-      lineNarration: 'Disbursement from Bank',
-      costCenter: 'CC-GEN',
-    },
-    {
-      accountId: '40100000-0000-0000-0000-000000004010',
-      accountCode: '4010',
-      accountName: 'Sales Revenue - Manufactured Systems',
-      debitRupees: 0,
-      creditRupees: 50000,
-      lineNarration: 'Revenue realization',
-      costCenter: 'CC-GEN',
-    },
-  ]);
+  protected readonly lines = signal<VoucherLineVM[]>([{ ...BLANK_LINE }, { ...BLANK_LINE }]);
 
   protected readonly totalDebit = computed(() =>
     this.lines().reduce((acc, l) => acc + (Number(l.debitRupees) || 0), 0),
@@ -521,45 +493,37 @@ export class ArNewJournalVoucherPage {
   }
 
   private loadAccounts(): void {
-    this.coaService.getList({ maxResultCount: 200 }).subscribe({
+    this.coaService.getList({ maxResultCount: 1000 }).subscribe({
       next: (res) => {
-        if (res.items && res.items.length > 0) {
-          const opts = res.items.map((a) => ({ id: a.id ?? '', code: a.accountCode, name: a.accountName }));
-          this.accountOptions.set(opts);
-
-          // Update initial lines to real DB IDs if found
-          this.lines.update((currLines) =>
-            currLines.map((line) => {
-              const matched = opts.find((o) => o.code === line.accountCode);
-              return matched
-                ? { ...line, accountId: matched.id, accountCode: matched.code, accountName: matched.name }
-                : line;
-            }),
+        const opts = (res.items ?? []).map((a) => ({
+          id: a.id ?? '',
+          code: a.accountCode,
+          name: a.accountName,
+        }));
+        this.accountOptions.set(opts);
+        if (opts.length === 0) {
+          this.error.set(
+            'This workspace has no ledger accounts yet. Set up the chart of accounts first (Finance → Chart of accounts).',
           );
         }
       },
-      error: () => {},
+      error: (e: unknown) =>
+        this.error.set(readApiError(e, 'The chart of accounts could not be loaded.')),
     });
   }
 
   private loadVoucher(id: string): void {
-    const local = getStoredJournalEntries().find((e) => e.id === id);
-    if (local) {
-      this.populateFromDto(local);
-      return;
-    }
-
     this.jvService.get(id).subscribe({
       next: (v) => this.populateFromDto(v),
-      error: () => {
-        this.toasts.error('Could not load journal voucher.');
-      },
+      error: (e: unknown) => this.error.set(readApiError(e, 'Could not load journal voucher.')),
     });
   }
 
   private populateFromDto(v: JournalEntryDto): void {
     this.entryNumber = v.entryNumber;
-    this.entryDateUtc = v.entryDateUtc ? v.entryDateUtc.substring(0, 10) : new Date().toISOString().substring(0, 10);
+    this.entryDateUtc = v.entryDateUtc
+      ? v.entryDateUtc.substring(0, 10)
+      : new Date().toISOString().substring(0, 10);
     this.voucherType = v.voucherType;
     this.referenceDocumentNumber = v.referenceDocumentNumber ?? '';
     this.narration = v.narration;
@@ -585,15 +549,15 @@ export class ArNewJournalVoucherPage {
 
     this.lines.update((list) =>
       list.map((l, i) =>
-        i === index
-          ? { ...l, accountId: opt.id, accountCode: opt.code, accountName: opt.name }
-          : l,
+        i === index ? { ...l, accountId: opt.id, accountCode: opt.code, accountName: opt.name } : l,
       ),
     );
   }
 
   updateLineNarration(index: number, val: string): void {
-    this.lines.update((list) => list.map((l, i) => (i === index ? { ...l, lineNarration: val } : l)));
+    this.lines.update((list) =>
+      list.map((l, i) => (i === index ? { ...l, lineNarration: val } : l)),
+    );
   }
 
   updateLineCostCenter(index: number, val: string): void {
@@ -619,19 +583,7 @@ export class ArNewJournalVoucherPage {
   }
 
   addLine(): void {
-    const firstOpt = this.accountOptions()[0];
-    this.lines.update((list) => [
-      ...list,
-      {
-        accountId: firstOpt.id,
-        accountCode: firstOpt.code,
-        accountName: firstOpt.name,
-        debitRupees: 0,
-        creditRupees: 0,
-        lineNarration: '',
-        costCenter: 'CC-GEN',
-      },
-    ]);
+    this.lines.update((list) => [...list, { ...BLANK_LINE }]);
   }
 
   removeLine(index: number): void {
@@ -645,12 +597,6 @@ export class ArNewJournalVoucherPage {
 
   submit(): void {
     if (this.busy()) return;
-
-    if (!this.entryNumber?.trim()) {
-      this.error.set('Please enter a voucher number.');
-      this.toasts.error('Please enter a voucher number.');
-      return;
-    }
 
     if (!this.narration?.trim()) {
       this.error.set('Please enter a narration & audit note explaining this journal voucher.');
@@ -675,7 +621,9 @@ export class ArNewJournalVoucherPage {
       (l) => !l.accountId || (l.debitRupees === 0 && l.creditRupees === 0),
     );
     if (invalidLine) {
-      this.error.set('Each ledger line must have an account selected and a non-zero debit or credit amount.');
+      this.error.set(
+        'Each ledger line must have an account selected and a non-zero debit or credit amount.',
+      );
       this.toasts.error('Please complete all ledger lines.');
       return;
     }
@@ -692,8 +640,10 @@ export class ArNewJournalVoucherPage {
     }));
 
     const input: CreateJournalEntryDto = {
-      entryNumber: this.entryNumber.trim(),
-      entryDateUtc: new Date(this.entryDateUtc || new Date().toISOString().substring(0, 10)).toISOString(),
+      entryNumber: this.entryNumber.trim() || undefined,
+      entryDateUtc: new Date(
+        this.entryDateUtc || new Date().toISOString().substring(0, 10),
+      ).toISOString(),
       voucherType: this.voucherType,
       narration: this.narration.trim(),
       referenceDocumentNumber: this.referenceDocumentNumber.trim() || undefined,
@@ -702,73 +652,17 @@ export class ArNewJournalVoucherPage {
 
     const id = this.editId();
 
-    const createdDto: JournalEntryDto = {
-      id: id || `jv-${Date.now()}`,
-      entryNumber: input.entryNumber || `JV-2026-0099`,
-      entryDateUtc: input.entryDateUtc,
-      voucherType: input.voucherType,
-      status: JournalVoucherStatus.Posted,
-      narration: input.narration,
-      referenceDocumentNumber: input.referenceDocumentNumber,
-      totalDebitInPaise: Math.round(this.totalDebit() * 100),
-      totalCreditInPaise: Math.round(this.totalCredit() * 100),
-      postedAtUtc: new Date().toISOString(),
-      postedBy: 'Chief Accountant Rajesh Iyer',
-      lines: this.lines().map((l, idx) => ({
-        id: `jvl-${Date.now()}-${idx}`,
-        journalEntryId: id || `jv-${Date.now()}`,
-        accountId: l.accountId,
-        accountCode: l.accountCode,
-        accountName: l.accountName,
-        debitAmountInPaise: Math.round(l.debitRupees * 100),
-        creditAmountInPaise: Math.round(l.creditRupees * 100),
-        lineNarration: l.lineNarration?.trim() || undefined,
-        costCenter: l.costCenter?.trim() || undefined,
-      })),
-    };
-
-    if (environment.useMockData) {
-      saveStoredJournalEntry(createdDto);
-      this.busy.set(false);
-      this.toasts.success(
-        id ? `Voucher ${input.entryNumber} updated.` : `Journal Voucher ${input.entryNumber} created.`,
-      );
-      void this.router.navigateByUrl('/finance/journal-entries');
-      return;
-    }
-
-    if (id) {
-      this.jvService.update(id, input).subscribe({
-        next: (res) => {
-          saveStoredJournalEntry(res);
-          this.busy.set(false);
-          this.toasts.success(`Voucher ${res.entryNumber} updated.`);
-          void this.router.navigateByUrl('/finance/journal-entries');
-        },
-        error: () => {
-          // If backend update fails, fallback to local persistence so user doesn't lose work
-          saveStoredJournalEntry(createdDto);
-          this.busy.set(false);
-          this.toasts.success(`Voucher ${input.entryNumber} updated.`);
-          void this.router.navigateByUrl('/finance/journal-entries');
-        },
-      });
-    } else {
-      this.jvService.create(input).subscribe({
-        next: (res) => {
-          saveStoredJournalEntry(res);
-          this.busy.set(false);
-          this.toasts.success(`Voucher ${res.entryNumber} created.`);
-          void this.router.navigateByUrl('/finance/journal-entries');
-        },
-        error: () => {
-          // If backend create fails (e.g. AccountId not in DB or network error), fallback to local storage
-          saveStoredJournalEntry(createdDto);
-          this.busy.set(false);
-          this.toasts.success(`Voucher ${input.entryNumber} created.`);
-          void this.router.navigateByUrl('/finance/journal-entries');
-        },
-      });
-    }
+    // Saved as a draft; it reaches the ledger when someone posts it. The app-wide toast
+    // confirms the save, or shows the server's reason for refusing it (kept on the page too).
+    (id ? this.jvService.update(id, input) : this.jvService.create(input)).subscribe({
+      next: () => {
+        this.busy.set(false);
+        void this.router.navigateByUrl('/finance/journal-entries');
+      },
+      error: (e: unknown) => {
+        this.busy.set(false);
+        this.error.set(readApiError(e, 'The journal voucher could not be saved.'));
+      },
+    });
   }
 }

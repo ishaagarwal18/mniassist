@@ -20,7 +20,6 @@ import { ArButton } from '../../ui/button';
 import { ArCard } from '../../ui/card';
 import { ArContactPicker } from './contact-picker';
 import { ProjectOptionDto, ProjectService } from '../../proxy/projects/project.service';
-import { environment } from '../../../environments/environment';
 import {
   BLANK_ENQUIRY_DRAFT,
   EnquiryDraft,
@@ -76,7 +75,7 @@ export class ArEnquiryForm implements OnInit {
       source: project ? LeadSource.Project : LeadSource.Manual,
     }));
     if (project) this.projectId.set(project);
-    if (this.canSeeProjects() && !environment.useMockData) {
+    if (this.canSeeProjects()) {
       this.projectsApi
         .search(null)
         .subscribe({ next: (list) => this.projects.set(list), error: () => undefined });

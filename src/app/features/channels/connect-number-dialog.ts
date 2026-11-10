@@ -9,8 +9,6 @@ import {
   signal,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { ChannelService as ChannelApi } from '../../proxy/channels';
 import { OnboardingStep } from '../../proxy/channels/onboarding-step.enum';
 import { GupshupOnboardingStep } from '../../proxy/channels/gupshup-onboarding-step.enum';
@@ -449,17 +447,7 @@ export class ArConnectNumberDialog implements OnInit {
     if (this.metaBusy()) return;
     this.facebookReady.set(false);
     this.preparationError.set(null);
-    if (environment.useMockData) {
-      this.metaSession.set({
-        completed: false,
-        nextLabel: STEP_LABEL[OnboardingStep.WabaCreated],
-      });
-      this.toasts.warning(
-        'Embedded signup opens a Meta window — not available in the mock build.',
-        'Connect a number',
-      );
-      return;
-    }
+
     this.metaBusy.set(true);
     this.metaBusyLabel.set('Preparing Facebook sign-in…');
     try {
@@ -643,19 +631,6 @@ export class ArConnectNumberDialog implements OnInit {
   } | null>(null);
 
   protected async startGupshup(): Promise<void> {
-    if (environment.useMockData) {
-      this.gupshupSession.set({
-        id: 'mock-session',
-        completed: false,
-        nextLabel: GUPSHUP_STEP_LABEL[GupshupOnboardingStep.EmbedLinkIssued],
-        embedLink: null,
-      });
-      this.toasts.warning(
-        'Gupshup signup opens a hosted page — not available in the mock build.',
-        'Connect a number',
-      );
-      return;
-    }
     this.gupshupBusy.set(true);
     try {
       const dto = await firstValueFrom(this.api.getOrStartSolutionPartnerOnboarding());

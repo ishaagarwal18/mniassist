@@ -5,11 +5,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 
 import { inr } from '../../../core/util/format';
 import { ArTopbar } from '../../../layout/topbar';
-import { SalesExportFormat, SalesInvoiceStatus } from '../../../proxy/sales/sales-enums';
-import {
-  RecordSalesInvoicePaymentDto,
-  SalesInvoiceDto,
-} from '../../../proxy/sales/sales-invoice.models';
+import { SalesExportFormat } from '../../../proxy/sales/sales-enums';
+import { SalesInvoiceDto } from '../../../proxy/sales/sales-invoice.models';
 import { SalesInvoiceService } from '../../../proxy/sales/sales-invoice.service';
 import { ArButton, ArChip, ArIcon } from '../../../ui';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
@@ -28,7 +25,6 @@ import {
   toSalesPaymentDto,
   validateSalesPayment,
 } from '../sales-records.logic';
-import { MOCK_INVOICES } from './sales-invoices.mock';
 import { ArSalesExport } from '../sales-export';
 
 /**
@@ -446,7 +442,6 @@ export class ArSalesInvoicePage extends SalesRecordPage<SalesInvoiceDto> {
 
   protected readonly list = '/sales/invoices';
   protected readonly noun = 'This invoice';
-  protected readonly mockRecords = MOCK_INVOICES;
 
   protected readonly inr = inr;
   protected readonly modes = SALES_PAYMENT_MODES;
@@ -502,7 +497,6 @@ export class ArSalesInvoicePage extends SalesRecordPage<SalesInvoiceDto> {
   protected issue(inv: SalesInvoiceDto): void {
     void this.run(
       () => this.api.issue(inv.id!, { skipHandleError: true }),
-      (cur) => ({ ...cur, status: SalesInvoiceStatus.Issued }),
       (s) => `Invoice ${s.invoiceNumber} issued.`,
       `${inv.invoiceNumber} could not be issued.`,
     );
@@ -515,35 +509,9 @@ export class ArSalesInvoicePage extends SalesRecordPage<SalesInvoiceDto> {
     // A failed payment is never shown as recorded: the money would look received when it is not.
     const saved = await this.run(
       () => this.api.recordPayment(inv.id!, input, { skipHandleError: true }),
-      (cur) => mockPayment(cur, input),
       () => `${inr(input.amountInPaise)} recorded against ${inv.invoiceNumber}.`,
       'The payment could not be recorded.',
     );
     if (saved) this.paying.set(false);
   }
-}
-
-/** What the API would return after a payment, for the demo build. */
-function mockPayment(inv: SalesInvoiceDto, input: RecordSalesInvoicePaymentDto): SalesInvoiceDto {
-  const amountInPaise = input.amountInPaise;
-  const paid = inv.paidAmountInPaise + amountInPaise;
-  const balance = Math.max(0, inv.grandTotalInPaise - paid);
-  return {
-    ...inv,
-    paidAmountInPaise: paid,
-    balanceDueInPaise: balance,
-    status: balance === 0 ? SalesInvoiceStatus.Paid : SalesInvoiceStatus.PartiallyPaid,
-    payments: [
-      {
-        id: `pmt-${Date.now()}`,
-        salesInvoiceId: inv.id!,
-        paymentDateUtc: new Date().toISOString(),
-        amountInPaise,
-        paymentMode: input.paymentMode,
-        referenceNumber: input.referenceNumber,
-        remarks: input.remarks,
-      },
-      ...inv.payments,
-    ],
-  };
 }

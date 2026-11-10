@@ -13,7 +13,6 @@ import {
   AcceptanceTestSummaryDto,
 } from '../../proxy/project-billing/acceptance-test.service';
 import { ArButton, ArChip } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { TEST_KIND_TEXT, TEST_STATUS_TEXT, TEST_STATUS_TONE } from './tests.logic';
 
 /** The order's FAT, SAT and commissioning records: create one from the standard checklist, open it to record and send for signature. */
@@ -118,7 +117,7 @@ export class ArAcceptanceTestsPanel {
   constructor() {
     effect(() => {
       const id = this.orderId();
-      if (!environment.useMockData && this.canSee()) void this.load(id);
+      if (this.canSee()) void this.load(id);
     });
   }
 

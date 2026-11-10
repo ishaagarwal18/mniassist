@@ -10,8 +10,6 @@ import {
 import { RouterLink } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { PlatformCheckoutRunner } from '../../core/services/platform-checkout';
 import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
@@ -344,10 +342,6 @@ export class ArOnboardingAddFunds implements OnInit {
   }
 
   private async loadWallet(): Promise<void> {
-    if (environment.useMockData) {
-      this.wallet.set({ balanceInPaise: 0, chargesStartOn: null, daysRemaining: null });
-      return;
-    }
     try {
       const w = await firstValueFrom(this.walletApi.get());
       this.wallet.set({
@@ -362,7 +356,7 @@ export class ArOnboardingAddFunds implements OnInit {
   }
 
   private async loadGateways(): Promise<void> {
-    const g = environment.useMockData ? [] : await this.checkout.gateways();
+    const g = await this.checkout.gateways();
     this.gateways.set(g);
     if (g.length > 0) this.gateway.set(g[0].name);
     this.gatewaysLoaded.set(true);

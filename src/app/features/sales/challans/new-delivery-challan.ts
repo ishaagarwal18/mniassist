@@ -1,7 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../../environments/environment';
 import { PickerOption } from '../../../core/services/pipeline.service';
 import type { ProductDto } from '../../../proxy/library/product.service';
 import {
@@ -9,7 +7,7 @@ import {
   DeliveryChallanDto,
 } from '../../../proxy/sales/delivery-challan.models';
 import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.service';
-import { DeliveryChallanStatus, DeliveryChallanType } from '../../../proxy/sales/sales-enums';
+import { DeliveryChallanType } from '../../../proxy/sales/sales-enums';
 import { ArButton, ArDialog } from '../../../ui';
 import { ArDateInput } from '../../../ui/date-input';
 import { ArSelect } from '../../../ui/select';
@@ -425,33 +423,12 @@ export class ArNewDeliveryChallan {
     this.busy.set(true);
     this.error.set(null);
     try {
-      const created = environment.useMockData
-        ? this.mockCreated(input, customer.label)
-        : await firstValueFrom(this.api.create(input));
+      const created = await firstValueFrom(this.api.create(input));
       this.closed.emit(created);
     } catch (e: unknown) {
       this.error.set(errorMessage(e, 'The challan could not be saved.'));
     } finally {
       this.busy.set(false);
     }
-  }
-
-  private mockCreated(input: CreateDeliveryChallanDto, customerName: string): DeliveryChallanDto {
-    return {
-      id: `dc-${Date.now()}`,
-      challanNumber: `DC-${Date.now().toString().slice(-6)}`,
-      type: input.type,
-      status: DeliveryChallanStatus.Draft,
-      customerId: input.customerId,
-      customerName,
-      challanDateUtc: input.challanDateUtc!,
-      shippingAddress: input.shippingAddress,
-      transporterName: input.transporterName,
-      vehicleNumber: input.vehicleNumber,
-      lrNumber: input.lrNumber,
-      remarks: input.remarks,
-      creationTime: new Date().toISOString(),
-      lines: [],
-    };
   }
 }

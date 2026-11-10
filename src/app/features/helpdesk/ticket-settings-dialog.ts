@@ -1,7 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { TemplateService } from '../../proxy/messaging/template.service';
 import { TemplateCategory } from '../../proxy/messaging/template-category.enum';
 import { TemplateStatus } from '../../proxy/messaging/template-status.enum';
@@ -10,7 +8,7 @@ import { ArButton, ArDialog } from '../../ui';
 import { ArSelect } from '../../ui/select';
 import { errorMessage } from '../activities/activity-logic';
 import { PRIORITY_SLA_HOURS } from './ticket-logic';
-import { ServiceTicketGateway } from './ticket-mock';
+import { ServiceTicketGateway } from './ticket-gateway';
 
 /**
  * How soon each priority is promised a response, and the customer-facing page that raises a ticket without anyone signing in.
@@ -306,7 +304,6 @@ export class ArTicketSettingsDialog {
   }
 
   private async loadTemplates(): Promise<void> {
-    if (environment.useMockData) return;
     try {
       const list = await firstValueFrom(
         this.templatesApi.getList({

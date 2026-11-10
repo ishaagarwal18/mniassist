@@ -25,7 +25,6 @@ import {
   RiskBand,
 } from '../../../proxy/pipeline/obsolescence.service';
 import { ArBanner, ArButton, ArChip, ArStatTile } from '../../../ui';
-import { environment } from '../../../../environments/environment';
 import {
   atRiskSentence,
   bandText,
@@ -57,7 +56,6 @@ export class ArRadarPage {
   private readonly toasts = inject(ToastService);
   private readonly permissions = inject(PermissionService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly View = RadarView;
   protected readonly State = MigrationState;
   protected readonly stages = [
@@ -131,11 +129,10 @@ export class ArRadarPage {
     this.contactId = query.get('contactId');
     this.accountId = query.get('accountId');
     void this.load();
-    if (!this.mock) {
-      firstValueFrom(this.api.getPeople())
-        .then((p) => this.people.set(p))
-        .catch(() => this.people.set([]));
-    }
+
+    firstValueFrom(this.api.getPeople())
+      .then((p) => this.people.set(p))
+      .catch(() => this.people.set([]));
   }
 
   protected stageText = stageText;
@@ -169,10 +166,6 @@ export class ArRadarPage {
   }
 
   protected async load(): Promise<void> {
-    if (this.mock) {
-      this.loading.set(false);
-      return;
-    }
     this.loading.set(true);
     this.selected.set(new Set());
     try {

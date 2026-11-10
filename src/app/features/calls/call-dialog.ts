@@ -14,7 +14,7 @@ import { SoftphoneService } from '../../core/services/softphone.service';
 import { CallLogDto, CallSetupDto } from '../../proxy/voice';
 import { ArButton, ArDialog } from '../../ui';
 import { errorMessage } from '../activities/activity-logic';
-import { CallGateway } from './call-mock';
+import { CallGateway } from './call-gateway';
 import { displayNumber, looksLikeNumber, toE164Digits } from './call-logic';
 
 /**

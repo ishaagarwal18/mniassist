@@ -1,7 +1,5 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-
-import { environment } from '../../../environments/environment';
 import { AnalyticsService as AnalyticsApi, DashboardDto } from '../../proxy/analytics';
 import { ChannelHealthDto, QualityRating } from '../../proxy/channels';
 import { settled } from '../util/resource';
@@ -42,33 +40,6 @@ interface Dashboard {
   };
   trend: { marketing: number; utility: number; service: number }[];
 }
-
-const SEED: Dashboard = {
-  channels: [],
-  volume: {
-    sent24h: 1_240,
-    received24h: 318,
-    delivered24h: 1_206,
-    failed24h: 12,
-    deliveryRate: 0.972,
-  },
-  inbox: { openConversations: 23, unassigned: 5, windowClosingWithinHour: 3 },
-  pipeline: {
-    openEnquiries: 18,
-    newThisWeek: 4,
-    openValueInPaise: 42_60_00_000,
-    quotationsAwaitingDecision: 11,
-    winRate: 0.34,
-  },
-  spend: {
-    spend24hInPaise: 2_247_00,
-    spendMonthInPaise: 41_80_000,
-    freeMessages24h: 612,
-    avoidedCharge24hInPaise: 7_040_00,
-    walletBalanceInPaise: 18_42_000,
-  },
-  trend: [],
-};
 
 function normalise(dto: DashboardDto | undefined): Dashboard {
   const v = dto?.volume ?? {};
@@ -117,17 +88,15 @@ export class DashboardStore {
   private readonly api = inject(AnalyticsApi);
 
   private readonly resource = rxResource({
-    params: () => (environment.useMockData ? undefined : {}),
+    params: () => ({}),
     stream: () => this.api.getDashboard(),
     defaultValue: undefined as DashboardDto | undefined,
   });
 
-  readonly loading = computed(() => !environment.useMockData && this.resource.isLoading());
+  readonly loading = computed(() => this.resource.isLoading());
 
   readonly data = computed<Dashboard>(() =>
-    environment.useMockData
-      ? SEED
-      : normalise(settled(this.resource, undefined as DashboardDto | undefined)),
+    normalise(settled(this.resource, undefined as DashboardDto | undefined)),
   );
 
   readonly volume = computed(() => this.data().volume);

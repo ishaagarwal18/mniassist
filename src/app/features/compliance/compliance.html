@@ -22,6 +22,11 @@
   </ar-topbar>
 
   <div class="cx ar-scroll">
+    @if (failed()) {
+      <ar-banner tone="bad"
+        >The compliance register could not be loaded. Try again in a moment.</ar-banner
+      >
+    }
     <div class="cx__stats">
       <ar-stat-tile
         label="Open requests"
@@ -94,8 +99,22 @@
             <ng-template #template let-r>
               <div class="actions">
                 @if (r.state === 'received' || r.state === 'inProgress') {
-                  <button ar-button variant="ghost" icon="check" title="Fulfil request" [disabled]="!!busy()" (click)="fulfil(r)"></button>
-                  <button ar-button variant="ghost" icon="close" title="Reject request" [disabled]="!!busy()" (click)="reject(r)"></button>
+                  <button
+                    ar-button
+                    variant="ghost"
+                    icon="check"
+                    title="Fulfil request"
+                    [disabled]="!!busy()"
+                    (click)="fulfil(r)"
+                  ></button>
+                  <button
+                    ar-button
+                    variant="ghost"
+                    icon="close"
+                    title="Reject request"
+                    [disabled]="!!busy()"
+                    (click)="reject(r)"
+                  ></button>
                 }
               </div>
             </ng-template>

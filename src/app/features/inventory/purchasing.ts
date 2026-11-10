@@ -2,8 +2,6 @@ import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
 import {
@@ -43,56 +41,6 @@ interface ReceiveRow {
   numbers: string;
   expiry: string;
 }
-
-const MOCK_SUPPLIERS: SupplierDto[] = [
-  {
-    id: 's1',
-    name: 'Pune Filtration Supplies',
-    gstin: '27AABCU9603R1ZM',
-    leadDays: 7,
-    isActive: true,
-  },
-  { id: 's2', name: 'Deccan Drives & Controls', leadDays: 14, isActive: true },
-];
-
-const MOCK_ORDERS: PurchaseOrderDto[] = [
-  {
-    id: 'o1',
-    reference: 'PO-2026-0012',
-    supplierId: 's1',
-    supplierName: 'Pune Filtration Supplies',
-    locationId: 'l1',
-    locationName: 'Main store',
-    state: 'PartlyReceived',
-    expectedOn: new Date(Date.now() + 3 * 86_400_000).toISOString(),
-    creationTime: new Date(Date.now() - 4 * 86_400_000).toISOString(),
-    subtotalInPaise: 31_000_00,
-    lines: [
-      {
-        id: 'ol1',
-        productId: 'p1',
-        partNumber: 'AF-2901',
-        description: 'Air filter element',
-        quantity: 20,
-        unitCostInPaise: 1_300_00,
-        receivedQuantity: 12,
-        outstanding: 8,
-        tracking: 'None',
-      },
-      {
-        id: 'ol2',
-        productId: 'p2',
-        partNumber: 'OF-1625',
-        description: 'Oil filter',
-        quantity: 5,
-        unitCostInPaise: 1_000_00,
-        receivedQuantity: 0,
-        outstanding: 5,
-        tracking: 'None',
-      },
-    ],
-  },
-];
 
 /**
  * Buying stock: purchase orders from draft to received, receipts posted into stock at the order's cost (which moves each part's
@@ -166,14 +114,16 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
               No purchase orders yet. Start one with New order, or from the Reorder suggestions tab.
             </p>
           } @else {
-            <ejs-grid arGrid="purchase-orders" [dataSource]="shownOrders()" aria-label="Purchase orders">
+            <ejs-grid
+              arGrid="purchase-orders"
+              [dataSource]="shownOrders()"
+              aria-label="Purchase orders"
+            >
               <e-columns>
                 <e-column field="reference" headerText="Order" width="160">
                   <ng-template #template let-o>
                     <b class="ar-mono">{{ o.reference }}</b>
-                    <span class="sub"
-                      >{{ day(o.creationTime) }} · into {{ o.locationName }}</span
-                    >
+                    <span class="sub">{{ day(o.creationTime) }} · into {{ o.locationName }}</span>
                   </ng-template>
                 </e-column>
                 <e-column field="supplierName" headerText="Supplier" width="200" />
@@ -192,8 +142,8 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
                     @for (l of o.lines; track l.id) {
                       @if (l.outstanding > 0 && o.state !== 'Cancelled') {
                         <span class="sub"
-                          ><span class="ar-mono">{{ l.partNumber }}</span>
-                          {{ n(l.outstanding) }} of {{ n(l.quantity) }}</span
+                          ><span class="ar-mono">{{ l.partNumber }}</span> {{ n(l.outstanding) }} of
+                          {{ n(l.quantity) }}</span
                         >
                       }
                     }
@@ -201,9 +151,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
                 </e-column>
                 <e-column field="state" headerText="Status" width="130">
                   <ng-template #template let-o>
-                    <ar-chip [tone]="stateOf(o).tone" [dot]="true">{{
-                      stateOf(o).label
-                    }}</ar-chip>
+                    <ar-chip [tone]="stateOf(o).tone" [dot]="true">{{ stateOf(o).label }}</ar-chip>
                   </ng-template>
                 </e-column>
                 <e-column headerText="Actions" width="200">
@@ -211,12 +159,8 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
                     <div class="acts">
                       @if (canManage()) {
                         @if (o.state === 'Draft') {
-                          <button type="button" class="act" (click)="editOrderPage(o)">
-                            Edit
-                          </button>
-                          <button type="button" class="act" (click)="markSent(o)">
-                            Mark sent
-                          </button>
+                          <button type="button" class="act" (click)="editOrderPage(o)">Edit</button>
+                          <button type="button" class="act" (click)="markSent(o)">Mark sent</button>
                         }
                         @if (o.state === 'Sent' || o.state === 'PartlyReceived') {
                           <button type="button" class="act" (click)="openReceive(o)">
@@ -245,7 +189,11 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
               Parts below their minimum, counting what is on order. The suggestion brings each back
               to twice its minimum.
             </p>
-            <ejs-grid arGrid="reorder-suggestions" [dataSource]="suggestions()" aria-label="Reorder suggestions">
+            <ejs-grid
+              arGrid="reorder-suggestions"
+              [dataSource]="suggestions()"
+              aria-label="Reorder suggestions"
+            >
               <e-columns>
                 <e-column field="partNumber" headerText="Part" width="200">
                   <ng-template #template let-s>
@@ -293,11 +241,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
           }
         }
         @case ('suppliers') {
-          <ar-supplier-directory
-            [canManage]="canManage()"
-            [local]="mockSuppliers"
-            (edit)="supplierPage($event)"
-          />
+          <ar-supplier-directory [canManage]="canManage()" (edit)="supplierPage($event)" />
         }
       }
     </div>
@@ -729,8 +673,6 @@ export class ArPurchasing {
   protected readonly tab = signal<Tab>('orders');
   protected readonly orders = signal<PurchaseOrderDto[]>([]);
   protected readonly suppliers = signal<SupplierDto[]>([]);
-  /** Sample suppliers for the Suppliers tab (mock data); live, it pages through the server. */
-  protected readonly mockSuppliers = environment.useMockData ? MOCK_SUPPLIERS : null;
   protected readonly suggestions = signal<ReorderSuggestionDto[]>([]);
   protected readonly locations = signal<StockLocationDto[]>([]);
   protected readonly busy = signal(false);
@@ -801,12 +743,6 @@ export class ArPurchasing {
   }
 
   private async load(): Promise<void> {
-    if (environment.useMockData) {
-      this.suppliers.set(MOCK_SUPPLIERS);
-      this.orders.set(MOCK_ORDERS);
-      this.locations.set([{ id: 'l1', name: 'Main store', isActive: true }]);
-      return;
-    }
     try {
       const [orders, suppliers, suggestions, locations] = await Promise.all([
         firstValueFrom(this.api.getOrders()),
@@ -938,10 +874,6 @@ export class ArPurchasing {
       return;
     }
     this.productTimer = setTimeout(async () => {
-      if (environment.useMockData) {
-        this.products.set([{ productId: 'p3', partNumber: 'OS-4410', name: 'Oil separator' }]);
-        return;
-      }
       try {
         const page = await firstValueFrom(
           this.productsApi.getList({ filter: text.trim(), activeOnly: true, maxResultCount: 10 }),
@@ -981,15 +913,14 @@ export class ArPurchasing {
         note: e.note.trim() || null,
         lines: read.lines,
       };
-      if (!environment.useMockData) {
-        const saved = await firstValueFrom(
-          e.id ? this.api.update(e.id, input) : this.api.create(input),
-        );
-        this.notice.set(
-          `${saved.reference} saved as a draft. Mark it sent once it has gone to the supplier.`,
-        );
-        await this.load();
-      }
+
+      const saved = await firstValueFrom(
+        e.id ? this.api.update(e.id, input) : this.api.create(input),
+      );
+      this.notice.set(
+        `${saved.reference} saved as a draft. Mark it sent once it has gone to the supplier.`,
+      );
+      await this.load();
       this.editing.set(null);
     } catch (err: unknown) {
       this.dialogError.set(problem(err, 'The order could not be saved.'));
@@ -1031,10 +962,8 @@ export class ArPurchasing {
   ): Promise<void> {
     this.error.set(null);
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(call());
-        await this.load();
-      }
+      await firstValueFrom(call());
+      await this.load();
       this.notice.set(done);
     } catch (e: unknown) {
       this.error.set(problem(e, `${o.reference} could not be changed.`));
@@ -1116,15 +1045,13 @@ export class ArPurchasing {
     this.busy.set(true);
     this.dialogError.set(null);
     try {
-      if (!environment.useMockData) {
-        const saved = await firstValueFrom(
-          this.api.receive(r.order.id, { lines, note: this.receiveNote().trim() || null }),
-        );
-        this.notice.set(
-          `${saved.reference}: ${saved.state === 'Received' ? 'all received' : 'received in part'}. Stock and average costs are updated.`,
-        );
-        await this.load();
-      }
+      const saved = await firstValueFrom(
+        this.api.receive(r.order.id, { lines, note: this.receiveNote().trim() || null }),
+      );
+      this.notice.set(
+        `${saved.reference}: ${saved.state === 'Received' ? 'all received' : 'received in part'}. Stock and average costs are updated.`,
+      );
+      await this.load();
       this.receiving.set(null);
     } catch (e: unknown) {
       this.dialogError.set(problem(e, 'The delivery could not be received.'));

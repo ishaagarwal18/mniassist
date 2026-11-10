@@ -15,22 +15,15 @@
     type="button"
     variant="ghost"
     icon="upload"
-    [disabled]="busy() || mock"
+    [disabled]="busy()"
     (click)="csv.click()"
   >
     Import maker's list
   </button>
-  <button ar-button type="button" icon="plus" [disabled]="mock" (click)="openNew()">
-    Add a rule
-  </button>
+  <button ar-button type="button" icon="plus" (click)="openNew()">Add a rule</button>
 </ar-topbar>
 
 <div class="lc ar-scroll">
-  @if (mock) {
-    <ar-banner tone="teal"
-      >Lifecycle rules need the live API. In demo mode the list stays empty.</ar-banner
-    >
-  }
   @if (error(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
   }
@@ -372,8 +365,22 @@
         <e-column field="id" headerText="" width="80" textAlign="Right">
           <ng-template #template let-r>
             <div class="lc__btns">
-              <button ar-button type="button" variant="ghost" icon="edit" title="Edit" (click)="openEdit(r)"></button>
-              <button ar-button type="button" variant="ghost" icon="trash" title="Delete" (click)="remove(r)"></button>
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                icon="edit"
+                title="Edit"
+                (click)="openEdit(r)"
+              ></button>
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                icon="trash"
+                title="Delete"
+                (click)="remove(r)"
+              ></button>
             </div>
           </ng-template>
         </e-column>

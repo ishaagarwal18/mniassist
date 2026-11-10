@@ -2,8 +2,6 @@ import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ArTopbar } from '../../layout/topbar';
 import {
@@ -14,69 +12,6 @@ import {
 } from '../../proxy/compliance/dpdp-readiness.service';
 import { ArButton, ArChip } from '../../ui';
 import type { ChipTone } from '../../ui/chip';
-
-const SEED: DpdpReadinessDto = {
-  profile: {
-    legalName: 'Emnisoft Pvt Ltd',
-    address: null,
-    grievanceOfficerName: null,
-    purposes: 'Sending quotations and order updates on WhatsApp\nScheduling service visits',
-    processors: 'Meta Platforms — WhatsApp Business messaging',
-  },
-  ready: 6,
-  gaps: 5,
-  needsReview: 1,
-  checks: [
-    {
-      key: 'fiduciary',
-      title: 'Who is responsible for the data',
-      status: 'Gap',
-      detail: "Add the business's legal name and address.",
-      section: 'profile',
-    },
-    {
-      key: 'grievance',
-      title: 'A person customers can complain to',
-      status: 'Gap',
-      detail: 'Name a grievance officer with an email or phone number.',
-      section: 'profile',
-    },
-    {
-      key: 'purposes',
-      title: 'What the data is used for',
-      status: 'Ready',
-      detail: '2 purpose(s) listed.',
-      section: 'profile',
-    },
-    {
-      key: 'opt-out',
-      title: 'Stopping when asked',
-      status: 'Ready',
-      detail: 'STOP and similar replies suppress the contact automatically.',
-      section: null,
-    },
-    {
-      key: 'consent-evidence',
-      title: 'Proof of marketing consent',
-      status: 'Gap',
-      detail: '37 of 412 marketing contacts have no recorded source or date.',
-      section: 'contacts',
-    },
-    {
-      key: 'legal-review',
-      title: 'A lawyer has reviewed the notice',
-      status: 'Review',
-      detail: 'The draft here is not legal advice. Have it reviewed, then record the date.',
-      section: 'profile',
-    },
-  ],
-  noticeDraft: 'DRAFT FOR LEGAL REVIEW — NOT LEGAL ADVICE\n\nPrivacy notice — Emnisoft Pvt Ltd\n…',
-  noticeDrafts: {
-    en: 'DRAFT FOR LEGAL REVIEW — NOT LEGAL ADVICE\n\nPrivacy notice — Emnisoft Pvt Ltd\n…',
-    hi: 'कानूनी समीक्षा के लिए मसौदा — यह कानूनी सलाह नहीं है\n\nगोपनीयता सूचना — Emnisoft Pvt Ltd\n…',
-    mr: 'कायदेशीर पुनरावलोकनासाठी मसुदा — हा कायदेशीर सल्ला नाही\n\nगोपनीयता सूचना — Emnisoft Pvt Ltd\n…',
-  },
-};
 
 const NOTICE_LANGUAGES: { code: string; label: string }[] = [
   { code: 'en', label: 'English' },
@@ -392,7 +327,7 @@ export class ArDpdp {
 
   private async load(): Promise<void> {
     try {
-      const d = environment.useMockData ? SEED : await firstValueFrom(this.api.get());
+      const d = await firstValueFrom(this.api.get());
       this.data.set(d);
       this.profile.set({
         ...d.profile,
@@ -427,7 +362,7 @@ export class ArDpdp {
       const input: DpdpProfileDto = Object.fromEntries(
         Object.entries(p).map(([k, v]) => [k, typeof v === 'string' && v.trim() === '' ? null : v]),
       );
-      if (!environment.useMockData) await firstValueFrom(this.api.updateProfile(input));
+      await firstValueFrom(this.api.updateProfile(input));
       await this.load();
     } catch (e: unknown) {
       this.saveError.set(this.problem(e, 'The details could not be saved.'));

@@ -2,159 +2,30 @@ import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { GridModule, RecordClickEventArgs, RowSelectEventArgs } from '@syncfusion/ej2-angular-grids';
-import { environment } from '../../../../environments/environment';
+import {
+  GridModule,
+  RecordClickEventArgs,
+  RowSelectEventArgs,
+} from '@syncfusion/ej2-angular-grids';
 import { ArTopbar } from '../../../layout/topbar';
 import {
-  CreateFieldServiceTicketDto,
   FieldServiceTicketDto,
   FieldServiceTicketService,
   ResolveFieldServiceTicketDto,
   ServiceTicketPriority,
-  ServiceTicketSpareConsumedDto,
   ServiceTicketStatus,
   ServiceTicketType,
 } from '../../../proxy/field-service';
-import { ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { ArBanner, ArButton, ArChip, ArDialog, ChipTone } from '../../../ui';
+import { readApiError } from '../../../core/util/api-error';
 import { ArGrid } from '../../../ui/grid';
 import { initialSearch } from '../../../core/util/customer-scope';
-
-const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
-  {
-    id: 'fst-1',
-    ticketNumber: 'FST-2026-0101',
-    customerId: 'cust-1',
-    customerName: 'Tata Motors Powertrain Ltd',
-    customerSiteAddress: 'Block C, Powertrain Shop, Chakan, Pune 410501',
-    customerContactPhone: '+91 98230 45671',
-    amcContractId: 'amc-1',
-    equipmentSerialNumber: 'PR-400T-2024-09',
-    equipmentModel: 'Hydraulic Stamping Press 400 Ton',
-    ticketType: ServiceTicketType.Breakdown,
-    priority: ServiceTicketPriority.CriticalEmergency,
-    status: ServiceTicketStatus.InProgress,
-    issueDescription:
-      'Main ram pressure dropping during 350 bar stamping cycle. Line 1 assembly halted.',
-    assignedFieldEngineer: 'Sunil Deshmukh (Sr Service Specialist)',
-    scheduledVisitDateUtc: new Date(Date.now() - 4 * 3600_000).toISOString(),
-    visitStartTimeUtc: new Date(Date.now() - 3 * 3600_000).toISOString(),
-    totalSparesCostInPaise: 10_800_00,
-    creationTime: new Date(Date.now() - 6 * 3600_000).toISOString(),
-    sparesConsumed: [
-      {
-        id: 'sp-1',
-        serviceTicketId: 'fst-1',
-        partNumber: 'SK-FKM-90',
-        description: 'Viton FKM High-Pressure Cylinder Seal Kit',
-        quantity: 1,
-        unitPriceInPaise: 4_600_00,
-        isBillableToCustomer: false, // Covered under Comprehensive AMC
-        lineTotalInPaise: 4_600_00,
-      },
-      {
-        id: 'sp-2',
-        serviceTicketId: 'fst-1',
-        partNumber: 'SOL-COIL-24V',
-        description: 'Proportional Directional Solenoid Coil 24V DC',
-        quantity: 1,
-        unitPriceInPaise: 6_200_00,
-        isBillableToCustomer: false, // Covered under Comprehensive AMC
-        lineTotalInPaise: 6_200_00,
-      },
-    ],
-  },
-  {
-    id: 'fst-2',
-    ticketNumber: 'FST-2026-0102',
-    customerId: 'cust-2',
-    customerName: 'Jindal Steel & Power Ltd',
-    customerSiteAddress: 'Rolling Mill Division, Raigarh Plant, Chhattisgarh',
-    customerContactPhone: '+91 94370 12890',
-    amcContractId: 'amc-2',
-    equipmentSerialNumber: 'GAN-25T-2023-11',
-    equipmentModel: 'Automated Heavy Billet Handling Gantry 25T',
-    ticketType: ServiceTicketType.Breakdown,
-    priority: ServiceTicketPriority.High,
-    status: ServiceTicketStatus.InTransit,
-    issueDescription:
-      'Hoist motor drive tripping with Overcurrent Fault F-002 under heavy 20-ton load.',
-    assignedFieldEngineer: 'Prakash Rao (Field Lead)',
-    scheduledVisitDateUtc: new Date(Date.now() + 2 * 3600_000).toISOString(),
-    totalSparesCostInPaise: 0,
-    creationTime: new Date(Date.now() - 3 * 3600_000).toISOString(),
-    sparesConsumed: [],
-  },
-  {
-    id: 'fst-3',
-    ticketNumber: 'FST-2026-0098',
-    customerId: 'cust-3',
-    customerName: 'Bharat Forge Industrial',
-    customerSiteAddress: 'Mundhwa Forge Division, Pune 411036',
-    customerContactPhone: '+91 98811 54320',
-    equipmentSerialNumber: 'CHL-IND-2022-04',
-    equipmentModel: 'High-Frequency Induction Furnace Chiller 120kW',
-    ticketType: ServiceTicketType.PreventiveMaintenance,
-    priority: ServiceTicketPriority.Medium,
-    status: ServiceTicketStatus.Resolved,
-    issueDescription: 'Quarterly PM check & condenser coil descaling before summer peak load.',
-    rootCauseAnalysis: 'Scale deposit in copper heat exchanger tubes due to high water hardness.',
-    resolutionSummary:
-      'Chemical acid flush and neutralizer wash performed. Flow rate restored to 240 LPM. Refrigerant R410A topped up.',
-    assignedFieldEngineer: 'Aman Deep (Specialist)',
-    scheduledVisitDateUtc: new Date(Date.now() - 24 * 3600_000).toISOString(),
-    customerSignoffName: 'Mahesh Joshi (Plant Maintenance Manager)',
-    customerSatisfactionRating: 5,
-    totalSparesCostInPaise: 18_500_00,
-    creationTime: new Date(Date.now() - 36 * 3600_000).toISOString(),
-    sparesConsumed: [
-      {
-        id: 'sp-3',
-        serviceTicketId: 'fst-3',
-        partNumber: 'CHEM-DS-20L',
-        description: 'Eco-Safe Descaling Solution 20L Canister',
-        quantity: 2,
-        unitPriceInPaise: 5_500_00,
-        isBillableToCustomer: true,
-        lineTotalInPaise: 11_000_00,
-      },
-      {
-        id: 'sp-4',
-        serviceTicketId: 'fst-3',
-        partNumber: 'GAS-R410A-CAN',
-        description: 'Refrigerant Gas R410A 5kg Cylinder',
-        quantity: 1,
-        unitPriceInPaise: 7_500_00,
-        isBillableToCustomer: true,
-        lineTotalInPaise: 7_500_00,
-      },
-    ],
-  },
-  {
-    id: 'fst-4',
-    ticketNumber: 'FST-2026-0095',
-    customerId: 'cust-4',
-    customerName: 'Mahindra Automotive Ltd',
-    customerSiteAddress: 'Nashik Assembly Plant, Maharashtra 422007',
-    customerContactPhone: '+91 97654 32109',
-    equipmentSerialNumber: 'SDP-440-2025-01',
-    equipmentModel: 'Servo Drive Automation Control Panel 440V',
-    ticketType: ServiceTicketType.InstallationCommissioning,
-    priority: ServiceTicketPriority.High,
-    status: ServiceTicketStatus.Assigned,
-    issueDescription:
-      'Site erection completed. Site engineer needed for wiring sign-off and PLC dry run.',
-    assignedFieldEngineer: 'Kavita Iyer (Automation Systems Eng)',
-    scheduledVisitDateUtc: new Date(Date.now() + 24 * 3600_000).toISOString(),
-    totalSparesCostInPaise: 0,
-    creationTime: new Date(Date.now() - 12 * 3600_000).toISOString(),
-    sparesConsumed: [],
-  },
-];
 
 @Component({
   selector: 'app-field-service-tickets',
   standalone: true,
   imports: [
+    ArBanner,
     CommonModule,
     FormsModule,
     DatePipe,
@@ -175,6 +46,9 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
     </ar-topbar>
 
     <div class="page-content">
+      @if (loadError(); as e) {
+        <ar-banner tone="bad">{{ e }}</ar-banner>
+      }
       <!-- KPI Row -->
       <section class="kpi-grid">
         <div class="kpi-card">
@@ -399,7 +273,12 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
                   </ng-template>
                 </e-column>
                 <e-column field="description" headerText="Description" width="220"></e-column>
-                <e-column field="quantity" headerText="Qty" width="90" [textAlign]="'Right'"></e-column>
+                <e-column
+                  field="quantity"
+                  headerText="Qty"
+                  width="90"
+                  [textAlign]="'Right'"
+                ></e-column>
                 <e-column headerText="Unit Price (₹)" width="130" [textAlign]="'Right'">
                   <ng-template #template let-sp>
                     ₹{{ sp.unitPriceInPaise / 100 | number: '1.2-2' }}
@@ -982,8 +861,9 @@ const MOCK_SERVICE_TICKETS: FieldServiceTicketDto[] = [
 export class FieldServiceTicketsComponent {
   private readonly ticketService = inject(FieldServiceTicketService);
 
-  readonly tickets = signal<FieldServiceTicketDto[]>(MOCK_SERVICE_TICKETS);
-  readonly selectedTicket = signal<FieldServiceTicketDto | null>(MOCK_SERVICE_TICKETS[0]);
+  readonly tickets = signal<FieldServiceTicketDto[]>([]);
+  readonly selectedTicket = signal<FieldServiceTicketDto | null>(null);
+  readonly loadError = signal<string | null>(null);
   readonly isLoading = signal<boolean>(false);
 
   // Filters
@@ -992,21 +872,7 @@ export class FieldServiceTicketsComponent {
   readonly statusFilter = signal<string>('ALL');
 
   // Dialogs
-  readonly isCreateOpen = signal<boolean>(false);
   readonly isResolveOpen = signal<boolean>(false);
-
-  newTicket: CreateFieldServiceTicketDto = {
-    ticketNumber: '',
-    customerId: 'cust-1',
-    customerName: '',
-    customerSiteAddress: '',
-    customerContactPhone: '',
-    equipmentSerialNumber: '',
-    equipmentModel: '',
-    ticketType: ServiceTicketType.Breakdown,
-    priority: ServiceTicketPriority.High,
-    issueDescription: '',
-  };
 
   resolveForm: ResolveFieldServiceTicketDto = {
     rootCauseAnalysis: '',
@@ -1064,8 +930,6 @@ export class FieldServiceTicketsComponent {
   }
 
   loadTickets(): void {
-    if (environment.useMockData) return;
-
     this.isLoading.set(true);
     this.ticketService.getList({ maxResultCount: 100 }).subscribe({
       next: (res) => {
@@ -1075,7 +939,10 @@ export class FieldServiceTicketsComponent {
         }
         this.isLoading.set(false);
       },
-      error: () => this.isLoading.set(false),
+      error: (e: unknown) => {
+        this.loadError.set(readApiError(e, 'The service tickets could not be loaded.'));
+        this.isLoading.set(false);
+      },
     });
   }
 
@@ -1085,8 +952,7 @@ export class FieldServiceTicketsComponent {
 
   onTicketSelected(args: RowSelectEventArgs): void {
     const row = (Array.isArray(args.data) ? args.data[0] : args.data) as
-      | FieldServiceTicketDto
-      | undefined;
+      FieldServiceTicketDto | undefined;
     if (row) this.selectTicket(row);
   }
 
@@ -1180,68 +1046,12 @@ export class FieldServiceTicketsComponent {
     }
   }
 
-  openCreate(): void {
-    const nextSeq = this.tickets().length + 1;
-    this.newTicket = {
-      ticketNumber: `FST-2026-${String(nextSeq + 105).padStart(4, '0')}`,
-      customerId: 'cust-1',
-      customerName: '',
-      customerSiteAddress: '',
-      customerContactPhone: '',
-      equipmentSerialNumber: '',
-      equipmentModel: '',
-      ticketType: ServiceTicketType.Breakdown,
-      priority: ServiceTicketPriority.High,
-      issueDescription: '',
-    };
-    this.isCreateOpen.set(true);
-  }
-
-  createTicket(): void {
-    if (!this.newTicket.customerName || !this.newTicket.issueDescription) return;
-
-    if (!environment.useMockData) {
-      this.ticketService.create(this.newTicket).subscribe({
-        next: (created) => {
-          this.tickets.update((list) => [created, ...list]);
-          this.selectedTicket.set(created);
-          this.isCreateOpen.set(false);
-        },
-      });
-      return;
-    }
-
-    const created: FieldServiceTicketDto = {
-      id: `fst-${Date.now()}`,
-      ticketNumber: this.newTicket.ticketNumber || 'FST-2026-0199',
-      customerId: this.newTicket.customerId,
-      customerName: this.newTicket.customerName,
-      customerSiteAddress: this.newTicket.customerSiteAddress,
-      customerContactPhone: this.newTicket.customerContactPhone,
-      equipmentSerialNumber: this.newTicket.equipmentSerialNumber,
-      equipmentModel: this.newTicket.equipmentModel,
-      ticketType: this.newTicket.ticketType,
-      priority: this.newTicket.priority,
-      status: ServiceTicketStatus.Open,
-      issueDescription: this.newTicket.issueDescription,
-      totalSparesCostInPaise: 0,
-      creationTime: new Date().toISOString(),
-      sparesConsumed: [],
-    };
-
-    this.tickets.update((list) => [created, ...list]);
-    this.selectedTicket.set(created);
-    this.isCreateOpen.set(false);
-  }
-
   openResolveModal(ticket: FieldServiceTicketDto): void {
     this.resolveForm = {
-      rootCauseAnalysis:
-        ticket.rootCauseAnalysis || 'Machine wear and seal deterioration under operating pressure.',
-      resolutionSummary:
-        ticket.resolutionSummary ||
-        'Replaced defective components, performed system flush and verified 350 bar test run.',
-      customerSignoffName: ticket.customerSignoffName || 'Customer Plant In-Charge',
+      // What the engineer found is typed in; nothing is suggested in its place.
+      rootCauseAnalysis: ticket.rootCauseAnalysis ?? '',
+      resolutionSummary: ticket.resolutionSummary ?? '',
+      customerSignoffName: ticket.customerSignoffName ?? '',
       customerSatisfactionRating: 5,
     };
     this.isResolveOpen.set(true);
@@ -1251,7 +1061,7 @@ export class FieldServiceTicketsComponent {
     const sel = this.selectedTicket();
     if (!sel) return;
 
-    if (!environment.useMockData && sel.id) {
+    if (sel.id) {
       this.ticketService.resolve(sel.id, this.resolveForm).subscribe({
         next: (updated) => {
           this.updateTicketInState(updated);

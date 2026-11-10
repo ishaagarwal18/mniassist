@@ -118,7 +118,6 @@ export class ArSmsInboundCard {
   protected readonly error = signal<string | null>(null);
 
   constructor() {
-    if (environment.useMockData) return;
     firstValueFrom(this.api.getOrCreate())
       .then((c) => {
         this.sender.set(c.senderId === 'PENDNG' ? null : c.senderId);

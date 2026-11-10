@@ -32,25 +32,6 @@ const KINDS: { kind: HelpdeskShopKind; label: string; credential: string; help: 
   },
 ];
 
-const SEED_HELPDESK: IntegrationConnectionDto[] = [
-  {
-    id: 'hs-1',
-    name: 'Freshdesk Support',
-    kind: IntegrationKind.Freshdesk,
-    state: IntegrationState.Connected,
-    configJson: JSON.stringify({ domain: 'support.freshdesk.com' }),
-    lastSyncAtUtc: new Date().toISOString(),
-  },
-  {
-    id: 'hs-2',
-    name: 'Shopify Store',
-    kind: IntegrationKind.Shopify,
-    state: IntegrationState.Connected,
-    configJson: JSON.stringify({ shopDomain: 'mni-assist.myshopify.com' }),
-    lastSyncAtUtc: new Date().toISOString(),
-  },
-];
-
 interface ConnectionForm {
   id: string | null;
   kind: HelpdeskShopKind;
@@ -275,10 +256,9 @@ export class ArHelpdeskShopSection implements OnInit {
   private async load(): Promise<void> {
     try {
       const page = await firstValueFrom(this.api.getList({ maxResultCount: 100 }));
-      const items = (page.items ?? []).filter((c) => KINDS.some((k) => k.kind === c.kind));
-      this.connections.set(items.length > 0 ? items : SEED_HELPDESK);
+      this.connections.set((page.items ?? []).filter((c) => KINDS.some((k) => k.kind === c.kind)));
     } catch {
-      this.connections.set(SEED_HELPDESK);
+      this.error.set('The connections could not be loaded.');
     }
   }
 

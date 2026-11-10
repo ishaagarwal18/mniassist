@@ -8,6 +8,10 @@
   </button>
 </ar-topbar>
 
+@if (loadError(); as e) {
+  <ar-banner tone="bad">{{ e }}</ar-banner>
+}
+
 <div class="cd">
   <aside class="cd__list ar-scroll" aria-label="Dashboards">
     @for (d of dashboards(); track d.id) {

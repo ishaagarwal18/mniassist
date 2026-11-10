@@ -2,8 +2,6 @@ import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { grantedPolicy } from '../../core/auth/permission';
 import { PickerOption } from '../../core/services/pipeline.service';
 import { CockpitOriginService } from '../../layout/cockpit-origin.service';
@@ -81,12 +79,11 @@ export class ArReorderSendPage {
   protected readonly lifetimeDays = signal(7);
 
   constructor() {
-    if (!environment.useMockData)
-      firstValueFrom(this.api.getSettings())
-        .then((s) => this.lifetimeDays.set(s.linkLifetimeDays))
-        .catch(() => {
-          // The hint keeps the default; sending still says when the link stops working.
-        });
+    firstValueFrom(this.api.getSettings())
+      .then((s) => this.lifetimeDays.set(s.linkLifetimeDays))
+      .catch(() => {
+        // The hint keeps the default; sending still says when the link stops working.
+      });
   }
 
   protected another(): void {

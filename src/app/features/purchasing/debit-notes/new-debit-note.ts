@@ -4,16 +4,12 @@ import {
   Component,
   DestroyRef,
   computed,
-  effect,
   inject,
   signal,
-  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { catchError, firstValueFrom, map, of } from 'rxjs';
-
-import { environment } from '../../../../environments/environment';
+import { firstValueFrom } from 'rxjs';
 import { checkPolicy } from '../../../core/auth/permission';
 import { ToastService } from '../../../core/ui/toast.service';
 import { readApiError } from '../../../core/util/api-error';
@@ -24,13 +20,8 @@ import { ArTopbar } from '../../../layout/topbar';
 import {
   GoodsReceiptNoteDto,
   GoodsReceiptNoteService,
-  GrnStatus,
   VendorBillDto,
-  VendorBillService,
-  VendorBillStatus,
-  VendorDebitNoteDto,
   VendorDebitNoteService,
-  VendorDebitNoteStatus,
 } from '../../../proxy/purchasing';
 import { ArButton, ArIcon, ArSelect } from '../../../ui';
 import {
@@ -366,7 +357,6 @@ export class ArNewDebitNotePage {
   private readonly toasts = inject(ToastService);
   private readonly origin = inject(CockpitOriginService);
   private readonly debitApi = inject(VendorDebitNoteService);
-  private readonly billApi = inject(VendorBillService);
   private readonly grnApi = inject(GoodsReceiptNoteService);
   private readonly supplierOptions = inject(SupplierOptionsService);
   private readonly destroyRef = inject(DestroyRef);
@@ -433,35 +423,6 @@ export class ArNewDebitNotePage {
       });
     if (this.grnRequest) void this.debitReceipt(this.grnRequest);
   }
-
-  /** The supplier's bills and goods receipts, whenever the supplier changes. */
-  private readonly loadReferences = effect(() => {
-    const supplierId = this.form().supplierId;
-    untracked(() => {
-      if (!supplierId || !this.canCreate || environment.useMockData) {
-        this.bills.set([]);
-        this.receipts.set([]);
-        return;
-      }
-      const quiet = { skipHandleError: true };
-      this.billApi
-        .getList({ supplierId, maxResultCount: 50 }, quiet)
-        .pipe(
-          map((page) => (page.items ?? []).filter((b) => b.status !== VendorBillStatus.Cancelled)),
-          catchError(() => of(null)),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe((list) => this.bills.set(list));
-      this.grnApi
-        .getList({ supplierId, maxResultCount: 50 }, quiet)
-        .pipe(
-          map((page) => (page.items ?? []).filter((g) => g.status !== GrnStatus.Cancelled)),
-          catchError(() => of(null)),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe((list) => this.receipts.set(list));
-    });
-  });
 
   protected err(key: string): string | null {
     return this.errors()[key] ?? null;
@@ -562,7 +523,6 @@ export class ArNewDebitNotePage {
 
   /** `?grn=` from the GRN list: that receipt's supplier and rejections. */
   private async debitReceipt(id: string): Promise<void> {
-    if (environment.useMockData) return;
     try {
       const g = await firstValueFrom(this.grnApi.get(id, { skipHandleError: true }));
       this.patch({ supplierId: g.supplierId, supplierName: g.supplierName });
@@ -588,9 +548,7 @@ export class ArNewDebitNotePage {
     const dto = toCreateDebitDto(this.form());
     this.busy.set(true);
     try {
-      const saved = environment.useMockData
-        ? this.mockSaved()
-        : await firstValueFrom(this.debitApi.create(dto, { skipHandleError: true }));
+      const saved = await firstValueFrom(this.debitApi.create(dto, { skipHandleError: true }));
       this.toasts.success(
         `${saved.debitNoteNumber} for ${inr(saved.grandTotalInPaise)} saved as a draft. Issue it from Debit notes.`,
         'Debit note saved',
@@ -613,26 +571,5 @@ export class ArNewDebitNotePage {
     return this.router
       .createUrlTree(['/purchasing/debit-notes'], { queryParams: params })
       .toString();
-  }
-
-  private mockSaved(): VendorDebitNoteDto {
-    const f = this.form();
-    const t = debitTotals(f);
-    return {
-      id: `vdn-${Date.now()}`,
-      debitNoteNumber: `VDN-2026-${String(Date.now()).slice(-4)}`,
-      supplierId: f.supplierId,
-      supplierName: f.supplierName,
-      status: VendorDebitNoteStatus.Draft,
-      issueDateUtc: new Date().toISOString(),
-      reason: f.reason,
-      isInterState: f.isInterState,
-      taxableAmountInPaise: t.taxable,
-      cgstInPaise: t.cgst,
-      sgstInPaise: t.sgst,
-      igstInPaise: t.igst,
-      grandTotalInPaise: t.grand,
-      lines: [],
-    };
   }
 }

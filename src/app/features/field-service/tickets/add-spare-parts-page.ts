@@ -1,15 +1,7 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -17,80 +9,8 @@ import {
   FieldServiceTicketService,
   RecordSpareConsumedDto,
 } from '../../../proxy/field-service';
-import {
-  InventoryService,
-  StockItemDto,
-} from '../../../proxy/inventory/inventory.service';
+import { InventoryService, StockItemDto } from '../../../proxy/inventory/inventory.service';
 import { ArButton, ArCard } from '../../../ui';
-
-/** Mock spare products for the dev environment. */
-const MOCK_STOCK_ITEMS: StockItemDto[] = [
-  {
-    productId: 'prod-1',
-    partNumber: 'SK-FKM-90',
-    name: 'Viton FKM High-Pressure Cylinder Seal Kit',
-    unit: 'Kit',
-    onHand: 12,
-    reserved: 2,
-    available: 10,
-    isLow: false,
-    averageCostInPaise: 4_600_00,
-    valueInPaise: 55_200_00,
-    locations: [],
-  },
-  {
-    productId: 'prod-2',
-    partNumber: 'SOL-COIL-24V',
-    name: 'Proportional Directional Solenoid Coil 24V DC',
-    unit: 'Pcs',
-    onHand: 8,
-    reserved: 1,
-    available: 7,
-    isLow: false,
-    averageCostInPaise: 6_200_00,
-    valueInPaise: 49_600_00,
-    locations: [],
-  },
-  {
-    productId: 'prod-3',
-    partNumber: 'BRG-6205-ZZ',
-    name: 'Deep Groove Ball Bearing 6205-ZZ (25×52×15)',
-    unit: 'Pcs',
-    onHand: 50,
-    reserved: 0,
-    available: 50,
-    isLow: false,
-    averageCostInPaise: 850_00,
-    valueInPaise: 42_500_00,
-    locations: [],
-  },
-  {
-    productId: 'prod-4',
-    partNumber: 'VFD-BRAKE-RES-10R',
-    name: 'VFD Dynamic Braking Resistor 10Ω 400W',
-    unit: 'Pcs',
-    onHand: 5,
-    reserved: 0,
-    available: 5,
-    isLow: true,
-    averageCostInPaise: 2_800_00,
-    valueInPaise: 14_000_00,
-    locations: [],
-  },
-  {
-    productId: 'prod-5',
-    partNumber: 'HOSE-HP-6MM-1M',
-    name: 'High-Pressure Hydraulic Hose 6mm ID 1m',
-    unit: 'Mtr',
-    onHand: 30,
-    reserved: 0,
-    available: 30,
-    isLow: false,
-    averageCostInPaise: 1_200_00,
-    valueInPaise: 36_000_00,
-    locations: [],
-  },
-];
 
 interface SpareLineItem {
   product: StockItemDto;
@@ -118,7 +38,6 @@ interface SpareLineItem {
     </ar-topbar>
 
     <div class="sp ar-scroll">
-
       @if (ticket(); as t) {
         <div class="sp__context-banner">
           <span class="sp__ticket-no">{{ t.ticketNumber }}</span>
@@ -130,7 +49,6 @@ interface SpareLineItem {
       }
 
       <div class="sp__layout">
-
         <!-- Left: product catalogue picker -->
         <ar-card heading="Parts catalogue" class="sp__catalogue-card">
           <div class="sp__search-row">
@@ -176,9 +94,7 @@ interface SpareLineItem {
         <!-- Right: selected items + qty / billing -->
         <ar-card heading="Selected parts to record" class="sp__basket-card">
           @if (basket().length === 0) {
-            <p class="sp__empty sp__empty--basket">
-              Click parts on the left to add them here.
-            </p>
+            <p class="sp__empty sp__empty--basket">Click parts on the left to add them here.</p>
           } @else {
             <div class="sp__basket-list">
               @for (line of basket(); track line.product.productId) {
@@ -209,13 +125,23 @@ interface SpareLineItem {
                       />
                     </label>
                     <label class="sp__bill-label">
-                      <input type="checkbox" [ngModel]="line.isBillable" (ngModelChange)="updateBillable(line, $event)" />
+                      <input
+                        type="checkbox"
+                        [ngModel]="line.isBillable"
+                        (ngModelChange)="updateBillable(line, $event)"
+                      />
                       <span>Billable to customer</span>
                     </label>
                     <span class="sp__line-total">
                       ₹{{ (line.quantity * line.unitPriceInPaise) / 100 | number: '1.2-2' }}
                     </span>
-                    <button ar-button type="button" variant="ghost" class="sp__remove" (click)="removeLine(line)">
+                    <button
+                      ar-button
+                      type="button"
+                      variant="ghost"
+                      class="sp__remove"
+                      (click)="removeLine(line)"
+                    >
                       ✕
                     </button>
                   </div>
@@ -480,8 +406,7 @@ export class ArAddSparePartsPage {
     const q = this.searchQuery.trim().toLowerCase();
     if (!q) return this.allProducts();
     return this.allProducts().filter(
-      (p) =>
-        p.partNumber.toLowerCase().includes(q) || p.name.toLowerCase().includes(q),
+      (p) => p.partNumber.toLowerCase().includes(q) || p.name.toLowerCase().includes(q),
     );
   });
 
@@ -495,18 +420,16 @@ export class ArAddSparePartsPage {
 
   private loadData(): void {
     // Load ticket for context banner
-    if (!environment.useMockData && this.ticketId) {
+    if (this.ticketId) {
       this.ticketService.get(this.ticketId).subscribe({
         next: (t) => this.ticket.set(t),
-        error: () => { /* non-critical */ },
+        error: () => {
+          /* non-critical */
+        },
       });
     }
 
     // Load products from inventory
-    if (environment.useMockData) {
-      this.allProducts.set(MOCK_STOCK_ITEMS);
-      return;
-    }
 
     this.loadingProducts.set(true);
     this.inventoryService.getLevels().subscribe({
@@ -580,12 +503,6 @@ export class ArAddSparePartsPage {
   submit(): void {
     if (this.busy() || this.basket().length === 0) return;
     this.error.set(null);
-
-    if (environment.useMockData) {
-      this.toasts.success(`${this.basket().length} spare part(s) recorded (mock).`);
-      void this.router.navigateByUrl('/field-service/tickets');
-      return;
-    }
 
     this.busy.set(true);
 

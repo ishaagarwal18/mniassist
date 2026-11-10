@@ -1,19 +1,10 @@
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ArChart } from '../../ui/chart';
 import { ArChartSeries } from '../../ui/chart-series';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { AnalyticsStore, ConversionDimension } from '../../core/services/analytics.service';
 import { ChannelService } from '../../core/services/channel.service';
 import { PipelineStore } from '../../core/services/pipeline.service';
@@ -240,27 +231,16 @@ export class ArAnalytics {
   } | null>(null);
   protected readonly narrating = signal(false);
 
-  /** A summary belongs to one period and channel; picking another clears it. */
-  private readonly clearNarrative = effect(() => {
-    this.period.range();
-    this.channels.active();
-    this.narrative.set(null);
-  });
-
   protected async summarise(): Promise<void> {
     this.narrating.set(true);
     try {
       this.narrative.set(
-        environment.useMockData
-          ? {
-              text: 'Messages were up 14% on the period before and more of them were delivered, while the median first reply fell from 16 to 11 minutes. Won value rose 19% on five more deals, with Referral converting best. Price was the most common reason deals were lost; the lost-reason list and the VFD retrofit campaign, which drew replies but few enquiries, are worth a look.',
-            }
-          : await firstValueFrom(
-              this.api.getNarrative({
-                ...this.period.range(),
-                channelId: this.channels.active()?.id,
-              }),
-            ),
+        await firstValueFrom(
+          this.api.getNarrative({
+            ...this.period.range(),
+            channelId: this.channels.active()?.id,
+          }),
+        ),
       );
     } catch {
       // Shown as a toast; the button stays available to try again.
@@ -281,19 +261,18 @@ export class ArAnalytics {
     const title = `${row.label} · ${OUTCOME_LABEL[outcome].toLowerCase()}`;
     this.drilling.set({ title, loading: true, rows: [] });
     try {
-      const items = environment.useMockData
-        ? this.mockDrill(row.label, outcome)
-        : ((
-            await firstValueFrom(
-              this.api.getConversionEnquiries({
-                ...this.period.range(),
-                dimension: this.conversion().dimension ?? 'source',
-                pipelineId: this.conversionPipelineId(),
-                key: row.key,
-                outcome,
-              }),
-            )
-          ).items ?? []);
+      const items =
+        (
+          await firstValueFrom(
+            this.api.getConversionEnquiries({
+              ...this.period.range(),
+              dimension: this.conversion().dimension ?? 'source',
+              pipelineId: this.conversionPipelineId(),
+              key: row.key,
+              outcome,
+            }),
+          )
+        ).items ?? [];
       this.drilling.set({ title, loading: false, rows: items.map((e) => this.drillRow(e)) });
     } catch {
       // The failure is shown as a toast; close rather than leave a spinner.
@@ -315,26 +294,6 @@ export class ArAnalytics {
       owner: e.owner ?? 'Unassigned',
       when: new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
     };
-  }
-
-  private mockDrill(label: string, outcome: Outcome): ConversionEnquiryDto[] {
-    return [
-      {
-        id: 'e-1',
-        reference: 'ENQ-2026-0142',
-        title: 'VFD retrofit — packing line',
-        contact: 'Rahul Deshmukh',
-        company: 'Chakan Plastics',
-        outcome,
-        lostReason: outcome === 'lost' ? 'Price too high' : null,
-        valueInPaise: 4_50_00_000,
-        owner: 'ravi.k',
-        source: label,
-        openedAtUtc: new Date(Date.now() - 20 * 86_400_000).toISOString(),
-        closedAtUtc:
-          outcome === 'open' ? null : new Date(Date.now() - 3 * 86_400_000).toISOString(),
-      },
-    ];
   }
 
   // ---- chart --------------------------------------------------------------------------

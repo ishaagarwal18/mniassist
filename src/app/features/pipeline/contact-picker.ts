@@ -15,7 +15,6 @@ import { firstValueFrom } from 'rxjs';
 import { PickerOption, PipelineStore } from '../../core/services/pipeline.service';
 import { grantedPolicy } from '../../core/auth/permission';
 import { readApiError } from '../../core/util/api-error';
-import { environment } from '../../../environments/environment';
 import { ContactService as ContactApi } from '../../proxy/contacts/contact.service';
 
 /**
@@ -237,15 +236,13 @@ export class ArContactPicker {
     try {
       const name = this.newName().trim();
       const company = this.newCompany().trim();
-      const created = environment.useMockData
-        ? { id: 'new-' + Date.now(), displayName: name, companyName: company }
-        : await firstValueFrom(
-            this.contacts.create({
-              waId,
-              displayName: name,
-              companyName: company || undefined,
-            }),
-          );
+      const created = await firstValueFrom(
+        this.contacts.create({
+          waId,
+          displayName: name,
+          companyName: company || undefined,
+        }),
+      );
       this.adding.set(false);
       this.choose({
         id: created.id!,

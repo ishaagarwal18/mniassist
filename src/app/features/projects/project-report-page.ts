@@ -11,7 +11,6 @@ import {
   ProjectWinRateDto,
 } from '../../proxy/projects/project-report.service';
 import { ArBanner, ArButton, ArCard, ArStatTile } from '../../ui';
-import { environment } from '../../../environments/environment';
 import { STAGE_TEXT, percent, rupeesShort } from './project.logic';
 
 /** The period choices, in months back from today. */
@@ -38,7 +37,6 @@ export function winRateNote(r: ProjectWinRateDto): string {
 export class ArProjectReportPage {
   private readonly api = inject(ProjectReportService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly monthsChoices = REPORT_MONTHS;
   protected readonly months = signal<number>(12);
   protected readonly report = signal<ProjectReportDto | null>(null);
@@ -68,7 +66,6 @@ export class ArProjectReportPage {
   }
 
   protected async load(): Promise<void> {
-    if (this.mock) return;
     const to = new Date();
     const from = new Date(to);
     from.setMonth(from.getMonth() - this.months());

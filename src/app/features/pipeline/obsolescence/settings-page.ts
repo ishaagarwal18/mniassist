@@ -12,7 +12,6 @@ import {
   ObsolescenceSettingsDto,
 } from '../../../proxy/pipeline/obsolescence.service';
 import { ArBanner, ArButton, ArCard } from '../../../ui';
-import { environment } from '../../../../environments/environment';
 import { POINT_FIELDS, PointKey, settingsProblem } from './obsolescence.logic';
 
 type NumberKey =
@@ -39,7 +38,6 @@ export class ArObsolescenceSettingsPage {
   private readonly templatesApi = inject(TemplateService);
   private readonly toasts = inject(ToastService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly fields = POINT_FIELDS;
   protected readonly settings = signal<ObsolescenceSettingsDto | null>(null);
   protected readonly templates = signal<{ id: string; name: string; lang: string }[]>([]);
@@ -55,7 +53,6 @@ export class ArObsolescenceSettingsPage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       const [settings, templates] = await Promise.all([
         firstValueFrom(this.api.getSettings()),

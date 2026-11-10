@@ -8,7 +8,6 @@ import { readApiError } from '../../../core/util/api-error';
 import { ArTopbar } from '../../../layout/topbar';
 import { BoqImportService } from '../../../proxy/pipeline/boq-import.service';
 import { ArBanner, ArButton } from '../../../ui';
-import { environment } from '../../../../environments/environment';
 import { ArContactPicker } from '../contact-picker';
 import { ACCEPT, MAX_FILES, isReadable, maxBytes, size } from './boq-import.logic';
 
@@ -31,7 +30,6 @@ export class ArNewBoqImportPage {
 
   protected readonly accept = ACCEPT;
   protected readonly maxFiles = MAX_FILES;
-  protected readonly mock = environment.useMockData;
   protected readonly size = size;
 
   private readonly query = this.route.snapshot.queryParamMap;
@@ -50,15 +48,13 @@ export class ArNewBoqImportPage {
   protected readonly available = signal(true);
 
   protected readonly canRead = computed(
-    () => !!this.contact() && this.files().length > 0 && !this.busy() && !this.mock,
+    () => !!this.contact() && this.files().length > 0 && !this.busy(),
   );
 
   constructor() {
-    if (!this.mock) {
-      firstValueFrom(this.api.getAvailable())
-        .then((ok) => this.available.set(ok))
-        .catch(() => this.available.set(true));
-    }
+    firstValueFrom(this.api.getAvailable())
+      .then((ok) => this.available.set(ok))
+      .catch(() => this.available.set(true));
   }
 
   protected onPicked(option: PickerOption | null): void {

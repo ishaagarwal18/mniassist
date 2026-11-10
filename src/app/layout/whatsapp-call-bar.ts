@@ -9,8 +9,6 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-
-import { environment } from '../../environments/environment';
 import { grantedPolicy } from '../core/auth/permission';
 import { InboxRealtimeService } from '../core/realtime/inbox-realtime.service';
 import { CallAlert } from '../core/services/call-alert';
@@ -434,7 +432,7 @@ export class ArWhatsAppCallBar {
    * new tab must unlock again, is then unlocked by the agent's first click or key press in the app (see the constructor).
    */
   protected readonly alertSetup = computed(() => {
-    if (!this.canUse() || environment.useMockData || this.setupAnswered()) return null;
+    if (!this.canUse() || this.setupAnswered()) return null;
     const p = this.alert.permission();
     return p === 'unsupported' ? 'audio' : p === 'granted' ? null : p;
   });
@@ -461,7 +459,7 @@ export class ArWhatsAppCallBar {
   constructor() {
     const destroyRef = inject(DestroyRef);
     destroyRef.onDestroy(() => this.alert.stop());
-    if (!this.canUse() || environment.useMockData) return;
+    if (!this.canUse()) return;
 
     let stopped = false;
     let timer: ReturnType<typeof setTimeout>;

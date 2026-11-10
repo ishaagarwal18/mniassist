@@ -3,7 +3,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
@@ -13,371 +12,9 @@ import {
   ChartOfAccountDto,
   ChartOfAccountService,
 } from '../../../proxy/finance';
-import { ArButton, ArChip, ChipTone } from '../../../ui';
+import { ArBanner, ArButton, ArChip, ChipTone } from '../../../ui';
+import { readApiError } from '../../../core/util/api-error';
 import { ArGrid } from '../../../ui/grid';
-
-const MOCK_COA: ChartOfAccountDto[] = [
-  // Assets
-  {
-    id: 'coa-1010',
-    accountCode: '1010',
-    accountName: 'HDFC Bank Current Account',
-    category: AccountCategory.Asset,
-    subCategory: AccountSubCategory.BankAndCash,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 50_00_000_00,
-    currentBalanceInPaise: 68_45_200_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Primary operating disbursement & collections current a/c #50200012345',
-  },
-  {
-    id: 'coa-1020',
-    accountCode: '1020',
-    accountName: 'Petty Cash Account',
-    category: AccountCategory.Asset,
-    subCategory: AccountSubCategory.BankAndCash,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 50_000_00,
-    currentBalanceInPaise: 42_500_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Factory workshop petty cash imprest',
-  },
-  {
-    id: 'coa-1200',
-    accountCode: '1200',
-    accountName: 'Accounts Receivable (Sundry Debtors)',
-    category: AccountCategory.Asset,
-    subCategory: AccountSubCategory.AccountsReceivable,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 85_40_000_00,
-    currentBalanceInPaise: 92_15_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Customer trade receivables control ledger',
-  },
-  {
-    id: 'coa-1300',
-    accountCode: '1300',
-    accountName: 'Raw Material Inventory',
-    category: AccountCategory.Asset,
-    subCategory: AccountSubCategory.Inventory,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 1_20_00_000_00,
-    currentBalanceInPaise: 1_35_60_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Steel round bars, ductile castings, Viton seal kits store',
-  },
-  {
-    id: 'coa-1310',
-    accountCode: '1310',
-    accountName: 'Work-in-Progress (WIP) Inventory',
-    category: AccountCategory.Asset,
-    subCategory: AccountSubCategory.Inventory,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 45_00_000_00,
-    currentBalanceInPaise: 52_80_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Shop floor batches under active machining & testing',
-  },
-  {
-    id: 'coa-1320',
-    accountCode: '1320',
-    accountName: 'Finished Goods Inventory',
-    category: AccountCategory.Asset,
-    subCategory: AccountSubCategory.Inventory,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 78_00_000_00,
-    currentBalanceInPaise: 84_50_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Completed hydraulic valves, cylinders & power packs ready for dispatch',
-  },
-  {
-    id: 'coa-1400',
-    accountCode: '1400',
-    accountName: 'Plant & Heavy Machinery',
-    category: AccountCategory.Asset,
-    subCategory: AccountSubCategory.NonCurrentAsset,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 3_50_00_000_00,
-    currentBalanceInPaise: 3_50_00_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: '5-Axis CNC machining centers, hydrostatic pressure test pits, gantry cranes',
-  },
-  {
-    id: 'coa-1500',
-    accountCode: '1500',
-    accountName: 'Input Tax Credit (ITC) - CGST',
-    category: AccountCategory.Asset,
-    subCategory: AccountSubCategory.CurrentAsset,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 4_80_000_00,
-    currentBalanceInPaise: 6_24_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Central GST ITC ledger under GSTR-2B reconciliation',
-  },
-  {
-    id: 'coa-1510',
-    accountCode: '1510',
-    accountName: 'Input Tax Credit (ITC) - SGST',
-    category: AccountCategory.Asset,
-    subCategory: AccountSubCategory.CurrentAsset,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 4_80_000_00,
-    currentBalanceInPaise: 6_24_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'State GST ITC ledger under GSTR-2B reconciliation',
-  },
-  {
-    id: 'coa-1520',
-    accountCode: '1520',
-    accountName: 'Input Tax Credit (ITC) - IGST',
-    category: AccountCategory.Asset,
-    subCategory: AccountSubCategory.CurrentAsset,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 9_60_000_00,
-    currentBalanceInPaise: 12_40_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Integrated GST ITC on interstate vendor purchases',
-  },
-
-  // Liabilities
-  {
-    id: 'coa-2010',
-    accountCode: '2010',
-    accountName: 'Accounts Payable (Sundry Creditors)',
-    category: AccountCategory.Liability,
-    subCategory: AccountSubCategory.AccountsPayable,
-    normalBalance: BalanceNature.Credit,
-    openingBalanceInPaise: 64_20_000_00,
-    currentBalanceInPaise: 71_50_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Vendor trade liabilities control ledger (MSME Section 15 aging compliant)',
-  },
-  {
-    id: 'coa-2020',
-    accountCode: '2020',
-    accountName: 'Output GST Payable - CGST',
-    category: AccountCategory.Liability,
-    subCategory: AccountSubCategory.DutiesAndTaxes,
-    normalBalance: BalanceNature.Credit,
-    openingBalanceInPaise: 5_40_000_00,
-    currentBalanceInPaise: 7_15_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Central GST output liability on sales invoices',
-  },
-  {
-    id: 'coa-2021',
-    accountCode: '2021',
-    accountName: 'Output GST Payable - SGST',
-    category: AccountCategory.Liability,
-    subCategory: AccountSubCategory.DutiesAndTaxes,
-    normalBalance: BalanceNature.Credit,
-    openingBalanceInPaise: 5_40_000_00,
-    currentBalanceInPaise: 7_15_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'State GST output liability on sales invoices',
-  },
-  {
-    id: 'coa-2022',
-    accountCode: '2022',
-    accountName: 'Output GST Payable - IGST',
-    category: AccountCategory.Liability,
-    subCategory: AccountSubCategory.DutiesAndTaxes,
-    normalBalance: BalanceNature.Credit,
-    openingBalanceInPaise: 11_20_000_00,
-    currentBalanceInPaise: 14_80_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Interstate GST output liability',
-  },
-  {
-    id: 'coa-2030',
-    accountCode: '2030',
-    accountName: 'TDS Payable u/s 194Q & 194C',
-    category: AccountCategory.Liability,
-    subCategory: AccountSubCategory.DutiesAndTaxes,
-    normalBalance: BalanceNature.Credit,
-    openingBalanceInPaise: 1_80_000_00,
-    currentBalanceInPaise: 2_45_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Statutory TDS deducted on vendor bills above ₹50L threshold',
-  },
-  {
-    id: 'coa-2100',
-    accountCode: '2100',
-    accountName: 'Working Capital Bank Loan',
-    category: AccountCategory.Liability,
-    subCategory: AccountSubCategory.NonCurrentLiability,
-    normalBalance: BalanceNature.Credit,
-    openingBalanceInPaise: 1_50_00_000_00,
-    currentBalanceInPaise: 1_40_00_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Secured term facility with SBI Industrial Branch',
-  },
-
-  // Equity
-  {
-    id: 'coa-3010',
-    accountCode: '3010',
-    accountName: 'Paid-Up Share Capital',
-    category: AccountCategory.Equity,
-    subCategory: AccountSubCategory.ShareCapital,
-    normalBalance: BalanceNature.Credit,
-    openingBalanceInPaise: 2_00_00_000_00,
-    currentBalanceInPaise: 2_00_00_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Paid-up equity shares of ₹10 each',
-  },
-  {
-    id: 'coa-3020',
-    accountCode: '3020',
-    accountName: 'Retained Earnings & Reserves',
-    category: AccountCategory.Equity,
-    subCategory: AccountSubCategory.RetainedEarnings,
-    normalBalance: BalanceNature.Credit,
-    openingBalanceInPaise: 1_22_30_000_00,
-    currentBalanceInPaise: 1_65_89_200_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Accumulated surplus reserves',
-  },
-
-  // Revenue
-  {
-    id: 'coa-4010',
-    accountCode: '4010',
-    accountName: 'Sales Revenue - Manufactured Systems',
-    category: AccountCategory.Revenue,
-    subCategory: AccountSubCategory.OperatingRevenue,
-    normalBalance: BalanceNature.Credit,
-    openingBalanceInPaise: 2_80_00_000_00,
-    currentBalanceInPaise: 3_45_00_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Commercial sales of hydraulic valves, cylinders and automation panels',
-  },
-  {
-    id: 'coa-4020',
-    accountCode: '4020',
-    accountName: 'Service Revenue - AMC Contracts',
-    category: AccountCategory.Revenue,
-    subCategory: AccountSubCategory.OperatingRevenue,
-    normalBalance: BalanceNature.Credit,
-    openingBalanceInPaise: 45_00_000_00,
-    currentBalanceInPaise: 54_80_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Annual Maintenance Contracts on installed machine base',
-  },
-  {
-    id: 'coa-4030',
-    accountCode: '4030',
-    accountName: 'Service Revenue - Field Breakdown & Spares',
-    category: AccountCategory.Revenue,
-    subCategory: AccountSubCategory.OperatingRevenue,
-    normalBalance: BalanceNature.Credit,
-    openingBalanceInPaise: 22_50_000_00,
-    currentBalanceInPaise: 28_40_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Emergency repair callouts and billable replacement spares',
-  },
-  {
-    id: 'coa-4100',
-    accountCode: '4100',
-    accountName: 'Other Income & Metal Scrap Sales',
-    category: AccountCategory.Revenue,
-    subCategory: AccountSubCategory.OtherIncome,
-    normalBalance: BalanceNature.Credit,
-    openingBalanceInPaise: 4_10_000_00,
-    currentBalanceInPaise: 5_30_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Steel shavings, ductile turnings scrap disposal',
-  },
-
-  // Expenses & COGS
-  {
-    id: 'coa-5010',
-    accountCode: '5010',
-    accountName: 'Cost of Goods Sold - Raw Materials Consumed',
-    category: AccountCategory.Expense,
-    subCategory: AccountSubCategory.CostOfGoodsSold,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 1_45_00_000_00,
-    currentBalanceInPaise: 1_78_20_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Direct material allocation to production work orders',
-  },
-  {
-    id: 'coa-5020',
-    accountCode: '5020',
-    accountName: 'Direct Shop Floor Machinist Wages',
-    category: AccountCategory.Expense,
-    subCategory: AccountSubCategory.CostOfGoodsSold,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 38_00_000_00,
-    currentBalanceInPaise: 46_50_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Direct labor cost of CNC operators, welders and assemblers',
-  },
-  {
-    id: 'coa-6010',
-    accountCode: '6010',
-    accountName: 'Factory Power, Fuel & Industrial Gases',
-    category: AccountCategory.Expense,
-    subCategory: AccountSubCategory.OperatingExpense,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 14_50_000_00,
-    currentBalanceInPaise: 18_20_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'High-tension power bill and welding argon/CO2 gases',
-  },
-  {
-    id: 'coa-6020',
-    accountCode: '6020',
-    accountName: 'Machine Tooling & Plant Maintenance',
-    category: AccountCategory.Expense,
-    subCategory: AccountSubCategory.OperatingExpense,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 8_90_000_00,
-    currentBalanceInPaise: 11_10_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'Carbide inserts, hydraulic oil ISO VG 68, seals replacement',
-  },
-  {
-    id: 'coa-6030',
-    accountCode: '6030',
-    accountName: 'Field Service Travel & Site Expenses',
-    category: AccountCategory.Expense,
-    subCategory: AccountSubCategory.OperatingExpense,
-    normalBalance: BalanceNature.Debit,
-    openingBalanceInPaise: 6_20_000_00,
-    currentBalanceInPaise: 7_90_000_00,
-    isActive: true,
-    isSystemAccount: true,
-    description: 'On-site engineer transit, lodging, and client plant site expenses',
-  },
-];
 
 @Component({
   selector: 'app-chart-of-accounts',
@@ -387,6 +24,7 @@ const MOCK_COA: ChartOfAccountDto[] = [
     FormsModule,
     DecimalPipe,
     ArTopbar,
+    ArBanner,
     ArButton,
     ArChip,
     ArGrid,
@@ -404,6 +42,14 @@ const MOCK_COA: ChartOfAccountDto[] = [
     </ar-topbar>
 
     <div class="page-content">
+      @if (loadError(); as e) {
+        <ar-banner tone="bad">{{ e }}</ar-banner>
+      } @else if (!isLoading() && accounts().length === 0) {
+        <ar-banner tone="teal">
+          No ledger accounts yet. Use “Bootstrap Standard COA” to add the standard Indian
+          manufacturing and service ledgers, or add your own accounts.
+        </ar-banner>
+      }
       <!-- KPI Row -->
       <section class="kpi-grid">
         <div class="kpi-card">
@@ -820,8 +466,9 @@ export class ChartOfAccountsComponent {
   private readonly coaService = inject(ChartOfAccountService);
   private readonly toasts = inject(ToastService);
 
-  readonly accounts = signal<ChartOfAccountDto[]>(MOCK_COA);
+  readonly accounts = signal<ChartOfAccountDto[]>([]);
   readonly isLoading = signal<boolean>(false);
+  readonly loadError = signal<string | null>(null);
 
   // Filters
   readonly searchQuery = signal<string>('');
@@ -871,17 +518,17 @@ export class ChartOfAccountsComponent {
   }
 
   loadAccounts(): void {
-    if (environment.useMockData) return;
-
     this.isLoading.set(true);
-    this.coaService.getList({ maxResultCount: 200 }).subscribe({
+    this.loadError.set(null);
+    this.coaService.getList({ maxResultCount: 1000 }).subscribe({
       next: (res) => {
-        if (res.items && res.items.length > 0) {
-          this.accounts.set(res.items);
-        }
+        this.accounts.set(res.items ?? []);
         this.isLoading.set(false);
       },
-      error: () => this.isLoading.set(false),
+      error: (e: unknown) => {
+        this.loadError.set(readApiError(e, 'The chart of accounts could not be loaded.'));
+        this.isLoading.set(false);
+      },
     });
   }
 
@@ -961,18 +608,17 @@ export class ChartOfAccountsComponent {
   }
 
   seedStandardAccounts(): void {
-    if (!environment.useMockData) {
-      this.coaService.seedStandardCoa().subscribe({
-        next: (count) => {
-          this.loadAccounts();
-          this.toasts.success(`Standard Chart of Accounts bootstrapped with ${count || 26} accounts.`);
-        },
-        error: () => this.toasts.error('Failed to bootstrap standard COA.'),
-      });
-      return;
-    }
-
-    this.accounts.set(MOCK_COA);
-    this.toasts.success('Standard Chart of Accounts loaded (26 manufacturing & service ledgers).');
+    this.coaService.seedStandardCoa().subscribe({
+      next: (count) => {
+        this.loadAccounts();
+        this.toasts.success(
+          count
+            ? `Standard Chart of Accounts bootstrapped with ${count} accounts.`
+            : 'The standard accounts are already in your chart of accounts.',
+        );
+      },
+      // The API's reason is shown by the app-wide error toast.
+    });
+    return;
   }
 }

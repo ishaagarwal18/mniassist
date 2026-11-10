@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
@@ -14,25 +21,11 @@ import {
   KnowledgeAskResultDto,
   KnowledgeSource,
 } from '../../proxy/knowledge/ai-assistant.service';
-import { environment } from '../../../environments/environment';
 import { ArTopbar } from '../../layout/topbar';
 import { ArBanner, ArButton, ArChip, ArDialog } from '../../ui';
 import { ArGrid } from '../../ui/grid';
 import { ChipTone } from '../../ui/chip';
 import { ConfirmService } from '../../core/ui/confirm.service';
-
-const SEED_SETTINGS: ChatbotSettingsDto = {
-  enabled: false,
-  minSimilarity: 0.45,
-  persona: 'Polite and concise. We are Meridian Automation, an ABB and Siemens channel partner.',
-  handoffMessage:
-    "Thanks for your message — I'm passing this to our team, who will reply here shortly.",
-  maxRepliesPerConversation: 6,
-  answerWhatsApp: true,
-  answerInstagram: false,
-  answerMessenger: false,
-  answerEmail: false,
-};
 
 /** The channels the assistant can answer on, in the order the form lists them. */
 export const ASSISTANT_CHANNELS = [
@@ -43,40 +36,6 @@ export const ASSISTANT_CHANNELS = [
 ] as const;
 
 export type AssistantChannelKey = (typeof ASSISTANT_CHANNELS)[number]['key'];
-
-const SEED_STATUS: ChatbotStatusDto = {
-  modelConfigured: false,
-  modelName: 'claude-sonnet-5',
-  embeddingModel: 'hashing-512',
-  embeddingIsSemantic: false,
-  recommendedMinSimilarity: 0.2,
-  articleCount: 2,
-  enabledArticleCount: 2,
-  indexedChunkCount: 5,
-  staleArticleCount: 0,
-};
-
-const SEED_ARTICLES: KnowledgeArticleDto[] = [
-  {
-    id: 'kb-1',
-    title: 'Warranty and returns',
-    body: 'All drives carry a 24 month warranty from the date of dispatch. Returns are accepted within 7 days if unopened.',
-    source: KnowledgeSource.Manual,
-    isEnabled: true,
-    chunkCount: 1,
-    indexedAtUtc: new Date(Date.now() - 3_600_000).toISOString(),
-  },
-  {
-    id: 'kb-2',
-    title: 'ACS580 datasheet',
-    body: 'ACS580 general purpose drive, 0.75 to 250 kW …',
-    source: KnowledgeSource.LibraryDocument,
-    libraryDocumentId: 'doc-1',
-    isEnabled: true,
-    chunkCount: 4,
-    indexedAtUtc: new Date(Date.now() - 86_400_000).toISOString(),
-  },
-];
 
 const OUTCOME_TONE: Record<ChatbotOutcome, ChipTone> = {
   [ChatbotOutcome.Answered]: 'good',
@@ -208,7 +167,8 @@ export class ArAiAssistant {
   }
 
   protected goEditArticle(article: KnowledgeArticleDto): void {
-    if (this.router) void this.router.navigate(['/settings/ai-assistant/articles', article.id, 'edit']);
+    if (this.router)
+      void this.router.navigate(['/settings/ai-assistant/articles', article.id, 'edit']);
     else this.openArticle(article);
   }
 
@@ -220,12 +180,6 @@ export class ArAiAssistant {
   }
 
   private async load(): Promise<void> {
-    if (environment.useMockData) {
-      this.applySettings(SEED_SETTINGS);
-      this.status.set(SEED_STATUS);
-      this.articles.set(SEED_ARTICLES);
-      return;
-    }
     try {
       const [settings, status, articles, recent] = await Promise.all([
         firstValueFrom(this.api.getSettings()),
@@ -261,7 +215,6 @@ export class ArAiAssistant {
   }
 
   private async refreshStatus(): Promise<void> {
-    if (environment.useMockData) return;
     this.status.set(await firstValueFrom(this.api.getStatus()));
     this.articles.set(await firstValueFrom(this.api.getArticles()));
   }
@@ -279,9 +232,8 @@ export class ArAiAssistant {
         maxRepliesPerConversation: this.maxReplies(),
         ...this.answerOn(),
       };
-      if (!environment.useMockData) {
-        this.applySettings(await firstValueFrom(this.api.updateSettings(input)));
-      }
+
+      this.applySettings(await firstValueFrom(this.api.updateSettings(input)));
       this.notice.set('Assistant settings saved.');
     } catch (e: unknown) {
       // The API refuses to switch it on with no model behind it — show that, and leave the
@@ -299,17 +251,7 @@ export class ArAiAssistant {
     this.asking.set(true);
     this.error.set(null);
     try {
-      this.askResult.set(
-        environment.useMockData
-          ? {
-              wouldAnswer: false,
-              topScore: 0.31,
-              threshold: this.minSimilarity(),
-              handoffReason: 'Mock data — connect to the real API to test retrieval.',
-              passages: [],
-            }
-          : await firstValueFrom(this.api.ask(q)),
-      );
+      this.askResult.set(await firstValueFrom(this.api.ask(q)));
     } catch (e: unknown) {
       this.error.set(this.messageOf(e, 'The question could not be tested.'));
     } finally {
@@ -322,10 +264,6 @@ export class ArAiAssistant {
     this.error.set(null);
     this.notice.set(null);
     try {
-      if (environment.useMockData) {
-        this.notice.set('Mock data — nothing synced.');
-        return;
-      }
       const r = await firstValueFrom(this.api.syncLibrary());
       this.notice.set(
         `Library synced — ${r.created} added, ${r.updated} updated, ${r.unchanged} unchanged` +
@@ -346,11 +284,9 @@ export class ArAiAssistant {
     this.error.set(null);
     this.notice.set(null);
     try {
-      if (!environment.useMockData) {
-        const r = await firstValueFrom(this.api.reindex());
-        this.notice.set(`Re-indexed ${r.reindexed} article${r.reindexed === 1 ? '' : 's'}.`);
-        await this.refreshStatus();
-      }
+      const r = await firstValueFrom(this.api.reindex());
+      this.notice.set(`Re-indexed ${r.reindexed} article${r.reindexed === 1 ? '' : 's'}.`);
+      await this.refreshStatus();
     } catch (e: unknown) {
       this.error.set(this.messageOf(e, 'Re-indexing failed.'));
     } finally {
@@ -382,12 +318,11 @@ export class ArAiAssistant {
         body: this.draftBody().trim(),
         isEnabled: this.draftEnabled(),
       };
-      if (!environment.useMockData) {
-        await firstValueFrom(
-          target.id ? this.api.updateArticle(target.id, input) : this.api.createArticle(input),
-        );
-        await this.refreshStatus();
-      }
+
+      await firstValueFrom(
+        target.id ? this.api.updateArticle(target.id, input) : this.api.createArticle(input),
+      );
+      await this.refreshStatus();
       this.close();
     } catch (e: unknown) {
       this.articleError.set(this.messageOf(e, 'The article could not be saved.'));
@@ -398,16 +333,14 @@ export class ArAiAssistant {
 
   protected async toggleArticle(article: KnowledgeArticleDto): Promise<void> {
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(
-          this.api.updateArticle(article.id, {
-            title: article.title,
-            body: article.body,
-            isEnabled: !article.isEnabled,
-          }),
-        );
-        await this.refreshStatus();
-      }
+      await firstValueFrom(
+        this.api.updateArticle(article.id, {
+          title: article.title,
+          body: article.body,
+          isEnabled: !article.isEnabled,
+        }),
+      );
+      await this.refreshStatus();
     } catch (e: unknown) {
       this.error.set(this.messageOf(e, 'The article could not be updated.'));
     }
@@ -423,10 +356,8 @@ export class ArAiAssistant {
     )
       return;
     try {
-      if (!environment.useMockData) {
-        await firstValueFrom(this.api.deleteArticle(article.id));
-        await this.refreshStatus();
-      }
+      await firstValueFrom(this.api.deleteArticle(article.id));
+      await this.refreshStatus();
     } catch (e: unknown) {
       this.error.set(this.messageOf(e, 'The article could not be deleted.'));
     }

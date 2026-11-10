@@ -11,7 +11,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
-import { environment } from '../../../../environments/environment';
 import { canOpenUrl } from '../../../core/auth/nav-access.guard';
 import { checkPolicy } from '../../../core/auth/permission';
 import { CurrentUserService } from '../../../core/services/current-user.service';
@@ -28,7 +27,6 @@ import {
   VendorDebitNoteStatus,
   Vendor360Dto,
   Vendor360Service,
-  Vendor360SupplierDto,
   GrnStatus,
 } from '../../../proxy/purchasing';
 import { ArButton, ArChip, ArIcon, ChipTone, IconName } from '../../../ui';
@@ -38,247 +36,6 @@ import { PURCHASING_PERMISSIONS } from '../purchasing-permissions';
 import { ArSupplierFinder } from './supplier-finder';
 import { ArVendor360Links } from './vendor-360-links';
 import { vendorParams } from './vendor-360-links.logic';
-
-const MOCK_VENDORS_360: Vendor360Dto[] = [
-  {
-    id: 'sup-1',
-    name: 'Bharat Precision Gears Pvt Ltd',
-    gstin: '27AABCB1234F1Z5',
-    pan: 'AABCB1234F',
-    phone: '+91 20 2712 9901',
-    email: 'accounts@bharatprecisiongears.com',
-    address: 'Plot 45, Sector 10, MIDC Bhosari',
-    city: 'Pune',
-    state: 'Maharashtra',
-    pincode: '411026',
-    msmeCategory: MsmeClassification.Small,
-    udyamRegistrationNumber: 'UDYAM-MH-26-0019283',
-    bankName: 'HDFC Bank Ltd',
-    bankAccountNumber: '50200081729381',
-    bankIfscCode: 'HDFC0001092',
-    totalPurchasesInPaise: 12_850_000_00,
-    totalPaidInPaise: 9_254_050_00,
-    outstandingPayableInPaise: 3_595_950_00,
-    msmeOverdueInPaise: 0,
-    leadDays: 14,
-    qualityAcceptancePercent: 98.6,
-    totalPurchaseOrdersCount: 2,
-    totalGoodsReceiptNotesCount: 1,
-    totalVendorBillsCount: 1,
-    totalDebitNotesCount: 1,
-    recentPurchaseOrders: [
-      {
-        id: 'po-101',
-        reference: 'PO-2026-089',
-        state: 'Delivered',
-        creationTime: new Date(Date.now() - 10 * 86_400_000).toISOString(),
-        expectedOn: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-        subtotalInPaise: 305_000_00,
-        lineCount: 2,
-      },
-      {
-        id: 'po-077',
-        reference: 'PO-2026-065',
-        state: 'Closed',
-        creationTime: new Date(Date.now() - 40 * 86_400_000).toISOString(),
-        expectedOn: new Date(Date.now() - 25 * 86_400_000).toISOString(),
-        subtotalInPaise: 540_000_00,
-        lineCount: 4,
-      },
-    ],
-    recentGoodsReceiptNotes: [
-      {
-        id: 'grn-1',
-        grnNumber: 'GRN-2026-0104',
-        purchaseOrderId: 'po-101',
-        purchaseOrderReference: 'PO-2026-089',
-        supplierId: 'sup-1',
-        supplierName: 'Bharat Precision Gears Pvt Ltd',
-        challanNumber: 'DC-BPG-4402',
-        challanDateUtc: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-        vehicleNumber: 'MH 14 HG 8921',
-        transporterName: 'VRL Logistics',
-        gateEntryNumber: 'GE-2026-0412',
-        gateInTimeUtc: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-        status: GrnStatus.Approved,
-        qcStatus: QcInspectionStatus.Passed,
-        creationTime: new Date(Date.now() - 2 * 86_400_000).toISOString(),
-        lines: [
-          {
-            id: 'l1',
-            goodsReceiptNoteId: 'grn-1',
-            lineNumber: 1,
-            partNumber: 'GR-HEL-120',
-            description: 'Helical Gear 120mm OD',
-            orderedQuantity: 50,
-            challanQuantity: 50,
-            receivedQuantity: 50,
-            acceptedQuantity: 50,
-            rejectedQuantity: 0,
-            unitOfMeasure: 'NOS',
-            storageBin: 'BIN-RACK-A3',
-          },
-        ],
-      },
-    ],
-    recentVendorBills: [
-      {
-        id: 'vb-1',
-        billNumber: 'VB-2026-0089',
-        vendorInvoiceNumber: 'INV-BPG-8912',
-        vendorInvoiceDateUtc: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-        supplierId: 'sup-1',
-        supplierName: 'Bharat Precision Gears Pvt Ltd',
-        supplierGstin: '27AABCB1234F1Z5',
-        status: VendorBillStatus.Approved,
-        threeWayMatchStatus: ThreeWayMatchStatus.Matched,
-        dueDateUtc: new Date(Date.now() + 27 * 86_400_000).toISOString(),
-        subtotalInPaise: 305_000_00,
-        discountInPaise: 0,
-        cgstInPaise: 27_450_00,
-        sgstInPaise: 27_450_00,
-        igstInPaise: 0,
-        totalTaxInPaise: 54_900_00,
-        tdsRateBasisPoints: 10,
-        tdsDeductedInPaise: 305_00,
-        grandTotalInPaise: 359_900_00,
-        netPayableInPaise: 359_595_00,
-        paidAmountInPaise: 0,
-        balanceDueInPaise: 359_595_00,
-        gstr2bMatchStatus: Gstr2bMatchStatus.MatchedIn2B,
-        isReverseCharge: false,
-        creationTime: new Date(Date.now() - 3 * 86_400_000).toISOString(),
-        lines: [],
-        payments: [],
-      },
-    ],
-    recentDebitNotes: [
-      {
-        id: 'vdn-2',
-        debitNoteNumber: 'DN-2026-0009',
-        supplierId: 'sup-1',
-        supplierName: 'Bharat Precision Gears Pvt Ltd',
-        status: VendorDebitNoteStatus.Settled,
-        issueDateUtc: new Date(Date.now() - 25 * 86_400_000).toISOString(),
-        reason: 'Rate revision adjustment per indexation clause',
-        isInterState: false,
-        taxableAmountInPaise: 12_000_00,
-        cgstInPaise: 1080_00,
-        sgstInPaise: 1080_00,
-        igstInPaise: 0,
-        grandTotalInPaise: 14_160_00,
-        creationTime: new Date(Date.now() - 25 * 86_400_000).toISOString(),
-        lines: [],
-      },
-    ],
-  },
-  {
-    id: 'sup-3',
-    name: 'Sundram Fasteners Automotive',
-    gstin: '33AABCS9821L1ZM',
-    pan: 'AABCS9821L',
-    phone: '+91 44 2852 1100',
-    email: 'oem.sales@sundramfasteners.co.in',
-    address: '98-A, Mount Road, Guindy',
-    city: 'Chennai',
-    state: 'Tamil Nadu',
-    pincode: '600032',
-    msmeCategory: MsmeClassification.Medium,
-    udyamRegistrationNumber: 'UDYAM-TN-02-0048191',
-    bankName: 'State Bank of India',
-    bankAccountNumber: '30091823901',
-    bankIfscCode: 'SBIN0001099',
-    totalPurchasesInPaise: 6_450_000_00,
-    totalPaidInPaise: 4_215_240_00,
-    outstandingPayableInPaise: 2_234_760_00,
-    msmeOverdueInPaise: 420_000_00, // Overdue > 45 days
-    leadDays: 7,
-    qualityAcceptancePercent: 92.5,
-    totalPurchaseOrdersCount: 1,
-    totalGoodsReceiptNotesCount: 1,
-    totalVendorBillsCount: 1,
-    totalDebitNotesCount: 1,
-    recentPurchaseOrders: [
-      {
-        id: 'po-099',
-        reference: 'PO-2026-081',
-        state: 'Delivered',
-        creationTime: new Date(Date.now() - 15 * 86_400_000).toISOString(),
-        expectedOn: new Date(Date.now() - 7 * 86_400_000).toISOString(),
-        subtotalInPaise: 44_400_00,
-        lineCount: 1,
-      },
-    ],
-    recentGoodsReceiptNotes: [
-      {
-        id: 'grn-3',
-        grnNumber: 'GRN-2026-0103',
-        purchaseOrderId: 'po-099',
-        purchaseOrderReference: 'PO-2026-081',
-        supplierId: 'sup-3',
-        supplierName: 'Sundram Fasteners Automotive',
-        challanNumber: 'SF-INV-00912',
-        challanDateUtc: new Date(Date.now() - 6 * 86_400_000).toISOString(),
-        vehicleNumber: 'TN 09 BX 2209',
-        transporterName: 'TCI Freight',
-        status: GrnStatus.Approved,
-        qcStatus: QcInspectionStatus.PartiallyPassed,
-        creationTime: new Date(Date.now() - 6 * 86_400_000).toISOString(),
-        lines: [],
-      },
-    ],
-    recentVendorBills: [
-      {
-        id: 'vb-2',
-        billNumber: 'VB-2026-0082',
-        vendorInvoiceNumber: 'INV-SF-2026-77',
-        vendorInvoiceDateUtc: new Date(Date.now() - 50 * 86_400_000).toISOString(),
-        supplierId: 'sup-3',
-        supplierName: 'Sundram Fasteners Automotive',
-        supplierGstin: '33AABCS9821L1ZM',
-        status: VendorBillStatus.PartiallyPaid,
-        threeWayMatchStatus: ThreeWayMatchStatus.PriceVariance,
-        dueDateUtc: new Date(Date.now() - 5 * 86_400_000).toISOString(),
-        subtotalInPaise: 44_400_00,
-        discountInPaise: 0,
-        cgstInPaise: 0,
-        sgstInPaise: 0,
-        igstInPaise: 7_992_00,
-        totalTaxInPaise: 7_992_00,
-        tdsRateBasisPoints: 10,
-        tdsDeductedInPaise: 44_40,
-        grandTotalInPaise: 52_392_00,
-        netPayableInPaise: 52_347_60,
-        paidAmountInPaise: 30_000_00,
-        balanceDueInPaise: 22_347_60,
-        gstr2bMatchStatus: Gstr2bMatchStatus.MatchedIn2B,
-        isReverseCharge: false,
-        creationTime: new Date(Date.now() - 50 * 86_400_000).toISOString(),
-        lines: [],
-        payments: [],
-      },
-    ],
-    recentDebitNotes: [
-      {
-        id: 'vdn-1',
-        debitNoteNumber: 'DN-2026-0012',
-        supplierId: 'sup-3',
-        supplierName: 'Sundram Fasteners Automotive',
-        status: VendorDebitNoteStatus.Issued,
-        issueDateUtc: new Date(Date.now() - 4 * 86_400_000).toISOString(),
-        reason: 'QC Rejection: 15 PCS flange bolts failed pitch gauge',
-        isInterState: true,
-        taxableAmountInPaise: 3600_00,
-        cgstInPaise: 0,
-        sgstInPaise: 0,
-        igstInPaise: 648_00,
-        grandTotalInPaise: 4248_00,
-        creationTime: new Date(Date.now() - 4 * 86_400_000).toISOString(),
-        lines: [],
-      },
-    ],
-  },
-];
 
 type VendorTab = 'bills' | 'grn' | 'po' | 'debit';
 const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
@@ -307,7 +64,6 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
       <div class="v3-top">
         <ar-supplier-finder
           [currentName]="vendor()?.name ?? null"
-          [local]="mockSuppliers"
           (picked)="onVendorChange($event)"
         />
       </div>
@@ -554,7 +310,9 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
                       <ng-template #template let-b>
                         <div class="v3-cell">
                           <span>{{ b.vendorInvoiceNumber }}</span>
-                          <span class="v3-muted block">{{ b.vendorInvoiceDateUtc | date: 'mediumDate' }}</span>
+                          <span class="v3-muted block">{{
+                            b.vendorInvoiceDateUtc | date: 'mediumDate'
+                          }}</span>
                         </div>
                       </ng-template>
                     </e-column>
@@ -572,19 +330,34 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
                         </ar-chip>
                       </ng-template>
                     </e-column>
-                    <e-column field="grandTotalInPaise" headerText="Total" width="130" [textAlign]="'Right'">
+                    <e-column
+                      field="grandTotalInPaise"
+                      headerText="Total"
+                      width="130"
+                      [textAlign]="'Right'"
+                    >
                       <ng-template #template let-b>
                         <span class="ar-mono">{{ inr(b.grandTotalInPaise) }}</span>
                       </ng-template>
                     </e-column>
-                    <e-column field="balanceDueInPaise" headerText="Balance due" width="140" [textAlign]="'Right'">
+                    <e-column
+                      field="balanceDueInPaise"
+                      headerText="Balance due"
+                      width="140"
+                      [textAlign]="'Right'"
+                    >
                       <ng-template #template let-b>
                         <div class="ar-mono">
-                          <span [class.v3-bad]="b.balanceDueInPaise > 0" [class.v3-good]="b.balanceDueInPaise === 0">
+                          <span
+                            [class.v3-bad]="b.balanceDueInPaise > 0"
+                            [class.v3-good]="b.balanceDueInPaise === 0"
+                          >
                             {{ inr(b.balanceDueInPaise) }}
                           </span>
                           @if (b.dueDateUtc && b.balanceDueInPaise > 0) {
-                            <span class="v3-muted v3-block">due {{ b.dueDateUtc | date: 'd MMM' }}</span>
+                            <span class="v3-muted v3-block"
+                              >due {{ b.dueDateUtc | date: 'd MMM' }}</span
+                            >
                           }
                         </div>
                       </ng-template>
@@ -635,11 +408,17 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
                       <ng-template #template let-g>
                         <div class="v3-cell">
                           <span>{{ g.gateEntryNumber || '—' }}</span>
-                          <span class="v3-muted block">{{ (g.gateInTimeUtc || g.creationTime) | date: 'mediumDate' }}</span>
+                          <span class="v3-muted block">{{
+                            g.gateInTimeUtc || g.creationTime | date: 'mediumDate'
+                          }}</span>
                         </div>
                       </ng-template>
                     </e-column>
-                    <e-column field="purchaseOrderReference" headerText="Purchase order" width="150">
+                    <e-column
+                      field="purchaseOrderReference"
+                      headerText="Purchase order"
+                      width="150"
+                    >
                       <ng-template #template let-g>
                         {{ g.purchaseOrderReference || 'Direct' }}
                       </ng-template>
@@ -711,8 +490,18 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
                         {{ p.expectedOn ? (p.expectedOn | date: 'mediumDate') : '—' }}
                       </ng-template>
                     </e-column>
-                    <e-column field="lineCount" headerText="Items" width="90" [textAlign]="'Right'"></e-column>
-                    <e-column field="subtotalInPaise" headerText="Value" width="140" [textAlign]="'Right'">
+                    <e-column
+                      field="lineCount"
+                      headerText="Items"
+                      width="90"
+                      [textAlign]="'Right'"
+                    ></e-column>
+                    <e-column
+                      field="subtotalInPaise"
+                      headerText="Value"
+                      width="140"
+                      [textAlign]="'Right'"
+                    >
                       <ng-template #template let-p>
                         <strong class="ar-mono">{{ inr(p.subtotalInPaise) }}</strong>
                       </ng-template>
@@ -758,16 +547,19 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
                         <span class="v3-reason">{{ dn.reason }}</span>
                       </ng-template>
                     </e-column>
-                    <e-column field="grandTotalInPaise" headerText="Amount" width="130" [textAlign]="'Right'">
+                    <e-column
+                      field="grandTotalInPaise"
+                      headerText="Amount"
+                      width="130"
+                      [textAlign]="'Right'"
+                    >
                       <ng-template #template let-dn>
                         <strong class="ar-mono">{{ inr(dn.grandTotalInPaise) }}</strong>
                       </ng-template>
                     </e-column>
                     <e-column headerText="Status" width="130">
                       <ng-template #template let-dn>
-                        <ar-chip [tone]="debitTone(dn.status)">{{
-                          debitLabel(dn.status)
-                        }}</ar-chip>
+                        <ar-chip [tone]="debitTone(dn.status)">{{ debitLabel(dn.status) }}</ar-chip>
                       </ng-template>
                     </e-column>
                     <e-column headerText="Actions" width="90" [visible]="can().debitNotes">
@@ -1328,30 +1120,16 @@ export class Vendor360Component {
   protected readonly tabs = TABS;
   protected readonly inr = inr;
 
-  /** Sample suppliers for the finder (mock data); live, the finder searches the server. */
-  protected readonly mockSuppliers: Vendor360SupplierDto[] | null = environment.useMockData
-    ? MOCK_VENDORS_360.map((v) => ({
-        id: v.id ?? '',
-        name: v.name,
-        gstin: v.gstin,
-        phone: v.phone,
-        isActive: true,
-      }))
-    : null;
   /** False once the server has said there is no supplier at all. */
   readonly hasSuppliers = signal(true);
   readonly currentVendorId = signal<string>('');
   /** The open tab, kept in the URL (`?tab=`) so the way back from a record lands on it again. */
   readonly activeTab = signal<VendorTab>(readTab(this.route.snapshot.queryParamMap.get('tab')));
-  readonly loaded = signal(environment.useMockData);
+  readonly loaded = signal(false);
   readonly loadError = signal<string | null>(null);
 
   private readonly live = signal<Vendor360Dto | null>(null);
-  readonly vendor = computed(() =>
-    environment.useMockData
-      ? (MOCK_VENDORS_360.find((v) => v.id === this.currentVendorId()) ?? MOCK_VENDORS_360[0])
-      : this.live(),
-  );
+  readonly vendor = computed(() => this.live());
 
   /** Opens a purchasing list on just this supplier. */
   readonly scope = computed<Params>(() => {
@@ -1498,10 +1276,7 @@ export class Vendor360Component {
         replaceUrl: true,
         queryParamsHandling: 'preserve',
       });
-    if (environment.useMockData) {
-      if (MOCK_VENDORS_360[0]?.id) go(MOCK_VENDORS_360[0].id);
-      return;
-    }
+
     this.vendor360Service
       .getSupplierMatches(null, 1)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -1519,7 +1294,6 @@ export class Vendor360Component {
   }
 
   private loadVendor(id: string) {
-    if (environment.useMockData) return;
     this.live.set(null);
     this.loadError.set(null);
     this.vendor360Service

@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { rxResource } from '@angular/core/rxjs-interop';
-
-import { environment } from '../../../environments/environment';
 import { settled } from '../../core/util/resource';
 import { SecurityLogService } from '../../proxy/identity/security-log.service';
 import type { SecurityLogDto } from '../../proxy/identity/models';
@@ -73,11 +71,10 @@ const SHOWN = 10;
 })
 export class ArSignInHistoryCard {
   private readonly api = inject(SecurityLogService);
-  private readonly mock = environment.useMockData;
   protected readonly shown = SHOWN;
 
   private readonly resource = rxResource({
-    params: () => (this.mock ? undefined : {}),
+    params: () => ({}),
     stream: () => this.api.getMyList({ maxResultCount: SHOWN }),
     defaultValue: { totalCount: 0, items: [] as SecurityLogDto[] },
   });

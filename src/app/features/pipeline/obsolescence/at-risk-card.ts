@@ -20,7 +20,6 @@ import {
   RiskBand,
 } from '../../../proxy/pipeline/obsolescence.service';
 import { ArChip } from '../../../ui';
-import { environment } from '../../../../environments/environment';
 import { bandText, bandTone, stageText, stageTone } from './obsolescence.logic';
 
 /**
@@ -87,7 +86,7 @@ export class ArAtRiskCard {
     effect(() => {
       const contactId = this.contactId();
       const accountId = this.accountId();
-      if (environment.useMockData || !this.allowed() || (!contactId && !accountId)) {
+      if (!this.allowed() || (!contactId && !accountId)) {
         this.rows.set([]);
         return;
       }

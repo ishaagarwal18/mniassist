@@ -14,7 +14,6 @@ import { readApiError } from '../../core/util/api-error';
 import type { ServiceTicketDto } from '../../proxy/support/service-ticket.models';
 import { ServiceTicketService } from '../../proxy/support/service-ticket.service';
 import { ArButton, ArCard } from '../../ui';
-import { environment } from '../../../environments/environment';
 
 /**
  * A breakdown's fix, recorded by the engineer: the code seen, the real cause, what fixed it and the spares used. Three closed tickets
@@ -35,7 +34,6 @@ export class ArRecordFixCard implements OnInit {
   private readonly api = inject(ServiceTicketService);
   private readonly toasts = inject(ToastService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly code = signal('');
   protected readonly cause = signal('');
   protected readonly fix = signal('');
@@ -51,7 +49,6 @@ export class ArRecordFixCard implements OnInit {
   }
 
   protected async save(): Promise<void> {
-    if (this.mock) return;
     this.busy.set(true);
     try {
       const updated = await firstValueFrom(

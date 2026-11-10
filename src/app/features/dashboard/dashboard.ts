@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
+import { of, switchMap } from 'rxjs';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { RouterLink } from '@angular/router';
-
+import { CustomDashboardService, DashboardRenderDto } from '../../proxy/analytics';
+import { formatMetric, pinnedHomeDashboard } from '../analytics/dashboard-home';
 import { ChannelService } from '../../core/services/channel.service';
 import { DashboardStore } from '../../core/services/dashboard.service';
 import { CampaignStore } from '../../core/services/campaign.service';
@@ -77,18 +80,31 @@ export class ArDashboard {
     () => inr(this.spend().avoidedCharge24hInPaise) + ' avoided in the last 24h',
   );
 
-  protected readonly customDashboard = computed(() => {
-    try {
-      const raw = localStorage.getItem('ar_custom_dashboards');
-      if (!raw) return null;
-      const list = JSON.parse(raw);
-      if (!Array.isArray(list) || list.length === 0) return null;
-      const pinnedId = localStorage.getItem('ar_home_dashboard');
-      return (pinnedId ? list.find((d: any) => d.id === pinnedId) : null) ?? list[0];
-    } catch {
-      return null;
-    }
+  private readonly dashboardsApi = inject(CustomDashboardService);
+  /**
+   * The custom dashboard this person pinned to home (on this device), rendered by the server.
+   * Nothing is shown when none is pinned or the pinned one has since been deleted.
+   */
+  private readonly homeDashboard = rxResource({
+    params: () => ({ id: pinnedHomeDashboard() }),
+    stream: ({ params }) =>
+      !params.id
+        ? of(null as DashboardRenderDto | null)
+        : this.dashboardsApi
+            .getList()
+            .pipe(
+              switchMap((list) =>
+                (list.items ?? []).some((d) => d.id === params.id)
+                  ? this.dashboardsApi.render(params.id!)
+                  : of(null as DashboardRenderDto | null),
+              ),
+            ),
+    defaultValue: null as DashboardRenderDto | null,
   });
+  protected readonly customDashboard = computed(() =>
+    this.homeDashboard.error() ? null : this.homeDashboard.value(),
+  );
+  protected readonly formatMetric = formatMetric;
 
   protected readonly freeMessagesLabel = computed(() => count(this.spend().freeMessages24h));
 

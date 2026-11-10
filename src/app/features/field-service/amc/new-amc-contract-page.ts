@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-
-import { environment } from '../../../../environments/environment';
 import { PickerOption } from '../../../core/services/pipeline.service';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
@@ -416,12 +414,7 @@ export class ArNewAmcContractPage {
 
     this.busy.set(true);
     this.error.set(null);
-    if (environment.useMockData) {
-      this.busy.set(false);
-      this.toasts.success('AMC contract created.');
-      void this.router.navigateByUrl('/field-service/amc');
-      return;
-    }
+
     this.amcService.create(input).subscribe({
       next: (c) => {
         this.busy.set(false);

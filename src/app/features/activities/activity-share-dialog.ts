@@ -14,7 +14,7 @@ import { ActivitySendLineDto, ReminderChannels } from '../../proxy/activities';
 import { ArButton, ArDialog } from '../../ui';
 import { ActivityDirectory } from './activity-directory';
 import { channelLabel } from './activity-links.logic';
-import { ActivityGateway } from './activity-mock';
+import { ActivityGateway } from './activity-gateway';
 import { errorMessage } from './activity-logic';
 import { ArReminderChannels } from './reminder-channels';
 

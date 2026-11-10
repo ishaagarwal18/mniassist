@@ -32,7 +32,7 @@ import {
   kindFor,
   targetsFor,
 } from './form-logic';
-import { WebFormGateway } from './form-mock';
+import { WebFormGateway } from './form-gateway';
 import { ConfirmService } from '../../core/ui/confirm.service';
 
 type View =

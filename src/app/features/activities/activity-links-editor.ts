@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, model, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { ActivityLinkDto, ActivityLinkService, ActivityLinkType } from '../../proxy/activities';
 import {
   LINK_TYPES,
@@ -249,10 +247,7 @@ export class ArActivityLinks {
 
   private async search(): Promise<void> {
     const seq = ++this.seq;
-    if (environment.useMockData) {
-      this.results.set([]);
-      return;
-    }
+
     this.searching.set(true);
     try {
       const found = await firstValueFrom(

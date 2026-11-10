@@ -17,7 +17,6 @@ import {
 } from '../../../proxy/pipeline/cross-reference.service';
 import { ArBanner, ArButton, ArChip } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
-import { environment } from '../../../../environments/environment';
 import { CROSS_REFERENCE_TEMPLATE } from './boq-import.logic';
 
 const RELATION_LABEL: Record<CrossReferenceRelation, string> = {
@@ -49,7 +48,6 @@ export class ArCrossReferences {
   private readonly dialogs = inject(ConfirmService);
   private readonly permissions = inject(PermissionService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly relations = [
     CrossReferenceRelation.Equivalent,
     CrossReferenceRelation.Functional,
@@ -92,10 +90,6 @@ export class ArCrossReferences {
   }
 
   protected async load(): Promise<void> {
-    if (this.mock) {
-      this.loading.set(false);
-      return;
-    }
     this.loading.set(true);
     try {
       const [page, waiting] = await Promise.all([

@@ -18,7 +18,6 @@ import {
   UpdateOemPostingSettingsInput,
 } from '../../proxy/oem/spa-report.service';
 import { ArBanner, ArButton, ArCard } from '../../ui';
-import { environment } from '../../../environments/environment';
 
 /** Which suppliers are OEMs, how often claims go to each, and how long after the invoice each accepts a claim. */
 @Component({
@@ -30,9 +29,6 @@ import { environment } from '../../../environments/environment';
       <a ar-button variant="ghost" routerLink="/oem/spa">Special prices</a>
     </ar-topbar>
     <div class="oe ar-scroll">
-      @if (mock) {
-        <ar-banner tone="teal">OEM settings need the live API.</ar-banner>
-      }
       @if (error(); as e) {
         <ar-banner tone="bad">{{ e }}</ar-banner>
       }
@@ -162,7 +158,6 @@ export class ArOemSettingsPage {
   private readonly toasts = inject(ToastService);
   private readonly permissions = inject(PermissionService);
 
-  protected readonly mock = environment.useMockData;
   protected readonly canEdit = grantedPolicy('AutoReach.Spa.Approve', this.permissions);
   protected readonly rows = signal<OemSupplierDto[]>([]);
   protected readonly error = signal<string | null>(null);
@@ -216,7 +211,6 @@ export class ArOemSettingsPage {
   }
 
   private async load(): Promise<void> {
-    if (this.mock) return;
     try {
       this.rows.set(await firstValueFrom(this.api.getList()));
       this.fillPosting(await firstValueFrom(this.postingApi.getPosting()));

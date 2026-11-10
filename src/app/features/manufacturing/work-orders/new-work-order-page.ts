@@ -2,17 +2,13 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/ui/toast.service';
 import { ArTopbar } from '../../../layout/topbar';
 import {
   BillOfMaterialDto,
   BillOfMaterialService,
   CreateWorkOrderDto,
-  RoutingStage,
-  WorkOrderDto,
   WorkOrderService,
-  WorkOrderStatus,
 } from '../../../proxy/manufacturing';
 import { ArButton, ArCard, ArIcon } from '../../../ui';
 
@@ -46,8 +42,14 @@ const plusDaysLocal = (days: number) =>
               <ar-icon name="machine" [size]="20" />
             </span>
             <div class="bom-banner__content">
-              <strong>Linked to Bill of Materials: {{ bom.bomNumber || bom.finishedGoodPartNumber }}</strong>
-              <p>Components and routing steps will be automatically exploded from this master BOM upon release.</p>
+              <strong
+                >Linked to Bill of Materials:
+                {{ bom.bomNumber || bom.finishedGoodPartNumber }}</strong
+              >
+              <p>
+                Components and routing steps will be automatically exploded from this master BOM
+                upon release.
+              </p>
             </div>
             <button type="button" class="btn-clear-bom" (click)="clearSelectedBom()">
               Change / Unlink
@@ -60,16 +62,17 @@ const plusDaysLocal = (days: number) =>
           <div class="form-grid">
             <div class="form-group full-width" *ngIf="boms().length > 0 && !selectedBom()">
               <label class="form-label">Link to Existing BOM (Optional)</label>
-              <select
-                class="ar-field__input"
-                (change)="onBomSelected($any($event.target).value)"
-              >
+              <select class="ar-field__input" (change)="onBomSelected($any($event.target).value)">
                 <option value="">-- Manual Part Entry or Select a Master BOM --</option>
                 <option *ngFor="let b of boms()" [value]="b.id">
-                  {{ b.bomNumber }} — {{ b.finishedGoodPartNumber }} ({{ b.finishedGoodDescription }})
+                  {{ b.bomNumber }} — {{ b.finishedGoodPartNumber }} ({{
+                    b.finishedGoodDescription
+                  }})
                 </option>
               </select>
-              <span class="field-hint">Selecting a BOM auto-fills the finished good part number and description.</span>
+              <span class="field-hint"
+                >Selecting a BOM auto-fills the finished good part number and description.</span
+              >
             </div>
 
             <div class="form-group">
@@ -203,17 +206,10 @@ const plusDaysLocal = (days: number) =>
 
         <!-- Bottom Form Actions -->
         <div class="form-actions">
-          <button
-            ar-button
-            variant="primary"
-            type="submit"
-            [disabled]="isBusy()"
-          >
+          <button ar-button variant="primary" type="submit" [disabled]="isBusy()">
             {{ isBusy() ? 'Creating Work Order…' : 'Create Work Order' }}
           </button>
-          <a ar-button variant="ghost" routerLink="/manufacturing/work-orders">
-            Cancel
-          </a>
+          <a ar-button variant="ghost" routerLink="/manufacturing/work-orders"> Cancel </a>
         </div>
       </form>
     </div>
@@ -334,7 +330,9 @@ const plusDaysLocal = (days: number) =>
         font-size: 0.9rem;
         background: #ffffff;
         color: #0f172a;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        transition:
+          border-color 0.15s ease,
+          box-shadow 0.15s ease;
 
         &:focus {
           outline: none;
@@ -400,8 +398,6 @@ export class ArNewWorkOrderPage implements OnInit {
   }
 
   private loadBoms(): void {
-    if (environment.useMockData) return;
-
     this.bomService.getList({ maxResultCount: 100 }).subscribe({
       next: (res) => {
         const items = res.items ?? [];
@@ -492,15 +488,6 @@ export class ArNewWorkOrderPage implements OnInit {
       remarks: w.remarks?.trim() || undefined,
     };
 
-    if (environment.useMockData) {
-      setTimeout(() => {
-        this.isBusy.set(false);
-        this.toasts.success(`Work order ${input.workOrderNumber || 'WO-2026-0082'} created.`);
-        this.router.navigate(['/manufacturing/work-orders']);
-      }, 500);
-      return;
-    }
-
     this.woService.create(input).subscribe({
       next: (created) => {
         this.isBusy.set(false);
@@ -510,7 +497,8 @@ export class ArNewWorkOrderPage implements OnInit {
       error: (err) => {
         this.isBusy.set(false);
         this.formError.set(
-          err?.error?.error?.message ?? 'The work order could not be created on the production server.',
+          err?.error?.error?.message ??
+            'The work order could not be created on the production server.',
         );
       },
     });

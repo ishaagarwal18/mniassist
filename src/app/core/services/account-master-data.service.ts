@@ -1,7 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { AccountStore } from './account.store';
 import { AccountMasterKind, CustomerAccountService } from '../../proxy/contacts';
 import {
@@ -21,7 +19,7 @@ interface MasterCity {
 /**
  * The account form's pick-lists (industry sectors, states, cities), read from the database: the shared catalogue plus this
  * workspace's own additions, with values already used on accounts mixed in. Additions are saved to the database. Only when the
- * server cannot be reached (and in the demo build) does it fall back to the curated list shipped with the app.
+ * server cannot be reached does it fall back to the curated list shipped with the app.
  */
 @Injectable({
   providedIn: 'root',
@@ -73,8 +71,6 @@ export class AccountMasterDataService {
   }
 
   async loadBackendData(): Promise<void> {
-    if (environment.useMockData) return;
-
     this.loading.set(true);
     try {
       const result = await firstValueFrom(this.api.getMasterData({ skipHandleError: true }));
@@ -166,7 +162,6 @@ export class AccountMasterDataService {
   }
 
   private save(kind: AccountMasterKind, name: string, stateName?: string | null): void {
-    if (environment.useMockData) return;
     this.api.addMasterValue({ kind, name, stateName: stateName || null }).subscribe({
       // On failure the global error handler has said why; reload so the list shows what was really saved.
       error: () => void this.loadBackendData(),

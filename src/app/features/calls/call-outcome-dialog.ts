@@ -12,7 +12,7 @@ import { firstValueFrom } from 'rxjs';
 import { CallLogDto, CallOutcome } from '../../proxy/voice';
 import { ArButton, ArDialog } from '../../ui';
 import { errorMessage } from '../activities/activity-logic';
-import { CallGateway } from './call-mock';
+import { CallGateway } from './call-gateway';
 import { OUTCOME_CHOICES, OUTCOME_LABEL, callHeadline, outcomeToOffer } from './call-logic';
 
 /** Saying how a call went and what was said. It follows the call to the contact's timeline and the deal's history. */
