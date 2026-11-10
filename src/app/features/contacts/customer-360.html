@@ -609,19 +609,18 @@
                 </ar-chip>
               </ng-template>
             </e-column>
-            <e-column headerText="Action" width="140" freeze="Right">
+            <e-column headerText="Action" width="70">
               <ng-template #template let-o>
                 <div class="actions-col">
-                  <a ar-button variant="ghost" [routerLink]="['/sales/orders', o.id]"> Open </a>
+                  <a ar-button variant="ghost" icon="link" title="Open order" [routerLink]="['/sales/orders', o.id]"></a>
                   <a
                     ar-button
                     variant="ghost"
+                    icon="send"
                     [routerLink]="['/contacts', o.customerId, 'message']"
                     [queryParams]="{ document: 'o:' + o.id }"
                     title="Send this order to its buyer on WhatsApp or email"
-                  >
-                    Send
-                  </a>
+                  ></a>
                 </div>
               </ng-template>
             </e-column>
@@ -698,19 +697,18 @@
                 </ar-chip>
               </ng-template>
             </e-column>
-            <e-column headerText="Action" width="140" freeze="Right">
+            <e-column headerText="Action" width="70">
               <ng-template #template let-dc>
                 <div class="actions-col">
-                  <a ar-button variant="ghost" [routerLink]="['/sales/challans', dc.id]"> View </a>
+                  <a ar-button variant="ghost" icon="link" title="View challan" [routerLink]="['/sales/challans', dc.id]"></a>
                   <a
                     ar-button
                     variant="ghost"
+                    icon="send"
                     [routerLink]="['/contacts', dc.customerId, 'message']"
                     [queryParams]="{ document: 'c:' + dc.id }"
                     title="Send this challan to its buyer on WhatsApp or email"
-                  >
-                    Send
-                  </a>
+                  ></a>
                 </div>
               </ng-template>
             </e-column>
@@ -808,19 +806,18 @@
                 </ar-chip>
               </ng-template>
             </e-column>
-            <e-column headerText="Action" width="140" freeze="Right">
+            <e-column headerText="Action" width="70">
               <ng-template #template let-inv>
                 <div class="actions-col">
-                  <a ar-button variant="ghost" [routerLink]="['/sales/invoices', inv.id]"> View </a>
+                  <a ar-button variant="ghost" icon="link" title="View invoice" [routerLink]="['/sales/invoices', inv.id]"></a>
                   <a
                     ar-button
                     variant="ghost"
+                    icon="send"
                     [routerLink]="['/contacts', inv.customerId, 'message']"
                     [queryParams]="{ document: 'i:' + inv.id }"
                     title="Send this invoice to its buyer on WhatsApp or email"
-                  >
-                    Send
-                  </a>
+                  ></a>
                 </div>
               </ng-template>
             </e-column>
@@ -889,16 +886,16 @@
                 </ar-chip>
               </ng-template>
             </e-column>
-            <e-column headerText="Action" width="110" freeze="Right">
+            <e-column headerText="Action" width="50">
               <ng-template #template let-ast>
                 <a
                   ar-button
                   variant="ghost"
+                  icon="machine"
+                  title="Installed base details"
                   routerLink="/installed-base"
                   [queryParams]="{ open: ast.id }"
-                >
-                  Details
-                </a>
+                ></a>
               </ng-template>
             </e-column>
           </e-columns>
@@ -956,9 +953,9 @@
                 {{ t.creationTime | date: 'dd MMM yyyy' }}
               </ng-template>
             </e-column>
-            <e-column headerText="Action" width="110" freeze="Right">
+            <e-column headerText="Action" width="50">
               <ng-template #template let-t>
-                <a ar-button variant="ghost" [routerLink]="['/helpdesk', t.id]"> Desk </a>
+                <a ar-button variant="ghost" icon="help" title="Open ticket in Helpdesk" [routerLink]="['/helpdesk', t.id]"></a>
               </ng-template>
             </e-column>
           </e-columns>

@@ -256,7 +256,7 @@
             <e-column field="lastActivity" headerText="Last activity" />
             <e-column
               headerText="Actions"
-              width="360"
+              width="190"
               textAlign="Right"
               [visible]="canView360() || canReorder() || canUpdate() || canDelete()"
               [showInColumnChooser]="false"
@@ -268,32 +268,29 @@
                   <a
                     ar-button
                     variant="ghost"
+                    icon="contacts"
                     title="Customer 360 for {{ c.name }}"
                     [routerLink]="['/contacts', c.id, '360']"
-                  >
-                    360
-                  </a>
+                  ></a>
                 }
                 @if (canUpdate()) {
                   <a
                     ar-button
                     variant="ghost"
+                    icon="edit"
                     title="Edit {{ c.name }}"
                     [routerLink]="['/contacts', c.id, 'edit']"
-                  >
-                    Edit
-                  </a>
+                  ></a>
                 }
                 @if (canDelete()) {
                   <button
                     ar-button
                     type="button"
                     variant="ghost"
+                    icon="trash"
                     title="Delete {{ c.name }}"
                     (click)="deleteContact(c)"
-                  >
-                    Delete
-                  </button>
+                  ></button>
                 }
                 @if (canReorder()) {
                   <button
@@ -303,9 +300,7 @@
                     icon="send"
                     title="Send {{ c.name }} their spares re-order link"
                     (click)="reorderFor.set({ id: c.id, name: c.name })"
-                  >
-                    Re-order link
-                  </button>
+                  ></button>
                 }
               </ng-template>
             </e-column>

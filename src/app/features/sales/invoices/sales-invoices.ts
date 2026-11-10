@@ -197,7 +197,7 @@ import { ArSalesExport } from '../sales-export';
                 </ar-chip>
               </ng-template>
             </e-column>
-            <e-column headerText="Actions" width="200" freeze="Right">
+            <e-column headerText="Actions" width="200">
               <ng-template #template let-inv>
                 <div class="row-actions">
                   <button class="action-btn" (click)="openInvoice(inv)">View</button>

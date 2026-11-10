@@ -152,4 +152,22 @@ describe('expired session redirect', () => {
     expect(warning).toHaveBeenCalledTimes(2);
     expect(account.isAuthenticated()).toBe(false);
   });
+  it('goes to sign-in when ABP drops an expired sign-in by itself', () => {
+    const account = TestBed.inject(CurrentUserService);
+    expect(account.wasSignedIn()).toBe(true);
+    // ABP clears the tokens and reloads the app state, which now says signed out.
+    config.next({ ...signedIn, currentUser: { ...signedIn.currentUser, isAuthenticated: false } });
+    expect(warning).toHaveBeenCalledOnce();
+    expect(navigate).toHaveBeenCalledWith('/login', { replaceUrl: true });
+    expect(sessionStorage.getItem('ar.returnUrl')).toBe('/inbox?channel=one');
+    // Requests already in flight still count as this ended session, not a new one.
+    expect(account.wasSignedIn()).toBe(true);
+  });
+
+  it('does not warn twice when signing out on purpose', () => {
+    const account = TestBed.inject(CurrentUserService);
+    account.logout();
+    expect(warning).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledOnce();
+  });
 });

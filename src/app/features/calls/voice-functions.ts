@@ -403,7 +403,7 @@ const blankForm = (): FunctionForm => ({
               <span translate="no">{{ fn.usedByAgents }}</span>
             </ng-template>
           </e-column>
-          <e-column headerText="Actions" width="200" freeze="Right">
+          <e-column headerText="Actions" width="200">
             <ng-template #template let-fn>
               <div class="fns__rowact">
                 <button

@@ -12,7 +12,16 @@ import {
 } from '@abp/ng.core';
 import { OAuthService } from 'angular-oauth2-oidc';
 import { RememberMeService } from '@abp/ng.oauth';
-import { catchError, firstValueFrom, of, timeout } from 'rxjs';
+import {
+  catchError,
+  distinctUntilChanged,
+  filter,
+  firstValueFrom,
+  map,
+  of,
+  pairwise,
+  timeout,
+} from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { ProfileDto, ProfileService, UpdateProfileDto } from '../../proxy/account';
@@ -182,6 +191,31 @@ export class CurrentUserService {
   readonly isAuthenticated = computed(() =>
     MOCK ? this.mockSignedIn() : this.user().isAuthenticated,
   );
+
+  constructor() {
+    // ABP ends a sign-in by itself when the token expires and cannot be refreshed, or the
+    // auth server refuses it: it clears the stored tokens and reloads the app state, but
+    // leaves the page up. Treat that like any other ended session and go to sign-in.
+    if (!MOCK) {
+      this.config
+        .getOne$('currentUser')
+        .pipe(
+          map((u) => Boolean((u as { isAuthenticated?: boolean } | undefined)?.isAuthenticated)),
+          distinctUntilChanged(),
+          pairwise(),
+          filter(([was, now]) => was && !now),
+        )
+        .subscribe(() => this.sessionEnded());
+    }
+  }
+
+  /**
+   * This browser was signed in until just now: a 401 from the API then means the session
+   * ended, even when the stored token was already cleared before the request went out.
+   */
+  wasSignedIn(): boolean {
+    return !MOCK && (this.isAuthenticated() || this.endingSession);
+  }
 
   readonly fullName = computed(() => {
     const u = this.user();

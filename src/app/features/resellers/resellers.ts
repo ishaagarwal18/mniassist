@@ -154,7 +154,7 @@ const PAGE = { maxResultCount: 200 };
                       {{ money(p.accruedCommissionPaise) }}
                     </ng-template>
                   </e-column>
-                  <e-column headerText="" width="90" freeze="Right">
+                  <e-column headerText="" width="90">
                     <ng-template #template let-p>
                       <button type="button" class="link" (click)="select(p.id)">Open</button>
                     </ng-template>
@@ -413,7 +413,7 @@ const PAGE = { maxResultCount: 200 };
                           }}</ar-chip>
                         </ng-template>
                       </e-column>
-                      <e-column headerText="" width="180" freeze="Right">
+                      <e-column headerText="" width="180">
                         <ng-template #template let-c>
                           @if (canClients()) {
                             <div class="act">
@@ -547,7 +547,7 @@ const PAGE = { maxResultCount: 200 };
                           {{ o.paymentReference || o.rejectionReason || '—' }}
                         </ng-template>
                       </e-column>
-                      <e-column headerText="" width="200" freeze="Right">
+                      <e-column headerText="" width="200">
                         <ng-template #template let-o>
                           @if (hostView() && canProcessPayouts()) {
                             <div class="act">

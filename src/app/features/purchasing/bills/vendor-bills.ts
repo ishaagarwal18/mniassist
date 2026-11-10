@@ -372,7 +372,7 @@ const MOCK_BILLS: VendorBillDto[] = [
                 </ar-chip>
               </ng-template>
             </e-column>
-            <e-column headerText="Actions" width="200" freeze="Right">
+            <e-column headerText="Actions" width="200">
               <ng-template #template let-b>
                 <div class="action-buttons">
                   <button

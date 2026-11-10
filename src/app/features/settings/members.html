@@ -126,7 +126,7 @@
         </e-column>
         <e-column
           headerText="Actions"
-          width="320"
+          width="130"
           textAlign="Right"
           [allowSorting]="false"
           [allowFiltering]="false"
@@ -137,39 +137,43 @@
               @if (canActAs(m.member)) {
                 <button
                   *arHasPermission="'AutoReach.Members.Impersonate'"
+                  ar-button
                   type="button"
-                  class="link"
+                  variant="ghost"
+                  icon="user"
+                  title="Act as {{ m.name }}"
                   (click)="actAs(m.member)"
-                >
-                  Act as
-                </button>
+                ></button>
               }
               @if (m.member.twoFactorEnabled) {
                 <button
                   *arHasPermission="'AutoReach.Members.ResetTwoFactor'"
+                  ar-button
                   type="button"
-                  class="link"
+                  variant="ghost"
+                  icon="shield"
+                  title="Reset 2-step verification"
                   (click)="resetTwoFactor(m.member)"
-                >
-                  Reset 2-step
-                </button>
+                ></button>
               }
               <button
                 *arHasPermission="'AutoReach.Members.RevokeSessions'"
+                ar-button
                 type="button"
-                class="link"
+                variant="ghost"
+                icon="phone"
+                title="Active devices &amp; sessions"
                 (click)="openDevices(m.member)"
-              >
-                Devices
-              </button>
+              ></button>
               <button
                 *arHasPermission="'AutoReach.Members.Deactivate'"
+                ar-button
                 type="button"
-                class="link link--danger"
+                variant="ghost"
+                icon="close"
+                title="Deactivate member"
                 (click)="deactivate(m.member)"
-              >
-                Deactivate
-              </button>
+              ></button>
             </span>
           </ng-template>
         </e-column>
@@ -205,7 +209,7 @@
           </e-column>
           <e-column
             headerText="Actions"
-            width="140"
+            width="60"
             textAlign="Right"
             [allowSorting]="false"
             [allowFiltering]="false"
@@ -214,12 +218,13 @@
             <ng-template #template let-m>
               <button
                 *arHasPermission="'AutoReach.Members.Deactivate'"
+                ar-button
                 type="button"
-                class="link"
+                variant="ghost"
+                icon="refresh"
+                title="Reactivate member"
                 (click)="reactivate(m.member)"
-              >
-                Reactivate
-              </button>
+              ></button>
             </ng-template>
           </e-column>
         </e-columns>
@@ -262,7 +267,7 @@
           </e-column>
           <e-column
             headerText="Actions"
-            width="170"
+            width="80"
             textAlign="Right"
             [allowSorting]="false"
             [allowFiltering]="false"
@@ -272,20 +277,22 @@
               <span class="mb__act">
                 <button
                   *arHasPermission="'AutoReach.Members.Invite'"
+                  ar-button
                   type="button"
-                  class="link"
+                  variant="ghost"
+                  icon="send"
+                  title="Resend invitation"
                   (click)="resend(i.id)"
-                >
-                  Resend
-                </button>
+                ></button>
                 <button
                   *arHasPermission="'AutoReach.Members.Invite'"
+                  ar-button
                   type="button"
-                  class="link link--danger"
+                  variant="ghost"
+                  icon="trash"
+                  title="Revoke invitation"
                   (click)="revokeInvite(i.id, i.email)"
-                >
-                  Revoke
-                </button>
+                ></button>
               </span>
             </ng-template>
           </e-column>

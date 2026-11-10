@@ -178,7 +178,7 @@ import { ArSalesExport } from '../sales-export';
                 </ar-chip>
               </ng-template>
             </e-column>
-            <e-column headerText="Actions" width="240" freeze="Right">
+            <e-column headerText="Actions" width="240">
               <ng-template #template let-order>
                 <div class="row-actions">
                   <button class="action-btn" title="View details" (click)="openOrder(order)">

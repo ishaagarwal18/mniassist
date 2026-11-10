@@ -164,7 +164,7 @@ import {
                 </ng-template>
               </e-column>
             }
-            <e-column headerText="Actions" width="180" freeze="Right">
+            <e-column headerText="Actions" width="180">
               <ng-template #template let-s>
                 <div class="acts">
                   @if (canOpen360()) {

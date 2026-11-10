@@ -216,55 +216,47 @@
         </ng-template>
       </e-column>
 
-      <e-column headerText="Actions" width="340" textAlign="Right">
+      <e-column headerText="Actions" width="190" textAlign="Right">
         <ng-template #template let-r>
           <div class="ac-row-actions" (click)="$event.stopPropagation()">
             <a
               ar-button
               variant="primary"
-              size="sm"
               title="Rollup financial &amp; pipeline metrics"
               [routerLink]="['/contacts/accounts', r.id, 'rollup']"
             >
               <ar-icon name="analytics" [size]="13" />
-              Rollup
             </a>
             @if (canView360()) {
               <a
                 ar-button
                 variant="ghost"
-                size="sm"
                 title="Customer 360 overview for {{ r.name }}"
                 [routerLink]="['/contacts/accounts', r.id, '360']"
               >
                 <ar-icon name="contacts" [size]="13" />
-                360
               </a>
             }
             @if (canBuyers()) {
               <a
                 ar-button
                 variant="ghost"
-                size="sm"
                 title="Buyers and credit at {{ r.name }}"
                 routerLink="/contacts/accounts/credit"
                 [queryParams]="{ account: r.id }"
               >
                 <ar-icon name="billing" [size]="13" />
-                Credit
               </a>
             }
             @if (canCreate() && r.depth < maxDepth) {
               <a
                 ar-button
                 variant="ghost"
-                size="sm"
                 title="Add plant or subsidiary under {{ r.name }}"
                 [routerLink]="['/contacts/accounts/new']"
                 [queryParams]="{ parentId: r.id }"
               >
                 <ar-icon name="plus" [size]="13" />
-                Sub
               </a>
             }
             @if (canUpdate()) {

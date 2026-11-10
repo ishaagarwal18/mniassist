@@ -639,7 +639,7 @@
               </e-column>
               <e-column
                 headerText="Actions"
-                width="130"
+                width="60"
                 textAlign="Right"
                 [allowSorting]="false"
                 [allowFiltering]="false"
@@ -650,11 +650,11 @@
                     <button
                       ar-button
                       variant="quiet"
+                      icon="trash"
+                      title="Remove branch"
                       [disabled]="busy()"
                       (click)="removeBranch(p.id!, b.digit)"
-                    >
-                      Remove
-                    </button>
+                    ></button>
                   }
                 </ng-template>
               </e-column>

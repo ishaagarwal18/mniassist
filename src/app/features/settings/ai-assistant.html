@@ -290,7 +290,7 @@
         </e-column>
         <e-column
           headerText="Actions"
-          width="170"
+          width="80"
           textAlign="Right"
           [allowSorting]="false"
           [allowFiltering]="false"
@@ -299,13 +299,9 @@
           <ng-template #template let-a>
             <span class="ai__row-actions">
               @if (a.article.source === Source.Manual) {
-                <button ar-button type="button" variant="ghost" (click)="goEditArticle(a.article)">
-                  Edit
-                </button>
+                <button ar-button type="button" variant="ghost" icon="edit" title="Edit article" (click)="goEditArticle(a.article)"></button>
               }
-              <button ar-button type="button" variant="ghost" (click)="removeArticle(a.article)">
-                Delete
-              </button>
+              <button ar-button type="button" variant="ghost" icon="trash" title="Delete article" (click)="removeArticle(a.article)"></button>
             </span>
           </ng-template>
         </e-column>

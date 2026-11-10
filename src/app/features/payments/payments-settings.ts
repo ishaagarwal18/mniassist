@@ -174,7 +174,7 @@ const STATUS_TONE: Record<PaymentRequestStatus, ChipTone> = {
                   </div>
                 </ng-template>
               </e-column>
-              <e-column headerText="Actions" width="140" freeze="Right">
+              <e-column headerText="Actions" width="140">
                 <ng-template #template let-r>
                   <div class="pm__row-actions">
                     @if (r.status === Status.Pending || r.status === Status.Failed) {

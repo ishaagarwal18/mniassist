@@ -192,16 +192,14 @@
             <span class="xr__muted" translate="no">{{ r.note ?? '' }}</span>
           </ng-template>
         </e-column>
-        <e-column field="id" headerText="" width="170">
+        <e-column field="id" headerText="" width="80" textAlign="Right">
           <ng-template #template let-r>
             @if (canApprove()) {
               <div class="xr__btns">
                 @if (!r.isApproved) {
-                  <button type="button" class="xr__btn xr__btn--main" (click)="approve([r.id])">
-                    Approve
-                  </button>
+                  <button ar-button type="button" variant="primary" icon="check" title="Approve cross-reference" (click)="approve([r.id])"></button>
                 }
-                <button type="button" class="xr__btn" (click)="remove(r)">Delete</button>
+                <button ar-button type="button" variant="ghost" icon="trash" title="Delete cross-reference" (click)="remove(r)"></button>
               </div>
             }
           </ng-template>

@@ -54,9 +54,14 @@ export class ApiFeedbackInterceptor implements HttpInterceptor {
           }
         },
         error: (err: unknown) => {
-          // A sign-in this browser still holds was refused: it expired or was revoked. Showing
-          // "signed out" and leaving the page up only leads to more failures, so end it properly.
-          if (err instanceof HttpErrorResponse && err.status === 401 && this.holdsSignIn()) {
+          // A sign-in this browser holds, or held until just now, was refused: it expired or was
+          // revoked. Showing "signed out" and leaving the page up only leads to more failures,
+          // so end it properly. (ABP may already have cleared the token without redirecting.)
+          if (
+            err instanceof HttpErrorResponse &&
+            err.status === 401 &&
+            (this.holdsSignIn() || this.injector.get(CurrentUserService).wasSignedIn())
+          ) {
             const code = (err.error as { error?: { code?: string } } | null)?.error?.code;
             this.injector
               .get(CurrentUserService)

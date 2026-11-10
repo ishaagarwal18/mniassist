@@ -321,7 +321,7 @@ const MOCK_GRNS: GoodsReceiptNoteDto[] = [
                 </ar-chip>
               </ng-template>
             </e-column>
-            <e-column headerText="Actions" width="260" freeze="Right">
+            <e-column headerText="Actions" width="260">
               <ng-template #template let-g>
                 <div class="action-buttons">
                   <button

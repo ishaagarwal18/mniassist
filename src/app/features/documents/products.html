@@ -132,16 +132,14 @@
               <span class="muted">{{ gstLabel(p) }}</span>
             </ng-template>
           </e-column>
-          <e-column headerText="Actions" width="140" [textAlign]="'Right'" freeze="Right">
+          <e-column headerText="Actions" width="100" [textAlign]="'Right'">
             <ng-template #template let-p>
               <div class="actions">
                 @if (canUpdate()) {
-                  <button ar-button type="button" variant="ghost" (click)="goEdit(p)">Edit</button>
+                  <button ar-button type="button" variant="ghost" icon="edit" title="Edit product" (click)="goEdit(p)"></button>
                 }
                 @if (canDelete()) {
-                  <button ar-button type="button" variant="ghost" (click)="remove(p)">
-                    Delete
-                  </button>
+                  <button ar-button type="button" variant="ghost" icon="trash" title="Delete product" (click)="remove(p)"></button>
                 }
               </div>
             </ng-template>

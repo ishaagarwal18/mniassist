@@ -89,7 +89,7 @@ const SEED: TenantDto[] = [
               </e-column>
               <e-column
                 headerText="Actions"
-                width="300"
+                width="140"
                 textAlign="Right"
                 [allowSorting]="false"
                 [allowFiltering]="false"
@@ -98,37 +98,41 @@ const SEED: TenantDto[] = [
                 <ng-template #template let-t>
                   <span class="ta-actions">
                     <button
+                      ar-button
                       type="button"
-                      class="link"
+                      variant="ghost"
+                      icon="settings"
+                      title="Manage workspace"
                       *abpPermission="'AutoReach.Administration.ManageTenants'"
                       (click)="goManage(t)"
-                    >
-                      Manage
-                    </button>
+                    ></button>
                     <button
+                      ar-button
                       type="button"
-                      class="link"
+                      variant="ghost"
+                      icon="bolt"
+                      title="Features"
                       *abpPermission="'AbpTenantManagement.Tenants.ManageFeatures'"
                       (click)="goFeatures(t)"
-                    >
-                      Features
-                    </button>
+                    ></button>
                     <button
+                      ar-button
                       type="button"
-                      class="link"
+                      variant="ghost"
+                      icon="edit"
+                      title="Rename workspace"
                       *abpPermission="'AbpTenantManagement.Tenants.Update'"
                       (click)="goRename(t)"
-                    >
-                      Rename
-                    </button>
+                    ></button>
                     <button
+                      ar-button
                       type="button"
-                      class="link link--danger"
+                      variant="ghost"
+                      icon="trash"
+                      title="Delete workspace"
                       *abpPermission="'AbpTenantManagement.Tenants.Delete'"
                       (click)="remove(t)"
-                    >
-                      Delete
-                    </button>
+                    ></button>
                   </span>
                 </ng-template>
               </e-column>

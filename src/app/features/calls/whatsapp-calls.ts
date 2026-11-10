@@ -299,7 +299,7 @@ const SEED: WhatsAppCallDto[] = [
                 }
               </ng-template>
             </e-column>
-            <e-column headerText="Actions" width="100" [textAlign]="'Right'" freeze="Right" [visible]="canRecordings()">
+            <e-column headerText="Actions" width="100" [textAlign]="'Right'" [visible]="canRecordings()">
               <ng-template #template let-c>
                 @if (!inProgress(c)) {
                   <button

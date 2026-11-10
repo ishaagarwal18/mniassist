@@ -329,7 +329,7 @@ export function recentReturnPeriods(
                   </div>
                 </ng-template>
               </e-column>
-              <e-column headerText="Actions" width="170" freeze="Right">
+              <e-column headerText="Actions" width="170">
                 <ng-template #template let-doc>
                   <div class="actions-cell">
                     <button

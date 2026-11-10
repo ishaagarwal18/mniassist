@@ -83,35 +83,26 @@
           <span [class.due]="followUp(q) === 'due now'">{{ followUp(q) }}</span>
         </ng-template>
       </e-column>
-      <e-column headerText="Actions" width="300" freeze="Right">
+      <e-column headerText="Actions" width="160">
         <ng-template #template let-q>
           <div class="actions">
             <a
               ar-button
               variant="ghost"
-              [icon]="isRecord(q) || !canUpdate() ? null : 'edit'"
+              [icon]="isRecord(q) || !canUpdate() ? 'document' : 'edit'"
+              [title]="isRecord(q) || !canUpdate() ? 'View quotation' : 'Edit quotation'"
               [routerLink]="['/quotations', q.id, 'edit']"
-            >
-              {{ isRecord(q) || !canUpdate() ? 'View' : 'Edit' }}
-            </a>
+            ></a>
             @if (signingAvailable && (canSign(q) || sigChip(q))) {
-              <button ar-button variant="ghost" [disabled]="!!busy()" (click)="signingFor.set(q)">
-                Signature
-              </button>
+              <button ar-button variant="ghost" icon="edit" title="Digital signature" [disabled]="!!busy()" (click)="signingFor.set(q)"></button>
             }
-            <button ar-button variant="ghost" [disabled]="!!busy()" (click)="download(q)">
-              PDF
-            </button>
+            <button ar-button variant="ghost" icon="download" title="Download PDF" [disabled]="!!busy()" (click)="download(q)"></button>
             @if (canUpdate() && (q.state === 'issued' || q.state === 'revised')) {
-              <button ar-button variant="ghost" [disabled]="!!busy()" (click)="won(q)">Won</button>
-              <button ar-button variant="ghost" [disabled]="!!busy()" (click)="lost(q)">
-                Lost
-              </button>
+              <button ar-button variant="ghost" icon="check" title="Mark as won" [disabled]="!!busy()" (click)="won(q)"></button>
+              <button ar-button variant="ghost" icon="close" title="Mark as lost" [disabled]="!!busy()" (click)="lost(q)"></button>
             }
             @if (canDelete()) {
-              <button ar-button variant="danger" [disabled]="!!busy()" (click)="remove(q)">
-                Delete
-              </button>
+              <button ar-button variant="danger" icon="trash" title="Delete quotation" [disabled]="!!busy()" (click)="remove(q)"></button>
             }
           </div>
         </ng-template>

@@ -115,7 +115,7 @@ interface Row extends IdentityUserDto {
               </e-column>
               <e-column
                 headerText="Actions"
-                width="280"
+                width="140"
                 textAlign="Right"
                 [allowSorting]="false"
                 [allowFiltering]="false"
@@ -124,37 +124,41 @@ interface Row extends IdentityUserDto {
                 <ng-template #template let-u>
                   <span class="ta-actions">
                     <button
+                      ar-button
                       type="button"
-                      class="link"
+                      variant="ghost"
+                      icon="edit"
+                      title="Edit user"
                       *abpPermission="'AbpIdentity.Users.Update'"
                       (click)="openEdit(u.user)"
-                    >
-                      Edit
-                    </button>
+                    ></button>
                     <button
+                      ar-button
                       type="button"
-                      class="link"
+                      variant="ghost"
+                      icon="shield"
+                      title="Permissions"
                       *abpPermission="'AbpIdentity.Users.ManagePermissions'"
                       (click)="openPermissions(u.user)"
-                    >
-                      Permissions
-                    </button>
+                    ></button>
                     <button
+                      ar-button
                       type="button"
-                      class="link"
+                      variant="ghost"
+                      icon="user"
+                      title="Security"
                       *abpPermission="'AbpIdentity.Users.Update'"
                       (click)="security.set(u.user)"
-                    >
-                      Security
-                    </button>
+                    ></button>
                     <button
+                      ar-button
                       type="button"
-                      class="link link--danger"
+                      variant="ghost"
+                      icon="trash"
+                      title="Delete user"
                       *abpPermission="'AbpIdentity.Users.Delete'"
                       (click)="remove(u.user)"
-                    >
-                      Delete
-                    </button>
+                    ></button>
                   </span>
                 </ng-template>
               </e-column>

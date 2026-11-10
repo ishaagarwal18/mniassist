@@ -270,7 +270,7 @@ const MOCK_DEBIT_NOTES: VendorDebitNoteDto[] = [
                 </ar-chip>
               </ng-template>
             </e-column>
-            <e-column headerText="Actions" width="220" freeze="Right">
+            <e-column headerText="Actions" width="220">
               <ng-template #template let-dn>
                 <div class="action-buttons">
                   <button

@@ -594,7 +594,7 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
                         <ar-chip [tone]="billTone(b.status)">{{ billLabel(b.status) }}</ar-chip>
                       </ng-template>
                     </e-column>
-                    <e-column headerText="Actions" width="90" freeze="Right" [visible]="can().bills">
+                    <e-column headerText="Actions" width="90" [visible]="can().bills">
                       <ng-template #template let-b>
                         <a
                           ar-button
@@ -664,7 +664,7 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
                         <ar-chip [tone]="grnTone(g.status)">{{ grnLabel(g.status) }}</ar-chip>
                       </ng-template>
                     </e-column>
-                    <e-column headerText="Actions" width="90" freeze="Right" [visible]="can().grn">
+                    <e-column headerText="Actions" width="90" [visible]="can().grn">
                       <ng-template #template let-g>
                         <a
                           ar-button
@@ -770,7 +770,7 @@ const TABS: readonly VendorTab[] = ['bills', 'grn', 'po', 'debit'];
                         }}</ar-chip>
                       </ng-template>
                     </e-column>
-                    <e-column headerText="Actions" width="90" freeze="Right" [visible]="can().debitNotes">
+                    <e-column headerText="Actions" width="90" [visible]="can().debitNotes">
                       <ng-template #template let-dn>
                         <a
                           ar-button

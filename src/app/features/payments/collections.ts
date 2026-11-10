@@ -201,7 +201,7 @@ const SEED: CollectionBoardDto = {
               </ng-template>
             </e-column>
             @if (canManage()) {
-              <e-column headerText="Actions" width="150" freeze="Right">
+              <e-column headerText="Actions" width="150">
                 <ng-template #template let-r>
                   <button
                     ar-button

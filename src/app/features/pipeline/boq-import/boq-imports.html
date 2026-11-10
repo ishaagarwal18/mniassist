@@ -62,10 +62,10 @@
             {{ r.creationTime | date: 'd MMM y, HH:mm' }}
           </ng-template>
         </e-column>
-        <e-column field="quotationId" headerText="Quotation" width="140">
+        <e-column field="quotationId" headerText="Quotation" width="70" textAlign="Right">
           <ng-template #template let-r>
             @if (r.quotationId) {
-              <a class="bl__link" [routerLink]="['/quotations', r.quotationId, 'edit']">Open</a>
+              <a ar-button variant="ghost" icon="link" title="Open quotation" [routerLink]="['/quotations', r.quotationId, 'edit']"></a>
             } @else {
               <span class="bl__muted">—</span>
             }

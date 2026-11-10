@@ -206,7 +206,7 @@ const MOCK_ORDERS: PurchaseOrderDto[] = [
                     }}</ar-chip>
                   </ng-template>
                 </e-column>
-                <e-column headerText="Actions" width="200" freeze="Right">
+                <e-column headerText="Actions" width="200">
                   <ng-template #template let-o>
                     <div class="acts">
                       @if (canManage()) {

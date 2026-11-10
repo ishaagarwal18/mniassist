@@ -369,11 +369,11 @@
             <span class="lc__muted" translate="no">{{ r.sourceReference ?? '' }}</span>
           </ng-template>
         </e-column>
-        <e-column field="id" headerText="" width="140">
+        <e-column field="id" headerText="" width="80" textAlign="Right">
           <ng-template #template let-r>
             <div class="lc__btns">
-              <button type="button" class="lc__btn" (click)="openEdit(r)">Edit</button>
-              <button type="button" class="lc__btn" (click)="remove(r)">Delete</button>
+              <button ar-button type="button" variant="ghost" icon="edit" title="Edit" (click)="openEdit(r)"></button>
+              <button ar-button type="button" variant="ghost" icon="trash" title="Delete" (click)="remove(r)"></button>
             </div>
           </ng-template>
         </e-column>

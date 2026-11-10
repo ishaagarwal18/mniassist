@@ -366,7 +366,7 @@
             </e-column>
 
             <!-- Actions Column -->
-            <e-column headerText="Actions" width="160" textAlign="Right">
+            <e-column headerText="Actions" width="100" textAlign="Right">
               <ng-template #template let-f>
                 <div class="ff-row-actions">
                   <button
@@ -382,19 +382,19 @@
                     ar-button
                     variant="ghost"
                     type="button"
+                    icon="edit"
+                    title="Edit rule"
                     (click)="goEdit(f)"
-                  >
-                    Edit
-                  </button>
+                  ></button>
                   <button
                     ar-button
                     variant="ghost"
                     type="button"
+                    icon="trash"
+                    title="Delete rule"
                     class="ff-btn-delete"
                     (click)="remove(f, $event)"
-                  >
-                    Delete
-                  </button>
+                  ></button>
                 </div>
               </ng-template>
             </e-column>

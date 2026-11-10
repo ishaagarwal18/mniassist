@@ -360,18 +360,17 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
                       </span>
                     </ng-template>
                   </e-column>
-                  <e-column headerText="Actions" width="150" freeze="Right">
+                  <e-column headerText="Actions" width="60">
                     <ng-template #template let-u>
                       <button
                         ar-button
                         type="button"
                         variant="ghost"
                         icon="shield"
+                        title="Set password"
                         [disabled]="busy()"
                         (click)="openPassword(u)"
-                      >
-                        Set password
-                      </button>
+                      ></button>
                     </ng-template>
                   </e-column>
                 </e-columns>
@@ -533,7 +532,7 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
                       <ar-chip [tone]="chip(i.state).tone">{{ chip(i.state).label }}</ar-chip>
                     </ng-template>
                   </e-column>
-                  <e-column headerText="Actions" width="140" freeze="Right">
+                  <e-column headerText="Actions" width="80">
                     <ng-template #template let-i>
                       <div class="wm__act">
                         @if (i.state === State.Draft) {
@@ -541,21 +540,21 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
                             ar-button
                             type="button"
                             variant="primary"
+                            icon="document"
+                            title="Issue invoice"
                             [disabled]="busy()"
                             (click)="issueInvoice(d, i)"
-                          >
-                            Issue
-                          </button>
+                          ></button>
                         } @else if (i.state === State.Issued) {
                           <button
                             ar-button
                             type="button"
                             variant="ghost"
+                            icon="check"
+                            title="Mark as paid"
                             [disabled]="busy()"
                             (click)="markInvoicePaid(d, i)"
-                          >
-                            Mark paid
-                          </button>
+                          ></button>
                         }
                         <button
                           ar-button
@@ -566,10 +565,9 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
                           [attr.aria-label]="
                             'Download ' + (i.number || 'draft invoice') + ' as PDF'
                           "
+                          title="Download PDF"
                           (click)="downloadInvoice(d, i)"
-                        >
-                          PDF
-                        </button>
+                        ></button>
                       </div>
                     </ng-template>
                   </e-column>

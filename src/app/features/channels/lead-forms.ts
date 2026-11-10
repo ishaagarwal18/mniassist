@@ -154,7 +154,7 @@ function when(utc: string | null | undefined): string {
                 </div>
               </ng-template>
             </e-column>
-            <e-column headerText="Action" width="110" freeze="Right">
+            <e-column headerText="Action" width="110">
               <ng-template #template let-l>
                 @if (l.status === failed) {
                   <button ar-button variant="ghost" [disabled]="busy()" (click)="retry(l)">

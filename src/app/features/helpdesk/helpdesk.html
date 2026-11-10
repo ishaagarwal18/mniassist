@@ -153,17 +153,16 @@
             </ng-template>
           </e-column>
 
-          <e-column headerText="" width="90" textAlign="Right">
+          <e-column headerText="" width="50" textAlign="Right">
             <ng-template #template let-t>
               <a
                 ar-button
                 variant="ghost"
-                class="btn-sm"
+                icon="edit"
+                title="Edit ticket"
                 [routerLink]="['/helpdesk', t.id]"
                 (click)="$event.stopPropagation()"
-              >
-                Edit
-              </a>
+              ></a>
             </ng-template>
           </e-column>
         </e-columns>

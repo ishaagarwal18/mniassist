@@ -310,7 +310,7 @@ const MOCK_BOMS: BillOfMaterialDto[] = [
                 </ar-chip>
               </ng-template>
             </e-column>
-            <e-column headerText="Actions" width="220" freeze="Right">
+            <e-column headerText="Actions" width="220">
               <ng-template #template let-b>
                 <div class="action-buttons">
                   <button

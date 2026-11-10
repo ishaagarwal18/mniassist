@@ -316,7 +316,7 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
                   }
                 </ng-template>
               </e-column>
-              <e-column headerText="Actions" width="320" freeze="Right">
+              <e-column headerText="Actions" width="320">
                 <ng-template #template let-i>
                   <div class="acts">
                     @if (tracking() && canManage()) {

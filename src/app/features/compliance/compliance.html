@@ -90,16 +90,12 @@
               <ar-chip [tone]="slaTone(r)">{{ slaLabel(r) }}</ar-chip>
             </ng-template>
           </e-column>
-          <e-column headerText="Actions" width="150" freeze="Right">
+          <e-column headerText="Actions" width="80">
             <ng-template #template let-r>
               <div class="actions">
                 @if (r.state === 'received' || r.state === 'inProgress') {
-                  <button ar-button variant="ghost" [disabled]="!!busy()" (click)="fulfil(r)">
-                    Fulfil
-                  </button>
-                  <button ar-button variant="ghost" [disabled]="!!busy()" (click)="reject(r)">
-                    Reject
-                  </button>
+                  <button ar-button variant="ghost" icon="check" title="Fulfil request" [disabled]="!!busy()" (click)="fulfil(r)"></button>
+                  <button ar-button variant="ghost" icon="close" title="Reject request" [disabled]="!!busy()" (click)="reject(r)"></button>
                 }
               </div>
             </ng-template>
@@ -223,7 +219,7 @@
               </ng-template>
             </e-column>
             @if (canManageBreaches) {
-              <e-column headerText="Actions" width="300" freeze="Right">
+              <e-column headerText="Actions" width="130">
                 <ng-template #template let-b>
                   <div class="actions">
                     @if (b.state !== 'closed') {
@@ -231,40 +227,40 @@
                         <button
                           ar-button
                           variant="ghost"
+                          icon="shield"
+                          title="Mark contained"
                           [disabled]="!!busy()"
                           (click)="containBreach(b)"
-                        >
-                          Contained
-                        </button>
+                        ></button>
                       }
                       @if (b.boardOutstanding) {
                         <button
                           ar-button
                           variant="ghost"
+                          icon="bell"
+                          title="Board notified"
                           [disabled]="!!busy()"
                           (click)="boardTold(b)"
-                        >
-                          Board told
-                        </button>
+                        ></button>
                       }
                       @if (b.principalsOutstanding) {
                         <button
                           ar-button
                           variant="ghost"
+                          icon="send"
+                          title="Principals notified"
                           [disabled]="!!busy()"
                           (click)="peopleTold(b)"
-                        >
-                          People told
-                        </button>
+                        ></button>
                       }
                       <button
                         ar-button
                         variant="ghost"
+                        icon="check"
+                        title="Close breach"
                         [disabled]="!!busy()"
                         (click)="closeBreach(b)"
-                      >
-                        Close
-                      </button>
+                      ></button>
                     } @else {
                       <span class="muted" [title]="b.remediationNotes || ''"
                         >Closed {{ when(b.closedAt) }}</span

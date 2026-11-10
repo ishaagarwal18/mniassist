@@ -179,7 +179,7 @@ const STATE: Record<string, { label: string; tone: ChipTone }> = {
                 }
               </ng-template>
             </e-column>
-            <e-column headerText="Delivery" width="240" freeze="Right">
+            <e-column headerText="Delivery" width="240">
               <ng-template #template let-r>
                 @if (shipmentOf(r.quotationId); as s) {
                   <ar-chip [tone]="shipState(s.status).tone" [dot]="true">{{
