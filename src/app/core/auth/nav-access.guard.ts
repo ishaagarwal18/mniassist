@@ -1,14 +1,44 @@
 import { inject } from '@angular/core';
-import { CanActivateChildFn, Router } from '@angular/router';
+import { CanActivateFn, Router } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
 
 import { NAV, NavItem } from '../../layout/nav.model';
 import { CurrentUserService } from '../services/current-user.service';
 import { PlanService } from '../services/plan.service';
 import { ToastService } from '../ui/toast.service';
-import { canAccessNavItem } from './permission';
+import { canAccessNavItem, checkPolicy } from './permission';
 
 const NAV_ITEMS: readonly NavItem[] = NAV.flatMap((g) => g.items);
+
+// These pages open an action directly and require its grant in addition to module access.
+const ACTION_PERMISSIONS: Readonly<Record<string, string>> = {
+  '/contacts/new': 'AutoReach.Contacts.Create',
+  '/contacts/:id/edit': 'AutoReach.Contacts.Update',
+  '/contacts/accounts/new': 'AutoReach.Contacts.Create',
+  '/contacts/accounts/:accountId/edit': 'AutoReach.Contacts.Update',
+  '/campaigns/new': 'AutoReach.Campaigns.Create',
+  '/templates/new': 'AutoReach.Templates.Create',
+  '/templates/:id/edit': 'AutoReach.Templates.Update',
+  '/enquiries/new': 'AutoReach.Pipeline.Create',
+  '/quotations/new': 'AutoReach.Quotations.Create',
+  '/quotations/:id/edit': 'AutoReach.Quotations.Update',
+  '/installed-base/new': 'AutoReach.InstalledBase.Create',
+  '/projects/new': 'AutoReach.Projects.Create',
+  '/projects/:id/edit': 'AutoReach.Projects.Update',
+  '/documents/new': 'AutoReach.Library.Create',
+  '/documents/:id/edit': 'AutoReach.Library.Update',
+  '/documents/products/new': 'AutoReach.Library.Create',
+  '/documents/products/import': 'AutoReach.Library.Create',
+  '/documents/products/:id/edit': 'AutoReach.Library.Update',
+  '/documents/price-lists/new': 'AutoReach.Library.Create',
+  '/documents/price-lists/:id/edit': 'AutoReach.Library.Update',
+  '/channels/connect': 'AutoReach.Channels.Onboard',
+  '/channels/:id/voice-agent': 'AutoReach.Channels.Manage',
+  '/settings/teams/new': 'AutoReach.Teams.Manage',
+  '/settings/teams/:id/edit': 'AutoReach.Teams.Manage',
+  '/settings/email-templates/new': 'AutoReach.TextTemplates.Edit',
+  '/platform/rates/new': 'AutoReach.Administration.ManageRateCards',
+};
 
 /**
  * The menu item a URL belongs to: the one whose route is the longest prefix of the path
@@ -64,17 +94,21 @@ export function showsInMenu(
 
 /**
  * Keeps typed-in URLs in line with the menu: a screen whose menu item is hidden for this
- * account (permission, host/tenant side) can't be opened by URL either. The host's built-in
- * admin passes everything, as in the menu. Plan and feature gates are left to the screens
- * themselves — the plan loads after sign-in, and those screens show their own upgrade prompt.
+ * account can't be opened by URL either. Use the matched route so URL encoding and
+ * matrix parameters cannot change the policy lookup. Pages without a menu match
+ * must declare their own access rule.
  */
-export const navAccessGuard: CanActivateChildFn = (_route, state) => {
-  const item = navItemForUrl(state.url);
+export const navAccessGuard: CanActivateFn = (route) => {
+  const path = '/' + route.pathFromRoot.map((part) => part.routeConfig?.path).filter(Boolean).join('/');
+  const item = navItemForUrl(path);
+  const permission = ACTION_PERMISSIONS[path];
+  const permissions = inject(PermissionService);
   if (
-    !item ||
+    (item || permission || route.data['authenticatedOnly'] === true) &&
+    checkPolicy(permission, permissions) &&
     canOpenUrl(
-      state.url,
-      inject(PermissionService),
+      path,
+      permissions,
       inject(PlanService),
       inject(CurrentUserService),
     )
@@ -82,6 +116,6 @@ export const navAccessGuard: CanActivateChildFn = (_route, state) => {
     return true;
   }
 
-  inject(ToastService).warning(`Your role doesn't include ${item.label}.`, 'No access');
+  inject(ToastService).warning('You do not have permission to open this page.', 'No access');
   return inject(Router).createUrlTree(['/home']);
 };

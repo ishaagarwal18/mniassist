@@ -382,8 +382,7 @@ export class ArSidebar {
 
   /**
    * Every page this person may open, by group, filtered reactively by role permissions,
-   * workspace plan and features. Includes the pages kept out of the sidebar (set-up, reports),
-   * which menu search and favourites still reach.
+   * workspace plan and features. Includes the pages reached from hubs that can be starred.
    */
   private readonly allowed = computed<readonly NavGroup[]>(() => {
     this.account.permissionState();
@@ -446,11 +445,11 @@ export class ArSidebar {
   private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('menuSearch');
 
   protected readonly shown = computed<readonly NavGroup[]>(() => {
+    const groups = this.nav();
     const terms = this.menuQuery().trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (terms.length === 0) return this.nav();
+    if (terms.length === 0) return groups;
     const hits = (text: string) => terms.every((t) => text.includes(t));
-    // Search reaches every page, including the set-up and report pages kept off the sidebar.
-    return this.allowed()
+    return groups
       .map((group) => {
         // The English and the shown language both match, so either can be typed.
         const heading = `${group.heading ?? ''} ${group.heading ? this.i18n.t(group.heading) : ''}`

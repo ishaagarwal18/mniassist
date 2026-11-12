@@ -153,7 +153,7 @@ export const routes: Routes = [
     // The field engineer's phone app: signed in, but no app shell. Works offline once loaded.
     path: 'field',
     title: 'Field · MNI Assist',
-    canActivate: [appAuthGuard],
+    canActivate: [appAuthGuard, navAccessGuard],
     loadComponent: () => import('./features/field/field').then((m) => m.ArField),
   },
   {
@@ -1148,6 +1148,7 @@ export const routes: Routes = [
       },
       {
         path: 'whats-new',
+        data: { authenticatedOnly: true },
         title: "What's new · MNI Assist",
         loadComponent: () => import('./features/help/whats-new').then((m) => m.ArWhatsNew),
       },

@@ -60,24 +60,15 @@ export function canAccessNavItem(
   planService: PlanService,
   account: CurrentUserService,
 ): boolean {
-  // Platform administrators can open every module, including operational tools.
-  // This does not change the API's tenant data filters or support-access checks.
+  if (
+    (item.hostOnly && !account.isHost()) ||
+    !checkPolicy(item.permission, permissions)
+  ) {
+    return false;
+  }
+
   if (account.isHostAdmin()) {
     return true;
-  }
-  // if (isHost) {
-  //   if (item.tenantOnly) {
-  //     return false;
-  //   }
-  // } else {
-  //   if (item.hostOnly) {
-  //     return false;
-  //   }
-  // }
-
-  // 2. Permission check
-  if (item.permission && !checkPolicy(item.permission, permissions)) {
-    return false;
   }
 
   // 3. Subscription Plan check

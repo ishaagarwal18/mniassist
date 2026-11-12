@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { PermissionService } from '@abp/ng.core';
 
 import { SubscriptionPlan } from '../../proxy/billing/subscription-plan.enum';
-import { NAV, NavItem } from '../../layout/nav.model';
-import { canAccessNavItem, grantedPolicy } from './permission';
+import { NavItem } from '../../layout/nav.model';
+import { canAccessNavItem } from './permission';
 import { PlanService } from '../services/plan.service';
 import { CurrentUserService } from '../services/current-user.service';
 
@@ -156,7 +156,7 @@ describe('canAccessNavItem - Plan and Permission gating', () => {
     expect(canAccessNavItem(networkItem, permissions, entPlan, account)).toBe(true);
   });
 
-  it('lets permissions, not the host or workspace side, decide what an ordinary user sees', () => {
+  it('requires both host context and the grant for platform pages', () => {
     // Since 6 Nov the menu no longer splits host and workspace items: a host user with the grant sees a
     // workspace screen, and the server's host-side permissions keep platform screens away from workspaces.
     const hostWithQuotes = createMockPermissions({
@@ -166,7 +166,6 @@ describe('canAccessNavItem - Plan and Permission gating', () => {
     const hostWithout = createMockPermissions({
       'AutoReach.Administration.ViewPlatformMetrics': true,
     });
-    const tenantPermissions = createMockPermissions({ 'AutoReach.Quotations': true });
     const entPlan = createMockPlanService(SubscriptionPlan.Enterprise, ['PipelineCrm']);
     const hostAccount = createMockAccount(true);
     const tenantAccount = createMockAccount(false);
@@ -175,19 +174,17 @@ describe('canAccessNavItem - Plan and Permission gating', () => {
     expect(canAccessNavItem(quotationsItem, hostWithQuotes, entPlan, hostAccount)).toBe(true);
     expect(canAccessNavItem(quotationsItem, hostWithout, entPlan, hostAccount)).toBe(false);
 
-    // A workspace user never holds the platform permission, so never sees the platform console.
-    expect(canAccessNavItem(platformConsoleItem, tenantPermissions, entPlan, tenantAccount)).toBe(
+    expect(canAccessNavItem(platformConsoleItem, hostWithQuotes, entPlan, tenantAccount)).toBe(
       false,
     );
   });
 
-  it('shows every navigation item to host-admin despite missing grants and a Starter plan', () => {
-    const permissions = createMockPermissions();
+  it('requires grants for host administrators and allows their plan override', () => {
+    const permissions = createMockPermissions({ 'AutoReach.Quotations': true });
     const plan = createMockPlanService(SubscriptionPlan.Starter);
     const account = createMockAccount(true, true);
 
-    for (const item of NAV.flatMap((group) => group.items)) {
-      expect(canAccessNavItem(item, permissions, plan, account), item.route).toBe(true);
-    }
+    expect(canAccessNavItem(platformConsoleItem, permissions, plan, account)).toBe(false);
+    expect(canAccessNavItem(quotationsItem, permissions, plan, account)).toBe(true);
   });
 });
