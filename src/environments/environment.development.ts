@@ -15,13 +15,13 @@ export const environment = {
     'Ngo9BigBOggjHTQxAR8/V1JBaF5cXmRCd1p/TH5YfUNzdUVEY1ZUTXxaS1ZhSXxVd0VjXX9ecXJUQmJVVkF9XEc=',
 
   application: {
-    baseUrl: 'http://localhost:4200',
+    baseUrl: 'https://localhost:4200',
     name: 'MNI Assist',
   },
 
   oAuthConfig: {
     issuer: 'https://localhost:44320/',
-    redirectUri: 'http://localhost:4200',
+    redirectUri: 'https://localhost:4200',
     clientId: 'AutoReach_App',
     // Resource-owner password grant: the /login form posts credentials straight
     // to /connect/token. "code" would make @abp/ng.oauth redirect to the host's

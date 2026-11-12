@@ -92,6 +92,7 @@ function readCollapsed(): boolean {
           class="sb__logo"
           onDark
           size="sm"
+          destination="/home"
           [iconOnly]="collapsed()"
           [logoSrc]="branding.logoDataUrl()"
         />

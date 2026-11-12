@@ -18,6 +18,7 @@ import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
 import { HostWorkspaceService } from '../../proxy/administration/host-workspace.service';
 import type {
+  CustomPlanDto,
   WorkspaceDetailDto,
   WorkspaceFeatureDto,
   WorkspaceUserDto,
@@ -25,6 +26,7 @@ import type {
 import { WorkspaceFeatureMode } from '../../proxy/administration/workspace-feature-mode.enum';
 import { BillingCycle } from '../../proxy/billing/billing-cycle.enum';
 import { InvoiceState } from '../../proxy/billing/invoice-state.enum';
+import { PlanFeature } from '../../proxy/billing/plan-feature.enum';
 import type { InvoiceDto } from '../../proxy/billing/models';
 import { ArBanner, ArButton, ArChip, ArDialog, ArTabs, ArDateInput, ArSelect } from '../../ui';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
@@ -153,16 +155,76 @@ const TABS: readonly Tab[] = ['Status', 'Plan', 'Features', 'Users', 'Invoices',
                 {{ s.includedAgentSeats }} seats.
               </p>
             }
+            <details class="wm__p">
+              <summary>Manage custom plans</summary>
+              <label class="fld">
+                <span class="fld__k">Plan to edit</span>
+                <select class="ar-field__input" [value]="editingCustomPlanId()"
+                  (change)="editCustomPlan($any($event.target).value)">
+                  <option value="">Create a new plan</option>
+                  @for (p of customPlans(); track p.id) {
+                    <option [value]="p.id">{{ p.name }}</option>
+                  }
+                </select>
+              </label>
+              <p>Choose a base tier for billing and limits, then select the features to include.</p>
+              @if (editingCustomPlanId()) {
+                <p>Assign the plan again to apply these changes to a workspace already using it.</p>
+              }
+              <div class="wm__grid">
+                <label class="fld">
+                  <span class="fld__k">Plan name</span>
+                  <input class="ar-field__input" maxlength="80"
+                    [value]="customName()" (input)="customName.set($any($event.target).value)" />
+                </label>
+                <label class="fld">
+                  <span class="fld__k">Base tier</span>
+                  <select class="ar-field__input" [value]="customBase()"
+                    (change)="customBase.set(+$any($event.target).value)">
+                    @for (p of plans; track p.value) {
+                      <option [value]="p.value">{{ p.label }}</option>
+                    }
+                  </select>
+                </label>
+              </div>
+              <fieldset>
+                <legend>Included features</legend>
+                <div class="wm__grid">
+                  @for (feature of planFeatures; track feature) {
+                    <label>
+                      <input type="checkbox" [checked]="customFeatures().includes(feature)"
+                        (change)="toggleCustomFeature(feature, $any($event.target).checked)" />
+                      {{ label(feature) }}
+                    </label>
+                  }
+                </div>
+              </fieldset>
+              <div class="wm__row">
+                <button ar-button type="button" variant="primary"
+                  [disabled]="busy() || !customName().trim()" (click)="saveCustomPlan()">
+                  {{ editingCustomPlanId() ? 'Save plan changes' : 'Save custom plan' }}
+                </button>
+                @if (editingCustomPlanId()) {
+                  <button ar-button type="button" variant="ghost" [disabled]="busy()"
+                    (click)="editCustomPlan('')">
+                    Cancel edit
+                  </button>
+                }
+              </div>
+            </details>
             <div class="wm__grid">
               <label class="fld">
                 <span class="fld__k">Plan</span>
                 <select
                   class="ar-field__input"
-                  [value]="form().plan"
-                  (change)="patch({ plan: +$any($event.target).value })"
+                  [value]="selectedCustomPlanId() || form().plan"
+                  (change)="selectPlan($any($event.target).value)"
                 >
                   @for (p of plans; track p.value) {
                     <option [value]="p.value">{{ p.label }}</option>
+                  }
+                  @for (p of customPlans(); track p.id) {
+                    <option [value]="p.id">{{ p.name }}</option>
                   }
                 </select>
               </label>
@@ -819,6 +881,15 @@ export class ArWorkspaceManageDialog {
 
   protected readonly tabs = TABS;
   protected readonly plans = PLAN_OPTIONS;
+  protected readonly planFeatures = Object.values(PlanFeature).filter(
+    (feature): feature is PlanFeature => typeof feature === 'number',
+  );
+  protected readonly customPlans = signal<CustomPlanDto[]>([]);
+  protected readonly editingCustomPlanId = signal('');
+  protected readonly selectedCustomPlanId = signal('');
+  protected readonly customName = signal('');
+  protected readonly customBase = signal(PLAN_OPTIONS[0].value);
+  protected readonly customFeatures = signal<PlanFeature[]>([]);
   protected readonly modes = MODE_OPTIONS;
   protected readonly Cycle = BillingCycle;
   protected readonly label = featureLabel;
@@ -1017,6 +1088,7 @@ export class ArWorkspaceManageDialog {
   private async load(id: string): Promise<void> {
     try {
       this.show(await firstValueFrom(this.api.get(id)));
+      this.customPlans.set(await firstValueFrom(this.api.getCustomPlans()));
     } catch (e) {
       this.error.set(readApiError(e));
     }
@@ -1025,11 +1097,57 @@ export class ArWorkspaceManageDialog {
   private show(d: WorkspaceDetailDto): void {
     this.detail.set(d);
     this.form.set(planFormFrom(d.subscription));
+    this.selectedCustomPlanId.set(d.subscription?.customPlanId ?? '');
     this.graceRupees.set(String((d.walletGraceOverdraftInPaise ?? 0) / 100));
   }
 
   protected patch(p: Partial<PlanForm>): void {
     this.form.update((f) => ({ ...f, ...p }));
+  }
+
+  protected selectPlan(value: string): void {
+    const custom = this.customPlans().find((plan) => plan.id === value);
+    this.selectedCustomPlanId.set(custom?.id ?? '');
+    this.patch({ plan: custom?.basePlan ?? Number(value), monthlyFeeRupees: '', seats: '' });
+  }
+
+  protected toggleCustomFeature(feature: PlanFeature, included: boolean): void {
+    this.customFeatures.update((features) =>
+      included ? [...features, feature] : features.filter((item) => item !== feature),
+    );
+  }
+
+  protected editCustomPlan(id: string): void {
+    const plan = this.customPlans().find((item) => item.id === id);
+    this.editingCustomPlanId.set(plan?.id ?? '');
+    this.customName.set(plan?.name ?? '');
+    this.customBase.set(plan?.basePlan ?? PLAN_OPTIONS[0].value);
+    this.customFeatures.set(plan?.features ?? []);
+  }
+
+  protected async saveCustomPlan(): Promise<void> {
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      const plan = await firstValueFrom(this.api.saveCustomPlan({
+        id: this.editingCustomPlanId() || undefined,
+        name: this.customName().trim(),
+        basePlan: this.customBase(),
+        features: this.customFeatures(),
+      }));
+      this.customPlans.update((plans) =>
+        plans.some((item) => item.id === plan.id)
+          ? plans.map((item) => item.id === plan.id ? plan : item)
+          : [...plans, plan],
+      );
+      this.selectPlan(plan.id);
+      this.editCustomPlan('');
+      this.toasts.success(`${plan.name} is ready to assign.`);
+    } catch (e) {
+      this.error.set(readApiError(e));
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   /** Runs one change, shows the new state, and remembers the list needs a reload. */
@@ -1090,7 +1208,10 @@ export class ArWorkspaceManageDialog {
       this.error.set(input);
       return;
     }
-    const plan = PLAN_OPTIONS.find((p) => p.value === input.plan)?.label ?? 'the plan';
+    input.customPlanId = this.selectedCustomPlanId() || undefined;
+    const plan = this.customPlans().find((p) => p.id === input.customPlanId)?.name
+      ?? PLAN_OPTIONS.find((p) => p.value === input.plan)?.label
+      ?? 'the plan';
     if (
       !(await this.dialogs.confirm({
         title: `Put ${d.name} on ${plan}${input.isTrial ? ' (trial)' : ''}?`,

@@ -61,7 +61,8 @@ export const MODE_OPTIONS: readonly { value: WorkspaceFeatureMode; label: string
 export function subscriptionSummary(s: WorkspaceSubscriptionDto | null | undefined): string {
   if (!s) return 'No subscription — on the Starter trial terms';
   const cycle = s.cycle === BillingCycle.Annual ? 'annual' : 'monthly';
-  const kind = s.isTrial ? `${planLabel(s.plan)} trial` : `${planLabel(s.plan)}, ${cycle}`;
+  const name = s.customPlanName ?? planLabel(s.plan);
+  const kind = s.isTrial ? `${name} trial` : `${name}, ${cycle}`;
   const until = s.expiresAtUtc
     ? `ends ${dateOnly(s.expiresAtUtc)}`
     : `${s.isTrial ? 'trial ends' : 'renews'} ${dateOnly(s.currentPeriodEndUtc)}`;

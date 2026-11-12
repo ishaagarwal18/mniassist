@@ -1,6 +1,8 @@
 import type { InvoiceDto } from '../billing/models';
 import type {
   AssignPlanInput,
+  CreateCustomPlanInput,
+  CustomPlanDto,
   HostGenerateInvoiceInput,
   WorkspaceInvoiceInput,
   SetWalletGraceInput,
@@ -20,6 +22,18 @@ import { Injectable, inject } from '@angular/core';
 export class HostWorkspaceService {
   private restService = inject(RestService);
   apiName = 'AutoReach';
+
+  getCustomPlans = () =>
+    this.restService.request<void, CustomPlanDto[]>(
+      { method: 'GET', url: '/api/auto-reach/host-workspace/custom-plans' },
+      { apiName: this.apiName },
+    );
+
+  saveCustomPlan = (body: CreateCustomPlanInput) =>
+    this.restService.request<CreateCustomPlanInput, CustomPlanDto>(
+      { method: 'POST', url: '/api/auto-reach/host-workspace/save-custom-plan', body },
+      { apiName: this.apiName },
+    );
 
   get = (id: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, WorkspaceDetailDto>(

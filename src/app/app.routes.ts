@@ -1,4 +1,5 @@
 import { Route, Routes } from '@angular/router';
+import { environment } from '../environments/environment';
 import { appAuthGuard } from './core/auth/auth.guard';
 import { AR_DIALOG_INLINE } from './ui/dialog-inline';
 import { navAccessGuard } from './core/auth/nav-access.guard';
@@ -23,22 +24,27 @@ function formPage(
   };
 }
 
+const loginPage: Route = {
+  title: 'Sign in · MNI Assist',
+  loadComponent: () => import('./features/account/login').then((m) => m.ArLogin),
+};
+
 /** Every feature is lazily loaded — the shell and the design system are the
  *  only things in the initial bundle. */
 export const routes: Routes = [
+  ...(!environment.production
+    ? [{ path: '', pathMatch: 'full' as const, redirectTo: 'account/login' }]
+    : []),
   {
     // The public front page: what AutoReach is and what it costs. No login, no app shell.
     // Must stay ahead of the shell below, whose empty path would otherwise claim `/`.
-    path: '',
+    path: environment.production ? '' : 'welcome',
     pathMatch: 'full',
     title: 'MNI Assist · AI Business Engagement Platform for Industrial Companies',
     loadComponent: () => import('./features/landing/landing').then((m) => m.ArLanding),
   },
-  {
-    path: 'login',
-    title: 'Sign in · MNI Assist',
-    loadComponent: () => import('./features/account/login').then((m) => m.ArLogin),
-  },
+  { path: 'account/login', ...loginPage },
+  { path: 'login', ...loginPage },
   {
     // The public status page (T-19): no sign-in and no shell, so it opens when sign-in is what is broken.
     path: 'status',

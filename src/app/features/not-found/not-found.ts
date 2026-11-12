@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { ArBrand } from '../../layout/brand';
+import { ArBrand, PUBLIC_HOME_PATH } from '../../layout/brand';
 
 @Component({
   selector: 'ar-not-found',
@@ -9,13 +9,13 @@ import { ArBrand } from '../../layout/brand';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header>
-      <a routerLink="/" aria-label="MNI Assist home"><ar-brand onDark /></a>
+      <ar-brand onDark />
     </header>
     <main aria-labelledby="not-found-title">
       <div class="message">
         <h1 id="not-found-title">Page not found</h1>
         <p>The page may have moved or the address may be incorrect.</p>
-        <a class="home-link" routerLink="/">Go to the homepage <span aria-hidden="true">→</span></a>
+        <a class="home-link" [routerLink]="publicHome">Go to the homepage <span aria-hidden="true">→</span></a>
       </div>
       <div class="error-code" aria-hidden="true">404</div>
     </main>
@@ -103,4 +103,6 @@ import { ArBrand } from '../../layout/brand';
     }
   `,
 })
-export class ArNotFound {}
+export class ArNotFound {
+  protected readonly publicHome = PUBLIC_HOME_PATH;
+}

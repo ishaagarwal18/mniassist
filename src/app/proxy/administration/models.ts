@@ -73,6 +73,7 @@ export interface SuspendWorkspaceInput {
 }
 
 export interface AssignPlanInput {
+  customPlanId?: string;
   plan: SubscriptionPlan;
   cycle: BillingCycle;
   isTrial: boolean;
@@ -80,6 +81,17 @@ export interface AssignPlanInput {
   expiresAtUtc?: string | null;
   monthlyFeeInPaise?: number | null;
   includedAgentSeats?: number | null;
+}
+
+export interface CreateCustomPlanInput {
+  id?: string;
+  name: string;
+  basePlan: SubscriptionPlan;
+  features: PlanFeature[];
+}
+
+export interface CustomPlanDto extends CreateCustomPlanInput {
+  id: string;
 }
 
 export interface SetWorkspaceFeatureInput {
@@ -92,6 +104,8 @@ export interface SetWorkspaceDatabaseInput {
 }
 
 export interface WorkspaceSubscriptionDto {
+  customPlanId?: string | null;
+  customPlanName?: string | null;
   plan: SubscriptionPlan;
   cycle: BillingCycle;
   isTrial: boolean;

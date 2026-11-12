@@ -1,12 +1,14 @@
 import { ChangeDetectionStrategy, Component, booleanAttribute, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 /** The product's name and tagline, in one place. */
 export const BRAND_NAME = 'MNI Assist';
 export const BRAND_TAGLINE = 'AI Business Engagement Platform for Industrial Companies.';
+export const PUBLIC_HOME_PATH = environment.production ? '/' : '/welcome';
 
 /**
- * The MNI Assist logo and wordmark. Always a link to the public landing page.
+ * The MNI Assist logo and wordmark, linked to the public landing page by default.
  * `onDark` puts the logo on a small white tile, because the navy "M" in the
  * artwork would disappear on navy. `logoSrc` swaps in a workspace's own logo
  * (tenant branding); the link and name stay.
@@ -21,7 +23,7 @@ export const BRAND_TAGLINE = 'AI Business Engagement Platform for Industrial Com
     '[class.br--sm]': 'size() === "sm"',
   },
   template: `
-    <a class="br" routerLink="/" [attr.aria-label]="name + ' home'">
+    <a class="br" [routerLink]="destination()" [attr.aria-label]="name + ' home'">
       <span class="br__mark" aria-hidden="true">
         <img [src]="logoSrc() || 'brand/mni-assist-logo.png'" alt="" />
       </span>
@@ -111,6 +113,7 @@ export const BRAND_TAGLINE = 'AI Business Engagement Platform for Industrial Com
   `,
 })
 export class ArBrand {
+  readonly destination = input(PUBLIC_HOME_PATH);
   readonly onDark = input(false, { transform: booleanAttribute });
   readonly iconOnly = input(false, { transform: booleanAttribute });
   readonly tagline = input(false, { transform: booleanAttribute });

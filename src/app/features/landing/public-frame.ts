@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { CurrentUserService } from '../../core/services/current-user.service';
-import { ArBrand } from '../../layout/brand';
+import { ArBrand, PUBLIC_HOME_PATH } from '../../layout/brand';
 
 /** The industry pages, by address and name, for the header, footer and landing page. */
 export const INDUSTRY_LINKS = [
@@ -22,7 +22,7 @@ export const INDUSTRY_LINKS = [
   template: `
     <header class="pf-nav">
       <div class="pf-wrap pf-nav__row">
-        <a routerLink="/" aria-label="MNI Assist home"><ar-brand onDark /></a>
+        <ar-brand onDark />
         <nav class="pf-nav__links" aria-label="Pages">
           <a routerLink="/roi">ROI calculator</a>
           @for (i of industries; track i.slug) {
@@ -44,7 +44,7 @@ export const INDUSTRY_LINKS = [
       <div class="pf-wrap pf-foot__row">
         <span>© {{ year }} Emnisoft Pvt Ltd. MNI Assist is a product of Emnisoft Pvt Ltd.</span>
         <nav aria-label="More">
-          <a routerLink="/">Plans and features</a>
+          <a [routerLink]="publicHome">Plans and features</a>
           <a routerLink="/roi">ROI calculator</a>
           <a routerLink="/privacy">Privacy policy</a>
         </nav>
@@ -141,6 +141,7 @@ export const INDUSTRY_LINKS = [
   `,
 })
 export class ArPublicFrame {
+  protected readonly publicHome = PUBLIC_HOME_PATH;
   protected readonly signedIn = inject(CurrentUserService).isAuthenticated;
   protected readonly industries = INDUSTRY_LINKS;
   protected readonly year = new Date().getFullYear();

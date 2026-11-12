@@ -129,10 +129,7 @@ export class PlanService {
             (usage.plan as SubscriptionPlan) ?? SubscriptionPlan.Starter;
           this.plan.set(resolvedPlan);
 
-          const featureList = [
-            ...(DEFAULT_PLAN_FEATURES[resolvedPlan] ?? []),
-            ...(usage.features ?? []),
-          ];
+          const featureList = usage.features ?? DEFAULT_PLAN_FEATURES[resolvedPlan] ?? [];
           this.features.set(new Set(featureList.map((f) => f.toLowerCase())));
           this.loading.set(false);
         });
