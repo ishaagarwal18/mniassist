@@ -904,7 +904,7 @@ export class ArVoiceWebWidgets implements OnInit {
   async ngOnInit(): Promise<void> {
     try {
       const page = await firstValueFrom(this.channelsApi.getList({ maxResultCount: 100 } as never));
-      this.channels.set((page.items ?? []).filter((c) => c.provider === 0));
+      this.channels.set(page.items ?? []);
     } catch {
       this.channels.set([]);
     }

@@ -1619,7 +1619,11 @@ export const routes: Routes = [
       formPage('platform/status/:id/edit', 'Update incident · MNI Assist', 'edit', () =>
         import('./features/platform/status-incidents').then((m) => m.ArStatusIncidents),
       ),
-      { path: '**', redirectTo: 'home' },
     ],
+  },
+  {
+    path: '**',
+    title: 'Page not found · MNI Assist',
+    loadComponent: () => import('./features/not-found/not-found').then((m) => m.ArNotFound),
   },
 ];

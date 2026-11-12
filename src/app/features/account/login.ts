@@ -34,7 +34,7 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
     <ar-auth-showcase class="lg__show" />
     <div class="lg">
       <div class="lg__top"><ar-language-switch /><ar-theme-toggle /></div>
-      <form class="lg__card" (submit)="submit($event)">
+      <form class="lg__card" novalidate (submit)="submit($event)">
         <div class="lg__brand">
           <ar-brand [logoSrc]="workspaceLogo()" />
         </div>
@@ -216,28 +216,44 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
             />
           </label>
 
-          <label class="lg__field">
-            <span>{{ i18n.t('Username, email or phone number') }}</span>
+          <div class="lg__field">
+            <label for="login-username">{{ i18n.t('Username, email or phone number') }}</label>
             <input
               class="ar-field__input"
+              id="login-username"
               name="username"
               autocomplete="username"
               autocapitalize="none"
+              required
+              [attr.aria-invalid]="usernameMissing() ? 'true' : null"
+              [attr.aria-describedby]="usernameMissing() ? 'login-username-error' : null"
               [value]="username()"
               (input)="username.set($any($event.target).value)"
             />
-          </label>
-          <label class="lg__field">
-            <span>{{ i18n.t('Password') }}</span>
+            @if (usernameMissing()) {
+              <p class="lg__field-error" id="login-username-error">
+                {{ i18n.t('Enter your username, email or phone number.') }}
+              </p>
+            }
+          </div>
+          <div class="lg__field">
+            <label for="login-password">{{ i18n.t('Password') }}</label>
             <input
               class="ar-field__input"
+              id="login-password"
               type="password"
               name="password"
               autocomplete="current-password"
+              required
+              [attr.aria-invalid]="passwordMissing() ? 'true' : null"
+              [attr.aria-describedby]="passwordMissing() ? 'login-password-error' : null"
               [value]="password()"
               (input)="password.set($any($event.target).value)"
             />
-          </label>
+            @if (passwordMissing()) {
+              <p class="lg__field-error" id="login-password-error">{{ i18n.t('Enter your password.') }}</p>
+            }
+          </div>
           <label class="lg__remember">
             <input
               type="checkbox"
@@ -247,7 +263,7 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
             {{ i18n.t('Keep me signed in') }}
           </label>
 
-          <button ar-button type="submit" variant="primary" [disabled]="busy() || !canSubmit()">
+          <button ar-button type="submit" variant="primary" [disabled]="busy()">
             {{ i18n.t(busy() ? 'Signing in…' : 'Sign in') }}
           </button>
 
@@ -377,11 +393,20 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
       display: block;
       margin-bottom: 14px;
     }
-    .lg__field > span {
+    .lg__field > span,
+    .lg__field > label {
       display: block;
       margin-bottom: 5px;
       font: 500 12.5px var(--ar-font-sans);
       color: var(--ar-ink-700);
+    }
+    .lg__field input[aria-invalid='true'] {
+      border-color: var(--ar-red-600);
+    }
+    .lg__field-error {
+      margin: 5px 0 0;
+      color: var(--ar-red-600);
+      font-size: 12.5px;
     }
     .lg__opt {
       font-style: normal;
@@ -491,6 +516,9 @@ export class ArLogin {
   protected readonly tenant = signal('');
   protected readonly username = signal('');
   protected readonly password = signal('');
+  private readonly submitted = signal(false);
+  protected readonly usernameMissing = computed(() => this.submitted() && !this.username().trim());
+  protected readonly passwordMissing = computed(() => this.submitted() && !this.password());
   protected readonly rememberMe = signal(true);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -598,9 +626,16 @@ export class ArLogin {
       return;
     }
     if (this.step() !== 'password') return;
-    if (!this.canSubmit() || this.busy()) return;
-    this.busy.set(true);
+    if (this.busy()) return;
     this.error.set(null);
+    this.submitted.set(true);
+    if (!this.canSubmit()) {
+      const form = event.currentTarget as HTMLFormElement;
+      const field = form.elements.namedItem(this.usernameMissing() ? 'username' : 'password');
+      if (field instanceof HTMLInputElement) field.focus();
+      return;
+    }
+    this.busy.set(true);
     try {
       await this.account.signIn(
         this.username().trim(),
@@ -694,6 +729,7 @@ export class ArLogin {
   }
 
   protected backToPassword(): void {
+    this.submitted.set(false);
     this.step.set('password');
     this.password.set('');
     this.secondFactor.set('');

@@ -267,7 +267,7 @@ export class ArNewVoiceBatchPage implements OnInit {
     try {
       const res = await firstValueFrom(this.channelsApi.getList({ maxResultCount: 50 }));
       // AI calls go out on Meta's own WhatsApp Cloud API; a number connected through a partner cannot place them.
-      const items = (res?.items || []).filter((c) => c.provider === 0);
+      const items = res?.items ?? [];
       this.channels.set(items);
       if (items.length > 0 && items[0].id && !this.channelId()) {
         this.channelId.set(items[0].id);

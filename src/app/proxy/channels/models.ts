@@ -4,11 +4,8 @@ import type { QualityRating } from './quality-rating.enum';
 import type { MessagingTier } from './messaging-tier.enum';
 import type { ChannelState } from './channel-state.enum';
 import type { OnboardingStep } from './onboarding-step.enum';
-import type { GupshupOnboardingStep } from './gupshup-onboarding-step.enum';
 
 export interface ChannelDto extends AuditedEntityDto<string> {
-  /** MetaDirect = 0, Gupshup = 1. */
-  provider?: number;
   wabaId?: string;
   phoneNumberId?: string;
   businessPortfolioId?: string;
@@ -91,25 +88,6 @@ export interface OnboardingSessionDto extends EntityDto<string> {
   metaAppId?: string | null;
   embeddedSignupConfigurationId?: string | null;
   graphVersion?: string | null;
-}
-
-// ---- Solution Partner onboarding (Gupshup, decision D-01, spec §4.2) ----------
-
-export interface SolutionPartnerOnboardingSessionDto extends EntityDto<string> {
-  channelId?: string | null;
-  completedThrough?: GupshupOnboardingStep;
-  nextStep?: GupshupOnboardingStep;
-  lastError?: string | null;
-  startedAtUtc?: string;
-  completedAtUtc?: string | null;
-  /** The link to send the tenant to. Present once EmbedLinkIssued is reached, and
-   *  re-shown on a resumed session rather than re-issued — it stays valid five days. */
-  embedLink?: string | null;
-}
-
-export interface RegenerateEmbedLinkInput {
-  /** True once the tenant reports the previous link expired or failed. */
-  regenerate: boolean;
 }
 
 export interface RequestDisplayNameChangeInput {

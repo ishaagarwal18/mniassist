@@ -138,10 +138,6 @@ import { ArBrand } from '../../layout/brand';
             <strong>Meta Platforms, Inc.</strong> — WhatsApp Cloud API, Instagram and Messenger
             sends and receives.
           </li>
-          <li>
-            <strong>Gupshup</strong> — an alternative WhatsApp Business Solution Provider route,
-            where a tenant is routed through one instead of connecting directly to Meta.
-          </li>
           <li><strong>MSG91</strong> — SMS delivery.</li>
           <li><strong>Exotel</strong> — voice calling and IVR.</li>
           <li>

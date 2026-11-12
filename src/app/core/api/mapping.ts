@@ -89,7 +89,7 @@ const DECISION_ROLE: Record<
 
 export function toChannel(dto: ChannelDto, health?: ChannelHealthDto): Channel {
   return {
-    supportsVoiceAi: dto.provider === 0,
+    supportsVoiceAi: true,
     id: dto.id!,
     wabaId: dto.wabaId ?? '',
     phoneNumberId: dto.phoneNumberId ?? '',

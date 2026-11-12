@@ -59,7 +59,6 @@ describe('guided WhatsApp connection', () => {
     connectExisting: vi.fn(() => of({ displayPhoneNumber: '+91 79845 77527' })),
     getOrStartOnboarding: vi.fn(() => of(session)),
     completeEmbeddedSignup: vi.fn(() => of({ ...session, completedAtUtc: '2026-10-15' })),
-    getOrStartSolutionPartnerOnboarding: vi.fn(() => of({ id: 'gupshup-session' })),
   };
   const channels = { reload: vi.fn() };
   const toasts = { success: vi.fn(), warning: vi.fn() };
@@ -260,16 +259,5 @@ describe('guided WhatsApp connection', () => {
     resolveLogin({ code: 'unused-code', status: 'connected' });
     await Promise.resolve();
     expect(api.completeEmbeddedSignup).not.toHaveBeenCalled();
-  });
-
-  it('keeps Gupshup available independently of Facebook preparation', async () => {
-    const { fixture, button } = create();
-    await fixture.whenStable();
-    button('Gupshup')!.click();
-    fixture.detectChanges();
-    button('Start setup')!.click();
-    await fixture.whenStable();
-    expect(api.getOrStartSolutionPartnerOnboarding).toHaveBeenCalledOnce();
-    expect(facebook.launch).not.toHaveBeenCalled();
   });
 });

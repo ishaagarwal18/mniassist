@@ -1008,7 +1008,7 @@ export class ArVoiceCallBatches implements OnInit {
   protected async openNew(): Promise<void> {
     try {
       const page = await firstValueFrom(this.channelsApi.getList({ maxResultCount: 50 }));
-      this.channels.set((page.items ?? []).filter((c) => c.provider === 0));
+      this.channels.set(page.items ?? []);
     } catch {
       this.channels.set([]);
     }

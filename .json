@@ -60,10 +60,6 @@
         "UsePreviousValue":  true
     },
     {
-        "ParameterKey":  "GupshupPartnerSecret",
-        "UsePreviousValue":  true
-    },
-    {
         "ParameterKey":  "LogRetentionDays",
         "UsePreviousValue":  true
     },
@@ -156,10 +152,6 @@
         "UsePreviousValue":  true
     },
     {
-        "ParameterKey":  "GupshupPartnerEmail",
-        "UsePreviousValue":  true
-    },
-    {
         "ParameterKey":  "CertificateArn",
         "UsePreviousValue":  true
     },
@@ -185,10 +177,6 @@
     },
     {
         "ParameterKey":  "EmailUnsubscribeSecret",
-        "UsePreviousValue":  true
-    },
-    {
-        "ParameterKey":  "GupshupWebhookSharedSecret",
         "UsePreviousValue":  true
     },
     {

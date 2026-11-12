@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --host 127.0.0.1 --port 4200 --ssl --ssl-cert .angular/localhost-ssl/localhost.pem --ssl-key .angular/localhost-ssl/localhost.key",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "build:prod": "ng build --configuration production",

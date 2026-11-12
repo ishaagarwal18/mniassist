@@ -558,7 +558,7 @@ export class ArVoiceIvr {
       const page = await firstValueFrom(this.channelsApi.getList({ maxResultCount: 100 } as never));
       this.agentNumbers.set(
         (page.items ?? [])
-          .filter((c) => c.provider === 0 && c.id)
+          .filter((c) => c.id)
           .map((c) => ({
             id: c.id!,
             verifiedName: c.verifiedName,

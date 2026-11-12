@@ -11,11 +11,7 @@ import {
 import { firstValueFrom } from 'rxjs';
 import { ChannelService as ChannelApi } from '../../proxy/channels';
 import { OnboardingStep } from '../../proxy/channels/onboarding-step.enum';
-import { GupshupOnboardingStep } from '../../proxy/channels/gupshup-onboarding-step.enum';
-import type {
-  OnboardingSessionDto,
-  SolutionPartnerOnboardingSessionDto,
-} from '../../proxy/channels/models';
+import type { OnboardingSessionDto } from '../../proxy/channels/models';
 import { ArButton } from '../../ui/button';
 import { ArDialog } from '../../ui/dialog';
 import { ArTabs } from '../../ui/tabs';
@@ -39,27 +35,15 @@ const STEP_LABEL: Record<OnboardingStep, string> = {
   [OnboardingStep.StarterTemplatesSubmitted]: 'Submit the starter templates',
 };
 
-const GUPSHUP_STEP_LABEL: Record<GupshupOnboardingStep, string> = {
-  [GupshupOnboardingStep.AppCreated]: 'Create the Gupshup app',
-  [GupshupOnboardingStep.CallbackConfigured]: 'Configure the webhook callback',
-  [GupshupOnboardingStep.EmbedLinkIssued]: 'Get your signup link',
-  [GupshupOnboardingStep.TenantLinked]: 'Complete WhatsApp signup on Gupshup',
-  [GupshupOnboardingStep.AppTokenObtained]: 'Fetch the app access token',
-  [GupshupOnboardingStep.ChannelSeeded]: 'Activate the channel',
-};
-
 const PROVIDER_LABELS: readonly string[] = [
   'WhatsApp with Facebook',
   'Existing Cloud API account',
-  'Gupshup',
 ];
 
 /**
- * The "connect a number" entry point. Two routes onto the same WhatsAppChannel record
- * (spec §4.2, decision D-01): Meta's own embedded signup, or Gupshup as a Solution
- * Partner fallback for a tenant that doesn't want to hold its own Meta business
- * verification. Neither route can complete in one dialog — both hand off to a hosted
- * signup flow and resume from a session record afterward.
+ * The "connect a number" entry point: Meta's embedded signup, or attaching an account that is
+ * already on the Cloud API. Embedded signup cannot complete in one dialog — it hands off to
+ * Facebook's popup and resumes from a session record afterward.
  */
 @Component({
   selector: 'ar-connect-number-dialog',
@@ -119,7 +103,7 @@ const PROVIDER_LABELS: readonly string[] = [
         @if (preparationError(); as error) {
           <p class="cn__err" role="alert">{{ error }}</p>
         }
-      } @else if (provider() === providerTabs[1]) {
+      } @else {
         <p class="cn__p">
           Connect a number that is already registered with Meta Cloud API. Your number and security
           PIN stay unchanged.
@@ -171,30 +155,6 @@ const PROVIDER_LABELS: readonly string[] = [
         @if (existingBusy()) {
           <p class="cn__status" role="status">Validating your account with Meta…</p>
         }
-      } @else {
-        <p class="cn__p">
-          Gupshup is a WhatsApp Business Solution Partner — a route for a tenant who'd rather not
-          hold its own Meta business verification. You'll be sent to a Gupshup-hosted page to
-          complete WhatsApp's signup on our partner account's behalf; the link stays valid for five
-          days.
-        </p>
-
-        @if (gupshupSession(); as s) {
-          <p class="cn__status">
-            Onboarding {{ s.completed ? 'complete' : 'in progress' }} — next:
-            <strong>{{ s.nextLabel }}</strong>
-          </p>
-          @if (s.error) {
-            <p class="cn__err">{{ s.error }}</p>
-          }
-          @if (s.embedLink && !s.completed) {
-            <p class="cn__link">
-              <button ar-button type="button" variant="ghost" (click)="openEmbedLink(s.embedLink)">
-                Open Gupshup signup ↗
-              </button>
-            </p>
-          }
-        }
       }
 
       <div dialogActions>
@@ -244,7 +204,7 @@ const PROVIDER_LABELS: readonly string[] = [
               {{ metaBusy() ? 'Preparing Facebook…' : 'Try again' }}
             </button>
           }
-        } @else if (provider() === providerTabs[1]) {
+        } @else {
           <button
             ar-button
             type="button"
@@ -253,35 +213,6 @@ const PROVIDER_LABELS: readonly string[] = [
             (click)="connectExisting()"
           >
             {{ existingBusy() ? 'Connecting…' : 'Connect existing number' }}
-          </button>
-        } @else if (gupshupSession() && !gupshupSession()!.completed) {
-          <button
-            ar-button
-            type="button"
-            variant="ghost"
-            [disabled]="gupshupBusy()"
-            (click)="regenerateGupshupLink()"
-          >
-            Link expired — get a new one
-          </button>
-          <button
-            ar-button
-            type="button"
-            variant="primary"
-            [disabled]="gupshupBusy()"
-            (click)="checkGupshupStatus()"
-          >
-            {{ gupshupBusy() ? 'Checking…' : "I've finished on Gupshup — check status" }}
-          </button>
-        } @else {
-          <button
-            ar-button
-            type="button"
-            variant="primary"
-            [disabled]="gupshupBusy()"
-            (click)="startGupshup()"
-          >
-            {{ gupshupBusy() ? 'Starting…' : gupshupSession() ? 'Resume setup' : 'Start setup' }}
           </button>
         }
       </div>
@@ -311,9 +242,6 @@ const PROVIDER_LABELS: readonly string[] = [
       margin: 6px 0 0;
       font: 400 12px var(--ar-font-sans);
       color: var(--ar-warn-600);
-    }
-    .cn__link {
-      margin: 10px 0 0;
     }
     .cn__field {
       display: grid;
@@ -619,67 +547,4 @@ export class ArConnectNumberDialog implements OnInit {
     else this.toasts.warning(message ?? fallback, 'Connect a number');
   }
 
-  // ---- Gupshup Solution Partner onboarding ---------------------------------
-
-  protected readonly gupshupBusy = signal(false);
-  protected readonly gupshupSession = signal<{
-    id: string;
-    completed: boolean;
-    nextLabel: string;
-    embedLink?: string | null;
-    error?: string;
-  } | null>(null);
-
-  protected async startGupshup(): Promise<void> {
-    this.gupshupBusy.set(true);
-    try {
-      const dto = await firstValueFrom(this.api.getOrStartSolutionPartnerOnboarding());
-      this.applyGupshupSession(dto);
-    } finally {
-      this.gupshupBusy.set(false);
-    }
-  }
-
-  protected openEmbedLink(link: string): void {
-    window.open(link, '_blank', 'noopener,noreferrer,width=600,height=760');
-  }
-
-  protected async checkGupshupStatus(): Promise<void> {
-    const session = this.gupshupSession();
-    if (!session) return;
-
-    this.gupshupBusy.set(true);
-    try {
-      const dto = await firstValueFrom(this.api.completeSolutionPartnerOnboarding(session.id));
-      this.applyGupshupSession(dto);
-    } finally {
-      this.gupshupBusy.set(false);
-    }
-  }
-
-  protected async regenerateGupshupLink(): Promise<void> {
-    const session = this.gupshupSession();
-    if (!session) return;
-
-    this.gupshupBusy.set(true);
-    try {
-      const dto = await firstValueFrom(
-        this.api.regenerateSolutionPartnerEmbedLink(session.id, { regenerate: true }),
-      );
-      this.applyGupshupSession(dto);
-    } finally {
-      this.gupshupBusy.set(false);
-    }
-  }
-
-  private applyGupshupSession(dto: SolutionPartnerOnboardingSessionDto): void {
-    if (!dto.id) return;
-    this.gupshupSession.set({
-      id: dto.id,
-      completed: dto.completedAtUtc != null,
-      nextLabel: dto.nextStep != null ? GUPSHUP_STEP_LABEL[dto.nextStep] : '—',
-      embedLink: dto.embedLink,
-      error: dto.lastError ?? undefined,
-    });
-  }
 }
