@@ -282,13 +282,23 @@
     background var(--ar-ease),
     color var(--ar-ease);
 }
-.sb__item:hover {
-  background: var(--ar-nav-hi);
-  color: var(--sb-strong);
-}
 .sb__item:focus-visible {
   outline: 2px solid var(--ar-blue-500);
   outline-offset: -2px;
+}
+.sb__tooltip {
+  position: fixed;
+  inset: auto;
+  transform: translateY(-50%);
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid #385678;
+  border-radius: var(--ar-radius-control);
+  background: #132c47;
+  color: #f8fafc;
+  box-shadow: 0 4px 14px #0004;
+  font: 550 12px/1.4 var(--ar-font-sans);
+  pointer-events: none;
 }
 .sb__bar {
   position: absolute;
@@ -334,6 +344,19 @@
 .sb__item--ai.sb__item--on .sb__bar {
   background: var(--ar-ai-500);
 }
+.sb__item:is(:hover, :focus-visible) {
+  background: #1b3556;
+  color: #f8fafc;
+}
+.sb__item:is(:hover, :focus-visible) ar-icon {
+  color: #9ac8ff;
+}
+.sb__item--ai:is(:hover, :focus-visible) {
+  background: #133b40;
+}
+.sb__item--ai:is(:hover, :focus-visible) ar-icon {
+  color: #7ce8db;
+}
 .sb__badge {
   flex: none;
   min-width: 20px;
@@ -358,8 +381,8 @@
 .sb__row {
   position: relative;
 }
-.sb__row:hover .sb__item,
-.sb__row:focus-within .sb__item {
+:host(:not(.sb--collapsed)) .sb__row:hover .sb__item,
+:host(:not(.sb--collapsed)) .sb__row:focus-within .sb__item {
   padding-right: 32px;
 }
 .sb__star {

@@ -61,7 +61,7 @@ export const NAV: readonly NavGroup[] = [
     items: [
       {
         label: 'Get started',
-        icon: 'check',
+        icon: 'getting-started',
         route: '/getting-started',
         //tenantOnly: true,
         untilSetupComplete: true,
@@ -99,14 +99,14 @@ export const NAV: readonly NavGroup[] = [
     items: [
       {
         label: 'Customer 360',
-        icon: 'contacts',
+        icon: 'customer-360',
         route: '/contacts/360',
         permission: 'AutoReach.Customer360',
         //tenantOnly: true,
       },
       {
         label: 'Accounts',
-        icon: 'contacts',
+        icon: 'accounts',
         route: '/contacts/accounts',
         permission: 'AutoReach.Contacts',
         //tenantOnly: true,
@@ -120,14 +120,14 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Account health',
-        icon: 'analytics',
+        icon: 'account-health',
         route: '/account-health',
         permission: 'AutoReach.Contacts',
         // tenantOnly: true,
       },
       {
         label: 'Duplicates',
-        icon: 'contacts',
+        icon: 'copy',
         route: '/contacts/duplicates',
         permission: 'AutoReach.Contacts.Merge',
         //tenantOnly: true,
@@ -213,7 +213,7 @@ export const NAV: readonly NavGroup[] = [
     items: [
       {
         label: 'Vendor 360',
-        icon: 'contacts',
+        icon: 'vendor-360',
         route: '/purchasing/vendor-360',
         feature: 'SalesAndPurchasing',
         permission: 'AutoReach.Vendor360',
@@ -229,7 +229,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Goods receipt (GRN)',
-        icon: 'machine',
+        icon: 'goods-receipt',
         route: '/purchasing/grn',
         feature: 'SalesAndPurchasing',
         permission: 'AutoReach.GoodsReceiptNotes',
@@ -245,7 +245,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Debit notes',
-        icon: 'document',
+        icon: 'debit-note',
         route: '/purchasing/debit-notes',
         feature: 'SalesAndPurchasing',
         permission: 'AutoReach.VendorDebitNotes',
@@ -253,7 +253,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Stock',
-        icon: 'machine',
+        icon: 'stock',
         route: '/stock',
         permission: 'AutoReach.Inventory',
         feature: 'ErpSync',
@@ -261,7 +261,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Stock planning',
-        icon: 'analytics',
+        icon: 'stock-planning',
         route: '/stock/planning',
         permission: 'AutoReach.Inventory',
         feature: 'ErpSync',
@@ -291,14 +291,14 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Projects',
-        icon: 'tower',
+        icon: 'projects',
         route: '/projects',
         permission: 'AutoReach.Projects',
         feature: 'PipelineCrm',
       },
       {
         label: 'Forecast',
-        icon: 'analytics',
+        icon: 'forecast',
         route: '/forecast',
         permission: 'AutoReach.Pipeline',
         feature: 'PipelineCrm',
@@ -306,7 +306,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Projection plan',
-        icon: 'analytics',
+        icon: 'projection-plan',
         route: '/pipeline/projection-plan',
         permission: 'AutoReach.ProjectionPlans',
         feature: 'PipelineCrm',
@@ -328,7 +328,7 @@ export const NAV: readonly NavGroup[] = [
     items: [
       {
         label: 'Sales orders',
-        icon: 'document',
+        icon: 'sales-orders',
         route: '/sales/orders',
         feature: 'SalesAndPurchasing',
         permission: 'AutoReach.SalesOrders',
@@ -336,7 +336,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Delivery challans',
-        icon: 'machine',
+        icon: 'delivery-challans',
         route: '/sales/challans',
         feature: 'SalesAndPurchasing',
         permission: 'AutoReach.DeliveryChallans',
@@ -344,7 +344,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Sales invoices',
-        icon: 'billing',
+        icon: 'sales-invoices',
         route: '/sales/invoices',
         feature: 'SalesAndPurchasing',
         permission: 'AutoReach.SalesInvoices',
@@ -359,7 +359,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Retention',
-        icon: 'shield',
+        icon: 'retention',
         route: '/billing/retention',
         feature: 'ProjectBilling',
         permission: 'AutoReach.ProjectBilling.Invoice',
@@ -374,7 +374,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Re-orders',
-        icon: 'send',
+        icon: 'reorders',
         route: '/reorders',
         permission: 'AutoReach.ReorderPortal',
         feature: 'ReorderPortal',
@@ -382,7 +382,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Collections',
-        icon: 'billing',
+        icon: 'collections',
         route: '/collections',
         permission: 'AutoReach.Collections',
         feature: 'Payments',
@@ -395,21 +395,21 @@ export const NAV: readonly NavGroup[] = [
     items: [
       {
         label: 'Deal registrations',
-        icon: 'shield',
+        icon: 'deal-registrations',
         route: '/oem/registrations',
         permission: 'AutoReach.Spa',
         feature: 'OemPricing',
       },
       {
         label: 'Special prices',
-        icon: 'billing',
+        icon: 'special-prices',
         route: '/oem/spa',
         permission: 'AutoReach.Spa',
         feature: 'OemPricing',
       },
       {
         label: 'OEM claims',
-        icon: 'analytics',
+        icon: 'oem-claims',
         route: '/oem/claims',
         permission: 'AutoReach.Spa.Claims',
         feature: 'OemPricing',
@@ -445,7 +445,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'WhatsApp calls',
-        icon: 'phone',
+        icon: 'whatsapp-calls',
         route: '/calls/whatsapp',
         permission: 'AutoReach.Inbox',
         feature: 'Voice',
@@ -453,7 +453,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'AI voice agents',
-        icon: 'phone',
+        icon: 'ai-agents',
         route: '/calls/ai-agents',
         permission: 'AutoReach.Channels.Manage',
         feature: 'Voice',
@@ -461,7 +461,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'AI call batches',
-        icon: 'phone',
+        icon: 'ai-batches',
         route: '/calls/ai-batches',
         permission: 'AutoReach.Campaigns',
         feature: 'Voice',
@@ -501,7 +501,7 @@ export const NAV: readonly NavGroup[] = [
     items: [
       {
         label: 'Helpdesk',
-        icon: 'help',
+        icon: 'helpdesk',
         route: '/helpdesk',
         permission: 'AutoReach.Helpdesk',
         feature: 'Helpdesk',
@@ -509,7 +509,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Field tickets',
-        icon: 'help',
+        icon: 'field-tickets',
         route: '/field-service/tickets',
         feature: 'FieldService',
         permission: 'AutoReach.ServiceTickets',
@@ -517,7 +517,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Field app',
-        icon: 'phone',
+        icon: 'field-app',
         route: '/field',
         permission: 'AutoReach.Helpdesk.Update',
         feature: 'Helpdesk',
@@ -525,7 +525,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'AMC contracts',
-        icon: 'clock',
+        icon: 'amc-contracts',
         route: '/field-service/amc',
         feature: 'FieldService',
         permission: 'AutoReach.AmcContracts',
@@ -533,7 +533,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'AMC renewals',
-        icon: 'refresh',
+        icon: 'amc-renewals',
         route: '/renewals',
         permission: 'AutoReach.Renewals',
         feature: 'RenewalDesk',
@@ -541,7 +541,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Installed base',
-        icon: 'machine',
+        icon: 'installed-base',
         route: '/installed-base',
         permission: 'AutoReach.InstalledBase',
         feature: 'PipelineCrm',
@@ -549,7 +549,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Obsolescence radar',
-        icon: 'machine',
+        icon: 'obsolescence-radar',
         route: '/obsolescence',
         permission: 'AutoReach.Obsolescence',
         feature: 'PipelineCrm',
@@ -557,7 +557,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Spares due',
-        icon: 'machine',
+        icon: 'spares-due',
         route: '/spares',
         permission: 'AutoReach.InstalledBase',
         feature: 'PipelineCrm',
@@ -565,7 +565,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Remote maintenance',
-        icon: 'sparkle',
+        icon: 'remote-maintenance',
         route: '/field-service/remote-maintenance',
         feature: 'FieldService',
         permission: 'AutoReach.RemoteMaintenance',
@@ -579,7 +579,7 @@ export const NAV: readonly NavGroup[] = [
     items: [
       {
         label: 'Bill of materials',
-        icon: 'document',
+        icon: 'bill-of-materials',
         route: '/manufacturing/bom',
         feature: 'Manufacturing',
         permission: 'AutoReach.BillOfMaterials',
@@ -587,7 +587,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Work orders',
-        icon: 'machine',
+        icon: 'work-orders',
         route: '/manufacturing/work-orders',
         feature: 'Manufacturing',
         permission: 'AutoReach.WorkOrders',
@@ -600,7 +600,7 @@ export const NAV: readonly NavGroup[] = [
     items: [
       {
         label: 'Chart of accounts',
-        icon: 'document',
+        icon: 'chart-of-accounts',
         route: '/finance/chart-of-accounts',
         feature: 'Finance',
         permission: 'AutoReach.ChartOfAccounts',
@@ -608,7 +608,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Journal vouchers',
-        icon: 'billing',
+        icon: 'journal-entries',
         route: '/finance/journal-entries',
         feature: 'Finance',
         permission: 'AutoReach.JournalEntries',
@@ -616,7 +616,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Financial statements',
-        icon: 'analytics',
+        icon: 'financial-statements',
         route: '/finance/statements',
         feature: 'Finance',
         permission: 'AutoReach.FinancialStatements',
@@ -624,7 +624,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'GST compliance',
-        icon: 'check',
+        icon: 'gst-compliance',
         route: '/finance/gst-compliance',
         feature: 'Finance',
         permission: 'AutoReach.GstCompliance',
@@ -637,7 +637,7 @@ export const NAV: readonly NavGroup[] = [
     items: [
       {
         label: 'Products',
-        icon: 'machine',
+        icon: 'products',
         route: '/documents/products',
         permission: 'AutoReach.Library',
         feature: 'DocumentLibrary',
@@ -654,14 +654,14 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Fault codes',
-        icon: 'alert',
+        icon: 'fault-codes',
         route: '/documents/fault-codes',
         permission: 'AutoReach.FaultCodes',
         feature: 'DocumentLibrary',
       },
       {
         label: 'Price lists',
-        icon: 'billing',
+        icon: 'price-lists',
         route: '/documents/price-lists',
         permission: 'AutoReach.Library',
         feature: 'DocumentLibrary',
@@ -669,7 +669,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Catalogue',
-        icon: 'template',
+        icon: 'catalogue',
         route: '/channels/catalogue',
         permission: 'AutoReach.Channels',
         feature: 'DocumentLibrary',
@@ -677,7 +677,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Documents',
-        icon: 'document',
+        icon: 'documents',
         route: '/documents',
         permission: 'AutoReach.Library',
         feature: 'DocumentLibrary',
@@ -690,7 +690,7 @@ export const NAV: readonly NavGroup[] = [
     items: [
       {
         label: 'Dealer network',
-        icon: 'tower',
+        icon: 'dealer-network',
         route: '/network',
         permission: 'AutoReach.Network',
         feature: 'OemNetwork',
@@ -698,7 +698,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Reseller programme',
-        icon: 'globe',
+        icon: 'reseller-programme',
         route: '/resellers',
         feature: 'Partners',
         permission: 'AutoReach.Resellers',
@@ -720,7 +720,7 @@ export const NAV: readonly NavGroup[] = [
     items: [
       {
         label: 'All reports',
-        icon: 'document',
+        icon: 'all-reports',
         route: '/reports',
         permission:
           'AutoReach.Analytics || AutoReach.Inventory || AutoReach.Payments || AutoReach.Pipeline',
@@ -728,7 +728,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Analytics',
-        icon: 'analytics',
+        icon: 'analytics-overview',
         route: '/analytics',
         permission: 'AutoReach.Analytics',
         feature: 'FullAnalytics',
@@ -762,7 +762,7 @@ export const NAV: readonly NavGroup[] = [
       },
       {
         label: 'Custom dashboards',
-        icon: 'analytics',
+        icon: 'custom-dashboards',
         route: '/analytics/dashboards',
         permission: 'AutoReach.Analytics',
         feature: 'FullAnalytics',
@@ -890,7 +890,7 @@ export const NAV: readonly NavGroup[] = [
   {
     heading: 'Settings',
     items: [
-      { label: 'Settings', icon: 'settings', route: '/settings' },
+      { label: 'Settings', icon: 'settings-menu', route: '/settings' },
       {
         label: 'Business profile',
         icon: 'document',
@@ -994,7 +994,7 @@ export const NAV: readonly NavGroup[] = [
     items: [
       {
         label: 'Console',
-        icon: 'globe',
+        icon: 'platform-console',
         route: '/platform',
         permission: 'AutoReach.Administration.ViewPlatformMetrics',
         hostOnly: true,
@@ -1002,42 +1002,42 @@ export const NAV: readonly NavGroup[] = [
       // Daily work for the platform team, so it stays in the menu (Administration is set-up only).
       {
         label: 'Workspaces',
-        icon: 'globe',
+        icon: 'workspaces',
         route: '/admin/tenants',
         permission: 'AbpTenantManagement.Tenants',
         hostOnly: true,
       },
       {
         label: 'Feature flags',
-        icon: 'settings',
+        icon: 'feature-flags',
         route: '/platform/feature-flags',
         permission: 'AutoReach.Administration.ManageTenants',
         hostOnly: true,
       },
       {
         label: 'AI providers',
-        icon: 'settings',
+        icon: 'ai-providers',
         route: '/platform/ai-providers',
         permission: 'AutoReach.Administration.ManageTenants',
         hostOnly: true,
       },
       {
         label: 'Payment gateways',
-        icon: 'billing',
+        icon: 'payment-gateways',
         route: '/platform/payment-gateways',
         permission: 'AutoReach.Administration.ManageTenants',
         hostOnly: true,
       },
       {
         label: 'Phone numbers',
-        icon: 'phone',
+        icon: 'phone-numbers',
         route: '/platform/phone-numbers',
         permission: 'AutoReach.Administration.ManageTenants',
         hostOnly: true,
       },
       {
         label: 'Status page',
-        icon: 'shield',
+        icon: 'status-page',
         route: '/platform/status',
         permission: 'AutoReach.Administration.ManageTenants',
         hostOnly: true,

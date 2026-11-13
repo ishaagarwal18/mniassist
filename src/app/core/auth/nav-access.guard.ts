@@ -12,6 +12,7 @@ const NAV_ITEMS: readonly NavItem[] = NAV.flatMap((g) => g.items);
 
 // These pages open an action directly and require its grant in addition to module access.
 const ACTION_PERMISSIONS: Readonly<Record<string, string>> = {
+  '/meetings/new': 'AutoReach.Activities.Create',
   '/contacts/new': 'AutoReach.Contacts.Create',
   '/contacts/:id/edit': 'AutoReach.Contacts.Update',
   '/contacts/accounts/new': 'AutoReach.Contacts.Create',

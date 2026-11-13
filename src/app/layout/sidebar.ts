@@ -142,7 +142,7 @@ function readCollapsed(): boolean {
       </div>
     </div>
 
-    <nav class="sb__nav" aria-label="Main">
+    <nav class="sb__nav" aria-label="Main" (scroll)="hideMenuTooltip()">
       @for (group of shown(); track group.heading) {
         <div
           class="sb__group"
@@ -192,8 +192,13 @@ function readCollapsed(): boolean {
                     [class.sb__item--on]="item.route === active()"
                     [attr.aria-current]="item.route === active() ? 'page' : null"
                     [routerLink]="item.route"
-                    [attr.title]="collapsed() ? i18n.t(item.label) : null"
-                    (click)="clearSearch(); drawer.close()"
+                    [attr.aria-label]="collapsed() ? i18n.t(item.label) : null"
+                    (mouseenter)="showMenuTooltip($event, item.label)"
+                    (mouseleave)="hideMenuTooltip()"
+                    (focus)="showMenuTooltip($event, item.label)"
+                    (blur)="hideMenuTooltip()"
+                    (keydown.escape)="hideMenuTooltip()"
+                    (click)="hideMenuTooltip(); clearSearch(); drawer.close()"
                   >
                     <span class="sb__bar" aria-hidden="true"></span>
                     <ar-icon [name]="item.icon" [size]="16" />
@@ -233,6 +238,7 @@ function readCollapsed(): boolean {
         <p class="sb__none">{{ i18n.t('No menu items match “{0}”.', menuQuery().trim()) }}</p>
       }
     </nav>
+    <div #menuTooltip class="sb__tooltip" popover="manual" aria-hidden="true"></div>
 
     <div class="sb__foot">
       @if (menuOpen()) {
@@ -352,8 +358,26 @@ export class ArSidebar {
 
   /** Icons-only mode, remembered per browser and shared with topbar breadcrumbs. */
   protected readonly collapsed = this.drawer.collapsed;
+  private readonly menuTooltip = viewChild<ElementRef<HTMLElement>>('menuTooltip');
+
+  protected showMenuTooltip(event: Event, label: string): void {
+    const tooltip = this.menuTooltip()?.nativeElement;
+    const anchor = event.currentTarget;
+    if (!this.collapsed() || !tooltip || !(anchor instanceof HTMLElement)) return;
+
+    const bounds = anchor.getBoundingClientRect();
+    tooltip.textContent = this.i18n.t(label);
+    tooltip.style.left = `${bounds.right + 10}px`;
+    tooltip.style.top = `${bounds.top + bounds.height / 2}px`;
+    tooltip.showPopover();
+  }
+
+  protected hideMenuTooltip(): void {
+    this.menuTooltip()?.nativeElement.hidePopover();
+  }
 
   protected toggleCollapsed(): void {
+    this.hideMenuTooltip();
     this.drawer.toggleCollapsed();
   }
 

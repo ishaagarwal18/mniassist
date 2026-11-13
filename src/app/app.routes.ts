@@ -33,7 +33,7 @@ const loginPage: Route = {
  *  only things in the initial bundle. */
 export const routes: Routes = [
   ...(!environment.production
-    ? [{ path: '', pathMatch: 'full' as const, redirectTo: 'account/login' }]
+    ? [{ path: '', pathMatch: 'full' as const, redirectTo: 'welcome' }]
     : []),
   {
     // The public front page: what AutoReach is and what it costs. No login, no app shell.
@@ -1217,6 +1217,9 @@ export const routes: Routes = [
         title: 'Meetings · MNI Assist',
         loadComponent: () => import('./features/activities/meetings').then((m) => m.ArMeetings),
       },
+      formPage('meetings/new', 'Schedule meeting', 'new', () =>
+        import('./features/activities/schedule-meeting-page').then((m) => m.ArScheduleMeetingPage),
+      ),
       {
         path: 'documents',
         title: 'Documents · MNI Assist',

@@ -172,7 +172,7 @@ const REMINDERS: { label: string; minutes: number }[] = [
           (input)="where.set($any($event.target).value)"
         />
         <div class="mt__direct-create">
-          <span class="mt__direct-title">Create directly in:</span>
+          <span class="mt__direct-title">Schedule with a video provider</span>
           <div class="mt__direct-buttons">
             <button
               ar-button
@@ -205,6 +205,9 @@ const REMINDERS: { label: string; minutes: number }[] = [
               Zoom
             </button>
           </div>
+          <p class="mt__note">
+            Finish scheduling in the provider tab, then paste the join link above before saving.
+          </p>
         </div>
       </label>
 
@@ -518,9 +521,6 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
   protected createInTeams(): void {
     const url = this.teamsLink();
     window.open(url, '_blank', 'noopener');
-    if (!this.where()) {
-      this.where.set('Microsoft Teams');
-    }
   }
 
   protected createInGoogle(): void {
@@ -534,16 +534,10 @@ export class ArMeetingDialog implements OnInit, OnDestroy {
       location: this.where(),
     });
     window.open(url, '_blank', 'noopener');
-    if (!this.where()) {
-      this.where.set('Google Meet');
-    }
   }
 
   protected createInZoom(): void {
     window.open(this.zoomNew, '_blank', 'noopener');
-    if (!this.where()) {
-      this.where.set('Zoom Meeting');
-    }
   }
 
   private readonly api = inject(ActivityGateway).meetings;

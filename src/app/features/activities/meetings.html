@@ -21,16 +21,15 @@
     Import iCal
   </button>
   @if (directory.canCreate) {
-    <button ar-button type="button" variant="primary" icon="plus" (click)="creating.set(true)">
+    <a ar-button variant="primary" icon="plus" routerLink="/meetings/new">
       Schedule
-    </button>
+    </a>
   }
 </ar-topbar>
 
-@if (creating() || editing()) {
+@if (editing(); as meeting) {
   <ar-meeting-dialog
-    [meeting]="editing()"
-    [startPreset]="presetStart()"
+    [meeting]="meeting"
     (saved)="closeEditor(true)"
     (closed)="closeEditor(false)"
   />

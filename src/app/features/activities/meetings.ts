@@ -32,7 +32,7 @@ import {
   MeetingKind,
   MeetingStatus,
 } from '../../proxy/activities';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ArButton, ArChip, ArDraggable } from '../../ui';
 import { ToastService } from '../../core/ui/toast.service';
 import {
@@ -150,8 +150,7 @@ export class ArMeetings {
   });
 
   // ---- dialogs ----------------------------------------------------------------------
-  protected readonly creating = signal(false);
-  protected readonly presetStart = signal<Date | null>(null);
+  private readonly router = inject(Router);
   protected readonly editing = signal<MeetingDto | null>(null);
   protected readonly detail = signal<MeetingDto | null>(null);
   protected readonly outcomeOpen = signal(false);
@@ -224,6 +223,7 @@ export class ArMeetings {
   /** A click on an empty slot schedules a meeting then, unless that time has gone. */
   protected onCellClick(args: CellClickEventArgs): void {
     args.cancel = true;
+    if (!this.directory.canCreate) return;
     const at = args.isAllDay
       ? new Date(
           args.startTime.getFullYear(),
@@ -233,8 +233,9 @@ export class ArMeetings {
           0,
         )
       : args.startTime;
-    this.presetStart.set(at.getTime() < Date.now() ? null : at);
-    this.creating.set(true);
+    void this.router.navigate(['/meetings/new'], {
+      queryParams: { start: at.getTime() >= Date.now() ? at.toISOString() : null },
+    });
   }
 
   protected onEventRendered(args: EventRenderedArgs): void {
@@ -423,9 +424,7 @@ export class ArMeetings {
   }
 
   protected closeEditor(changed: boolean): void {
-    this.creating.set(false);
     this.editing.set(null);
-    this.presetStart.set(null);
     if (changed) {
       this.detail.set(null);
       this.reload();
