@@ -1,7 +1,9 @@
 import {
   ApplicationConfig,
   ErrorHandler,
+  inject,
   isDevMode,
+  provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
@@ -11,6 +13,7 @@ import { DISABLE_PROJECT_NAME, PermissionService, provideAbpCore, withOptions } 
 import { provideAbpOAuth } from '@abp/ng.oauth';
 
 import { routes } from './app.routes';
+import { HostBrandStore } from './core/services/host-brand.store';
 import { environment } from '../environments/environment';
 import { AgencyActingInterceptor } from './core/http/agency-acting.interceptor';
 import { ApiFeedbackInterceptor } from './core/http/api-feedback.interceptor';
@@ -38,6 +41,13 @@ class DevRebundleErrorHandler extends ErrorHandler {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    // On a reseller's domain, show their brand from the first screen; never hold the app up for long.
+    provideAppInitializer(() =>
+      Promise.race([
+        inject(HostBrandStore).load(),
+        new Promise<void>((done) => setTimeout(done, 2500)),
+      ]),
+    ),
     provideRouter(
       routes,
       withPreloading(IdlePreloading),

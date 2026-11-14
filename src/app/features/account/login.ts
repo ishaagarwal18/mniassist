@@ -20,6 +20,7 @@ import { ArLanguageSwitch } from '../../layout/language-switch';
 import { LanguageService } from '../../core/i18n/language.service';
 import { ArAuthShowcase } from './auth-showcase';
 import { ArBrand } from '../../layout/brand';
+import { HostBrandStore } from '../../core/services/host-brand.store';
 import { workspaceSlug } from '../../core/util/workspace-slug';
 
 /**
@@ -251,7 +252,9 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
               (input)="password.set($any($event.target).value)"
             />
             @if (passwordMissing()) {
-              <p class="lg__field-error" id="login-password-error">{{ i18n.t('Enter your password.') }}</p>
+              <p class="lg__field-error" id="login-password-error">
+                {{ i18n.t('Enter your password.') }}
+              </p>
             }
           </div>
           <label class="lg__remember">
@@ -289,10 +292,16 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
           <a class="lg__link lg__link--forgot" routerLink="/forgot-password">{{
             i18n.t('Forgot password?')
           }}</a>
-          <p class="lg__new">
-            {{ i18n.t('New to MNI Assist?') }}
-            <a class="lg__link" routerLink="/signup">{{ i18n.t('Create a workspace') }}</a>
-          </p>
+          @if (!hostBrand.hidePlatform()) {
+            <p class="lg__new">
+              @if (hostBrand.isReseller()) {
+                <a class="lg__link" routerLink="/signup">{{ i18n.t('Create a workspace') }}</a>
+              } @else {
+                {{ i18n.t('New to MNI Assist?') }}
+                <a class="lg__link" routerLink="/signup">{{ i18n.t('Create a workspace') }}</a>
+              }
+            </p>
+          }
         }
       </form>
       <ul class="lg__trust" aria-label="Security">
@@ -301,8 +310,20 @@ import { workspaceSlug } from '../../core/util/workspace-slug';
         <li><ar-icon name="user" [size]="14" /> {{ i18n.t('Role-based access') }}</li>
       </ul>
       <p class="lg__foot">
-        MNI Assist — AI Business Engagement Platform for Industrial Companies ·
-        <a routerLink="/privacy" class="lg__foot-link">{{ i18n.t('Privacy policy') }}</a> ·
+        @if (hostBrand.isReseller()) {
+          <span translate="no">{{ hostBrand.name() }}</span> ·
+          @if (hostBrand.privacyUrl(); as privacy) {
+            <a [href]="privacy" rel="noopener" target="_blank" class="lg__foot-link">{{
+              i18n.t('Privacy policy')
+            }}</a>
+          } @else {
+            <a routerLink="/privacy" class="lg__foot-link">{{ i18n.t('Privacy policy') }}</a>
+          }
+          ·
+        } @else {
+          MNI Assist — AI Business Engagement Platform for Industrial Companies ·
+          <a routerLink="/privacy" class="lg__foot-link">{{ i18n.t('Privacy policy') }}</a> ·
+        }
         <a routerLink="/status" class="lg__foot-link">{{ i18n.t('System status') }}</a>
       </p>
     </div>
@@ -557,6 +578,7 @@ export class ArLogin {
   // (unknown workspace, network hiccup) just leaves AutoReach's own defaults in
   // place rather than surfacing an error on a field that isn't required yet.
   protected readonly workspaceLogo = signal<string | null>(null);
+  protected readonly hostBrand = inject(HostBrandStore);
   protected readonly workspacePrimaryColor = signal<string | null>(null);
   private lastPreviewedWorkspace = '';
 

@@ -6,6 +6,7 @@ import {
   TenantBrandingDto,
   UpdateTenantBrandingInput,
 } from '../../proxy/branding';
+import { HostBrandStore } from './host-brand.store';
 
 /**
  * Tenant identity: a logo and two accent colours, applied to the app shell as CSS
@@ -36,8 +37,11 @@ export class BrandingStore {
   });
 
   readonly tenantName = computed(() => this.branding()?.tenantName ?? null);
-  readonly primaryColor = computed(() => this.branding()?.primaryColor ?? null);
-  readonly accentColor = computed(() => this.branding()?.accentColor ?? null);
+  private readonly host = inject(HostBrandStore);
+
+  /** The workspace's colours, else the reseller's on a reseller domain, else none (the platform's own). */
+  readonly primaryColor = computed(() => this.branding()?.primaryColor ?? this.host.primaryColor());
+  readonly accentColor = computed(() => this.branding()?.accentColor ?? this.host.secondaryColor());
   readonly logoDataUrl = computed(() => this.branding()?.logoDataUrl ?? null);
   readonly hasLogo = computed(() => this.branding()?.hasLogo ?? false);
 

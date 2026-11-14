@@ -109,8 +109,7 @@ export interface ConfigureCustomDomainInput {
   customDomain: string;
 }
 
-export interface VerifyCustomDomainInput {
-}
+export interface VerifyCustomDomainInput {}
 
 export interface ResellerClientTenantDto extends FullAuditedEntityDto<string> {
   id: string;
@@ -204,3 +203,19 @@ export interface ResellerDashboardDto {
 }
 
 export type ResellerPageRequest = PagedAndSortedResultRequestDto;
+
+/** A reseller's public branding, looked up by the host the app is served on. Empty brand name: not a reseller domain. */
+export interface PublicWhiteLabelBrandingDto {
+  brandName: string;
+  logoUrlLight?: string;
+  logoUrlDark?: string;
+  faviconUrl?: string;
+  primaryColorHex: string;
+  secondaryColorHex: string;
+  supportEmail?: string;
+  helpDeskUrl?: string;
+  termsUrl?: string;
+  privacyPolicyUrl?: string;
+  hidePlatformBranding: boolean;
+  customCss?: string;
+}

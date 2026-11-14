@@ -95,3 +95,18 @@ export enum GstCancelReason {
   OrderCancelled = 3,
   Other = 4,
 }
+
+export enum Gstr2bDocumentType {
+  Invoice = 0,
+  CreditNote = 1,
+  DebitNote = 2,
+  Import = 3,
+}
+
+/** How a GSTR-2B line compares with the bills in the books. */
+export enum Gstr2bLineMatch {
+  Matched = 0,
+  TaxMismatch = 1,
+  NotInBooks = 2,
+  NotMatched = 3,
+}

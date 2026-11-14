@@ -7,6 +7,7 @@ import type {
   CreateResellerPartnerInput,
   ProcessPayoutInput,
   ProvisionClientTenantInput,
+  PublicWhiteLabelBrandingDto,
   RecordCommissionInput,
   RejectPayoutInput,
   RequestPayoutInput,
@@ -141,6 +142,27 @@ export class ResellerService {
         method: 'POST',
         url: `/api/auto-reach/reseller/verify-custom-domain/${partnerId}`,
         body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Takes the custom domain off and releases it, so it stops being served. */
+  removeCustomDomain = (partnerId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<void, ResellerWhiteLabelProfileDto>(
+      {
+        method: 'DELETE',
+        url: `/api/auto-reach/reseller/custom-domain/${partnerId}`,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** Anonymous: the branding of the reseller whose domain this is, or the platform's defaults. */
+  getPublicBrandingByDomain = (hostName: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<void, PublicWhiteLabelBrandingDto>(
+      {
+        method: 'GET',
+        url: '/api/auto-reach/reseller/public-branding-by-domain',
+        params: { hostName },
       },
       { apiName: this.apiName, ...config },
     );

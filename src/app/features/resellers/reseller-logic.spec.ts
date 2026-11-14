@@ -46,6 +46,10 @@ describe('reseller logic', () => {
     expect(isValidDomain('portal.brandpulse.net')).toBe(true);
     expect(isValidDomain('https://brandpulse.net')).toBe(false);
     expect(isValidDomain('localhost')).toBe(false);
+    // A CNAME cannot sit on a bare domain, so it takes a sub-domain.
+    expect(isValidDomain('brandpulse.net')).toBe(false);
+    expect(isValidDomain('app.brandpulse.co.in')).toBe(true);
+    expect(isValidDomain('-bad.brandpulse.net')).toBe(false);
     expect(isHexColour('#10B981')).toBe(true);
     expect(isHexColour('10B981')).toBe(false);
   });

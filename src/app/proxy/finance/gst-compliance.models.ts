@@ -6,6 +6,8 @@ import {
   GstCancelReason,
   GstPortalMode,
   Gstr1Section,
+  Gstr2bDocumentType,
+  Gstr2bLineMatch,
 } from './finance-enums';
 
 export interface GstAuditRegisterDto extends FullAuditedEntityDto<string> {
@@ -141,14 +143,112 @@ export interface Gstr1SummaryDto {
   totalInvoiceValueInPaise: number;
 }
 
+/** An amount split by tax head, in paise. */
+export interface GstHeadsDto {
+  igstInPaise: number;
+  cgstInPaise: number;
+  sgstInPaise: number;
+  cessInPaise: number;
+  totalInPaise: number;
+}
+
+/** GSTR-3B for a return period, as the form's tables 3.1 and 4 and the set-off. */
 export interface Gstr3bSummaryDto {
   returnPeriod: string;
   outwardTaxableInPaise: number;
   outwardTaxPayableInPaise: number;
+  /** Net input tax credit, Table 4(C). */
   eligibleItcInPaise: number;
   itcIgstInPaise: number;
   itcCgstInPaise: number;
   itcSgstInPaise: number;
+  /** Tax left to pay in cash after the set-off, reverse-charge tax included. */
   netGstPayableInCashInPaise: number;
+  /** Credit left after the set-off. */
   electronicCreditLedgerBalanceInPaise: number;
+  outwardTax: GstHeadsDto;
+  nilRatedInPaise: number;
+  reverseChargeTaxableInPaise: number;
+  reverseChargeTax: GstHeadsDto;
+  itcImports: GstHeadsDto;
+  itcReverseCharge: GstHeadsDto;
+  itcAllOther: GstHeadsDto;
+  itcReversed: GstHeadsDto;
+  netItc: GstHeadsDto;
+  itcIneligible: GstHeadsDto;
+  paidFromCredit: GstHeadsDto;
+  payableInCash: GstHeadsDto;
+  creditCarriedForward: GstHeadsDto;
+  hasGstr2b: boolean;
+  gstr2bGeneratedOn?: string;
+  billsMatched: number;
+  billsWithTaxMismatch: number;
+  billsMissingIn2b: number;
+  gstr2bInvoicesNotInBooks: number;
+  gstr2bNotInBooksTaxInPaise: number;
+  notes: string[];
+}
+
+export interface ImportGstr2bInput {
+  returnPeriod: string;
+  fileName?: string;
+  json: string;
+}
+
+export interface Gstr2bStatementDto {
+  returnPeriod: string;
+  gstin: string;
+  generatedOn?: string;
+  fileName?: string;
+  importedAtUtc: string;
+  invoices: number;
+  creditNotes: number;
+  debitNotes: number;
+  imports: number;
+  matched: number;
+  taxMismatch: number;
+  notInBooks: number;
+  billsMissing: number;
+  reportedItcInPaise: number;
+  skippedSections: Record<string, number>;
+}
+
+export interface Gstr2bLineDto {
+  id: string;
+  documentType: Gstr2bDocumentType;
+  supplierGstin: string;
+  supplierName?: string;
+  documentNumber: string;
+  documentDateUtc?: string;
+  invoiceValueInPaise: number;
+  taxableInPaise: number;
+  igstInPaise: number;
+  cgstInPaise: number;
+  sgstInPaise: number;
+  cessInPaise: number;
+  isReverseCharge: boolean;
+  isItcAvailable: boolean;
+  itcUnavailableReason?: string;
+  match: Gstr2bLineMatch;
+  vendorBillId?: string;
+  vendorBillNumber?: string;
+  billTaxInPaise?: number;
+}
+
+export interface GetGstr2bLinesInput {
+  returnPeriod: string;
+  match?: Gstr2bLineMatch;
+  filter?: string;
+  skipCount?: number;
+  maxResultCount?: number;
+}
+
+export interface Gstr2bMissingBillDto {
+  id: string;
+  billNumber: string;
+  vendorInvoiceNumber: string;
+  vendorInvoiceDateUtc: string;
+  supplierName: string;
+  supplierGstin?: string;
+  taxInPaise: number;
 }

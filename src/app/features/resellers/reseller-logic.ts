@@ -96,9 +96,17 @@ export function registrationProblem(input: Partial<CreateResellerPartnerInput>):
   return null;
 }
 
-/** A domain a partner can point at the platform: a host name with at least one dot, no scheme or path. */
+/**
+ * A sub-domain a reseller can point here: letters, digits and hyphens, at least three labels (a CNAME cannot sit on a
+ * bare domain such as yourcompany.com). The API applies the same rule.
+ */
 export function isValidDomain(text: string): boolean {
-  return /^(?!-)[a-z0-9-]{1,63}(\.[a-z0-9-]{1,63})+$/i.test(text.trim());
+  const labels = text.trim().replace(/\.$/, '').split('.');
+  return (
+    labels.length >= 3 &&
+    labels.every((l) => /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i.test(l)) &&
+    text.trim().length <= 253
+  );
 }
 
 /** A six-digit hex colour, e.g. "#1769FF". */

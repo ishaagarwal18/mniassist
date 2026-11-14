@@ -1,10 +1,17 @@
-import { ChangeDetectionStrategy, Component, booleanAttribute, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  booleanAttribute,
+  computed,
+  inject,
+  input,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../environments/environment';
+import { BRAND_NAME, BRAND_TAGLINE } from '../core/brand-name';
+import { HostBrandStore } from '../core/services/host-brand.store';
 
-/** The product's name and tagline, in one place. */
-export const BRAND_NAME = 'MNI Assist';
-export const BRAND_TAGLINE = 'AI Business Engagement Platform for Industrial Companies.';
+export { BRAND_NAME, BRAND_TAGLINE };
 export const PUBLIC_HOME_PATH = environment.production ? '/' : '/welcome';
 
 /**
@@ -23,14 +30,14 @@ export const PUBLIC_HOME_PATH = environment.production ? '/' : '/welcome';
     '[class.br--sm]': 'size() === "sm"',
   },
   template: `
-    <a class="br" [routerLink]="destination()" [attr.aria-label]="name + ' home'">
+    <a class="br" [routerLink]="destination()" [attr.aria-label]="name() + ' home'">
       <span class="br__mark" aria-hidden="true">
-        <img [src]="logoSrc() || 'brand/mni-assist-logo.png'" alt="" />
+        <img [src]="logo()" alt="" />
       </span>
       @if (!iconOnly()) {
         <span class="br__text">
-          <span class="br__name">{{ name }}</span>
-          @if (tagline()) {
+          <span class="br__name" translate="no">{{ name() }}</span>
+          @if (tagline() && !host.isReseller()) {
             <span class="br__tag">{{ tag }}</span>
           }
         </span>
@@ -121,6 +128,17 @@ export class ArBrand {
   /** A workspace's own uploaded logo, shown in place of the MNI Assist mark. */
   readonly logoSrc = input<string | null>(null);
 
-  protected readonly name = BRAND_NAME;
+  protected readonly host = inject(HostBrandStore);
+
+  /** The reseller's name on their domain, the platform's elsewhere. */
+  protected readonly name = this.host.name;
+  /** A workspace's logo first, then the reseller's (dark variant on dark), then the platform's. */
+  protected readonly logo = computed(
+    () =>
+      this.logoSrc() ||
+      (this.onDark() ? this.host.logoUrlDark() : this.host.logoUrl()) ||
+      'brand/mni-assist-logo.png',
+  );
+  /** A reseller's domain shows no platform tagline. */
   protected readonly tag = BRAND_TAGLINE;
 }

@@ -1,7 +1,7 @@
 import { Rest, RestService } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { PagedResultDto } from '@abp/ng.core';
+import { ListResultDto, PagedResultDto } from '@abp/ng.core';
 import {
   CancelGstDocumentInput,
   CreateGstAuditRegisterDto,
@@ -14,6 +14,11 @@ import {
   Gstr1SummaryDto,
   Gstr3bSummaryDto,
   UpdateGstPortalSettingsInput,
+  GetGstr2bLinesInput,
+  Gstr2bLineDto,
+  Gstr2bMissingBillDto,
+  Gstr2bStatementDto,
+  ImportGstr2bInput,
 } from './gst-compliance.models';
 
 @Injectable({
@@ -208,6 +213,69 @@ export class GstPortalSettingsService {
   test(config?: Partial<Rest.Config>): Observable<GstPortalTestResultDto> {
     return this.restService.request<any, GstPortalTestResultDto>(
       { method: 'POST', url: '/api/auto-reach/gst-portal-settings/test' },
+      { apiName: this.apiName, ...config },
+    );
+  }
+}
+
+/** GSTR-2B statements downloaded from the GST portal, matched against vendor bills. */
+@Injectable({
+  providedIn: 'root',
+})
+export class Gstr2bService {
+  private readonly restService = inject(RestService);
+  apiName = 'AutoReach';
+
+  /** Imports (or replaces) the period's GSTR-2B and matches it against vendor bills. */
+  import(input: ImportGstr2bInput, config?: Partial<Rest.Config>): Observable<Gstr2bStatementDto> {
+    return this.restService.request<any, Gstr2bStatementDto>(
+      { method: 'POST', url: '/api/auto-reach/gstr2b/import', body: input },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
+  /** The period's statement, or null when none is imported. */
+  get(returnPeriod: string, config?: Partial<Rest.Config>): Observable<Gstr2bStatementDto | null> {
+    return this.restService.request<any, Gstr2bStatementDto | null>(
+      { method: 'GET', url: '/api/auto-reach/gstr2b', params: { returnPeriod } },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
+  getLines(
+    input: GetGstr2bLinesInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<PagedResultDto<Gstr2bLineDto>> {
+    return this.restService.request<any, PagedResultDto<Gstr2bLineDto>>(
+      {
+        method: 'GET',
+        url: '/api/auto-reach/gstr2b/lines',
+        params: {
+          returnPeriod: input.returnPeriod,
+          match: input.match,
+          filter: input.filter,
+          skipCount: input.skipCount,
+          maxResultCount: input.maxResultCount,
+        },
+      },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
+  /** Approved bills up to the period's end that no GSTR-2B carries. */
+  getBillsMissing(
+    returnPeriod: string,
+    config?: Partial<Rest.Config>,
+  ): Observable<ListResultDto<Gstr2bMissingBillDto>> {
+    return this.restService.request<any, ListResultDto<Gstr2bMissingBillDto>>(
+      { method: 'GET', url: '/api/auto-reach/gstr2b/bills-missing', params: { returnPeriod } },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
+  delete(returnPeriod: string, config?: Partial<Rest.Config>): Observable<void> {
+    return this.restService.request<any, void>(
+      { method: 'DELETE', url: '/api/auto-reach/gstr2b', params: { returnPeriod } },
       { apiName: this.apiName, ...config },
     );
   }

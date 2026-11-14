@@ -336,7 +336,9 @@ const PAGE = { maxResultCount: 200 };
                           domainStatus(b.domainStatus).label
                         }}</ar-chip>
                       </p>
-                      @if (b.domainStatus !== D.Active || b.sslCertificateThumbprint?.length === 32) {
+                      @if (
+                        b.domainStatus !== D.Active || b.sslCertificateThumbprint?.length === 32
+                      ) {
                         <p class="sub">
                           Add a CNAME record pointing
                           <span class="ar-mono">{{ b.customDomain }}</span> at
@@ -344,6 +346,15 @@ const PAGE = { maxResultCount: 200 };
                           >, and a TXT record at _autoreach-verify.{{ b.customDomain }} with
                           <span class="ar-mono">{{ b.domainVerificationToken }}</span
                           >.
+                        </p>
+                      }
+                      @if (
+                        b.domainStatus === D.DnsVerified || b.domainStatus === D.SslProvisioning
+                      ) {
+                        <p class="sub">
+                          The DNS records are right. The certificate is being issued; it is checked
+                          again every few hours, and the domain goes live by itself once it is
+                          ready.
                         </p>
                       }
                     } @else {
@@ -357,13 +368,13 @@ const PAGE = { maxResultCount: 200 };
                           {{ b.customDomain ? 'Change domain' : 'Set up a domain' }}
                         </button>
                       }
+                      @if (canBrand() && b.customDomain) {
+                        <button ar-button type="button" variant="ghost" (click)="removeDomain(b)">
+                          Remove domain
+                        </button>
+                      }
                       @if (hostView() && b.customDomain) {
-                        <button
-                          ar-button
-                          type="button"
-                          variant="primary"
-                          (click)="verifyDomain()"
-                        >
+                        <button ar-button type="button" variant="primary" (click)="verifyDomain()">
                           Check domain
                         </button>
                       }
@@ -1929,6 +1940,21 @@ export class ArResellers {
           this.api.configureCustomDomain(b.partnerId, { customDomain: v['domain'].trim() }),
         ),
       'Domain saved. Add the DNS records shown.',
+    );
+  }
+
+  protected async removeDomain(b: ResellerWhiteLabelProfileDto): Promise<void> {
+    if (!b.customDomain) return;
+    const ok = await this.dialogs.confirm({
+      title: 'Remove this domain?',
+      message: `${b.customDomain} will stop opening the app, and its certificate will not be renewed. Clients go back to the standard address.`,
+      confirmText: 'Remove domain',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    await this.act(
+      () => firstValueFrom(this.api.removeCustomDomain(b.partnerId)),
+      'Domain removed.',
     );
   }
 

@@ -1,4 +1,6 @@
-import { Route, Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Route, Router, Routes } from '@angular/router';
+import { HostBrandStore } from './core/services/host-brand.store';
 import { environment } from '../environments/environment';
 import { appAuthGuard } from './core/auth/auth.guard';
 import { AR_DIALOG_INLINE } from './ui/dialog-inline';
@@ -40,6 +42,10 @@ export const routes: Routes = [
     // Must stay ahead of the shell below, whose empty path would otherwise claim `/`.
     path: environment.production ? '' : 'welcome',
     pathMatch: 'full',
+    // On a reseller's domain there is no platform front page: it opens on sign-in.
+    canMatch: [
+      () => (inject(HostBrandStore).isReseller() ? inject(Router).parseUrl('/login') : true),
+    ],
     title: 'MNI Assist · AI Business Engagement Platform for Industrial Companies',
     loadComponent: () => import('./features/landing/landing').then((m) => m.ArLanding),
   },

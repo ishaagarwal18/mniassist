@@ -29,6 +29,7 @@ import {
   VoiceAgentType,
   VOICE_AGENT_TIERS,
   VOICE_AGENT_ENGINES,
+  VOICE_AGENT_SPEECH_PROVIDERS,
   VOICE_SPEECH_NOISE,
   VOICE_SPEECH_PATIENCE,
   VoiceAgentSpeech,
@@ -222,6 +223,36 @@ import { IntegrationService } from '../../proxy/integrations/integration.service
               }
             </select></label
           >
+          @if (model.engine === 'pipeline') {
+            <label class="ar-field"
+              ><span>{{ 'AutoReach::VoiceAgent.SpeechProvider' | abpLocalization }}</span>
+              <select
+                class="ar-field__input"
+                [ngModel]="model.speechProvider ?? ''"
+                (ngModelChange)="model.speechProvider = $event; saved.set(false)"
+                [disabled]="saving()"
+              >
+                @for (option of speechProviders; track option) {
+                  <option
+                    [value]="option"
+                    [disabled]="
+                      option !== '' &&
+                      !speechProviderReady(option) &&
+                      model.speechProvider !== option
+                    "
+                  >
+                    {{
+                      'AutoReach::VoiceAgent.SpeechProvider.' + (option || 'default')
+                        | abpLocalization
+                    }}
+                  </option>
+                }
+              </select>
+              <small>{{
+                'AutoReach::VoiceAgent.SpeechProvider.help' | abpLocalization
+              }}</small></label
+            >
+          }
           @if (model.engine !== 'pipeline') {
             <label class="ar-field"
               ><span>{{ 'AutoReach::VoiceAgent.Voice' | abpLocalization }}</span>
@@ -1203,10 +1234,19 @@ export class ArVoiceAgentDialog implements OnInit {
   protected readonly voices = VOICE_AGENT_VOICES;
   protected readonly models = VOICE_AGENT_TIERS;
   protected readonly engines = VOICE_AGENT_ENGINES;
-  /** The call relay has the speech pipeline's keys. */
+  protected readonly speechProviders = VOICE_AGENT_SPEECH_PROVIDERS;
+  /** The call relay can run the speech pipeline: on WhatsApp calls, or on phone calls only (Sarvam AI, Bhashini). */
   protected readonly pipelineReady = computed(
-    () => this.settings()?.engines?.includes('pipeline') ?? false,
+    () =>
+      (this.settings()?.engines?.includes('pipeline') ||
+        this.settings()?.phoneEngines?.includes('pipeline')) ??
+      false,
   );
+
+  /** The relay has this speech provider's keys. */
+  protected speechProviderReady(provider: string): boolean {
+    return this.settings()?.speechProviders?.includes(provider) ?? false;
+  }
   protected readonly previewing = signal(false);
   protected readonly previewFailed = signal(false);
   private previewAudio: HTMLAudioElement | null = null;

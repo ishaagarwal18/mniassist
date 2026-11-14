@@ -23,10 +23,18 @@ export interface VoiceAgentDefinition {
   tier?: string | null;
   /** '' for speech to speech (OpenAI realtime), or 'pipeline': speech to text, a chat model and text to speech. */
   engine?: string | null;
+  /** For the pipeline on phone calls: '' lets the relay choose, or one of VOICE_AGENT_SPEECH_PROVIDERS. */
+  speechProvider?: string | null;
 }
 
 /** Speech engines: '' is speech to speech; 'pipeline' runs on the call relay's speech providers (Deepgram, ElevenLabs). */
 export const VOICE_AGENT_ENGINES = ['', 'pipeline'] as const;
+
+/**
+ * Speech providers for the pipeline on phone calls: '' lets the relay choose (Sarvam AI, then Bhashini, then Deepgram with
+ * ElevenLabs, whichever is set up there and speaks the agent's language). WhatsApp calls always use Deepgram and ElevenLabs.
+ */
+export const VOICE_AGENT_SPEECH_PROVIDERS = ['', 'sarvam', 'bhashini', 'deepgram'] as const;
 
 /** OpenAI realtime voices an agent may use (the server and relay check the same list). Marin and Cedar are recommended. */
 export const VOICE_AGENT_VOICES = [
@@ -232,6 +240,10 @@ export interface VoiceAgentSettings extends VoiceAgentInput {
   sharedAgentName?: string | null;
   /** The speech engines the call relay can run now ('realtime', 'pipeline'). */
   engines?: string[];
+  /** The engines a phone call can run on the relay now. */
+  phoneEngines?: string[];
+  /** The speech providers set up on the relay for phone calls ('sarvam', 'bhashini', 'deepgram'). */
+  speechProviders?: string[];
 }
 
 export interface VoiceAgentNumber {
@@ -291,6 +303,7 @@ export class VoiceAgentService {
       flow,
       tier,
       engine,
+      speechProvider,
       speech,
       voicemailMessage,
     } = model;
@@ -314,6 +327,8 @@ export class VoiceAgentService {
           flow: type === 'flow' ? flow : null,
           tier: tier ?? '',
           engine: engine ?? '',
+          // Only the pipeline uses it; a speech-to-speech agent keeps none, so switching back leaves nothing stale.
+          speechProvider: engine === 'pipeline' ? (speechProvider ?? '') : '',
           speech: cleanSpeech(speech),
           voicemailMessage: voicemailMessage?.trim() || null,
         },

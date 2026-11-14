@@ -23,6 +23,8 @@ import {
 import { ArButton, ArChip, ChipTone } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
 import { askCancelReason, portalModeLabel, unofficialNumberChip } from './gst-portal.logic';
+import { ArGstr2bPanel } from './gstr2b-panel';
+import { gstr3bTableRows, setOffRows } from './gstr3b.logic';
 
 /** GST return periods (MMYYYY) for the last `count` months by the Indian calendar, newest first. */
 export function recentReturnPeriods(
@@ -58,6 +60,7 @@ export function recentReturnPeriods(
     ArChip,
     ArGrid,
     GridModule,
+    ArGstr2bPanel,
   ],
   template: `
     <ar-topbar title="GST Compliance & Statutory Auditor (GSTR-1, GSTR-3B, E-Way Bill)">
@@ -99,16 +102,20 @@ export function recentReturnPeriods(
           <span class="sub">IGST + CGST + SGST Payable</span>
         </div>
         <div class="kpi-card teal">
-          <span class="label">GSTR-2B-matched purchase tax</span>
+          <span class="label">Net input tax credit (4C)</span>
           <strong class="value">₹{{ summary.eligibleItcInPaise / 100 | number: '1.2-2' }}</strong>
-          <span class="sub">Approved or paid vendor bills by invoice month</span>
+          <span class="sub">{{
+            summary.hasGstr2b
+              ? 'From GSTR-2B matched with your bills'
+              : 'From bills marked matched by hand'
+          }}</span>
         </div>
         <div class="kpi-card">
-          <span class="label">Estimated Cash Liability</span>
+          <span class="label">Payable in cash</span>
           <strong class="value text-profit"
             >₹{{ summary.netGstPayableInCashInPaise / 100 | number: '1.2-2' }}</strong
           >
-          <span class="sub">Aggregate estimate before filing adjustments</span>
+          <span class="sub">After setting credit off (Rule 88A), reverse charge included</span>
         </div>
       </section>
 
@@ -128,6 +135,13 @@ export function recentReturnPeriods(
             (click)="activeTab.set('gstr1')"
           >
             GSTR-1 Return Tables Summary
+          </button>
+          <button
+            class="tab-btn"
+            [class.active]="activeTab() === 'gstr2b'"
+            (click)="activeTab.set('gstr2b')"
+          >
+            GSTR-2B Input Credit
           </button>
           <button
             class="tab-btn"
@@ -370,6 +384,17 @@ export function recentReturnPeriods(
         </div>
       </section>
 
+      <!-- TAB: GSTR-2B INPUT CREDIT -->
+      @if (activeTab() === 'gstr2b') {
+        <section class="tab-content-container">
+          <ar-gstr2b-panel
+            [period]="selectedPeriod()"
+            [periodLabel]="periodLabel()"
+            (changed)="reloadSummary()"
+          />
+        </section>
+      }
+
       <!-- TAB 3: GSTR-3B RECONCILIATION -->
       <section *ngIf="activeTab() === 'gstr3b'" class="tab-content-container">
         <ejs-grid
@@ -433,17 +458,20 @@ export function recentReturnPeriods(
                 }}</span>
               </ng-template>
             </e-column>
-            <e-column
-              field="totalTax"
-              headerText="Total Tax Payable (₹)"
-              width="190"
-              [textAlign]="'Right'"
-            >
+            <e-column field="cess" headerText="Cess (₹)" width="140" [textAlign]="'Right'">
+              <ng-template #template let-r>
+                <span class="font-mono">{{
+                  r.cess != null ? '₹' + (r.cess | number: '1.2-2') : '-'
+                }}</span>
+              </ng-template>
+            </e-column>
+            <e-column field="totalTax" headerText="Total Tax (₹)" width="190" [textAlign]="'Right'">
               <ng-template #template let-r>
                 <strong
                   class="font-mono"
                   [class.text-tax]="r.type === 'outward'"
                   [class.text-success]="r.type === 'itc'"
+                  [class.text-bad]="r.type === 'reversal'"
                   [class.text-profit]="r.type === 'cash'"
                 >
                   ₹{{ r.totalTax | number: '1.2-2' }}
@@ -452,6 +480,47 @@ export function recentReturnPeriods(
             </e-column>
           </e-columns>
         </ejs-grid>
+        @if (gstr3b(); as b) {
+          <h4 class="setoff-title">Set-off (Section 49, Rule 88A)</h4>
+          <table class="setoff-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>IGST (₹)</th>
+                <th>CGST (₹)</th>
+                <th>SGST (₹)</th>
+                <th>Cess (₹)</th>
+                <th>Total (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of setOff(); track r.heading) {
+                <tr>
+                  <th scope="row">{{ r.heading }}</th>
+                  <td>{{ r.igst | number: '1.2-2' }}</td>
+                  <td>{{ r.cgst | number: '1.2-2' }}</td>
+                  <td>{{ r.sgst | number: '1.2-2' }}</td>
+                  <td>{{ r.cess | number: '1.2-2' }}</td>
+                  <td>
+                    <strong>{{ r.total | number: '1.2-2' }}</strong>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (b.notes.length) {
+            <ul class="gstr3b-notes">
+              @for (n of b.notes; track n) {
+                <li>{{ n }}</li>
+              }
+            </ul>
+          }
+          @if (!b.hasGstr2b) {
+            <button ar-button="ghost" type="button" (click)="activeTab.set('gstr2b')">
+              Import this month's GSTR-2B
+            </button>
+          }
+        }
       </section>
     </div>
   `,
@@ -768,6 +837,9 @@ export function recentReturnPeriods(
         color: #f59e0b;
         font-weight: 600;
       }
+      .text-bad {
+        color: var(--ar-bad-600);
+      }
       .text-success {
         color: #16a34a;
       }
@@ -783,6 +855,32 @@ export function recentReturnPeriods(
       .mt-4 {
         margin-top: 1rem;
       }
+      .setoff-title {
+        margin: 1.25rem 0 0.5rem;
+        font-size: 0.95rem;
+      }
+      .setoff-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+      .setoff-table th,
+      .setoff-table td {
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--ar-line-100);
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .setoff-table th[scope='row'],
+      .setoff-table thead th:first-child {
+        text-align: left;
+      }
+      .gstr3b-notes {
+        margin: 1rem 0;
+        padding-left: 1.1rem;
+        font-size: 0.82rem;
+        color: var(--ar-ink-500);
+      }
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -796,7 +894,7 @@ export class GstComplianceComponent {
   readonly selectedPeriod = signal(this.periods[0].value);
   readonly loading = signal(false);
   readonly loadError = signal<string | null>(null);
-  readonly activeTab = signal<'register' | 'gstr1' | 'gstr3b'>('register');
+  readonly activeTab = signal<'register' | 'gstr1' | 'gstr2b' | 'gstr3b'>('register');
 
   readonly records = signal<GstAuditRegisterDto[]>([]);
 
@@ -827,40 +925,38 @@ export class GstComplianceComponent {
   readonly gstr3b = signal<Gstr3bSummaryDto | null>(null);
   readonly summaryError = signal(false);
 
+  /** GSTR-3B's rows as the form prints them: 3.1 and Table 4, in rupees. */
   readonly gstr3bRows = computed(() => {
     const b = this.gstr3b();
-    const r1 = this.gstr1();
-    if (!b || !r1) return [];
-    return [
-      {
-        heading: '3.1(a) Outward Taxable Supplies (Other than zero rated)',
-        taxable: b.outwardTaxableInPaise / 100,
-        igst: r1.totalIgstInPaise / 100,
-        cgst: r1.totalCgstInPaise / 100,
-        sgst: r1.totalSgstInPaise / 100,
-        totalTax: b.outwardTaxPayableInPaise / 100,
-        type: 'outward',
-      },
-      {
-        heading: '4. Purchase tax on GSTR-2B-matched bills',
-        taxable: null,
-        igst: b.itcIgstInPaise / 100,
-        cgst: b.itcCgstInPaise / 100,
-        sgst: b.itcSgstInPaise / 100,
-        totalTax: b.eligibleItcInPaise / 100,
-        type: 'itc',
-      },
-      {
-        heading: '5. Estimated Cash Liability',
-        taxable: null,
-        igst: null,
-        cgst: null,
-        sgst: null,
-        totalTax: b.netGstPayableInCashInPaise / 100,
-        type: 'cash',
-      },
-    ];
+    return b ? gstr3bTableRows(b) : [];
   });
+
+  readonly setOff = computed(() => {
+    const b = this.gstr3b();
+    return b ? setOffRows(b) : [];
+  });
+
+  /** The selected period's name, e.g. "November 2026". */
+  readonly periodLabel = computed(
+    () =>
+      this.periods
+        .find((p) => p.value === this.selectedPeriod())
+        ?.label.replace(' (current)', '') ?? '',
+  );
+
+  /** Reads GSTR-3B again, after GSTR-2B changed. */
+  async reloadSummary(): Promise<void> {
+    const period = this.selectedPeriod();
+    try {
+      const summary = await firstValueFrom(this.gstService.getGstr3bSummary(period));
+      if (period === this.selectedPeriod()) {
+        this.gstr3b.set(summary);
+        this.summaryError.set(false);
+      }
+    } catch {
+      if (period === this.selectedPeriod()) this.summaryError.set(true);
+    }
+  }
 
   readonly GstPortalMode = GstPortalMode;
   readonly generatingIrns = signal(new Set<string>());
