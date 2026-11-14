@@ -34,28 +34,12 @@
   <div class="ff-container ar-scroll">
     <!-- Stat Summary Tiles -->
     <section class="ff-metrics" aria-label="Feature flag metrics">
-      <ar-stat-tile
-        label="Total Rules"
-        [value]="metrics().total + ' rules'"
-        note="Active policies in system"
-        tone="teal"
-      />
-      <ar-stat-tile
-        label="Active On"
-        [value]="metrics().active + ' active'"
-        note="100% full enablement"
-        tone="good"
-      />
-      <ar-stat-tile
-        label="Canary Staged"
-        [value]="metrics().staged + ' rolling out'"
-        note="Partitioned by tenant hash"
-        tone="amber"
-      />
+      <ar-stat-tile label="Total Rules" [value]="metrics().total.toString()" tone="teal" />
+      <ar-stat-tile label="Fully enabled" [value]="metrics().active.toString()" tone="good" />
+      <ar-stat-tile label="Staged rollout" [value]="metrics().staged.toString()" tone="amber" />
       <ar-stat-tile
         label="Workspace Overrides"
-        [value]="metrics().overrides + ' overrides'"
-        note="Dedicated tenant rules"
+        [value]="metrics().overrides.toString()"
         tone="neutral"
       />
     </section>
@@ -205,57 +189,6 @@
         />
       </div>
 
-      <div class="ff-toolbar__filters" role="tablist" aria-label="Filter scope">
-        <button
-          type="button"
-          class="ff-pill-btn"
-          [class.ff-pill-btn--active]="scopeFilter() === 'all'"
-          (click)="scopeFilter.set('all')"
-        >
-          All Rules <span class="ff-pill-count">{{ metrics().total }}</span>
-        </button>
-        <button
-          type="button"
-          class="ff-pill-btn"
-          [class.ff-pill-btn--active]="scopeFilter() === 'global'"
-          (click)="scopeFilter.set('global')"
-        >
-          Global <span class="ff-pill-count">{{ metrics().globals }}</span>
-        </button>
-        <button
-          type="button"
-          class="ff-pill-btn"
-          [class.ff-pill-btn--active]="scopeFilter() === 'override'"
-          (click)="scopeFilter.set('override')"
-        >
-          Overrides <span class="ff-pill-count">{{ metrics().overrides }}</span>
-        </button>
-        <button
-          type="button"
-          class="ff-pill-btn"
-          [class.ff-pill-btn--active]="scopeFilter() === 'active'"
-          (click)="scopeFilter.set('active')"
-        >
-          Active On <span class="ff-pill-count">{{ metrics().active }}</span>
-        </button>
-        <button
-          type="button"
-          class="ff-pill-btn"
-          [class.ff-pill-btn--active]="scopeFilter() === 'staged'"
-          (click)="scopeFilter.set('staged')"
-        >
-          Staged % <span class="ff-pill-count">{{ metrics().staged }}</span>
-        </button>
-        <button
-          type="button"
-          class="ff-pill-btn"
-          [class.ff-pill-btn--active]="scopeFilter() === 'disabled'"
-          (click)="scopeFilter.set('disabled')"
-        >
-          Disabled
-        </button>
-      </div>
-
       <div class="ff-toolbar__feature-select">
         <select
           class="ar-field__input ff-filter-select"
@@ -268,6 +201,63 @@
             <option [value]="k.value">{{ k.label }}</option>
           }
         </select>
+      </div>
+
+      <div class="ff-toolbar__filters" role="group" aria-label="Filter rules">
+        <button
+          type="button"
+          class="ff-pill-btn"
+          [class.ff-pill-btn--active]="scopeFilter() === 'all'"
+          [attr.aria-pressed]="scopeFilter() === 'all'"
+          (click)="scopeFilter.set('all')"
+        >
+          All Rules <span class="ff-pill-count">{{ metrics().total }}</span>
+        </button>
+        <button
+          type="button"
+          class="ff-pill-btn"
+          [class.ff-pill-btn--active]="scopeFilter() === 'global'"
+          [attr.aria-pressed]="scopeFilter() === 'global'"
+          (click)="scopeFilter.set('global')"
+        >
+          Global <span class="ff-pill-count">{{ metrics().globals }}</span>
+        </button>
+        <button
+          type="button"
+          class="ff-pill-btn"
+          [class.ff-pill-btn--active]="scopeFilter() === 'override'"
+          [attr.aria-pressed]="scopeFilter() === 'override'"
+          (click)="scopeFilter.set('override')"
+        >
+          Overrides <span class="ff-pill-count">{{ metrics().overrides }}</span>
+        </button>
+        <button
+          type="button"
+          class="ff-pill-btn"
+          [class.ff-pill-btn--active]="scopeFilter() === 'active'"
+          [attr.aria-pressed]="scopeFilter() === 'active'"
+          (click)="scopeFilter.set('active')"
+        >
+          Active On <span class="ff-pill-count">{{ metrics().active }}</span>
+        </button>
+        <button
+          type="button"
+          class="ff-pill-btn"
+          [class.ff-pill-btn--active]="scopeFilter() === 'staged'"
+          [attr.aria-pressed]="scopeFilter() === 'staged'"
+          (click)="scopeFilter.set('staged')"
+        >
+          Staged % <span class="ff-pill-count">{{ metrics().staged }}</span>
+        </button>
+        <button
+          type="button"
+          class="ff-pill-btn"
+          [class.ff-pill-btn--active]="scopeFilter() === 'disabled'"
+          [attr.aria-pressed]="scopeFilter() === 'disabled'"
+          (click)="scopeFilter.set('disabled')"
+        >
+          Disabled
+        </button>
       </div>
     </section>
 
@@ -285,6 +275,7 @@
       } @else {
         <ejs-grid
           arGrid="feature-flags-grid"
+          [arGridSearch]="false"
           [dataSource]="filteredFlags()"
           aria-label="Feature flags"
         >

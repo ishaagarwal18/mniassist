@@ -145,12 +145,26 @@ export class ArProjectionPlan implements OnInit {
     return d ? pct(d.ytdActualRevenueInPaise, d.totalProjectedAnnualRevenueInPaise) : 0;
   });
   protected readonly hasActuals = computed(() => (this.plan()?.actualRevenueInPaise ?? 0) > 0);
+  protected readonly generatedAssumptions = computed(() => {
+    const notes = this.plan()?.notes?.trim() ?? '';
+    const match =
+      /^Autonomously generated projection with ([+-]?\d+(?:[.,]\d+)?)% targeted expansion and ([+-]?\d+(?:[.,]\d+)?)% baseline gross margin\.$/i.exec(
+        notes,
+      );
+    if (!match) return null;
+
+    const percent = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 6 });
+    return {
+      growth: percent.format(Number(match[1].replace(',', '.'))),
+      margin: percent.format(Number(match[2].replace(',', '.'))),
+    };
+  });
 
   async ngOnInit(): Promise<void> {
     await this.load();
   }
 
-  private async load(selectId?: string): Promise<void> {
+  protected async load(selectId?: string): Promise<void> {
     this.loading.set(true);
     this.loadError.set(null);
     try {
@@ -198,12 +212,16 @@ export class ArProjectionPlan implements OnInit {
       : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
-  protected async pickPlan(id: string): Promise<void> {
-    if (!id || id === this.plan()?.id) return;
+  protected async pickPlan(id: string, openOverview = false): Promise<void> {
+    if (!id || this.working()) return;
+    this.working.set('open');
     try {
-      await this.show(id);
+      if (id !== this.plan()?.id) await this.show(id);
+      if (openOverview) this.tab.set('overview');
     } catch (e: unknown) {
       this.toasts.error(readApiError(e, 'The plan could not be opened.'), 'Projection plan');
+    } finally {
+      this.working.set(null);
     }
   }
 
@@ -469,7 +487,7 @@ export class ArProjectionPlan implements OnInit {
   }
 
   protected bar(part: number, whole: number): number {
-    return Math.min(100, pct(part, whole));
+    return Math.max(0, Math.min(100, pct(part, whole)));
   }
 
   protected time(d: Date): string {

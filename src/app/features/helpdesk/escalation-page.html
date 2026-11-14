@@ -145,70 +145,74 @@
         }
       </fieldset>
 
-      <table class="ep__steps">
-        <thead>
-          <tr>
-            <th scope="col">After, minutes</th>
-            <th scope="col">If still</th>
-            <th scope="col">Then</th>
-            <th scope="col" aria-label="Remove"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (s of d.steps; track $index; let k = $index) {
+      <div class="ep__steps-scroll" role="region" aria-label="Escalation steps" tabindex="0">
+        <table class="ep__steps">
+          <thead>
             <tr>
-              <td>
-                <input
-                  class="ar-field__input ep__min"
-                  type="number"
-                  min="1"
-                  max="43200"
-                  [attr.aria-label]="'Step ' + (k + 1) + ' minutes'"
-                  [value]="s.minutes"
-                  (input)="setStep(i, k, { minutes: +$any($event.target).value || 0 })"
-                />
-                <span class="ep__muted">{{ s.minutes > 0 ? duration(s.minutes) : '' }}</span>
-              </td>
-              <td>
-                <select
-                  class="ar-field__input"
-                  [attr.aria-label]="'Step ' + (k + 1) + ' condition'"
-                  (change)="setStep(i, k, { condition: +$any($event.target).value })"
-                >
-                  @for (c of conditions; track c) {
-                    <option [value]="c" [selected]="s.condition === c">
-                      {{ CONDITION_TEXT[c] }}
-                    </option>
-                  }
-                </select>
-              </td>
-              <td class="ep__actions">
-                @for (a of ACTION_FIELDS; track a.flag) {
-                  <label class="ep__check">
-                    <input
-                      type="checkbox"
-                      [checked]="hasAction(s.actions, a.flag)"
-                      (change)="setAction(i, k, a.flag, $any($event.target).checked)"
-                    />
-                    {{ a.label }}
-                  </label>
-                }
-              </td>
-              <td>
-                <button
-                  ar-button
-                  type="button"
-                  variant="ghost"
-                  [attr.aria-label]="'Remove step ' + (k + 1)"
-                  (click)="removeStep(i, k)"
-                >
-                  Remove
-                </button>
-              </td>
+              <th scope="col">After, minutes</th>
+              <th scope="col">If still</th>
+              <th scope="col">Then</th>
+              <th scope="col" aria-label="Remove"></th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (s of d.steps; track $index; let k = $index) {
+              <tr>
+                <td>
+                  <input
+                    class="ar-field__input ep__min"
+                    type="number"
+                    min="1"
+                    max="43200"
+                    [attr.aria-label]="'Step ' + (k + 1) + ' minutes'"
+                    [value]="s.minutes"
+                    (input)="setStep(i, k, { minutes: +$any($event.target).value || 0 })"
+                  />
+                  <span class="ep__muted">{{ s.minutes > 0 ? duration(s.minutes) : '' }}</span>
+                </td>
+                <td>
+                  <select
+                    class="ar-field__input"
+                    [attr.aria-label]="'Step ' + (k + 1) + ' condition'"
+                    (change)="setStep(i, k, { condition: +$any($event.target).value })"
+                  >
+                    @for (c of conditions; track c) {
+                      <option [value]="c" [selected]="s.condition === c">
+                        {{ CONDITION_TEXT[c] }}
+                      </option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <div class="ep__actions">
+                    @for (a of ACTION_FIELDS; track a.flag) {
+                      <label class="ep__check">
+                        <input
+                          type="checkbox"
+                          [checked]="hasAction(s.actions, a.flag)"
+                          (change)="setAction(i, k, a.flag, $any($event.target).checked)"
+                        />
+                        {{ a.label }}
+                      </label>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [attr.aria-label]="'Remove step ' + (k + 1)"
+                    (click)="removeStep(i, k)"
+                  >
+                    Remove
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
 
       @if (problem(d); as p) {
         <p class="ep__problem">{{ p }}</p>

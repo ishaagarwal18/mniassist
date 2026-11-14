@@ -1,109 +1,167 @@
-<ar-topbar title="Competitor brands" subtitle="And the brands we sell, for project specifications">
-  <a ar-button variant="ghost" routerLink="/projects">Projects</a>
-  <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="addCommon()">
-    Add common brands
-  </button>
+<ar-topbar
+  title="Competitor brands"
+  subtitle="Manage the brands and categories used in project specifications"
+>
+  <a ar-button variant="ghost" routerLink="/projects">Back to projects</a>
 </ar-topbar>
 
 <div class="cb ar-scroll">
-  @if (error(); as e) {
-    <ar-banner tone="bad">{{ e }}</ar-banner>
-  }
+  @if (loading()) {
+    <p class="cb__muted" role="status">Loading competitor brands…</p>
+  } @else if (error(); as message) {
+    <ar-banner tone="bad">{{ message }}</ar-banner>
+    <div><button ar-button type="button" variant="ghost" (click)="load()">Retry</button></div>
+  } @else {
+    <div class="cb__layout">
+      <ar-card heading="Competitor directory">
+        <div class="cb__toolbar">
+          <span class="cb__muted"
+            >{{ brands().length }} {{ brands().length === 1 ? 'brand' : 'brands' }}</span
+          >
+          <button ar-button type="button" variant="ghost" [disabled]="busy()" (click)="addCommon()">
+            Add common brands
+          </button>
+        </div>
 
-  <ar-card heading="Project settings">
-    <label class="ar-field">
-      <span class="ar-field__label"
-        >Our brands <span class="ar-field__opt">the makes we sell, comma between</span></span
-      >
-      <input
-        class="ar-field__input"
-        [value]="ourBrandsText()"
-        (input)="ourBrandsText.set($any($event.target).value)"
-      />
-    </label>
-    @if (settings()?.catalogueMakes?.length) {
-      <p class="cb__muted">
-        Blank uses the makes in your product list:
-        <span translate="no">{{ settings()!.catalogueMakes!.join(', ') }}</span
-        >.
-        <button type="button" class="cb__link" (click)="useCatalogue()">Copy them here</button>
-      </p>
-    }
-    <label class="ar-field">
-      <span class="ar-field__label"
-        >Specification categories <span class="ar-field__opt">comma between</span></span
-      >
-      <input
-        class="ar-field__input"
-        [value]="categoriesText()"
-        (input)="categoriesText.set($any($event.target).value)"
-      />
-    </label>
-    <div class="cb__foot">
-      <button ar-button type="button" [disabled]="busy()" (click)="saveSettings()">
-        Save settings
-      </button>
-    </div>
-  </ar-card>
+        @if (brands().length) {
+          <ul class="cb__list">
+            @for (b of brands(); track b.id) {
+              <li class="cb__brand">
+                <div class="cb__brand-head">
+                  <h3 translate="no">{{ b.name }}</h3>
+                  <ar-chip [dot]="true" [tone]="b.isActive ? 'good' : 'neutral'">
+                    {{ b.isActive ? 'In pickers' : 'Hidden from pickers' }}
+                  </ar-chip>
+                </div>
+                <form
+                  class="cb__alias"
+                  (submit)="$event.preventDefault(); setMakes(b, aliases.value)"
+                >
+                  <label class="ar-field">
+                    <span class="ar-field__label"
+                      >Also sold as <span class="ar-field__opt">comma-separated</span></span
+                    >
+                    <input
+                      #aliases
+                      class="ar-field__input"
+                      [value]="b.makes.join(', ')"
+                      [disabled]="busy()"
+                    />
+                  </label>
+                  <button ar-button type="submit" variant="ghost" [disabled]="busy()">
+                    Save aliases
+                  </button>
+                </form>
+                <div class="cb__actions">
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="busy()"
+                    (click)="toggle(b)"
+                  >
+                    {{ b.isActive ? 'Hide from pickers' : 'Show in pickers' }}
+                  </button>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="busy()"
+                    (click)="remove(b)"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        } @else {
+          <div class="cb__empty">
+            <strong>No competitor brands yet</strong>
+            <p class="cb__muted">Add a brand or start with the common brands list.</p>
+          </div>
+        }
+      </ar-card>
 
-  <ar-card heading="Competitor brands">
-    <table class="cb__table">
-      <thead>
-        <tr>
-          <th scope="col">Brand</th>
-          <th scope="col">Also sold as <span class="cb__muted">comma between</span></th>
-          <th scope="col">In pickers</th>
-          <th scope="col" aria-label="Actions"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (b of brands(); track b.id) {
-          <tr [class.cb__off]="!b.isActive">
-            <td translate="no">{{ b.name }}</td>
-            <td>
+      <div class="cb__stack">
+        <ar-card heading="Add a competitor">
+          <form class="cb__form" (submit)="$event.preventDefault(); add()">
+            <label class="ar-field">
+              <span class="ar-field__label">Brand name</span>
               <input
                 class="ar-field__input"
-                [attr.aria-label]="'Makes of ' + b.name"
-                [value]="b.makes.join(', ')"
-                (change)="setMakes(b, $any($event.target).value)"
+                maxlength="100"
+                required
+                placeholder="e.g. Rockwell Automation"
+                [disabled]="busy()"
+                [value]="newName()"
+                (input)="newName.set($any($event.target).value)"
               />
-            </td>
-            <td>
-              <label class="cb__check">
-                <input type="checkbox" [checked]="b.isActive" (change)="toggle(b)" />
-                {{ b.isActive ? 'On' : 'Off' }}
-              </label>
-            </td>
-            <td>
-              <button ar-button type="button" variant="ghost" (click)="remove(b)">Remove</button>
-            </td>
-          </tr>
-        } @empty {
-          <tr>
-            <td colspan="4" class="cb__muted">
-              No brands yet. Click Add common brands, or add one below.
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-    <form class="cb__add" (submit)="$event.preventDefault(); add()">
-      <input
-        class="ar-field__input"
-        maxlength="100"
-        placeholder="Brand, e.g. Rockwell Automation"
-        aria-label="New brand"
-        [value]="newName()"
-        (input)="newName.set($any($event.target).value)"
-      />
-      <input
-        class="ar-field__input"
-        placeholder="Also sold as, e.g. Allen-Bradley"
-        aria-label="New brand's makes"
-        [value]="newMakes()"
-        (input)="newMakes.set($any($event.target).value)"
-      />
-      <button ar-button type="submit" [disabled]="!newName().trim()">Add</button>
-    </form>
-  </ar-card>
+            </label>
+            <label class="ar-field">
+              <span class="ar-field__label"
+                >Also sold as <span class="ar-field__opt">optional, comma-separated</span></span
+              >
+              <input
+                class="ar-field__input"
+                placeholder="e.g. Allen-Bradley"
+                [disabled]="busy()"
+                [value]="newMakes()"
+                (input)="newMakes.set($any($event.target).value)"
+              />
+            </label>
+            <div class="cb__actions">
+              <button ar-button type="submit" [disabled]="busy() || !newName().trim()">
+                Add brand
+              </button>
+            </div>
+          </form>
+        </ar-card>
+
+        <ar-card heading="Project settings">
+          <form class="cb__form" (submit)="$event.preventDefault(); saveSettings()">
+            <label class="ar-field">
+              <span class="ar-field__label"
+                >Brands we sell <span class="ar-field__opt">comma-separated</span></span
+              >
+              <input
+                class="ar-field__input"
+                [disabled]="busy()"
+                [value]="ourBrandsText()"
+                (input)="ourBrandsText.set($any($event.target).value)"
+              />
+            </label>
+            @if (settings()?.catalogueMakes?.length) {
+              <div>
+                <p class="cb__muted">Leave blank to use the brands from your product catalogue.</p>
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="busy()"
+                  (click)="useCatalogue()"
+                >
+                  Copy catalogue brands
+                </button>
+              </div>
+            }
+            <label class="ar-field">
+              <span class="ar-field__label"
+                >Specification categories <span class="ar-field__opt">comma-separated</span></span
+              >
+              <input
+                class="ar-field__input"
+                [disabled]="busy()"
+                [value]="categoriesText()"
+                (input)="categoriesText.set($any($event.target).value)"
+              />
+            </label>
+            <div class="cb__actions">
+              <button ar-button type="submit" [disabled]="busy()">Save settings</button>
+            </div>
+          </form>
+        </ar-card>
+      </div>
+    </div>
+  }
 </div>

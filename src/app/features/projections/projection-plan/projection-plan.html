@@ -1,13 +1,27 @@
 <ar-topbar
   title="Projection plan"
-  subtitle="The year's revenue and margin targets by quarter and business line, against what you actually invoiced"
+  subtitle="Track revenue targets, gross margin, and invoiced actuals"
   help="Generate a plan from the last 12 months of invoices (and the open pipeline), or set one by hand. Sync actuals reads your issued sales invoices into each quarter. Scenarios show the year 15% worse and 15% better than plan."
 >
-  @if (canCreate()) {
-    <button ar-button type="button" variant="ghost" icon="plus" (click)="openNew()">
+  @if (canCreate() && plan() && !loading() && !loadError()) {
+    <button
+      ar-button
+      type="button"
+      variant="ghost"
+      icon="plus"
+      [disabled]="!!working()"
+      (click)="openNew()"
+    >
       New plan
     </button>
-    <button ar-button type="button" variant="primary" icon="sparkle" (click)="openGenerate()">
+    <button
+      ar-button
+      type="button"
+      variant="primary"
+      icon="sparkle"
+      [disabled]="!!working()"
+      (click)="openGenerate()"
+    >
       Generate plan
     </button>
   }
@@ -15,9 +29,10 @@
 
 <div class="pp ar-scroll">
   @if (loading()) {
-    <p class="pp__note">Loading…</p>
+    <p class="pp__note" role="status">Loading projection plans…</p>
   } @else if (loadError(); as e) {
     <ar-banner tone="bad">{{ e }}</ar-banner>
+    <div><button ar-button type="button" variant="ghost" (click)="load()">Retry</button></div>
   } @else {
     @if (outcome(); as o) {
       <section class="pp__outcome" [class.pp__outcome--warn]="o.tone === 'warn'" role="status">
@@ -73,73 +88,88 @@
     } @else {
       @let p = plan()!;
       <!-- The plan being looked at, and what can be done with it -->
-      <div class="pp__bar">
-        <label class="pp__pick">
-          <span class="ar-field__label">Plan</span>
-          <select
-            class="ar-field__input"
-            aria-label="Projection plan"
-            (change)="pickPlan($any($event.target).value)"
-          >
-            @for (x of plans(); track x.id) {
-              <option [value]="x.id" [selected]="x.id === p.id">
-                {{ x.planCode }} · {{ x.title }} ({{ planStatus(x.status).label }})
-              </option>
-            }
-          </select>
-        </label>
-        <ar-chip [tone]="planStatus(p.status).tone">{{ planStatus(p.status).label }}</ar-chip>
-        <div class="pp__bar-actions">
-          @if (canUpdate()) {
-            <button
-              ar-button
-              type="button"
-              variant="ghost"
-              icon="refresh"
-              [disabled]="!!working()"
-              (click)="sync()"
-            >
-              {{ working() === 'sync' ? 'Reading invoices…' : 'Sync actuals' }}
-            </button>
-          }
-          @if (canSimulate()) {
-            <button
-              ar-button
-              type="button"
-              variant="ghost"
-              icon="analytics"
-              [disabled]="!!working()"
-              (click)="runScenarios()"
-            >
-              {{ working() === 'scenarios' ? 'Working out…' : 'Scenarios' }}
-            </button>
-          }
-          @if (canUpdate() && p.status !== Active) {
-            <button
-              ar-button
-              type="button"
-              variant="primary"
-              icon="check"
-              [disabled]="!!working()"
-              (click)="activate()"
-            >
-              Activate
-            </button>
-          }
-          @if (canDelete()) {
-            <button
-              ar-button
-              type="button"
-              variant="danger"
-              icon="trash"
-              [disabled]="!!working()"
-              (click)="remove()"
-            >
-              Delete
-            </button>
-          }
+      <section class="pp__plan" aria-label="Selected plan">
+        <div class="pp__identity">
+          <div>
+            <p class="pp__note">FY {{ p.fiscalYear }} · {{ p.planCode }}</p>
+            <h2>{{ p.title }}</h2>
+          </div>
+          <ar-chip [dot]="true" [tone]="planStatus(p.status).tone">{{
+            planStatus(p.status).label
+          }}</ar-chip>
         </div>
-      </div>
+        <div class="pp__bar">
+          <label class="pp__pick">
+            <span class="ar-field__label">Plan</span>
+            <select
+              class="ar-field__input"
+              aria-label="Projection plan"
+              #planPicker
+              [disabled]="!!working() || editing()"
+              (change)="pickPlan(planPicker.value); planPicker.value = p.id ?? ''"
+            >
+              @for (x of plans(); track x.id) {
+                <option [value]="x.id" [selected]="x.id === p.id">
+                  {{ x.planCode }} · {{ x.title }} ({{ planStatus(x.status).label }})
+                </option>
+              }
+            </select>
+          </label>
+          <div class="pp__bar-actions">
+            @if (canUpdate()) {
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                icon="refresh"
+                [disabled]="!!working()"
+                (click)="sync()"
+              >
+                {{ working() === 'sync' ? 'Reading invoices…' : 'Sync actuals' }}
+              </button>
+            }
+            @if (canSimulate()) {
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                icon="analytics"
+                [disabled]="!!working()"
+                (click)="runScenarios()"
+              >
+                {{ working() === 'scenarios' ? 'Working out…' : 'Scenarios' }}
+              </button>
+            }
+            @if (canUpdate() && p.status !== Active) {
+              <button
+                ar-button
+                type="button"
+                variant="primary"
+                icon="check"
+                [disabled]="!!working()"
+                (click)="activate()"
+              >
+                Activate
+              </button>
+            }
+            @if (canDelete()) {
+              <button
+                ar-button
+                type="button"
+                variant="danger"
+                icon="trash"
+                [disabled]="!!working()"
+                (click)="remove()"
+              >
+                Delete
+              </button>
+            }
+          </div>
+        </div>
+        @if (working() === 'open') {
+          <p class="pp__note" role="status">Opening plan…</p>
+        }
+      </section>
 
       @if (dashboard(); as d) {
         <div class="pp__kpis">
@@ -148,10 +178,19 @@
             <strong>{{ compact(d.totalProjectedAnnualRevenueInPaise) }}</strong>
             <small>FY {{ p.fiscalYear }}</small>
           </div>
-          <div class="pp__kpi">
+          <div class="pp__kpi pp__kpi--progress">
             <span>Invoiced so far</span>
             <strong>{{ compact(d.ytdActualRevenueInPaise) }}</strong>
-            <small>{{ realised() }}% of the target</small>
+            @if (d.totalProjectedAnnualRevenueInPaise > 0) {
+              <small>{{ realised() }}% of the target</small>
+              <progress
+                aria-label="Revenue target progress"
+                max="100"
+                [value]="bar(d.ytdActualRevenueInPaise, d.totalProjectedAnnualRevenueInPaise)"
+              ></progress>
+            } @else {
+              <small>No revenue target set</small>
+            }
           </div>
           <div class="pp__kpi">
             <span>Gross margin</span>
@@ -166,7 +205,7 @@
             <small>after operating costs</small>
           </div>
           <div class="pp__kpi">
-            <span>Year-end if the rest goes to plan</span>
+            <span>Year-end forecast</span>
             <strong>{{ compact(d.forecastedYearEndLandingInPaise) }}</strong>
             <small>invoiced so far + targets still ahead</small>
           </div>
@@ -174,33 +213,45 @@
       }
 
       @if (!hasActuals()) {
-        <p class="pp__hint">
-          No actuals yet. Click <strong>Sync actuals</strong> to read the issued sales invoices of
-          FY {{ p.fiscalYear }} into the plan.
-        </p>
+        <ar-banner tone="teal">
+          No invoiced actuals for FY {{ p.fiscalYear }}.
+          @if (canUpdate()) {
+            Use <strong>Sync actuals</strong> to import issued sales invoices.
+          }
+        </ar-banner>
       }
 
-      <div class="pp__tabs" role="tablist">
+      <div class="pp__tabs" role="group" aria-label="Projection plan views">
         <button
           type="button"
-          role="tab"
+          [attr.aria-pressed]="tab() === 'overview'"
           [class.on]="tab() === 'overview'"
           (click)="tab.set('overview')"
         >
           Overview
         </button>
-        <button type="button" role="tab" [class.on]="tab() === 'lines'" (click)="tab.set('lines')">
+        <button
+          type="button"
+          [attr.aria-pressed]="tab() === 'lines'"
+          [class.on]="tab() === 'lines'"
+          (click)="tab.set('lines')"
+        >
           Lines ({{ p.items.length }})
         </button>
         <button
           type="button"
-          role="tab"
+          [attr.aria-pressed]="tab() === 'scenarios'"
           [class.on]="tab() === 'scenarios'"
           (click)="tab.set('scenarios')"
         >
           Scenarios
         </button>
-        <button type="button" role="tab" [class.on]="tab() === 'plans'" (click)="tab.set('plans')">
+        <button
+          type="button"
+          [attr.aria-pressed]="tab() === 'plans'"
+          [class.on]="tab() === 'plans'"
+          (click)="tab.set('plans')"
+        >
           All plans ({{ plans().length }})
         </button>
       </div>
@@ -210,68 +261,81 @@
           @if (dashboard(); as d) {
             <div class="pp__grid">
               <ar-card heading="By quarter">
-                <table class="pp__tbl">
-                  <thead>
-                    <tr>
-                      <th>Quarter</th>
-                      <th class="num">Target</th>
-                      <th class="num">Invoiced</th>
-                      <th>Progress</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (q of d.quarterlyTrajections; track q.quarterLabel) {
+                <div class="pp__scroll" role="region" aria-label="Quarterly targets" tabindex="0">
+                  <table class="pp__tbl">
+                    <thead>
                       <tr>
-                        <td>{{ q.quarterLabel }}</td>
-                        <td class="num">{{ compact(q.targetRevenueInPaise) }}</td>
-                        <td class="num">{{ compact(q.actualRevenueInPaise) }}</td>
-                        <td>
-                          <span class="pp__meter">
-                            <span
-                              [style.width.%]="bar(q.actualRevenueInPaise, q.targetRevenueInPaise)"
-                            ></span>
-                          </span>
-                        </td>
-                        <td>
-                          <ar-chip [tone]="itemStatus(q.status).tone">{{
-                            itemStatus(q.status).label
-                          }}</ar-chip>
-                        </td>
+                        <th>Quarter</th>
+                        <th class="num">Target</th>
+                        <th class="num">Invoiced</th>
+                        <th>Progress</th>
+                        <th>Status</th>
                       </tr>
-                    } @empty {
-                      <tr>
-                        <td colspan="5" class="pp__note">This plan has no lines.</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      @for (q of d.quarterlyTrajections; track q.quarterLabel) {
+                        <tr>
+                          <td>{{ q.quarterLabel }}</td>
+                          <td class="num">{{ compact(q.targetRevenueInPaise) }}</td>
+                          <td class="num">{{ compact(q.actualRevenueInPaise) }}</td>
+                          <td>
+                            @if (q.targetRevenueInPaise > 0) {
+                              <progress
+                                [attr.aria-label]="q.quarterLabel + ' revenue progress'"
+                                max="100"
+                                [value]="bar(q.actualRevenueInPaise, q.targetRevenueInPaise)"
+                              ></progress>
+                            } @else {
+                              —
+                            }
+                          </td>
+                          <td>
+                            <ar-chip [tone]="itemStatus(q.status).tone">{{
+                              itemStatus(q.status).label
+                            }}</ar-chip>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="5" class="pp__note">This plan has no lines.</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
               </ar-card>
 
               <ar-card heading="By business line">
-                <table class="pp__tbl">
-                  <thead>
-                    <tr>
-                      <th>Business line</th>
-                      <th class="num">Target</th>
-                      <th class="num">Invoiced</th>
-                      <th class="num">Margin</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (b of d.businessLines; track b.businessLine) {
+                <div
+                  class="pp__scroll"
+                  role="region"
+                  aria-label="Business line targets"
+                  tabindex="0"
+                >
+                  <table class="pp__tbl">
+                    <thead>
                       <tr>
-                        <td>{{ line(b.businessLine) }}</td>
-                        <td class="num">{{ compact(b.projectedRevenueInPaise) }}</td>
-                        <td class="num">
-                          {{ compact(b.actualRevenueInPaise) }}
-                          <small class="pp__muted">{{ b.realizationPercent }}%</small>
-                        </td>
-                        <td class="num">{{ b.marginPercent }}%</td>
+                        <th>Business line</th>
+                        <th class="num">Target</th>
+                        <th class="num">Invoiced</th>
+                        <th class="num">Margin</th>
                       </tr>
-                    }
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      @for (b of d.businessLines; track b.businessLine) {
+                        <tr>
+                          <td>{{ line(b.businessLine) }}</td>
+                          <td class="num">{{ compact(b.projectedRevenueInPaise) }}</td>
+                          <td class="num">
+                            {{ compact(b.actualRevenueInPaise) }}
+                            <small class="pp__muted">{{ b.realizationPercent }}%</small>
+                          </td>
+                          <td class="num">{{ b.marginPercent }}%</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
                 <p class="pp__note">
                   Invoices carry no business line, so each quarter's invoices are shared among the
                   lines in proportion to their targets.
@@ -279,8 +343,22 @@
               </ar-card>
             </div>
           }
-          @if (p.notes) {
-            <ar-card heading="How this plan was made">
+          @if (generatedAssumptions(); as assumptions) {
+            <ar-card heading="Planning assumptions">
+              <p class="pp__note">Inputs used to generate this plan.</p>
+              <dl class="pp__assumptions">
+                <div>
+                  <dt>Target growth</dt>
+                  <dd>{{ assumptions.growth }}%</dd>
+                </div>
+                <div>
+                  <dt>Baseline gross margin</dt>
+                  <dd>{{ assumptions.margin }}%</dd>
+                </div>
+              </dl>
+            </ar-card>
+          } @else if (p.notes?.trim()) {
+            <ar-card heading="Plan notes">
               <p class="pp__notes">{{ p.notes }}</p>
             </ar-card>
           }
@@ -320,7 +398,7 @@
                 </button>
               }
             </div>
-            <div class="pp__scroll">
+            <div class="pp__scroll" role="region" aria-label="Projection targets" tabindex="0">
               <table class="pp__tbl">
                 <thead>
                   <tr>
@@ -384,7 +462,13 @@
                       </tr>
                     } @empty {
                       <tr>
-                        <td colspan="8" class="pp__note">This plan has no lines.</td>
+                        <td colspan="8" class="pp__note">
+                          {{
+                            lineFilter() === 'all'
+                              ? 'This plan has no lines.'
+                              : 'No targets for this quarter.'
+                          }}
+                        </td>
                       </tr>
                     }
                   }
@@ -462,40 +546,46 @@
 
         @case ('plans') {
           <ar-card heading="All plans">
-            <table class="pp__tbl">
-              <thead>
-                <tr>
-                  <th>Plan</th>
-                  <th>Year</th>
-                  <th>Status</th>
-                  <th class="num">Target</th>
-                  <th class="num">Invoiced</th>
-                  <th>Made</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (x of plans(); track x.id) {
-                  <tr
-                    class="pp__row"
-                    [class.pp__row--on]="x.id === p.id"
-                    (click)="pickPlan(x.id!); tab.set('overview')"
-                  >
-                    <td>
-                      <span class="ar-mono">{{ x.planCode }}</span> {{ x.title }}
-                    </td>
-                    <td>{{ x.fiscalYear }}</td>
-                    <td>
-                      <ar-chip [tone]="planStatus(x.status).tone">{{
-                        planStatus(x.status).label
-                      }}</ar-chip>
-                    </td>
-                    <td class="num">{{ compact(x.targetRevenueInPaise) }}</td>
-                    <td class="num">{{ compact(x.actualRevenueInPaise) }}</td>
-                    <td>{{ dayOf(x.creationTime) }}</td>
+            <div class="pp__scroll" role="region" aria-label="Saved projection plans" tabindex="0">
+              <table class="pp__tbl">
+                <thead>
+                  <tr>
+                    <th>Plan</th>
+                    <th>Year</th>
+                    <th>Status</th>
+                    <th class="num">Target</th>
+                    <th class="num">Invoiced</th>
+                    <th>Created</th>
                   </tr>
-                }
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  @for (x of plans(); track x.id) {
+                    <tr [class.pp__row--on]="x.id === p.id">
+                      <td>
+                        <button
+                          type="button"
+                          class="pp__plan-link"
+                          [disabled]="!!working() || editing()"
+                          (click)="pickPlan(x.id!, true)"
+                        >
+                          {{ x.title }}
+                        </button>
+                        <small class="pp__plan-code ar-mono">{{ x.planCode }}</small>
+                      </td>
+                      <td>{{ x.fiscalYear }}</td>
+                      <td>
+                        <ar-chip [tone]="planStatus(x.status).tone">{{
+                          planStatus(x.status).label
+                        }}</ar-chip>
+                      </td>
+                      <td class="num">{{ compact(x.targetRevenueInPaise) }}</td>
+                      <td class="num">{{ compact(x.actualRevenueInPaise) }}</td>
+                      <td>{{ dayOf(x.creationTime) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
           </ar-card>
         }
       }

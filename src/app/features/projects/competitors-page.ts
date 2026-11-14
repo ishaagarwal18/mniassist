@@ -11,7 +11,7 @@ import {
   CompetitorBrandService,
   ProjectSettingsDto,
 } from '../../proxy/projects/competitor-brand.service';
-import { ArBanner, ArButton, ArCard } from '../../ui';
+import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
 
 /** "a; b , c" → ["a", "b", "c"]. */
 function list(text: string): string[] {
@@ -27,7 +27,7 @@ function list(text: string): string[] {
  */
 @Component({
   selector: 'ar-competitors-page',
-  imports: [ArTopbar, ArButton, ArBanner, ArCard, RouterLink],
+  imports: [ArTopbar, ArButton, ArBanner, ArCard, ArChip, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './competitors-page.html',
   styleUrl: './competitors-page.scss',
@@ -45,12 +45,15 @@ export class ArCompetitorsPage {
   protected readonly newMakes = signal('');
   protected readonly error = signal<string | null>(null);
   protected readonly busy = signal(false);
+  protected readonly loading = signal(true);
 
   constructor() {
     void this.load();
   }
 
-  private async load(): Promise<void> {
+  protected async load(): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
     try {
       const [brands, settings] = await Promise.all([
         firstValueFrom(this.api.getList()),
@@ -62,6 +65,8 @@ export class ArCompetitorsPage {
       this.categoriesText.set(settings.categories.join(', '));
     } catch (e) {
       this.error.set(readApiError(e, 'The brands could not be loaded.'));
+    } finally {
+      this.loading.set(false);
     }
   }
 
@@ -74,7 +79,7 @@ export class ArCompetitorsPage {
           ? `${added} brands added. Remove any you don't meet.`
           : 'They are all in the list already.',
       );
-      await this.load();
+      this.brands.set(await firstValueFrom(this.api.getList()));
     } catch (e) {
       this.toasts.error(readApiError(e, 'The brands could not be added.'));
     } finally {
@@ -84,45 +89,55 @@ export class ArCompetitorsPage {
 
   protected async add(): Promise<void> {
     const name = this.newName().trim();
-    if (!name) return;
+    if (!name || this.busy()) return;
+    this.busy.set(true);
     try {
-      await firstValueFrom(this.api.create({ name, makes: list(this.newMakes()), isActive: true }));
+      const created = await firstValueFrom(
+        this.api.create({ name, makes: list(this.newMakes()), isActive: true }),
+      );
+      this.brands.update((brands) =>
+        [...brands, created].sort((left, right) => left.name.localeCompare(right.name)),
+      );
       this.newName.set('');
       this.newMakes.set('');
-      await this.load();
+      this.toasts.success('Brand added.');
     } catch (e) {
       this.toasts.error(readApiError(e, 'The brand could not be added.'));
+    } finally {
+      this.busy.set(false);
     }
   }
 
   protected async toggle(b: CompetitorBrandDto): Promise<void> {
-    try {
-      await firstValueFrom(
-        this.api.update(b.id, {
-          name: b.name,
-          makes: b.makes,
-          notes: b.notes,
-          isActive: !b.isActive,
-        }),
-      );
-      await this.load();
-    } catch (e) {
-      this.toasts.error(readApiError(e, 'The brand could not be changed.'));
-    }
+    await this.updateBrand(b, b.makes, !b.isActive);
   }
 
   protected async setMakes(b: CompetitorBrandDto, text: string): Promise<void> {
+    await this.updateBrand(b, list(text), b.isActive);
+  }
+
+  private async updateBrand(
+    b: CompetitorBrandDto,
+    makes: string[],
+    isActive: boolean,
+  ): Promise<void> {
+    if (this.busy()) return;
+    this.busy.set(true);
     try {
-      await firstValueFrom(
+      const updated = await firstValueFrom(
         this.api.update(b.id, {
           name: b.name,
-          makes: list(text),
+          makes,
           notes: b.notes,
-          isActive: b.isActive,
+          isActive,
         }),
       );
+      this.brands.update((brands) => brands.map((brand) => (brand.id === b.id ? updated : brand)));
+      this.toasts.success('Brand updated.');
     } catch (e) {
-      this.toasts.error(readApiError(e, 'The makes could not be saved.'));
+      this.toasts.error(readApiError(e, 'The brand could not be updated.'));
+    } finally {
+      this.busy.set(false);
     }
   }
 
@@ -133,12 +148,16 @@ export class ArCompetitorsPage {
         'Specifications and lost enquiries that name it keep their record. Switching it off instead hides it from pickers.',
       confirmText: 'Remove',
     });
-    if (!ok) return;
+    if (!ok || this.busy()) return;
+    this.busy.set(true);
     try {
       await firstValueFrom(this.api.delete(b.id));
-      await this.load();
+      this.brands.update((brands) => brands.filter((brand) => brand.id !== b.id));
+      this.toasts.success('Brand removed.');
     } catch (e) {
       this.toasts.error(readApiError(e, 'The brand could not be removed.'));
+    } finally {
+      this.busy.set(false);
     }
   }
 

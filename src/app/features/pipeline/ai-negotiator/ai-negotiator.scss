@@ -12,6 +12,10 @@
   flex-direction: column;
   gap: 14px;
 }
+.ng > * {
+  flex-shrink: 0;
+  min-width: 0;
+}
 .ng__note {
   margin: 0;
   font: 400 12.5px/1.5 var(--ar-font-sans);
@@ -31,7 +35,7 @@
 
 .ng__kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
   gap: 10px;
 }
 .ng__kpi {
@@ -73,6 +77,7 @@ button.ng__kpi:hover {
 
 .ng__tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   border-bottom: 1px solid var(--ar-line-200);
 }
@@ -106,7 +111,7 @@ button.ng__kpi:hover {
 
 .ng__split {
   display: grid;
-  grid-template-columns: minmax(260px, 320px) 1fr;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
   gap: 14px;
   align-items: start;
 }
@@ -192,6 +197,7 @@ button.ng__kpi:hover {
 }
 .ng__head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
   align-items: flex-start;
@@ -214,7 +220,7 @@ button.ng__kpi:hover {
 
 .ng__figures {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr));
   gap: 8px;
 }
 .ng__figures div {
@@ -314,6 +320,8 @@ button.ng__kpi:hover {
 }
 .ng__msg {
   max-width: 80%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
   padding: 8px 12px;
   border-radius: 10px;
   font: 400 13px/1.5 var(--ar-font-sans);
@@ -364,7 +372,7 @@ button.ng__kpi:hover {
 
 .ng__rules {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 14px;
   margin: 8px 0;
 }
@@ -391,4 +399,22 @@ button.ng__kpi:hover {
 .ng__summary {
   margin: 10px 0;
   font: 400 13px/1.6 var(--ar-font-sans);
+}
+.ng__practice-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-block: 14px;
+}
+.ng__transcript-heading {
+  margin: 16px 0 10px;
+}
+@media (max-width: 600px) {
+  .ng {
+    padding-inline: 12px;
+  }
+  .ng__practice-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ng__msg {
+    max-width: 94%;
+  }
 }

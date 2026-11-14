@@ -41,22 +41,27 @@
       </div>
     </div>
 
-    <div class="ng__tabs" role="tablist">
+    <div class="ng__tabs" role="group" aria-label="Negotiator views">
       <button
         type="button"
-        role="tab"
+        [attr.aria-pressed]="tab() === 'negotiations'"
         [class.on]="tab() === 'negotiations'"
         (click)="tab.set('negotiations')"
       >
         Negotiations ({{ sessions().length }})
       </button>
-      <button type="button" role="tab" [class.on]="tab() === 'rules'" (click)="tab.set('rules')">
+      <button
+        type="button"
+        [attr.aria-pressed]="tab() === 'rules'"
+        [class.on]="tab() === 'rules'"
+        (click)="tab.set('rules')"
+      >
         Rules
       </button>
       @if (canPractise()) {
         <button
           type="button"
-          role="tab"
+          [attr.aria-pressed]="tab() === 'practice'"
           [class.on]="tab() === 'practice'"
           (click)="tab.set('practice')"
         >
@@ -469,79 +474,80 @@
       }
 
       @case ('practice') {
-        <ar-card heading="Practice against a pretend customer">
+        <ar-card heading="Practice negotiation">
           <p class="ng__note">
             Nothing is saved and nobody is messaged. See how your rules answer a customer before
             using them on a real quotation.
           </p>
-          <div class="ng__rules">
-            <label class="ar-field" for="p-quote">
-              <span class="ar-field__label">Quoted price (₹)</span>
-              <input
-                id="p-quote"
-                class="ar-field__input"
-                inputmode="decimal"
-                [value]="simQuote()"
-                (input)="simQuote.set($any($event.target).value)"
-              />
-            </label>
-            <label class="ar-field" for="p-cost">
-              <span class="ar-field__label">Your cost (₹)</span>
-              <input
-                id="p-cost"
-                class="ar-field__input"
-                inputmode="decimal"
-                [value]="simCost()"
-                (input)="simCost.set($any($event.target).value)"
-              />
-            </label>
-            <label class="ar-field" for="p-persona">
-              <span class="ar-field__label">Kind of customer</span>
-              <select
-                id="p-persona"
-                class="ar-field__input"
-                (change)="simPersona.set(+$any($event.target).value)"
+          <form (submit)="$event.preventDefault(); !working() && practise()">
+            <div class="ng__rules ng__practice-fields">
+              <label class="ar-field" for="p-quote">
+                <span class="ar-field__label">Quoted price (₹)</span>
+                <input
+                  id="p-quote"
+                  class="ar-field__input"
+                  inputmode="decimal"
+                  [value]="simQuote()"
+                  (input)="simQuote.set($any($event.target).value)"
+                />
+              </label>
+              <label class="ar-field" for="p-cost">
+                <span class="ar-field__label">Your cost (₹)</span>
+                <input
+                  id="p-cost"
+                  class="ar-field__input"
+                  inputmode="decimal"
+                  [value]="simCost()"
+                  (input)="simCost.set($any($event.target).value)"
+                />
+              </label>
+              <label class="ar-field" for="p-persona">
+                <span class="ar-field__label">Kind of customer</span>
+                <select
+                  id="p-persona"
+                  class="ar-field__input"
+                  (change)="simPersona.set(+$any($event.target).value)"
+                >
+                  @for (p of personas; track p.value) {
+                    <option [value]="p.value" [selected]="p.value === simPersona()">
+                      {{ p.label }}
+                    </option>
+                  }
+                </select>
+              </label>
+              <label class="ar-field" for="p-demand">
+                <span class="ar-field__label">Discount they ask for (%)</span>
+                <input
+                  id="p-demand"
+                  class="ar-field__input"
+                  inputmode="decimal"
+                  [value]="simDemand()"
+                  (input)="simDemand.set($any($event.target).value)"
+                />
+              </label>
+            </div>
+            <div class="ng__rules-actions">
+              <button
+                ar-button
+                type="submit"
+                variant="primary"
+                icon="sparkle"
+                [disabled]="!!working()"
               >
-                @for (p of personas; track p.value) {
-                  <option [value]="p.value" [selected]="p.value === simPersona()">
-                    {{ p.label }}
-                  </option>
-                }
-              </select>
-            </label>
-            <label class="ar-field" for="p-demand">
-              <span class="ar-field__label">Discount they ask for (%)</span>
-              <input
-                id="p-demand"
-                class="ar-field__input"
-                inputmode="decimal"
-                [value]="simDemand()"
-                (input)="simDemand.set($any($event.target).value)"
-              />
-            </label>
-          </div>
-          <div class="ng__rules-actions">
-            <button
-              ar-button
-              type="button"
-              variant="primary"
-              icon="sparkle"
-              [disabled]="!!working()"
-              (click)="practise()"
-            >
-              {{ working() === 'practice' ? 'Playing it out…' : 'Play it out' }}
-            </button>
-          </div>
+                {{ working() === 'practice' ? 'Running simulation…' : 'Run simulation' }}
+              </button>
+            </div>
+          </form>
         </ar-card>
 
         @if (sim(); as r) {
-          <ar-card heading="How it went">
+          <ar-card heading="Simulation results">
             <div class="ng__figures">
               <div>
-                <span>Ended</span><strong>{{ statusOf[r.finalStatus].label }}</strong>
+                <span>Status</span><strong>{{ statusOf[r.finalStatus].label }}</strong>
               </div>
               <div>
-                <span>Final price</span><strong>{{ money(r.finalAmountInPaise) }}</strong>
+                <span>Latest offer</span><strong>{{ money(r.finalAmountInPaise) }}</strong>
               </div>
               <div>
                 <span>Discount</span><strong>{{ r.finalDiscountPercent }}%</strong>
@@ -551,6 +557,7 @@
               </div>
             </div>
             <p class="ng__summary">{{ r.simulationSummary }}</p>
+            <h3 class="ng__h ng__transcript-heading">Practice transcript</h3>
             <ol class="ng__chat">
               @for (o of r.rounds; track $index) {
                 <li [class]="'ng__msg ng__msg--' + side(o)">
@@ -565,7 +572,7 @@
                   </div>
                   @if (o.aiReasoning) {
                     <details>
-                      <summary>Why</summary>
+                      <summary>Show reasoning</summary>
                       <p>{{ o.aiReasoning }}</p>
                     </details>
                   }

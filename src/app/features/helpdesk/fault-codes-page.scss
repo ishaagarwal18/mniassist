@@ -13,8 +13,14 @@
   gap: 14px;
   max-width: 1150px;
 }
+/* Let the editor and library flow at their full height inside the scroll area. */
+.fc > * {
+  flex-shrink: 0;
+  min-width: 0;
+}
 .fc__tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   border-bottom: 1px solid var(--ar-line-200);
 }
@@ -33,7 +39,7 @@
 }
 .fc__grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   align-items: end;
   margin-bottom: 10px;
@@ -46,7 +52,7 @@
 }
 @media (max-width: 900px) {
   .fc__grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 .fc__h {
@@ -61,7 +67,8 @@
   margin-bottom: 6px;
 }
 .fc__row input {
-  flex: 1;
+  flex: 1 1 160px;
+  min-width: 0;
 }
 .fc__n {
   width: 18px;
@@ -85,6 +92,7 @@
 }
 .fc__foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin-top: 12px;
@@ -94,11 +102,13 @@
 }
 .fc__bar {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
 }
 .fc__search {
-  flex: 1;
+  flex: 1 1 200px;
+  min-width: 0;
   max-width: 420px;
 }
 .fc__state {
@@ -164,4 +174,21 @@
   padding-left: 18px;
   color: var(--ar-amber-700);
   font: 400 12.5px var(--ar-font-sans);
+}
+@media (max-width: 600px) {
+  .fc {
+    padding-inline: 12px;
+  }
+  .fc__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fc__wide {
+    grid-column: 1 / -1;
+  }
+  .fc__row {
+    flex-wrap: wrap;
+  }
+  .fc__role {
+    max-width: 100%;
+  }
 }

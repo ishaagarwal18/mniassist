@@ -13,6 +13,10 @@
   gap: 14px;
   max-width: 1100px;
 }
+.ep > * {
+  flex-shrink: 0;
+  min-width: 0;
+}
 .ep__grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -35,6 +39,7 @@
   color: var(--ar-ink-700);
 }
 .ep__hours {
+  min-inline-size: 0;
   margin: 14px 0 0;
   padding: 10px 12px;
   border: 1px solid var(--ar-line-200);
@@ -59,9 +64,13 @@
 .ep__time {
   width: 120px;
 }
+.ep__steps-scroll {
+  overflow-x: auto;
+  margin-top: 14px;
+}
 .ep__steps {
   width: 100%;
-  margin-top: 14px;
+  min-width: 700px;
   border-collapse: collapse;
   font: 400 13px var(--ar-font-sans);
 }
@@ -87,6 +96,9 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px 12px;
 }
+.ep__check input {
+  flex-shrink: 0;
+}
 .ep__muted {
   display: block;
   margin-top: 4px;
@@ -100,11 +112,17 @@
 }
 .ep__foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
   margin-top: 12px;
 }
 .ep__foot .ep__muted {
-  flex: 1;
+  flex: 1 1 240px;
   margin: 0;
+}
+@media (max-width: 600px) {
+  .ep {
+    padding-inline: 12px;
+  }
 }

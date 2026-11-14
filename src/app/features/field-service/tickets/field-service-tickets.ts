@@ -322,60 +322,65 @@ import { initialSearch } from '../../../core/util/customer-scope';
     <!-- Resolve Ticket Dialog -->
     <ar-dialog
       *ngIf="isResolveOpen()"
-      title="Resolve Ticket & Customer Signoff"
+      title="Resolve ticket"
+      width="min(560px, calc(100vw - 32px))"
       (dismiss)="isResolveOpen.set(false)"
     >
-      <div class="modal-body-container" *ngIf="selectedTicket() as ticket">
-        <p class="mb-3">
-          Closing ticket <strong>{{ ticket.ticketNumber }}</strong> after resolving breakdown.
+      <div class="resolve-fields" *ngIf="selectedTicket() as ticket">
+        <p class="resolve-context">
+          Record the resolution and customer signoff for <strong>{{ ticket.ticketNumber }}</strong
+          >.
         </p>
 
-        <div class="form-group full-width">
-          <label>Root Cause Analysis (RCA)</label>
+        <label class="ar-field">
+          <span class="ar-field__label">Root cause analysis</span>
           <textarea
-            class="form-control"
-            rows="2"
+            class="ar-field__input"
+            rows="3"
             [(ngModel)]="resolveForm.rootCauseAnalysis"
-            placeholder="Detailed technical cause of machine fault..."
+            placeholder="What caused the breakdown?"
           ></textarea>
-        </div>
+        </label>
 
-        <div class="form-group full-width mt-3">
-          <label>Resolution Summary & Actions Taken</label>
+        <label class="ar-field">
+          <span class="ar-field__label">Resolution summary</span>
           <textarea
-            class="form-control"
-            rows="2"
+            class="ar-field__input"
+            rows="3"
             [(ngModel)]="resolveForm.resolutionSummary"
-            placeholder="Replaced valve spool, flushed circuit, restored 350 bar test pressure..."
+            placeholder="What was done to restore service?"
           ></textarea>
-        </div>
+        </label>
 
-        <div class="form-grid mt-3">
-          <div class="form-group">
-            <label>Customer Representative Name</label>
+        <div class="resolve-signoff">
+          <label class="ar-field">
+            <span class="ar-field__label">Customer representative</span>
             <input
               type="text"
-              class="form-control"
+              class="ar-field__input"
               [(ngModel)]="resolveForm.customerSignoffName"
-              placeholder="Client Signatory"
+              placeholder="Full name"
             />
-          </div>
-          <div class="form-group">
-            <label>Customer Satisfaction Rating (1 to 5 Stars)</label>
-            <select class="form-control" [(ngModel)]="resolveForm.customerSatisfactionRating">
-              <option [ngValue]="5">5 - Excellent (Fast resolution)</option>
+          </label>
+          <label class="ar-field">
+            <span class="ar-field__label">Satisfaction rating</span>
+            <select class="ar-field__input" [(ngModel)]="resolveForm.customerSatisfactionRating">
+              <option [ngValue]="5">5 - Excellent</option>
               <option [ngValue]="4">4 - Good</option>
               <option [ngValue]="3">3 - Satisfactory</option>
               <option [ngValue]="2">2 - Poor</option>
               <option [ngValue]="1">1 - Unsatisfactory</option>
             </select>
-          </div>
+          </label>
         </div>
-
-        <div class="dialog-actions mt-4">
-          <button ar-button="primary" (click)="resolveTicket()">Resolve & Close Ticket</button>
-          <button ar-button="ghost" (click)="isResolveOpen.set(false)">Cancel</button>
-        </div>
+      </div>
+      <div dialogActions class="resolve-actions">
+        <button ar-button type="button" variant="ghost" (click)="isResolveOpen.set(false)">
+          Cancel
+        </button>
+        <button ar-button type="button" variant="primary" (click)="resolveTicket()">
+          Resolve and close
+        </button>
       </div>
     </ar-dialog>
   `,
@@ -784,42 +789,34 @@ import { initialSearch } from '../../../core/util/customer-scope';
         }
       }
 
-      .modal-body-container {
-        padding: 1.25rem;
-      }
-
-      .form-grid {
+      .resolve-fields,
+      .resolve-signoff {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
+        gap: 14px;
       }
-
-      .form-group {
+      .resolve-signoff {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+      }
+      .resolve-fields .ar-field,
+      .resolve-fields .ar-field__input {
+        min-width: 0;
+      }
+      .resolve-fields .ar-field__input {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .resolve-fields textarea {
+        resize: vertical;
+      }
+      .resolve-context {
+        margin: 0;
+        color: var(--ar-ink-600);
+      }
+      .resolve-actions {
         display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
-
-        &.full-width {
-          grid-column: 1 / -1;
-        }
-
-        label {
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: #334155;
-        }
-
-        .form-control {
-          padding: 0.45rem 0.75rem;
-          border: 1px solid #cbd5e1;
-          border-radius: 5px;
-          font-size: 0.875rem;
-
-          &:focus {
-            outline: none;
-            border-color: #0284c7;
-          }
-        }
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
       }
 
       .checkbox-label {
@@ -828,12 +825,6 @@ import { initialSearch } from '../../../core/util/customer-scope';
         gap: 0.5rem;
         font-size: 0.85rem;
         cursor: pointer;
-      }
-
-      .dialog-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.75rem;
       }
 
       .fw-bold {

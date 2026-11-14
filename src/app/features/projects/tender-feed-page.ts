@@ -13,6 +13,7 @@ import {
   TenderFeedSettingsDto,
 } from '../../proxy/projects/tender-feed.service';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
+import type { ChipTone } from '../../ui/chip';
 import { TENDER_STATUS_TEXT, splitList } from './project.logic';
 
 /**
@@ -40,6 +41,7 @@ export class ArTenderFeedPage {
   protected readonly alerts = signal<TenderAlertDto[]>([]);
   protected readonly error = signal<string | null>(null);
   protected readonly busy = signal(false);
+  protected readonly loading = signal(true);
   protected readonly Status = TenderAlertStatus;
 
   constructor() {
@@ -50,19 +52,40 @@ export class ArTenderFeedPage {
     return TENDER_STATUS_TEXT[status] ?? '';
   }
 
-  private async load(): Promise<void> {
+  protected statusTone(status: TenderAlertStatus): ChipTone {
+    switch (status) {
+      case TenderAlertStatus.Failed:
+        return 'bad';
+      case TenderAlertStatus.Suggested:
+        return 'ai';
+      case TenderAlertStatus.ProjectCreated:
+        return 'good';
+      case TenderAlertStatus.Queued:
+        return 'teal';
+      default:
+        return 'neutral';
+    }
+  }
+
+  protected async load(refreshForm = true): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
     try {
       const [settings, alerts] = await Promise.all([
         firstValueFrom(this.api.getSettings()),
         firstValueFrom(this.api.getAlerts({ maxResultCount: 50 })),
       ]);
       this.settings.set(settings);
-      this.enabled.set(settings.enabled);
-      this.keywordsText.set(settings.keywords.map((k) => k.word).join(', '));
-      this.sendersText.set(settings.senders.join(', '));
+      if (refreshForm) {
+        this.enabled.set(settings.enabled);
+        this.keywordsText.set(settings.keywords.map((k) => k.word).join(', '));
+        this.sendersText.set(settings.senders.join(', '));
+      }
       this.alerts.set(alerts.items ?? []);
     } catch (e) {
       this.error.set(readApiError(e, 'The tender feed could not be loaded.'));
+    } finally {
+      this.loading.set(false);
     }
   }
 
@@ -92,7 +115,7 @@ export class ArTenderFeedPage {
     try {
       const made = await firstValueFrom(this.api.createInboundAddress());
       this.inboundUrl.set(made.url);
-      await this.load();
+      await this.load(false);
     } catch (e) {
       this.toasts.error(readApiError(e, 'The inbound address could not be made.'));
     } finally {
@@ -103,8 +126,12 @@ export class ArTenderFeedPage {
   protected async copyAddress(): Promise<void> {
     const url = this.inboundUrl();
     if (!url) return;
-    await navigator.clipboard.writeText(url);
-    this.toasts.success('Address copied.');
+    try {
+      await navigator.clipboard.writeText(url);
+      this.toasts.success('Address copied.');
+    } catch {
+      this.toasts.error('Could not copy automatically. Select and copy the address manually.');
+    }
   }
 
   protected async paste(): Promise<void> {
@@ -115,10 +142,8 @@ export class ArTenderFeedPage {
       await firstValueFrom(this.api.paste({ subject: this.pasteSubject().trim() || null, text }));
       this.pasteSubject.set('');
       this.pasteText.set('');
-      this.toasts.success(
-        'Alert taken. It is read in a minute; a match shows on the projects board.',
-      );
-      await this.load();
+      this.toasts.success('Alert queued. Matching alerts appear on the projects board.');
+      await this.load(false);
     } catch (e) {
       this.toasts.error(readApiError(e, 'The alert could not be taken.'));
     } finally {
