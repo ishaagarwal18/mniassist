@@ -33,8 +33,8 @@ describe('New AI call batch page', () => {
             getList: () =>
               of({
                 items: [
-                  { id: 'ch1', provider: 0, verifiedName: 'Meridian' },
-                  { id: 'g1', provider: 1, verifiedName: 'Through a partner' },
+                  { id: 'ch1', verifiedName: 'Meridian' },
+                  { id: 'ch2', verifiedName: 'Meridian Service' },
                 ],
                 totalCount: 2,
               }),
@@ -78,10 +78,10 @@ describe('New AI call batch page', () => {
     fixture.detectChanges();
   }
 
-  it('offers only Meta-direct numbers and refuses a window outside 09:00–21:00 before calling the API', async () => {
+  it('offers every connected number and refuses a window outside 09:00–21:00 before calling the API', async () => {
     const { fixture, root } = await create();
     const channel = root.querySelector('select[name="channelId"]') as HTMLSelectElement;
-    expect([...channel.options].map((o) => o.value)).toEqual(['ch1']);
+    expect([...channel.options].map((o) => o.value)).toEqual(['ch1', 'ch2']);
 
     await type(
       fixture,

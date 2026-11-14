@@ -950,6 +950,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'finance/gst-compliance/connection',
+        title: 'GST portal connection · MNI Assist',
+        loadComponent: () =>
+          import('./features/finance/gst-compliance/gst-portal-connection').then(
+            (m) => m.ArGstPortalConnection,
+          ),
+      },
+      {
         path: 'finance/gst-compliance/eway/:id',
         title: 'Generate E-Way Bill · MNI Assist',
         loadComponent: () =>

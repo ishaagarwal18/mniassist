@@ -37,7 +37,7 @@ function when(utc: string | null | undefined): string {
 }
 
 /**
- * Meta ads against what they brought: for each ad or boosted post, the Click-to-WhatsApp chats
+ * Meta ads against what they brought: for each ad or boosted post, the WhatsApp and Messenger chats
  * it started, the lead-form leads it brought, the enquiries and wins that followed and, once the
  * workspace connects its ad account (ads_read), what the ad cost and so what each enquiry cost.
  * Facebook sends the person back to /analytics/ads/callback, which is this same screen finishing
@@ -211,7 +211,7 @@ function when(utc: string | null | undefined): string {
             <e-column field="lastSeen" headerText="Last activity" width="110" />
           </e-columns>
           <ng-template #emptyRecordTemplate
-            >No ad activity in this period. Chats opened from a Click-to-WhatsApp ad, leads from a
+            >No ad activity in this period. Chats opened from a WhatsApp or Messenger ad, leads from a
             lead form, and spend from a connected ad account appear here by ad.</ng-template
           >
         </ejs-grid>

@@ -73,3 +73,25 @@ export enum EWayBillStatus {
   Cancelled = 3,
   Expired = 4,
 }
+
+/** Where a workspace's e-invoices and e-way bills are registered. Only Live numbers are legally valid. */
+export enum GstPortalMode {
+  Off = 0,
+  Test = 1,
+  Sandbox = 2,
+  Live = 3,
+}
+
+export enum EWayTransportMode {
+  Road = 1,
+  Rail = 2,
+  Air = 3,
+  Ship = 4,
+}
+
+export enum GstCancelReason {
+  Duplicate = 1,
+  DataEntryMistake = 2,
+  OrderCancelled = 3,
+  Other = 4,
+}

@@ -110,7 +110,6 @@ export interface ConfigureCustomDomainInput {
 }
 
 export interface VerifyCustomDomainInput {
-  simulateSuccess: boolean;
 }
 
 export interface ResellerClientTenantDto extends FullAuditedEntityDto<string> {

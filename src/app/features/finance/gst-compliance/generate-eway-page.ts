@@ -2,32 +2,51 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ConfirmService } from '../../../core/ui/confirm.service';
 import { ToastService } from '../../../core/ui/toast.service';
+import { readApiError } from '../../../core/util/api-error';
 import { ArTopbar } from '../../../layout/topbar';
 import {
   EWayBillStatus,
-  GenerateEWayBillInput,
+  EWayTransportMode,
   GstAuditRegisterDto,
   GstComplianceService,
+  GstPortalMode,
+  GstPortalReadinessDto,
 } from '../../../proxy/finance';
-import { ArButton, ArCard, ArChip } from '../../../ui';
-
-const GSTIN_OR_TRANSPORTER_ID = /^[0-9]{2}[A-Z0-9]{13}$/;
-/** Indian vehicle registration, e.g. MH14BT4590 or MH-14-BT-4590 (separators ignored). */
-const VEHICLE_NUMBER = /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/;
+import { ArBanner, ArButton, ArCard, ArChip } from '../../../ui';
+import {
+  askCancelReason,
+  EWayForm,
+  eWayInputFrom,
+  portalModeLabel,
+  TRANSPORT_MODES,
+  unofficialNumberChip,
+} from './gst-portal.logic';
 
 /**
- * Generate the e-way bill for one invoice in the GST register (/finance/gst-compliance/eway/:id). Part A comes from the
- * invoice; Part B — the transporter, vehicle and distance — is entered here. On success the number is kept on the register
- * row and on the sales invoice.
+ * The e-way bill for one invoice in the GST register (/finance/gst-compliance/eway/:id). Part A comes from the invoice;
+ * Part B — how the goods travel, the transporter, the vehicle and the distance — is entered here. The number comes from
+ * the GST portal in Live mode and goes on the register row and the sales invoice; in Test and Sandbox it stays on the
+ * register only.
  */
 @Component({
   selector: 'ar-generate-eway-page',
   standalone: true,
-  imports: [DecimalPipe, DatePipe, FormsModule, RouterLink, ArTopbar, ArCard, ArButton, ArChip],
+  imports: [
+    DecimalPipe,
+    DatePipe,
+    FormsModule,
+    RouterLink,
+    ArTopbar,
+    ArCard,
+    ArButton,
+    ArChip,
+    ArBanner,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ar-topbar title="Generate e-way bill" [subtitle]="record()?.documentNumber ?? ''">
+    <ar-topbar title="E-way bill" [subtitle]="record()?.documentNumber ?? ''">
       <a ar-button variant="ghost" routerLink="/finance/gst-compliance">Back to GST compliance</a>
     </ar-topbar>
 
@@ -44,11 +63,42 @@ const VEHICLE_NUMBER = /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/;
           </div>
         </ar-card>
       } @else if (record(); as doc) {
+        @if (readiness(); as ready) {
+          @if (ready.mode === GstPortalMode.Off) {
+            <ar-banner tone="warn">
+              E-way bills are switched off for this workspace.
+              <a
+                banner-actions
+                ar-button
+                variant="ghost"
+                routerLink="/finance/gst-compliance/connection"
+                >GST portal connection</a
+              >
+            </ar-banner>
+          } @else if (!ready.isConnected) {
+            <ar-banner tone="warn">
+              The Masters India account is not set, so nothing can be sent to the portal yet.
+              <a
+                banner-actions
+                ar-button
+                variant="ghost"
+                routerLink="/finance/gst-compliance/connection"
+                >GST portal connection</a
+              >
+            </ar-banner>
+          } @else if (ready.mode !== GstPortalMode.Live) {
+            <ar-banner tone="teal">
+              {{ modeLabel(ready.mode) }} mode: the number you get here is a rehearsal and is not a
+              valid e-way bill.
+            </ar-banner>
+          }
+        }
+
         <ar-card heading="Invoice and consignee (Part A)">
           <dl class="ewb__facts">
             <div>
               <dt>Invoice</dt>
-              <dd class="ar-mono">{{ doc.documentNumber }}</dd>
+              <dd class="ar-mono" translate="no">{{ doc.documentNumber }}</dd>
             </div>
             <div>
               <dt>Date</dt>
@@ -56,7 +106,7 @@ const VEHICLE_NUMBER = /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/;
             </div>
             <div>
               <dt>Consignee</dt>
-              <dd>{{ doc.counterpartyLegalName }}</dd>
+              <dd translate="no">{{ doc.counterpartyLegalName }}</dd>
             </div>
             <div>
               <dt>Consignee GSTIN</dt>
@@ -83,8 +133,11 @@ const VEHICLE_NUMBER = /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/;
           <ar-card heading="E-way bill">
             <div class="ewb__done">
               <ar-chip tone="good" [dot]="true">Active</ar-chip>
+              @if (chip(doc.eWayBillMode); as c) {
+                <ar-chip [tone]="c.tone" [title]="c.title">{{ c.label }}</ar-chip>
+              }
               <span>
-                Number <strong class="ar-mono">{{ doc.eWayBillNumber }}</strong>
+                Number <strong class="ar-mono" translate="no">{{ doc.eWayBillNumber }}</strong>
                 @if (doc.eWayBillValidUntilUtc) {
                   · valid until {{ doc.eWayBillValidUntilUtc | date: 'medium' }}
                 }
@@ -92,46 +145,82 @@ const VEHICLE_NUMBER = /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/;
             </div>
             <p class="ewb__muted">
               Vehicle {{ doc.vehicleNumber || '—' }} · Transporter
-              {{ doc.transporterGstin || '—' }} · {{ doc.distanceInKm ?? '—' }} km
+              {{ doc.transporterName || doc.transporterGstin || '—' }} ·
+              {{ doc.distanceInKm ?? '—' }} km
             </p>
+            <div class="ewb__actions">
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                [disabled]="isSubmitting()"
+                (click)="cancelEWayBill()"
+              >
+                Cancel e-way bill
+              </button>
+            </div>
           </ar-card>
-        } @else if (doc.eWayBillStatus !== EWayBillStatus.PendingGeneration) {
-          <ar-card>
-            <p class="ewb__muted">
-              This invoice doesn't need an e-way bill: one is required for goods worth more than
-              ₹50,000.
-            </p>
-          </ar-card>
-        } @else {
+        }
+
+        @if (doc.eWayBillStatus === EWayBillStatus.Cancelled) {
+          <ar-banner tone="teal">
+            E-way bill <span class="ar-mono" translate="no">{{ doc.eWayBillNumber }}</span> was
+            cancelled{{ doc.eWayBillCancelRemarks ? ': ' + doc.eWayBillCancelRemarks : '' }}. A new
+            one can be generated below.
+          </ar-banner>
+        }
+
+        @if (showForm(doc)) {
+          @if (problems().length) {
+            <ar-banner tone="warn">
+              <strong>Fix these first, then generate the e-way bill:</strong>
+              <ul class="ewb__list">
+                @for (p of problems(); track p) {
+                  <li>{{ p }}</li>
+                }
+              </ul>
+            </ar-banner>
+          }
+          @if (doc.eWayBillLastError; as last) {
+            <ar-banner tone="bad"
+              >The portal refused the last attempt:
+              <span translate="no">{{ last }}</span></ar-banner
+            >
+          }
+
           <ar-card heading="Transport (Part B)">
             <p class="ewb__muted">
-              Needed for goods worth more than ₹50,000 (CGST Rule 138). Validity is set from the
-              distance: one day for every 200 km.
+              Needed for goods worth more than ₹50,000 (CGST Rule 138). The portal sets the validity
+              from the distance: one day for every 200 km.
             </p>
             <form class="ewb__form" (ngSubmit)="submitEWayBill()">
               <label class="ar-field">
-                <span class="ar-field__label"
-                  >Vehicle number <span class="ar-field__req">*</span></span
+                <span class="ar-field__label">Mode of transport</span>
+                <select
+                  class="ar-field__input"
+                  name="transportMode"
+                  [(ngModel)]="form.transportMode"
                 >
+                  @for (m of transportModes; track m.value) {
+                    <option [ngValue]="m.value">{{ m.label }}</option>
+                  }
+                </select>
+              </label>
+              <label class="ar-field">
+                <span class="ar-field__label"
+                  >Vehicle number
+                  @if (form.transportMode === EWayTransportMode.Road) {
+                    <span class="ar-field__opt">or a transporter</span>
+                  } @else {
+                    <span class="ar-field__opt">optional</span>
+                  }
+                </span>
                 <input
                   class="ar-field__input ar-mono"
                   name="vehicleNumber"
                   placeholder="e.g. MH14BT4590"
                   autocomplete="off"
-                  [(ngModel)]="vehicleNumber"
-                />
-              </label>
-              <label class="ar-field">
-                <span class="ar-field__label"
-                  >Transporter GSTIN or ID <span class="ar-field__opt">optional</span></span
-                >
-                <input
-                  class="ar-field__input ar-mono"
-                  name="transporterGstin"
-                  maxlength="15"
-                  placeholder="15 characters"
-                  autocomplete="off"
-                  [(ngModel)]="transporterGstin"
+                  [(ngModel)]="form.vehicleNumber"
                 />
               </label>
               <label class="ar-field">
@@ -144,7 +233,60 @@ const VEHICLE_NUMBER = /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/;
                   max="4000"
                   class="ar-field__input"
                   name="distanceInKm"
-                  [(ngModel)]="distanceInKm"
+                  [(ngModel)]="form.distanceInKm"
+                />
+              </label>
+              <label class="ar-field">
+                <span class="ar-field__label"
+                  >Transporter GSTIN or ID <span class="ar-field__opt">optional</span></span
+                >
+                <input
+                  class="ar-field__input ar-mono"
+                  name="transporterGstin"
+                  maxlength="15"
+                  placeholder="15 characters"
+                  autocomplete="off"
+                  [(ngModel)]="form.transporterGstin"
+                />
+              </label>
+              <label class="ar-field">
+                <span class="ar-field__label"
+                  >Transporter name <span class="ar-field__opt">optional</span></span
+                >
+                <input
+                  class="ar-field__input"
+                  name="transporterName"
+                  maxlength="100"
+                  autocomplete="off"
+                  [(ngModel)]="form.transporterName"
+                />
+              </label>
+              <label class="ar-field">
+                <span class="ar-field__label"
+                  >{{ documentLabel() }}
+                  @if (form.transportMode === EWayTransportMode.Road) {
+                    <span class="ar-field__opt">optional</span>
+                  } @else {
+                    <span class="ar-field__req">*</span>
+                  }
+                </span>
+                <input
+                  class="ar-field__input ar-mono"
+                  name="transportDocumentNumber"
+                  maxlength="15"
+                  autocomplete="off"
+                  [(ngModel)]="form.transportDocumentNumber"
+                />
+              </label>
+              <label class="ar-field">
+                <span class="ar-field__label"
+                  >Document date <span class="ar-field__opt">optional</span></span
+                >
+                <input
+                  type="date"
+                  class="ar-field__input"
+                  name="transportDocumentDate"
+                  [(ngModel)]="form.transportDocumentDate"
                 />
               </label>
               @if (formError(); as e) {
@@ -152,11 +294,23 @@ const VEHICLE_NUMBER = /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/;
               }
               <div class="ewb__actions ewb__wide">
                 <a ar-button variant="ghost" routerLink="/finance/gst-compliance">Cancel</a>
-                <button ar-button type="submit" variant="primary" [disabled]="isSubmitting()">
+                <button
+                  ar-button
+                  type="submit"
+                  variant="primary"
+                  [disabled]="isSubmitting() || !canSend()"
+                >
                   {{ isSubmitting() ? 'Generating…' : 'Generate e-way bill' }}
                 </button>
               </div>
             </form>
+          </ar-card>
+        } @else if (doc.eWayBillStatus === EWayBillStatus.NotApplicable) {
+          <ar-card>
+            <p class="ewb__muted">
+              This invoice doesn't need an e-way bill: one is required for goods worth more than
+              ₹50,000.
+            </p>
           </ar-card>
         }
       }
@@ -203,6 +357,10 @@ const VEHICLE_NUMBER = /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/;
       margin: 0 0 12px;
       font: 400 12.5px var(--ar-font-sans);
       color: var(--ar-ink-500);
+    }
+    .ewb__list {
+      margin: 6px 0 0;
+      padding-left: 18px;
     }
     .ewb__done {
       display: flex;
@@ -266,18 +424,64 @@ export class ArGenerateEWayPage implements OnInit {
   private readonly router = inject(Router);
   private readonly gstService = inject(GstComplianceService);
   private readonly toasts = inject(ToastService);
+  private readonly confirm = inject(ConfirmService);
 
   protected readonly EWayBillStatus = EWayBillStatus;
+  protected readonly EWayTransportMode = EWayTransportMode;
+  protected readonly GstPortalMode = GstPortalMode;
+  protected readonly transportModes = TRANSPORT_MODES;
+  protected readonly chip = unofficialNumberChip;
+  protected readonly modeLabel = portalModeLabel;
 
   readonly record = signal<GstAuditRegisterDto | null>(null);
+  readonly readiness = signal<GstPortalReadinessDto | null>(null);
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
   readonly isSubmitting = signal(false);
   readonly formError = signal<string | null>(null);
 
-  vehicleNumber = '';
-  transporterGstin = '';
-  distanceInKm: number | null = null;
+  form: EWayForm = {
+    transportMode: EWayTransportMode.Road,
+    vehicleNumber: '',
+    transporterGstin: '',
+    transporterName: '',
+    transportDocumentNumber: '',
+    transportDocumentDate: '',
+    distanceInKm: null,
+  };
+
+  protected problems(): string[] {
+    return this.readiness()?.eWayBillProblems ?? [];
+  }
+
+  /** The portal is on and has an account, and nothing is missing on the invoice. */
+  protected canSend(): boolean {
+    const ready = this.readiness();
+    if (!ready) return true; // The check did not load: let the server decide.
+    return ready.mode !== GstPortalMode.Off && ready.isConnected && !ready.eWayBillProblems.length;
+  }
+
+  /** The form shows whenever a bill can be generated: one is due, or the last one was cancelled or was a rehearsal. */
+  protected showForm(doc: GstAuditRegisterDto): boolean {
+    if (doc.eWayBillStatus === EWayBillStatus.NotApplicable) return false;
+    if (doc.eWayBillStatus === EWayBillStatus.Active) {
+      return doc.eWayBillMode !== GstPortalMode.Live && doc.eWayBillMode != null;
+    }
+    return true;
+  }
+
+  protected documentLabel(): string {
+    switch (this.form.transportMode) {
+      case EWayTransportMode.Rail:
+        return 'RR number';
+      case EWayTransportMode.Air:
+        return 'Airway bill number';
+      case EWayTransportMode.Ship:
+        return 'Bill of lading number';
+      default:
+        return 'LR / transport document number';
+    }
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id') ?? '';
@@ -292,41 +496,25 @@ export class ArGenerateEWayPage implements OnInit {
         this.loading.set(false);
       },
     });
+    this.gstService.getReadiness(id, { skipHandleError: true }).subscribe({
+      next: (ready) => this.readiness.set(ready),
+      error: () => this.readiness.set(null),
+    });
   }
 
   submitEWayBill(): void {
     const rec = this.record();
     if (!rec?.id || this.isSubmitting()) return;
 
-    const vehicle = this.vehicleNumber.toUpperCase().replace(/[\s-]/g, '');
-    const transporter = this.transporterGstin.toUpperCase().replace(/\s/g, '');
-    const distance = Number(this.distanceInKm);
-    if (!vehicle) {
-      this.formError.set('Enter the vehicle number.');
-      return;
-    }
-    if (!VEHICLE_NUMBER.test(vehicle)) {
-      this.formError.set('That vehicle number does not look right, e.g. MH14BT4590.');
-      return;
-    }
-    if (transporter && !GSTIN_OR_TRANSPORTER_ID.test(transporter)) {
-      this.formError.set('The transporter GSTIN or ID has 15 characters, e.g. 27AAACG1234A1Z5.');
-      return;
-    }
-    if (!(distance >= 1 && distance <= 4000)) {
-      this.formError.set('Enter the distance in km, between 1 and 4,000.');
+    const built = eWayInputFrom(this.form);
+    if (built.error !== undefined) {
+      this.formError.set(built.error);
       return;
     }
     this.formError.set(null);
 
-    const input: GenerateEWayBillInput = {
-      vehicleNumber: vehicle,
-      transporterGstin: transporter || undefined,
-      distanceInKm: Math.round(distance),
-    };
-
     this.isSubmitting.set(true);
-    this.gstService.generateEWayBill(rec.id, input).subscribe({
+    this.gstService.generateEWayBill(rec.id, built.input, { skipHandleError: true }).subscribe({
       next: (updated) => {
         this.isSubmitting.set(false);
         this.toasts.success(
@@ -338,7 +526,33 @@ export class ArGenerateEWayPage implements OnInit {
       },
       error: (err) => {
         this.isSubmitting.set(false);
-        this.formError.set(err?.error?.error?.message ?? 'The e-way bill could not be generated.');
+        this.formError.set(readApiError(err, 'The e-way bill could not be generated.'));
+      },
+    });
+  }
+
+  async cancelEWayBill(): Promise<void> {
+    const rec = this.record();
+    if (!rec?.id || !rec.eWayBillNumber || this.isSubmitting()) return;
+
+    const input = await askCancelReason(
+      this.confirm,
+      'e-way bill',
+      rec.eWayBillNumber,
+      rec.eWayBillMode === GstPortalMode.Live,
+    );
+    if (!input) return;
+
+    this.isSubmitting.set(true);
+    this.gstService.cancelEWayBill(rec.id, input, { skipHandleError: true }).subscribe({
+      next: (updated) => {
+        this.isSubmitting.set(false);
+        this.record.set(updated);
+        this.toasts.success(`E-way bill ${rec.eWayBillNumber} cancelled.`);
+      },
+      error: (err) => {
+        this.isSubmitting.set(false);
+        this.toasts.error(readApiError(err, 'The e-way bill could not be cancelled.'));
       },
     });
   }

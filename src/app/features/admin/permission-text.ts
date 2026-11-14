@@ -471,6 +471,11 @@ const EXACT: Record<string, PermissionText> = {
     title: 'File GST returns',
     detail: 'Prepare and file GSTR returns.',
   },
+  'AutoReach.GstCompliance.ManageConnection': {
+    title: 'Manage the GST portal connection',
+    detail:
+      'Choose test, sandbox or live, and set the Masters India account e-invoices and e-way bills go through.',
+  },
   'AutoReach.NegotiationAgent.ManagePolicy': {
     title: 'Set negotiation limits',
     detail: 'Set the discounts and terms the AI negotiator may offer.',

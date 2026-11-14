@@ -4,19 +4,25 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
+import { ConfirmService } from '../../../core/ui/confirm.service';
 import { ToastService } from '../../../core/ui/toast.service';
+import { readApiError } from '../../../core/util/api-error';
 import { ArTopbar } from '../../../layout/topbar';
 import {
   EInvoiceStatus,
   EWayBillStatus,
   GstAuditRegisterDto,
   GstComplianceService,
+  GstPortalMode,
+  GstPortalSettingsDto,
+  GstPortalSettingsService,
   Gstr1Section,
   Gstr1SummaryDto,
   Gstr3bSummaryDto,
 } from '../../../proxy/finance';
 import { ArButton, ArChip, ChipTone } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
+import { askCancelReason, portalModeLabel, unofficialNumberChip } from './gst-portal.logic';
 
 /** GST return periods (MMYYYY) for the last `count` months by the Indian calendar, newest first. */
 export function recentReturnPeriods(
@@ -56,6 +62,9 @@ export function recentReturnPeriods(
   template: `
     <ar-topbar title="GST Compliance & Statutory Auditor (GSTR-1, GSTR-3B, E-Way Bill)">
       <div actions class="topbar-actions">
+        <a ar-button="ghost" routerLink="/finance/gst-compliance/connection"
+          >GST portal: {{ portalLabel() }}</a
+        >
         <select
           class="period-select"
           aria-label="Return period"
@@ -70,33 +79,36 @@ export function recentReturnPeriods(
     </ar-topbar>
 
     <div class="page-content">
+      @if (summaryError()) {
+        <p role="alert">The GSTR-3B summary could not be loaded.</p>
+      }
       <!-- KPI Row -->
-      <section class="kpi-grid">
+      <section class="kpi-grid" *ngIf="gstr3b() as summary">
         <div class="kpi-card">
           <span class="label">Outward Taxable Value</span>
           <strong class="value"
-            >₹{{ gstr3b().outwardTaxableInPaise / 100 | number: '1.2-2' }}</strong
+            >₹{{ summary.outwardTaxableInPaise / 100 | number: '1.2-2' }}</strong
           >
           <span class="sub">GSTR-1 Outward B2B / B2C Supplies</span>
         </div>
         <div class="kpi-card amber">
           <span class="label">Total Tax Output Liability</span>
           <strong class="value"
-            >₹{{ gstr3b().outwardTaxPayableInPaise / 100 | number: '1.2-2' }}</strong
+            >₹{{ summary.outwardTaxPayableInPaise / 100 | number: '1.2-2' }}</strong
           >
           <span class="sub">IGST + CGST + SGST Payable</span>
         </div>
         <div class="kpi-card teal">
-          <span class="label">Eligible ITC (GSTR-2B)</span>
-          <strong class="value">₹{{ gstr3b().eligibleItcInPaise / 100 | number: '1.2-2' }}</strong>
-          <span class="sub">3-Way matched vendor invoices</span>
+          <span class="label">GSTR-2B-matched purchase tax</span>
+          <strong class="value">₹{{ summary.eligibleItcInPaise / 100 | number: '1.2-2' }}</strong>
+          <span class="sub">Approved or paid vendor bills by invoice month</span>
         </div>
         <div class="kpi-card">
-          <span class="label">Net GST Payable in Cash</span>
+          <span class="label">Estimated Cash Liability</span>
           <strong class="value text-profit"
-            >₹{{ gstr3b().netGstPayableInCashInPaise / 100 | number: '1.2-2' }}</strong
+            >₹{{ summary.netGstPayableInCashInPaise / 100 | number: '1.2-2' }}</strong
           >
-          <span class="sub">Net cash liability after ITC offset</span>
+          <span class="sub">Aggregate estimate before filing adjustments</span>
         </div>
       </section>
 
@@ -129,6 +141,21 @@ export function recentReturnPeriods(
 
       <!-- TAB 1: OUTWARD REGISTER & E-WAY / E-INVOICE -->
       <section *ngIf="activeTab() === 'register'" class="tab-content-container">
+        @if (portal(); as p) {
+          @if (p.mode === GstPortalMode.Off) {
+            <p class="register-note">
+              E-invoices and e-way bills are switched off.
+              <a routerLink="/finance/gst-compliance/connection">Turn them on</a>.
+            </p>
+          } @else if (p.mode !== GstPortalMode.Live) {
+            <p class="register-note">
+              {{ portalLabel() }} mode: IRNs and e-way bill numbers generated here are rehearsals.
+              They are not registered with the government and stay off your invoices.
+              <a routerLink="/finance/gst-compliance/connection">Connect Masters India</a> to go
+              live.
+            </p>
+          }
+        }
         <div class="table-card">
           @if (loadError(); as e) {
             <p class="register-note register-note--bad" role="alert">{{ e }}</p>
@@ -209,9 +236,24 @@ export function recentReturnPeriods(
                     <ar-chip [tone]="getEInvoiceTone(doc.eInvoiceStatus)">
                       {{ getEInvoiceLabel(doc.eInvoiceStatus) }}
                     </ar-chip>
-                    <span class="irn-snippet" *ngIf="doc.irnHash" [title]="doc.irnHash">
+                    @if (doc.irnHash && doc.eInvoiceStatus === EInvoiceStatus.Generated) {
+                      @if (chip(doc.eInvoiceMode); as c) {
+                        <ar-chip [tone]="c.tone" [title]="c.title">{{ c.label }}</ar-chip>
+                      }
+                    }
+                    <span
+                      class="irn-snippet"
+                      *ngIf="doc.irnHash"
+                      [title]="doc.irnHash"
+                      translate="no"
+                    >
                       IRN: {{ doc.irnHash.substring(0, 10) }}...
                     </span>
+                    @if (doc.eInvoiceStatus === EInvoiceStatus.Failed && doc.eInvoiceLastError) {
+                      <span class="irn-snippet" [title]="doc.eInvoiceLastError" translate="no">
+                        {{ doc.eInvoiceLastError }}
+                      </span>
+                    }
                   </div>
                 </ng-template>
               </e-column>
@@ -221,7 +263,12 @@ export function recentReturnPeriods(
                     <ar-chip [tone]="getEWayTone(doc.eWayBillStatus)">
                       {{ getEWayLabel(doc.eWayBillStatus) }}
                     </ar-chip>
-                    <span class="ewb-num font-mono" *ngIf="doc.eWayBillNumber">
+                    @if (doc.eWayBillNumber && doc.eWayBillStatus === EWayBillStatus.Active) {
+                      @if (chip(doc.eWayBillMode); as c) {
+                        <ar-chip [tone]="c.tone" [title]="c.title">{{ c.label }}</ar-chip>
+                      }
+                    }
+                    <span class="ewb-num font-mono" *ngIf="doc.eWayBillNumber" translate="no">
                       #{{ doc.eWayBillNumber }}
                     </span>
                   </div>
@@ -231,28 +278,37 @@ export function recentReturnPeriods(
                 <ng-template #template let-doc>
                   <div class="actions-cell">
                     <button
-                      *ngIf="doc.eInvoiceStatus === EInvoiceStatus.PendingGeneration"
+                      *ngIf="doc.canGenerateEInvoice"
                       ar-button="ghost"
                       class="btn-xs"
+                      [disabled]="generatingIrns().has(doc.id)"
                       (click)="generateEInvoice(doc)"
                     >
-                      Generate IRN
+                      {{
+                        doc.eInvoiceStatus === EInvoiceStatus.Failed ? 'Retry IRN' : 'Generate IRN'
+                      }}
                     </button>
                     <a
-                      *ngIf="doc.eWayBillStatus === EWayBillStatus.PendingGeneration"
+                      *ngIf="doc.eWayBillStatus !== EWayBillStatus.NotApplicable"
                       ar-button="ghost"
                       class="btn-xs"
                       [routerLink]="['/finance/gst-compliance/eway', doc.id]"
                     >
-                      Generate E-Way
+                      {{ doc.canGenerateEWayBill ? 'Generate E-Way' : 'E-way bill' }}
                     </a>
-                    <span
+                    <button
                       *ngIf="
                         doc.eInvoiceStatus === EInvoiceStatus.Generated &&
-                        doc.eWayBillStatus === EWayBillStatus.Active
+                        doc.eWayBillStatus !== EWayBillStatus.Active
                       "
-                      class="text-success-check"
+                      ar-button="ghost"
+                      class="btn-xs"
+                      [disabled]="generatingIrns().has(doc.id)"
+                      (click)="cancelEInvoice(doc)"
                     >
+                      Cancel IRN
+                    </button>
+                    <span *ngIf="isCompliant(doc)" class="text-success-check">
                       &#10003; Compliant
                     </span>
                   </div>
@@ -768,21 +824,8 @@ export class GstComplianceComponent {
     };
   });
 
-  readonly gstr3b = computed<Gstr3bSummaryDto>(() => {
-    const taxable = this.gstr1().totalTaxableValueInPaise;
-    const outwardTax = this.gstr1().totalTaxValueInPaise;
-    const eligibleItc = Math.round(outwardTax * 0.65);
-    const netCash = Math.max(0, outwardTax - eligibleItc);
-
-    return {
-      returnPeriod: this.selectedPeriod(),
-      outwardTaxableInPaise: taxable,
-      outwardTaxPayableInPaise: outwardTax,
-      eligibleItcInPaise: eligibleItc,
-      netGstPayableInCashInPaise: netCash,
-      electronicCreditLedgerBalanceInPaise: 0,
-    };
-  });
+  readonly gstr3b = signal<Gstr3bSummaryDto | null>(null);
+  readonly summaryError = signal(false);
 
   readonly gstr3bRows = computed(() => {
     const b = this.gstr3b();
@@ -799,16 +842,16 @@ export class GstComplianceComponent {
         type: 'outward',
       },
       {
-        heading: '4. Eligible Input Tax Credit (ITC) Available from GSTR-2B',
+        heading: '4. Purchase tax on GSTR-2B-matched bills',
         taxable: null,
-        igst: (b.eligibleItcInPaise * 0.5) / 100,
-        cgst: (b.eligibleItcInPaise * 0.25) / 100,
-        sgst: (b.eligibleItcInPaise * 0.25) / 100,
+        igst: b.itcIgstInPaise / 100,
+        cgst: b.itcCgstInPaise / 100,
+        sgst: b.itcSgstInPaise / 100,
         totalTax: b.eligibleItcInPaise / 100,
         type: 'itc',
       },
       {
-        heading: '5. Net Tax Payable in Cash (Electronic Cash Ledger Deposit)',
+        heading: '5. Estimated Cash Liability',
         taxable: null,
         igst: null,
         cgst: null,
@@ -819,12 +862,46 @@ export class GstComplianceComponent {
     ];
   });
 
+  readonly GstPortalMode = GstPortalMode;
+  readonly generatingIrns = signal(new Set<string>());
+  protected readonly chip = unofficialNumberChip;
+
+  private readonly portalService = inject(GstPortalSettingsService);
+  private readonly confirm = inject(ConfirmService);
+
+  /** The workspace's portal connection: where numbers come from. Null until loaded. */
+  readonly portal = signal<GstPortalSettingsDto | null>(null);
+  readonly portalLabel = computed(() => {
+    const p = this.portal();
+    if (!p) return '…';
+    if ((p.mode === GstPortalMode.Sandbox || p.mode === GstPortalMode.Live) && !p.isConnected) {
+      return 'not connected';
+    }
+    return portalModeLabel(p.mode);
+  });
   readonly EInvoiceStatus = EInvoiceStatus;
   readonly EWayBillStatus = EWayBillStatus;
   readonly Gstr1Section = Gstr1Section;
 
   constructor() {
     void this.loadGstRecords();
+    this.portalService.get({ skipHandleError: true }).subscribe({
+      next: (p) => this.portal.set(p),
+      error: () => this.portal.set(null),
+    });
+  }
+
+  /** Every document the invoice needs is real (Live), and it needs at least one. */
+  isCompliant(doc: GstAuditRegisterDto): boolean {
+    const needsIrn = doc.eInvoiceStatus !== EInvoiceStatus.NotApplicable;
+    const needsEwb = doc.eWayBillStatus !== EWayBillStatus.NotApplicable;
+    const irnOk =
+      !needsIrn ||
+      (doc.eInvoiceStatus === EInvoiceStatus.Generated && doc.eInvoiceMode === GstPortalMode.Live);
+    const ewbOk =
+      !needsEwb ||
+      (doc.eWayBillStatus === EWayBillStatus.Active && doc.eWayBillMode === GstPortalMode.Live);
+    return (needsIrn || needsEwb) && irnOk && ewbOk;
   }
 
   /**
@@ -834,6 +911,8 @@ export class GstComplianceComponent {
   async loadGstRecords(): Promise<void> {
     const period = this.selectedPeriod();
     this.loading.set(true);
+    this.gstr3b.set(null);
+    this.summaryError.set(false);
     this.loadError.set(null);
     try {
       try {
@@ -847,6 +926,12 @@ export class GstComplianceComponent {
         this.gstService.getList({ returnPeriod: period, maxResultCount: 500 }),
       );
       if (period === this.selectedPeriod()) this.records.set(res.items ?? []);
+      try {
+        const summary = await firstValueFrom(this.gstService.getGstr3bSummary(period));
+        if (period === this.selectedPeriod()) this.gstr3b.set(summary);
+      } catch {
+        if (period === this.selectedPeriod()) this.summaryError.set(true);
+      }
     } catch {
       if (period === this.selectedPeriod()) {
         this.records.set([]);
@@ -941,30 +1026,88 @@ export class GstComplianceComponent {
     }
   }
 
-  generateEInvoice(doc: GstAuditRegisterDto): void {
-    if (doc.id) {
-      this.gstService.generateEInvoice(doc.id).subscribe({
-        next: (updated) => {
-          this.updateRecordInState(updated);
-          this.toasts.success(`IRN generated successfully for ${doc.documentNumber}`);
-        },
-        error: (err) => {
-          this.toasts.error(err?.error?.error?.message ?? 'IRN generation failed on GST portal.');
-        },
-      });
-      return;
-    }
+  async generateEInvoice(doc: GstAuditRegisterDto): Promise<void> {
+    const id = doc.id;
+    if (!id || this.generatingIrns().has(id)) return;
 
-    const updated: GstAuditRegisterDto = {
-      ...doc,
-      eInvoiceStatus: EInvoiceStatus.Generated,
-      irnHash: '8b4d1b823e59bcf7e1d5204859a0fbc5928d3ef71829e0839218d6e7f8a920b1',
-      eInvoiceAckNo: `11202604008${Math.floor(Math.random() * 90 + 10)}`,
-      eInvoiceAckDateUtc: new Date().toISOString(),
-      signedQrCode: 'https://einvoice1.gst.gov.in/verify',
-    };
-    this.updateRecordInState(updated);
-    this.toasts.success(`IRN generated successfully for ${doc.documentNumber}`);
+    this.setBusy(id, true);
+    try {
+      // Say what is missing before anything goes to the portal.
+      const ready = await firstValueFrom(
+        this.gstService.getReadiness(id, { skipHandleError: true }),
+      ).catch(() => null);
+      if (ready?.eInvoiceProblems.length) {
+        await this.confirm.confirm({
+          title: `${doc.documentNumber} is not ready for an e-invoice`,
+          message: 'Fix these, then generate the IRN.',
+          details: ready.eInvoiceProblems,
+          confirmText: 'OK',
+          cancelText: 'Close',
+        });
+        return;
+      }
+
+      const updated = await firstValueFrom(
+        this.gstService.generateEInvoice(id, { skipHandleError: true }),
+      );
+      this.updateRecordInState(updated);
+      this.toasts.success(
+        updated.eInvoiceMode === GstPortalMode.Live
+          ? `IRN registered for ${doc.documentNumber}.`
+          : `${portalModeLabel(updated.eInvoiceMode)} IRN generated for ${doc.documentNumber}. It is not registered with the government.`,
+      );
+    } catch (err) {
+      this.toasts.error(readApiError(err, 'The IRN could not be generated.'));
+      // The portal's reason is kept on the row; show it.
+      await this.refreshRow(id);
+    } finally {
+      this.setBusy(id, false);
+    }
+  }
+
+  async cancelEInvoice(doc: GstAuditRegisterDto): Promise<void> {
+    const id = doc.id;
+    if (!id || !doc.irnHash || this.generatingIrns().has(id)) return;
+
+    const input = await askCancelReason(
+      this.confirm,
+      'e-invoice',
+      `The IRN of ${doc.documentNumber}`,
+      doc.eInvoiceMode === GstPortalMode.Live,
+    );
+    if (!input) return;
+
+    this.setBusy(id, true);
+    try {
+      const updated = await firstValueFrom(
+        this.gstService.cancelEInvoice(id, input, { skipHandleError: true }),
+      );
+      this.updateRecordInState(updated);
+      this.toasts.success(`The e-invoice of ${doc.documentNumber} was cancelled.`);
+    } catch (err) {
+      this.toasts.error(readApiError(err, 'The e-invoice could not be cancelled.'));
+    } finally {
+      this.setBusy(id, false);
+    }
+  }
+
+  private setBusy(id: string, busy: boolean): void {
+    this.generatingIrns.update((pending) => {
+      const next = new Set(pending);
+      if (busy) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  private async refreshRow(id: string): Promise<void> {
+    try {
+      this.updateRecordInState(
+        await firstValueFrom(this.gstService.get(id, { skipHandleError: true })),
+      );
+    } catch {
+      // The list keeps what it had.
+    }
   }
 
   private updateRecordInState(updated: GstAuditRegisterDto): void {

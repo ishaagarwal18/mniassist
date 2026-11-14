@@ -191,11 +191,25 @@ import { ArGrid } from '../../../ui/grid';
                 </ar-chip>
               </ng-template>
             </e-column>
-            <e-column field="gstr2bMatchStatus" headerText="GSTR-2B ITC" width="140">
+            <e-column field="gstr2bMatchStatus" headerText="GSTR-2B ITC" width="180">
               <ng-template #template let-b>
-                <ar-chip [tone]="itcTone(b.gstr2bMatchStatus)">
-                  {{ itcLabel(b.gstr2bMatchStatus) }}
-                </ar-chip>
+                @if (can().approve && b.status !== VendorBillStatus.Cancelled) {
+                  <select
+                    aria-label="GSTR-2B match status"
+                    [ngModel]="b.gstr2bMatchStatus"
+                    (ngModelChange)="reconcileGstr2b(b, $event)"
+                    [disabled]="reconcilingBill() !== null"
+                  >
+                    <option [ngValue]="Gstr2bMatchStatus.Pending">Pending</option>
+                    <option [ngValue]="Gstr2bMatchStatus.MatchedIn2B">Matched in GSTR-2B</option>
+                    <option [ngValue]="Gstr2bMatchStatus.MissingIn2B">Missing in GSTR-2B</option>
+                    <option [ngValue]="Gstr2bMatchStatus.TaxMismatch">Tax mismatch</option>
+                  </select>
+                } @else {
+                  <ar-chip [tone]="itcTone(b.gstr2bMatchStatus)">
+                    {{ itcLabel(b.gstr2bMatchStatus) }}
+                  </ar-chip>
+                }
               </ng-template>
             </e-column>
             <e-column
@@ -799,6 +813,22 @@ export class VendorBillsComponent {
       b.balanceDueInPaise > 0 &&
       (b.status === VendorBillStatus.Approved || b.status === VendorBillStatus.PartiallyPaid)
     );
+  }
+
+  readonly reconcilingBill = signal<string | null>(null);
+
+  async reconcileGstr2b(bill: VendorBillDto, status: Gstr2bMatchStatus): Promise<void> {
+    if (!bill.id || this.reconcilingBill()) return;
+    this.reconcilingBill.set(bill.id);
+    try {
+      const updated = await firstValueFrom(this.billService.reconcileGstr2b(bill.id, status));
+      this.updateBillInState(updated);
+    } catch {
+      this.updateBillInState({ ...bill });
+      this.toasts.error('Could not save the GSTR-2B match status.');
+    } finally {
+      this.reconcilingBill.set(null);
+    }
   }
 
   private updateBillInState(updated: VendorBillDto) {

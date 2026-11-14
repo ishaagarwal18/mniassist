@@ -336,14 +336,14 @@ const PAGE = { maxResultCount: 200 };
                           domainStatus(b.domainStatus).label
                         }}</ar-chip>
                       </p>
-                      @if (b.domainStatus !== D.Active) {
+                      @if (b.domainStatus !== D.Active || b.sslCertificateThumbprint?.length === 32) {
                         <p class="sub">
                           Add a CNAME record pointing
                           <span class="ar-mono">{{ b.customDomain }}</span> at
                           <span class="ar-mono">{{ b.dnsVerificationTarget }}</span
-                          >, and a TXT record with
+                          >, and a TXT record at _autoreach-verify.{{ b.customDomain }} with
                           <span class="ar-mono">{{ b.domainVerificationToken }}</span
-                          >. The platform team then confirms it.
+                          >.
                         </p>
                       }
                     } @else {
@@ -357,31 +357,17 @@ const PAGE = { maxResultCount: 200 };
                           {{ b.customDomain ? 'Change domain' : 'Set up a domain' }}
                         </button>
                       }
-                      @if (hostView() && b.customDomain && b.domainStatus !== D.Active) {
+                      @if (hostView() && b.customDomain) {
                         <button
                           ar-button
                           type="button"
                           variant="primary"
-                          (click)="verifyDomain(true)"
+                          (click)="verifyDomain()"
                         >
-                          Mark as verified
-                        </button>
-                        <button
-                          ar-button
-                          type="button"
-                          variant="ghost"
-                          (click)="verifyDomain(false)"
-                        >
-                          Mark as failed
+                          Check domain
                         </button>
                       }
                     </div>
-                    @if (hostView() && b.customDomain && b.domainStatus !== D.Active) {
-                      <p class="sub">
-                        DNS isn't checked automatically yet: confirm both records by hand before
-                        marking the domain verified.
-                      </p>
-                    }
                   }
                 }
 
@@ -1946,21 +1932,12 @@ export class ArResellers {
     );
   }
 
-  protected async verifyDomain(success: boolean): Promise<void> {
+  protected async verifyDomain(): Promise<void> {
     const b = this.profile();
     if (!b) return;
-    const ok = await this.dialogs.confirm({
-      title: success ? `Mark ${b.customDomain} as verified?` : `Mark ${b.customDomain} as failed?`,
-      message: success
-        ? 'Only do this after checking the CNAME and TXT records yourself; the domain then goes live for this partner.'
-        : 'The partner sees that verification failed and can fix their DNS.',
-      confirmText: success ? 'Mark verified' : 'Mark failed',
-      tone: success ? 'primary' : 'danger',
-    });
-    if (!ok) return;
     await this.act(
-      () => firstValueFrom(this.api.verifyCustomDomain(b.partnerId, { simulateSuccess: success })),
-      success ? 'Domain marked as verified.' : 'Domain marked as failed.',
+      () => firstValueFrom(this.api.verifyCustomDomain(b.partnerId, {})),
+      'Domain check completed. See the domain status for the result.',
     );
   }
 
