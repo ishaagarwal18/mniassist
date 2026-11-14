@@ -4,3 +4,8 @@ dist/
 *.log
 .env
 playwright-results/
+.claude
+a11y-audit/
+docs/
+.vscode
+tools/
