@@ -81,6 +81,13 @@ export const routes: Routes = [
     loadComponent: () => import('./features/account/reset-password').then((m) => m.ArResetPassword),
   },
   {
+    // Where an invitation email's link lands (WorkspaceMemberAppService builds it): no login, no shell.
+    path: 'accept-invitation',
+    title: 'Join your team · MNI Assist',
+    loadComponent: () =>
+      import('./features/account/accept-invitation').then((m) => m.ArAcceptInvitation),
+  },
+  {
     path: 'confirm-email',
     title: 'Confirm your email · MNI Assist',
     loadComponent: () => import('./features/account/confirm-email').then((m) => m.ArConfirmEmail),
@@ -282,6 +289,12 @@ export const routes: Routes = [
         title: 'Campaigns · MNI Assist',
         loadComponent: () =>
           import('./features/campaigns/campaign-builder').then((m) => m.ArCampaignBuilder),
+      },
+      {
+        path: 'campaigns/:id/ab-test',
+        title: 'A/B test · MNI Assist',
+        loadComponent: () =>
+          import('./features/campaigns/ab-test-page').then((m) => m.ArAbTestPage),
       },
       {
         path: 'campaigns/new',
@@ -1273,6 +1286,12 @@ export const routes: Routes = [
       formPage('documents/:id/edit', 'Edit document', 'edit', () =>
         import('./features/documents/documents').then((m) => m.ArDocuments),
       ),
+      // Notification buttons (WalletMonitorWorker, MeterAggregatorWorker, ReconciliationAppService,
+      // BreachNotificationWorker) point at these addresses; stored notifications keep them, so they redirect.
+      { path: 'billing/wallet', redirectTo: 'billing', pathMatch: 'full' },
+      { path: 'billing/reconciliation/:id', redirectTo: 'billing/invoices', pathMatch: 'full' },
+      { path: 'compliance/breaches/:id', redirectTo: 'compliance', pathMatch: 'full' },
+      { path: 'settings/channels', redirectTo: 'channels', pathMatch: 'full' },
       {
         path: 'billing',
         title: 'Billing · MNI Assist',
@@ -1292,6 +1311,45 @@ export const routes: Routes = [
       formPage('channels/:id/voice-agent', 'Voice agent', 'voice-agent', () =>
         import('./features/channels/channels').then((m) => m.ArChannels),
       ),
+      {
+        path: 'channels/social',
+        title: 'Messenger & Instagram · MNI Assist',
+        loadComponent: () =>
+          import('./features/channels/social-channels').then((m) => m.ArSocialChannels),
+      },
+      {
+        // Meta returns here after Facebook Login (Messenger:Api:RedirectUri).
+        path: 'messenger/oauth-callback',
+        title: 'Connecting Messenger · MNI Assist',
+        data: { callback: 'messenger' },
+        loadComponent: () =>
+          import('./features/channels/social-channels').then((m) => m.ArSocialChannels),
+      },
+      {
+        // Meta returns here after Instagram Business Login (Instagram:Api:RedirectUri).
+        path: 'instagram/oauth-callback',
+        title: 'Connecting Instagram · MNI Assist',
+        data: { callback: 'instagram' },
+        loadComponent: () =>
+          import('./features/channels/social-channels').then((m) => m.ArSocialChannels),
+      },
+      {
+        path: 'channels/sms',
+        title: 'SMS set-up · MNI Assist',
+        loadComponent: () => import('./features/channels/sms-setup').then((m) => m.ArSmsSetup),
+      },
+      {
+        path: 'channels/:id/health',
+        title: 'Number health · MNI Assist',
+        loadComponent: () =>
+          import('./features/channels/number-health').then((m) => m.ArNumberHealth),
+      },
+      {
+        path: 'reminders',
+        title: 'Follow-up reminders · MNI Assist',
+        loadComponent: () =>
+          import('./features/pipeline/follow-up-reminders').then((m) => m.ArFollowUpReminders),
+      },
       {
         path: 'channels/numbers',
         title: 'Display name & PIN · MNI Assist',
@@ -1428,6 +1486,18 @@ export const routes: Routes = [
         path: 'settings/members',
         title: 'Members & invites · MNI Assist',
         loadComponent: () => import('./features/settings/members').then((m) => m.ArMembers),
+      },
+      {
+        path: 'settings/labels',
+        title: 'Conversation labels · MNI Assist',
+        loadComponent: () =>
+          import('./features/settings/conversation-labels').then((m) => m.ArConversationLabels),
+      },
+      {
+        path: 'compliance/consent-text',
+        title: 'Consent wording · MNI Assist',
+        loadComponent: () =>
+          import('./features/compliance/consent-texts').then((m) => m.ArConsentTexts),
       },
       {
         path: 'settings/pick-lists',
@@ -1602,6 +1672,12 @@ export const routes: Routes = [
         import('./features/platform/console').then((m) => m.ArPlatformConsole),
       ),
       {
+        path: 'platform/support',
+        title: 'Support sign-in · MNI Assist',
+        loadComponent: () =>
+          import('./features/platform/support-sign-in').then((m) => m.ArSupportSignIn),
+      },
+      {
         path: 'platform/feature-flags',
         title: 'Feature flags · MNI Assist',
         loadComponent: () =>
@@ -1643,6 +1719,28 @@ export const routes: Routes = [
       formPage('platform/status/:id/edit', 'Update incident · MNI Assist', 'edit', () =>
         import('./features/platform/status-incidents').then((m) => m.ArStatusIncidents),
       ),
+      // Links notifications carry (NotificationManager actionRoute) that are not pages of their own. Kept last so
+      // every real route (contacts/new, contacts/segments, enquiries/pipelines…) matches first.
+      {
+        path: 'contacts/exports/:id',
+        title: 'Contact export · MNI Assist',
+        loadComponent: () =>
+          import('./features/contacts/contact-export-page').then((m) => m.ArContactExportPage),
+      },
+      { path: 'contacts/:id', redirectTo: 'contacts/:id/360', pathMatch: 'full' },
+      {
+        path: 'enquiries/:id',
+        pathMatch: 'full',
+        redirectTo: ({ params }) =>
+          inject(Router).createUrlTree(['/enquiries'], { queryParams: { open: params['id'] } }),
+      },
+      {
+        path: 'inbox/:id',
+        pathMatch: 'full',
+        redirectTo: ({ params }) =>
+          inject(Router).createUrlTree(['/inbox'], { queryParams: { conversation: params['id'] } }),
+      },
+      { path: 'analytics/quality', redirectTo: 'channels/numbers', pathMatch: 'full' },
     ],
   },
   {

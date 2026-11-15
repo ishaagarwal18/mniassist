@@ -178,6 +178,13 @@ export class BillingPlanService {
       { apiName: this.apiName, ...config },
     );
 
+  /** Deletes one of the workspace's own templates (the standard ones cannot be deleted). */
+  deleteTemplate = (id: string, config?: Partial<Rest.Config>) =>
+    this.rest.request<void, void>(
+      { method: 'DELETE', url: `/api/auto-reach/billing-plan/${id}/template` },
+      { apiName: this.apiName, ...config },
+    );
+
   createInvoiceDraft = (milestoneId: string, config?: Partial<Rest.Config>) =>
     this.rest.request<void, PreparedMilestoneInvoiceDto>(
       { method: 'POST', url: `/api/auto-reach/billing-plan/invoice-draft/${milestoneId}` },

@@ -40,6 +40,33 @@ export interface SendSmsInput {
   isMarketing?: boolean | null;
 }
 
+export interface SetSmsSenderInput {
+  /** The 6-character DLT header (sender ID). */
+  senderId: string;
+  /** The MSG91 auth key; blank keeps the stored one. */
+  authKey?: string | null;
+}
+
+export enum SmsTemplateCategory {
+  Transactional = 0,
+  ServiceImplicit = 1,
+  ServiceExplicit = 2,
+  Promotional = 3,
+}
+
+export interface CreateSmsTemplateInput {
+  name: string;
+  dltTemplateId: string;
+  flowId: string;
+  content: string;
+  category: SmsTemplateCategory;
+  variableNames: string[];
+}
+
+export interface MarkSmsTemplateRejectedInput {
+  reason?: string | null;
+}
+
 /** The workspace's MSG91 SMS channel. Routes follow ABP's conventional-controller naming for SmsChannelAppService. */
 @Injectable({ providedIn: 'root' })
 export class SmsChannelService {
@@ -55,6 +82,38 @@ export class SmsChannelService {
   setInboundNumber = (input: SetSmsInboundNumberInput, config?: Partial<Rest.Config>) =>
     this.restService.request<SetSmsInboundNumberInput, SmsChannelDto>(
       { method: 'POST', url: '/api/auto-reach/sms-channel/set-inbound-number', body: input },
+      { apiName: this.apiName, ...config },
+    );
+
+  setSender = (input: SetSmsSenderInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<SetSmsSenderInput, SmsChannelDto>(
+      { method: 'POST', url: '/api/auto-reach/sms-channel/set-sender', body: input },
+      { apiName: this.apiName, ...config },
+    );
+
+  createTemplate = (input: CreateSmsTemplateInput, config?: Partial<Rest.Config>) =>
+    this.restService.request<CreateSmsTemplateInput, SmsTemplateDto>(
+      { method: 'POST', url: '/api/auto-reach/sms-channel/template', body: input },
+      { apiName: this.apiName, ...config },
+    );
+
+  markTemplateApproved = (templateId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, SmsTemplateDto>(
+      { method: 'POST', url: `/api/auto-reach/sms-channel/mark-template-approved/${templateId}` },
+      { apiName: this.apiName, ...config },
+    );
+
+  markTemplateRejected = (
+    templateId: string,
+    input: MarkSmsTemplateRejectedInput,
+    config?: Partial<Rest.Config>,
+  ) =>
+    this.restService.request<MarkSmsTemplateRejectedInput, SmsTemplateDto>(
+      {
+        method: 'POST',
+        url: `/api/auto-reach/sms-channel/mark-template-rejected/${templateId}`,
+        body: input,
+      },
       { apiName: this.apiName, ...config },
     );
 

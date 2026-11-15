@@ -82,7 +82,12 @@ describe('Helpdesk and store connections', () => {
     (root.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
     fixture.detectChanges();
     expect(api.create).not.toHaveBeenCalled();
-    expect(root.querySelector('[role="alert"]')?.textContent).toContain('acme.myshopify.com');
+    // The problem is shown under the field it is about, and the field is marked invalid.
+    const address = root.querySelector('input[name="address"]') as HTMLInputElement;
+    expect(address.getAttribute('aria-invalid')).toBe('true');
+    expect(address.parentElement?.querySelector('.ar-field__error')?.textContent).toContain(
+      'acme.myshopify.com',
+    );
 
     set(root, 'address', 'https://Meridian.myshopify.com/admin');
     (root.querySelector('form') as HTMLFormElement).dispatchEvent(new Event('submit'));
@@ -94,5 +99,8 @@ describe('Helpdesk and store connections', () => {
       credential: 'shpat_x',
     });
     expect(api.test).toHaveBeenCalledWith('c3');
+    // The test came back without "connected": that is said, rather than the save looking fine.
+    fixture.detectChanges();
+    expect(root.querySelector('[role="alert"]')?.textContent).toContain('the test failed');
   });
 });

@@ -15,6 +15,7 @@ import {
   ContactService as ContactApi,
   DecisionRole,
 } from '../../proxy/contacts';
+import { CustomFieldService } from '../../proxy/contacts';
 import { ArContactForm } from './contact-form';
 
 @Component({ selector: 'ar-topbar', template: '<ng-content />' })
@@ -114,6 +115,11 @@ describe('ArContactForm (New Contact & Edit Contact Page)', () => {
             getGrantedPolicy: () => true,
             getGrantedPolicy$: () => of(true),
           },
+        },
+        {
+          // No custom fields in this workspace: the form shows no "More details" card.
+          provide: CustomFieldService,
+          useValue: { getFor: () => of({ items: [] }) },
         },
       ],
     }).overrideComponent(ArContactForm, {

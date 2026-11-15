@@ -1,6 +1,10 @@
+import { firstValueFrom } from 'rxjs';
+import { readApiError } from '../../core/util/api-error';
+import { ActivityDirectoryService } from '../../proxy/activities/activity.service';
+import type { ActivityUserDto } from '../../proxy/activities/activity.models';
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
 
 import {
@@ -38,6 +42,7 @@ const KIND_LABEL: Record<ReqKind, string> = {
 @Component({
   selector: 'ar-compliance',
   imports: [
+    RouterLink,
     ArTopbar,
     ArBanner,
     ArButton,
@@ -295,6 +300,50 @@ export class ArCompliance {
           year: 'numeric',
         })
       : 'never';
+  }
+
+  // ---- assign and download ------------------------------------------
+  private readonly directory = inject(ActivityDirectoryService);
+  protected readonly people = signal<ActivityUserDto[]>([]);
+  private readonly loadPeople = firstValueFrom(
+    this.directory.getUsers({ skipHandleError: true }),
+  ).then(
+    (list) => this.people.set(list),
+    () => this.people.set([]),
+  );
+
+  protected personName(userId: string | undefined): string {
+    return userId ? (this.people().find((p) => p.userId === userId)?.name ?? 'Someone') : '—';
+  }
+
+  protected async assign(r: DpdpRequest, userId: string): Promise<void> {
+    if (!userId || userId === r.assignedUserId) return;
+    this.busy.set(r.id);
+    try {
+      await this.store.assign(r.id, userId);
+      this.toasts.success(`Assigned to ${this.personName(userId)}.`, 'Request');
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The request could not be assigned.'), 'Request');
+    } finally {
+      this.busy.set(null);
+    }
+  }
+
+  protected async downloadResponse(r: DpdpRequest): Promise<void> {
+    this.busy.set(r.id);
+    try {
+      const blob = await this.store.downloadResponse(r.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dpdp-response-${r.id.slice(0, 8)}${blob.type.includes('zip') ? '.zip' : blob.type.includes('pdf') ? '.pdf' : '.json'}`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The response file could not be downloaded.'), 'Request');
+    } finally {
+      this.busy.set(null);
+    }
   }
 
   protected async fulfil(r: DpdpRequest): Promise<void> {

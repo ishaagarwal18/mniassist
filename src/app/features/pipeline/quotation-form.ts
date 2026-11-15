@@ -1,3 +1,4 @@
+import { ArQuotationActions } from './quotation-actions';
 import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
@@ -88,6 +89,7 @@ const STATE_LABEL: Record<QuotationState, { label: string; tone: ChipTone }> = {
 @Component({
   selector: 'ar-quotation-form',
   imports: [
+    ArQuotationActions,
     ArTopbar,
     ArButton,
     ArCard,

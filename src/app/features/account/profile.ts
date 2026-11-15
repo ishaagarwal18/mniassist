@@ -7,6 +7,8 @@ import { ArThemeToggle } from '../../layout/theme-toggle';
 import { ArBanner, ArButton, ArCard } from '../../ui';
 import { ArEmailConfirmationBanner } from './email-confirmation-banner';
 import { ArGoogleCalendarCard } from './google-calendar-card';
+import { ArProfilePictureCard } from './profile-picture-card';
+import { ArCallingNumberCard } from './calling-number-card';
 
 /**
  * The signed-in user's own profile — name, contact details and password. Backed by
@@ -22,6 +24,8 @@ import { ArGoogleCalendarCard } from './google-calendar-card';
     ArThemeToggle,
     ArEmailConfirmationBanner,
     ArGoogleCalendarCard,
+    ArProfilePictureCard,
+    ArCallingNumberCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './profile.html',

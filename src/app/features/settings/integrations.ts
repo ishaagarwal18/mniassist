@@ -13,6 +13,9 @@ import { firstValueFrom } from 'rxjs';
 
 import { OpsService } from '../../core/services/ops.service';
 import { WebhookSubscription } from '../../core/models/ops.model';
+import { ArApiKeysCard } from './api-keys-card';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { readApiError } from '../../core/util/api-error';
 import { WebhookEvent } from '../../proxy/integrations/webhook-event.enum';
 import {
   CrmOAuthService,
@@ -124,6 +127,7 @@ const DELIVERY_TONE: Record<string, ChipTone> = {
 @Component({
   selector: 'ar-integrations',
   imports: [
+    ArApiKeysCard,
     ArTopbar,
     ArBanner,
     ArButton,
@@ -142,6 +146,7 @@ const DELIVERY_TONE: Record<string, ChipTone> = {
 })
 export class ArIntegrations {
   private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly ops = inject(OpsService);
   private readonly crmSync = inject(CrmSyncService);
   private readonly integrations = inject(IntegrationService);
@@ -157,6 +162,7 @@ export class ArIntegrations {
     'CRM sync',
     'ERP (Tally / SAP)',
     'Helpdesk & store',
+    'API keys',
   ] as const;
   protected readonly activeTab = signal<string>('Webhooks');
 
@@ -211,6 +217,8 @@ export class ArIntegrations {
   // ---- OAuth connect flow (M10-9) ------------------------------------
   protected readonly oAuthKinds = OAUTH_KINDS;
   protected readonly oAuthStarting = signal<SyncableKind | null>(null);
+  /** Salesforce only: connect (or reconnect) a sandbox org, which signs in at test.salesforce.com. */
+  protected readonly salesforceSandbox = signal(false);
   protected readonly oAuthBanner = signal<{ tone: 'good' | 'bad'; message: string } | null>(null);
 
   constructor() {
@@ -295,7 +303,10 @@ export class ArIntegrations {
     try {
       const label = this.oAuthKinds.find((k) => k.kind === kind)?.label ?? `Kind ${kind}`;
       const result = await firstValueFrom(
-        this.crmOAuth.start(kind, connectionId ? { connectionId } : { name: label }),
+        this.crmOAuth.start(kind, {
+          ...(connectionId ? { connectionId } : { name: label }),
+          ...(kind === 9 && !connectionId ? { sandbox: this.salesforceSandbox() } : {}),
+        }),
       );
       window.location.href = result.authorizeUrl;
     } catch (e: unknown) {
@@ -499,6 +510,73 @@ export class ArIntegrations {
       else next.delete(event);
       return next;
     });
+  }
+
+  /** The secret from the last rotation, shown once for the endpoint it belongs to. */
+  protected readonly revealedSecret = signal<{ id: string; secret: string } | null>(null);
+  protected readonly webhookBusy = signal<string | null>(null);
+
+  protected async rotateSecret(w: WebhookSubscription): Promise<void> {
+    const ok = await this.dialogs.confirm({
+      title: 'Rotate the signing secret?',
+      message: `The current secret for ${w.description || w.url} stops working immediately. Requests are signed with the new one from now on.`,
+      details: [
+        'Update the secret in the receiving system straight away, or its signature checks will fail.',
+      ],
+      confirmText: 'Rotate secret',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    await this.runWebhook('rotate', async () => {
+      const secret = await this.ops.rotateWebhookSecret(w.id);
+      this.revealedSecret.set({ id: w.id, secret });
+      this.toasts.success(
+        'New signing secret created. Copy it now; it is not shown again.',
+        'Webhook',
+      );
+    });
+  }
+
+  protected async copySecret(secret: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(secret);
+      this.toasts.success('Signing secret copied.', 'Webhook');
+    } catch {
+      this.toasts.warning('Copy failed. Select the secret and copy it by hand.', 'Webhook');
+    }
+  }
+
+  protected async sendTest(w: WebhookSubscription): Promise<void> {
+    await this.runWebhook('test', async () => {
+      await this.ops.sendWebhookTest(w.id);
+      this.toasts.success('Test event sent. Its result is under Recent deliveries.', 'Webhook');
+    });
+  }
+
+  protected async reenable(w: WebhookSubscription): Promise<void> {
+    await this.runWebhook('reenable', async () => {
+      await this.ops.reenableWebhook(w.id);
+      this.toasts.success('Endpoint switched back on.', 'Webhook');
+    });
+  }
+
+  protected async retryDelivery(deliveryId: string): Promise<void> {
+    await this.runWebhook('retry:' + deliveryId, async () => {
+      await this.ops.retryWebhookDelivery(deliveryId);
+      this.toasts.success('Sent again. The result shows here in a moment.', 'Webhook');
+    });
+  }
+
+  private async runWebhook(action: string, work: () => Promise<void>): Promise<void> {
+    if (this.webhookBusy()) return;
+    this.webhookBusy.set(action);
+    try {
+      await work();
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'That did not work. Try again.'), 'Webhook');
+    } finally {
+      this.webhookBusy.set(null);
+    }
   }
 
   protected async createEndpoint(): Promise<void> {

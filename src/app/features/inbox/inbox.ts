@@ -1,3 +1,8 @@
+import { readApiError } from '../../core/util/api-error';
+import { ArMyMentions } from './my-mentions';
+import { ArConversationLabelPicker } from './conversation-label-picker';
+import { ArCannedReplyPicker } from './canned-reply-picker';
+import { SNOOZE_CHOICES, SnoozeChoice, snoozeUntil } from './snooze.logic';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   ChangeDetectionStrategy,
@@ -51,6 +56,9 @@ import { ArShareLocationDialog, SharedLocation } from './share-location-dialog';
 @Component({
   selector: 'ar-inbox',
   imports: [
+    ArMyMentions,
+    ArConversationLabelPicker,
+    ArCannedReplyPicker,
     ArAuthHref,
     ArAuthSrc,
     ArShareLocationDialog,
@@ -192,6 +200,60 @@ export class ArInbox {
     by: string;
   } | null>(null);
   protected readonly summaryBusy = signal(false);
+
+  // ---- snooze, auto-assign, mentions ---------------------------------
+  protected readonly snoozeChoices = SNOOZE_CHOICES;
+  protected readonly cannedOpen = signal(false);
+
+  /** A saved reply goes into the draft (after anything already typed) for a last look before sending. */
+  protected useCanned(text: string): void {
+    const current = this.draft().trim();
+    this.draft.set(
+      current
+        ? `${current}
+${text}`
+        : text,
+    );
+    this.cannedOpen.set(false);
+  }
+  protected readonly snoozeOpen = signal(false);
+  protected readonly mentionsOpen = signal(false);
+  protected readonly threadBusy = signal<string | null>(null);
+
+  protected async snooze(conversationId: string, choice: SnoozeChoice): Promise<void> {
+    this.snoozeOpen.set(false);
+    const until = snoozeUntil(choice);
+    await this.threadAction('snooze', async () => {
+      await this.inbox.snooze(conversationId, until);
+      this.toasts.success(
+        `Snoozed until ${until.toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' })}. A reply from the customer brings it back.`,
+        'Inbox',
+      );
+    });
+  }
+
+  protected async autoAssign(conversationId: string): Promise<void> {
+    await this.threadAction('assign', async () => {
+      await this.inbox.autoAssign(conversationId);
+      this.toasts.success('Assigned by your routing rules.', 'Inbox');
+    });
+  }
+
+  protected openMention(conversationId: string): void {
+    this.mentionsOpen.set(false);
+    this.inbox.select(conversationId);
+  }
+
+  private async threadAction(key: string, work: () => Promise<void>): Promise<void> {
+    this.threadBusy.set(key);
+    try {
+      await work();
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'That did not work. Try again.'), 'Inbox');
+    } finally {
+      this.threadBusy.set(null);
+    }
+  }
 
   protected async summarise(conversationId: string): Promise<void> {
     this.summaryBusy.set(true);

@@ -508,6 +508,13 @@ export const NAV: readonly NavGroup[] = [
         //tenantOnly: true,
       },
       {
+        label: 'Follow-up reminders',
+        icon: 'clock',
+        route: '/reminders',
+        menu: 'settings',
+        permission: 'AutoReach.InstalledBase',
+      },
+      {
         label: 'Field tickets',
         icon: 'field-tickets',
         route: '/field-service/tickets',
@@ -791,6 +798,34 @@ export const NAV: readonly NavGroup[] = [
         //tenantOnly: true,
       },
       {
+        label: 'Messenger & Instagram',
+        icon: 'inbox',
+        route: '/channels/social',
+        menu: 'settings',
+        permission: 'AutoReach.Channels',
+      },
+      {
+        label: 'Conversation labels',
+        icon: 'filter',
+        route: '/settings/labels',
+        menu: 'settings',
+        permission: 'AutoReach.Inbox',
+      },
+      {
+        label: 'Consent wording',
+        icon: 'shield',
+        route: '/compliance/consent-text',
+        menu: 'settings',
+        permission: 'AutoReach.Compliance',
+      },
+      {
+        label: 'SMS set-up',
+        icon: 'send',
+        route: '/channels/sms',
+        menu: 'settings',
+        permission: 'AutoReach.Channels',
+      },
+      {
         label: 'Display name & PIN',
         icon: 'tower',
         route: '/channels/numbers',
@@ -997,6 +1032,14 @@ export const NAV: readonly NavGroup[] = [
         icon: 'platform-console',
         route: '/platform',
         permission: 'AutoReach.Administration.ViewPlatformMetrics',
+        hostOnly: true,
+      },
+      {
+        label: 'Support sign-in',
+        icon: 'shield',
+        route: '/platform/support',
+        menu: 'settings',
+        permission: 'AutoReach.Administration.Impersonate',
         hostOnly: true,
       },
       // Daily work for the platform team, so it stays in the menu (Administration is set-up only).

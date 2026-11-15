@@ -10,6 +10,7 @@
   } @else {
     <div class="pf__col">
       <ar-email-confirmation-banner />
+      <ar-profile-picture-card [name]="name() + ' ' + surname()" />
       <ar-card heading="Your details">
         @if (detailsError(); as e) {
           <ar-banner tone="bad">{{ e }}</ar-banner>
@@ -154,6 +155,7 @@
       </ar-card>
 
       <ar-google-calendar-card />
+      <ar-calling-number-card />
     </div>
   }
 </div>

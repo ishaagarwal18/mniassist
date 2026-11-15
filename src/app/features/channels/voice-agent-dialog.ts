@@ -248,10 +248,13 @@ import { IntegrationService } from '../../proxy/integrations/integration.service
                   </option>
                 }
               </select>
-              <small>{{
-                'AutoReach::VoiceAgent.SpeechProvider.help' | abpLocalization
-              }}</small></label
-            >
+              <small>{{ 'AutoReach::VoiceAgent.SpeechProvider.help' | abpLocalization }}</small>
+              @if (!speechProviderOnWhatsApp(model.speechProvider ?? '')) {
+                <small class="ar-field__warning">{{
+                  'AutoReach::VoiceAgent.SpeechProvider.notOnWhatsApp' | abpLocalization
+                }}</small>
+              }
+            </label>
           }
           @if (model.engine !== 'pipeline') {
             <label class="ar-field"
@@ -1246,6 +1249,11 @@ export class ArVoiceAgentDialog implements OnInit {
   /** The relay has this speech provider's keys. */
   protected speechProviderReady(provider: string): boolean {
     return this.settings()?.speechProviders?.includes(provider) ?? false;
+  }
+  /** A chosen provider WhatsApp calls can't use on this relay (Sarvam AI and Bhashini need its libopus build). */
+  protected speechProviderOnWhatsApp(provider: string): boolean {
+    if (provider === '' || provider === 'deepgram') return true;
+    return this.settings()?.whatsAppSpeechProviders?.includes(provider) ?? false;
   }
   protected readonly previewing = signal(false);
   protected readonly previewFailed = signal(false);

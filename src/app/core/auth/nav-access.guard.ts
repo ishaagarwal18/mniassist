@@ -35,6 +35,8 @@ const ACTION_PERMISSIONS: Readonly<Record<string, string>> = {
   '/documents/price-lists/:id/edit': 'AutoReach.Library.Update',
   '/channels/connect': 'AutoReach.Channels.Onboard',
   '/channels/:id/voice-agent': 'AutoReach.Channels.Manage',
+  '/channels/sms': 'AutoReach.Channels.Manage',
+  '/campaigns/:id/ab-test': 'AutoReach.Campaigns',
   '/settings/teams/new': 'AutoReach.Teams.Manage',
   '/settings/teams/:id/edit': 'AutoReach.Teams.Manage',
   '/settings/email-templates/new': 'AutoReach.TextTemplates.Edit',
@@ -100,19 +102,19 @@ export function showsInMenu(
  * must declare their own access rule.
  */
 export const navAccessGuard: CanActivateFn = (route) => {
-  const path = '/' + route.pathFromRoot.map((part) => part.routeConfig?.path).filter(Boolean).join('/');
+  const path =
+    '/' +
+    route.pathFromRoot
+      .map((part) => part.routeConfig?.path)
+      .filter(Boolean)
+      .join('/');
   const item = navItemForUrl(path);
   const permission = ACTION_PERMISSIONS[path];
   const permissions = inject(PermissionService);
   if (
     (item || permission || route.data['authenticatedOnly'] === true) &&
     checkPolicy(permission, permissions) &&
-    canOpenUrl(
-      path,
-      permissions,
-      inject(PlanService),
-      inject(CurrentUserService),
-    )
+    canOpenUrl(path, permissions, inject(PlanService), inject(CurrentUserService))
   ) {
     return true;
   }

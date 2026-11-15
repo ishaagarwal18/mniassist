@@ -33,6 +33,8 @@ export interface FieldVisitDto {
   checklist: FieldChecklistItemDto[];
   photos: FieldPhotoDto[];
   state: 'Open' | 'AwaitingSignOff' | 'SignedOff';
+  /** The engineer who made the visit; filled in the office view only. */
+  engineerName?: string | null;
   signedByName?: string | null;
   signedOffAtUtc?: string | null;
 }
@@ -119,6 +121,16 @@ export class FieldServiceService {
         responseType: 'blob',
         url: '/api/auto-reach/field-service/photo',
         params: { clientVisitId, photoId },
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** The office view: every engineer's visits to one ticket, newest first. */
+  getVisitsForTicket = (ticketId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, FieldVisitDto[]>(
+      {
+        method: 'GET',
+        url: `/api/auto-reach/field-service/visits-for-ticket/${ticketId}`,
       },
       { apiName: this.apiName, ...config },
     );

@@ -71,6 +71,37 @@
     </section>
 
     <section class="ag__block">
+      <h2 class="ag__h">Agency visits to this workspace</h2>
+      <p class="ag__lead">
+        Every time someone from an agency opened a read-only session here, newest first.
+      </p>
+      @if (visitsFailed()) {
+        <p class="ag__empty">The visit history could not be loaded.</p>
+      } @else {
+        @for (v of visits(); track v.id) {
+          <article class="ag__row">
+            <div>
+              <span class="ag__row-name">{{ v.agencyUserName }}</span>
+              <span class="ag__row-meta">{{ v.agencyDisplayName ?? 'Agency' }}</span>
+            </div>
+            <div class="ag__visit">
+              <span>{{ when(v.startedAtUtc) }}</span>
+              @if (visitState(v) === 'ended') {
+                <ar-chip tone="neutral">Ended {{ when(v.endedAtUtc!) }}</ar-chip>
+              } @else if (visitState(v) === 'open') {
+                <ar-chip tone="good">Open now</ar-chip>
+              } @else {
+                <ar-chip tone="neutral">Expired {{ when(v.expiresAtUtc) }}</ar-chip>
+              }
+            </div>
+          </article>
+        } @empty {
+          <p class="ag__empty">No agency has opened a session here yet.</p>
+        }
+      }
+    </section>
+
+    <section class="ag__block">
       <h2 class="ag__h">Client workspaces you manage</h2>
 
       @if (acting.session(); as s) {

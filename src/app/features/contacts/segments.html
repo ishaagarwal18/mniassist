@@ -291,6 +291,15 @@
                   </span>
                 </button>
                 <div class="saved__actions">
+                  <button
+                    type="button"
+                    class="saved__btn"
+                    title="Count the members again now"
+                    [disabled]="recounting() === s.id"
+                    (click)="recount(s.id, $event)"
+                  >
+                    {{ recounting() === s.id ? 'Counting…' : 'Recount' }}
+                  </button>
                   @if (canUpdate()) {
                     <button
                       type="button"

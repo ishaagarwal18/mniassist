@@ -1,0 +1,57 @@
+@if (failed()) {
+  <ar-card heading="Site visits">
+    <p class="fv__empty">The site visits could not be loaded.</p>
+  </ar-card>
+} @else if (visits().length) {
+  <ar-card heading="Site visits">
+    @for (v of visits(); track v.clientVisitId) {
+      @let s = status(v.state);
+      <article class="fv">
+        <header class="fv__head">
+          <div>
+            <span class="fv__who">{{ v.engineerName ?? 'Engineer' }}</span>
+            <span class="fv__when">Arrived {{ when(v.arrivedAtUtc) }}</span>
+          </div>
+          <ar-chip [tone]="s.tone">{{ s.label }}</ar-chip>
+        </header>
+
+        @if (v.signedOffAtUtc) {
+          <p class="fv__meta">Signed by {{ v.signedByName }} on {{ when(v.signedOffAtUtc) }}</p>
+        }
+
+        @if (v.notes) {
+          <p class="fv__notes">{{ v.notes }}</p>
+        }
+
+        @if (v.checklist.length) {
+          <ul class="fv__checks">
+            @for (c of v.checklist; track $index) {
+              <li [class.fv__check--done]="c.done">
+                <span aria-hidden="true">{{ c.done ? '✓' : '✗' }}</span>
+                <span class="fv__sr">{{ c.done ? 'Done:' : 'Not done:' }}</span>
+                {{ c.label }}
+              </li>
+            }
+          </ul>
+        }
+
+        @if (v.photos.length) {
+          <div class="fv__photos">
+            @for (p of v.photos; track p.id; let i = $index) {
+              @if (photoUrls()[p.id]; as url) {
+                <a class="fv__photo" [href]="url" target="_blank" rel="noopener">
+                  <img [src]="url" [alt]="'Site photo ' + (i + 1)" loading="lazy" />
+                </a>
+              } @else {
+                <span
+                  class="fv__photo fv__photo--waiting"
+                  [attr.aria-label]="'Loading photo ' + (i + 1)"
+                ></span>
+              }
+            }
+          </div>
+        }
+      </article>
+    }
+  </ar-card>
+}

@@ -1,3 +1,4 @@
+import { ArLiveAiTranscript } from './live-ai-transcript';
 import { LocalizationPipe, PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
@@ -26,7 +27,17 @@ import { ArGrid } from '../../ui/grid';
  */
 @Component({
   selector: 'ar-whatsapp-calls',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, LocalizationPipe, ArGrid, GridModule, RouterLink],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    LocalizationPipe,
+    ArGrid,
+    GridModule,
+    RouterLink,
+    ArLiveAiTranscript,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
@@ -166,6 +177,9 @@ import { ArGrid } from '../../ui/grid';
             </button>
           </div>
         }
+        @if (liveCall(); as id) {
+          <ar-live-ai-transcript [callId]="id" (closed)="liveCall.set(null)" />
+        }
         <ejs-grid arGrid="whatsapp-calls" [dataSource]="rows()" aria-label="WhatsApp Calls Log">
           <e-columns>
             <e-column width="50" textAlign="Center" [visible]="canRecordings()">
@@ -212,6 +226,11 @@ import { ArGrid } from '../../ui/grid';
                 }
                 @if (c.transferCount) {
                   <span class="wa__muted"> · transferred</span>
+                }
+                @if (inProgress(c)) {
+                  <button ar-button type="button" variant="ghost" (click)="liveCall.set(c.id)">
+                    Live transcript
+                  </button>
                 }
               </ng-template>
             </e-column>
@@ -484,6 +503,8 @@ export class ArWhatsAppCalls {
   private readonly confirm = inject(ConfirmService);
   private readonly toasts = inject(ToastService);
   protected readonly selected = signal<Set<string>>(new Set());
+  /** The in-progress call whose AI transcript is being watched live. */
+  protected readonly liveCall = signal<string | null>(null);
   protected readonly deleting = signal(false);
 
   protected readonly stats = computed(() => {

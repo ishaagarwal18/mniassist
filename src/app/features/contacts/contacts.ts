@@ -1,3 +1,4 @@
+import { ContactExportService } from '../../proxy/contacts/contact-export.service';
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { GridModule } from '@syncfusion/ej2-angular-grids';
@@ -25,7 +26,7 @@ import { BusinessCardService } from '../../proxy/contacts';
 import { shrinkImage } from '../../core/util/image';
 import { persistedToggle } from '../../core/util/persisted-toggle';
 import { firstValueFrom } from 'rxjs';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
 import { ConfirmService } from '../../core/ui/confirm.service';
@@ -126,6 +127,30 @@ export class ArContacts {
   protected readonly canUpdate = grantedPolicy('AutoReach.Contacts.Update', this.permissions);
   protected readonly canDelete = grantedPolicy('AutoReach.Contacts.Delete', this.permissions);
   protected readonly canImport = grantedPolicy('AutoReach.Contacts.Import', this.permissions);
+  protected readonly canExport = grantedPolicy('AutoReach.Contacts.Export', this.permissions);
+  private readonly exportApi = inject(ContactExportService);
+  protected readonly exporting = signal(false);
+
+  /** Queues the server-side export of every contact (the grid's own export only has the rows on screen). */
+  protected async requestExport(): Promise<void> {
+    this.exporting.set(true);
+    try {
+      const req = await firstValueFrom(
+        this.exportApi.request({ filter: this.query().trim() || null }, { skipHandleError: true }),
+      );
+      this.exportToasts.success(
+        'The export has started. You will be notified when the file is ready.',
+        'Export',
+      );
+      if (req.id) void this.exportRouter.navigate(['/contacts/exports', req.id]);
+    } catch (e: unknown) {
+      this.exportToasts.error(readApiError(e, 'The export could not be started.'), 'Export');
+    } finally {
+      this.exporting.set(false);
+    }
+  }
+  private readonly exportToasts = inject(ToastService);
+  private readonly exportRouter = inject(Router);
   /** Customer 360: orders, challans, invoices, tickets and machines for one contact. */
   protected readonly canView360 = grantedPolicy('AutoReach.Customer360', this.permissions);
   /** Spares re-order portal: send a customer their personal link from their row. */

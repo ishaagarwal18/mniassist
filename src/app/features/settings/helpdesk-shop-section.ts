@@ -7,6 +7,7 @@ import { IntegrationService } from '../../proxy/integrations/integration.service
 import { IntegrationState } from '../../proxy/integrations/integration-state.enum';
 import { IntegrationConnectionDto } from '../../proxy/integrations/models';
 import { ArButton } from '../../ui/button';
+import { FieldErrors, hasErrors, helpdeskShopErrors, hostOf } from './connector-validation';
 
 type HelpdeskShopKind =
   IntegrationKind.Freshdesk | IntegrationKind.Zendesk | IntegrationKind.Shopify;
@@ -89,9 +90,15 @@ interface ConnectionForm {
               class="ar-field__input"
               name="name"
               maxlength="128"
+              [class.ar-invalid]="!!errors()['name']"
+              [attr.aria-invalid]="!!errors()['name']"
               [(ngModel)]="f.name"
               [disabled]="busy()"
-          /></label>
+            />
+            @if (errors()['name']; as e) {
+              <small class="ar-field__error">{{ e }}</small>
+            }
+          </label>
           <label class="ar-field"
             ><span class="ar-field__label">{{ addressLabel(f.kind) }}</span>
             <input
@@ -99,9 +106,15 @@ interface ConnectionForm {
               name="address"
               translate="no"
               [placeholder]="addressPlaceholder(f.kind)"
+              [class.ar-invalid]="!!errors()['address']"
+              [attr.aria-invalid]="!!errors()['address']"
               [(ngModel)]="f.address"
               [disabled]="busy()"
-          /></label>
+            />
+            @if (errors()['address']; as e) {
+              <small class="ar-field__error">{{ e }}</small>
+            }
+          </label>
           @if (f.kind === zendesk) {
             <label class="ar-field"
               ><span class="ar-field__label">Agent email</span>
@@ -109,9 +122,15 @@ interface ConnectionForm {
                 class="ar-field__input"
                 type="email"
                 name="email"
+                [class.ar-invalid]="!!errors()['email']"
+                [attr.aria-invalid]="!!errors()['email']"
                 [(ngModel)]="f.email"
                 [disabled]="busy()"
-            /></label>
+              />
+              @if (errors()['email']; as e) {
+                <small class="ar-field__error">{{ e }}</small>
+              }
+            </label>
           }
           <label class="ar-field"
             ><span class="ar-field__label">{{ kindOf(f.kind).credential }}</span>
@@ -121,9 +140,15 @@ interface ConnectionForm {
               name="credential"
               autocomplete="off"
               [placeholder]="f.id ? 'Saved; leave blank to keep' : ''"
+              [class.ar-invalid]="!!errors()['credential']"
+              [attr.aria-invalid]="!!errors()['credential']"
               [(ngModel)]="f.credential"
               [disabled]="busy()"
-          /></label>
+            />
+            @if (errors()['credential']; as e) {
+              <small class="ar-field__error">{{ e }}</small>
+            }
+          </label>
           <p class="hs__help">{{ kindOf(f.kind).help }}</p>
           <div class="hs__actions">
             <button ar-button type="submit" variant="primary" [disabled]="busy()">
@@ -248,6 +273,7 @@ export class ArHelpdeskShopSection implements OnInit {
   protected readonly form = signal<ConnectionForm | null>(null);
   protected readonly busy = signal(false);
   protected readonly error = signal('');
+  protected readonly errors = signal<FieldErrors>({});
 
   async ngOnInit(): Promise<void> {
     await this.load();
@@ -302,6 +328,7 @@ export class ArHelpdeskShopSection implements OnInit {
 
   protected edit(c: IntegrationConnectionDto | null): void {
     this.error.set('');
+    this.errors.set({});
     if (!c) {
       this.form.set({
         id: null,
@@ -327,23 +354,12 @@ export class ArHelpdeskShopSection implements OnInit {
   protected async save(): Promise<void> {
     const f = this.form();
     if (!f || this.busy()) return;
-    const address = f.address
-      .trim()
-      .toLowerCase()
-      .replace(/^https?:\/\//, '')
-      .replace(/\/.*$/, '');
-    const valid =
-      f.kind === IntegrationKind.Freshdesk
-        ? /^[a-z0-9][a-z0-9-]*\.freshdesk\.com$/.test(address)
-        : f.kind === IntegrationKind.Shopify
-          ? /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(address)
-          : /^[a-z0-9][a-z0-9-]*$/.test(address) && f.email.includes('@');
-    if (!f.name.trim() || !valid || (!f.id && !f.credential)) {
-      this.error.set(
-        `Enter a name, the ${this.addressLabel(f.kind).toLowerCase()} (${this.addressPlaceholder(f.kind)}) and the ${this.kindOf(f.kind).credential}.`,
-      );
-      return;
-    }
+    const errors = helpdeskShopErrors(f.kind, f, !f.id);
+    this.errors.set(errors);
+    if (hasErrors(errors)) return;
+    const host = hostOf(f.address);
+    // Zendesk takes the subdomain alone; someone pasting acme.zendesk.com means acme.
+    const address = f.kind === IntegrationKind.Zendesk ? host.replace(/\.zendesk\.com$/, '') : host;
     const config =
       f.kind === IntegrationKind.Freshdesk
         ? { domain: address }
@@ -362,11 +378,22 @@ export class ArHelpdeskShopSection implements OnInit {
       const saved = await firstValueFrom(
         f.id ? this.api.update(f.id, input) : this.api.create(input),
       );
-      if (saved.id) await firstValueFrom(this.api.test(saved.id));
       this.form.set(null);
+      if (saved.id) {
+        try {
+          const tested = await firstValueFrom(this.api.test(saved.id));
+          if (tested.state !== IntegrationState.Connected)
+            this.error.set(`Saved, but the test failed: ${tested.lastError || 'no answer'}`);
+        } catch {
+          this.error.set('Saved, but the connection could not be tested.');
+        }
+      }
       await this.load();
-    } catch {
-      this.error.set('The connection could not be saved.');
+    } catch (e: unknown) {
+      // The API's own words (IntegrationConfigRules) when it refused the settings.
+      this.error.set(
+        e instanceof Error && e.message ? e.message : 'The connection could not be saved.',
+      );
     } finally {
       this.busy.set(false);
     }

@@ -112,3 +112,17 @@ export function qty(value: number): string {
     ? value.toLocaleString('en-IN')
     : value.toLocaleString('en-IN', { maximumFractionDigits: 3 });
 }
+
+/**
+ * Why a location cannot be closed, or null when it can. The API refuses to close the default
+ * location, so the screen says so before the request instead of after it.
+ */
+export function closeLocationBlock(
+  location: { id: string; isActive: boolean },
+  defaultLocationId: string | null | undefined,
+): string | null {
+  if (!location.isActive) return null;
+  return defaultLocationId === location.id
+    ? 'Choose another default location before closing this one.'
+    : null;
+}

@@ -1,3 +1,4 @@
+import { ArRoutingRulesCard } from './routing-rules-card';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -55,7 +56,17 @@ const EMPTY: Draft = {
 
 @Component({
   selector: 'ar-teams',
-  imports: [NgTemplateOutlet, ArTopbar, ArButton, ArBanner, ArChip, ArDialog, ArGrid, GridModule],
+  imports: [
+    NgTemplateOutlet,
+    ArTopbar,
+    ArButton,
+    ArBanner,
+    ArChip,
+    ArDialog,
+    ArGrid,
+    GridModule,
+    ArRoutingRulesCard,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isPage) {
@@ -138,6 +149,9 @@ const EMPTY: Draft = {
             </e-columns>
             <ng-template #emptyRecordTemplate>No teams configured.</ng-template>
           </ejs-grid>
+          @if (canManage()) {
+            <ar-routing-rules-card style="margin-top: 16px" />
+          }
         }
       </div>
     }

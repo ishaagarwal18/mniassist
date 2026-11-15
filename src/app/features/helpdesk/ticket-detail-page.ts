@@ -1,3 +1,5 @@
+import { ArFieldVisitsCard } from './field-visits-card';
+import { ArTicketDetailsEditor } from './ticket-details-editor';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -50,6 +52,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
   selector: 'ar-ticket-detail-page',
   standalone: true,
   imports: [
+    ArTicketDetailsEditor,
     CommonModule,
     ArTopbar,
     ArButton,
@@ -58,6 +61,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
     ArBreakdownClockCard,
     ArRecordFixCard,
     ArDiagnosisPanel,
+    ArFieldVisitsCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -107,6 +111,9 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
                   }
                 </div>
                 <h2 class="ticket-subject">{{ t.subject }}</h2>
+                @if (canUpdate()) {
+                  <ar-ticket-details-editor [ticket]="t" (saved)="fixSaved($event)" />
+                }
                 <div class="ticket-meta">
                   <span class="meta-item">
                     <span class="meta-label">Customer / Contact:</span>
@@ -226,6 +233,7 @@ const PRIORITY_TONE: Record<TicketPriority, ChipTone> = {
               <ar-diagnosis-panel [ticket]="t" />
               <ar-record-fix-card [ticket]="t" [canEdit]="canUpdate()" (saved)="fixSaved($event)" />
             }
+            <ar-field-visits-card [ticketId]="t.id" />
             <ar-card heading="Ticket Settings & Assignment">
               @if (canUpdate()) {
                 <div class="control-group">

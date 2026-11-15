@@ -3,7 +3,7 @@ import { rxResource, toSignal, takeUntilDestroyed } from '@angular/core/rxjs-int
 import { firstValueFrom, map, bufferTime, filter } from 'rxjs';
 import { NavigationEnd, Router } from '@angular/router';
 import { InboxService as InboxApi } from '../../proxy/messaging';
-import { toConversation, toMessage } from '../api/mapping';
+import { groupAttachmentRows, toConversation, toMessage } from '../api/mapping';
 import { Conversation } from '../models/conversation.model';
 import { InboxRealtimeService } from '../realtime/inbox-realtime.service';
 import { settled } from '../util/resource';
@@ -107,7 +107,9 @@ export class InboxService {
       this.api.getMessages(conversationId as string, { skipCount: 0, maxResultCount: 100 }).pipe(
         // The API returns newest first for paging; the thread reads oldest first.
         map((page) =>
-          (page.items ?? []).map((m) => toMessage(m, conversationId as string)).reverse(),
+          groupAttachmentRows(
+            (page.items ?? []).map((m) => toMessage(m, conversationId as string)).reverse(),
+          ),
         ),
       ),
     defaultValue: [] as ReturnType<typeof toMessage>[],
@@ -172,6 +174,26 @@ export class InboxService {
 
   select(id: string): void {
     this._selectedId.set(id);
+  }
+
+  /** Hides the conversation until the given time; a customer reply brings it back sooner. */
+  async snooze(conversationId: string, untilUtc: Date): Promise<void> {
+    await firstValueFrom(
+      this.api.snooze(
+        conversationId,
+        { untilUtc: untilUtc.toISOString() },
+        { skipHandleError: true },
+      ),
+    );
+    this.countsResource.reload();
+    this.listResource.reload();
+  }
+
+  /** Hands the conversation to the next agent by the workspace's assignment rules. */
+  async autoAssign(conversationId: string): Promise<void> {
+    await firstValueFrom(this.api.autoAssign(conversationId, { skipHandleError: true }));
+    this.countsResource.reload();
+    this.listResource.reload();
   }
 
   /** Send a free-form reply. Only valid while the 24-hour window is open. */

@@ -5,6 +5,7 @@ import { ToastService } from '../../core/ui/toast.service';
 import { readApiError } from '../../core/util/api-error';
 import { WebPushScope } from '../../proxy/notifications/web-push-scope.enum';
 import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
+import { ArAlertTemplateStatus } from '../notifications/alert-template-status';
 
 /**
  * Turns on notifications from this browser (M06-11): a new customer message, a lead or task
@@ -12,7 +13,7 @@ import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
  */
 @Component({
   selector: 'ar-browser-notifications-card',
-  imports: [ArCard, ArButton, ArBanner, ArChip],
+  imports: [ArCard, ArButton, ArBanner, ArChip, ArAlertTemplateStatus],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-card heading="Browser notifications">
@@ -88,6 +89,7 @@ import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
           }
         </div>
       }
+      <ar-alert-template-status class="bn__alerts" />
     </ar-card>
   `,
   styles: `
@@ -95,6 +97,10 @@ import { ArBanner, ArButton, ArCard, ArChip } from '../../ui';
       margin: 0 0 10px;
       font: 400 12px var(--ar-font-sans);
       color: var(--ar-ink-500);
+    }
+    .bn__alerts {
+      display: block;
+      margin-top: 14px;
     }
     .bn__row {
       display: flex;

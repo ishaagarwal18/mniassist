@@ -153,5 +153,22 @@ describe('contact-form.logic', () => {
       expect(payload.ownerUserId).toBe('u-123');
       expect(payload.tags).toEqual(['vip', 'plant-visit']);
     });
+
+    it('sends a cleared website as empty so the saved one is removed, with the custom fields', () => {
+      const draft: ContactDraft = {
+        waId: '919821012345',
+        displayName: 'Neha',
+        designation: '',
+        companyName: '',
+        accountId: '',
+        email: '',
+        website: '  ',
+        city: '',
+        state: '',
+        role: DecisionRole.Purchase,
+      };
+      const payload = buildContactPayload(draft, undefined, { plant_site: 'Chakan' });
+      expect(payload.attributes).toEqual({ plant_site: 'Chakan', website: '' });
+    });
   });
 });

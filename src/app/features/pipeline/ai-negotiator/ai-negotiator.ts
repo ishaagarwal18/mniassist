@@ -1,3 +1,4 @@
+import { ArCounterOfferCheck } from './counter-offer-check';
 import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
@@ -79,7 +80,16 @@ const DEFAULT_RULES = {
  */
 @Component({
   selector: 'ar-ai-negotiator',
-  imports: [ArTopbar, ArButton, ArCard, ArChip, ArDialog, ArBanner, RouterLink],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArCard,
+    ArChip,
+    ArDialog,
+    ArBanner,
+    RouterLink,
+    ArCounterOfferCheck,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './ai-negotiator.html',
   styleUrl: './ai-negotiator.scss',

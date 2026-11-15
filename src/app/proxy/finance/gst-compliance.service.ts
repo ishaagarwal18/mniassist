@@ -8,7 +8,10 @@ import {
   GenerateEWayBillInput,
   GetGstAuditRegistersInput,
   GstAuditRegisterDto,
+  GstCreditOpeningDto,
+  GstPortalSessionDto,
   GstPortalReadinessDto,
+  SetGstCreditOpeningInput,
   GstPortalSettingsDto,
   GstPortalTestResultDto,
   Gstr1SummaryDto,
@@ -83,6 +86,46 @@ export class GstComplianceService {
       {
         method: 'GET',
         url: '/api/auto-reach/gst-compliance/gstr1Summary',
+        params: { returnPeriod },
+      },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
+  /** The month's electronic credit ledger opening balance, or null when none is entered. */
+  getCreditOpening(
+    returnPeriod: string,
+    config?: Partial<Rest.Config>,
+  ): Observable<GstCreditOpeningDto | null> {
+    return this.restService.request<any, GstCreditOpeningDto | null>(
+      {
+        method: 'GET',
+        url: '/api/auto-reach/gst-compliance/credit-opening',
+        params: { returnPeriod },
+      },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
+  setCreditOpening(
+    input: SetGstCreditOpeningInput,
+    config?: Partial<Rest.Config>,
+  ): Observable<GstCreditOpeningDto> {
+    return this.restService.request<any, GstCreditOpeningDto>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/gst-compliance/set-credit-opening',
+        body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
+  clearCreditOpening(returnPeriod: string, config?: Partial<Rest.Config>): Observable<void> {
+    return this.restService.request<any, void>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/gst-compliance/clear-credit-opening',
         params: { returnPeriod },
       },
       { apiName: this.apiName, ...config },
@@ -225,6 +268,59 @@ export class GstPortalSettingsService {
 export class Gstr2bService {
   private readonly restService = inject(RestService);
   apiName = 'AutoReach';
+
+  /** Whether GSTR-2B can be pulled from the GST portal here, and whether a session is open. */
+  getPortalSession(config?: Partial<Rest.Config>): Observable<GstPortalSessionDto> {
+    return this.restService.request<any, GstPortalSessionDto>(
+      { method: 'GET', url: '/api/auto-reach/gstr2b/portal-session' },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
+  /** Step 1 of signing in: the GST portal sends an OTP to the registered mobile. */
+  requestPortalOtp(portalUsername: string, config?: Partial<Rest.Config>): Observable<void> {
+    return this.restService.request<any, void>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/gstr2b/request-portal-otp',
+        body: { portalUsername },
+      },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
+  verifyPortalOtp(
+    portalUsername: string,
+    otp: string,
+    config?: Partial<Rest.Config>,
+  ): Observable<GstPortalSessionDto> {
+    return this.restService.request<any, GstPortalSessionDto>(
+      {
+        method: 'POST',
+        url: '/api/auto-reach/gstr2b/verify-portal-otp',
+        body: { portalUsername, otp },
+      },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
+  signOutPortal(config?: Partial<Rest.Config>): Observable<void> {
+    return this.restService.request<any, void>(
+      { method: 'POST', url: '/api/auto-reach/gstr2b/sign-out-portal' },
+      { apiName: this.apiName, ...config },
+    );
+  }
+
+  /** Downloads the month's GSTR-2B from the GST portal and imports it. */
+  pullFromPortal(
+    returnPeriod: string,
+    config?: Partial<Rest.Config>,
+  ): Observable<Gstr2bStatementDto> {
+    return this.restService.request<any, Gstr2bStatementDto>(
+      { method: 'POST', url: '/api/auto-reach/gstr2b/pull-from-portal', params: { returnPeriod } },
+      { apiName: this.apiName, ...config },
+    );
+  }
 
   /** Imports (or replaces) the period's GSTR-2B and matches it against vendor bills. */
   import(input: ImportGstr2bInput, config?: Partial<Rest.Config>): Observable<Gstr2bStatementDto> {

@@ -222,6 +222,13 @@ export class SegmentStore {
     this.reloadTick.update((n) => n + 1);
   }
 
+  /** Re-runs a saved segment's rules on the server and refreshes its member count. */
+  async evaluate(id: string): Promise<SegmentPreviewDto> {
+    const result = await firstValueFrom(this.api.evaluate(id, { skipHandleError: true }));
+    this.reloadTick.update((n) => n + 1);
+    return result;
+  }
+
   async remove(id: string): Promise<void> {
     await firstValueFrom(this.api.delete(id));
     this.reloadTick.update((n) => n + 1);

@@ -1,3 +1,4 @@
+import { ArCustomFieldsCard } from './custom-fields-card';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -34,7 +35,7 @@ let nextKey = 1;
  */
 @Component({
   selector: 'ar-pick-lists',
-  imports: [ArTopbar, ArBanner, ArButton, ArChip],
+  imports: [ArTopbar, ArBanner, ArButton, ArChip, ArCustomFieldsCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './pick-lists.scss',
   template: `
@@ -207,6 +208,7 @@ let nextKey = 1;
           }
         </div>
       }
+      <ar-custom-fields-card style="margin-top: 16px" />
     </div>
   `,
 })

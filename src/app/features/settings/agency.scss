@@ -129,3 +129,19 @@
   display: flex;
   gap: 6px;
 }
+
+.ag__row-meta {
+  display: block;
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-500);
+}
+
+.ag__visit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  font: 400 12px var(--ar-font-sans);
+  color: var(--ar-ink-700);
+}

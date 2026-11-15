@@ -1,3 +1,5 @@
+import { ToastService } from '../../core/ui/toast.service';
+import { readApiError } from '../../core/util/api-error';
 import { PermissionService } from '@abp/ng.core';
 import { NgTemplateOutlet } from '@angular/common';
 import {
@@ -63,6 +65,7 @@ export class ArSegments {
   private readonly permissions = inject(PermissionService);
   private readonly store = inject(SegmentStore);
   private readonly dialogs = inject(ConfirmService);
+  private readonly toasts = inject(ToastService);
 
   protected readonly canCreate = grantedPolicy('AutoReach.Segments.Create', this.permissions);
   protected readonly canUpdate = grantedPolicy('AutoReach.Segments.Update', this.permissions);
@@ -81,6 +84,23 @@ export class ArSegments {
   }
   protected readonly preview = this.store.preview;
   protected readonly saved = this.store.savedSegments;
+  protected readonly recounting = signal<string | null>(null);
+
+  protected async recount(id: string, event: Event): Promise<void> {
+    event.stopPropagation();
+    this.recounting.set(id);
+    try {
+      const r = await this.store.evaluate(id);
+      this.toasts.success(
+        `${r.totalMatching ?? 0} contacts match · ${r.marketingEligible ?? 0} can get marketing.`,
+        'Audience',
+      );
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The audience could not be counted.'), 'Audience');
+    } finally {
+      this.recounting.set(null);
+    }
+  }
   protected readonly fields = this.store.fields;
   protected readonly walletPaise = this.store.walletBalanceInPaise;
 

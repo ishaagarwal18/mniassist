@@ -1,3 +1,6 @@
+import { PermissionService } from '@abp/ng.core';
+import { grantedPolicy } from '../../core/auth/permission';
+import { InvoiceService } from '../../proxy/billing/invoice.service';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -118,6 +121,64 @@ export class ArInvoices {
     this.recOpen.set(false);
     if (this.isPage && this.router) {
       void this.router.navigate(['/billing/invoices']);
+    }
+  }
+
+  // ---- platform admin: mark paid, credit note --------------------------
+  private readonly invoiceApi = inject(InvoiceService);
+  protected readonly canIssue = grantedPolicy(
+    'AutoReach.Billing.IssueInvoices',
+    inject(PermissionService),
+  );
+  protected readonly adminBusy = signal(false);
+
+  protected async markPaid(v: Invoice): Promise<void> {
+    const ok = await this.dialogs.confirm({
+      title: `Mark ${v.number} paid?`,
+      message: 'Use this for a payment received outside the app, such as a bank transfer.',
+      confirmText: 'Mark paid',
+    });
+    if (!ok) return;
+    await this.adminAction(
+      () => firstValueFrom(this.invoiceApi.markPaid(v.id, { skipHandleError: true })),
+      'Marked paid.',
+    );
+  }
+
+  protected async creditNote(v: Invoice): Promise<void> {
+    const reason = await this.dialogs.ask(
+      `Raise a credit note against ${v.number}?`,
+      {
+        label: 'Reason (printed on the credit note)',
+        required: true,
+        maxLength: 256,
+        multiline: true,
+      },
+      'The credit note reverses this invoice in full and is issued straight away.',
+    );
+    if (!reason?.trim()) return;
+    await this.adminAction(
+      () =>
+        firstValueFrom(
+          this.invoiceApi.createCreditNote(
+            { invoiceId: v.id, reason: reason.trim() },
+            { skipHandleError: true },
+          ),
+        ),
+      'Credit note issued.',
+    );
+  }
+
+  private async adminAction(work: () => Promise<unknown>, done: string): Promise<void> {
+    this.adminBusy.set(true);
+    try {
+      await work();
+      this.toasts.success(done, 'Invoice');
+      this.ops.reloadInvoices();
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'That did not work. Try again.'), 'Invoice');
+    } finally {
+      this.adminBusy.set(false);
     }
   }
 

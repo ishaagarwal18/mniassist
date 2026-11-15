@@ -1,4 +1,5 @@
 import type {
+  BusinessProfileDto,
   ChannelDto,
   ConnectExistingWhatsAppInput,
   ChannelHealthDto,
@@ -193,6 +194,17 @@ export class ChannelService {
         headers: { Accept: 'application/json' },
         url: `/api/auto-reach/channel/${id}`,
         body: input,
+      },
+      { apiName: this.apiName, ...config },
+    );
+
+  /** The number's business profile as WhatsApp shows it now (read from Meta). */
+  getBusinessProfile = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, BusinessProfileDto>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/channel/${id}/business-profile`,
       },
       { apiName: this.apiName, ...config },
     );

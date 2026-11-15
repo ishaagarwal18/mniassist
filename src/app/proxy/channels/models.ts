@@ -106,6 +106,16 @@ export interface SetTwoStepPinInput {
   currentPin?: string | null;
 }
 
+export interface BusinessProfileDto {
+  about?: string | null;
+  address?: string | null;
+  email?: string | null;
+  website?: string | null;
+  description?: string | null;
+  vertical?: string | null;
+  profilePictureUrl?: string | null;
+}
+
 export interface UpdateBusinessProfileInput {
   about?: string | null;
   address?: string | null;

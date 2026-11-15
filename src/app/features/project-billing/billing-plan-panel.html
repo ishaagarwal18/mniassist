@@ -198,6 +198,19 @@
             }
           </select>
         </label>
+        @if (pickedTemplate(); as pt) {
+          @if (!pt.isStandard && pt.id) {
+            <button
+              ar-button
+              type="button"
+              variant="ghost"
+              [disabled]="locked()"
+              (click)="deleteTemplate(pt)"
+            >
+              Delete template
+            </button>
+          }
+        }
         <label class="ar-field">
           <span class="ar-field__label">Advance %</span>
           <input

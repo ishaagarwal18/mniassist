@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { OpsService } from '../../core/services/ops.service';
 import { NotificationTone } from '../../core/models/ops.model';
 import { ArTopbar } from '../../layout/topbar';
+import { ArAlertTemplateStatus } from './alert-template-status';
 import { ArButton, ArChip, ArIcon } from '../../ui';
 import { ChipTone } from '../../ui/chip';
 import { IconName } from '../../ui/icon';
@@ -34,7 +35,7 @@ const TONE_ICON: Record<NotificationTone, IconName> = {
  */
 @Component({
   selector: 'ar-notifications',
-  imports: [ArTopbar, ArButton, ArChip, ArIcon, RouterLink],
+  imports: [ArAlertTemplateStatus, ArTopbar, ArButton, ArChip, ArIcon, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './notifications.html',
   styleUrl: './notifications.scss',

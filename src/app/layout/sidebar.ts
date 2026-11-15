@@ -1,3 +1,4 @@
+import { MyPictureStore } from '../core/services/my-picture.store';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -271,7 +272,7 @@ function readCollapsed(): boolean {
         [attr.aria-expanded]="menuOpen()"
         (click)="toggleMenu($event)"
       >
-        <ar-avatar [name]="account.fullName()" tone="teal" [size]="26" />
+        <ar-avatar [name]="account.fullName()" [src]="picture.dataUrl()" tone="teal" [size]="26" />
         <span class="sb__user-text">
           <span class="sb__user-name">{{ account.fullName() }}</span>
           <span class="sb__user-role">{{ account.primaryRole() }}</span>
@@ -289,6 +290,7 @@ export class ArSidebar {
   private readonly ops = inject(OpsService);
   private readonly permissions = inject(PermissionService);
   protected readonly account = inject(CurrentUserService);
+  protected readonly picture = inject(MyPictureStore);
   protected readonly branding = inject(BrandingStore);
   protected readonly pwa = inject(PwaService);
   protected readonly plan = inject(PlanService);
@@ -311,6 +313,8 @@ export class ArSidebar {
     effect(() => {
       const id = this.account.id();
       untracked(() => this.favouriteRoutes.set(readFavourites(id)));
+      // The picture is per person too: load it once someone is signed in.
+      if (id) untracked(() => this.picture.ensureLoaded());
     });
 
     // When navigating to a page, ensure its parent group is unfolded so the selection is in view.

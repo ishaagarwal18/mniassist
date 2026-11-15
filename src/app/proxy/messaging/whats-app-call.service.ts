@@ -343,6 +343,17 @@ export class WhatsAppCallService {
       { apiName: this.apiName, skipHandleError: true, ...config },
     );
 
+  /** What the AI and the caller are saying while the call is still in progress. */
+  getLiveConversation = (id: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, VoiceConversationSnapshotDto | null>(
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        url: `/api/auto-reach/whats-app-call/${id}/live-conversation`,
+      },
+      { apiName: this.apiName, skipHandleError: true, ...config },
+    );
+
   getConversation = (id: string, config?: Partial<Rest.Config>) =>
     this.restService.request<any, VoiceConversationSnapshotDto | null>(
       {

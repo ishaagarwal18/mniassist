@@ -8,6 +8,14 @@ import { IntegrationKind } from '../../proxy/integrations/integration-kind.enum'
 import { IntegrationService } from '../../proxy/integrations/integration.service';
 import { ArButton, ArChip, ArDialog } from '../../ui';
 import { ErpForm, applyErpForm, describeRun, erpFormProblem, readErpForm } from './erp-sync-logic';
+import {
+  ErpConnectionFields,
+  FieldErrors,
+  applyErpConnection,
+  erpConnectionErrors,
+  hasErrors,
+} from './connector-validation';
+import { IntegrationState } from '../../proxy/integrations/integration-state.enum';
 
 /**
  * Tally and SAP Business One: customers and accepted quotations go in, invoices and what each customer owes come back.
@@ -19,7 +27,12 @@ import { ErpForm, applyErpForm, describeRun, erpFormProblem, readErpForm } from 
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="erp" aria-label="Tally and SAP record sync">
-      <h2 class="erp__title">Tally &amp; SAP Business One</h2>
+      <div class="erp__top">
+        <h2 class="erp__title">Tally &amp; SAP Business One</h2>
+        <button ar-button type="button" icon="plus" (click)="openConnection(null)">
+          Add connection
+        </button>
+      </div>
       <p class="erp__lead">
         Company accounts go in as customers when they are created or edited, and a quotation marked
         won goes in once as a sales order — net of GST, which the ERP applies from its own tax
@@ -92,15 +105,151 @@ import { ErpForm, applyErpForm, describeRun, erpFormProblem, readErpForm } from 
             <button ar-button type="button" variant="ghost" (click)="openSettings(c)">
               What to sync
             </button>
+            <button ar-button type="button" variant="ghost" (click)="openConnection(c)">
+              Connection details
+            </button>
           </div>
         </article>
       } @empty {
         <p class="erp__empty">
-          No Tally or SAP Business One connection. Add one above, check the connection, then choose
-          what to sync here.
+          No Tally or SAP Business One connection. Use Add connection, then choose what to sync
+          here.
         </p>
       }
     </section>
+
+    @if (connection(); as cf) {
+      <ar-dialog
+        [title]="cf.id ? cf.fields.name + ' — connection' : 'Add a Tally or SAP connection'"
+        (dismiss)="connection.set(null)"
+      >
+        <div class="erp__form">
+          @if (!cf.id) {
+            <label class="ar-field" for="erp-kind">
+              <span class="ar-field__label">ERP</span>
+              <select
+                id="erp-kind"
+                class="ar-field__input"
+                [value]="cf.fields.kind"
+                (change)="patchConnection({ kind: +$any($event.target).value })"
+              >
+                <option [value]="tally">Tally (Prime / ERP 9)</option>
+                <option [value]="sap">SAP Business One</option>
+              </select>
+            </label>
+          }
+          <label class="ar-field" for="erp-name">
+            <span class="ar-field__label">Name</span>
+            <input
+              id="erp-name"
+              class="ar-field__input"
+              maxlength="128"
+              [class.ar-invalid]="!!connErrors()['name']"
+              [attr.aria-invalid]="!!connErrors()['name']"
+              [value]="cf.fields.name"
+              (input)="patchConnection({ name: $any($event.target).value })"
+            />
+            @if (connErrors()['name']; as e) {
+              <small class="ar-field__error">{{ e }}</small>
+            }
+          </label>
+          <label class="ar-field" for="erp-url">
+            <span class="ar-field__label">{{
+              cf.fields.kind === tally ? 'Tally gateway address' : 'Service Layer address'
+            }}</span>
+            <input
+              id="erp-url"
+              class="ar-field__input ar-mono"
+              translate="no"
+              [placeholder]="
+                cf.fields.kind === tally
+                  ? 'http://192.168.1.20:9000'
+                  : 'https://sap.acme.in:50000/b1s/v1'
+              "
+              [class.ar-invalid]="!!connErrors()['url']"
+              [attr.aria-invalid]="!!connErrors()['url']"
+              [value]="cf.fields.url"
+              (input)="patchConnection({ url: $any($event.target).value })"
+            />
+            @if (connErrors()['url']; as e) {
+              <small class="ar-field__error">{{ e }}</small>
+            }
+            <small class="ar-field__hint">{{
+              cf.fields.kind === tally
+                ? 'Tally must be running with its HTTP server on (F1 Help, Settings, Connectivity), and reachable from the AutoReach server — usually through a tunnel or a static IP, since Tally sits on the office network.'
+                : 'The address of your SAP Business One Service Layer, ending /b1s/v1 or /b1s/v2.'
+            }}</small>
+          </label>
+          @if (cf.fields.kind === sap) {
+            <label class="ar-field" for="erp-db">
+              <span class="ar-field__label">Company database</span>
+              <input
+                id="erp-db"
+                class="ar-field__input ar-mono"
+                translate="no"
+                placeholder="SBODEMOIN"
+                [class.ar-invalid]="!!connErrors()['companyDb']"
+                [attr.aria-invalid]="!!connErrors()['companyDb']"
+                [value]="cf.fields.companyDb"
+                (input)="patchConnection({ companyDb: $any($event.target).value })"
+              />
+              @if (connErrors()['companyDb']; as e) {
+                <small class="ar-field__error">{{ e }}</small>
+              }
+            </label>
+            <label class="ar-field" for="erp-user">
+              <span class="ar-field__label">User name</span>
+              <input
+                id="erp-user"
+                class="ar-field__input"
+                autocomplete="off"
+                [class.ar-invalid]="!!connErrors()['username']"
+                [attr.aria-invalid]="!!connErrors()['username']"
+                [value]="cf.fields.username"
+                (input)="patchConnection({ username: $any($event.target).value })"
+              />
+              @if (connErrors()['username']; as e) {
+                <small class="ar-field__error">{{ e }}</small>
+              }
+            </label>
+            <label class="ar-field" for="erp-pass">
+              <span class="ar-field__label">Password</span>
+              <input
+                id="erp-pass"
+                class="ar-field__input"
+                type="password"
+                autocomplete="new-password"
+                [placeholder]="cf.id ? 'Saved; leave blank to keep' : ''"
+                [class.ar-invalid]="!!connErrors()['password']"
+                [attr.aria-invalid]="!!connErrors()['password']"
+                [value]="cf.fields.password"
+                (input)="patchConnection({ password: $any($event.target).value })"
+              />
+              @if (connErrors()['password']; as e) {
+                <small class="ar-field__error">{{ e }}</small>
+              }
+            </label>
+          }
+          @if (connError(); as e) {
+            <p class="erp__err" role="alert">{{ e }}</p>
+          }
+        </div>
+        <div dialogActions>
+          <button ar-button type="button" variant="ghost" (click)="connection.set(null)">
+            Cancel
+          </button>
+          <button
+            ar-button
+            type="button"
+            variant="primary"
+            [disabled]="saving()"
+            (click)="saveConnection()"
+          >
+            {{ saving() ? 'Saving…' : 'Save and test' }}
+          </button>
+        </div>
+      </ar-dialog>
+    }
 
     @if (editing(); as c) {
       <ar-dialog [title]="c.name + ' — what to sync'" (dismiss)="editing.set(null)">
@@ -225,6 +374,13 @@ import { ErpForm, applyErpForm, describeRun, erpFormProblem, readErpForm } from 
       gap: 12px;
       padding: 20px 24px;
     }
+    .erp__top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
     .erp__title {
       margin: 0;
       font: 600 15px var(--ar-font-sans);
@@ -336,8 +492,101 @@ export class ArErpSyncSection {
   protected readonly formError = signal<string | null>(null);
   protected readonly saving = signal(false);
 
+  protected readonly tally = IntegrationKind.Tally;
+  protected readonly sap = IntegrationKind.SapB1;
+  /** The connection details being added or edited (gateway / Service Layer, database, user, password). */
+  protected readonly connection = signal<{ id: string | null; fields: ErpConnectionFields } | null>(
+    null,
+  );
+  protected readonly connErrors = signal<FieldErrors>({});
+  protected readonly connError = signal<string | null>(null);
+
   constructor() {
     void this.load();
+  }
+
+  protected async openConnection(c: ErpSyncConnectionStatusDto | null): Promise<void> {
+    this.connErrors.set({});
+    this.connError.set(null);
+    if (!c) {
+      this.connection.set({
+        id: null,
+        fields: {
+          kind: IntegrationKind.Tally,
+          name: '',
+          url: '',
+          companyDb: '',
+          username: '',
+          password: '',
+        },
+      });
+      return;
+    }
+    try {
+      const config = await this.configOf(c.connectionId);
+      const text = (key: string) =>
+        typeof config[key] === 'string' ? (config[key] as string) : '';
+      const kind = c.kind === IntegrationKind.Tally ? IntegrationKind.Tally : IntegrationKind.SapB1;
+      this.connection.set({
+        id: c.connectionId,
+        fields: {
+          kind,
+          name: c.name ?? '',
+          url: kind === IntegrationKind.Tally ? text('url') : text('serviceLayerUrl'),
+          companyDb: text('companyDb'),
+          username: text('username'),
+          password: '',
+        },
+      });
+    } catch (e: unknown) {
+      this.error.set(e instanceof Error ? e.message : 'Could not load the connection.');
+    }
+  }
+
+  protected patchConnection(change: Partial<ErpConnectionFields>): void {
+    this.connection.update((c) => (c ? { ...c, fields: { ...c.fields, ...change } } : c));
+  }
+
+  protected async saveConnection(): Promise<void> {
+    const c = this.connection();
+    if (!c || this.saving()) return;
+    const errors = erpConnectionErrors(c.fields, !c.id);
+    this.connErrors.set(errors);
+    if (hasErrors(errors)) return;
+
+    this.saving.set(true);
+    this.connError.set(null);
+    try {
+      const config = applyErpConnection(c.id ? await this.configOf(c.id) : {}, c.fields);
+      const input = {
+        kind: c.fields.kind,
+        name: c.fields.name.trim(),
+        configJson: JSON.stringify(config),
+        // Tally has no password; for SAP a blank one on an edit keeps the stored password.
+        credential:
+          c.fields.kind === IntegrationKind.SapB1 && c.fields.password ? c.fields.password : null,
+      };
+      const saved = await firstValueFrom(
+        c.id ? this.integrations.update(c.id, input) : this.integrations.create(input),
+      );
+      this.connection.set(null);
+      if (saved.id) {
+        const tested = await firstValueFrom(this.integrations.test(saved.id));
+        if (tested.state === IntegrationState.Connected) {
+          this.notice.set(`${input.name}: connected. Choose what to sync next.`);
+          this.error.set(null);
+        } else {
+          this.error.set(
+            `${input.name} was saved, but the test failed: ${tested.lastError || 'no answer'}`,
+          );
+        }
+      }
+      await this.load();
+    } catch (e: unknown) {
+      this.connError.set(e instanceof Error ? e.message : 'The connection could not be saved.');
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   private async load(): Promise<void> {

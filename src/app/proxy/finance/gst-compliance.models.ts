@@ -173,6 +173,11 @@ export interface Gstr3bSummaryDto {
   itcImports: GstHeadsDto;
   itcReverseCharge: GstHeadsDto;
   itcAllOther: GstHeadsDto;
+  /** 4(A)(4): credit passed on by the business's Input Service Distributor. */
+  itcIsd: GstHeadsDto;
+  /** The electronic credit ledger's balance at the start of the month, as entered. */
+  openingCreditBalance: GstHeadsDto;
+  hasOpeningCreditBalance: boolean;
   itcReversed: GstHeadsDto;
   netItc: GstHeadsDto;
   itcIneligible: GstHeadsDto;
@@ -187,6 +192,36 @@ export interface Gstr3bSummaryDto {
   gstr2bInvoicesNotInBooks: number;
   gstr2bNotInBooksTaxInPaise: number;
   notes: string[];
+}
+
+/** The electronic credit ledger's opening balance for a month. Paise. */
+export interface GstCreditOpeningDto {
+  returnPeriod: string;
+  igstInPaise: number;
+  cgstInPaise: number;
+  sgstInPaise: number;
+  cessInPaise: number;
+  note?: string;
+  updatedAtUtc?: string;
+}
+
+export interface SetGstCreditOpeningInput {
+  returnPeriod: string;
+  igstInPaise: number;
+  cgstInPaise: number;
+  sgstInPaise: number;
+  cessInPaise: number;
+  note?: string;
+}
+
+/** Whether GSTR-2B can be pulled from the GST portal, and the open session. */
+export interface GstPortalSessionDto {
+  isConfigured: boolean;
+  providerName: string;
+  isSignedIn: boolean;
+  portalUsername?: string;
+  expiresAtUtc?: string;
+  gstin?: string;
 }
 
 export interface ImportGstr2bInput {
@@ -205,6 +240,7 @@ export interface Gstr2bStatementDto {
   creditNotes: number;
   debitNotes: number;
   imports: number;
+  isdDocuments: number;
   matched: number;
   taxMismatch: number;
   notInBooks: number;

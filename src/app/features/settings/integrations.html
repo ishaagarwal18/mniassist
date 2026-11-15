@@ -21,7 +21,11 @@
   <ar-tabs
     [tabs]="tabs"
     [(active)]="activeTab"
-    style="padding: 0 20px; border-bottom: 1px solid var(--ar-line-200); background: var(--ar-card-bg);"
+    style="
+      padding: 0 20px;
+      border-bottom: 1px solid var(--ar-line-200);
+      background: var(--ar-card-bg);
+    "
   />
 
   @if (activeTab() === 'Webhooks') {
@@ -53,8 +57,9 @@
         @if (selected(); as w) {
           @if (!w.enabled) {
             <ar-banner tone="bad">
-              This endpoint switched itself off after {{ w.consecutiveFailures }} consecutive failures.
-              Events raised while it is off are not queued — fix the endpoint, then re-enable it.
+              This endpoint switched itself off after {{ w.consecutiveFailures }} consecutive
+              failures. Events raised while it is off are not queued — fix the endpoint, then
+              re-enable it.
             </ar-banner>
           }
 
@@ -65,9 +70,25 @@
                 <p class="panel__url ar-mono">{{ w.url }}</p>
               </div>
               <div class="panel__actions">
-                <button ar-button variant="ghost">Send test</button>
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  [disabled]="webhookBusy() !== null"
+                  (click)="sendTest(w)"
+                >
+                  {{ webhookBusy() === 'test' ? 'Sending…' : 'Send test' }}
+                </button>
                 @if (!w.enabled) {
-                  <button ar-button variant="primary">Re-enable</button>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="primary"
+                    [disabled]="webhookBusy() !== null"
+                    (click)="reenable(w)"
+                  >
+                    {{ webhookBusy() === 'reenable' ? 'Switching on…' : 'Re-enable' }}
+                  </button>
                 }
               </div>
             </header>
@@ -111,11 +132,31 @@
               <p class="signing__text">
                 Every request carries <code>X-AutoReach-Signature-256</code> and
                 <code>X-AutoReach-Timestamp</code>. The signature is an HMAC-SHA256 over
-                <code>{{ '{timestamp}.{body}' }}</code> using your signing secret — the same shape Meta
-                uses, so code that already verifies Meta's webhooks works here unchanged. The timestamp
-                is inside the signed material, which is what stops a captured payload being replayed.
+                <code>{{ '{timestamp}.{body}' }}</code> using your signing secret — the same shape
+                Meta uses, so code that already verifies Meta's webhooks works here unchanged. The
+                timestamp is inside the signed material, which is what stops a captured payload
+                being replayed.
               </p>
-              <button ar-button variant="ghost">Rotate secret</button>
+              @if (revealedSecret(); as r) {
+                @if (r.id === w.id) {
+                  <div class="signing__secret" role="status">
+                    <p class="ar-label">New signing secret (shown once)</p>
+                    <code class="ar-mono signing__value" translate="no">{{ r.secret }}</code>
+                    <button ar-button type="button" variant="ghost" (click)="copySecret(r.secret)">
+                      Copy
+                    </button>
+                  </div>
+                }
+              }
+              <button
+                ar-button
+                type="button"
+                variant="ghost"
+                [disabled]="webhookBusy() !== null"
+                (click)="rotateSecret(w)"
+              >
+                {{ webhookBusy() === 'rotate' ? 'Rotating…' : 'Rotate secret' }}
+              </button>
             </div>
           </div>
 
@@ -158,6 +199,21 @@
                     ><span class="ar-mono">{{ d.when }}</span></ng-template
                   >
                 </e-column>
+                <e-column headerText="" width="110">
+                  <ng-template #template let-d>
+                    @if (d.state === 'failed' || d.state === 'abandoned') {
+                      <button
+                        ar-button
+                        type="button"
+                        variant="ghost"
+                        [disabled]="webhookBusy() !== null"
+                        (click)="retryDelivery(d.id)"
+                      >
+                        {{ webhookBusy() === 'retry:' + d.id ? 'Retrying…' : 'Retry' }}
+                      </button>
+                    }
+                  </ng-template>
+                </e-column>
               </e-columns>
               <ng-template #emptyRecordTemplate>No deliveries yet.</ng-template>
             </ejs-grid>
@@ -168,16 +224,17 @@
       </section>
     </div>
   } @else if (activeTab() === 'CRM sync') {
-    <section class="crm ar-scroll" style="flex:1;overflow-y:auto;" aria-label="CRM two-way sync">
+    <section class="crm ar-scroll" style="flex: 1; overflow-y: auto" aria-label="CRM two-way sync">
       <h2 class="crm__title">CRM two-way sync</h2>
       <p class="crm__lead">
-        Enquiries and quotations are pushed to a connected Zoho CRM, HubSpot or Salesforce as deals when
-        they are created or move stage, and the contact behind each one is pushed as its own
-        contact/lead record first. With timeline logging on, WhatsApp replies and messages sent to that
-        contact — campaign sends included, if you choose — are also logged as notes or activities on
-        their record. A change made back in the CRM — the deal stage or its value — flows into the
-        pipeline when the CRM posts to the inbound webhook below. A connection made through Connect
-        below refreshes its own access token automatically; one pasted in by hand does not.
+        Enquiries and quotations are pushed to a connected Zoho CRM, HubSpot or Salesforce as deals
+        when they are created or move stage, and the contact behind each one is pushed as its own
+        contact/lead record first. With timeline logging on, WhatsApp replies and messages sent to
+        that contact — campaign sends included, if you choose — are also logged as notes or
+        activities on their record. A change made back in the CRM — the deal stage or its value —
+        flows into the pipeline when the CRM posts to the inbound webhook below. A connection made
+        through Connect below refreshes its own access token automatically; one pasted in by hand
+        does not.
       </p>
 
       @if (oAuthBanner(); as banner) {
@@ -200,6 +257,17 @@
             {{ oAuthStarting() === k.kind ? 'Redirecting…' : 'Connect ' + k.label }}
           </button>
         }
+        <label
+          class="crm__sandbox"
+          title="Sign in at test.salesforce.com instead of login.salesforce.com"
+        >
+          <input
+            type="checkbox"
+            [checked]="salesforceSandbox()"
+            (change)="salesforceSandbox.set($any($event.target).checked)"
+          />
+          Salesforce sandbox org
+        </label>
       </div>
 
       @for (c of crm(); track c.connectionId) {
@@ -228,7 +296,10 @@
             @if (c.supportsAccountSync) {
               {{
                 c.accountsEnabled
-                  ? c.linkedAccounts + ' compan' + (c.linkedAccounts === 1 ? 'y' : 'ies') + ' linked'
+                  ? c.linkedAccounts +
+                    ' compan' +
+                    (c.linkedAccounts === 1 ? 'y' : 'ies') +
+                    ' linked'
                   : 'companies off'
               }}
               ·
@@ -268,17 +339,22 @@
         </article>
       } @empty {
         <p class="empty">
-          No CRM with two-way sync is connected. Use Connect above for Zoho CRM, HubSpot or Salesforce.
+          No CRM with two-way sync is connected. Use Connect above for Zoho CRM, HubSpot or
+          Salesforce.
         </p>
       }
     </section>
   } @else if (activeTab() === 'ERP (Tally / SAP)') {
-    <div class="ar-scroll" style="flex:1;padding:20px;overflow-y:auto;">
+    <div class="ar-scroll" style="flex: 1; padding: 20px; overflow-y: auto">
       <ar-erp-sync-section />
     </div>
   } @else if (activeTab() === 'Helpdesk & store') {
-    <div class="ar-scroll" style="flex:1;padding:20px;overflow-y:auto;">
+    <div class="ar-scroll" style="flex: 1; padding: 20px; overflow-y: auto">
       <ar-helpdesk-shop-section />
+    </div>
+  } @else if (activeTab() === 'API keys') {
+    <div class="ar-scroll" style="flex: 1; padding: 20px; overflow-y: auto">
+      <ar-api-keys-card />
     </div>
   }
 }
@@ -298,7 +374,9 @@
         />
       </label>
       <label class="ar-field">
-        <span class="ar-field__label">Description <span class="ar-field__opt">(optional)</span></span>
+        <span class="ar-field__label"
+          >Description <span class="ar-field__opt">(optional)</span></span
+        >
         <input
           class="ar-field__input"
           [value]="description()"
@@ -324,9 +402,7 @@
         <p class="intg__dialog-err">{{ err }}</p>
       }
       <div dialogActions>
-        <button ar-button type="button" variant="ghost" (click)="close()">
-          Cancel
-        </button>
+        <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
         <button
           ar-button
           type="button"
@@ -392,8 +468,8 @@
               [checked]="accountsEnabled()"
               (change)="accountsEnabled.set($any($event.target).checked)"
             />
-            Sync company accounts to {{ crmKindLabel(mc.kind) }}, keeping the parent-child hierarchy,
-            and link each contact to its account
+            Sync company accounts to {{ crmKindLabel(mc.kind) }}, keeping the parent-child
+            hierarchy, and link each contact to its account
           </label>
           <p class="crm__mapping-lead">
             Creates a company record for each account (parents first). Nothing is deleted in

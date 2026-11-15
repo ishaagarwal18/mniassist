@@ -8,6 +8,7 @@ import {
   AgencyLinkDto,
   AgencyLinkStatus,
   AgencyService,
+  AgencySessionDto,
 } from '../../proxy/agencies';
 import { AgencyActingStore } from '../../core/services/agency-acting.store';
 import { ArTopbar } from '../../layout/topbar';
@@ -15,6 +16,15 @@ import { ArButton, ArChip } from '../../ui';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { HostAccessConfiguration, isHostContext } from '../../core/auth/host-access';
 import { readApiError } from '../../core/util/api-error';
+
+/** Whether an agency's acting session was ended, is still open, or ran out. */
+export function visitState(
+  v: Pick<AgencySessionDto, 'endedAtUtc' | 'expiresAtUtc'>,
+  now = new Date(),
+): 'ended' | 'open' | 'expired' {
+  if (v.endedAtUtc) return 'ended';
+  return new Date(v.expiresAtUtc).getTime() > now.getTime() ? 'open' : 'expired';
+}
 
 /**
  * Agency mode (M01-8). A client issues an invite code and gives it to their agency;
@@ -57,6 +67,26 @@ export class ArAgency {
     defaultValue: { items: [] as AgencyClientSnapshotDto[] },
   });
   protected readonly clients = computed(() => this.clientsResource.value().items ?? []);
+
+  /** Acting sessions agencies opened in this (client) workspace — the client's audit view. */
+  private readonly visitsResource = rxResource({
+    params: () => (this.isPlatform ? undefined : { tick: this.tick() }),
+    stream: () => this.api.getActingSessionsForClient(),
+    defaultValue: { items: [] as AgencySessionDto[] },
+  });
+  protected readonly visits = computed(() => this.visitsResource.value().items ?? []);
+  protected readonly visitsFailed = computed(() => this.visitsResource.status() === 'error');
+
+  protected when(utc: string): string {
+    return new Date(utc).toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+  protected readonly visitState = visitState;
 
   protected readonly issuedCode = signal<string | null>(null);
   protected readonly redeemCode = signal('');

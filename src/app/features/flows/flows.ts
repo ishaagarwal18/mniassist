@@ -1,3 +1,5 @@
+import { ArFlowDataExchangePanel } from './flow-data-exchange-panel';
+import { ArFlowResponses } from './flow-responses';
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
@@ -28,7 +30,15 @@ const STATE_TONE: Record<FState, ChipTone> = {
  */
 @Component({
   selector: 'ar-flows',
-  imports: [ArTopbar, ArButton, ArChip, ArDialog, ArSelect],
+  imports: [
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArDialog,
+    ArSelect,
+    ArFlowResponses,
+    ArFlowDataExchangePanel,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './flows.html',
   styleUrl: './flows.scss',
@@ -46,6 +56,16 @@ export class ArFlows {
   protected readonly canUpdate = grantedPolicy('AutoReach.Flows.Update', this.permissions);
   protected readonly canDelete = grantedPolicy('AutoReach.Flows.Delete', this.permissions);
   protected readonly canPublish = grantedPolicy('AutoReach.Flows.Publish', this.permissions);
+
+  // ---- Responses and data exchange -----------------------------------
+  protected readonly responsesOf = signal<{ id: string; name: string } | null>(null);
+  protected readonly dataExchangeOpen = signal(false);
+  protected readonly dataExchangeChannel = signal('');
+
+  protected openDataExchange(): void {
+    if (!this.dataExchangeChannel()) this.dataExchangeChannel.set(this.channels()[0]?.id ?? '');
+    this.dataExchangeOpen.set(true);
+  }
 
   // ---- Funnel (M08-5) -----------------------------------------------
   protected readonly funnelOpen = signal(false);

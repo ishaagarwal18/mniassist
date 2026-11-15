@@ -796,6 +796,12 @@
         </div>
       }
 
+      @if (quote()?.id && quote()!.state !== 0 && quote()!.state !== 4) {
+        <ar-quotation-actions
+          [quotationId]="quote()!.id!"
+          [validUntilUtc]="quote()!.validUntilUtc"
+        />
+      }
       @if (quote()?.id && quote()!.state !== 0) {
         <ar-quote-revisions [quotationId]="quote()!.id!" [reference]="quote()!.reference ?? ''" />
       }

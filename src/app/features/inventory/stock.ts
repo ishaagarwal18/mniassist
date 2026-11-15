@@ -22,7 +22,7 @@ import { GridModule } from '@syncfusion/ej2-angular-grids';
 import { ArDateInput } from '../../ui/date-input';
 import { ArSelect } from '../../ui/select';
 import { parseRupees, rupees } from '../reorder/reorder-logic';
-import { MOVE_LABEL, MoveKind, parseLots, parseMove, qty } from './stock-logic';
+import { MOVE_LABEL, MoveKind, closeLocationBlock, parseLots, parseMove, qty } from './stock-logic';
 
 interface MoveTarget {
   productId: string;
@@ -837,7 +837,56 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
           <div class="locs">
             <span class="ar-field__label">Locations</span>
             @for (l of locations(); track l.id) {
-              <span class="loc">{{ l.name }}{{ l.isActive ? '' : ' (closed)' }}</span>
+              <div class="loc-row">
+                @if (editingLocation() === l.id) {
+                  <input
+                    class="ar-field__input"
+                    [attr.aria-label]="'New name for ' + l.name"
+                    [value]="locationName()"
+                    (input)="locationName.set($any($event.target).value)"
+                    (keydown.enter)="renameLocation(l)"
+                    (keydown.escape)="editingLocation.set(null)"
+                  />
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="!locationName().trim() || busy()"
+                    (click)="renameLocation(l)"
+                  >
+                    Save
+                  </button>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    (click)="editingLocation.set(null)"
+                  >
+                    Cancel
+                  </button>
+                } @else {
+                  <span class="loc">{{ l.name }}{{ l.isActive ? '' : ' (closed)' }}</span>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="busy()"
+                    (click)="startRename(l)"
+                  >
+                    Rename
+                  </button>
+                  <button
+                    ar-button
+                    type="button"
+                    variant="ghost"
+                    [disabled]="busy() || !!closeLocationBlock(l, defaultLocation())"
+                    [title]="closeLocationBlock(l, defaultLocation()) ?? ''"
+                    (click)="setLocationOpen(l, !l.isActive)"
+                  >
+                    {{ l.isActive ? 'Close' : 'Reopen' }}
+                  </button>
+                }
+              </div>
             }
             <div class="locs__add">
               <input
@@ -1080,6 +1129,20 @@ const NUMBERING_LABEL: Record<StockTracking, string> = {
       display: flex;
       gap: 8px;
     }
+    .loc-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .loc-row .loc {
+      flex: 1;
+      min-width: 0;
+    }
+    .loc-row .ar-field__input {
+      flex: 1;
+      min-width: 140px;
+    }
     @media (max-width: 560px) {
       .st {
         padding-inline: 12px;
@@ -1165,6 +1228,9 @@ export class ArStock {
   protected readonly defaultLocation = signal('');
   protected readonly issueOnWin = signal(true);
   protected readonly newLocation = signal('');
+  /** The location being renamed in the settings dialog, if any. */
+  protected readonly editingLocation = signal<string | null>(null);
+  protected readonly locationName = signal('');
   protected readonly keptOptions: { value: StockKeptIn; label: string; hint: string }[] = [
     {
       value: 'AutoReach',
@@ -1545,6 +1611,49 @@ export class ArStock {
       if (!this.defaultLocation() && made.id) this.defaultLocation.set(made.id);
     } catch (e: unknown) {
       this.dialogError.set(problem(e, 'The location could not be added.'));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected readonly closeLocationBlock = closeLocationBlock;
+
+  protected startRename(l: StockLocationDto): void {
+    this.locationName.set(l.name);
+    this.editingLocation.set(l.id);
+  }
+
+  protected async renameLocation(l: StockLocationDto): Promise<void> {
+    const name = this.locationName().trim();
+    if (!name) return;
+    if (name === l.name) {
+      this.editingLocation.set(null);
+      return;
+    }
+    if (await this.saveLocation(l, { name, isActive: l.isActive }, 'renamed')) {
+      this.editingLocation.set(null);
+    }
+  }
+
+  /** Closing keeps the location's history; the API refuses to close the default location. */
+  protected async setLocationOpen(l: StockLocationDto, open: boolean): Promise<void> {
+    await this.saveLocation(l, { name: l.name, isActive: open }, open ? 'reopened' : 'closed');
+  }
+
+  private async saveLocation(
+    l: StockLocationDto,
+    input: { name: string; isActive: boolean },
+    verb: string,
+  ): Promise<boolean> {
+    this.busy.set(true);
+    this.dialogError.set(null);
+    try {
+      const saved = await firstValueFrom(this.api.updateLocation(l.id, input));
+      this.locations.update((list) => list.map((x) => (x.id === saved.id ? saved : x)));
+      return true;
+    } catch (e: unknown) {
+      this.dialogError.set(problem(e, `The location could not be ${verb}.`));
+      return false;
     } finally {
       this.busy.set(false);
     }

@@ -1,3 +1,4 @@
+import { ArPoolNumbersCard } from './pool-numbers-card';
 import { PermissionService } from '@abp/ng.core';
 import { CommonModule, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
@@ -34,6 +35,7 @@ type ActiveTab = 'inventory' | 'telecom-entity';
     ArChip,
     ArIcon,
     NgTemplateOutlet,
+    ArPoolNumbersCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './telecom.html',

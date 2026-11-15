@@ -1,3 +1,5 @@
+import { ArContactConsent } from './contact-consent';
+import { ArCustomerInsights } from './customer-insights';
 import { ArAccountProjects } from '../projects/account-projects';
 import { PermissionService } from '@abp/ng.core';
 import { CommonModule } from '@angular/common';
@@ -62,6 +64,8 @@ export type Customer360Tab =
   standalone: true,
   imports: [
     ArAtRiskCard,
+    ArContactConsent,
+    ArCustomerInsights,
     CommonModule,
     FormsModule,
     RouterLink,

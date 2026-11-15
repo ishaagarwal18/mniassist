@@ -16,6 +16,20 @@
   @if (channel(); as ch) {
     <ar-channel-health-strip [channel]="ch" />
   }
+  <span class="inbox__mentions">
+    <button
+      ar-button
+      variant="ghost"
+      type="button"
+      [attr.aria-expanded]="mentionsOpen()"
+      (click)="mentionsOpen.set(!mentionsOpen())"
+    >
+      My &#64;mentions
+    </button>
+    @if (mentionsOpen()) {
+      <ar-my-mentions (opened)="openMention($event)" (closed)="mentionsOpen.set(false)" />
+    }
+  </span>
   <span class="inbox__filters">
     <button
       ar-button
@@ -180,6 +194,7 @@
               <span class="ar-mono">{{ thread.phoneE164 }}</span>
             }
           </span>
+          <ar-conversation-label-picker [conversationId]="thread.id" />
         </div>
         @if (thread.windowless) {
           <div class="window window--open">
@@ -201,6 +216,38 @@
         @if (thread.contactId && (!thread.channel || thread.channel === 'Email' || thread.sms)) {
           <button ar-button variant="ghost" icon="phone" (click)="calling.set(true)">Call</button>
         }
+        <span class="thread__snooze">
+          <button
+            ar-button
+            variant="ghost"
+            type="button"
+            icon="clock"
+            [disabled]="threadBusy() !== null"
+            [attr.aria-expanded]="snoozeOpen()"
+            (click)="snoozeOpen.set(!snoozeOpen())"
+          >
+            {{ threadBusy() === 'snooze' ? 'Snoozing…' : 'Snooze' }}
+          </button>
+          @if (snoozeOpen()) {
+            <span class="thread__snooze-menu" role="menu">
+              @for (o of snoozeChoices; track o.value) {
+                <button type="button" role="menuitem" (click)="snooze(thread.id, o.value)">
+                  {{ o.label }}
+                </button>
+              }
+            </span>
+          }
+        </span>
+        <button
+          ar-button
+          variant="ghost"
+          type="button"
+          title="Give this conversation to the next agent by your assignment rules"
+          [disabled]="threadBusy() !== null"
+          (click)="autoAssign(thread.id)"
+        >
+          {{ threadBusy() === 'assign' ? 'Assigning…' : 'Auto-assign' }}
+        </button>
         <button
           ar-button
           variant="ghost"
@@ -413,6 +460,54 @@
                 }
               }
             }
+            @if (m.extras; as extras) {
+              <div class="bubble__extras">
+                @for (x of extras; track x.id) {
+                  @if (x.media; as xm) {
+                    @switch (xm.kind) {
+                      @case ('image') {
+                        <a class="bubble__extra" [arAuthHref]="xm.url" [fileName]="xm.fileName">
+                          <img
+                            [arAuthSrc]="xm.thumbnailUrl ?? xm.url"
+                            alt="Attached image"
+                            loading="lazy"
+                          />
+                        </a>
+                      }
+                      @case ('video') {
+                        <video
+                          class="bubble__media"
+                          [arAuthSrc]="xm.url"
+                          controls
+                          preload="metadata"
+                        ></video>
+                      }
+                      @case ('audio') {
+                        <audio
+                          class="bubble__media"
+                          [arAuthSrc]="xm.url"
+                          controls
+                          preload="none"
+                        ></audio>
+                      }
+                      @default {
+                        <a class="bubble__file" [arAuthHref]="xm.url" [fileName]="xm.fileName">
+                          <ar-icon name="document" [size]="16" />
+                          <span>{{ xm.fileName || 'Attachment' }}</span>
+                        </a>
+                      }
+                    }
+                  } @else if (x.mediaRemoved) {
+                    <p class="bubble__removed" role="note">
+                      <ar-icon name="shield" [size]="14" />
+                      File removed: a virus was found in it.
+                    </p>
+                  } @else if (x.body) {
+                    <p class="bubble__body" translate="no">{{ x.body }}</p>
+                  }
+                }
+              </div>
+            }
             @if (m.location; as loc) {
               <a
                 class="bubble__file"
@@ -531,6 +626,17 @@
               (keydown.enter.meta)="send()"
               (keydown.enter.control)="send()"
             ></textarea>
+            <button
+              type="button"
+              class="composer__suggest-chip"
+              [attr.aria-expanded]="cannedOpen()"
+              (click)="cannedOpen.set(!cannedOpen())"
+            >
+              Saved replies
+            </button>
+            @if (cannedOpen()) {
+              <ar-canned-reply-picker [conversationId]="thread.id" (picked)="useCanned($event)" />
+            }
 
             @if (suggestions().length > 0) {
               <div class="composer__suggest">

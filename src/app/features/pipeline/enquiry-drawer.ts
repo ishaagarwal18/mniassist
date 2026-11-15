@@ -1,3 +1,4 @@
+import { ArEnquiryMovePipeline } from './enquiry-move-pipeline';
 import {
   CompetitorBrandDto,
   CompetitorBrandService,
@@ -6,6 +7,7 @@ import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   inject,
   input,
@@ -26,6 +28,19 @@ import { ArEnquiryNetwork } from '../network/enquiry-network';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { PROFILE_FIELDS, ProfileField, profileFilled, profileInput } from './enquiry-profile';
+import {
+  CustomFieldDefinitionDto,
+  CustomFieldEntity,
+  CustomFieldService,
+} from '../../proxy/contacts';
+import { ArCustomFieldInputs } from '../contacts/custom-field-inputs';
+import {
+  customFieldAttributes,
+  customFieldProblems,
+  customFieldValuesOf,
+  showCustomValue,
+  sortFields,
+} from '../contacts/custom-field-values';
 import { AccountMasterDataService } from '../../core/services/account-master-data.service';
 
 /**
@@ -45,6 +60,8 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
     ArEnquiryCalls,
     ArEnquiryTickets,
     ArEnquiryNetwork,
+    ArEnquiryMovePipeline,
+    ArCustomFieldInputs,
     RouterLink,
     ArSelect,
   ],
@@ -191,6 +208,13 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
                   (change)="editOrderDate.set($any($event.target).value)"
                 />
               </label>
+              <ar-custom-field-inputs
+                idPrefix="enq-cf"
+                [fields]="customFields()"
+                [values]="editCustom()"
+                [problems]="customProblems()"
+                (valueChange)="setCustom($event.key, $event.value)"
+              />
             </div>
             <div dialogActions>
               <button ar-button type="button" variant="ghost" (click)="editing.set(false)">
@@ -256,6 +280,13 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
             <p class="lost">Lost — {{ d.lostReason }}</p>
           }
 
+          <ar-enquiry-move-pipeline
+            class="move"
+            [enquiryId]="d.id"
+            [pipelineId]="d.pipelineId"
+            (moved)="changed.emit()"
+          />
+
           <section class="sec">
             <h3 class="sec__t">
               RFQ details
@@ -274,6 +305,20 @@ import { AccountMasterDataService } from '../../core/services/account-master-dat
               </div>
             </dl>
           </section>
+
+          @if (customFields().length) {
+            <section class="sec">
+              <h3 class="sec__t">More details</h3>
+              <dl class="rfq">
+                @for (f of customFields(); track f.id) {
+                  <div>
+                    <dt>{{ f.label }}</dt>
+                    <dd>{{ showCustom(f, attributeOf(d, f.key)) }}</dd>
+                  </div>
+                }
+              </dl>
+            </section>
+          }
 
           <section class="sec">
             <h3 class="sec__t">Requirement</h3>
@@ -773,6 +818,33 @@ export class ArEnquiryDrawer {
   protected readonly lostBrand = signal('');
   protected readonly brands = signal<CompetitorBrandDto[]>([]);
   private readonly brandsApi = inject(CompetitorBrandService);
+
+  /** The workspace's enquiry fields from Settings → Custom fields, in their set order. */
+  protected readonly customFields = signal<CustomFieldDefinitionDto[]>([]);
+  protected readonly editCustom = signal<Record<string, string>>({});
+  private readonly triedEditSave = signal(false);
+  protected readonly customProblems = computed(() =>
+    this.triedEditSave() ? customFieldProblems(this.customFields(), this.editCustom()) : {},
+  );
+  protected readonly showCustom = showCustomValue;
+
+  protected attributeOf(d: EnquiryDetail, key: string | undefined): string | undefined {
+    if (!key) return undefined;
+    const wanted = key.toLowerCase();
+    return Object.entries(d.attributes ?? {}).find(([k]) => k.toLowerCase() === wanted)?.[1];
+  }
+
+  protected setCustom(key: string, value: string): void {
+    this.editCustom.update((v) => ({ ...v, [key]: value }));
+  }
+
+  private readonly customFieldsLoad = inject(CustomFieldService)
+    .getFor(CustomFieldEntity.Enquiry, { skipHandleError: true })
+    .subscribe({
+      next: (r) => this.customFields.set(sortFields(r.items ?? [])),
+      // Custom fields are extra: the drawer still works without them.
+      error: () => this.customFields.set([]),
+    });
   protected readonly lostNote = signal('');
   protected readonly lostCategories: { value: LostReasonCategory; label: string }[] = [
     { value: LostReasonCategory.PriceTooHigh, label: 'Price too high' },
@@ -879,6 +951,8 @@ export class ArEnquiryDrawer {
     this.editRequirement.set(d.requirement ?? '');
     this.editValueRupees.set(d.valueInPaise ? String(d.valueInPaise / 100) : '');
     this.editProfile.set({ ...(d.attributes ?? {}) });
+    this.editCustom.set(customFieldValuesOf(this.customFields(), d.attributes));
+    this.triedEditSave.set(false);
     this.editOrderDate.set(d.expectedCloseDate ? d.expectedCloseDate.slice(0, 10) : '');
     this.editing.set(true);
   }
@@ -892,6 +966,14 @@ export class ArEnquiryDrawer {
     const profile = profileInput(this.editProfile());
     if (typeof profile === 'string') {
       this.toasts.warning(profile, 'Edit enquiry');
+      return;
+    }
+    this.triedEditSave.set(true);
+    const customProblem = Object.values(
+      customFieldProblems(this.customFields(), this.editCustom()),
+    )[0];
+    if (customProblem) {
+      this.toasts.warning(customProblem, 'Edit enquiry');
       return;
     }
     this.busy.set(true);
@@ -908,7 +990,10 @@ export class ArEnquiryDrawer {
         requirement: this.editRequirement().trim() || undefined,
         estimatedValueInPaise: rupees > 0 ? Math.round(rupees * 100) : undefined,
         expectedCloseDate: this.editOrderDate() ? `${this.editOrderDate()}T00:00:00Z` : null,
-        attributes: profile,
+        attributes: {
+          ...customFieldAttributes(this.customFields(), this.editCustom()),
+          ...profile,
+        },
       });
       this.editing.set(false);
       this.toasts.success('Enquiry updated.');

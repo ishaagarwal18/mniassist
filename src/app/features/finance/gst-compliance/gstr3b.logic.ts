@@ -60,6 +60,7 @@ export function gstr3bTableRows(b: Gstr3bSummaryDto): Gstr3bRow[] {
     ),
     row('4(A)(1) ITC: import of goods', b.itcImports, 'itc'),
     row('4(A)(3) ITC: inward supplies liable to reverse charge', b.itcReverseCharge, 'itc'),
+    row('4(A)(4) ITC: inward supplies from ISD', b.itcIsd ?? empty, 'itc'),
     row('4(A)(5) ITC: all other', b.itcAllOther, 'itc'),
     row('4(B)(2) ITC reversed: others (Rule 37, unpaid after 180 days)', b.itcReversed, 'reversal'),
     row('4(C) Net ITC available', b.netItc, 'itc'),
@@ -91,6 +92,9 @@ function setOffRow(heading: string, h: GstHeadsDto): SetOffRow {
 export function setOffRows(b: Gstr3bSummaryDto): SetOffRow[] {
   return [
     setOffRow('Tax on outward supplies', b.outwardTax),
+    ...(b.hasOpeningCreditBalance
+      ? [setOffRow('Credit ledger opening balance', b.openingCreditBalance)]
+      : []),
     setOffRow('Paid from input tax credit', b.paidFromCredit),
     setOffRow('Reverse-charge tax (cash only)', b.reverseChargeTax),
     setOffRow('Payable in cash', b.payableInCash),

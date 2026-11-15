@@ -244,6 +244,8 @@ export interface VoiceAgentSettings extends VoiceAgentInput {
   phoneEngines?: string[];
   /** The speech providers set up on the relay for phone calls ('sarvam', 'bhashini', 'deepgram'). */
   speechProviders?: string[];
+  /** Speech providers WhatsApp calls can use on the relay now. */
+  whatsAppSpeechProviders?: string[];
 }
 
 export interface VoiceAgentNumber {

@@ -34,6 +34,9 @@ const summary = (over: Partial<Gstr3bSummaryDto> = {}): Gstr3bSummaryDto => ({
   itcImports: heads(900, 0, 0, 10),
   itcReverseCharge: heads(1_800),
   itcAllOther: heads(0, 20_000, 20_000),
+  itcIsd: heads(),
+  openingCreditBalance: heads(),
+  hasOpeningCreditBalance: false,
   itcReversed: heads(0, 1_000, 1_000),
   netItc: heads(2_700, 19_000, 19_000, 10),
   itcIneligible: heads(0, 500, 500),
@@ -59,6 +62,7 @@ describe('GSTR-3B rows', () => {
       '3.1(d)',
       '4(A)(1)',
       '4(A)(3)',
+      '4(A)(4)',
       '4(A)(5)',
       '4(B)(2)',
       '4(C)',
@@ -73,8 +77,8 @@ describe('GSTR-3B rows', () => {
     });
     expect(rows[1]).toMatchObject({ taxable: 500, totalTax: 0 });
     expect(rows[3]).toMatchObject({ igst: 9, cess: 0.1 });
-    expect(rows[6].type).toBe('reversal');
-    expect(rows[7]).toMatchObject({ totalTax: 407.1, type: 'itc' });
+    expect(rows[7].type).toBe('reversal');
+    expect(rows[8]).toMatchObject({ totalTax: 407.1, type: 'itc' });
   });
 
   it('shows the set-off with reverse-charge tax apart, as it can only be paid in cash', () => {
@@ -88,6 +92,13 @@ describe('GSTR-3B rows', () => {
     ]);
     expect(rows[2].igst).toBe(18);
     expect(rows[3].total).toBe(1_411);
+    // An entered opening balance shows straight after the tax it is set off against.
+    expect(
+      setOffRows(summary({ hasOpeningCreditBalance: true, openingCreditBalance: heads(500) }))[1],
+    ).toMatchObject({
+      heading: 'Credit ledger opening balance',
+      igst: 5,
+    });
   });
 });
 

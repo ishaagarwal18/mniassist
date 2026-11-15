@@ -483,6 +483,10 @@ input[type='radio']:not(.e-control) {
   font: 500 11.5px/1.4 var(--ar-font-sans);
   color: var(--ar-red-600);
 }
+.ar-field__warning {
+  font: 500 11.5px/1.4 var(--ar-font-sans);
+  color: var(--ar-amber-600);
+}
 .ar-invalid,
 .ar-invalid:hover,
 .e-input-group.e-control-wrapper.ar-invalid {

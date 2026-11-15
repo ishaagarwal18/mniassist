@@ -235,9 +235,10 @@ export class ActivityLinkService {
   search = (input: SearchActivityLinksInput, config?: Partial<Rest.Config>) =>
     this.restService.request<any, ActivityLinkDto[]>(
       {
-        method: 'GET',
+        // ABP publishes SearchAsync as POST (the verb isn't Get…), reading the input from the body.
+        method: 'POST',
         url: '/api/auto-reach/activity-link/search',
-        params: { type: input.type, filter: input.filter, maxResultCount: input.maxResultCount },
+        body: input,
       },
       { apiName: this.apiName, ...config },
     );

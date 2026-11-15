@@ -90,12 +90,15 @@ export function buildContactPayload(
     ownerUserId?: string | null;
     tags?: readonly string[];
   },
+  customAttributes: Record<string, string> = {},
 ): CreateUpdateContactDto {
   const waId = cleanWhatsAppNumber(draft.waId);
-  const attributes: Record<string, string> = {};
-  if (draft.website.trim()) {
-    attributes['website'] = draft.website.trim();
-  }
+  // Attributes are merged on the server, so a cleared website is sent as "" — which removes it —
+  // rather than left out, which would keep the old address.
+  const attributes: Record<string, string> = {
+    ...customAttributes,
+    website: draft.website.trim(),
+  };
 
   return {
     waId,

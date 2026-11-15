@@ -24,6 +24,18 @@ import {
   ContactService as ContactApi,
   DecisionRole,
 } from '../../proxy/contacts';
+import {
+  CustomFieldDefinitionDto,
+  CustomFieldEntity,
+  CustomFieldService,
+} from '../../proxy/contacts';
+import { ArCustomFieldInputs } from './custom-field-inputs';
+import {
+  customFieldAttributes,
+  customFieldProblems,
+  customFieldValuesOf,
+  sortFields,
+} from './custom-field-values';
 import { ArBanner } from '../../ui/banner';
 import { ArButton } from '../../ui/button';
 import { ArCard } from '../../ui/card';
@@ -42,7 +54,7 @@ import { parseVCards } from './vcard';
 
 @Component({
   selector: 'ar-contact-form',
-  imports: [ArTopbar, ArButton, ArCard, ArBanner, ArIcon, ArChip],
+  imports: [ArTopbar, ArButton, ArCard, ArBanner, ArIcon, ArChip, ArCustomFieldInputs],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './contact-form.html',
   styleUrl: './contact-form.scss',
@@ -72,6 +84,42 @@ export class ArContactForm implements OnInit {
 
   private editingStored?: Contact['stored'];
 
+  private readonly customFieldApi = inject(CustomFieldService);
+  /** The workspace's contact fields from Settings → Custom fields, in their set order. */
+  protected readonly customFields = signal<CustomFieldDefinitionDto[]>([]);
+  protected readonly customValues = signal<Record<string, string>>({});
+  /** Shown once a save has been tried, so a new form does not open full of errors. */
+  private readonly triedSave = signal(false);
+  protected readonly customProblems = computed(() =>
+    this.triedSave() ? customFieldProblems(this.customFields(), this.customValues()) : {},
+  );
+
+  protected patchCustom(key: string, value: string): void {
+    this.customValues.update((v) => ({ ...v, [key]: value }));
+    this.error.set(null);
+  }
+
+  /** Loads the field definitions, and on an edit the contact's stored values for them. */
+  private async loadCustomFields(contactId: string | null): Promise<void> {
+    try {
+      const fields = sortFields(
+        (
+          await firstValueFrom(
+            this.customFieldApi.getFor(CustomFieldEntity.Contact, { skipHandleError: true }),
+          )
+        ).items ?? [],
+      );
+      if (!fields.length) return;
+      const attributes = contactId
+        ? ((await firstValueFrom(this.api.get(contactId))).attributes ?? {})
+        : {};
+      this.customFields.set(fields);
+      this.customValues.set(customFieldValuesOf(fields, attributes));
+    } catch {
+      // Custom fields are extra: the rest of the form still works without them.
+    }
+  }
+
   // Master Data collections for State & City
   protected readonly states = this.masterData.states;
   protected readonly availableCities = computed(() => {
@@ -93,6 +141,7 @@ export class ArContactForm implements OnInit {
     const routeId = this.route.snapshot.paramMap.get('id');
     const queryAccountId = this.route.snapshot.queryParamMap.get('accountId');
 
+    void this.loadCustomFields(routeId);
     if (routeId) {
       this.editingId.set(routeId);
       await this.loadForEdit(routeId);
@@ -282,7 +331,11 @@ export class ArContactForm implements OnInit {
 
   protected async save(): Promise<void> {
     const currentDraft = this.draft();
-    const validationError = validateContactDraft(currentDraft);
+    this.triedSave.set(true);
+    const customProblem = Object.values(
+      customFieldProblems(this.customFields(), this.customValues()),
+    )[0];
+    const validationError = validateContactDraft(currentDraft) ?? customProblem ?? null;
     if (validationError) {
       this.error.set(validationError);
       this.toast.warning(validationError, 'Validation error');
@@ -293,7 +346,11 @@ export class ArContactForm implements OnInit {
     this.error.set(null);
     try {
       const editId = this.editingId();
-      const payload = buildContactPayload(currentDraft, this.editingStored);
+      const payload = buildContactPayload(
+        currentDraft,
+        this.editingStored,
+        customFieldAttributes(this.customFields(), this.customValues()),
+      );
 
       if (editId) {
         await this.store.update(editId, payload);

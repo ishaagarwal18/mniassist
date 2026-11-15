@@ -3,12 +3,24 @@
   [subtitle]="subtitle()"
   help="Every WhatsApp message sent outside the 24-hour reply window must be an approved template. Meta reviews and approves each one — not MNI Assist — so check back here for its status before building a campaign around it."
 >
+  <button
+    ar-button
+    variant="ghost"
+    type="button"
+    [attr.aria-expanded]="languagesOpen()"
+    (click)="languagesOpen.set(!languagesOpen())"
+  >
+    {{ languagesOpen() ? 'Hide languages' : 'Languages' }}
+  </button>
   @if (canCreate()) {
     <button ar-button variant="primary" icon="plus" (click)="newTemplate()">New template</button>
   }
 </ar-topbar>
 
 <div class="tpl ar-scroll">
+  @if (languagesOpen()) {
+    <ar-template-languages [channelId]="activeChannel()?.id" />
+  }
   <!-- The number these templates belong to, and what can be done to all of them. -->
   <section class="tpl__numbar" aria-label="WhatsApp number">
     <label class="ar-field tpl__number">

@@ -5,6 +5,8 @@ import type { IntegrationKind } from './integration-kind.enum';
 export interface StartCrmOAuthDto {
   name?: string | null;
   connectionId?: string | null;
+  /** Salesforce only: true signs in to a sandbox org; null keeps what the connection has. */
+  sandbox?: boolean | null;
 }
 
 export interface CrmOAuthStartResultDto {

@@ -3,6 +3,11 @@
   subtitle="In-chat forms — RFQ intake, booking, tickets"
   help="In-chat forms for structured input — an RFQ intake or a booking works better as a Flow than free-text back-and-forth. Use Funnel to see exactly which question loses people."
 >
+  @if (canUpdate()) {
+    <button ar-button type="button" variant="ghost" (click)="openDataExchange()">
+      Data exchange & Flow pack
+    </button>
+  }
   @if (canCreate()) {
     <button ar-button type="button" variant="primary" icon="plus" (click)="openDialog()">
       New flow
@@ -84,6 +89,9 @@
           <button ar-button variant="ghost" (click)="design(f)">Design</button>
         }
         <button ar-button variant="ghost" (click)="openFunnel(f)">Funnel</button>
+        <button ar-button variant="ghost" (click)="responsesOf.set({ id: f.id, name: f.name })">
+          Responses
+        </button>
         @if (canPublish()) {
           @if (f.state === 'draft' || f.state === 'deprecated') {
             <button ar-button variant="primary" [disabled]="!!busy()" (click)="publish(f)">
@@ -132,6 +140,38 @@
     }
     <div dialogActions>
       <button ar-button variant="primary" (click)="funnelOpen.set(false)">Done</button>
+    </div>
+  </ar-dialog>
+}
+
+@if (responsesOf(); as r) {
+  <ar-dialog [title]="r.name + ' — responses'" (dismiss)="responsesOf.set(null)">
+    <ar-flow-responses [flowId]="r.id" />
+    <div dialogActions>
+      <button ar-button variant="primary" (click)="responsesOf.set(null)">Done</button>
+    </div>
+  </ar-dialog>
+}
+
+@if (dataExchangeOpen()) {
+  <ar-dialog title="Flow data exchange" (dismiss)="dataExchangeOpen.set(false)">
+    <label class="ar-field">
+      <span class="ar-field__label">WhatsApp number</span>
+      <select class="ar-field__input" (change)="dataExchangeChannel.set($any($event.target).value)">
+        @for (ch of channels(); track ch.id) {
+          <option [value]="ch.id" [selected]="ch.id === dataExchangeChannel()">
+            {{ ch.displayName }} · {{ ch.displayPhone }}
+          </option>
+        }
+      </select>
+    </label>
+    @if (dataExchangeChannel(); as id) {
+      <ar-flow-data-exchange-panel [channelId]="id" />
+    } @else {
+      <p class="fl__empty">Connect a WhatsApp number first.</p>
+    }
+    <div dialogActions>
+      <button ar-button variant="primary" (click)="dataExchangeOpen.set(false)">Done</button>
     </div>
   </ar-dialog>
 }

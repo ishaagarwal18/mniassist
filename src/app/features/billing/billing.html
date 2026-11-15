@@ -65,6 +65,15 @@
         </p>
       </section>
 
+      <ar-auto-top-up-card
+        [enabledIn]="!!d().autoTopUp"
+        [amountInPaise]="d().autoAmountInPaise ?? 0"
+        [thresholdInPaise]="d().lowThresholdInPaise"
+        (saved)="reloadWallet()"
+      />
+
+      <ar-rate-history-card />
+
       <section class="card">
         <h2 class="card__h">This period</h2>
         <div class="bl__stats">

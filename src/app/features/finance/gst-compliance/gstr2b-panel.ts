@@ -17,6 +17,7 @@ import { grantedPolicy } from '../../../core/auth/permission';
 import { ConfirmService } from '../../../core/ui/confirm.service';
 import { ToastService } from '../../../core/ui/toast.service';
 import { readApiError } from '../../../core/util/api-error';
+import { ArGstr2bPortalPull } from './gstr2b-portal-pull';
 import {
   Gstr2bDocumentType,
   Gstr2bLineDto,
@@ -55,6 +56,10 @@ export function documentLabel(type: Gstr2bDocumentType): string {
       return 'Debit note';
     case Gstr2bDocumentType.Import:
       return 'Import';
+    case Gstr2bDocumentType.IsdInvoice:
+      return 'ISD credit';
+    case Gstr2bDocumentType.IsdCreditNote:
+      return 'ISD credit note';
     default:
       return 'Invoice';
   }
@@ -72,7 +77,17 @@ export function lineTax(l: Gstr2bLineDto): number {
 @Component({
   selector: 'ar-gstr2b-panel',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, FormsModule, RouterLink, ArCard, ArButton, ArChip, ArBanner],
+  imports: [
+    DatePipe,
+    DecimalPipe,
+    FormsModule,
+    RouterLink,
+    ArCard,
+    ArButton,
+    ArChip,
+    ArBanner,
+    ArGstr2bPortalPull,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="g2b">
@@ -94,9 +109,11 @@ export function lineTax(l: Gstr2bLineDto): number {
               <p class="g2b__muted">
                 GSTIN <span class="ar-mono" translate="no">{{ s.gstin }}</span> ·
                 {{ s.invoices }} invoices · {{ s.creditNotes }} credit notes ·
-                {{ s.debitNotes }} debit notes · {{ s.imports }} imports · credit reported ₹{{
-                  s.reportedItcInPaise / 100 | number: '1.2-2'
-                }}
+                {{ s.debitNotes }} debit notes · {{ s.imports }} imports
+                @if (s.isdDocuments) {
+                  · {{ s.isdDocuments }} ISD
+                }
+                · credit reported ₹{{ s.reportedItcInPaise / 100 | number: '1.2-2' }}
               </p>
             </div>
             @if (canImport()) {
@@ -241,6 +258,7 @@ export function lineTax(l: Gstr2bLineDto): number {
                 [disabled]="busy()"
               />
             </label>
+            <ar-gstr2b-portal-pull [period]="period()" (pulled)="onPulled($event)" />
           } @else {
             <p class="g2b__muted">Ask someone who can file GST returns to import it.</p>
           }
@@ -547,6 +565,16 @@ export class ArGstr2bPanel {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** GSTR-2B came straight from the GST portal: the same follow-up as an upload. */
+  async onPulled(result: Gstr2bStatementDto): Promise<void> {
+    this.statement.set(result);
+    this.toasts.success(
+      `GSTR-2B pulled from the GST portal: ${result.matched} matched, ${result.taxMismatch} with different tax, ${result.notInBooks} not in the books.`,
+    );
+    await this.load();
+    this.changed.emit();
   }
 
   async remove(): Promise<void> {

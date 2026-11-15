@@ -25,172 +25,181 @@
   </ar-topbar>
 
   <div class="nm ar-scroll">
-  <ar-banner tone="teal">
-    The display name and the two-step PIN belong to Meta, not to MNI Assist. A name change goes
-    through review and can be refused; a PIN protects the number from being re-registered on someone
-    else's WhatsApp account, and Meta enforces a seven-day wait before a forgotten one can be reset.
-  </ar-banner>
+    <ar-banner tone="teal">
+      The display name and the two-step PIN belong to Meta, not to MNI Assist. A name change goes
+      through review and can be refused; a PIN protects the number from being re-registered on
+      someone else's WhatsApp account, and Meta enforces a seven-day wait before a forgotten one can
+      be reset.
+    </ar-banner>
 
-  @for (n of numbers(); track n.channelId) {
-    <article class="num" [class.num--unreg]="!n.isRegistered">
-      <header class="num__head">
-        <div class="num__id">
-          <h2 class="num__phone ar-mono">{{ n.displayPhoneNumber }}</h2>
-          <p class="num__name">{{ n.verifiedName }}</p>
-        </div>
+    @for (n of numbers(); track n.channelId) {
+      <article class="num" [class.num--unreg]="!n.isRegistered">
+        <header class="num__head">
+          <div class="num__id">
+            <h2 class="num__phone ar-mono">{{ n.displayPhoneNumber }}</h2>
+            <p class="num__name">{{ n.verifiedName }}</p>
+          </div>
 
-        <div class="num__state">
-          <ar-chip [tone]="qualityTone(n.quality)" [dot]="true">
-            {{ n.quality === 'unknown' ? 'No rating yet' : n.quality + ' quality' }}
-          </ar-chip>
-          <ar-chip tone="neutral" [mono]="true">{{ n.tier }}</ar-chip>
-          @if (!n.isRegistered) {
-            <ar-chip tone="bad">Not registered</ar-chip>
-          }
-        </div>
-      </header>
+          <div class="num__state">
+            <ar-chip [tone]="qualityTone(n.quality)" [dot]="true">
+              {{ n.quality === 'unknown' ? 'No rating yet' : n.quality + ' quality' }}
+            </ar-chip>
+            <ar-chip tone="neutral" [mono]="true">{{ n.tier }}</ar-chip>
+            @if (!n.isRegistered) {
+              <ar-chip tone="bad">Not registered</ar-chip>
+            }
+            <a ar-button variant="ghost" [routerLink]="['/channels', n.channelId, 'health']">
+              Health & profile
+            </a>
+          </div>
+        </header>
 
-      <div class="num__grid">
-        <!-- ── Display name ─────────────────────────────────────────────── -->
-        <section class="blk">
-          <h3 class="blk__t">Display name</h3>
+        <div class="num__grid">
+          <!-- ── Display name ─────────────────────────────────────────────── -->
+          <section class="blk">
+            <h3 class="blk__t">Display name</h3>
 
-          @if (n.nameReviewState === 'pending' && n.requestedName) {
-            <div class="review">
-              <div class="review__row">
-                <span class="review__k">Customers see</span>
-                <span class="review__v">{{ n.verifiedName }}</span>
-              </div>
-              <div class="review__row review__row--pending">
-                <span class="review__k">Under review</span>
-                <span class="review__v">{{ n.requestedName }}</span>
-              </div>
-              <p class="blk__note">
-                Submitted {{ when(n.nameRequestedAt) }}. Meta usually decides within a few days.
-                Nothing changes for your customers until it is approved.
-              </p>
-            </div>
-          } @else if (n.nameReviewState === 'rejected') {
-            <div class="review review--bad">
-              <ar-chip tone="bad">Refused by Meta</ar-chip>
-              <p class="review__reason">{{ n.nameRejectionReason }}</p>
-            </div>
-          } @else {
-            <p class="blk__val">{{ n.verifiedName }}</p>
-            <p class="blk__note">Approved by Meta. Changing it starts a new review.</p>
-          }
-
-          @if (canManage()) {
-            @if (editingName() === n.channelId) {
-              <div class="edit">
-                <input
-                  class="edit__in"
-                  type="text"
-                  [value]="draftName()"
-                  (input)="draftName.set($any($event.target).value)"
-                  placeholder="Business name as customers should see it"
-                  maxlength="128"
-                />
-                <div class="edit__row">
-                  <button ar-button variant="primary" (click)="submitName(n.channelId)">
-                    Submit for review
-                  </button>
-                  <button ar-button variant="ghost" (click)="editingName.set(null)">Cancel</button>
+            @if (n.nameReviewState === 'pending' && n.requestedName) {
+              <div class="review">
+                <div class="review__row">
+                  <span class="review__k">Customers see</span>
+                  <span class="review__v">{{ n.verifiedName }}</span>
                 </div>
-                <p class="edit__hint">
-                  Meta refuses names that do not match the business on your verified Meta Business
-                  Portfolio, and names that are generic ("Sales", "Support").
+                <div class="review__row review__row--pending">
+                  <span class="review__k">Under review</span>
+                  <span class="review__v">{{ n.requestedName }}</span>
+                </div>
+                <p class="blk__note">
+                  Submitted {{ when(n.nameRequestedAt) }}. Meta usually decides within a few days.
+                  Nothing changes for your customers until it is approved.
                 </p>
               </div>
+            } @else if (n.nameReviewState === 'rejected') {
+              <div class="review review--bad">
+                <ar-chip tone="bad">Refused by Meta</ar-chip>
+                <p class="review__reason">{{ n.nameRejectionReason }}</p>
+              </div>
             } @else {
-              <button ar-button variant="ghost" (click)="startNameEdit(n)">
-                {{
-                  n.nameReviewState === 'pending' ? 'Change the requested name' : 'Request a change'
-                }}
-              </button>
+              <p class="blk__val">{{ n.verifiedName }}</p>
+              <p class="blk__note">Approved by Meta. Changing it starts a new review.</p>
             }
-          }
-        </section>
 
-        <!-- ── Two-step PIN ─────────────────────────────────────────────── -->
-        <section class="blk">
-          <h3 class="blk__t">Two-step verification PIN</h3>
-
-          @if (n.hasTwoStepPin) {
-            <p class="blk__val ar-mono">••••••</p>
-            <p class="blk__note">{{ age(n.pinUpdatedAt) }}. The PIN is never displayed again.</p>
-          } @else {
-            <p class="blk__val blk__val--none">No PIN stored in MNI Assist</p>
-            <p class="blk__note">
-              @if (n.isRegistered) {
-                This number is registered. An existing Cloud API number can connect without storing
-                its PIN here. Check Meta WhatsApp Manager for its current two-step verification
-                setting.
+            @if (canManage()) {
+              @if (editingName() === n.channelId) {
+                <div class="edit">
+                  <input
+                    class="edit__in"
+                    type="text"
+                    [value]="draftName()"
+                    (input)="draftName.set($any($event.target).value)"
+                    placeholder="Business name as customers should see it"
+                    maxlength="128"
+                  />
+                  <div class="edit__row">
+                    <button ar-button variant="primary" (click)="submitName(n.channelId)">
+                      Submit for review
+                    </button>
+                    <button ar-button variant="ghost" (click)="editingName.set(null)">
+                      Cancel
+                    </button>
+                  </div>
+                  <p class="edit__hint">
+                    Meta refuses names that do not match the business on your verified Meta Business
+                    Portfolio, and names that are generic ("Sales", "Support").
+                  </p>
+                </div>
               } @else {
-                Complete Cloud API registration before sending or receiving messages on this number.
+                <button ar-button variant="ghost" (click)="startNameEdit(n)">
+                  {{
+                    n.nameReviewState === 'pending'
+                      ? 'Change the requested name'
+                      : 'Request a change'
+                  }}
+                </button>
               }
-            </p>
-          }
+            }
+          </section>
 
-          @if (canManage()) {
-            @if (editingPin() === n.channelId) {
-              <div class="edit">
-                @if (n.hasTwoStepPin) {
+          <!-- ── Two-step PIN ─────────────────────────────────────────────── -->
+          <section class="blk">
+            <h3 class="blk__t">Two-step verification PIN</h3>
+
+            @if (n.hasTwoStepPin) {
+              <p class="blk__val ar-mono">••••••</p>
+              <p class="blk__note">{{ age(n.pinUpdatedAt) }}. The PIN is never displayed again.</p>
+            } @else {
+              <p class="blk__val blk__val--none">No PIN stored in MNI Assist</p>
+              <p class="blk__note">
+                @if (n.isRegistered) {
+                  This number is registered. An existing Cloud API number can connect without
+                  storing its PIN here. Check Meta WhatsApp Manager for its current two-step
+                  verification setting.
+                } @else {
+                  Complete Cloud API registration before sending or receiving messages on this
+                  number.
+                }
+              </p>
+            }
+
+            @if (canManage()) {
+              @if (editingPin() === n.channelId) {
+                <div class="edit">
+                  @if (n.hasTwoStepPin) {
+                    <input
+                      class="edit__in edit__in--pin ar-mono"
+                      type="password"
+                      inputmode="numeric"
+                      maxlength="6"
+                      placeholder="Current PIN"
+                      autocomplete="off"
+                      [value]="draftCurrentPin()"
+                      (input)="draftCurrentPin.set($any($event.target).value)"
+                    />
+                  }
                   <input
                     class="edit__in edit__in--pin ar-mono"
                     type="password"
                     inputmode="numeric"
                     maxlength="6"
-                    placeholder="Current PIN"
-                    autocomplete="off"
-                    [value]="draftCurrentPin()"
-                    (input)="draftCurrentPin.set($any($event.target).value)"
+                    placeholder="New six-digit PIN"
+                    autocomplete="new-password"
+                    [value]="draftPin()"
+                    (input)="draftPin.set($any($event.target).value)"
                   />
-                }
-                <input
-                  class="edit__in edit__in--pin ar-mono"
-                  type="password"
-                  inputmode="numeric"
-                  maxlength="6"
-                  placeholder="New six-digit PIN"
-                  autocomplete="new-password"
-                  [value]="draftPin()"
-                  (input)="draftPin.set($any($event.target).value)"
-                />
-                <div class="edit__row">
-                  <button ar-button variant="primary" (click)="setPin(n.channelId)">
-                    {{ n.hasTwoStepPin || n.isRegistered ? 'Set PIN' : 'Set PIN and register' }}
-                  </button>
-                  <button ar-button variant="ghost" (click)="editingPin.set(null)">Cancel</button>
+                  <div class="edit__row">
+                    <button ar-button variant="primary" (click)="setPin(n.channelId)">
+                      {{ n.hasTwoStepPin || n.isRegistered ? 'Set PIN' : 'Set PIN and register' }}
+                    </button>
+                    <button ar-button variant="ghost" (click)="editingPin.set(null)">Cancel</button>
+                  </div>
+                  <p class="edit__hint">
+                    Write it down somewhere safe. If it is lost, Meta will not let you reset it for
+                    seven days, and the number cannot be migrated during that time.
+                  </p>
                 </div>
-                <p class="edit__hint">
-                  Write it down somewhere safe. If it is lost, Meta will not let you reset it for
-                  seven days, and the number cannot be migrated during that time.
-                </p>
-              </div>
-            } @else {
-              <button
-                ar-button
-                [variant]="n.hasTwoStepPin ? 'ghost' : 'primary'"
-                (click)="editingPin.set(n.channelId)"
-              >
-                {{ n.hasTwoStepPin ? 'Change PIN' : 'Set PIN' }}
-              </button>
+              } @else {
+                <button
+                  ar-button
+                  [variant]="n.hasTwoStepPin ? 'ghost' : 'primary'"
+                  (click)="editingPin.set(n.channelId)"
+                >
+                  {{ n.hasTwoStepPin ? 'Change PIN' : 'Set PIN' }}
+                </button>
+              }
             }
-          }
-        </section>
-      </div>
+          </section>
+        </div>
 
-      @if (canOnboard()) {
-        <footer class="num__foot">
-          <button ar-button type="button" variant="danger" icon="trash" (click)="goRelease(n)">
-            Release number
-          </button>
-        </footer>
-      }
-    </article>
-  }
-</div>
+        @if (canOnboard()) {
+          <footer class="num__foot">
+            <button ar-button type="button" variant="danger" icon="trash" (click)="goRelease(n)">
+              Release number
+            </button>
+          </footer>
+        }
+      </article>
+    }
+  </div>
 }
 
 <ng-template #formsTpl>
@@ -216,9 +225,9 @@
             (change)="releaseDeregister.set($any($event.target).checked)"
           />
           <span>
-            <strong>Also deregister it at Meta.</strong> Needed to move the number to another provider
-            or back to the WhatsApp Business app. It then stops working on every app until it is
-            registered again. Leave this off to connect it to another workspace later.
+            <strong>Also deregister it at Meta.</strong> Needed to move the number to another
+            provider or back to the WhatsApp Business app. It then stops working on every app until
+            it is registered again. Leave this off to connect it to another workspace later.
           </span>
         </label>
 
@@ -239,9 +248,7 @@
         }
 
         <div class="rel__actions">
-          <button ar-button type="button" variant="ghost" (click)="close()">
-            Cancel
-          </button>
+          <button ar-button type="button" variant="ghost" (click)="close()">Cancel</button>
           <button
             ar-button
             type="button"

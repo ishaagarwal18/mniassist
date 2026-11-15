@@ -1,0 +1,142 @@
+// Shared layout for the plain set-up pages (social channels, SMS, A/B test, number health, support sign-in…).
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.wp {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.wp__card {
+  background: var(--ar-white);
+  border: 1px solid var(--ar-line-200);
+  border-radius: var(--ar-radius-card);
+  padding: 18px 20px 20px;
+}
+
+.wp__title {
+  margin: 0 0 4px;
+  font: 600 15px var(--ar-font-sans);
+  color: var(--ar-ink-900);
+}
+
+.wp__muted {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--ar-ink-500);
+}
+
+.wp__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.wp__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.wp__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--ar-ink-700);
+}
+
+.wp__field--wide {
+  grid-column: 1 / -1;
+}
+
+.wp__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wp__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--ar-line-200);
+}
+
+.wp__item:first-child {
+  border-top: 0;
+}
+
+.wp__grow {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.wp__name {
+  font-weight: 600;
+  color: var(--ar-ink-900);
+}
+
+.wp__sub {
+  display: block;
+  font-size: 12px;
+  color: var(--ar-ink-500);
+}
+
+.wp__error {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--ar-red-600);
+}
+
+.wp__empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ar-ink-500);
+}
+
+.wp__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.wp__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.wp__table th,
+.wp__table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-top: 1px solid var(--ar-line-200);
+}
+
+.wp__table th {
+  font-weight: 600;
+  color: var(--ar-ink-500);
+  border-top: 0;
+}
+
+@media (max-width: 640px) {
+  .wp {
+    padding: 14px 16px 24px;
+  }
+}

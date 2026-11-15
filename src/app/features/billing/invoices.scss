@@ -295,3 +295,11 @@
   background: var(--ar-red-100);
   color: var(--ar-red-600);
 }
+
+.doc__admin {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 8px;
+}

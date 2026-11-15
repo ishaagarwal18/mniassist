@@ -46,6 +46,10 @@ export interface Message {
   readonly pending?: boolean;
   /** An outgoing message that was not delivered, and why (WhatsApp's reason, or ours). */
   readonly failure?: string;
+  /** The channel's own message id (WhatsApp wamid, Messenger/Instagram mid). */
+  readonly providerId?: string;
+  /** Messenger/Instagram: the 2nd–10th attachments sent with this message, stored as their own rows (mid#2…). */
+  readonly extras?: readonly Message[];
 }
 
 export interface Conversation {

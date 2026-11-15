@@ -263,4 +263,27 @@ export class OpsService {
     );
     this.webhooksResource.reload();
   }
+
+  /** A new signing secret; the old one stops working at once. The only time the secret is ever shown. */
+  async rotateWebhookSecret(id: string): Promise<string> {
+    const result = await firstValueFrom(this.webhookApi.rotateSecret(id));
+    this.webhooksResource.reload();
+    return result.signingSecret ?? '';
+  }
+
+  async sendWebhookTest(id: string): Promise<void> {
+    await firstValueFrom(this.webhookApi.sendTest(id));
+    this.webhooksResource.reload();
+    this.deliveriesResource.reload();
+  }
+
+  async retryWebhookDelivery(deliveryId: string): Promise<void> {
+    await firstValueFrom(this.webhookApi.retryDelivery(deliveryId));
+    this.deliveriesResource.reload();
+  }
+
+  async reenableWebhook(id: string): Promise<void> {
+    await firstValueFrom(this.webhookApi.reenable(id));
+    this.webhooksResource.reload();
+  }
 }

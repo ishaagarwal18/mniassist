@@ -1,3 +1,4 @@
+import { ArTemplateLanguages } from './template-languages';
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
@@ -47,7 +48,7 @@ const QUALITY_TONE: Record<TemplateQuality, ChipTone> = {
  */
 @Component({
   selector: 'ar-templates',
-  imports: [ArTopbar, ArButton, ArChip, ArSearchBox, ArStatTile],
+  imports: [ArTopbar, ArButton, ArChip, ArSearchBox, ArStatTile, ArTemplateLanguages],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './templates.html',
   styleUrl: './templates.scss',
@@ -60,6 +61,7 @@ export class ArTemplates {
   private readonly channelStore = inject(ChannelService);
   protected readonly channels = this.channelStore.channels;
   protected readonly activeChannel = this.channelStore.active;
+  protected readonly languagesOpen = signal(false);
 
   protected selectChannel(id: string): void {
     if (this.busy() || !this.channels().some((channel) => channel.id === id)) return;

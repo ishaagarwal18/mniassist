@@ -24,6 +24,7 @@ import { ArButton, ArChip, ChipTone } from '../../../ui';
 import { ArGrid } from '../../../ui/grid';
 import { askCancelReason, portalModeLabel, unofficialNumberChip } from './gst-portal.logic';
 import { ArGstr2bPanel } from './gstr2b-panel';
+import { ArCreditOpeningPanel } from './credit-opening-panel';
 import { gstr3bTableRows, setOffRows } from './gstr3b.logic';
 
 /** GST return periods (MMYYYY) for the last `count` months by the Indian calendar, newest first. */
@@ -61,6 +62,7 @@ export function recentReturnPeriods(
     ArGrid,
     GridModule,
     ArGstr2bPanel,
+    ArCreditOpeningPanel,
   ],
   template: `
     <ar-topbar title="GST Compliance & Statutory Auditor (GSTR-1, GSTR-3B, E-Way Bill)">
@@ -508,6 +510,11 @@ export function recentReturnPeriods(
               }
             </tbody>
           </table>
+          <ar-credit-opening-panel
+            [period]="selectedPeriod()"
+            [label]="periodLabel()"
+            (changed)="reloadSummary()"
+          />
           @if (b.notes.length) {
             <ul class="gstr3b-notes">
               @for (n of b.notes; track n) {

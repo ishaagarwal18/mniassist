@@ -11,6 +11,7 @@
     subtitle="DPDP requests, retention and breach log"
     help="Where you look after your customers’ personal data under India’s DPDP Act, 2023. Answer requests to see, correct or delete data within 30 days, set how long data is kept, check the rules AI calls follow, and record any data breach."
   >
+    <a ar-button variant="ghost" routerLink="/compliance/consent-text">Consent wording</a>
     @if (canManageBreaches) {
       <button ar-button type="button" variant="ghost" icon="plus" (click)="goNewBreach()">
         Log an incident
@@ -95,9 +96,40 @@
               <ar-chip [tone]="slaTone(r)">{{ slaLabel(r) }}</ar-chip>
             </ng-template>
           </e-column>
-          <e-column headerText="Actions" width="80">
+          <e-column headerText="Assigned to" width="170">
+            <ng-template #template let-r>
+              @if (r.state === 'received' || r.state === 'inProgress') {
+                <select
+                  class="ar-field__input"
+                  aria-label="Assign request"
+                  [disabled]="!!busy()"
+                  (change)="assign(r, $any($event.target).value)"
+                >
+                  <option value="" [selected]="!r.assignedUserId">Nobody</option>
+                  @for (u of people(); track u.userId) {
+                    <option [value]="u.userId" [selected]="u.userId === r.assignedUserId">
+                      {{ u.name }}
+                    </option>
+                  }
+                </select>
+              } @else {
+                {{ personName(r.assignedUserId) }}
+              }
+            </ng-template>
+          </e-column>
+          <e-column headerText="Actions" width="120">
             <ng-template #template let-r>
               <div class="actions">
+                @if (r.hasResponse) {
+                  <button
+                    ar-button
+                    variant="ghost"
+                    icon="download"
+                    title="Download the response sent to the requester"
+                    [disabled]="!!busy()"
+                    (click)="downloadResponse(r)"
+                  ></button>
+                }
                 @if (r.state === 'received' || r.state === 'inProgress') {
                   <button
                     ar-button

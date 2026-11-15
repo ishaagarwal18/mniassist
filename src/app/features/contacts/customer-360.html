@@ -307,6 +307,19 @@
     <!-- Every related screen, opened on this customer -->
     <ar-customer-360-links [customer]="c" [conversationId]="conversationId()" />
 
+    @if (c.isAccountView ? c.accountId : c.contactId; as customerId) {
+      <ar-customer-insights
+        [customerId]="customerId"
+        [contactId]="c.isAccountView ? null : c.contactId"
+      />
+    }
+
+    @if (isPersonView() && c.contactId) {
+      <div class="c360-consent">
+        <ar-contact-consent [contactId]="c.contactId" />
+      </div>
+    }
+
     @if (!isPersonView()) {
       <nav class="c360-nav-tabs" aria-label="Customer 360 dossier sections">
         <button
@@ -612,7 +625,13 @@
             <e-column headerText="Action" width="70">
               <ng-template #template let-o>
                 <div class="actions-col">
-                  <a ar-button variant="ghost" icon="link" title="Open order" [routerLink]="['/sales/orders', o.id]"></a>
+                  <a
+                    ar-button
+                    variant="ghost"
+                    icon="link"
+                    title="Open order"
+                    [routerLink]="['/sales/orders', o.id]"
+                  ></a>
                   <a
                     ar-button
                     variant="ghost"
@@ -700,7 +719,13 @@
             <e-column headerText="Action" width="70">
               <ng-template #template let-dc>
                 <div class="actions-col">
-                  <a ar-button variant="ghost" icon="link" title="View challan" [routerLink]="['/sales/challans', dc.id]"></a>
+                  <a
+                    ar-button
+                    variant="ghost"
+                    icon="link"
+                    title="View challan"
+                    [routerLink]="['/sales/challans', dc.id]"
+                  ></a>
                   <a
                     ar-button
                     variant="ghost"
@@ -809,7 +834,13 @@
             <e-column headerText="Action" width="70">
               <ng-template #template let-inv>
                 <div class="actions-col">
-                  <a ar-button variant="ghost" icon="link" title="View invoice" [routerLink]="['/sales/invoices', inv.id]"></a>
+                  <a
+                    ar-button
+                    variant="ghost"
+                    icon="link"
+                    title="View invoice"
+                    [routerLink]="['/sales/invoices', inv.id]"
+                  ></a>
                   <a
                     ar-button
                     variant="ghost"
@@ -955,7 +986,13 @@
             </e-column>
             <e-column headerText="Action" width="50">
               <ng-template #template let-t>
-                <a ar-button variant="ghost" icon="help" title="Open ticket in Helpdesk" [routerLink]="['/helpdesk', t.id]"></a>
+                <a
+                  ar-button
+                  variant="ghost"
+                  icon="help"
+                  title="Open ticket in Helpdesk"
+                  [routerLink]="['/helpdesk', t.id]"
+                ></a>
               </ng-template>
             </e-column>
           </e-columns>

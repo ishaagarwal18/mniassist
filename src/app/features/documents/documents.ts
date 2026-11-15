@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { rxResource } from '@angular/core/rxjs-interop';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom, map } from 'rxjs';
+import { catchError, firstValueFrom, forkJoin, map, of } from 'rxjs';
 import { grantedPolicy } from '../../core/auth/permission';
 import { ConfirmService } from '../../core/ui/confirm.service';
 import {
@@ -53,6 +53,12 @@ function toDoc(d: LibraryDocumentDto): Doc {
  * are shown because "which datasheet do customers actually ask for" is the useful
  * question here.
  */
+/** One token with at least one digit and 3+ characters (6ES7214-1AG40, 3RT2026), worth a part-number search. */
+export function looksLikePartNumber(q: string | undefined | null): q is string {
+  const t = (q ?? '').trim();
+  return t.length >= 3 && !/\s/.test(t) && /\d/.test(t);
+}
+
 @Component({
   selector: 'ar-documents',
   imports: [
@@ -318,11 +324,27 @@ export class ArDocuments {
   private readonly resource = rxResource({
     params: () => (this.isPage ? undefined : { q: this.query() }),
     stream: ({ params }) =>
-      this.api
-        .getList({ filter: params.q, skipCount: 0, maxResultCount: 200 })
-        .pipe(map((p) => (p.items ?? []).map(toDoc))),
+      forkJoin({
+        list: this.api.getList({ filter: params.q, skipCount: 0, maxResultCount: 200 }),
+        // A part number is matched on the server too, which ignores spaces, dashes and case.
+        parts: looksLikePartNumber(params.q)
+          ? this.api
+              .searchByPartNumber(params.q.trim(), { skipHandleError: true })
+              .pipe(catchError(() => of({ items: [] })))
+          : of({ items: [] }),
+      }).pipe(
+        map(({ list, parts }) => {
+          const byPart = (parts.items ?? []).map(toDoc);
+          this.partMatches.set(new Set(byPart.map((d) => d.id)));
+          const seen = new Set(byPart.map((d) => d.id));
+          return [...byPart, ...(list.items ?? []).map(toDoc).filter((d) => !seen.has(d.id))];
+        }),
+      ),
     defaultValue: [] as Doc[],
   });
+
+  /** Documents the server matched by part number; they stay listed even if the title doesn't match. */
+  private readonly partMatches = signal<ReadonlySet<string>>(new Set());
 
   protected readonly loading = computed(() => this.resource.isLoading());
   protected readonly documents = computed<Doc[]>(() => {
@@ -331,7 +353,9 @@ export class ArDocuments {
     return q
       ? list.filter(
           (d) =>
-            d.title.toLowerCase().includes(q) || d.parts.some((p) => p.toLowerCase().includes(q)),
+            this.partMatches().has(d.id) ||
+            d.title.toLowerCase().includes(q) ||
+            d.parts.some((p) => p.toLowerCase().includes(q)),
         )
       : list;
   });

@@ -1,0 +1,17 @@
+.ats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ar-line-200);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.ats__label {
+  font-weight: 600;
+}
+.ats__text {
+  color: var(--ar-ink-400);
+  flex: 1 1 260px;
+}

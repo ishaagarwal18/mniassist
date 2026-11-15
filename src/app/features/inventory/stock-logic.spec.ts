@@ -1,4 +1,4 @@
-import { parseLots, parseMove, qty } from './stock-logic';
+import { closeLocationBlock, parseLots, parseMove, qty } from './stock-logic';
 
 describe('stock logic', () => {
   it('reads each kind of move the way the API expects it', () => {
@@ -46,5 +46,16 @@ describe('stock logic', () => {
     });
     expect('error' in parseLots('receive', 'Batch', 10, 'B1\nB2', '')).toBe(true);
     expect(parseLots('receive', 'None', 10, 'anything', '')).toEqual({ lots: null });
+  });
+});
+
+describe('closeLocationBlock', () => {
+  it('blocks closing the default location only', () => {
+    expect(closeLocationBlock({ id: 'a', isActive: true }, 'a')).toMatch(/default/);
+    expect(closeLocationBlock({ id: 'b', isActive: true }, 'a')).toBeNull();
+  });
+
+  it('always lets a closed location reopen', () => {
+    expect(closeLocationBlock({ id: 'a', isActive: false }, 'a')).toBeNull();
   });
 });

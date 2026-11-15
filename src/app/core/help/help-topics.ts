@@ -198,6 +198,34 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'An imported list is the weakest evidence of consent. Confirm it before marketing to those contacts.',
     ],
   },
+  'contacts/exports/:id': {
+    benefits: [
+      'Download the contacts file you asked for once it is ready.',
+      'See straight away if the export failed or the link has expired.',
+    ],
+    steps: ['Wait until the export shows Ready.', 'Click Download before the link expires.'],
+  },
+  'settings/labels': {
+    benefits: [
+      'Sort the inbox by what a conversation is about: hot lead, warranty, spares.',
+      'Filter the inbox by a label to work through one kind of chat.',
+    ],
+    steps: [
+      'Give the label a name and pick a colour.',
+      'In the inbox, open a conversation and add the label from its header.',
+    ],
+  },
+  'compliance/consent-text': {
+    benefits: [
+      'Keep the exact wording each contact agreed to, as DPDP requires.',
+      'Show consent notices in the contact’s own language.',
+    ],
+    steps: [
+      'Pick the notice and language, write the wording, and save it as a draft.',
+      'Publish it when final: it replaces the version shown until now.',
+      'To change published wording, start a new version from it.',
+    ],
+  },
   'contacts/segments': {
     benefits: [
       'Target exactly the customers a campaign is meant for.',
@@ -1078,6 +1106,38 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Use Edit to correct a call’s details later.',
     ],
   },
+  'campaigns/:id/ab-test': {
+    benefits: [
+      'Find out which template customers respond to before sending to everyone.',
+      'The winner goes to the rest of the audience automatically.',
+    ],
+    steps: [
+      'Pick the metric and how much of the audience to test on.',
+      'Add two or more variants, each with its own approved template.',
+      'Save, then send the campaign and watch the results here.',
+    ],
+  },
+  reminders: {
+    benefits: [
+      'See every follow-up reminder that will go to customers.',
+      'Stop or move a reminder that would arrive at the wrong time.',
+    ],
+    steps: [
+      'Choose which reminders to show.',
+      'Click Reschedule to move one, or Halt to stop it with a reason.',
+    ],
+  },
+  'platform/support': {
+    benefits: [
+      'Help a customer using access they granted, with every action recorded.',
+      'The customer is told the moment a session starts.',
+    ],
+    steps: [
+      'Find the customer’s grant and click Start.',
+      'End the session when the work is done.',
+      'Click Sessions to see the history for a workspace.',
+    ],
+  },
   'calls/whatsapp': {
     benefits: [
       'Customers can call your WhatsApp number from the app they already use.',
@@ -1297,6 +1357,54 @@ export const HELP_TOPICS: Readonly<Record<string, HelpTopic>> = {
       'Click Connect a number and follow the Meta sign-up steps.',
       'Watch the usage meter: amber past 60%, red past 80%.',
       'If it is high, spread sends over more of the day.',
+    ],
+  },
+  'channels/social': {
+    benefits: [
+      'Answer Facebook Page and Instagram messages from the same inbox as WhatsApp.',
+      'See at a glance whether each Page or account is still connected.',
+    ],
+    steps: [
+      'Click Connect a Page and sign in with the Facebook account that manages it.',
+      'Pick the Page to connect.',
+      'For Instagram, click Connect an account and sign in with the professional account.',
+    ],
+  },
+  'messenger/oauth-callback': {
+    benefits: [
+      'Finishes connecting your Facebook Page after you sign in with Meta.',
+      'Lists the Pages your account manages so you can choose one.',
+    ],
+    steps: ['Wait while the sign-in finishes.', 'Pick the Page to connect.'],
+  },
+  'instagram/oauth-callback': {
+    benefits: [
+      'Finishes connecting your Instagram account after you sign in.',
+      'The sign-in is renewed automatically before it expires.',
+    ],
+    steps: ['Wait while the sign-in finishes.', 'Check the account shows as Connected.'],
+  },
+  'channels/sms': {
+    benefits: [
+      'Send SMS that meet India’s DLT rules.',
+      'Only approved templates can be sent, so nothing is blocked by operators.',
+    ],
+    steps: [
+      'Enter the sender ID registered on DLT and your MSG91 auth key.',
+      'Add each DLT template exactly as approved, naming every variable.',
+      'Mark a template approved or rejected once the DLT portal decides.',
+    ],
+  },
+  'channels/:id/health': {
+    benefits: [
+      'See Meta’s quality rating and daily limit for this number.',
+      'Spot quality drops after big campaigns before the limit falls.',
+      'Keep the business profile customers see up to date.',
+    ],
+    steps: [
+      'Check the rating and how much of today’s limit is used.',
+      'Read the 30-day history for drops.',
+      'Change the profile fields and click Update profile.',
     ],
   },
   'channels/numbers': {

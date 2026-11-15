@@ -342,6 +342,23 @@
         </div>
       </ar-card>
 
+      <!-- Section 4: the workspace's own custom fields (Settings → Custom fields) -->
+      @if (customFields().length) {
+        <ar-card heading="More details">
+          <div class="form-section-body">
+            <div class="form-grid">
+              <ar-custom-field-inputs
+                idPrefix="contact-cf"
+                [fields]="customFields()"
+                [values]="customValues()"
+                [problems]="customProblems()"
+                (valueChange)="patchCustom($event.key, $event.value)"
+              />
+            </div>
+          </div>
+        </ar-card>
+      }
+
       <!-- Bottom Action Footer -->
       <div class="form-footer">
         <button ar-button type="button" variant="ghost" (click)="cancel()">Cancel</button>

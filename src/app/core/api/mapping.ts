@@ -224,7 +224,42 @@ export function toMessage(dto: MessageDto, conversationId?: string): Message {
           }
         : undefined,
     buttons: toMessageButtons(dto.interactiveJson),
+    providerId: dto.waMessageId ?? undefined,
   };
+}
+
+/** An extra attachment row's id is its message's id plus #n (SocialAttachments.RowId on the API). */
+const EXTRA_ROW = /^(.+)#(\d+)$/;
+
+/**
+ * Folds Messenger/Instagram extra-attachment rows (mid#2, mid#3…) into the message they came with, in order, so a
+ * message with three photos reads as one bubble. A row whose message isn't loaded (an older page) stays on its own.
+ */
+export function groupAttachmentRows(messages: readonly Message[]): Message[] {
+  const byProvider = new Map<string, number>();
+  messages.forEach((m, i) => {
+    if (m.providerId && !EXTRA_ROW.test(m.providerId)) byProvider.set(m.providerId, i);
+  });
+
+  const extras = new Map<number, { n: number; m: Message }[]>();
+  const folded = new Set<number>();
+  messages.forEach((m, i) => {
+    const match = m.providerId ? EXTRA_ROW.exec(m.providerId) : null;
+    const parent = match ? byProvider.get(match[1]) : undefined;
+    if (match && parent !== undefined) {
+      const list = extras.get(parent) ?? [];
+      list.push({ n: Number(match[2]), m });
+      extras.set(parent, list);
+      folded.add(i);
+    }
+  });
+
+  if (folded.size === 0) return [...messages];
+  return messages.flatMap((m, i) => {
+    if (folded.has(i)) return [];
+    const list = extras.get(i);
+    return list ? [{ ...m, extras: list.sort((a, b) => a.n - b.n).map((e) => e.m) }] : [m];
+  });
 }
 
 function toMessageButtons(json: string | null | undefined) {

@@ -1,3 +1,4 @@
+import { ConfirmService } from '../../core/ui/confirm.service';
 import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
@@ -63,6 +64,7 @@ function rupees(paise: number | null | undefined): string {
 export class ArBillingPlanPanel {
   private readonly api = inject(BillingPlanService);
   private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly router = inject(Router);
   private readonly permissions = inject(PermissionService);
   private readonly advancesApi = inject(AdvanceReceiptService);
@@ -197,9 +199,31 @@ export class ArBillingPlanPanel {
     this.advance.set(String(t.advancePercentBp / 100));
   }
 
+  /** The template last picked, so one of the workspace's own can be deleted. */
+  protected readonly pickedTemplate = signal<BillingPlanTemplateDto | null>(null);
+
   protected pickTemplate(name: string): void {
     const t = this.templates().find((x) => x.name === name);
+    this.pickedTemplate.set(t ?? null);
     if (t) this.applyTemplate(t);
+  }
+
+  protected async deleteTemplate(t: BillingPlanTemplateDto): Promise<void> {
+    if (!t.id || t.isStandard) return;
+    const ok = await this.dialogs.delete(
+      'template',
+      t.name,
+      'Plans already made from it are not changed.',
+    );
+    if (!ok) return;
+    try {
+      await firstValueFrom(this.api.deleteTemplate(t.id, { skipHandleError: true }));
+      this.templates.set(await firstValueFrom(this.api.getTemplates()));
+      this.pickedTemplate.set(null);
+      this.toasts.success('Template deleted.');
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'The template could not be deleted.'));
+    }
   }
 
   protected setRow(i: number, change: Partial<MilestoneRow>): void {

@@ -5,6 +5,19 @@
   "
   help="Your full customer list. Consent is shown with both a label and a colour — an imported list is flagged as the weakest evidence you have that someone agreed to be messaged."
 >
+  @if (canExport()) {
+    <button
+      ar-button
+      type="button"
+      variant="ghost"
+      icon="download"
+      [disabled]="exporting()"
+      title="Prepare a file of every contact (matching the search). You are notified when it is ready."
+      (click)="requestExport()"
+    >
+      {{ exporting() ? 'Starting…' : 'Export all' }}
+    </button>
+  }
   @if (canImport()) {
     <button ar-button type="button" variant="ghost" icon="upload" (click)="importOpen.set(true)">
       Import

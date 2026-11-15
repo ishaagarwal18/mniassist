@@ -283,3 +283,31 @@
   grid-template-columns: 1fr 1fr;
   gap: 10px 12px;
 }
+
+.crm__sandbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ar-ink-400);
+}
+
+.signing__secret {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ar-line-200);
+  border-radius: 8px;
+}
+.signing__secret .ar-label {
+  flex-basis: 100%;
+  margin: 0;
+}
+.signing__value {
+  flex: 1 1 240px;
+  overflow-wrap: anywhere;
+  user-select: all;
+}

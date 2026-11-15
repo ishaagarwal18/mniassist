@@ -1,3 +1,5 @@
+import { ArAutoTopUpCard } from './auto-top-up-card';
+import { ArRateHistoryCard } from './rate-history-card';
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -55,6 +57,7 @@ const EMPTY = {
   daysRemaining: 0,
   chargesStartOn: null as string | null,
   autoTopUp: false,
+  lowThresholdInPaise: 0,
   autoAmountInPaise: 0,
   plan: undefined as unknown as SubscriptionPlan,
   feeInPaise: 0,
@@ -77,6 +80,8 @@ const EMPTY = {
 @Component({
   selector: 'ar-billing',
   imports: [
+    ArAutoTopUpCard,
+    ArRateHistoryCard,
     ArTopbar,
     ArBanner,
     ArButton,
@@ -204,6 +209,9 @@ export class ArBilling {
 
   protected readonly busy = signal(false);
   private readonly tick = signal(0);
+  protected reloadWallet(): void {
+    this.tick.update((n) => n + 1);
+  }
 
   private readonly resource = rxResource({
     params: () => ({ tick: this.tick() }),
@@ -224,6 +232,7 @@ export class ArBilling {
           chargesStartOn: r.wallet.chargesStartOnUtc ?? null,
           autoTopUp: r.wallet.autoTopUpEnabled,
           autoAmountInPaise: r.wallet.autoTopUpAmountInPaise,
+          lowThresholdInPaise: r.wallet.lowBalanceThresholdInPaise ?? 0,
           plan: r.sub.plan,
           feeInPaise: r.sub.monthlyFeeInPaise,
           seats: r.sub.includedAgentSeats,

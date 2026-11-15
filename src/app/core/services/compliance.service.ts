@@ -23,6 +23,10 @@ export interface DpdpRequest {
   receivedAt: string;
   daysRemaining: number;
   breached: boolean;
+  /** Who is working on it. */
+  assignedUserId?: string;
+  /** A response file (the access export) is ready to download. */
+  hasResponse: boolean;
 }
 export interface RetentionPolicy {
   id: string;
@@ -163,6 +167,8 @@ export class ComplianceStore {
                 receivedAt: d.receivedAtUtc,
                 daysRemaining: d.daysRemaining,
                 breached: d.isBreached,
+                assignedUserId: d.assignedUserId ?? undefined,
+                hasResponse: !!d.responseBlobRef,
               }) as DpdpRequest,
           ),
           policies: (r.policies.items ?? []).map(
@@ -219,6 +225,14 @@ export class ComplianceStore {
   async fulfil(id: string, notes?: string): Promise<void> {
     await firstValueFrom(this.api.fulfilRequest(id, { notes }));
     this.reload();
+  }
+  async assign(id: string, userId: string): Promise<void> {
+    await firstValueFrom(this.api.assignRequest(id, userId, { skipHandleError: true }));
+    this.reload();
+  }
+  /** The response file sent to the requester (the access export), as a Blob to save. */
+  downloadResponse(id: string): Promise<Blob> {
+    return firstValueFrom(this.api.downloadResponse(id, { skipHandleError: true }));
   }
   async reject(id: string, reason: string): Promise<void> {
     await firstValueFrom(this.api.rejectRequest(id, { reason }));

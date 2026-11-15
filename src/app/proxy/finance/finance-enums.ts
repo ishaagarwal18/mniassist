@@ -101,6 +101,8 @@ export enum Gstr2bDocumentType {
   CreditNote = 1,
   DebitNote = 2,
   Import = 3,
+  IsdInvoice = 4,
+  IsdCreditNote = 5,
 }
 
 /** How a GSTR-2B line compares with the bills in the books. */
