@@ -236,6 +236,7 @@
           }
         </span>
         <span class="tp__actions">
+          <button ar-button variant="ghost" (click)="previewing.set(t)">Preview</button>
           @if (canUpdate() && canEdit(t)) {
             <button ar-button variant="ghost" (click)="edit(t)">Edit</button>
           }
@@ -254,3 +255,11 @@
     </article>
   }
 </div>
+@if (previewing(); as p) {
+  <ar-template-preview-dialog
+    [templateId]="p.id"
+    [name]="p.name"
+    [variableCount]="p.variableCount"
+    (closed)="previewing.set(null)"
+  />
+}

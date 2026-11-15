@@ -15,6 +15,7 @@ import { ToastService } from '../../core/ui/toast.service';
 import { ArTopbar } from '../../layout/topbar';
 import { TemplateService as TemplateApi } from '../../proxy/messaging/template.service';
 import { ArCampaignForm } from './campaign-form';
+import { FeatureFlagStore } from '../../core/services/feature-flag.store';
 
 @Component({ selector: 'ar-topbar', template: '<ng-content />' })
 class TestTopbar {
@@ -49,6 +50,7 @@ describe('ArCampaignForm (New Campaign Page)', () => {
     TestBed.configureTestingModule({
       imports: [ArCampaignForm],
       providers: [
+        { provide: FeatureFlagStore, useValue: { isOn: () => true } },
         {
           provide: Router,
           useValue: { navigate: routerNavigate },

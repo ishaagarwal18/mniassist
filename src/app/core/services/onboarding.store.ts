@@ -219,6 +219,15 @@ export class OnboardingStore {
     };
   }
 
+  /** True once the checklist is done or the user has hidden it: either way Get started leaves the menu. */
+  readonly hidden = computed(() => this.checklist().isComplete || this.checklist().dismissed);
+
+  /** Hides Get started for good; the steps still count as they are done. */
+  async dismiss(): Promise<void> {
+    const dto = await firstValueFrom(this.api.dismiss());
+    this.local.set(this.normalise(dto));
+  }
+
   async markStep(step: OnboardingChecklistStep): Promise<void> {
     const dto = await firstValueFrom(this.api.markStep(step));
     this.local.set(this.normalise(dto));

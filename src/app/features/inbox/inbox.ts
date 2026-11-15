@@ -1,3 +1,6 @@
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { VoiceChannelService } from '../../proxy/voice/voice-channel.service';
+import type { ChipTone } from '../../ui/chip';
 import { readApiError } from '../../core/util/api-error';
 import { ArMyMentions } from './my-mentions';
 import { ArConversationNotes } from './conversation-notes';
@@ -85,6 +88,7 @@ import { ArShareLocationDialog, SharedLocation } from './share-location-dialog';
 })
 export class ArInbox {
   private readonly toasts = inject(ToastService);
+  private readonly dialogs = inject(ConfirmService);
   private readonly inbox = inject(InboxService);
   private readonly channels = inject(ChannelService);
 
@@ -97,10 +101,17 @@ export class ArInbox {
   /** The list can fold to a strip of avatars, for more room to read and write. */
   protected readonly listCollapsed = persistedToggle('ar.inbox.listCollapsed');
   protected readonly listQuery = signal('');
+  // Two or more letters go to the server, which also searches what was said in the messages; one letter filters what is loaded.
+  private searchTimer: ReturnType<typeof setTimeout> | undefined;
+  private readonly pushSearch = effect(() => {
+    const q = this.listQuery().trim();
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.inbox.filter.set(q.length >= 2 ? q : ''), 350);
+  });
   protected readonly shownConversations = computed(() => {
     const q = this.listQuery().trim().toLowerCase();
     const all = this.conversations();
-    if (!q) return all;
+    if (!q || q.length >= 2) return all;
     return all.filter((c) =>
       [c.contactName, c.company, c.snippet, c.channel].some((v) => v?.toLowerCase().includes(q)),
     );
@@ -457,9 +468,43 @@ ${text}`
     note?: string;
   } | null>(null);
 
+  /** The customer's current answer to a call-permission request, loaded when a WhatsApp conversation opens. */
+  protected readonly permission = signal<{ conversationId: string; value: CallPermissionDto | null } | null>(
+    null,
+  );
+  private readonly loadPermission = effect(() => {
+    const t = this.selected();
+    const id = t && !t.channel && !t.sms ? t.id : null;
+    if (!id || untracked(() => this.permission()?.conversationId) === id) return;
+    untracked(() => {
+      this.permission.set(null);
+      firstValueFrom(this.callsApi.getPermission(id, { skipHandleError: true }))
+        .then((value) => {
+          if (this.selected()?.id === id) this.permission.set({ conversationId: id, value });
+        })
+        .catch(() => undefined);
+    });
+  });
+
+  /** What the chip beside "Ask to call" says, or null when nothing has been asked yet. */
+  protected permissionLabel(p: CallPermissionDto | null): { text: string; tone: ChipTone } | null {
+    if (!p) return null;
+    const until = p.expiresAtUtc ? new Date(p.expiresAtUtc) : null;
+    const day = (d: Date) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    if (p.state === 'Granted' && p.canCall)
+      return {
+        text: p.isPermanent ? 'Calls allowed' : until ? `Calls allowed until ${day(until)}` : 'Calls allowed',
+        tone: 'good',
+      };
+    if (p.state === 'Granted') return { text: 'Permission expired', tone: 'warn' };
+    if (p.state === 'Declined') return { text: 'Declined calls', tone: 'bad' };
+    return { text: `Asked ${day(new Date(p.requestedAtUtc))}, no answer yet`, tone: 'neutral' };
+  }
+
   protected async askToCall(conversationId: string): Promise<void> {
     try {
       const value = await firstValueFrom(this.callsApi.requestPermission(conversationId));
+      this.permission.set({ conversationId, value });
       this.callPermission.set({
         conversationId,
         value,
@@ -471,6 +516,31 @@ ${text}`
         value: null,
         note: this.problem(e, 'The request could not be sent.'),
       });
+    }
+  }
+
+  // ---- Phone menu call: the workspace's number rings the customer straight into its IVR menu ----------------------------
+  private readonly voiceChannelApi = inject(VoiceChannelService);
+  protected readonly ivrCallBusy = signal(false);
+
+  protected async callIntoMenu(contactId: string, name: string): Promise<void> {
+    const ok = await this.dialogs.confirm({
+      title: `Call ${name} into the phone menu?`,
+      message:
+        "The workspace's phone number rings them and plays the phone menu (IVR). Nobody from the team is on the line. A promotional number needs their marketing consent.",
+      confirmText: 'Call now',
+    });
+    if (!ok) return;
+    this.ivrCallBusy.set(true);
+    try {
+      await firstValueFrom(
+        this.voiceChannelApi.placeCall({ contactId, useIvr: true, record: false }, { skipHandleError: true }),
+      );
+      this.toasts.success('Calling. The call shows in the call log.', 'Phone menu');
+    } catch (e: unknown) {
+      this.toasts.error(this.problem(e, 'The call could not be placed.'), 'Phone menu');
+    } finally {
+      this.ivrCallBusy.set(false);
     }
   }
 

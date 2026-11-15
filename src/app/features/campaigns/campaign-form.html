@@ -397,13 +397,18 @@
                 <input
                   id="campaign-lite"
                   type="checkbox"
-                  [checked]="!!draft().sendViaMarketingLite"
+                  [checked]="!!draft().sendViaMarketingLite && liteEnabled()"
+                  [disabled]="!liteEnabled()"
                   (change)="patchExtra({ sendViaMarketingLite: $any($event.target).checked })"
                 />
                 <span>
                   <strong>Send through Marketing Messages Lite</strong>
-                  Meta's marketing route, which can reach more people. Needs Marketing Lite set up
-                  on this number.
+                  @if (liteEnabled()) {
+                    Meta's marketing route, which can reach more people. Needs Marketing Lite set up
+                    on this number.
+                  } @else {
+                    Not switched on for this workspace yet. Ask MNI support to turn it on.
+                  }
                 </span>
               </label>
             }

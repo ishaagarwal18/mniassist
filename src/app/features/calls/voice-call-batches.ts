@@ -214,6 +214,15 @@ const toMinute = (clock: string) => {
                         {{ 'AutoReach::VoiceBatch.Pause' | abpLocalization }}
                       </button>
                     }
+                    @if (canUpdate() && (batch.status === 'Draft' || batch.status === 'Paused')) {
+                      <a
+                        ar-button
+                        variant="ghost"
+                        icon="edit"
+                        [routerLink]="['/calls/ai-batches', batch.id, 'edit']"
+                        >Edit</a
+                      >
+                    }
                     @if (
                       canUpdate() && batch.status !== 'Completed' && batch.status !== 'Cancelled'
                     ) {
@@ -338,9 +347,7 @@ const toMinute = (clock: string) => {
                     >
                       <ng-template #template let-person>
                         <ar-chip [tone]="recipientTone(person.status)">
-                          {{
-                            'AutoReach::VoiceBatch.Recipient.' + person.status | abpLocalization
-                          }}
+                          {{ 'AutoReach::VoiceBatch.Recipient.' + person.status | abpLocalization }}
                         </ar-chip>
                       </ng-template>
                     </e-column>

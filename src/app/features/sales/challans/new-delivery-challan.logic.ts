@@ -1,5 +1,7 @@
 import type { ProductDto } from '../../../proxy/library/product.service';
 import type { CreateDeliveryChallanLineDto } from '../../../proxy/sales/delivery-challan.models';
+import { SalesOrderStatus } from '../../../proxy/sales/sales-enums';
+import type { SalesOrderDto } from '../../../proxy/sales/sales-order.models';
 
 /** One item on a new challan, as typed or picked from the catalogue. */
 export interface ChallanLine {
@@ -11,6 +13,8 @@ export interface ChallanLine {
   quantity: number;
   unitOfMeasure: string;
   productId: string | null;
+  /** The sales order line it delivers, so the order knows what is still to go. */
+  salesOrderLineId?: string | null;
 }
 
 export const blankChallanLine = (): ChallanLine => ({
@@ -61,6 +65,7 @@ export function toChallanLines(lines: readonly ChallanLine[]): CreateDeliveryCha
     const description = l.description.trim() || l.itemName.trim() || l.partNumber.trim();
     return {
       productId: l.productId ?? undefined,
+      salesOrderLineId: l.salesOrderLineId ?? undefined,
       partNumber: l.partNumber.trim() || description,
       description,
       hsnCode: l.hsnCode.trim() || undefined,
@@ -68,4 +73,28 @@ export function toChallanLines(lines: readonly ChallanLine[]): CreateDeliveryCha
       unitOfMeasure: l.unitOfMeasure,
     };
   });
+}
+
+/** Orders that still have goods to go out: confirmed, in production, or part dispatched. */
+export const OPEN_ORDER_STATUSES: readonly SalesOrderStatus[] = [
+  SalesOrderStatus.Confirmed,
+  SalesOrderStatus.InProduction,
+  SalesOrderStatus.PartiallyDispatched,
+];
+
+/** A challan line for each order line with quantity still to dispatch, linked back to that order line. */
+export function challanLinesFromOrder(order: SalesOrderDto): ChallanLine[] {
+  return (order.lines ?? [])
+    .map((l) => ({ l, left: (l.quantity ?? 0) - (l.dispatchedQuantity ?? 0) }))
+    .filter(({ left }) => left > 0)
+    .map(({ l, left }) => ({
+      itemName: l.description ?? '',
+      partNumber: l.partNumber ?? '',
+      description: l.description ?? '',
+      hsnCode: l.hsnCode ?? '',
+      quantity: left,
+      unitOfMeasure: 'Nos',
+      productId: l.productId ?? null,
+      salesOrderLineId: l.id,
+    }));
 }

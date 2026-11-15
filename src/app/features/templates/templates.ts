@@ -1,3 +1,4 @@
+import { ArTemplatePreviewDialog } from './template-preview-dialog';
 import { ArTemplateLanguages } from './template-languages';
 import { PermissionService } from '@abp/ng.core';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
@@ -48,12 +49,22 @@ const QUALITY_TONE: Record<TemplateQuality, ChipTone> = {
  */
 @Component({
   selector: 'ar-templates',
-  imports: [ArTopbar, ArButton, ArChip, ArSearchBox, ArStatTile, ArTemplateLanguages],
+  imports: [
+    ArTemplatePreviewDialog,
+    ArTopbar,
+    ArButton,
+    ArChip,
+    ArSearchBox,
+    ArStatTile,
+    ArTemplateLanguages,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './templates.html',
   styleUrl: './templates.scss',
 })
 export class ArTemplates {
+  /** The template open in the preview dialog. */
+  protected readonly previewing = signal<Template | null>(null);
   private readonly permissions = inject(PermissionService);
   private readonly dialogs = inject(ConfirmService);
   private readonly toasts = inject(ToastService);

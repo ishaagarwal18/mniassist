@@ -16,6 +16,9 @@ export interface NavItem {
   /** Specific PlanFeature name required (e.g. 'AutomationBuilder', 'PipelineCrm', etc.). */
   readonly feature?: string;
 
+  /** A platform feature flag (FeatureFlagKeys on the API); the item is hidden until it is on for this workspace. */
+  readonly flag?: string;
+
   /** Shown only for platform host administration. Hidden for tenant workspaces. */
   readonly hostOnly?: boolean;
 

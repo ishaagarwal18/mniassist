@@ -419,7 +419,7 @@ export class ArSidebar {
     this.plan.features();
     this.account.isHost();
 
-    const setupComplete = this.onboarding.isComplete();
+    const setupComplete = this.onboarding.hidden();
 
     return NAV.map((group) => ({
       ...group,

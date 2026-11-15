@@ -16,6 +16,8 @@ import {
   DeliveryChallanDto,
 } from '../../../proxy/sales/delivery-challan.models';
 import { DeliveryChallanService } from '../../../proxy/sales/delivery-challan.service';
+import type { SalesOrderDto } from '../../../proxy/sales/sales-order.models';
+import { SalesOrderService } from '../../../proxy/sales/sales-order.service';
 import { DeliveryChallanType } from '../../../proxy/sales/sales-enums';
 import { ArButton, ArDialog } from '../../../ui';
 import { ArDateInput } from '../../../ui/date-input';
@@ -25,6 +27,8 @@ import { ArCatalogueItem, CatalogueSearch } from '../catalogue-item';
 import { ArSalesCustomer, SalesCustomerChoice } from '../sales-customer';
 import { EMPTY_PARTY, SalesParty, defaultShipIndex, shipToText } from '../sales-party';
 import {
+  OPEN_ORDER_STATUSES,
+  challanLinesFromOrder,
   ChallanLine,
   blankChallanLine,
   challanLineFromProduct,
@@ -77,6 +81,19 @@ export const CHALLAN_TYPES = withOptionNames('sales.challan-type', [
               }
             </select>
           </label>
+          @if (openOrders().length > 0) {
+            <label class="ar-field">
+              <span class="ar-field__label">Against sales order</span>
+              <select class="ar-field__input" (change)="pickOrder($any($event.target).value)">
+                <option value="" [selected]="!orderId()">None (goods not on an order)</option>
+                @for (o of openOrders(); track o.id) {
+                  <option [value]="o.id" [selected]="o.id === orderId()">
+                    {{ o.orderNumber }}
+                  </option>
+                }
+              </select>
+            </label>
+          }
           <label class="ar-field">
             <span class="ar-field__label">Challan date</span>
             <input
@@ -390,11 +407,54 @@ export class ArNewDeliveryChallan {
 
   /** A new customer choice; a new account (or none) refills the site address from it. */
   protected onCustomer(choice: SalesCustomerChoice): void {
+    const changed = choice.customer?.id !== this.choice()?.customer?.id;
     this.choice.set(choice);
     this.error.set(null);
+    if (changed) void this.loadOrders(choice);
     if (choice.party !== this.party()) {
       this.party.set(choice.party);
       this.chooseShipTo(defaultShipIndex(choice.party));
+    }
+  }
+
+  private readonly ordersApi = inject(SalesOrderService);
+  /** The customer's orders with goods still to go out; a challan against one counts towards it. */
+  protected readonly openOrders = signal<SalesOrderDto[]>([]);
+  protected readonly orderId = signal('');
+
+  private async loadOrders(choice: SalesCustomerChoice): Promise<void> {
+    this.openOrders.set([]);
+    this.orderId.set('');
+    const customerId = choice.customer?.id;
+    if (!customerId) return;
+    try {
+      const page = await firstValueFrom(
+        this.ordersApi.getList({
+          customerId,
+          customerAccountId: choice.accountId ?? undefined,
+          maxResultCount: 100,
+        }),
+      );
+      this.openOrders.set((page.items ?? []).filter((o) => OPEN_ORDER_STATUSES.includes(o.status)));
+    } catch {
+      // Without the list the challan is simply not linked to an order.
+    }
+  }
+
+  /** Choosing an order fills the lines with what is still to dispatch on it. */
+  protected async pickOrder(id: string): Promise<void> {
+    this.orderId.set(id);
+    if (!id) {
+      this.lines.set([blankChallanLine()]);
+      return;
+    }
+    try {
+      const order = await firstValueFrom(this.ordersApi.get(id));
+      const lines = challanLinesFromOrder(order);
+      this.lines.set(lines.length ? lines : [blankChallanLine()]);
+      if (!lines.length) this.error.set('Everything on this order has already been dispatched.');
+    } catch (e: unknown) {
+      this.error.set(errorMessage(e, 'The order could not be loaded.'));
     }
   }
 
@@ -447,6 +507,7 @@ export class ArNewDeliveryChallan {
 
     const input: CreateDeliveryChallanDto = {
       type: this.type(),
+      salesOrderId: this.orderId() || undefined,
       customerId: customer.id,
       customerAccountId: choice.accountId ?? undefined,
       challanDateUtc: new Date(this.challanDate()).toISOString(),

@@ -35,6 +35,7 @@ import { ConfirmService } from '../../core/ui/confirm.service';
 import { ToastService } from '../../core/ui/toast.service';
 import { ArCampaignLinks } from './campaign-links';
 import { ArCampaignSetup } from './campaign-setup';
+import { ArCampaignRecipients } from './campaign-recipients';
 
 const STATE_TONE: Record<CState, ChipTone> = {
   draft: 'neutral',
@@ -62,6 +63,7 @@ const STATE_TONE: Record<CState, ChipTone> = {
     RouterLink,
     ArCampaignSetup,
     ArCampaignLinks,
+    ArCampaignRecipients,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './campaign-builder.html',

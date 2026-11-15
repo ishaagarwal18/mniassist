@@ -1,7 +1,7 @@
 import { readApiError } from '../../core/util/api-error';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ToastService } from '../../core/ui/toast.service';
 import { ArTopbar } from '../../layout/topbar';
@@ -23,7 +23,7 @@ function toMinute(time: string): number {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ar-topbar
-      title="Schedule AI Call Batch"
+      [title]="editId ? 'Edit AI Call Batch' : 'Schedule AI Call Batch'"
       subtitle="Configure outbound automated campaign calls and compliance calling windows"
     >
       <button ar-button type="button" variant="ghost" (click)="cancel()">Back to Batches</button>
@@ -47,7 +47,13 @@ function toMinute(time: string): number {
           <div class="form-grid">
             <label class="ar-field">
               <span class="ar-field__label">Calling Channel <span class="required">*</span></span>
-              <select class="ar-field__input" [(ngModel)]="channelId" name="channelId">
+              <select
+                class="ar-field__input"
+                [(ngModel)]="channelId"
+                name="channelId"
+                [disabled]="!!editId"
+                [title]="editId ? 'A batch keeps the number it was created on' : ''"
+              >
                 @for (channel of channels(); track channel.id) {
                   <option [value]="channel.id">
                     {{ channel.verifiedName || channel.displayPhoneNumber || channel.id }}
@@ -171,7 +177,15 @@ function toMinute(time: string): number {
               variant="primary"
               [disabled]="busy() || !name().trim() || !channelId()"
             >
-              {{ busy() ? 'Scheduling batch…' : 'Create & Schedule Batch' }}
+              {{
+                busy()
+                  ? editId
+                    ? 'Saving…'
+                    : 'Scheduling batch…'
+                  : editId
+                    ? 'Save changes'
+                    : 'Create & Schedule Batch'
+              }}
             </button>
           </div>
         </form>
@@ -245,6 +259,8 @@ export class ArNewVoiceBatchPage implements OnInit {
   private readonly api = inject(VoiceCallBatchService);
   private readonly channelsApi = inject(ChannelService);
   private readonly toasts = inject(ToastService);
+  /** Set on /calls/ai-batches/:id/edit: the page changes that batch instead of creating one. */
+  protected readonly editId = inject(ActivatedRoute).snapshot.paramMap.get('id');
 
   protected readonly channels = signal<ChannelDto[]>([]);
   protected readonly name = signal('');
@@ -269,12 +285,34 @@ export class ArNewVoiceBatchPage implements OnInit {
       // AI calls go out on Meta's own WhatsApp Cloud API; a number connected through a partner cannot place them.
       const items = res?.items ?? [];
       this.channels.set(items);
+      if (this.editId) await this.loadBatch(this.editId);
       if (items.length > 0 && items[0].id && !this.channelId()) {
         this.channelId.set(items[0].id);
       }
     } catch (e: unknown) {
       this.error.set(readApiError(e, 'The WhatsApp numbers could not be loaded.'));
     }
+  }
+
+  private async loadBatch(id: string): Promise<void> {
+    const b = await firstValueFrom(this.api.get(id));
+    const clock = (m: number) =>
+      `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+    const local = (utc?: string | null) => {
+      if (!utc) return '';
+      const d = new Date(utc);
+      return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+    };
+    this.name.set(b.name);
+    this.channelId.set(b.channelId);
+    this.line.set((b.line ?? 'whatsapp') as VoiceLine);
+    this.purpose.set(b.purpose ?? '');
+    this.startsAt.set(local(b.startsAtUtc));
+    this.windowStart.set(clock(b.windowStartMinute));
+    this.windowEnd.set(clock(b.windowEndMinute));
+    this.maxConcurrent.set(b.maxConcurrent);
+    this.maxAttempts.set(b.maxAttempts);
+    this.retryAfterMinutes.set(b.retryAfterMinutes);
   }
 
   cancel(): void {
@@ -303,24 +341,34 @@ export class ArNewVoiceBatchPage implements OnInit {
     this.busy.set(true);
     this.error.set('');
     try {
+      const input = {
+        name: nameVal,
+        channelId: chId,
+        line: this.line(),
+        purpose: this.purpose().trim() || undefined,
+        startsAtUtc: this.startsAt() ? new Date(this.startsAt()).toISOString() : null,
+        windowStartMinute,
+        windowEndMinute,
+        maxConcurrent: Number(this.maxConcurrent()) || 1,
+        maxAttempts: Number(this.maxAttempts()) || 1,
+        retryAfterMinutes: Number(this.retryAfterMinutes()) || 60,
+      };
       await firstValueFrom(
-        this.api.create({
-          name: nameVal,
-          channelId: chId,
-          line: this.line(),
-          purpose: this.purpose().trim() || undefined,
-          startsAtUtc: this.startsAt() ? new Date(this.startsAt()).toISOString() : null,
-          windowStartMinute,
-          windowEndMinute,
-          maxConcurrent: Number(this.maxConcurrent()) || 1,
-          maxAttempts: Number(this.maxAttempts()) || 1,
-          retryAfterMinutes: Number(this.retryAfterMinutes()) || 60,
-        }),
+        this.editId ? this.api.update(this.editId, input) : this.api.create(input),
       );
-      this.toasts.success(`Batch "${nameVal}" created and scheduled.`);
+      this.toasts.success(
+        this.editId ? `Batch "${nameVal}" saved.` : `Batch "${nameVal}" created and scheduled.`,
+      );
       void this.router.navigateByUrl('/calls/ai-batches');
     } catch (e: unknown) {
-      this.error.set(readApiError(e, 'Failed to create call batch. Please verify parameters.'));
+      this.error.set(
+        readApiError(
+          e,
+          this.editId
+            ? 'The batch could not be saved. Please check the details.'
+            : 'Failed to create call batch. Please verify parameters.',
+        ),
+      );
     } finally {
       this.busy.set(false);
     }

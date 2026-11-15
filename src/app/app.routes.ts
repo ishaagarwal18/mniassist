@@ -1221,6 +1221,12 @@ export const routes: Routes = [
           import('./features/calls/voice-call-batches').then((m) => m.ArVoiceCallBatches),
       },
       {
+        path: 'calls/ai-batches/:id/edit',
+        title: 'Edit AI Call Batch · MNI Assist',
+        loadComponent: () =>
+          import('./features/calls/new-voice-batch-page').then((m) => m.ArNewVoiceBatchPage),
+      },
+      {
         path: 'calls/ai-batches/new',
         title: 'New AI Call Batch · MNI Assist',
         loadComponent: () =>

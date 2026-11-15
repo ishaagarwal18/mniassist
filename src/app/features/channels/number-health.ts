@@ -23,6 +23,7 @@ import type {
 import { QualityRating } from '../../proxy/channels/quality-rating.enum';
 import { ArButton, ArChip } from '../../ui';
 import { ChipTone } from '../../ui/chip';
+import { ArSendingLimitsCard } from './sending-limits-card';
 
 const QUALITY: Record<QualityRating, { tone: ChipTone; label: string }> = {
   [QualityRating.Unknown]: { tone: 'neutral', label: 'Not rated yet' },
@@ -98,7 +99,7 @@ export function profileForm(dto: BusinessProfileDto | null | undefined): Profile
  */
 @Component({
   selector: 'ar-number-health',
-  imports: [ArTopbar, ArButton, ArChip, DatePipe, DecimalPipe, RouterLink],
+  imports: [ArTopbar, ArButton, ArChip, DatePipe, DecimalPipe, RouterLink, ArSendingLimitsCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: '../shared/work-page.scss',
   template: `
@@ -144,6 +145,7 @@ export function profileForm(dto: BusinessProfileDto | null | undefined): Profile
             </p>
           }
         </section>
+        <ar-sending-limits-card [channelId]="id" />
       }
 
       <section class="wp__card">
@@ -278,7 +280,7 @@ export function profileForm(dto: BusinessProfileDto | null | undefined): Profile
 export class ArNumberHealth implements OnInit {
   private readonly api = inject(ChannelService);
   private readonly toasts = inject(ToastService);
-  private readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
+  protected readonly id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
 
   protected readonly health = signal<ChannelHealthDto | null>(null);
   protected readonly history = signal<ChannelQualitySnapshotDto[]>([]);

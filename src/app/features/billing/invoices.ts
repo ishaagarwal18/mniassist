@@ -173,7 +173,8 @@ export class ArInvoices {
   protected async issue(v: Invoice): Promise<void> {
     const ok = await this.dialogs.confirm({
       title: `Issue ${v.number}?`,
-      message: 'The invoice is sent to the workspace with a due date. After this it can only be reversed with a credit note.',
+      message:
+        'The invoice is sent to the workspace with a due date. After this it can only be reversed with a credit note.',
       confirmText: 'Issue invoice',
     });
     if (!ok) return;
@@ -204,7 +205,9 @@ export class ArInvoices {
   protected async downloadPdf(v: Invoice): Promise<void> {
     this.downloading.set(v.id);
     try {
-      const blob = await firstValueFrom(this.invoiceApi.downloadPdf(v.id, { skipHandleError: true }));
+      const blob = await firstValueFrom(
+        this.invoiceApi.downloadPdf(v.id, { skipHandleError: true }),
+      );
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -257,6 +260,7 @@ export class ArInvoices {
 
   protected readonly invoices = this.ops.invoices;
   protected readonly runs = this.ops.reconciliationRuns;
+  protected readonly latestRuns = this.ops.latestReconciliation;
   protected readonly selectedId = signal<string | null>('inv-1');
 
   // ---- Generate invoice dialog -----------------------------------

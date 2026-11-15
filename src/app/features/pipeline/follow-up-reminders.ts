@@ -12,6 +12,7 @@ import { ReminderService } from '../../proxy/pipeline/reminder.service';
 import { ReminderState } from '../../proxy/pipeline/reminder-state.enum';
 import { ArButton, ArChip } from '../../ui';
 import { ChipTone } from '../../ui/chip';
+import { ArPlanRemindersDialog } from './plan-reminders-dialog';
 
 const KIND: Record<ReminderKind, string> = {
   [ReminderKind.AmcRenewal]: 'AMC renewal',
@@ -41,7 +42,7 @@ export function futureUtc(local: string, now: Date = new Date()): string | null 
  */
 @Component({
   selector: 'ar-follow-up-reminders',
-  imports: [ArTopbar, ArButton, ArChip, DatePipe],
+  imports: [ArTopbar, ArButton, ArChip, DatePipe, ArPlanRemindersDialog],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: '../shared/work-page.scss',
   template: `
@@ -66,7 +67,13 @@ export function futureUtc(local: string, now: Date = new Date()): string | null 
             <option value="">All</option>
           </select>
         </label>
+        <button ar-button type="button" variant="primary" (click)="planning.set(true)">
+          Plan reminders
+        </button>
       </div>
+      @if (planning()) {
+        <ar-plan-reminders-dialog (closed)="planned($event)" />
+      }
 
       <section class="wp__card">
         <ul class="wp__list">
@@ -155,6 +162,14 @@ export class ArFollowUpReminders implements OnInit {
   private readonly dialogs = inject(ConfirmService);
 
   protected readonly scheduled = ReminderState.Scheduled;
+  protected readonly planning = signal(false);
+
+  protected async planned(n: number | null): Promise<void> {
+    this.planning.set(false);
+    if (n == null) return;
+    this.toasts.success(n === 1 ? '1 reminder planned.' : `${n} reminders planned.`);
+    await this.load(0);
+  }
   protected readonly reminders = signal<ReminderDto[]>([]);
   protected readonly total = signal(0);
   protected readonly stateFilter = signal<string>('0');

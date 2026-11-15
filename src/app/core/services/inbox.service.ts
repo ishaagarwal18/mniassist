@@ -85,10 +85,22 @@ export class InboxService {
             skipCount: 0,
             maxResultCount: 50,
           },
-    stream: ({ params }) =>
-      this.api
-        .getConversations(params)
-        .pipe(map((page) => (page.items ?? []).map((dto) => toConversation(dto)))),
+    stream: ({ params }) => {
+      // A typed term searches message text too (name, company, number and what was said). The search endpoint has no
+      // unread or closing-window filters, so with those on the plain list filter is used instead.
+      const term = params.filter.trim();
+      const request =
+        term.length >= 2 && !params.unreadOnly && !params.windowClosingSoon
+          ? this.api.search({
+              term,
+              state: params.state,
+              assignedUserId: params.assignedUserId,
+              skipCount: 0,
+              maxResultCount: 50,
+            })
+          : this.api.getConversations(params);
+      return request.pipe(map((page) => (page.items ?? []).map((dto) => toConversation(dto))));
+    },
     defaultValue: [] as Conversation[],
   });
 

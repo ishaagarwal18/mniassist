@@ -1,3 +1,4 @@
+import { FeatureFlagStore } from '../../core/services/feature-flag.store';
 import { PermissionService } from '@abp/ng.core';
 import {
   ChangeDetectionStrategy,
@@ -52,6 +53,9 @@ import {
   styleUrl: './campaign-form.scss',
 })
 export class ArCampaignForm implements OnInit {
+  /** Marketing Lite sends only when the platform has the mm-lite flag on for this workspace. */
+  private readonly flagStore = inject(FeatureFlagStore);
+  protected readonly liteEnabled = () => this.flagStore.isOn('mm-lite');
   private readonly router = inject(Router);
   private readonly permissions = inject(PermissionService);
   private readonly toasts = inject(ToastService);

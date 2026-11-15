@@ -8,7 +8,9 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { ConfirmService } from '../../core/ui/confirm.service';
+import { readApiError } from '../../core/util/api-error';
 import { firstValueFrom } from 'rxjs';
 
 import { ChecklistItem, OnboardingStore } from '../../core/services/onboarding.store';
@@ -59,6 +61,13 @@ import { ArOnboardingInviteTeam } from './invite-team';
       [subtitle]="checklist().completedCount + ' of ' + checklist().totalCount + ' done'"
       help="A running checklist, not a gate — steps you've already finished show as done automatically. It leaves the menu by itself once every step is done."
     />
+    @if (!checklist().isComplete && !checklist().dismissed) {
+      <p class="ob__hide">
+        <button ar-button type="button" variant="ghost" (click)="hideChecklist()">
+          Hide Get started
+        </button>
+      </p>
+    }
 
     <div class="ob ar-scroll" [class.ob--wide]="openStepId() !== null">
       <!-- The rail: every step at a glance; click one to go to it. -->
@@ -544,6 +553,25 @@ export class ArOnboardingWizard {
   private readonly toasts = inject(ToastService);
   private readonly account = inject(AccountRecoveryService);
   protected readonly store = inject(OnboardingStore);
+  private readonly dialogs = inject(ConfirmService);
+  private readonly router = inject(Router);
+
+  protected async hideChecklist(): Promise<void> {
+    const ok = await this.dialogs.confirm({
+      title: 'Hide Get started?',
+      message:
+        'It leaves the menu. Steps you finish later still count, and settings stay where they are.',
+      confirmText: 'Hide it',
+    });
+    if (!ok) return;
+    try {
+      await this.store.dismiss();
+      this.toasts.success('Get started is hidden.');
+      void this.router.navigate(['/home']);
+    } catch (e: unknown) {
+      this.toasts.error(readApiError(e, 'That could not be done.'));
+    }
+  }
   private readonly destroyRef = inject(DestroyRef);
 
   /** The address the confirmation link went to, once sent. */

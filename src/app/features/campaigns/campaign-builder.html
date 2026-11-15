@@ -250,6 +250,7 @@
                   ><b>{{ inr(r.spendInPaise) }}</b> spend</span
                 >
               </div>
+              <ar-campaign-recipients [campaignId]="c.id" />
               @if (r.errors.length > 0) {
                 <ul class="errs">
                   @for (e of r.errors; track e.code) {

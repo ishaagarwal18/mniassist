@@ -392,6 +392,50 @@ const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
         </section>
 
         <!-- Summary -->
+        <details class="ni__irn">
+          <summary>E-invoice already generated outside the app</summary>
+          <p class="ar-field__opt">
+            Only when this invoice was registered on the GST portal or another tool. Invoices issued
+            here get their IRN from the app's own GST connection.
+          </p>
+          <div class="ni__irn-grid">
+            <label class="ar-field" for="ni-irn">
+              <span class="ar-field__label">IRN</span>
+              <input
+                id="ni-irn"
+                class="ar-field__input ar-mono"
+                translate="no"
+                maxlength="64"
+                [value]="irn()"
+                (input)="irn.set($any($event.target).value)"
+              />
+            </label>
+            <label class="ar-field" for="ni-eway">
+              <span class="ar-field__label">E-way bill number</span>
+              <input
+                id="ni-eway"
+                class="ar-field__input ar-mono"
+                inputmode="numeric"
+                maxlength="14"
+                [value]="ewayBill()"
+                (input)="ewayBill.set($any($event.target).value)"
+              />
+            </label>
+            <label class="ar-field ni__irn-wide" for="ni-qr">
+              <span class="ar-field__label">Signed QR code text</span>
+              <textarea
+                id="ni-qr"
+                class="ar-field__input ar-mono"
+                translate="no"
+                rows="3"
+                maxlength="2048"
+                [value]="qrCode()"
+                (input)="qrCode.set($any($event.target).value)"
+              ></textarea>
+            </label>
+          </div>
+        </details>
+
         <section class="ni__foot" aria-label="Notes and totals">
           <label class="ar-field ni__notes">
             <span class="ar-field__label"
@@ -468,6 +512,28 @@ const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
     </ar-dialog>
   `,
   styles: `
+    .ni__irn {
+      margin: 12px 0;
+      font: 400 13px var(--ar-font-sans);
+    }
+    .ni__irn summary {
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .ni__irn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .ni__irn-wide {
+      grid-column: 1 / -1;
+    }
+    @media (max-width: 640px) {
+      .ni__irn-grid {
+        grid-template-columns: 1fr;
+      }
+    }
     .ni {
       display: flex;
       flex-direction: column;
@@ -792,6 +858,10 @@ export class ArNewSalesInvoice {
   protected readonly shippingAddress = signal('');
   protected readonly shipIndex = signal(-1);
   protected readonly notes = signal('');
+  /** E-invoice details from the GST portal or another tool, for an invoice registered outside the app. */
+  protected readonly irn = signal('');
+  protected readonly qrCode = signal('');
+  protected readonly ewayBill = signal('');
   protected readonly conditions = signal('');
   /** A credit or debit note adjusts one earlier invoice. */
   protected readonly isNote = computed(
@@ -1027,6 +1097,21 @@ export class ArNewSalesInvoice {
       return;
     }
 
+    const irn = this.irn().trim();
+    const eway = this.ewayBill().replace(/\s/g, '');
+    if (irn && !/^[0-9a-fA-F]{64}$/.test(irn)) {
+      this.error.set('An IRN is 64 letters and digits (0–9, a–f), as shown on the GST portal.');
+      return;
+    }
+    if (eway && !/^[0-9]{12}$/.test(eway)) {
+      this.error.set('An e-way bill number has 12 digits.');
+      return;
+    }
+    if (this.qrCode().trim() && !irn) {
+      this.error.set('Enter the IRN that goes with the signed QR code.');
+      return;
+    }
+
     const billOfSupply = this.kind() === SalesInvoiceKind.BillOfSupply;
     const input: CreateSalesInvoiceDto = {
       kind: this.kind(),
@@ -1045,6 +1130,9 @@ export class ArNewSalesInvoice {
       originalInvoiceId: this.isNote() ? this.originalInvoiceId() || undefined : undefined,
       deliveryChallanId: !this.isNote() ? this.challanId() || undefined : undefined,
       lines: toInvoiceLines(this.lines(), billOfSupply),
+      irn: irn || undefined,
+      qrCodeData: this.qrCode().trim() || undefined,
+      eWayBillNumber: eway || undefined,
     };
 
     this.busy.set(true);

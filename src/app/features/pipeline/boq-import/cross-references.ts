@@ -118,26 +118,54 @@ export class ArCrossReferences {
     void this.load();
   }
 
+  /** The cross-reference being changed in the form above, or null when the form adds a new one. */
+  protected readonly editingId = signal<string | null>(null);
+
+  protected edit(r: CrossReferenceDto): void {
+    this.editingId.set(r.id);
+    this.otherMake.set(r.otherMake ?? '');
+    this.otherPart.set(r.otherPartNumber);
+    this.ourPart.set(r.ourPartNumber);
+    this.relation.set(r.relation);
+    this.note.set(r.note ?? '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  protected cancelEdit(): void {
+    this.editingId.set(null);
+    this.otherPart.set('');
+    this.ourPart.set('');
+    this.note.set('');
+  }
+
   protected async add(): Promise<void> {
     if (!this.canAdd()) return;
     this.busy.set(true);
+    const editing = this.editingId();
     try {
-      await firstValueFrom(
-        this.api.create({
-          otherMake: this.otherMake().trim() || null,
-          otherPartNumber: this.otherPart().trim(),
-          ourPartNumber: this.ourPart().trim(),
-          relation: this.relation(),
-          note: this.note().trim() || null,
-        }),
-      );
-      this.toasts.success('Cross-reference added.');
+      const input = {
+        otherMake: this.otherMake().trim() || null,
+        otherPartNumber: this.otherPart().trim(),
+        ourPartNumber: this.ourPart().trim(),
+        relation: this.relation(),
+        note: this.note().trim() || null,
+      };
+      await firstValueFrom(editing ? this.api.update(editing, input) : this.api.create(input));
+      this.toasts.success(editing ? 'Cross-reference saved.' : 'Cross-reference added.');
+      this.editingId.set(null);
       this.otherPart.set('');
       this.ourPart.set('');
       this.note.set('');
       await this.load();
     } catch (e) {
-      this.toasts.error(readApiError(e, 'The cross-reference could not be added.'));
+      this.toasts.error(
+        readApiError(
+          e,
+          editing
+            ? 'The cross-reference could not be saved.'
+            : 'The cross-reference could not be added.',
+        ),
+      );
     } finally {
       this.busy.set(false);
     }

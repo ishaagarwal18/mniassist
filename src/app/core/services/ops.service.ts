@@ -118,6 +118,16 @@ export class OpsService {
     defaultValue: [] as ReconciliationRun[],
   });
 
+  /** Each number's most recent month closed against Meta's invoice. */
+  private readonly latestRecResource = rxResource({
+    params: () => (!this.path().startsWith('/billing/invoices') ? undefined : {}),
+    stream: () =>
+      this.reconciliationApi
+        .getLatestPerChannel()
+        .pipe(map((r) => (r.items ?? []).map(toReconciliationRun))),
+    defaultValue: [] as ReconciliationRun[],
+  });
+
   private readonly webhooksResource = rxResource({
     params: () =>
       !this.canReadWebhooks() || !this.path().startsWith('/settings/integrations') ? undefined : {},
@@ -168,6 +178,10 @@ export class OpsService {
 
   readonly reconciliationRuns = computed<readonly ReconciliationRun[]>(() =>
     settled(this.reconciliationResource),
+  );
+
+  readonly latestReconciliation = computed<readonly ReconciliationRun[]>(() =>
+    settled(this.latestRecResource),
   );
 
   readonly webhooks = computed<readonly WebhookSubscription[]>(() =>
@@ -244,6 +258,7 @@ export class OpsService {
   async reconcileInvoice(input: RunReconciliationDto): Promise<ReconciliationRun | null> {
     const run = await firstValueFrom(this.reconciliationApi.run(input));
     this.reconciliationResource.reload();
+    this.latestRecResource.reload();
     return toReconciliationRun(run);
   }
 
@@ -251,6 +266,7 @@ export class OpsService {
   async acknowledgeReconciliation(id: string, note: string): Promise<void> {
     await firstValueFrom(this.reconciliationApi.acknowledge(id, { note: note || undefined }));
     this.reconciliationResource.reload();
+    this.latestRecResource.reload();
   }
 
   async createWebhook(url: string, description: string, events: WebhookEvent[]): Promise<void> {

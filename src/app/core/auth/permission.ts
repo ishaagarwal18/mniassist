@@ -54,16 +54,19 @@ export function grantedPolicy(
  * based on role permissions, active subscription plan, unlocked features,
  * and host vs. tenant segregation.
  */
+/** Set by FeatureFlagStore once it exists; until then every flagged item reads as off. */
+let flagIsOn: (key: string) => boolean = () => false;
+export function registerFlagChecker(check: (key: string) => boolean): void {
+  flagIsOn = check;
+}
+
 export function canAccessNavItem(
   item: NavItem,
   permissions: PermissionService,
   planService: PlanService,
   account: CurrentUserService,
 ): boolean {
-  if (
-    (item.hostOnly && !account.isHost()) ||
-    !checkPolicy(item.permission, permissions)
-  ) {
+  if ((item.hostOnly && !account.isHost()) || !checkPolicy(item.permission, permissions)) {
     return false;
   }
 
@@ -78,6 +81,11 @@ export function canAccessNavItem(
 
   // 4. Plan feature check
   if (item.feature && !planService.hasFeature(item.feature)) {
+    return false;
+  }
+
+  // 5. Platform feature flag
+  if (item.flag && !flagIsOn(item.flag)) {
     return false;
   }
 

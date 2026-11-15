@@ -38,7 +38,7 @@
   <form
     class="xr__card"
     (submit)="$event.preventDefault(); add()"
-    aria-label="Add a cross-reference"
+    [attr.aria-label]="editingId() ? 'Edit a cross-reference' : 'Add a cross-reference'"
   >
     <label class="ar-field">
       <span class="ar-field__label">Other make</span>
@@ -86,7 +86,12 @@
         (input)="note.set($any($event.target).value)"
       />
     </label>
-    <button ar-button type="submit" icon="plus" [disabled]="!canAdd()">Add</button>
+    @if (editingId()) {
+      <button ar-button type="submit" icon="check" [disabled]="!canAdd()">Save</button>
+      <button ar-button type="button" variant="ghost" (click)="cancelEdit()">Cancel</button>
+    } @else {
+      <button ar-button type="submit" icon="plus" [disabled]="!canAdd()">Add</button>
+    }
   </form>
 
   <div class="xr__bar">
@@ -201,6 +206,14 @@
                     (click)="approve([r.id])"
                   ></button>
                 }
+                <button
+                  ar-button
+                  type="button"
+                  variant="ghost"
+                  icon="edit"
+                  title="Edit cross-reference"
+                  (click)="edit(r)"
+                ></button>
                 <button
                   ar-button
                   type="button"

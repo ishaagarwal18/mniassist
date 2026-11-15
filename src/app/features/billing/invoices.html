@@ -240,6 +240,32 @@
         <p class="empty">No invoices yet.</p>
       }
 
+      @if (latestRuns().length > 0) {
+        <section class="rec rec--latest" aria-label="Latest month per number">
+          <p class="ar-label">Latest month per number</p>
+          <ul class="rec__latest">
+            @for (r of latestRuns(); track r.id) {
+              <li>
+                <span class="ar-mono" translate="no">{{ r.channelNumber }}</span>
+                <span class="rec__source">{{ r.periodLabel }}</span>
+                <ar-chip
+                  [tone]="r.withinTolerance ? 'good' : r.acknowledged ? 'neutral' : 'warn'"
+                  [dot]="true"
+                >
+                  {{
+                    r.withinTolerance
+                      ? 'Matched'
+                      : r.acknowledged
+                        ? 'Checked'
+                        : 'Off by ' + variancePercent(r.varianceBasisPoints)
+                  }}
+                </ar-chip>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
       @for (r of runs(); track r.id) {
         <section class="rec" [class.rec--alert]="!r.withinTolerance && !r.acknowledged">
           <header class="rec__head">

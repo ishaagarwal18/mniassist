@@ -268,6 +268,11 @@
           >
             Ask to call
           </button>
+          @if (permission(); as pm) {
+            @if (pm.conversationId === thread.id && permissionLabel(pm.value); as pl) {
+              <ar-chip [tone]="pl.tone" [dot]="true">{{ pl.text }}</ar-chip>
+            }
+          }
           <button
             ar-button
             variant="ghost"
@@ -287,6 +292,18 @@
           >
             Call with AI agent
           </button>
+          @if (thread.contactId) {
+            <button
+              ar-button
+              variant="ghost"
+              icon="phone"
+              title="Rings the customer from the workspace's phone number straight into its phone menu (IVR), with no one on the line"
+              [disabled]="ivrCallBusy()"
+              (click)="callIntoMenu(thread.contactId, thread.contactName)"
+            >
+              Call into phone menu
+            </button>
+          }
           @if (canReorder() && thread.contactId) {
             <button
               ar-button
